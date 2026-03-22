@@ -1,0 +1,15 @@
+import MiniLoader from "@/components/ai/MiniLoader";
+import ResendVerificationForm from "@/components/auth/ResendVerificationForm";
+import { SearchParamsReader } from "@/components/renderingError/SearchParamsReader";
+import { Suspense } from "react";
+
+export default function ResendVerificationPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
+      <Suspense fallback={<MiniLoader text="Proveravamo link..." />}>
+        <SearchParamsReader />
+        <ResendVerificationForm />
+      </Suspense>
+    </div>
+  );
+}

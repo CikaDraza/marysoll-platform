@@ -1,0 +1,11 @@
+export { Theme3Header } from "./Header";
+export { Theme3Footer } from "./Footer";
+export { Theme3Hero } from "./Hero";
+export { Theme3HeroSecond } from "./HeroSecond";
+export { Theme3WhatOffer } from "./WhatOffer";
+export { Theme3WhyChooseUs } from "./WhyChooseUs";
+export { Theme3GallerySection } from "./GallerySection";
+export { Theme3PricingSection } from "./PricingSection";
+export { Theme3ImageGenerationSection } from "./ImageGenerationSection";
+export { Theme3AppointmentSection } from "./AppointmentSection";
+export { Theme3TestimonialsSection } from "./TestimonialsSection";

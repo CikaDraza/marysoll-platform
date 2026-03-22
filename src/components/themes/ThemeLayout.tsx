@@ -1,0 +1,155 @@
+"use client";
+/**
+ * ThemeLayout — renders salon landing page using the selected theme.
+ *
+ * Receives pre-serialized plain objects from ClientHomePage (Server Component).
+ * All data is plain JS — no Mongoose ObjectIds or toJSON methods.
+ *
+ * tenantSlug is passed to Headers so login/register links point to
+ * the correct tenant-scoped routes (/{slug}/login, /{slug}/panel).
+ */
+
+import type { LandingTheme } from "@/models/SalonProfile";
+import type { IService, SalonProfileData } from "@/types";
+
+// Theme 1
+import { Theme1Header } from "./theme-1/Header";
+import { Theme1Footer } from "./theme-1/Footer";
+import { Theme1Hero } from "./theme-1/Hero";
+import { Theme1HeroSecond } from "./theme-1/HeroSecond";
+import { Theme1WhatOffer } from "./theme-1/WhatOffer";
+import { Theme1WhyChooseUs } from "./theme-1/WhyChooseUs";
+import { Theme1GallerySection } from "./theme-1/GallerySection";
+import { Theme1PricingSection } from "./theme-1/PricingSection";
+import { Theme1ImageGenerationSection } from "./theme-1/ImageGenerationSection";
+import { Theme1AppointmentSection } from "./theme-1/AppointmentSection";
+import { Theme1TestimonialsSection } from "./theme-1/TestimonialsSection";
+
+// Theme 2
+import { Theme2Header } from "./theme-2/Header";
+import { Theme2Footer } from "./theme-2/Footer";
+import { Theme2Hero } from "./theme-2/Hero";
+import { Theme2HeroSecond } from "./theme-2/HeroSecond";
+import { Theme2WhatOffer } from "./theme-2/WhatOffer";
+import { Theme2WhyChooseUs } from "./theme-2/WhyChooseUs";
+import { Theme2GallerySection } from "./theme-2/GallerySection";
+import { Theme2PricingSection } from "./theme-2/PricingSection";
+import { Theme2ImageGenerationSection } from "./theme-2/ImageGenerationSection";
+import { Theme2AppointmentSection } from "./theme-2/AppointmentSection";
+import { Theme2TestimonialsSection } from "./theme-2/TestimonialsSection";
+
+// Theme 3
+import { Theme3Header } from "./theme-3/Header";
+import { Theme3Footer } from "./theme-3/Footer";
+import { Theme3Hero } from "./theme-3/Hero";
+import { Theme3HeroSecond } from "./theme-3/HeroSecond";
+import { Theme3WhatOffer } from "./theme-3/WhatOffer";
+import { Theme3WhyChooseUs } from "./theme-3/WhyChooseUs";
+import { Theme3GallerySection } from "./theme-3/GallerySection";
+import { Theme3PricingSection } from "./theme-3/PricingSection";
+import { Theme3ImageGenerationSection } from "./theme-3/ImageGenerationSection";
+import { Theme3AppointmentSection } from "./theme-3/AppointmentSection";
+import { Theme3TestimonialsSection } from "./theme-3/TestimonialsSection";
+
+interface Testimonial {
+  _id: string;
+  clientName: string;
+  rating: number;
+  comment: string;
+  adminReply?: string;
+}
+
+interface ThemeLayoutProps {
+  theme: LandingTheme;
+  salon: SalonProfileData;
+  services: IService[];
+  testimonials: Testimonial[];
+  /** Tenant slug — used to build correct login/panel links in headers */
+  tenantSlug?: string;
+}
+
+export function ThemeLayout({
+  theme,
+  salon,
+  services,
+  testimonials,
+  tenantSlug,
+}: ThemeLayoutProps) {
+  const instagram = salon.social?.instagram || "";
+  const showGallery = !!instagram;
+
+  const headerProps = {
+    tenantSlug,
+    salonName: salon.name,
+    salonLogo: salon.logo ?? null,
+    instagramUrl: showGallery ? instagram : undefined,
+  };
+
+  const footerProps = {
+    salonName: salon.name,
+    instagram: salon.social?.instagram,
+    facebook: salon.social?.facebook,
+    tiktok: salon.social?.tiktok,
+  };
+
+  // ── Theme 1: Light gradient ───────────────────────────────────────────────
+  if (theme === "theme-1") {
+    return (
+      <div className="min-h-screen flex flex-col bg-white">
+        <Theme1Header {...headerProps} />
+        <main className="flex-1 overflow-x-hidden flex flex-col pt-20">
+          <Theme1Hero salon={salon} />
+          <Theme1HeroSecond salonName={salon.name} description={salon.description} />
+          {services.length > 0 && <Theme1WhatOffer services={services} />}
+          <Theme1WhyChooseUs />
+          {showGallery && <Theme1GallerySection instagramUrl={instagram} />}
+          <Theme1PricingSection services={services} />
+          <Theme1ImageGenerationSection />
+          <Theme1AppointmentSection salonName={salon.name} />
+          <Theme1TestimonialsSection testimonials={testimonials} />
+        </main>
+        <Theme1Footer {...footerProps} />
+      </div>
+    );
+  }
+
+  // ── Theme 2: Dark luxury ──────────────────────────────────────────────────
+  if (theme === "theme-2") {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-950">
+        <Theme2Header {...headerProps} />
+        <main className="flex-1 overflow-x-hidden flex flex-col">
+          <Theme2Hero salon={salon} />
+          <Theme2HeroSecond salonName={salon.name} />
+          {services.length > 0 && <Theme2WhatOffer services={services} />}
+          <Theme2WhyChooseUs />
+          {showGallery && <Theme2GallerySection instagramUrl={instagram} />}
+          <Theme2PricingSection services={services} />
+          <Theme2ImageGenerationSection />
+          <Theme2AppointmentSection salonName={salon.name} />
+          <Theme2TestimonialsSection testimonials={testimonials} />
+        </main>
+        <Theme2Footer {...footerProps} />
+      </div>
+    );
+  }
+
+  // ── Theme 3: Soft minimal ─────────────────────────────────────────────────
+  return (
+    <div className="min-h-screen flex flex-col bg-[#FAF8F5]">
+      <Theme3Header {...headerProps} />
+      <main className="flex-1 overflow-x-hidden flex flex-col">
+        <Theme3Hero salon={salon} />
+        <Theme3HeroSecond salonName={salon.name} description={salon.description} />
+        {services.length > 0 && <Theme3WhatOffer services={services} />}
+        <Theme3WhyChooseUs />
+        {showGallery && <Theme3GallerySection instagramUrl={instagram} />}
+        <Theme3PricingSection services={services} />
+        <Theme3ImageGenerationSection />
+        <Theme3AppointmentSection salonName={salon.name} />
+        <Theme3TestimonialsSection testimonials={testimonials} />
+      </main>
+      <Theme3Footer {...footerProps} />
+    </div>
+  );
+}

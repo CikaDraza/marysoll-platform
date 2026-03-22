@@ -1,0 +1,250 @@
+/**
+ * useAdminServices — hook za admin upravljanje uslugama.
+ *
+ * - Učitava usluge filtrirane po tenantId (iz JWT)
+ * - Create / Update / Delete sa optimistik UI
+ * - Modal state (create | edit | closed)
+ * - Strogo tipizirano: IService, IServiceInput, IServiceVariant, IServiceExtra, IServiceGroupItem
+ */
+"use client";
+
+import { useState, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import type {
+  IService,
+  IServiceInput,
+  IServiceVariant,
+  IServiceExtra,
+  IServiceGroupItem,
+  ISubscription,
+} from "@/types";
+import { useAuth } from "@/hooks/useAuth";
+
+// ─── Defaults ─────────────────────────────────────────────────────────────────
+
+export const emptyServiceForm = (): IServiceInput => ({
+  name: "",
+  category: "",
+  subcategory: "",
+  type: "single",
+  basePrice: undefined,
+  duration: undefined,
+  description: "",
+  items: [],
+  variants: [],
+  extras: [],
+  services: [],
+  featured: "none",
+  subscription: { enabled: false, priceMonthly: null, startDate: null, endDate: null },
+});
+
+export function mapServiceToForm(s: IService): IServiceInput {
+  return {
+    name: s.name ?? "",
+    category: s.category ?? "",
+    subcategory: s.subcategory ?? "",
+    type: s.type ?? "single",
+    basePrice: s.basePrice ?? undefined,
+    duration: s.duration ?? undefined,
+    description: s.description ?? "",
+    items: s.items ?? [],
+    variants: s.variants ?? [],
+    extras: s.extras ?? [],
+    services: s.services ?? [],
+    featured: s.featured ?? "none",
+    subscription: s.subscription ?? { enabled: false, priceMonthly: null, startDate: null, endDate: null },
+  };
+}
+
+function validateService(f: IServiceInput): string | null {
+  if (!f.name.trim()) return "Naziv usluge je obavezan.";
+  if (!f.category.trim()) return "Kategorija je obavezna.";
+  if (f.type === "single") {
+    if (!f.basePrice || f.basePrice <= 0) return "Cena mora biti veća od 0.";
+    if (!f.duration || f.duration <= 0) return "Trajanje mora biti veće od 0.";
+  }
+  if (f.type === "variant" && (!f.variants || f.variants.length === 0))
+    return "Dodajte najmanje jednu varijantu.";
+  if (f.type === "group" && (!f.services || f.services.length === 0))
+    return "Dodajte najmanje jednu uslugu u grupi.";
+  return null;
+}
+
+// ─── API helpers ──────────────────────────────────────────────────────────────
+
+async function fetchServices(token: string): Promise<IService[]> {
+  const res = await fetch("/api/services", { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error("Greška pri učitavanju usluga");
+  return res.json();
+}
+
+async function createService(payload: IServiceInput, token: string): Promise<IService> {
+  const res = await fetch("/api/services/create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? "Greška"); }
+  return res.json();
+}
+
+async function updateService(id: string, payload: IServiceInput, token: string): Promise<IService> {
+  const res = await fetch(`/api/services/${id}/update`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? "Greška"); }
+  return res.json();
+}
+
+async function deleteService(id: string, token: string): Promise<void> {
+  const res = await fetch(`/api/services/${id}/delete`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Greška pri brisanju");
+}
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
+export type ServiceModalMode = "closed" | "create" | "edit";
+
+export function useAdminServices() {
+  const { token } = useAuth();
+  const qc = useQueryClient();
+
+  const { data: services = [], isLoading, error } = useQuery<IService[]>({
+    queryKey: ["services"],
+    queryFn: () => fetchServices(token ?? ""),
+    enabled: !!token,
+    staleTime: 1000 * 60,
+    refetchOnWindowFocus: false,
+  });
+
+  const [modalMode, setModalMode] = useState<ServiceModalMode>("closed");
+  const [editingService, setEditingService] = useState<IService | null>(null);
+  const [form, setFormState] = useState<IServiceInput>(emptyServiceForm());
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // ── Modal controls ────────────────────────────────────────────────────────
+
+  const openCreate = useCallback(() => {
+    setEditingService(null);
+    setFormState(emptyServiceForm());
+    setModalMode("create");
+  }, []);
+
+  const openEdit = useCallback((s: IService) => {
+    setEditingService(s);
+    setFormState(mapServiceToForm(s));
+    setModalMode("edit");
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setModalMode("closed");
+    setEditingService(null);
+    setFormState(emptyServiceForm());
+  }, []);
+
+  // ── Field setters ─────────────────────────────────────────────────────────
+
+  const setField = useCallback(<K extends keyof IServiceInput>(k: K, v: IServiceInput[K]) => {
+    setFormState((p) => ({ ...p, [k]: v }));
+  }, []);
+
+  // Variants
+  const addVariant = useCallback(() => {
+    setFormState((p) => ({
+      ...p,
+      variants: [...(p.variants ?? []), { name: "", price: 0, duration: 30, perItem: false } as IServiceVariant],
+    }));
+  }, []);
+  const updateVariant = useCallback((i: number, k: keyof IServiceVariant, v: string | number | boolean) => {
+    setFormState((p) => { const a = [...(p.variants ?? [])]; a[i] = { ...a[i], [k]: v }; return { ...p, variants: a }; });
+  }, []);
+  const removeVariant = useCallback((i: number) => {
+    setFormState((p) => ({ ...p, variants: (p.variants ?? []).filter((_, j) => j !== i) }));
+  }, []);
+
+  // Extras
+  const addExtra = useCallback(() => {
+    setFormState((p) => ({
+      ...p,
+      extras: [...(p.extras ?? []), { name: "", price: 0, duration: 0, perItem: false } as IServiceExtra],
+    }));
+  }, []);
+  const updateExtra = useCallback((i: number, k: keyof IServiceExtra, v: string | number | boolean) => {
+    setFormState((p) => { const a = [...(p.extras ?? [])]; a[i] = { ...a[i], [k]: v }; return { ...p, extras: a }; });
+  }, []);
+  const removeExtra = useCallback((i: number) => {
+    setFormState((p) => ({ ...p, extras: (p.extras ?? []).filter((_, j) => j !== i) }));
+  }, []);
+
+  // Group services
+  const addGroupService = useCallback(() => {
+    setFormState((p) => ({
+      ...p,
+      services: [...(p.services ?? []), { name: "", price: 0, duration: 30, description: "" } as IServiceGroupItem],
+    }));
+  }, []);
+  const updateGroupService = useCallback((i: number, k: keyof IServiceGroupItem, v: string | number) => {
+    setFormState((p) => { const a = [...(p.services ?? [])]; a[i] = { ...a[i], [k]: v }; return { ...p, services: a }; });
+  }, []);
+  const removeGroupService = useCallback((i: number) => {
+    setFormState((p) => ({ ...p, services: (p.services ?? []).filter((_, j) => j !== i) }));
+  }, []);
+
+  // Subscription
+  const setSubscriptionField = useCallback((k: keyof ISubscription, v: boolean | number | string | null) => {
+    setFormState((p) => ({ ...p, subscription: { ...p.subscription, [k]: v } }));
+  }, []);
+
+  // ── Save mutation ─────────────────────────────────────────────────────────
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!token) throw new Error("Niste prijavljeni");
+      const err = validateService(form);
+      if (err) throw new Error(err);
+      if (modalMode === "edit" && editingService)
+        return updateService(editingService._id, form, token);
+      return createService(form, token);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["services"] });
+      toast.success(modalMode === "edit" ? "Usluga ažurirana!" : "Usluga kreirana!");
+      closeModal();
+    },
+    onError: (e: Error) => toast.error(e.message || "Greška"),
+  });
+
+  // ── Delete mutation ───────────────────────────────────────────────────────
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteService(id, token ?? ""),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["services"] });
+      toast.success("Usluga obrisana.");
+      setDeleteConfirmId(null);
+    },
+    onError: () => toast.error("Greška pri brisanju."),
+  });
+
+  return {
+    services, isLoading, error,
+    modalMode, editingService, form,
+    openCreate, openEdit, closeModal,
+    setField,
+    addVariant, updateVariant, removeVariant,
+    addExtra, updateExtra, removeExtra,
+    addGroupService, updateGroupService, removeGroupService,
+    setSubscriptionField,
+    save: saveMutation.mutate,
+    isSaving: saveMutation.isPending,
+    deleteConfirmId, setDeleteConfirmId,
+    confirmDelete: deleteMutation.mutate,
+    isDeleting: deleteMutation.isPending,
+  };
+}

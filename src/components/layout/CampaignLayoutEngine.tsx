@@ -1,0 +1,36 @@
+import HeroPrimaryBlockView from "../blocks-ai/HeroPrimaryBlockView";
+import HeroVisualBlockView from "../blocks-ai/HeroVisualBlockView";
+import ArticleSectionBlockView from "../blocks-ai/ArticleSectionBlockView";
+import FeatureGridBlockView from "../blocks-ai/FeatureGridBlockView";
+import { LandingBlock } from "@/types/landing-blocks";
+
+interface Props {
+  blocks: LandingBlock[];
+}
+
+export function CampaignLayoutEngine({ blocks }: Props) {
+  const visibleBlocks = blocks.sort((a, b) => a.priority - b.priority);
+
+  return (
+    <main className="relative overflow-x-visible flex flex-col min-h-screen w-full px-1 2xl:px-16 pb-36">
+      {visibleBlocks.map((block) => {
+        switch (block.type) {
+          case "HeroPrimaryBlock":
+            return <HeroPrimaryBlockView key={block.id} block={block} />;
+
+          case "HeroVisualBlock":
+            return <HeroVisualBlockView key={block.id} block={block} />;
+
+          case "ArticleSectionBlock":
+            return <ArticleSectionBlockView key={block.id} block={block} />;
+
+          case "FeatureGridBlock":
+            return <FeatureGridBlockView key={block.id} block={block} />;
+
+          default:
+            return null;
+        }
+      })}
+    </main>
+  );
+}

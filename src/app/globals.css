@@ -1,0 +1,232 @@
+/* Uvoz fontova sa Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Changa:wght@200..800&display=swap');
+
+/* Tailwind CSS import */
+@import "tailwindcss";
+
+/* Definisanje prilagođenih CSS varijabli (boje i fontovi) */
+:root {
+  /* BOJE */
+  --main-color: #7f22fe;
+  --primary-color: #5D0156;
+  --secondary-color: #BA34B7;
+  --tetra-color: #9810fa;
+  --red-color: #D20003;
+  --black-color: #000000;
+  --white-color: #ffffff;
+
+  /* GLOBALNA POZADINA I TEKST */
+  --background: #E2E2E2;
+  --foreground: var(--black-color);
+  /* Koristi crnu kao osnovnu boju teksta */
+
+  /* FONTI */
+  --main-font: 'Changa', sans-serif;
+  --heading-font: 'Berkshire Swash', cursive;
+}
+
+/* Prilagođavanje za dark mode (ako ga koristiš) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Obrnute boje za dark mode */
+    --background: var(--black-color);
+    --foreground: var(--white-color);
+  }
+}
+
+/* STILIZOVANJE BODY I HEADING ELEMENATA */
+body {
+  /* Postavljanje globalnog fonta na Changa i boje pozadine */
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--main-font);
+  /* Ceo sajt koristi Changa */
+}
+
+.main-font {
+  font-family: var(--main-font);
+}
+
+.heading-font {
+  font-family: var(--heading-font);
+}
+
+h1 {
+  /* H1 koristi Berkshire Swash i željenu veličinu */
+  font-family: var(--heading-font);
+}
+
+h2 {
+  /* H2 koristi Changa (ili drugi, po želji, ali ostavićemo main-font) i željenu veličinu */
+  font-family: var(--main-font);
+}
+
+.logo span, .hero .title {
+  font-family: var(--heading-font);
+}
+
+.hero-second .title {
+  font-size: 200px;
+}
+
+@media (max-width: 768px) {
+  .hero-second .title {
+      font-size: 48px;
+    }
+}
+
+.privacy-policy h1, .dashboard h1, .calendar h1, .appointment-page h1, .services-page h1 {
+  font-family: var(--main-font);
+}
+
+/* u globalnom CSS fajlu */
+@keyframes bounce {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+/* U vašem CSS fajlu */
+.fc .fc-toolbar {
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fc .fc-toolbar.fc-header-toolbar {
+  margin-bottom: 1em;
+}
+
+@media (max-width: 768px) {
+  .fc .fc-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .fc .fc-toolbar-title {
+    font-size: 1.2em;
+    margin: 10px 0;
+  }
+
+  .fc .fc-button {
+    padding: 4px 8px;
+    font-size: 0.8em;
+  }
+
+  .fc .fc-timegrid-slot, .fc-event-title.fc-sticky, .fc-event-time {
+    font-size: 0.7em;
+  }
+
+  .fc .fc-daygrid-day-number {
+    font-size: 0.8em;
+    padding: 2px;
+  }
+}
+
+/* U vašem CSS fajlu */
+.fc .fc-col-header-cell-cushion {
+  font-size: 1em;
+  /* Default za desktop */
+}
+
+/* Za tablete */
+@media (max-width: 768px) {
+  .fc .fc-col-header-cell-cushion {
+    font-size: 0.75em;
+  }
+}
+
+/* Za mobilne telefone */
+@media (max-width: 480px) {
+  .fc .fc-col-header-cell-cushion {
+    font-size: 0.50em;
+    padding: 4px 2px;
+    line-height: 1.2;
+  }
+  /* FullCalendar container */
+  .fc.fc-media-screen.fc-direction-ltr.fc-theme-standard.fc-liquid-hack {
+      max-width: 100%;
+      width: 100%;
+      height: 100%;
+      overflow-x: auto;
+  }
+  /* FullCalendar header */
+  .fc-header-toolbar.fc-toolbar.fc-toolbar-ltr {
+    position: sticky;
+    max-width: 100%;
+    width: 100%;
+  }
+  /* FullCalendar view harness */
+  .fc-view-harness.fc-view-harness-passive {
+    width: 100%;
+    min-width: 1000px;
+    height: 100%;
+  }
+  tbody tr.fc-scrollgrid-section.fc-scrollgrid-section-header.fc-scrollgrid-section-sticky {
+    position: sticky;
+  }
+
+    /* === HORIZONTAL SCROLL KOJI RADI NA SVIM TELEFONIMA === */
+
+}
+
+.calendar-wrapper {
+  -webkit-overflow-scrolling: touch;
+  /* iPhone – omogućava glatki skrol */
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.calendar-wrapper::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, Edge */
+}
+
+/* Dete mora imati fiksnu minimalnu širinu */
+.calendar-inner {
+  min-width: 900px;
+  /* ili 1000px, 1200px – koliko hoćeš */
+  width: max-content;
+}
+
+/* Dodatno – za glatkiji osećaj */
+.calendar-wrapper {
+  touch-action: pan-x;
+  /* dozvoljava samo horizontalni svajp */
+}
+
+@layer utilities {
+  .transition-max-height {
+    transition-property: max-height;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+
+  .animate-slide-down {
+    animation: slideDown 0.3s ease-out;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

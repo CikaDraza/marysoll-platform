@@ -1,0 +1,81 @@
+// src/app/api/newsletter/campaigns/[id]/publish/route.ts
+// Objavljuje landing sa statusom "published"
+import { NextResponse } from "next/server";
+import { connectToDB } from "@/lib/db/mongodb";
+import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
+import { PublishLandingPayload } from "@/types/newsletter";
+import { NewsletterCampaign } from "@/models/NewsletterCampaign";
+
+export async function PATCH(
+  request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
+  try {
+    await connectToDB();
+
+    const authResult: AdminAuthResult = await requireAdmin(request);
+
+    if (!authResult.success) {
+      return authResult.response;
+    }
+
+    const { decoded } = authResult;
+    const tenantId = decoded.tenantId;
+    const { id } = await context.params;
+    const body: PublishLandingPayload = await request.json();
+
+    const campaign = await await NewsletterCampaign.findOneAndUpdate(
+      {
+        _id: id,
+        tenantId,
+      },
+      {
+        $set: {
+          "landingPage.status": "published",
+        },
+      },
+      {
+        new: true,
+      },
+    );
+
+    if (!campaign) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    if (campaign.campaignType !== "email-landing") {
+      return NextResponse.json(
+        { error: "Campaign is not landing-enabled" },
+        { status: 400 },
+      );
+    }
+
+    // Update landing page with published status
+    campaign.landingPage = {
+      enabled: true,
+      slug: campaign.ctaSlug,
+      layout: body.layout,
+      semanticType: body.semanticType,
+      generatedAt: body.generatedAt,
+      status: "published", // Uvek "published" za publish
+      score: body.score || campaign.landingPage?.score || 0,
+      seo: body.seo || campaign.landingPage?.seo || {},
+      regeneratedCount: campaign.landingPage?.regeneratedCount || 0,
+    };
+
+    await campaign.save();
+
+    return NextResponse.json(campaign);
+  } catch (error) {
+    console.error("Publish landing error:", error);
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Greška pri objavljivanju landing-a",
+      },
+      { status: 500 },
+    );
+  }
+}

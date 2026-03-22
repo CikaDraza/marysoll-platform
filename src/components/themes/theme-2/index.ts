@@ -1,0 +1,11 @@
+export { Theme2Header } from "./Header";
+export { Theme2Footer } from "./Footer";
+export { Theme2Hero } from "./Hero";
+export { Theme2HeroSecond } from "./HeroSecond";
+export { Theme2WhatOffer } from "./WhatOffer";
+export { Theme2WhyChooseUs } from "./WhyChooseUs";
+export { Theme2GallerySection } from "./GallerySection";
+export { Theme2PricingSection } from "./PricingSection";
+export { Theme2ImageGenerationSection } from "./ImageGenerationSection";
+export { Theme2AppointmentSection } from "./AppointmentSection";
+export { Theme2TestimonialsSection } from "./TestimonialsSection";

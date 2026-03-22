@@ -1,0 +1,183 @@
+/**
+ * ClientHomePage — Server Component
+ *
+ * Fetches tenant data by:
+ *   1. tenantSlug from x-tenant-slug header (subdomain routing)
+ *   2. Custom domain lookup
+ *   3. Path-based slug (localhost/slug dev routing)
+ *
+ * Renders the correct theme via ThemeLayout.
+ */
+import { connectToDB } from "@/lib/db/mongodb";
+import { Tenant } from "@/models/Tenant";
+import { SalonProfile } from "@/models/SalonProfile";
+import { Service } from "@/models/Service";
+import { Testimonial } from "@/models/Testimonial";
+import { headers } from "next/headers";
+import { ThemeLayout } from "@/components/themes/ThemeLayout";
+import type { LandingTheme } from "@/models/SalonProfile";
+import type { IService, SalonProfileData } from "@/types";
+
+interface Props {
+  tenantSlug: string;
+}
+
+interface TestimonialData {
+  _id: string;
+  clientName: string;
+  rating: number;
+  comment: string;
+  adminReply?: string;
+}
+
+async function getTenantData(tenantSlug: string) {
+  await connectToDB();
+
+  const headersList = await headers();
+  const hostname = headersList.get("host")?.split(":")[0] ?? "";
+  const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+
+  let tenant = null;
+
+  if (tenantSlug && tenantSlug !== "default" && tenantSlug !== "") {
+    tenant = await Tenant.findOne({ slug: tenantSlug }).lean();
+  } else if (!hostname.endsWith(BASE_DOMAIN) && hostname !== "localhost") {
+    // Custom domain lookup
+    tenant = await Tenant.findOne({
+      customDomain: hostname,
+      customDomainVerified: true,
+    }).lean();
+  }
+
+  if (!tenant) return null;
+
+  const tenantId = (tenant as Record<string, unknown>)._id;
+
+  const [salon, services, testimonials] = await Promise.all([
+    SalonProfile.findOne({ tenantId }).lean(),
+    Service.find({ tenantId }).lean(),
+    Testimonial.find({ tenantId, isApproved: true })
+      .sort({ createdAt: -1 })
+      .limit(6)
+      .lean(),
+  ]);
+
+  return { tenant, salon, services, testimonials };
+}
+
+export async function ClientHomePage({ tenantSlug }: Props) {
+  const data = await getTenantData(tenantSlug);
+
+  if (!data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
+        <div className="text-center p-8 max-w-md">
+          <div className="text-6xl mb-5">💅</div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Salon nije pronađen</h1>
+          <p className="text-gray-500 text-sm leading-relaxed">
+            Subdomen{" "}
+            <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">{tenantSlug || "–"}</code>{" "}
+            ne postoji ili salon još uvek nije aktivan.
+          </p>
+          {process.env.NODE_ENV === "development" && (
+            <p className="mt-4 text-xs text-gray-400">
+              Dev tip: Postavi <code>DEV_DOMAIN_TYPE=client</code> i{" "}
+              <code>DEV_TENANT_SLUG=&lt;slug&gt;</code> u <code>.env.local</code>, ili poseti{" "}
+              <code>localhost:3000/&lt;slug&gt;</code>
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const { salon, services, testimonials } = data;
+
+  const s = salon as (Record<string, unknown> & { branding?: Record<string, string> }) | null;
+  const landingTheme: LandingTheme =
+    (s?.landingTheme as LandingTheme) ?? "theme-1";
+
+  // Serialize for client-safe props
+  const salonData: SalonProfileData = {
+    _id: String(s?._id ?? ""),
+    name: String(s?.name ?? ""),
+    email: String(s?.email ?? ""),
+    description: String(s?.description ?? ""),
+    logo: s?.logo ? String(s.logo) : undefined,
+    phone: String(s?.phone ?? ""),
+    street: String(s?.street ?? ""),
+    city: String(s?.city ?? ""),
+    social: {
+      instagram: String((s?.social as Record<string, string>)?.instagram ?? ""),
+      facebook: String((s?.social as Record<string, string>)?.facebook ?? ""),
+      tiktok: String((s?.social as Record<string, string>)?.tiktok ?? ""),
+    },
+    newsletterEmail: String(s?.newsletterEmail ?? ""),
+    branding: {
+      primaryColor: s?.branding?.primaryColor ?? "#a855f7",
+      secondaryColor: s?.branding?.secondaryColor ?? "#ec4899",
+      fontFamily: s?.branding?.fontFamily ?? "Inter",
+    },
+  };
+
+  const serviceList = (services as Record<string, unknown>[]).map(sv => ({
+    _id: String(sv._id),
+    name: String(sv.name ?? ""),
+    category: String(sv.category ?? ""),
+    subcategory: sv.subcategory ? String(sv.subcategory) : undefined,
+    type: (sv.type as "single" | "group" | "variant") ?? "single",
+    basePrice: sv.basePrice ? Number(sv.basePrice) : undefined,
+    duration: sv.duration ? Number(sv.duration) : undefined,
+    description: String(sv.description ?? ""),
+    items: Array.isArray(sv.items) ? sv.items.map(String) : [],
+    variants: Array.isArray(sv.variants)
+      ? sv.variants.map((v: unknown) => {
+          const vv = v as Record<string, unknown>;
+          return { name: String(vv.name ?? ""), price: Number(vv.price ?? 0), duration: Number(vv.duration ?? 0), perItem: Boolean(vv.perItem) };
+        })
+      : [],
+    extras: Array.isArray(sv.extras)
+      ? sv.extras.map((e: unknown) => {
+          const ee = e as Record<string, unknown>;
+          return { name: String(ee.name ?? ""), price: Number(ee.price ?? 0), duration: Number(ee.duration ?? 0), perItem: Boolean(ee.perItem) };
+        })
+      : [],
+    services: Array.isArray(sv.services)
+      ? sv.services.map((s: unknown) => {
+          const ss = s as Record<string, unknown>;
+          return { name: String(ss.name ?? ""), price: Number(ss.price ?? 0), duration: Number(ss.duration ?? 0), description: String(ss.description ?? "") };
+        })
+      : [],
+    featured: (sv.featured as "main" | "second" | "third" | "none" | null) ?? null,
+    subscription: (() => {
+      const sub = sv.subscription as Record<string, unknown> | undefined;
+      if (!sub) return { enabled: false, priceMonthly: null, startDate: null, endDate: null };
+      return {
+        enabled: Boolean(sub.enabled ?? false),
+        priceMonthly: sub.priceMonthly != null ? Number(sub.priceMonthly) : null,
+        startDate: sub.startDate ? String(sub.startDate) : null,
+        endDate: sub.endDate ? String(sub.endDate) : null,
+      };
+    })(),
+    createdAt: String(sv.createdAt ?? ""),
+    updatedAt: String(sv.updatedAt ?? ""),
+  })) as IService[];
+
+  const testimonialList: TestimonialData[] = (testimonials as Record<string, unknown>[]).map(t => ({
+    _id: String(t._id),
+    clientName: String(t.clientName ?? ""),
+    rating: Number(t.rating ?? 5),
+    comment: String(t.comment ?? ""),
+    adminReply: t.adminReply ? String(t.adminReply) : undefined,
+  }));
+
+  return (
+    <ThemeLayout
+      theme={landingTheme}
+      salon={salonData}
+      services={serviceList}
+      testimonials={testimonialList}
+      tenantSlug={tenantSlug || undefined}
+    />
+  );
+}
