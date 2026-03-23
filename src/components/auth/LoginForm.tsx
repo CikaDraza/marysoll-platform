@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import api from "@/lib/api";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -35,18 +34,18 @@ export default function LoginForm() {
     }
   }, [searchParams]);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data } = await api.post("/api/auth/login", {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
+      const data = await res.json();
 
-      if (!data.success) {
-        // Ako email nije verifikovan — ponudi opciju za novi link
+      if (!res.ok) {
         if (data.code === "EMAIL_NOT_VERIFIED") {
           toast.error(
             "Email nije verifikovan. Proverite inbox ili zatražite novi link.",
@@ -57,7 +56,7 @@ export default function LoginForm() {
         toast.error(data.error ?? "Greška pri prijavi");
         return;
       }
-
+      toast.success("Uspešno ste prijavljeni!");
       localStorage.setItem("token", data.token);
       if (data.refreshToken)
         localStorage.setItem("refreshToken", data.refreshToken);
@@ -78,7 +77,7 @@ export default function LoginForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
+      <div className="bg-white rounded-2xl shadow-lg p-8 max-w-xs lg:max-w-lg lg:w-96">
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-bold text-purple-600">
             Marysoll

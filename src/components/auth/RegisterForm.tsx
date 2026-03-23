@@ -23,7 +23,7 @@ export default function RegisterForm() {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!form.agreedToPrivacy) {
       toast.error("Morate prihvatiti politiku privatnosti");

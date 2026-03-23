@@ -611,7 +611,7 @@ export default function AdminDashboardPage() {
                                     e.target.value,
                                   )
                                 }
-                                className="text-sm font-semibold text-zinc-800 bg-transparent focus:outline-none w-[70px]"
+                                className="text-sm font-semibold text-zinc-800 bg-transparent focus:outline-none w-auto"
                               />
                               <span className="text-zinc-300">|</span>
                               <span className="text-xs text-zinc-400 font-medium">
@@ -628,7 +628,7 @@ export default function AdminDashboardPage() {
                                     e.target.value,
                                   )
                                 }
-                                className="text-sm font-semibold text-zinc-800 bg-transparent focus:outline-none w-[70px]"
+                                className="text-sm font-semibold text-zinc-800 bg-transparent focus:outline-none w-auto"
                               />
                             </div>
                             <button
