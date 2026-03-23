@@ -51,7 +51,7 @@ export function useTenantAdmin() {
   });
 
   const [customDomainInput, setCustomDomainInput] = useState(
-    tenant?.customDomain ?? ""
+    tenant?.customDomain ?? "",
   );
 
   const customDomainMutation = useMutation({
@@ -80,13 +80,13 @@ export function useTenantAdmin() {
   /**
    * Builds the public URL for this tenant.
    * In dev: localhost:PORT/[slug]
-   * In prod: NEXT_PUBLIC_SITE_URL/[slug] or customDomain if set
+   * In prod: NEXT_PUBLIC_APP_URL/[slug] or customDomain if set
    */
   function getTenantUrl(): string {
     if (!tenant) return "";
     if (tenant.customDomain) return `https://${tenant.customDomain}`;
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
+    const siteUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
     if (siteUrl) return `${siteUrl}/${tenant.slug}`;
 
     // Dev fallback

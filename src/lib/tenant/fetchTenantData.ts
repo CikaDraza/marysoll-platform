@@ -12,24 +12,24 @@ import type { SalonProfileData, IService, IAppointment } from "@/types";
 
 /**
  * Resolves the base URL for internal API calls.
- * In production uses NEXT_PUBLIC_SITE_URL, in dev falls back to localhost.
+ * In production uses NEXT_PUBLIC_APP_URL, in dev falls back to localhost.
  */
 function getBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
   }
   const port = process.env.PORT ?? "3000";
   return `http://localhost:${port}`;
 }
 
 export async function fetchPublicSalonProfile(
-  tenantSlug: string
+  tenantSlug: string,
 ): Promise<SalonProfileData | null> {
   try {
     const base = getBaseUrl();
     const res = await fetch(
       `${base}/api/public/${tenantSlug}/salon-profile`,
-      { next: { revalidate: 300 } } // 5 min cache
+      { next: { revalidate: 300 } }, // 5 min cache
     );
     if (!res.ok) return null;
     const json = await res.json();
@@ -40,14 +40,13 @@ export async function fetchPublicSalonProfile(
 }
 
 export async function fetchPublicServices(
-  tenantSlug: string
+  tenantSlug: string,
 ): Promise<IService[]> {
   try {
     const base = getBaseUrl();
-    const res = await fetch(
-      `${base}/api/public/${tenantSlug}/services`,
-      { next: { revalidate: 300 } }
-    );
+    const res = await fetch(`${base}/api/public/${tenantSlug}/services`, {
+      next: { revalidate: 300 },
+    });
     if (!res.ok) return [];
     return res.json();
   } catch {
@@ -56,13 +55,13 @@ export async function fetchPublicServices(
 }
 
 export async function fetchPublicAppointments(
-  tenantSlug: string
+  tenantSlug: string,
 ): Promise<IAppointment[]> {
   try {
     const base = getBaseUrl();
     const res = await fetch(
       `${base}/api/public/${tenantSlug}/appointments`,
-      { cache: "no-store" } // always fresh for calendar
+      { cache: "no-store" }, // always fresh for calendar
     );
     if (!res.ok) return [];
     return res.json();

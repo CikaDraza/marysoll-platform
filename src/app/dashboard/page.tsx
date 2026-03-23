@@ -1,3 +1,4 @@
+// app/dashboard/page.tsx
 "use client";
 
 // AuthStatusButton: shows current user + logout on admin header
