@@ -92,8 +92,8 @@ export async function sendEmail(
 
   const fromEmail =
     options.from ||
-    `"Marysoll Makeup Salon" <${
-      process.env.SALON_FROM_EMAIL || "onboarding@resend.dev"
+    `"Marysoll small business platform" <${
+      process.env.EMAIL_FROM || "onboarding@resend.dev"
     }>`;
 
   try {
@@ -125,24 +125,25 @@ export async function sendAppointmentNotification(
 ): Promise<{ success: boolean; messageId?: string }> {
   // Use branded templates with salon layout
   const subjects: Record<string, string> = {
-    created:    `Termin zakazan — ${data.serviceName}`,
-    approved:   `Termin potvrđen ✓ — ${data.serviceName}`,
-    rejected:   `Informacija o vašem terminu — ${data.serviceName}`,
-    rescheduled:`Vaš termin je pomeren — ${data.serviceName}`,
-    cancelled:  `Termin otkazan — ${data.serviceName}`,
+    created: `Termin zakazan — ${data.serviceName}`,
+    approved: `Termin potvrđen ✓ — ${data.serviceName}`,
+    rejected: `Informacija o vašem terminu — ${data.serviceName}`,
+    rescheduled: `Vaš termin je pomeren — ${data.serviceName}`,
+    cancelled: `Termin otkazan — ${data.serviceName}`,
   };
 
   const templateFns: Record<string, () => Promise<string>> = {
-    created:     () => appointmentCreatedTemplate(data),
-    approved:    () => appointmentApprovedTemplate(data),
-    rejected:    () => appointmentRejectedTemplate(data),
-    rescheduled: () => appointmentRescheduledTemplate({
-      ...data,
-      // Fall back to original date/time if proposedDate/proposedTime not set
-      proposedDate: data.proposedDate ?? data.date,
-      proposedTime: data.proposedTime ?? data.time,
-    }),
-    cancelled:   () => appointmentCancelledTemplate(data),
+    created: () => appointmentCreatedTemplate(data),
+    approved: () => appointmentApprovedTemplate(data),
+    rejected: () => appointmentRejectedTemplate(data),
+    rescheduled: () =>
+      appointmentRescheduledTemplate({
+        ...data,
+        // Fall back to original date/time if proposedDate/proposedTime not set
+        proposedDate: data.proposedDate ?? data.date,
+        proposedTime: data.proposedTime ?? data.time,
+      }),
+    cancelled: () => appointmentCancelledTemplate(data),
   };
 
   const html = await templateFns[type]();
@@ -1003,14 +1004,30 @@ export async function sendTestimonialNotification(
       comment: data.comment ?? "",
       adminReply: data.adminReply,
     });
-    return sendEmail({ to, subject: `Hvala na recenziji! — ${data.serviceName}`, html });
+    return sendEmail({
+      to,
+      subject: `Hvala na recenziji! — ${data.serviceName}`,
+      html,
+    });
   }
 
   const legacyTemplates = {
-    replied:  { subject: `Odgovor na vaš komentar - ${data.serviceName}`,      html: getTestimonialRepliedHtml(data) },
-    updated:  { subject: `Komentar ažuriran - ${data.serviceName}`,             html: getTestimonialUpdatedHtml(data) },
-    deleted:  { subject: `Komentar obrisan - ${data.serviceName}`,              html: getTestimonialDeletedHtml(data) },
-    message:  { subject: `Sistemska poruka - Komentar za ${data.serviceName}`,  html: getTestimonialMessageHtml(data) },
+    replied: {
+      subject: `Odgovor na vaš komentar - ${data.serviceName}`,
+      html: getTestimonialRepliedHtml(data),
+    },
+    updated: {
+      subject: `Komentar ažuriran - ${data.serviceName}`,
+      html: getTestimonialUpdatedHtml(data),
+    },
+    deleted: {
+      subject: `Komentar obrisan - ${data.serviceName}`,
+      html: getTestimonialDeletedHtml(data),
+    },
+    message: {
+      subject: `Sistemska poruka - Komentar za ${data.serviceName}`,
+      html: getTestimonialMessageHtml(data),
+    },
   };
   const template = legacyTemplates[type as keyof typeof legacyTemplates];
   return sendEmail({ to, subject: template.subject, html: template.html });
@@ -1219,10 +1236,10 @@ export async function sendNewsletterEmail(
 
   try {
     const { data } = await resend.emails.send({
-      from: `Marysoll Makeup & Nails Salon <${
+      from: `Marysoll small business platform <${
         process.env.NEWSLETTER_FROM_EMAIL || "onboarding@resend.dev"
       }>`,
-      replyTo: process.env.SALON_FROM_EMAIL,
+      replyTo: process.env.SUPPORT_FROM_EMAIL,
       to: Array.isArray(to) ? to : [to],
       subject,
       html: fullHtml,
@@ -1269,7 +1286,8 @@ export async function sendRegisterVerificationEmail(
   clientName = "korisniče",
 ): Promise<void> {
   const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${verificationToken}&type=client`;
-  const { emailVerificationTemplate } = await import("@/lib/email/templates/otherTemplates");
+  const { emailVerificationTemplate } =
+    await import("@/lib/email/templates/otherTemplates");
   const html = await emailVerificationTemplate({
     clientName,
     verificationUrl: verifyUrl,
