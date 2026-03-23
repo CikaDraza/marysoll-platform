@@ -315,10 +315,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     domainType === "superadmin" ||
     SUPERADMIN_API_ROUTES.some((r) => pathname.startsWith(r))
   ) {
-    const fail = pathname.startsWith("/api/")
-      ? await guardApi(request, false, true)
-      : await guardPage(request, false, true);
-    if (fail) return fail;
+    // /auth/callback prima token iz URL — ne treba auth guard
+    if (!pathname.startsWith("/auth/callback")) {
+      const fail = pathname.startsWith("/api/")
+        ? await guardApi(request, false, true)
+        : await guardPage(request, false, true);
+      if (fail) return fail;
+    }
     return pass();
   }
 
@@ -331,7 +334,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       }
     } else if (
       !pathname.startsWith("/login") &&
-      !pathname.startsWith("/forgot-password")
+      !pathname.startsWith("/forgot-password") &&
+      !pathname.startsWith("/auth/callback") // token handoff — ne zahteva auth
     ) {
       const fail = await guardPage(request, true);
       if (fail) return fail;

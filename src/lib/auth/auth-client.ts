@@ -17,13 +17,29 @@ import { jwtDecode } from "jwt-decode";
 export function getUserFromToken(token?: string): DecodedUser | null {
   if (typeof window === "undefined") return null;
 
-  const raw = token ?? localStorage.getItem("token");
+  // Priority: explicit arg > localStorage > cookie (shared across subdomains)
+  let raw = token ?? localStorage.getItem("token");
+
+  // Fallback: čitaj iz cookie "auth-token" koji je shared na .marysoll.com
+  if (!raw) {
+    const cookieMatch = document.cookie.match(/(?:^|;\s*)auth-token=([^;]+)/);
+    if (cookieMatch) {
+      raw = decodeURIComponent(cookieMatch[1]);
+      // Sačuvaj u localStorage za buduće pozive
+      try {
+        localStorage.setItem("token", raw);
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
   if (!raw) return null;
 
   try {
     const decoded = jwtDecode<
       DecodedUser & {
-        id?: string;       // nekim JWT-ovima id umesto _id
+        id?: string; // nekim JWT-ovima id umesto _id
         sub?: string;
       }
     >(raw);
@@ -36,18 +52,18 @@ export function getUserFromToken(token?: string): DecodedUser | null {
     return {
       // Normalizujemo id → koristimo onako kako je u JWT-u
       // DecodedUser koristi `id` (ne `_id`) - vidi types/auth/types.ts
-      id:              decoded.id ?? decoded.sub ?? "",
-      email:           decoded.email ?? "",
-      name:            decoded.name ?? "",
-      phone:           decoded.phone ?? "",
-      isAdmin:         decoded.isAdmin ?? false,
-      isSuperAdmin:    decoded.isSuperAdmin ?? false,
-      tenantId:        decoded.tenantId ?? null,
-      userType:        decoded.userType ?? "guest",
+      id: decoded.id ?? decoded.sub ?? "",
+      email: decoded.email ?? "",
+      name: decoded.name ?? "",
+      phone: decoded.phone ?? "",
+      isAdmin: decoded.isAdmin ?? false,
+      isSuperAdmin: decoded.isSuperAdmin ?? false,
+      tenantId: decoded.tenantId ?? null,
+      userType: decoded.userType ?? "guest",
       isEmailVerified: decoded.isEmailVerified ?? false,
-      isOnline:        decoded.isOnline,
-      lastActive:      decoded.lastActive,
-      exp:             decoded.exp,
+      isOnline: decoded.isOnline,
+      lastActive: decoded.lastActive,
+      exp: decoded.exp,
     };
   } catch {
     return null;
@@ -59,7 +75,24 @@ export function getUserFromToken(token?: string): DecodedUser | null {
  */
 export function getRawToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("token");
+
+  // Najpre localStorage, pa cookie kao fallback
+  const fromStorage = localStorage.getItem("token");
+  if (fromStorage) return fromStorage;
+
+  // Cookie fallback (shared .marysoll.com cookie)
+  const cookieMatch = document.cookie.match(/(?:^|;\s*)auth-token=([^;]+)/);
+  if (cookieMatch) {
+    const token = decodeURIComponent(cookieMatch[1]);
+    try {
+      localStorage.setItem("token", token);
+    } catch {
+      /* ignore */
+    }
+    return token;
+  }
+
+  return null;
 }
 
 /**

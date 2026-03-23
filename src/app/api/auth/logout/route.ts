@@ -22,16 +22,40 @@ export async function POST(req: Request) {
       }
     }
 
+    const isProd = process.env.NODE_ENV === "production";
+    const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+
     const res = NextResponse.json({ message: "Odjavljen" });
 
-    // Očisti cookies
-    res.cookies.set("token", "", { maxAge: 0, path: "/" });
+    // Očisti sve cookie varijante (lokalni i shared)
+    const cookieOptions = {
+      httpOnly: false,
+      secure: isProd,
+      sameSite: "lax" as const,
+      maxAge: 0,
+      path: "/",
+    };
+
+    res.cookies.set("token", "", cookieOptions);
+    res.cookies.set("auth-token", "", cookieOptions);
+    res.cookies.set("auth-token", "", {
+      ...cookieOptions,
+      domain: isProd ? `.${baseDomain}` : undefined,
+    });
     res.cookies.set("refreshToken", "", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 0, // Istekao
+      secure: isProd,
+      sameSite: "lax",
+      maxAge: 0,
       path: "/",
+    });
+    res.cookies.set("refreshToken", "", {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: "lax",
+      maxAge: 0,
+      path: "/",
+      domain: isProd ? `.${baseDomain}` : undefined,
     });
 
     return res;

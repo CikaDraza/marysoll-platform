@@ -59,6 +59,9 @@ export async function POST(request: NextRequest) {
       user.isSuperAdmin ?? false,
     );
 
+    const isProd = process.env.NODE_ENV === "production";
+    const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+
     const response = NextResponse.json({
       message: "Prijava uspešna",
       token: accessToken,
@@ -74,12 +77,24 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // refreshToken cookie: dostupan na SVIM subdomenima (.marysoll.com)
     response.cookies.set("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: isProd,
+      sameSite: "lax", // lax umesto strict — dozvoljava cross-subdomain
       maxAge: 30 * 24 * 60 * 60,
       path: "/",
+      domain: isProd ? `.${baseDomain}` : undefined, // .marysoll.com — shared
+    });
+
+    // accessToken cookie: čitljiv JS-om, shared across subdomains
+    response.cookies.set("auth-token", accessToken, {
+      httpOnly: false, // JS može da ga čita
+      secure: isProd,
+      sameSite: "lax",
+      maxAge: 30 * 24 * 60 * 60,
+      path: "/",
+      domain: isProd ? `.${baseDomain}` : undefined,
     });
 
     return response;

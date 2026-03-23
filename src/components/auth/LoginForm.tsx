@@ -57,14 +57,22 @@ export default function LoginForm() {
         return;
       }
       toast.success("Uspešno ste prijavljeni!");
+
+      // Sačuvaj token na trenutnom domenu (marysoll.com)
       localStorage.setItem("token", data.token);
       if (data.refreshToken)
         localStorage.setItem("refreshToken", data.refreshToken);
 
+      const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+      // Token enkodovan za URL prenos između domena
+      const encodedToken = encodeURIComponent(data.token);
+
       if (data.user?.isSuperAdmin) {
-        window.location.href = `https://superadmin.${process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com"}/superadmin/dashboard`;
+        // Preusmeri na superadmin subdomen sa token u URL
+        window.location.href = `https://superadmin.${baseDomain}/auth/callback?token=${encodedToken}&redirect=/superadmin/dashboard`;
       } else if (data.user?.isAdmin) {
-        window.location.href = `https://admin.${process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com"}/dashboard`;
+        // Preusmeri na admin subdomen sa token u URL
+        window.location.href = `https://admin.${baseDomain}/auth/callback?token=${encodedToken}&redirect=/dashboard`;
       } else {
         router.push("/");
       }
