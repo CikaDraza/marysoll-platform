@@ -53,6 +53,32 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: "/login",
+        destination: `https://marysoll.com/login`,
+        permanent: false,
+        has: [
+          {
+            type: "host",
+            value: `superadmin.marysoll.com`,
+          },
+        ],
+      },
+      {
+        source: "/login",
+        destination: `https://marysoll.com/login`,
+        permanent: false,
+        has: [
+          {
+            type: "host",
+            value: `admin.marysoll.com`,
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

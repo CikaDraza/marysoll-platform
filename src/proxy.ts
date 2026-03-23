@@ -238,7 +238,9 @@ async function guardPage(
   needAdmin = false,
   needSuperAdmin = false,
 ): Promise<NextResponse | null> {
-  const loginUrl = new URL("/login", request.url);
+  const loginUrl = new URL(
+    `https://${process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com"}/login`,
+  );
   const unauthorizedUrl = new URL("/unauthorized", request.url);
   let token = getToken(request);
   let decoded = token ? decodeToken(token) : null;

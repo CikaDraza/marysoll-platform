@@ -62,11 +62,11 @@ export default function LoginForm() {
         localStorage.setItem("refreshToken", data.refreshToken);
 
       if (data.user?.isSuperAdmin) {
-        router.push("/superadmin/dashboard");
+        window.location.href = `https://superadmin.${process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com"}/superadmin/dashboard`;
       } else if (data.user?.isAdmin) {
-        router.push("/dashboard");
+        window.location.href = `https://admin.${process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com"}/dashboard`;
       } else {
-        router.push("/termini");
+        router.push("/");
       }
     } catch {
       toast.error("Greška na serveru");
