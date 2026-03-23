@@ -1,17 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { login, isLoggingIn, isLoggedIn, isAdmin, isSuperAdmin } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
 
+  // Toast iz query params (redirect nakon registracije, reset lozinke itd.)
   useEffect(() => {
     const registered = searchParams.get("registered");
     const subdomain = searchParams.get("subdomain");
@@ -24,62 +27,27 @@ export default function LoginForm() {
         { duration: 6000 },
       );
     }
-    if (alreadyVerified) {
-      toast("Email je već verifikovan.", { icon: "ℹ️" });
-    }
-    if (passwordReset) {
+    if (alreadyVerified) toast("Email je već verifikovan.", { icon: "ℹ️" });
+    if (passwordReset)
       toast.success("Lozinka je uspešno promenjena! Prijavite se.", {
         duration: 5000,
       });
-    }
   }, [searchParams]);
 
-  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+  // Ako je već ulogovan kao klijent — preusmeri
+  useEffect(() => {
+    if (isLoggedIn && !isAdmin && !isSuperAdmin) {
+      router.push("/");
+    }
+  }, [isLoggedIn, isAdmin, isSuperAdmin, router]);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        if (data.code === "EMAIL_NOT_VERIFIED") {
-          toast.error(
-            "Email nije verifikovan. Proverite inbox ili zatražite novi link.",
-            { duration: 5000 },
-          );
-          return;
-        }
-        toast.error(data.error ?? "Greška pri prijavi");
-        return;
-      }
-      toast.success("Uspešno ste prijavljeni!");
-
-      // Sačuvaj token na trenutnom domenu (marysoll.com)
-      localStorage.setItem("token", data.token);
-      if (data.refreshToken)
-        localStorage.setItem("refreshToken", data.refreshToken);
-
-      const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
-      // Token enkodovan za URL prenos između domena
-      const encodedToken = encodeURIComponent(data.token);
-
-      if (data.user?.isSuperAdmin) {
-        // Preusmeri na superadmin subdomen sa token u URL
-        window.location.href = `https://superadmin.${baseDomain}/auth/callback?token=${encodedToken}&redirect=/superadmin/dashboard`;
-      } else if (data.user?.isAdmin) {
-        // Preusmeri na admin subdomen sa token u URL
-        window.location.href = `https://admin.${baseDomain}/auth/callback?token=${encodedToken}&redirect=/dashboard`;
-      } else {
-        router.push("/");
-      }
+      // Sva logika (redirect, toast, token storage) je u useAuth.login
+      await login(email, password);
     } catch {
-      toast.error("Greška na serveru");
-    } finally {
-      setLoading(false);
+      // Greška je već prikazana u useAuth.onError — ništa ovde
     }
   }
 
@@ -90,7 +58,7 @@ export default function LoginForm() {
           <Link href="/" className="text-2xl font-bold text-purple-600">
             Marysoll
           </Link>
-          <h1 className="text-7xl font-bold text-gray-900 mt-3">Prijava</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mt-3">Prijava</h1>
           <p className="text-gray-500 text-sm mt-1">Unesite vaše podatke</p>
         </div>
 
@@ -106,12 +74,14 @@ export default function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="ime@salon.com"
+              autoFocus
+              disabled={isLoggingIn}
             />
           </div>
 
           <div>
-            <div className="flex items-center justify-between">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700">
                 Lozinka
               </label>
               <Link
@@ -128,10 +98,11 @@ export default function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="••••••••"
+              disabled={isLoggingIn}
             />
           </div>
 
-          <div className="flex items-center justify-between text-sm">
+          <div className="text-sm">
             <Link
               href="/resend-verification"
               className="text-gray-400 hover:text-purple-600"
@@ -142,10 +113,13 @@ export default function LoginForm() {
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-purple-600 text-white py-2.5 rounded-xl font-semibold hover:bg-purple-700 transition disabled:opacity-50"
+            disabled={isLoggingIn}
+            className="w-full bg-purple-600 text-white py-2.5 rounded-xl font-semibold hover:bg-purple-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {loading ? "Prijavljivanje..." : "Prijavi se"}
+            {isLoggingIn && (
+              <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+            )}
+            {isLoggingIn ? "Prijavljivanje..." : "Prijavi se"}
           </button>
         </form>
 

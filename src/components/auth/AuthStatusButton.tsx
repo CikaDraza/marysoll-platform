@@ -9,8 +9,8 @@
  */
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { getUserFromToken, getRawToken } from "@/lib/auth/auth-client";
+import { getRawToken, getUserFromToken } from "@/lib/auth/auth-client";
+import { useAuth } from "@/hooks/useAuth";
 import type { DecodedUser } from "@/types/auth/types";
 import Link from "next/link";
 
@@ -21,11 +21,8 @@ interface AuthStatusButtonProps {
   theme?: "dark" | "light";
 }
 
-export function AuthStatusButton({
-  logoutRedirect = "/",
-  theme = "light",
-}: AuthStatusButtonProps) {
-  const router = useRouter();
+export function AuthStatusButton({ theme = "light" }: AuthStatusButtonProps) {
+  const { logout } = useAuth();
   const [user, setUser] = useState<DecodedUser | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -40,38 +37,9 @@ export function AuthStatusButton({
   }, []);
 
   function handleLogout() {
-    // Clear localStorage
-    localStorage.removeItem("token");
-    localStorage.removeItem("refreshToken");
-
-    // Clear shared cookies (.marysoll.com domain)
-    const isProd = window.location.hostname !== "localhost";
-    const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
-    const cookieDomain = isProd ? `.${baseDomain}` : "";
-    document.cookie = `auth-token=; max-age=0; path=/; domain=${cookieDomain}`;
-    document.cookie = `refreshToken=; max-age=0; path=/; domain=${cookieDomain}`;
-
-    // Notify server (fire and forget)
-    const token = getRawToken();
-    if (token) {
-      fetch("/api/auth/logout", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        keepalive: true,
-      }).catch(() => {});
-    }
-
-    setUser(null);
     setIsOpen(false);
-
-    // Uvek se vrati na marysoll.com/login za logout
-    const baseDom = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
-    if (isProd) {
-      window.location.href = `https://${baseDom}/login`;
-    } else {
-      router.push(logoutRedirect);
-      router.refresh();
-    }
+    // useAuth.logout: briše tokene, cookie, zove API, preusmeri na login
+    logout();
   }
 
   const isDark = theme === "dark";

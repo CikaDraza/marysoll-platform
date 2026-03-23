@@ -65,7 +65,13 @@ api.interceptors.response.use(
       } catch {
         // Refresh nije uspeo — odjavi korisnika
         localStorage.removeItem("token");
-        window.location.href = "/login";
+        const baseDomain =
+          process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+        const host = window.location.hostname;
+        const isProd = host !== "localhost" && !host.startsWith("127.");
+        window.location.href = isProd
+          ? `https://${baseDomain}/login`
+          : "/login";
       }
     }
     return Promise.reject(error);

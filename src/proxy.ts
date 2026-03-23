@@ -182,8 +182,15 @@ async function detectDomainType(
 
 // ─── Token helpers ────────────────────────────────────────────────────────────
 function getToken(request: NextRequest): string | null {
+  // 1. Authorization header (API pozivi)
   const auth = request.headers.get("authorization");
   if (auth?.startsWith("Bearer ")) return auth.slice(7);
+
+  // 2. Cookie "auth-token" — shared .marysoll.com cookie (postavlja login API)
+  const authTokenCookie = request.cookies.get("auth-token")?.value;
+  if (authTokenCookie) return authTokenCookie;
+
+  // 3. Cookie "token" — legacy fallback
   return request.cookies.get("token")?.value ?? null;
 }
 
