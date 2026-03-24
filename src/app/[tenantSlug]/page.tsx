@@ -54,7 +54,7 @@ export default async function TenantSlugPage({ params }: Props) {
   const slugFromHeader = headersList.get("x-tenant-slug") ?? tenantSlug;
 
   // Whether via subdomain in production or path in dev, render the salon home
-  if (domainType === "client" || true) {
+  if (domainType === "client") {
     return <ClientHomePage tenantSlug={slugFromHeader} />;
   }
 

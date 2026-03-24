@@ -28,18 +28,31 @@ export async function GET(req: NextRequest) {
   try {
     await connectToDB();
 
-    const tenant = (await Tenant.findOne({
-      customDomain: domain.toLowerCase(),
+    const normalizedDomain = domain.toLowerCase().trim();
+
+    // Proveri sa www i bez www
+    const domainsToCheck = [normalizedDomain];
+    if (normalizedDomain.startsWith("www.")) {
+      domainsToCheck.push(normalizedDomain.replace("www.", ""));
+    } else {
+      domainsToCheck.push(`www.${normalizedDomain}`);
+    }
+
+    const tenant = await Tenant.findOne({
+      customDomain: { $in: domainsToCheck },
+      customDomainVerified: true, // ← DODAJ OVU PROVERU
       status: "active",
     })
       .select("slug")
-      .lean()) as Record<string, unknown> | null;
+      .lean();
 
     if (!tenant) {
+      console.log(`❌ Tenant not found for domain: ${normalizedDomain}`);
       return NextResponse.json({ slug: null }, { status: 404 });
     }
 
-    return NextResponse.json({ slug: String(tenant.slug) });
+    console.log(`✅ Found tenant: ${tenant} for domain: ${normalizedDomain}`);
+    return NextResponse.json({ slug: String(tenant) });
   } catch (err) {
     console.error("GET /api/internal/resolve-domain:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

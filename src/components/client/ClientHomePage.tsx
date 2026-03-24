@@ -73,17 +73,22 @@ export async function ClientHomePage({ tenantSlug }: Props) {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
         <div className="text-center p-8 max-w-md">
           <div className="text-6xl mb-5">💅</div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Salon nije pronađen</h1>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+            Salon nije pronađen
+          </h1>
           <p className="text-gray-500 text-sm leading-relaxed">
             Subdomen{" "}
-            <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">{tenantSlug || "–"}</code>{" "}
+            <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">
+              {tenantSlug || "–"}
+            </code>{" "}
             ne postoji ili salon još uvek nije aktivan.
           </p>
           {process.env.NODE_ENV === "development" && (
             <p className="mt-4 text-xs text-gray-400">
               Dev tip: Postavi <code>DEV_DOMAIN_TYPE=client</code> i{" "}
-              <code>DEV_TENANT_SLUG=&lt;slug&gt;</code> u <code>.env.local</code>, ili poseti{" "}
-              <code>localhost:3000/&lt;slug&gt;</code>
+              <code>CUSTOM_CLIENT_DOMAIN=&lt;slug&gt;</code> u{" "}
+              <code>.env.local</code>, ili poseti{" "}
+              <code>localhost:3006/&lt;slug&gt;</code>
             </p>
           )}
         </div>
@@ -93,7 +98,9 @@ export async function ClientHomePage({ tenantSlug }: Props) {
 
   const { salon, services, testimonials } = data;
 
-  const s = salon as (Record<string, unknown> & { branding?: Record<string, string> }) | null;
+  const s = salon as
+    | (Record<string, unknown> & { branding?: Record<string, string> })
+    | null;
   const landingTheme: LandingTheme =
     (s?.landingTheme as LandingTheme) ?? "theme-1";
 
@@ -120,7 +127,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     },
   };
 
-  const serviceList = (services as Record<string, unknown>[]).map(sv => ({
+  const serviceList = (services as Record<string, unknown>[]).map((sv) => ({
     _id: String(sv._id),
     name: String(sv.name ?? ""),
     category: String(sv.category ?? ""),
@@ -133,28 +140,51 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     variants: Array.isArray(sv.variants)
       ? sv.variants.map((v: unknown) => {
           const vv = v as Record<string, unknown>;
-          return { name: String(vv.name ?? ""), price: Number(vv.price ?? 0), duration: Number(vv.duration ?? 0), perItem: Boolean(vv.perItem) };
+          return {
+            name: String(vv.name ?? ""),
+            price: Number(vv.price ?? 0),
+            duration: Number(vv.duration ?? 0),
+            perItem: Boolean(vv.perItem),
+          };
         })
       : [],
     extras: Array.isArray(sv.extras)
       ? sv.extras.map((e: unknown) => {
           const ee = e as Record<string, unknown>;
-          return { name: String(ee.name ?? ""), price: Number(ee.price ?? 0), duration: Number(ee.duration ?? 0), perItem: Boolean(ee.perItem) };
+          return {
+            name: String(ee.name ?? ""),
+            price: Number(ee.price ?? 0),
+            duration: Number(ee.duration ?? 0),
+            perItem: Boolean(ee.perItem),
+          };
         })
       : [],
     services: Array.isArray(sv.services)
       ? sv.services.map((s: unknown) => {
           const ss = s as Record<string, unknown>;
-          return { name: String(ss.name ?? ""), price: Number(ss.price ?? 0), duration: Number(ss.duration ?? 0), description: String(ss.description ?? "") };
+          return {
+            name: String(ss.name ?? ""),
+            price: Number(ss.price ?? 0),
+            duration: Number(ss.duration ?? 0),
+            description: String(ss.description ?? ""),
+          };
         })
       : [],
-    featured: (sv.featured as "main" | "second" | "third" | "none" | null) ?? null,
+    featured:
+      (sv.featured as "main" | "second" | "third" | "none" | null) ?? null,
     subscription: (() => {
       const sub = sv.subscription as Record<string, unknown> | undefined;
-      if (!sub) return { enabled: false, priceMonthly: null, startDate: null, endDate: null };
+      if (!sub)
+        return {
+          enabled: false,
+          priceMonthly: null,
+          startDate: null,
+          endDate: null,
+        };
       return {
         enabled: Boolean(sub.enabled ?? false),
-        priceMonthly: sub.priceMonthly != null ? Number(sub.priceMonthly) : null,
+        priceMonthly:
+          sub.priceMonthly != null ? Number(sub.priceMonthly) : null,
         startDate: sub.startDate ? String(sub.startDate) : null,
         endDate: sub.endDate ? String(sub.endDate) : null,
       };
@@ -163,7 +193,9 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     updatedAt: String(sv.updatedAt ?? ""),
   })) as IService[];
 
-  const testimonialList: TestimonialData[] = (testimonials as Record<string, unknown>[]).map(t => ({
+  const testimonialList: TestimonialData[] = (
+    testimonials as Record<string, unknown>[]
+  ).map((t) => ({
     _id: String(t._id),
     clientName: String(t.clientName ?? ""),
     rating: Number(t.rating ?? 5),
