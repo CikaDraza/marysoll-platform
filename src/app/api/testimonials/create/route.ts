@@ -59,6 +59,7 @@ export async function POST(req: Request) {
 
     const testimonial = await Testimonial.create({
       clientId: user.id,
+      tenantId: user.tenantId,
       clientName: userName?.name || user.email.split("@")[0],
       clientEmail: user.email,
       appointmentId: {

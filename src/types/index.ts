@@ -578,6 +578,7 @@ export interface EmailOptions {
 export interface AppointmentNotificationData {
   clientName: string;
   serviceName: string;
+  tenantId?: string | Types.ObjectId;
   date: string;
   time: string;
   appointmentId: string;

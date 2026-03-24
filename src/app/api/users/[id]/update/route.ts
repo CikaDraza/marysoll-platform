@@ -75,9 +75,7 @@ export async function PUT(
     // Pročitaj telo zahteva
     const body = await req.json();
     const { name, password, phone, birthday } = body;
-    console.log({
-      body: body,
-    });
+
     // Ažuriraj samo dozvoljena polja
     const updateData: Partial<IUser> = {};
 

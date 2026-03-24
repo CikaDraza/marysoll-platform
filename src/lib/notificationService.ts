@@ -14,6 +14,7 @@ import {
 
 interface CreateNotificationParams {
   userId: string | Types.ObjectId;
+  tenantId: Types.ObjectId | string;
   type: INotification["type"];
   title: string;
   message: string;
@@ -47,6 +48,10 @@ export async function createNotification(params: CreateNotificationParams) {
   try {
     const notificationData = {
       ...params,
+      tenantId:
+        typeof params.tenantId === "string"
+          ? new Types.ObjectId(params.tenantId)
+          : params.tenantId,
       userId:
         typeof params.userId === "string"
           ? new Types.ObjectId(params.userId)
@@ -88,6 +93,7 @@ async function getAllAdminUserIds(): Promise<string[]> {
 // Definiši tipove za appointment i testimonial
 interface AppointmentForNotification {
   _id: string;
+  tenantId: Types.ObjectId | string;
   clientId: string;
   clientName: string;
   serviceName: string;
@@ -98,6 +104,7 @@ interface AppointmentForNotification {
 
 interface TestimonialForNotification {
   _id: string;
+  tenantId: Types.ObjectId | string;
   clientId: string;
   clientName: string;
   rating: number;
@@ -263,6 +270,7 @@ export async function createAppointmentNotification(
       for (const adminId of adminUserIds) {
         const notification = await createNotification({
           userId: adminId,
+          tenantId: appointment.tenantId,
           type: fullType,
           title: config.adminTitle,
           message: config.adminMessage,
@@ -281,6 +289,7 @@ export async function createAppointmentNotification(
       // Admin šalje poruku - obavesti klijenta
       return await createNotification({
         userId: appointment.clientId,
+        tenantId: appointment.tenantId,
         type: fullType,
         title: config.clientTitle,
         message: config.clientMessage,
@@ -303,6 +312,7 @@ export async function createAppointmentNotification(
     for (const adminId of adminUserIds) {
       const notification = await createNotification({
         userId: adminId,
+        tenantId: appointment.tenantId,
         type: fullType,
         title: config.adminTitle,
         message: config.adminMessage,
@@ -321,6 +331,7 @@ export async function createAppointmentNotification(
     try {
       const notification = await createNotification({
         userId: appointment.clientId,
+        tenantId: appointment.tenantId,
         type: fullType,
         title: config.clientTitle,
         message: config.clientMessage,
@@ -574,6 +585,7 @@ export async function createTestimonialNotification(
     for (const adminId of adminUserIds) {
       const notification = await createNotification({
         userId: adminId,
+        tenantId: testimonial.tenantId,
         type: fullType,
         title: config.adminTitle,
         message: config.adminMessage,
@@ -591,6 +603,7 @@ export async function createTestimonialNotification(
     // Odgovor na komentar - obavesti klijenta
     return await createNotification({
       userId: testimonial.clientId,
+      tenantId: testimonial.tenantId,
       type: fullType,
       title: config.clientTitle,
       message: config.clientMessage,
@@ -695,12 +708,14 @@ async function sendTestimonialEmailNotifications(
 // Funkcija za kreiranje generičke notifikacije
 export async function createGenericNotification(
   userId: string,
+  tenantId: string | Types.ObjectId,
   title: string,
   message: string,
   metadata?: Record<string, unknown>,
 ) {
   return await createNotification({
     userId,
+    tenantId, // Generic notifikacije nisu vezane za tenant
     type: "generic",
     title,
     message,

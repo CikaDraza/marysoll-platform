@@ -46,7 +46,7 @@ export default function ClientPanelPage() {
   // Tab from URL param or default
   const tabParam = searchParams.get("tab") as PanelTab | null;
   const [activeTab, setActiveTab] = useState<PanelTab>(
-    tabParam && TABS.find((t) => t.id === tabParam) ? tabParam : "Moji Termini"
+    tabParam && TABS.find((t) => t.id === tabParam) ? tabParam : "Moji Termini",
   );
 
   // Auth guard
@@ -81,7 +81,7 @@ export default function ClientPanelPage() {
     <div className="min-h-screen bg-zinc-50">
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <header className="bg-white border-b border-zinc-100 sticky top-0 z-30">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
             <Link
               href={`/${tenantSlug}`}
@@ -106,7 +106,7 @@ export default function ClientPanelPage() {
         </div>
 
         {/* Tabs */}
-        <div className="max-w-5xl mx-auto px-6 flex overflow-x-auto scrollbar-none">
+        <div className="max-w-7xl mx-auto px-6 flex overflow-x-auto scrollbar-none">
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -117,8 +117,7 @@ export default function ClientPanelPage() {
                   : "border-transparent text-zinc-400 hover:text-zinc-700"
               }`}
             >
-              {t.emoji}{" "}
-              <span className="hidden sm:inline">{t.id}</span>
+              {t.emoji} <span className="hidden sm:inline">{t.id}</span>
               <span className="sm:hidden">{t.emoji}</span>
             </button>
           ))}
@@ -126,7 +125,7 @@ export default function ClientPanelPage() {
       </header>
 
       {/* ── Content ─────────────────────────────────────────────────────── */}
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {activeTab === "Moji Termini" && <ClientAppointments />}
         {activeTab === "Zakazivanja" && <AppointmentCalendar />}
         {activeTab === "Moje Preporuke" && <ClientTestimonials />}

@@ -1,14 +1,27 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { publicApi } from "@/lib/api";
 import { IService } from "@/types";
+import { useParams } from "next/navigation";
 
-export function useServices({ query = "" }: { query?: string } = {}) {
+interface UseServicesOptions {
+  query?: string;
+}
+
+export function useServices({ query = "" }: UseServicesOptions = {}) {
+  const params = useParams();
+  const tenantSlug = params?.tenantSlug as string;
+
   return useQuery<IService[]>({
-    queryKey: ["services", query],
+    queryKey: ["services", tenantSlug, query],
     queryFn: async () => {
-      const { data } = await publicApi.get("/services");
+      if (!tenantSlug) {
+        throw new Error("Tenant slug is required");
+      }
+
+      const { data } = await publicApi.get(`/public/${tenantSlug}/services`);
       return data;
     },
+    enabled: !!tenantSlug,
     staleTime: 1000 * 60,
     refetchOnWindowFocus: false,
   });

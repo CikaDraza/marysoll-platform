@@ -24,7 +24,6 @@ export default function AdminServiceForm({
   const categories = services
     ? Array.from(new Set(services.map((s) => s.category)))
     : [];
-  console.log(categories);
 
   useEffect(() => {
     if (editing) {

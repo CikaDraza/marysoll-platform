@@ -232,6 +232,7 @@ export default function AppointmentCalendar() {
   return (
     <>
       <Toaster position="top-right" />
+      {/* Working hours */}
       <div
         className="p-4 bg-white rounded-2xl overflow-auto overflow-x-scroll"
         onTouchStart={handleTouchStart}
@@ -243,148 +244,152 @@ export default function AppointmentCalendar() {
         ) : isError ? (
           <p className="text-center text-red-500">Greška pri učitavanju.</p>
         ) : (
-          <FullCalendar
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            initialView="timeGridWeek"
-            selectable
-            select={handleDateSelect}
-            dateClick={handleDateClick}
-            editable={user?.isAdmin ?? false}
-            headerToolbar={{
-              left: "prev,next today",
-              center: "title",
-              right: "dayGridMonth,timeGridWeek,timeGridDay",
-            }}
-            height="auto"
-            slotDuration="00:15:00" // Slotovi od 15 minuta za precizniji prikaz
-            snapDuration="00:15:00" // Snap na 15 minuta
-            slotLabelInterval="01:00:00" // Prikazuj label svaki sat
-            slotLabelFormat={{
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            }}
-            allDaySlot={false}
-            slotMinTime="00:00:00"
-            slotMaxTime="24:00:00"
-            events={events.map((event) => {
-              const appt = appointments.find((a) => a._id === event.id);
-              if (!appt) return event;
+          <div className="flex gap-4 justify-center">
+            <div>
+              <WorkingHoursWidget profile={safeProfile} />
+              {/* ── Legenda ────────────────────────────────────────────────────── */}
+              <div className="mt-4 flex flex-wrap gap-4 px-1 text-xs text-gray-600">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded border border-gray-200 bg-white shadow-sm flex-shrink-0" />
+                  <span>Radno vreme</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded border border-gray-200 bg-[#fffadf] flex-shrink-0" />
+                  <span>Današnji dan</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded border border-gray-200 bg-[#f3f3f3] flex-shrink-0" />
+                  <span>Salon ne radi</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded bg-purple-500 flex-shrink-0" />
+                  <span>Zakazan termin</span>
+                </div>
+              </div>
+            </div>
+            <FullCalendar
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              initialView="timeGridWeek"
+              selectable
+              select={handleDateSelect}
+              dateClick={handleDateClick}
+              editable={user?.isAdmin ?? false}
+              headerToolbar={{
+                left: "prev,next today",
+                center: "title",
+                right: "dayGridMonth,timeGridWeek,timeGridDay",
+              }}
+              height="auto"
+              slotDuration="00:15:00" // Slotovi od 15 minuta za precizniji prikaz
+              snapDuration="00:15:00" // Snap na 15 minuta
+              slotLabelInterval="01:00:00" // Prikazuj label svaki sat
+              slotLabelFormat={{
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              }}
+              allDaySlot={false}
+              slotMinTime="00:00:00"
+              slotMaxTime="24:00:00"
+              events={events.map((event) => {
+                const appt = appointments.find((a) => a._id === event.id);
+                if (!appt) return event;
 
-              const duration = appt.duration || 60;
-              const startDateTime = new Date(`${appt.date}T${appt.time}`);
-              const endDateTime = new Date(
-                startDateTime.getTime() + duration * 60000,
-              );
+                const duration = appt.duration || 60;
+                const startDateTime = new Date(`${appt.date}T${appt.time}`);
+                const endDateTime = new Date(
+                  startDateTime.getTime() + duration * 60000,
+                );
 
-              // Proveri da li je trenutni korisnik vlasnik termina
-              const isCurrentUserAppointment = appt.clientEmail === user?.email;
+                // Proveri da li je trenutni korisnik vlasnik termina
+                const isCurrentUserAppointment =
+                  appt.clientEmail === user?.email;
 
-              if (!isCurrentUserAppointment) {
-                // Tuđi termini - siva boja
+                if (!isCurrentUserAppointment) {
+                  // Tuđi termini - siva boja
+                  return {
+                    id: appt._id,
+                    title: `${appt.serviceName} - ${appt.clientName}`,
+                    start: startDateTime,
+                    end: endDateTime,
+                    backgroundColor: "#f3f4f6", // bg-gray-100
+                    textColor: "#6b7280", // text-gray-500
+                    borderColor: "#d1d5db", // border-gray-300
+                  };
+                }
+
+                // Funkcija za generisanje boje na osnovu stringa
+                const stringToColor = (str: string) => {
+                  let hash = 0;
+                  for (let i = 0; i < str.length; i++) {
+                    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+                  }
+
+                  // Predefinisane boje za određene usluge (opciono)
+                  const predefinedColors: Record<string, string> = {
+                    Makeup: "#8b5cf6",
+                    Manikir: "#ec4899",
+                    Pedikir: "#6366f1",
+                    // Dodajte ostale ako želite
+                  };
+
+                  // Ako je usluga u predefinisanim, vrati tu boju
+                  if (predefinedColors[appt.serviceName]) {
+                    return predefinedColors[appt.serviceName];
+                  }
+
+                  // Inače generiši boju na osnovu hash-a
+                  const hue = hash % 360;
+                  return `hsl(${hue}, 70%, 60%)`;
+                };
+
+                const backgroundColor = stringToColor(appt.serviceName);
+                const textColor = "#ffffff";
+
                 return {
                   id: appt._id,
-                  title: `${appt.serviceName} - ${appt.clientName}`,
+                  title: `${appt.serviceName} - ${
+                    appt.clientName
+                  } (${duration}min) ${translateClientNote(appt.status)}`,
                   start: startDateTime,
                   end: endDateTime,
-                  backgroundColor: "#f3f4f6", // bg-gray-100
-                  textColor: "#6b7280", // text-gray-500
-                  borderColor: "#d1d5db", // border-gray-300
+                  backgroundColor,
+                  textColor,
+                  borderColor: backgroundColor,
+                  extendedProps: {
+                    appointmentId: appt._id,
+                    clientName: appt.clientName,
+                    serviceName: appt.serviceName,
+                    duration: appt.duration,
+                    status: appt.status,
+                  },
                 };
-              }
+              })}
+              businessHours={businessHours}
+              locale={srLocale}
+              firstDay={1}
+              dayHeaderContent={(args) => {
+                const days = [
+                  "Nedelja",
+                  "Ponedeljak",
+                  "Utorak",
+                  "Sreda",
+                  "Četvrtak",
+                  "Petak",
+                  "Subota",
+                ];
+                const date = new Date(args.date);
+                const dayName = days[date.getDay()];
+                const dayNumber = date.getDate();
+                const month = date.getMonth() + 1;
 
-              // Funkcija za generisanje boje na osnovu stringa
-              const stringToColor = (str: string) => {
-                let hash = 0;
-                for (let i = 0; i < str.length; i++) {
-                  hash = str.charCodeAt(i) + ((hash << 5) - hash);
-                }
-
-                // Predefinisane boje za određene usluge (opciono)
-                const predefinedColors: Record<string, string> = {
-                  Makeup: "#8b5cf6",
-                  Manikir: "#ec4899",
-                  Pedikir: "#6366f1",
-                  // Dodajte ostale ako želite
+                return {
+                  html: `<div>${dayName}<br/>${dayNumber}.${month}.</div>`,
                 };
-
-                // Ako je usluga u predefinisanim, vrati tu boju
-                if (predefinedColors[appt.serviceName]) {
-                  return predefinedColors[appt.serviceName];
-                }
-
-                // Inače generiši boju na osnovu hash-a
-                const hue = hash % 360;
-                return `hsl(${hue}, 70%, 60%)`;
-              };
-
-              const backgroundColor = stringToColor(appt.serviceName);
-              const textColor = "#ffffff";
-
-              return {
-                id: appt._id,
-                title: `${appt.serviceName} - ${
-                  appt.clientName
-                } (${duration}min) ${translateClientNote(appt.status)}`,
-                start: startDateTime,
-                end: endDateTime,
-                backgroundColor,
-                textColor,
-                borderColor: backgroundColor,
-                extendedProps: {
-                  appointmentId: appt._id,
-                  clientName: appt.clientName,
-                  serviceName: appt.serviceName,
-                  duration: appt.duration,
-                  status: appt.status,
-                },
-              };
-            })}
-            businessHours={businessHours}
-            locale={srLocale}
-            firstDay={1}
-            dayHeaderContent={(args) => {
-              const days = [
-                "Nedelja",
-                "Ponedeljak",
-                "Utorak",
-                "Sreda",
-                "Četvrtak",
-                "Petak",
-                "Subota",
-              ];
-              const date = new Date(args.date);
-              const dayName = days[date.getDay()];
-              const dayNumber = date.getDate();
-              const month = date.getMonth() + 1;
-
-              return {
-                html: `<div>${dayName}<br/>${dayNumber}.${month}.</div>`,
-              };
-            }}
-          />
+              }}
+            />
+          </div>
         )}
-      </div>
-      {/* Working hours */}
-      <WorkingHoursWidget profile={safeProfile} />
-      {/* ── Legenda ────────────────────────────────────────────────────── */}
-      <div className="mt-4 flex flex-wrap gap-4 px-1 text-xs text-gray-600">
-        <div className="flex items-center gap-1.5">
-          <span className="w-4 h-4 rounded border border-gray-200 bg-white shadow-sm flex-shrink-0" />
-          <span>Radno vreme</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-4 h-4 rounded border border-gray-200 bg-[#fffadf] flex-shrink-0" />
-          <span>Današnji dan</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-4 h-4 rounded border border-gray-200 bg-[#f3f3f3] flex-shrink-0" />
-          <span>Salon ne radi</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-4 h-4 rounded bg-purple-500 flex-shrink-0" />
-          <span>Zakazan termin</span>
-        </div>
       </div>
 
       <ClientCreateModal
