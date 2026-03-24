@@ -18,7 +18,7 @@ function getBaseUrl(): string {
   if (process.env.NEXT_PUBLIC_APP_URL) {
     return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
   }
-  const port = process.env.PORT ?? "3000";
+  const port = process.env.PORT ?? "3006";
   return `http://localhost:${port}`;
 }
 
