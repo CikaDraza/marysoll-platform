@@ -1,42 +1,115 @@
 // src/app/api/appointments/create/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { Service } from "@/models/Service";
-import { requireAuth, resolveTenant } from "@/lib/auth/auth-server";
+import { Tenant } from "@/models/Tenant";
+import { requireAuth } from "@/lib/auth/auth-server";
 import { createAppointmentNotification } from "@/lib/notificationService";
 import type { IAppointmentService } from "@/types";
+import type { ITenant } from "@/models/Tenant"; // Uveri se da imaš ovaj import
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("🚀 START: Kreiranje termina");
     await connectToDB();
 
     const authResult = requireAuth(request);
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
+    if (authResult instanceof NextResponse) return authResult;
     const { decoded } = authResult;
-    const tenant = await resolveTenant(request);
-    const tenantId = tenant?._id ?? null;
+    console.log("✅ Auth passed, user:", decoded.id);
 
-    if (tenant) {
-      const isActive =
-        tenant.verified === true &&
-        (tenant.paid === true || tenant.isTrialActive === true);
+    // Čitaj header-e iz middleware-a
+    const headersList = await headers();
+    const tenantSlug = headersList.get("x-tenant-slug");
+    console.log("🔍 tenantSlug from headers:", tenantSlug);
 
-      if (!isActive) {
-        return NextResponse.json(
-          {
-            error:
-              "Salon nije aktivan. Zakazivanje nije moguće. Proverite pretplatu ili trial period.",
-          },
-          { status: 403 },
-        );
+    let tenant: ITenant | null = null;
+    let tenantId: string | null = null;
+
+    // 1. Probaj naći tenant po slug-u iz header-a
+    if (tenantSlug && tenantSlug !== "default" && tenantSlug !== "") {
+      // Koristi .lean() ali castuj rezultat
+      const tenantDoc = await Tenant.findOne({
+        slug: tenantSlug,
+        status: "active",
+      }).lean();
+
+      if (tenantDoc) {
+        tenant = tenantDoc as unknown as ITenant;
+        console.log("🔍 Tenant by slug:", tenant.slug);
       }
     }
 
+    // 2. Ako nema, probaj po tenantId iz tokena
+    if (!tenant && decoded.tenantId) {
+      console.log("🔍 Fallback to token tenantId:", decoded.tenantId);
+      const tenantDoc = await Tenant.findById(decoded.tenantId).lean();
+
+      if (tenantDoc) {
+        tenant = tenantDoc as unknown as ITenant;
+        console.log("🔍 Tenant by token:", tenant.slug);
+      }
+    }
+
+    // 3. Ako i dalje nema, vrati grešku
+    if (!tenant) {
+      console.log("❌ No tenant found");
+      return NextResponse.json(
+        { error: "Salon nije pronađen" },
+        { status: 404 },
+      );
+    }
+
+    // Eksplicitno konvertuj _id u string
+    tenantId = tenant._id?.toString() || null;
+
+    if (!tenantId) {
+      console.log("❌ tenantId is null");
+      return NextResponse.json(
+        { error: "Greška sa ID-em salona" },
+        { status: 500 },
+      );
+    }
+
+    console.log("✅ Final tenantId:", tenantId);
+
+    // Provera da li salon može primati zakazivanja
+    const now = new Date();
+    const trialEndsAt = tenant.trialEndsAt
+      ? new Date(tenant.trialEndsAt)
+      : null;
+    const isTrialActive =
+      tenant.isTrialActive && trialEndsAt && trialEndsAt > now;
+
+    console.log("📊 Tenant status:", {
+      paid: tenant.paid,
+      plan: tenant.plan,
+      isTrialActive: tenant.isTrialActive,
+      trialEndsAt: trialEndsAt?.toISOString(),
+      calculatedIsTrialActive: isTrialActive,
+    });
+
+    const canAcceptBookings =
+      tenant.paid === true || isTrialActive === true || tenant.plan === "free";
+
+    if (!canAcceptBookings) {
+      return NextResponse.json(
+        { error: "Salon nije aktivan. Zakazivanje nije moguće." },
+        { status: 403 },
+      );
+    }
+
     const data = await request.json();
+    console.log("📥 Data:", JSON.stringify(data, null, 2));
+
+    if (!data.services?.[0]?.serviceId) {
+      return NextResponse.json(
+        { error: "Nedostaje ID usluge" },
+        { status: 400 },
+      );
+    }
 
     const service = await Service.findById(data.services[0].serviceId);
     if (!service) {
@@ -49,7 +122,7 @@ export async function POST(request: NextRequest) {
     const { date, time } = data;
 
     const existing = await Appointment.findOne({
-      ...(tenantId ? { tenantId } : {}),
+      tenantId,
       date,
       time,
       status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
@@ -61,7 +134,7 @@ export async function POST(request: NextRequest) {
 
     const appointment = new Appointment({
       ...data,
-      tenantId,
+      tenantId, // Sada je ovo string
       clientId: decoded.id,
       duration: data.duration,
       services: data.services.map((s: IAppointmentService) => ({
@@ -73,6 +146,7 @@ export async function POST(request: NextRequest) {
     });
 
     await appointment.save();
+    console.log("✅ Appointment saved:", appointment._id);
 
     await createAppointmentNotification(
       {
@@ -92,9 +166,9 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
-    console.error("❌ Greška pri čuvanju termina:", error);
+    console.error("❌ ERROR:", error);
     return NextResponse.json(
-      { error: "Greška pri čuvanju termina" },
+      { error: "Greška pri čuvanju termina", details: String(error) },
       { status: 500 },
     );
   }

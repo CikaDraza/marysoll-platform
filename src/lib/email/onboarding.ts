@@ -53,7 +53,8 @@ export async function sendOwnerWelcomeEmail(params: {
   subdomain: string;
   trialEndsAt: Date;
 }): Promise<void> {
-  const dashboardUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const dashboardUrl =
+    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const trialEndsFormatted = params.trialEndsAt.toLocaleDateString("sr-RS", {
     day: "numeric",
     month: "long",
@@ -84,7 +85,7 @@ export async function sendClientVerificationEmail(params: {
   clientName: string;
   salonName: string;
   verificationToken: string;
-  salonBaseUrl: string;
+  salonBaseUrl: string | undefined;
 }): Promise<void> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const verifyUrl = `${baseUrl}/verify-email?token=${params.verificationToken}&type=client`;

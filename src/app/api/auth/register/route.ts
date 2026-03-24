@@ -6,6 +6,7 @@
  * tenantId se čita iz x-tenant-slug headera (injektuje middleware).
  */
 import { NextRequest, NextResponse } from "next/server";
+import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { connectToDB } from "@/lib/db/mongodb";
@@ -22,31 +23,60 @@ export async function POST(req: NextRequest) {
     if (!name || !email || !password || !agreedToPrivacy) {
       return NextResponse.json(
         { error: "Sva polja su obavezna." },
-        { status: 400 }
+        { status: 400 },
       );
     }
     if (password.length < 8) {
       return NextResponse.json(
         { error: "Lozinka mora imati najmanje 8 karaktera." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const normalizedEmail = email.toLowerCase().trim();
 
     // Nađi tenant iz headera (middleware ubacuje x-tenant-slug)
-    const tenantSlug = req.headers.get("x-tenant-slug");
+    // const tenantSlug = req.headers.get("x-tenant-slug");
+    // let tenant = null;
+    // let salonName = "salon";
+    // let salonBaseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+    // if (tenantSlug && tenantSlug !== "default") {
+    //   tenant = await Tenant.findOne({ slug: tenantSlug, status: "active" });
+    //   if (tenant) {
+    //     salonName = tenant.name;
+    //     salonBaseUrl = `https://${tenant.slug}.marysoll.com`;
+    //   }
+    // }
+
+    // Nađi tenant iz headera (middleware ubacuje x-tenant-slug)
+    // Koristi headers() iz next/headers da bi dobio vrednosti iz middleware-a
+    const headersList = await headers();
+    console.log("🔍 API - x-tenant-slug:", headersList.get("x-tenant-slug"));
+    console.log("🔍 API - x-domain-type:", headersList.get("x-domain-type"));
+    const tenantSlug = headersList.get("x-tenant-slug");
+
+    console.log("🔍 Register - tenantSlug from headers:", tenantSlug); // Debug
+
     let tenant = null;
     let salonName = "salon";
-    let salonBaseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    let salonBaseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_DEV_URL;
 
-    if (tenantSlug && tenantSlug !== "default") {
+    if (tenantSlug && tenantSlug !== "default" && tenantSlug !== "") {
       tenant = await Tenant.findOne({ slug: tenantSlug, status: "active" });
       if (tenant) {
         salonName = tenant.name;
-        salonBaseUrl = `https://${tenant.slug}.marysoll.com`;
+        // Za localhost dev, koristi path-based URL
+        if (process.env.NODE_ENV === "development") {
+          salonBaseUrl = `${process.env.NEXT_PUBLIC_DEV_URL}/${tenantSlug}`;
+        } else {
+          salonBaseUrl = `https://${tenant.slug}.marysoll.com`;
+        }
       }
     }
+
+    console.log("🔍 Register - tenant found:", tenant ? tenant.slug : "null"); // Debug
 
     const existingUser = await User.findOne({ email: normalizedEmail });
 
@@ -58,7 +88,7 @@ export async function POST(req: NextRequest) {
       if (existingUser.userType === "legal") {
         return NextResponse.json(
           { error: "Korisnik sa ovom email adresom već postoji." },
-          { status: 400 }
+          { status: 400 },
         );
       }
       // Gost koji je zakazivao termin — upgrejduj nalog
@@ -70,8 +100,11 @@ export async function POST(req: NextRequest) {
       existingUser.isEmailVerified = false;
       existingUser.verificationToken = verificationToken;
       existingUser.verificationTokenExpiry = verificationTokenExpiry;
+
       if (tenant && !existingUser.tenantId) {
-        existingUser.tenantId = tenant._id as Parameters<typeof existingUser.set>[1];
+        existingUser.tenantId = tenant._id as Parameters<
+          typeof existingUser.set
+        >[1];
       }
       await existingUser.save();
     } else {
@@ -109,7 +142,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       { message: "Registracija uspešna. Proverite email za verifikaciju." },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("❌ Register error:", error);
