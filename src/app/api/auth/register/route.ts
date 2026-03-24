@@ -6,7 +6,6 @@
  * tenantId se čita iz x-tenant-slug headera (injektuje middleware).
  */
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { connectToDB } from "@/lib/db/mongodb";
@@ -36,47 +35,19 @@ export async function POST(req: NextRequest) {
     const normalizedEmail = email.toLowerCase().trim();
 
     // Nađi tenant iz headera (middleware ubacuje x-tenant-slug)
-    // const tenantSlug = req.headers.get("x-tenant-slug");
-    // let tenant = null;
-    // let salonName = "salon";
-    // let salonBaseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-
-    // if (tenantSlug && tenantSlug !== "default") {
-    //   tenant = await Tenant.findOne({ slug: tenantSlug, status: "active" });
-    //   if (tenant) {
-    //     salonName = tenant.name;
-    //     salonBaseUrl = `https://${tenant.slug}.marysoll.com`;
-    //   }
-    // }
-
-    // Nađi tenant iz headera (middleware ubacuje x-tenant-slug)
-    // Koristi headers() iz next/headers da bi dobio vrednosti iz middleware-a
-    const headersList = await headers();
-    console.log("🔍 API - x-tenant-slug:", headersList.get("x-tenant-slug"));
-    console.log("🔍 API - x-domain-type:", headersList.get("x-domain-type"));
-    const tenantSlug = headersList.get("x-tenant-slug");
-
-    console.log("🔍 Register - tenantSlug from headers:", tenantSlug); // Debug
-
+    const tenantSlug = req.headers.get("x-tenant-slug");
     let tenant = null;
     let salonName = "salon";
     let salonBaseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_DEV_URL;
+      process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-    if (tenantSlug && tenantSlug !== "default" && tenantSlug !== "") {
+    if (tenantSlug && tenantSlug !== "default") {
       tenant = await Tenant.findOne({ slug: tenantSlug, status: "active" });
       if (tenant) {
         salonName = tenant.name;
-        // Za localhost dev, koristi path-based URL
-        if (process.env.NODE_ENV === "development") {
-          salonBaseUrl = `${process.env.NEXT_PUBLIC_DEV_URL}/${tenantSlug}`;
-        } else {
-          salonBaseUrl = `https://${tenant.slug}.marysoll.com`;
-        }
+        salonBaseUrl = `https://${tenant.slug}.marysoll.com`;
       }
     }
-
-    console.log("🔍 Register - tenant found:", tenant ? tenant.slug : "null"); // Debug
 
     const existingUser = await User.findOne({ email: normalizedEmail });
 
