@@ -118,6 +118,7 @@ export async function PUT(req: Request, { params }: Params) {
       await createTestimonialNotification(
         {
           _id: updatedTestimonial._id.toString(),
+          tenantId: updatedTestimonial.tenantId,
           clientId: updatedTestimonial.clientId.toString(),
           clientName: updatedTestimonial.clientName,
           rating: updatedTestimonial.rating,
@@ -145,6 +146,7 @@ export async function PUT(req: Request, { params }: Params) {
       await createTestimonialNotification(
         {
           _id: updatedTestimonial._id.toString(),
+          tenantId: updatedTestimonial.tenantId.toString(),
           clientId: updatedTestimonial.clientId.toString(),
           clientName: updatedTestimonial.clientName,
           rating: updatedTestimonial.rating,

@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     if (!appointmentId || !message) {
       return NextResponse.json(
         { error: "Appointment ID i poruka su obavezni" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     if (!appointment) {
       return NextResponse.json(
         { error: "Termin nije pronađen" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -58,18 +58,19 @@ export async function POST(req: Request) {
           ? { "unreadCount.client": 1 }
           : { "unreadCount.admin": 1 },
       },
-      { new: true }
+      { new: true },
     );
     if (!updatedAppointment) {
       return NextResponse.json(
         { error: "Greška pri slanju poruke" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     await createAppointmentNotification(
       {
         _id: appointment._id.toString(),
+        tenantId: appointment!._id,
         clientId: appointment.clientId,
         clientName: appointment.clientName,
         serviceName: appointment.serviceName,
@@ -78,7 +79,7 @@ export async function POST(req: Request) {
       {
         sender: isAdmin ? "admin" : "client",
         message: message.substring(0, 100),
-      }
+      },
     );
 
     return NextResponse.json({ success: true, message: newMessage });
@@ -86,7 +87,7 @@ export async function POST(req: Request) {
     console.error("Error sending message:", error);
     return NextResponse.json(
       { error: "Greška pri slanju poruke" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

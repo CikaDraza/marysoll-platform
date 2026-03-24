@@ -1,12 +1,13 @@
 // src/app/api/appointments/update/[id]/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
-import { verifyToken } from "@/lib/auth/auth-server";
+import { resolveTenant, verifyToken } from "@/lib/auth/auth-server";
 import { createAppointmentNotification } from "@/lib/notificationService";
 import { IAppointment } from "@/types";
 import { User } from "@/models/User";
 import { Notification } from "@/models/Notification";
+import { Types } from "mongoose";
 
 interface UpdateAppointmentData {
   status?:
@@ -24,7 +25,7 @@ interface UpdateAppointmentData {
 }
 
 export async function PUT(
-  req: Request,
+  req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
   await connectToDB();
@@ -42,6 +43,25 @@ export async function PUT(
 
     if (!user) {
       return NextResponse.json({ error: "Invalid token" }, { status: 403 });
+    }
+
+    const tenant = await resolveTenant(req);
+    const tenantId = tenant?._id ?? null;
+
+    if (tenant) {
+      const isActive =
+        tenant.verified === true &&
+        (tenant.paid === true || tenant.isTrialActive === true);
+
+      if (!isActive) {
+        return NextResponse.json(
+          {
+            error:
+              "Salon nije aktivan. Zakazivanje nije moguće. Proverite pretplatu ili trial period.",
+          },
+          { status: 403 },
+        );
+      }
     }
 
     const updatedData: UpdateAppointmentData = await req.json();
@@ -136,7 +156,11 @@ export async function PUT(
 
     // Notifikacija za promenu statusa
     if (updatedData.status && updatedData.status !== appointment.status) {
-      await handleStatusChangeNotification(appointment, updatedData.status);
+      await handleStatusChangeNotification(
+        appointment,
+        updatedData.status,
+        tenantId!,
+      );
     }
 
     return NextResponse.json(updated);
@@ -168,6 +192,7 @@ async function handleStatusChangeNotification(
     | "appointment_rejected"
     | "appointment_rescheduled"
     | "appointment_cancelled",
+  tenantId: Types.ObjectId | string,
 ) {
   // Mapiraj duge statuse iz baze na kratke tipove za notifikacije
   const statusToNotificationType: Record<
@@ -192,6 +217,7 @@ async function handleStatusChangeNotification(
     await createAppointmentNotification(
       {
         _id: appointment._id?.toString() || "",
+        tenantId: tenantId!,
         clientId: appointment.clientId?.toString() || "",
         clientName: clientName,
         serviceName: appointment.serviceName,
