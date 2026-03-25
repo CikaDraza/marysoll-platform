@@ -48,42 +48,59 @@ export default function LoggedButton({
   // ── Klijentski panel linkovi (unutar salona) ──────────────────────────────
   const clientPanelLinks = tenantSlug
     ? [
-        { label: "Moji termini", href: `/${tenantSlug}/panel?tab=Moji+Termini` },
+        {
+          label: "Moji termini",
+          href: `/${tenantSlug}/panel?tab=Moji+Termini`,
+        },
         { label: "Zakazivanja", href: `/${tenantSlug}/panel?tab=Zakazivanja` },
-        { label: "Moje preporuke", href: `/${tenantSlug}/panel?tab=Moje+Preporuke` },
-        { label: "Notifikacije", href: `/${tenantSlug}/panel?tab=Notifikacije` },
+        {
+          label: "Moje preporuke",
+          href: `/${tenantSlug}/panel?tab=Moje+Preporuke`,
+        },
+        {
+          label: "Notifikacije",
+          href: `/${tenantSlug}/panel?tab=Notifikacije`,
+        },
         { label: "Moj profil", href: `/${tenantSlug}/panel?tab=Moj+Profil` },
       ]
     : [];
 
   // ── Admin linkovi (globalni dashboard) ────────────────────────────────────
-  const adminLinks = !tenantSlug && user.isAdmin
-    ? [
-        { label: "Svi Termini", href: "/dashboard?tab=Svi Termini" },
-        { label: "Klijenti", href: "/dashboard?tab=Klijenti" },
-        { label: "Preporuke Klijenata", href: "/dashboard?tab=Preporuke Klijenata" },
-        { label: "Zakazivanja", href: "/dashboard?tab=Zakazivanja" },
-        { label: "Usluge", href: "/dashboard?tab=Usluge" },
-        { label: "Statistika", href: "/dashboard?tab=Statistika" },
-        { label: "Profil Salona", href: "/dashboard?tab=Salon Profil" },
-        { label: "Newsletter Kampanja", href: "/dashboard?tab=Newsletter Kampanja" },
-      ]
-    : [];
+  const adminLinks =
+    !tenantSlug && user.isAdmin
+      ? [
+          { label: "Svi Termini", href: "/dashboard?tab=Svi Termini" },
+          { label: "Klijenti", href: "/dashboard?tab=Klijenti" },
+          {
+            label: "Preporuke Klijenata",
+            href: "/dashboard?tab=Preporuke Klijenata",
+          },
+          { label: "Zakazivanja", href: "/dashboard?tab=Zakazivanja" },
+          { label: "Usluge", href: "/dashboard?tab=Usluge" },
+          { label: "Statistika", href: "/dashboard?tab=Statistika" },
+          { label: "Profil Salona", href: "/dashboard?tab=Salon Profil" },
+          {
+            label: "Newsletter Kampanja",
+            href: "/dashboard?tab=Newsletter Kampanja",
+          },
+        ]
+      : [];
 
   // ── Globalni klijentski linkovi (bez tenantSlug) ─────────────────────────
-  const globalClientLinks = !tenantSlug && !user.isAdmin
-    ? [
-        { label: "Moji Termini", href: "/dashboard?tab=Moji Termini" },
-        { label: "Zakazivanja", href: "/dashboard?tab=Zakazivanja" },
-        { label: "Moje Preporuke", href: "/dashboard?tab=Moje Preporuke" },
-      ]
-    : [];
+  const globalClientLinks =
+    !tenantSlug && !user.isAdmin
+      ? [
+          { label: "Moji Termini", href: "/dashboard?tab=Moji Termini" },
+          { label: "Zakazivanja", href: "/dashboard?tab=Zakazivanja" },
+          { label: "Moje Preporuke", href: "/dashboard?tab=Moje Preporuke" },
+        ]
+      : [];
 
   const menuLinks = tenantSlug
     ? clientPanelLinks
     : user.isAdmin
-    ? adminLinks
-    : globalClientLinks;
+      ? adminLinks
+      : globalClientLinks;
 
   return (
     <Menu as="div" className="relative inline-block text-left">
@@ -99,7 +116,9 @@ export default function LoggedButton({
         {/* Name badge */}
         <div className="px-4 py-2.5">
           <p className="text-xs text-gray-400">Prijavljeni ste kao</p>
-          <p className="text-sm font-semibold text-gray-800 truncate">{user.name}</p>
+          <p className="text-sm font-semibold text-gray-800 truncate">
+            {user.name}
+          </p>
         </div>
 
         {/* Links */}
@@ -124,7 +143,7 @@ export default function LoggedButton({
           <MenuItem>
             <button
               onClick={() => {
-                logout();
+                logout({ tenantSlug });
                 if (onCloseMobileMenu) onCloseMobileMenu();
               }}
               className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"

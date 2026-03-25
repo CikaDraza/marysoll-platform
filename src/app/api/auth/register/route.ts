@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     let tenant = null;
     let salonName = "salon";
     let salonBaseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+      process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3006";
 
     if (tenantSlug && tenantSlug !== "default") {
       tenant = await Tenant.findOne({ slug: tenantSlug, status: "active" });
@@ -73,9 +73,7 @@ export async function POST(req: NextRequest) {
       existingUser.verificationTokenExpiry = verificationTokenExpiry;
 
       if (tenant && !existingUser.tenantId) {
-        existingUser.tenantId = tenant._id as Parameters<
-          typeof existingUser.set
-        >[1];
+        existingUser.tenantId = tenant._id as import("mongoose").Types.ObjectId;
       }
       await existingUser.save();
     } else {

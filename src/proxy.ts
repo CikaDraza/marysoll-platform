@@ -22,6 +22,17 @@ const IS_PROD = process.env.NODE_ENV === "production";
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
 const CUSTOM_CLIENT_DOMAIN = process.env.CUSTOM_CLIENT_DOMAIN ?? null;
 
+/** Returns true when the request host is a fully custom domain (not *.marysoll.com or localhost). */
+function isCustomDomain(hostname: string, baseDomain: string): boolean {
+  const host = hostname.split(":")[0];
+  return (
+    host !== "localhost" &&
+    !host.startsWith("127.") &&
+    !host.endsWith(baseDomain) &&
+    host !== baseDomain
+  );
+}
+
 const ADMIN_PROTECTED_API_ROUTES = [
   "/api/services/create",
   "/api/services",
@@ -365,6 +376,35 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       // Custom domain bez slug-a - pokušaj da pronađeš tenant po domenu
       // Ovo bi već trebalo da je uradio detectDomainType, ali ako nije:
       return NextResponse.rewrite(new URL("/not-found", request.url));
+    }
+
+    // Custom domain rewriting: on kikikiss.beauty, /login must serve
+    // app/[tenantSlug]/login/page.tsx, not app/login/page.tsx.
+    // We rewrite root-relative client paths to their tenantSlug-prefixed
+    // equivalents so Next.js file-system routing picks the right page.
+    const CLIENT_TENANT_PATHS = new Set([
+      "/login",
+      "/register",
+      "/panel",
+      "/termini",
+      "/usluge",
+      "/forgot-password",
+      "/resend-verification",
+    ]);
+
+    if (
+      tenantSlug &&
+      isCustomDomain(hostname, BASE_DOMAIN) &&
+      CLIENT_TENANT_PATHS.has(pathname)
+    ) {
+      const rewriteUrl = new URL(
+        `/${tenantSlug}${pathname}`,
+        request.nextUrl.origin,
+      );
+      rewriteUrl.search = request.nextUrl.search;
+      return NextResponse.rewrite(rewriteUrl, {
+        request: { headers: requestHeaders },
+      });
     }
 
     if (

@@ -68,6 +68,20 @@ async function getTenantData(tenantSlug: string) {
 export async function ClientHomePage({ tenantSlug }: Props) {
   const data = await getTenantData(tenantSlug);
 
+  // Detect whether we are being served from a custom domain.
+  // On a custom domain (e.g. kikikiss.beauty) theme headers must use
+  // root-relative paths (/login, /panel) not path-prefixed ones
+  // (/kiki-kiss/login). Passing undefined to ThemeLayout achieves this
+  // because all themes guard their base with `tenantSlug ? `/${tenantSlug}` : ""`.
+  const headersList = await headers();
+  const hostname = headersList.get("host")?.split(":")[0] ?? "";
+  const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+  const isCustomDomain =
+    hostname !== "" &&
+    hostname !== "localhost" &&
+    !hostname.endsWith(BASE_DOMAIN);
+  const themeSlug = isCustomDomain ? undefined : tenantSlug || undefined;
+
   if (!data) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
@@ -209,7 +223,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
       salon={salonData}
       services={serviceList}
       testimonials={testimonialList}
-      tenantSlug={tenantSlug || undefined}
+      tenantSlug={themeSlug}
     />
   );
 }

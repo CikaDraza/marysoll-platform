@@ -40,19 +40,21 @@ export async function GET(req: NextRequest) {
 
     const tenant = await Tenant.findOne({
       customDomain: { $in: domainsToCheck },
-      customDomainVerified: true, // ← DODAJ OVU PROVERU
+      customDomainVerified: true,
       status: "active",
     })
       .select("slug")
-      .lean();
+      .lean<{ slug: string }>();
 
     if (!tenant) {
       console.log(`❌ Tenant not found for domain: ${normalizedDomain}`);
       return NextResponse.json({ slug: null }, { status: 404 });
     }
 
-    console.log(`✅ Found tenant: ${tenant} for domain: ${normalizedDomain}`);
-    return NextResponse.json({ slug: String(tenant) });
+    console.log(
+      `✅ Found tenant: ${String(tenant.slug)} for domain: ${normalizedDomain}`,
+    );
+    return NextResponse.json({ slug: String(tenant.slug) });
   } catch (err) {
     console.error("GET /api/internal/resolve-domain:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

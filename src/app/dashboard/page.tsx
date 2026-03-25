@@ -12,15 +12,17 @@ import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useAdminServices } from "@/hooks/useAdminServices";
 import { DAYS_OF_WEEK } from "@/types";
 import type { DayOfWeek, IService, LandingTheme } from "@/types";
+import { AdminCustomDomain } from "@/components/admin/AdminCustomDomain";
 
 // ─── Types & constants ────────────────────────────────────────────────────────
-type Tab = "profil" | "radno-vreme" | "social-seo" | "usluge";
+type Tab = "profil" | "radno-vreme" | "social-seo" | "usluge" | "domen";
 
 const TABS: { id: Tab; label: string; emoji: string }[] = [
   { id: "profil", label: "Profil salona", emoji: "🏪" },
   { id: "radno-vreme", label: "Radno vreme", emoji: "🕐" },
   { id: "social-seo", label: "Social & SEO", emoji: "🌐" },
   { id: "usluge", label: "Usluge", emoji: "✂️" },
+  { id: "domen", label: "Custom Domen", emoji: "🔗" },
 ];
 
 // Theme thumbnails from Cloudinary /salons/landing-pages
@@ -905,6 +907,9 @@ export default function AdminDashboardPage() {
               })()}
           </div>
         )}
+
+        {/* ═══ TAB: Custom Domen ══════════════════════════════════════════ */}
+        {tab === "domen" && <AdminCustomDomain />}
       </main>
 
       {/* ── Service Modal ─────────────────────────────────────────────────── */}

@@ -231,7 +231,17 @@ export function useAuth() {
   });
 
   // ── Logout ────────────────────────────────────────────────────────────────
-  const logoutMutation = useMutation<void, unknown, void>({
+  // ── Logout ────────────────────────────────────────────────────────────────
+
+  /**
+   * tenantSlug — when provided (client pages), redirects to /{tenantSlug}/login
+   * instead of the global marysoll.com/login (admin login).
+   */
+  interface LogoutOptions {
+    tenantSlug?: string;
+  }
+
+  const logoutMutation = useMutation<void, unknown, LogoutOptions>({
     mutationFn: async () => {
       const token = getRawToken();
       if (token) {
@@ -243,11 +253,34 @@ export function useAuth() {
         }
       }
     },
-    onSettled: () => {
+    onSettled: (_data, _err, variables) => {
       clearAllTokens();
       queryClient.setQueryData(["authUser"], null);
       queryClient.clear();
       toast.success("Uspešno ste se odjavili");
+
+      const tenantSlug = variables?.tenantSlug;
+
+      if (tenantSlug) {
+        // Client logout — if on a custom domain, stay on /login (root-relative).
+        // Otherwise use the marysoll.com/{tenantSlug}/login path.
+        const host = window.location.hostname;
+        const base = getBaseDomain();
+        const onCustomDomain =
+          host !== "localhost" &&
+          !host.startsWith("127.") &&
+          !host.endsWith(base) &&
+          host !== base;
+
+        window.location.href = onCustomDomain
+          ? "/login"
+          : isProductionDomain()
+            ? `https://${base}/${tenantSlug}/login`
+            : `/${tenantSlug}/login`;
+        return;
+      }
+
+      // Admin / marketing logout — go to main login
       const base = getBaseDomain();
       window.location.href = isProductionDomain()
         ? `https://${base}/login`
@@ -274,7 +307,7 @@ export function useAuth() {
       registerMutation.mutateAsync(payload),
     isRegistering: registerMutation.isPending,
 
-    logout: () => logoutMutation.mutate(),
+    logout: (options?: LogoutOptions) => logoutMutation.mutate(options ?? {}),
     isLoggingOut: logoutMutation.isPending,
 
     updateOnlineStatus,

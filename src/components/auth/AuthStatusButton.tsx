@@ -19,13 +19,20 @@ interface AuthStatusButtonProps {
   logoutRedirect?: string;
   /** Visual theme - "dark" za superadmin/admin (tamna pozadina), "light" za marketing */
   theme?: "dark" | "light";
+  /**
+   * tenantSlug — when provided, logout redirects to /{tenantSlug}/login
+   * instead of the global marysoll.com/login.
+   */
+  tenantSlug?: string;
 }
 
-export function AuthStatusButton({ theme = "light" }: AuthStatusButtonProps) {
+export function AuthStatusButton({
+  theme = "light",
+  tenantSlug,
+}: AuthStatusButtonProps) {
   const { logout } = useAuth();
   const [user, setUser] = useState<DecodedUser | null>(null);
   const [isOpen, setIsOpen] = useState(false);
-
   // Read user from token on mount (client-only)
   useEffect(() => {
     async function handleUserFromToken() {
@@ -39,7 +46,7 @@ export function AuthStatusButton({ theme = "light" }: AuthStatusButtonProps) {
   function handleLogout() {
     setIsOpen(false);
     // useAuth.logout: briše tokene, cookie, zove API, preusmeri na login
-    logout();
+    logout({ tenantSlug });
   }
 
   const isDark = theme === "dark";
