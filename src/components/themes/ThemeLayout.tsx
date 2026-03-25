@@ -16,12 +16,11 @@ import type { IService, SalonProfileData } from "@/types";
 import { Theme1Header } from "./theme-1/Header";
 import { Theme1Footer } from "./theme-1/Footer";
 import { Theme1Hero } from "./theme-1/Hero";
-import { Theme1HeroSecond } from "./theme-1/HeroSecond";
+// import { Theme1HeroSecond } from "./theme-1/HeroSecond";
 import { Theme1WhatOffer } from "./theme-1/WhatOffer";
 import { Theme1WhyChooseUs } from "./theme-1/WhyChooseUs";
 import { Theme1GallerySection } from "./theme-1/GallerySection";
 import { Theme1PricingSection } from "./theme-1/PricingSection";
-import { Theme1ImageGenerationSection } from "./theme-1/ImageGenerationSection";
 import { Theme1AppointmentSection } from "./theme-1/AppointmentSection";
 import { Theme1TestimonialsSection } from "./theme-1/TestimonialsSection";
 
@@ -50,6 +49,7 @@ import { Theme3PricingSection } from "./theme-3/PricingSection";
 import { Theme3ImageGenerationSection } from "./theme-3/ImageGenerationSection";
 import { Theme3AppointmentSection } from "./theme-3/AppointmentSection";
 import { Theme3TestimonialsSection } from "./theme-3/TestimonialsSection";
+import { Theme1ImageGenerationSection } from "./theme-1/ImageGenerationSection";
 
 interface Testimonial {
   _id: string;
@@ -86,6 +86,7 @@ export function ThemeLayout({
   };
 
   const footerProps = {
+    tenantSlug,
     salonName: salon.name,
     instagram: salon.social?.instagram,
     facebook: salon.social?.facebook,
@@ -99,7 +100,7 @@ export function ThemeLayout({
         <Theme1Header {...headerProps} />
         <main className="flex-1 overflow-x-hidden flex flex-col pt-20">
           <Theme1Hero salon={salon} />
-          <Theme1HeroSecond salonName={salon.name} description={salon.description} />
+          {/* <Theme1HeroSecond salonName={salon.name} description={salon.description} /> */}
           {services.length > 0 && <Theme1WhatOffer services={services} />}
           <Theme1WhyChooseUs />
           {showGallery && <Theme1GallerySection instagramUrl={instagram} />}
@@ -140,7 +141,10 @@ export function ThemeLayout({
       <Theme3Header {...headerProps} />
       <main className="flex-1 overflow-x-hidden flex flex-col">
         <Theme3Hero salon={salon} />
-        <Theme3HeroSecond salonName={salon.name} description={salon.description} />
+        <Theme3HeroSecond
+          salonName={salon.name}
+          description={salon.description}
+        />
         {services.length > 0 && <Theme3WhatOffer services={services} />}
         <Theme3WhyChooseUs />
         {showGallery && <Theme3GallerySection instagramUrl={instagram} />}

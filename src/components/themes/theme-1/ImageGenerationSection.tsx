@@ -1,7 +1,8 @@
 "use client";
-import { useState, useCallback } from "react";
-import Image from "next/image";
+
 import { generateImage } from "@/services/geminiService";
+import Image from "next/image";
+import { useCallback, useState } from "react";
 
 export function Theme1ImageGenerationSection() {
   const [prompt, setPrompt] = useState("");
@@ -10,34 +11,112 @@ export function Theme1ImageGenerationSection() {
   const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = useCallback(async () => {
-    if (!prompt.trim()) { setError("Unesite opis izgleda."); return; }
-    setIsLoading(true); setError(null); setGeneratedImage(null);
-    try { setGeneratedImage(await generateImage(prompt)); }
-    catch { setError("Greška. Pokušajte ponovo."); }
-    finally { setIsLoading(false); }
+    if (!prompt.trim()) {
+      setError("Molimo unesite opis izgleda koji želite da generišete.");
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    setGeneratedImage(null);
+    try {
+      const imageData = await generateImage(prompt);
+      setGeneratedImage(imageData);
+    } catch (e) {
+      setError(
+        "Došlo je do greške prilikom generisanja slike. Molimo pokušajte ponovo.",
+      );
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
   }, [prompt]);
 
   return (
-    <section className="py-16 lg:py-24 px-4">
-      <div className="max-w-2xl mx-auto text-center">
-        <h2 className="text-3xl font-bold text-(--primary-color) mb-4">Kreiraj svoj izgled</h2>
-        <p className="text-gray-500 text-sm mb-8">Opišite željeni makeup, nokte ili stil i naš AI će kreirati viziju za vas.</p>
-        <div className="flex gap-3 mb-6">
-          <input type="text" value={prompt} onChange={e => setPrompt(e.target.value)} disabled={isLoading}
-            placeholder="Npr. dramatičan večernji makeup sa zlatnim sjajem"
-            className="flex-1 px-5 py-3 rounded-full border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-(--primary-color)/40" />
-          <button onClick={handleGenerate} disabled={isLoading}
-            className="px-6 py-3 bg-(--primary-color) text-white text-sm font-semibold rounded-full hover:bg-(--secondary-color) transition disabled:opacity-50">
-            {isLoading ? "..." : "Generiši"}
-          </button>
-        </div>
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-        <div className="bg-(--primary-color)/10 rounded-2xl min-h-48 flex items-center justify-center p-4">
-          {generatedImage ? (
-            <Image src={generatedImage} alt="AI generated" width={400} height={400} className="rounded-xl max-h-96 object-contain" />
-          ) : (
-            <p className="text-(--primary-color)/60 text-sm">{isLoading ? "AI kreira vašu viziju..." : "Ovde će se pojaviti generisana slika."}</p>
-          )}
+    <section id="ai-generator" className="py-4 md:py-32 mx-auto">
+      <div className="container mx-auto px-6 text-center text-black">
+        <h2 className="text-4xl text-(--primary-color) font-black tracking-tighter mb-4">
+          Kreiraj svoj izgled
+        </h2>
+        <p className="max-w-2xl mx-auto text-sm lg:text-lg text-black/80 mb-8">
+          Isprobajte naš AI generator! Opišite kakav makeup, nokte ili stil
+          želite, a naša veštačka inteligencija će stvoriti jedinstvenu viziju
+          za vas.
+        </p>
+        <div className="max-w-2xl mx-auto">
+          <div className="flex flex-col sm:flex-row gap-4 mb-8">
+            <input
+              type="text"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Npr. 'dramatičan večernji makeup sa zlatnim sjajem'"
+              className="w-full px-6 py-3 rounded-full text-gray-800 ring-2 ring-gray-400 bg-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-(--primary-color)/70 transition-all"
+              disabled={isLoading}
+            />
+            <button
+              onClick={handleGenerate}
+              disabled={isLoading}
+              className="bg-(--primary-color) text-white font-bold py-3 px-8 rounded-full hover:bg-white hover:text-(--primary-color) transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+              {isLoading ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Generisanje...
+                </>
+              ) : (
+                "Generiši"
+              )}
+            </button>
+          </div>
+          {error && <p className="text-red-400 mb-4">{error}</p>}
+          <div className="bg-(--primary-color) rounded-2xl min-h-75 md:md:min-h-100 flex items-center justify-center p-4">
+            {generatedImage ? (
+              <div className="flex flex-col items-center">
+                <Image
+                  width={400}
+                  height={400}
+                  src={generatedImage}
+                  alt="Generated look"
+                  className="rounded-lg max-h-100 shadow-2xl"
+                />
+                <button
+                  onClick={() => {
+                    const link = document.createElement("a");
+                    link.href = generatedImage;
+                    link.download = `marysoll-ai-look-${Date.now()}.jpg`;
+                    link.click();
+                  }}
+                  className="mt-4 bg-white text-brand-secondary font-semibold py-2 px-6 rounded-full shadow hover:bg-(--secondary-color) hover:text-white transition-all duration-300"
+                >
+                  Sačuvaj sliku
+                </button>
+              </div>
+            ) : (
+              <p className="text-white">
+                {isLoading
+                  ? "AI kreira vašu viziju..."
+                  : "Ovde će se pojaviti vaša generisana slika."}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </section>

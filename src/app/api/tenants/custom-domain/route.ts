@@ -232,19 +232,42 @@ export async function GET(req: NextRequest) {
     }
 
     const domain = tenant.customDomain as string;
+    const wasVerified = Boolean(tenant.customDomainVerified);
     const vercelStatus = await getDomainVercelStatus(domain);
 
-    // Auto-update verified status in DB if Vercel confirms
-    if (vercelStatus.verified && !tenant.customDomainVerified) {
+    if (vercelStatus.verified && !wasVerified) {
+      // Vercel just confirmed — persist verified=true in DB
       await Tenant.findByIdAndUpdate(decoded.tenantId, {
         $set: { customDomainVerified: true },
+      });
+      return NextResponse.json({
+        customDomain: domain,
+        verified: true,
+        verification: null,
+        notVerified: false,
+      });
+    }
+
+    if (!vercelStatus.verified && wasVerified) {
+      // Domain was previously verified but Vercel no longer confirms it
+      // (DNS removed, domain expired, etc.) — reset DB flag so routing
+      // falls back to path-based (marysoll.com/[slug]) automatically.
+      await Tenant.findByIdAndUpdate(decoded.tenantId, {
+        $set: { customDomainVerified: false },
+      });
+      return NextResponse.json({
+        customDomain: domain,
+        verified: false,
+        verification: vercelStatus.verification ?? null,
+        notVerified: true,
       });
     }
 
     return NextResponse.json({
       customDomain: domain,
       verified: vercelStatus.verified,
-      verification: vercelStatus.verification,
+      verification: vercelStatus.verification ?? null,
+      notVerified: !vercelStatus.verified,
     });
   } catch (err) {
     console.error("GET /api/tenants/custom-domain:", err);

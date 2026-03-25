@@ -6,6 +6,6 @@ export { Theme1WhatOffer } from "./WhatOffer";
 export { Theme1WhyChooseUs } from "./WhyChooseUs";
 export { Theme1GallerySection } from "./GallerySection";
 export { Theme1PricingSection } from "./PricingSection";
-export { Theme1ImageGenerationSection } from "./ImageGenerationSection";
 export { Theme1AppointmentSection } from "./AppointmentSection";
 export { Theme1TestimonialsSection } from "./TestimonialsSection";
+export { Theme1ImageGenerationSection } from "./ImageGenerationSection";

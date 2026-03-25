@@ -47,13 +47,9 @@ export async function GET(req: NextRequest) {
       .lean<{ slug: string }>();
 
     if (!tenant) {
-      console.log(`❌ Tenant not found for domain: ${normalizedDomain}`);
       return NextResponse.json({ slug: null }, { status: 404 });
     }
 
-    console.log(
-      `✅ Found tenant: ${String(tenant.slug)} for domain: ${normalizedDomain}`,
-    );
     return NextResponse.json({ slug: String(tenant.slug) });
   } catch (err) {
     console.error("GET /api/internal/resolve-domain:", err);

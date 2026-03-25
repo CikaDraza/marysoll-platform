@@ -12,18 +12,15 @@ import type { ITenant } from "@/models/Tenant"; // Uveri se da imaš ovaj import
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("🚀 START: Kreiranje termina");
     await connectToDB();
 
     const authResult = requireAuth(request);
     if (authResult instanceof NextResponse) return authResult;
     const { decoded } = authResult;
-    console.log("✅ Auth passed, user:", decoded.id);
 
     // Čitaj header-e iz middleware-a
     const headersList = await headers();
     const tenantSlug = headersList.get("x-tenant-slug");
-    console.log("🔍 tenantSlug from headers:", tenantSlug);
 
     let tenant: ITenant | null = null;
     let tenantId: string | null = null;
@@ -38,24 +35,20 @@ export async function POST(request: NextRequest) {
 
       if (tenantDoc) {
         tenant = tenantDoc as unknown as ITenant;
-        console.log("🔍 Tenant by slug:", tenant.slug);
       }
     }
 
     // 2. Ako nema, probaj po tenantId iz tokena
     if (!tenant && decoded.tenantId) {
-      console.log("🔍 Fallback to token tenantId:", decoded.tenantId);
       const tenantDoc = await Tenant.findById(decoded.tenantId).lean();
 
       if (tenantDoc) {
         tenant = tenantDoc as unknown as ITenant;
-        console.log("🔍 Tenant by token:", tenant.slug);
       }
     }
 
     // 3. Ako i dalje nema, vrati grešku
     if (!tenant) {
-      console.log("❌ No tenant found");
       return NextResponse.json(
         { error: "Salon nije pronađen" },
         { status: 404 },
@@ -66,14 +59,11 @@ export async function POST(request: NextRequest) {
     tenantId = tenant._id?.toString() || null;
 
     if (!tenantId) {
-      console.log("❌ tenantId is null");
       return NextResponse.json(
         { error: "Greška sa ID-em salona" },
         { status: 500 },
       );
     }
-
-    console.log("✅ Final tenantId:", tenantId);
 
     // Provera da li salon može primati zakazivanja
     const now = new Date();
@@ -82,14 +72,6 @@ export async function POST(request: NextRequest) {
       : null;
     const isTrialActive =
       tenant.isTrialActive && trialEndsAt && trialEndsAt > now;
-
-    console.log("📊 Tenant status:", {
-      paid: tenant.paid,
-      plan: tenant.plan,
-      isTrialActive: tenant.isTrialActive,
-      trialEndsAt: trialEndsAt?.toISOString(),
-      calculatedIsTrialActive: isTrialActive,
-    });
 
     const canAcceptBookings =
       tenant.paid === true || isTrialActive === true || tenant.plan === "free";
@@ -102,7 +84,6 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json();
-    console.log("📥 Data:", JSON.stringify(data, null, 2));
 
     if (!data.services?.[0]?.serviceId) {
       return NextResponse.json(
@@ -146,7 +127,6 @@ export async function POST(request: NextRequest) {
     });
 
     await appointment.save();
-    console.log("✅ Appointment saved:", appointment._id);
 
     await createAppointmentNotification(
       {

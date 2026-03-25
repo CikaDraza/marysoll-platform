@@ -7,6 +7,7 @@
  * Akcije:
  * - Čitanje tenant podataka (slug, customDomain, status)
  * - Postavljanje / uklanjanje custom domena
+ * - Provjera dostupnosti domena via Vercel API
  */
 "use client";
 
@@ -25,6 +26,27 @@ interface TenantPublicData {
   subdomain: string;
   isTrialActive: boolean;
   trialEndsAt: string | null;
+}
+
+export interface DomainSearchResult {
+  name: string;
+  available: boolean;
+  price: number | null;
+  premium: boolean;
+  purchaseUrl: string;
+}
+
+interface DomainVerificationResponse {
+  customDomain: string | null;
+  verified: boolean;
+  verification?: {
+    type: string;
+    domain: string;
+    value: string;
+    reason: string;
+  }[];
+  /** true when Vercel explicitly says not verified — DB flag was reset to false */
+  notVerified?: boolean;
 }
 
 async function fetchMyTenant(token: string): Promise<TenantPublicData | null> {
@@ -54,6 +76,8 @@ export function useTenantAdmin() {
     tenant?.customDomain ?? "",
   );
 
+  // ── Save / remove custom domain ─────────────────────────────────────────
+
   const customDomainMutation = useMutation({
     mutationFn: async (domain: string) => {
       const res = await fetch("/api/tenants/custom-domain", {
@@ -77,14 +101,73 @@ export function useTenantAdmin() {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  // ── Domain search (availability check) ──────────────────────────────────
+
+  const [domainSearchResult, setDomainSearchResult] =
+    useState<DomainSearchResult | null>(null);
+  const [domainSearchInput, setDomainSearchInput] = useState("");
+
+  const domainSearchMutation = useMutation({
+    mutationFn: async (name: string): Promise<DomainSearchResult> => {
+      const res = await fetch(
+        `/api/tenants/domain-search?name=${encodeURIComponent(name)}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? "Greška pri proveri dostupnosti");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setDomainSearchResult(data);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // ── Verification refresh ─────────────────────────────────────────────────
+
+  const verifyMutation = useMutation({
+    mutationFn: async (): Promise<DomainVerificationResponse> => {
+      const res = await fetch("/api/tenants/custom-domain", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Greška pri proveri verifikacije");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      // Invalidate tenant cache so the UI reflects the latest verified status
+      qc.invalidateQueries({ queryKey: ["myTenant"] });
+
+      if (data.verified) {
+        toast.success("Domen je verifikovan! 🎉");
+      } else if (data.notVerified) {
+        // DB was reset — domain no longer verified, routing falls back to path-based
+        toast.error(
+          "Domen nije verifikovan. Proverite DNS zapise. Salon je privremeno dostupan na path-based URL-u.",
+          { duration: 6000 },
+        );
+      } else {
+        toast("DNS provera u toku. Sačekajte i pokušajte ponovo.", {
+          icon: "⏳",
+        });
+      }
+    },
+    onError: () => toast.error("Greška pri proveri verifikacije"),
+  });
+
+  // ── getTenantUrl ─────────────────────────────────────────────────────────
+
   /**
    * Builds the public URL for this tenant.
-   * In dev: localhost:PORT/[slug]
-   * In prod: NEXT_PUBLIC_APP_URL/[slug] or customDomain if set
+   * Only uses customDomain if customDomainVerified is true in DB.
+   * Falls back to path-based URL otherwise.
    */
   function getTenantUrl(): string {
     if (!tenant) return "";
-    if (tenant.customDomain) return `https://${tenant.customDomain}`;
+    if (tenant.customDomain && tenant.customDomainVerified) {
+      return `https://${tenant.customDomain}`;
+    }
 
     const siteUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
     if (siteUrl) return `${siteUrl}/${tenant.slug}`;
@@ -97,6 +180,8 @@ export function useTenantAdmin() {
   return {
     tenant,
     isLoading,
+
+    // Custom domain set/remove
     customDomainInput,
     setCustomDomainInput,
     saveCustomDomain: () => customDomainMutation.mutate(customDomainInput),
@@ -105,6 +190,23 @@ export function useTenantAdmin() {
       customDomainMutation.mutate("");
     },
     isSavingDomain: customDomainMutation.isPending,
+
+    // Domain availability search
+    domainSearchInput,
+    setDomainSearchInput,
+    searchDomain: () => domainSearchMutation.mutate(domainSearchInput),
+    domainSearchResult,
+    clearDomainSearch: () => {
+      setDomainSearchResult(null);
+      setDomainSearchInput("");
+    },
+    isSearchingDomain: domainSearchMutation.isPending,
+
+    // Verification
+    verifyDomain: verifyMutation.mutate,
+    isVerifying: verifyMutation.isPending,
+    lastVerification: verifyMutation.data ?? null,
+
     getTenantUrl,
   };
 }

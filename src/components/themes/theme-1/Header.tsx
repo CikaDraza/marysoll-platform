@@ -12,7 +12,6 @@ import {
 } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/hooks/useAuth";
-import { useSalonProfile } from "@/hooks/useSalonProfile";
 import LoggedButton from "@/components/auth/LoggedButton";
 
 interface Theme1HeaderProps {
@@ -39,7 +38,9 @@ export function Theme1Header({
   const navItems = [
     { name: "Naslovna", href: `${base}/` },
     { name: "Usluge", href: `${base}/usluge` },
-    ...(showGallery ? [{ name: "Galerija", href: instagramUrl!, external: true }] : []),
+    ...(showGallery
+      ? [{ name: "Galerija", href: instagramUrl!, external: true }]
+      : []),
     { name: "Termini", href: `${base}/termini`, cta: true },
   ];
 
@@ -53,9 +54,22 @@ export function Theme1Header({
       <nav className="flex items-center justify-between py-5 px-6 lg:px-12">
         <Link href={`${base}/`} className="flex items-center gap-2">
           {logoSrc ? (
-            <Image src={logoSrc} alt={displayName} width={140} height={48} className="h-12 w-auto" />
+            <div className="flex items-center">
+              <Image
+                src={logoSrc}
+                alt={displayName}
+                width={140}
+                height={48}
+                className="h-12 w-auto"
+              />
+              <span className="text-xs font-bold text-(--primary-color)">
+                {displayName}
+              </span>
+            </div>
           ) : (
-            <span className="text-xl font-bold text-(--primary-color)">{displayName}</span>
+            <span className="text-xl font-bold text-(--primary-color)">
+              {displayName}
+            </span>
           )}
         </Link>
 
@@ -105,7 +119,12 @@ export function Theme1Header({
       </nav>
 
       {/* Mobile menu */}
-      <Transition show={mobileMenuOpen} as={Dialog} onClose={setMobileMenuOpen} className="lg:hidden">
+      <Transition
+        show={mobileMenuOpen}
+        as={Dialog}
+        onClose={setMobileMenuOpen}
+        className="lg:hidden"
+      >
         <TransitionChild
           as="div"
           className="fixed inset-0"
@@ -130,8 +149,13 @@ export function Theme1Header({
         >
           <DialogPanel className="h-full bg-white px-6 py-6 shadow-2xl">
             <div className="flex items-center justify-between mb-8">
-              <span className="font-bold text-lg text-(--primary-color)">{displayName}</span>
-              <button onClick={() => setMobileMenuOpen(false)} className="p-2 rounded-lg hover:bg-gray-100">
+              <span className="font-bold text-lg text-(--primary-color)">
+                {displayName}
+              </span>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 rounded-lg hover:bg-gray-100"
+              >
                 <XMarkIcon className="size-5" />
               </button>
             </div>

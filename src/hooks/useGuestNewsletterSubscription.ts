@@ -5,7 +5,7 @@ import { subscribeToNewsletter } from "@/lib/newsletterService";
 // Opcionalno: ako želiš da vratiš poruku greške umesto redirect-a
 export async function useGuestNewsletterSubscription(
   prevState: { message: string; success: boolean } | null,
-  formData: FormData
+  formData: FormData,
 ): Promise<{ message: string; success: boolean }> {
   const emailValue = formData.get("email");
 
