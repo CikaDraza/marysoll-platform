@@ -40,14 +40,17 @@ interface SalonData {
 
 export async function wrapEmailLayout(
   data: EmailLayoutData,
-  salonOverride?: SalonData
+  salonOverride?: SalonData,
 ): Promise<string> {
   let salon: SalonData | null = salonOverride ?? null;
 
   if (!salon) {
     try {
       await connectToDB();
-      const raw = await SalonProfile.findOne().lean() as Record<string, unknown> | null;
+      const raw = (await SalonProfile.findOne().lean()) as Record<
+        string,
+        unknown
+      > | null;
       if (raw) {
         salon = {
           name: String(raw.name ?? ""),
@@ -57,9 +60,15 @@ export async function wrapEmailLayout(
           city: String(raw.city ?? ""),
           phone: String(raw.phone ?? ""),
           social: {
-            instagram: String((raw.social as Record<string, string>)?.instagram ?? ""),
-            tiktok: String((raw.social as Record<string, string>)?.tiktok ?? ""),
-            facebook: String((raw.social as Record<string, string>)?.facebook ?? ""),
+            instagram: String(
+              (raw.social as Record<string, string>)?.instagram ?? "",
+            ),
+            tiktok: String(
+              (raw.social as Record<string, string>)?.tiktok ?? "",
+            ),
+            facebook: String(
+              (raw.social as Record<string, string>)?.facebook ?? "",
+            ),
           },
         };
       }
@@ -69,7 +78,10 @@ export async function wrapEmailLayout(
   }
 
   const salonName = salon?.name || "Marysoll";
-  const appUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "https://marysoll.com";
+  const appUrl =
+    process.env.NEXTAUTH_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    "https://marysoll.com";
 
   return `<!DOCTYPE html>
 <html lang="sr" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -127,7 +139,7 @@ export async function wrapEmailLayout(
 
         <!-- Main card -->
         <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600"
-          style="max-width:600px;background-color:#ffffff;border-radius:0 0 16px 16px;box-shadow:0 8px 48px rgba(144,137,252,0.10),0 2px 12px rgba(255,128,181,0.08);"
+          style="max-width:600px;background-color:#ffffff;border-radius:0 0 16px 16px;"
           class="email-container">
 
           <!-- HEADER -->
@@ -136,9 +148,10 @@ export async function wrapEmailLayout(
               <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
                   <td align="center" style="padding-bottom:20px;">
-                    ${salon?.logo
-                      ? `<img src="${salon.logo}" width="200" alt="${salonName}" class="logo-img" style="display:block;max-width:200px;height:auto;border:0;outline:none;text-decoration:none;">`
-                      : `<table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td align="center" style="width:64px;height:64px;background:linear-gradient(135deg,#ff80b5 0%,#9089fc 100%);border-radius:50%;"><span style="font-size:28px;line-height:64px;display:block;">✦</span></td></tr></table>`
+                    ${
+                      salon?.logo
+                        ? `<img src="${salon.logo}" width="200" alt="${salonName}" class="logo-img" style="display:block;max-width:200px;height:auto;border:0;outline:none;text-decoration:none;">`
+                        : `<table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td align="center" style="width:64px;height:64px;background:linear-gradient(135deg,#ff80b5 0%,#9089fc 100%);border-radius:50%;"><span style="font-size:28px;line-height:64px;display:block;">✦</span></td></tr></table>`
                     }
                   </td>
                 </tr>
@@ -149,14 +162,18 @@ export async function wrapEmailLayout(
                     </h1>
                   </td>
                 </tr>
-                ${salon?.description ? `
+                ${
+                  salon?.description
+                    ? `
                 <tr>
                   <td align="center">
                     <p class="tagline" style="margin:0;font-family:'Georgia',serif;font-size:11px;color:#b08db5;letter-spacing:2.5px;text-transform:uppercase;font-style:italic;">
                       ${salon.description}
                     </p>
                   </td>
-                </tr>` : ""}
+                </tr>`
+                    : ""
+                }
               </table>
             </td>
           </tr>
@@ -212,7 +229,12 @@ export async function wrapEmailLayout(
                   </td>
                 </tr>
 
-                ${salon?.social && (salon.social.instagram || salon.social.tiktok || salon.social.facebook) ? `
+                ${
+                  salon?.social &&
+                  (salon.social.instagram ||
+                    salon.social.tiktok ||
+                    salon.social.facebook)
+                    ? `
                 <tr>
                   <td align="center" style="padding-bottom:16px;">
                     <table role="presentation" border="0" cellpadding="0" cellspacing="0">
@@ -223,7 +245,9 @@ export async function wrapEmailLayout(
                       </tr>
                     </table>
                   </td>
-                </tr>` : ""}
+                </tr>`
+                    : ""
+                }
 
                 <tr>
                   <td align="center" style="padding-bottom:8px;">

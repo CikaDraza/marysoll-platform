@@ -5,11 +5,14 @@
  * Isti layout kao admin dashboard, ali sa klijentskim tabovima.
  * Auth guard se radi na klijentskoj strani (ne server redirect,
  * jer potrebna je fleksibilnost za klijentski token).
+ *
+ * useClientRouting handles both path-based and custom domain routing so
+ * links and redirects work correctly in both modes.
  */
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import ClientAppointments from "@/components/client/ClientAppointments";
@@ -17,6 +20,7 @@ import AppointmentCalendar from "@/components/client/AppointmentCalendar";
 import ClientTestimonials from "@/components/client/ClientTestimonials";
 import NotificationSettings from "@/components/settings/NotificationSettings";
 import ClientProfile from "@/components/client/ClientProfile";
+import { useClientRouting } from "@/hooks/useClientRouting";
 
 // ─── Tabs ────────────────────────────────────────────────────────────────────
 type PanelTab =
@@ -37,9 +41,8 @@ const TABS: { id: PanelTab; emoji: string }[] = [
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function ClientPanelPage() {
   const router = useRouter();
-  const params = useParams();
   const searchParams = useSearchParams();
-  const tenantSlug = params.tenantSlug as string;
+  const { base, tenantSlug } = useClientRouting();
 
   const { user, isLoggedIn, isLoading, logout } = useAuth();
 
@@ -49,17 +52,17 @@ export default function ClientPanelPage() {
     tabParam && TABS.find((t) => t.id === tabParam) ? tabParam : "Moji Termini",
   );
 
-  // Auth guard
+  // Auth guard — redirect to correct login URL for this routing mode
   useEffect(() => {
     if (!isLoading && !isLoggedIn) {
-      router.replace(`/${tenantSlug}/login?from=panel`);
+      router.replace(`${base}/login?from=panel`);
     }
-  }, [isLoading, isLoggedIn, router, tenantSlug]);
+  }, [isLoading, isLoggedIn, router, base]);
 
   // Update URL when tab changes
   function handleTabChange(tab: PanelTab) {
     setActiveTab(tab);
-    router.replace(`/${tenantSlug}/panel?tab=${encodeURIComponent(tab)}`, {
+    router.replace(`${base}/panel?tab=${encodeURIComponent(tab)}`, {
       scroll: false,
     });
   }
@@ -84,7 +87,7 @@ export default function ClientPanelPage() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
             <Link
-              href={`/${tenantSlug}`}
+              href={`${base}/`}
               className="text-[11px] font-bold text-violet-500 uppercase tracking-widest hover:text-violet-700 transition"
             >
               ← Salon
@@ -96,8 +99,7 @@ export default function ClientPanelPage() {
 
           <button
             onClick={() => {
-              logout();
-              router.push(`/${tenantSlug}/login`);
+              logout({ tenantSlug });
             }}
             className="text-xs text-zinc-400 hover:text-zinc-700 border border-zinc-200 px-3 py-1.5 rounded-lg hover:border-zinc-400 transition"
           >

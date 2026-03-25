@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useClientRouting } from "@/hooks/useClientRouting";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import Link from "next/link";
@@ -27,13 +28,18 @@ export default function LoggedButton({
   tenantSlug,
 }: LoggedButtonProps) {
   const { logout } = useAuth();
+  // useClientRouting gives us the correct base ("" or "/slug") for this domain mode.
+  // Only used when tenantSlug is set (i.e. we're on a client salon page).
+  const { base } = useClientRouting();
 
   const handleMenuItemClick = () => {
     if (onCloseMobileMenu) onCloseMobileMenu();
   };
 
   if (!user) {
-    const loginHref = tenantSlug ? `/${tenantSlug}/login` : "/login";
+    // On custom domain base is "", so loginHref becomes "/login" — correct.
+    // On path-based base is "/kiki-makeup", so loginHref is "/kiki-makeup/login".
+    const loginHref = tenantSlug ? `${base}/login` : "/login";
     return (
       <Link
         href={loginHref}
@@ -48,20 +54,11 @@ export default function LoggedButton({
   // ── Klijentski panel linkovi (unutar salona) ──────────────────────────────
   const clientPanelLinks = tenantSlug
     ? [
-        {
-          label: "Moji termini",
-          href: `/${tenantSlug}/panel?tab=Moji+Termini`,
-        },
-        { label: "Zakazivanja", href: `/${tenantSlug}/panel?tab=Zakazivanja` },
-        {
-          label: "Moje preporuke",
-          href: `/${tenantSlug}/panel?tab=Moje+Preporuke`,
-        },
-        {
-          label: "Notifikacije",
-          href: `/${tenantSlug}/panel?tab=Notifikacije`,
-        },
-        { label: "Moj profil", href: `/${tenantSlug}/panel?tab=Moj+Profil` },
+        { label: "Moji termini", href: `${base}/panel?tab=Moji+Termini` },
+        { label: "Zakazivanja", href: `${base}/panel?tab=Zakazivanja` },
+        { label: "Moje preporuke", href: `${base}/panel?tab=Moje+Preporuke` },
+        { label: "Notifikacije", href: `${base}/panel?tab=Notifikacije` },
+        { label: "Moj profil", href: `${base}/panel?tab=Moj+Profil` },
       ]
     : [];
 

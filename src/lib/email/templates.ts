@@ -17,7 +17,7 @@ function base(body: string): string {
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:40px 16px;">
     <tr><td align="center">
       <table width="560" cellpadding="0" cellspacing="0"
-        style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.07);">
+        style="background:#fff;border-radius:16px;overflow:hidden;">
         <tr>
           <td style="background:${PRIMARY};padding:28px 40px;">
             <span style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.5px;">Marysoll</span><br/>
