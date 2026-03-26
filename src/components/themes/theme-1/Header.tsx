@@ -17,6 +17,8 @@ import LoggedButton from "@/components/auth/LoggedButton";
 interface Theme1HeaderProps {
   instagramUrl?: string;
   tenantSlug?: string;
+  /** Real DB slug — always set, used for LoggedButton panel links */
+  clientSlug?: string;
   salonName?: string;
   salonLogo?: string | null;
 }
@@ -26,6 +28,7 @@ export function Theme1Header({
   tenantSlug,
   salonName,
   salonLogo,
+  clientSlug,
 }: Theme1HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, isLoggedIn, isLoading } = useAuth();
@@ -113,7 +116,7 @@ export function Theme1Header({
               Prijava
             </Link>
           ) : (
-            <LoggedButton user={user!} tenantSlug={tenantSlug} />
+            <LoggedButton user={user!} tenantSlug={clientSlug ?? tenantSlug} />
           )}
         </div>
       </nav>

@@ -224,6 +224,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
       services={serviceList}
       testimonials={testimonialList}
       tenantSlug={themeSlug}
+      clientSlug={tenantSlug || undefined}
     />
   );
 }

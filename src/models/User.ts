@@ -10,6 +10,19 @@ const userSchema = new Schema<IUser>(
     birthday: { type: Date, default: null, required: false },
     isAdmin: { type: Boolean, default: false },
     isSuperAdmin: { type: Boolean, default: false },
+    /**
+     * globalRole — platformska rola korisnika.
+     * "SUPER_ADMIN" = superadmin pristup svim salonima.
+     * "USER"        = običan korisnik, role u salonima se čuvaju u UserSalon.
+     *
+     * Backward compat: isAdmin i isSuperAdmin ostaju za JWT kompatibilnost.
+     * globalRole je nova polja koja se koristi zajedno sa UserSalon modelom.
+     */
+    globalRole: {
+      type: String,
+      enum: ["SUPER_ADMIN", "USER"],
+      default: "USER",
+    },
     // Multi-tenant: null = super admin or guest without tenant
     tenantId: { type: Schema.Types.ObjectId, ref: "Tenant", default: null },
     agreedToPrivacy: { type: Boolean, required: true },

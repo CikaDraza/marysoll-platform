@@ -64,8 +64,18 @@ interface ThemeLayoutProps {
   salon: SalonProfileData;
   services: IService[];
   testimonials: Testimonial[];
-  /** Tenant slug — used to build correct login/panel links in headers */
+  /**
+   * tenantSlug — controls URL prefix in nav links.
+   * undefined on custom domain (so nav links are root-relative: /login, /usluge).
+   * "/kiki-makeup" on path-based routing.
+   */
   tenantSlug?: string;
+  /**
+   * clientSlug — always the real DB slug, used for LoggedButton panel links.
+   * On custom domain tenantSlug is undefined but clientSlug is still "kiki-makeup"
+   * so LoggedButton can build correct /kiki-makeup/panel links (middleware rewrites these).
+   */
+  clientSlug?: string;
 }
 
 export function ThemeLayout({
@@ -74,12 +84,14 @@ export function ThemeLayout({
   services,
   testimonials,
   tenantSlug,
+  clientSlug,
 }: ThemeLayoutProps) {
   const instagram = salon.social?.instagram || "";
   const showGallery = !!instagram;
 
   const headerProps = {
     tenantSlug,
+    clientSlug: clientSlug ?? tenantSlug,
     salonName: salon.name,
     salonLogo: salon.logo ?? null,
     instagramUrl: showGallery ? instagram : undefined,

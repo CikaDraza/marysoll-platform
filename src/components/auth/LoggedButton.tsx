@@ -51,11 +51,16 @@ export default function LoggedButton({
     );
   }
 
-  // ── Klijentski panel linkovi (unutar salona) ──────────────────────────────
-  // Always use /${tenantSlug}/panel regardless of custom domain.
-  // On custom domain kikikiss.beauty, middleware rewrites /kiki-makeup/panel
-  // to the correct Next.js page. Using ${base}/panel when base="" would
-  // produce /panel which Next.js routes to app/panel (does not exist).
+  // ── Linkovi zavisno od konteksta ─────────────────────────────────────────
+  //
+  // tenantSlug je uvijek postavljen kada je LoggedButton na salon stranici
+  // (i path-based i custom domain — Header proslijeđuje clientSlug koji je
+  // uvijek pravi DB slug).
+  //
+  // Bez tenantSlug: korisnik je na admin.marysoll.com (admin) ili
+  // marketing stranici — prikazujemo admin linkove ako isAdmin=true,
+  // inače ništa (klijent ne bi trebao biti ovdje bez tenantSlug).
+
   const clientPanelLinks = tenantSlug
     ? [
         {
@@ -75,7 +80,7 @@ export default function LoggedButton({
       ]
     : [];
 
-  // ── Admin linkovi (globalni dashboard) ────────────────────────────────────
+  // Admin dashboard linkovi — samo na admin.marysoll.com (bez tenantSlug)
   const adminLinks =
     !tenantSlug && user.isAdmin
       ? [
@@ -96,21 +101,15 @@ export default function LoggedButton({
         ]
       : [];
 
-  // ── Globalni klijentski linkovi (bez tenantSlug) ─────────────────────────
-  const globalClientLinks =
-    !tenantSlug && !user.isAdmin
-      ? [
-          { label: "Moji Termini", href: "/dashboard?tab=Moji Termini" },
-          { label: "Zakazivanja", href: "/dashboard?tab=Zakazivanja" },
-          { label: "Moje Preporuke", href: "/dashboard?tab=Moje Preporuke" },
-        ]
-      : [];
-
+  // Logika izbora linkova:
+  // - Na salon stranici (tenantSlug postoji) → uvijek klijentski panel linkovi
+  // - Na admin domenu (bez tenantSlug, isAdmin) → admin linkovi
+  // - Klijent bez tenantSlug → ne prikazujemo ništa (edge case, ne bi trebalo)
   const menuLinks = tenantSlug
     ? clientPanelLinks
     : user.isAdmin
       ? adminLinks
-      : globalClientLinks;
+      : [];
 
   return (
     <Menu as="div" className="relative inline-block text-left">

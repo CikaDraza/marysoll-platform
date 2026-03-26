@@ -3,7 +3,8 @@
 
 // AuthStatusButton: shows current user + logout on admin header
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 import Link from "next/link";
 import { AuthStatusButton } from "@/components/auth/AuthStatusButton";
@@ -87,14 +88,42 @@ export default function AdminDashboardPage() {
   const [tab, setTab] = useState<Tab>("profil");
   const [confirmDeleteSalon, setConfirmDeleteSalon] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const { user, isLoading: authLoading } = useAuth();
 
+  // Client-side admin guard — middleware guards the route server-side,
+  // but this is a second layer: if a non-admin somehow gets here,
+  // redirect immediately to the main login page.
+  // All hooks must be called unconditionally — before any early return.
   const sp = useSalonProfileAdmin();
   const svc = useAdminServices();
   const tenant = useTenantAdmin();
   const hasProfile = !!sp.profile;
-
-  // Salon website URL — derived from tenant (slug or custom domain)
   const salonUrl = tenant.getTenantUrl();
+
+  useEffect(() => {
+    if (!authLoading && user && !user.isAdmin && !user.isSuperAdmin) {
+      window.location.replace(
+        `${process.env.NEXT_PUBLIC_APP_URL ?? "https://marysoll.com"}/login`,
+      );
+    }
+    if (!authLoading && !user) {
+      window.location.replace(
+        `${process.env.NEXT_PUBLIC_APP_URL ?? "https://marysoll.com"}/login`,
+      );
+    }
+  }, [authLoading, user]);
+
+  // Render nothing while checking auth or if not admin
+  if (authLoading || !user || (!user.isAdmin && !user.isSuperAdmin)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
+        <div className="flex items-center gap-3 text-zinc-400 text-sm">
+          <div className="w-5 h-5 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin" />
+          Provera pristupa...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-zinc-50">
@@ -807,103 +836,106 @@ export default function AdminDashboardPage() {
             {!svc.isLoading &&
               svc.services.length > 0 &&
               (() => {
-                const grouped = svc.services.reduce<Record<string, IService[]>>(
-                  (acc, s) => {
-                    const c = s.category || "Ostalo";
-                    if (!acc[c]) acc[c] = [];
-                    acc[c].push(s);
-                    return acc;
-                  },
-                  {},
-                );
+                const grouped: Record<string, IService[]> = svc.services.reduce<
+                  Record<string, IService[]>
+                >((acc: Record<string, IService[]>, s: IService) => {
+                  const c = s.category || "Ostalo";
+                  if (!acc[c]) acc[c] = [];
+                  acc[c].push(s);
+                  return acc;
+                }, {});
 
-                return Object.entries(grouped).map(([cat, items]) => (
-                  <div key={cat}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[11px] font-bold text-violet-600 uppercase tracking-widest">
-                        {cat}
-                      </span>
-                      <span className="text-xs text-zinc-300">
-                        {items.length}
-                      </span>
-                    </div>
-                    <div className="rounded-2xl border border-zinc-100 overflow-hidden">
-                      {items.map((srv, i) => (
-                        <div
-                          key={srv._id}
-                          className={`flex items-center gap-3 px-4 py-3.5 hover:bg-zinc-50 transition group ${i > 0 ? "border-t border-zinc-100" : ""}`}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-sm font-semibold text-zinc-800 truncate">
-                                {srv.name}
-                              </span>
-                              <span
-                                className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${TYPE_BADGE[srv.type] ?? "bg-zinc-100 text-zinc-500"}`}
-                              >
-                                {srv.type}
-                              </span>
-                              {srv.featured && srv.featured !== "none" && (
-                                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-600">
-                                  ★ {srv.featured}
+                return Object.entries(grouped).map(
+                  ([cat, items]: [string, IService[]]) => (
+                    <div key={cat}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-[11px] font-bold text-violet-600 uppercase tracking-widest">
+                          {cat}
+                        </span>
+                        <span className="text-xs text-zinc-300">
+                          {items.length}
+                        </span>
+                      </div>
+                      <div className="rounded-2xl border border-zinc-100 overflow-hidden">
+                        {items.map((srv, i) => (
+                          <div
+                            key={srv._id}
+                            className={`flex items-center gap-3 px-4 py-3.5 hover:bg-zinc-50 transition group ${i > 0 ? "border-t border-zinc-100" : ""}`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-semibold text-zinc-800 truncate">
+                                  {srv.name}
                                 </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-4 mt-1">
-                              <span className="text-xs text-zinc-500 font-medium">
-                                {servicePrice(srv)}
-                              </span>
-                              {srv.duration && (
-                                <span className="text-xs text-zinc-400">
-                                  ⏱ {srv.duration} min
-                                </span>
-                              )}
-                              {srv.subcategory && (
-                                <span className="text-xs text-zinc-400">
-                                  {srv.subcategory}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => svc.openEdit(srv)}
-                              className="p-2 text-zinc-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition text-sm"
-                              title="Izmeni"
-                            >
-                              ✏️
-                            </button>
-                            {svc.deleteConfirmId === srv._id ? (
-                              <div className="flex items-center gap-1">
-                                <button
-                                  onClick={() => svc.confirmDelete(srv._id)}
-                                  disabled={svc.isDeleting}
-                                  className="px-2.5 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg"
+                                <span
+                                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${TYPE_BADGE[srv.type] ?? "bg-zinc-100 text-zinc-500"}`}
                                 >
-                                  {svc.isDeleting ? "..." : "Obriši"}
-                                </button>
-                                <button
-                                  onClick={() => svc.setDeleteConfirmId(null)}
-                                  className="px-2 py-1.5 text-zinc-400 text-xs hover:text-zinc-600"
-                                >
-                                  Odustani
-                                </button>
+                                  {srv.type}
+                                </span>
+                                {srv.featured && srv.featured !== "none" && (
+                                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-600">
+                                    ★ {srv.featured}
+                                  </span>
+                                )}
                               </div>
-                            ) : (
+                              <div className="flex items-center gap-4 mt-1">
+                                <span className="text-xs text-zinc-500 font-medium">
+                                  {servicePrice(srv)}
+                                </span>
+                                {srv.duration && (
+                                  <span className="text-xs text-zinc-400">
+                                    ⏱ {srv.duration} min
+                                  </span>
+                                )}
+                                {srv.subcategory && (
+                                  <span className="text-xs text-zinc-400">
+                                    {srv.subcategory}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
-                                onClick={() => svc.setDeleteConfirmId(srv._id)}
-                                className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition text-sm"
-                                title="Obriši"
+                                onClick={() => svc.openEdit(srv)}
+                                className="p-2 text-zinc-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition text-sm"
+                                title="Izmeni"
                               >
-                                🗑️
+                                ✏️
                               </button>
-                            )}
+                              {svc.deleteConfirmId === srv._id ? (
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => svc.confirmDelete(srv._id)}
+                                    disabled={svc.isDeleting}
+                                    className="px-2.5 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg"
+                                  >
+                                    {svc.isDeleting ? "..." : "Obriši"}
+                                  </button>
+                                  <button
+                                    onClick={() => svc.setDeleteConfirmId(null)}
+                                    className="px-2 py-1.5 text-zinc-400 text-xs hover:text-zinc-600"
+                                  >
+                                    Odustani
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    svc.setDeleteConfirmId(srv._id)
+                                  }
+                                  className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition text-sm"
+                                  title="Obriši"
+                                >
+                                  🗑️
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ));
+                  ),
+                );
               })()}
           </div>
         )}
@@ -927,8 +959,10 @@ function ServiceModal({ s }: { s: ReturnType<typeof useAdminServices> }) {
   const l2 =
     "block text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5";
 
-  const categories = s
-    ? Array.from(new Set(s.services.map((s) => s.category)))
+  const categories: string[] = s
+    ? Array.from(
+        new Set(s.services.map((s: IService) => String(s.category ?? ""))),
+      )
     : [];
 
   return (
@@ -976,8 +1010,8 @@ function ServiceModal({ s }: { s: ReturnType<typeof useAdminServices> }) {
                   className="mt-1 block w-full rounded-md border-gray-200 bg-gray-100 p-2"
                 >
                   <option value="">-- izaberi --</option>
-                  {categories.map((c) => (
-                    <option key={c} value={c}>
+                  {categories.map((c, i) => (
+                    <option key={`cat-${i}`} value={c}>
                       {c}
                     </option>
                   ))}

@@ -275,6 +275,8 @@ export interface IUser extends Document {
   phone: string;
   birthday?: Date | null;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
+  globalRole: "SUPER_ADMIN" | "USER";
   agreedToPrivacy: boolean;
   isOnline: boolean;
   lastActive: Date | string;
