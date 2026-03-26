@@ -34,11 +34,10 @@ interface ClientRouting {
   path: (slug: string) => string;
 }
 
-function detectCustomDomain(): boolean {
+export function detectCustomDomain(): boolean {
   if (typeof window === "undefined") return false;
   const host = window.location.hostname;
-  const baseDomain =
-    process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
   return (
     host !== "localhost" &&
     !host.startsWith("127.") &&
