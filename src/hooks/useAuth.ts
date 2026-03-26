@@ -186,15 +186,20 @@ export function useAuth() {
       const prod = isProductionDomain();
 
       if (data.user.isSuperAdmin) {
-        window.location.href = prod
-          ? `https://superadmin.${base}/auth/callback?token=${encoded}&redirect=/superadmin/dashboard`
-          : `/superadmin/dashboard`;
+        // replace() avoids a back-button history entry that would loop back to login
+        window.location.replace(
+          prod
+            ? `https://superadmin.${base}/auth/callback?token=${encoded}&redirect=/superadmin/dashboard`
+            : `/superadmin/dashboard`,
+        );
       } else if (data.user.isAdmin) {
-        window.location.href = prod
-          ? `https://admin.${base}/auth/callback?token=${encoded}&redirect=/dashboard`
-          : `/dashboard`;
+        window.location.replace(
+          prod
+            ? `https://admin.${base}/auth/callback?token=${encoded}&redirect=/dashboard`
+            : `/dashboard`,
+        );
       }
-      // Klijenti — komponenta radi router.push("/") sama
+      // Klijenti — login page radi window.location.href sama
     },
     onError: (err: unknown) => {
       const apiErr = err as {

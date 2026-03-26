@@ -7,6 +7,7 @@
  */
 import { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { CheckIcon } from "@heroicons/react/20/solid";
 import {
   fetchPublicSalonProfile,
@@ -40,13 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-function ServiceCard({
-  service,
-  tenantSlug,
-}: {
-  service: IService;
-  tenantSlug: string;
-}) {
+function ServiceCard({ service, base }: { service: IService; base: string }) {
   const dark = service.featured === "main";
 
   return (
@@ -145,7 +140,7 @@ function ServiceCard({
       )}
 
       <Link
-        href={`/${tenantSlug}/termini`}
+        href={`${base}/termini`}
         className={`mt-auto block text-center py-2.5 rounded-xl text-sm font-semibold transition ${
           dark
             ? "bg-purple-600 text-white hover:bg-purple-500"
@@ -160,6 +155,16 @@ function ServiceCard({
 
 export default async function UslugePage({ params }: Props) {
   const { tenantSlug } = await params;
+
+  const headersList = await headers();
+  const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+  const host = headersList.get("host")?.split(":")[0] ?? "";
+  const onCustomDomain =
+    host !== "localhost" &&
+    !host.startsWith("127.") &&
+    !host.endsWith(BASE_DOMAIN) &&
+    host !== BASE_DOMAIN;
+  const base = onCustomDomain ? "" : `/${tenantSlug}`;
 
   const [profile, services] = await Promise.all([
     fetchPublicSalonProfile(tenantSlug),
@@ -191,7 +196,7 @@ export default async function UslugePage({ params }: Props) {
           online.
         </p>
         <Link
-          href={`/${tenantSlug}/termini`}
+          href={`${base}/termini`}
           className="inline-block px-8 py-3 bg-purple-600 text-white font-semibold rounded-full hover:bg-purple-700 transition text-sm"
         >
           Pogledaj slobodne termine →
@@ -218,7 +223,7 @@ export default async function UslugePage({ params }: Props) {
           Pogledajte slobodne termine i odaberite onaj koji vam odgovara.
         </p>
         <Link
-          href={`/${tenantSlug}/termini`}
+          href={`${base}/termini`}
           className="inline-block px-10 py-4 bg-white text-purple-600 font-bold rounded-full hover:bg-gray-100 transition shadow-lg"
         >
           Zakaži termin →

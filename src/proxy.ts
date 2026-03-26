@@ -258,9 +258,15 @@ async function guardPage(
   needAdmin = false,
   needSuperAdmin = false,
 ): Promise<NextResponse | null> {
-  const loginUrl = new URL(
-    `https://${process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com"}/login`,
-  );
+  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+  const host = request.headers.get("host")?.split(":")[0] ?? "";
+
+  // Redirect unauthenticated users to the login page that matches their domain.
+  // admin.marysoll.com → admin.marysoll.com/login (then next.config redirects to marysoll.com/login)
+  // superadmin.marysoll.com → same
+  // anything else → marysoll.com/login
+  const loginUrl = new URL(`https://${baseDomain}/login`);
+
   const unauthorizedUrl = new URL("/unauthorized", request.url);
   let token = getToken(request);
   let decoded = token ? decodeToken(token) : null;
@@ -392,10 +398,17 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       "/resend-verification",
     ]);
 
+    // Match exact path OR path that starts with one of the client tenant paths
+    // e.g. /panel?tab=Zakazivanja → pathname is "/panel", matches fine
+    // e.g. /panel/something → also caught by startsWith check below
+    const matchesClientPath =
+      CLIENT_TENANT_PATHS.has(pathname) ||
+      [...CLIENT_TENANT_PATHS].some((p) => pathname.startsWith(p + "/"));
+
     if (
       tenantSlug &&
       isCustomDomain(hostname, BASE_DOMAIN) &&
-      CLIENT_TENANT_PATHS.has(pathname)
+      matchesClientPath
     ) {
       const rewriteUrl = new URL(
         `/${tenantSlug}${pathname}`,

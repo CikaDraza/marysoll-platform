@@ -1,20 +1,18 @@
 /**
- * /[tenantSlug]/register — Registracija klijenta salona.
+ * (public)/[tenantSlug]/register — Registracija klijenta salona.
  * Nema "Registruj salon" opcije — samo klijentski nalog.
  */
 "use client";
 
 import { useState } from "react";
-import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { useClientRouting } from "@/hooks/useClientRouting";
 
 type Step = "form" | "check_email";
 
 export default function ClientRegisterPage() {
-  const router = useRouter();
-  const params = useParams();
-  const tenantSlug = params.tenantSlug as string;
+  const { base } = useClientRouting();
 
   const [step, setStep] = useState<Step>("form");
   const [loading, setLoading] = useState(false);
@@ -69,12 +67,19 @@ export default function ClientRegisterPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 px-4">
         <div className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-md text-center">
-          <Link href={`/${tenantSlug}`} className="text-sm text-purple-600 font-semibold block mb-6">
+          <Link
+            href={`${base}/`}
+            className="text-sm text-purple-600 font-semibold block mb-6"
+          >
             ← Nazad na salon
           </Link>
           <div className="text-6xl mb-4">📬</div>
-          <h1 className="text-xl font-bold text-gray-900 mb-3">Proverite email!</h1>
-          <p className="text-gray-500 text-sm mb-2">Poslali smo verifikacioni link na:</p>
+          <h1 className="text-xl font-bold text-gray-900 mb-3">
+            Proverite email!
+          </h1>
+          <p className="text-gray-500 text-sm mb-2">
+            Poslali smo verifikacioni link na:
+          </p>
           <p className="text-purple-700 font-semibold text-sm bg-purple-50 rounded-lg py-2 px-4 inline-block mb-6">
             {registeredEmail}
           </p>
@@ -95,7 +100,10 @@ export default function ClientRegisterPage() {
           >
             Nisam dobio/la email — pošalji ponovo
           </button>
-          <Link href={`/${tenantSlug}/login`} className="text-gray-400 text-xs hover:underline">
+          <Link
+            href={`${base}/login`}
+            className="text-gray-400 text-xs hover:underline"
+          >
             Nazad na prijavu
           </Link>
         </div>
@@ -107,7 +115,10 @@ export default function ClientRegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 py-12 px-4">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href={`/${tenantSlug}`} className="text-sm text-purple-600 font-semibold block mb-3">
+          <Link
+            href={`${base}/`}
+            className="text-sm text-purple-600 font-semibold block mb-3"
+          >
             ← Nazad na salon
           </Link>
           <h1 className="text-xl font-bold text-gray-900">Kreiraj nalog</h1>
@@ -118,7 +129,9 @@ export default function ClientRegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ime i prezime *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ime i prezime *
+            </label>
             <input
               type="text"
               required
@@ -130,7 +143,9 @@ export default function ClientRegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email *
+            </label>
             <input
               type="email"
               required
@@ -142,7 +157,9 @@ export default function ClientRegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Lozinka *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Lozinka *
+            </label>
             <input
               type="password"
               required
@@ -156,7 +173,8 @@ export default function ClientRegisterPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Telefon <span className="text-gray-400 font-normal">(opciono)</span>
+              Telefon{" "}
+              <span className="text-gray-400 font-normal">(opciono)</span>
             </label>
             <input
               type="tel"
@@ -193,7 +211,10 @@ export default function ClientRegisterPage() {
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Već imate nalog?{" "}
-          <Link href={`/${tenantSlug}/login`} className="text-purple-600 font-medium hover:underline">
+          <Link
+            href={`${base}/login`}
+            className="text-purple-600 font-medium hover:underline"
+          >
             Prijavite se
           </Link>
         </p>

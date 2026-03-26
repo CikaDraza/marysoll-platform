@@ -52,13 +52,26 @@ export default function LoggedButton({
   }
 
   // ── Klijentski panel linkovi (unutar salona) ──────────────────────────────
+  // Always use /${tenantSlug}/panel regardless of custom domain.
+  // On custom domain kikikiss.beauty, middleware rewrites /kiki-makeup/panel
+  // to the correct Next.js page. Using ${base}/panel when base="" would
+  // produce /panel which Next.js routes to app/panel (does not exist).
   const clientPanelLinks = tenantSlug
     ? [
-        { label: "Moji termini", href: `${base}/panel?tab=Moji+Termini` },
-        { label: "Zakazivanja", href: `${base}/panel?tab=Zakazivanja` },
-        { label: "Moje preporuke", href: `${base}/panel?tab=Moje+Preporuke` },
-        { label: "Notifikacije", href: `${base}/panel?tab=Notifikacije` },
-        { label: "Moj profil", href: `${base}/panel?tab=Moj+Profil` },
+        {
+          label: "Moji termini",
+          href: `/${tenantSlug}/panel?tab=Moji+Termini`,
+        },
+        { label: "Zakazivanja", href: `/${tenantSlug}/panel?tab=Zakazivanja` },
+        {
+          label: "Moje preporuke",
+          href: `/${tenantSlug}/panel?tab=Moje+Preporuke`,
+        },
+        {
+          label: "Notifikacije",
+          href: `/${tenantSlug}/panel?tab=Notifikacije`,
+        },
+        { label: "Moj profil", href: `/${tenantSlug}/panel?tab=Moj+Profil` },
       ]
     : [];
 

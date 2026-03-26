@@ -559,14 +559,12 @@ export function MarketingHomePageSecond() {
               <span className="w-2 h-2 bg-violet-500 rounded-full animate-pulse" />
               Nova generacija salona
             </motion.div>
-
             <motion.h1
               variants={fadeInUp}
               className="text-5xl lg:text-7xl font-bold text-gray-900 leading-tight"
             >
               Hej, ja sam <span className="text-violet-600">Mary</span>. 👋
             </motion.h1>
-
             <motion.p
               variants={fadeInUp}
               className="mt-6 text-xl text-gray-600 leading-relaxed max-w-xl"
@@ -579,6 +577,20 @@ export function MarketingHomePageSecond() {
               , jer sam tu da ti pružim{" "}
               <span className="font-semibold">rešenje</span>
             </motion.p>
+            <motion.ul
+              variants={fadeInUp}
+              className="flex flex-col items-start gap-4 mt-6 leading-relaxed max-w-xl"
+            >
+              <li className="w-auto items-center rounded-md bg-purple-50 px-2 py-1 text-sm font-medium text-purple-700 inset-ring inset-ring-purple-700/10">
+                ✔ sistem za zakazivanje
+              </li>
+              <li className="w-auto items-center rounded-md bg-purple-50 px-2 py-1 text-sm font-medium text-purple-700 inset-ring inset-ring-purple-700/10">
+                ✔ sistem za komunikaciju sa klijentima
+              </li>
+              <li className="w-auto items-center rounded-md bg-purple-50 px-2 py-1 text-sm font-medium text-purple-700 inset-ring inset-ring-purple-700/10">
+                ✔ automatski podsetnici
+              </li>
+            </motion.ul>
 
             <motion.p
               variants={fadeInUp}
@@ -597,7 +609,6 @@ export function MarketingHomePageSecond() {
                 hobi.
               </span>
             </motion.p>
-
             <motion.p
               variants={fadeInUp}
               className="mt-4 text-gray-500 max-w-lg"
@@ -605,7 +616,6 @@ export function MarketingHomePageSecond() {
               Zaboravi na haos sa terminima, papirnim beležnicama i klijentima
               koji ne dolaze. Ja to rešavam za tebe.
             </motion.p>
-
             <motion.div
               variants={fadeInUp}
               className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
@@ -634,7 +644,6 @@ export function MarketingHomePageSecond() {
                 👀 Vidi kako radi
               </motion.a>
             </motion.div>
-
             {/* Social Proof */}
             <motion.div
               variants={fadeInUp}

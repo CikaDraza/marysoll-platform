@@ -1,24 +1,25 @@
 /**
- * /[tenantSlug]/login — Login stranica za klijente konkretnog salona.
- * Ne prikazuje "Registruj salon" link — samo klijentska prijava.
+ * (public)/[tenantSlug]/login
  *
- * Works in two modes:
+ * Client login page. Works in two routing modes:
  *   - Path-based:    marysoll.com/kiki-makeup/login
  *   - Custom domain: kikikiss.beauty/login  (middleware rewrites internally)
  *
- * useClientRouting resolves the correct base so all links and redirects
- * work in both modes without branching logic in the component.
+ * KEY FIX: After successful login we use window.location.href instead of
+ * router.push so the full page reloads with the new token in localStorage.
+ * router.push keeps the React tree alive — useAuth query may not re-run,
+ * leaving the user visually stuck on the login page even though they are
+ * authenticated.
  */
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useClientRouting } from "@/hooks/useClientRouting";
 
 export default function ClientLoginPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { base } = useClientRouting();
 
@@ -64,11 +65,12 @@ export default function ClientLoginPage() {
       if (data.refreshToken)
         localStorage.setItem("refreshToken", data.refreshToken);
 
-      // Navigate to the from-param destination or default to panel.
-      // base is "" on custom domain, "/kiki-makeup" on path-based — so the
-      // resulting path is always correct in the browser URL bar.
+      // Full page navigation — forces useAuth to re-read localStorage on mount.
+      // router.push would keep the React tree alive and the login page visible
+      // because the useAuth query wouldn't trigger a remount.
       const from = searchParams.get("from");
-      router.push(from ? `${base}/${from}` : `${base}/panel`);
+      const destination = from ? `${base}/${from}` : `${base}/panel`;
+      window.location.href = destination;
     } catch {
       toast.error("Greška na serveru");
     } finally {

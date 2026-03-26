@@ -1,13 +1,9 @@
 /**
- * /[tenantSlug]/panel — Klijentski panel.
+ * (public)/[tenantSlug]/panel — Klijentski panel.
  *
- * Dostupan samo ulogovanim klijentima.
- * Isti layout kao admin dashboard, ali sa klijentskim tabovima.
- * Auth guard se radi na klijentskoj strani (ne server redirect,
- * jer potrebna je fleksibilnost za klijentski token).
- *
- * useClientRouting handles both path-based and custom domain routing so
- * links and redirects work correctly in both modes.
+ * Auth guard: if not logged in, redirect to login with window.location.href
+ * (not router.replace) so the page fully reloads after login and picks up
+ * the new token from localStorage on mount.
  */
 "use client";
 
@@ -15,14 +11,13 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import { useClientRouting } from "@/hooks/useClientRouting";
 import ClientAppointments from "@/components/client/ClientAppointments";
 import AppointmentCalendar from "@/components/client/AppointmentCalendar";
 import ClientTestimonials from "@/components/client/ClientTestimonials";
 import NotificationSettings from "@/components/settings/NotificationSettings";
 import ClientProfile from "@/components/client/ClientProfile";
-import { useClientRouting } from "@/hooks/useClientRouting";
 
-// ─── Tabs ────────────────────────────────────────────────────────────────────
 type PanelTab =
   | "Moji Termini"
   | "Zakazivanja"
@@ -38,7 +33,6 @@ const TABS: { id: PanelTab; emoji: string }[] = [
   { id: "Moj Profil", emoji: "👤" },
 ];
 
-// ─── Component ────────────────────────────────────────────────────────────────
 export default function ClientPanelPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -46,20 +40,18 @@ export default function ClientPanelPage() {
 
   const { user, isLoggedIn, isLoading, logout } = useAuth();
 
-  // Tab from URL param or default
   const tabParam = searchParams.get("tab") as PanelTab | null;
   const [activeTab, setActiveTab] = useState<PanelTab>(
     tabParam && TABS.find((t) => t.id === tabParam) ? tabParam : "Moji Termini",
   );
 
-  // Auth guard — redirect to correct login URL for this routing mode
   useEffect(() => {
     if (!isLoading && !isLoggedIn) {
-      router.replace(`${base}/login?from=panel`);
+      // Full navigation — ensures fresh mount with token after login redirect
+      window.location.href = `${base}/login?from=panel`;
     }
-  }, [isLoading, isLoggedIn, router, base]);
+  }, [isLoading, isLoggedIn, base]);
 
-  // Update URL when tab changes
   function handleTabChange(tab: PanelTab) {
     setActiveTab(tab);
     router.replace(`${base}/panel?tab=${encodeURIComponent(tab)}`, {
@@ -82,7 +74,6 @@ export default function ClientPanelPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50">
-      {/* ── Header ──────────────────────────────────────────────────────── */}
       <header className="bg-white border-b border-zinc-100 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
@@ -98,16 +89,13 @@ export default function ClientPanelPage() {
           </div>
 
           <button
-            onClick={() => {
-              logout({ tenantSlug });
-            }}
+            onClick={() => logout({ tenantSlug })}
             className="text-xs text-zinc-400 hover:text-zinc-700 border border-zinc-200 px-3 py-1.5 rounded-lg hover:border-zinc-400 transition"
           >
             Odjavi se
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="max-w-7xl mx-auto px-6 flex overflow-x-auto scrollbar-none">
           {TABS.map((t) => (
             <button
@@ -126,7 +114,6 @@ export default function ClientPanelPage() {
         </div>
       </header>
 
-      {/* ── Content ─────────────────────────────────────────────────────── */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {activeTab === "Moji Termini" && <ClientAppointments />}
         {activeTab === "Zakazivanja" && <AppointmentCalendar />}

@@ -1,12 +1,14 @@
 /**
- * /[tenantSlug]/termini — Public appointments calendar page.
+ * (public)/[tenantSlug]/termini — Public appointments calendar page.
  *
- * Server Component — fetches appointments and salon profile server-side.
- * Fully public — anyone can view the calendar to see availability.
- * Booking requires login (redirects to /panel?tab=Zakazivanja).
+ * Server Component. Reads x-domain-type header to determine whether
+ * we are on a custom domain — if so, links use root-relative paths
+ * (/panel, /register) instead of /[slug]/panel so they work correctly
+ * on kikikiss.beauty without exposing the internal slug in the URL.
  */
 import { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import {
   fetchPublicSalonProfile,
   fetchPublicAppointments,
@@ -42,6 +44,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function TerminiPage({ params }: Props) {
   const { tenantSlug } = await params;
 
+  const headersList = await headers();
+  const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+  const host = headersList.get("host")?.split(":")[0] ?? "";
+  const onCustomDomain =
+    host !== "localhost" &&
+    !host.startsWith("127.") &&
+    !host.endsWith(BASE_DOMAIN) &&
+    host !== BASE_DOMAIN;
+
+  // On custom domain: links are root-relative (/panel, /register)
+  // On path-based:    links include slug (/kiki-makeup/panel)
+  const base = onCustomDomain ? "" : `/${tenantSlug}`;
+
   const [profile, appointments] = await Promise.all([
     fetchPublicSalonProfile(tenantSlug),
     fetchPublicAppointments(tenantSlug),
@@ -76,13 +91,13 @@ export default async function TerminiPage({ params }: Props) {
         </p>
         <div className="flex flex-wrap gap-3 justify-center">
           <Link
-            href={`/${tenantSlug}/panel?tab=Zakazivanja`}
+            href={`${base}/panel?tab=Zakazivanja`}
             className="px-7 py-3 bg-purple-600 text-white font-semibold rounded-full hover:bg-purple-700 transition text-sm"
           >
             Zakaži termin →
           </Link>
           <Link
-            href={`/${tenantSlug}/usluge`}
+            href={`${base}/usluge`}
             className="px-7 py-3 border border-gray-200 text-gray-700 font-semibold rounded-full hover:border-gray-400 transition text-sm"
           >
             Cenovnik usluga
@@ -93,10 +108,8 @@ export default async function TerminiPage({ params }: Props) {
       <div className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar */}
         <aside className="lg:col-span-1 space-y-4">
-          {/* Working hours */}
           <WorkingHoursWidget profile={safeProfile} />
 
-          {/* Calendar legend */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <h3 className="font-bold text-gray-800 mb-4 text-sm">📋 Legenda</h3>
             <ul className="space-y-2.5 text-xs text-gray-600">
@@ -119,7 +132,6 @@ export default async function TerminiPage({ params }: Props) {
             </ul>
           </div>
 
-          {/* Quick CTA */}
           <div className="bg-purple-50 border border-purple-100 rounded-2xl p-5">
             <p className="text-sm font-semibold text-purple-800 mb-2">
               Kako zakazati?
@@ -131,7 +143,7 @@ export default async function TerminiPage({ params }: Props) {
               <li>Potvrdite zakazivanje</li>
             </ol>
             <Link
-              href={`/${tenantSlug}/register`}
+              href={`${base}/register`}
               className="block text-center py-2 bg-purple-600 text-white text-xs font-bold rounded-xl hover:bg-purple-700 transition"
             >
               Kreiraj nalog →
