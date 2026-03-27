@@ -23,7 +23,7 @@ function ClientAppointmentListItem({
   onOpenChat,
 }: ClientAppointmentListItemProps) {
   const { isOnline } = useUsers().data?.find(
-    (u) => u._id === appointment.clientId,
+    (u: IAppointment) => u._id === appointment.clientId,
   ) || { isOnline: false };
 
   const unreadClient = appointment.unreadCount?.client ?? 0;

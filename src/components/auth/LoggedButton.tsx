@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
-import { detectCustomDomain, useClientRouting } from "@/hooks/useClientRouting";
+import { useClientRouting } from "@/hooks/useClientRouting";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import Link from "next/link";
@@ -31,7 +31,6 @@ export default function LoggedButton({
   // useClientRouting gives us the correct base ("" or "/slug") for this domain mode.
   // Only used when tenantSlug is set (i.e. we're on a client salon page).
   const { base } = useClientRouting();
-  const isCustomDomain = detectCustomDomain();
 
   const handleMenuItemClick = () => {
     if (onCloseMobileMenu) onCloseMobileMenu();
@@ -61,30 +60,18 @@ export default function LoggedButton({
   // Bez tenantSlug: korisnik je na admin.marysoll.com (admin) ili
   // marketing stranici — prikazujemo admin linkove ako isAdmin=true,
   // inače ništa (klijent ne bi trebao biti ovdje bez tenantSlug).
-  console.log(isCustomDomain, base);
 
+  // On custom domain (kikikiss.beauty): base="" → links are /panel, /login etc.
+  // On path-based (marysoll.com/kiki-makeup): base="/kiki-makeup" → links are /kiki-makeup/panel etc.
+  // Next.js Link does client-side navigation — middleware rewrites only run server-side,
+  // so we must emit the correct URL that the browser should show, not the internal rewrite target.
   const clientPanelLinks = tenantSlug
     ? [
-        {
-          label: "Moji termini",
-          href: `/${isCustomDomain ? base : `/${tenantSlug}`}/panel?tab=Moji+Termini`,
-        },
-        {
-          label: "Zakazivanja",
-          href: `/${isCustomDomain ? base : `/${tenantSlug}`}/panel?tab=Zakazivanja`,
-        },
-        {
-          label: "Moje preporuke",
-          href: `/${isCustomDomain ? base : `/${tenantSlug}`}/panel?tab=Moje+Preporuke`,
-        },
-        {
-          label: "Notifikacije",
-          href: `/${isCustomDomain ? base : `/${tenantSlug}`}/panel?tab=Notifikacije`,
-        },
-        {
-          label: "Moj profil",
-          href: `/${isCustomDomain ? base : `/${tenantSlug}`}/panel?tab=Moj+Profil`,
-        },
+        { label: "Moji termini", href: `${base}/panel?tab=Moji+Termini` },
+        { label: "Zakazivanja", href: `${base}/panel?tab=Zakazivanja` },
+        { label: "Moje preporuke", href: `${base}/panel?tab=Moje+Preporuke` },
+        { label: "Notifikacije", href: `${base}/panel?tab=Notifikacije` },
+        { label: "Moj profil", href: `${base}/panel?tab=Moj+Profil` },
       ]
     : [];
 
