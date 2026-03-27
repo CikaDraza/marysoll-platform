@@ -61,28 +61,29 @@ export default function LoggedButton({
   // Bez tenantSlug: korisnik je na admin.marysoll.com (admin) ili
   // marketing stranici — prikazujemo admin linkove ako isAdmin=true,
   // inače ništa (klijent ne bi trebao biti ovdje bez tenantSlug).
+  console.log(isCustomDomain, base);
 
   const clientPanelLinks = tenantSlug
     ? [
         {
           label: "Moji termini",
-          href: `/${isCustomDomain ? "" : `/${tenantSlug}`}/panel?tab=Moji+Termini`,
+          href: `/${isCustomDomain ? base : `/${tenantSlug}`}/panel?tab=Moji+Termini`,
         },
         {
           label: "Zakazivanja",
-          href: `/${isCustomDomain ? "" : `/${tenantSlug}`}/panel?tab=Zakazivanja`,
+          href: `/${isCustomDomain ? base : `/${tenantSlug}`}/panel?tab=Zakazivanja`,
         },
         {
           label: "Moje preporuke",
-          href: `/${isCustomDomain ? "" : `/${tenantSlug}`}/panel?tab=Moje+Preporuke`,
+          href: `/${isCustomDomain ? base : `/${tenantSlug}`}/panel?tab=Moje+Preporuke`,
         },
         {
           label: "Notifikacije",
-          href: `/${isCustomDomain ? "" : `/${tenantSlug}`}/panel?tab=Notifikacije`,
+          href: `/${isCustomDomain ? base : `/${tenantSlug}`}/panel?tab=Notifikacije`,
         },
         {
           label: "Moj profil",
-          href: `/${isCustomDomain ? "" : `/${tenantSlug}`}/panel?tab=Moj+Profil`,
+          href: `/${isCustomDomain ? base : `/${tenantSlug}`}/panel?tab=Moj+Profil`,
         },
       ]
     : [];
