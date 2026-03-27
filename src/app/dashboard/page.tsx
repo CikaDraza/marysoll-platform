@@ -8,21 +8,30 @@ import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 import Link from "next/link";
 import { AuthStatusButton } from "@/components/auth/AuthStatusButton";
+import { NotificationBell } from "@/components/shared/NotificationBell";
 import { useSalonProfileAdmin } from "@/hooks/useSalonProfileAdmin";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useAdminServices } from "@/hooks/useAdminServices";
 import { DAYS_OF_WEEK } from "@/types";
 import type { DayOfWeek, IService, LandingTheme } from "@/types";
 import { AdminCustomDomain } from "@/components/admin/AdminCustomDomain";
+import AdminAppointments from "@/components/admin/AdminAppointments";
 
 // ─── Types & constants ────────────────────────────────────────────────────────
-type Tab = "profil" | "radno-vreme" | "social-seo" | "usluge" | "domen";
+type Tab =
+  | "profil"
+  | "radno-vreme"
+  | "social-seo"
+  | "usluge"
+  | "domen"
+  | "termini";
 
 const TABS: { id: Tab; label: string; emoji: string }[] = [
   { id: "profil", label: "Profil salona", emoji: "🏪" },
   { id: "radno-vreme", label: "Radno vreme", emoji: "🕐" },
   { id: "social-seo", label: "Social & SEO", emoji: "🌐" },
   { id: "usluge", label: "Usluge", emoji: "✂️" },
+  { id: "termini", label: "Termini", emoji: "📅" },
   { id: "domen", label: "Custom Domen", emoji: "🔗" },
 ];
 
@@ -151,6 +160,7 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <NotificationBell />
             {/* Link to salon website */}
             {hasProfile && salonUrl && (
               <Link
@@ -836,109 +846,109 @@ export default function AdminDashboardPage() {
             {!svc.isLoading &&
               svc.services.length > 0 &&
               (() => {
-                const grouped: Record<string, IService[]> = svc.services.reduce<
-                  Record<string, IService[]>
-                >((acc: Record<string, IService[]>, s: IService) => {
-                  const c = s.category || "Ostalo";
-                  if (!acc[c]) acc[c] = [];
-                  acc[c].push(s);
-                  return acc;
-                }, {});
+                const grouped = svc.services.reduce<Record<string, IService[]>>(
+                  (acc, s) => {
+                    const c = s.category || "Ostalo";
+                    if (!acc[c]) acc[c] = [];
+                    acc[c].push(s);
+                    return acc;
+                  },
+                  {},
+                );
 
-                return Object.entries(grouped).map(
-                  ([cat, items]: [string, IService[]]) => (
-                    <div key={cat}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-[11px] font-bold text-violet-600 uppercase tracking-widest">
-                          {cat}
-                        </span>
-                        <span className="text-xs text-zinc-300">
-                          {items.length}
-                        </span>
-                      </div>
-                      <div className="rounded-2xl border border-zinc-100 overflow-hidden">
-                        {items.map((srv, i) => (
-                          <div
-                            key={srv._id}
-                            className={`flex items-center gap-3 px-4 py-3.5 hover:bg-zinc-50 transition group ${i > 0 ? "border-t border-zinc-100" : ""}`}
-                          >
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-sm font-semibold text-zinc-800 truncate">
-                                  {srv.name}
-                                </span>
-                                <span
-                                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${TYPE_BADGE[srv.type] ?? "bg-zinc-100 text-zinc-500"}`}
-                                >
-                                  {srv.type}
-                                </span>
-                                {srv.featured && srv.featured !== "none" && (
-                                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-600">
-                                    ★ {srv.featured}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-4 mt-1">
-                                <span className="text-xs text-zinc-500 font-medium">
-                                  {servicePrice(srv)}
-                                </span>
-                                {srv.duration && (
-                                  <span className="text-xs text-zinc-400">
-                                    ⏱ {srv.duration} min
-                                  </span>
-                                )}
-                                {srv.subcategory && (
-                                  <span className="text-xs text-zinc-400">
-                                    {srv.subcategory}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={() => svc.openEdit(srv)}
-                                className="p-2 text-zinc-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition text-sm"
-                                title="Izmeni"
+                return Object.entries(grouped).map(([cat, items]) => (
+                  <div key={cat}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[11px] font-bold text-violet-600 uppercase tracking-widest">
+                        {cat}
+                      </span>
+                      <span className="text-xs text-zinc-300">
+                        {items.length}
+                      </span>
+                    </div>
+                    <div className="rounded-2xl border border-zinc-100 overflow-hidden">
+                      {items.map((srv, i) => (
+                        <div
+                          key={srv._id}
+                          className={`flex items-center gap-3 px-4 py-3.5 hover:bg-zinc-50 transition group ${i > 0 ? "border-t border-zinc-100" : ""}`}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-semibold text-zinc-800 truncate">
+                                {srv.name}
+                              </span>
+                              <span
+                                className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${TYPE_BADGE[srv.type] ?? "bg-zinc-100 text-zinc-500"}`}
                               >
-                                ✏️
-                              </button>
-                              {svc.deleteConfirmId === srv._id ? (
-                                <div className="flex items-center gap-1">
-                                  <button
-                                    onClick={() => svc.confirmDelete(srv._id)}
-                                    disabled={svc.isDeleting}
-                                    className="px-2.5 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg"
-                                  >
-                                    {svc.isDeleting ? "..." : "Obriši"}
-                                  </button>
-                                  <button
-                                    onClick={() => svc.setDeleteConfirmId(null)}
-                                    className="px-2 py-1.5 text-zinc-400 text-xs hover:text-zinc-600"
-                                  >
-                                    Odustani
-                                  </button>
-                                </div>
-                              ) : (
-                                <button
-                                  onClick={() =>
-                                    svc.setDeleteConfirmId(srv._id)
-                                  }
-                                  className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition text-sm"
-                                  title="Obriši"
-                                >
-                                  🗑️
-                                </button>
+                                {srv.type}
+                              </span>
+                              {srv.featured && srv.featured !== "none" && (
+                                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-600">
+                                  ★ {srv.featured}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 mt-1">
+                              <span className="text-xs text-zinc-500 font-medium">
+                                {servicePrice(srv)}
+                              </span>
+                              {srv.duration && (
+                                <span className="text-xs text-zinc-400">
+                                  ⏱ {srv.duration} min
+                                </span>
+                              )}
+                              {srv.subcategory && (
+                                <span className="text-xs text-zinc-400">
+                                  {srv.subcategory}
+                                </span>
                               )}
                             </div>
                           </div>
-                        ))}
-                      </div>
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => svc.openEdit(srv)}
+                              className="p-2 text-zinc-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition text-sm"
+                              title="Izmeni"
+                            >
+                              ✏️
+                            </button>
+                            {svc.deleteConfirmId === srv._id ? (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => svc.confirmDelete(srv._id)}
+                                  disabled={svc.isDeleting}
+                                  className="px-2.5 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg"
+                                >
+                                  {svc.isDeleting ? "..." : "Obriši"}
+                                </button>
+                                <button
+                                  onClick={() => svc.setDeleteConfirmId(null)}
+                                  className="px-2 py-1.5 text-zinc-400 text-xs hover:text-zinc-600"
+                                >
+                                  Odustani
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => svc.setDeleteConfirmId(srv._id)}
+                                className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition text-sm"
+                                title="Obriši"
+                              >
+                                🗑️
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ),
-                );
+                  </div>
+                ));
               })()}
           </div>
         )}
+
+        {/* ═══ TAB: Termini ═══════════════════════════════════════════════ */}
+        {tab === "termini" && <AdminAppointments />}
 
         {/* ═══ TAB: Custom Domen ══════════════════════════════════════════ */}
         {tab === "domen" && <AdminCustomDomain />}
@@ -960,9 +970,7 @@ function ServiceModal({ s }: { s: ReturnType<typeof useAdminServices> }) {
     "block text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5";
 
   const categories: string[] = s
-    ? Array.from(
-        new Set(s.services.map((s: IService) => String(s.category ?? ""))),
-      )
+    ? Array.from(new Set(s.services.map((s) => String(s.category ?? ""))))
     : [];
 
   return (
