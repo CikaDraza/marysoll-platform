@@ -4,7 +4,7 @@ import Loader from "../elements/Loader";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useAppointmentMutations } from "@/hooks/useAppointmentMutations";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { IAppointment, IMessage } from "@/types";
+import { IAppointment, IMessage, IUser } from "@/types";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useUsers } from "@/hooks/useUsers";
 import { useMarkMessagesSeen } from "@/hooks/useMarkMessagesSeen";
@@ -23,7 +23,7 @@ function ClientAppointmentListItem({
   onOpenChat,
 }: ClientAppointmentListItemProps) {
   const { isOnline } = useUsers().data?.find(
-    (u: IAppointment) => u._id === appointment.clientId,
+    (u: IUser) => u._id === appointment.clientId,
   ) || { isOnline: false };
 
   const unreadClient = appointment.unreadCount?.client ?? 0;
