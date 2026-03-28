@@ -36,7 +36,19 @@ export const emptyServiceForm = (): IServiceInput => ({
   extras: [],
   services: [],
   featured: "none",
-  subscription: { enabled: false, priceMonthly: null, startDate: null, endDate: null },
+  subscription: {
+    enabled: false,
+    features: [],
+    usage: {},
+    featureOverrides: null,
+    overrideExpiresAt: null,
+    overrideNote: null,
+    currentPeriodEnd: null,
+    status: "trialing",
+    priceMonthly: null,
+    startDate: "",
+    endDate: "",
+  },
 });
 
 export function mapServiceToForm(s: IService): IServiceInput {
@@ -53,7 +65,12 @@ export function mapServiceToForm(s: IService): IServiceInput {
     extras: s.extras ?? [],
     services: s.services ?? [],
     featured: s.featured ?? "none",
-    subscription: s.subscription ?? { enabled: false, priceMonthly: null, startDate: null, endDate: null },
+    subscription: s.subscription ?? {
+      enabled: false,
+      priceMonthly: null,
+      startDate: null,
+      endDate: null,
+    },
   };
 }
 
@@ -74,28 +91,49 @@ function validateService(f: IServiceInput): string | null {
 // ─── API helpers ──────────────────────────────────────────────────────────────
 
 async function fetchServices(token: string): Promise<IService[]> {
-  const res = await fetch("/api/services", { headers: { Authorization: `Bearer ${token}` } });
+  const res = await fetch("/api/services", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   if (!res.ok) throw new Error("Greška pri učitavanju usluga");
   return res.json();
 }
 
-async function createService(payload: IServiceInput, token: string): Promise<IService> {
+async function createService(
+  payload: IServiceInput,
+  token: string,
+): Promise<IService> {
   const res = await fetch("/api/services/create", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? "Greška"); }
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e.error ?? "Greška");
+  }
   return res.json();
 }
 
-async function updateService(id: string, payload: IServiceInput, token: string): Promise<IService> {
+async function updateService(
+  id: string,
+  payload: IServiceInput,
+  token: string,
+): Promise<IService> {
   const res = await fetch(`/api/services/${id}/update`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? "Greška"); }
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e.error ?? "Greška");
+  }
   return res.json();
 }
 
@@ -115,7 +153,11 @@ export function useAdminServices() {
   const { token } = useAuth();
   const qc = useQueryClient();
 
-  const { data: services = [], isLoading, error } = useQuery<IService[]>({
+  const {
+    data: services = [],
+    isLoading,
+    error,
+  } = useQuery<IService[]>({
     queryKey: ["services"],
     queryFn: () => fetchServices(token ?? ""),
     enabled: !!token,
@@ -150,56 +192,109 @@ export function useAdminServices() {
 
   // ── Field setters ─────────────────────────────────────────────────────────
 
-  const setField = useCallback(<K extends keyof IServiceInput>(k: K, v: IServiceInput[K]) => {
-    setFormState((p) => ({ ...p, [k]: v }));
-  }, []);
+  const setField = useCallback(
+    <K extends keyof IServiceInput>(k: K, v: IServiceInput[K]) => {
+      setFormState((p) => ({ ...p, [k]: v }));
+    },
+    [],
+  );
 
   // Variants
   const addVariant = useCallback(() => {
     setFormState((p) => ({
       ...p,
-      variants: [...(p.variants ?? []), { name: "", price: 0, duration: 30, perItem: false } as IServiceVariant],
+      variants: [
+        ...(p.variants ?? []),
+        { name: "", price: 0, duration: 30, perItem: false } as IServiceVariant,
+      ],
     }));
   }, []);
-  const updateVariant = useCallback((i: number, k: keyof IServiceVariant, v: string | number | boolean) => {
-    setFormState((p) => { const a = [...(p.variants ?? [])]; a[i] = { ...a[i], [k]: v }; return { ...p, variants: a }; });
-  }, []);
+  const updateVariant = useCallback(
+    (i: number, k: keyof IServiceVariant, v: string | number | boolean) => {
+      setFormState((p) => {
+        const a = [...(p.variants ?? [])];
+        a[i] = { ...a[i], [k]: v };
+        return { ...p, variants: a };
+      });
+    },
+    [],
+  );
   const removeVariant = useCallback((i: number) => {
-    setFormState((p) => ({ ...p, variants: (p.variants ?? []).filter((_, j) => j !== i) }));
+    setFormState((p) => ({
+      ...p,
+      variants: (p.variants ?? []).filter((_, j) => j !== i),
+    }));
   }, []);
 
   // Extras
   const addExtra = useCallback(() => {
     setFormState((p) => ({
       ...p,
-      extras: [...(p.extras ?? []), { name: "", price: 0, duration: 0, perItem: false } as IServiceExtra],
+      extras: [
+        ...(p.extras ?? []),
+        { name: "", price: 0, duration: 0, perItem: false } as IServiceExtra,
+      ],
     }));
   }, []);
-  const updateExtra = useCallback((i: number, k: keyof IServiceExtra, v: string | number | boolean) => {
-    setFormState((p) => { const a = [...(p.extras ?? [])]; a[i] = { ...a[i], [k]: v }; return { ...p, extras: a }; });
-  }, []);
+  const updateExtra = useCallback(
+    (i: number, k: keyof IServiceExtra, v: string | number | boolean) => {
+      setFormState((p) => {
+        const a = [...(p.extras ?? [])];
+        a[i] = { ...a[i], [k]: v };
+        return { ...p, extras: a };
+      });
+    },
+    [],
+  );
   const removeExtra = useCallback((i: number) => {
-    setFormState((p) => ({ ...p, extras: (p.extras ?? []).filter((_, j) => j !== i) }));
+    setFormState((p) => ({
+      ...p,
+      extras: (p.extras ?? []).filter((_, j) => j !== i),
+    }));
   }, []);
 
   // Group services
   const addGroupService = useCallback(() => {
     setFormState((p) => ({
       ...p,
-      services: [...(p.services ?? []), { name: "", price: 0, duration: 30, description: "" } as IServiceGroupItem],
+      services: [
+        ...(p.services ?? []),
+        {
+          name: "",
+          price: 0,
+          duration: 30,
+          description: "",
+        } as IServiceGroupItem,
+      ],
     }));
   }, []);
-  const updateGroupService = useCallback((i: number, k: keyof IServiceGroupItem, v: string | number) => {
-    setFormState((p) => { const a = [...(p.services ?? [])]; a[i] = { ...a[i], [k]: v }; return { ...p, services: a }; });
-  }, []);
+  const updateGroupService = useCallback(
+    (i: number, k: keyof IServiceGroupItem, v: string | number) => {
+      setFormState((p) => {
+        const a = [...(p.services ?? [])];
+        a[i] = { ...a[i], [k]: v };
+        return { ...p, services: a };
+      });
+    },
+    [],
+  );
   const removeGroupService = useCallback((i: number) => {
-    setFormState((p) => ({ ...p, services: (p.services ?? []).filter((_, j) => j !== i) }));
+    setFormState((p) => ({
+      ...p,
+      services: (p.services ?? []).filter((_, j) => j !== i),
+    }));
   }, []);
 
   // Subscription
-  const setSubscriptionField = useCallback((k: keyof ISubscription, v: boolean | number | string | null) => {
-    setFormState((p) => ({ ...p, subscription: { ...p.subscription, [k]: v } }));
-  }, []);
+  const setSubscriptionField = useCallback(
+    (k: keyof ISubscription, v: boolean | number | string | null) => {
+      setFormState((p) => ({
+        ...p,
+        subscription: { ...p.subscription, [k]: v },
+      }));
+    },
+    [],
+  );
 
   // ── Save mutation ─────────────────────────────────────────────────────────
 
@@ -214,7 +309,9 @@ export function useAdminServices() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["services"] });
-      toast.success(modalMode === "edit" ? "Usluga ažurirana!" : "Usluga kreirana!");
+      toast.success(
+        modalMode === "edit" ? "Usluga ažurirana!" : "Usluga kreirana!",
+      );
       closeModal();
     },
     onError: (e: Error) => toast.error(e.message || "Greška"),
@@ -233,17 +330,30 @@ export function useAdminServices() {
   });
 
   return {
-    services, isLoading, error,
-    modalMode, editingService, form,
-    openCreate, openEdit, closeModal,
+    services,
+    isLoading,
+    error,
+    modalMode,
+    editingService,
+    form,
+    openCreate,
+    openEdit,
+    closeModal,
     setField,
-    addVariant, updateVariant, removeVariant,
-    addExtra, updateExtra, removeExtra,
-    addGroupService, updateGroupService, removeGroupService,
+    addVariant,
+    updateVariant,
+    removeVariant,
+    addExtra,
+    updateExtra,
+    removeExtra,
+    addGroupService,
+    updateGroupService,
+    removeGroupService,
     setSubscriptionField,
     save: saveMutation.mutate,
     isSaving: saveMutation.isPending,
-    deleteConfirmId, setDeleteConfirmId,
+    deleteConfirmId,
+    setDeleteConfirmId,
     confirmDelete: deleteMutation.mutate,
     isDeleting: deleteMutation.isPending,
   };

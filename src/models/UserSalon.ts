@@ -64,13 +64,10 @@ const UserSalonSchema = new Schema<IUserSalon>(
 );
 
 // Jedan korisnik može imati samo jednu rolu po salonu
-UserSalonSchema.index({ userId: 1, salonId: 1 }, { unique: true });
-
-// Brzo pretraživanje svih salona jednog korisnika
-UserSalonSchema.index({ userId: 1, isActive: 1 });
-
-// Brzo pretraživanje svih članova jednog salona
-UserSalonSchema.index({ salonId: 1, role: 1, isActive: 1 });
+UserSalonSchema.index(
+  { userId: 1, salonId: 1, role: 1, isActive: 1 },
+  { unique: true },
+);
 
 export const UserSalon =
   models.UserSalon || model<IUserSalon>("UserSalon", UserSalonSchema);

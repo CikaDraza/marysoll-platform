@@ -119,9 +119,10 @@ const SubscriptionSchema = new Schema<ISubscription>(
 );
 
 // Indeksi
-SubscriptionSchema.index({ tenantId: 1 }, { unique: true });
-SubscriptionSchema.index({ status: 1 });
-SubscriptionSchema.index({ lsSubscriptionId: 1 }, { sparse: true });
+SubscriptionSchema.index(
+  { tenantId: 1, status: 1, lsSubscriptionId: 1 },
+  { unique: true, sparse: true },
+);
 
 export const Subscription =
   models.Subscription ||

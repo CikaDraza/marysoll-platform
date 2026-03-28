@@ -3,7 +3,7 @@
 
 // AuthStatusButton: shows current user + logout on admin header
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
@@ -17,6 +17,7 @@ import { DAYS_OF_WEEK } from "@/types";
 import type { DayOfWeek, IService, LandingTheme } from "@/types";
 import { AdminCustomDomain } from "@/components/admin/AdminCustomDomain";
 import AdminAppointments from "@/components/admin/AdminAppointments";
+import Loader from "@/components/elements/Loader";
 
 // ─── Types & constants ────────────────────────────────────────────────────────
 type Tab =
@@ -94,7 +95,7 @@ const TYPE_BADGE: Record<string, string> = {
 };
 
 // ─── Main page ────────────────────────────────────────────────────────────────
-export default function AdminDashboardPage() {
+function AdminDashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -1396,5 +1397,14 @@ function ServiceModal({ s }: { s: ReturnType<typeof useAdminServices> }) {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminDashboardPage() {
+  return (
+    // You could have a loading skeleton as the `fallback` too
+    <Suspense fallback={<Loader />}>
+      <AdminDashboard />
+    </Suspense>
   );
 }

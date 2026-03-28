@@ -19,6 +19,13 @@ export function useAdminServiceForm() {
     extras: [],
     subscription: {
       enabled: false,
+      features: [],
+      usage: {},
+      featureOverrides: null,
+      overrideExpiresAt: null,
+      overrideNote: null,
+      currentPeriodEnd: null,
+      status: "trialing",
       priceMonthly: null,
       startDate: "",
       endDate: "",
