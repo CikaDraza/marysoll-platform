@@ -590,6 +590,9 @@ export function MarketingHomePageSecond() {
               <li className="w-auto items-center rounded-md bg-purple-50 px-2 py-1 text-sm font-medium text-purple-700 inset-ring inset-ring-purple-700/10">
                 ✔ automatski podsetnici
               </li>
+              <li className="w-auto items-center rounded-md bg-purple-50 px-2 py-1 text-sm font-medium text-purple-700 inset-ring inset-ring-purple-700/10">
+                ✔ baza klijenata
+              </li>
             </motion.ul>
 
             <motion.p
