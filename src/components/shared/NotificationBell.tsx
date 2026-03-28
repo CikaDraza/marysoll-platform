@@ -24,6 +24,7 @@ import {
 } from "@/hooks/useNotifications";
 import { useAuth } from "@/hooks/useAuth";
 import type { INotification } from "@/types";
+import Link from "next/link";
 
 interface NotificationBellProps {
   /**
@@ -42,17 +43,11 @@ function getNotificationHref(
   tenantSlug?: string,
 ): string {
   const base = tenantSlug ? `/${tenantSlug}/panel` : "/dashboard";
-  const adminTerminiTab = "Svi Termini";
+  const adminTerminiTab = "termini";
   const clientTerminiTab = "Moji Termini";
 
   if (notification.type.includes("appointment")) {
     const tab = isAdmin ? adminTerminiTab : clientTerminiTab;
-    if (
-      notification.type === "appointment_message" &&
-      notification.appointmentId
-    ) {
-      return `${base}?appointment=${notification.appointmentId}&tab=${encodeURIComponent(tab)}`;
-    }
     return `${base}?tab=${encodeURIComponent(tab)}`;
   }
 
@@ -90,7 +85,7 @@ function NotificationItem({
 
   return (
     <MenuItem>
-      <a
+      <Link
         href={href}
         onClick={() => onRead(notification._id)}
         className={`flex items-start gap-3 px-4 py-3 text-sm hover:bg-zinc-50 transition border-b border-zinc-100 last:border-0 ${
@@ -140,7 +135,7 @@ function NotificationItem({
             </p>
           )}
         </div>
-      </a>
+      </Link>
     </MenuItem>
   );
 }

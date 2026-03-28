@@ -46,9 +46,19 @@ export default function ClientPanelPage() {
     tabParam && TABS.find((t) => t.id === tabParam) ? tabParam : "Moji Termini",
   );
 
+  // Sync tab when URL changes — NotificationBell navigates with ?tab=... query
+  useEffect(() => {
+    async function syncTabWithURL() {
+      const t = searchParams.get("tab") as PanelTab | null;
+      if (t && TABS.find((tab) => tab.id === t)) {
+        setActiveTab(t);
+      }
+    }
+    syncTabWithURL();
+  }, [searchParams]);
+
   useEffect(() => {
     if (!isLoading && !isLoggedIn) {
-      // Full navigation — ensures fresh mount with token after login redirect
       window.location.href = `${base}/login?from=panel`;
     }
   }, [isLoading, isLoggedIn, base]);
@@ -84,7 +94,7 @@ export default function ClientPanelPage() {
             >
               ← Salon
             </Link>
-            <h1 className="text-xl font-bold text-zinc-800 leading-tight mt-0.5">
+            <h1 className="text-sm font-bold text-zinc-800 leading-tight mt-0.5">
               Zdravo, {user?.name ?? "klijente"} 👋
             </h1>
           </div>
@@ -93,7 +103,7 @@ export default function ClientPanelPage() {
             <NotificationBell tenantSlug={tenantSlug} />
             <button
               onClick={() => logout({ tenantSlug })}
-              className="cursor-pointer text-xs text-zinc-400 hover:text-zinc-700 border border-zinc-200 px-3 py-1.5 rounded-lg hover:border-zinc-400 transition"
+              className="text-xs text-zinc-400 hover:text-zinc-700 border border-zinc-200 px-3 py-1.5 rounded-lg hover:border-zinc-400 transition"
             >
               Odjavi se
             </button>

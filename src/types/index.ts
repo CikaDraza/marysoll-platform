@@ -50,6 +50,19 @@ export interface ISubscription {
   priceMonthly: number | null;
   startDate: string | null;
   endDate: string | null;
+  features: string[];
+  usage: Record<string, number>;
+  featureOverrides: Record<string, unknown> | null;
+  overrideExpiresAt: Date | null;
+  overrideNote: string | null;
+  currentPeriodEnd: Date | null;
+  status:
+    | "trialing"
+    | "active"
+    | "past_due"
+    | "canceled"
+    | "unpaid"
+    | "expired";
 }
 
 export interface IServiceVariant {

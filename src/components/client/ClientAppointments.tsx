@@ -17,7 +17,6 @@ interface ClientAppointmentListItemProps {
   onOpenChat: (appointment: IAppointment) => void;
 }
 
-// components/admin/AdminAppointments.tsx - AppointmentListItem deo
 function ClientAppointmentListItem({
   appointment,
   onOpenChat,
@@ -264,7 +263,7 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-[url(/colorful-background.jpeg)] bg-center bg-no-repeat rounded-lg w-full max-w-2xl mx-4">
+      <div className="bg-black bg-[url(/colorful-background.jpeg)] bg-center bg-no-repeat rounded-lg w-full max-w-2xl mx-4">
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-white">
             Chat - {appointment.clientName} - {appointment.serviceName}

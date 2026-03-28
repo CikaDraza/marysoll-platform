@@ -51,6 +51,7 @@ const ADMIN_PROTECTED_API_ROUTES = [
   "/api/cloudinary",
   "/api/statistics",
   "/api/tenants/update",
+  "/api/subscriptions",
 ];
 
 const SUPERADMIN_API_ROUTES = [
@@ -259,7 +260,6 @@ async function guardPage(
   needSuperAdmin = false,
 ): Promise<NextResponse | null> {
   const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
-  const host = request.headers.get("host")?.split(":")[0] ?? "";
 
   // Redirect unauthenticated users to the login page that matches their domain.
   // admin.marysoll.com → admin.marysoll.com/login (then next.config redirects to marysoll.com/login)

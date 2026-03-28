@@ -4,6 +4,7 @@
 // AuthStatusButton: shows current user + logout on admin header
 
 import { useRef, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 import Link from "next/link";
@@ -94,7 +95,54 @@ const TYPE_BADGE: Record<string, string> = {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function AdminDashboardPage() {
-  const [tab, setTab] = useState<Tab>("profil");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Tab state synced with URL query param — allows NotificationBell links to set tab
+  const tabParam = searchParams.get("tab") as Tab | null;
+  const [tab, setTab] = useState<Tab>(
+    tabParam &&
+      [
+        "profil",
+        "radno-vreme",
+        "social-seo",
+        "usluge",
+        "termini",
+        "domen",
+      ].includes(tabParam)
+      ? tabParam
+      : "profil",
+  );
+
+  // Sync tab when URL changes (e.g. NotificationBell click navigates with ?tab=termini)
+  useEffect(() => {
+    async function syncTabWithUrl() {
+      const t = searchParams.get("tab") as Tab | null;
+      if (
+        t &&
+        [
+          "profil",
+          "radno-vreme",
+          "social-seo",
+          "usluge",
+          "termini",
+          "domen",
+        ].includes(t)
+      ) {
+        setTab(t);
+      }
+    }
+    syncTabWithUrl();
+  }, [searchParams]);
+
+  // Update URL when tab changes so browser back/forward works
+  function handleTabChange(newTab: Tab) {
+    setTab(newTab);
+    router.replace(`/dashboard?tab=${encodeURIComponent(newTab)}`, {
+      scroll: false,
+    });
+  }
+
   const [confirmDeleteSalon, setConfirmDeleteSalon] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const { user, isLoading: authLoading } = useAuth();
@@ -160,7 +208,6 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <NotificationBell />
             {/* Link to salon website */}
             {hasProfile && salonUrl && (
               <Link
@@ -193,6 +240,7 @@ export default function AdminDashboardPage() {
                 Učitavanje...
               </span>
             )}
+            <NotificationBell />
             <AuthStatusButton theme="light" logoutRedirect="/login" />
           </div>
         </div>
@@ -202,7 +250,7 @@ export default function AdminDashboardPage() {
           {TABS.map((t) => (
             <button
               key={t.id}
-              onClick={() => setTab(t.id)}
+              onClick={() => handleTabChange(t.id)}
               className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
                 tab === t.id
                   ? "border-violet-500 text-violet-700"

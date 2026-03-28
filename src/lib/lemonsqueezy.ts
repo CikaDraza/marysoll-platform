@@ -6,8 +6,11 @@ import "server-only";
  */
 
 import { connectToDB } from "@/lib/db/mongodb";
+import crypto from "crypto";
 import { Tenant } from "@/models/Tenant";
-import type { ITenant } from "@/models/Tenant";
+import { syncSubscriptionFromLs } from "@/lib/plans/subscriptionService";
+import type { PlanName } from "@/lib/plans/planFeatures";
+import type { ISubscription } from "@/models/Subscription";
 
 interface LemonSqueezyWebhookEvent {
   meta: {
@@ -40,7 +43,7 @@ const VARIANT_TO_PLAN: Record<string, PlanSlug> = {
 };
 
 export async function handleLemonSqueezyWebhook(
-  event: LemonSqueezyWebhookEvent
+  event: LemonSqueezyWebhookEvent,
 ): Promise<void> {
   await connectToDB();
 
@@ -63,8 +66,10 @@ export async function handleLemonSqueezyWebhook(
     case "subscription_created":
     case "subscription_updated": {
       const plan = VARIANT_TO_PLAN[attributes.variant_name] ?? "starter";
-      const isPaid = attributes.status === "active" || attributes.status === "trialing";
+      const isPaid =
+        attributes.status === "active" || attributes.status === "trialing";
 
+      // 1. Ažuriraj Tenant (backward compat)
       await Tenant.findByIdAndUpdate(tenantId, {
         paid: isPaid,
         plan,
@@ -75,6 +80,31 @@ export async function handleLemonSqueezyWebhook(
           ? new Date(attributes.trial_ends_at)
           : null,
         isTrialActive: attributes.status === "trialing",
+      });
+
+      // 2. Sinkronizuj Subscription model
+      const lsStatus: ISubscription["status"] =
+        attributes.status === "trialing"
+          ? "trialing"
+          : attributes.status === "active"
+            ? "active"
+            : attributes.status === "past_due"
+              ? "past_due"
+              : attributes.status === "paused"
+                ? "paused"
+                : "expired";
+
+      await syncSubscriptionFromLs({
+        tenantId,
+        plan: plan as PlanName,
+        status: lsStatus,
+        lsSubscriptionId: event.data.id,
+        lsCustomerId: String(attributes.customer_id),
+        lsVariantId: attributes.variant_name,
+        periodStart: new Date(),
+        periodEnd: attributes.ends_at
+          ? new Date(attributes.ends_at)
+          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       });
       break;
     }
@@ -101,14 +131,10 @@ export async function handleLemonSqueezyWebhook(
 
 export function verifyLemonSqueezySignature(
   payload: string,
-  signature: string
+  signature: string,
 ): boolean {
-  const crypto = require("crypto");
   const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET ?? "";
   const hmac = crypto.createHmac("sha256", secret);
   const digest = hmac.update(payload).digest("hex");
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(digest)
-  );
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest));
 }
