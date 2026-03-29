@@ -285,14 +285,14 @@ function FriendsChat() {
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={visibleMessages.length >= 6 ? { opacity: 1, scale: 1 } : {}}
-        className="mt-4 p-4 bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl text-center"
+        className="mt-4 p-4 bg-gradient-to-r from-violet-600 to-violet-700 rounded-2xl text-center"
       >
         <p className="text-white text-sm font-medium mb-4">
           💜 MarySoll — Tvoja drugarica iz salona
         </p>
         <Link
           href="/register"
-          className="w-2/3 inline-block bg-white text-violet-600 px-4 py-1.5 rounded-full text-xs font-bold hover:scale-105 transition"
+          className="w-2/3 inline-block bg-white text-violet-600 px-4 py-3 rounded-full text-sm font-bold hover:scale-105 transition"
         >
           Zakazi i ti →
         </Link>
@@ -480,15 +480,15 @@ export function MarketingHomePageSecond() {
                 width={136}
                 height={40}
                 alt="Marysoll je napravila nešto posebno"
-                src={"/marysoll-tetra-logo.svg"}
+                src={"/marysoll-violet-logo.svg"}
                 className="h-10 w-auto object-contain"
               />
               <div className="flex flex-col">
                 <span className="text-md/9 text-(--tetra-color) heading-font">
                   MarySoll
                 </span>
-                <small className="text-[0.5rem] text-(--tetra-color) -mt-1.5">
-                  je napravila nešto posebno
+                <small className="text-[0.5rem] text-(--tetra-color) -mt-1">
+                  je napravila nešto sasvim posebno
                 </small>
               </div>
             </Link>
@@ -512,7 +512,7 @@ export function MarketingHomePageSecond() {
               href="/register"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-(--tetra-color) text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-violet-200"
+              className="bg-violet-600 text-white px-5 py-2 rounded-full text-sm font-bold transition shadow-lg shadow-violet-200"
             >
               Počni besplatno
             </motion.a>
@@ -581,16 +581,16 @@ export function MarketingHomePageSecond() {
               variants={fadeInUp}
               className="flex flex-col items-start gap-4 mt-6 leading-relaxed max-w-xl"
             >
-              <li className="w-auto items-center rounded-md bg-purple-50 px-2 py-1 text-sm font-medium text-purple-700 inset-ring inset-ring-purple-700/10">
+              <li className="w-auto items-center rounded-md bg-violet-50 px-2 py-1 text-sm font-medium text-violet-600 inset-ring inset-ring-purple-700/10">
                 ✔ sistem za zakazivanje
               </li>
-              <li className="w-auto items-center rounded-md bg-purple-50 px-2 py-1 text-sm font-medium text-purple-700 inset-ring inset-ring-purple-700/10">
+              <li className="w-auto items-center rounded-md bg-violet-50 px-2 py-1 text-sm font-medium text-violet-600 inset-ring inset-ring-purple-700/10">
                 ✔ sistem za komunikaciju sa klijentima
               </li>
-              <li className="w-auto items-center rounded-md bg-purple-50 px-2 py-1 text-sm font-medium text-purple-700 inset-ring inset-ring-purple-700/10">
+              <li className="w-auto items-center rounded-md bg-violet-50 px-2 py-1 text-sm font-medium text-violet-600 inset-ring inset-ring-purple-700/10">
                 ✔ automatski podsetnici
               </li>
-              <li className="w-auto items-center rounded-md bg-purple-50 px-2 py-1 text-sm font-medium text-purple-700 inset-ring inset-ring-purple-700/10">
+              <li className="w-auto items-center rounded-md bg-violet-50 px-2 py-1 text-sm font-medium text-violet-600 inset-ring inset-ring-purple-700/10">
                 ✔ baza klijenata
               </li>
             </motion.ul>
@@ -599,16 +599,17 @@ export function MarketingHomePageSecond() {
               variants={fadeInUp}
               className="mt-6 text-xl text-gray-600 leading-relaxed max-w-xl"
             >
-              Organizujem ti{" "}
-              <span className="text-violet-600 font-semibold">salon</span>,{" "}
+              Sa Marysoll:{" "}
+              <span className="text-violet-600 font-semibold">salon </span> ti
+              raste,{" "}
               <span className="text-violet-600 font-semibold">
                 fitnes centar
               </span>
-              , <span className="text-violet-600 font-semibold">kliniku</span>,{" "}
+              , <span className="text-violet-600 font-semibold">klinika</span>,{" "}
               <span className="text-violet-600 font-semibold">spa</span>…
               <br />
               <span className="text-gray-500">
-                da možeš da se baviš kreativnijim stvarima, da gledaš posao kao
+                da možeš da se baviš kreativnijim stvarima. Posao da ti bude
                 hobi.
               </span>
             </motion.p>
@@ -750,7 +751,7 @@ export function MarketingHomePageSecond() {
       {/* ============================================
           FRIENDS CHAT SECTION (Social Proof)
       ============================================ */}
-      <section className="py-24 bg-gradient-to-br from-violet-900 to-purple-900">
+      <section className="min-h-[1000px] py-24 bg-gradient-to-br from-violet-600 to-violet-900">
         <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <motion.h2

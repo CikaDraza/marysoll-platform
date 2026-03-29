@@ -69,7 +69,8 @@ export default function ClientTestimonials() {
   const appointmentsWithoutTestimonial = useMemo(() => {
     return appointments.filter((appointment) => {
       try {
-        const isClientAppointment = appointment.clientId === (currentUser?._id ?? currentUser?.id);
+        const isClientAppointment =
+          appointment.clientId === (currentUser?._id ?? currentUser?.id);
 
         if (!isClientAppointment) return false;
 
@@ -192,7 +193,7 @@ export default function ClientTestimonials() {
       <Toaster position="top-right" />
 
       {/* Header */}
-      <div className="bg-white py-4 rounded-lg">
+      <div className="py-4 rounded-lg">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="flex items-center lg:col-span-4">
             <h2 className="text-2xl! font-bold text-(--secondary-color)">
@@ -201,7 +202,7 @@ export default function ClientTestimonials() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Status komentara
             </label>
             <select
@@ -210,7 +211,7 @@ export default function ClientTestimonials() {
                 setStatusFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
+              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
             >
               <option value="">Svi komentari</option>
               <option value="unread">Nepročitani</option>
@@ -219,7 +220,7 @@ export default function ClientTestimonials() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Pretraga
             </label>
             <div className="relative">
@@ -231,7 +232,7 @@ export default function ClientTestimonials() {
                   setSearchQuery(e.target.value);
                   setPage(1);
                 }}
-                className="w-full border border-gray-300 rounded-md bg-white p-1.5 px-3 focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
+                className="w-full border border-gray-300 dark:border-gray-700 rounded-md p-1.5 px-3 focus:ring-2 focus:ring-(--primary-color) focus:border-transparent dark:placeholder:text-gray-300"
               />
               {isFetching && (
                 <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
@@ -242,7 +243,7 @@ export default function ClientTestimonials() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Datum
             </label>
             <input
@@ -252,7 +253,7 @@ export default function ClientTestimonials() {
                 setDateQuery(e.target.value);
                 setPage(1);
               }}
-              className="w-full p-1.5 border border-gray-300 rounded-md bg-gray-100 focus:ring-2 focus:ring-(--primary-color)! focus:border-transparent"
+              className="w-full p-1.5 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-(--primary-color)! focus:border-transparent"
             />
           </div>
 
@@ -261,7 +262,7 @@ export default function ClientTestimonials() {
             <button
               onClick={clearFilters}
               disabled={!hasActiveFilters && page === 1}
-              className="cursor-pointer bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:opacity-10 disabled:cursor-not-allowed transition-colors w-full"
+              className="cursor-pointer bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:opacity-10 dark:disabled:opacity-30 disabled:cursor-not-allowed transition-colors w-full"
             >
               Obriši filtere
             </button>
@@ -270,7 +271,9 @@ export default function ClientTestimonials() {
         {/* Prikaz aktivnih filtera */}
         {hasActiveFilters && (
           <div className="filters mt-3 flex flex-wrap gap-2">
-            <span className="text-sm text-gray-600">Aktivni filteri:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-300">
+              Aktivni filteri:
+            </span>
 
             {statusFilter && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -323,8 +326,8 @@ export default function ClientTestimonials() {
 
       {/* Sekcija 1: Termini bez komentara */}
       {appointmentsWithoutTestimonial.length > 0 && (
-        <div className="bg-gray-50 rounded-lg px-6 py-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="rounded-lg px-6 py-8">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-300 mb-4">
             Termini koji čekaju vaš komentar (
             {appointmentsWithoutTestimonial.length})
           </h3>
@@ -332,18 +335,18 @@ export default function ClientTestimonials() {
             {appointmentsWithoutTestimonial.map((appointment) => (
               <div
                 key={appointment._id}
-                className="flex justify-between items-center p-4 bg-white rounded-lg shadow-xs"
+                className="flex justify-between items-center p-4 rounded-lg shadow-xs"
               >
                 <div className="flex-1">
-                  <p className="font-medium text-gray-900 text-lg">
+                  <p className="font-medium text-gray-900 dark:text-gray-300 text-lg">
                     {appointment.serviceName}
                   </p>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                     {new Date(appointment.date).toLocaleDateString("sr-RS")} u{" "}
                     {appointment.time}
                   </p>
                   {appointment.note && (
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">
                       Napomena: {appointment.note}
                     </p>
                   )}
@@ -370,7 +373,7 @@ export default function ClientTestimonials() {
       {/* Sekcija 2: Komentari bez odgovora */}
       {testimonialsWithoutReply.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-xl font-semibold text-gray-900">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-300">
             Ostavili ste komentar ({testimonialsWithoutReply.length})
           </h3>
           {testimonialsWithoutReply.map((testimonial) => (
@@ -395,7 +398,7 @@ export default function ClientTestimonials() {
       {/* Sekcija 3: Komentari sa odgovorom Salona */}
       {testimonialsWithReply.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-xl font-semibold text-gray-900">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-300">
             Sa odgovorom salona ({testimonialsWithReply.length})
           </h3>
           {testimonialsWithReply.map((testimonial) => (
@@ -419,11 +422,11 @@ export default function ClientTestimonials() {
       {/* Prazno stanje */}
       {appointmentsWithoutTestimonial.length === 0 &&
         clientTestimonials.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-gray-500 dark:text-gray-300">
             <p className="text-lg">
               Trenutno nemate termine za komentarisanje.
             </p>
-            <p className="text-sm mt-2">
+            <p className="text-sm mt-2 dark:text-gray-300">
               Kada zakazete termin, ovde ćete moći da ostavite komentar.
             </p>
           </div>
@@ -471,7 +474,7 @@ function TestimonialItem({
   handlePageChange: (page: number) => void;
 }) {
   return (
-    <div className="rounded-lg p-6 bg-gray-50">
+    <div className="rounded-lg p-6">
       {editingId === testimonial._id ? (
         <div className="space-y-4">
           <div>

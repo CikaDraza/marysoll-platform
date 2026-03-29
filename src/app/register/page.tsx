@@ -1,15 +1,22 @@
+import { Suspense } from "react";
 import MiniLoader from "@/components/ai/MiniLoader";
 import RegisterForm from "@/components/auth/RegisterForm";
 import { SearchParamsReader } from "@/components/renderingError/SearchParamsReader";
-import { Suspense } from "react";
+import AuthLayout from "@/layout/AuthLayout";
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
+    <AuthLayout
+      heading="Kreirajte vaš salon"
+      subheading="Počnite besplatno — 14 dana trial perioda"
+      footerText="Već imate nalog?"
+      footerLinkText="Prijavite se"
+      footerLinkHref="/login"
+    >
       <Suspense fallback={<MiniLoader text="Proveravamo link..." />}>
         <SearchParamsReader />
         <RegisterForm />
       </Suspense>
-    </div>
+    </AuthLayout>
   );
 }

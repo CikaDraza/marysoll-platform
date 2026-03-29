@@ -87,6 +87,12 @@ export interface PlanFeatures {
 
   // ── Trial ─────────────────────────────────────────────────────────────────
   trialDays: number;
+  /** Maksimalan broj salona po nalogu. -1 = neograničeno */
+  maxSalons: number;
+  /** Statistika: "basic" = samo ukupno, "full" = sve karte, "ai" = AI analitika */
+  statisticsLevel: "none" | "basic" | "full" | "ai";
+  /** Newsletter nivo: "email" = samo email, "landing" = email + landing page */
+  newsletterLevel: "none" | "email" | "landing";
 }
 
 // ─── Feature definicije po planu ─────────────────────────────────────────────
@@ -140,6 +146,9 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     unlimitedAiTokens: false,
 
     trialDays: 14,
+    maxSalons: 1,
+    statisticsLevel: "basic",
+    newsletterLevel: "email",
   },
 
   starter: {
@@ -182,6 +191,9 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     unlimitedAiTokens: false,
 
     trialDays: 0,
+    maxSalons: 2,
+    statisticsLevel: "full",
+    newsletterLevel: "email",
   },
 
   pro: {
@@ -224,6 +236,9 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     unlimitedAiTokens: false,
 
     trialDays: 0,
+    maxSalons: 10,
+    statisticsLevel: "ai",
+    newsletterLevel: "landing",
   },
 
   enterprise: {
@@ -266,6 +281,9 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     unlimitedAiTokens: true,
 
     trialDays: 0,
+    maxSalons: 10,
+    statisticsLevel: "ai",
+    newsletterLevel: "landing",
   },
 };
 
@@ -299,10 +317,7 @@ export function planHasFeature<K extends keyof PlanFeatures>(
 /**
  * Provjeri da li je limit prekoračen (-1 = neograničeno).
  */
-export function isWithinLimit(
-  current: number,
-  limit: number,
-): boolean {
+export function isWithinLimit(current: number, limit: number): boolean {
   if (limit === -1) return true;
   return current < limit;
 }

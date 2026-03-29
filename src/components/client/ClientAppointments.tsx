@@ -48,7 +48,7 @@ function ClientAppointmentListItem({
   };
 
   return (
-    <li className="flex flex-col lg:flex-row justify-between gap-x-6 py-5 border-b border-gray-200">
+    <li className="flex flex-col lg:flex-row justify-between gap-x-6 py-5 border-b border-gray-200 dark:border-slate-800">
       <div className="flex min-w-0 gap-x-4 flex-1">
         <div className="min-w-0 flex-auto">
           {isOnline ? (
@@ -67,7 +67,7 @@ function ClientAppointmentListItem({
             </div>
           )}
           <div className="flex items-center gap-2">
-            <p className="text-sm/6 font-semibold text-gray-900">
+            <p className="text-sm/6 font-semibold text-gray-900 dark:text-gray-100">
               {currentAppointment.clientName}
             </p>
             <span
@@ -116,7 +116,7 @@ function ClientAppointmentListItem({
       </div>
 
       <div className="flex flex-col items-end gap-2">
-        <p className="text-sm/6 font-semibold text-gray-900">
+        <p className="text-sm/6 font-semibold text-gray-900 dark:text-gray-100">
           {currentAppointment.serviceName.toUpperCase()}
         </p>
         <div className="mt-1 flex flex-col items-end gap-x-1.5">
@@ -449,7 +449,7 @@ export default function ClientAppointments() {
   return (
     <div className="space-y-6">
       {/* SEARCH BAR */}
-      <div className="bg-white py-4 rounded-lg">
+      <div className="py-4 rounded-lg">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="flex items-center lg:col-span-4">
             <h3 className="font-semibold text-(--primary-color) text-lg! lg:text-2xl!">
@@ -458,7 +458,7 @@ export default function ClientAppointments() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium dark:text-gray-100 text-gray-700 mb-1">
               Pretraga
             </label>
             <div className="relative">
@@ -470,7 +470,7 @@ export default function ClientAppointments() {
                   setTextQuery(e.target.value);
                   setPage(1); // Resetuj stranu na novu pretragu
                 }}
-                className="w-full border border-gray-200 rounded-md bg-white px-3 py-2 text-gray-600 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+                className="w-full border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 text-gray-600 dark:text-gray-100 dark:placeholder:text-gray-100 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
               />
               {isFetching && (
                 <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
@@ -480,7 +480,7 @@ export default function ClientAppointments() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium dark:text-gray-100 text-gray-700 mb-1">
               Status termina
             </label>
             <select
@@ -489,7 +489,7 @@ export default function ClientAppointments() {
                 setStatusFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
+              className="w-full p-2 border border-gray-200 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
             >
               <option value="">Svi termini</option>
               <option value="pending">Na čekaju</option>
@@ -500,7 +500,7 @@ export default function ClientAppointments() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium dark:text-gray-100 text-gray-700 mb-1">
               Datum
             </label>
             <input
@@ -510,7 +510,7 @@ export default function ClientAppointments() {
                 setDateQuery(e.target.value);
                 setPage(1); // Resetuj stranu na novi datum
               }}
-              className="w-full rounded-md border-gray-200 bg-gray-100 p-2 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+              className="w-full rounded-md border border-gray-200 dark:border-gray-700 p-2 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
             />
           </div>
 
@@ -518,7 +518,7 @@ export default function ClientAppointments() {
             <button
               onClick={handleClearFilters}
               disabled={!hasActiveFilters && page === 1}
-              className="w-full cursor-pointer bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:opacity-10 disabled:cursor-not-allowed transition-colors"
+              className="w-full cursor-pointer bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:opacity-10 dark:disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               Obriši filtere
             </button>

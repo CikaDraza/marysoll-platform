@@ -1,15 +1,22 @@
+import { Suspense } from "react";
 import MiniLoader from "@/components/ai/MiniLoader";
 import LoginForm from "@/components/auth/LoginForm";
 import { SearchParamsReader } from "@/components/renderingError/SearchParamsReader";
-import { Suspense } from "react";
+import AuthLayout from "@/layout/AuthLayout";
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
+    <AuthLayout
+      heading="Dobro došli nazad"
+      subheading="Prijavite se na vaš Marysoll nalog"
+      footerText="Nemate nalog?"
+      footerLinkText="Registrujte salon"
+      footerLinkHref="/register"
+    >
       <Suspense fallback={<MiniLoader />}>
         <SearchParamsReader />
         <LoginForm />
       </Suspense>
-    </div>
+    </AuthLayout>
   );
 }

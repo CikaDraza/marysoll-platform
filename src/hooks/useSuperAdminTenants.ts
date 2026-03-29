@@ -6,6 +6,7 @@
  */
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { PlanFeatures } from "@/lib/plans/planFeatures";
 import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
@@ -202,6 +203,49 @@ export function useSuperAdminTenants() {
     onError: () => toast.error("Greška pri snimanju podešavanja"),
   });
 
+  // ─── Feature override mutations ───────────────────────────────────────────
+
+  const setOverrideMutation = useMutation({
+    mutationFn: async ({
+      tenantId,
+      overrides,
+      expiresAt,
+      note,
+    }: {
+      tenantId: string;
+      overrides: Partial<Record<keyof PlanFeatures, boolean>>;
+      expiresAt: string;
+      note: string;
+    }) => {
+      const { data } = await api.put(
+        `/subscriptions/override/${tenantId}`,
+        { overrides, expiresAt, note },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["superadmin-tenants"] });
+      toast.success("Feature override primenjen");
+    },
+    onError: (err: Error) =>
+      toast.error(err.message ?? "Greška pri override-u"),
+  });
+
+  const removeOverrideMutation = useMutation({
+    mutationFn: async (tenantId: string) => {
+      const { data } = await api.delete(`/subscriptions/override/${tenantId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["superadmin-tenants"] });
+      toast.success("Override uklonjen");
+    },
+    onError: (err: Error) => toast.error(err.message ?? "Greška"),
+  });
+
   return {
     tenants,
     isLoading,
@@ -218,14 +262,33 @@ export function useSuperAdminTenants() {
     isUpdatingTrial: trialMutation.isPending,
 
     // Status
-    setStatus: (tenantId: string, status: "active" | "suspended" | "pending" | "cancelled") =>
-      statusMutation.mutate({ tenantId, status }),
+    setStatus: (
+      tenantId: string,
+      status: "active" | "suspended" | "pending" | "cancelled",
+    ) => statusMutation.mutate({ tenantId, status }),
     isUpdatingStatus: statusMutation.isPending,
 
     // Plan
-    setPlan: (tenantId: string, plan: "free" | "starter" | "pro" | "enterprise", expiresAt?: string) =>
-      planMutation.mutate({ tenantId, plan, expiresAt }),
+    setPlan: (
+      tenantId: string,
+      plan: "free" | "starter" | "pro" | "enterprise",
+      expiresAt?: string,
+    ) => planMutation.mutate({ tenantId, plan, expiresAt }),
     isUpdatingPlan: planMutation.isPending,
+
+    // Feature overrides
+    setFeatureOverride: (
+      tenantId: string,
+      params: {
+        overrides: Partial<Record<keyof PlanFeatures, boolean>>;
+        expiresAt: string;
+        note: string;
+      },
+    ) => setOverrideMutation.mutate({ tenantId, ...params }),
+    isSettingOverride: setOverrideMutation.isPending,
+    removeFeatureOverride: (tenantId: string) =>
+      removeOverrideMutation.mutate(tenantId),
+    isRemovingOverride: removeOverrideMutation.isPending,
 
     // Platform settings
     savePlatformSettings: settingsMutation.mutate,

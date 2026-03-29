@@ -42,14 +42,14 @@ export default function TestimonialForm({
     <form
       id="testimonial-form"
       onSubmit={handleSubmit}
-      className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm"
+      className="p-6 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm"
     >
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-300 mb-4">
         Ostavite komentar za termin: {appointment.serviceName}
       </h3>
 
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Ocena:
         </label>
         <div className="flex space-x-1">
@@ -71,14 +71,14 @@ export default function TestimonialForm({
       </div>
 
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Komentar:
         </label>
         <textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Podelite svoje iskustvo sa nama..."
-          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
+          className="w-full p-3 border border-gray-300 dark:border-gray-800 rounded-md focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
           rows={4}
           required
           minLength={10}

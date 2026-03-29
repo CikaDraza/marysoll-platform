@@ -526,6 +526,116 @@ function TrialTab({
 }
 
 // ─── Tab: Planovi ─────────────────────────────────────────────────────────────
+// ─── Tab: Planovi ─────────────────────────────────────────────────────────────
+
+const FEATURE_GROUPS: {
+  label: string;
+  keys: (keyof import("@/lib/plans/planFeatures").PlanFeatures)[];
+}[] = [
+  {
+    label: "Core",
+    keys: [
+      "customDomain",
+      "appointments",
+      "emailNotifications",
+      "pushNotifications",
+      "testimonials",
+    ],
+  },
+  {
+    label: "Newsletter",
+    keys: [
+      "newsletter",
+      "newsletterCampaigns",
+      "newsletterLanding",
+      "newsletterStats",
+    ],
+  },
+  {
+    label: "Statistika",
+    keys: ["statistics"],
+  },
+  {
+    label: "AI funkcionalnosti",
+    keys: [
+      "aiAssistant",
+      "aiImageGeneration",
+      "aiSeoGeneration",
+      "aiEmailTemplates",
+      "aiLandingPages",
+      "aiMarketingAnalysis",
+    ],
+  },
+  {
+    label: "Plaćanje & Loyalty",
+    keys: ["paymentIntegration", "loyaltySystem", "clientSubscriptions"],
+  },
+  {
+    label: "Enterprise",
+    keys: [
+      "socialMediaAds",
+      "googleBusinessOptimization",
+      "videoCreation",
+      "aeoGeoOptimization",
+      "unlimitedAiTokens",
+    ],
+  },
+];
+
+const FEATURE_LABELS: Record<string, string> = {
+  customDomain: "Custom domen",
+  appointments: "Zakazivanje termina",
+  emailNotifications: "Email notifikacije",
+  pushNotifications: "Push notifikacije",
+  testimonials: "Testimonials / Preporuke",
+  newsletter: "Newsletter (osnovno)",
+  newsletterCampaigns: "Newsletter kampanje",
+  newsletterLanding: "Newsletter landing stranice",
+  newsletterStats: "Statistika newslettera",
+  statistics: "Statistika salona",
+  aiAssistant: "AI asistent za zakazivanje",
+  aiImageGeneration: "AI generisanje slika",
+  aiSeoGeneration: "AI SEO optimizacija",
+  aiEmailTemplates: "AI email templati",
+  aiLandingPages: "AI landing stranice",
+  aiMarketingAnalysis: "AI marketing analiza",
+  paymentIntegration: "Integracija plaćanja",
+  loyaltySystem: "Loyalty bodovi",
+  clientSubscriptions: "Mesečna pretplata klijenata",
+  socialMediaAds: "Social media ads",
+  googleBusinessOptimization: "Google Business",
+  videoCreation: "Kreiranje videa",
+  aeoGeoOptimization: "AEO/GEO optimizacija",
+  unlimitedAiTokens: "Neograničeni AI tokeni",
+};
+
+const PLAN_INFO = [
+  {
+    id: "free",
+    label: "Free",
+    price: "0 EUR",
+    desc: "Trial, osnovna funkcionalnost",
+  },
+  {
+    id: "starter",
+    label: "Starter",
+    price: "19 EUR",
+    desc: "Newsletter, statistika, 128GB",
+  },
+  {
+    id: "pro",
+    label: "Pro",
+    price: "49 EUR",
+    desc: "AI, payments, loyalty, 512GB",
+  },
+  {
+    id: "enterprise",
+    label: "Enterprise",
+    price: "Po dogovoru",
+    desc: "Sve + neograničeno",
+  },
+] as const;
+
 function PlanoviTab({
   sa,
   tenants,
@@ -538,38 +648,42 @@ function PlanoviTab({
     "free",
   );
 
-  const PLAN_INFO = [
-    {
-      id: "free",
-      label: "Free",
-      price: "0 EUR",
-      desc: "Osnovna funkcionalnost, trial period",
-    },
-    {
-      id: "starter",
-      label: "Starter",
-      price: "19 EUR",
-      desc: "Do 100 termina/mesečno, newsletter",
-    },
-    {
-      id: "pro",
-      label: "Pro",
-      price: "49 EUR",
-      desc: "Neograničeno, AI asistent, analitika",
-    },
-    {
-      id: "enterprise",
-      label: "Enterprise",
-      price: "Po dogovoru",
-      desc: "Custom integracije, prioritetna podrška",
-    },
-  ];
+  // Override state
+  const [overrideEnabled, setOverrideEnabled] = useState(false);
+  const [overrides, setOverrides] = useState<Record<string, boolean>>({});
+  const [overrideExpiry, setOverrideExpiry] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().split("T")[0];
+  });
+  const [overrideNote, setOverrideNote] = useState("");
+
+  const selectedTenant = tenants.find((t) => t._id === selectedId);
+
+  function toggleOverride(key: string) {
+    setOverrides((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  function handleApplyOverride() {
+    if (!selectedId) return;
+    sa.setFeatureOverride(selectedId, {
+      overrides,
+      expiresAt: new Date(overrideExpiry).toISOString(),
+      note: overrideNote,
+    });
+  }
+
+  function handleRemoveOverride() {
+    if (!selectedId) return;
+    sa.removeFeatureOverride(selectedId);
+    setOverrides({});
+  }
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-4xl">
       <h2 className="text-lg font-bold">Upravljanje planovima</h2>
 
-      {/* Plan cards */}
+      {/* Plan counters */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {PLAN_INFO.map((p) => {
           const count = tenants.filter((t) => t.plan === p.id).length;
@@ -584,63 +698,212 @@ function PlanoviTab({
         })}
       </div>
 
-      {/* Change plan */}
+      {/* Salon selector */}
       <div className={card}>
-        <h3 className="font-semibold text-sm mb-4">Promeni plan za salon</h3>
-        <div className="space-y-4">
-          <div>
-            <label className={lbl}>Salon</label>
-            <select
-              className={inp}
-              value={selectedId}
-              onChange={(e) => setSelectedId(e.target.value)}
-            >
-              <option value="">— Izaberite salon —</option>
-              {tenants.map((t) => (
-                <option key={t._id} value={t._id}>
-                  {t.name} — trenutno: {t.plan}
-                </option>
-              ))}
-            </select>
+        <h3 className="font-semibold text-sm mb-4 text-white">Izaberi salon</h3>
+        <select
+          className={inp}
+          value={selectedId}
+          onChange={(e) => {
+            setSelectedId(e.target.value);
+            setOverrides({});
+            setOverrideEnabled(false);
+          }}
+        >
+          <option value="">— Izaberite salon —</option>
+          {tenants.map((t) => (
+            <option key={t._id} value={t._id}>
+              {t.name} ({t.slug}) — plan: {t.plan} — {t.status}
+            </option>
+          ))}
+        </select>
+
+        {selectedTenant && (
+          <div className="mt-3 flex flex-wrap gap-2 items-center">
+            <StatusBadge status={selectedTenant.status} />
+            <PlanBadge plan={selectedTenant.plan} />
+            {selectedTenant.isTrialActive && (
+              <span className="text-[10px] bg-amber-900/60 text-amber-400 border border-amber-700 px-2 py-0.5 rounded-full font-bold">
+                TRIAL {selectedTenant.trialDaysLeft}d
+              </span>
+            )}
+            <span className="text-xs text-slate-400 ml-1">
+              {selectedTenant.owner?.email}
+            </span>
           </div>
-          <div>
-            <label className={lbl}>Novi plan</label>
-            <select
-              className={inp}
-              value={plan}
-              onChange={(e) => setPlan(e.target.value as typeof plan)}
-            >
-              {PLAN_INFO.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label} — {p.price}
-                </option>
-              ))}
-            </select>
-          </div>
-          <button
-            onClick={() => selectedId && sa.setPlan(selectedId, plan)}
-            disabled={!selectedId || sa.isUpdatingPlan}
-            className={btnPrimary}
-          >
-            {sa.isUpdatingPlan ? "Ažuriranje..." : "Sačuvaj plan"}
-          </button>
-        </div>
+        )}
       </div>
 
-      {/* Payment modes */}
+      {selectedId && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Change plan */}
+          <div className={card}>
+            <h3 className="font-semibold text-sm mb-4 text-white">
+              Promeni plan
+            </h3>
+            <div className="space-y-3">
+              <div>
+                <label className={lbl}>Novi plan</label>
+                <select
+                  className={inp}
+                  value={plan}
+                  onChange={(e) => setPlan(e.target.value as typeof plan)}
+                >
+                  {PLAN_INFO.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label} — {p.price}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="p-3 bg-slate-700/50 rounded-lg text-xs text-slate-400 leading-relaxed">
+                {PLAN_INFO.find((p) => p.id === plan)?.desc}
+              </div>
+              <button
+                onClick={() => selectedId && sa.setPlan(selectedId, plan)}
+                disabled={!selectedId || sa.isUpdatingPlan}
+                className={btnPrimary}
+              >
+                {sa.isUpdatingPlan ? "Ažuriranje..." : "Sačuvaj plan"}
+              </button>
+            </div>
+          </div>
+
+          {/* Feature override */}
+          <div className={card}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-sm text-white">
+                Feature override
+              </h3>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400">Za testiranje</span>
+                <button
+                  onClick={() => setOverrideEnabled(!overrideEnabled)}
+                  className={`w-10 h-5 rounded-full transition-colors relative ${overrideEnabled ? "bg-violet-600" : "bg-slate-600"}`}
+                >
+                  <div
+                    className={`w-3.5 h-3.5 bg-white rounded-full absolute top-0.5 transition-transform ${overrideEnabled ? "translate-x-5" : "translate-x-0.5"}`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {!overrideEnabled ? (
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Omogući override da aktiviraš specifične feature-e za ovaj salon
+                bez mijenjanja plana. Korisno za testiranje i demo.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {/* Feature toggles by group */}
+                <div className="max-h-72 overflow-y-auto space-y-4 pr-1">
+                  {FEATURE_GROUPS.map((group) => (
+                    <div key={group.label}>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">
+                        {group.label}
+                      </p>
+                      <div className="space-y-1.5">
+                        {group.keys.map((key) => {
+                          const keyStr = String(key);
+                          const isOn = !!overrides[keyStr];
+                          return (
+                            <label
+                              key={keyStr}
+                              className="flex items-center gap-3 cursor-pointer group"
+                            >
+                              <button
+                                onClick={() => toggleOverride(keyStr)}
+                                className={`w-8 h-4 rounded-full transition-colors flex-shrink-0 relative ${isOn ? "bg-emerald-500" : "bg-slate-600 group-hover:bg-slate-500"}`}
+                              >
+                                <div
+                                  className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform ${isOn ? "translate-x-4" : "translate-x-0.5"}`}
+                                />
+                              </button>
+                              <span
+                                className={`text-xs ${isOn ? "text-emerald-400 font-semibold" : "text-slate-400"}`}
+                              >
+                                {FEATURE_LABELS[keyStr] ?? keyStr}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Expiry + note */}
+                <div className="space-y-2 pt-2 border-t border-slate-700">
+                  <div>
+                    <label className={lbl}>Override važi do</label>
+                    <input
+                      type="date"
+                      className={inp}
+                      value={overrideExpiry}
+                      min={new Date().toISOString().split("T")[0]}
+                      onChange={(e) => setOverrideExpiry(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className={lbl}>Napomena (opciono)</label>
+                    <input
+                      type="text"
+                      className={inp}
+                      value={overrideNote}
+                      onChange={(e) => setOverrideNote(e.target.value)}
+                      placeholder="npr. Demo za klijenta"
+                    />
+                  </div>
+                </div>
+
+                {/* Active override count */}
+                {Object.values(overrides).some(Boolean) && (
+                  <div className="text-xs bg-violet-900/40 border border-violet-700 rounded-lg px-3 py-2 text-violet-300">
+                    {Object.values(overrides).filter(Boolean).length} feature-a
+                    aktivirano override-om
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleApplyOverride}
+                    disabled={
+                      !Object.values(overrides).some(Boolean) ||
+                      sa.isSettingOverride
+                    }
+                    className={btnPrimary}
+                  >
+                    {sa.isSettingOverride ? "Čuvanje..." : "Primeni override"}
+                  </button>
+                  <button
+                    onClick={handleRemoveOverride}
+                    disabled={sa.isRemovingOverride}
+                    className="px-4 py-2 border border-slate-600 text-slate-400 text-xs font-bold rounded-lg hover:border-red-600 hover:text-red-400 transition disabled:opacity-40"
+                  >
+                    {sa.isRemovingOverride ? "..." : "Ukloni override"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Payment modes info */}
       <div className={card}>
-        <h3 className="font-semibold text-sm mb-3">Načini plaćanja</h3>
+        <h3 className="font-semibold text-sm mb-3 text-white">
+          Načini plaćanja
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-slate-700 rounded-xl p-4 border border-emerald-800/50">
             <h4 className="font-bold text-emerald-400 text-sm mb-2">
               🎁 Besplatan trial
             </h4>
-            <p className="text-xs text-slate-400 leading-relaxed mb-3">
-              Korisnik registruje salon i dobija N dana besplatno{" "}
-              <strong>bez unošenja kartice</strong>. Nakon isteka treba da plati
-              ili gubi pristup.
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Korisnik registruje salon i dobija N dana besplatno bez unošenja
+              kartice.
             </p>
-            <div className="text-xs text-emerald-300 space-y-1">
+            <div className="text-xs text-emerald-300 space-y-1 mt-3">
               <p>✓ Niža barijera za ulazak</p>
               <p>✓ Brži onboarding</p>
               <p>✗ Viši churn rate</p>
@@ -648,29 +911,24 @@ function PlanoviTab({
           </div>
           <div className="bg-slate-700 rounded-xl p-4 border border-violet-800/50">
             <h4 className="font-bold text-violet-400 text-sm mb-2">
-              💳 Kartica obavezna
+              💳 Trial sa karticom
             </h4>
-            <p className="text-xs text-slate-400 leading-relaxed mb-3">
-              Korisnik unosi karticu pri registraciji,{" "}
-              <strong>naplaćuje se</strong> ali dobija trial period gde može da
-              dobije novac nazad (refund) ako nije zadovoljan.
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Korisnik unosi karticu pri registraciji, ne naplaćuje se tokom
+              triala.
             </p>
-            <div className="text-xs text-violet-300 space-y-1">
-              <p>✓ Viši intent (ozbiljniji korisnici)</p>
-              <p>✓ Direktna naplata posle triala</p>
-              <p>✗ Više trenja pri onboardingu</p>
+            <div className="text-xs text-violet-300 space-y-1 mt-3">
+              <p>✓ Niži churn rate</p>
+              <p>✓ Automatska konverzija</p>
+              <p>✗ Viša barijera</p>
             </div>
           </div>
         </div>
-        <p className="text-xs text-slate-500 mt-3">
-          Promenite aktivan mod u <strong>Podešavanja → Trial mod</strong>.
-        </p>
       </div>
     </div>
   );
 }
 
-// ─── Tab: Statistika ──────────────────────────────────────────────────────────
 function StatistikaTab({
   stats,
   tenants,

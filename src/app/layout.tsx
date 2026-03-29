@@ -1,26 +1,35 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Outfit } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Toaster } from "react-hot-toast";
 import { QueryProvider } from "@/providers/QueryProvider";
+import { ThemeProvider } from "@/context/ThemeContext";
+import { SidebarProvider } from "@/context/SidebarContext";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
 export const metadata: Metadata = {
   title: "Marysoll",
   description: "Beauty Salon Platform",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="sr">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <QueryProvider>
-          {children}
-          <Toaster position="top-center" />
-        </QueryProvider>
+    <html lang="sr" suppressHydrationWarning>
+      <body className={`${outfit.variable} font-outfit antialiased`}>
+        <ThemeProvider>
+          <SidebarProvider>
+            <QueryProvider>
+              {children}
+              <Toaster position="top-center" />
+            </QueryProvider>
+          </SidebarProvider>
+        </ThemeProvider>
         <SpeedInsights />
       </body>
     </html>

@@ -1,232 +1,87 @@
-/* Uvoz fontova sa Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Changa:wght@200..800&display=swap');
-
-/* Tailwind CSS import */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
-/* Definisanje prilagođenih CSS varijabli (boje i fontovi) */
+/* Dark mode via class strategy */
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-outfit: Outfit, sans-serif;
+
+  /* Marysoll brand */
+  --color-brand-50: #f2f0ff;
+  --color-brand-100: #e5e0ff;
+  --color-brand-200: #ccc4ff;
+  --color-brand-300: #a99aff;
+  --color-brand-400: #8466ff;
+  --color-brand-500: #6d28d9;
+  --color-brand-600: #5b21b6;
+  --color-brand-700: #4c1d95;
+  --color-brand-800: #3b1478;
+  --color-brand-900: #2d1060;
+
+  --color-gray-dark: #1a2231;
+  --color-gray-950: #0d1117;
+}
+
+/* Salon brand CSS variables (used by public themes) */
 :root {
-  /* BOJE */
-  --main-color: #7f22fe;
-  --primary-color: #5D0156;
-  --secondary-color: #BA34B7;
-  --tetra-color: #9810fa;
-  --red-color: #D20003;
-  --black-color: #000000;
-  --white-color: #ffffff;
-
-  /* GLOBALNA POZADINA I TEKST */
-  --background: #E2E2E2;
-  --foreground: var(--black-color);
-  /* Koristi crnu kao osnovnu boju teksta */
-
-  /* FONTI */
-  --main-font: 'Changa', sans-serif;
-  --heading-font: 'Berkshire Swash', cursive;
+  --primary-color: oklch(54.1% 0.281 293.009);
+  --secondary-color: oklch(49.1% 0.27 292.581);
+  --secondary-color-strong: #f3e8ff;
+  --secondary-color-dark: oklch(43.2% 0.232 292.759);
+  --main-font: 'Outfit', sans-serif;
 }
 
-/* Prilagođavanje za dark mode (ako ga koristiš) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Obrnute boje za dark mode */
-    --background: var(--black-color);
-    --foreground: var(--white-color);
-  }
+html {
+  font-family: 'Outfit', sans-serif;
 }
 
-/* STILIZOVANJE BODY I HEADING ELEMENATA */
 body {
-  /* Postavljanje globalnog fonta na Changa i boje pozadine */
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--main-font);
-  /* Ceo sajt koristi Changa */
-}
-
-.main-font {
+  @apply bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100;
   font-family: var(--main-font);
 }
 
-.heading-font {
-  font-family: var(--heading-font);
+/* Sidebar menu utilities */
+@utility menu-item {
+  @apply flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all;
 }
 
-h1 {
-  /* H1 koristi Berkshire Swash i željenu veličinu */
-  font-family: var(--heading-font);
+@utility menu-item-active {
+  @apply bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400;
 }
 
-h2 {
-  /* H2 koristi Changa (ili drugi, po želji, ali ostavićemo main-font) i željenu veličinu */
-  font-family: var(--main-font);
+@utility menu-item-inactive {
+  @apply text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200;
 }
 
-.logo span, .hero .title {
-  font-family: var(--heading-font);
+@utility menu-item-icon-active {
+  @apply text-violet-600 dark:text-violet-400;
 }
 
-.hero-second .title {
-  font-size: 200px;
+@utility menu-item-icon-inactive {
+  @apply text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300;
 }
 
-@media (max-width: 768px) {
-  .hero-second .title {
-      font-size: 48px;
-    }
-}
-
-.privacy-policy h1, .dashboard h1, .calendar h1, .appointment-page h1, .services-page h1 {
-  font-family: var(--main-font);
-}
-
-/* u globalnom CSS fajlu */
-@keyframes bounce {
-
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-5px);
-  }
-}
-
-.animate-bounce {
-  animation: bounce 1s infinite;
-}
-
-/* U vašem CSS fajlu */
-.fc .fc-toolbar {
-  flex-direction: column;
-  gap: 10px;
-}
-
-.fc .fc-toolbar.fc-header-toolbar {
-  margin-bottom: 1em;
-}
-
-@media (max-width: 768px) {
-  .fc .fc-toolbar {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .fc .fc-toolbar-title {
-    font-size: 1.2em;
-    margin: 10px 0;
-  }
-
-  .fc .fc-button {
-    padding: 4px 8px;
-    font-size: 0.8em;
-  }
-
-  .fc .fc-timegrid-slot, .fc-event-title.fc-sticky, .fc-event-time {
-    font-size: 0.7em;
-  }
-
-  .fc .fc-daygrid-day-number {
-    font-size: 0.8em;
-    padding: 2px;
-  }
-}
-
-/* U vašem CSS fajlu */
-.fc .fc-col-header-cell-cushion {
-  font-size: 1em;
-  /* Default za desktop */
-}
-
-/* Za tablete */
-@media (max-width: 768px) {
-  .fc .fc-col-header-cell-cushion {
-    font-size: 0.75em;
-  }
-}
-
-/* Za mobilne telefone */
-@media (max-width: 480px) {
-  .fc .fc-col-header-cell-cushion {
-    font-size: 0.50em;
-    padding: 4px 2px;
-    line-height: 1.2;
-  }
-  /* FullCalendar container */
-  .fc.fc-media-screen.fc-direction-ltr.fc-theme-standard.fc-liquid-hack {
-      max-width: 100%;
-      width: 100%;
-      height: 100%;
-      overflow-x: auto;
-  }
-  /* FullCalendar header */
-  .fc-header-toolbar.fc-toolbar.fc-toolbar-ltr {
-    position: sticky;
-    max-width: 100%;
-    width: 100%;
-  }
-  /* FullCalendar view harness */
-  .fc-view-harness.fc-view-harness-passive {
-    width: 100%;
-    min-width: 1000px;
-    height: 100%;
-  }
-  tbody tr.fc-scrollgrid-section.fc-scrollgrid-section-header.fc-scrollgrid-section-sticky {
-    position: sticky;
-  }
-
-    /* === HORIZONTAL SCROLL KOJI RADI NA SVIM TELEFONIMA === */
-
-}
-
-.calendar-wrapper {
-  -webkit-overflow-scrolling: touch;
-  /* iPhone – omogućava glatki skrol */
-  overflow-x: auto;
-  overflow-y: hidden;
-  width: 100%;
+/* Scrollbar hide */
+@utility scrollbar-none {
   scrollbar-width: none;
-  /* Firefox */
-}
 
-.calendar-wrapper::-webkit-scrollbar {
-  display: none;
-  /* Chrome, Safari, Edge */
-}
-
-/* Dete mora imati fiksnu minimalnu širinu */
-.calendar-inner {
-  min-width: 900px;
-  /* ili 1000px, 1200px – koliko hoćeš */
-  width: max-content;
-}
-
-/* Dodatno – za glatkiji osećaj */
-.calendar-wrapper {
-  touch-action: pan-x;
-  /* dozvoljava samo horizontalni svajp */
-}
-
-@layer utilities {
-  .transition-max-height {
-    transition-property: max-height;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 300ms;
+  &::-webkit-scrollbar {
+    display: none;
   }
+}
 
-  .animate-slide-down {
-    animation: slideDown 0.3s ease-out;
-  }
+/* Admin card */
+@utility admin-card {
+  @apply bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm;
+}
 
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
+/* Form input — admin */
+@utility admin-input {
+  @apply w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400 dark:focus:ring-violet-500 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition;
+}
 
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+/* Label */
+@utility admin-label {
+  @apply block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5;
 }

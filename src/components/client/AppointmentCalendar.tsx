@@ -234,7 +234,7 @@ export default function AppointmentCalendar() {
       <Toaster position="top-right" />
       {/* Working hours */}
       <div
-        className="p-4 bg-white rounded-2xl overflow-auto overflow-x-scroll"
+        className="p-4 bg-white dark:bg-slate-900 rounded-2xl overflow-auto overflow-x-scroll"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -292,7 +292,9 @@ export default function AppointmentCalendar() {
               slotMinTime="00:00:00"
               slotMaxTime="24:00:00"
               events={events.map((event) => {
-                const appt = appointments.find((a) => a._id === event.id);
+                const appt = appointments.find(
+                  (a: IAppointment) => a._id === event.id,
+                );
                 if (!appt) return event;
 
                 const duration = appt.duration || 60;

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import { StatsCards } from "@/components/admin/statistics/StatsCards";
 import { StatsPieChart } from "@/components/admin/statistics/StatsPieChart";
 import { StatsTable } from "@/components/admin/statistics/StatsTable";
@@ -7,6 +8,8 @@ import { useStatistics } from "@/hooks/useStatistics";
 export const StatisticsPage: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const { features } = usePlanFeatures();
+  const statsLevel = features.statisticsLevel;
 
   const { clients, totalAppointments, totalRevenue } = useStatistics({
     month: selectedMonth,
@@ -97,52 +100,75 @@ export const StatisticsPage: React.FC = () => {
       {/* Cards */}
       <StatsCards month={selectedMonth} year={selectedYear} />
 
-      {/* Charts and Tables */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <StatsPieChart month={selectedMonth} year={selectedYear} />
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Brzi pregled
-          </h3>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-              <span className="text-sm font-medium text-blue-700">
-                Ukupno termina
-              </span>
-              <span className="text-lg font-bold text-blue-900">
-                {totalAppointments || 0}
-              </span>
-            </div>
-            <div className="flex flex-col lg:flex-row justify-between items-center p-3 bg-green-50 rounded-lg">
-              <span className="text-sm font-medium text-green-700">
-                Ukupan prihod
-              </span>
-              <span className="text-lg font-bold text-green-900">
-                {global ? formatCurrency(totalRevenue) : formatCurrency(0)}
-              </span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-              <span className="text-sm font-medium text-purple-700">
-                Aktivni klijenti
-              </span>
-              <span className="text-lg font-bold text-purple-900">
-                {clients?.active || 0}
-              </span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-              <span className="text-sm font-medium text-orange-700">
-                Novi klijenti
-              </span>
-              <span className="text-lg font-bold text-orange-900">
-                {clients?.new || 0}
-              </span>
+      {/* Full stats — starter+ */}
+      {statsLevel === "none" && (
+        <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-8 text-center text-sm text-zinc-400">
+          Statistika nije dostupna na vašem planu.
+        </div>
+      )}
+
+      {/* Charts and Tables — starter+ */}
+      {(statsLevel === "full" || statsLevel === "ai") && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <StatsPieChart month={selectedMonth} year={selectedYear} />
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              Brzi pregled
+            </h3>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                <span className="text-sm font-medium text-blue-700">
+                  Ukupno termina
+                </span>
+                <span className="text-lg font-bold text-blue-900">
+                  {totalAppointments || 0}
+                </span>
+              </div>
+              <div className="flex flex-col lg:flex-row justify-between items-center p-3 bg-green-50 rounded-lg">
+                <span className="text-sm font-medium text-green-700">
+                  Ukupan prihod
+                </span>
+                <span className="text-lg font-bold text-green-900">
+                  {global ? formatCurrency(totalRevenue) : formatCurrency(0)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+                <span className="text-sm font-medium text-purple-700">
+                  Aktivni klijenti
+                </span>
+                <span className="text-lg font-bold text-purple-900">
+                  {clients?.active || 0}
+                </span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
+                <span className="text-sm font-medium text-orange-700">
+                  Novi klijenti
+                </span>
+                <span className="text-lg font-bold text-orange-900">
+                  {clients?.new || 0}
+                </span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Detailed Table */}
+      )}
       <StatsTable month={selectedMonth} year={selectedYear} />
+      {statsLevel === "ai" && (
+        <div className="bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-100 rounded-2xl p-6 mt-6">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">🤖</span>
+            <div>
+              <p className="text-sm font-bold text-violet-800 mb-1">
+                AI Analiza statistike
+              </p>
+              <p className="text-xs text-violet-600">
+                AI analiza i predviđanje termina dostupno je u Pro/Enterprise
+                planu. Dolazi u sledećoj verziji.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

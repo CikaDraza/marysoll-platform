@@ -67,7 +67,7 @@ function AppointmentListItem({
   };
 
   return (
-    <li className="flex flex-col lg:flex-row justify-between gap-x-6 py-5 border-b border-gray-200">
+    <li className="flex flex-col lg:flex-row justify-between gap-x-6 py-5 border-b border-gray-200 dark:border-slate-800">
       <div className="flex min-w-0 gap-x-4 flex-1">
         <div className="min-w-0 flex-auto">
           {isOnline ? (
@@ -86,7 +86,7 @@ function AppointmentListItem({
             </div>
           )}
           <div className="flex items-center gap-2">
-            <p className="text-sm/6 font-semibold text-gray-900">
+            <p className="text-sm/6 font-semibold text-gray-900 dark:text-gray-300">
               {currentAppointment.clientName}
             </p>
             <span
@@ -112,11 +112,11 @@ function AppointmentListItem({
               </span>
             )}
           </div>
-          <p className="mt-1 text-xs/5 text-gray-500">
+          <p className="mt-1 text-xs/5 text-gray-500 dark:text-gray-300">
             {currentAppointment.clientEmail}
           </p>
           {currentAppointment.note && (
-            <p className="mt-2 text-xs text-gray-600">
+            <p className="mt-2 text-xs text-gray-600 dark:text-gray-300">
               <strong>Napomena klijenta:</strong> {currentAppointment.note}
             </p>
           )}
@@ -135,11 +135,11 @@ function AppointmentListItem({
       </div>
 
       <div className="flex flex-col items-end gap-2">
-        <p className="text-sm/6 font-semibold text-gray-900">
+        <p className="text-sm/6 font-semibold text-gray-900 dark:text-gray-300">
           {currentAppointment.serviceName.toUpperCase()}
         </p>
         <div className="mt-1 flex flex-col items-end gap-x-1.5">
-          <p className="text-xs/5 text-gray-500">
+          <p className="text-xs/5 text-gray-500 dark:text-gray-300">
             {`${
               currentAppointment.lastUpdatedBy === "client"
                 ? "Klijent"
@@ -315,9 +315,34 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
   if (!appointment) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-black bg-[url(/colorful-background.jpeg)] bg-center bg-no-repeat rounded-lg w-full max-w-2xl mx-4">
-        <div className="flex justify-between items-center p-4 border-b border-gray-200">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="relative bg-slate-900 rounded-lg w-full max-w-2xl mx-4">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Large circle top-right */}
+          <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-violet-600/20 blur-3xl" />
+          {/* Small circle bottom-left */}
+          <div className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full bg-purple-500/20 blur-2xl" />
+          {/* Grid dots */}
+          <svg
+            className="absolute inset-0 w-full h-full opacity-5"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <pattern
+                id="dots"
+                x="0"
+                y="0"
+                width="24"
+                height="24"
+                patternUnits="userSpaceOnUse"
+              >
+                <circle cx="2" cy="2" r="1.5" fill="white" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#dots)" />
+          </svg>
+        </div>
+        <div className="flex justify-between items-center p-4 border-b border-gray-700">
           <h3 className="text-lg font-semibold text-white">
             Chat - {appointment.clientName} - {appointment.serviceName}
           </h3>
@@ -382,7 +407,7 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
           )}
         </div>
 
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-gray-700">
           <div className="flex flex-col lg:flex-row gap-2">
             <input
               type="text"
@@ -390,7 +415,7 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyPress}
               placeholder="Unesite poruku..."
-              className="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-(--secondary-color)"
+              className="flex-1 text-white placeholder-gray-300 border border-gray-500 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-(--secondary-color)"
               disabled={isSending}
             />
             <button
@@ -491,7 +516,7 @@ export default function AdminAppointments() {
   return (
     <div className="space-y-6">
       {/* SEARCH BAR */}
-      <div className="bg-white py-4 rounded-lg">
+      <div className="py-4 rounded-lg">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="flex items-center lg:col-span-4">
             <h3 className="font-semibold text-(--primary-color) text-lg! lg:text-2xl!">
@@ -500,7 +525,7 @@ export default function AdminAppointments() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Pretraga
             </label>
             <div className="relative">
@@ -512,7 +537,7 @@ export default function AdminAppointments() {
                   setTextQuery(e.target.value);
                   setPage(1); // Resetuj stranu na novu pretragu
                 }}
-                className="w-full border border-gray-200 rounded-md bg-white px-3 py-2 text-gray-600 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+                className="w-full border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 text-gray-600 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
               />
               {isFetching && (
                 <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
@@ -523,7 +548,7 @@ export default function AdminAppointments() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Status termina
             </label>
             <select
@@ -532,7 +557,7 @@ export default function AdminAppointments() {
                 setStatusFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
+              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
             >
               <option value="">Svi termini</option>
               <option value="pending">Na čekaju</option>
@@ -544,7 +569,7 @@ export default function AdminAppointments() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Datum
             </label>
             <input
@@ -554,7 +579,7 @@ export default function AdminAppointments() {
                 setDateQuery(e.target.value);
                 setPage(1); // Resetuj stranu na novi datum
               }}
-              className="w-full rounded-md border-gray-200 bg-gray-100 p-2 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+              className="w-full rounded-md border border-gray-200 dark:border-gray-700 p-2 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
             />
           </div>
 
@@ -562,7 +587,7 @@ export default function AdminAppointments() {
             <button
               onClick={handleClearFilters}
               disabled={!hasActiveFilters && page === 1}
-              className="w-full cursor-pointer bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:opacity-10 disabled:cursor-not-allowed transition-colors"
+              className="w-full cursor-pointer bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:opacity-10 dark:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               Obriši filtere
             </button>
@@ -572,14 +597,14 @@ export default function AdminAppointments() {
 
       {/* RESULTS */}
       {appointments.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-500 dark:text-gray-300">
           {hasActiveFilters
             ? "Nema pronađenih termina."
             : "Nema zakazanih termina."}
         </div>
       ) : (
         <>
-          <div className="bg-white rounded-lg">
+          <div className="rounded-lg">
             <ul role="list" className="divide-y divide-gray-100">
               {appointments.map((appointment: IAppointment) => (
                 <AppointmentListItem

@@ -90,13 +90,15 @@ function DefaultUpgradePrompt({
   const badgeColor = PLAN_BADGE_COLORS[minPlan];
 
   return (
-    <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/60 p-8 flex flex-col items-center justify-center text-center gap-4">
+    <div className="rounded-2xl border border-dashed border-zinc-200 p-8 flex flex-col items-center justify-center text-center gap-4">
       <div className="w-12 h-12 rounded-2xl bg-violet-100 flex items-center justify-center text-2xl">
         🔒
       </div>
 
       <div>
-        <p className="text-sm font-bold text-zinc-800 mb-1">{featureLabel}</p>
+        <p className="text-sm font-bold text-zinc-800 dark:text-zinc-300 mb-1">
+          {featureLabel}
+        </p>
         <p className="text-xs text-zinc-500 max-w-xs leading-relaxed">
           Ova funkcionalnost nije dostupna na vašem trenutnom planu.
         </p>
@@ -115,7 +117,7 @@ function DefaultUpgradePrompt({
         href="/dashboard?tab=pretplata"
         className="text-xs font-semibold text-violet-600 hover:text-violet-800 underline underline-offset-2 transition"
       >
-        Unaprijedi plan →
+        Unapredi plan →
       </Link>
     </div>
   );

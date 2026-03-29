@@ -1,7 +1,7 @@
 {
-  "name": "Marysoll Makeup Salon",
-  "short_name": "Salon",
-  "description": "Salon za lepotu - zakazivanje termina",
+  "name": "Marysoll Bussines Growth System",
+  "short_name": "Marysoll",
+  "description": "Marysoll - Sa nama salon ti raste, fitnes centar, klinika, spa…",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
