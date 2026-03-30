@@ -46,7 +46,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
     const data = payload[0].payload;
     return (
       <div className="bg-white p-3 border border-gray-300 rounded-lg shadow-lg">
-        <p className="font-semibold">{data.fullName}</p>
+        <p className="font-semibold text-gray-800">{data.fullName}</p>
         <p className="text-sm text-gray-600">Broj termina: {data.value}</p>
         <p className="text-sm text-gray-600">
           Prihod:{" "}
@@ -69,7 +69,7 @@ export const StatsPieChart: React.FC<StatsPieChartProps> = ({
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6 h-80 flex items-center justify-center">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 h-80 flex items-center justify-center">
         <Loader />
       </div>
     );
@@ -77,15 +77,17 @@ export const StatsPieChart: React.FC<StatsPieChartProps> = ({
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6 h-80 flex items-center justify-center">
-        <div className="text-red-600">Greška pri učitavanju podataka</div>
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 h-80 flex items-center justify-center">
+        <div className="text-red-600 dark:text-red-400">
+          Greška pri učitavanju podataka
+        </div>
       </div>
     );
   }
 
   if (!services || services.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6 h-80 flex items-center justify-center">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 h-80 flex items-center justify-center">
         <div className="text-gray-500">Nema podataka o uslugama za prikaz</div>
       </div>
     );
@@ -132,10 +134,12 @@ export const StatsPieChart: React.FC<StatsPieChartProps> = ({
     const percentage = percent ? (percent * 100).toFixed(0) : "0";
     return `(${percentage}%)`;
   };
+  const card =
+    "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6 mb-6";
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-1 lg:p-6">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">
+    <div className={`${card}`}>
+      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-300 mb-4">
         Distribucija usluga - {month}/{year}
       </h3>
       <div className="h-96">

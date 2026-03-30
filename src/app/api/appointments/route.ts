@@ -55,15 +55,19 @@ export async function GET(req: Request) {
     if (status === "pending") {
       filter.status = "pending";
     } else if (status === "approved") {
-      filter.status = "approved";
+      filter.status = "appointment_approved";
     } else if (status === "rejected") {
-      filter.status = "rejected";
+      filter.status = "appointment_rejected";
     } else if (status === "rescheduled") {
-      filter.status = "rescheduled";
+      filter.status = "appointment_rescheduled";
     } else if (status === "cancelled") {
-      filter.status = "cancelled";
+      filter.status = "appointment_cancelled";
+    } else if (status === "completed") {
+      filter.status = "completed";
+    } else if (status === "no_show") {
+      filter.status = "no_show";
     }
-
+    console.log({ status: status, filter: filter });
     // Pipeline za paginaciju
     const aggregationPipeline: mongoose.PipelineStage[] = [
       { $match: filter },
@@ -78,6 +82,7 @@ export async function GET(req: Request) {
     ];
 
     const result = await Appointment.aggregate(aggregationPipeline);
+    console.log(result);
 
     const totalCount = result[0]?.metadata?.total || 0;
     const appointments = result[0]?.data || [];

@@ -479,7 +479,7 @@ export default function ClientAppointments() {
               )}
             </div>
           </div>
-          <div>
+          <div className="py-2">
             <label className="block text-sm font-medium dark:text-gray-100 text-gray-700 mb-1">
               Status termina
             </label>
@@ -493,10 +493,12 @@ export default function ClientAppointments() {
             >
               <option value="">Svi termini</option>
               <option value="pending">Na čekaju</option>
+              <option value="completed">Završeno</option>
               <option value="approved">Odobren</option>
               <option value="rejected">Odbijen</option>
               <option value="rescheduled">Pomeren termin</option>
               <option value="cancelled">Otkazan</option>
+              <option value="no_show">Nije se pojavio</option>
             </select>
           </div>
           <div>
@@ -514,7 +516,7 @@ export default function ClientAppointments() {
             />
           </div>
 
-          <div className="flex items-end">
+          <div className="flex items-end pb-2">
             <button
               onClick={handleClearFilters}
               disabled={!hasActiveFilters && page === 1}

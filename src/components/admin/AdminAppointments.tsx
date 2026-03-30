@@ -67,7 +67,7 @@ function AppointmentListItem({
   };
 
   return (
-    <li className="flex flex-col lg:flex-row justify-between gap-x-6 py-5 border-b border-gray-200 dark:border-slate-800">
+    <li className="flex flex-col lg:flex-row justify-between gap-x-6 py-5 border-b dark:last:border-gray-900 last:border-gray-50 border-gray-200 dark:border-slate-800">
       <div className="flex min-w-0 gap-x-4 flex-1">
         <div className="min-w-0 flex-auto">
           {isOnline ? (
@@ -438,6 +438,9 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
   );
 }
 
+const card =
+  "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
+
 export default function AdminAppointments() {
   const [textQuery, setTextQuery] = useState("");
   const [dateQuery, setDateQuery] = useState("");
@@ -516,14 +519,13 @@ export default function AdminAppointments() {
   return (
     <div className="space-y-6">
       {/* SEARCH BAR */}
-      <div className="py-4 rounded-lg">
+      <div className={`${card}`}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="flex items-center lg:col-span-4">
             <h3 className="font-semibold text-(--primary-color) text-lg! lg:text-2xl!">
               Lista svih termina
             </h3>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Pretraga
@@ -546,8 +548,7 @@ export default function AdminAppointments() {
               )}
             </div>
           </div>
-
-          <div>
+          <div className="py-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Status termina
             </label>
@@ -557,14 +558,16 @@ export default function AdminAppointments() {
                 setStatusFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
             >
               <option value="">Svi termini</option>
               <option value="pending">Na čekaju</option>
+              <option value="completed">Završeno</option>
               <option value="approved">Odobren</option>
               <option value="rejected">Odbijen</option>
               <option value="rescheduled">Pomeren termin</option>
               <option value="cancelled">Otkazan</option>
+              <option value="no_show">Nije se pojavio</option>
             </select>
           </div>
 
@@ -582,8 +585,7 @@ export default function AdminAppointments() {
               className="w-full rounded-md border border-gray-200 dark:border-gray-700 p-2 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
             />
           </div>
-
-          <div className="flex items-end">
+          <div className="flex items-end pb-2">
             <button
               onClick={handleClearFilters}
               disabled={!hasActiveFilters && page === 1}
@@ -604,7 +606,7 @@ export default function AdminAppointments() {
         </div>
       ) : (
         <>
-          <div className="rounded-lg">
+          <div className={`${card}`}>
             <ul role="list" className="divide-y divide-gray-100">
               {appointments.map((appointment: IAppointment) => (
                 <AppointmentListItem
@@ -618,10 +620,12 @@ export default function AdminAppointments() {
 
           {/* Paginator */}
           {pagination && pagination.totalPages > 1 && (
-            <Paginator
-              pagination={pagination}
-              onPageChange={handlePageChange}
-            />
+            <div className={`${card}`}>
+              <Paginator
+                pagination={pagination}
+                onPageChange={handlePageChange}
+              />
+            </div>
           )}
         </>
       )}

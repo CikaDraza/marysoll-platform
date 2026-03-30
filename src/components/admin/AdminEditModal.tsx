@@ -19,6 +19,18 @@ interface Props {
   token?: string;
 }
 
+const inp = [
+  "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
+  "text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800",
+  "focus:outline-none focus:ring-2 focus:ring-violet-400 transition",
+  "placeholder:text-gray-400 dark:placeholder:text-gray-500",
+].join(" ");
+
+const lbl =
+  "block text-[11px] font-bold text-gray-400 dark:text-gray-300 uppercase tracking-widest mb-1.5";
+const card =
+  "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
+
 export default function AdminEditModal({
   isOpen,
   onClose,
@@ -187,14 +199,14 @@ export default function AdminEditModal({
   return (
     <>
       <Dialog open={isOpen} onClose={onClose} className="relative my-20 z-50">
-        <DialogBackdrop className="fixed inset-0 bg-black/50" />
+        <DialogBackdrop className="fixed inset-0 bg-black/80" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-xl w-full bg-white rounded-lg shadow-xl p-6 overflow-scroll max-h-[90vh] min-h-[90vh] lg:min-h-auto">
+          <DialogPanel className="max-w-xl w-full bg-white dark:bg-gray-900 rounded-lg shadow-xl p-6 overflow-scroll max-h-[90vh] min-h-[90vh] lg:min-h-auto">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold">Izmene termina</h3>
               <button
                 onClick={onClose}
-                className="text-gray-600 hover:text-gray-900"
+                className="cursor-pointer text-gray-600 hover:text-gray-900 dark:hover:text-gray-50"
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
@@ -202,26 +214,22 @@ export default function AdminEditModal({
 
             <form onSubmit={handleUpdate} className="mt-4 space-y-4 h-full">
               <div>
-                <label className="block text-sm font-semibold text-gray-700">
-                  Datum
-                </label>
+                <label className={lbl}>Datum</label>
                 <input
                   type="date"
                   value={selectedEditDate}
                   onChange={(e) => setSelectedEditDate(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-200 p-2 bg-gray-100 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+                  className={inp}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700">
-                  Vreme
-                </label>
+                <label className={lbl}>Vreme</label>
                 <select
                   value={selectedEditTime}
                   onChange={(e) => setSelectedEditTime(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-200 p-2 bg-gray-100"
+                  className={inp}
                   required
                 >
                   <option value="">— izaberite vreme —</option>
@@ -235,34 +243,28 @@ export default function AdminEditModal({
 
               <div className="flex gap-x-3">
                 <div className="flex-1">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Klijent
-                  </label>
+                  <label className={lbl}>Klijent</label>
                   <input
                     type="text"
                     value={appointment.clientName}
                     disabled
-                    className="mt-1 block w-full rounded-md border-gray-200 p-2 bg-gray-100"
+                    className={inp}
                   />
                 </div>
 
                 <div className="flex-1">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Email
-                  </label>
+                  <label className={lbl}>Email</label>
                   <input
                     type="email"
                     value={appointment.clientEmail}
                     disabled
-                    className="mt-1 block w-full rounded-md border-gray-200 p-2 bg-gray-100"
+                    className={inp}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700">
-                  Usluga
-                </label>
+                <label className={lbl}>Usluga</label>
                 <div className="flex flex-col lg:grid lg:grid-cols-2 mt-3 gap-x-3 gap-y-2">
                   {services.map((s) => (
                     <div
@@ -416,14 +418,12 @@ export default function AdminEditModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Napomena
-                </label>
+                <label className={lbl}>Napomena</label>
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   rows={3}
-                  className="mt-1 block w-full rounded-md border-gray-200 p-2 bg-gray-100"
+                  className={inp}
                 />
               </div>
 
@@ -431,7 +431,7 @@ export default function AdminEditModal({
                 <button
                   type="button"
                   onClick={confirmDelete}
-                  className="flex items-center gap-2 px-4 py-2 rounded bg-red-100 text-red-600"
+                  className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded bg-red-100 text-red-600 hover:bg-red-600 hover:text-white"
                 >
                   <TrashIcon className="w-4 h-4" /> Obriši termin
                 </button>
@@ -440,13 +440,13 @@ export default function AdminEditModal({
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-4 py-2 bg-gray-100 rounded"
+                    className="cursor-pointer px-4 py-2 bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-800/80 rounded"
                   >
                     Otkaži
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-(--secondary-color) text-white rounded disabled:opacity-50"
+                    className="cursor-pointer px-4 py-2 bg-(--secondary-color) hover:bg-(--secondary-color)/90 text-white rounded disabled:opacity-50"
                     disabled={
                       selectedService?.type === "variant" && !selectedVariant
                     }

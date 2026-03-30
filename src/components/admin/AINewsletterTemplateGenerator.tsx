@@ -55,7 +55,7 @@ export default function AINewsletterTemplateGenerator({
 
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 max-w-4xl w-full max-h-screen overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-4xl w-full max-h-screen overflow-y-auto">
             <h3 className="text-2xl font-bold mb-4">
               AI Generisanje Email Templejta
             </h3>
@@ -63,7 +63,8 @@ export default function AINewsletterTemplateGenerator({
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              className="w-full h-32 p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="Ovde upišite tekst za generisanje HTML templejta."
+              className="w-full h-32 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
 
             <div className="flex gap-3 mt-6">
@@ -80,7 +81,7 @@ export default function AINewsletterTemplateGenerator({
                   setPrompt("");
                   setGeneratedHtml("");
                 }}
-                className="cursor-pointer px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="cursor-pointer px-6 py-3 border border-gray-300 rounded-lg hover:text-black hover:bg-gray-50"
               >
                 Otkaži
               </button>

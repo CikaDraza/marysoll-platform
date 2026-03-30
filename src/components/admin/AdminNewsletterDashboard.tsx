@@ -22,6 +22,18 @@ import AdminSemanticModal from "./campaign/AdminSematicModal";
 import { SingleImageField } from "./campaign/SingleImageField";
 import LoaderButton from "../elements/LoaderButton";
 
+const inp = [
+  "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
+  "text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800",
+  "focus:outline-none focus:ring-2 focus:ring-violet-400 transition",
+  "placeholder:text-gray-400 dark:placeholder:text-gray-500",
+].join(" ");
+
+const lbl =
+  "block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5";
+const card =
+  "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
+
 const statusBadgeStyles: Record<INewsletterCampaign["status"], string> = {
   draft: "bg-gray-100 text-gray-800",
   scheduled: "bg-purple-100 text-purple-800",
@@ -390,18 +402,18 @@ export default function AdminNewsletterDashboard() {
   }
 
   return (
-    <div className="p-2 lg:p-8 max-w-7xl mx-auto">
+    <div>
       <Toaster position="top-right" />
       {/* ===== NEWSLETTER EMAIL TEMPLATES SEKCIJA ===== */}
       <div className="mb-12">
         <div className="flex flex-col items-start gap-6 mb-8">
-          <div className="flex-1">
+          <div className={`${card} w-full flex-1`}>
             <h2 className="text-2xl! lg:text-4xl! font-bold mb-4">
-              Newsletter Email Templejti
+              Newsletter Email Kampanje
             </h2>
-            <p className="text-gray-600 max-w-3xl">
-              Ovde upravljate templejtima za email kampanje. Sistem dolazi sa{" "}
-              <strong>default templejtima</strong>
+            <p className="text-gray-600 dark:text-gray-400 max-w-3xl">
+              Ovde upravljate email kampanjama. Sistem dolazi sa{" "}
+              <strong>default templejtima </strong>
               (promocije, novosti, saveti, rođendani...), ali možete kreirati i{" "}
               <strong>custom templejte</strong> putem AI asistenta ili importom
               gotovog HTML koda.
@@ -426,7 +438,7 @@ export default function AdminNewsletterDashboard() {
 
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="cursor-pointer px-6 py-3 border border-gray-300 dark:border-gray-700 rounded-lg dark:hover:border-gray-300"
             >
               📄 Importuj HTML datoteku
             </button>
@@ -440,94 +452,93 @@ export default function AdminNewsletterDashboard() {
           </div>
         </div>
         {/* Default templejti grid */}
-        <h3 className="text-lg lg:text-xl font-bold">Default Templejti:</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 my-8">
-          {defaultTemplates.map((template) => (
-            <div
-              key={template.slug}
-              className="border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="bg-gray-50 p-4 border-b border-gray-200 flex justify-between items-center">
-                <div>
-                  <h4 className="font-semibold">{template.name}</h4>
-                  <p className="text-sm text-gray-600">{template.slug}</p>
-                </div>
-                <button
-                  className="text-sm text-blue-600 hover:text-blue-600 cursor-pointer"
-                  onClick={() => {
-                    handleTemplateSelect(template);
-                    setCustomHtmlInput(template.htmlTemplate);
-                    setPreviewHtml(
-                      replaceVariables(template.htmlTemplate, {
-                        ...(template.variables || []).reduce(
-                          (acc, v) => ({
-                            ...acc,
-                            [v.name]: v.defaultValue || "",
-                          }),
-                          {} as Record<string, string>,
-                        ),
-                      }),
-                    );
-                    setTimeout(() => {
-                      const element = document.getElementById(
-                        "custom-html-template",
-                      );
-                      if (element) {
-                        element.scrollIntoView({
-                          behavior: "smooth",
-                          block: "start",
-                        });
-                      }
-                    }, 100);
-                  }}
-                >
-                  Izmeni
-                </button>
-              </div>
-              <div className="h-64 bg-white">
-                <iframe
-                  srcDoc={template.htmlTemplate}
-                  className="w-full h-full border-0"
-                  title={`Preview ${template.name}`}
-                  sandbox="allow-same-origin"
-                />
-              </div>
-              <div className="p-4 bg-gray-50 flex justify-between items-center">
-                <span
-                  className={`text-xs px-2 py-1 rounded-full ${
-                    template.isActive
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  {template.isActive ? "Aktivan" : "Neaktivan"}
-                </span>
-
-                <div className="flex gap-3">
+        <div className={`${card} mb-4`}>
+          <h3 className="text-lg lg:text-xl font-bold">Default Templejti:</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 my-8">
+            {defaultTemplates.map((template) => (
+              <div key={template.slug} className={`${card}`}>
+                <div className="bg-gray-50 dark:bg-gray-900 p-4 border-b border-gray-200 flex justify-between items-center">
+                  <div>
+                    <h4 className="font-semibold">{template.name}</h4>
+                    <p className="text-sm text-gray-600">{template.slug}</p>
+                  </div>
                   <button
-                    onClick={() => handleTemplateSelect(template)}
-                    className="text-sm text-(--secondary-color) hover:underline cursor-pointer"
+                    className="text-sm text-blue-600 hover:text-blue-600 cursor-pointer"
+                    onClick={() => {
+                      handleTemplateSelect(template);
+                      setCustomHtmlInput(template.htmlTemplate);
+                      setPreviewHtml(
+                        replaceVariables(template.htmlTemplate, {
+                          ...(template.variables || []).reduce(
+                            (acc, v) => ({
+                              ...acc,
+                              [v.name]: v.defaultValue || "",
+                            }),
+                            {} as Record<string, string>,
+                          ),
+                        }),
+                      );
+                      setTimeout(() => {
+                        const element = document.getElementById(
+                          "custom-html-template",
+                        );
+                        if (element) {
+                          element.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                          });
+                        }
+                      }, 100);
+                    }}
                   >
-                    Koristi u kampanji →
+                    Izmeni
                   </button>
                 </div>
+                <div className="h-64 bg-white">
+                  <iframe
+                    srcDoc={template.htmlTemplate}
+                    className="w-full h-full border-0"
+                    title={`Preview ${template.name}`}
+                    sandbox="allow-same-origin"
+                  />
+                </div>
+                <div className="p-4 bg-gray-50 dark:bg-gray-950 flex justify-between items-center">
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full ${
+                      template.isActive
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {template.isActive ? "Aktivan" : "Neaktivan"}
+                  </span>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleTemplateSelect(template)}
+                      className="text-sm text-(--primary-color) dark:text-gray-300 hover:underline cursor-pointer"
+                    >
+                      Koristi u kampanji →
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
         {/* Custom templejti grid */}
         {templates.length > 0 && (
-          <>
+          <div className={`${card} mb-4`}>
             <h3 className="text-lg lg:text-xl font-bold">
               Sačuvani Templejti:
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 my-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 my-8">
               {templates.map((template) => (
                 <div
                   key={template._id}
                   className="border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                 >
-                  <div className="bg-gray-50 p-4 border-b border-gray-200 flex items-center justify-between">
+                  <div className="bg-gray-50 dark:bg-gray-900 p-4 border-b border-gray-200 flex items-center justify-between">
                     <div>
                       <h4 className="font-semibold">{template.name}</h4>
                       <p className="text-sm text-gray-600">{template.slug}</p>
@@ -589,7 +600,7 @@ export default function AdminNewsletterDashboard() {
                       sandbox="allow-same-origin"
                     />
                   </div>
-                  <div className="p-4 bg-gray-50 flex justify-between items-center">
+                  <div className="p-4 bg-gray-50 dark:bg-gray-950 flex justify-between items-center">
                     <span
                       className={`text-xs px-2 py-1 rounded-full ${
                         template.isActive
@@ -613,7 +624,7 @@ export default function AdminNewsletterDashboard() {
                     <div className="flex gap-3">
                       <button
                         onClick={() => handleTemplateSelect(template)}
-                        className="text-sm text-(--secondary-color) hover:underline cursor-pointer"
+                        className="text-sm text-(--secondary-color) dark:text-gray-300 hover:underline cursor-pointer"
                       >
                         Koristi u kampanji →
                       </button>
@@ -622,14 +633,11 @@ export default function AdminNewsletterDashboard() {
                 </div>
               ))}
             </div>
-          </>
+          </div>
         )}
 
         {selectedTemplate && (
-          <div
-            id="selected-template"
-            className="mt-8 p-6 bg-gray-50 rounded-xl"
-          >
+          <div id="selected-template" className={`${card}`}>
             <h3 className="text-xl font-semibold mb-4">
               Popunite varijable za &quot;{selectedTemplate.name}&quot;
             </h3>
@@ -661,7 +669,7 @@ export default function AdminNewsletterDashboard() {
                     className={isImageField ? "md:col-span-2" : ""}
                     key={variable.name}
                   >
-                    <label className="block text-sm font-medium mb-2 text-gray-700">
+                    <label className={`${lbl}`}>
                       {variable.label}
                       {isClientName && (
                         <span className="ml-2 text-xs text-blue-600 font-normal">
@@ -693,7 +701,7 @@ export default function AdminNewsletterDashboard() {
                         className={`w-full p-3 border rounded-lg resize-none ${
                           isClientName
                             ? "bg-gray-100 text-gray-500 cursor-not-allowed border-gray-300"
-                            : "border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                            : "border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                         }`}
                         rows={4}
                       />
@@ -713,7 +721,7 @@ export default function AdminNewsletterDashboard() {
                         className={`w-full p-3 border rounded-lg ${
                           isClientName
                             ? "bg-gray-100 text-gray-500 cursor-not-allowed"
-                            : "border-gray-300 focus:ring-2 focus:ring-pink-500"
+                            : "border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-pink-500"
                         }`}
                       />
                     ) : variable.type === "datetime-local" ? (
@@ -727,7 +735,7 @@ export default function AdminNewsletterDashboard() {
                         className={`w-full p-3 border rounded-lg ${
                           isClientName
                             ? "bg-gray-100 text-gray-500 cursor-not-allowed"
-                            : "border-gray-300 focus:ring-2 focus:ring-pink-500"
+                            : "border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-pink-500"
                         }`}
                       />
                     ) : (
@@ -749,7 +757,7 @@ export default function AdminNewsletterDashboard() {
                         className={`w-full p-3 border rounded-lg ${
                           isClientName
                             ? "bg-gray-100 text-gray-500 cursor-not-allowed border-gray-300"
-                            : "border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                            : "border-gray-300 dark:border-gray-700 focus:ring-2 focus:outline-none focus:ring-pink-500 focus:border-transparent"
                         }`}
                       />
                     )}
@@ -769,7 +777,7 @@ export default function AdminNewsletterDashboard() {
                     value={formData.variables?.ctaSlug ?? ""}
                     onChange={(e) => updateVariable("ctaSlug", e.target.value)}
                     placeholder="npr. termini, manikir, promo-makeup"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                   />
                   <p className="text-sm text-gray-500 mt-1">
                     Primer: /termini → vodi na https://marysoll.makeup/termini
@@ -781,11 +789,16 @@ export default function AdminNewsletterDashboard() {
         )}
 
         {/* Custom import sekcija */}
-        <div className="border border-dashed border-gray-300 rounded-xl p-6 bg-gray-50">
+        <div
+          className={
+            card +
+            " mt-4 border border-dashed border-gray-300 rounded-xl p-6 bg-gray-50"
+          }
+        >
           {formData.content && (
             <div className="mb-6">
               <h4 className="font-semibold mb-3">Preview templejta:</h4>
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border dark:border-gray-700 rounded-lg overflow-hidden">
                 <iframe
                   srcDoc={formData.content}
                   className="w-full h-screen min-h-96"
@@ -812,7 +825,7 @@ export default function AdminNewsletterDashboard() {
                       variables: {},
                     });
                   }}
-                  className="cursor-pointer mt-4 px-6 py-3 border border-gray-200 rounded-lg hover:bg-gray-100"
+                  className="cursor-pointer mt-4 px-6 py-3 border border-gray-200 dark:border-gray-700 rounded-lg dark:hover:bg-gray-800 hover:bg-gray-100"
                 >
                   Obriši preview templejt
                 </button>
@@ -828,7 +841,7 @@ export default function AdminNewsletterDashboard() {
             value={customHtmlInput}
             onChange={(e) => setCustomHtmlInput(e.target.value)}
             placeholder="Ovde zalepi čist HTML kod templejta (bez <html>, <body>, <head> tagova)"
-            className="w-full h-60 lg:h-48 p-4 border border-gray-300 rounded-lg font-mono text-sm bg-white"
+            className="w-full h-60 lg:h-48 p-4 border border-gray-300 rounded-lg font-mono text-sm"
           />
           <label className="flex items-center gap-3 my-4">
             <input
@@ -883,7 +896,7 @@ export default function AdminNewsletterDashboard() {
                   setCustomHtmlInput("");
                   setIsVariable(false);
                 }}
-                className="cursor-pointer px-6 py-3 border border-gray-200 rounded-lg hover:bg-gray-100"
+                className="cursor-pointer px-6 py-3 border border-gray-200 dark:border-gray-700 rounded-lg dark:hover:bg-gray-800 hover:bg-gray-100"
               >
                 Obriši HTML templejta
               </button>
@@ -891,468 +904,483 @@ export default function AdminNewsletterDashboard() {
           </div>
         </div>
       </div>
-      <div className="flex flex-col lg:flex-row justify-between items-center mb-8">
-        <h2 className="text-2xl! lg:text-4xl! font-bold">
-          Newsletter Kampanje
-        </h2>
-        <button
-          onClick={() => setIsFormOpen(!isFormOpen)}
-          className={`px-6 py-2 lg:py-3 ${
-            isFormOpen
-              ? `bg-red-500 hover:bg-red-600`
-              : `bg-(--secondary-color) hover:bg-(--secondary-color)/90`
-          } text-white rounded-lg cursor-pointer w-full lg:w-auto mt-3`}
-        >
-          {isFormOpen ? "Otkaži" : "+ Nova kampanja"}
-        </button>
-      </div>
-
-      {/* Forma za kreiranje kampanje */}
-      {isFormOpen && (
-        <div className="border border-gray-200 rounded-xl p-3 lg:p-6 mb-8">
-          <h3 className="text-2xl font-semibold mb-6">Kreiraj novu kampanju</h3>
-          <form
-            onSubmit={handleCreate}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6"
+      <div className={card}>
+        <div className="flex flex-col lg:flex-row justify-between items-center mb-8">
+          <h2 className="text-2xl! lg:text-4xl! font-bold">
+            Kreirane Kampanje
+          </h2>
+          <button
+            onClick={() => setIsFormOpen(!isFormOpen)}
+            className={`px-6 py-2 lg:py-3 ${
+              isFormOpen
+                ? `bg-red-500 hover:bg-red-600`
+                : `bg-(--secondary-color) hover:bg-(--secondary-color)/90`
+            } text-white rounded-lg cursor-pointer w-full lg:w-auto mt-3`}
           >
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Naziv kampanje
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                className="w-full px-4 py-2 bg-gray-100 rounded-lg focus:outline-(--secondary-color)"
-              />
-            </div>
+            {isFormOpen ? "Otkaži" : "+ Nova kampanja"}
+          </button>
+        </div>
 
-            <div className="md:col-span-1">
-              <label className="block text-sm font-medium mb-2">
-                Izabrani templejt
-              </label>
-              {selectedTemplate ? (
-                <div className="px-4 py-2 bg-gray-100 rounded-lg flex items-center justify-between">
-                  <div>
-                    <span className="font-semibold">
-                      {selectedTemplate.name}
-                    </span>
-                    <span className="text-sm text-gray-600 ml-2">
-                      ({selectedTemplate.slug})
-                    </span>
+        {/* Forma za kreiranje kampanje */}
+        {isFormOpen && (
+          <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-3 lg:p-6 mb-8">
+            <h3 className="text-2xl font-semibold mb-6">
+              Kreiraj novu kampanju
+            </h3>
+            <form
+              onSubmit={handleCreate}
+              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+            >
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Naziv kampanje
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-950 rounded-lg focus:outline-none focus:ring-2 focus:ring-(--secondary-color)"
+                />
+              </div>
+
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium mb-2">
+                  Izabrani templejt
+                </label>
+                {selectedTemplate ? (
+                  <div className="px-4 py-2 bg-gray-100 dark:bg-gray-950 rounded-lg flex items-center justify-between">
+                    <div>
+                      <span className="font-semibold">
+                        {selectedTemplate.name}
+                      </span>
+                      <span className="text-sm text-gray-600 ml-2">
+                        ({selectedTemplate.slug})
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedTemplate(null);
+                        setFormData({
+                          ...formData,
+                          templateId: "",
+                          subject: "",
+                          content: "",
+                          variables: {},
+                        });
+                      }}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      Ukloni
+                    </button>
                   </div>
-                  <button
-                    onClick={() => {
-                      setSelectedTemplate(null);
+                ) : (
+                  <p className="text-gray-500 px-4 py-2 text-xs italic">
+                    Kliknite na &ldquo;Koristi u kampanji&ldquo; kod željenog
+                    templejta iz liste iznad
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Subject
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.subject}
+                  onChange={(e) =>
+                    setFormData({ ...formData, subject: e.target.value })
+                  }
+                  className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-950 rounded-lg focus:outline-none focus:ring-2 focus:ring-(--secondary-color)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Preview tekst
+                </label>
+                <input
+                  type="text"
+                  value={formData.previewText}
+                  onChange={(e) =>
+                    setFormData({ ...formData, previewText: e.target.value })
+                  }
+                  placeholder="Tekst koji se vidi pre otvaranja emaila"
+                  className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-950 rounded-lg focus:outline-none focus:ring-2 focus:ring-(--secondary-color)"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-2">
+                  Zakazivanje pocetka kampanje
+                </label>
+                <input
+                  type="datetime-local"
+                  value={formData.scheduledFor}
+                  onChange={(e) =>
+                    setFormData({ ...formData, scheduledFor: e.target.value })
+                  }
+                  className="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-(--secondary-color)"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Ostavi prazno za slanje odmah nakon kreiranja
+                </p>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="flex items-center gap-3 mb-4">
+                  <input
+                    type="checkbox"
+                    checked={formData.sendToAll}
+                    onChange={(e) => {
+                      setFormData({ ...formData, sendToAll: e.target.checked });
+                    }}
+                    className="size-5"
+                  />
+                  <span className="font-medium">
+                    Pošalji svim pretplatnicima
+                  </span>
+                </label>
+                {!formData.sendToAll && (
+                  <div className={card + " md:col-span-2 mt-6"}>
+                    <h4 className="font-semibold mb-4">
+                      Ručni odabir primaoca
+                    </h4>
+
+                    {/* Pretraga */}
+                    <input
+                      type="text"
+                      placeholder="Pretraži po imenu ili emailu..."
+                      value={search}
+                      onChange={(e) => {
+                        setSearch(e.target.value);
+                        setPage(1);
+                      }}
+                      className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-950 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-(--secondary-color)"
+                    />
+
+                    {/* Select all */}
+                    <label className="flex items-center gap-2 mb-4">
+                      <input
+                        ref={selectAllRef}
+                        type="checkbox"
+                        checked={
+                          hasSelection && selected.length === subscribers.length
+                        }
+                        onChange={() => {
+                          toggleAll();
+                          updateSelectAllIndeterminate();
+                        }}
+                        className="size-4"
+                      />
+                      <span className="text-sm">
+                        Izaberi sve na ovoj strani
+                      </span>
+                    </label>
+
+                    {/* Lista */}
+                    <div className="max-h-96 overflow-y-auto px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                      {isLoadingUser ? (
+                        <p className="p-4 text-center text-gray-500">
+                          Učitavanje...
+                        </p>
+                      ) : subscribers.length === 0 ? (
+                        <p className="p-4 text-center text-gray-500">
+                          Nema pretplatnika
+                        </p>
+                      ) : (
+                        subscribers.map((sub) => (
+                          <label
+                            key={sub._id}
+                            className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-950/10 border-b border-gray-200 dark:border-gray-700 last:border-0"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selected.includes(sub.email)}
+                              onChange={() => toggleSubscriber(sub.email)}
+                              className="size-4"
+                            />
+                            <div>
+                              <div className="font-medium">{sub.name}</div>
+                              <div className="text-sm text-gray-600">
+                                {sub.email}
+                              </div>
+                            </div>
+                          </label>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Badge-ovi */}
+                    {hasSelection && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {selected.map((email) => (
+                          <span
+                            key={email}
+                            className="inline-flex items-center gap-1 px-3 py-1 bg-pink-100 text-pink-800 rounded-full text-sm"
+                          >
+                            {email}
+                            <button
+                              onClick={() => toggleSubscriber(email)}
+                              className="hover:text-pink-900"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                        <button
+                          onClick={clearSelection}
+                          className="text-sm text-gray-600 hover:text-gray-700"
+                        >
+                          Obriši sve
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Paginacija */}
+                    {pages > 1 && (
+                      <div className="mt-4 flex justify-center gap-2">
+                        {Array.from({ length: pages }, (_, i) => (
+                          <button
+                            key={i + 1}
+                            onClick={() => setPage(i + 1)}
+                            className={`px-3 py-1 rounded ${
+                              page === i + 1
+                                ? "bg-pink-600 text-white"
+                                : "bg-gray-200"
+                            }`}
+                          >
+                            {i + 1}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="col-span-1 lg:col-span-2 gap-4">
+                <label className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={formData.excludeRecentSubscribers}
+                    onChange={(e) =>
                       setFormData({
                         ...formData,
-                        templateId: "",
-                        subject: "",
-                        content: "",
-                        variables: {},
-                      });
-                    }}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    Ukloni
-                  </button>
-                </div>
-              ) : (
-                <p className="text-gray-500 px-4 py-2 text-xs italic">
-                  Kliknite na &ldquo;Koristi u kampanji&ldquo; kod željenog
-                  templejta iz liste iznad
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Subject</label>
-              <input
-                type="text"
-                required
-                value={formData.subject}
-                onChange={(e) =>
-                  setFormData({ ...formData, subject: e.target.value })
-                }
-                className="w-full px-4 py-2 bg-gray-100 rounded-lg focus:outline-(--secondary-color)"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Preview tekst
-              </label>
-              <input
-                type="text"
-                value={formData.previewText}
-                onChange={(e) =>
-                  setFormData({ ...formData, previewText: e.target.value })
-                }
-                placeholder="Tekst koji se vidi pre otvaranja emaila"
-                className="w-full px-4 py-2 bg-gray-100 rounded-lg focus:outline-(--secondary-color)"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-2">
-                Zakazivanje pocetka kampanje
-              </label>
-              <input
-                type="datetime-local"
-                value={formData.scheduledFor}
-                onChange={(e) =>
-                  setFormData({ ...formData, scheduledFor: e.target.value })
-                }
-                className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-(--secondary-color)"
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                Ostavi prazno za slanje odmah nakon kreiranja
-              </p>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="flex items-center gap-3 mb-4">
-                <input
-                  type="checkbox"
-                  checked={formData.sendToAll}
-                  onChange={(e) => {
-                    setFormData({ ...formData, sendToAll: e.target.checked });
-                  }}
-                  className="size-5"
-                />
-                <span className="font-medium">Pošalji svim pretplatnicima</span>
-              </label>
-              {!formData.sendToAll && (
-                <div className="md:col-span-2 mt-6">
-                  <h4 className="font-semibold mb-4">Ručni odabir primaoca</h4>
-
-                  {/* Pretraga */}
-                  <input
-                    type="text"
-                    placeholder="Pretraži po imenu ili emailu..."
-                    value={search}
-                    onChange={(e) => {
-                      setSearch(e.target.value);
-                      setPage(1);
-                    }}
-                    className="w-full px-4 py-2 bg-gray-100 rounded-lg mb-4"
+                        excludeRecentSubscribers: e.target.checked,
+                      })
+                    }
                   />
+                  <span>Isključi nove pretplatnike (poslednjih 30 dana)</span>
+                </label>
 
-                  {/* Select all */}
-                  <label className="flex items-center gap-2 mb-4">
-                    <input
-                      ref={selectAllRef}
-                      type="checkbox"
-                      checked={
-                        hasSelection && selected.length === subscribers.length
-                      }
-                      onChange={() => {
-                        toggleAll();
-                        updateSelectAllIndeterminate();
-                      }}
-                      className="size-4"
-                    />
-                    <span className="text-sm">Izaberi sve na ovoj strani</span>
-                  </label>
+                <label className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={formData.excludeInactive}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        excludeInactive: e.target.checked,
+                      })
+                    }
+                  />
+                  <span>Isključi neaktivne (nema otvaranja 90+ dana)</span>
+                </label>
+              </div>
 
-                  {/* Lista */}
-                  <div className="max-h-96 overflow-y-auto px-4 py-2 bg-gray-100 rounded-lg">
-                    {isLoadingUser ? (
-                      <p className="p-4 text-center text-gray-500">
-                        Učitavanje...
-                      </p>
-                    ) : subscribers.length === 0 ? (
-                      <p className="p-4 text-center text-gray-500">
-                        Nema pretplatnika
-                      </p>
-                    ) : (
-                      subscribers.map((sub) => (
-                        <label
-                          key={sub._id}
-                          className="flex items-center gap-3 p-3 hover:bg-gray-50 border-b border-gray-200 last:border-0"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selected.includes(sub.email)}
-                            onChange={() => toggleSubscriber(sub.email)}
-                            className="size-4"
-                          />
-                          <div>
-                            <div className="font-medium">{sub.name}</div>
-                            <div className="text-sm text-gray-600">
-                              {sub.email}
-                            </div>
-                          </div>
-                        </label>
-                      ))
-                    )}
-                  </div>
+              <div className="md:col-span-2 flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={() => setIsFormOpen(false)}
+                  className="cursor-pointer px-6 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-950/30"
+                >
+                  Otkaži
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreating}
+                  className="cursor-pointer px-6 py-3 bg-(--secondary-color) text-white rounded-lg hover:bg-(--secondary-color)/90 disabled:opacity-70"
+                >
+                  {isCreating ? "Kreiram..." : "Kreiraj kampanju"}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
-                  {/* Badge-ovi */}
-                  {hasSelection && (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {selected.map((email) => (
-                        <span
-                          key={email}
-                          className="inline-flex items-center gap-1 px-3 py-1 bg-pink-100 text-pink-800 rounded-full text-sm"
-                        >
-                          {email}
-                          <button
-                            onClick={() => toggleSubscriber(email)}
-                            className="hover:text-pink-900"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                      <button
-                        onClick={clearSelection}
-                        className="text-sm text-gray-600 hover:text-gray-800"
-                      >
-                        Obriši sve
-                      </button>
+        {/* Lista kampanja */}
+        <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-2xl font-semibold">Sve kampanje</h3>
+          </div>
+          <div className="divide-y divide-gray-200 px-3">
+            {campaigns.length === 0 ? (
+              <p className="p-8 text-center text-gray-500">
+                Još nema kreiranih kampanja
+              </p>
+            ) : (
+              campaigns.map((c) => (
+                <div
+                  key={c._id}
+                  className="p-4 flex flex-col items-start gap-3 hover:bg-gray-50"
+                >
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg">{c.name}</h3>
+                    <div className="text-sm text-gray-600 mt-1">
+                      <span>
+                        Status: <strong>{c.status.toUpperCase()}</strong>
+                      </span>
+                      {" • "}
+                      <span>Poslato: {c.sentCount}</span>
+                      {" • "}
+                      <span>Kliknuto: {c.clickCount}</span>
+                      {" • "}
+                      <span>
+                        Otvoreno: {c.openCount} (
+                        {Math.round((c.openCount / (c.sentCount || 1)) * 100)}%)
+                      </span>
+                      {c.scheduledFor && (
+                        <>
+                          {" • "}
+                          <span>
+                            Zakazano:{" "}
+                            {format(
+                              new Date(c.scheduledFor),
+                              "dd.MM.yyyy HH:mm",
+                            )}
+                          </span>
+                        </>
+                      )}
+                      {c.sentAt && (
+                        <>
+                          {" • "}
+                          <span>
+                            Poslato:{" "}
+                            {format(new Date(c.sentAt), "dd.MM.yyyy HH:mm")}
+                          </span>
+                        </>
+                      )}
                     </div>
-                  )}
+                  </div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {semanticCampaign && (
+                      <AdminSemanticModal
+                        isOpen={true}
+                        onClose={() => setSemanticCampaign(null)}
+                        campaign={semanticCampaign}
+                      />
+                    )}
+                    {c.status === "draft" || c.status === "scheduled" ? (
+                      <button
+                        onClick={() => setSemanticCampaign(c)}
+                        className="cursor-pointer px-3 py-2.5 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded"
+                      >
+                        Semantic / Landing
+                      </button>
+                    ) : null}
+                    {c.status === "draft" ||
+                    c.status === "scheduled" ||
+                    c.status === "paused" ? (
+                      <button
+                        onClick={() => handleSend(c._id, c.name)}
+                        disabled={isSending}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-70 cursor-pointer"
+                      >
+                        {isSending ? "Pokrećem..." : "Pokreni sada"}
+                      </button>
+                    ) : null}
 
-                  {/* Paginacija */}
-                  {pages > 1 && (
-                    <div className="mt-4 flex justify-center gap-2">
-                      {Array.from({ length: pages }, (_, i) => (
+                    {c.status === "sending" && (
+                      <>
                         <button
-                          key={i + 1}
-                          onClick={() => setPage(i + 1)}
-                          className={`px-3 py-1 rounded ${
-                            page === i + 1
-                              ? "bg-pink-600 text-white"
-                              : "bg-gray-200"
-                          }`}
+                          onClick={() => pauseCampaign(c._id)}
+                          disabled={isPausing}
+                          className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-70 cursor-pointer"
                         >
-                          {i + 1}
+                          {isPausing ? "Pauziram..." : "Pauziraj"}
                         </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="col-span-1 lg:col-span-2 gap-4">
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={formData.excludeRecentSubscribers}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      excludeRecentSubscribers: e.target.checked,
-                    })
-                  }
-                />
-                <span>Isključi nove pretplatnike (poslednjih 30 dana)</span>
-              </label>
-
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={formData.excludeInactive}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      excludeInactive: e.target.checked,
-                    })
-                  }
-                />
-                <span>Isključi neaktivne (nema otvaranja 90+ dana)</span>
-              </label>
-            </div>
-
-            <div className="md:col-span-2 flex justify-end gap-4">
-              <button
-                type="button"
-                onClick={() => setIsFormOpen(false)}
-                className="cursor-pointer px-6 py-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-              >
-                Otkaži
-              </button>
-              <button
-                type="submit"
-                disabled={isCreating}
-                className="cursor-pointer px-6 py-3 bg-(--secondary-color) text-white rounded-lg hover:bg-(--secondary-color)/90 disabled:opacity-70"
-              >
-                {isCreating ? "Kreiram..." : "Kreiraj kampanju"}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Lista kampanja */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h3 className="text-2xl! font-semibold">Sve kampanje</h3>
-        </div>
-        <div className="divide-y divide-gray-200 px-3">
-          {campaigns.length === 0 ? (
-            <p className="p-8 text-center text-gray-500">
-              Još nema kreiranih kampanja
-            </p>
-          ) : (
-            campaigns.map((c) => (
-              <div
-                key={c._id}
-                className="p-4 flex flex-col items-start gap-3 hover:bg-gray-50"
-              >
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg">{c.name}</h3>
-                  <div className="text-sm text-gray-600 mt-1">
-                    <span>
-                      Status: <strong>{c.status.toUpperCase()}</strong>
-                    </span>
-                    {" • "}
-                    <span>Poslato: {c.sentCount}</span>
-                    {" • "}
-                    <span>Kliknuto: {c.clickCount}</span>
-                    {" • "}
-                    <span>
-                      Otvoreno: {c.openCount} (
-                      {Math.round((c.openCount / (c.sentCount || 1)) * 100)}%)
-                    </span>
-                    {c.scheduledFor && (
-                      <>
-                        {" • "}
-                        <span>
-                          Zakazano:{" "}
-                          {format(new Date(c.scheduledFor), "dd.MM.yyyy HH:mm")}
-                        </span>
                       </>
                     )}
-                    {c.sentAt && (
+
+                    {c.status === "paused" && (
                       <>
-                        {" • "}
-                        <span>
-                          Poslato:{" "}
-                          {format(new Date(c.sentAt), "dd.MM.yyyy HH:mm")}
-                        </span>
+                        <button
+                          onClick={() => resumeCampaign(c._id)}
+                          disabled={isResuming}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-70"
+                        >
+                          {isResuming ? "Nastavljam..." : "Nastavi"}
+                        </button>
+                        <button
+                          onClick={() => stopCampaign(c._id)}
+                          disabled={isStopping}
+                          className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-70 cursor-pointer"
+                        >
+                          Zaustavi
+                        </button>
                       </>
                     )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 flex-wrap">
-                  {semanticCampaign && (
-                    <AdminSemanticModal
-                      isOpen={true}
-                      onClose={() => setSemanticCampaign(null)}
-                      campaign={semanticCampaign}
-                    />
-                  )}
-                  {c.status === "draft" || c.status === "scheduled" ? (
-                    <button
-                      onClick={() => setSemanticCampaign(c)}
-                      className="cursor-pointer px-3 py-2.5 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded"
-                    >
-                      Semantic / Landing
-                    </button>
-                  ) : null}
-                  {c.status === "draft" ||
-                  c.status === "scheduled" ||
-                  c.status === "paused" ? (
-                    <button
-                      onClick={() => handleSend(c._id, c.name)}
-                      disabled={isSending}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-70 cursor-pointer"
-                    >
-                      {isSending ? "Pokrećem..." : "Pokreni sada"}
-                    </button>
-                  ) : null}
 
-                  {c.status === "sending" && (
-                    <>
-                      <button
-                        onClick={() => pauseCampaign(c._id)}
-                        disabled={isPausing}
-                        className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-70 cursor-pointer"
-                      >
-                        {isPausing ? "Pauziram..." : "Pauziraj"}
-                      </button>
-                    </>
-                  )}
-
-                  {c.status === "paused" && (
-                    <>
-                      <button
-                        onClick={() => resumeCampaign(c._id)}
-                        disabled={isResuming}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-70"
-                      >
-                        {isResuming ? "Nastavljam..." : "Nastavi"}
-                      </button>
+                    {(c.status === "sending" || c.status === "paused") && (
                       <button
                         onClick={() => stopCampaign(c._id)}
                         disabled={isStopping}
-                        className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-70 cursor-pointer"
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-70 cursor-pointer"
                       >
-                        Zaustavi
+                        {isStopping ? "Zaustavljam..." : "Zaustavi trajno"}
                       </button>
-                    </>
-                  )}
+                    )}
 
-                  {(c.status === "sending" || c.status === "paused") && (
-                    <button
-                      onClick={() => stopCampaign(c._id)}
-                      disabled={isStopping}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-70 cursor-pointer"
-                    >
-                      {isStopping ? "Zaustavljam..." : "Zaustavi trajno"}
-                    </button>
-                  )}
+                    {c.status === "draft" || c.status === "scheduled" ? (
+                      <button
+                        onClick={() => setPreviewCampaign(c)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mr-2 cursor-pointer"
+                      >
+                        Preview
+                      </button>
+                    ) : null}
 
-                  {c.status === "draft" || c.status === "scheduled" ? (
-                    <button
-                      onClick={() => setPreviewCampaign(c)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mr-2 cursor-pointer"
+                    {/* Brisanje uvek dozvoljeno (osim možda ako je sending) */}
+                    {c.status !== "sending" && (
+                      <button
+                        onClick={() => {
+                          if (
+                            confirm(
+                              `Da li ste sigurni da želite da obrišete kampanju "${c.name}"?`,
+                            )
+                          ) {
+                            deleteCampaign(c._id);
+                          }
+                        }}
+                        disabled={isDeleting}
+                        className="px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 disabled:opacity-70 cursor-pointer"
+                      >
+                        Obriši
+                      </button>
+                    )}
+                    {c.semanticContent?.status && (
+                      <span className="ml-2 text-xs px-2 py-0.5 rounded bg-gray-200">
+                        {c.semanticContent.status}
+                      </span>
+                    )}
+                    {/* Status badge */}
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        statusBadgeStyles[c.status]
+                      }`}
                     >
-                      Preview
-                    </button>
-                  ) : null}
-
-                  {/* Brisanje uvek dozvoljeno (osim možda ako je sending) */}
-                  {c.status !== "sending" && (
-                    <button
-                      onClick={() => {
-                        if (
-                          confirm(
-                            `Da li ste sigurni da želite da obrišete kampanju "${c.name}"?`,
-                          )
-                        ) {
-                          deleteCampaign(c._id);
-                        }
-                      }}
-                      disabled={isDeleting}
-                      className="px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 disabled:opacity-70 cursor-pointer"
-                    >
-                      Obriši
-                    </button>
-                  )}
-                  {c.semanticContent?.status && (
-                    <span className="ml-2 text-xs px-2 py-0.5 rounded bg-gray-200">
-                      {c.semanticContent.status}
+                      {c.status.toUpperCase()}
                     </span>
-                  )}
-                  {/* Status badge */}
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      statusBadgeStyles[c.status]
-                    }`}
-                  >
-                    {c.status.toUpperCase()}
-                  </span>
+                  </div>
                 </div>
-              </div>
-            ))
-          )}
+              ))
+            )}
+          </div>
         </div>
       </div>
       {previewCampaign && (

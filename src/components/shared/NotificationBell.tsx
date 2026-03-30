@@ -193,7 +193,7 @@ export function NotificationBell({ tenantSlug }: NotificationBellProps) {
   return (
     <Menu as="div" className="relative p-2">
       {/* Bell button */}
-      <MenuButton className="cursor-pointer relative p-2 rounded-xl text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 transition">
+      <MenuButton className="cursor-pointer relative flex items-center justify-center w-10 h-10 text-gray-500 bg-white border border-gray-200 rounded-full transition-colors hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white">
         <BellIcon className="w-5 h-5" />
 
         {unreadCount > 0 && (

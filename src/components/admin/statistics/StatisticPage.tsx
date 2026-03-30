@@ -40,23 +40,25 @@ export const StatisticsPage: React.FC = () => {
       currency: "RSD",
     }).format(amount);
   };
+  const card =
+    "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6 mb-6";
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-3xl! font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl! font-bold text-gray-900 dark:text-zinc-100 mb-2">
           Pregled performansi salona po mesecima
         </h1>
         <p className="text-gray-600"></p>
       </div>
 
       {/* Filter controls */}
-      <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+      <div className={`${card}`}>
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <label
               htmlFor="month"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1"
             >
               Mesec
             </label>
@@ -64,7 +66,7 @@ export const StatisticsPage: React.FC = () => {
               id="month"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-blue-500"
             >
               {months.map((month) => (
                 <option key={month.value} value={month.value}>
@@ -77,7 +79,7 @@ export const StatisticsPage: React.FC = () => {
           <div className="flex-1">
             <label
               htmlFor="year"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1"
             >
               Godina
             </label>
@@ -85,7 +87,7 @@ export const StatisticsPage: React.FC = () => {
               id="year"
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               {years.map((year) => (
                 <option key={year} value={year}>
@@ -111,12 +113,12 @@ export const StatisticsPage: React.FC = () => {
       {(statsLevel === "full" || statsLevel === "ai") && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <StatsPieChart month={selectedMonth} year={selectedYear} />
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          <div className={`${card}`}>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-300 mb-4">
               Brzi pregled
             </h3>
             <div className="space-y-4">
-              <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+              <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-gray-950 rounded-lg">
                 <span className="text-sm font-medium text-blue-700">
                   Ukupno termina
                 </span>
@@ -124,7 +126,7 @@ export const StatisticsPage: React.FC = () => {
                   {totalAppointments || 0}
                 </span>
               </div>
-              <div className="flex flex-col lg:flex-row justify-between items-center p-3 bg-green-50 rounded-lg">
+              <div className="flex flex-col lg:flex-row justify-between items-center p-3 bg-green-50 dark:bg-gray-950 rounded-lg">
                 <span className="text-sm font-medium text-green-700">
                   Ukupan prihod
                 </span>
@@ -132,7 +134,7 @@ export const StatisticsPage: React.FC = () => {
                   {global ? formatCurrency(totalRevenue) : formatCurrency(0)}
                 </span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+              <div className="flex justify-between items-center p-3 bg-purple-50 dark:bg-gray-950 rounded-lg">
                 <span className="text-sm font-medium text-purple-700">
                   Aktivni klijenti
                 </span>
@@ -140,7 +142,7 @@ export const StatisticsPage: React.FC = () => {
                   {clients?.active || 0}
                 </span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
+              <div className="flex justify-between items-center p-3 bg-orange-50 dark:bg-gray-950 rounded-lg">
                 <span className="text-sm font-medium text-orange-700">
                   Novi klijenti
                 </span>

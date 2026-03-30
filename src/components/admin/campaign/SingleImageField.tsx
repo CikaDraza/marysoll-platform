@@ -44,7 +44,7 @@ export function SingleImageField({ value, onChange }: SingleImageFieldProps) {
   };
 
   return (
-    <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+    <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
       {/* AI Generation Section */}
       <div className="space-y-2">
         <label className="block text-xs font-medium text-gray-600">
@@ -56,7 +56,7 @@ export function SingleImageField({ value, onChange }: SingleImageFieldProps) {
             value={singleImage.prompt}
             onChange={(e) => singleImage.setPrompt(e.target.value)}
             placeholder="Unesite prompt za generisanje slike..."
-            className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+            className="flex-1 px-3 py-2 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
           />
           <button
             type="button"
@@ -72,10 +72,12 @@ export function SingleImageField({ value, onChange }: SingleImageFieldProps) {
       {/* Divider */}
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-300" />
+          <div className="w-full border-t border-gray-300 dark:border-gray-700" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-gray-50 text-gray-500">ili</span>
+          <span className="px-2 bg-gray-50 dark:bg-gray-900 text-gray-500">
+            ili
+          </span>
         </div>
       </div>
 

@@ -217,8 +217,8 @@ function WeekView({
                 : isToday
                   ? "border-amber-200"
                   : !isWorking
-                    ? "border-zinc-100 bg-zinc-50/60 opacity-50"
-                    : "border-zinc-100 shadow hover:border-violet-200"
+                    ? "border-red-500 dark:border-red-700 bg-red-500/10 text-white opacity-90"
+                    : "border-zinc-100 dark:border-zinc-700 shadow hover:border-violet-200"
             }`}
           >
             <div className="text-center mb-1">
@@ -226,14 +226,14 @@ function WeekView({
                 {format(day, "EEE", { locale: sr })}
               </span>
               <p
-                className={`text-sm font-bold ${isToday ? "text-amber-600" : isSelected ? "text-violet-600" : "text-zinc-700"}`}
+                className={`text-sm font-bold ${isToday ? "text-amber-600" : isSelected ? "text-violet-500" : "text-zinc-500"}`}
               >
                 {format(day, "d")}
               </p>
             </div>
 
             {!isWorking && (
-              <span className="text-[9px] text-zinc-300 text-center">
+              <span className="text-[9px] isSelected text-red-400 text-center">
                 Neradan
               </span>
             )}
@@ -307,13 +307,15 @@ export default function AppointmentAdminCalendar() {
   }
 
   const wh = salonForm.workingHours as WorkingHoursMap;
+  const card =
+    "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
 
   return (
     <div className="space-y-5">
       {/* ── Info row ────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Radno vreme */}
-        <div className="rounded-2xl border border-zinc-100 shadow-sm p-5">
+        <div className={`${card}`}>
           <p className="text-[11px] font-bold text-zinc-400 dark:text-gray-300 uppercase tracking-widest mb-3">
             Radno vreme salona
           </p>
@@ -339,7 +341,7 @@ export default function AppointmentAdminCalendar() {
         </div>
 
         {/* Legenda */}
-        <div className="rounded-2xl border border-zinc-100 shadow-sm p-5">
+        <div className={`${card}`}>
           <p className="text-[11px] font-bold text-zinc-400 dark:text-gray-300 uppercase tracking-widest mb-3">
             Legenda
           </p>
@@ -367,7 +369,7 @@ export default function AppointmentAdminCalendar() {
       </div>
 
       {/* ── Calendar ────────────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-zinc-100 dark:border-zinc-700 shadow-sm overflow-hidden">
+      <div className={`${card}`}>
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-zinc-100 dark:border-zinc-700">
           {/* View toggle */}

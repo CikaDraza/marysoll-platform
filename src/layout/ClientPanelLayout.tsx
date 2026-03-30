@@ -185,7 +185,7 @@ function ClientSidebar({
               className={[
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                 isActive
-                  ? "bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 shadow shadow-slate-950"
+                  ? "bg-violet-50 dark:bg-slate-800 text-violet-700 dark:text-violet-400 shadow-lg shadow-slate-200 dark:shadow-slate-950"
                   : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-200",
                 !isVisible ? "justify-center" : "",
               ].join(" ")}

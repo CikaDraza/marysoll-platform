@@ -20,6 +20,18 @@ interface Props {
   token?: string;
 }
 
+const inp = [
+  "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
+  "text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800",
+  "focus:outline-none focus:ring-2 focus:ring-violet-400 transition",
+  "placeholder:text-gray-400 dark:placeholder:text-gray-500",
+].join(" ");
+
+const lbl =
+  "block text-[11px] font-bold text-gray-400 dark:text-gray-300 uppercase tracking-widest mb-1.5";
+const card =
+  "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
+
 // Tip za payload pri kreiranju (bez _id i automatskih polja)
 type CreateAppointmentPayload = Omit<
   IAppointment,
@@ -193,14 +205,19 @@ export default function AdminCreateModal({
 
   return (
     <Dialog open={isOpen} onClose={handleClose} className="relative z-50">
-      <DialogBackdrop className="fixed inset-0 bg-black/50" />
+      <DialogBackdrop className="fixed inset-0 bg-black/80" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="max-w-xl w-full bg-white rounded-lg shadow-xl p-6 max-h-[90vh] min-h-[90vh] overflow-scroll lg:min-h-auto">
+        <DialogPanel
+          className={
+            card +
+            " max-w-xl w-full max-h-[90vh] min-h-[90vh] overflow-scroll lg:min-h-auto"
+          }
+        >
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">Kreiraj termin</h3>
             <button
               onClick={handleClose}
-              className="text-gray-600 hover:text-gray-900"
+              className="text-gray-600 hover:text-gray-900 dark:hover:text-gray-200"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
@@ -208,7 +225,7 @@ export default function AdminCreateModal({
 
           {/* Prikaz informacija o klijentu */}
           {selectedClient && (
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+            <div className="mt-4 p-3 bg-gray-100 rounded-lg">
               <p className="text-sm font-medium text-gray-900">Klijent:</p>
               <p className="text-sm text-gray-600">{selectedClient.name}</p>
               <p className="text-sm text-gray-600">{selectedClient.email}</p>
@@ -217,13 +234,11 @@ export default function AdminCreateModal({
 
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700">
-                Klijent *
-              </label>
+              <label className={lbl}>Klijent *</label>
               <select
                 value={clientId ?? ""}
                 onChange={(e) => setClientId(e.target.value || null)}
-                className="mt-1 block w-full rounded-md border-gray-200 bg-gray-100 p-2"
+                className={inp}
                 required
               >
                 <option value="">— izaberite klijenta —</option>
@@ -241,27 +256,23 @@ export default function AdminCreateModal({
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700">
-                Datum *
-              </label>
+              <label className={lbl}>Datum *</label>
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-200 bg-gray-100 p-2 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+                className={inp}
                 required
                 min={new Date().toISOString().split("T")[0]}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700">
-                Vreme *
-              </label>
+              <label className={lbl}>Vreme *</label>
               <select
                 value={selectedTime}
                 onChange={(e) => setSelectedTime(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-200 bg-gray-100 p-2"
+                className={inp}
                 required
               >
                 <option value="">— izaberite vreme —</option>
@@ -274,9 +285,7 @@ export default function AdminCreateModal({
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700">
-                Usluga *
-              </label>
+              <label className={lbl}>Usluga *</label>
               <div className="flex flex-col lg:grid lg:grid-cols-2 mt-3 gap-2">
                 {services.map((s) => (
                   <div
@@ -423,13 +432,11 @@ export default function AdminCreateModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Napomena (opciono)
-              </label>
+              <label className={lbl}>Napomena (opciono)</label>
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-200 bg-gray-100 p-2"
+                className={inp}
                 rows={3}
                 placeholder="Dodatne napomene ili instrukcije za klijenta..."
               />
@@ -439,7 +446,7 @@ export default function AdminCreateModal({
               <button
                 type="button"
                 onClick={handleClose}
-                className="cursor-pointer px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+                className="cursor-pointer px-4 py-2 bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-800/80 rounded hover:bg-gray-200 transition-colors"
               >
                 Otkaži
               </button>

@@ -166,9 +166,9 @@ function AdminDashboard() {
             <Image
               src={sp.logoPreview}
               alt="logo"
-              width={48}
-              height={48}
-              className="w-12 h-12 rounded-xl object-cover border border-gray-200 dark:border-gray-700"
+              width={64}
+              height={64}
+              className="w-14 h-14 rounded-xl object-cover border border-gray-200 dark:border-gray-700"
             />
           )}
           <div>
@@ -569,7 +569,7 @@ function AdminDashboard() {
               return (
                 <div
                   key={day}
-                  className={`rounded-2xl border p-4 transition-colors ${isRest ? "bg-gray-50 dark:bg-gray-800/50 border-gray-100 dark:border-gray-800" : "bg-violet-50/40 dark:bg-violet-900/10 border-violet-100 dark:border-violet-900/40"}`}
+                  className={`rounded-2xl border p-4 transition-colors ${isRest ? "bg-gray-50 dark:bg-gray-800/50 border-gray-100 dark:border-gray-800" : "bg-violet-50/40 dark:bg-gray-900 border-violet-100 dark:border-violet-900/40"}`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 min-w-0">
@@ -783,7 +783,7 @@ function AdminDashboard() {
               <h2 className="font-bold text-gray-900 dark:text-white">
                 Usluge
               </h2>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 {svc.services.length} ukupno
               </p>
             </div>
@@ -835,7 +835,7 @@ function AdminDashboard() {
                     <span className="text-[11px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-widest">
                       {cat}
                     </span>
-                    <span className="text-xs text-gray-300 dark:text-gray-600">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
                       {items.length}
                     </span>
                   </div>

@@ -24,7 +24,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ month, year }) => {
         {[...Array(4)].map((_, i) => (
           <div
             key={i}
-            className="bg-gray-200 rounded-lg p-4 animate-pulse h-24"
+            className="bg-gray-200 dark:bg-gray-900 rounded-lg p-4 animate-pulse h-24"
           ></div>
         ))}
       </div>
@@ -57,11 +57,13 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ month, year }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       {/* Ukupan prihod */}
-      <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-4 border-l-4 border-green-500">
         <div className="flex justify-between items-start">
           <div className="pr-2">
-            <p className="text-sm font-medium text-gray-600">Ukupan prihod</p>
-            <p className="text-xs text-gray-700">
+            <p className="text-sm font-medium text-gray-600 dark:text-zinc-300">
+              Ukupan prihod
+            </p>
+            <p className="text-xs text-gray-700 dark:text-zinc-300">
               Za {month}/{year}
             </p>
           </div>
@@ -87,11 +89,13 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ month, year }) => {
       </div>
 
       {/* Ukupno termina */}
-      <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-4 border-l-4 border-blue-500">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm font-medium text-gray-600">Ukupno termina</p>
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-sm font-medium text-gray-600 dark:text-zinc-300">
+              Ukupno termina
+            </p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-zinc-300">
               {totalAppointments || 0}
             </p>
           </div>
@@ -111,17 +115,21 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ month, year }) => {
             </svg>
           </div>
         </div>
-        <p className="text-xs text-gray-500 mt-2">Zakazani termini</p>
+        <p className="text-xs text-gray-500 dark:text-zinc-300 mt-2">
+          Zakazani termini
+        </p>
       </div>
 
       {/* Aktivni klijenti */}
-      <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-purple-500">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-4 border-l-4 border-purple-500">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm font-medium text-gray-600">
+            <p className="text-sm font-medium text-gray-600 dark:text-zinc-300">
               Aktivni klijenti
             </p>
-            <p className="text-2xl font-bold text-gray-900">{clients.active}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-zinc-300">
+              {clients.active}
+            </p>
             <p className="text-xs text-green-600 mt-1">+{clients.new} novih</p>
           </div>
           <div className="bg-purple-100 p-2 rounded-lg">
@@ -140,15 +148,21 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ month, year }) => {
             </svg>
           </div>
         </div>
-        <p className="text-xs text-gray-500 mt-2">Od ukupno {clients.total}</p>
+        <p className="text-xs text-gray-500 dark:text-zinc-300 mt-2">
+          Od ukupno {clients.total}
+        </p>
       </div>
 
       {/* Prosečan razmak */}
-      <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-orange-500">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-4 border-l-4 border-orange-500">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm font-medium text-gray-600">Prosečan razmak</p>
-            <p className="text-2xl font-bold text-gray-900">{avgTimeGap} min</p>
+            <p className="text-sm font-medium text-gray-600 dark:text-zinc-300">
+              Prosečan razmak
+            </p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-zinc-300">
+              {avgTimeGap} min
+            </p>
           </div>
           <div className="bg-orange-100 p-2 rounded-lg">
             <svg
@@ -166,7 +180,9 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ month, year }) => {
             </svg>
           </div>
         </div>
-        <p className="text-xs text-gray-500 mt-2">Između termina</p>
+        <p className="text-xs text-gray-500 dark:text-zinc-300 mt-2">
+          Između termina
+        </p>
       </div>
     </div>
   );
