@@ -2,33 +2,50 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/hooks/useAuth";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 const Icon = ({ d, size = 20 }: { d: string | string[]; size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
     {(Array.isArray(d) ? d : [d]).map((path, i) => (
-      <path key={i} d={path} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        key={i}
+        d={path}
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     ))}
   </svg>
 );
 
 const icons = {
   dashboard: "M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z",
-  calendar:  "M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z",
-  scissors:  "M6 3L20 17M6 21L20 7M6 3a3 3 0 100 6 3 3 0 000-6zM20 7a3 3 0 100 6 3 3 0 000-6z",
-  chart:     "M18 20V10M12 20V4M6 20v-6",
-  mail:      "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
-  globe:     "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20",
-  link:      "M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71",
-  clock:     "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 6v6l4 2",
-  dots:      "M5 12h.01M12 12h.01M19 12h.01",
-  chevron:   "M6 9l6 6 6-6",
-  users:     "M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75",
+  calendar:
+    "M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z",
+  scissors:
+    "M6 3L20 17M6 21L20 7M6 3a3 3 0 100 6 3 3 0 000-6zM20 7a3 3 0 100 6 3 3 0 000-6z",
+  chart: "M18 20V10M12 20V4M6 20v-6",
+  mail: "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
+  globe:
+    "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20",
+  link: "M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71",
+  clock:
+    "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 6v6l4 2",
+  dots: "M5 12h.01M12 12h.01M19 12h.01",
+  chevron: "M6 9l6 6 6-6",
+  users:
+    "M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75",
 };
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
@@ -46,9 +63,9 @@ const AdminNav: NavItem[] = [
     name: "Dashboard",
     icon: <Icon d={icons.dashboard} />,
     subItems: [
-      { name: "Profil salona",    tab: "profil" },
-      { name: "Radno vreme",      tab: "radno-vreme" },
-      { name: "Social & SEO",     tab: "social-seo" },
+      { name: "Profil salona", tab: "profil" },
+      { name: "Radno vreme", tab: "radno-vreme" },
+      { name: "Social & SEO", tab: "social-seo" },
     ],
   },
   {
@@ -60,8 +77,8 @@ const AdminNav: NavItem[] = [
     name: "Termini",
     icon: <Icon d={icons.clock} />,
     subItems: [
-      { name: "Lista termina",  tab: "termini" },
-      { name: "Kalendar",       tab: "kalendar" },
+      { name: "Lista termina", tab: "termini" },
+      { name: "Kalendar", tab: "kalendar" },
     ],
   },
   {
@@ -75,6 +92,21 @@ const AdminNav: NavItem[] = [
     path: "/dashboard?tab=newsletter",
   },
   {
+    name: "Preporuke",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+    path: "/dashboard?tab=preporuke",
+  },
+  {
     name: "Custom domen",
     icon: <Icon d={icons.link} />,
     path: "/dashboard?tab=domen",
@@ -84,10 +116,11 @@ const AdminNav: NavItem[] = [
 // ─── Plan badge in sidebar footer ─────────────────────────────────────────────
 
 const PLAN_COLORS: Record<string, string> = {
-  free:       "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
-  starter:    "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
-  pro:        "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400",
-  enterprise: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+  free: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+  starter: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
+  pro: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400",
+  enterprise:
+    "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
 };
 
 // ─── AppSidebar ───────────────────────────────────────────────────────────────
@@ -99,7 +132,9 @@ const AppSidebar: React.FC = () => {
   const router = useRouter();
 
   const [openSubmenu, setOpenSubmenu] = useState<number | null>(null);
-  const [subMenuHeight, setSubMenuHeight] = useState<Record<number, number>>({});
+  const [subMenuHeight, setSubMenuHeight] = useState<Record<number, number>>(
+    {},
+  );
   const subMenuRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   const isVisible = isExpanded || isHovered || isMobileOpen;
@@ -109,7 +144,9 @@ const AppSidebar: React.FC = () => {
     (item: NavItem) => {
       if (item.path) return pathname.includes(item.path.split("?")[0]);
       if (item.subItems) {
-        return item.subItems.some((s) => s.path && pathname.includes(s.path.split("?")[0]));
+        return item.subItems.some(
+          (s) => s.path && pathname.includes(s.path.split("?")[0]),
+        );
       }
       return false;
     },
@@ -120,7 +157,8 @@ const AppSidebar: React.FC = () => {
   useEffect(() => {
     if (openSubmenu !== null) {
       const el = subMenuRefs.current[openSubmenu];
-      if (el) setSubMenuHeight((p) => ({ ...p, [openSubmenu]: el.scrollHeight }));
+      if (el)
+        setSubMenuHeight((p) => ({ ...p, [openSubmenu]: el.scrollHeight }));
     }
   }, [openSubmenu]);
 
@@ -139,7 +177,9 @@ const AppSidebar: React.FC = () => {
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Logo */}
-      <div className={`flex items-center h-16 px-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0 ${!isVisible ? "justify-center" : ""}`}>
+      <div
+        className={`flex items-center h-16 px-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0 ${!isVisible ? "justify-center" : ""}`}
+      >
         <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0">
           {/* Monogram icon — always visible */}
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white text-xs font-black flex-shrink-0 shadow-sm">
@@ -181,26 +221,38 @@ const AppSidebar: React.FC = () => {
                   }
                 }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
-                  ${active
-                    ? "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200"
+                  ${
+                    active
+                      ? "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200"
                   }
                   ${!isVisible ? "justify-center" : ""}
                 `}
               >
-                <span className={`flex-shrink-0 ${active ? "text-violet-600 dark:text-violet-400" : "text-gray-500 dark:text-gray-400"}`}>
+                <span
+                  className={`flex-shrink-0 ${active ? "text-violet-600 dark:text-violet-400" : "text-gray-500 dark:text-gray-400"}`}
+                >
                   {item.icon}
                 </span>
 
                 {isVisible && (
                   <>
-                    <span className="flex-1 text-left truncate">{item.name}</span>
+                    <span className="flex-1 text-left truncate">
+                      {item.name}
+                    </span>
                     {item.subItems && (
                       <svg
                         className={`w-4 h-4 transition-transform duration-200 text-gray-400 ${submenuOpen ? "rotate-180 text-violet-500" : ""}`}
-                        viewBox="0 0 24 24" fill="none"
+                        viewBox="0 0 24 24"
+                        fill="none"
                       >
-                        <path d={icons.chevron} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path
+                          d={icons.chevron}
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
                       </svg>
                     )}
                   </>
@@ -210,13 +262,21 @@ const AppSidebar: React.FC = () => {
               {/* Submenu */}
               {item.subItems && isVisible && (
                 <div
-                  ref={(el) => { subMenuRefs.current[idx] = el; }}
+                  ref={(el) => {
+                    subMenuRefs.current[idx] = el;
+                  }}
                   className="overflow-hidden transition-all duration-200"
-                  style={{ height: submenuOpen ? `${subMenuHeight[idx] ?? 0}px` : "0px" }}
+                  style={{
+                    height: submenuOpen
+                      ? `${subMenuHeight[idx] ?? 0}px`
+                      : "0px",
+                  }}
                 >
                   <ul className="mt-1 ml-9 space-y-0.5 pb-1">
                     {item.subItems.map((sub) => {
-                      const subPath = sub.path ?? (sub.tab ? `/dashboard?tab=${sub.tab}` : "#");
+                      const subPath =
+                        sub.path ??
+                        (sub.tab ? `/dashboard?tab=${sub.tab}` : "#");
                       return (
                         <li key={sub.name}>
                           <Link
@@ -251,10 +311,22 @@ const AppSidebar: React.FC = () => {
               target="_blank"
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200 transition-colors"
             >
-              <span className="text-gray-500 dark:text-gray-400"><Icon d={icons.globe} /></span>
+              <span className="text-gray-500 dark:text-gray-400">
+                <Icon d={icons.globe} />
+              </span>
               <span>Sajt salona</span>
-              <svg className="w-3.5 h-3.5 ml-auto text-gray-300" viewBox="0 0 24 24" fill="none">
-                <path d="M7 17L17 7M17 7H7M17 7v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <svg
+                className="w-3.5 h-3.5 ml-auto text-gray-300"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <path
+                  d="M7 17L17 7M17 7H7M17 7v10"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </Link>
           </div>
@@ -274,7 +346,9 @@ const AppSidebar: React.FC = () => {
               </p>
               <p className="text-[10px] text-gray-400 truncate">{user.email}</p>
             </div>
-            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full flex-shrink-0 ${PLAN_COLORS[plan]}`}>
+            <span
+              className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full flex-shrink-0 ${PLAN_COLORS[plan]}`}
+            >
               {plan}
             </span>
           </div>

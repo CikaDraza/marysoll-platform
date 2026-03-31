@@ -67,7 +67,7 @@ export async function GET(req: Request) {
     } else if (status === "no_show") {
       filter.status = "no_show";
     }
-    console.log({ status: status, filter: filter });
+
     // Pipeline za paginaciju
     const aggregationPipeline: mongoose.PipelineStage[] = [
       { $match: filter },
@@ -82,7 +82,6 @@ export async function GET(req: Request) {
     ];
 
     const result = await Appointment.aggregate(aggregationPipeline);
-    console.log(result);
 
     const totalCount = result[0]?.metadata?.total || 0;
     const appointments = result[0]?.data || [];

@@ -476,13 +476,10 @@ export function MarketingHomePageSecond() {
             className="font-bold text-2xl bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-2"
           >
             <Link href="/" className="flex gap-2">
-              <Image
-                width={136}
-                height={40}
-                alt="Marysoll je napravila nešto posebno"
-                src={"/marysoll-violet-logo.svg"}
-                className="h-10 w-auto object-contain"
-              />
+              {/* Monogram icon — always visible */}
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white text-sm font-black flex-shrink-0 shadow-sm">
+                M
+              </div>
               <div className="flex flex-col">
                 <span className="text-md/9 text-(--tetra-color) heading-font">
                   MarySoll

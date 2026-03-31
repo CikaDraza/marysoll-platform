@@ -4,8 +4,8 @@ self.addEventListener("push", function (event) {
     const data = event.data.json();
     const options = {
       body: data.body,
-      icon: data.icon || "/logo-marysoll.png",
-      badge: "/logo-marysoll.png",
+      icon: data.icon || "/notification-icon.png",
+      badge: "/notification-icon.png",
       tag: data.tag,
       data: {
         url: data.url || "/",
@@ -33,7 +33,7 @@ self.addEventListener("notificationclick", function (event) {
           return client.focus();
         }
         return clients.openWindow(event.notification.data.url || "/");
-      })
+      }),
   );
 });
 

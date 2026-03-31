@@ -5,26 +5,42 @@ import { useParams } from "next/navigation";
 
 interface UseServicesOptions {
   query?: string;
+  token?: string;
 }
 
-export function useServices({ query = "" }: UseServicesOptions = {}) {
+export function useServices({ query = "", token }: UseServicesOptions = {}) {
   const params = useParams();
   const tenantSlug = params?.tenantSlug as string;
 
-  return useQuery<IService[]>({
-    queryKey: ["services", tenantSlug, query],
+  const adminQuery = useQuery<IService[]>({
+    queryKey: ["services", "admin", query],
     queryFn: async () => {
-      if (!tenantSlug) {
-        throw new Error("Tenant slug is required");
-      }
-
-      const { data } = await publicApi.get(`/public/${tenantSlug}/services`);
-      return data;
+      const url = query
+        ? `/api/services?query=${encodeURIComponent(query)}`
+        : "/api/services";
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Greška pri učitavanju usluga.");
+      return res.json();
     },
-    enabled: !!tenantSlug,
+    enabled: !!token,
     staleTime: 1000 * 60,
     refetchOnWindowFocus: false,
   });
+
+  const publicQuery = useQuery<IService[]>({
+    queryKey: ["services", tenantSlug, query],
+    queryFn: async () => {
+      const { data } = await publicApi.get(`/public/${tenantSlug}/services`);
+      return data;
+    },
+    enabled: !token && !!tenantSlug,
+    staleTime: 1000 * 60,
+    refetchOnWindowFocus: false,
+  });
+
+  return token ? adminQuery : publicQuery;
 }
 
 async function saveService(data: IService): Promise<IService> {

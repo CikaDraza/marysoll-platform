@@ -139,7 +139,7 @@ export function useBrowserNotifications() {
     if (unreadNotifications.length > 0) {
       requestPermission().then((hasPermission) => {
         if (hasPermission) {
-          unreadNotifications.forEach((notification) => {
+          unreadNotifications.forEach((notification: INotification) => {
             showNotification(notification.title, {
               body: notification.message,
               tag: notification._id,

@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     webpush.setVapidDetails(
       `mailto:${vapidKeys.email}`,
       vapidKeys.publicKey,
-      vapidKeys.privateKey
+      vapidKeys.privateKey,
     );
 
     // Sačuvaj ili ažuriraj subscription
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
           },
         },
       },
-      { new: true }
+      { new: true },
     );
 
     // Test push notifikacija za potvrdu
@@ -58,13 +58,13 @@ export async function POST(req: Request) {
         JSON.stringify({
           title: "Push notifikacije su aktivirane!",
           body: "Sada ćete primati obaveštenja čak i kada niste na sajtu.",
-          icon: "/logo-marysoll.png",
+          icon: "/notification-icon.png",
           tag: "subscription-success",
           data: {
             url: "/",
             timestamp: Date.now(),
           },
-        })
+        }),
       );
     } catch (pushError) {
       console.warn("Test push failed (might be expected):", pushError);
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
     console.error("Error in subscribe endpoint:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

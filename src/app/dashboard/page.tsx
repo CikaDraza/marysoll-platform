@@ -11,6 +11,7 @@ import { DAYS_OF_WEEK } from "@/types";
 import type { DayOfWeek, IService, LandingTheme } from "@/types";
 import { AdminCustomDomain } from "@/components/admin/AdminCustomDomain";
 import AdminAppointments from "@/components/admin/AdminAppointments";
+import AdminTestimonials from "@/components/admin/AdminTestimonials";
 import AppointmentAdminCalendar from "@/components/admin/AppointmentAdminCalendar";
 import { StatisticsPage } from "@/components/admin/statistics/StatisticPage";
 import AdminNewsletterDashboard from "@/components/admin/AdminNewsletterDashboard";
@@ -30,6 +31,7 @@ type Tab =
   | "kalendar"
   | "statistika"
   | "newsletter"
+  | "preporuke"
   | "domen";
 
 const ALL_TABS: Tab[] = [
@@ -41,6 +43,7 @@ const ALL_TABS: Tab[] = [
   "kalendar",
   "statistika",
   "newsletter",
+  "preporuke",
   "domen",
 ];
 
@@ -933,6 +936,7 @@ function AdminDashboard() {
           <AdminNewsletterDashboard />
         </FeatureGate>
       )}
+      {tab === "preporuke" && <AdminTestimonials />}
       {tab === "domen" && <AdminCustomDomain />}
 
       {/* Service modal */}

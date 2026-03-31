@@ -1,7 +1,6 @@
 // app/api/testimonials/route.ts
 import { NextResponse } from "next/server";
-import { connectToDB } from "@/lib/db/mongodb";
-import { verifyToken } from "@/lib/auth/auth-server";
+import { Testimonial } from "@/models/Testimonial";
 import { FilterQuery } from "mongoose";
 import mongoose from "mongoose";
 import {
@@ -10,7 +9,8 @@ import {
   PaginationInfo,
   TestimonialsResponse,
 } from "@/types";
-import { Testimonial } from "@/models/Testimonial";
+import { connectToDB } from "@/lib/db/mongodb";
+import { verifyToken } from "@/lib/auth/auth-server";
 
 interface AggregationTestimonial {
   _id: mongoose.Types.ObjectId;
@@ -177,6 +177,7 @@ export async function GET(req: Request) {
       testimonials: formattedTestimonials,
       pagination,
     };
+    console.log(response.pagination);
 
     return NextResponse.json(response);
   } catch (error) {

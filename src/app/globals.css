@@ -85,3 +85,73 @@ body {
 @utility admin-label {
   @apply block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5;
 }
+/* FullCalendar light mode — today column (override via CSS variable) */
+:root {
+  --fc-today-bg-color: #fdf8f0; /* warm beige */
+}
+
+/* FullCalendar dark mode */
+.dark .fc {
+  color: #e5e7eb; /* gray-200 */
+  background-color: #111827; /* gray-900 */
+}
+.dark .fc-theme-standard td,
+.dark .fc-theme-standard th,
+.dark .fc-theme-standard .fc-scrollgrid {
+  border-color: #374151; /* gray-700 */
+}
+/* Background overrides — FullCalendar sets white explicitly on cells */
+.dark .fc th {
+  background-color: #1f2937; /* gray-800 — header row */
+}
+.dark .fc td {
+  background-color: #111827; /* gray-900 — body cells */
+}
+.dark .fc .fc-timegrid-axis {
+  background-color: #1f2937;
+}
+/* Dark mode overrides for today bg and vertical column separators */
+.dark {
+  --fc-today-bg-color: rgba(124, 58, 237, 0.07); /* subtle violet for today */
+}
+.dark .fc .fc-timegrid-col {
+  border-right: 1px solid #374151; /* gray-700 — vertical separator between days */
+}
+.dark .fc .fc-col-header-cell-cushion {
+  color: #e5e7eb;
+}
+/* Override explicit light-mode text colors set via dayHeaderContent spans */
+.dark .fc .fc-col-header-cell-cushion span {
+  color: inherit !important;
+}
+.dark .fc .fc-timegrid-slot-label-cushion,
+.dark .fc .fc-daygrid-day-number {
+  color: #9ca3af; /* gray-400 */
+}
+.dark .fc .fc-toolbar-title {
+  color: #f3f4f6; /* gray-100 */
+}
+.dark .fc .fc-button {
+  background-color: #374151;
+  border-color: #4b5563;
+  color: #e5e7eb;
+}
+.dark .fc .fc-button:hover {
+  background-color: #4b5563;
+  border-color: #6b7280;
+}
+.dark .fc .fc-button-active,
+.dark .fc .fc-button:focus {
+  background-color: #7c3aed !important;
+  border-color: #7c3aed !important;
+  box-shadow: none !important;
+}
+.dark .fc .fc-non-business {
+  background: rgba(255,255,255,0.03);
+}
+.dark .fc .fc-timegrid-now-indicator-line {
+  border-color: #a78bfa;
+}
+.dark .fc .fc-highlight {
+  background: rgba(124, 58, 237, 0.15);
+}

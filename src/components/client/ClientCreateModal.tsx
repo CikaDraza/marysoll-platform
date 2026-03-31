@@ -27,6 +27,7 @@ export default function ClientCreateModal({
   const { user, isLoading } = useAuth();
   const { data: services = [], isLoading: servicesLoading } = useServices();
   const { createAppointment } = useAppointmentMutations(token);
+  console.log({ client: services });
 
   const timeOptions = useMemo(() => generateTimes(0, 24, 15), []);
 
@@ -181,9 +182,9 @@ export default function ClientCreateModal({
       <Dialog open={isOpen} onClose={onClose} className="relative z-50">
         <DialogBackdrop className="fixed inset-0 bg-black/50" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-2xl w-full bg-white rounded-lg shadow-xl p-6">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-lg shadow-xl p-6">
             <div className="text-center py-8">
-              <p>Učitavanje...</p>
+              <p className="text-gray-700 dark:text-gray-300">Učitavanje...</p>
             </div>
           </DialogPanel>
         </div>
@@ -195,23 +196,23 @@ export default function ClientCreateModal({
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <DialogBackdrop className="fixed inset-0 bg-black/50" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="max-w-2xl w-full bg-white rounded-lg shadow-xl p-6 max-h-[90vh] min-h-[90vh] overflow-y-auto flex flex-col">
+        <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-lg shadow-xl p-6 max-h-[90vh] min-h-[90vh] overflow-y-auto flex flex-col">
           <div className="flex justify-between items-center">
-            <h3 className="text-xl font-semibold">Zakazivanje termina</h3>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Zakazivanje termina</h3>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-200"
             >
               <XMarkIcon className="w-6 h-6" />
             </button>
           </div>
 
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm font-medium text-gray-900">
+          <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
               Zakazujete termin kao:
             </p>
-            <p className="text-sm text-gray-600">{user?.name}</p>
-            <p className="text-sm text-gray-600">{user?.email}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{user?.name}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{user?.email}</p>
           </div>
 
           <form
@@ -220,27 +221,27 @@ export default function ClientCreateModal({
           >
             <div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Datum *
                 </label>
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-200 bg-gray-100 p-2 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+                  className="mt-1 block w-full rounded-md border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-2 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
                   required
                   min={new Date().toISOString().split("T")[0]}
                 />
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm font-semibold text-gray-700">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Vreme *
                 </label>
                 <select
                   value={selectedTime}
                   onChange={(e) => setSelectedTime(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-200 bg-gray-100 p-2"
+                  className="mt-1 block w-full rounded-md border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-2"
                   required
                 >
                   <option value="">— izaberite vreme —</option>
@@ -253,14 +254,14 @@ export default function ClientCreateModal({
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm font-semibold text-gray-700">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Usluga *
                 </label>
                 <div className="flex flex-col lg:grid lg:grid-cols-2 mt-3 gap-x-3 gap-y-2">
                   {services.map((s) => (
                     <div
                       key={s._id}
-                      className="flex gap-x-3 items-center rounded-md border-gray-200 bg-gray-100 p-2"
+                      className="flex gap-x-3 items-center rounded-md border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 p-2"
                     >
                       <input
                         id={`service-${s._id}`}
@@ -278,7 +279,7 @@ export default function ClientCreateModal({
                       />
                       <label
                         htmlFor={`service-${s._id}`}
-                        className="block text-sm/6 font-medium text-gray-900 flex-1"
+                        className="block text-sm/6 font-medium text-gray-900 dark:text-gray-100 flex-1"
                       >
                         {s.name}
                       </label>
@@ -293,7 +294,7 @@ export default function ClientCreateModal({
                       selectedService.variants &&
                       selectedService.variants.length > 0 && (
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Izaberite varijantu:
                           </label>
                           <div className="grid grid-cols-2 gap-2">
@@ -303,7 +304,7 @@ export default function ClientCreateModal({
                                 className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
                                   selectedVariant === variant.name
                                     ? "border-(--primary-color) bg-(--primary-color)/5"
-                                    : "border-gray-200 hover:border-gray-300"
+                                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500"
                                 }`}
                               >
                                 <input
@@ -317,16 +318,16 @@ export default function ClientCreateModal({
                                   className="mr-3"
                                 />
                                 <div className="flex-1">
-                                  <div className="font-medium">
+                                  <div className="font-medium text-gray-900 dark:text-gray-100">
                                     {variant.name}
                                   </div>
-                                  <div className="text-sm text-gray-600">
+                                  <div className="text-sm text-gray-600 dark:text-gray-400">
                                     {formatPriceToString(variant.price)} RSD
                                     {variant.duration &&
                                       ` • ${variant.duration} min`}
                                   </div>
                                   {variant.perItem && (
-                                    <div className="text-xs text-gray-500 mt-1">
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                       (po stavci)
                                     </div>
                                   )}
@@ -341,14 +342,14 @@ export default function ClientCreateModal({
                     {selectedService.extras &&
                       selectedService.extras.length > 0 && (
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Dodatne opcije (opciono):
                           </label>
                           <div className="space-y-2">
                             {selectedService.extras.map((extra, index) => (
                               <label
                                 key={index}
-                                className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:border-gray-300"
+                                className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-gray-300 dark:hover:border-gray-500"
                               >
                                 <div className="flex items-center">
                                   <input
@@ -362,11 +363,11 @@ export default function ClientCreateModal({
                                     className="mr-3"
                                   />
                                   <div>
-                                    <div className="font-medium">
+                                    <div className="font-medium text-gray-900 dark:text-gray-100">
                                       {extra.name}
                                     </div>
                                     {extra.perItem && (
-                                      <div className="text-xs text-gray-500">
+                                      <div className="text-xs text-gray-500 dark:text-gray-400">
                                         (po stavci)
                                       </div>
                                     )}
@@ -382,15 +383,15 @@ export default function ClientCreateModal({
                       )}
 
                     {/* Prikaz ukupne cene i trajanja */}
-                    <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-lg">
                       <div className="flex justify-between items-center">
                         <div>
-                          <div className="font-semibold">Ukupno:</div>
-                          <div className="text-sm text-gray-600">
+                          <div className="font-semibold text-gray-900 dark:text-gray-100">Ukupno:</div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
                             {totalDuration} min
                           </div>
                           {selectedVariant && (
-                            <div className="text-sm text-gray-500 mt-1">
+                            <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                               Izabrana varijanta: {selectedVariant}
                             </div>
                           )}
@@ -404,7 +405,7 @@ export default function ClientCreateModal({
                 )}
 
                 {servicesLoading && (
-                  <span className="text-sm font-semibold text-gray-700">
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Učitavanje usluga...
                   </span>
                 )}
@@ -412,13 +413,13 @@ export default function ClientCreateModal({
             </div>
             <div className="flex flex-col gap-4 mt-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Napomena (opciono)
                 </label>
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-200 bg-gray-100 p-2"
+                  className="mt-1 block w-full rounded-md border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2"
                   rows={3}
                   placeholder="Dodatne napomene ili instrukcije..."
                 />
@@ -428,7 +429,7 @@ export default function ClientCreateModal({
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="cursor-pointer px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+                  className="cursor-pointer px-4 py-2 bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 transition-colors"
                 >
                   Otkaži
                 </button>

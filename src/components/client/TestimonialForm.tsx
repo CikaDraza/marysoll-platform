@@ -78,7 +78,7 @@ export default function TestimonialForm({
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Podelite svoje iskustvo sa nama..."
-          className="w-full p-3 border border-gray-300 dark:border-gray-800 rounded-md focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
+          className="w-full p-3 border border-gray-300 dark:border-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
           rows={4}
           required
           minLength={10}

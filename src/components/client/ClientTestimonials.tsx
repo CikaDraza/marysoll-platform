@@ -17,6 +17,9 @@ import { getServiceName } from "@/helpers/testimonialHelpers";
 import { useDebounce } from "@/hooks/useDebounce";
 import Paginator from "../elements/Paginator";
 
+const card =
+  "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
+
 export default function ClientTestimonials() {
   const [showForm, setShowForm] = useState(false);
   const [selectedAppointment, setSelectedAppointment] =
@@ -52,7 +55,7 @@ export default function ClientTestimonials() {
     return res?.testimonials || [];
   }, [res?.testimonials]);
 
-  const pagination: PaginationInfo = response?.pagination || {
+  const pagination: PaginationInfo = res?.pagination || {
     page,
     limit: 10,
     totalCount: 0,
@@ -60,6 +63,7 @@ export default function ClientTestimonials() {
     hasNextPage: false,
     hasPrevPage: false,
   };
+  console.log(pagination);
 
   const appointments = useMemo(() => {
     return response?.appointments || [];
@@ -69,8 +73,7 @@ export default function ClientTestimonials() {
   const appointmentsWithoutTestimonial = useMemo(() => {
     return appointments.filter((appointment) => {
       try {
-        const isClientAppointment =
-          appointment.clientId === (currentUser?._id ?? currentUser?.id);
+        const isClientAppointment = appointment.clientId === currentUser?.id;
 
         if (!isClientAppointment) return false;
 
@@ -193,10 +196,10 @@ export default function ClientTestimonials() {
       <Toaster position="top-right" />
 
       {/* Header */}
-      <div className="py-4 rounded-lg">
+      <div className={card}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="flex items-center lg:col-span-4">
-            <h2 className="text-2xl! font-bold text-(--secondary-color)">
+            <h2 className="text-2xl! font-bold text-(--secondary-color) dark:text-white">
               Komentari o vašem iskustvu
             </h2>
           </div>
@@ -326,7 +329,7 @@ export default function ClientTestimonials() {
 
       {/* Sekcija 1: Termini bez komentara */}
       {appointmentsWithoutTestimonial.length > 0 && (
-        <div className="rounded-lg px-6 py-8">
+        <div className={card}>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-300 mb-4">
             Termini koji čekaju vaš komentar (
             {appointmentsWithoutTestimonial.length})
@@ -372,7 +375,7 @@ export default function ClientTestimonials() {
 
       {/* Sekcija 2: Komentari bez odgovora */}
       {testimonialsWithoutReply.length > 0 && (
-        <div className="space-y-4">
+        <div className={card}>
           <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-300">
             Ostavili ste komentar ({testimonialsWithoutReply.length})
           </h3>
@@ -397,7 +400,7 @@ export default function ClientTestimonials() {
 
       {/* Sekcija 3: Komentari sa odgovorom Salona */}
       {testimonialsWithReply.length > 0 && (
-        <div className="space-y-4">
+        <div className={card}>
           <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-300">
             Sa odgovorom salona ({testimonialsWithReply.length})
           </h3>

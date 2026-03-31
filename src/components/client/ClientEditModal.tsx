@@ -1,0 +1,525 @@
+"use client";
+
+import React, { useMemo, useState } from "react";
+import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
+import { XMarkIcon, TrashIcon, ClockIcon } from "@heroicons/react/24/outline";
+import toast from "react-hot-toast";
+import { generateTimes } from "@/helpers/generateTimes";
+import { IAppointment } from "@/types";
+import { useAppointmentMutations } from "@/hooks/useAppointmentMutations";
+import { useServices } from "@/hooks/useServices";
+import { formatPriceToString } from "@/helpers/formatPrice";
+import { motion } from "framer-motion";
+import AlertModal from "../modals/AlertModal";
+
+interface Props {
+  isOpen: boolean;
+  onClose: () => void;
+  appointment: IAppointment | null;
+  token?: string;
+}
+
+const inp = [
+  "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
+  "text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800",
+  "focus:outline-none focus:ring-2 focus:ring-violet-400 transition",
+  "placeholder:text-gray-400 dark:placeholder:text-gray-500",
+].join(" ");
+
+const lbl =
+  "block text-[11px] font-bold text-gray-400 dark:text-gray-300 uppercase tracking-widest mb-1.5";
+
+const EDIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+
+function isWithinEditWindow(appt: IAppointment): boolean {
+  if (!appt.createdAt) return true;
+  return Date.now() - new Date(appt.createdAt).getTime() < EDIT_WINDOW_MS;
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: "Na čekanju",
+  appointment_approved: "Odobreno",
+  appointment_rejected: "Odbijeno",
+  appointment_rescheduled: "Pomerano",
+  appointment_cancelled: "Otkazano",
+  completed: "Završeno",
+  no_show: "Nije došao",
+};
+
+const STATUS_BADGE: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-800 border-amber-300",
+  appointment_approved: "bg-emerald-100 text-emerald-800 border-emerald-300",
+  appointment_rejected: "bg-red-100 text-red-700 border-red-200",
+  appointment_rescheduled: "bg-blue-100 text-blue-800 border-blue-300",
+  appointment_cancelled: "bg-zinc-100 text-zinc-500 border-zinc-200",
+  completed: "bg-teal-100 text-teal-800 border-teal-300",
+  no_show: "bg-purple-100 text-purple-700 border-purple-300",
+};
+
+export default function ClientEditModal({
+  isOpen,
+  onClose,
+  appointment,
+  token,
+}: Props) {
+  const { updateAppointment, deleteAppointment } =
+    useAppointmentMutations(token);
+  const { data: services = [] } = useServices();
+  const timeOptions = useMemo(() => generateTimes(0, 24, 15), []);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+
+  const [selectedDate, setSelectedDate] = useState<string>(
+    appointment?.date ?? "",
+  );
+  const [selectedTime, setSelectedTime] = useState<string>(
+    appointment?.time ?? "",
+  );
+  const [selectedServiceId, setSelectedServiceId] = useState<string>(
+    appointment?.services?.[0]?.serviceId ?? "",
+  );
+  const [selectedVariant, setSelectedVariant] = useState<string>(
+    appointment?.services?.[0]?.serviceName ?? "",
+  );
+  const [selectedExtras, setSelectedExtras] = useState<string[]>(
+    appointment?.services?.[0]?.extras?.map((e) => e.name) ?? [],
+  );
+  const [note, setNote] = useState<string>(appointment?.note ?? "");
+
+  if (!appointment) return null;
+
+  const canEdit = isWithinEditWindow(appointment);
+  const selectedService = services.find((s) => s._id === selectedServiceId);
+
+  const calculateTotal = () => {
+    if (!selectedService) return { price: 0, duration: 0 };
+    let price = 0;
+    let duration = selectedService.duration || 0;
+
+    if (
+      selectedService.type === "variant" &&
+      selectedVariant &&
+      selectedService.variants
+    ) {
+      const variant = selectedService.variants.find(
+        (v) => v.name === selectedVariant,
+      );
+      if (variant) {
+        price = variant.price;
+        if (variant.duration) duration = variant.duration;
+      }
+    } else if (selectedService.type === "single") {
+      price = selectedService.basePrice || 0;
+      duration = selectedService.duration || 0;
+    } else if (selectedService.type === "group") {
+      price = selectedService.basePrice || 0;
+      duration = selectedService.duration || 0;
+    }
+
+    if (selectedService.extras && selectedExtras.length > 0) {
+      selectedExtras.forEach((extraName) => {
+        const extra = selectedService.extras?.find((e) => e.name === extraName);
+        if (extra) {
+          price += extra.price || 0;
+          if (extra.duration) duration += extra.duration;
+        }
+      });
+    }
+    return { price, duration };
+  };
+
+  const { price: totalPrice, duration: totalDuration } = calculateTotal();
+
+  const handleUpdate = async () => {
+    if (!selectedService) return toast.error("Molimo izaberite uslugu.");
+    if (selectedService.type === "variant" && !selectedVariant)
+      return toast.error("Molimo izaberite varijantu.");
+
+    const extrasForStorage = selectedExtras.map((extraName) => {
+      const extra = selectedService.extras?.find((e) => e.name === extraName);
+      return {
+        name: extraName,
+        price: extra?.price || 0,
+        duration: extra?.duration || 0,
+        perItem: extra?.perItem || false,
+      };
+    });
+
+    const dateChanged = selectedDate !== appointment.date;
+    const timeChanged = selectedTime !== appointment.time;
+
+    const updateData: Partial<IAppointment> = {
+      date: selectedDate,
+      time: selectedTime,
+      serviceName: `${selectedService.name}${selectedVariant ? ` - ${selectedVariant}` : ""}`,
+      note: note || undefined,
+      duration: totalDuration,
+      services: [
+        {
+          serviceId: selectedServiceId,
+          serviceName:
+            selectedService.type === "variant"
+              ? selectedVariant
+              : selectedService.name,
+          extras:
+            extrasForStorage.length > 0 ? extrasForStorage : undefined,
+          quantity: 1,
+          price: totalPrice,
+          duration: totalDuration,
+        },
+      ],
+      lastUpdatedBy: "client",
+      ...(dateChanged || timeChanged
+        ? { status: "appointment_rescheduled" }
+        : {}),
+    };
+
+    try {
+      await updateAppointment.mutateAsync({
+        id: appointment._id!,
+        updatedData: updateData,
+      });
+      onClose();
+    } catch {
+      toast.error("Greška pri ažuriranju termina.");
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteAppointment.mutateAsync(appointment._id!);
+      onClose();
+    } catch {
+      toast.error("Greška pri brisanju termina.");
+    }
+  };
+
+  const handleExtraToggle = (extraName: string) => {
+    setSelectedExtras((prev) =>
+      prev.includes(extraName)
+        ? prev.filter((n) => n !== extraName)
+        : [...prev, extraName],
+    );
+  };
+
+  return (
+    <>
+      <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+        <DialogBackdrop className="fixed inset-0 bg-black/80" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel className="max-w-xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-6 overflow-y-auto max-h-[90vh]">
+            {/* Header */}
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Moj termin
+                </h3>
+                <span
+                  className={`inline-block mt-1 text-[11px] font-semibold px-2 py-0.5 rounded border ${STATUS_BADGE[appointment.status] ?? "bg-gray-100 border-gray-200 text-gray-600"}`}
+                >
+                  {STATUS_LABELS[appointment.status] ?? appointment.status}
+                </span>
+              </div>
+              <button
+                onClick={onClose}
+                className="cursor-pointer text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 mt-0.5"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Edit window warning */}
+            {!canEdit && (
+              <div className="mb-4 flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
+                <ClockIcon className="w-4 h-4 shrink-0" />
+                Rok za izmenu je istekao (1 sat od zakazivanja).
+              </div>
+            )}
+
+            {canEdit ? (
+              <div className="space-y-4">
+                {/* Date */}
+                <div>
+                  <label className={lbl}>Datum</label>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className={inp}
+                    min={new Date().toISOString().split("T")[0]}
+                    required
+                  />
+                </div>
+
+                {/* Time */}
+                <div>
+                  <label className={lbl}>Vreme</label>
+                  <select
+                    value={selectedTime}
+                    onChange={(e) => setSelectedTime(e.target.value)}
+                    className={inp}
+                    required
+                  >
+                    <option value="">— izaberite vreme —</option>
+                    {timeOptions.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Service */}
+                <div>
+                  <label className={lbl}>Usluga</label>
+                  <div className="flex flex-col lg:grid lg:grid-cols-2 mt-2 gap-2">
+                    {services.map((s) => (
+                      <div
+                        key={s._id}
+                        className="flex gap-x-3 items-center rounded-md border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 p-2"
+                      >
+                        <input
+                          id={`svc-${s._id}`}
+                          name="service"
+                          type="radio"
+                          value={s._id}
+                          checked={selectedServiceId === s._id}
+                          onChange={() => {
+                            setSelectedServiceId(s._id);
+                            setSelectedVariant("");
+                            setSelectedExtras([]);
+                          }}
+                          className="relative size-4 appearance-none rounded-full border border-gray-300 bg-white before:absolute before:inset-1 before:rounded-full before:bg-white not-checked:before:hidden checked:border-(--primary-color) checked:bg-(--primary-color) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--primary-color) disabled:border-gray-300 disabled:bg-gray-100 disabled:before:bg-gray-400 forced-colors:appearance-auto forced-colors:before:hidden"
+                        />
+                        <label
+                          htmlFor={`svc-${s._id}`}
+                          className="block text-sm/6 font-medium text-gray-900 dark:text-gray-100"
+                        >
+                          {s.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+
+                  {selectedService && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      transition={{ duration: 0.25, ease: "easeInOut" }}
+                      className="mt-4 space-y-4"
+                    >
+                      {/* Variants */}
+                      {selectedService.type === "variant" &&
+                        selectedService.variants &&
+                        selectedService.variants.length > 0 && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              Izaberite varijantu:
+                            </label>
+                            <div className="grid grid-cols-2 gap-2">
+                              {selectedService.variants.map((v, i) => (
+                                <label
+                                  key={i}
+                                  className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                                    selectedVariant === v.name
+                                      ? "border-(--primary-color) bg-(--primary-color)/5"
+                                      : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500"
+                                  }`}
+                                >
+                                  <input
+                                    type="radio"
+                                    name="variant"
+                                    value={v.name}
+                                    checked={selectedVariant === v.name}
+                                    onChange={(e) =>
+                                      setSelectedVariant(e.target.value)
+                                    }
+                                    className="mr-3"
+                                  />
+                                  <div className="flex-1">
+                                    <div className="font-medium text-gray-900 dark:text-gray-100">
+                                      {v.name}
+                                    </div>
+                                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                                      {formatPriceToString(v.price)} RSD
+                                      {v.duration && ` • ${v.duration} min`}
+                                    </div>
+                                  </div>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                      {/* Extras */}
+                      {selectedService.extras &&
+                        selectedService.extras.length > 0 && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              Dodatne opcije (opciono):
+                            </label>
+                            <div className="space-y-2">
+                              {selectedService.extras.map((extra, i) => (
+                                <label
+                                  key={i}
+                                  className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-gray-300 dark:hover:border-gray-500"
+                                >
+                                  <div className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedExtras.includes(
+                                        extra.name,
+                                      )}
+                                      onChange={() =>
+                                        handleExtraToggle(extra.name)
+                                      }
+                                      className="mr-3"
+                                    />
+                                    <div>
+                                      <div className="font-medium text-gray-900 dark:text-gray-100">
+                                        {extra.name}
+                                      </div>
+                                      {extra.perItem && (
+                                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                                          (po stavci)
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="text-(--secondary-color) font-semibold">
+                                    +{formatPriceToString(extra.price || 0)}{" "}
+                                    RSD
+                                  </div>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                      {/* Total */}
+                      <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-3 rounded-lg">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <div className="font-semibold text-gray-900 dark:text-gray-100">
+                              Ukupno:
+                            </div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                              {totalDuration} min
+                            </div>
+                            {selectedVariant && (
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                Varijanta: {selectedVariant}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-lg font-bold text-(--secondary-color)">
+                            {formatPriceToString(totalPrice)} RSD
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Note */}
+                <div>
+                  <label className={lbl}>Napomena</label>
+                  <textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    rows={3}
+                    className={inp}
+                    placeholder="Dodatne napomene..."
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-col lg:flex-row justify-between items-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAlertOpen(true)}
+                    className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded bg-red-100 text-red-600 hover:bg-red-600 hover:text-white transition"
+                  >
+                    <TrashIcon className="w-4 h-4" /> Obriši termin
+                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="cursor-pointer px-4 py-2 bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 rounded text-sm"
+                    >
+                      Otkaži
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleUpdate}
+                      disabled={
+                        updateAppointment.isPending ||
+                        (selectedService?.type === "variant" && !selectedVariant)
+                      }
+                      className="cursor-pointer px-4 py-2 bg-(--secondary-color) hover:bg-(--secondary-color)/90 text-white rounded disabled:opacity-50 text-sm"
+                    >
+                      {updateAppointment.isPending
+                        ? "Čuvanje..."
+                        : "Sačuvaj izmene"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Read-only view */
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
+                    <div className={lbl}>Datum</div>
+                    <div className="font-semibold text-gray-800 dark:text-gray-200">
+                      {appointment.date}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
+                    <div className={lbl}>Vreme</div>
+                    <div className="font-semibold text-gray-800 dark:text-gray-200">
+                      {appointment.time}
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
+                  <div className={lbl}>Usluga</div>
+                  <div className="font-semibold text-gray-800 dark:text-gray-200">
+                    {appointment.serviceName}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    {appointment.duration} min
+                  </div>
+                </div>
+                {appointment.note && (
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
+                    <div className={lbl}>Napomena</div>
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
+                      {appointment.note}
+                    </div>
+                  </div>
+                )}
+                <div className="flex justify-end">
+                  <button
+                    onClick={onClose}
+                    className="cursor-pointer px-4 py-2 bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 rounded text-sm text-gray-700 dark:text-gray-300"
+                  >
+                    Zatvori
+                  </button>
+                </div>
+              </div>
+            )}
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      <AlertModal
+        open={isAlertOpen}
+        setOpen={setIsAlertOpen}
+        onConfirm={handleDelete}
+        title="Obriši termin"
+        message="Da li ste sigurni da želite da obrišete ovaj termin? Ova akcija se ne može opozvati."
+      />
+    </>
+  );
+}

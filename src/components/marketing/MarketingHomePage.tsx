@@ -147,18 +147,14 @@ export function MarketingHomePage() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="text-2xl">
               <Link href="/" className="flex gap-2">
-                <Image
-                  width={136}
-                  height={40}
-                  alt="Marysoll je napravila nešto posebno"
-                  src={"/marysoll-white-logo.svg"}
-                  className="h-10 w-auto object-contain"
-                />
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                  M
+                </div>
                 <div className="flex flex-col">
                   <span className="text-md/9 text-white heading-font">
                     MarySoll
                   </span>
-                  <small className="text-[0.5rem] text-white -mt-1.5">
+                  <small className="text-[0.5rem] text-white -mt-1">
                     je napravila nešto posebno
                   </small>
                 </div>

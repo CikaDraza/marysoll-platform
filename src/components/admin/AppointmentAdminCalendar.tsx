@@ -26,6 +26,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSalonProfileAdmin } from "@/hooks/useSalonProfileAdmin";
 import AdminEditModal from "./AdminEditModal";
 import AdminCreateModal from "./AdminCreateModal";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
+import srLocale from "@fullcalendar/core/locales/sr";
+import { toFullCalendarBusinessHours } from "@/helpers/parseWorkingHours";
 import type {
   IAppointment,
   WorkingHoursMap,
@@ -98,6 +104,17 @@ const STATUS_LABELS: Record<string, string> = {
   appointment_cancelled: "Otkazano",
   completed: "Završeno",
   no_show: "Nije došao",
+};
+
+// Hex colors for FullCalendar events (Tailwind classes don't work in FC)
+const STATUS_HEX: Record<string, string> = {
+  pending: "#fbbf24", // amber-400
+  appointment_approved: "#10b981", // emerald-500
+  appointment_rejected: "#ef4444", // red-500
+  appointment_rescheduled: "#3b82f6", // blue-500
+  appointment_cancelled: "#9ca3af", // gray-400
+  completed: "#14b8a6", // teal-500
+  no_show: "#8b5cf6", // purple-500
 };
 
 // ─── DayView ──────────────────────────────────────────────────────────────────
@@ -265,12 +282,15 @@ function WeekView({
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-type ViewMode = "day" | "week";
+type ViewMode = "day" | "week" | "fullcalendar";
 
 export default function AppointmentAdminCalendar() {
   const { token } = useAuth();
   const { form: salonForm } = useSalonProfileAdmin();
   const workingHours = salonForm.workingHours as WorkingHoursMap | undefined;
+  const businessHours = toFullCalendarBusinessHours(
+    (workingHours ?? {}) as Record<string, unknown>,
+  );
 
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -373,60 +393,66 @@ export default function AppointmentAdminCalendar() {
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-zinc-100 dark:border-zinc-700">
           {/* View toggle */}
-          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-violet-900 rounded-xl p-1">
-            {(["week", "day"] as ViewMode[]).map((v) => (
+          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-gray-800 rounded-xl p-1">
+            {[
+              { v: "week" as ViewMode, label: "Sedmica" },
+              { v: "day" as ViewMode, label: "Dan" },
+              { v: "fullcalendar" as ViewMode, label: "Full kalendar" },
+            ].map(({ v, label }) => (
               <button
                 key={v}
                 onClick={() => setViewMode(v)}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
                   viewMode === v
-                    ? "bg-white text-violet-700 shadow-sm"
-                    : "text-zinc-400 dark:text-gray-300 hover:text-zinc-700"
+                    ? "bg-white dark:bg-gray-700 text-violet-700 dark:text-violet-400 shadow-sm"
+                    : "text-zinc-400 dark:text-gray-400 hover:text-zinc-700 dark:hover:text-gray-200"
                 }`}
               >
-                {v === "week" ? "Sedmica" : "Dan"}
+                {label}
               </button>
             ))}
           </div>
 
           {/* Navigation */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() =>
-                viewMode === "week"
-                  ? setWeekStart((w) => subWeeks(w, 1))
-                  : setSelectedDate((d) => addDays(d, -1))
-              }
-              className="p-1.5 rounded-lg hover:bg-zinc-100 transition text-zinc-400 hover:text-zinc-700"
-            >
-              <ChevronLeftIcon className="w-4 h-4" />
-            </button>
-            <span className="text-sm font-semibold text-zinc-800 dark:text-gray-300 min-w-[180px] text-center">
-              {viewMode === "week"
-                ? `${format(weekStart, "d MMM", { locale: sr })} – ${format(endOfWeek(weekStart, { weekStartsOn: 1 }), "d MMM yyyy", { locale: sr })}`
-                : format(selectedDate, "EEEE, d MMMM yyyy", { locale: sr })}
-            </span>
-            <button
-              onClick={() =>
-                viewMode === "week"
-                  ? setWeekStart((w) => addWeeks(w, 1))
-                  : setSelectedDate((d) => addDays(d, 1))
-              }
-              className="p-1.5 rounded-lg hover:bg-zinc-100 transition text-zinc-400 hover:dark:text-gray-700"
-            >
-              <ChevronRightIcon className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => {
-                const today = new Date();
-                setSelectedDate(today);
-                setWeekStart(startOfWeek(today, { weekStartsOn: 1 }));
-              }}
-              className="ml-1 px-3 py-1.5 text-xs font-semibold bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 transition"
-            >
-              Danas
-            </button>
-          </div>
+          {viewMode !== "fullcalendar" && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() =>
+                  viewMode === "week"
+                    ? setWeekStart((w) => subWeeks(w, 1))
+                    : setSelectedDate((d) => addDays(d, -1))
+                }
+                className={`p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-gray-800 transition text-zinc-400 hover:text-zinc-700 `}
+              >
+                <ChevronLeftIcon className="w-4 h-4" />
+              </button>
+              <span className="text-sm font-semibold text-zinc-800 dark:text-gray-300 min-w-[180px] text-center">
+                {viewMode === "week"
+                  ? `${format(weekStart, "d MMM", { locale: sr })} – ${format(endOfWeek(weekStart, { weekStartsOn: 1 }), "d MMM yyyy", { locale: sr })}`
+                  : format(selectedDate, "EEEE, d MMMM yyyy", { locale: sr })}
+              </span>
+              <button
+                onClick={() =>
+                  viewMode === "week"
+                    ? setWeekStart((w) => addWeeks(w, 1))
+                    : setSelectedDate((d) => addDays(d, 1))
+                }
+                className="p-1.5 rounded-lg hover:bg-zinc-100 transition text-zinc-400 hover:dark:text-gray-700"
+              >
+                <ChevronRightIcon className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => {
+                  const today = new Date();
+                  setSelectedDate(today);
+                  setWeekStart(startOfWeek(today, { weekStartsOn: 1 }));
+                }}
+                className="ml-1 px-3 py-1.5 text-xs font-semibold bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 transition"
+              >
+                Danas
+              </button>
+            </div>
+          )}
 
           {/* Add */}
           <button
@@ -459,7 +485,7 @@ export default function AppointmentAdminCalendar() {
               onDayClick={handleDayClick}
               onAppointmentClick={handleAppointmentClick}
             />
-          ) : (
+          ) : viewMode === "day" ? (
             <>
               {/* Day strip */}
               <div className="flex gap-1.5 overflow-x-auto pb-3 mb-4 scrollbar-none">
@@ -467,6 +493,7 @@ export default function AppointmentAdminCalendar() {
                   const day = addDays(new Date(), i - 3);
                   const isSelected = isSameDay(day, selectedDate);
                   const isToday = isSameDay(day, new Date());
+                  const { isWorking } = getWorkingRange(workingHours, day);
                   return (
                     <button
                       key={i}
@@ -476,7 +503,9 @@ export default function AppointmentAdminCalendar() {
                           ? "bg-violet-600 border-violet-600 text-white"
                           : isToday
                             ? "border-amber-200 bg-amber-50 text-amber-700"
-                            : "border-zinc-100 bg-white text-zinc-600 hover:border-violet-200"
+                            : !isWorking
+                              ? "border-red-500 dark:border-red-700 bg-red-500/10 text-red-400 opacity-90"
+                              : "border-zinc-100 dark:border-gray-700 bg-white dark:bg-gray-900 text-zinc-600 dark:text-gray-400 hover:border-violet-200"
                       }`}
                     >
                       <span className="text-[9px] uppercase font-bold mt-2">
@@ -498,6 +527,79 @@ export default function AppointmentAdminCalendar() {
                 onAppointmentClick={handleAppointmentClick}
               />
             </>
+          ) : (
+            /* ── FullCalendar view ──────────────────────────────────────── */
+            <div className="overflow-hidden">
+              <FullCalendar
+                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                initialView="timeGridWeek"
+                selectable
+                select={(info) => {
+                  const date = info.start.toLocaleDateString("en-CA");
+                  const time = info.start.toLocaleTimeString("en-GB", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+                  handleSlotClick(date, time);
+                }}
+                eventClick={(info) => {
+                  const appt = appointments.find(
+                    (a) => a._id === info.event.id,
+                  );
+                  if (appt) handleAppointmentClick(appt);
+                }}
+                headerToolbar={{
+                  left: "prev,next today",
+                  center: "title",
+                  right: "dayGridMonth,timeGridWeek,timeGridDay",
+                }}
+                height="auto"
+                slotDuration="00:30:00"
+                slotLabelInterval="01:00:00"
+                slotLabelFormat={{
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: false,
+                }}
+                allDaySlot={false}
+                slotMinTime="06:00:00"
+                slotMaxTime="23:00:00"
+                events={appointments.map((a) => {
+                  const duration = a.duration || 60;
+                  const start = new Date(`${a.date}T${a.time}`);
+                  const end = new Date(start.getTime() + duration * 60000);
+                  const color = STATUS_HEX[a.status] ?? STATUS_HEX.pending;
+                  const label = STATUS_LABELS[a.status] ?? a.status;
+                  return {
+                    id: a._id,
+                    title: `${a.serviceName} — ${a.clientName} (${label})`,
+                    start,
+                    end,
+                    backgroundColor: color,
+                    borderColor: color,
+                    textColor: "#ffffff",
+                  };
+                })}
+                businessHours={businessHours}
+                locale={srLocale}
+                firstDay={1}
+                dayHeaderContent={(args) => {
+                  const d = new Date(args.date);
+                  const names = [
+                    "Ned",
+                    "Pon",
+                    "Uto",
+                    "Sre",
+                    "Čet",
+                    "Pet",
+                    "Sub",
+                  ];
+                  return {
+                    html: `<div class="text-center"><span class="text-xs text-gray-400 dark:text-gray-500 uppercase">${names[d.getDay()]}</span><br/><span class="font-bold text-gray-800 dark:text-gray-200">${d.getDate()}.${d.getMonth() + 1}.</span></div>`,
+                  };
+                }}
+              />
+            </div>
           )}
         </div>
       </div>
@@ -511,6 +613,7 @@ export default function AppointmentAdminCalendar() {
         token={token ?? undefined}
       />
       <AdminEditModal
+        key={selectedAppt?._id}
         isOpen={editOpen}
         onClose={() => {
           setEditOpen(false);

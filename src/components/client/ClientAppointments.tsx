@@ -262,8 +262,33 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
   if (!appointment) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-black bg-[url(/colorful-background.jpeg)] bg-center bg-no-repeat rounded-lg w-full max-w-2xl mx-4">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="relative bg-slate-900 rounded-lg w-full max-w-2xl mx-4">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Large circle top-right */}
+          <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-violet-600/20 blur-3xl" />
+          {/* Small circle bottom-left */}
+          <div className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full bg-purple-500/20 blur-2xl" />
+          {/* Grid dots */}
+          <svg
+            className="absolute inset-0 w-full h-full opacity-5"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <pattern
+                id="dots"
+                x="0"
+                y="0"
+                width="24"
+                height="24"
+                patternUnits="userSpaceOnUse"
+              >
+                <circle cx="2" cy="2" r="1.5" fill="white" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#dots)" />
+          </svg>
+        </div>
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-white">
             Chat - {appointment.clientName} - {appointment.serviceName}
