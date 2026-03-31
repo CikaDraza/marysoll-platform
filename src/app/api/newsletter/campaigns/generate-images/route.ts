@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
-import { uploadBase64ToCloudinary } from "@/lib/cloudinary";
+import { uploadBase64ToCloudinary, getTenantFolder } from "@/lib/cloudinary";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 
 const API_KEY = process.env.GEMINI_API_KEY;
@@ -43,7 +43,8 @@ export async function POST(req: Request) {
       throw new Error("No image data returned from Gemini API.");
     }
 
-    const uploadResponse = await uploadBase64ToCloudinary(base64Image);
+    const folder = await getTenantFolder(authResult.decoded.tenantId);
+    const uploadResponse = await uploadBase64ToCloudinary(base64Image, folder);
 
     return NextResponse.json({
       url: uploadResponse.secure_url,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { SalonProfile } from "@/models/SalonProfile";
-import { uploadToCloudinary } from "@/lib/cloudinary";
+import { uploadToCloudinary, getTenantFolder } from "@/lib/cloudinary";
 import { requireAdmin } from "@/lib/auth/auth-server";
 import { DecodedToken } from "@/types/auth/types";
 
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     let logoUrl: string | null = null;
     const logoFile = form.get("logo");
     if (logoFile instanceof File && logoFile.size > 0) {
-      const folder = tenantId ? `salons/${tenantId}` : "salons";
+      const folder = await getTenantFolder(tenantId);
       logoUrl = await uploadToCloudinary(logoFile, folder);
     }
 

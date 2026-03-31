@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { SalonProfile } from "@/models/SalonProfile";
-import { uploadToCloudinary, deleteFromCloudinary } from "@/lib/cloudinary";
+import { uploadToCloudinary, deleteFromCloudinary, getTenantFolder } from "@/lib/cloudinary";
 import { requireAdmin } from "@/lib/auth/auth-server";
 import { DecodedToken } from "@/types/auth/types";
 
@@ -61,7 +61,7 @@ export async function PUT(req: NextRequest) {
     if (logoFile instanceof File && logoFile.size > 0) {
       if (profile.logo)
         await deleteFromCloudinary(profile.logo).catch(console.error);
-      const folder = tenantId ? `salons/${tenantId}` : "salons";
+      const folder = await getTenantFolder(tenantId);
       profile.logo = await uploadToCloudinary(logoFile, folder);
     }
 

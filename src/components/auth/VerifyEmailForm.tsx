@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 type Status =
@@ -53,7 +53,6 @@ const messages: Record<
 
 export default function VerifyEmailForm() {
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   const token = searchParams.get("token");
   const type = searchParams.get("type") ?? "client";
@@ -72,9 +71,9 @@ export default function VerifyEmailForm() {
 
   useEffect(() => {
     if (token && status === "loading") {
-      router.replace(`/api/auth/verify?token=${token}&type=${type}`);
+      window.location.href = `/api/auth/verify?token=${token}&type=${type}`;
     }
-  }, [token, type, status, router]);
+  }, [token, type, status]);
 
   const msg = messages[status];
 
@@ -82,8 +81,14 @@ export default function VerifyEmailForm() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 px-4">
       <div className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-md text-center">
         {/* Logo */}
-        <div className="mb-8">
-          <span className="text-2xl font-bold text-purple-600">Marysoll</span>
+        {/* Monogram icon — always visible */}
+        <div className="flex flex-col items-center justify-center">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white text-xs font-black flex-shrink-0 shadow-sm">
+            M
+          </div>
+          <div className="mb-8">
+            <span className="text-lg font-bold text-purple-600">Marysoll</span>
+          </div>
         </div>
 
         {/* Status */}

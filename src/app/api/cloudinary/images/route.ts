@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryImage } from "@/types/cloudinary";
+import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
+import { getTenantFolder } from "@/lib/cloudinary";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -8,11 +10,16 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const authResult: AdminAuthResult = await requireAdmin(req);
+    if (!authResult.success) return authResult.response;
+
+    const folder = await getTenantFolder(authResult.decoded.tenantId);
+
     const res = await cloudinary.api.resources({
       type: "upload",
-      prefix: "salon/",
+      prefix: `${folder}/`,
       max_results: 100,
     });
 
