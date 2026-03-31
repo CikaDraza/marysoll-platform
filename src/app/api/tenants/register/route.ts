@@ -124,6 +124,7 @@ export async function POST(request: NextRequest) {
       tenantId: tenant._id,
       name: salonName.trim(),
       email: normalizedEmail,
+      phone: phone?.trim() ?? "",
       description: "",
     });
     await salonProfile.save();

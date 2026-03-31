@@ -1,6 +1,7 @@
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { SalonProfile } from "@/models/SalonProfile";
+import { User } from "@/models/User";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -13,10 +14,25 @@ export async function GET(request: NextRequest) {
 
     const tenantId = auth.decoded.tenantId;
     const profile = tenantId
-      ? await SalonProfile.findOne({ tenantId }).lean()
-      : await SalonProfile.findOne({}).lean();
+      ? await SalonProfile.findOne({ tenantId })
+      : await SalonProfile.findOne({});
 
-    return NextResponse.json({ success: true, data: profile ?? null });
+    if (!profile) {
+      return NextResponse.json({ success: true, data: null });
+    }
+
+    // Backfill: if SalonProfile.phone is empty, pull it from the owner's User doc
+    if (!profile.phone) {
+      const owner = await User.findById(auth.decoded.id).select("phone").lean() as
+        | { phone?: string }
+        | null;
+      if (owner?.phone) {
+        profile.phone = owner.phone;
+        await profile.save();
+      }
+    }
+
+    return NextResponse.json({ success: true, data: profile.toObject() });
   } catch (err) {
     console.error("GET /api/salon-profile:", err);
     return NextResponse.json(
