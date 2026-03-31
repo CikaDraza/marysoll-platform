@@ -36,6 +36,7 @@ export async function testimonialCreatedTemplate(data: {
   rating: number;
   comment: string;
   adminReply?: string;
+  tenantId?: string | null;
 }): Promise<string> {
   const stars = "★".repeat(data.rating) + "☆".repeat(5 - data.rating);
   const content = `
@@ -61,7 +62,7 @@ export async function testimonialCreatedTemplate(data: {
     ${ctaButton("Pregledaj moje recenzije", `${appUrl()}/dashboard?tab=Moje+Preporuke`)}
     <p style="margin:8px 0 0 0;">Vaše mišljenje nam puno znači. Hvala! ✦</p>
   `;
-  return wrapEmailLayout({ title: "Recenzija primljena", content });
+  return wrapEmailLayout({ title: "Recenzija primljena", content, tenantId: data.tenantId });
 }
 
 // ── Email verification (client registration) ──────────────────────────────────
@@ -69,6 +70,7 @@ export async function emailVerificationTemplate(data: {
   clientName: string;
   verificationUrl: string;
   ctaLabel?: string;
+  tenantId?: string | null;
 }): Promise<string> {
   const content = `
     <p style="margin:0 0 16px 0;">Poštovani/a <strong>${data.clientName}</strong>,</p>
@@ -79,7 +81,7 @@ export async function emailVerificationTemplate(data: {
     </p>
     <p style="margin:8px 0 0 0;">Dobrodošli! ✦</p>
   `;
-  return wrapEmailLayout({ title: "Potvrdite email adresu", content });
+  return wrapEmailLayout({ title: "Potvrdite email adresu", content, tenantId: data.tenantId });
 }
 
 // ── Password reset ────────────────────────────────────────────────────────────
@@ -179,6 +181,7 @@ export async function clientVerificationTemplate(data: {
   clientName: string;
   salonName: string;
   verifyUrl: string;
+  tenantId?: string | null;
 }): Promise<string> {
   const content = `
     <p style="margin:0 0 16px 0;">Zdravo <strong>${data.clientName}</strong>,</p>
@@ -186,7 +189,7 @@ export async function clientVerificationTemplate(data: {
     <p style="margin:0 0 4px;font-size:13px;color:#9089b0;">Link važi <strong>24 sata</strong>.</p>
     ${ctaButton("Potvrdite email adresu →", data.verifyUrl)}
   `;
-  return wrapEmailLayout({ title: `Potvrdite email — ${data.salonName}`, content });
+  return wrapEmailLayout({ title: `Potvrdite email — ${data.salonName}`, content, tenantId: data.tenantId });
 }
 
 // ── Client welcome ────────────────────────────────────────────────────────────
@@ -194,13 +197,14 @@ export async function clientWelcomeTemplate(data: {
   clientName: string;
   salonName: string;
   salonUrl: string;
+  tenantId?: string | null;
 }): Promise<string> {
   const content = `
     <p style="margin:0 0 16px 0;">Zdravo <strong>${data.clientName}</strong>,</p>
     <p style="margin:0 0 20px 0;">Vaš nalog u salonu <strong>${data.salonName}</strong> je spreman. Možete zakazati termine, pregledati cenovnik i pratiti vaše rezervacije.</p>
     ${ctaButton("Zakažite termin →", data.salonUrl)}
   `;
-  return wrapEmailLayout({ title: `Dobrodošli u ${data.salonName}! 🎉`, content });
+  return wrapEmailLayout({ title: `Dobrodošli u ${data.salonName}! 🎉`, content, tenantId: data.tenantId });
 }
 
 // ── Newsletter promotion ───────────────────────────────────────────────────────

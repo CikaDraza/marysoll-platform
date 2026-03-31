@@ -159,6 +159,7 @@ function AdminDashboard() {
       </div>
     );
   }
+  console.log(sp, user);
 
   return (
     <DashboardLayout>

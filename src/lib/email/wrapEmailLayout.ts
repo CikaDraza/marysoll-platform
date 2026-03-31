@@ -2,30 +2,25 @@ import "server-only";
 /**
  * lib/email/wrapEmailLayout.ts
  *
- * Production HTML email layout wrapper.
- * Dynamically fetches salon profile data from DB and wraps inner content.
+ * Email layout wrapper.
  *
- * Used by ALL transactional email templates.
- * Replaces the old static base() function in templates.ts.
- *
- * Accepts:
- *   title   — email <title> and preheader reference
- *   content — inner HTML (from individual template functions)
- *
- * Optionally accepts salonOverride to avoid a DB call when
- * salon data is already available in the calling context.
+ * - tenantId provided  → fetch that salon's SalonProfile from DB (salon-branded email)
+ * - tenantId omitted   → Marysoll platform branding (owner onboarding, password reset, etc.)
  */
 
 import { connectToDB } from "@/lib/db/mongodb";
 import { SalonProfile } from "@/models/SalonProfile";
+import { Types } from "mongoose";
 
 export interface EmailLayoutData {
   title: string;
   content: string;
+  /** Pass tenantId for salon-branded emails. Omit for Marysoll platform emails. */
+  tenantId?: string | null;
 }
 
 interface SalonData {
-  name?: string;
+  name: string;
   description?: string;
   logo?: string | null;
   street?: string;
@@ -38,46 +33,47 @@ interface SalonData {
   };
 }
 
+const PLATFORM: SalonData = {
+  name: "Marysoll",
+  description: "Platforma za online zakazivanje",
+};
+
+async function resolveSalon(tenantId?: string | null): Promise<SalonData> {
+  if (!tenantId) return PLATFORM;
+
+  try {
+    await connectToDB();
+    const raw = (await SalonProfile.findOne({
+      tenantId: new Types.ObjectId(tenantId),
+    }).lean()) as Record<string, unknown> | null;
+
+    if (!raw) return PLATFORM;
+
+    return {
+      name: String(raw.name ?? "Marysoll"),
+      description: raw.description ? String(raw.description) : undefined,
+      logo: raw.logo ? String(raw.logo) : null,
+      street: raw.street ? String(raw.street) : undefined,
+      city: raw.city ? String(raw.city) : undefined,
+      phone: raw.phone ? String(raw.phone) : undefined,
+      social: {
+        instagram: String((raw.social as Record<string, string>)?.instagram ?? ""),
+        tiktok: String((raw.social as Record<string, string>)?.tiktok ?? ""),
+        facebook: String((raw.social as Record<string, string>)?.facebook ?? ""),
+      },
+    };
+  } catch {
+    return PLATFORM;
+  }
+}
+
 export async function wrapEmailLayout(
   data: EmailLayoutData,
   salonOverride?: SalonData,
 ): Promise<string> {
-  let salon: SalonData | null = salonOverride ?? null;
+  const salon = salonOverride ?? (await resolveSalon(data.tenantId));
 
-  if (!salon) {
-    try {
-      await connectToDB();
-      const raw = (await SalonProfile.findOne().lean()) as Record<
-        string,
-        unknown
-      > | null;
-      if (raw) {
-        salon = {
-          name: String(raw.name ?? ""),
-          description: String(raw.description ?? ""),
-          logo: raw.logo ? String(raw.logo) : null,
-          street: String(raw.street ?? ""),
-          city: String(raw.city ?? ""),
-          phone: String(raw.phone ?? ""),
-          social: {
-            instagram: String(
-              (raw.social as Record<string, string>)?.instagram ?? "",
-            ),
-            tiktok: String(
-              (raw.social as Record<string, string>)?.tiktok ?? "",
-            ),
-            facebook: String(
-              (raw.social as Record<string, string>)?.facebook ?? "",
-            ),
-          },
-        };
-      }
-    } catch {
-      // If DB fetch fails, continue with null salon (graceful degradation)
-    }
-  }
-
-  const salonName = salon?.name || "Marysoll";
+  const salonName = salon.name;
   const appUrl =
     process.env.NEXTAUTH_URL ||
     process.env.NEXT_PUBLIC_APP_URL ||
@@ -149,7 +145,7 @@ export async function wrapEmailLayout(
                 <tr>
                   <td align="center" style="padding-bottom:20px;">
                     ${
-                      salon?.logo
+                      salon.logo
                         ? `<img src="${salon.logo}" width="200" alt="${salonName}" class="logo-img" style="display:block;max-width:200px;height:auto;border:0;outline:none;text-decoration:none;">`
                         : `<table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td align="center" style="width:64px;height:64px;background:linear-gradient(135deg,#ff80b5 0%,#9089fc 100%);border-radius:50%;"><span style="font-size:28px;line-height:64px;display:block;">✦</span></td></tr></table>`
                     }
@@ -163,7 +159,7 @@ export async function wrapEmailLayout(
                   </td>
                 </tr>
                 ${
-                  salon?.description
+                  salon.description
                     ? `
                 <tr>
                   <td align="center">
@@ -230,10 +226,8 @@ export async function wrapEmailLayout(
                 </tr>
 
                 ${
-                  salon?.social &&
-                  (salon.social.instagram ||
-                    salon.social.tiktok ||
-                    salon.social.facebook)
+                  salon.social &&
+                  (salon.social.instagram || salon.social.tiktok || salon.social.facebook)
                     ? `
                 <tr>
                   <td align="center" style="padding-bottom:16px;">
@@ -252,7 +246,7 @@ export async function wrapEmailLayout(
                 <tr>
                   <td align="center" style="padding-bottom:8px;">
                     <p style="margin:0;font-family:'Georgia',serif;font-size:11px;color:#b0a0bc;line-height:1.6;letter-spacing:0.2px;">
-                      ${[salon?.street, salon?.city, salon?.phone].filter(Boolean).join(" · ")}
+                      ${[salon.street, salon.city, salon.phone].filter(Boolean).join(" · ")}
                     </p>
                   </td>
                 </tr>

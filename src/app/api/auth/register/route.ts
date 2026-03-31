@@ -104,6 +104,7 @@ export async function POST(req: NextRequest) {
         salonName,
         verificationToken,
         salonBaseUrl,
+        tenantId: tenant?._id?.toString() ?? null,
       });
     } catch (emailErr) {
       console.error("⚠️ Client verification email nije poslat:", emailErr);

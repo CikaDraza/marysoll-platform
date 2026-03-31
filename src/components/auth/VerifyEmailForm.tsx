@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -54,63 +54,27 @@ const messages: Record<
 export default function VerifyEmailForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [status, setStatus] = useState<Status>("loading");
+
+  const token = searchParams.get("token");
+  const type = searchParams.get("type") ?? "client";
+  const success = searchParams.get("success");
+  const error = searchParams.get("error");
+  const alreadyVerified = searchParams.get("already_verified");
+
+  const status = useMemo<Status>(() => {
+    if (alreadyVerified) return "already_verified";
+    if (success === "owner") return "success_owner";
+    if (success === "client") return "success_client";
+    if (error) return "error";
+    if (!token) return "error";
+    return "loading";
+  }, [alreadyVerified, success, error, token]);
 
   useEffect(() => {
-    const token = searchParams.get("token");
-    const type = searchParams.get("type") ?? "client";
-    const success = searchParams.get("success");
-    const error = searchParams.get("error");
-    const alreadyVerified = searchParams.get("already_verified");
-
-    async function verifyEmail() {
-      if (alreadyVerified) {
-        setStatus("already_verified");
-        return;
-      }
-      if (success === "owner") {
-        setStatus("success_owner");
-        return;
-      }
-      if (success === "client") {
-        setStatus("success_client");
-        return;
-      }
-      if (error) {
-        setStatus("error");
-        return;
-      }
-      if (token) {
-        try {
-          const res = await fetch(
-            `/api/auth/verify?token=${token}&type=${type}`,
-          );
-          const data = await res.json();
-          if (data.success) {
-            setStatus(type === "owner" ? "success_owner" : "success_client");
-          } else {
-            setStatus("error");
-          }
-        } catch (err: unknown) {
-          console.error(
-            "Greška pri verifikaciji emaila:",
-            err instanceof Error ? err.message : err,
-          );
-          setStatus("error");
-        }
-      } else {
-        setStatus("error");
-      }
-    }
-
-    verifyEmail();
-
-    // Ima token — pozovi GET endpoint koji redirect-uje nazad
-    if (token) {
+    if (token && status === "loading") {
       router.replace(`/api/auth/verify?token=${token}&type=${type}`);
-      return;
     }
-  }, [searchParams, router]);
+  }, [token, type, status, router]);
 
   const msg = messages[status];
 

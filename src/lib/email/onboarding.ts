@@ -86,6 +86,7 @@ export async function sendClientVerificationEmail(params: {
   salonName: string;
   verificationToken: string;
   salonBaseUrl: string | undefined;
+  tenantId?: string | null;
 }): Promise<void> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const verifyUrl = `${baseUrl}/verify-email?token=${params.verificationToken}&type=client`;
@@ -94,6 +95,7 @@ export async function sendClientVerificationEmail(params: {
     clientName: params.clientName,
     salonName: params.salonName,
     verifyUrl,
+    tenantId: params.tenantId,
   });
 
   await sendEmail({
@@ -109,11 +111,13 @@ export async function sendClientWelcomeEmail(params: {
   clientName: string;
   salonName: string;
   salonUrl: string;
+  tenantId?: string | null;
 }): Promise<void> {
   const html = await clientWelcomeTemplate({
     clientName: params.clientName,
     salonName: params.salonName,
     salonUrl: params.salonUrl,
+    tenantId: params.tenantId,
   });
 
   await sendEmail({

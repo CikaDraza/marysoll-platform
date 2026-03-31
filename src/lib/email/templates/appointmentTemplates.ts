@@ -82,6 +82,7 @@ export async function appointmentCreatedTemplate(data: {
   date: string;
   time: string;
   note?: string;
+  tenantId?: string | null;
 }): Promise<string> {
   const content = `
     <p style="margin:0 0 16px 0;">Poštovani/a <strong>${data.clientName}</strong>,</p>
@@ -99,7 +100,7 @@ export async function appointmentCreatedTemplate(data: {
     ${ctaButton("Pogledaj termin", `${appUrl()}/dashboard?tab=Moji+Termini`)}
     <p style="margin:8px 0 0 0;font-size:13px;color:#9089b0;">Obaveštićemo vas čim termin bude potvrđen. ✦</p>
   `;
-  return wrapEmailLayout({ title: "Termin zakazan", content });
+  return wrapEmailLayout({ title: "Termin zakazan", content, tenantId: data.tenantId });
 }
 
 export async function appointmentApprovedTemplate(data: {
@@ -108,6 +109,7 @@ export async function appointmentApprovedTemplate(data: {
   date: string;
   time: string;
   note?: string;
+  tenantId?: string | null;
 }): Promise<string> {
   const content = `
     <p style="margin:0 0 16px 0;">Poštovani/a <strong>${data.clientName}</strong>,</p>
@@ -124,7 +126,7 @@ export async function appointmentApprovedTemplate(data: {
     ${appointmentDetailTable(data)}
     <p style="margin:0;">Ako imate pitanja, slobodno nas kontaktirajte. ✦</p>
   `;
-  return wrapEmailLayout({ title: "Termin potvrđen ✓", content });
+  return wrapEmailLayout({ title: "Termin potvrđen ✓", content, tenantId: data.tenantId });
 }
 
 export async function appointmentRejectedTemplate(data: {
@@ -133,6 +135,7 @@ export async function appointmentRejectedTemplate(data: {
   date: string;
   time: string;
   note?: string;
+  tenantId?: string | null;
 }): Promise<string> {
   const content = `
     <p style="margin:0 0 16px 0;">Poštovani/a <strong>${data.clientName}</strong>,</p>
@@ -159,7 +162,7 @@ export async function appointmentRejectedTemplate(data: {
     ${ctaButton("Zakaži novi termin", `${appUrl()}/dashboard?tab=Zakazivanja`)}
     <p style="margin:8px 0 0 0;">Ispričavamo se zbog neprijatnosti. ✦</p>
   `;
-  return wrapEmailLayout({ title: "Informacija o vašem terminu", content });
+  return wrapEmailLayout({ title: "Informacija o vašem terminu", content, tenantId: data.tenantId });
 }
 
 export async function appointmentRescheduledTemplate(data: {
@@ -170,6 +173,7 @@ export async function appointmentRescheduledTemplate(data: {
   proposedDate: string;
   proposedTime: string;
   note?: string;
+  tenantId?: string | null;
 }): Promise<string> {
   const content = `
     <p style="margin:0 0 16px 0;">Poštovani/a <strong>${data.clientName}</strong>,</p>
@@ -196,7 +200,7 @@ export async function appointmentRescheduledTemplate(data: {
     ${ctaButton("Potvrdite termin", `${appUrl()}/dashboard?tab=Moji+Termini`)}
     <p style="margin:8px 0 0 0;">Vidimo se uskoro! ✦</p>
   `;
-  return wrapEmailLayout({ title: "Vaš termin je pomeren", content });
+  return wrapEmailLayout({ title: "Vaš termin je pomeren", content, tenantId: data.tenantId });
 }
 
 export async function appointmentCancelledTemplate(data: {
@@ -205,6 +209,7 @@ export async function appointmentCancelledTemplate(data: {
   date: string;
   time: string;
   lastUpdatedBy?: "client" | "admin";
+  tenantId?: string | null;
 }): Promise<string> {
   const byClient = data.lastUpdatedBy !== "admin";
   const content = `
@@ -228,5 +233,5 @@ export async function appointmentCancelledTemplate(data: {
     ${!byClient ? `<p style="margin:16px 0 0 0;">Ispričavamo se zbog neprijatnosti.</p>` : ""}
     <p style="margin:8px 0 0 0;">Hvala na razumevanju. ✦</p>
   `;
-  return wrapEmailLayout({ title: "Termin otkazan", content });
+  return wrapEmailLayout({ title: "Termin otkazan", content, tenantId: data.tenantId });
 }

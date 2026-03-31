@@ -101,6 +101,7 @@ export async function GET(request: NextRequest) {
           clientName: user.name,
           salonName,
           salonUrl,
+          tenantId: user.tenantId?.toString() ?? null,
         });
       } catch (emailErr) {
         console.error("⚠️ Client welcome email nije poslat:", emailErr);

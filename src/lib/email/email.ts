@@ -132,18 +132,19 @@ export async function sendAppointmentNotification(
     cancelled: `Termin otkazan — ${data.serviceName}`,
   };
 
+  const tenantId = data.tenantId?.toString() ?? null;
   const templateFns: Record<string, () => Promise<string>> = {
-    created: () => appointmentCreatedTemplate(data),
-    approved: () => appointmentApprovedTemplate(data),
-    rejected: () => appointmentRejectedTemplate(data),
+    created: () => appointmentCreatedTemplate({ ...data, tenantId }),
+    approved: () => appointmentApprovedTemplate({ ...data, tenantId }),
+    rejected: () => appointmentRejectedTemplate({ ...data, tenantId }),
     rescheduled: () =>
       appointmentRescheduledTemplate({
         ...data,
-        // Fall back to original date/time if proposedDate/proposedTime not set
         proposedDate: data.proposedDate ?? data.date,
         proposedTime: data.proposedTime ?? data.time,
+        tenantId,
       }),
-    cancelled: () => appointmentCancelledTemplate(data),
+    cancelled: () => appointmentCancelledTemplate({ ...data, tenantId }),
   };
 
   const html = await templateFns[type]();

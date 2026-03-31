@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const { salonName, ownerName, email, password, phone, agreedToPrivacy } =
       await request.json();
 
-    if (!salonName || !ownerName || !email || !password || !agreedToPrivacy) {
+    if (!salonName || !ownerName || !email || !password || !phone || !agreedToPrivacy) {
       return NextResponse.json({ error: "Sva polja su obavezna" }, { status: 400 });
     }
     if (password.length < 8) {
@@ -29,6 +29,9 @@ export async function POST(request: NextRequest) {
         { error: "Lozinka mora imati najmanje 8 karaktera" },
         { status: 400 }
       );
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: "Unesite ispravnu email adresu" }, { status: 400 });
     }
 
     const normalizedEmail = email.toLowerCase().trim();

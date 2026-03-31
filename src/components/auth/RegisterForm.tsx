@@ -6,11 +6,43 @@ import toast from "react-hot-toast";
 
 type Step = "form" | "check_email";
 
+type FormFields = {
+  salonName: string;
+  ownerName: string;
+  email: string;
+  password: string;
+  phone: string;
+  agreedToPrivacy: boolean;
+};
+
+type FieldErrors = Partial<Record<keyof FormFields, string>>;
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validate(form: FormFields): FieldErrors {
+  const e: FieldErrors = {};
+  if (!form.salonName.trim()) e.salonName = "Naziv salona je obavezan";
+  if (!form.ownerName.trim()) e.ownerName = "Ime i prezime je obavezno";
+  if (!form.email.trim()) {
+    e.email = "Email je obavezan";
+  } else if (!EMAIL_RE.test(form.email)) {
+    e.email = "Unesite ispravnu email adresu";
+  }
+  if (!form.password) {
+    e.password = "Lozinka je obavezna";
+  } else if (form.password.length < 8) {
+    e.password = "Lozinka mora imati najmanje 8 karaktera";
+  }
+  if (!form.phone.trim()) e.phone = "Telefon je obavezan";
+  if (!form.agreedToPrivacy) e.agreedToPrivacy = "Morate prihvatiti politiku privatnosti";
+  return e;
+}
+
 export default function RegisterForm() {
   const [step, setStep] = useState<Step>("form");
   const [loading, setLoading] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormFields>({
     salonName: "",
     ownerName: "",
     email: "",
@@ -18,17 +50,21 @@ export default function RegisterForm() {
     phone: "",
     agreedToPrivacy: false,
   });
+  const [errors, setErrors] = useState<FieldErrors>({});
 
-  function set(field: string, value: string | boolean) {
+  function set<K extends keyof FormFields>(field: K, value: FormFields[K]) {
     setForm((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
   }
 
-  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.agreedToPrivacy) {
-      toast.error("Morate prihvatiti politiku privatnosti");
+    const errs = validate(form);
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
       return;
     }
+    setErrors({});
     setLoading(true);
     try {
       const res = await fetch("/api/tenants/register", {
@@ -63,7 +99,7 @@ export default function RegisterForm() {
           Marysoll
         </Link>
         <div className="text-6xl mb-4">📬</div>
-        <h1 className="text-7xl font-bold text-gray-900 mb-3">
+        <h1 className="text-xl font-bold text-gray-900 mb-3">
           Proverite email!
         </h1>
         <p className="text-gray-500 text-sm mb-2">
@@ -100,19 +136,24 @@ export default function RegisterForm() {
   // ─── Korak 1: Forma ───────────────────────────────────────────────────────
   return (
     <div className="w-full">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Naziv salona
           </label>
           <input
             type="text"
-            required
             value={form.salonName}
             onChange={(e) => set("salonName", e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+            className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 transition ${
+              errors.salonName ? "border-red-400 bg-red-50" : "border-gray-200"
+            }`}
             placeholder="Nail Studio Anja"
+            disabled={loading}
           />
+          {errors.salonName && (
+            <p className="text-red-500 text-xs mt-1">{errors.salonName}</p>
+          )}
         </div>
 
         <div>
@@ -121,12 +162,17 @@ export default function RegisterForm() {
           </label>
           <input
             type="text"
-            required
             value={form.ownerName}
             onChange={(e) => set("ownerName", e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+            className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 transition ${
+              errors.ownerName ? "border-red-400 bg-red-50" : "border-gray-200"
+            }`}
             placeholder="Anja Petrović"
+            disabled={loading}
           />
+          {errors.ownerName && (
+            <p className="text-red-500 text-xs mt-1">{errors.ownerName}</p>
+          )}
         </div>
 
         <div>
@@ -135,12 +181,17 @@ export default function RegisterForm() {
           </label>
           <input
             type="email"
-            required
             value={form.email}
             onChange={(e) => set("email", e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+            className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 transition ${
+              errors.email ? "border-red-400 bg-red-50" : "border-gray-200"
+            }`}
             placeholder="anja@salon.com"
+            disabled={loading}
           />
+          {errors.email && (
+            <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+          )}
         </div>
 
         <div>
@@ -149,52 +200,71 @@ export default function RegisterForm() {
           </label>
           <input
             type="password"
-            required
-            minLength={8}
             value={form.password}
             onChange={(e) => set("password", e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+            className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 transition ${
+              errors.password ? "border-red-400 bg-red-50" : "border-gray-200"
+            }`}
             placeholder="Min. 8 karaktera"
+            disabled={loading}
           />
+          {errors.password && (
+            <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+          )}
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Telefon <span className="text-gray-400 font-normal">(opciono)</span>
+            Telefon
           </label>
           <input
             type="tel"
             value={form.phone}
             onChange={(e) => set("phone", e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+            className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 transition ${
+              errors.phone ? "border-red-400 bg-red-50" : "border-gray-200"
+            }`}
             placeholder="+381 60 123 4567"
+            disabled={loading}
           />
+          {errors.phone && (
+            <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
+          )}
         </div>
 
-        <label className="flex items-start gap-3 cursor-pointer pt-1">
-          <input
-            type="checkbox"
-            checked={form.agreedToPrivacy}
-            onChange={(e) => set("agreedToPrivacy", e.target.checked)}
-            className="mt-0.5 accent-purple-600"
-          />
-          <span className="text-sm text-gray-600">
-            Prihvatam{" "}
-            <Link href="/privacy" className="text-purple-600 hover:underline">
-              politiku privatnosti
-            </Link>{" "}
-            i{" "}
-            <Link href="/terms" className="text-purple-600 hover:underline">
-              uslove korišćenja
-            </Link>
-          </span>
-        </label>
+        <div>
+          <label className="flex items-start gap-3 cursor-pointer pt-1">
+            <input
+              type="checkbox"
+              checked={form.agreedToPrivacy}
+              onChange={(e) => set("agreedToPrivacy", e.target.checked)}
+              className="mt-0.5 accent-purple-600"
+              disabled={loading}
+            />
+            <span className="text-sm text-gray-600">
+              Prihvatam{" "}
+              <Link href="/privacy" className="text-purple-600 hover:underline">
+                politiku privatnosti
+              </Link>{" "}
+              i{" "}
+              <Link href="/terms" className="text-purple-600 hover:underline">
+                uslove korišćenja
+              </Link>
+            </span>
+          </label>
+          {errors.agreedToPrivacy && (
+            <p className="text-red-500 text-xs mt-1">{errors.agreedToPrivacy}</p>
+          )}
+        </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-violet-600 text-white py-3 rounded-xl font-semibold hover:bg-violet-700 transition disabled:opacity-50"
+          className="w-full bg-violet-600 text-white py-3 rounded-xl font-semibold hover:bg-violet-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
         >
+          {loading && (
+            <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+          )}
           {loading ? "Kreiranje salona..." : "Kreiraj salon →"}
         </button>
       </form>

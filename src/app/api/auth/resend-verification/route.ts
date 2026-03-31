@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
         salonName,
         verificationToken,
         salonBaseUrl,
+        tenantId: user.tenantId?.toString() ?? null,
       });
     }
 
