@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
+import { requireFeature } from "@/lib/plans/planEnforcement";
 import { NewsletterTemplate } from "@/models/NewsletterTemplate";
 
 export async function DELETE(
@@ -15,9 +16,17 @@ export async function DELETE(
       return authResult.response;
     }
 
+    const tenantId = authResult.decoded.tenantId;
+
+    const denied = await requireFeature(tenantId, "newsletterCampaigns");
+    if (denied) return denied;
+
     await connectToDB();
 
-    const deleted = await NewsletterTemplate.findByIdAndDelete(id);
+    const deleted = await NewsletterTemplate.findOneAndDelete({
+      _id: id,
+      tenantId,
+    });
     if (!deleted) {
       return NextResponse.json(
         { error: "Templejt nije pronađen" },

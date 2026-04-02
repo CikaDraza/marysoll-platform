@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
+import { requireFeature } from "@/lib/plans/planEnforcement";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 
 export async function DELETE(
@@ -19,6 +20,9 @@ export async function DELETE(
 
     const { decoded } = authResult;
     const tenantId = decoded.tenantId;
+
+    const denied = await requireFeature(tenantId, "newsletterLanding");
+    if (denied) return denied;
     const { id } = await context.params;
 
     const campaign = await NewsletterCampaign.findOneAndDelete({

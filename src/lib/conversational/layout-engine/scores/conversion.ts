@@ -1,6 +1,6 @@
-import { LayoutBlock } from "@/types/conversational/layout";
+import { LandingBlock } from "@/types/landing-blocks";
 
-export function scoreConversion(layout: LayoutBlock[]): number {
+export function scoreConversion(layout: LandingBlock[]): number {
   let score = 0.6;
 
   const order = layout.map((b) => b.type);

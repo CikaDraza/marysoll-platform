@@ -1,11 +1,14 @@
 // src/components/admin/campaign/SingleImageField.tsx
 "use client";
 
-import React from "react";
+import React, { useRef, useState } from "react";
 import Image from "next/image";
 import { useSingleImage } from "@/hooks/newsletter/useSingleImage";
 import { useCloudinaryImages } from "@/hooks/useCloudinaryImages";
 import LoaderButton from "@/components/elements/LoaderButton";
+import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
+import { useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 interface SingleImageFieldProps {
   value: string;
@@ -18,9 +21,12 @@ interface SingleImageFieldProps {
  * Koristi se za email-only kampanje (Glavna slika)
  */
 export function SingleImageField({ value, onChange }: SingleImageFieldProps) {
-  const { data: cloudinaryData, isLoading: isLoadingImages } =
+  const { data: cloudinaryData, isLoading: isLoadingImages, refetch } =
     useCloudinaryImages();
   const singleImage = useSingleImage(value);
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const cloudinaryImages = cloudinaryData?.images || [];
 
@@ -40,6 +46,35 @@ export function SingleImageField({ value, onChange }: SingleImageFieldProps) {
     const generatedUrl = await singleImage.generate();
     if (generatedUrl) {
       onChange(generatedUrl);
+    }
+  };
+
+  const handleUpload = async (file: File) => {
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const res = await fetch("/api/cloudinary/images", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Upload failed");
+      }
+
+      const { secure_url } = await res.json();
+      singleImage.setUrl(secure_url);
+      onChange(secure_url);
+      queryClient.invalidateQueries({ queryKey: ["cloudinary-images"] });
+      refetch();
+      toast.success("Slika uploadovana!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -67,6 +102,39 @@ export function SingleImageField({ value, onChange }: SingleImageFieldProps) {
             {singleImage.isGenerating ? <LoaderButton /> : "Generiši"}
           </button>
         </div>
+      </div>
+
+      {/* Upload from device */}
+      <div className="space-y-2">
+        <label className="block text-xs font-medium text-gray-600">
+          Upload sa uređaja
+        </label>
+        <button
+          type="button"
+          disabled={isUploading}
+          onClick={() => fileInputRef.current?.click()}
+          className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isUploading ? (
+            <LoaderButton />
+          ) : (
+            <>
+              <ArrowUpTrayIcon className="w-4 h-4" />
+              Izaberi sliku
+            </>
+          )}
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleUpload(file);
+            e.target.value = "";
+          }}
+        />
       </div>
 
       {/* Divider */}

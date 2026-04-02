@@ -11,7 +11,7 @@
 
 import type { CampaignIntent } from "./conversational/campaign";
 import type { Types } from "mongoose";
-import { LayoutBlock } from "./conversational/layout";
+import { LandingBlock } from "./landing-blocks";
 
 // Re-export runtime konstanti iz constants.ts za backward compat
 export {
@@ -404,7 +404,7 @@ export interface INewsletterCampaign {
     status: "pending" | "generated" | "published" | "failed";
     generatedAt: Date;
     regeneratedCount: number;
-    layout?: LayoutBlock[];
+    layout?: LandingBlock[];
     semanticType?: "promotion" | "event" | "service" | "blog" | "other";
     score: number;
     seo: {

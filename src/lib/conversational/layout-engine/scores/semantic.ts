@@ -1,12 +1,9 @@
-import { LayoutBlock } from "@/types/conversational/layout";
+import { LandingBlock } from "@/types/landing-blocks";
 
-export function scoreSemanticMatch(layout: LayoutBlock[]): number {
+export function scoreSemanticMatch(layout: LandingBlock[]): number {
   let score = 1;
 
   const types = layout.map((b) => b.type);
-
-  if (types.includes("PricingBlock") && !types.includes("FeatureGridBlock"))
-    score -= 0.3;
 
   if (types.includes("HeroVisualBlock") && !types.includes("HeroPrimaryBlock"))
     score -= 0.4;

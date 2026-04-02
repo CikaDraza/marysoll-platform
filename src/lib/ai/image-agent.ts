@@ -1,13 +1,4 @@
-/**
- * Image Agent
- *
- * Step 1: DeepSeek (DEEPSEEK_API_KEY_IMAGE) generates an optimized image prompt
- * Step 2: Google Gemini Imagen renders the actual image
- *
- * DeepSeek cannot generate images directly — it generates the prompt.
- * Gemini handles the actual image generation (same as existing client-growth implementation).
- */
-
+// src/services/imageAgent.ts
 import { callDeepSeek } from "./agents";
 import type { DeepSeekMessage } from "./agents";
 
@@ -21,9 +12,11 @@ Izbegavaj: lica, ljude prepoznatljive, tekst u slici, logos.
 `;
 
 /**
- * Step 1: Generate an optimized image prompt using DeepSeek
+ * Korak 1: Generiši optimizovan prompt koristeći DeepSeek
  */
-export async function generateImagePrompt(userDescription: string): Promise<string> {
+export async function generateImagePrompt(
+  userDescription: string,
+): Promise<string> {
   const messages: DeepSeekMessage[] = [
     {
       role: "user",
@@ -46,29 +39,31 @@ export async function generateImagePrompt(userDescription: string): Promise<stri
 }
 
 /**
- * Step 2: Render image using Google Gemini Imagen
- * (Unchanged from client-growth implementation)
+ * Korak 2: Generiši sliku koristeći našu novu rutu (OpenAI DALL-E)
+ * Vraća data URL u base64 formatu.
  */
-export async function generateImageWithGemini(prompt: string): Promise<string> {
-  const { GoogleGenAI } = await import("@google/genai");
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-
-  const response = await ai.models.generateImages({
-    model: "imagen-3.0-generate-002",
-    prompt,
-    config: { numberOfImages: 1, outputMimeType: "image/jpeg" },
+export async function generateImageWithDeepSeek(
+  prompt: string,
+): Promise<string> {
+  const res = await fetch("/api/generate-image-deepseek", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt }),
   });
 
-  const imageBytes = response.generatedImages?.[0]?.image?.imageBytes;
-  if (!imageBytes) throw new Error("No image generated");
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Server error");
+  }
 
-  return `data:image/jpeg;base64,${imageBytes}`;
+  const data = await res.json();
+  return data.image; // data:image/...;base64,...
 }
 
 /**
- * Full pipeline: description → DeepSeek prompt → Gemini image → base64
+ * Kompletna pipeline: opis korisnika → DeepSeek prompt → OpenAI slika → base64
  */
 export async function generateImage(userDescription: string): Promise<string> {
   const optimizedPrompt = await generateImagePrompt(userDescription);
-  return generateImageWithGemini(optimizedPrompt);
+  return generateImageWithDeepSeek(optimizedPrompt);
 }

@@ -1,4 +1,4 @@
-import { LayoutBlock } from "@/types/conversational/layout";
+import { LandingBlock } from "@/types/landing-blocks";
 
 function hasText(v?: string) {
   return Boolean(v && v.trim().length > 0);
@@ -8,13 +8,8 @@ function hasImages(arr?: string[]) {
   return Array.isArray(arr) && arr.length > 0 && Boolean(arr[0]);
 }
 
-function validHref(href?: string) {
-  if (!href) return false;
-  if (href === "#") return true;
-  return /^\/|https?:\/\//.test(href);
-}
 
-export function sanitizeLayout(blocks: LayoutBlock[]): LayoutBlock[] {
+export function sanitizeLayout(blocks: LandingBlock[]): LandingBlock[] {
   if (!blocks?.length) return [];
 
   const seenTypes = new Set<string>();
@@ -50,14 +45,6 @@ export function sanitizeLayout(blocks: LayoutBlock[]): LayoutBlock[] {
           block.features.some((f) => hasText(f.title))
         );
 
-      // ---------- PRICING ----------
-      case "PricingBlock":
-        return Array.isArray(block.plans) && block.plans.length > 0;
-
-      // ---------- CTA ----------
-      case "CTABlock":
-        return hasText(block.label) && validHref(block.href);
-
       default:
         return true;
     }
@@ -68,7 +55,6 @@ export function sanitizeLayout(blocks: LayoutBlock[]): LayoutBlock[] {
     const singleton = [
       "HeroPrimaryBlock",
       "HeroVisualBlock",
-      "PricingBlock",
       "CTABlock",
     ];
 

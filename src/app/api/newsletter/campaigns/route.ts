@@ -1,8 +1,9 @@
-// app/api/newsletter/campaingns/route.ts
-// GET /api/newsletter/campaingns
+// app/api/newsletter/campaigns/route.ts
+// GET /api/newsletter/campaigns
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
+import { requireFeature } from "@/lib/plans/planEnforcement";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 
 export async function GET(req: NextRequest) {
@@ -10,8 +11,13 @@ export async function GET(req: NextRequest) {
     const auth: AdminAuthResult = await requireAdmin(req);
     if (!auth.success) return auth.response;
 
+    const tenantId = auth.decoded.tenantId;
+
+    const denied = await requireFeature(tenantId, "newsletterCampaigns");
+    if (denied) return denied;
+
     await connectToDB();
-    const campaigns = await NewsletterCampaign.find({})
+    const campaigns = await NewsletterCampaign.find({ tenantId })
       .sort({ createdAt: -1 })
       .lean();
 

@@ -64,11 +64,29 @@ export function verifyRefreshToken(token: string): DecodedToken | null {
 export function getTokenFromRequest(
   request: NextRequest | Request,
 ): string | null {
+  // 1. Authorization header
   const authHeader = request.headers.get("authorization");
   if (authHeader?.startsWith("Bearer ")) return authHeader.split(" ")[1];
+
+  // 2. NextRequest cookies API
   if ("cookies" in request) {
-    return (request as NextRequest).cookies.get("token")?.value ?? null;
+    const req = request as NextRequest;
+    const token =
+      req.cookies.get("auth-token")?.value ??
+      req.cookies.get("token")?.value ??
+      null;
+    if (token) return token;
   }
+
+  // 3. Raw Cookie header (plain Request objects in route handlers)
+  const cookieHeader = request.headers.get("cookie");
+  if (cookieHeader) {
+    const match =
+      cookieHeader.match(/(?:^|;\s*)auth-token=([^;]+)/) ??
+      cookieHeader.match(/(?:^|;\s*)token=([^;]+)/);
+    if (match?.[1]) return decodeURIComponent(match[1]);
+  }
+
   return null;
 }
 

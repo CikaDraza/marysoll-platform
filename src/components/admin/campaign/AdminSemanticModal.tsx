@@ -454,14 +454,20 @@ export default function AdminSemanticModal({
                     ))}
                   </select>
                   {preview.aiLanding?.seo?.ogImage && (
-                    <div className="mt-2 h-20 w-32 relative overflow-hidden rounded">
-                      <Image
-                        fill
-                        src={preview.aiLanding.seo.ogImage}
-                        alt="OG Preview"
-                        className="object-cover w-full h-full"
-                      />
-                    </div>
+                    preview.aiLanding.seo.ogImage.startsWith("https://res.cloudinary.com/") ? (
+                      <div className="mt-2 h-20 w-32 relative overflow-hidden rounded">
+                        <Image
+                          fill
+                          src={preview.aiLanding.seo.ogImage}
+                          alt="OG Preview"
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-xs text-red-500">
+                        OG slika nije sa Cloudinary-a. Izaberi validnu sliku iz liste iznad.
+                      </p>
+                    )
                   )}
                 </div>
               )}
@@ -555,7 +561,23 @@ export default function AdminSemanticModal({
                 <button
                   type="button"
                   disabled={preview.isGenerating}
-                  onClick={preview.generatePreview}
+                  onClick={() => {
+                    if (!form.semanticContent.summary?.trim()) {
+                      toast.error(
+                        "Unesite opis kampanje (summary) pre generisanja landinga",
+                      );
+                      return;
+                    }
+                    if (!form.semanticContent.intent) {
+                      toast.error("Izaberite svrhu kampanje pre generisanja landinga");
+                      return;
+                    }
+                    if (!form.semanticContent.tone) {
+                      toast.error("Izaberite ton pre generisanja landinga");
+                      return;
+                    }
+                    preview.generatePreview();
+                  }}
                   className="px-3 py-2 text-xs font-semibold bg-green-500 hover:bg-green-600 text-white rounded disabled:bg-green-800"
                 >
                   {preview.isGenerating ? <LoaderButton /> : "Generate landing"}

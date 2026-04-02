@@ -1,4 +1,8 @@
-export const generateImage = async (prompt: string): Promise<string> => {
+// src/services/deepseekImageService.ts
+
+export const generateImageWithDeepSeek = async (
+  prompt: string,
+): Promise<string> => {
   const res = await fetch("/api/generate-image", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

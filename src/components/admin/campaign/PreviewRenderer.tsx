@@ -2,11 +2,11 @@
 "use client";
 
 import Image from "next/image";
-import { LayoutBlock } from "@/types/conversational/layout";
 import { LandingSeo } from "@/types/newsletter";
+import { LandingBlock } from "@/types/landing-blocks";
 
 interface PreviewRendererProps {
-  blocks: LayoutBlock[];
+  blocks: LandingBlock[];
   seo?: LandingSeo;
   isSeoLoading?: boolean;
   isSeoReady?: boolean;
@@ -168,52 +168,8 @@ export function PreviewRenderer({
           case "CTABlock":
             return (
               <div key={block.id} className="p-6 bg-gray-200 rounded-xl">
-                <div
-                  className={`${
-                    block.variant === "primary"
-                      ? "cursor-pointer flex w-full justify-center rounded-md bg-(--secondary-color) px-6 py-4 text-sm/6 font-semibold text-white hover:bg-(--secondary-color)/80"
-                      : "cursor-pointer mt-3 inline-flex w-full justify-center rounded-md bg-white px-6 py-4 text-sm font-semibold text-gray-900 shadow-xs inset-ring inset-ring-gray-300 hover:bg-gray-50"
-                  } mx-auto`}
-                >
+                <div className="cursor-pointer flex w-full justify-center rounded-md bg-(--secondary-color) px-6 py-4 text-sm/6 font-semibold text-white hover:bg-(--secondary-color)/80">
                   Label: {block.label} - Link: {block.href}
-                </div>
-              </div>
-            );
-
-          case "PricingBlock":
-            return (
-              <div key={block.id} className="p-6 bg-gray-200 rounded-xl">
-                <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 items-center gap-y-6">
-                  {block.plans?.map(
-                    (plan: {
-                      id: string;
-                      name: string;
-                      price: number | string;
-                      description?: string;
-                      ctaLabel?: string;
-                      href?: string;
-                    }) => (
-                      <div
-                        key={plan.id}
-                        className="relative bg-gray-900 shadow-2xl rounded-3xl p-8 ring-1 ring-gray-900/10"
-                      >
-                        <h3 className="text-(--secondary-color) text-base/7 font-semibold">
-                          {plan.name}
-                        </h3>
-                        <p className="mt-4 flex items-baseline gap-x-2">
-                          <span className="text-white text-4xl font-semibold tracking-tight">
-                            {plan.price}
-                          </span>
-                        </p>
-                        <p className="text-gray-300 mt-6 text-base/7">
-                          {plan.description}
-                        </p>
-                        <div className="bg-(--secondary-color) text-white shadow-xs hover:bg-(--secondary-color)/90 mt-8 block rounded-md px-3.5 py-2.5 text-center text-sm font-semibold">
-                          {plan.ctaLabel} {plan.href}
-                        </div>
-                      </div>
-                    ),
-                  )}
                 </div>
               </div>
             );

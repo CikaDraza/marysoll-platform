@@ -1,4 +1,4 @@
-import { LayoutBlock } from "@/types/conversational/layout";
+import { LandingBlock } from "@/types/landing-blocks";
 
 /**
  * Extract plain text content from layout blocks
@@ -7,12 +7,10 @@ import { LayoutBlock } from "@/types/conversational/layout";
  * - embeddings
  * - search indexing
  */
-export function extractTextFromBlocks(blocks: readonly LayoutBlock[]): string {
-  const visible = blocks.filter((b) => b.visibility !== "hidden");
-
+export function extractTextFromBlocks(blocks: readonly LandingBlock[]): string {
   const parts: string[] = [];
 
-  for (const block of visible) {
+  for (const block of blocks) {
     switch (block.type) {
       case "HeroPrimaryBlock":
         parts.push(block.title);
@@ -33,14 +31,6 @@ export function extractTextFromBlocks(blocks: readonly LayoutBlock[]): string {
       case "FeatureGridBlock":
         for (const f of block.features) {
           parts.push(f.title, f.description);
-        }
-        break;
-
-      case "PricingBlock":
-        for (const plan of block.plans) {
-          parts.push(plan.name);
-
-          if (plan.description) parts.push(plan.description);
         }
         break;
 

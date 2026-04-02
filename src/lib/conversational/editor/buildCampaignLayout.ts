@@ -1,9 +1,9 @@
 // src/lib/conversational/editor/buildCampaignLayout.ts
-import { LayoutBlock, LayoutBlockPreview } from "@/types/conversational/layout";
 import { sanitizeLayout } from "./sanitizeLayout";
 import { scoreLayout } from "../layout-engine/scoreLayout";
 import { INewsletterCampaign } from "@/types";
 import { AICampaignResponse } from "@/types/conversational/ai-preview";
+import { LandingBlock } from "@/types/landing-blocks";
 
 /**
  * TRANSFORMACIJA: Od AI objekta do Layout Engine nizova
@@ -13,7 +13,7 @@ export function buildCampaignLayout(
   campaign: INewsletterCampaign,
   semanticType: string,
 ) {
-  const layout: LayoutBlock[] = [];
+  const layout: LandingBlock[] = [];
   let priority = 1;
   const columns = 1;
 
@@ -32,7 +32,6 @@ export function buildCampaignLayout(
       id: "hero",
       type: "HeroPrimaryBlock",
       priority: priority++,
-      visibility: "visible",
       title: landing.hero.title,
       subtitle: landing.hero.subtitle,
       align: "center",
@@ -47,7 +46,6 @@ export function buildCampaignLayout(
       id: "hero-visual",
       type: "HeroVisualBlock",
       priority: priority++,
-      visibility: "visible",
       title: landing.heroVisual.title,
       subtitle: landing.heroVisual.subtitle,
       imagesUrl: landing.heroVisual.imagesUrl || [],
@@ -63,7 +61,6 @@ export function buildCampaignLayout(
       id: "article",
       type: "ArticleSectionBlock",
       priority: priority++,
-      visibility: "visible",
       title: landing.article.title,
       content: landing.article.content,
     });
@@ -75,7 +72,6 @@ export function buildCampaignLayout(
       id: "content-split",
       type: "ContentSplitBlock",
       priority: priority++,
-      visibility: "visible",
       heading: landing.contentSplit.heading,
       content: landing.contentSplit.content,
     });
@@ -87,33 +83,8 @@ export function buildCampaignLayout(
       id: "features",
       type: "FeatureGridBlock",
       priority: priority++,
-      visibility: "visible",
       columns: columns,
       features: landing.features,
-    });
-  }
-
-  // --- PRICING ---
-  if (landing.pricing && landing.pricing.length > 0) {
-    layout.push({
-      id: "pricing",
-      type: "PricingBlock",
-      priority: priority++,
-      visibility: "visible",
-      plans: landing.pricing,
-    });
-  }
-
-  // --- CTA ---
-  if (landing.cta) {
-    layout.push({
-      id: "cta",
-      type: "CTABlock",
-      variant: "primary",
-      label: landing.cta.label || "Zakaži termin",
-      href: campaign.ctaSlug || "/termini",
-      priority: priority++,
-      visibility: "visible",
     });
   }
 

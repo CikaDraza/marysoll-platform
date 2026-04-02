@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const url = searchParams.get("url");
 
   // Fallback URL ako nešto pođe po zlu
-  const fallbackUrl = "https://www.marysoll.makeup";
+  const fallbackUrl = "https://www.marysoll.com";
 
   // Logujemo klik samo ako imamo sve potrebne podatke
   if (campaign && subscriber && url) {

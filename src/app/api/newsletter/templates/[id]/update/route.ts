@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { type AdminAuthResult, requireAdmin } from "@/lib/auth/auth-server";
+import { requireFeature } from "@/lib/plans/planEnforcement";
 import { NewsletterTemplate } from "@/models/NewsletterTemplate";
 
 export async function PUT(
@@ -14,13 +15,19 @@ export async function PUT(
       return authResult.response;
     }
 
+    const tenantId = authResult.decoded.tenantId;
+
+    const denied = await requireFeature(tenantId, "newsletterCampaigns");
+    if (denied) return denied;
+
     await connectToDB();
     const { id } = await context.params;
     const body = await request.json();
-    const updated = await NewsletterTemplate.findByIdAndUpdate(id, body, {
-      new: true,
-      runValidators: true,
-    });
+    const updated = await NewsletterTemplate.findOneAndUpdate(
+      { _id: id, tenantId },
+      body,
+      { new: true, runValidators: true },
+    );
 
     if (!updated) {
       return NextResponse.json(

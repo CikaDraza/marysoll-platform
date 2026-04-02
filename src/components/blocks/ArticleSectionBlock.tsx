@@ -1,26 +1,17 @@
-// src/components/conversational/blocks/ArticleSectionBlock.tsx
-"use client";
+import { ArticleSectionBlock } from "@/types/landing-blocks";
+import { Reveal } from "../motion/Reveal";
 
-import { LayoutBlockType } from "@/types/conversational/blocks";
-
-interface Props {
-  block: Extract<LayoutBlockType, { type: "ArticleSectionBlock" }>;
-}
-
-export function ArticleSectionBlock({ block }: Props) {
-  const { id, visibility, className, title, content } = block;
-
-  if (visibility === "hidden") return null;
-
+export default function ArticleSectionBlockView({
+  block,
+}: {
+  block: ArticleSectionBlock;
+}) {
   return (
-    <section
-      id={id}
-      className={`py-12 bg-background mx-auto ${className ?? ""}`}
-    >
-      <h2 className="text-base/7 font-semibold text-white">{title}</h2>
-      <p className="max-w-xl text-base/7 text-justify text-gray-600 lg:max-w-7xl">
-        {content}
-      </p>
-    </section>
+    <Reveal>
+      <h2 className="text-4xl font-bold tracking-tight sm:text-6xl">
+        {block.title}
+      </h2>
+      <p className="mt-5 line-clamp-3 text-lg text-gray-600">{block.content}</p>
+    </Reveal>
   );
 }

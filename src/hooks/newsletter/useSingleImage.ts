@@ -33,8 +33,16 @@ export function useSingleImage(initialUrl: string = ""): UseSingleImageReturn {
       });
 
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to generate image");
+        // Read the response body as text to see what was returned
+        const errorText = await res.text();
+        console.error("DALL-E proxy error:", res.status, errorText);
+        // If the response was JSON, you can still try to parse it
+        try {
+          const errJson = JSON.parse(errorText);
+          throw new Error(errJson.error || "Server error");
+        } catch {
+          throw new Error(`Server error: ${errorText.substring(0, 200)}`);
+        }
       }
 
       const data = await res.json();

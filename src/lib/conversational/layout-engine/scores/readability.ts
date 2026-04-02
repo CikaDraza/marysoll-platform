@@ -1,6 +1,6 @@
-import { LayoutBlock } from "@/types/conversational/layout";
+import { LandingBlock } from "@/types/landing-blocks";
 
-export function scoreReadability(layout: LayoutBlock[]): number {
+export function scoreReadability(layout: LandingBlock[]): number {
   let score = 1;
 
   const textBlocks = layout.filter((b) =>

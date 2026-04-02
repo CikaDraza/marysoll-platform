@@ -7,7 +7,7 @@ import {
 } from "@/types/conversational/campaign";
 import { INewsletterCampaign } from "@/types";
 import { CampaignIntent } from "@/types/conversational/campaign";
-import { LayoutBlock } from "@/types/conversational/layout";
+import { LandingBlock } from "@/types/landing-blocks";
 import { AICampaignResponse } from "@/types/conversational/ai-preview";
 
 // Fleksibilniji tipovi koji podržavaju oba slučaja
@@ -29,8 +29,8 @@ interface FormInput {
 }
 
 interface LandingInput {
-  layout?: LayoutBlock[];
-  blocks?: LayoutBlock[];
+  layout?: LandingBlock[];
+  blocks?: LandingBlock[];
   seo?: Record<string, unknown>;
   score?: { total: number; breakdown: Record<string, number> } | number;
   meta?: {
@@ -59,8 +59,6 @@ function toLandingResponse(landing: LandingInput): AICampaignResponse | null {
   const articleBlock = blocks.find((b) => b.type === "ArticleSectionBlock");
   const contentSplitBlock = blocks.find((b) => b.type === "ContentSplitBlock");
   const featuresBlock = blocks.find((b) => b.type === "FeatureGridBlock");
-  const pricingBlock = blocks.find((b) => b.type === "PricingBlock");
-  const ctaBlock = blocks.find((b) => b.type === "CTABlock");
 
   return {
     hero: heroBlock
@@ -83,10 +81,6 @@ function toLandingResponse(landing: LandingInput): AICampaignResponse | null {
         }
       : { heading: "", content: "" },
     features: featuresBlock?.features || [],
-    pricing: pricingBlock?.plans,
-    cta: ctaBlock
-      ? { label: ctaBlock.label || "", goal: ctaBlock.href || "" }
-      : { label: "", goal: "" },
   };
 }
 
@@ -95,7 +89,7 @@ export function useAutoOptimizeLayout({ campaign, form, aiLanding }: Params) {
   const runIdRef = useRef(0);
 
   const generateVariant = useCallback(
-    (seed: number): BuildCampaignLayoutResult | null => {
+    (): BuildCampaignLayoutResult | null => {
       const landingResponse = toLandingResponse(aiLanding);
 
       if (!landingResponse) return null;
@@ -112,7 +106,6 @@ export function useAutoOptimizeLayout({ campaign, form, aiLanding }: Params) {
           id: block.id,
           type: block.type,
           priority: block.priority,
-          visibility: block.visibility,
         })),
         meta: {
           ...result.meta,
@@ -133,9 +126,9 @@ export function useAutoOptimizeLayout({ campaign, form, aiLanding }: Params) {
 
     try {
       const variants = await Promise.all([
-        Promise.resolve(generateVariant(1)),
-        Promise.resolve(generateVariant(2)),
-        Promise.resolve(generateVariant(3)),
+        Promise.resolve(generateVariant()),
+        Promise.resolve(generateVariant()),
+        Promise.resolve(generateVariant()),
       ]);
 
       if (runId !== runIdRef.current) return null;

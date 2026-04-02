@@ -1,6 +1,6 @@
-import { LayoutBlock } from "@/types/conversational/layout";
+import { LandingBlock } from "@/types/landing-blocks";
 
-export function scoreStructure(layout: LayoutBlock[]): number {
+export function scoreStructure(layout: LandingBlock[]): number {
   if (!layout.length) return 0;
 
   let score = 1;
@@ -8,16 +8,12 @@ export function scoreStructure(layout: LayoutBlock[]): number {
   const types = layout.map((b) => b.type);
 
   const hasHero = types.includes("HeroPrimaryBlock");
-  const hasCTA = types.includes("CTABlock");
   const hasContent = types.some((t) =>
     ["ArticleSectionBlock", "ContentSplitBlock"].includes(t),
   );
 
   if (!hasHero) score -= 0.4;
-  if (!hasCTA) score -= 0.3;
   if (!hasContent) score -= 0.3;
-
-  if (types[0] === "CTABlock") score -= 0.4;
 
   return clamp(score);
 }

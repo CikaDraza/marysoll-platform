@@ -1,6 +1,6 @@
 "use client";
 
-import { generateImage } from "@/services/geminiService";
+import { generateImageWithDeepSeek } from "@/services/deepseekImageService";
 import Image from "next/image";
 import { useCallback, useState } from "react";
 
@@ -19,7 +19,7 @@ export function Theme1ImageGenerationSection() {
     setError(null);
     setGeneratedImage(null);
     try {
-      const imageData = await generateImage(prompt);
+      const imageData = await generateImageWithDeepSeek(prompt);
       setGeneratedImage(imageData);
     } catch (e) {
       setError(

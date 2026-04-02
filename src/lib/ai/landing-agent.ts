@@ -1,6 +1,6 @@
 /**
  * Landing Agent — generates newsletter landing page blocks and SEO metadata
- * Uses DEEPSEEK_API_KEY_LANDING
+ * Uses API_KEY_NEWSLETTER_LANDING_GENERATION
  */
 
 import { callDeepSeek } from "./agents";

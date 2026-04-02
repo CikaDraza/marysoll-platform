@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
+import { requireFeature } from "@/lib/plans/planEnforcement";
 import { sendCampaignEmails } from "@/lib/newsletterService";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 
@@ -21,6 +22,9 @@ export async function POST(
 
   const { decoded } = authResult;
   const tenantId = decoded.tenantId;
+
+  const denied = await requireFeature(tenantId, "newsletterCampaigns");
+  if (denied) return denied;
   const body: SendRequestBody = await request.json();
   const { id } = await context.params;
   const { action } = body;

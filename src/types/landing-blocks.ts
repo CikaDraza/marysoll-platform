@@ -36,6 +36,7 @@ export interface HeroVisualBlock extends BaseLandingBlock {
 /* ---------- ARTICLE ---------- */
 export interface ArticleSectionBlock extends BaseLandingBlock {
   type: "ArticleSectionBlock";
+  title: string;
   content: string;
 }
 
@@ -57,6 +58,12 @@ export interface ContentSplitBlock extends BaseLandingBlock {
   type: "ContentSplitBlock";
   heading: string;
   content: string;
+}
+
+export interface CTABlock extends BaseLandingBlock {
+  type: "CTABlock";
+  label: string;
+  href: string;
 }
 
 /* ---------- PRICING ---------- */
@@ -84,20 +91,11 @@ export interface Plan {
   href: string;
 }
 
-/* ---------- CTABlock ---------- */
-
-export interface CTABlock extends BaseLandingBlock {
-  type: "CTABlock";
-  ctaLabel: string;
-  href: string;
-  variant?: "primary" | "secondary";
-}
-
 /* ---------- UNION ---------- */
 export type LandingBlock =
   | HeroPrimaryBlock
   | HeroVisualBlock
   | ArticleSectionBlock
   | ContentSplitBlock
-  | CTABlock
-  | FeatureGridBlock;
+  | FeatureGridBlock
+  | CTABlock;

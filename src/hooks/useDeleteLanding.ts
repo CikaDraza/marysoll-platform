@@ -27,6 +27,7 @@ export const useDeleteLanding = () => {
       toast.success("Landing sadržaj je obrisan.");
       return true;
     } catch (err) {
+      console.error(err);
       toast.error("Neuspešno brisanje.");
       return false;
     } finally {

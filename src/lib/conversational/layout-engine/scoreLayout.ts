@@ -1,13 +1,13 @@
 // app/lib/conversational/layout-engine/scoreLayout.ts
-import { LayoutBlock } from "@/types/conversational/layout";
 import { LayoutScoreResult } from "@/types/conversational/layoutScore";
 import { scoreStructure } from "./scores/structure";
 import { scoreReadability } from "./scores/readability";
 import { scoreConversion } from "./scores/conversion";
 import { scoreSemanticMatch } from "./scores/semantic";
 import { scoreVisualBalance } from "./scores/visual";
+import { LandingBlock } from "@/types/landing-blocks";
 
-export function scoreLayout(layout: LayoutBlock[]): LayoutScoreResult {
+export function scoreLayout(layout: LandingBlock[]): LayoutScoreResult {
   const structure = scoreStructure(layout);
   const readability = scoreReadability(layout);
   const conversion = scoreConversion(layout);

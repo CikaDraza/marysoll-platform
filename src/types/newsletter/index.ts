@@ -1,7 +1,7 @@
 // src/types/newsletter/index.ts
 // Centralizovani tipovi za newsletter i campaign funkcionalnosti
 
-import { LayoutBlock } from "../conversational/layout";
+import { LandingBlock } from "../landing-blocks";
 
 // ============== CAMPAIGN TYPES ==============
 
@@ -49,7 +49,7 @@ export interface CampaignLandingPage {
   status: LandingStatus;
   generatedAt?: Date | string;
   regeneratedCount: number;
-  layout?: LayoutBlock[];
+  layout?: LandingBlock[];
   semanticType?: string;
   score?: number;
   seo?: LandingSeo;
@@ -87,7 +87,7 @@ export interface UpdateCampaignSemanticPayload {
 }
 
 export interface PublishLandingPayload {
-  layout: LayoutBlock[];
+  layout: LandingBlock[];
   seo?: LandingSeo;
   semanticType: string;
   generatedAt: string;
@@ -100,7 +100,7 @@ export interface SaveCampaignSemanticPayload {
   semanticContent: CampaignSemanticContent;
   landingPage: {
     slug: string;
-    layout?: LayoutBlock[];
+    layout?: LandingBlock[];
     seo?: LandingSeo;
     score?: number;
     semanticType?: string;
@@ -112,7 +112,7 @@ export interface SaveCampaignSemanticPayload {
 // ============== PREVIEW TYPES ==============
 
 export interface LandingPreviewResult {
-  layout: LayoutBlock[];
+  layout: LandingBlock[];
   seo?: LandingSeo;
   score?: {
     total: number;

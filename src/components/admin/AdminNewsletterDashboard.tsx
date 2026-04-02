@@ -18,9 +18,9 @@ import {
   formatDatePretty,
   formatDateTimePretty,
 } from "@/helpers/formatISODate";
-import AdminSemanticModal from "./campaign/AdminSematicModal";
 import { SingleImageField } from "./campaign/SingleImageField";
 import LoaderButton from "../elements/LoaderButton";
+import AdminSemanticModal from "./campaign/AdminSemanticModal";
 
 const inp = [
   "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
@@ -907,7 +907,7 @@ export default function AdminNewsletterDashboard() {
       <div className={card}>
         <div className="flex flex-col lg:flex-row justify-between items-center mb-8">
           <h2 className="text-2xl! lg:text-4xl! font-bold">
-            Kreirane Kampanje
+            Kreiranje Kampanje
           </h2>
           <button
             onClick={() => setIsFormOpen(!isFormOpen)}
@@ -1227,7 +1227,7 @@ export default function AdminNewsletterDashboard() {
               campaigns.map((c) => (
                 <div
                   key={c._id}
-                  className="p-4 flex flex-col items-start gap-3 hover:bg-gray-50"
+                  className="p-4 flex flex-col items-start gap-3"
                 >
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg">{c.name}</h3>
@@ -1364,7 +1364,7 @@ export default function AdminNewsletterDashboard() {
                       </button>
                     )}
                     {c.semanticContent?.status && (
-                      <span className="ml-2 text-xs px-2 py-0.5 rounded bg-gray-200">
+                      <span className="ml-2 text-xs px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700">
                         {c.semanticContent.status}
                       </span>
                     )}

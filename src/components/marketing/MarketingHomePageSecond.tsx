@@ -211,7 +211,7 @@ const conversation = [
   { id: 5, text: "Mary? Šta je to? 🤔", sender: "left", name: "Maja" },
   {
     id: 6,
-    text: "MarySoll.app — samo joj kažeš šta ti treba i ona organizuje sve",
+    text: "MarySoll.com — samo joj kažeš šta ti treba i ona organizuje sve",
     sender: "right",
     name: "Anja",
   },
@@ -230,7 +230,7 @@ function FriendsChat() {
     conversation.forEach((_, index) => {
       setTimeout(() => {
         setVisibleMessages((prev) => [...prev, index]);
-      }, index * 2000);
+      }, index * 800);
     });
   }, []);
 
@@ -240,7 +240,7 @@ function FriendsChat() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.8 }}
-      className="bg-gray-900 rounded-3xl p-6 w-full max-w-lg mx-auto shadow-2xl"
+      className="bg-gray-900 rounded-3xl p-6 w-full max-w-lg h-[768px] mx-auto shadow-2xl"
     >
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
@@ -284,7 +284,7 @@ function FriendsChat() {
       {/* MarySoll CTA in chat */}
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
-        animate={visibleMessages.length >= 6 ? { opacity: 1, scale: 1 } : {}}
+        animate={visibleMessages.length >= 7 ? { opacity: 1, scale: 1 } : {}}
         className="mt-4 p-4 bg-gradient-to-r from-violet-600 to-violet-700 rounded-2xl text-center"
       >
         <p className="text-white text-sm font-medium mb-4">
@@ -748,8 +748,33 @@ export function MarketingHomePageSecond() {
       {/* ============================================
           FRIENDS CHAT SECTION (Social Proof)
       ============================================ */}
-      <section className="min-h-[1000px] py-24 bg-gradient-to-br from-violet-600 to-violet-900">
-        <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+      <section className="relative min-h-[1000px] py-24 bg-(--color-brand-900)">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+          {/* Large circle top-right */}
+          <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-violet-600/20 blur-3xl" />
+          {/* Small circle bottom-left */}
+          <div className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full bg-purple-500/20 blur-2xl" />
+          {/* Grid dots */}
+          <svg
+            className="absolute inset-0 w-full h-full opacity-10"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <pattern
+                id="dots"
+                x="0"
+                y="0"
+                width="24"
+                height="24"
+                patternUnits="userSpaceOnUse"
+              >
+                <circle cx="2" cy="2" r="1.5" fill="white" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#dots)" />
+          </svg>
+        </div>
+        <div className="relative z-10 max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <motion.h2
               initial={{ opacity: 0, y: 30 }}

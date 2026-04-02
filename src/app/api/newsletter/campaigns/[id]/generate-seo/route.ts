@@ -1,7 +1,9 @@
 // src/app/api/newsletter/campaigns/[id]/generate-seo/route.ts
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
-import { generateSeoForLanding } from "@/services/generateSeoForLanding";
+import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
+import { requireFeature } from "@/lib/plans/planEnforcement";
+import { generateSeoMetadata } from "@/lib/ai/orchestrator";
 import { extractTextFromBlocks } from "@/lib/conversational/ai/extractTextFromBlocks";
 import { LayoutBlock } from "@/types/conversational/layout";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
@@ -17,6 +19,14 @@ export async function POST(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
+    const authResult: AdminAuthResult = await requireAdmin(req);
+    if (!authResult.success) return authResult.response;
+
+    const tenantId = authResult.decoded.tenantId;
+
+    const denied = await requireFeature(tenantId, "aiSeoGeneration");
+    if (denied) return denied;
+
     await connectToDB();
     const { id } = await context.params;
     const body: RequestBody = await req.json();
@@ -28,7 +38,7 @@ export async function POST(
       );
     }
 
-    const campaign = await NewsletterCampaign.findById(id);
+    const campaign = await NewsletterCampaign.findOne({ _id: id, tenantId });
     if (!campaign) {
       return NextResponse.json(
         { error: "Campaign not found" },
@@ -36,11 +46,9 @@ export async function POST(
       );
     }
 
-    // Extract text content from layout blocks
     const textContent = extractTextFromBlocks(body.layout);
 
-    // Generate SEO
-    const seo = await generateSeoForLanding({
+    const seo = await generateSeoMetadata({
       titleSeed: body.titleSeed || campaign.subject,
       content: textContent,
       keywords: body.keywords || campaign.semanticContent?.keywords || [],

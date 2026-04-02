@@ -3,6 +3,7 @@ import "server-only";
 import { NewsletterStats, NewsletterSubscriptionData } from "@/types";
 import { User } from "@/models/User";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
+import { Tenant } from "@/models/Tenant";
 import crypto from "crypto";
 import { connectToDB } from "./db/mongodb";
 import { NewsletterLog } from "@/models/NewsletterLog";
@@ -11,9 +12,36 @@ import {
   sendNewsletterVerificationEmail,
 } from "./email/email";
 
-const trackingDomain = process.env.TRACKING_DOMAIN!;
-const landingDomain = process.env.LANDING_DOMAIN!;
-const websiteDomain = process.env.NEXT_PUBLIC_API_URL!;
+const trackingDomain = process.env.NEXT_PUBLIC_APP_URL;
+const websiteDomain = process.env.NEXT_PUBLIC_API_URL;
+const platformBaseUrl = process.env.NEXT_PUBLIC_APP_URL;
+
+function getLandingBaseUrl(
+  tenant: {
+    slug: string;
+    customDomain?: string | null;
+    customDomainVerified?: boolean;
+  } | null,
+): string {
+  if (tenant?.customDomain && tenant.customDomainVerified) {
+    return `https://${tenant.customDomain}`;
+  }
+  return `${platformBaseUrl}/${tenant?.slug ?? ""}`;
+}
+
+function getNewsletterLandingUrl(
+  tenant: {
+    slug: string;
+    customDomain?: string | null;
+    customDomainVerified?: boolean;
+  } | null,
+  landingSlug: string,
+): string {
+  const cleanSlug = landingSlug.startsWith("/")
+    ? landingSlug.slice(1)
+    : landingSlug;
+  return `${getLandingBaseUrl(tenant)}/newsletter/${cleanSlug}`;
+}
 
 export async function subscribeToNewsletter(data: NewsletterSubscriptionData) {
   await connectToDB();
@@ -125,6 +153,14 @@ export async function sendCampaignEmails(campaignId: string) {
   const campaign = await NewsletterCampaign.findById(campaignId);
   if (!campaign || campaign.status !== "sending") return;
 
+  const tenant = await Tenant.findById(campaign.tenantId)
+    .select("slug customDomain customDomainVerified")
+    .lean<{
+      slug: string;
+      customDomain?: string | null;
+      customDomainVerified?: boolean;
+    }>();
+
   let recipients: string[] = [];
 
   if (campaign.sendToAll) {
@@ -172,25 +208,27 @@ export async function sendCampaignEmails(campaignId: string) {
     };
 
     // Generiši tracking CTA URL
-    const baseUrl =
-      campaign.campaignType === "email-landing" ? landingDomain : websiteDomain;
-
-    function normalizeSlug(slug?: string) {
-      if (!slug) return "/";
-
-      if (slug.startsWith("http")) {
-        try {
-          return new URL(slug).pathname;
-        } catch {
-          return "/";
+    let finalUrl: string;
+    if (
+      campaign.campaignType === "email-landing" &&
+      campaign.landingPage?.slug
+    ) {
+      finalUrl = getNewsletterLandingUrl(tenant, campaign.landingPage.slug);
+    } else {
+      function normalizeSlug(slug?: string) {
+        if (!slug) return "/";
+        if (slug.startsWith("http")) {
+          try {
+            return new URL(slug).pathname;
+          } catch {
+            return "/";
+          }
         }
+        return slug.startsWith("/") ? slug : `/${slug}`;
       }
-
-      return slug.startsWith("/") ? slug : `/${slug}`;
+      const ctaSlug = normalizeSlug(campaign.ctaSlug);
+      finalUrl = `${websiteDomain}${ctaSlug}`;
     }
-
-    const ctaSlug = normalizeSlug(campaign.ctaSlug);
-    const finalUrl = `${baseUrl}${ctaSlug}`;
 
     const trackingCtaUrl =
       `${trackingDomain}/api/newsletter/track/click` +

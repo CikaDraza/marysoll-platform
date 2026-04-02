@@ -1,13 +1,18 @@
-import { NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
+// src/app/api/generate-image/route.ts
 
-const API_KEY = process.env.GEMINI_API_KEY;
+import { NextResponse } from "next/server";
+import OpenAI from "openai";
+
+const API_KEY = process.env.API_KEY_IMAGE_GENERATION;
 
 if (!API_KEY) {
-  throw new Error("API_KEY environment variable not set");
+  throw new Error("API_KEY_IMAGE_GENERATION environment variable not set");
 }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+const openai = new OpenAI({
+  baseURL: "https://api.deepseek.com/v1",
+  apiKey: API_KEY,
+});
 
 export async function POST(req: Request) {
   try {
@@ -20,28 +25,43 @@ export async function POST(req: Request) {
       );
     }
 
-    const response = await ai.models.generateImages({
-      model: "imagen-4.0-generate-001",
-      prompt: `Create a visually stunning, high-fashion image for a makeup and nail salon: "${prompt}".`,
-      config: {
-        numberOfImages: 1,
-        outputMimeType: "image/jpeg",
-        aspectRatio: "1:1",
-      },
+    const enhancedPrompt = `Create a visually stunning, high-fashion image for a makeup, nail salons, wellness, massage or spa beauty industry: "${prompt}". The image should be professional, elegant, and suitable for a beauty salon website.`;
+
+    const response = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: enhancedPrompt,
+      n: 1,
+      size: "1024x1024",
+      quality: "standard",
+      response_format: "url",
     });
 
-    const base64ImageBytes =
-      response.generatedImages?.[0]?.image?.imageBytes ?? "";
-
-    if (!base64ImageBytes) {
-      throw new Error("No image data returned from Gemini API.");
+    if (!response.data) {
+      throw new Error("No image data returned from OpenAI.");
     }
 
+    const imageUrl = response.data[0]?.url;
+    if (!imageUrl) {
+      throw new Error("No image URL returned from OpenAI.");
+    }
+
+    // Fetch the image and convert to base64
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      throw new Error("Failed to fetch image from OpenAI");
+    }
+    const imageBuffer = await imageResponse.arrayBuffer();
+    const base64 = Buffer.from(imageBuffer).toString("base64");
+
+    // Determine content type from response headers or default to jpeg
+    const contentType =
+      imageResponse.headers.get("content-type") || "image/jpeg";
+
     return NextResponse.json({
-      image: `data:image/jpeg;base64,${base64ImageBytes}`,
+      image: `data:${contentType};base64,${base64}`,
     });
   } catch (error: unknown) {
-    console.error("Gemini image generation error:", error);
+    console.error("Image generation error:", error);
     return NextResponse.json(
       { error: "Image generation failed." },
       { status: 500 },

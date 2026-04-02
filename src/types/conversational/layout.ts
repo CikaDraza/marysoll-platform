@@ -7,7 +7,6 @@ import {
   HeroPrimaryBlock,
   HeroVisualBlock,
   LayoutBlockType,
-  PricingBlock,
 } from "@/types/conversational/blocks";
 
 /* ------------------------------------------------------------------ */
@@ -20,7 +19,6 @@ export type LayoutBlock =
   | ArticleSectionBlock
   | ContentSplitBlock
   | FeatureGridBlock
-  | PricingBlock
   | CTABlock;
 
 /* ------------------------------------------------------------------ */

@@ -1,7 +1,8 @@
-// app/api/newsletter/campaigns/route.ts
+// app/api/newsletter/campaigns/create/route.ts
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
+import { requireFeature } from "@/lib/plans/planEnforcement";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 
 export async function POST(request: Request) {
@@ -12,6 +13,11 @@ export async function POST(request: Request) {
     if (!authResult.success) {
       return authResult.response;
     }
+
+    const tenantId = authResult.decoded.tenantId;
+
+    const denied = await requireFeature(tenantId, "newsletterCampaigns");
+    if (denied) return denied;
 
     const body = await request.json();
     const {
@@ -63,6 +69,7 @@ export async function POST(request: Request) {
     }
 
     const campaign = new NewsletterCampaign({
+      tenantId,
       name: name.trim(),
       templateId: templateId || null,
       defaultTemplateSlug: defaultTemplateSlug,

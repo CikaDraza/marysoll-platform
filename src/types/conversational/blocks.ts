@@ -46,7 +46,7 @@ export type HeroVisualBlock = LayoutBlockBase & {
   href?: string;
   align?: BlockAlign;
   size?: BlockSize;
-  imagesUrl: string[];
+  imagesUrl?: string[];
   variant?: "primary" | "secondary";
   imageURLs?: string[];
 };
@@ -95,9 +95,9 @@ export type LayoutBlockType =
   | "ArticleSectionBlock"
   | "FeatureGridBlock"
   | "CTABlock"
-  | "PricingBlock"
   | "HeroVisualBlock"
-  | "ContentSplitBlock";
+  | "ContentSplitBlock"
+  | "PricingBlock";
 
 export interface BaseBlock {
   id: string;
@@ -116,7 +116,6 @@ export const PUBLIC_ALLOWED_BLOCKS = [
   "HeroVisualBlock",
   "ArticleSectionBlock",
   "FeatureGridBlock",
-  "PricingBlock",
   "CTABlock",
   "ContentSplitBlock",
 ] as const satisfies readonly LayoutBlockType[];

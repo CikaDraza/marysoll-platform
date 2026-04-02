@@ -1,8 +1,9 @@
 // src/lib/conversational/campaign/campaign.types.ts
 
 import { INewsletterCampaign } from "..";
-import { LayoutBlock, LayoutBlockPreview } from "./layout";
+import { LayoutBlockPreview } from "./layout";
 import { LayoutScoreResult } from "./layoutScore";
+import { LandingBlock } from "@/types/landing-blocks";
 import { CampaignSemanticContent, CampaignType } from "./semantic";
 import { SchemaType, Schema } from "@google/generative-ai";
 
@@ -98,7 +99,7 @@ export const landingPreviewSchema: Schema = {
 };
 
 export interface CampaignLandingContent {
-  blocks: LayoutBlock[];
+  blocks: LandingBlock[];
   seo?: {
     title?: string;
     description?: string;
@@ -187,7 +188,7 @@ export enum CampaignIntent {
 }
 
 export type BuildCampaignLayoutResult = {
-  layout: LayoutBlock[];
+  layout: LandingBlock[];
   preview: LayoutBlockPreview[];
   score?: LayoutScoreResult;
   meta: {

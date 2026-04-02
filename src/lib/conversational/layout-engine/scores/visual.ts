@@ -1,6 +1,6 @@
-import { LayoutBlock } from "@/types/conversational/layout";
+import { LandingBlock } from "@/types/landing-blocks";
 
-export function scoreVisualBalance(layout: LayoutBlock[]): number {
+export function scoreVisualBalance(layout: LandingBlock[]): number {
   let score = 1;
 
   const visualBlocks = layout.filter((b) =>

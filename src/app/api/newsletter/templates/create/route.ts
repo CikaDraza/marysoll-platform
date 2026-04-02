@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
+import { requireFeature } from "@/lib/plans/planEnforcement";
 import { NewsletterTemplate } from "@/models/NewsletterTemplate";
 
 export async function POST(request: Request) {
@@ -10,6 +11,11 @@ export async function POST(request: Request) {
   if (!authResult.success) {
     return authResult.response;
   }
+
+  const tenantId = authResult.decoded.tenantId;
+
+  const denied = await requireFeature(tenantId, "newsletterCampaigns");
+  if (denied) return denied;
 
   await connectToDB();
 
@@ -43,6 +49,7 @@ export async function POST(request: Request) {
     }
 
     const template = new NewsletterTemplate({
+      tenantId,
       name,
       slug,
       subject,

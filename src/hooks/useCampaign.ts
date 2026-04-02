@@ -6,7 +6,7 @@ export function useCampaign(id: string, initialData?: Campaign) {
   return useQuery<Campaign>({
     queryKey: ["campaign", id],
     queryFn: async () => {
-      const res = await axios.get(`/api/campaigns/${id}`);
+      const res = await axios.get(`/api/landing-campaigns/${id}`);
       return res.data;
     },
     enabled: !!id,
