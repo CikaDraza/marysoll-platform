@@ -676,7 +676,7 @@ function PlanoviTab({
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-full">
       <h2 className="text-lg font-bold">Upravljanje planovima</h2>
 
       {/* Plan counters */}
@@ -1115,7 +1115,7 @@ function PodesavanjaTab({
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-full">
       <h2 className="text-lg font-bold">Podešavanja platforme</h2>
 
       {/* Trial settings */}
