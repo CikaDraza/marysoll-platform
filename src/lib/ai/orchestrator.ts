@@ -11,9 +11,7 @@
  */
 import "server-only";
 
-import {
-  generateEmailTemplate,
-} from "./agents/emailTemplateAgent";
+import { generateEmailTemplate } from "./agents/emailTemplateAgent";
 
 import {
   generateLandingPreview,
@@ -27,11 +25,26 @@ import {
   type SeoOutput,
 } from "./agents/seoAgent";
 
+import { generateImage } from "./agents/imageAgent";
 import {
-  generateImage,
-} from "./agents/imageAgent";
+  EmailCampaignContent,
+  EmailCampaignInput,
+  EmailCampaignOptimization,
+  EmailCampaignStrategy,
+  EmailCampaignTemplate,
+} from "@/types/ai/email-campaign/aiEmailCampaign.types";
+import { generateCampaignContent } from "./agents/emailCampaign/campaignContentAgent";
+import { generateCampaignTemplate } from "./agents/emailCampaign/campaignTemplateAgent";
+import { generateCampaignOptimization } from "./agents/emailCampaign/campaignOptimizationAgent";
+import { CampaignAnalytics } from "@/models/CampaignAnalytics";
+import { generateCampaignStrategy } from "./agents/emailCampaign/campaignStrategistAgent";
 
 // ─── Input / Output type map ──────────────────────────────────────────────────
+interface EmailCampaignStrategistInput extends EmailCampaignInput {
+  tenantId: string;
+  campaignId?: string;
+  useAverage: boolean;
+}
 
 interface AgentIO {
   emailTemplate: {
@@ -49,6 +62,22 @@ interface AgentIO {
   image: {
     input: { prompt: string };
     output: { optimizedPrompt: string; base64Image: string };
+  };
+  campaignStrategy: {
+    input: EmailCampaignStrategistInput;
+    output: EmailCampaignStrategy;
+  };
+  campaignContent: {
+    input: EmailCampaignStrategy;
+    output: EmailCampaignContent;
+  };
+  campaignTemplate: {
+    input: EmailCampaignContent;
+    output: EmailCampaignTemplate;
+  };
+  campaignOptimization: {
+    input: EmailCampaignContent;
+    output: EmailCampaignOptimization;
   };
 }
 
@@ -72,13 +101,71 @@ export async function runAgent<K extends AgentName>(
       ) as Promise<AgentIO[K]["output"]>;
 
     case "seo":
-      return generateSeoMetadata(
-        input as AgentIO["seo"]["input"],
-      ) as Promise<AgentIO[K]["output"]>;
+      return generateSeoMetadata(input as AgentIO["seo"]["input"]) as Promise<
+        AgentIO[K]["output"]
+      >;
 
     case "image":
       return generateImage(
         (input as AgentIO["image"]["input"]).prompt,
+      ) as Promise<AgentIO[K]["output"]>;
+
+    case "campaignStrategy": {
+      const inputTyped = input as AgentIO["campaignStrategy"]["input"];
+      const useAverage = inputTyped.useAverage ?? false; // Panel flag: default false = last campaign
+
+      // Projection: uzimamo samo ono što nam treba
+      const analytics = await CampaignAnalytics.findOne(
+        { tenantId: inputTyped.tenantId },
+        useAverage
+          ? { avgOpenRate: 1, avgClickRate: 1, topTopics: 1 } // samo prosečne metrike
+          : { campaignHistory: { $slice: -1 } }, // poslednja kampanja
+      ).lean();
+
+      let analyticsSummary: string | undefined;
+
+      if (analytics) {
+        if (useAverage) {
+          // Avg metrics
+          analyticsSummary = `Avg open rate: ${(
+            analytics.avgOpenRate * 100
+          ).toFixed(1)}%, Avg click rate: ${(
+            analytics.avgClickRate * 100
+          ).toFixed(1)}%, Top topics: ${analytics.topTopics.join(", ")}`;
+        } else {
+          // Last campaign metrics
+          const lastCampaign = analytics.campaignHistory?.[0];
+          if (lastCampaign) {
+            analyticsSummary = `Open rate: ${(
+              lastCampaign.openRate * 100
+            ).toFixed(1)}%, Click rate: ${(
+              lastCampaign.clickRate * 100
+            ).toFixed(
+              1,
+            )}%, Subject line: ${lastCampaign.subjectLine}, Topic: ${lastCampaign.topic}`;
+          }
+        }
+      }
+
+      return generateCampaignStrategy({
+        ...inputTyped,
+        analyticsSummary,
+      }) as Promise<AgentIO[K]["output"]>;
+    }
+
+    case "campaignContent":
+      return generateCampaignContent(
+        input as AgentIO["campaignContent"]["input"],
+      ) as Promise<AgentIO[K]["output"]>;
+
+    case "campaignTemplate":
+      return generateCampaignTemplate(
+        input as AgentIO["campaignTemplate"]["input"],
+      ) as Promise<AgentIO[K]["output"]>;
+
+    case "campaignOptimization":
+      return generateCampaignOptimization(
+        input as AgentIO["campaignOptimization"]["input"],
       ) as Promise<AgentIO[K]["output"]>;
 
     default:
@@ -91,5 +178,14 @@ export { generateEmailTemplate } from "./agents/emailTemplateAgent";
 export { generateLandingPreview } from "./agents/landingPageAgent";
 export { generateSeoMetadata } from "./agents/seoAgent";
 export { generateImage } from "./agents/imageAgent";
-export type { LandingPageInput, LandingPageOutput } from "./agents/landingPageAgent";
+export type {
+  LandingPageInput,
+  LandingPageOutput,
+} from "./agents/landingPageAgent";
 export type { SeoInput, SeoOutput } from "./agents/seoAgent";
+
+export {
+  generateCampaignContent,
+  generateCampaignTemplate,
+  generateCampaignOptimization,
+};

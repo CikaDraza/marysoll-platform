@@ -93,28 +93,23 @@ async function resolveCustomDomain(
   request: NextRequest,
   host: string,
 ): Promise<string | null> {
-  console.log("🔍 resolveCustomDomain called for:", host);
   const cached = domainCache.get(host);
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
-    console.log("🔍 Cache hit:", cached.slug);
     return cached.slug;
   }
 
   try {
     const url = new URL("/api/internal/resolve-domain", request.nextUrl.origin);
     url.searchParams.set("domain", host);
-    console.log("🔍 Fetching:", url.toString());
     const res = await fetch(url.toString(), {
       headers: { "x-internal-secret": process.env.INTERNAL_API_SECRET ?? "" },
     });
-    console.log("🔍 Response status:", res.status);
     if (!res.ok) {
       domainCache.set(host, { slug: null, ts: Date.now() });
       return null;
     }
 
     const data = await res.json();
-    console.log("🔍 Response data:", data);
     const slug = data.slug ?? null;
     domainCache.set(host, { slug, ts: Date.now() });
     return slug;
@@ -157,16 +152,13 @@ async function detectDomainType(
   if (host !== "localhost" && !host.endsWith(BASE_DOMAIN)) {
     // Ako je env var postavljen i odgovara hostu
     if (CUSTOM_CLIENT_DOMAIN && host === CUSTOM_CLIENT_DOMAIN) {
-      console.log("🔍 Using CUSTOM_CLIENT_DOMAIN:", host);
       // Moramo naći slug iz DB za ovaj domain
       const slug = await resolveCustomDomain(request, host);
-      console.log("🔍 Resolved slug:", slug);
       if (slug) {
         return { type: "client", tenantSlug: slug };
       }
       // Ako nema u DB, ali je env var postavljen, probaj sa null slug-om
       // (možda je hardkodovano negde drugde)
-      console.log("❌ Failed to resolve slug for CUSTOM_CLIENT_DOMAIN");
       return { type: "client", tenantSlug: null };
     }
 
@@ -330,9 +322,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-domain-type", domainType);
   requestHeaders.set("x-tenant-slug", tenantSlug ?? "");
-
-  // DEBUG
-  console.log("🚀 Middleware:", { hostname, domainType, tenantSlug, pathname });
 
   const pass = () =>
     NextResponse.next({ request: { headers: requestHeaders } });

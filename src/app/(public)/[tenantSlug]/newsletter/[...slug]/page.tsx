@@ -12,7 +12,6 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const { slugId } = normalizeCampaignSlug(slug);
-  console.log(slug, slugId);
 
   try {
     const data = await getCampaign(slugId);

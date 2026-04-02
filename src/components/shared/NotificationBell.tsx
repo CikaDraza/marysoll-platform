@@ -81,7 +81,6 @@ function NotificationItem({
   tenantSlug?: string;
 }) {
   const href = getNotificationHref(notification, isAdmin, tenantSlug);
-  console.log({ notification: notification, tenantSlug: tenantSlug });
 
   return (
     <MenuItem>

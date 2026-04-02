@@ -95,18 +95,14 @@ export default function SuperAdminDashboard() {
   const sa = useSuperAdminTenants();
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex flex-col">
+    <div className="h-screen bg-slate-900 text-white flex flex-col overflow-hidden">
       {/* Header */}
       <header className="bg-slate-800 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
         <div>
           <Link href="/" className="flex gap-2">
-            <Image
-              width={136}
-              height={40}
-              alt="Marysoll je napravila nešto posebno"
-              src={"/marysoll-white-logo.svg"}
-              className="h-10 w-auto object-contain"
-            />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white font-black text-lg shadow-lg">
+              M
+            </div>
             <div>
               <h1 className="text-2xl font-black text-white tracking-tight">
                 Marysoll SuperAdmin
@@ -342,7 +338,7 @@ function TrialTab({
   );
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-full">
       <h2 className="text-lg font-bold">Upravljanje trial periodom</h2>
 
       {/* Trial mode info */}

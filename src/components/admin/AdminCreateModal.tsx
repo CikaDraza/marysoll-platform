@@ -52,10 +52,11 @@ export default function AdminCreateModal({
   token,
 }: Props) {
   const { data: users = [], isLoading: usersLoading } = useUsers();
-  const { data: services = [], isLoading: servicesLoading } = useServices({ token: token ?? undefined });
+  const { data: services = [], isLoading: servicesLoading } = useServices({
+    token: token ?? undefined,
+  });
   const { createAppointment } = useAppointmentMutations(token || "");
   const timeOptions = useMemo(() => generateTimes(0, 24, 15), []);
-  console.log(services);
 
   const [clientId, setClientId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(defaultDate ?? "");
@@ -426,7 +427,9 @@ export default function AdminCreateModal({
                   <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-3 rounded-lg">
                     <div className="flex justify-between items-center">
                       <div>
-                        <div className="font-semibold text-gray-900 dark:text-gray-100">Ukupno:</div>
+                        <div className="font-semibold text-gray-900 dark:text-gray-100">
+                          Ukupno:
+                        </div>
                         <div className="text-sm text-gray-600 dark:text-gray-400">
                           {totalDuration} min
                         </div>

@@ -63,7 +63,6 @@ export default function ClientTestimonials() {
     hasNextPage: false,
     hasPrevPage: false,
   };
-  console.log(pagination);
 
   const appointments = useMemo(() => {
     return response?.appointments || [];

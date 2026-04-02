@@ -27,7 +27,6 @@ export default function ClientCreateModal({
   const { user, isLoading } = useAuth();
   const { data: services = [], isLoading: servicesLoading } = useServices();
   const { createAppointment } = useAppointmentMutations(token);
-  console.log({ client: services });
 
   const timeOptions = useMemo(() => generateTimes(0, 24, 15), []);
 
@@ -198,7 +197,9 @@ export default function ClientCreateModal({
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-lg shadow-xl p-6 max-h-[90vh] min-h-[90vh] overflow-y-auto flex flex-col">
           <div className="flex justify-between items-center">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Zakazivanje termina</h3>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+              Zakazivanje termina
+            </h3>
             <button
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-200"
@@ -211,8 +212,12 @@ export default function ClientCreateModal({
             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
               Zakazujete termin kao:
             </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{user?.name}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{user?.email}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {user?.name}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {user?.email}
+            </p>
           </div>
 
           <form
@@ -386,7 +391,9 @@ export default function ClientCreateModal({
                     <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-lg">
                       <div className="flex justify-between items-center">
                         <div>
-                          <div className="font-semibold text-gray-900 dark:text-gray-100">Ukupno:</div>
+                          <div className="font-semibold text-gray-900 dark:text-gray-100">
+                            Ukupno:
+                          </div>
                           <div className="text-sm text-gray-600 dark:text-gray-400">
                             {totalDuration} min
                           </div>

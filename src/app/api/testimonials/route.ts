@@ -177,7 +177,6 @@ export async function GET(req: Request) {
       testimonials: formattedTestimonials,
       pagination,
     };
-    console.log(response.pagination);
 
     return NextResponse.json(response);
   } catch (error) {
