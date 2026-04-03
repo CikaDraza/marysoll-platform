@@ -100,6 +100,33 @@ const AdminNav: NavItem[] = [
         tab: "email-campaign-ai",
         badge: "Enterprise",
       },
+      {
+        name: "Drafts",
+        path: "/marketing/campaigns/drafts",
+      },
+      {
+        name: "Scheduled",
+        path: "/marketing/campaigns/scheduled",
+      },
+      {
+        name: "Sent",
+        path: "/marketing/campaigns/sent",
+      },
+      {
+        name: "Campaign Analytics",
+        path: "/marketing/analytics",
+        badge: "Soon",
+      },
+      {
+        name: "A/B Subject Test",
+        path: "/marketing/ab-test",
+        badge: "Soon",
+      },
+      {
+        name: "Audience Segmentation",
+        path: "/marketing/audience",
+        badge: "Soon",
+      },
     ],
   },
   {
@@ -142,7 +169,13 @@ const AppSidebar: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
 
-  const [openSubmenu, setOpenSubmenu] = useState<number | null>(null);
+  const [openSubmenu, setOpenSubmenu] = useState<number | null>(() => {
+    // Auto-open the Marketing submenu when on /marketing/* routes
+    if (typeof window !== "undefined" && window.location.pathname.startsWith("/marketing")) {
+      return AdminNav.findIndex((item) => item.name === "Marketing");
+    }
+    return null;
+  });
   const [subMenuHeight, setSubMenuHeight] = useState<Record<number, number>>(
     {},
   );
@@ -153,10 +186,13 @@ const AppSidebar: React.FC = () => {
   // Determine active state
   const isActive = useCallback(
     (item: NavItem) => {
-      if (item.path) return pathname.includes(item.path.split("?")[0]);
+      if (item.path) return pathname.startsWith(item.path.split("?")[0]);
       if (item.subItems) {
         return item.subItems.some(
-          (s) => s.path && pathname.includes(s.path.split("?")[0]),
+          (s) =>
+            s.path
+              ? pathname.startsWith(s.path.split("?")[0])
+              : false,
         );
       }
       return false;
