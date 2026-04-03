@@ -92,6 +92,17 @@ const AdminNav: NavItem[] = [
     path: "/dashboard?tab=newsletter",
   },
   {
+    name: "Marketing",
+    icon: <Icon d="M13 10V3L4 14h7v7l9-11h-7z" />,
+    subItems: [
+      {
+        name: "Email Campaign AI",
+        tab: "email-campaign-ai",
+        badge: "Enterprise",
+      },
+    ],
+  },
+  {
     name: "Preporuke",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -283,11 +294,15 @@ const AppSidebar: React.FC = () => {
                             href={subPath}
                             className="block px-3 py-2 text-sm rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200 transition-colors"
                           >
-                            {sub.name}
-                            {sub.badge && (
-                              <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400">
-                                {sub.badge}
+                            {sub.name && sub.badge ? (
+                              <span className="flex flex-col items-start gap-0">
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400">
+                                  {sub.badge}
+                                </span>
+                                <span>{sub.name}</span>
                               </span>
+                            ) : (
+                              <span>{sub.name}</span>
                             )}
                           </Link>
                         </li>

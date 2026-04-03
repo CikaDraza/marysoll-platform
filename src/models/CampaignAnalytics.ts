@@ -1,12 +1,14 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document, Model, Types } from "mongoose";
 
 export interface EmailCampaignPerformance {
   campaignId: string;
+
   subjectLine: string;
-  topic: string;
+  topic?: string;
 
   sentCount: number;
   deliveredCount: number;
+
   openCount: number;
   clickCount: number;
 
@@ -17,7 +19,8 @@ export interface EmailCampaignPerformance {
 }
 
 export interface CampaignAnalyticsDocument extends Document {
-  tenantId: string;
+  tenantId: Types.ObjectId;
+  salonProfileId: Types.ObjectId;
 
   totalCampaigns: number;
 
@@ -36,59 +39,126 @@ export interface CampaignAnalyticsDocument extends Document {
 
 const CampaignPerformanceSchema = new Schema<EmailCampaignPerformance>(
   {
-    campaignId: { type: String, required: true },
+    campaignId: {
+      type: String,
+      required: true,
+    },
 
-    subjectLine: { type: String, required: true },
-    topic: { type: String },
+    subjectLine: {
+      type: String,
+      required: true,
+    },
 
-    sentCount: Number,
-    deliveredCount: Number,
+    topic: {
+      type: String,
+      default: "",
+    },
 
-    openCount: Number,
-    clickCount: Number,
+    sentCount: {
+      type: Number,
+      default: 0,
+    },
 
-    openRate: Number,
-    clickRate: Number,
+    deliveredCount: {
+      type: Number,
+      default: 0,
+    },
 
-    createdAt: { type: Date, default: Date.now },
+    openCount: {
+      type: Number,
+      default: 0,
+    },
+
+    clickCount: {
+      type: Number,
+      default: 0,
+    },
+
+    openRate: {
+      type: Number,
+      default: 0,
+    },
+
+    clickRate: {
+      type: Number,
+      default: 0,
+    },
+
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { _id: false },
 );
 
-const CampaignAnalyticsSchema = new Schema<CampaignAnalyticsDocument>({
-  tenantId: {
-    type: String,
-    required: true,
-    index: true,
+const CampaignAnalyticsSchema = new Schema<CampaignAnalyticsDocument>(
+  {
+    tenantId: {
+      type: Schema.Types.ObjectId,
+      ref: "Tenant",
+      required: true,
+      index: true,
+    },
+
+    salonProfileId: {
+      type: Schema.Types.ObjectId,
+      ref: "SalonProfile",
+      required: true,
+      index: true,
+    },
+
+    totalCampaigns: {
+      type: Number,
+      default: 0,
+    },
+
+    avgOpenRate: {
+      type: Number,
+      default: 0,
+    },
+
+    avgClickRate: {
+      type: Number,
+      default: 0,
+    },
+
+    bestSubjectLines: {
+      type: [String],
+      default: [],
+    },
+
+    worstSubjectLines: {
+      type: [String],
+      default: [],
+    },
+
+    topTopics: {
+      type: [String],
+      default: [],
+    },
+
+    campaignHistory: {
+      type: [CampaignPerformanceSchema],
+      default: [],
+    },
+
+    lastUpdated: {
+      type: Date,
+      default: Date.now,
+    },
   },
+  { timestamps: true },
+);
 
-  totalCampaigns: {
-    type: Number,
-    default: 0,
-  },
-
-  avgOpenRate: {
-    type: Number,
-    default: 0,
-  },
-
-  avgClickRate: {
-    type: Number,
-    default: 0,
-  },
-
-  bestSubjectLines: [String],
-  worstSubjectLines: [String],
-
-  topTopics: [String],
-
-  campaignHistory: [CampaignPerformanceSchema],
-
-  lastUpdated: {
-    type: Date,
-    default: Date.now,
-  },
-});
+/**
+ * Compound index:
+ * jedan analytics dokument po salonu
+ */
+CampaignAnalyticsSchema.index(
+  { tenantId: 1, salonProfileId: 1 },
+  { unique: true },
+);
 
 export const CampaignAnalytics: Model<CampaignAnalyticsDocument> =
   mongoose.models.CampaignAnalytics ||

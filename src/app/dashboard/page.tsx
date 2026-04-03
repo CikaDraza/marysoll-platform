@@ -15,6 +15,7 @@ import AdminTestimonials from "@/components/admin/AdminTestimonials";
 import AppointmentAdminCalendar from "@/components/admin/AppointmentAdminCalendar";
 import { StatisticsPage } from "@/components/admin/statistics/StatisticPage";
 import AdminNewsletterDashboard from "@/components/admin/AdminNewsletterDashboard";
+import { EmailCampaignAIGenerator } from "@/components/email-campaign/EmailCampaignAIGenerator";
 import { FeatureGate } from "@/components/shared/FeatureGate";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import DashboardLayout from "@/layout/DashboardLayout";
@@ -31,6 +32,7 @@ type Tab =
   | "kalendar"
   | "statistika"
   | "newsletter"
+  | "email-campaign-ai"
   | "preporuke"
   | "domen";
 
@@ -43,6 +45,7 @@ const ALL_TABS: Tab[] = [
   "kalendar",
   "statistika",
   "newsletter",
+  "email-campaign-ai",
   "preporuke",
   "domen",
 ];
@@ -934,6 +937,11 @@ function AdminDashboard() {
       {tab === "newsletter" && (
         <FeatureGate feature="newsletter">
           <AdminNewsletterDashboard />
+        </FeatureGate>
+      )}
+      {tab === "email-campaign-ai" && (
+        <FeatureGate feature="unlimitedAiTokens" requiredPlan="enterprise">
+          <EmailCampaignAIGenerator />
         </FeatureGate>
       )}
       {tab === "preporuke" && <AdminTestimonials />}

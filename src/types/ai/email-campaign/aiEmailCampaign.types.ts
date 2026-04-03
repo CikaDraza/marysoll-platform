@@ -18,6 +18,7 @@ export interface EmailCampaignStrategy {
   previewTexts: string[];
   targetAudience: string;
   recommendedSendTime: string;
+  reasoning?: string;
 }
 
 export interface EmailCampaignContent {
@@ -47,4 +48,5 @@ export interface EmailCampaignOptimization {
   expectedOpenRate: number;
   expectedClickRate: number;
   suggestions: string[];
+  confidenceScore?: number;
 }

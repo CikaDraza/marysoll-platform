@@ -36,14 +36,20 @@ import {
 import { generateCampaignContent } from "./agents/emailCampaign/campaignContentAgent";
 import { generateCampaignTemplate } from "./agents/emailCampaign/campaignTemplateAgent";
 import { generateCampaignOptimization } from "./agents/emailCampaign/campaignOptimizationAgent";
-import { CampaignAnalytics } from "@/models/CampaignAnalytics";
+import {
+  CampaignAnalytics,
+  EmailCampaignPerformance,
+} from "@/models/CampaignAnalytics";
 import { generateCampaignStrategy } from "./agents/emailCampaign/campaignStrategistAgent";
+import { SalonProfile } from "@/models/SalonProfile";
+import { SalonProfile as SalonProfileTypes } from "@/types";
 
 // ─── Input / Output type map ──────────────────────────────────────────────────
 interface EmailCampaignStrategistInput extends EmailCampaignInput {
   tenantId: string;
-  campaignId?: string;
+  salonIds: string[];
   useAverage: boolean;
+  salonProfileIds: string;
 }
 
 interface AgentIO {
@@ -112,29 +118,62 @@ export async function runAgent<K extends AgentName>(
 
     case "campaignStrategy": {
       const inputTyped = input as AgentIO["campaignStrategy"]["input"];
-      const useAverage = inputTyped.useAverage ?? false; // Panel flag: default false = last campaign
+      const useAverage = inputTyped.useAverage ?? false;
 
-      // Projection: uzimamo samo ono što nam treba
-      const analytics = await CampaignAnalytics.findOne(
-        { tenantId: inputTyped.tenantId },
+      if (!inputTyped.salonIds?.length) {
+        throw new Error("At least one salon must be selected.");
+      }
+
+      const selectedSalonId = inputTyped.salonIds[0];
+
+      // ─── 1️⃣ Učitaj sve salone za selektovane salonProfileId ─────────────
+      const salon = await SalonProfile.findOne({
+        _id: selectedSalonId,
+        tenantId: inputTyped.tenantId,
+      }).lean<SalonProfileTypes>();
+
+      if (!salon) {
+        throw new Error("Selected salon not found.");
+      }
+
+      // ─── 2️⃣ Izaberi prvi salon za strategiju ─────────────
+      const salonName = salon.name;
+      // ─── 3️⃣ Učitaj CampaignAnalytics za taj salon ─────────────
+      interface CampaignAnalyticsLean {
+        _id: string;
+        salonProfileId: string;
+        avgOpenRate?: number;
+        avgClickRate?: number;
+        topTopics?: string[];
+        campaignHistory?: EmailCampaignPerformance[];
+      }
+
+      const analyticsDoc = (await CampaignAnalytics.findOne(
+        { salonProfileId: salon._id },
         useAverage
-          ? { avgOpenRate: 1, avgClickRate: 1, topTopics: 1 } // samo prosečne metrike
-          : { campaignHistory: { $slice: -1 } }, // poslednja kampanja
-      ).lean();
+          ? { avgOpenRate: 1, avgClickRate: 1, topTopics: 1 }
+          : { campaignHistory: { $slice: -1 } },
+      ).lean<CampaignAnalyticsLean>()) as CampaignAnalyticsLean | null;
 
       let analyticsSummary: string | undefined;
 
-      if (analytics) {
+      if (analyticsDoc) {
         if (useAverage) {
-          // Avg metrics
-          analyticsSummary = `Avg open rate: ${(
-            analytics.avgOpenRate * 100
-          ).toFixed(1)}%, Avg click rate: ${(
-            analytics.avgClickRate * 100
-          ).toFixed(1)}%, Top topics: ${analytics.topTopics.join(", ")}`;
+          const avgOpenRate = analyticsDoc.avgOpenRate ?? 0;
+          const avgClickRate = analyticsDoc.avgClickRate ?? 0;
+          const topTopics = analyticsDoc.topTopics?.slice(0, 5) ?? [];
+
+          analyticsSummary = `Avg open rate: ${(avgOpenRate * 100).toFixed(
+            1,
+          )}%, Avg click rate: ${(avgClickRate * 100).toFixed(
+            1,
+          )}%, Top topics: ${topTopics.join(", ")}`;
         } else {
-          // Last campaign metrics
-          const lastCampaign = analytics.campaignHistory?.[0];
+          const lastCampaign =
+            analyticsDoc.campaignHistory?.[
+              analyticsDoc.campaignHistory.length - 1
+            ];
+
           if (lastCampaign) {
             analyticsSummary = `Open rate: ${(
               lastCampaign.openRate * 100
@@ -142,13 +181,15 @@ export async function runAgent<K extends AgentName>(
               lastCampaign.clickRate * 100
             ).toFixed(
               1,
-            )}%, Subject line: ${lastCampaign.subjectLine}, Topic: ${lastCampaign.topic}`;
+            )}%, Subject: ${lastCampaign.subjectLine}, Topic: ${lastCampaign.topic ?? "-"}`;
           }
         }
       }
 
+      // ─── 4️⃣ Poziv AI strategistu ─────────────
       return generateCampaignStrategy({
         ...inputTyped,
+        salonName,
         analyticsSummary,
       }) as Promise<AgentIO[K]["output"]>;
     }
