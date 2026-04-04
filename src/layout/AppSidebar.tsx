@@ -115,17 +115,14 @@ const AdminNav: NavItem[] = [
       {
         name: "Campaign Analytics",
         path: "/marketing/analytics",
-        badge: "Soon",
       },
       {
         name: "A/B Subject Test",
         path: "/marketing/ab-test",
-        badge: "Soon",
       },
       {
         name: "Audience Segmentation",
         path: "/marketing/audience",
-        badge: "Soon",
       },
     ],
   },

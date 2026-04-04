@@ -10,19 +10,68 @@
  *
  * Flow:
  *  1. Auth check
- *  2. Load EmailCampaign from DB
- *  3. Collect CLIENT recipients for the tenant (via UserSalon → User)
- *  4. Send batch emails via Resend
- *  5. Mark campaign as "sent" + write metrics
+ *  2. Load EmailCampaign from DB (idempotency: skip if already sent)
+ *  3. Resolve recipients — audience segment or all active CLIENTs
+ *  4. If A/B test enabled: split audience 50/50, each half gets different subject
+ *  5. Inject open-tracking pixel + wrap CTA with click-tracking URL
+ *  6. Send batch emails via Resend (max 50 per call)
+ *  7. Update campaign metrics + status
  */
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { EmailCampaign } from "@/models/EmailCampaign";
+import { AudienceSegment } from "@/models/AudienceSegment";
 import { UserSalon } from "@/models/UserSalon";
+import { CampaignEvent } from "@/models/CampaignEvent";
 import { resend } from "@/lib/email/resend";
+import { Types } from "mongoose";
 
 interface SendEmailPayload {
   campaignId: string;
+}
+
+type PopulatedUser = { _id: string; email: string; name: string };
+
+const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL ?? "https://app.marysoll.com";
+
+/** Escape special regex chars in a string */
+function escapeRegex(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Injects a tracking pixel before </body> and wraps the campaign's CTA URL
+ * with a click-tracking redirect.
+ */
+function injectTracking(
+  html: string,
+  campaignId: string,
+  userId: string,
+  ctaUrl: string | undefined,
+  variantId?: "A" | "B",
+): string {
+  const vParam = variantId ? `&v=${variantId}` : "";
+
+  // 1. Open pixel
+  const pixelUrl = `${APP_URL}/api/email/open?c=${campaignId}&u=${userId}${vParam}`;
+  const pixel = `<img src="${pixelUrl}" width="1" height="1" alt="" style="display:none;border:0;" />`;
+  let out = html.includes("</body>")
+    ? html.replace("</body>", `${pixel}\n</body>`)
+    : html + pixel;
+
+  // 2. CTA click-tracking (replace ctaUrl in href attributes)
+  if (ctaUrl) {
+    const trackUrl =
+      `${APP_URL}/api/email/click?c=${campaignId}&u=${userId}${vParam}` +
+      `&url=${encodeURIComponent(ctaUrl)}`;
+    out = out.replace(
+      new RegExp(escapeRegex(ctaUrl), "g"),
+      trackUrl,
+    );
+  }
+
+  return out;
 }
 
 export async function POST(req: NextRequest) {
@@ -48,30 +97,42 @@ export async function POST(req: NextRequest) {
     // ── Load campaign ─────────────────────────────────────────────────────────
     const campaign = await EmailCampaign.findById(campaignId);
     if (!campaign) {
-      return NextResponse.json(
-        { error: "Campaign not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
     }
 
     if (campaign.scheduling.status === "sent") {
       return NextResponse.json({ message: "Already sent" });
     }
 
-    // Mark as "sending" immediately to prevent duplicate sends
+    // Mark as "sending" immediately — idempotency guard
     campaign.scheduling.status = "sending";
     await campaign.save();
 
-    // ── Collect recipients ────────────────────────────────────────────────────
-    // All active CLIENTs of the tenant
-    type PopulatedUser = { _id: string; email: string; name: string };
-    const userSalonDocs = await UserSalon.find({
+    // ── Resolve recipients ────────────────────────────────────────────────────
+    const baseQuery: Record<string, unknown> = {
       salonId: campaign.tenantId,
-      role: "CLIENT",
       isActive: true,
-    }).populate<{ userId: PopulatedUser }>("userId", "email name");
+    };
 
-    const recipients = (userSalonDocs as Array<{ userId: PopulatedUser }>)
+    if (campaign.audienceSegmentId) {
+      const segment = await AudienceSegment.findById(
+        campaign.audienceSegmentId,
+      ).lean<{ filters?: { roles?: string[] } }>();
+      const roles = segment?.filters?.roles?.length
+        ? segment.filters.roles
+        : ["CLIENT"];
+      baseQuery.role = { $in: roles };
+    } else {
+      baseQuery.role = "CLIENT";
+    }
+
+    const userSalonDocs = await UserSalon.find(baseQuery).populate<{
+      userId: PopulatedUser;
+    }>("userId", "email name");
+
+    const recipients = (
+      userSalonDocs as Array<{ userId: PopulatedUser }>
+    )
       .map((us) => us.userId)
       .filter((u): u is PopulatedUser => !!u && !!u.email);
 
@@ -79,16 +140,15 @@ export async function POST(req: NextRequest) {
       campaign.scheduling.status = "sent";
       campaign.scheduling.sentAt = new Date();
       campaign.metrics.recipients = 0;
+      campaign.metrics.delivered = 0;
       await campaign.save();
-      return NextResponse.json({ message: "No recipients — marked sent", recipients: 0 });
+      return NextResponse.json({
+        message: "No recipients — marked sent",
+        recipients: 0,
+      });
     }
 
-    // ── Send via Resend (batch, max 100 per call) ─────────────────────────────
-    const subject =
-      campaign.optimization?.optimizedSubject ||
-      campaign.content?.subject ||
-      campaign.salonName;
-
+    // ── Validate HTML template ────────────────────────────────────────────────
     const html = campaign.template?.html;
     if (!html) {
       campaign.scheduling.status = "failed";
@@ -99,38 +159,116 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const ctaUrl = campaign.content?.ctaUrl || undefined;
     const FROM = process.env.EMAIL_FROM ?? "noreply@marysoll.com";
     const BATCH_SIZE = 50;
-    let sent = 0;
+    const tenantId = campaign.tenantId;
+    let totalSent = 0;
 
-    for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
-      const batch = recipients.slice(i, i + BATCH_SIZE);
-      const emails = batch.map((r) => ({
-        from: FROM,
-        to: r.email,
-        subject,
-        html,
-      }));
+    // ── A/B Test split ────────────────────────────────────────────────────────
+    const abEnabled =
+      campaign.abTest?.enabled &&
+      campaign.abTest.variants.length >= 2;
 
-      const { error } = await resend.batch.send(emails);
-      if (error) {
-        console.error("[send-email] Resend batch error:", error);
-        // Continue with remaining batches — partial delivery is better than none
-      } else {
-        sent += batch.length;
+    if (abEnabled) {
+      const varA = campaign.abTest.variants.find((v) => v.id === "A") ||
+        campaign.abTest.variants[0];
+      const varB = campaign.abTest.variants.find((v) => v.id === "B") ||
+        campaign.abTest.variants[1];
+
+      const halfIdx = Math.floor(recipients.length / 2);
+      const groups: Array<{ variant: typeof varA; list: PopulatedUser[]; id: "A" | "B" }> = [
+        { variant: varA, list: recipients.slice(0, halfIdx), id: "A" },
+        { variant: varB, list: recipients.slice(halfIdx), id: "B" },
+      ];
+
+      for (const group of groups) {
+        const subject = group.variant.subject || campaign.content?.subject || campaign.salonName;
+        let groupSent = 0;
+
+        for (let i = 0; i < group.list.length; i += BATCH_SIZE) {
+          const batch = group.list.slice(i, i + BATCH_SIZE);
+          const emails = batch.map((r) => ({
+            from: FROM,
+            to: r.email,
+            subject,
+            html: injectTracking(html, campaignId, r._id, ctaUrl, group.id),
+          }));
+
+          const { error } = await resend.batch.send(emails);
+          if (!error) {
+            groupSent += batch.length;
+            // Log sent events in background (non-blocking)
+            CampaignEvent.insertMany(
+              batch.map((r) => ({
+                campaignId: new Types.ObjectId(campaignId),
+                tenantId,
+                recipientEmail: r.email,
+                recipientUserId: new Types.ObjectId(r._id),
+                type: "sent",
+                variantId: group.id,
+                timestamp: new Date(),
+              })),
+            ).catch((e) => console.error("[send-email] insertMany error", e));
+          } else {
+            console.error("[send-email] Resend batch error:", error);
+          }
+        }
+
+        totalSent += groupSent;
+
+        // Update variant sent count
+        await EmailCampaign.findOneAndUpdate(
+          { _id: campaignId, "abTest.variants.id": group.id },
+          { $inc: { "abTest.variants.$.sent": groupSent } },
+        );
+      }
+    } else {
+      // ── Standard send ──────────────────────────────────────────────────────
+      const subject =
+        campaign.optimization?.optimizedSubject ||
+        campaign.content?.subject ||
+        campaign.salonName;
+
+      for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+        const batch = recipients.slice(i, i + BATCH_SIZE);
+        const emails = batch.map((r) => ({
+          from: FROM,
+          to: r.email,
+          subject,
+          html: injectTracking(html, campaignId, r._id, ctaUrl),
+        }));
+
+        const { error } = await resend.batch.send(emails);
+        if (!error) {
+          totalSent += batch.length;
+          CampaignEvent.insertMany(
+            batch.map((r) => ({
+              campaignId: new Types.ObjectId(campaignId),
+              tenantId,
+              recipientEmail: r.email,
+              recipientUserId: new Types.ObjectId(r._id),
+              type: "sent",
+              timestamp: new Date(),
+            })),
+          ).catch((e) => console.error("[send-email] insertMany error", e));
+        } else {
+          console.error("[send-email] Resend batch error:", error);
+        }
       }
     }
 
     // ── Update campaign metrics ───────────────────────────────────────────────
     campaign.scheduling.status = "sent";
     campaign.scheduling.sentAt = new Date();
-    campaign.metrics.recipients = sent;
+    campaign.metrics.recipients = totalSent;
+    campaign.metrics.delivered = totalSent; // assume delivered = sent; will be refined by opens
     await campaign.save();
 
     return NextResponse.json({
       campaignId,
       status: "sent",
-      recipients: sent,
+      recipients: totalSent,
     });
   } catch (err) {
     console.error("[POST /api/internal/send-email]", err);

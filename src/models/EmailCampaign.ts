@@ -52,12 +52,18 @@ export interface EmailCampaignDocument extends Document {
     confidenceScore: number;
   };
 
+  // Audience segment (optional)
+  audienceSegmentId?: Types.ObjectId;
+
   // A/B test structure
   abTest: {
     enabled: boolean;
     variants: Array<{
+      id: "A" | "B";
       subject: string;
       weight: number;
+      sent: number;
+      opened: number;
     }>;
   };
 
@@ -71,6 +77,7 @@ export interface EmailCampaignDocument extends Document {
   // Delivery metrics (updated by worker after sending)
   metrics: {
     recipients: number;
+    delivered: number;
     opens: number;
     clicks: number;
     openRate: number;
@@ -97,6 +104,7 @@ const EmailCampaignSchema = new Schema<EmailCampaignDocument>(
     topic: { type: String, required: true },
     audience: { type: String },
     tone: { type: String, required: true },
+    audienceSegmentId: { type: Schema.Types.ObjectId, ref: "AudienceSegment" },
 
     strategy: {
       sendDateSuggestion: { type: Date },
@@ -134,8 +142,11 @@ const EmailCampaignSchema = new Schema<EmailCampaignDocument>(
       variants: {
         type: [
           {
+            id: { type: String, enum: ["A", "B"] },
             subject: { type: String, required: true },
             weight: { type: Number, required: true },
+            sent: { type: Number, default: 0 },
+            opened: { type: Number, default: 0 },
           },
         ],
         default: [],
@@ -154,6 +165,7 @@ const EmailCampaignSchema = new Schema<EmailCampaignDocument>(
 
     metrics: {
       recipients: { type: Number, default: 0 },
+      delivered: { type: Number, default: 0 },
       opens: { type: Number, default: 0 },
       clicks: { type: Number, default: 0 },
       openRate: { type: Number, default: 0 },
