@@ -23,9 +23,10 @@ export function generateAccessToken(
   name: string,
   tenantId: string | null = null,
   isSuperAdmin = false,
+  globalRole = "USER",
 ): string {
   return jwt.sign(
-    { id, email, isAdmin, name, tenantId, isSuperAdmin },
+    { id, email, isAdmin, name, tenantId, isSuperAdmin, globalRole },
     process.env.JWT_SECRET!,
     { expiresIn: "30d" },
   );

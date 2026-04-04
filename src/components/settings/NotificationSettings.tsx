@@ -8,6 +8,18 @@ import { useState } from "react";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import Loader from "../elements/Loader";
 
+const inp = [
+  "border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
+  "text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800",
+  "focus:outline-none focus:ring-2 focus:ring-violet-400 transition",
+  "placeholder:text-gray-400 dark:placeholder:text-gray-500",
+].join(" ");
+
+const lbl =
+  "block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5";
+const card =
+  "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
+
 export default function NotificationSettings() {
   const { user } = useAuth();
   const {
@@ -32,16 +44,14 @@ export default function NotificationSettings() {
       <Toaster position="top-right" />
 
       {/* Naslov zavisno od uloge */}
-      <h3 className="text-2xl font-bold text-gray-900 mb-8">
+      <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8">
         {isAdmin ? "Postavke notifikacija" : "Moje postavke notifikacija"}
       </h3>
 
       <div className="space-y-8">
         {/* Globalne postavke - ZA SVE */}
         <div>
-          <h4 className="text-lg font-semibold text-gray-700 mb-4">
-            Globalne postavke
-          </h4>
+          <h4 className={lbl}>Globalne postavke</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <NotificationToggle
               label="Email notifikacije"
@@ -66,7 +76,7 @@ export default function NotificationSettings() {
 
         {/* Postavke za termine - RAZLIČITO ZA ADMINA I KLIJENTA */}
         <div>
-          <h4 className="text-lg font-semibold text-gray-700 mb-4">
+          <h4 className={lbl}>
             {isAdmin
               ? "Notifikacije za termine"
               : "Notifikacije za moje termine"}
@@ -148,8 +158,8 @@ export default function NotificationSettings() {
           </div>
 
           {settings.appointmentReminder && (
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="mt-8">
+              <label className={lbl + " mb-3"}>
                 Koliko sati pre termina da se pošalje podsetnik?
               </label>
               <div className="flex items-center space-x-4">
@@ -158,7 +168,7 @@ export default function NotificationSettings() {
                   onChange={(e) =>
                     updateSetting("reminderHours", parseInt(e.target.value))
                   }
-                  className="border border-gray-300 rounded-md px-3 py-2"
+                  className={inp}
                   disabled={saveMutation.isPending}
                 >
                   <option value="1">1 sat</option>
@@ -168,9 +178,7 @@ export default function NotificationSettings() {
                   <option value="24">24 sata</option>
                   <option value="48">48 sati</option>
                 </select>
-                <span className="text-sm text-gray-500">
-                  pre početka termina
-                </span>
+                <span className={lbl}>pre početka termina</span>
               </div>
             </div>
           )}
@@ -178,7 +186,7 @@ export default function NotificationSettings() {
 
         {/* Postavke za preporuke - RAZLIČITO ZA ADMINA I KLIJENTA */}
         <div>
-          <h4 className="text-lg font-semibold text-gray-700 mb-4">
+          <h4 className={lbl}>
             {isAdmin
               ? "Notifikacije za preporuke"
               : "Notifikacije za moje preporuke"}
@@ -255,9 +263,7 @@ export default function NotificationSettings() {
 
         {/* Newsletter postavke (opciono) */}
         <div>
-          <h4 className="text-lg font-semibold text-gray-700 mb-4">
-            Newsletter postavke
-          </h4>
+          <h4 className={lbl}>Newsletter postavke</h4>
           <p className="text-sm text-gray-600 mb-6">
             Primajte promocije, novosti i korisne savete direktno na email.
             Možete birati koje vrste sadržaja želite.
@@ -305,10 +311,7 @@ export default function NotificationSettings() {
         {/* Akcije */}
         <div className="flex justify-between items-center pt-6 border-t border-gray-300">
           <div className="sm:col-span-2">
-            <label
-              htmlFor="phone-number"
-              className="block text-sm/6 font-semibold text-gray-700"
-            >
+            <label htmlFor="phone-number" className={lbl}>
               Test mailing
             </label>
             <div className="mt-2.5">
@@ -381,9 +384,9 @@ function NotificationToggle({
   onChange: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+    <div className={`${card} flex items-center justify-between`}>
       <div>
-        <p className="font-medium text-gray-900">{label}</p>
+        <p className={lbl}>{label}</p>
         <p className="text-sm text-gray-500">{description}</p>
       </div>
       <button

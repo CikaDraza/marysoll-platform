@@ -174,7 +174,6 @@ export default function ClientRegisterPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Telefon{" "}
-              <span className="text-gray-400 font-normal">(opciono)</span>
             </label>
             <input
               type="tel"

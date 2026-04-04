@@ -21,7 +21,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { EmailCampaign } from "@/models/EmailCampaign";
 import { AudienceSegment } from "@/models/AudienceSegment";
-import { UserSalon } from "@/models/UserSalon";
+import { AudienceContact } from "@/models/AudienceContact";
 import { CampaignEvent } from "@/models/CampaignEvent";
 import { resend } from "@/lib/email/resend";
 import { Types } from "mongoose";
@@ -30,7 +30,7 @@ interface SendEmailPayload {
   campaignId: string;
 }
 
-type PopulatedUser = { _id: string; email: string; name: string };
+type RecipientContact = { _id: string; email: string; firstName?: string; lastName?: string };
 
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL ?? "https://app.marysoll.com";
@@ -108,33 +108,33 @@ export async function POST(req: NextRequest) {
     campaign.scheduling.status = "sending";
     await campaign.save();
 
-    // ── Resolve recipients ────────────────────────────────────────────────────
-    const baseQuery: Record<string, unknown> = {
-      salonId: campaign.tenantId,
-      isActive: true,
+    // ── Resolve recipients via AudienceContact ────────────────────────────────
+    const contactQuery: Record<string, unknown> = {
+      tenantId: campaign.tenantId,
+      status: "ACTIVE",
+      subscribed: true,
     };
 
     if (campaign.audienceSegmentId) {
       const segment = await AudienceSegment.findById(
         campaign.audienceSegmentId,
-      ).lean<{ filters?: { roles?: string[] } }>();
-      const roles = segment?.filters?.roles?.length
-        ? segment.filters.roles
-        : ["CLIENT"];
-      baseQuery.role = { $in: roles };
+      ).lean<{ filters?: { roles?: string[]; tags?: string[] } }>();
+
+      if (segment?.filters?.roles?.length) {
+        contactQuery.contactType = { $in: segment.filters.roles };
+      }
+      if (segment?.filters?.tags?.length) {
+        contactQuery.tags = { $in: segment.filters.tags };
+      }
     } else {
-      baseQuery.role = "CLIENT";
+      contactQuery.contactType = "CLIENT";
     }
 
-    const userSalonDocs = await UserSalon.find(baseQuery).populate<{
-      userId: PopulatedUser;
-    }>("userId", "email name");
+    const contactDocs = await AudienceContact.find(contactQuery)
+      .select("_id email firstName lastName")
+      .lean<RecipientContact[]>();
 
-    const recipients = (
-      userSalonDocs as Array<{ userId: PopulatedUser }>
-    )
-      .map((us) => us.userId)
-      .filter((u): u is PopulatedUser => !!u && !!u.email);
+    const recipients = contactDocs.filter((c): c is RecipientContact => !!c.email);
 
     if (recipients.length === 0) {
       campaign.scheduling.status = "sent";
@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
         campaign.abTest.variants[1];
 
       const halfIdx = Math.floor(recipients.length / 2);
-      const groups: Array<{ variant: typeof varA; list: PopulatedUser[]; id: "A" | "B" }> = [
+      const groups: Array<{ variant: typeof varA; list: RecipientContact[]; id: "A" | "B" }> = [
         { variant: varA, list: recipients.slice(0, halfIdx), id: "A" },
         { variant: varB, list: recipients.slice(halfIdx), id: "B" },
       ];

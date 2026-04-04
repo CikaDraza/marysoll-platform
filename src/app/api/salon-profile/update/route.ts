@@ -37,6 +37,7 @@ export async function PUT(req: NextRequest) {
       "street",
       "city",
       "newsletterEmail",
+      "contactEmail",
     ]) {
       const val = form.get(field);
       if (val && typeof val === "string") profile[field] = val;

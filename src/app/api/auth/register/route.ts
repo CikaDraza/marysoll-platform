@@ -11,7 +11,9 @@ import crypto from "crypto";
 import { connectToDB } from "@/lib/db/mongodb";
 import { User } from "@/models/User";
 import { Tenant } from "@/models/Tenant";
+import { AudienceContact } from "@/models/AudienceContact";
 import { sendClientVerificationEmail } from "@/lib/email/onboarding";
+import toast from "react-hot-toast";
 
 export async function POST(req: NextRequest) {
   try {
@@ -96,6 +98,32 @@ export async function POST(req: NextRequest) {
       await newUser.save();
     }
 
+    // Kreiraj ili ažuriraj AudienceContact entry
+    const savedUser =
+      existingUser ?? (await User.findOne({ email: normalizedEmail }));
+    if (savedUser) {
+      try {
+        await AudienceContact.findOneAndUpdate(
+          { email: normalizedEmail, tenantId: tenant?._id ?? null },
+          {
+            $setOnInsert: {
+              email: normalizedEmail,
+              userId: savedUser._id,
+              tenantId: tenant?._id ?? undefined,
+              contactType:
+                savedUser.globalRole === "OWNER" ? "SALON_OWNER" : "CLIENT",
+              source: "user",
+              subscribed: true,
+              status: "ACTIVE",
+            },
+          },
+          { upsert: true },
+        );
+      } catch (contactErr) {
+        console.error("⚠️ AudienceContact upsert failed:", contactErr);
+      }
+    }
+
     // Pošalji verifikacioni email
     try {
       await sendClientVerificationEmail({
@@ -116,6 +144,7 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     console.error("❌ Register error:", error);
+    toast.error(error instanceof Error ? error.message : "Greška na serveru");
     return NextResponse.json({ error: "Greška na serveru" }, { status: 500 });
   }
 }

@@ -10,6 +10,23 @@ import { SalonSelector } from "@/components/shared/SalonSelector";
 import type { EmailCampaignTone } from "@/types/ai/email-campaign/aiEmailCampaign.types";
 import type { GenerateStrategyInput } from "@/hooks/emailCampaign/useGenerateStrategy";
 
+type AudienceType =
+  | "all_subscribers"
+  | "all_clients"
+  | "vip_clients"
+  | "inactive_clients"
+  | "custom_segment"
+  | "manual_emails";
+
+const AUDIENCE_OPTIONS: { value: AudienceType; label: string }[] = [
+  { value: "all_subscribers", label: "All subscribers" },
+  { value: "all_clients", label: "All clients" },
+  { value: "vip_clients", label: "VIP clients" },
+  { value: "inactive_clients", label: "Inactive clients" },
+  { value: "custom_segment", label: "Custom segment" },
+  { value: "manual_emails", label: "Manual emails" },
+];
+
 const TONES: { value: EmailCampaignTone; label: string; icon: string }[] = [
   { value: "informative", label: "Informativno", icon: "📋" },
   { value: "friendly", label: "Prijateljski", icon: "😊" },
@@ -38,7 +55,9 @@ export function CampaignStrategistPanel({ onGenerate, isLoading, error }: Props)
   const [salonIds, setSalonIds] = useState<string[]>([]);
   const [showSalonError, setShowSalonError] = useState(false);
   const [topic, setTopic] = useState("");
-  const [audience, setAudience] = useState("");
+  const [audienceType, setAudienceType] = useState<AudienceType>("all_subscribers");
+  const [customSegment, setCustomSegment] = useState("");
+  const [manualEmails, setManualEmails] = useState("");
   const [tone, setTone] = useState<EmailCampaignTone>("friendly");
   const [analyticsMode, setAnalyticsMode] = useState<"average" | "last">("last");
 
@@ -49,10 +68,19 @@ export function CampaignStrategistPanel({ onGenerate, isLoading, error }: Props)
     }
     if (!topic.trim()) return;
 
+    let audienceValue: string | undefined;
+    if (audienceType === "custom_segment") {
+      audienceValue = customSegment.trim() || undefined;
+    } else if (audienceType === "manual_emails") {
+      audienceValue = manualEmails.trim() || undefined;
+    } else {
+      audienceValue = AUDIENCE_OPTIONS.find((o) => o.value === audienceType)?.label;
+    }
+
     onGenerate({
       salonIds,
       topic: topic.trim(),
-      audience: audience.trim() || undefined,
+      audience: audienceValue,
       tone,
       useAverage: analyticsMode === "average",
     });
@@ -90,13 +118,47 @@ export function CampaignStrategistPanel({ onGenerate, isLoading, error }: Props)
         </div>
 
         <div>
-          <label className={lbl}>Ciljna publika (opciono)</label>
-          <input
-            className={inp}
-            value={audience}
-            onChange={(e) => setAudience(e.target.value)}
-            placeholder="npr. Stalne klijentice, novi klijenti, VIP klijenti..."
-          />
+          <label className={lbl}>Audience Selection</label>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Send to:</p>
+          <div className="space-y-2">
+            {AUDIENCE_OPTIONS.map((opt) => (
+              <label
+                key={opt.value}
+                className="flex items-center gap-2.5 cursor-pointer group"
+              >
+                <input
+                  type="radio"
+                  name="audienceType"
+                  value={opt.value}
+                  checked={audienceType === opt.value}
+                  onChange={() => setAudienceType(opt.value)}
+                  className="accent-violet-600 w-4 h-4 cursor-pointer"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition">
+                  {opt.label}
+                </span>
+              </label>
+            ))}
+          </div>
+
+          {audienceType === "custom_segment" && (
+            <input
+              className={`${inp} mt-3`}
+              value={customSegment}
+              onChange={(e) => setCustomSegment(e.target.value)}
+              placeholder="Describe the custom segment..."
+            />
+          )}
+
+          {audienceType === "manual_emails" && (
+            <textarea
+              className={`${inp} mt-3 resize-none`}
+              rows={3}
+              value={manualEmails}
+              onChange={(e) => setManualEmails(e.target.value)}
+              placeholder="Enter email addresses, comma or newline separated..."
+            />
+          )}
         </div>
 
         <div>

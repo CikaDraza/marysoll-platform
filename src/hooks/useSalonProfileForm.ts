@@ -39,6 +39,7 @@ const defaultForm = (): Partial<SalonProfile> => ({
   street: "",
   city: "",
   newsletterEmail: "",
+  contactEmail: "",
   social: {
     instagram: "",
     facebook: "",
@@ -57,6 +58,7 @@ export function mapInitialSalonToForm(s: SalonProfile): Partial<SalonProfile> {
     city: s.city ?? "",
     logo: s.logo ?? undefined,
     newsletterEmail: s.newsletterEmail ?? "",
+    contactEmail: s.contactEmail ?? "",
     social: {
       instagram: s.social?.instagram ?? "",
       facebook: s.social?.facebook ?? "",

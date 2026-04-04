@@ -7,32 +7,60 @@ import {
   generateRefreshToken,
 } from "@/lib/auth/auth-server";
 
+const SUPPORT_LINK = "https://marysoll.com/kontakt";
+
 export async function POST(request: NextRequest) {
   try {
     await connectToDB();
     const { email, password } = await request.json();
 
-    const user = await User.findOne({ email });
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: "Email i lozinka su obavezni." },
+        { status: 400 },
+      );
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
       return NextResponse.json(
-        { error: "Korisnik nije pronađen" },
+        {
+          error: "Korisnik sa ovom email adresom nije pronađen.",
+          hint: `Kontaktirajte podršku: ${SUPPORT_LINK}`,
+        },
         { status: 404 },
       );
     }
 
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
-      return NextResponse.json({ error: "Pogrešna lozinka" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Pogrešna lozinka. Pokušajte ponovo ili resetujte lozinku." },
+        { status: 401 },
+      );
     }
 
     if (!user.isEmailVerified) {
       return NextResponse.json(
         {
           error:
-            "Email nije verifikovan. Proverite inbox ili zatražite novi link.",
+            "Email adresa nije verifikovana. Proverite inbox ili zatražite novi verifikacioni link.",
           code: "EMAIL_NOT_VERIFIED",
         },
         { status: 401 },
+      );
+    }
+
+    // Verify globalRole is set — guard against stale documents
+    const allowedRoles = ["SUPER_ADMIN", "OWNER", "ADMIN", "STAFF", "USER"];
+    if (!allowedRoles.includes(user.globalRole ?? "")) {
+      return NextResponse.json(
+        {
+          error: "Vaš nalog nema ispravno podešenu rolu. Kontaktirajte podršku.",
+          hint: SUPPORT_LINK,
+          code: "INVALID_ROLE",
+        },
+        { status: 403 },
       );
     }
 
@@ -50,6 +78,7 @@ export async function POST(request: NextRequest) {
       user.name ?? user.email.split("@")[0],
       tenantId,
       user.isSuperAdmin ?? false,
+      user.globalRole ?? "USER",
     );
     const refreshToken = generateRefreshToken(
       user._id.toString(),
@@ -69,6 +98,7 @@ export async function POST(request: NextRequest) {
         id: user._id,
         name: user.name,
         email: user.email,
+        globalRole: user.globalRole ?? "USER",
         isAdmin: user.isAdmin,
         isSuperAdmin: user.isSuperAdmin ?? false,
         tenantId,
@@ -81,15 +111,15 @@ export async function POST(request: NextRequest) {
     response.cookies.set("refreshToken", refreshToken, {
       httpOnly: true,
       secure: isProd,
-      sameSite: "lax", // lax umesto strict — dozvoljava cross-subdomain
+      sameSite: "lax",
       maxAge: 30 * 24 * 60 * 60,
       path: "/",
-      domain: isProd ? `.${baseDomain}` : undefined, // .marysoll.com — shared
+      domain: isProd ? `.${baseDomain}` : undefined,
     });
 
     // accessToken cookie: čitljiv JS-om, shared across subdomains
     response.cookies.set("auth-token", accessToken, {
-      httpOnly: false, // JS može da ga čita
+      httpOnly: false,
       secure: isProd,
       sameSite: "lax",
       maxAge: 30 * 24 * 60 * 60,

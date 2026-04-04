@@ -521,7 +521,7 @@ export default function AdminAppointments() {
       {/* SEARCH BAR */}
       <div className={`${card}`}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="flex items-center lg:col-span-4">
+          <div className="flex items-center md:col-span-4">
             <h3 className="font-semibold text-(--primary-color) text-lg! lg:text-2xl!">
               Lista svih termina
             </h3>
@@ -589,7 +589,7 @@ export default function AdminAppointments() {
             <button
               onClick={handleClearFilters}
               disabled={!hasActiveFilters && page === 1}
-              className="w-full cursor-pointer bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:opacity-10 dark:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="w-full cursor-pointer bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:opacity-10 disabled:dark:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               Obriši filtere
             </button>

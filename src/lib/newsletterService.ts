@@ -4,6 +4,7 @@ import { NewsletterStats, NewsletterSubscriptionData } from "@/types";
 import { User } from "@/models/User";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 import { Tenant } from "@/models/Tenant";
+import { AudienceContact } from "@/models/AudienceContact";
 import crypto from "crypto";
 import { connectToDB } from "./db/mongodb";
 import { NewsletterLog } from "@/models/NewsletterLog";
@@ -76,6 +77,26 @@ export async function subscribeToNewsletter(data: NewsletterSubscriptionData) {
     };
 
     await user.save();
+
+    // Kreiraj AudienceContact za novog newsletter pretplatnika
+    try {
+      await AudienceContact.findOneAndUpdate(
+        { email: data.email, tenantId: null },
+        {
+          $setOnInsert: {
+            email: data.email,
+            userId: user._id,
+            contactType: "NEWSLETTER",
+            source: "newsletter",
+            subscribed: true,
+            status: "ACTIVE",
+          },
+        },
+        { upsert: true },
+      );
+    } catch (contactErr) {
+      console.error("⚠️ AudienceContact upsert failed (newsletter):", contactErr);
+    }
 
     // Pošalji verifikacioni email
     await sendNewsletterVerificationEmail(data.email, verificationToken);

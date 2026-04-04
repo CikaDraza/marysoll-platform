@@ -6,10 +6,10 @@ import { NextResponse } from "next/server";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { AudienceSegment } from "@/models/AudienceSegment";
-import { UserSalon } from "@/models/UserSalon";
+import { AudienceContact } from "@/models/AudienceContact";
 import { Types } from "mongoose";
 
-/** Estimate how many clients match a segment's filters */
+/** Estimate how many AudienceContacts match a segment's filters */
 async function estimateCount(
   tenantId: Types.ObjectId,
   filters: {
@@ -19,13 +19,26 @@ async function estimateCount(
     tags?: string[];
   },
 ): Promise<number> {
-  const roles = filters.roles?.length ? filters.roles : ["CLIENT"];
   const query: Record<string, unknown> = {
-    salonId: tenantId,
-    role: { $in: roles },
-    isActive: true,
+    tenantId,
+    status: "ACTIVE",
+    subscribed: true,
   };
-  return UserSalon.countDocuments(query);
+
+  if (filters.subscribed === false) {
+    query.subscribed = false;
+  }
+
+  if (filters.tags?.length) {
+    query.tags = { $in: filters.tags };
+  }
+
+  // roles map: treat "CLIENT" → contactType CLIENT, "SALON_OWNER" → SALON_OWNER, etc.
+  if (filters.roles?.length) {
+    query.contactType = { $in: filters.roles };
+  }
+
+  return AudienceContact.countDocuments(query);
 }
 
 export async function GET(req: Request) {

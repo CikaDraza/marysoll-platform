@@ -7,20 +7,25 @@ const userSchema = new Schema<IUser>(
     password: { type: String, required: true },
     name: { type: String, required: true },
     phone: { type: String, required: true },
+    marketingPhone: { type: String, default: "" },
+    newsletterEmail: { type: String, default: "" },
+    contactEmail: { type: String, default: "" },
     birthday: { type: Date, default: null, required: false },
     isAdmin: { type: Boolean, default: false },
     isSuperAdmin: { type: Boolean, default: false },
     /**
      * globalRole — platformska rola korisnika.
      * "SUPER_ADMIN" = superadmin pristup svim salonima.
-     * "USER"        = običan korisnik, role u salonima se čuvaju u UserSalon.
+     * "OWNER"       = vlasnik salona (tenant admin).
+     * "ADMIN"       = admin salona.
+     * "STAFF"       = zaposleni u salonu.
+     * "USER"        = obični klijent.
      *
      * Backward compat: isAdmin i isSuperAdmin ostaju za JWT kompatibilnost.
-     * globalRole je nova polja koja se koristi zajedno sa UserSalon modelom.
      */
     globalRole: {
       type: String,
-      enum: ["SUPER_ADMIN", "USER"],
+      enum: ["SUPER_ADMIN", "OWNER", "ADMIN", "STAFF", "USER"],
       default: "USER",
     },
     // Multi-tenant: null = super admin or guest without tenant

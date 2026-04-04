@@ -395,6 +395,18 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
   );
 }
 
+const inp = [
+  "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
+  "text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800",
+  "focus:outline-none focus:ring-2 focus:ring-violet-400 transition",
+  "placeholder:text-gray-400 dark:placeholder:text-gray-500",
+].join(" ");
+
+const lbl =
+  "block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5";
+const card =
+  "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
+
 export default function ClientAppointments() {
   const [textQuery, setTextQuery] = useState("");
   const [dateQuery, setDateQuery] = useState("");
@@ -475,80 +487,81 @@ export default function ClientAppointments() {
     <div className="space-y-6">
       {/* SEARCH BAR */}
       <div className="py-4 rounded-lg">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="flex items-center lg:col-span-4">
-            <h3 className="font-semibold text-(--primary-color) text-lg! lg:text-2xl!">
-              Moji termini
-            </h3>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium dark:text-gray-100 text-gray-700 mb-1">
-              Pretraga
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Ime, email, usluga..."
-                value={textQuery}
-                onChange={(e) => {
-                  setTextQuery(e.target.value);
-                  setPage(1); // Resetuj stranu na novu pretragu
-                }}
-                className="w-full border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 text-gray-600 dark:text-gray-100 dark:placeholder:text-gray-100 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
-              />
-              {isFetching && (
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                  <div className="w-4 h-4 border-2 border-gray-300 border-t-(--secondary-color) rounded-full animate-spin"></div>
-                </div>
-              )}
+        <div className={card}>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="flex items-center lg:col-span-4">
+              <h3 className="font-semibold text-(--primary-color) dark:text-gray-100 text-lg! lg:text-2xl!">
+                Moji termini
+              </h3>
             </div>
-          </div>
-          <div className="py-2">
-            <label className="block text-sm font-medium dark:text-gray-100 text-gray-700 mb-1">
-              Status termina
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setPage(1);
-              }}
-              className="w-full p-2 border border-gray-200 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
-            >
-              <option value="">Svi termini</option>
-              <option value="pending">Na čekaju</option>
-              <option value="completed">Završeno</option>
-              <option value="approved">Odobren</option>
-              <option value="rejected">Odbijen</option>
-              <option value="rescheduled">Pomeren termin</option>
-              <option value="cancelled">Otkazan</option>
-              <option value="no_show">Nije se pojavio</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium dark:text-gray-100 text-gray-700 mb-1">
-              Datum
-            </label>
-            <input
-              type="date"
-              value={dateQuery}
-              onChange={(e) => {
-                setDateQuery(e.target.value);
-                setPage(1); // Resetuj stranu na novi datum
-              }}
-              className="w-full rounded-md border border-gray-200 dark:border-gray-700 p-2 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
-            />
-          </div>
 
-          <div className="flex items-end pb-2">
-            <button
-              onClick={handleClearFilters}
-              disabled={!hasActiveFilters && page === 1}
-              className="w-full cursor-pointer bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:opacity-10 dark:disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              Obriši filtere
-            </button>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Pretraga
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Ime, email, usluga..."
+                  value={textQuery}
+                  onChange={(e) => {
+                    setTextQuery(e.target.value);
+                    setPage(1); // Resetuj stranu na novu pretragu
+                  }}
+                  className="w-full border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 text-gray-600 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+                />
+                {isFetching && (
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-(--secondary-color) rounded-full animate-spin"></div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="py-1">
+              <label className="block text-sm font-medium dark:text-gray-100 text-gray-700 mb-1">
+                Status termina
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full p-2 border border-gray-200 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
+              >
+                <option value="">Svi termini</option>
+                <option value="pending">Na čekaju</option>
+                <option value="completed">Završeno</option>
+                <option value="approved">Odobren</option>
+                <option value="rejected">Odbijen</option>
+                <option value="rescheduled">Pomeren termin</option>
+                <option value="cancelled">Otkazan</option>
+                <option value="no_show">Nije se pojavio</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Datum
+              </label>
+              <input
+                type="date"
+                value={dateQuery}
+                onChange={(e) => {
+                  setDateQuery(e.target.value);
+                  setPage(1); // Resetuj stranu na novi datum
+                }}
+                className="w-full rounded-md border border-gray-200 dark:border-gray-700 p-2 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+              />
+            </div>
+            <div className="flex items-end pb-2">
+              <button
+                onClick={handleClearFilters}
+                disabled={!hasActiveFilters && page === 1}
+                className="w-full cursor-pointer bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:opacity-10 disabled:dark:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                Obriši filtere
+              </button>
+            </div>
           </div>
         </div>
       </div>

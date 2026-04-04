@@ -259,6 +259,9 @@ export interface IUser {
   name: string;
   email: string;
   phone: string;
+  marketingPhone?: string;
+  newsletterEmail?: string;
+  contactEmail?: string;
   birthday?: Date | null;
   isAdmin: boolean;
   isSuperAdmin: boolean;
@@ -289,7 +292,7 @@ export interface IUser extends Document {
   birthday?: Date | null;
   isAdmin: boolean;
   isSuperAdmin: boolean;
-  globalRole: "SUPER_ADMIN" | "USER";
+  globalRole: "SUPER_ADMIN" | "OWNER" | "ADMIN" | "STAFF" | "USER";
   agreedToPrivacy: boolean;
   isOnline: boolean;
   lastActive: Date | string;
@@ -677,6 +680,7 @@ export interface SalonProfile {
   city: string;
   social: SocialLinks;
   newsletterEmail: string;
+  contactEmail?: string;
   createdAt?: string;
   updatedAt?: string;
   workingHours?: WorkingHoursMap | Record<string, unknown>;
@@ -694,6 +698,7 @@ export interface ISalonProfileForm {
   street: string;
   city: string;
   newsletterEmail: string;
+  contactEmail: string;
   logo: string | null;
   social: SocialLinks;
   workingHours: WorkingHoursMap;
@@ -713,6 +718,7 @@ export interface SalonProfileData {
   city: string;
   social: SocialLinks;
   newsletterEmail?: string;
+  contactEmail?: string;
   workingHours?: WorkingHoursMap | Record<string, unknown>;
   seo?: SeoData;
   branding?: IBranding;

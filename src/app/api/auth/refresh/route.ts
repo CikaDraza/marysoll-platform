@@ -24,7 +24,8 @@ export async function POST(request: NextRequest) {
     const tenantId = user.tenantId?.toString() ?? null;
     const token = generateAccessToken(
       user._id.toString(), user.email, user.isAdmin,
-      user.name ?? "", tenantId, user.isSuperAdmin ?? false
+      user.name ?? "", tenantId, user.isSuperAdmin ?? false,
+      user.globalRole ?? "USER",
     );
 
     return NextResponse.json({ token });

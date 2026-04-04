@@ -7,6 +7,18 @@ import toast, { Toaster } from "react-hot-toast";
 import Link from "next/link";
 import Loader from "../elements/Loader";
 
+const inp = [
+  "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
+  "text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800",
+  "focus:outline-none focus:ring-2 focus:ring-violet-400 transition",
+  "placeholder:text-gray-400 dark:placeholder:text-gray-500",
+].join(" ");
+
+const lbl =
+  "block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5";
+const card =
+  "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
+
 export default function ClientProfile() {
   const { data: user, isLoading } = useCurrentUser();
   const { updateUser, deleteUser } = useUserMutations();
@@ -100,10 +112,10 @@ export default function ClientProfile() {
   const canDelete = deleteEmail === user.email;
 
   return (
-    <div className="rounded-lg shadow p-3 lg:p-6">
+    <div className={card}>
       <Toaster position="top-right" />
       <div className="flex flex-col lg:flex-row justify-between items-center mb-6">
-        <h2 className="text-xl! lg:text-2xl! mb-6 lg:mb-0 font-bold text-gray-900">
+        <h2 className="text-xl! lg:text-2xl! mb-6 lg:mb-0 font-bold text-gray-900 dark:text-gray-100">
           Moje Lične informacije
         </h2>
         {!isEditing && (
@@ -120,15 +132,13 @@ export default function ClientProfile() {
         <form onSubmit={handleUpdate} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Ime i prezime
-              </label>
+              <label className={lbl}>Ime i prezime</label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full rounded-md border-gray-200 p-3 bg-gray-50 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+                className={inp}
                 required
               />
             </div>
@@ -269,35 +279,23 @@ export default function ClientProfile() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Ime i prezime
-              </label>
-              <p className="p-3 bg-gray-50 rounded-md">
-                {user.name || "Nije postavljeno"}
-              </p>
+              <label className={lbl}>Ime i prezime</label>
+              <p className={inp}>{user.name || "Nije postavljeno"}</p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Email
-              </label>
-              <p className="p-3 bg-gray-50 rounded-md">{user.email}</p>
+              <label className={lbl}>Email</label>
+              <p className={inp}>{user.email}</p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Telefon
-              </label>
-              <p className="p-3 bg-gray-50 rounded-md">
-                {user.phone || "Nije postavljeno"}
-              </p>
+              <label className={lbl}>Telefon</label>
+              <p className={inp}>{user.phone || "Nije postavljeno"}</p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Datum rođenja
-              </label>
-              <p className="p-3 bg-gray-50 rounded-md">
+              <label className={lbl}>Datum rođenja</label>
+              <p className={inp}>
                 {user.birthday
                   ? new Date(user.birthday).toLocaleDateString("sr-RS")
                   : "Nije postavljeno"}
@@ -311,12 +309,8 @@ export default function ClientProfile() {
             </h2>
             <div className="flex flex-col items-start gap-6">
               <div className="w-full lg:w-1/2">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Lozinka
-                </label>
-                <p className="p-3 bg-gray-100 text-gray-600 rounded-lg">
-                  ••••••••
-                </p>
+                <label className={lbl}>Lozinka</label>
+                <p className={inp}>••••••••</p>
               </div>
               <Link
                 href="/forgot-password"
@@ -330,11 +324,11 @@ export default function ClientProfile() {
       )}
 
       {/* Sekcija za brisanje naloga */}
-      <div className="mt-12 pt-8 border-t border-gray-200 bg-gray-900 rounded-xl p-3">
-        <h2 className="text-2xl! font-semibold text-white mb-4">
+      <div className={card + " mt-10 border-red-500"}>
+        <h2 className="text-2xl! font-semibold text-gray-900 dark:text-gray-300 mb-4">
           Brisanje naloga
         </h2>
-        <p className="text-gray-300 mb-6">
+        <p className="text-gray-600 dark:text-gray-300 mb-6">
           Brisanjem naloga trajno brišete sve vaše podatke. Ova akcija se ne
           može opozvati.
         </p>
@@ -342,22 +336,24 @@ export default function ClientProfile() {
         {!showDeleteConfirmation ? (
           <button
             onClick={() => setShowDeleteConfirmation(true)}
-            className="cursor-pointer w-full py-3 bg-(--red-color) text-white rounded-lg hover:bg-red-700"
+            className="cursor-pointer w-full py-3 border border-red-500 text-red-500 rounded-lg hover:bg-red-700 hover:text-white"
           >
             Obriši nalog
           </button>
         ) : (
-          <div className="space-y-4 animate-fadeIn">
-            <p className="text-gray-300">
+          <div className="space-y-4 animate-fadeIn py-2">
+            <p className={lbl}>
               Za potvrdu brisanja, unesite vaš email:{" "}
-              <strong className="text-white">{user.email}</strong>
+              <strong className="dark:text-white text-gray-700">
+                {user.email}
+              </strong>
             </p>
             <input
               type="email"
               value={deleteEmail}
               onChange={(e) => setDeleteEmail(e.target.value)}
               placeholder="Unesite vaš email"
-              className="w-full rounded-lg bg-gray-100 p-3 focus:outline-2 focus:-outline-offset-2 focus:outline-red-500"
+              className={inp + " my-4"}
             />
             <div className="flex gap-3">
               <button
@@ -372,7 +368,7 @@ export default function ClientProfile() {
               <button
                 onClick={handleDelete}
                 disabled={!canDelete || deleteUser.isPending}
-                className="cursor-pointer flex-2 lg:flex-1 py-3 bg-(--red-color) text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                className="cursor-pointer flex-2 lg:flex-1 py-3 bg-red-500 text-white rounded-md hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {deleteUser.isPending ? "Brisanje..." : "Potvrdi brisanje"}
               </button>

@@ -28,7 +28,7 @@ export default function ClientPanelPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { base } = useClientRouting();
-  const { user, isLoggedIn, isLoading } = useAuth();
+  const { isLoggedIn, isLoading } = useAuth();
   const { data: salon } = useSalonProfile();
 
   // Tab — URL synced

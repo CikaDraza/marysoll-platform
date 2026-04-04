@@ -22,6 +22,7 @@ const SalonProfileSchema = new mongoose.Schema(
       tiktok: { type: String, default: "" },
     },
     newsletterEmail: { type: String, required: false, default: "" },
+    contactEmail: { type: String, required: false, default: "" },
     workingHours: { type: Object, default: {} },
 
     // SEO Meta

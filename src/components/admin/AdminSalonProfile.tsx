@@ -10,8 +10,12 @@ import Image from "next/image";
 import { useUpdateSalonSeo } from "@/hooks/useSalonSeoMutations";
 import LoaderButton from "../elements/LoaderButton";
 import NotificationSettings from "../settings/NotificationSettings";
+import { api } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function AdminSalonProfile() {
+  const { user } = useAuth();
+  const isOwner = user?.globalRole === "OWNER";
   const { data: salonProfile, isLoading } = useSalonProfile();
 
   const {
@@ -46,6 +50,42 @@ export default function AdminSalonProfile() {
   };
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // ── Change password state ──────────────────────────────────────────────────
+  const [pwForm, setPwForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [pwLoading, setPwLoading] = useState(false);
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pwForm.newPassword !== pwForm.confirmPassword) {
+      toast.error("Nove lozinke se ne poklapaju.");
+      return;
+    }
+    if (pwForm.newPassword.length < 8) {
+      toast.error("Nova lozinka mora imati najmanje 8 karaktera.");
+      return;
+    }
+    setPwLoading(true);
+    try {
+      await api.post("/auth/change-password", {
+        currentPassword: pwForm.currentPassword,
+        newPassword: pwForm.newPassword,
+      });
+      toast.success("Lozinka uspešno promenjena.");
+      setPwForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error ?? "Greška pri promeni lozinke.";
+      toast.error(msg);
+    } finally {
+      setPwLoading(false);
+    }
+  };
 
   /** Validacija forme */
   const validate = (): boolean => {
@@ -281,26 +321,67 @@ export default function AdminSalonProfile() {
             </div>
           </div>
 
-          {/* Newsletter */}
-          <div className="border-b border-gray-900/10 pb-12">
-            <h3 className="text-2xl font-semibold text-gray-900">
-              Email Promocija
-            </h3>
-            <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-              <div className="sm:col-span-4">
-                <label className="block text-sm/6 font-medium text-gray-900">
-                  Newsletter
-                </label>
-                <input
-                  type="text"
-                  name="newsletterEmail"
-                  value={form.newsletterEmail || ""}
-                  onChange={handleChange}
-                  className="mt-2 block w-full rounded-md bg-white px-3 py-2 outline-1 outline-gray-300"
-                />
+          {/* Email Promocija + Marketing telefon — OWNER only */}
+          {isOwner && (
+            <div className="border-b border-gray-900/10 pb-12">
+              <h3 className="text-2xl font-semibold text-gray-900">
+                Email Promocija
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Email adrese koje se koriste za newsletter kampanje i kontakt.
+              </p>
+              <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                <div className="sm:col-span-3">
+                  <label className="block text-sm/6 font-medium text-gray-900">
+                    Newsletter email
+                  </label>
+                  <p className="text-xs text-gray-500 mb-1">
+                    Adresa sa koje se šalju newsletter kampanje.
+                  </p>
+                  <input
+                    type="email"
+                    name="newsletterEmail"
+                    value={form.newsletterEmail || ""}
+                    onChange={handleChange}
+                    placeholder="newsletter@vašsalon.com"
+                    className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-(--secondary-color)"
+                  />
+                </div>
+                <div className="sm:col-span-3">
+                  <label className="block text-sm/6 font-medium text-gray-900">
+                    Kontakt email
+                  </label>
+                  <p className="text-xs text-gray-500 mb-1">
+                    Adresa za klijentske upite i kontakt obrazac.
+                  </p>
+                  <input
+                    type="email"
+                    name="contactEmail"
+                    value={(form as { contactEmail?: string }).contactEmail || ""}
+                    onChange={handleChange}
+                    placeholder="kontakt@vašsalon.com"
+                    className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-(--secondary-color)"
+                  />
+                </div>
+                <div className="sm:col-span-3">
+                  <label className="block text-sm/6 font-medium text-gray-900">
+                    Marketing telefon
+                  </label>
+                  <p className="text-xs text-gray-500 mb-1">
+                    Broj koji se prikazuje u marketinškim materijalima.
+                  </p>
+                  <input
+                    type="tel"
+                    name="marketingPhone"
+                    value={(form as { marketingPhone?: string }).marketingPhone || ""}
+                    onChange={handleChange}
+                    placeholder="+381 60 000 0000"
+                    className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-(--secondary-color)"
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* SOCIJALNE MREŽE */}
           <div className="border-b border-gray-900/10 pb-12">
@@ -368,6 +449,76 @@ export default function AdminSalonProfile() {
           </div>
         </form>
       )}
+
+      {/* PROMENA LOZINKE */}
+      <div className="pt-12 mt-12 border-t border-gray-200">
+        <h3 className="text-2xl font-semibold text-gray-900 mb-1">
+          Promena lozinke
+        </h3>
+        <p className="text-sm text-gray-500 mb-8">
+          Unesite trenutnu lozinku i novu lozinku da biste je promenili.
+        </p>
+        <form onSubmit={handlePasswordChange} className="max-w-lg space-y-5">
+          <div>
+            <label className="block text-sm/6 font-medium text-gray-900">
+              Trenutna lozinka
+            </label>
+            <input
+              type="password"
+              value={pwForm.currentPassword}
+              onChange={(e) =>
+                setPwForm((p) => ({ ...p, currentPassword: e.target.value }))
+              }
+              autoComplete="current-password"
+              className="mt-1 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 outline-gray-300 focus:outline-(--secondary-color)"
+            />
+          </div>
+          <div>
+            <label className="block text-sm/6 font-medium text-gray-900">
+              Nova lozinka
+            </label>
+            <input
+              type="password"
+              value={pwForm.newPassword}
+              onChange={(e) =>
+                setPwForm((p) => ({ ...p, newPassword: e.target.value }))
+              }
+              autoComplete="new-password"
+              placeholder="Najmanje 8 karaktera"
+              className="mt-1 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 outline-gray-300 focus:outline-(--secondary-color) placeholder:text-gray-400"
+            />
+          </div>
+          <div>
+            <label className="block text-sm/6 font-medium text-gray-900">
+              Potvrdite novu lozinku
+            </label>
+            <input
+              type="password"
+              value={pwForm.confirmPassword}
+              onChange={(e) =>
+                setPwForm((p) => ({ ...p, confirmPassword: e.target.value }))
+              }
+              autoComplete="new-password"
+              className="mt-1 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 outline-gray-300 focus:outline-(--secondary-color)"
+            />
+            {pwForm.confirmPassword &&
+              pwForm.newPassword !== pwForm.confirmPassword && (
+                <p className="text-red-500 text-xs mt-1">
+                  Lozinke se ne poklapaju.
+                </p>
+              )}
+          </div>
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={pwLoading}
+              className="px-6 py-2.5 rounded-md bg-(--secondary-color) text-white text-sm font-semibold hover:bg-(--secondary-color)/90 disabled:opacity-60 cursor-pointer"
+            >
+              {pwLoading ? "Menjam lozinku..." : "Promeni lozinku"}
+            </button>
+          </div>
+        </form>
+      </div>
 
       {/* SEO & META PODACI */}
       <div className="pt-12 mt-12">
