@@ -37,6 +37,7 @@ const emptyForm = (): ISalonProfileForm => ({
   email: "",
   description: "",
   phone: "",
+  contactEmail: "",
   street: "",
   city: "",
   newsletterEmail: "",
@@ -89,6 +90,7 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
     email: p.email ?? "",
     description: p.description ?? "",
     phone: p.phone ?? "",
+    contactEmail: p.contactEmail ?? "",
     street: p.street ?? "",
     city: p.city ?? "",
     newsletterEmail: p.newsletterEmail ?? "",
@@ -189,11 +191,14 @@ export function useSalonProfileAdmin() {
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    if (profile) {
-      setForm(mapProfileToForm(profile));
-      setLogoPreview(profile.logo ?? null);
-      setIsEditing(false);
+    async function handleProfile() {
+      if (profile) {
+        setForm(mapProfileToForm(profile));
+        setLogoPreview(profile.logo ?? null);
+        setIsEditing(false);
+      }
     }
+    handleProfile();
   }, [profile]);
 
   // ── Form handlers ─────────────────────────────────────────────────────────
