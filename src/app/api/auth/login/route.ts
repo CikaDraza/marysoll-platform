@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     // Look up tenant slug so it can be embedded in the access token
     let tenantSlug: string | null = null;
     if (tenantId) {
-      const tenant = await Tenant.findById(tenantId).select("slug").lean();
+      const tenant = await Tenant.findById(tenantId).select("slug").lean<{ slug: string }>();
       tenantSlug = tenant?.slug ?? null;
     }
 

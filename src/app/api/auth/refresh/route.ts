@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     let tenantSlug: string | null = null;
     if (tenantId) {
-      const tenant = await Tenant.findById(tenantId).select("slug").lean();
+      const tenant = await Tenant.findById(tenantId).select("slug").lean<{ slug: string }>();
       tenantSlug = tenant?.slug ?? null;
     }
 
