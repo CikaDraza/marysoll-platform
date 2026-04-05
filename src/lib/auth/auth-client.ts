@@ -59,6 +59,8 @@ export function getUserFromToken(token?: string): DecodedUser | null {
       isAdmin: decoded.isAdmin ?? false,
       isSuperAdmin: decoded.isSuperAdmin ?? false,
       tenantId: decoded.tenantId ?? null,
+      tenantSlug: decoded.tenantSlug ?? null,
+      globalRole: decoded.globalRole,
       userType: decoded.userType ?? "guest",
       isEmailVerified: decoded.isEmailVerified ?? false,
       isOnline: decoded.isOnline,

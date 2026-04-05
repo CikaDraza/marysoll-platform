@@ -394,11 +394,18 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       CLIENT_TENANT_PATHS.has(pathname) ||
       [...CLIENT_TENANT_PATHS].some((p) => pathname.startsWith(p + "/"));
 
-    if (
-      tenantSlug &&
-      isCustomDomain(hostname, BASE_DOMAIN) &&
-      matchesClientPath
-    ) {
+    // Rewrite root-relative paths to tenantSlug-prefixed equivalents for any
+    // host-based routing: custom domains (kikikiss.beauty) AND tenant subdomains
+    // (kiki-kiss.marysoll.com). Path-based routing (marysoll.com/kiki-kiss/panel)
+    // doesn't need a rewrite — Next.js file-system routing already handles it.
+    const host = hostname.split(":")[0];
+    const PLATFORM_SUBDOMAINS = new Set(["admin", "superadmin", "app", "www"]);
+    const isTenantSubdomain =
+      host.endsWith(`.${BASE_DOMAIN}`) &&
+      !PLATFORM_SUBDOMAINS.has(host.slice(0, -(BASE_DOMAIN.length + 1)));
+    const isHostBased = isCustomDomain(hostname, BASE_DOMAIN) || isTenantSubdomain;
+
+    if (tenantSlug && isHostBased && matchesClientPath) {
       const rewriteUrl = new URL(
         `/${tenantSlug}${pathname}`,
         request.nextUrl.origin,

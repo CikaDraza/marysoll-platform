@@ -191,15 +191,23 @@ export function AuthStatusButton({
                   🏪 Admin dashboard
                 </Link>
               )}
-              {!user.isAdmin && !user.isSuperAdmin && (
-                <Link
-                  href="/termini"
-                  onClick={() => setIsOpen(false)}
-                  className={`flex items-center gap-2 px-4 py-2 text-xs transition ${isDark ? "text-slate-300 hover:bg-slate-700 hover:text-white" : "text-gray-700 hover:bg-gray-50"}`}
-                >
-                  📅 Moji termini
-                </Link>
-              )}
+              {!user.isAdmin &&
+                !user.isSuperAdmin &&
+                (() => {
+                  const slug = tenantSlug ?? user.tenantSlug;
+                  const href = slug
+                    ? `/${slug}/panel?tab=Moji+Termini`
+                    : "/termini";
+                  return (
+                    <Link
+                      href={href}
+                      onClick={() => setIsOpen(false)}
+                      className={`flex items-center gap-2 px-4 py-2 text-xs transition ${isDark ? "text-slate-300 hover:bg-slate-700 hover:text-white" : "text-gray-700 hover:bg-gray-50"}`}
+                    >
+                      📅 Moji termini
+                    </Link>
+                  );
+                })()}
             </div>
 
             {/* Logout */}

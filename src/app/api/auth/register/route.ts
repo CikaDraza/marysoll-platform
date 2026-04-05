@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   try {
     await connectToDB();
 
-    const { name, email, password, phone, agreedToPrivacy } = await req.json();
+    const { name, email, password, phone, agreedToPrivacy, tenantSlug: bodyTenantSlug } = await req.json();
 
     if (!name || !email || !password || !agreedToPrivacy) {
       return NextResponse.json(
@@ -36,8 +36,8 @@ export async function POST(req: NextRequest) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Nađi tenant iz headera (middleware ubacuje x-tenant-slug)
-    const tenantSlug = req.headers.get("x-tenant-slug");
+    // Nađi tenant: header (middleware) ili body (path-based routing fallback)
+    const tenantSlug = req.headers.get("x-tenant-slug") || bodyTenantSlug || null;
     let tenant = null;
     let salonName = "salon";
     let salonBaseUrl =

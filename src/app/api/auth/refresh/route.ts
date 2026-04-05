@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { User } from "@/models/User";
+import { Tenant } from "@/models/Tenant";
 import { verifyRefreshToken, generateAccessToken } from "@/lib/auth/auth-server";
 
 export async function POST(request: NextRequest) {
@@ -22,10 +23,17 @@ export async function POST(request: NextRequest) {
     }
 
     const tenantId = user.tenantId?.toString() ?? null;
+
+    let tenantSlug: string | null = null;
+    if (tenantId) {
+      const tenant = await Tenant.findById(tenantId).select("slug").lean();
+      tenantSlug = tenant?.slug ?? null;
+    }
+
     const token = generateAccessToken(
       user._id.toString(), user.email, user.isAdmin,
       user.name ?? "", tenantId, user.isSuperAdmin ?? false,
-      user.globalRole ?? "USER",
+      user.globalRole ?? "USER", tenantSlug,
     );
 
     return NextResponse.json({ token });

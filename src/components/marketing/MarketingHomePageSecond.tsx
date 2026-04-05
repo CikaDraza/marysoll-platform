@@ -109,7 +109,7 @@ function FakeChatStream() {
       </div>
 
       {/* Chat Messages */}
-      <div className="space-y-3 min-h-[280px] max-h-[320px] overflow-hidden">
+      <div className="space-y-3 min-h-[350px] max-h-[400px] overflow-hidden">
         <AnimatePresence mode="popLayout">
           {messages.map((msg) => (
             <motion.div

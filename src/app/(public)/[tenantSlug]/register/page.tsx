@@ -12,7 +12,7 @@ import { useClientRouting } from "@/hooks/useClientRouting";
 type Step = "form" | "check_email";
 
 export default function ClientRegisterPage() {
-  const { base } = useClientRouting();
+  const { base, tenantSlug } = useClientRouting();
 
   const [step, setStep] = useState<Step>("form");
   const [loading, setLoading] = useState(false);
@@ -45,7 +45,10 @@ export default function ClientRegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          tenantSlug: base ? tenantSlug : undefined,
+        }),
       });
       const data = await res.json();
 
@@ -137,7 +140,7 @@ export default function ClientRegisterPage() {
               required
               value={form.name}
               onChange={(e) => set("name", e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="Ana Petrović"
             />
           </div>
@@ -151,7 +154,7 @@ export default function ClientRegisterPage() {
               required
               value={form.email}
               onChange={(e) => set("email", e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="ana@email.com"
             />
           </div>
@@ -166,7 +169,7 @@ export default function ClientRegisterPage() {
               minLength={8}
               value={form.password}
               onChange={(e) => set("password", e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="Min. 8 karaktera"
             />
           </div>
@@ -179,7 +182,7 @@ export default function ClientRegisterPage() {
               type="tel"
               value={form.phone}
               onChange={(e) => set("phone", e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="+381 60 123 4567"
             />
           </div>

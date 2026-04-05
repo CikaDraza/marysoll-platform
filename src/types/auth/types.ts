@@ -5,6 +5,7 @@ export interface DecodedToken {
   isAdmin: boolean;
   isSuperAdmin: boolean;
   tenantId: string | null;
+  tenantSlug: string | null;
   globalRole?: string;
   exp: number;
   iat: number;
@@ -20,6 +21,7 @@ export interface DecodedUser {
   isAdmin: boolean;
   isSuperAdmin: boolean;
   tenantId: string | null;
+  tenantSlug: string | null;
   globalRole?: string;
   userType: "guest" | "legal";
   isEmailVerified: boolean;

@@ -38,13 +38,27 @@ export function detectCustomDomain(): boolean {
   if (typeof window === "undefined") return false;
   const host = window.location.hostname;
   const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
-  return (
+
+  // Fully custom domain (e.g. kikikiss.beauty)
+  if (
     host !== "localhost" &&
     !host.startsWith("127.") &&
     !host.startsWith("192.168.") &&
     !host.endsWith(baseDomain) &&
     host !== baseDomain
-  );
+  ) {
+    return true;
+  }
+
+  // Tenant subdomain (e.g. kiki-kiss.marysoll.com) — treated the same as a
+  // custom domain for routing: base="" so links are root-relative (/panel, /login).
+  const PLATFORM_SUBDOMAINS = new Set(["admin", "superadmin", "app", "www"]);
+  if (host.endsWith(`.${baseDomain}`)) {
+    const sub = host.slice(0, -(baseDomain.length + 1));
+    if (!PLATFORM_SUBDOMAINS.has(sub)) return true;
+  }
+
+  return false;
 }
 
 export function useClientRouting(): ClientRouting {

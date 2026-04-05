@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
       phone: phone?.trim() ?? "",
       isAdmin: true,
       isSuperAdmin: false,
+      globalRole: "OWNER",
       agreedToPrivacy: true,
       isEmailVerified: false,
       verificationToken,

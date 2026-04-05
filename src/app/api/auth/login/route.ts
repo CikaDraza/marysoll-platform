@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectToDB } from "@/lib/db/mongodb";
 import { User } from "@/models/User";
+import { Tenant } from "@/models/Tenant";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -51,9 +52,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify globalRole is set — guard against stale documents
+    // Normalize globalRole — guard against stale documents without the field
+    const effectiveRole = user.globalRole ?? "USER";
     const allowedRoles = ["SUPER_ADMIN", "OWNER", "ADMIN", "STAFF", "USER"];
-    if (!allowedRoles.includes(user.globalRole ?? "")) {
+    if (!allowedRoles.includes(effectiveRole)) {
       return NextResponse.json(
         {
           error: "Vaš nalog nema ispravno podešenu rolu. Kontaktirajte podršku.",
@@ -71,6 +73,13 @@ export async function POST(request: NextRequest) {
 
     const tenantId = user.tenantId?.toString() ?? null;
 
+    // Look up tenant slug so it can be embedded in the access token
+    let tenantSlug: string | null = null;
+    if (tenantId) {
+      const tenant = await Tenant.findById(tenantId).select("slug").lean();
+      tenantSlug = tenant?.slug ?? null;
+    }
+
     const accessToken = generateAccessToken(
       user._id.toString(),
       user.email,
@@ -78,7 +87,8 @@ export async function POST(request: NextRequest) {
       user.name ?? user.email.split("@")[0],
       tenantId,
       user.isSuperAdmin ?? false,
-      user.globalRole ?? "USER",
+      effectiveRole,
+      tenantSlug,
     );
     const refreshToken = generateRefreshToken(
       user._id.toString(),
