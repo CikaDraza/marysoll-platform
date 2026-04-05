@@ -165,14 +165,23 @@ export function useTenantAdmin() {
    */
   function getTenantUrl(): string {
     if (!tenant) return "";
+
+    // 1. Fully custom domain (e.g. kikikiss.beauty)
     if (tenant.customDomain && tenant.customDomainVerified) {
       return `https://${tenant.customDomain}`;
     }
 
-    const siteUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
-    if (siteUrl) return `${siteUrl}/${tenant.slug}`;
+    // 2. Tenant subdomain (e.g. kiki-kiss.marysoll.com)
+    const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+    const isProd =
+      typeof window !== "undefined" &&
+      window.location.hostname !== "localhost" &&
+      !window.location.hostname.startsWith("127.");
+    if (isProd) {
+      return `https://${tenant.slug}.${baseDomain}`;
+    }
 
-    // Dev fallback
+    // 3. Dev fallback — path-based
     const port = typeof window !== "undefined" ? window.location.port : "3000";
     return `http://localhost:${port}/${tenant.slug}`;
   }
