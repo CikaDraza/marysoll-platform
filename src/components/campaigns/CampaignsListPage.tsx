@@ -16,6 +16,7 @@ const TABS: { label: string; status: CampaignStatus; href: string }[] = [
     href: "/marketing/campaigns/scheduled",
   },
   { label: "Sent", status: "sent", href: "/marketing/campaigns/sent" },
+  { label: "Failed", status: "failed", href: "/marketing/campaigns/failed" },
 ];
 
 interface Props {

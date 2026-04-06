@@ -182,7 +182,7 @@ export function CampaignTable({ campaigns, status, isLoading, onSchedule }: Prop
     );
   }
 
-  const showSchedule = status === "draft" || status === "scheduled";
+  const showSchedule = status === "draft" || status === "scheduled" || status === "failed";
   const showSentAt = status === "sent";
 
   return (
@@ -271,9 +271,13 @@ export function CampaignTable({ campaigns, status, isLoading, onSchedule }: Prop
                     {showSchedule && onSchedule && (
                       <button
                         onClick={() => onSchedule(c)}
-                        className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-violet-600 hover:bg-violet-700 text-white transition-colors"
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white transition-colors ${
+                          status === "failed"
+                            ? "bg-red-600 hover:bg-red-700"
+                            : "bg-violet-600 hover:bg-violet-700"
+                        }`}
                       >
-                        Zakaži
+                        {status === "failed" ? "Zakaži ponovo" : "Zakaži"}
                       </button>
                     )}
                     {status === "draft" && (
