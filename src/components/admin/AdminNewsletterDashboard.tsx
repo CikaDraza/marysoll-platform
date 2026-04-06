@@ -841,7 +841,7 @@ export default function AdminNewsletterDashboard() {
             value={customHtmlInput}
             onChange={(e) => setCustomHtmlInput(e.target.value)}
             placeholder="Ovde zalepi čist HTML kod templejta (bez <html>, <body>, <head> tagova)"
-            className="w-full h-60 lg:h-48 p-4 border border-gray-300 rounded-lg font-mono text-sm"
+            className="w-full h-60 lg:h-48 p-4 border border-gray-300 dark:border-gray-700 rounded-lg font-mono text-sm"
           />
           <label className="flex items-center gap-3 my-4">
             <input

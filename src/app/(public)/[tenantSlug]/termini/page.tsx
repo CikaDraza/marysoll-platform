@@ -15,7 +15,7 @@ import {
 } from "@/lib/tenant/fetchTenantData";
 import AppointmentCalendarPage from "@/components/public/AppointmentCalendarPage";
 import type { IAppointment, SalonProfileData } from "@/types";
-import { WorkingHoursWidget } from "@/components/widgets/WorkingHoursWidget";
+import { formatWorkingHoursForDisplay } from "@/helpers/parseWorkingHours";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +75,10 @@ export default async function TerminiPage({ params }: Props) {
     newsletterEmail: "",
   };
 
+  const hours = formatWorkingHoursForDisplay(
+    safeProfile.workingHours as Record<string, unknown> | null,
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero header */}
@@ -122,8 +126,37 @@ export default async function TerminiPage({ params }: Props) {
           }}
         >
           {/* Radno Vreme - Zauzima celu levu stranu (5 redova) */}
-          <div style={{ gridArea: "working" }} className="h-full">
-            <WorkingHoursWidget profile={safeProfile} />
+          <div
+            style={{ gridArea: "working" }}
+            className="h-full bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col"
+          >
+            <div>
+              <p className="font-bold text-gray-800 mb-3 text-sm">
+                Radno vreme salona
+              </p>
+              <div className="space-y-1.5">
+                <ul className="space-y-1.5">
+                  {hours.map(({ day, hours: h, isOpen }) => (
+                    <li key={day} className="flex items-center justify-between">
+                      <span
+                        className={`text-xs font-medium w-28 ${isOpen ? "text-zinc-500" : "text-gray-400"}`}
+                      >
+                        {day}
+                      </span>
+                      <span
+                        className={`text-xs font-semibold px-1.5 py-0.5 rounded-full text-zinc-800 ${
+                          isOpen
+                            ? "bg-green-100 text-green-700 font-medium"
+                            : "bg-gray-100 text-gray-400"
+                        }`}
+                      >
+                        {h}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           </div>
 
           {/* Legenda - Zauzima 2 reda desno */}

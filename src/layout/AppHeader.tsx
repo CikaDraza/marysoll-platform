@@ -87,7 +87,7 @@ const AppHeader: React.FC = () => {
                 strokeWidth="2"
               />
             </svg>
-            Sajt
+            Sajt Salona
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
               <path
                 d="M7 17L17 7M17 7H7M17 7v10"

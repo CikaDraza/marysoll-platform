@@ -248,7 +248,7 @@ function AdminDashboard() {
               alt="logo"
               width={64}
               height={64}
-              className="w-14 h-14 rounded-xl object-cover border border-gray-200 dark:border-gray-700"
+              className="w-16 h-16 rounded-xl object-contain border border-gray-200 dark:border-gray-700"
             />
           )}
           <div>
@@ -917,7 +917,7 @@ function AdminDashboard() {
                   <span className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 px-2.5 py-1 rounded-lg">
                     {page}
                   </span>
-                  <div>
+                  <div className="mt-2">
                     <label className={lbl}>
                       Title{" "}
                       <span className="font-normal normal-case text-gray-300 dark:text-gray-600">
@@ -984,7 +984,7 @@ function AdminDashboard() {
             </div>
             <button
               onClick={svc.openCreate}
-              className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition shadow-sm shadow-violet-200"
+              className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition"
             >
               + Dodaj uslugu
             </button>
@@ -1006,7 +1006,7 @@ function AdminDashboard() {
               </p>
               <button
                 onClick={svc.openCreate}
-                className="px-6 py-2.5 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition"
+                className="cursor-pointer px-6 py-2.5 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition"
               >
                 + Dodaj prvu uslugu
               </button>
@@ -1511,14 +1511,14 @@ function ServiceModal({ s }: { s: ReturnType<typeof useAdminServices> }) {
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-800">
           <button
             onClick={s.closeModal}
-            className="px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium"
+            className="cursor-pointer px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium"
           >
             Odustani
           </button>
           <button
             onClick={() => s.save()}
             disabled={s.isSaving}
-            className="px-7 py-2.5 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition disabled:opacity-50 shadow-sm shadow-violet-200"
+            className="px-7 py-2.5 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition disabled:opacity-50 cursor-pointer"
           >
             {s.isSaving
               ? "Snimanje..."

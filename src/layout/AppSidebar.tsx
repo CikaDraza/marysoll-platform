@@ -168,7 +168,10 @@ const AppSidebar: React.FC = () => {
 
   const [openSubmenu, setOpenSubmenu] = useState<number | null>(() => {
     // Auto-open the Marketing submenu when on /marketing/* routes
-    if (typeof window !== "undefined" && window.location.pathname.startsWith("/marketing")) {
+    if (
+      typeof window !== "undefined" &&
+      window.location.pathname.startsWith("/marketing")
+    ) {
       return AdminNav.findIndex((item) => item.name === "Marketing");
     }
     return null;
@@ -185,11 +188,8 @@ const AppSidebar: React.FC = () => {
     (item: NavItem) => {
       if (item.path) return pathname.startsWith(item.path.split("?")[0]);
       if (item.subItems) {
-        return item.subItems.some(
-          (s) =>
-            s.path
-              ? pathname.startsWith(s.path.split("?")[0])
-              : false,
+        return item.subItems.some((s) =>
+          s.path ? pathname.startsWith(s.path.split("?")[0]) : false,
         );
       }
       return false;
@@ -362,7 +362,7 @@ const AppSidebar: React.FC = () => {
               <span className="text-gray-500 dark:text-gray-400">
                 <Icon d={icons.globe} />
               </span>
-              <span>Sajt salona</span>
+              <span>Sajt Platfrme</span>
               <svg
                 className="w-3.5 h-3.5 ml-auto text-gray-300"
                 viewBox="0 0 24 24"

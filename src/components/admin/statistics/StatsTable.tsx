@@ -20,7 +20,7 @@ export const StatsTable: React.FC<StatsTableProps> = ({ month, year }) => {
     return (
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6">
         <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="h-6 bg-gray-200 dark:bg-gray-950 rounded w-1/4 mb-4"></div>
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
@@ -62,8 +62,15 @@ export const StatsTable: React.FC<StatsTableProps> = ({ month, year }) => {
   const sortedServices = [...services].sort(
     (a: { count: number }, b: { count: number }) => b.count - a.count,
   );
+  const inp = [
+    "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
+    "text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800",
+    "focus:outline-none focus:ring-2 focus:ring-violet-400 transition",
+    "placeholder:text-gray-400 dark:placeholder:text-gray-500",
+  ].join(" ");
+
   const card =
-    "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6 mb-6";
+    "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
 
   return (
     <div className={`${card}`}>
@@ -72,7 +79,7 @@ export const StatsTable: React.FC<StatsTableProps> = ({ month, year }) => {
       </h3>
 
       {/* Top klijenti */}
-      <div className={`${card}`}>
+      <div className={`${card} mb-6`}>
         <h4 className="text-md font-medium text-gray-700 dark:text-zinc-300 mb-3">
           Top 3 klijenta
         </h4>
@@ -80,7 +87,11 @@ export const StatsTable: React.FC<StatsTableProps> = ({ month, year }) => {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-zinc-700">
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-300 uppercase tracking-wider">
+                <th
+                  className={
+                    "px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-300 uppercase tracking-wider"
+                  }
+                >
                   Email
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-300 uppercase tracking-wider">
@@ -88,7 +99,7 @@ export const StatsTable: React.FC<StatsTableProps> = ({ month, year }) => {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200 dark:divide-zinc-700">
+            <tbody className="divide-y divide-gray-200 dark:divide-zinc-300">
               {topClients && topClients.length > 0 ? (
                 topClients.map(
                   (client: { email: string; count: number }, index: number) => (
@@ -113,7 +124,7 @@ export const StatsTable: React.FC<StatsTableProps> = ({ month, year }) => {
                 <tr>
                   <td
                     colSpan={2}
-                    className="px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-300"
+                    className={inp + " rounded-none! text-center"}
                   >
                     Nema podataka o klijentima
                   </td>
@@ -125,7 +136,7 @@ export const StatsTable: React.FC<StatsTableProps> = ({ month, year }) => {
       </div>
 
       {/* Top usluge */}
-      <div className={`${card}`}>
+      <div className={`${card} mb-6`}>
         <h4 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-3">
           Top usluge
         </h4>
@@ -169,7 +180,7 @@ export const StatsTable: React.FC<StatsTableProps> = ({ month, year }) => {
                 <tr>
                   <td
                     colSpan={2}
-                    className="px-4 py-3 text-center text-sm text-gray-500"
+                    className={inp + " rounded-none! text-center"}
                   >
                     Nema podataka o uslugama
                   </td>
@@ -181,7 +192,7 @@ export const StatsTable: React.FC<StatsTableProps> = ({ month, year }) => {
       </div>
 
       {/* Detaljna raspodela usluga */}
-      <div className={`${card}`}>
+      <div className={`${card} mb-6`}>
         <h4 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-3">
           Detaljna raspodela usluga
         </h4>
@@ -204,33 +215,45 @@ export const StatsTable: React.FC<StatsTableProps> = ({ month, year }) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 dark:divide-gray-700">
-              {sortedServices.map((service, index) => (
-                <tr
-                  key={service.name}
-                  className={
-                    index % 2 === 0
-                      ? "bg-white dark:bg-gray-900"
-                      : "bg-gray-50 dark:bg-gray-800"
-                  }
-                >
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
-                    {service.name}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
-                    {service.count}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
-                    {formatCurrency(service.revenue)}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
-                    {totalAppointments > 0
-                      ? `${((service.count / totalAppointments) * 100).toFixed(
-                          1,
-                        )}%`
-                      : "0%"}
+              {sortedServices.length > 0 ? (
+                sortedServices.map((service, index) => (
+                  <tr
+                    key={service.name}
+                    className={
+                      index % 2 === 0
+                        ? "bg-white dark:bg-gray-900"
+                        : "bg-gray-50 dark:bg-gray-800"
+                    }
+                  >
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                      {service.name}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                      {service.count}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                      {formatCurrency(service.revenue)}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                      {totalAppointments > 0
+                        ? `${(
+                            (service.count / totalAppointments) *
+                            100
+                          ).toFixed(1)}%`
+                        : "0%"}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className={inp + " rounded-none! text-center"}
+                  >
+                    Nema podataka o uslugama
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

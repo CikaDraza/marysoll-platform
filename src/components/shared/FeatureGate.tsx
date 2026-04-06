@@ -160,7 +160,9 @@ export function FeatureGate({
 
   // Loading state — ništa ne prikazuj (izbjegava flash)
   if (isLoading) {
-    return <div className="rounded-2xl bg-zinc-50 animate-pulse h-32" />;
+    return (
+      <div className="rounded-2xl bg-zinc-50 dark:bg-gray-800 animate-pulse h-32" />
+    );
   }
 
   // Feature dostupan — renderuj sadržaj

@@ -308,9 +308,11 @@ export function AdminCustomDomain() {
             </h2>
             <p className="text-xs text-zinc-400">
               Unesite domen koji ste kupili. Vaš salon će biti dostupan na{" "}
-              <code className="bg-zinc-100 p-1 rounded">kikikiss.beauty</code>{" "}
+              <code className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded">
+                kikikiss.beauty
+              </code>{" "}
               umesto na{" "}
-              <code className="bg-zinc-100 p-1 rounded">
+              <code className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded">
                 marysoll.com/{tenant?.slug ?? "vas-salon"}
               </code>
               .

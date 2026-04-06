@@ -147,7 +147,7 @@ function ClientSidebar({
               height={64}
               src={salonLogo}
               alt={salonName || ""}
-              className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
+              className="w-12 h-12 rounded-xl object-contain flex-shrink-0"
             />
           ) : (
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white text-xs font-black flex-shrink-0 shadow-sm">

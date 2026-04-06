@@ -34,7 +34,13 @@ import { useAppointments } from "@/hooks/useAppointments";
 import { useAuth } from "@/hooks/useAuth";
 import ClientCreateModal from "./ClientCreateModal";
 import ClientEditModal from "./ClientEditModal";
-import type { IAppointment, SalonProfileData, WorkingHoursMap, DayOfWeek, ITimeSlot } from "@/types";
+import type {
+  IAppointment,
+  SalonProfileData,
+  WorkingHoursMap,
+  DayOfWeek,
+  ITimeSlot,
+} from "@/types";
 import { useSalonProfile } from "@/hooks/useSalonProfile";
 import { toFullCalendarBusinessHours } from "@/helpers/parseWorkingHours";
 import { WorkingHoursWidget } from "../widgets/WorkingHoursWidget";
@@ -42,7 +48,13 @@ import { WorkingHoursWidget } from "../widgets/WorkingHoursWidget";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const DAY_NAMES_SR: DayOfWeek[] = [
-  "Nedelja", "Ponedeljak", "Utorak", "Sreda", "Četvrtak", "Petak", "Subota",
+  "Nedelja",
+  "Ponedeljak",
+  "Utorak",
+  "Sreda",
+  "Četvrtak",
+  "Petak",
+  "Subota",
 ];
 
 const STATUS_COLORS: Record<string, string> = {
@@ -100,7 +112,9 @@ function generateSlots(start: string, end: string): string[] {
   let cur = toMins(start);
   const endM = toMins(end);
   while (cur < endM) {
-    const h = Math.floor(cur / 60).toString().padStart(2, "0");
+    const h = Math.floor(cur / 60)
+      .toString()
+      .padStart(2, "0");
     const m = (cur % 60).toString().padStart(2, "0");
     slots.push(`${h}:${m}`);
     cur += 30;
@@ -322,7 +336,9 @@ function WeekView({
                   }}
                   className={`px-1.5 py-1 rounded-lg text-[9px] font-semibold border leading-tight truncate ${
                     isOwn
-                      ? (STATUS_COLORS[a.status] ?? "bg-zinc-100 border-zinc-200 text-zinc-600") + " cursor-pointer hover:opacity-80"
+                      ? (STATUS_COLORS[a.status] ??
+                          "bg-zinc-100 border-zinc-200 text-zinc-600") +
+                        " cursor-pointer hover:opacity-80"
                       : "bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 cursor-default"
                   }`}
                 >
@@ -407,7 +423,9 @@ export default function AppointmentCalendar() {
     newsletterEmail: "",
   };
 
-  const workingHours = salonProfile?.workingHours as WorkingHoursMap | undefined;
+  const workingHours = salonProfile?.workingHours as
+    | WorkingHoursMap
+    | undefined;
   const businessHours = toFullCalendarBusinessHours(
     (workingHours ?? {}) as Record<string, unknown>,
   );
@@ -453,8 +471,7 @@ export default function AppointmentCalendar() {
       return toast.error("Ne možete zakazati za ovaj termin.");
 
     const dayNumber = info.start.getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6;
-    const timeValue =
-      info.start.getHours() * 60 + info.start.getMinutes();
+    const timeValue = info.start.getHours() * 60 + info.start.getMinutes();
     const workingEntry = businessHours.find((b) =>
       b?.daysOfWeek.includes(dayNumber),
     );
@@ -541,7 +558,7 @@ export default function AppointmentCalendar() {
       <div className="space-y-5">
         {/* Info row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className={card}>
+          <div>
             <WorkingHoursWidget profile={safeProfile} />
           </div>
 
@@ -571,6 +588,12 @@ export default function AppointmentCalendar() {
                 <span className="w-3 h-3 rounded border border-zinc-100 dark:border-zinc-700 flex-shrink-0" />
                 <span className="text-xs text-zinc-400 dark:text-zinc-500">
                   Slobodan slot
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded border border-red-500 bg-red-950 flex-shrink-0" />
+                <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                  Neradan dan
                 </span>
               </div>
             </div>
@@ -761,7 +784,13 @@ export default function AppointmentCalendar() {
                   firstDay={1}
                   dayHeaderContent={(args) => {
                     const names = [
-                      "Ned", "Pon", "Uto", "Sre", "Čet", "Pet", "Sub",
+                      "Ned",
+                      "Pon",
+                      "Uto",
+                      "Sre",
+                      "Čet",
+                      "Pet",
+                      "Sub",
                     ];
                     const d = new Date(args.date);
                     return {

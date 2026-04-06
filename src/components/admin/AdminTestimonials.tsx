@@ -11,6 +11,18 @@ import { useBrowserNotifications } from "@/hooks/useNotifications";
 import Paginator from "../elements/Paginator";
 import { useDebounce } from "@/hooks/useDebounce";
 
+const inp = [
+  "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
+  "text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800",
+  "focus:outline-none focus:ring-2 focus:ring-violet-400 transition",
+  "placeholder:text-gray-400 dark:placeholder:text-gray-500",
+].join(" ");
+
+const lbl =
+  "block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5";
+const card =
+  "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
+
 export default function AdminTestimonials() {
   const [statusFilter, setStatusFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -85,79 +97,75 @@ export default function AdminTestimonials() {
       <Toaster position="top-right" />
 
       {/* Filteri */}
-      <div className="bg-white py-4 rounded-lg">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="flex items-center lg:col-span-4">
-            <h2 className="text-lg! lg:text-2xl! font-bold text-(--secondary-color)">
-              Lista Preporuka
-            </h2>
-          </div>
+      <div className="py-4 rounded-lg">
+        <div className={card}>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="flex items-center lg:col-span-4">
+              <h2 className="text-lg! lg:text-2xl! font-bold text-(--secondary-color)">
+                Lista Preporuka
+              </h2>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status komentara
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setPage(1);
-              }}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
-            >
-              <option value="">Svi komentari</option>
-              <option value="unread">Nepročitani</option>
-              <option value="read">Pročitani</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Pretraga
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Ime, email, komentar..."
-                value={searchQuery}
+            <div>
+              <label className={lbl}>Status komentara</label>
+              <select
+                value={statusFilter}
                 onChange={(e) => {
-                  setSearchQuery(e.target.value);
+                  setStatusFilter(e.target.value);
                   setPage(1);
                 }}
-                className="w-full border border-gray-300 rounded-md bg-white p-1.5 px-3 focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
-              />
-              {isFetching && (
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                  <div className="w-4 h-4 border-2 border-gray-300 border-t-(--secondary-color) rounded-full animate-spin"></div>
-                </div>
-              )}
+                className={inp}
+              >
+                <option value="">Svi komentari</option>
+                <option value="unread">Nepročitani</option>
+                <option value="read">Pročitani</option>
+              </select>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Datum
-            </label>
-            <input
-              type="date"
-              value={dateQuery}
-              onChange={(e) => {
-                setDateQuery(e.target.value);
-                setPage(1);
-              }}
-              className="w-full p-1.5 border border-gray-300 rounded-md bg-gray-100 focus:ring-2 focus:ring-(--primary-color)! focus:border-transparent"
-            />
-          </div>
+            <div>
+              <label className={lbl}>Pretraga</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Ime, email, komentar..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setPage(1);
+                  }}
+                  className={inp}
+                />
+                {isFetching && (
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-(--secondary-color) rounded-full animate-spin"></div>
+                  </div>
+                )}
+              </div>
+            </div>
 
-          {/* Clear filter */}
-          <div className="flex items-end">
-            <button
-              onClick={clearFilters}
-              disabled={!hasActiveFilters && page === 1}
-              className="cursor-pointer bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:opacity-10 disabled:cursor-not-allowed transition-colors w-full"
-            >
-              Obriši filtere
-            </button>
+            <div>
+              <label className={lbl}>Datum</label>
+              <input
+                type="date"
+                value={dateQuery}
+                onChange={(e) => {
+                  setDateQuery(e.target.value);
+                  setPage(1);
+                }}
+                className={inp}
+              />
+            </div>
+
+            {/* Clear filter */}
+            <div className="flex items-end">
+              <button
+                onClick={clearFilters}
+                disabled={!hasActiveFilters && page === 1}
+                className="cursor-pointer bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:opacity-10 disabled:cursor-not-allowed transition-colors w-full"
+              >
+                Obriši filtere
+              </button>
+            </div>
           </div>
         </div>
 
@@ -206,7 +214,7 @@ export default function AdminTestimonials() {
         )}
       </div>
 
-      {testimonials.length === 0 ? (
+      {testimonials.length !== 0 ? (
         <div className="text-center py-8 text-gray-500">
           {hasActiveFilters
             ? "Nema komentara koji odgovaraju filterima."
@@ -217,9 +225,9 @@ export default function AdminTestimonials() {
           <div className="space-y-6">
             {/* Nepročitani komentari */}
             {unreadTestimonials.length > 0 && (
-              <div>
+              <div className={card}>
                 <div className="flex items-center gap-3 mb-4">
-                  <h3 className="text-md lg:text-xl font-semibold text-gray-900">
+                  <h3 className="text-md lg:text-xl font-semibold text-gray-900 dark:text-gray-100">
                     Nepročitani komentari
                   </h3>
                   <span className="px-3 py-1 bg-red-100 text-red-800 text-xs lg:text-sm font-medium rounded-full">
@@ -241,8 +249,8 @@ export default function AdminTestimonials() {
 
             {/* Pročitani komentari */}
             {readTestimonials.length > 0 && (
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">
+              <div className={card}>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
                   Pročitani komentari ({readTestimonials.length})
                 </h3>
                 <div className="space-y-4">

@@ -51,15 +51,22 @@ interface Props {
   error?: string | null;
 }
 
-export function CampaignStrategistPanel({ onGenerate, isLoading, error }: Props) {
+export function CampaignStrategistPanel({
+  onGenerate,
+  isLoading,
+  error,
+}: Props) {
   const [salonIds, setSalonIds] = useState<string[]>([]);
   const [showSalonError, setShowSalonError] = useState(false);
   const [topic, setTopic] = useState("");
-  const [audienceType, setAudienceType] = useState<AudienceType>("all_subscribers");
+  const [audienceType, setAudienceType] =
+    useState<AudienceType>("all_subscribers");
   const [customSegment, setCustomSegment] = useState("");
   const [manualEmails, setManualEmails] = useState("");
   const [tone, setTone] = useState<EmailCampaignTone>("friendly");
-  const [analyticsMode, setAnalyticsMode] = useState<"average" | "last">("last");
+  const [analyticsMode, setAnalyticsMode] = useState<"average" | "last">(
+    "last",
+  );
 
   const handleSubmit = () => {
     if (salonIds.length === 0) {
@@ -74,7 +81,9 @@ export function CampaignStrategistPanel({ onGenerate, isLoading, error }: Props)
     } else if (audienceType === "manual_emails") {
       audienceValue = manualEmails.trim() || undefined;
     } else {
-      audienceValue = AUDIENCE_OPTIONS.find((o) => o.value === audienceType)?.label;
+      audienceValue = AUDIENCE_OPTIONS.find(
+        (o) => o.value === audienceType,
+      )?.label;
     }
 
     onGenerate({
@@ -119,7 +128,9 @@ export function CampaignStrategistPanel({ onGenerate, isLoading, error }: Props)
 
         <div>
           <label className={lbl}>Audience Selection</label>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Send to:</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+            Send to:
+          </p>
           <div className="space-y-2">
             {AUDIENCE_OPTIONS.map((opt) => (
               <label
@@ -190,7 +201,7 @@ export function CampaignStrategistPanel({ onGenerate, isLoading, error }: Props)
                 key={mode}
                 onClick={() => setAnalyticsMode(mode)}
                 className={[
-                  "flex-1 py-2 px-3 rounded-xl border text-xs font-medium transition cursor-pointer",
+                  "flex-1 py-3 px-3 rounded-xl border text-xs font-medium transition cursor-pointer",
                   analyticsMode === mode
                     ? "border-violet-400 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300"
                     : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-violet-300",
@@ -210,7 +221,7 @@ export function CampaignStrategistPanel({ onGenerate, isLoading, error }: Props)
           <button
             onClick={handleSubmit}
             disabled={!topic.trim()}
-            className="w-full py-3 px-4 bg-violet-600 text-white rounded-xl font-semibold text-sm hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
+            className="w-full py-4 px-4 bg-violet-600 text-white rounded-xl font-semibold text-sm hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
           >
             ✨ Generiši strategiju
           </button>
