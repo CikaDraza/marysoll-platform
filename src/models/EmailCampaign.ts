@@ -55,6 +55,9 @@ export interface EmailCampaignDocument extends Document {
   // Audience segment (optional)
   audienceSegmentId?: Types.ObjectId;
 
+  // Manual recipient override — if set, send only to these contacts (ignores segment)
+  recipientContactIds?: Types.ObjectId[];
+
   // A/B test structure
   abTest: {
     enabled: boolean;
@@ -105,6 +108,7 @@ const EmailCampaignSchema = new Schema<EmailCampaignDocument>(
     audience: { type: String },
     tone: { type: String, required: true },
     audienceSegmentId: { type: Schema.Types.ObjectId, ref: "AudienceSegment" },
+    recipientContactIds: [{ type: Schema.Types.ObjectId, ref: "AudienceContact" }],
 
     strategy: {
       sendDateSuggestion: { type: Date },

@@ -75,28 +75,40 @@ export async function executeSend(campaignId: string): Promise<ExecuteSendResult
   await campaign.save();
 
   // ── Resolve recipients ──────────────────────────────────────────────────────
-  const contactQuery: Record<string, unknown> = {
-    tenantId: campaign.tenantId,
-    status: "ACTIVE",
-    subscribed: true,
-  };
+  let contactDocs: RecipientContact[];
 
-  if (campaign.audienceSegmentId) {
-    const segment = await AudienceSegment.findById(
-      campaign.audienceSegmentId,
-    ).lean<{ filters?: { roles?: string[]; tags?: string[] } }>();
+  if (campaign.recipientContactIds?.length) {
+    // Manual override — send only to the selected contacts
+    contactDocs = await AudienceContact.find({
+      _id: { $in: campaign.recipientContactIds },
+      tenantId: campaign.tenantId,
+    })
+      .select("_id email firstName lastName")
+      .lean<RecipientContact[]>();
+  } else {
+    const contactQuery: Record<string, unknown> = {
+      tenantId: campaign.tenantId,
+      status: "ACTIVE",
+      subscribed: true,
+    };
 
-    if (segment?.filters?.roles?.length) {
-      contactQuery.contactType = { $in: segment.filters.roles };
+    if (campaign.audienceSegmentId) {
+      const segment = await AudienceSegment.findById(
+        campaign.audienceSegmentId,
+      ).lean<{ filters?: { roles?: string[]; tags?: string[] } }>();
+
+      if (segment?.filters?.roles?.length) {
+        contactQuery.contactType = { $in: segment.filters.roles };
+      }
+      if (segment?.filters?.tags?.length) {
+        contactQuery.tags = { $in: segment.filters.tags };
+      }
     }
-    if (segment?.filters?.tags?.length) {
-      contactQuery.tags = { $in: segment.filters.tags };
-    }
+
+    contactDocs = await AudienceContact.find(contactQuery)
+      .select("_id email firstName lastName")
+      .lean<RecipientContact[]>();
   }
-
-  const contactDocs = await AudienceContact.find(contactQuery)
-    .select("_id email firstName lastName")
-    .lean<RecipientContact[]>();
 
   const recipients = contactDocs.filter(
     (c): c is RecipientContact => !!c.email,
@@ -120,13 +132,19 @@ export async function executeSend(campaignId: string): Promise<ExecuteSendResult
   }
 
   // ── Wrap with salon-branded layout ──────────────────────────────────────────
+  const ctaUrl = campaign.content?.ctaUrl || undefined;
+
+  // Fix CTA placeholder: AI generates href="#" when ctaUrl was empty at generation time.
+  // Replace all href="#" with the actual ctaUrl before wrapping.
+  const fixedInnerHtml = ctaUrl
+    ? innerHtml.replace(/href="#"/gi, `href="${ctaUrl}"`)
+    : innerHtml;
+
   const html = await wrapEmailLayout({
     title: campaign.content?.subject ?? campaign.salonName,
-    content: innerHtml,
+    content: fixedInnerHtml,
     tenantId: campaign.tenantId?.toString() ?? null,
   });
-
-  const ctaUrl = campaign.content?.ctaUrl || undefined;
   const FROM = process.env.EMAIL_FROM ?? "noreply@marysoll.com";
   const BATCH_SIZE = 50;
   const tenantId = campaign.tenantId;

@@ -96,6 +96,26 @@ export function useUpdateCampaignAudience(campaignId: string) {
   });
 }
 
+export interface AudienceContactRow {
+  _id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  status: string;
+  subscribed: boolean;
+  contactType: string;
+}
+
+export function useAudienceContacts() {
+  return useQuery<AudienceContactRow[]>({
+    queryKey: ["audience-contacts"],
+    queryFn: async () => {
+      const res = await api.get<{ contacts: AudienceContactRow[] }>("/audience-contacts");
+      return res.data.contacts;
+    },
+  });
+}
+
 export function useScheduleCampaignFromList() {
   const qc = useQueryClient();
   return useMutation<

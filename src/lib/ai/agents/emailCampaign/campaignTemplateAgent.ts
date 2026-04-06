@@ -142,3 +142,79 @@ Generiši HTML templejt i blocks niz. Odgovori SAMO JSON objektom.`,
 
   return { html, blocks };
 }
+
+// ── Regenerate with strict content ────────────────────────────────────────────
+
+const REGENERATE_SYSTEM_PROMPT = `
+Ti si ekspert za HTML email templejte.
+
+Dobijaš POSTOJEĆI HTML templejt i IZMENJEN sadržaj.
+Tvoj zadatak je da PREPISUJEŠ HTML koristeći TAČNO i ISKLJUČIVO vrednosti iz izmenjenog sadržaja.
+
+STROGA PRAVILA:
+- Koristi TAČNO ove vrednosti — bez parafraziranja, bez izmene značenja
+- Sačuvaj vizuelnu strukturu i stilove originalnog HTML-a (boje, padding, font-size, layout)
+- Zameni samo tekstualne vrednosti i URL-ove
+- Ako nema ctaUrl, ostavi href="#"
+- ISPRAVI pravopisne greške u heroTitle i heroText (naslov i body tekst) — ne menjaj smisao, samo ispravi greške
+- ISPRAVI slova bez dijakritika u srpskom latiničnom pismu u heroTitle i heroText:
+  zameni "c" → "č" ili "ć" (prema kontekstu reči), "s" → "š", "z" → "ž", "dj" → "đ"
+  Primeri: "pridruziti" → "pridružiti", "organizacija" → "organizacija", "cestitamo" → "čestitamo",
+  "saljemo" → "šaljemo", "vise" → "više", "nase" → "naše", "bice" → "biće", "otici" → "otići"
+- NE menjaj ctaText i ctaUrl — koristi ih tačno onako kako su dati
+
+Odgovori ISKLJUČIVO validnim JSON objektom:
+{
+  "html": "string — ažurirani TABLE layout email content kao string (samo inner template)"
+}
+
+HTML pravila:
+- TABLE layout, inline CSS, bez <html>/<head>/<body>/<!DOCTYPE>
+- kompatibilno sa Gmail, Outlook i Apple Mail
+- NE koristiti flexbox ili grid
+- NE dodavati komentare, markdown, tekst van JSON-a
+`;
+
+export async function regenerateCampaignTemplate(
+  existingHtml: string,
+  content: {
+    subject: string;
+    previewText: string;
+    heroTitle: string;
+    heroText: string;
+    ctaText: string;
+    ctaUrl: string;
+  },
+): Promise<string> {
+  const messages: DeepSeekMessage[] = [
+    {
+      role: "user",
+      content: `Postojeći HTML:
+${existingHtml}
+
+Izmenjeni sadržaj (koristi TAČNO ove vrednosti):
+${JSON.stringify(content, null, 2)}
+
+Regeneriši HTML koristeći tačno ovaj sadržaj. Odgovori SAMO JSON objektom sa "html" poljem.`,
+    },
+  ];
+
+  const response = await callDeepSeek({
+    agent: "landing",
+    messages,
+    systemPrompt: REGENERATE_SYSTEM_PROMPT,
+    jsonMode: true,
+  });
+
+  const data = await response.json();
+  const raw = data.choices?.[0]?.message?.content ?? "{}";
+
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    parsed = {};
+  }
+
+  return typeof parsed.html === "string" ? parsed.html : existingHtml;
+}

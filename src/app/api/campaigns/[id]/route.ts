@@ -67,7 +67,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
       }
     }
 
-    const allowed = ["topic", "audience", "tone", "content", "template", "optimization", "abTest", "audienceSegmentId"];
+    const allowed = ["topic", "audience", "tone", "content", "template", "optimization", "abTest", "audienceSegmentId", "recipientContactIds"];
     const update: Record<string, unknown> = {};
     for (const key of allowed) {
       if (key in body) update[key] = body[key];
