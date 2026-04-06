@@ -1,21 +1,18 @@
 /**
  * GET /api/cron
  *
- * Vercel Cron Job — runs once per day at 12:15 UTC (Hobby plan limit).
+ * Vercel Cron Job — runs once per day at 12:15 UTC (Hobby plan).
  * Finds all campaigns with status="scheduled" and sendAt <= now,
- * claims each atomically, then calls /api/internal/send-email for each.
+ * claims each atomically, then calls executeSend() directly (no HTTP).
  *
  * Protected by Vercel's CRON_SECRET (Authorization: Bearer <secret>).
  */
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { EmailCampaign } from "@/models/EmailCampaign";
-
-const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ?? "https://www.marysoll.com";
+import { executeSend } from "@/lib/campaigns/executeSend";
 
 export async function GET(req: NextRequest) {
-  // Vercel injects Authorization: Bearer <CRON_SECRET> on every cron invocation
   const auth = req.headers.get("authorization");
   if (
     process.env.CRON_SECRET &&
@@ -27,7 +24,6 @@ export async function GET(req: NextRequest) {
   await connectToDB();
 
   const now = new Date();
-  const apiKey = process.env.INTERNAL_API_KEY ?? "";
   let processed = 0;
   let claimed: { _id: { toString(): string } } | null;
 
@@ -47,27 +43,11 @@ export async function GET(req: NextRequest) {
     console.log(`[cron] Dispatching campaign ${campaignId}`);
 
     try {
-      const res = await fetch(`${APP_URL}/api/internal/send-email`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-internal-api-key": apiKey,
-        },
-        body: JSON.stringify({ campaignId }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        console.error(`[cron] Campaign ${campaignId} failed: HTTP ${res.status} ${text}`);
-        await EmailCampaign.findByIdAndUpdate(campaignId, {
-          $set: { "scheduling.status": "failed" },
-        });
-      } else {
-        processed++;
-        console.log(`[cron] Campaign ${campaignId} dispatched OK`);
-      }
+      const result = await executeSend(campaignId);
+      console.log(`[cron] Campaign ${campaignId}:`, result);
+      processed++;
     } catch (err) {
-      console.error(`[cron] Campaign ${campaignId} error:`, err);
+      console.error(`[cron] Campaign ${campaignId} failed:`, err);
       await EmailCampaign.findByIdAndUpdate(campaignId, {
         $set: { "scheduling.status": "failed" },
       });
