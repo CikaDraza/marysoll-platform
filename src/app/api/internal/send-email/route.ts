@@ -259,11 +259,20 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Update campaign metrics ───────────────────────────────────────────────
+    const sentAt = new Date();
     campaign.scheduling.status = "sent";
-    campaign.scheduling.sentAt = new Date();
+    campaign.scheduling.sentAt = sentAt;
     campaign.metrics.recipients = totalSent;
     campaign.metrics.delivered = totalSent; // assume delivered = sent; will be refined by opens
     await campaign.save();
+
+    // ── Stamp AudienceContact.lastEmailSent for all recipients ────────────────
+    // Fire-and-forget: don't block the response on this update.
+    const recipientIds = recipients.map((r) => r._id);
+    AudienceContact.updateMany(
+      { _id: { $in: recipientIds } },
+      { $set: { lastEmailSent: sentAt } },
+    ).catch((e) => console.error("[send-email] lastEmailSent update failed:", e));
 
     return NextResponse.json({
       campaignId,

@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { EmailCampaign } from "@/models/EmailCampaign";
 import { CampaignEvent } from "@/models/CampaignEvent";
-import { User } from "@/models/User";
+import { AudienceContact } from "@/models/AudienceContact";
 
 const FALLBACK = process.env.NEXT_PUBLIC_APP_URL ?? "https://marysoll.com";
 
@@ -23,8 +23,9 @@ export async function GET(req: NextRequest) {
     try {
       await connectToDB();
 
-      const user = await User.findById(userId).select("email").lean<{ email: string }>();
-      if (user) {
+      // The `u` param is AudienceContact._id (set by /api/internal/send-email via injectTracking).
+      const contact = await AudienceContact.findById(userId).select("email").lean<{ email: string }>();
+      if (contact) {
         const campaignDoc = await EmailCampaign.findById(campaignId)
           .select("tenantId metrics")
           .lean<{ tenantId: string; metrics: { opens: number; clicks: number; delivered: number } }>();
@@ -37,12 +38,16 @@ export async function GET(req: NextRequest) {
             CampaignEvent.create({
               campaignId,
               tenantId: campaignDoc.tenantId,
-              recipientEmail: user.email,
+              recipientEmail: contact.email,
               recipientUserId: userId,
               type: "click",
               variantId: variantId ?? undefined,
               url,
               timestamp: new Date(),
+            }),
+            // Update AudienceContact engagement stats (clicks worth 2 points each)
+            AudienceContact.findByIdAndUpdate(userId, {
+              $inc: { clickCount: 1, engagementScore: 2 },
             }),
           ]);
 

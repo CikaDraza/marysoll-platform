@@ -8,6 +8,12 @@ if (!process.env.REDIS_URL) {
 const connection = new IORedis(process.env.REDIS_URL, {
   maxRetriesPerRequest: null,
   enableReadyCheck: false,
+  // Prevent serverless functions from hanging indefinitely when Redis is slow.
+  // connectTimeout: give up after 5s if TCP connection cannot be established.
+  // commandTimeout:  fail individual commands after 8s (well inside Vercel's 10s limit).
+  connectTimeout: 5000,
+  commandTimeout: 8000,
+  tls: process.env.REDIS_URL.startsWith("rediss://") ? {} : undefined,
 });
 
 export const emailCampaignQueue = new Queue("email-campaign-queue", {

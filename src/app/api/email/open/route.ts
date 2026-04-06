@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { EmailCampaign } from "@/models/EmailCampaign";
 import { CampaignEvent } from "@/models/CampaignEvent";
-import { User } from "@/models/User";
+import { AudienceContact } from "@/models/AudienceContact";
 
 const PIXEL = Buffer.from(
   "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
@@ -25,8 +25,9 @@ export async function GET(req: NextRequest) {
     try {
       await connectToDB();
 
-      const user = await User.findById(userId).select("email").lean<{ email: string }>();
-      if (user) {
+      // The `u` param is AudienceContact._id (set by /api/internal/send-email via injectTracking).
+      const contact = await AudienceContact.findById(userId).select("email").lean<{ email: string }>();
+      if (contact) {
         await Promise.all([
           // Increment campaign open counter
           EmailCampaign.findByIdAndUpdate(campaignId, {
@@ -38,11 +39,15 @@ export async function GET(req: NextRequest) {
             tenantId: (
               await EmailCampaign.findById(campaignId).select("tenantId").lean<{ tenantId: string }>()
             )?.tenantId,
-            recipientEmail: user.email,
+            recipientEmail: contact.email,
             recipientUserId: userId,
             type: "open",
             variantId: variantId ?? undefined,
             timestamp: new Date(),
+          }),
+          // Update AudienceContact engagement stats (opens worth 1 point each)
+          AudienceContact.findByIdAndUpdate(userId, {
+            $inc: { openCount: 1, engagementScore: 1 },
           }),
         ]);
 
