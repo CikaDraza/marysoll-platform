@@ -240,7 +240,7 @@ function FriendsChat() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.8 }}
-      className="bg-gray-900 rounded-3xl p-6 w-full max-w-lg h-[768px] mx-auto shadow-2xl"
+      className="bg-gray-900 rounded-3xl p-6 w-full max-w-lg h-[880px] lg:h-[768px] mx-auto shadow-2xl"
     >
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
@@ -509,7 +509,7 @@ export function MarketingHomePageSecond() {
               href="/register"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-violet-600 text-white px-5 py-2 rounded-full text-sm font-bold transition shadow-lg shadow-violet-200"
+              className="hidden md:block bg-violet-600 text-white px-5 py-2 rounded-full text-sm font-bold transition shadow-lg shadow-violet-200"
             >
               Počni besplatno
             </motion.a>
@@ -551,7 +551,7 @@ export function MarketingHomePageSecond() {
           >
             <motion.div
               variants={fadeInUp}
-              className="inline-flex items-center gap-2 bg-violet-100 text-violet-700 px-4 py-1.5 rounded-full text-sm font-medium mb-6"
+              className="inline-flex items-center gap-2 bg-violet-100 text-violet-700 px-4 py-1.5 rounded-full text-sm font-medium my-6"
             >
               <span className="w-2 h-2 bg-violet-500 rounded-full animate-pulse" />
               Nova generacija salona

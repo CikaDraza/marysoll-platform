@@ -203,7 +203,7 @@ export function NotificationBell({ tenantSlug }: NotificationBellProps) {
       </MenuButton>
 
       {/* Dropdown */}
-      <MenuItems className="absolute right-0 z-50 mt-2 w-80 lg:w-96 origin-top-right rounded-2xl bg-white shadow-xl ring-1 ring-zinc-200 focus:outline-none overflow-hidden">
+      <MenuItems className="absolute -right-44 md:-right-0 z-50 mt-2 w-80 lg:w-96 origin-top-right rounded-2xl bg-white shadow-xl ring-1 ring-zinc-200 focus:outline-none overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100">
           <div className="flex items-center gap-2">
