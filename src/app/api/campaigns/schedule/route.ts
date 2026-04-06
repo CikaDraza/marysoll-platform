@@ -1,10 +1,16 @@
-// POST /api/campaigns/schedule — save campaign and enqueue for sending
+// POST /api/campaigns/schedule — save campaign and mark it scheduled
+//
+// Architecture note:
+//   This route ONLY writes to MongoDB. It does NOT touch Redis.
+//   A long-running worker on Railway polls MongoDB every 60 s for campaigns
+//   whose sendAt has passed and processes them via /api/internal/send-email.
+//
+//   This avoids IORedis TCP connection issues in Vercel serverless functions.
 import { NextResponse } from "next/server";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { requireFeature } from "@/lib/plans/planEnforcement";
 import { connectToDB } from "@/lib/db/mongodb";
 import { EmailCampaign } from "@/models/EmailCampaign";
-import { emailCampaignQueue } from "@/lib/queues/emailCampaignQueue";
 
 interface ScheduleBody {
   campaignId: string;
@@ -59,14 +65,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Enqueue the send job — worker runs in a separate service
-    const delay = Math.max(0, sendDate.getTime() - Date.now());
-    await emailCampaignQueue.add(
-      "send-campaign",
-      { campaignId: campaign._id.toString() },
-      { delay },
-    );
-
+    // The Railway worker polls MongoDB every 60 s and picks this up automatically.
     return NextResponse.json({
       campaignId: campaign._id.toString(),
       status: "scheduled",
