@@ -12,7 +12,7 @@ Generiši email templejt i odgovori ISKLJUČIVO validnim JSON objektom bez ikakv
 
 JSON mora imati TAČNO ovu strukturu:
 {
-  "html": "string — kompletan HTML email kao string (TABLE layout, inline CSS, max 600px)",
+  "html": "string — TABLE layout email content kao string (samo inner template)",
   "blocks": [
     { "type": "hero",    "priority": 1, "data": { "headline": "string", "subheadline": "string" } },
     { "type": "text",    "priority": 2, "data": { "content": "string" } },
@@ -21,18 +21,42 @@ JSON mora imati TAČNO ovu strukturu:
   ]
 }
 
+VAŽNO:
+HTML mora biti samo email CONTENT koji ide unutar postojećeg email wrappera.
+
+NE generisati:
+- <html>
+- <head>
+- <body>
+- <!DOCTYPE>
+
+Wrapper već sadrži:
+- html dokument
+- header (logo + naziv tenanta)
+- footer (unsubscribe + settings)
+- centralni container širine 600px
+
+Zato generiši samo sadržaj emaila.
+
 Pravila za HTML:
-- TABLE layout obavezno
+- koristiti TABLE layout
 - inline CSS (bez <style> taga)
-- maksimalna širina 600px
-- kompatibilno sa Gmail, Outlook, Apple Mail
+- širina tabele 100% (wrapper kontroliše max-width)
+- kompatibilno sa Gmail, Outlook i Apple Mail
 - NE koristiti flexbox ili grid
+- koristiti samo <table>, <tr>, <td>, <img>, <a>, <p>, <strong>, <br>
 
 Pravila za blocks:
-- blocks mora biti niz sa 2–6 elemenata
+- blocks mora imati 2–6 elemenata
 - Dozvoljeni tipovi: hero, text, bullets, cta, divider, image
-- priority je redosled prikaza (1 = prvo)
-- NE dodavaj nikakve komentare, markdown, ni tekst van JSON-a
+- priority označava redosled prikaza (1 = prvo)
+
+VAŽNO:
+- HTML mora biti jedna <table> struktura
+- svi stilovi moraju biti inline
+- NE dodavati komentare
+- NE dodavati markdown
+- NE dodavati tekst van JSON objekta
 `;
 
 export async function generateCampaignTemplate(

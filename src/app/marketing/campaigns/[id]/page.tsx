@@ -3,15 +3,20 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { useCampaign, useScheduleCampaignFromList, useAudienceSegments, useUpdateCampaignAudience } from "@/hooks/campaigns/useCampaigns";
+import {
+  useCampaign,
+  useScheduleCampaignFromList,
+  useAudienceSegments,
+  useUpdateCampaignAudience,
+  useCampaignRecipients,
+} from "@/hooks/campaigns/useCampaigns";
 import { ScheduleModal } from "@/components/campaigns/CampaignTable";
 import type { CampaignRow } from "@/components/campaigns/CampaignTable";
 import type { CampaignStatus } from "@/models/EmailCampaign";
 
 const STATUS_BADGE: Record<CampaignStatus, string> = {
   draft: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-  scheduled:
-    "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  scheduled: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
   sending:
     "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
   sent: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
@@ -63,6 +68,9 @@ export default function CampaignDetailPage() {
   const updateAudience = useUpdateCampaignAudience(id);
   const [showSchedule, setShowSchedule] = useState(false);
   const [audienceSaving, setAudienceSaving] = useState(false);
+  const [showRecipients, setShowRecipients] = useState(false);
+  const { data: recipientsData, isLoading: recipientsLoading } =
+    useCampaignRecipients(id, showRecipients);
 
   if (isLoading) {
     return (
@@ -233,6 +241,63 @@ export default function CampaignDetailPage() {
             </Section>
           )}
 
+          {/* Recipients */}
+          <Section title="Primaoci">
+            <div className="space-y-3">
+              {!showRecipients ? (
+                <button
+                  onClick={() => setShowRecipients(true)}
+                  className="w-full px-4 py-2.5 rounded-xl text-sm font-medium border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  {status === "sent" ? "Prikaži primaoce" : "Pregled primalaca"}
+                </button>
+              ) : recipientsLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <div className="w-5 h-5 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin" />
+                </div>
+              ) : recipientsData ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                      {recipientsData.count}{" "}
+                      {recipientsData.source === "sent"
+                        ? "primljeno"
+                        : "primalaca (preview)"}
+                    </p>
+                    <button
+                      onClick={() => setShowRecipients(false)}
+                      className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    >
+                      Sakrij
+                    </button>
+                  </div>
+                  {recipientsData.recipients.length === 0 ? (
+                    <p className="text-sm text-gray-400 dark:text-gray-500">
+                      Nema primalaca.
+                    </p>
+                  ) : (
+                    <ul className="max-h-64 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                      {recipientsData.recipients.map((r) => (
+                        <li
+                          key={r.email}
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
+                          <span className="truncate">{r.email}</span>
+                          {r.name && (
+                            <span className="ml-auto text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
+                              {r.name}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          </Section>
+
           {/* HTML preview */}
           {c.template?.html && (
             <Section title="HTML Preview">
@@ -255,7 +320,8 @@ export default function CampaignDetailPage() {
             <Section title="Ciljna publika">
               <div className="space-y-3">
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Izaberi segment primalaca. Podrazumevano se šalje svim aktivnim klijentima.
+                  Izaberi segment primalaca. Podrazumevano se šalje svim
+                  aktivnim klijentima.
                 </p>
                 <select
                   className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400 transition"
@@ -266,13 +332,19 @@ export default function CampaignDetailPage() {
                   {segments.map((seg) => (
                     <option key={seg._id} value={seg._id}>
                       {seg.name}
-                      {seg.estimatedCount > 0 ? ` (~${seg.estimatedCount})` : ""}
+                      {seg.estimatedCount > 0
+                        ? ` (~${seg.estimatedCount})`
+                        : ""}
                     </option>
                   ))}
                 </select>
                 <button
                   onClick={async () => {
-                    const sel = (document.getElementById("audience-segment-select") as HTMLSelectElement).value;
+                    const sel = (
+                      document.getElementById(
+                        "audience-segment-select",
+                      ) as HTMLSelectElement
+                    ).value;
                     setAudienceSaving(true);
                     try {
                       await updateAudience.mutateAsync(sel || null);
@@ -287,7 +359,9 @@ export default function CampaignDetailPage() {
                 </button>
                 {c.audienceSegmentId && (
                   <p className="text-xs text-violet-600 dark:text-violet-400">
-                    Aktivan segment: {segments.find((s) => s._id === c.audienceSegmentId)?.name ?? c.audienceSegmentId}
+                    Aktivan segment:{" "}
+                    {segments.find((s) => s._id === c.audienceSegmentId)
+                      ?.name ?? c.audienceSegmentId}
                   </p>
                 )}
                 {!c.audienceSegmentId && (
@@ -302,10 +376,7 @@ export default function CampaignDetailPage() {
           {/* Scheduling */}
           <Section title="Zakazivanje">
             <div className="space-y-3">
-              <Field
-                label="Status"
-                value={STATUS_LABEL[status]}
-              />
+              <Field label="Status" value={STATUS_LABEL[status]} />
               {c.scheduling.sendAt && (
                 <Field
                   label="Zakazano za"

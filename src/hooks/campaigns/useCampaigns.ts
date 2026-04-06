@@ -52,6 +52,28 @@ export interface AudienceSegmentRow {
   };
 }
 
+export interface CampaignRecipient {
+  email: string;
+  name?: string;
+}
+
+export interface CampaignRecipientsResult {
+  count: number;
+  recipients: CampaignRecipient[];
+  source: "sent" | "preview";
+}
+
+export function useCampaignRecipients(id: string, enabled: boolean) {
+  return useQuery<CampaignRecipientsResult>({
+    queryKey: ["campaign-recipients", id],
+    queryFn: async () => {
+      const res = await api.get<CampaignRecipientsResult>(`/campaigns/${id}/recipients`);
+      return res.data;
+    },
+    enabled: !!id && enabled,
+  });
+}
+
 export function useAudienceSegments() {
   return useQuery<AudienceSegmentRow[]>({
     queryKey: ["audience-segments"],

@@ -15,6 +15,7 @@ import type {
   EmailCampaignStrategy,
   EmailCampaignTemplate,
 } from "@/types/ai/email-campaign/aiEmailCampaign.types";
+import LoaderButton from "@/components/elements/LoaderButton";
 
 interface Props {
   optimization?: EmailCampaignOptimization | null;
@@ -198,9 +199,7 @@ export function CampaignOptimizationPanel({
       <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
         <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
           <span>🎉</span>
-          <span>
-            Kampanja je kompletno generisana i optimizovana.
-          </span>
+          <span>Kampanja je kompletno generisana i optimizovana.</span>
         </div>
 
         {/* UsageStats inline */}
@@ -254,7 +253,7 @@ export function CampaignOptimizationPanel({
               disabled={!sendAt || scheduleMutation.isPending}
               className="px-4 py-2 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
             >
-              {scheduleMutation.isPending ? "..." : "Zakaži"}
+              {scheduleMutation.isPending ? <LoaderButton /> : "Zakaži"}
             </button>
           </div>
         )}

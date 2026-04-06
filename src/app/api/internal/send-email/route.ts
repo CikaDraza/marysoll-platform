@@ -11,11 +11,12 @@
  * Flow:
  *  1. Auth check
  *  2. Load EmailCampaign from DB (idempotency: skip if already sent)
- *  3. Resolve recipients — audience segment or all active CLIENTs
- *  4. If A/B test enabled: split audience 50/50, each half gets different subject
- *  5. Inject open-tracking pixel + wrap CTA with click-tracking URL
- *  6. Send batch emails via Resend (max 50 per call)
- *  7. Update campaign metrics + status
+ *  3. Resolve recipients — audience segment or all active subscribed contacts
+ *  4. Wrap inner HTML with wrapEmailLayout (salon branding, header, footer)
+ *  5. If A/B test enabled: split audience 50/50, each half gets different subject
+ *  6. Inject open-tracking pixel + wrap CTA with click-tracking URL
+ *  7. Send batch emails via Resend (max 50 per call)
+ *  8. Update campaign metrics + status
  */
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
@@ -24,6 +25,7 @@ import { AudienceSegment } from "@/models/AudienceSegment";
 import { AudienceContact } from "@/models/AudienceContact";
 import { CampaignEvent } from "@/models/CampaignEvent";
 import { resend } from "@/lib/email/resend";
+import { wrapEmailLayout } from "@/lib/email/wrapEmailLayout";
 import { Types } from "mongoose";
 
 interface SendEmailPayload {
@@ -126,9 +128,10 @@ export async function POST(req: NextRequest) {
       if (segment?.filters?.tags?.length) {
         contactQuery.tags = { $in: segment.filters.tags };
       }
-    } else {
-      contactQuery.contactType = "CLIENT";
+      // If segment exists but has no role/tag filters, fall through to all contacts
     }
+    // No else: when no segment is selected, send to ALL active subscribed contacts
+    // (CLIENT, NEWSLETTER, LEAD, etc.) — do not restrict by contactType.
 
     const contactDocs = await AudienceContact.find(contactQuery)
       .select("_id email firstName lastName")
@@ -149,8 +152,8 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Validate HTML template ────────────────────────────────────────────────
-    const html = campaign.template?.html;
-    if (!html) {
+    const innerHtml = campaign.template?.html;
+    if (!innerHtml) {
       campaign.scheduling.status = "failed";
       await campaign.save();
       return NextResponse.json(
@@ -158,6 +161,15 @@ export async function POST(req: NextRequest) {
         { status: 422 },
       );
     }
+
+    // ── Wrap inner content with salon-branded layout ──────────────────────────
+    // The AI agent produces only the inner <table> content. wrapEmailLayout adds
+    // the full DOCTYPE shell, salon logo, header, footer and unsubscribe link.
+    const html = await wrapEmailLayout({
+      title: campaign.content?.subject ?? campaign.salonName,
+      content: innerHtml,
+      tenantId: campaign.tenantId?.toString() ?? null,
+    });
 
     const ctaUrl = campaign.content?.ctaUrl || undefined;
     const FROM = process.env.EMAIL_FROM ?? "noreply@marysoll.com";
