@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { useCampaign, useScheduleCampaignFromList } from "@/hooks/campaigns/useCampaigns";
+import { useCampaign, useScheduleCampaignFromList, useAudienceSegments, useUpdateCampaignAudience } from "@/hooks/campaigns/useCampaigns";
 import { ScheduleModal } from "@/components/campaigns/CampaignTable";
 import type { CampaignRow } from "@/components/campaigns/CampaignTable";
 import type { CampaignStatus } from "@/models/EmailCampaign";
@@ -59,7 +59,10 @@ export default function CampaignDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: campaign, isLoading, error } = useCampaign(id);
   const scheduleMutation = useScheduleCampaignFromList();
+  const { data: segments = [] } = useAudienceSegments();
+  const updateAudience = useUpdateCampaignAudience(id);
   const [showSchedule, setShowSchedule] = useState(false);
+  const [audienceSaving, setAudienceSaving] = useState(false);
 
   if (isLoading) {
     return (
@@ -95,6 +98,7 @@ export default function CampaignDetailPage() {
     audience?: string;
     tone: string;
     salonName: string;
+    audienceSegmentId?: string;
     strategy?: { keyAngle?: string; promotionIdea?: string };
     content?: {
       subject?: string;
@@ -246,6 +250,55 @@ export default function CampaignDetailPage() {
 
         {/* Right col */}
         <div className="space-y-5">
+          {/* Audience selection — editable for draft + scheduled */}
+          {(isDraft || isScheduled) && (
+            <Section title="Ciljna publika">
+              <div className="space-y-3">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Izaberi segment primalaca. Podrazumevano se šalje svim aktivnim klijentima.
+                </p>
+                <select
+                  className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400 transition"
+                  defaultValue={c.audienceSegmentId ?? ""}
+                  id="audience-segment-select"
+                >
+                  <option value="">Svi aktivni klijenti (podrazumevano)</option>
+                  {segments.map((seg) => (
+                    <option key={seg._id} value={seg._id}>
+                      {seg.name}
+                      {seg.estimatedCount > 0 ? ` (~${seg.estimatedCount})` : ""}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={async () => {
+                    const sel = (document.getElementById("audience-segment-select") as HTMLSelectElement).value;
+                    setAudienceSaving(true);
+                    try {
+                      await updateAudience.mutateAsync(sel || null);
+                    } finally {
+                      setAudienceSaving(false);
+                    }
+                  }}
+                  disabled={audienceSaving}
+                  className="w-full px-4 py-2 rounded-xl text-sm font-semibold bg-violet-600 hover:bg-violet-700 text-white transition-colors disabled:opacity-50"
+                >
+                  {audienceSaving ? "Čuvanje..." : "Primeni segment"}
+                </button>
+                {c.audienceSegmentId && (
+                  <p className="text-xs text-violet-600 dark:text-violet-400">
+                    Aktivan segment: {segments.find((s) => s._id === c.audienceSegmentId)?.name ?? c.audienceSegmentId}
+                  </p>
+                )}
+                {!c.audienceSegmentId && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    Nije izabran segment — šalje se svim klijentima.
+                  </p>
+                )}
+              </div>
+            </Section>
+          )}
+
           {/* Scheduling */}
           <Section title="Zakazivanje">
             <div className="space-y-3">

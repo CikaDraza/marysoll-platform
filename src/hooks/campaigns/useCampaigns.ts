@@ -40,6 +40,40 @@ export function useDeleteCampaign() {
   });
 }
 
+export interface AudienceSegmentRow {
+  _id: string;
+  name: string;
+  estimatedCount: number;
+  filters: {
+    roles?: string[];
+    tags?: string[];
+    subscribed?: boolean;
+    lastVisitDays?: number;
+  };
+}
+
+export function useAudienceSegments() {
+  return useQuery<AudienceSegmentRow[]>({
+    queryKey: ["audience-segments"],
+    queryFn: async () => {
+      const res = await api.get<{ segments: AudienceSegmentRow[] }>("/audience-segments");
+      return res.data.segments;
+    },
+  });
+}
+
+export function useUpdateCampaignAudience(campaignId: string) {
+  const qc = useQueryClient();
+  return useMutation<void, Error, string | null>({
+    mutationFn: async (audienceSegmentId) => {
+      await api.patch(`/campaigns/${campaignId}`, { audienceSegmentId: audienceSegmentId ?? null });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["campaign", campaignId] });
+    },
+  });
+}
+
 export function useScheduleCampaignFromList() {
   const qc = useQueryClient();
   return useMutation<

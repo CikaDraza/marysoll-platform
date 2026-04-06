@@ -42,19 +42,32 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
     const body = (await req.json()) as Record<string, unknown>;
 
-    // Only allow editing drafts
+    // Only allow editing drafts (or scheduled for audience-only updates)
     const existing = await EmailCampaign.findOne({ _id: id, tenantId });
     if (!existing) {
       return NextResponse.json({ error: "Kampanja nije pronađena" }, { status: 404 });
     }
-    if (existing.scheduling.status !== "draft") {
+
+    const editableStatuses = ["draft", "scheduled"];
+    if (!editableStatuses.includes(existing.scheduling.status)) {
       return NextResponse.json(
-        { error: "Samo kampanje u statusu 'draft' se mogu izmeniti" },
+        { error: "Kampanja se ne može izmeniti u trenutnom statusu" },
         { status: 422 },
       );
     }
 
-    const allowed = ["topic", "audience", "tone", "content", "template", "optimization", "abTest"];
+    // Scheduled campaigns may only update audienceSegmentId
+    if (existing.scheduling.status === "scheduled") {
+      const nonAudience = Object.keys(body).filter((k) => k !== "audienceSegmentId");
+      if (nonAudience.length > 0) {
+        return NextResponse.json(
+          { error: "Zakazana kampanja može promeniti samo ciljnu publiku" },
+          { status: 422 },
+        );
+      }
+    }
+
+    const allowed = ["topic", "audience", "tone", "content", "template", "optimization", "abTest", "audienceSegmentId"];
     const update: Record<string, unknown> = {};
     for (const key of allowed) {
       if (key in body) update[key] = body[key];
