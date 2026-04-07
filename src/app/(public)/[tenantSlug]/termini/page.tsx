@@ -212,7 +212,7 @@ export default async function TerminiPage({ params }: Props) {
           >
             <h3 className="font-bold text-gray-800 text-md">Pravila salona</h3>
             <Link
-              href={`${base}/pravila-salona-zakazivanje`}
+              href={`${base}/pravila-zakazivanja`}
               className="text-gray-600 text-sm font-bold hover:underline"
             >
               Saznaj više →

@@ -614,6 +614,7 @@ export interface TestimonialNotificationData {
   rating: number;
   comment: string;
   adminReply?: string;
+  tenantId?: string | null;
 }
 
 // ─── Salon Profile ────────────────────────────────────────────────────────────

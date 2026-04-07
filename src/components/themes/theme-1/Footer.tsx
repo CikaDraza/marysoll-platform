@@ -24,6 +24,9 @@ export function Theme1Footer({
   const navItems = [
     { name: "Naslovna", href: `${base}/` },
     { name: "Usluge", href: `${base}/usluge` },
+    { name: "Cookie Policy", href: `${base}/cookie-policy` },
+    { name: "Pravila zakazivanja", href: `${base}/pravila-zakazivanja` },
+    { name: "Politika privatnosti", href: `${base}/politika-privatnosti` },
     { name: "Termini", href: `${base}/termini`, cta: true },
   ];
 
