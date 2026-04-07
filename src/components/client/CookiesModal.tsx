@@ -30,11 +30,14 @@ export function CookiesModal({ tenantSlug }: Props) {
     loadConsent();
   }, [open, consent]);
 
-  // Auto-open dialog on first visit (no cookie_consent_v1 in localStorage)
+  // Auto-open dialog on first visit (no cookie_consent_v2 in localStorage)
   useEffect(() => {
-    if (ready && !consent) {
-      setOpen(true);
+    async function checkConsent() {
+      if (ready && consent && !consent.decided) {
+        setOpen(true);
+      }
     }
+    checkConsent();
   }, [ready, consent]);
 
   // Listen for custom event to open preferences dialog (e.g. from cookie-policy page)
@@ -74,7 +77,7 @@ export function CookiesModal({ tenantSlug }: Props) {
       {!consent?.decided && (
         <div className="fixed left-0 bottom-6 z-50">
           <div className="absolute w-xs lg:w-xl h-full z-50 flex items-end justify-center p-4">
-            <div className="w-full rounded-xl bg-white shadow-xl">
+            <div className="w-full rounded-xl bg-white shadow-2xl">
               <div className="px-6 py-5">
                 <div className="flex items-start gap-4">
                   <div className="flex size-12 items-center justify-center shrink-0 rounded-full bg-yellow-100">
@@ -127,7 +130,7 @@ export function CookiesModal({ tenantSlug }: Props) {
         <div className="fixed inset-0 bg-black/40" />
         <div className="fixed inset-0 flex items-end justify-center p-4 z-50">
           <DialogPanel className="w-full max-w-lg rounded-xl bg-white p-6 shadow-lg">
-            <DialogTitle className="text-lg! font-semibold">
+            <DialogTitle className="text-lg text-gray-900 font-semibold">
               Podešavanje kolačića
             </DialogTitle>
 

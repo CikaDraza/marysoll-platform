@@ -9,7 +9,7 @@ export type CookieCategories = {
   decided?: boolean;
 };
 
-const STORAGE_KEY = "cookie_consent_v1";
+const STORAGE_KEY = "cookie_consent_v2";
 
 export function useCookieConsent() {
   const [consent, setConsent] = useState<CookieCategories | null>(null);
@@ -56,7 +56,7 @@ export function useCookieConsent() {
     (selection: Omit<CookieCategories, "necessary">) => {
       save({ necessary: true, ...selection, decided: true });
     },
-    [save]
+    [save],
   );
 
   const declineAll = useCallback(() => {

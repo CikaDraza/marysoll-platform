@@ -385,6 +385,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       "/usluge",
       "/forgot-password",
       "/resend-verification",
+      "/cookie-policy",
+      "/pravila-privatnosti",
+      "/pravila-zakazivanja",
+      "/newsletter",
     ]);
 
     // Match exact path OR path that starts with one of the client tenant paths
