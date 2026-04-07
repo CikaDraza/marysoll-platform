@@ -4,7 +4,6 @@ import { useCookieConsent } from "@/hooks/useCookieConsent";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface Props {
@@ -15,12 +14,8 @@ interface Props {
 export function CookiesModal({ tenantSlug }: Props) {
   const { consent, ready, acceptAll, acceptSelected, declineAll } =
     useCookieConsent();
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [tmp, setTmp] = useState({ functional: false, analytics: false });
-
-  // Hide entirely on the tenant home page (both custom domain "/" and path-based "/slug")
-  const isHomePage = pathname === "/" || pathname === `/${tenantSlug}`;
 
   // Sync checkbox state with current consent when dialog opens
   useEffect(() => {
@@ -59,8 +54,8 @@ export function CookiesModal({ tenantSlug }: Props) {
     return () => window.removeEventListener("hashchange", checkHash);
   }, []);
 
-  // Don't render until localStorage is read, or on the home page
-  if (!ready || isHomePage) return null;
+  // Don't render until localStorage is read
+  if (!ready) return null;
 
   const cookiePolicyHref = tenantSlug
     ? `/${tenantSlug}/cookie-policy`
