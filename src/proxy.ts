@@ -409,9 +409,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       !PLATFORM_SUBDOMAINS.has(host.slice(0, -(BASE_DOMAIN.length + 1)));
     const isHostBased = isCustomDomain(hostname, BASE_DOMAIN) || isTenantSubdomain;
 
-    if (tenantSlug && isHostBased && matchesClientPath) {
+    if (tenantSlug && isHostBased && (matchesClientPath || pathname === "/")) {
       const rewriteUrl = new URL(
-        `/${tenantSlug}${pathname}`,
+        `/${tenantSlug}${pathname === "/" ? "" : pathname}`,
         request.nextUrl.origin,
       );
       rewriteUrl.search = request.nextUrl.search;
