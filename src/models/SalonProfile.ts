@@ -1,6 +1,11 @@
-import mongoose, { model, models, Types } from "mongoose";
+import mongoose, { model, models, Schema, Types } from "mongoose";
 
 export type LandingTheme = "theme-1" | "theme-2" | "theme-3";
+
+const itemsSchema = new mongoose.Schema({
+  question: { type: String, required: true },
+  answer: { type: String, required: true },
+});
 
 const SalonProfileSchema = new mongoose.Schema(
   {
@@ -12,6 +17,44 @@ const SalonProfileSchema = new mongoose.Schema(
     name: { type: String, required: true },
     email: { type: String, required: true },
     description: { type: String },
+    landingStructure: {
+      hero: {
+        headline: { type: String, required: false },
+        subheadline: { type: String, required: false },
+        whereWhatForWhom: { type: String, required: false },
+      },
+      CTA: {
+        label: { type: String, required: false },
+        href: { type: String, required: false },
+      },
+      portfolio: {
+        headline: { type: String, required: false },
+        subheadline: { type: String, required: false },
+        categories: {
+          name: { type: String, required: false },
+          images: { type: [String], required: false },
+        },
+      },
+      services: { type: [Schema.Types.ObjectId], ref: "Service" },
+      about: {
+        headline: { type: String, required: false },
+        descriptions: { type: [String], required: false },
+      },
+      appointmentProcess: {
+        headline: { type: String, required: false },
+        subheadline: { type: String, required: false },
+        items: { type: [String], required: false },
+      },
+      testimonials: {
+        headline: { type: String, required: false },
+        subheadline: { type: String, required: false },
+      },
+      faq: {
+        headline: { type: String, required: false },
+        subheadline: { type: String, required: false },
+        items: [itemsSchema],
+      },
+    },
     logo: { type: String, required: false, default: null },
     phone: { type: String, required: false, default: "" },
     city: { type: String, required: false, default: "" },

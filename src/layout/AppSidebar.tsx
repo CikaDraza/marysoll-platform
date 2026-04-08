@@ -30,7 +30,8 @@ const Icon = ({ d, size = 20 }: { d: string | string[]; size?: number }) => (
 );
 
 const icons = {
-  dashboard: "M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z",
+  dashboard:
+    "M11.875 6.25V0H20V6.25H11.875ZM0 10V0H8.125V10H0ZM11.875 20V10H20V20H11.875ZM0 20V13.75H8.125V20H0ZM1 9H7V1H1V9ZM12.5 19H19V11H12.5V19ZM13 5.5H19V1H13V5.5ZM0.5 19.5H7.5V14.5H0.5V19.5Z",
   calendar:
     "M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z",
   scissors:
@@ -286,7 +287,7 @@ const AppSidebar: React.FC = () => {
                     </span>
                     {item.subItems && (
                       <svg
-                        className={`w-4 h-4 transition-transform duration-200 text-gray-400 ${submenuOpen ? "rotate-180 text-violet-500" : ""}`}
+                        className={`w-4 h-4 transition-transform duration-200 text-gray-400 ${submenuOpen ? "rotate-180 text-violet-500" : "rotate-0 text-gray-400"}`}
                         viewBox="0 0 24 24"
                         fill="none"
                       >

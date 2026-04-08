@@ -3,14 +3,13 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
-const API_KEY = process.env.API_KEY_IMAGE_GENERATION;
+const API_KEY = process.env.API_KEY_OPEN_IMAGE_GEN;
 
 if (!API_KEY) {
-  throw new Error("API_KEY_IMAGE_GENERATION environment variable not set");
+  throw new Error("API_KEY_OPEN_IMAGE_GEN environment variable not set");
 }
 
 const openai = new OpenAI({
-  baseURL: "https://api.deepseek.com/v1",
   apiKey: API_KEY,
 });
 
@@ -28,12 +27,9 @@ export async function POST(req: Request) {
     const enhancedPrompt = `Create a visually stunning, high-fashion image for a makeup, nail salons, wellness, massage or spa beauty industry: "${prompt}". The image should be professional, elegant, and suitable for a beauty salon website.`;
 
     const response = await openai.images.generate({
-      model: "dall-e-3",
+      model: "gpt-image-1",
       prompt: enhancedPrompt,
-      n: 1,
       size: "1024x1024",
-      quality: "standard",
-      response_format: "url",
     });
 
     if (!response.data) {

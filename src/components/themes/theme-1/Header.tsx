@@ -53,8 +53,8 @@ export function Theme1Header({
   const displayName = salonName ?? "Salon";
 
   return (
-    <header className="absolute inset-x-0 top-0 z-50">
-      <nav className="flex items-center justify-between py-5 px-6 lg:px-12">
+    <header className="bg-transparent absolute w-full lg:w-7xl mx-auto inset-x-0 top-0 z-50">
+      <nav className="flex items-center justify-between py-5 px-2 lg:px-0">
         <Link href={`${base}/`} className="flex items-center gap-2">
           {logoSrc ? (
             <div className="flex items-center">
@@ -64,15 +64,14 @@ export function Theme1Header({
                 width={140}
                 height={48}
                 className="h-12 w-auto"
+                preload={true}
               />
-              <span className="text-xs font-bold text-(--primary-color)">
+              <span className="text-xs font-bold text-black">
                 {displayName}
               </span>
             </div>
           ) : (
-            <span className="text-xl font-bold text-(--primary-color)">
-              {displayName}
-            </span>
+            <span className="text-xl font-bold text-black">{displayName}</span>
           )}
         </Link>
 
@@ -157,9 +156,9 @@ export function Theme1Header({
               </span>
               <button
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-2 rounded-lg hover:bg-gray-100"
+                className="p-2 cursor-pointer"
               >
-                <XMarkIcon className="size-5" />
+                <XMarkIcon className="size-5 text-(--primary-color) transition" />
               </button>
             </div>
             <div className="space-y-4">

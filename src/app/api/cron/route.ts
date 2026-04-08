@@ -14,10 +14,7 @@ import { executeSend } from "@/lib/campaigns/executeSend";
 
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization");
-  if (
-    process.env.CRON_SECRET &&
-    auth !== `Bearer ${process.env.CRON_SECRET}`
-  ) {
+  if (process.env.CRON_SECRET && auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -40,11 +37,9 @@ export async function GET(req: NextRequest) {
     if (!claimed) break;
 
     const campaignId = claimed._id.toString();
-    console.log(`[cron] Dispatching campaign ${campaignId}`);
 
     try {
-      const result = await executeSend(campaignId);
-      console.log(`[cron] Campaign ${campaignId}:`, result);
+      await executeSend(campaignId);
       processed++;
     } catch (err) {
       console.error(`[cron] Campaign ${campaignId} failed:`, err);

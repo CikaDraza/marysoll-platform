@@ -50,6 +50,7 @@ import { Theme3ImageGenerationSection } from "./theme-3/ImageGenerationSection";
 import { Theme3AppointmentSection } from "./theme-3/AppointmentSection";
 import { Theme3TestimonialsSection } from "./theme-3/TestimonialsSection";
 import { Theme1ImageGenerationSection } from "./theme-1/ImageGenerationSection";
+import { Theme1AboutUs } from "./theme-1";
 
 interface Testimonial {
   _id: string;
@@ -111,8 +112,24 @@ export function ThemeLayout({
       <div className="min-h-screen flex flex-col bg-white">
         <Theme1Header {...headerProps} />
         <main className="flex-1 overflow-x-hidden flex flex-col pt-20">
-          <Theme1Hero salon={salon} />
-          {/* <Theme1HeroSecond salonName={salon.name} description={salon.description} /> */}
+          <Theme1Hero
+            salon={salon}
+            heroData={
+              salon?.landingStructure?.hero || {
+                headline: "",
+                whereWhatForWhom: "",
+              }
+            }
+            cta={salon?.landingStructure?.CTA || { label: "", href: "" }}
+          />
+          <Theme1AboutUs
+            about={
+              salon?.landingStructure?.about || {
+                headline: "",
+                subheadline: "",
+              }
+            }
+          />
           {services.length > 0 && <Theme1WhatOffer services={services} />}
           <Theme1WhyChooseUs />
           {showGallery && <Theme1GallerySection instagramUrl={instagram} />}

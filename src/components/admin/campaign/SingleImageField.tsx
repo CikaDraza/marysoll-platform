@@ -21,8 +21,11 @@ interface SingleImageFieldProps {
  * Koristi se za email-only kampanje (Glavna slika)
  */
 export function SingleImageField({ value, onChange }: SingleImageFieldProps) {
-  const { data: cloudinaryData, isLoading: isLoadingImages, refetch } =
-    useCloudinaryImages();
+  const {
+    data: cloudinaryData,
+    isLoading: isLoadingImages,
+    refetch,
+  } = useCloudinaryImages();
   const singleImage = useSingleImage(value);
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -202,6 +205,8 @@ export function SingleImageField({ value, onChange }: SingleImageFieldProps) {
               alt="Selected image"
               fill
               className="object-cover"
+              sizes="(max-width: 768px) 100vw, 33vw"
+              preload={true}
             />
           </div>
           <button

@@ -708,11 +708,59 @@ export interface ISalonProfileForm {
   landingTheme: LandingTheme;
 }
 
+export interface IServiceLanding {
+  headline: string;
+  subheadline?: string;
+  description: string[];
+  lists: string[];
+}
+
 export interface SalonProfileData {
   _id: string;
   name: string;
   email: string;
   description: string;
+  landingStructure?: {
+    hero: {
+      headline: string;
+      subheadline?: string;
+      whereWhatForWhom: string;
+    };
+    CTA: {
+      label: string;
+      href: string;
+    };
+    portfolio: {
+      headline?: string;
+      subheadline?: string;
+      categories: {
+        name: string;
+        images: string[];
+      };
+    };
+    services: IServiceLanding[];
+    about: {
+      headline?: string;
+      descriptions: string[];
+    };
+    appointmentProcess: {
+      headline?: string;
+      subheadline?: string;
+      items: string[];
+    };
+    testimonials: {
+      headline?: string;
+      subheadline?: string;
+    };
+    faq: {
+      headline?: string;
+      subheadline?: string;
+      items: {
+        question: string;
+        answer: string;
+      }[];
+    };
+  };
   logo?: string | null;
   phone: string;
   street: string;

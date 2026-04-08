@@ -70,7 +70,7 @@ export function useGeneratedImages(
 
         // Invalidate cloudinary query for instant update
         queryClient.invalidateQueries({ queryKey: ["cloudinary-images"] });
-
+        toast.success("Slika generisana");
         return data.url;
       } catch (error) {
         toast.error(

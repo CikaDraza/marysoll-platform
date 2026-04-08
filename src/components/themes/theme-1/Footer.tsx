@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { CalendarDaysIcon } from "@heroicons/react/24/outline";
-import Image from "next/image";
 import FooterNewsletterForm from "@/components/marketing/FooterNewsletterForm";
 
 interface Theme1FooterProps {

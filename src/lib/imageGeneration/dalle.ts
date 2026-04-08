@@ -1,42 +1,39 @@
 // src/lib/imageGeneration/dalle.ts
 import OpenAI from "openai";
 
-const API_KEY = process.env.API_KEY_IMAGE_GENERATION;
+const API_KEY = process.env.API_KEY_OPEN_IMAGE_GEN;
+
 if (!API_KEY) {
-  throw new Error("API_KEY_IMAGE_GENERATION environment variable not set");
+  throw new Error("API_KEY_OPEN_IMAGE_GEN environment variable not set");
 }
 
 const openai = new OpenAI({ apiKey: API_KEY });
 
 export async function generateImageWithDalle(prompt: string): Promise<string> {
-  const enhancedPrompt = `Create a visually stunning, high-fashion image for a makeup, nails, beauty and care products: "${prompt}". The image should be professional, elegant, and suitable for a beauty salon website.`;
+  const enhancedPrompt = `
+Luxury beauty salon marketing photo. Makeup, hair styling, massage, and skincare products artfully arranged on a vanity table.
 
-  const response = await openai.images.generate({
-    model: "dall-e-3",
+Scene: ${prompt}
+
+Style:
+- high-end beauty photography
+- studio lighting
+- elegant skin tones
+- professional cosmetics branding
+- magazine quality
+`;
+
+  const result = await openai.images.generate({
+    model: "gpt-image-1",
     prompt: enhancedPrompt,
-    n: 1,
     size: "1024x1024",
-    quality: "standard",
-    response_format: "url",
   });
 
-  if (!response.data) {
-    throw new Error("No image data returned from OpenAI.");
+  const base64 = result.data?.[0]?.b64_json;
+
+  if (!base64) {
+    throw new Error("OpenAI did not return an image.");
   }
 
-  const imageUrl = response.data[0]?.url;
-  if (!imageUrl) {
-    throw new Error("No image URL returned from OpenAI.");
-  }
-
-  // Fetch image and convert to base64
-  const imageResponse = await fetch(imageUrl);
-  if (!imageResponse.ok) {
-    throw new Error("Failed to fetch image from OpenAI");
-  }
-  const imageBuffer = await imageResponse.arrayBuffer();
-  const base64 = Buffer.from(imageBuffer).toString("base64");
-  const contentType = imageResponse.headers.get("content-type") || "image/jpeg";
-
-  return `data:${contentType};base64,${base64}`;
+  return `data:image/png;base64,${base64}`;
 }

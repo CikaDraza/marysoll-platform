@@ -10,12 +10,14 @@ const benefits = [
 
 export function Theme1WhyChooseUs() {
   return (
-    <section className="py-16 lg:py-24 px-4">
+    <section className="mt-40 py-16 lg:py-24 px-4">
       <div className="max-w-2xl mx-auto text-center">
-        <h2 className="text-3xl lg:text-4xl font-bold text-(--primary-color) mb-12">Zašto izabrati nas?</h2>
+        <h2 className="text-3xl lg:text-4xl font-bold text-(--primary-color) mb-12">
+          Zašto izabrati nas?
+        </h2>
         <div className="bg-white rounded-3xl shadow-xl p-8 ring-1 ring-gray-100">
           <ul className="space-y-4">
-            {benefits.map(b => (
+            {benefits.map((b) => (
               <li key={b} className="flex items-center gap-3 text-left">
                 <CheckIcon className="h-5 w-5 text-(--secondary-color) flex-shrink-0" />
                 <span className="text-gray-700 font-medium">{b}</span>

@@ -124,6 +124,129 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     name: String(s?.name ?? ""),
     email: String(s?.email ?? ""),
     description: String(s?.description ?? ""),
+    landingStructure: {
+      hero: {
+        headline: String(
+          (s?.landingStructure as Record<string, unknown>)?.headline ?? "",
+        ),
+        subheadline: String(
+          (s?.landingStructure as Record<string, unknown>)?.subheadline ?? "",
+        ),
+        whereWhatForWhom: String(
+          (s?.landingStructure as Record<string, unknown>)?.whereWhatForWhom ??
+            "",
+        ),
+      },
+      CTA: {
+        label: String(
+          (s?.landingStructure as Record<string, unknown>)?.label ??
+            "Zakaži termin",
+        ),
+        href: String(
+          (s?.landingStructure as Record<string, unknown>)?.href ?? "#",
+        ),
+      },
+      portfolio: Object({
+        headline: String(
+          (s?.landingStructure as Record<string, unknown>)?.portfolioHeadline ??
+            "",
+        ),
+        subheadline: String(
+          (s?.landingStructure as Record<string, unknown>)
+            ?.portfolioSubheadline ?? "",
+        ),
+        categories: {
+          name: String(
+            (s?.landingStructure as Record<string, unknown>)?.name ??
+              "Kategorije",
+          ),
+          images: Array.isArray(
+            (s?.landingStructure as Record<string, unknown>)?.images,
+          )
+            ? (
+                (s?.landingStructure as Record<string, unknown>)
+                  ?.images as unknown[]
+              ).map(String)
+            : [],
+        },
+      }),
+      services: Object({
+        headline: String(
+          (s?.landingStructure as Record<string, unknown>)?.headline ?? "",
+        ),
+        subheadline: String(
+          (s?.landingStructure as Record<string, unknown>)?.subheadline ?? "",
+        ),
+        description: Array.isArray(
+          (s?.landingStructure as Record<string, unknown>)?.description,
+        )
+          ? ((s?.landingStructure as Record<string, unknown>)
+              ?.servicesCopy as unknown[])
+          : [],
+        lists: Array.isArray(
+          (s?.landingStructure as Record<string, unknown>)?.lists,
+        )
+          ? ((s?.landingStructure as Record<string, unknown>)
+              ?.lists as unknown[])
+          : [],
+      }),
+      appointmentProcess: Object({
+        headline: String(
+          (s?.landingStructure as Record<string, unknown>)
+            ?.appointmentProcessHeadline ?? "",
+        ),
+        subheadline: String(
+          (s?.landingStructure as Record<string, unknown>)
+            ?.appointmentProcessSubheadline ?? "",
+        ),
+        items: Array.isArray(
+          (s?.landingStructure as Record<string, unknown>)?.items,
+        )
+          ? ((s?.landingStructure as Record<string, unknown>)
+              ?.items as unknown[])
+          : [],
+      }),
+      testimonials: Object({
+        headline: String(
+          (s?.landingStructure as Record<string, unknown>)?.headline ?? "",
+        ),
+        subheadline: String(
+          (s?.landingStructure as Record<string, unknown>)?.subheadline ?? "",
+        ),
+      }),
+      about: {
+        headline: String(
+          (s?.landingStructure as Record<string, unknown>)?.aboutHeadline ?? "",
+        ),
+        descriptions: Array.isArray(
+          (s?.landingStructure as Record<string, unknown>)?.descriptions,
+        )
+          ? (s?.landingStructure as Record<string, string[]>)?.descriptions.map(
+              String,
+            )
+          : [
+              String(
+                (s?.landingStructure as Record<string, unknown>)
+                  ?.descriptions ?? "",
+              ),
+            ],
+      },
+      faq: Object({
+        headline: String(
+          (s?.landingStructure as Record<string, unknown>)?.faqHeadline ?? "",
+        ),
+        subheadline: String(
+          (s?.landingStructure as Record<string, unknown>)?.faqSubheadline ??
+            "",
+        ),
+        items: Array.isArray(
+          (s?.landingStructure as Record<string, unknown>)?.items,
+        )
+          ? ((s?.landingStructure as Record<string, unknown>)
+              ?.items as unknown[])
+          : [],
+      }),
+    },
     logo: s?.logo ? String(s.logo) : undefined,
     phone: String(s?.phone ?? ""),
     street: String(s?.street ?? ""),

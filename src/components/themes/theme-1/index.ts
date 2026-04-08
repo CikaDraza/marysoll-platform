@@ -1,7 +1,7 @@
 export { Theme1Header } from "./Header";
 export { Theme1Footer } from "./Footer";
 export { Theme1Hero } from "./Hero";
-export { Theme1HeroSecond } from "./HeroSecond";
+export { Theme1AboutUs } from "./AboutUs";
 export { Theme1WhatOffer } from "./WhatOffer";
 export { Theme1WhyChooseUs } from "./WhyChooseUs";
 export { Theme1GallerySection } from "./GallerySection";

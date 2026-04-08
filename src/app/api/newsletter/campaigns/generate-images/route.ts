@@ -29,16 +29,16 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4. Optimize prompt with DeepSeek + generate image with DALL-E
     const { base64Image } = await generateImage(prompt);
+    console.log(base64Image.slice(0, 50));
 
     // 5. Upload to Cloudinary in tenant folder
     const folder = await getTenantFolder(authResult.decoded.tenantId);
-    const uploadResponse = await uploadBase64ToCloudinary(base64Image, folder);
+    const url = await uploadBase64ToCloudinary(base64Image, folder);
 
     // 6. Return the secure URL
     return NextResponse.json({
-      url: uploadResponse.secure_url,
+      url,
     });
   } catch (error: unknown) {
     console.error("Newsletter image generation error:", error);

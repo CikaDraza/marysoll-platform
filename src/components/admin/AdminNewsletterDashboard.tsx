@@ -679,7 +679,7 @@ export default function AdminNewsletterDashboard() {
                     </label>
                     {isImageField ? (
                       <SingleImageField
-                        value={formData.variables?.[variable.name] || ""}
+                        value={formData.variables?.[variable.name]}
                         onChange={(url) => updateVariable(variable.name, url)}
                         label={variable.label}
                       />

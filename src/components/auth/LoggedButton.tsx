@@ -115,7 +115,7 @@ export default function LoggedButton({
 
       <MenuItems
         transition
-        className="absolute right-0 z-50 mt-2 w-52 origin-top-right rounded-xl bg-white shadow-xl ring-1 ring-gray-200 focus:outline-none divide-y divide-gray-100"
+        className="absolute lg:right-0 z-50 mt-2 w-52 origin-top-right rounded-xl bg-white shadow-xl ring-1 ring-gray-200 focus:outline-none divide-y divide-gray-100"
       >
         {/* Name badge */}
         <div className="px-4 py-2.5">

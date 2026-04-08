@@ -19,12 +19,14 @@ export type UploadResult = {
  * Uses the stored `cloudinaryFolder` field from the Tenant document.
  * Falls back to `salons/tenant-{id}` if tenant not found.
  */
-export async function getTenantFolder(tenantId: string | null | undefined): Promise<string> {
+export async function getTenantFolder(
+  tenantId: string | null | undefined,
+): Promise<string> {
   if (!tenantId) return "salons/default";
   await connectToDB();
-  const tenant = await Tenant.findById(tenantId).select("cloudinaryFolder").lean() as
-    | { cloudinaryFolder?: string }
-    | null;
+  const tenant = (await Tenant.findById(tenantId)
+    .select("cloudinaryFolder")
+    .lean()) as { cloudinaryFolder?: string } | null;
   return tenant?.cloudinaryFolder ?? `salons/tenant-${tenantId}`;
 }
 
@@ -68,10 +70,10 @@ export async function uploadBase64ToCloudinary(
   base64: string,
   folder: string,
 ): Promise<UploadResult> {
-  const result = await cloudinary.uploader.upload(
-    `data:image/jpeg;base64,${base64}`,
-    { folder, resource_type: "image" },
-  );
+  const result = await cloudinary.uploader.upload(base64, {
+    folder,
+    resource_type: "image",
+  });
   return { secure_url: result.secure_url };
 }
 
@@ -79,7 +81,10 @@ export async function deleteFromCloudinary(fileUrl: string) {
   if (!fileUrl) return;
   const publicId = extractPublicId(fileUrl);
   if (!publicId) {
-    console.warn("⚠️ deleteFromCloudinary: could not extract public_id from", fileUrl);
+    console.warn(
+      "⚠️ deleteFromCloudinary: could not extract public_id from",
+      fileUrl,
+    );
     return;
   }
   return cloudinary.uploader.destroy(publicId, { resource_type: "image" });
