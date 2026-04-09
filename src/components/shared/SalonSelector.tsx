@@ -25,7 +25,7 @@ export function SalonSelector({ value, onChange, showError }: Props) {
   if (isLoading) {
     return (
       <div className="space-y-2">
-        {[1, 2].map((i) => (
+        {[1].map((i) => (
           <div
             key={i}
             className="h-12 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse"

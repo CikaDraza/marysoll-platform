@@ -40,6 +40,7 @@ export interface EmailCampaignDocument extends Document {
   template: {
     templateId?: string;
     html: string;
+    imageUrl?: string;
   };
 
   // AI optimization
@@ -130,6 +131,7 @@ const EmailCampaignSchema = new Schema<EmailCampaignDocument>(
     template: {
       templateId: { type: String },
       html: { type: String, default: "" },
+      imageUrl: { type: String, default: "" },
     },
 
     optimization: {

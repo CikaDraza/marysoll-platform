@@ -1,20 +1,25 @@
-// src/app/api/generate-image/route.ts
-
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import OpenAI from "openai";
-
-const API_KEY = process.env.API_KEY_OPEN_IMAGE_GEN;
-
-if (!API_KEY) {
-  throw new Error("API_KEY_OPEN_IMAGE_GEN environment variable not set");
-}
+import { rateLimit } from "@/lib/imageGeneration/rateLimit";
 
 const openai = new OpenAI({
-  apiKey: API_KEY,
+  apiKey: process.env.API_KEY_OPEN_IMAGE_GEN,
 });
 
 export async function POST(req: Request) {
   try {
+    const ip = (await headers()).get("x-forwarded-for") || "unknown";
+
+    const rl = rateLimit(ip);
+
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded" },
+        { status: 429 },
+      );
+    }
+
     const { prompt } = await req.json();
 
     if (!prompt || prompt.trim() === "") {
@@ -24,7 +29,18 @@ export async function POST(req: Request) {
       );
     }
 
-    const enhancedPrompt = `Create a visually stunning, high-fashion image for a makeup, nail salons, wellness, massage or spa beauty industry: "${prompt}". The image should be professional, elegant, and suitable for a beauty salon website.`;
+    const enhancedPrompt = `
+Luxury beauty salon marketing image.
+
+Style:
+- elegant lighting
+- beauty salon aesthetic
+- modern professional photography
+- makeup, nails, spa or wellness theme
+
+User idea:
+${prompt}
+`;
 
     const response = await openai.images.generate({
       model: "gpt-image-1",
@@ -32,32 +48,18 @@ export async function POST(req: Request) {
       size: "1024x1024",
     });
 
-    if (!response.data) {
-      throw new Error("No image data returned from OpenAI.");
-    }
+    const base64 = response.data?.[0]?.b64_json;
 
-    const imageUrl = response.data[0]?.url;
-    if (!imageUrl) {
-      throw new Error("No image URL returned from OpenAI.");
+    if (!base64) {
+      throw new Error("No base64 image returned from OpenAI.");
     }
-
-    // Fetch the image and convert to base64
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      throw new Error("Failed to fetch image from OpenAI");
-    }
-    const imageBuffer = await imageResponse.arrayBuffer();
-    const base64 = Buffer.from(imageBuffer).toString("base64");
-
-    // Determine content type from response headers or default to jpeg
-    const contentType =
-      imageResponse.headers.get("content-type") || "image/jpeg";
 
     return NextResponse.json({
-      image: `data:${contentType};base64,${base64}`,
+      image: `data:image/png;base64,${base64}`,
     });
-  } catch (error: unknown) {
+  } catch (error) {
     console.error("Image generation error:", error);
+
     return NextResponse.json(
       { error: "Image generation failed." },
       { status: 500 },

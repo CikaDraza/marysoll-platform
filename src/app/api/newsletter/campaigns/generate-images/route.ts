@@ -30,7 +30,6 @@ export async function POST(req: Request) {
     }
 
     const { base64Image } = await generateImage(prompt);
-    console.log(base64Image.slice(0, 50));
 
     // 5. Upload to Cloudinary in tenant folder
     const folder = await getTenantFolder(authResult.decoded.tenantId);

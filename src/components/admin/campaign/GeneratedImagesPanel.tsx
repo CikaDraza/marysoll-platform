@@ -4,7 +4,11 @@ import { useRef, useState } from "react";
 import { ImageSelect } from "@/components/elements/ImageSelect";
 import LoaderButton from "@/components/elements/LoaderButton";
 import { useGeneratedImages } from "@/hooks/newsletter";
-import { MinusIcon, PlusIcon, ArrowUpTrayIcon } from "@heroicons/react/24/outline";
+import {
+  MinusIcon,
+  PlusIcon,
+  ArrowUpTrayIcon,
+} from "@heroicons/react/24/outline";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
@@ -53,7 +57,7 @@ export function GeneratedImagesPanel({
             value={img.prompt}
             onChange={(e) => updatePrompt(index, e.target.value)}
             placeholder="Prompt za sliku..."
-            className="w-full bg-gray-100 p-2 py-3 rounded"
+            className="w-full bg-gray-100 dark:bg-gray-950 p-2 py-3 rounded focus:outline-none focus:ring-2 focus:ring-violet-400"
           />
 
           <div className="flex gap-2">
@@ -83,7 +87,9 @@ export function GeneratedImagesPanel({
             </button>
 
             <input
-              ref={(el) => { fileInputRefs.current[index] = el; }}
+              ref={(el) => {
+                fileInputRefs.current[index] = el;
+              }}
               type="file"
               accept="image/*"
               className="hidden"

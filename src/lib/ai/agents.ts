@@ -54,13 +54,8 @@ export const AGENTS: Record<AgentType, AgentConfig> = {
   },
   image: {
     type: "image",
-    // Dedicated DeepSeek key for prompt optimisation.
-    // API_KEY_IMAGE_GENERATION is reserved for the OpenAI/DALL-E call in dalle.ts.
-    apiKey:
-      process.env.DEEPSEEK_API_KEY_IMAGE ??
-      process.env.DEEPSEEK_API_KEY_CHAT ??
-      "",
-    model: "deepseek-chat",
+    apiKey: process.env.API_KEY_OPEN_IMAGE_GEN ?? "",
+    model: "gpt-image-1",
     temperature: 0.7,
     maxTokens: 500,
     rpmLimit: 3,

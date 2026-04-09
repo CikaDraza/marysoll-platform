@@ -29,11 +29,14 @@ export interface EmailCampaignContent {
   body: string;
   bullets?: string[];
   ctaText: string;
+  /** Optional image prompt for AI image generation. Null means no image. */
+  imagePrompt?: string | null;
 }
 
 export interface EmailCampaignTemplate {
   html: string;
   blocks: EmailCampaignTemplateBlock[];
+  imageUrl?: string;
 }
 
 export interface EmailCampaignTemplateBlock {

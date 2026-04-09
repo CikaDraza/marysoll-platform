@@ -183,6 +183,14 @@ const AppSidebar: React.FC = () => {
   const subMenuRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   const isVisible = isExpanded || isHovered || isMobileOpen;
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    async function handleMounted() {
+      setIsMounted(true);
+    }
+    handleMounted();
+  }, []);
 
   // Determine active state
   const isActive = useCallback(
@@ -287,7 +295,7 @@ const AppSidebar: React.FC = () => {
                     </span>
                     {item.subItems && (
                       <svg
-                        className={`w-4 h-4 transition-transform duration-200 text-gray-400 ${submenuOpen ? "rotate-180 text-violet-500" : "rotate-0 text-gray-400"}`}
+                        className={`w-4 h-4 transition-transform duration-200 text-gray-400 ${isMounted && submenuOpen ? "rotate-180 text-violet-500" : "rotate-0 text-gray-400"}`}
                         viewBox="0 0 24 24"
                         fill="none"
                       >

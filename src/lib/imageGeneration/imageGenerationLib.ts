@@ -1,4 +1,4 @@
-// src/lib/imageGeneration/dalle.ts
+// src/lib/imageGeneration/imageGenerationLib.ts
 import OpenAI from "openai";
 
 const API_KEY = process.env.API_KEY_OPEN_IMAGE_GEN;
@@ -9,7 +9,7 @@ if (!API_KEY) {
 
 const openai = new OpenAI({ apiKey: API_KEY });
 
-export async function generateImageWithDalle(prompt: string): Promise<string> {
+export async function generateImageLib(prompt: string): Promise<string> {
   const enhancedPrompt = `
 Luxury beauty salon marketing photo. Makeup, hair styling, massage, and skincare products artfully arranged on a vanity table.
 

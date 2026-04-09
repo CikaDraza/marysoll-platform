@@ -103,6 +103,9 @@ export async function POST(req: Request) {
 
     if (template) {
       updatePayload["template.html"] = template.html;
+      if (template.imageUrl) {
+        updatePayload["template.imageUrl"] = template.imageUrl;
+      }
     }
 
     if (optimization) {

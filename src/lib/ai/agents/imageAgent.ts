@@ -7,12 +7,12 @@
  *   3. Returns base64 data URL
  *
  * Replaces lib/imageGeneration/deepseekPrompt.ts (prompt step)
- * while keeping lib/imageGeneration/dalle.ts for the render step.
+ * while keeping lib/imageGeneration for the render step.
  */
 import "server-only";
 
 import { callDeepSeek, DeepSeekMessage } from "../agents";
-import { generateImageWithDalle } from "@/lib/imageGeneration/dalle";
+import { generateImageLib } from "@/lib/imageGeneration/imageGenerationLib";
 
 const IMAGE_SYSTEM_PROMPT = `
 Ti si ekspert za kreiranje prompta za generisanje slika za beauty salone.
@@ -34,7 +34,7 @@ async function optimizePrompt(userDescription: string): Promise<string> {
     ];
 
     const response = await callDeepSeek({
-      agent: "image",
+      agent: "landing",
       messages,
       systemPrompt: IMAGE_SYSTEM_PROMPT,
     });
@@ -77,6 +77,6 @@ export async function generateImage(userDescription: string): Promise<{
   base64Image: string;
 }> {
   const optimizedPrompt = await optimizePrompt(userDescription);
-  const base64Image = await generateImageWithDalle(optimizedPrompt);
+  const base64Image = await generateImageLib(optimizedPrompt);
   return { optimizedPrompt, base64Image };
 }

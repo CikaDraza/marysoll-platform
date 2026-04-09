@@ -9,3 +9,4 @@ export { Theme1PricingSection } from "./PricingSection";
 export { Theme1AppointmentSection } from "./AppointmentSection";
 export { Theme1TestimonialsSection } from "./TestimonialsSection";
 export { Theme1ImageGenerationSection } from "./ImageGenerationSection";
+export { Theme1SocialProof } from "./SocialProof";

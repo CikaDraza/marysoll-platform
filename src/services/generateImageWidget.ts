@@ -1,12 +1,10 @@
-// src/services/deepseekImageService.ts
+// src/services/generateImageWidget.ts
 
-export const generateImageWithDeepSeek = async (
-  prompt: string,
-): Promise<string> => {
+export const generateImageWidget = async (prompt: string): Promise<string> => {
   const res = await fetch("/api/generate-image", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify({ prompt: prompt }),
   });
 
   if (!res.ok) {

@@ -1,4 +1,5 @@
 // src/services/imageAgent.ts
+import { generateImageLib } from "../imageGeneration/imageGenerationLib";
 import { callDeepSeek } from "./agents";
 import type { DeepSeekMessage } from "./agents";
 
@@ -39,31 +40,9 @@ export async function generateImagePrompt(
 }
 
 /**
- * Korak 2: Generiši sliku koristeći našu novu rutu (OpenAI DALL-E)
- * Vraća data URL u base64 formatu.
- */
-export async function generateImageWithDeepSeek(
-  prompt: string,
-): Promise<string> {
-  const res = await fetch("/api/generate-image-deepseek", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt }),
-  });
-
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || "Server error");
-  }
-
-  const data = await res.json();
-  return data.image; // data:image/...;base64,...
-}
-
-/**
  * Kompletna pipeline: opis korisnika → DeepSeek prompt → OpenAI slika → base64
  */
 export async function generateImage(userDescription: string): Promise<string> {
   const optimizedPrompt = await generateImagePrompt(userDescription);
-  return generateImageWithDeepSeek(optimizedPrompt);
+  return generateImageLib(optimizedPrompt);
 }

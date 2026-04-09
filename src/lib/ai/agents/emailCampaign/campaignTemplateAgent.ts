@@ -51,6 +51,13 @@ Pravila za blocks:
 - Dozvoljeni tipovi: hero, text, bullets, cta, divider, image
 - priority označava redosled prikaza (1 = prvo)
 
+SLIKA U EMAILU:
+Ako sadržaj uključuje polje "imagePrompt" (nije null), OBAVEZNO:
+1. Dodaj image blok u blocks niz: { "type": "image", "priority": 2, "data": { "url": "{{EMAIL_IMAGE_URL}}", "alt": "Campaign image" } }
+2. U HTML-u umetni sliku odmah posle hero sekcije koristeći TAČNO ovaj placeholder:
+   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px 0;"><tr><td align="center" style="padding:0;text-align:center;"><img src="{{EMAIL_IMAGE_URL}}" width="600" alt="Campaign image" style="max-width:100%;height:auto;display:block;margin:0 auto;border:0;" /></td></tr></table>
+3. Pomeri ostale blokove na odgovarajući priority (hero=1, image=2, text=3, itd.)
+
 VAŽNO:
 - HTML mora biti jedna <table> struktura
 - svi stilovi moraju biti inline

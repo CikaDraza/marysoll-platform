@@ -8,7 +8,7 @@ interface Props {
 }
 
 export function ImageBlock({ data }: Props) {
-  const imgWidth = data.width ?? 600;
+  const imgWidth = data.width ?? "600";
 
   const img = (
     // eslint-disable-next-line @next/next/no-img-element
@@ -21,6 +21,7 @@ export function ImageBlock({ data }: Props) {
         maxWidth: "100%",
         height: "auto",
         border: "0",
+        margin: "0 auto",
       }}
     />
   );
@@ -34,7 +35,13 @@ export function ImageBlock({ data }: Props) {
     >
       <tbody>
         <tr>
-          <td style={{ padding: "16px 32px", textAlign: "center" }}>
+          <td
+            align="center"
+            style={{
+              padding: "16px 32px",
+              textAlign: "center",
+            }}
+          >
             {data.link ? (
               <a href={data.link} style={{ display: "inline-block" }}>
                 {img}

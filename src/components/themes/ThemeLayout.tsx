@@ -50,7 +50,7 @@ import { Theme3ImageGenerationSection } from "./theme-3/ImageGenerationSection";
 import { Theme3AppointmentSection } from "./theme-3/AppointmentSection";
 import { Theme3TestimonialsSection } from "./theme-3/TestimonialsSection";
 import { Theme1ImageGenerationSection } from "./theme-1/ImageGenerationSection";
-import { Theme1AboutUs } from "./theme-1";
+import { Theme1AboutUs, Theme1SocialProof } from "./theme-1";
 
 interface Testimonial {
   _id: string;
@@ -88,7 +88,91 @@ export function ThemeLayout({
   clientSlug,
 }: ThemeLayoutProps) {
   const instagram = salon.social?.instagram || "";
-  const showGallery = !!instagram;
+  const showGallery = true;
+
+  type Treatment = {
+    id: string;
+    category: string;
+    title: string;
+    description: string;
+    images: { src: string; alt: string }[];
+    href: string;
+  };
+
+  const treatments: Treatment[] = [
+    {
+      id: "makeup-day",
+      category: "Makeup",
+      title: "Dnevna šminka",
+      description:
+        "Profesionalna šminka za dnevne svakodnevnice. Koristim profesionalnu kozmetiku renomiranih svetskih brendova.",
+      images: [
+        {
+          src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1775680463/salons/salon-kiki-kiss/jft1ovq89liveiameeox.png",
+          alt: "Dnevna šminka",
+        },
+        {
+          src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1768705206/marysoll-ai-look-1768705168082_xyfogh.jpg",
+          alt: "Dnevna azijska šminka",
+        },
+      ],
+      href: "/termini",
+    },
+    {
+      id: "makeup-night",
+      category: "Makeup",
+      title: "Večernja šminka",
+      description:
+        "Postojan izgled koji traje celu noć, uz naglašavanje tvojih najlepših crta lica.",
+      images: [
+        {
+          src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1768704883/marysoll-ai-look-1766951292797_plupol.jpg",
+          alt: "Dnevna šminka",
+        },
+        {
+          src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1768705190/marysoll-ai-look-1768704967165_zwkwim.jpg",
+          alt: "Dnevna azijska šminka",
+        },
+      ],
+      href: "/termini",
+    },
+    {
+      id: "nails",
+      category: "Nails",
+      title: "Nokti | Nails",
+      description:
+        "Nega noktiju uz gel lak, ojačavanje prirodnih noktiju i izlivanje. Higijenski, precizno i dugotrajno — za besprekorno negovane nokte u svakom trenutku.",
+      images: [
+        {
+          src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1771541591/salon/zycqbewvuphkygo2hr8w.jpg",
+          alt: "Frenč - Dizajn",
+        },
+        {
+          src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1771740371/marysoll-ai-look-1771740341957_nfxa1m.jpg",
+          alt: "Izlivanje noktiju",
+        },
+      ],
+      href: "/termini",
+    },
+    {
+      id: "obrve",
+      category: "Obrve",
+      title: "Obrve i Nausnice",
+      description:
+        "Profesionalno oblikovanje obrva i uklanjanje dlačica sa obrva i nausnica. Pratimo prirodnu formu lica kako bismo postigli uredan, ženstven i negovan izgled.",
+      images: [
+        {
+          src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1768705470/marysoll-ai-look-1768705452254_plwtv7.jpg",
+          alt: "Frenč - Dizajn",
+        },
+        {
+          src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1770896288/salon/svgc0l829bx5e62n2xg2.jpg",
+          alt: "Izlivanje noktiju",
+        },
+      ],
+      href: "/termini",
+    },
+  ];
 
   const headerProps = {
     tenantSlug,
@@ -130,9 +214,16 @@ export function ThemeLayout({
               }
             }
           />
+          <Theme1SocialProof />
           {services.length > 0 && <Theme1WhatOffer services={services} />}
           <Theme1WhyChooseUs />
-          {showGallery && <Theme1GallerySection instagramUrl={instagram} />}
+          {showGallery && (
+            <Theme1GallerySection
+              instagramUrl={instagram}
+              instagramTag={instagram}
+              treatments={treatments}
+            />
+          )}
           <Theme1PricingSection services={services} />
           <Theme1ImageGenerationSection />
           <Theme1AppointmentSection salonName={salon.name} />

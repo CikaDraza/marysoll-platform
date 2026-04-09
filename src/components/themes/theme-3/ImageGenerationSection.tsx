@@ -1,7 +1,7 @@
 "use client";
 import { useState, useCallback } from "react";
 import Image from "next/image";
-import { generateImageWithDeepSeek } from "@/services/deepseekImageService";
+import { generateImageWidget } from "@/services/generateImageWidget";
 
 export function Theme3ImageGenerationSection() {
   const [prompt, setPrompt] = useState("");
@@ -18,7 +18,7 @@ export function Theme3ImageGenerationSection() {
     setError(null);
     setGeneratedImage(null);
     try {
-      setGeneratedImage(await generateImageWithDeepSeek(prompt));
+      setGeneratedImage(await generateImageWidget(prompt));
     } catch {
       setError("Greška. Pokušajte ponovo.");
     } finally {

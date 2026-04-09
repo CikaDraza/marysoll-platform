@@ -10,9 +10,11 @@ const benefits = [
 
 export function Theme1WhyChooseUs() {
   return (
-    <section className="mt-40 py-16 lg:py-24 px-4">
+    <section className="relative py-16 lg:py-24 px-4">
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(45rem_50rem_at_top,var(--color-indigo-100),white)] opacity-20" />
+
       <div className="max-w-2xl mx-auto text-center">
-        <h2 className="text-3xl lg:text-4xl font-bold text-(--primary-color) mb-12">
+        <h2 className="text-3xl lg:text-4xl font-bold text-black mb-12">
           Zašto izabrati nas?
         </h2>
         <div className="bg-white rounded-3xl shadow-xl p-8 ring-1 ring-gray-100">

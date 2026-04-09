@@ -1,6 +1,6 @@
 "use client";
 
-import { generateImageWithDeepSeek } from "@/services/deepseekImageService";
+import { generateImageWidget } from "@/services/generateImageWidget";
 import Image from "next/image";
 import { useCallback, useState } from "react";
 
@@ -19,7 +19,7 @@ export function Theme1ImageGenerationSection() {
     setError(null);
     setGeneratedImage(null);
     try {
-      const imageData = await generateImageWithDeepSeek(prompt);
+      const imageData = await generateImageWidget(prompt);
       setGeneratedImage(imageData);
     } catch (e) {
       setError(
@@ -34,7 +34,7 @@ export function Theme1ImageGenerationSection() {
   return (
     <section id="ai-generator" className="py-4 md:py-32 mx-auto">
       <div className="container mx-auto px-6 text-center text-black">
-        <h2 className="text-4xl text-(--primary-color) font-black tracking-tighter mb-4">
+        <h2 className="text-4xl text-black font-black tracking-tighter mb-4">
           Kreiraj svoj izgled
         </h2>
         <p className="max-w-2xl mx-auto text-sm lg:text-lg text-black/80 mb-8">

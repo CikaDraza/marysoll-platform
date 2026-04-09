@@ -3,9 +3,21 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import { useCampaign, useAudienceContacts } from "@/hooks/campaigns/useCampaigns";
+import {
+  useCampaign,
+  useAudienceContacts,
+} from "@/hooks/campaigns/useCampaigns";
+import { useGeneratedImages } from "@/hooks/newsletter";
+import { GeneratedImagesPanel } from "@/components/admin/campaign/GeneratedImagesPanel";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
+import Image from "next/image";
+
+/** Extracts the first <img src="..."> URL from an HTML string. */
+function extractImageUrlFromHtml(html: string): string {
+  const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return match?.[1] ?? "";
+}
 
 export default function CampaignEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +36,9 @@ export default function CampaignEditPage() {
   const [heroText, setHeroText] = useState("");
   const [ctaText, setCtaText] = useState("");
   const [ctaUrl, setCtaUrl] = useState("");
+
+  // Image for email
+  const imagesHook = useGeneratedImages([]);
 
   // Recipient overrides
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
@@ -51,6 +66,7 @@ export default function CampaignEditPage() {
         offerTitle?: string;
         offerText?: string;
       };
+      template?: { html?: string; imageUrl?: string };
       recipientContactIds?: string[];
     };
     setTopic(c.topic ?? "");
@@ -63,6 +79,14 @@ export default function CampaignEditPage() {
     setCtaText(c.content?.ctaText ?? "");
     setCtaUrl(c.content?.ctaUrl ?? "");
     setSelectedContactIds(c.recipientContactIds ?? []);
+    // Resolve image: use explicit imageUrl first, fall back to extracting from HTML
+    const imageUrl =
+      c.template?.imageUrl ||
+      extractImageUrlFromHtml(c.template?.html ?? "");
+    if (imageUrl) {
+      imagesHook.reset([imageUrl]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaign]);
 
   if (isLoading) {
@@ -77,7 +101,10 @@ export default function CampaignEditPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <p className="text-sm text-gray-500 mb-4">Kampanja nije pronađena.</p>
-        <Link href="/marketing/campaigns/drafts" className="text-violet-600 text-sm font-medium">
+        <Link
+          href="/marketing/campaigns/drafts"
+          className="text-violet-600 text-sm font-medium"
+        >
           Nazad
         </Link>
       </div>
@@ -93,7 +120,10 @@ export default function CampaignEditPage() {
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
           Samo kampanje u statusu &quot;Draft&quot; se mogu izmeniti.
         </p>
-        <Link href={`/marketing/campaigns/${id}`} className="text-violet-600 text-sm font-medium">
+        <Link
+          href={`/marketing/campaigns/${id}`}
+          className="text-violet-600 text-sm font-medium"
+        >
           Nazad na pregled
         </Link>
       </div>
@@ -140,12 +170,27 @@ export default function CampaignEditPage() {
     setIsSaving(true);
     setError(null);
     try {
-      const existingContent = (campaign as unknown as {
-        content?: {
-          offerTitle?: string;
-          offerText?: string;
-        };
-      }).content;
+      const existingCampaign = campaign as unknown as {
+        content?: { offerTitle?: string; offerText?: string };
+        template?: { html?: string; imageUrl?: string };
+      };
+
+      const selectedImageUrl = imagesHook.images[0]?.url ?? "";
+      // If a new image was selected, inject it into the existing HTML
+      let existingHtml = existingCampaign.template?.html ?? "";
+      const prevImageUrl = existingCampaign.template?.imageUrl ?? "";
+      if (
+        selectedImageUrl &&
+        selectedImageUrl !== prevImageUrl &&
+        existingHtml
+      ) {
+        if (prevImageUrl) {
+          existingHtml = existingHtml.replaceAll(
+            prevImageUrl,
+            selectedImageUrl,
+          );
+        }
+      }
 
       await api.patch(`/campaigns/${id}`, {
         topic,
@@ -158,8 +203,12 @@ export default function CampaignEditPage() {
           heroText,
           ctaText,
           ctaUrl,
-          offerTitle: existingContent?.offerTitle ?? "",
-          offerText: existingContent?.offerText ?? "",
+          offerTitle: existingCampaign.content?.offerTitle ?? "",
+          offerText: existingCampaign.content?.offerText ?? "",
+        },
+        template: {
+          html: existingHtml,
+          imageUrl: selectedImageUrl,
         },
         recipientContactIds: selectedContactIds,
       });
@@ -187,18 +236,25 @@ export default function CampaignEditPage() {
           className="text-xs text-gray-400 hover:text-violet-500 transition-colors flex items-center gap-1 mb-3"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M15 18l-6-6 6-6"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
           Pregled kampanje
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Izmeni kampanju</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Izmeni kampanju
+        </h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
           Izmeni parametre i sadržaj kampanje pre slanja.
         </p>
       </div>
 
-      <div className="space-y-5 max-w-2xl">
-
+      <div className="space-y-5 max-w-7xl">
         {/* ── Basic settings ─────────────────────────────────────────────── */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6">
           <p className={sectionTitle}>Osnovna podešavanja</p>
@@ -223,7 +279,11 @@ export default function CampaignEditPage() {
             </div>
             <div>
               <label className={lbl}>Ton komunikacije</label>
-              <select className={inp} value={tone} onChange={(e) => setTone(e.target.value)}>
+              <select
+                className={inp}
+                value={tone}
+                onChange={(e) => setTone(e.target.value)}
+              >
                 <option value="">Izaberi ton</option>
                 <option value="informative">Informativno</option>
                 <option value="friendly">Prijateljski</option>
@@ -276,6 +336,30 @@ export default function CampaignEditPage() {
                 placeholder="Glavni tekst emaila..."
               />
             </div>
+            {/* ── Image section ────────────────────────────── */}
+            <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+              <label className={lbl}>Slika u emailu</label>
+
+              {/* Selected image preview — shows current image from draft or newly selected */}
+              {imagesHook.images[0]?.url && (
+                <div className="mb-3">
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500 mb-1.5">
+                    Trenutno odabrana slika:
+                  </p>
+                  <Image
+                    width={400}
+                    height={160}
+                    src={imagesHook.images[0].url}
+                    alt="Selected campaign image"
+                    className="w-full max-w-sm h-40 object-cover rounded-xl border-2 border-violet-400 ring-2 ring-violet-400 ring-offset-2 dark:ring-offset-gray-900"
+                  />
+                </div>
+              )}
+
+              {/* Panel for generate / upload / pick from Cloudinary */}
+              <GeneratedImagesPanel imagesHook={imagesHook} />
+            </div>
+
             <div>
               <label className={lbl}>CTA tekst</label>
               <input
@@ -294,7 +378,9 @@ export default function CampaignEditPage() {
                 onChange={(e) => setCtaUrl(e.target.value)}
                 placeholder="https://vasasalon.com/rezervacija"
               />
-              <p className="text-[11px] text-gray-400 mt-1">Link na koji vodi dugme u emailu</p>
+              <p className="text-[11px] text-gray-400 mt-1">
+                Link na koji vodi dugme u emailu
+              </p>
             </div>
           </div>
         </div>
@@ -309,14 +395,16 @@ export default function CampaignEditPage() {
               <p className="text-[11px] text-gray-400 mb-3">
                 {selectedContactIds.length === 0
                   ? "Svi aktivni pretplaćeni kontakti (bez selekcije)"
-                  : `${selectedContactIds.length} odabran${selectedContactIds.length === 1 ? "" : "o"}`}
-                {" "}— označi da ograničiš primaoce
+                  : `${selectedContactIds.length} odabran${selectedContactIds.length === 1 ? "" : "o"}`}{" "}
+                — označi da ograničiš primaoce
               </p>
               <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
                 <div className="max-h-52 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
                   {allContacts.map((contact) => {
                     const checked = selectedContactIds.includes(contact._id);
-                    const name = [contact.firstName, contact.lastName].filter(Boolean).join(" ");
+                    const name = [contact.firstName, contact.lastName]
+                      .filter(Boolean)
+                      .join(" ");
                     return (
                       <label
                         key={contact._id}
@@ -329,17 +417,25 @@ export default function CampaignEditPage() {
                           className="w-4 h-4 rounded accent-violet-600"
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-800 dark:text-gray-200 truncate">{contact.email}</p>
+                          <p className="text-sm text-gray-800 dark:text-gray-200 truncate">
+                            {contact.email}
+                          </p>
                           {name && (
-                            <p className="text-[11px] text-gray-400 truncate">{name}</p>
+                            <p className="text-[11px] text-gray-400 truncate">
+                              {name}
+                            </p>
                           )}
                         </div>
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                          contact.status === "ACTIVE" && contact.subscribed
-                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                            : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500"
-                        }`}>
-                          {contact.status === "ACTIVE" && contact.subscribed ? "aktivan" : "neaktivan"}
+                        <span
+                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                            contact.status === "ACTIVE" && contact.subscribed
+                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                              : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500"
+                          }`}
+                        >
+                          {contact.status === "ACTIVE" && contact.subscribed
+                            ? "aktivan"
+                            : "neaktivan"}
                         </span>
                       </label>
                     );
@@ -362,8 +458,9 @@ export default function CampaignEditPage() {
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6">
           <p className={sectionTitle}>HTML template</p>
           <p className="text-[12px] text-gray-400 dark:text-gray-500 mb-4">
-            Regeneriši HTML email template koristeći trenutne vrednosti iz sadržaja.
-            AI će koristiti tačno te vrednosti i sačuvati vizuelni stil.
+            Regeneriši HTML email template koristeći trenutne vrednosti iz
+            sadržaja. AI će koristiti tačno te vrednosti i sačuvati vizuelni
+            stil.
           </p>
           <button
             onClick={handleRegenerate}
@@ -378,7 +475,13 @@ export default function CampaignEditPage() {
             ) : (
               <>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
                 Regeneriši HTML
               </>
@@ -411,15 +514,24 @@ export default function CampaignEditPage() {
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 w-full max-w-2xl flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
               <div>
-                <h2 className="text-base font-bold text-gray-900 dark:text-white">Pregled novog HTML-a</h2>
-                <p className="text-[11px] text-gray-400 mt-0.5">Pregledaj pre primene</p>
+                <h2 className="text-base font-bold text-gray-900 dark:text-white">
+                  Pregled novog HTML-a
+                </h2>
+                <p className="text-[11px] text-gray-400 mt-0.5">
+                  Pregledaj pre primene
+                </p>
               </div>
               <button
                 onClick={() => setPreviewHtml(null)}
                 className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  <path
+                    d="M18 6L6 18M6 6l12 12"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </button>
             </div>
