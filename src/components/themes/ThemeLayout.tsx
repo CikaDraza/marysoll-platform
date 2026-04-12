@@ -138,6 +138,21 @@ export function ThemeLayout({
     tiktok: salon.social?.tiktok,
   };
 
+  // ── Per-tenant branding: CSS vars injected on the theme root ─────────────
+  // Overrides the global :root vars so all bg-(--primary-color) / text-(--secondary-color)
+  // classes in the theme pick up this tenant's palette automatically.
+  const primaryColor = salon.branding?.primaryColor || "#a855f7";
+  const secondaryColor = salon.branding?.secondaryColor || "#ec4899";
+  const fontFamily = salon.branding?.fontFamily || "Inter";
+  const brandingVars = {
+    "--primary-color": primaryColor,
+    "--secondary-color": secondaryColor,
+    "--main-font": `'${fontFamily}', sans-serif`,
+    fontFamily: `'${fontFamily}', sans-serif`,
+  } as React.CSSProperties;
+  // Google Fonts import URL for the tenant's chosen font
+  const googleFontHref = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontFamily)}:wght@300;400;500;600;700;800&display=swap`;
+
   // ── Hero CTA with resolved hrefs ────────────────────────────────────────
   const heroCtas = ls?.landing?.hero?.ctas;
   const resolvedCta = {
@@ -156,7 +171,9 @@ export function ThemeLayout({
   // ── Theme 1: Light gradient ───────────────────────────────────────────────
   if (theme === "theme-1") {
     return (
-      <div className="min-h-screen flex flex-col bg-white">
+      <div className="min-h-screen flex flex-col bg-white" style={brandingVars}>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="stylesheet" href={googleFontHref} />
         <Theme1Header {...headerProps} />
         <main className="flex-1 overflow-x-hidden flex flex-col pt-20">
           {heroEnabled && (
@@ -244,7 +261,9 @@ export function ThemeLayout({
   // ── Theme 2: Dark luxury ──────────────────────────────────────────────────
   if (theme === "theme-2") {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-950">
+      <div className="min-h-screen flex flex-col bg-gray-950" style={brandingVars}>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="stylesheet" href={googleFontHref} />
         <Theme2Header {...headerProps} />
         <main className="flex-1 overflow-x-hidden flex flex-col">
           <Theme2Hero salon={salon} />
@@ -264,7 +283,9 @@ export function ThemeLayout({
 
   // ── Theme 3: Soft minimal ─────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF8F5]">
+    <div className="min-h-screen flex flex-col bg-[#FAF8F5]" style={brandingVars}>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="stylesheet" href={googleFontHref} />
       <Theme3Header {...headerProps} />
       <main className="flex-1 overflow-x-hidden flex flex-col">
         <Theme3Hero salon={salon} />

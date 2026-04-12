@@ -18,7 +18,7 @@ export function Theme1CTABookingSection({ salonName, tenantSlug }: Props) {
       </p>
       <Link
         href={servicesHref}
-        className="inline-block px-10 py-4 bg-white text-(--primary-color) font-bold rounded-full hover:bg-gray-100 transition shadow-xl text-sm"
+        className="inline-block px-10 py-4 bg-white text-(--secondary-color) font-bold rounded-full hover:bg-gray-100 transition shadow-xl text-sm"
       >
         Zakaži odmah →
       </Link>

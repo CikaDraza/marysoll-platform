@@ -8,7 +8,12 @@ interface Props {
   tenantSlug?: string;
 }
 
-export function Theme1WhatOffer({ services, headline, subheadline, tenantSlug }: Props) {
+export function Theme1WhatOffer({
+  services,
+  headline,
+  subheadline,
+  tenantSlug,
+}: Props) {
   const servicesHref = tenantSlug ? `/${tenantSlug}/usluge` : "/usluge";
   return (
     <section className="py-40 lg:py-24 px-4">
@@ -38,7 +43,7 @@ export function Theme1WhatOffer({ services, headline, subheadline, tenantSlug }:
             <div className="m-auto">
               <Link
                 href={servicesHref}
-                className="px-7 py-3 border border-black hover:border-(--primary-color) text-black font-semibold rounded-full hover:bg-(--primary-color) hover:text-white transition text-sm"
+                className="px-7 py-3 border border-black hover:border-(--secondary-color) text-black font-semibold rounded-full hover:bg-(--secondary-color) hover:text-white transition text-sm"
               >
                 Naše usluge
               </Link>

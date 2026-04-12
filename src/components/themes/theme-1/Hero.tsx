@@ -94,24 +94,26 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                           href={`tel:${salon.phone}`}
                           className="relative lg:pl-12 text-center lg:text-left group"
                         >
-                          <dt className="text-sm font-light text-black">
+                          <dt className="text-sm font-light text-black group-hover:text-(--secondary-color)">
                             <PhoneArrowUpRightIcon className="hidden lg:block absolute left-0 top-0 size-8 text-black group-hover:text-(--secondary-color) transition-colors" />
                             Telefon
                           </dt>
-                          <dd className="text-sm text-black">{salon.phone}</dd>
+                          <dd className="text-sm text-black group-hover:text-(--secondary-color)">
+                            {salon.phone}
+                          </dd>
                         </Link>
                       )}
                     </div>
                     <div className="mt-10 flex gap-4 justify-between w-full lg:mx-0">
                       <Link
                         href={cta?.primary?.href || defaultHeroData.CTA.href}
-                        className="cursor-pointer flex-1 px-7 py-3 bg-(--secondary-color) text-white font-semibold rounded-full hover:bg-(--primary-color) transition text-sm"
+                        className="cursor-pointer flex-1 px-7 py-3 bg-(--secondary-color) text-white font-semibold rounded-full hover:bg-(--secondary-color)/90 transition text-sm"
                       >
                         {cta?.primary?.text || defaultHeroData.CTA.text}
                       </Link>
                       <Link
                         href={cta?.secondary?.href || "/usluge"}
-                        className="px-7 py-3 border border-black hover:border-(--primary-color) text-black font-semibold rounded-full hover:bg-(--primary-color) hover:text-white transition text-sm"
+                        className="px-7 py-3 border border-black hover:border-(--secondary-color) text-black font-semibold rounded-full hover:bg-(--secondary-color)/90 hover:text-white transition text-sm"
                       >
                         {cta?.secondary?.text || "Naše usluge"}
                       </Link>
@@ -144,14 +146,14 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                         <Link
                           href={salon.social.instagram}
                           target="_blank"
-                          className="flex px-2 items-center gap-1 text-xs text-gray-600 hover:text-(--primary-color) transition"
+                          className="flex px-2 items-center gap-1 text-xs text-gray-600 hover:text-(--secondary-color) transition"
                         >
                           <InstagramIcon bgColor="#000000" />
                         </Link>
                       ) : (
                         <button
                           disabled={true}
-                          className="flex px-2 items-center disabled:cursor-not-allowed disabled:text-gray-400 gap-1 text-xs text-gray-600 hover:text-(--primary-color) transition"
+                          className="flex px-2 items-center disabled:cursor-not-allowed disabled:text-gray-400 gap-1 text-xs text-gray-600 hover:text-(--secondary-color) transition"
                         >
                           <InstagramIcon bgColor="#000000" />
                         </button>
@@ -160,7 +162,7 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                         <Link
                           href={whatsapp}
                           target="_blank"
-                          className="flex px-2 items-center gap-1 text-xs text-gray-600 hover:text-(--primary-color) transition"
+                          className="flex px-2 items-center gap-1 text-xs text-gray-600 hover:text-(--secondary-color) transition"
                         >
                           <WhatsappIcon
                             bgColor="#000000"
@@ -184,7 +186,7 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                         <Link
                           href={salon.social.tiktok}
                           target="_blank"
-                          className="flex items-center px-2 gap-1 text-xs text-gray-600 hover:text-(--primary-color) transition"
+                          className="flex items-center px-2 gap-1 text-xs text-gray-600 hover:text-(--secondary-color) transition"
                         >
                           <TiktokIcon
                             bgColor="#000000"
@@ -195,7 +197,7 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                       ) : (
                         <button
                           disabled={true}
-                          className="flex px-2 items-center disabled:cursor-not-allowed disabled:text-gray-400 gap-1 text-xs text-gray-600 hover:text-(--primary-color) transition"
+                          className="flex px-2 items-center disabled:cursor-not-allowed disabled:text-gray-400 gap-1 text-xs text-gray-600 hover:text-(--secondary-color) transition"
                         >
                           <TiktokIcon
                             bgColor="#000000"
@@ -208,7 +210,7 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                         <Link
                           href={salon.social.facebook}
                           target="_blank"
-                          className="flex items-center px-2 gap-1 text-xs text-gray-600 hover:text-(--primary-color) transition"
+                          className="flex items-center px-2 gap-1 text-xs text-gray-600 hover:text-(--secondary-color) transition"
                         >
                           <FacebookIcon
                             bgColor="#000000"
@@ -219,7 +221,7 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                       ) : (
                         <button
                           disabled={true}
-                          className="flex px-2 items-center disabled:cursor-not-allowed disabled:text-gray-400 gap-1 text-xs text-gray-600 hover:text-(--primary-color) transition"
+                          className="flex px-2 items-center disabled:cursor-not-allowed disabled:text-gray-400 gap-1 text-xs text-gray-600 hover:text-(--secondary-color) transition"
                         >
                           <FacebookIcon
                             bgColor="#000000"
@@ -232,7 +234,7 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                         <Link
                           href={salon.social.telegram}
                           target="_blank"
-                          className="flex items-center gap-1 text-xs text-gray-600 hover:text-(--primary-color) transition"
+                          className="flex items-center gap-1 text-xs text-gray-600 hover:text-(--secondary-color) transition"
                         >
                           <TelegramIcon
                             bgColor="#000000"
@@ -243,7 +245,7 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                       ) : (
                         <button
                           disabled={true}
-                          className="flex px-2 items-center disabled:cursor-not-allowed disabled:text-gray-400 gap-1 text-xs text-gray-600 hover:text-(--primary-color) transition"
+                          className="flex px-2 items-center disabled:cursor-not-allowed disabled:text-gray-400 gap-1 text-xs text-gray-600 hover:text-(--secondary-color) transition"
                         >
                           <TelegramIcon
                             bgColor="#000000"

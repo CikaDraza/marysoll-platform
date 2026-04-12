@@ -49,13 +49,13 @@ export function Theme1ImageGenerationSection() {
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Npr. 'dramatičan večernji makeup sa zlatnim sjajem'"
-              className="w-full px-6 py-3 rounded-full text-gray-800 ring-2 ring-gray-400 bg-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-(--primary-color)/70 transition-all"
+              className="w-full px-6 py-3 rounded-full text-gray-800 ring-1 ring-gray-200 bg-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-(--secondary-color)/70 transition-all"
               disabled={isLoading}
             />
             <button
               onClick={handleGenerate}
               disabled={isLoading}
-              className="bg-(--primary-color) text-white font-bold py-3 px-8 rounded-full hover:bg-white hover:text-(--primary-color) transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="bg-(--secondary-color) text-white font-bold py-3 px-8 rounded-full hover:bg-white hover:text-(--secondary-color) cursor-pointer transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {isLoading ? (
                 <>
@@ -87,7 +87,7 @@ export function Theme1ImageGenerationSection() {
             </button>
           </div>
           {error && <p className="text-red-400 mb-4">{error}</p>}
-          <div className="bg-(--primary-color) rounded-2xl min-h-75 md:md:min-h-100 flex items-center justify-center p-4">
+          <div className="border border-gray-200 rounded-2xl min-h-75 md:md:min-h-100 flex items-center justify-center p-4">
             {generatedImage ? (
               <div className="flex flex-col items-center">
                 <Image
@@ -110,7 +110,7 @@ export function Theme1ImageGenerationSection() {
                 </button>
               </div>
             ) : (
-              <p className="text-white">
+              <p className="text-gray-700">
                 {isLoading
                   ? "AI kreira vašu viziju..."
                   : "Ovde će se pojaviti vaša generisana slika."}

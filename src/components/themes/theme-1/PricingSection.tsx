@@ -66,7 +66,7 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
             >
               <h3
                 className={classNames(
-                  dark ? "text-white" : "text-(--primary-color)",
+                  dark ? "text-white" : "text-(--secondary-color)",
                   "font-semibold text-base mb-1",
                 )}
               >

@@ -73,7 +73,7 @@ export function Theme1AppointmentSection({
                       {instruction.Icon && (
                         <instruction.Icon
                           aria-hidden="true"
-                          className="absolute top-1 left-1 size-5 text-indigo-600"
+                          className="absolute top-1 left-1 size-5 text-(--secondary-color)"
                         />
                       )}
                       {instruction.name}

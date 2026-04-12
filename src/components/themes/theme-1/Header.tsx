@@ -99,8 +99,8 @@ export function Theme1Header({
                 target={item.external ? "_blank" : "_self"}
                 className={
                   item.cta
-                    ? "px-5 py-2 bg-(--secondary-color) text-white text-sm font-semibold rounded-full hover:bg-(--primary-color) transition-colors"
-                    : `text-sm font-medium transition-colors ${isActive ? "text-(--secondary-color)" : "text-gray-700 hover:text-(--primary-color)"}`
+                    ? "px-5 py-2 bg-(--secondary-color)/90 text-white text-sm font-semibold rounded-full hover:bg-(--secondary-color) transition-colors"
+                    : `text-sm font-medium transition-colors ${isActive ? "text-(--secondary-color)" : "text-gray-700 hover:text-(--secondary-color)"}`
                 }
               >
                 {item.name}
@@ -151,14 +151,14 @@ export function Theme1Header({
         >
           <DialogPanel className="h-full bg-white px-6 py-6 shadow-2xl">
             <div className="flex items-center justify-between mb-8">
-              <span className="font-bold text-lg text-(--primary-color)">
+              <span className="font-bold text-lg text-(--secondary-color)">
                 {displayName}
               </span>
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-2 cursor-pointer"
               >
-                <XMarkIcon className="size-5 text-(--primary-color) transition" />
+                <XMarkIcon className="size-5 text-(--secondary-color) transition" />
               </button>
             </div>
             <div className="space-y-4">
@@ -171,7 +171,7 @@ export function Theme1Header({
                   className={
                     item.cta
                       ? "block text-center py-3 bg-(--secondary-color) text-white font-semibold rounded-xl"
-                      : "block py-2 text-gray-700 font-medium hover:text-(--primary-color)"
+                      : "block py-2 text-gray-700 font-medium hover:text-(--secondary-color)"
                   }
                 >
                   {item.name}
