@@ -623,6 +623,8 @@ export interface SocialLinks {
   instagram?: string;
   facebook?: string;
   tiktok?: string;
+  whatsapp?: string;
+  telegram?: string;
   [key: string]: string | undefined;
 }
 
@@ -687,6 +689,8 @@ export interface SalonProfile {
   workingHours?: WorkingHoursMap | Record<string, unknown>;
   seo?: SeoData;
   branding?: IBranding;
+  landingStructure?: LandingStructure;
+  isDemo?: boolean;
 }
 
 export type LandingTheme = "theme-1" | "theme-2" | "theme-3";
@@ -706,6 +710,7 @@ export interface ISalonProfileForm {
   seo: SeoData;
   branding: IBranding;
   landingTheme: LandingTheme;
+  landingStructure: LandingStructure;
 }
 
 export interface IServiceLanding {
@@ -715,52 +720,145 @@ export interface IServiceLanding {
   lists: string[];
 }
 
-export interface SalonProfileData {
-  _id: string;
-  name: string;
-  email: string;
-  description: string;
-  landingStructure?: {
+export interface LandingStructure {
+  landing: {
     hero: {
-      headline: string;
+      enabled: boolean;
+
+      headline?: string; // fallback: salon name
       subheadline?: string;
-      whereWhatForWhom: string;
-    };
-    CTA: {
-      label: string;
-      href: string;
-    };
-    portfolio: {
-      headline?: string;
-      subheadline?: string;
-      categories: {
-        name: string;
-        images: string[];
+      whereWhatForWhom?: string;
+
+      contact: {
+        location?: string;
+        phone?: string;
+      };
+
+      socialLinks?: {
+        instagram?: string;
+        facebook?: string;
+        tiktok?: string;
+        whatsapp?: string;
+        telegram?: string;
+      };
+
+      ctas: {
+        primary: {
+          text: string;
+          href: string;
+        };
+        secondary?: {
+          text: string;
+          href: string;
+        };
       };
     };
-    services: IServiceLanding[];
+
     about: {
+      enabled: boolean;
+
       headline?: string;
-      descriptions: string[];
+      paragraphs: string[]; // max 2 u UI
     };
-    appointmentProcess: {
+
+    servicesPreview: {
+      enabled: boolean;
+
       headline?: string;
       subheadline?: string;
-      items: string[];
+      // services se ucitavaju iz DB
     };
+
+    appointmentSection: {
+      enabled: boolean;
+
+      headline?: string;
+      subheadline?: string;
+
+      instructions: {
+        name: string;
+        icon: string; // Heroicon name npr "CalendarDaysIcon"
+      }[];
+    };
+
     testimonials: {
+      enabled: boolean;
+
       headline?: string;
-      subheadline?: string;
+      // content dolazi iz DB
     };
-    faq: {
+
+    gallery: {
+      enabled: boolean;
+
       headline?: string;
       subheadline?: string;
+
+      instagram: {
+        username?: string; // @handle
+        link?: string;
+        ctaText?: string;
+      };
+
+      treatments: {
+        id: string;
+        category: string;
+        title: string;
+        description: string;
+        images: { src: string; alt: string }[];
+        href: string;
+      }[];
+    };
+
+    faq: {
+      enabled: boolean;
+
+      headline?: string;
+      subheadline?: string;
+
+      support: {
+        text?: string;
+        email?: string;
+      };
+
       items: {
         question: string;
         answer: string;
       }[];
     };
   };
+
+  pages: {
+    servicesPage: {
+      headline?: string;
+      subheadline?: string;
+    };
+
+    appointmentsPage: {
+      headline?: string;
+      subheadline?: string;
+
+      ctas?: {
+        primary?: {
+          text: string;
+          href: string;
+        };
+        secondary?: {
+          text: string;
+          href: string;
+        };
+      };
+    };
+  };
+}
+
+export interface SalonProfileData {
+  _id: string;
+  name: string;
+  email: string;
+  description: string;
+  landingStructure?: LandingStructure;
+  isDemo?: boolean;
   logo?: string | null;
   phone: string;
   street: string;

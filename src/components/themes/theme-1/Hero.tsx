@@ -16,9 +16,16 @@ interface Props {
     subheadline?: string;
     whereWhatForWhom?: string;
   };
+  /** CTA hrefs are pre-resolved by ThemeLayout (tenantSlug prefix + external URL passthrough). */
   cta: {
-    label: string;
-    href: string;
+    primary: {
+      text: string;
+      href: string;
+    };
+    secondary?: {
+      text: string;
+      href: string;
+    };
   };
 }
 
@@ -28,13 +35,16 @@ const defaultHeroData = {
   whereWhatForWhom:
     "Kiki Kiss Beauty je salon lepote u Beogradu specijalizovan za profesionalno šminkanje, oblikovanje obrva i dugotrajan manikir za sve prilike.",
   CTA: {
-    label: "Zakaži termin",
+    text: "Zakaži termin",
     href: "/termini",
   },
 };
 
 export function Theme1Hero({ salon, heroData, cta }: Props) {
-  const whatsapp = salon?.phone ? `https://wa.me/${salon.phone}` : "#";
+  // WhatsApp: use explicit social link if set, otherwise derive from phone
+  const whatsapp =
+    salon?.social?.whatsapp ||
+    (salon?.phone ? `https://wa.me/${salon.phone.replace(/\D/g, "")}` : null);
 
   return (
     <section className="bg-transparent overflow-hidden -mt-20 min-h-screen lg:pb-24">
@@ -55,21 +65,14 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
         <div className="relative left-1/2 -translate-x-1/2 isolate px-4 h-full">
           <div className="mx-auto max-w-full pt-36 lg:pt-26">
             <div className="relative text-center">
-              <div className="lg:mt-16 pb-16 lg:w-7xl mx-auto">
-                <h1 className="text-4xl lg:text-[175px] text-center text-black font-bold">
+              <div className="py-32 lg:w-7xl mx-auto">
+                <h1 className="text-5xl lg:text-7xl text-center text-black font-bold">
                   {heroData.headline
                     ? heroData.headline
                     : salon.name
                       ? salon.name
                       : defaultHeroData.headline}
                 </h1>
-                <p className="ml-4 mt-0 lg:-mt-6 text-center lg:text-start text-gray-900">
-                  {heroData.subheadline
-                    ? heroData.subheadline
-                    : salon.description
-                      ? salon.description
-                      : defaultHeroData.subheadline}
-                </p>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-8">
                   {/* first column on desktop, on mobile second column */}
                   <dl className="order-3 lg:order-1 flex flex-col gap-y-6 lg:gap-y-0 justify-center items-center w-full">
@@ -101,16 +104,16 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                     </div>
                     <div className="mt-10 flex gap-4 justify-between w-full lg:mx-0">
                       <Link
-                        href={cta?.href ? cta.href : defaultHeroData.CTA.href}
+                        href={cta?.primary?.href || defaultHeroData.CTA.href}
                         className="cursor-pointer flex-1 px-7 py-3 bg-(--secondary-color) text-white font-semibold rounded-full hover:bg-(--primary-color) transition text-sm"
                       >
-                        {cta?.label ? cta.label : defaultHeroData.CTA.label}
+                        {cta?.primary?.text || defaultHeroData.CTA.text}
                       </Link>
                       <Link
-                        href="/usluge"
+                        href={cta?.secondary?.href || "/usluge"}
                         className="px-7 py-3 border border-black hover:border-(--primary-color) text-black font-semibold rounded-full hover:bg-(--primary-color) hover:text-white transition text-sm"
                       >
-                        Naše usluge
+                        {cta?.secondary?.text || "Naše usluge"}
                       </Link>
                     </div>
                   </dl>
@@ -123,7 +126,14 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                     className="order-2 lg:order-2 w-[280px] lg:w-[350px] h-[600px] object-contain mx-auto -mt-12"
                   />
                   {/* third column on desktop, on mobile third column */}
-                  <div className="order-1 lg:order-3 flex flex-col items-center justify-center lg:items-end">
+                  <div className="lg:-mt-16 order-1 lg:order-3 flex flex-col items-center justify-center lg:items-end">
+                    <p className="ml-4 mt-0 mb-4 lg:mb-8 lg:-mt-6 text-center lg:text-end text-gray-900">
+                      {heroData.subheadline
+                        ? heroData.subheadline
+                        : salon.description
+                          ? salon.description
+                          : defaultHeroData.subheadline}
+                    </p>
                     <p className="ml-4 mt-0 mb-4 lg:mb-8 lg:-mt-6 text-center lg:text-end text-gray-900">
                       {heroData.whereWhatForWhom
                         ? heroData.whereWhatForWhom
@@ -161,7 +171,7 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                       ) : (
                         <button
                           disabled={true}
-                          className="flex px-2 items-center disabled:cursor-not-allowed disabled:text-gray-400 gap-1 text-xs text-gray-600 hover:text-(--primary-color) transition"
+                          className="flex px-2 items-center disabled:cursor-not-allowed disabled:opacity-30 gap-1 text-xs text-gray-600 transition"
                         >
                           <WhatsappIcon
                             bgColor="#000000"
@@ -174,7 +184,7 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                         <Link
                           href={salon.social.tiktok}
                           target="_blank"
-                          className="flex items-center gap-1 text-xs text-gray-600 hover:text-(--primary-color) transition"
+                          className="flex items-center px-2 gap-1 text-xs text-gray-600 hover:text-(--primary-color) transition"
                         >
                           <TiktokIcon
                             bgColor="#000000"
@@ -198,7 +208,7 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                         <Link
                           href={salon.social.facebook}
                           target="_blank"
-                          className="flex items-center gap-1 text-xs text-gray-600 hover:text-(--primary-color) transition"
+                          className="flex items-center px-2 gap-1 text-xs text-gray-600 hover:text-(--primary-color) transition"
                         >
                           <FacebookIcon
                             bgColor="#000000"

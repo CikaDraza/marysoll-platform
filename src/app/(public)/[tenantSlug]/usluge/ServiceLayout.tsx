@@ -26,7 +26,7 @@ export default function ServicesLayout({ services }: { services: IService[] }) {
         <span className="text-sm font-bold pb-8 w-full text-center text-(--primary-color)">
           usluge
         </span>
-        <h1 className="text-4xl! lg:text-7xl! text-pretty text-gray-900 text-center font-bold">
+        <h1 className="text-5xl lg:text-7xl text-pretty text-gray-900 text-center font-bold">
           Nase usluge i cene bez trikova
         </h1>
         <p className="mt-8 w-4xl text-center text-sm lg:text-lg font-medium text-pretty text-gray-500 sm:text-xl/8 px-6 lg:px-8">
@@ -41,7 +41,7 @@ export default function ServicesLayout({ services }: { services: IService[] }) {
             key={group.category}
             className="max-w-full lg:py-24 px-2 lg:px-8"
           >
-            <div className="mx-auto max-w-2xl lg:mx-0">
+            <div className="mx-auto max-w-7xl lg:mx-0">
               <h2 className="text-2xl! font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl! lg:text-7xl!">
                 {group.category || "Usluga"}
               </h2>

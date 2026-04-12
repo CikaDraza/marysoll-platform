@@ -56,6 +56,8 @@ export async function PUT(req: NextRequest) {
     if (["theme-1", "theme-2", "theme-3"].includes(landingTheme)) {
       profile.landingTheme = landingTheme;
     }
+    const landingStructure = parseJSON("landingStructure");
+    if (landingStructure) profile.landingStructure = landingStructure;
 
     // Logo
     const logoFile = form.get("logo");

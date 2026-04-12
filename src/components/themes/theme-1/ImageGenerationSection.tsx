@@ -34,10 +34,10 @@ export function Theme1ImageGenerationSection() {
   return (
     <section id="ai-generator" className="py-4 md:py-32 mx-auto">
       <div className="container mx-auto px-6 text-center text-black">
-        <h2 className="text-4xl text-black font-black tracking-tighter mb-4">
+        <h2 className="text-5xl font-semibold tracking-tight text-balance text-gray-900 sm:text-6xl mb-6">
           Kreiraj svoj izgled
         </h2>
-        <p className="max-w-2xl mx-auto text-sm lg:text-lg text-black/80 mb-8">
+        <p className="max-w-2xl mx-auto text-sm text-black/80 mb-16">
           Isprobajte naš AI generator! Opišite kakav makeup, nokte ili stil
           želite, a naša veštačka inteligencija će stvoriti jedinstvenu viziju
           za vas.

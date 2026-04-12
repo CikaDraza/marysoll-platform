@@ -38,6 +38,7 @@ export interface ITenant extends Document {
     updatedAt: Date;
   };
   status: "active" | "suspended" | "pending" | "cancelled";
+  isDemo: { type: boolean; default: false };
   createdAt: Date;
   updatedAt: Date;
 }

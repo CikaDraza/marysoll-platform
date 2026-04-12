@@ -184,7 +184,7 @@ export default async function UslugePage({ params }: Props) {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Services by category */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
+      <section className="max-w-full mx-auto px-6 py-16">
         <ServicesLayout services={services} />
       </section>
 

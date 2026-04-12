@@ -6,13 +6,15 @@ import type { IService } from "@/types";
 
 interface Props {
   services: IService[];
+  tenantSlug?: string;
 }
 
 function classNames(...c: string[]) {
   return c.filter(Boolean).join(" ");
 }
 
-export function Theme1PricingSection({ services }: Props) {
+export function Theme1PricingSection({ services, tenantSlug }: Props) {
+  const servicesHref = tenantSlug ? `/${tenantSlug}/usluge` : "/usluge";
   const featured = [...services]
     .filter((s) => s.featured && s.featured !== "none")
     .sort((a, b) => {
@@ -25,7 +27,7 @@ export function Theme1PricingSection({ services }: Props) {
   if (featured.length === 0) return null;
 
   return (
-    <section className="relative isolate w-full py-12 lg:py-24">
+    <section className="relative isolate max-w-7xl mx-auto px-3 lg:px-0 py-12 lg:py-24">
       <div
         aria-hidden="true"
         className="absolute inset-x-0 -top-3 -z-10 transform-gpu overflow-hidden px-36 blur-3xl"
@@ -38,13 +40,13 @@ export function Theme1PricingSection({ services }: Props) {
           className="mx-auto aspect-[1155/678] w-[72rem] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-30"
         />
       </div>
-      <h2 className="text-center text-3xl lg:text-5xl font-bold text-(--primary-color) mb-4">
+      <h2 className="text-center text-5xl lg:text-6xl font-bold text-black mb-4">
         Cenovnik
       </h2>
       <p className="text-center text-sm text-(--secondary-color) mb-12">
         Transparentne cene za vrhunsku uslugu.
       </p>
-      <div className="mx-auto mt-8 grid max-w-7xl gap-y-6 grid-cols-1 lg:grid-cols-3">
+      <div className="mx-auto my-8 grid max-w-7xl gap-y-6 grid-cols-1 lg:grid-cols-3">
         {featured.map((srv, idx) => {
           const dark = srv.featured === "main";
           return (
@@ -64,7 +66,7 @@ export function Theme1PricingSection({ services }: Props) {
             >
               <h3
                 className={classNames(
-                  dark ? "text-(--secondary-color)" : "text-(--primary-color)",
+                  dark ? "text-white" : "text-(--primary-color)",
                   "font-semibold text-base mb-1",
                 )}
               >
@@ -145,14 +147,12 @@ export function Theme1PricingSection({ services }: Props) {
           );
         })}
       </div>
-      <p className="text-center mt-8">
-        <Link
-          href="/usluge"
-          className="text-sm text-(--secondary-color) font-semibold hover:underline"
-        >
-          Pogledaj sve usluge →
-        </Link>
-      </p>
+      <Link
+        href={servicesHref}
+        className="text-sm text-(--secondary-color) font-semibold hover:underline"
+      >
+        Pogledaj sve cene →
+      </Link>
     </section>
   );
 }

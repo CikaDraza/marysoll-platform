@@ -14,6 +14,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import type {
   ISalonProfileForm,
+  LandingStructure,
   LandingTheme,
   SalonProfile,
   WorkingHoursMap,
@@ -32,6 +33,54 @@ import { EMPTY_WORKING_HOURS } from "@/types/constants";
 
 const emptyWorkingHours = (): WorkingHoursMap => ({ ...EMPTY_WORKING_HOURS });
 
+export const emptyLandingStructure = (): LandingStructure => ({
+  landing: {
+    hero: {
+      enabled: true,
+      headline: "",
+      subheadline: "",
+      whereWhatForWhom: "",
+      contact: { location: "", phone: "" },
+      socialLinks: { instagram: "", facebook: "", tiktok: "", whatsapp: "", telegram: "" },
+      ctas: { primary: { text: "Zakaži termin", href: "/termini" } },
+    },
+    about: { enabled: true, headline: "", paragraphs: [] },
+    servicesPreview: { enabled: true, headline: "", subheadline: "" },
+    appointmentSection: {
+      enabled: true,
+      headline: "",
+      subheadline: "",
+      instructions: [],
+    },
+    testimonials: { enabled: true, headline: "" },
+    gallery: {
+      enabled: true,
+      headline: "",
+      subheadline: "",
+      instagram: { username: "", link: "", ctaText: "" },
+      treatments: [],
+    },
+    faq: {
+      enabled: true,
+      headline: "",
+      subheadline: "",
+      support: { text: "", email: "" },
+      items: [],
+    },
+  },
+  pages: {
+    servicesPage: { headline: "", subheadline: "" },
+    appointmentsPage: {
+      headline: "",
+      subheadline: "",
+      ctas: {
+        primary: { text: "", href: "" },
+        secondary: { text: "", href: "" },
+      },
+    },
+  },
+});
+
 const emptyForm = (): ISalonProfileForm => ({
   name: "",
   email: "",
@@ -42,7 +91,7 @@ const emptyForm = (): ISalonProfileForm => ({
   city: "",
   newsletterEmail: "",
   logo: null,
-  social: { instagram: "", facebook: "", tiktok: "" },
+  social: { instagram: "", facebook: "", tiktok: "", whatsapp: "", telegram: "" },
   workingHours: emptyWorkingHours(),
   seo: {
     homeTitle: "",
@@ -58,6 +107,7 @@ const emptyForm = (): ISalonProfileForm => ({
     fontFamily: "Inter",
   },
   landingTheme: "theme-1" as LandingTheme,
+  landingStructure: emptyLandingStructure(),
 });
 
 // Mapira SalonProfile iz DB u formu — normalizuje legacy workingHours string format
@@ -85,6 +135,106 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
   const rawProfile = p as unknown as Record<string, unknown>;
   const landingTheme = (rawProfile.landingTheme as LandingTheme) || "theme-1";
 
+  const empty = emptyLandingStructure();
+  const rawLS = (rawProfile.landingStructure as LandingStructure | undefined) ?? {};
+  const rawLanding = (rawLS as LandingStructure).landing ?? {};
+  const rawPages = (rawLS as LandingStructure).pages ?? {};
+
+  const landingStructure: LandingStructure = {
+    landing: {
+      hero: {
+        enabled: rawLanding.hero?.enabled ?? true,
+        headline: rawLanding.hero?.headline ?? "",
+        subheadline: rawLanding.hero?.subheadline ?? "",
+        whereWhatForWhom: rawLanding.hero?.whereWhatForWhom ?? "",
+        contact: {
+          location: rawLanding.hero?.contact?.location ?? "",
+          phone: rawLanding.hero?.contact?.phone ?? "",
+        },
+        socialLinks: {
+          instagram: rawLanding.hero?.socialLinks?.instagram ?? "",
+          facebook: rawLanding.hero?.socialLinks?.facebook ?? "",
+          tiktok: rawLanding.hero?.socialLinks?.tiktok ?? "",
+          whatsapp: rawLanding.hero?.socialLinks?.whatsapp ?? "",
+          telegram: rawLanding.hero?.socialLinks?.telegram ?? "",
+        },
+        ctas: {
+          primary: {
+            text: rawLanding.hero?.ctas?.primary?.text ?? "Zakaži termin",
+            href: rawLanding.hero?.ctas?.primary?.href ?? "/termini",
+          },
+          secondary: rawLanding.hero?.ctas?.secondary
+            ? { text: rawLanding.hero.ctas.secondary.text ?? "", href: rawLanding.hero.ctas.secondary.href ?? "" }
+            : undefined,
+        },
+      },
+      about: {
+        enabled: rawLanding.about?.enabled ?? true,
+        headline: rawLanding.about?.headline ?? "",
+        paragraphs: rawLanding.about?.paragraphs ?? [],
+      },
+      servicesPreview: {
+        enabled: rawLanding.servicesPreview?.enabled ?? true,
+        headline: rawLanding.servicesPreview?.headline ?? "",
+        subheadline: rawLanding.servicesPreview?.subheadline ?? "",
+      },
+      appointmentSection: {
+        enabled: rawLanding.appointmentSection?.enabled ?? true,
+        headline: rawLanding.appointmentSection?.headline ?? "",
+        subheadline: rawLanding.appointmentSection?.subheadline ?? "",
+        instructions: rawLanding.appointmentSection?.instructions ?? [],
+      },
+      testimonials: {
+        enabled: rawLanding.testimonials?.enabled ?? true,
+        headline: rawLanding.testimonials?.headline ?? "",
+      },
+      gallery: {
+        enabled: rawLanding.gallery?.enabled ?? true,
+        headline: rawLanding.gallery?.headline ?? "",
+        subheadline: rawLanding.gallery?.subheadline ?? "",
+        instagram: {
+          username: rawLanding.gallery?.instagram?.username ?? "",
+          link: rawLanding.gallery?.instagram?.link ?? "",
+          ctaText: rawLanding.gallery?.instagram?.ctaText ?? "",
+        },
+        treatments: rawLanding.gallery?.treatments ?? [],
+      },
+      faq: {
+        enabled: rawLanding.faq?.enabled ?? true,
+        headline: rawLanding.faq?.headline ?? "",
+        subheadline: rawLanding.faq?.subheadline ?? "",
+        support: {
+          text: rawLanding.faq?.support?.text ?? "",
+          email: rawLanding.faq?.support?.email ?? "",
+        },
+        items: rawLanding.faq?.items ?? [],
+      },
+    },
+    pages: {
+      servicesPage: {
+        headline: rawPages.servicesPage?.headline ?? "",
+        subheadline: rawPages.servicesPage?.subheadline ?? "",
+      },
+      appointmentsPage: {
+        headline: rawPages.appointmentsPage?.headline ?? "",
+        subheadline: rawPages.appointmentsPage?.subheadline ?? "",
+        ctas: {
+          primary: {
+            text: rawPages.appointmentsPage?.ctas?.primary?.text ?? "",
+            href: rawPages.appointmentsPage?.ctas?.primary?.href ?? "",
+          },
+          secondary: {
+            text: rawPages.appointmentsPage?.ctas?.secondary?.text ?? "",
+            href: rawPages.appointmentsPage?.ctas?.secondary?.href ?? "",
+          },
+        },
+      },
+    },
+  };
+
+  // suppress unused empty var warning
+  void empty;
+
   return {
     name: p.name ?? "",
     email: p.email ?? "",
@@ -99,6 +249,8 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
       instagram: p.social?.instagram ?? "",
       facebook: p.social?.facebook ?? "",
       tiktok: p.social?.tiktok ?? "",
+      whatsapp: p.social?.whatsapp ?? "",
+      telegram: p.social?.telegram ?? "",
     },
     workingHours: wh,
     seo: {
@@ -114,7 +266,8 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
       secondaryColor: p.branding?.secondaryColor ?? "#ec4899",
       fontFamily: p.branding?.fontFamily ?? "Inter",
     },
-    landingTheme: landingTheme,
+    landingTheme,
+    landingStructure,
   };
 }
 
@@ -222,6 +375,10 @@ export function useSalonProfileAdmin() {
     setForm((p) => ({ ...p, branding: { ...p.branding, [k]: v } }));
   }, []);
 
+  const setLandingStructure = useCallback((ls: LandingStructure) => {
+    setForm((p) => ({ ...p, landingStructure: ls }));
+  }, []);
+
   // ── Working hours ─────────────────────────────────────────────────────────
 
   const addTimeSlot = useCallback((day: DayOfWeek) => {
@@ -304,6 +461,7 @@ export function useSalonProfileAdmin() {
       fd.append("seo", JSON.stringify(form.seo));
       fd.append("branding", JSON.stringify(form.branding));
       fd.append("landingTheme", form.landingTheme);
+      fd.append("landingStructure", JSON.stringify(form.landingStructure));
       if (logoFile) fd.append("logo", logoFile);
 
       return apiSave(fd, token, !profile);
@@ -354,6 +512,7 @@ export function useSalonProfileAdmin() {
     setSocialField,
     setSeoField,
     setBrandingField,
+    setLandingStructure,
     isEditing,
     startEdit,
     cancelEdit,

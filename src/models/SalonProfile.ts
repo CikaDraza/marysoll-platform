@@ -1,8 +1,18 @@
-import mongoose, { model, models, Schema, Types } from "mongoose";
+import mongoose, { model, models, Types } from "mongoose";
 
 export type LandingTheme = "theme-1" | "theme-2" | "theme-3";
 
-const itemsSchema = new mongoose.Schema({
+const ctaSchema = new mongoose.Schema({
+  text: { type: String },
+  href: { type: String },
+});
+
+const instructionSchema = new mongoose.Schema({
+  name: { type: String },
+  icon: { type: String }, // Heroicon name e.g. "CalendarDaysIcon"
+});
+
+const faqItemSchema = new mongoose.Schema({
   question: { type: String, required: true },
   answer: { type: String, required: true },
 });
@@ -17,44 +27,110 @@ const SalonProfileSchema = new mongoose.Schema(
     name: { type: String, required: true },
     email: { type: String, required: true },
     description: { type: String },
+
+    isDemo: { type: Boolean, default: false },
+
     landingStructure: {
-      hero: {
-        headline: { type: String, required: false },
-        subheadline: { type: String, required: false },
-        whereWhatForWhom: { type: String, required: false },
-      },
-      CTA: {
-        label: { type: String, required: false },
-        href: { type: String, required: false },
-      },
-      portfolio: {
-        headline: { type: String, required: false },
-        subheadline: { type: String, required: false },
-        categories: {
-          name: { type: String, required: false },
-          images: { type: [String], required: false },
+      landing: {
+        hero: {
+          enabled: { type: Boolean, default: true },
+          headline: { type: String },
+          subheadline: { type: String },
+          whereWhatForWhom: { type: String },
+          contact: {
+            location: { type: String },
+            phone: { type: String },
+          },
+          socialLinks: {
+            instagram: { type: String },
+            facebook: { type: String },
+            tiktok: { type: String },
+            whatsapp: { type: String },
+            telegram: { type: String },
+          },
+          ctas: {
+            primary: ctaSchema,
+            secondary: ctaSchema,
+          },
+        },
+        about: {
+          enabled: { type: Boolean, default: true },
+          headline: { type: String },
+          paragraphs: { type: [String], default: [] },
+        },
+        servicesPreview: {
+          enabled: { type: Boolean, default: true },
+          headline: { type: String },
+          subheadline: { type: String },
+        },
+        appointmentSection: {
+          enabled: { type: Boolean, default: true },
+          headline: { type: String },
+          subheadline: { type: String },
+          instructions: { type: [instructionSchema], default: [] },
+        },
+        testimonials: {
+          enabled: { type: Boolean, default: true },
+          headline: { type: String },
+        },
+        gallery: {
+          enabled: { type: Boolean, default: true },
+          headline: { type: String },
+          subheadline: { type: String },
+          instagram: {
+            username: { type: String },
+            link: { type: String },
+            ctaText: { type: String },
+          },
+          treatments: {
+            type: [
+              {
+                id: { type: String },
+                category: { type: String },
+                title: { type: String },
+                description: { type: String },
+                images: {
+                  type: [
+                    {
+                      src: { type: String },
+                      alt: { type: String },
+                    },
+                  ],
+                  default: [],
+                },
+                href: { type: String, default: "/termini" },
+              },
+            ],
+            default: [],
+          },
+        },
+        faq: {
+          enabled: { type: Boolean, default: true },
+          headline: { type: String },
+          subheadline: { type: String },
+          support: {
+            text: { type: String },
+            email: { type: String },
+          },
+          items: { type: [faqItemSchema], default: [] },
         },
       },
-      services: { type: [Schema.Types.ObjectId], ref: "Service" },
-      about: {
-        headline: { type: String, required: false },
-        descriptions: { type: [String], required: false },
-      },
-      appointmentProcess: {
-        headline: { type: String, required: false },
-        subheadline: { type: String, required: false },
-        items: { type: [String], required: false },
-      },
-      testimonials: {
-        headline: { type: String, required: false },
-        subheadline: { type: String, required: false },
-      },
-      faq: {
-        headline: { type: String, required: false },
-        subheadline: { type: String, required: false },
-        items: [itemsSchema],
+      pages: {
+        servicesPage: {
+          headline: { type: String },
+          subheadline: { type: String },
+        },
+        appointmentsPage: {
+          headline: { type: String },
+          subheadline: { type: String },
+          ctas: {
+            primary: ctaSchema,
+            secondary: ctaSchema,
+          },
+        },
       },
     },
+
     logo: { type: String, required: false, default: null },
     phone: { type: String, required: false, default: "" },
     city: { type: String, required: false, default: "" },
@@ -63,12 +139,13 @@ const SalonProfileSchema = new mongoose.Schema(
       instagram: { type: String, default: "" },
       facebook: { type: String, default: "" },
       tiktok: { type: String, default: "" },
+      whatsapp: { type: String, default: "" },
+      telegram: { type: String, default: "" },
     },
     newsletterEmail: { type: String, required: false, default: "" },
     contactEmail: { type: String, required: false, default: "" },
     workingHours: { type: Object, default: {} },
 
-    // SEO Meta
     seo: {
       homeTitle: { type: String, default: "" },
       homeDescription: { type: String, default: "" },
@@ -78,14 +155,12 @@ const SalonProfileSchema = new mongoose.Schema(
       terminiDescription: { type: String, default: "" },
     },
 
-    // Branding
     branding: {
       primaryColor: { type: String, default: "#a855f7" },
       secondaryColor: { type: String, default: "#ec4899" },
       fontFamily: { type: String, default: "Inter" },
     },
 
-    // Landing page theme selection
     landingTheme: {
       type: String,
       enum: ["theme-1", "theme-2", "theme-3"],

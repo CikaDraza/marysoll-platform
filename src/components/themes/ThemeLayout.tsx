@@ -16,9 +16,7 @@ import type { IService, SalonProfileData } from "@/types";
 import { Theme1Header } from "./theme-1/Header";
 import { Theme1Footer } from "./theme-1/Footer";
 import { Theme1Hero } from "./theme-1/Hero";
-// import { Theme1HeroSecond } from "./theme-1/HeroSecond";
 import { Theme1WhatOffer } from "./theme-1/WhatOffer";
-import { Theme1WhyChooseUs } from "./theme-1/WhyChooseUs";
 import { Theme1GallerySection } from "./theme-1/GallerySection";
 import { Theme1PricingSection } from "./theme-1/PricingSection";
 import { Theme1AppointmentSection } from "./theme-1/AppointmentSection";
@@ -50,7 +48,12 @@ import { Theme3ImageGenerationSection } from "./theme-3/ImageGenerationSection";
 import { Theme3AppointmentSection } from "./theme-3/AppointmentSection";
 import { Theme3TestimonialsSection } from "./theme-3/TestimonialsSection";
 import { Theme1ImageGenerationSection } from "./theme-1/ImageGenerationSection";
-import { Theme1AboutUs, Theme1SocialProof } from "./theme-1";
+import {
+  Theme1AboutUs,
+  Theme1CTABookingSection,
+  Theme1FAQSection,
+  Theme1SocialProof,
+} from "./theme-1";
 
 interface Testimonial {
   _id: string;
@@ -88,98 +91,43 @@ export function ThemeLayout({
   clientSlug,
 }: ThemeLayoutProps) {
   const instagram = salon.social?.instagram || "";
-  const showGallery = true;
+  const ls = salon.landingStructure;
 
-  type Treatment = {
-    id: string;
-    category: string;
-    title: string;
-    description: string;
-    images: { src: string; alt: string }[];
-    href: string;
+  // ── Resolve internal hrefs: prefix with tenantSlug, pass external URLs through ──
+  const resolveHref = (href: string) => {
+    if (!href) return "#";
+    if (/^https?:\/\//.test(href)) return href;
+    const prefix = tenantSlug ? `/${tenantSlug}` : "";
+    return href.startsWith("/") ? `${prefix}${href}` : `${prefix}/${href}`;
   };
 
-  const treatments: Treatment[] = [
-    {
-      id: "makeup-day",
-      category: "Makeup",
-      title: "Dnevna šminka",
-      description:
-        "Profesionalna šminka za dnevne svakodnevnice. Koristim profesionalnu kozmetiku renomiranih svetskih brendova.",
-      images: [
-        {
-          src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1775680463/salons/salon-kiki-kiss/jft1ovq89liveiameeox.png",
-          alt: "Dnevna šminka",
-        },
-        {
-          src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1768705206/marysoll-ai-look-1768705168082_xyfogh.jpg",
-          alt: "Dnevna azijska šminka",
-        },
-      ],
-      href: "/termini",
-    },
-    {
-      id: "makeup-night",
-      category: "Makeup",
-      title: "Večernja šminka",
-      description:
-        "Postojan izgled koji traje celu noć, uz naglašavanje tvojih najlepših crta lica.",
-      images: [
-        {
-          src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1768704883/marysoll-ai-look-1766951292797_plupol.jpg",
-          alt: "Dnevna šminka",
-        },
-        {
-          src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1768705190/marysoll-ai-look-1768704967165_zwkwim.jpg",
-          alt: "Dnevna azijska šminka",
-        },
-      ],
-      href: "/termini",
-    },
-    {
-      id: "nails",
-      category: "Nails",
-      title: "Nokti | Nails",
-      description:
-        "Nega noktiju uz gel lak, ojačavanje prirodnih noktiju i izlivanje. Higijenski, precizno i dugotrajno — za besprekorno negovane nokte u svakom trenutku.",
-      images: [
-        {
-          src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1771541591/salon/zycqbewvuphkygo2hr8w.jpg",
-          alt: "Frenč - Dizajn",
-        },
-        {
-          src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1771740371/marysoll-ai-look-1771740341957_nfxa1m.jpg",
-          alt: "Izlivanje noktiju",
-        },
-      ],
-      href: "/termini",
-    },
-    {
-      id: "obrve",
-      category: "Obrve",
-      title: "Obrve i Nausnice",
-      description:
-        "Profesionalno oblikovanje obrva i uklanjanje dlačica sa obrva i nausnica. Pratimo prirodnu formu lica kako bismo postigli uredan, ženstven i negovan izgled.",
-      images: [
-        {
-          src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1768705470/marysoll-ai-look-1768705452254_plwtv7.jpg",
-          alt: "Frenč - Dizajn",
-        },
-        {
-          src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1770896288/salon/svgc0l829bx5e62n2xg2.jpg",
-          alt: "Izlivanje noktiju",
-        },
-      ],
-      href: "/termini",
-    },
-  ];
+  // ── Merge CMS hero social links over salon.social (CMS wins if non-empty) ──
+  const heroSL = ls?.landing?.hero?.socialLinks;
+  const mergedSocial = {
+    ...salon.social,
+    ...(heroSL?.instagram ? { instagram: heroSL.instagram } : {}),
+    ...(heroSL?.facebook ? { facebook: heroSL.facebook } : {}),
+    ...(heroSL?.tiktok ? { tiktok: heroSL.tiktok } : {}),
+    ...(heroSL?.whatsapp ? { whatsapp: heroSL.whatsapp } : {}),
+    ...(heroSL?.telegram ? { telegram: heroSL.telegram } : {}),
+  };
+  const salonWithMergedSocial = { ...salon, social: mergedSocial };
+
+  // ── CMS section enabled flags (default true if not set) ────────────────
+  const heroEnabled = ls?.landing?.hero?.enabled ?? true;
+  const aboutEnabled = ls?.landing?.about?.enabled ?? true;
+  const servicesPreviewEnabled = ls?.landing?.servicesPreview?.enabled ?? true;
+  const appointmentEnabled = ls?.landing?.appointmentSection?.enabled ?? true;
+  const testimonialsEnabled = ls?.landing?.testimonials?.enabled ?? true;
+  const galleryEnabled = ls?.landing?.gallery?.enabled ?? true;
+  const faqEnabled = ls?.landing?.faq?.enabled ?? true;
 
   const headerProps = {
     tenantSlug,
     clientSlug: clientSlug ?? tenantSlug,
     salonName: salon.name,
     salonLogo: salon.logo ?? null,
-    instagramUrl: showGallery ? instagram : undefined,
+    instagramUrl: galleryEnabled ? instagram : undefined,
   };
 
   const footerProps = {
@@ -190,44 +138,103 @@ export function ThemeLayout({
     tiktok: salon.social?.tiktok,
   };
 
+  // ── Hero CTA with resolved hrefs ────────────────────────────────────────
+  const heroCtas = ls?.landing?.hero?.ctas;
+  const resolvedCta = {
+    primary: {
+      text: heroCtas?.primary?.text || "",
+      href: resolveHref(heroCtas?.primary?.href || "/termini"),
+    },
+    secondary: heroCtas?.secondary
+      ? {
+          text: heroCtas.secondary.text || "",
+          href: resolveHref(heroCtas.secondary.href || "/usluge"),
+        }
+      : undefined,
+  };
+
   // ── Theme 1: Light gradient ───────────────────────────────────────────────
   if (theme === "theme-1") {
     return (
       <div className="min-h-screen flex flex-col bg-white">
         <Theme1Header {...headerProps} />
         <main className="flex-1 overflow-x-hidden flex flex-col pt-20">
-          <Theme1Hero
-            salon={salon}
-            heroData={
-              salon?.landingStructure?.hero || {
-                headline: "",
-                whereWhatForWhom: "",
-              }
-            }
-            cta={salon?.landingStructure?.CTA || { label: "", href: "" }}
-          />
-          <Theme1AboutUs
-            about={
-              salon?.landingStructure?.about || {
-                headline: "",
-                subheadline: "",
-              }
-            }
-          />
-          <Theme1SocialProof />
-          {services.length > 0 && <Theme1WhatOffer services={services} />}
-          <Theme1WhyChooseUs />
-          {showGallery && (
-            <Theme1GallerySection
-              instagramUrl={instagram}
-              instagramTag={instagram}
-              treatments={treatments}
+          {heroEnabled && (
+            <Theme1Hero
+              salon={salonWithMergedSocial}
+              heroData={{
+                headline: ls?.landing?.hero?.headline ?? "",
+                subheadline: ls?.landing?.hero?.subheadline,
+                whereWhatForWhom: ls?.landing?.hero?.whereWhatForWhom,
+              }}
+              cta={resolvedCta}
             />
           )}
-          <Theme1PricingSection services={services} />
+          {aboutEnabled && (
+            <Theme1AboutUs
+              about={{
+                headline: ls?.landing?.about?.headline,
+                paragraphs: ls?.landing?.about?.paragraphs ?? [],
+              }}
+            />
+          )}
+          <Theme1SocialProof />
+          {servicesPreviewEnabled && services.length > 0 && (
+            <Theme1WhatOffer
+              services={services}
+              headline={ls?.landing?.servicesPreview?.headline}
+              subheadline={ls?.landing?.servicesPreview?.subheadline}
+              tenantSlug={tenantSlug}
+            />
+          )}
+          {appointmentEnabled && (
+            <Theme1AppointmentSection
+              tenantSlug={tenantSlug}
+              clientSlug={clientSlug ?? tenantSlug}
+              salon={salon}
+              services={services}
+              headline={ls?.landing?.appointmentSection?.headline}
+              subheadline={ls?.landing?.appointmentSection?.subheadline}
+              instructions={ls?.landing?.appointmentSection?.instructions}
+            />
+          )}
+          {testimonialsEnabled && (
+            <Theme1TestimonialsSection
+              testimonials={testimonials.length > 0 ? testimonials : undefined}
+              headline={ls?.landing?.testimonials?.headline}
+            />
+          )}
+          {galleryEnabled && (
+            <Theme1GallerySection
+              instagramUrl={ls?.landing?.gallery?.instagram?.link || instagram}
+              instagramTag={
+                ls?.landing?.gallery?.instagram?.username || instagram
+              }
+              headline={ls?.landing?.gallery?.headline}
+              subheadline={ls?.landing?.gallery?.subheadline}
+              treatments={
+                ls?.landing?.gallery?.treatments &&
+                ls.landing.gallery.treatments.length > 0
+                  ? ls.landing.gallery.treatments
+                  : undefined
+              }
+            />
+          )}
+          <Theme1PricingSection services={services} tenantSlug={tenantSlug} />
+          {faqEnabled && (
+            <Theme1FAQSection
+              headline={ls?.landing?.faq?.headline}
+              subheadline={ls?.landing?.faq?.subheadline}
+              items={ls?.landing?.faq?.items}
+              supportText={ls?.landing?.faq?.support?.text}
+              supportEmail={ls?.landing?.faq?.support?.email}
+            />
+          )}
           <Theme1ImageGenerationSection />
-          <Theme1AppointmentSection salonName={salon.name} />
-          <Theme1TestimonialsSection testimonials={testimonials} />
+          <Theme1CTABookingSection
+            salonName={salon.name}
+            tenantSlug={tenantSlug}
+          />
         </main>
         <Theme1Footer {...footerProps} />
       </div>
@@ -244,7 +251,7 @@ export function ThemeLayout({
           <Theme2HeroSecond salonName={salon.name} />
           {services.length > 0 && <Theme2WhatOffer services={services} />}
           <Theme2WhyChooseUs />
-          {showGallery && <Theme2GallerySection instagramUrl={instagram} />}
+          {galleryEnabled && <Theme2GallerySection instagramUrl={instagram} />}
           <Theme2PricingSection services={services} />
           <Theme2ImageGenerationSection />
           <Theme2AppointmentSection salonName={salon.name} />
@@ -267,7 +274,7 @@ export function ThemeLayout({
         />
         {services.length > 0 && <Theme3WhatOffer services={services} />}
         <Theme3WhyChooseUs />
-        {showGallery && <Theme3GallerySection instagramUrl={instagram} />}
+        {galleryEnabled && <Theme3GallerySection instagramUrl={instagram} />}
         <Theme3PricingSection services={services} />
         <Theme3ImageGenerationSection />
         <Theme3AppointmentSection salonName={salon.name} />

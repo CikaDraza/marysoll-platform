@@ -16,6 +16,7 @@ import AppointmentAdminCalendar from "@/components/admin/AppointmentAdminCalenda
 import { StatisticsPage } from "@/components/admin/statistics/StatisticPage";
 import AdminNewsletterDashboard from "@/components/admin/AdminNewsletterDashboard";
 import { EmailCampaignAIGenerator } from "@/components/email-campaign/EmailCampaignAIGenerator";
+import { AdminLandingCMS } from "@/components/admin/cms/AdminLandingCMS";
 import { FeatureGate } from "@/components/shared/FeatureGate";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import DashboardLayout from "@/layout/DashboardLayout";
@@ -28,6 +29,7 @@ type Tab =
   | "profil"
   | "radno-vreme"
   | "social-seo"
+  | "cms"
   | "usluge"
   | "termini"
   | "kalendar"
@@ -41,6 +43,7 @@ const ALL_TABS: Tab[] = [
   "profil",
   "radno-vreme",
   "social-seo",
+  "cms",
   "usluge",
   "termini",
   "kalendar",
@@ -970,6 +973,9 @@ function AdminDashboard() {
         </div>
       )}
 
+      {/* ═══ TAB: CMS ═══════════════════════════════════════════════ */}
+      {tab === "cms" && <AdminLandingCMS sp={sp} />}
+
       {/* ═══ TAB: Usluge ════════════════════════════════════════════ */}
       {tab === "usluge" && (
         <div className="space-y-5">
@@ -1325,7 +1331,7 @@ function ServiceModal({ s }: { s: ReturnType<typeof useAdminServices> }) {
                   />
                   <input
                     type="number"
-                    className={i2 + " w-28"}
+                    className={i2 + " flex-1"}
                     value={v.price || ""}
                     onChange={(e) =>
                       s.updateVariant(i, "price", Number(e.target.value))
@@ -1335,7 +1341,7 @@ function ServiceModal({ s }: { s: ReturnType<typeof useAdminServices> }) {
                   />
                   <input
                     type="number"
-                    className={i2 + " w-20"}
+                    className={i2 + " flex-0 min-w-26"}
                     value={v.duration || ""}
                     onChange={(e) =>
                       s.updateVariant(i, "duration", Number(e.target.value))
@@ -1377,7 +1383,7 @@ function ServiceModal({ s }: { s: ReturnType<typeof useAdminServices> }) {
                   />
                   <input
                     type="number"
-                    className={i2 + " w-28"}
+                    className={i2 + " flex-1"}
                     value={sv.price || ""}
                     onChange={(e) =>
                       s.updateGroupService(i, "price", Number(e.target.value))
@@ -1387,7 +1393,7 @@ function ServiceModal({ s }: { s: ReturnType<typeof useAdminServices> }) {
                   />
                   <input
                     type="number"
-                    className={i2 + " w-20"}
+                    className={i2 + " flex-0 min-w-26"}
                     value={sv.duration || ""}
                     onChange={(e) =>
                       s.updateGroupService(
@@ -1431,7 +1437,7 @@ function ServiceModal({ s }: { s: ReturnType<typeof useAdminServices> }) {
                   />
                   <input
                     type="number"
-                    className={i2 + " w-28"}
+                    className={i2 + " flex-1"}
                     value={ex.price || ""}
                     onChange={(e) =>
                       s.updateExtra(i, "price", Number(e.target.value))
@@ -1441,7 +1447,7 @@ function ServiceModal({ s }: { s: ReturnType<typeof useAdminServices> }) {
                   />
                   <input
                     type="number"
-                    className={i2 + " w-20"}
+                    className={i2 + " flex-0 min-w-26"}
                     value={ex.duration || ""}
                     onChange={(e) =>
                       s.updateExtra(i, "duration", Number(e.target.value))

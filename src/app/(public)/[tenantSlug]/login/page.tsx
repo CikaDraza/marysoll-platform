@@ -68,8 +68,16 @@ export default function ClientLoginPage() {
       // Full page navigation — forces useAuth to re-read localStorage on mount.
       // router.push would keep the React tree alive and the login page visible
       // because the useAuth query wouldn't trigger a remount.
+      //
+      // pendingBooking=1 → guest selected a slot before logging in;
+      // redirect to home so the appointment widget can restore it from sessionStorage.
       const from = searchParams.get("from");
-      const destination = from ? `${base}/${from}` : `${base}/panel`;
+      const hasPendingBooking = searchParams.get("pendingBooking") === "1";
+      const destination = hasPendingBooking
+        ? `${base}/`
+        : from
+          ? `${base}/${from}`
+          : `${base}/panel`;
       window.location.href = destination;
     } catch {
       toast.error("Greška na serveru");

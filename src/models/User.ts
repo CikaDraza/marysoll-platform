@@ -25,7 +25,7 @@ const userSchema = new Schema<IUser>(
      */
     globalRole: {
       type: String,
-      enum: ["SUPER_ADMIN", "OWNER", "ADMIN", "STAFF", "USER"],
+      enum: ["SUPER_ADMIN", "OWNER", "ADMIN", "STAFF", "USER", "DEMO"],
       default: "USER",
     },
     // Multi-tenant: null = super admin or guest without tenant

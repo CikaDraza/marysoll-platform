@@ -39,6 +39,12 @@ export async function POST(req: NextRequest) {
 
     const landingTheme = (form.get("landingTheme") as string) || "theme-1";
 
+    const landingStructureRaw = form.get("landingStructure");
+    const landingStructure =
+      landingStructureRaw && typeof landingStructureRaw === "string"
+        ? JSON.parse(landingStructureRaw)
+        : undefined;
+
     const created = await SalonProfile.create({
       tenantId: tenantId ?? undefined,
       name: form.get("name"),
@@ -56,6 +62,7 @@ export async function POST(req: NextRequest) {
       workingHours: parseJSON("workingHours"),
       seo: parseJSON("seo"),
       branding: parseJSON("branding"),
+      ...(landingStructure ? { landingStructure } : {}),
     });
 
     return NextResponse.json({ success: true, data: created }, { status: 201 });

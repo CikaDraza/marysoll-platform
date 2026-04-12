@@ -67,6 +67,7 @@ const AdminNav: NavItem[] = [
       { name: "Profil salona", tab: "profil" },
       { name: "Radno vreme", tab: "radno-vreme" },
       { name: "Social & SEO", tab: "social-seo" },
+      { name: "Landing CMS", tab: "cms" },
     ],
   },
   {

@@ -24,7 +24,9 @@ export type AgentType =
   | "campaignStrategy"
   | "campaignContent"
   | "campaignTemplate"
-  | "campaignOptimization";
+  | "campaignOptimization"
+  | "seoLandingTheme"
+  | "landingContent";
 
 export interface AgentConfig {
   type: AgentType;
@@ -100,6 +102,22 @@ export const AGENTS: Record<AgentType, AgentConfig> = {
     maxTokens: 1500,
     rpmLimit: 5,
   },
+  seoLandingTheme: {
+    type: "seoLandingTheme",
+    apiKey: process.env.API_KEY_SEO_LADNING_THEME ?? "",
+    model: "deepseek-chat",
+    temperature: 0.2,
+    maxTokens: 2000,
+    rpmLimit: 5,
+  },
+  landingContent: {
+    type: "landingContent",
+    apiKey: process.env.API_KEY_LANDING_CONTENT ?? "",
+    model: "deepseek-chat",
+    temperature: 0.6,
+    maxTokens: 4000,
+    rpmLimit: 3,
+  },
 };
 
 export const AGENT_PERSONAS = {
@@ -142,6 +160,16 @@ export const AGENT_PERSONAS = {
     name: "Atlas",
     role: "Campaign Optimization AI",
     color: "text-blue-500",
+  },
+  seoLandingTheme: {
+    name: "Scout",
+    role: "Landing SEO Analyst",
+    color: "text-emerald-500",
+  },
+  landingContent: {
+    name: "Mira",
+    role: "Landing Content Writer",
+    color: "text-rose-500",
   },
 };
 
