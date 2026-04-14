@@ -1,7 +1,7 @@
 // app/api/testimonials/route.ts
 import { NextResponse } from "next/server";
 import { Testimonial } from "@/models/Testimonial";
-import { FilterQuery } from "mongoose";
+import { FilterQuery, Types } from "mongoose";
 import mongoose from "mongoose";
 import {
   ITestimonial,
@@ -10,7 +10,7 @@ import {
   TestimonialsResponse,
 } from "@/types";
 import { connectToDB } from "@/lib/db/mongodb";
-import { verifyToken } from "@/lib/auth/auth-server";
+import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
 
 interface AggregationTestimonial {
   _id: mongoose.Types.ObjectId;
@@ -46,15 +46,13 @@ export async function GET(req: Request) {
   try {
     await connectToDB();
 
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
+    const token = getTokenFromRequest(req);
+    if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const token = authHeader.split(" ")[1];
-    const user = verifyToken(token);
-
-    if (!user) {
+    const decoded = verifyToken(token);
+    if (!decoded) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -64,12 +62,38 @@ export async function GET(req: Request) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
 
+    const isSuperAdmin = decoded.isSuperAdmin ?? false;
+
+    // Tenant isolation gate — evaluated once, applied to both pipelines via filter.
+    if (isSuperAdmin) {
+      // SUPER_ADMIN may cross tenant boundaries — log every access.
+      console.error(
+        JSON.stringify({
+          event: "SUPERADMIN_UNSCOPED_TESTIMONIALS_ACCESS",
+          userId: decoded.id,
+          path: req.url,
+          timestamp: new Date().toISOString(),
+        }),
+      );
+    } else if (!decoded.tenantId) {
+      return NextResponse.json({ error: "Forbidden: no tenant context" }, { status: 403 });
+    }
+
     // Osnovni filter
     const filter: FilterQuery<ITestimonial> = {};
 
-    // Ako nije admin, klijent vidi samo svoje komentare
-    if (!user.isAdmin) {
-      filter.clientEmail = user.email;
+    // Always scope to the caller's tenant.
+    // Admin sees all testimonials in their tenant.
+    // Client sees only their own testimonials in their tenant.
+    // SUPER_ADMIN is intentionally unscoped (logged above).
+    if (!isSuperAdmin && decoded.tenantId) {
+      filter.tenantId = new Types.ObjectId(decoded.tenantId);
+    }
+
+    // Non-admin: additionally restrict to the caller's own email within this tenant.
+    // Email alone is NOT a safe scope — the tenantId above is the isolation boundary.
+    if (!decoded.isAdmin && !isSuperAdmin) {
+      filter.clientEmail = decoded.email;
     }
 
     // Filter po statusu

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectToDB } from "@/lib/db/mongodb";
 import { User } from "@/models/User";
+import { UserIdentity } from "@/models/UserIdentity";
 
 export async function POST(request: Request) {
   try {
@@ -39,6 +40,17 @@ export async function POST(request: Request) {
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
+
+    // Passive sync — user.password is already the bcrypt hash at this point.
+    // No upsert: if UserIdentity is absent (pre-migration account), do nothing.
+    try {
+      await UserIdentity.findOneAndUpdate(
+        { legacyUserId: user._id },
+        { passwordHash: user.password },
+      );
+    } catch (identityErr) {
+      console.error("⚠️ UserIdentity passwordHash sync failed (non-fatal):", identityErr);
+    }
 
     return NextResponse.json({ message: "Lozinka je uspešno promenjena" });
   } catch (error) {

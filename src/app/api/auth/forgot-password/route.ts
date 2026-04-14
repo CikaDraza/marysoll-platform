@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { connectToDB } from "@/lib/db/mongodb";
 import { User } from "@/models/User";
+import { Tenant } from "@/models/Tenant";
 import { sendResetEmail, sendResetEmailOnAssistant } from "@/lib/email/email";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const { email, assistantSlug, isAssistant } = await request.json();
 
@@ -14,7 +15,16 @@ export async function POST(request: Request) {
 
     await connectToDB();
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    // Resolve tenant from header (injected by proxy for subdomain requests).
+    // Platform-level password reset (owner/superadmin) has no tenant header.
+    const tenantSlug = request.headers.get("x-tenant-slug");
+    let tenantId: import("mongoose").Types.ObjectId | null = null;
+    if (tenantSlug && tenantSlug !== "default") {
+      const tenant = await Tenant.findOne({ slug: tenantSlug }).select("_id").lean<{ _id: import("mongoose").Types.ObjectId }>();
+      if (tenant) tenantId = tenant._id;
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim(), tenantId });
 
     // Security: uvek vraćaj istu poruku — ne otkrivaj da li nalog postoji
     if (!user) {
@@ -33,7 +43,7 @@ export async function POST(request: Request) {
     if (isAssistant && assistantSlug) {
       await sendResetEmailOnAssistant(user.email, resetToken, assistantSlug);
     } else {
-      await sendResetEmail(user.email, resetToken);
+      await sendResetEmail(user.email, resetToken, user.name, tenantId?.toString() ?? null);
     }
 
     return NextResponse.json({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { User } from "@/models/User";
+import { UserIdentity } from "@/models/UserIdentity";
 import { Tenant } from "@/models/Tenant";
 import { SalonProfile } from "@/models/SalonProfile";
 import { sendOwnerWelcomeEmail, sendClientWelcomeEmail, TRIAL_DAYS } from "@/lib/email/onboarding";
@@ -46,6 +47,17 @@ export async function GET(request: NextRequest) {
     user.verificationToken = undefined;
     user.verificationTokenExpiry = undefined;
     await user.save();
+
+    // Passive sync — propagate verified state to UserIdentity if one exists.
+    // No upsert: if UserIdentity is absent (pre-migration account), do nothing.
+    try {
+      await UserIdentity.findOneAndUpdate(
+        { legacyUserId: user._id },
+        { isEmailVerified: true },
+      );
+    } catch (identityErr) {
+      console.error("⚠️ UserIdentity isEmailVerified sync failed (non-fatal):", identityErr);
+    }
 
     if (type === "owner") {
       // ─── Aktivacija salona i probnog perioda ───────────────────────────────
@@ -150,6 +162,16 @@ export async function POST(request: NextRequest) {
     user.verificationToken = undefined;
     user.verificationTokenExpiry = undefined;
     await user.save();
+
+    // Passive sync — same as GET handler above.
+    try {
+      await UserIdentity.findOneAndUpdate(
+        { legacyUserId: user._id },
+        { isEmailVerified: true },
+      );
+    } catch (identityErr) {
+      console.error("⚠️ UserIdentity isEmailVerified sync failed (non-fatal):", identityErr);
+    }
 
     if (type === "owner") {
       const tenant = await Tenant.findOne({ ownerId: user._id });

@@ -5,10 +5,40 @@ import { Appointment } from "@/models/Appointment";
 import { FilterQuery, Types } from "mongoose";
 import mongoose from "mongoose";
 import { IAppointment, PaginationInfo } from "@/types";
+import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
 
 export async function GET(req: Request) {
   try {
     await connectToDB();
+
+    // Auth: decode token to extract tenantId.
+    // The proxy already guards this route, but we re-verify here so direct
+    // (non-browser) callers cannot bypass tenant scoping.
+    const token = getTokenFromRequest(req);
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
+    }
+
+    const isSuperAdmin = decoded.isSuperAdmin ?? false;
+
+    if (isSuperAdmin) {
+      // SUPER_ADMIN may query across all tenants — log every such access.
+      console.error(
+        JSON.stringify({
+          event: "SUPERADMIN_UNSCOPED_APPOINTMENTS_ACCESS",
+          userId: decoded.id,
+          path: req.url,
+          timestamp: new Date().toISOString(),
+        }),
+      );
+    } else if (!decoded.tenantId) {
+      // Non-super-admin without a tenantId in token has no valid scope.
+      return NextResponse.json({ error: "Forbidden: no tenant context" }, { status: 403 });
+    }
 
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") || "1");
@@ -21,6 +51,12 @@ export async function GET(req: Request) {
 
     // Kreiraj filter
     const filter: FilterQuery<IAppointment> = {};
+
+    // Tenant isolation: always scope to the caller's tenant.
+    // SUPER_ADMIN has no tenantId — intentionally unscoped (logged above).
+    if (!isSuperAdmin && decoded.tenantId) {
+      filter.tenantId = new Types.ObjectId(decoded.tenantId);
+    }
 
     if (clientId) {
       if (Types.ObjectId.isValid(clientId)) {

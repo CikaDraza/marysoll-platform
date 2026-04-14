@@ -22,7 +22,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Resolve tenant from header (injected by proxy middleware for tenant subdomains).
+    // OWNER/SUPER_ADMIN logins have no tenant header — they have tenantId: null.
+    const tenantSlugFromHeader = request.headers.get("x-tenant-slug");
+    let loginTenantId: import("mongoose").Types.ObjectId | null = null;
+    if (tenantSlugFromHeader && tenantSlugFromHeader !== "default") {
+      const tenantDoc = await Tenant.findOne({ slug: tenantSlugFromHeader }).select("_id").lean<{ _id: import("mongoose").Types.ObjectId }>();
+      if (tenantDoc) loginTenantId = tenantDoc._id;
+    }
+
+    // Find the user scoped to this tenant (same email can exist on multiple tenants).
+    // OWNER users always have tenantId: null — they are platform-level identities.
+    // Their tenant is linked via Tenant.ownerId, not User.tenantId.
+    let user = await User.findOne({ email: normalizedEmail, tenantId: loginTenantId });
+
+    // Fallback: logging in on a tenant subdomain but user not found there.
+    // Check if this is the tenant owner (tenantId: null) logging in from their own subdomain.
+    if (!user && loginTenantId) {
+      const candidate = await User.findOne({
+        email: normalizedEmail,
+        tenantId: null,
+        globalRole: "OWNER",
+      });
+      if (candidate) {
+        const ownerTenant = await Tenant.findOne({
+          ownerId: candidate._id,
+          _id: loginTenantId,
+        })
+          .select("_id")
+          .lean();
+        if (ownerTenant) user = candidate;
+      }
+    }
+
+    // Second fallback: platform login (no tenant header) but owner record still has
+    // tenantId set from a pre-fix registration. Find by email + OWNER role only.
+    if (!user && !loginTenantId) {
+      user = await User.findOne({ email: normalizedEmail, globalRole: "OWNER" }) ?? null;
+    }
+
     if (!user) {
       return NextResponse.json(
         {
@@ -71,13 +111,19 @@ export async function POST(request: NextRequest) {
       lastActive: new Date(),
     });
 
-    const tenantId = user.tenantId?.toString() ?? null;
+    // OWNER users have tenantId: null on their User document — resolve their tenant
+    // via Tenant.ownerId so the JWT carries the correct tenantId and tenantSlug.
+    let tenantId = user.tenantId?.toString() ?? null;
+    let tenantSlug = tenantSlugFromHeader ?? null;
 
-    // Look up tenant slug so it can be embedded in the access token
-    let tenantSlug: string | null = null;
-    if (tenantId) {
-      const tenant = await Tenant.findById(tenantId).select("slug").lean<{ slug: string }>();
-      tenantSlug = tenant?.slug ?? null;
+    if (effectiveRole === "OWNER" && !tenantId) {
+      const ownerTenant = await Tenant.findOne({ ownerId: user._id })
+        .select("_id slug")
+        .lean<{ _id: import("mongoose").Types.ObjectId; slug: string }>();
+      if (ownerTenant) {
+        tenantId = ownerTenant._id.toString();
+        tenantSlug = ownerTenant.slug;
+      }
     }
 
     const accessToken = generateAccessToken(

@@ -37,6 +37,8 @@ const ADMIN_PROTECTED_API_ROUTES = [
   "/api/services/create",
   "/api/services",
   "/api/appointments",
+  "/api/appointments/search",
+  "/api/testimonials",
   "/api/testimonials/delete",
   "/api/testimonials/update",
   "/api/testimonials/mark-read",

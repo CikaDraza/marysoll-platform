@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { User } from "@/models/User";
+import { UserIdentity } from "@/models/UserIdentity";
 import { SalonProfile } from "@/models/SalonProfile";
 import { sendOwnerVerificationEmail, TRIAL_DAYS } from "@/lib/email/onboarding";
 import crypto from "crypto";
@@ -35,7 +36,9 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    const existingUser = await User.findOne({ email: normalizedEmail });
+    // Only block if a platform-level user (tenantId: null) already exists with this email.
+    // The same email is allowed on tenant-scoped accounts (clients on different salons).
+    const existingUser = await User.findOne({ email: normalizedEmail, tenantId: null });
     if (existingUser) {
       return NextResponse.json(
         { error: "Nalog sa ovim emailom već postoji" },
@@ -116,9 +119,27 @@ export async function POST(request: NextRequest) {
     });
     await tenant.save();
 
-    // 3. Povezi user sa tenantom
-    owner.tenantId = tenant._id as Parameters<typeof owner.set>[1];
-    await owner.save();
+    // 3. Dual-write UserIdentity — non-blocking, must never break registration.
+    // $setOnInsert + upsert is the only race-condition-safe idempotent pattern:
+    // - email already exists → no-op (setOnInsert does not run on updates)
+    // - email does not exist → atomic insert
+    try {
+      await UserIdentity.findOneAndUpdate(
+        { email: normalizedEmail },
+        {
+          $setOnInsert: {
+            email: normalizedEmail,
+            passwordHash: hashedPassword,
+            isEmailVerified: owner.isEmailVerified,
+            platformRole: "OWNER",
+            legacyUserId: owner._id,
+          },
+        },
+        { upsert: true, new: false },
+      );
+    } catch (identityErr) {
+      console.error("⚠️ UserIdentity dual-write failed (non-fatal):", identityErr);
+    }
 
     // 4. Prazan profil salona
     const salonProfile = new SalonProfile({

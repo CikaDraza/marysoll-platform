@@ -108,7 +108,7 @@ export default function LoggedButton({
 
   return (
     <Menu as="div" className="relative inline-block text-left">
-      <MenuButton className="inline-flex items-center gap-x-1.5 rounded-md bg-black px-3 py-2 text-xs 2xl:text-sm font-semibold text-white hover:bg-gray-800">
+      <MenuButton className="inline-flex items-center gap-x-1.5 rounded-md bg-black px-3 py-2 text-xs 2xl:text-sm font-semibold text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-(--secondary-color) focus:ring-offset-2 focus:ring-offset-white">
         {user.name ?? "Korisnik"}
         <ChevronDownIcon aria-hidden="true" className="size-4 text-gray-400" />
       </MenuButton>

@@ -3,7 +3,7 @@ import { IUser } from "@/types";
 
 const userSchema = new Schema<IUser>(
   {
-    email: { type: String, required: true, unique: true },
+    email: { type: String, required: true },
     password: { type: String, required: true },
     name: { type: String, required: true },
     phone: { type: String, required: true },
@@ -106,6 +106,9 @@ const userSchema = new Schema<IUser>(
   { timestamps: true },
 );
 
+// One email per tenant — same email can exist on different tenants.
+// tenantId: null is for OWNER/SUPER_ADMIN (platform-level users), unique there too.
+userSchema.index({ email: 1, tenantId: 1 }, { unique: true });
 userSchema.index({ tenantId: 1 });
 
 export const User = models.User || model<IUser>("User", userSchema);

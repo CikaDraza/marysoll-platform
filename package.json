@@ -7,7 +7,8 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "jest"
+    "test": "jest",
+    "backfill:identity": "ts-node -r tsconfig-paths/register --project scripts/tsconfig.json scripts/backfill-user-identity.ts"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.19",

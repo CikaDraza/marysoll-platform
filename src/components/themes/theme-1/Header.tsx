@@ -66,7 +66,7 @@ export function Theme1Header({
                 className="h-12 w-auto"
                 preload={true}
               />
-              <span className="text-xs font-bold text-black">
+              <span className="ml-2 text-sm font-bold text-black">
                 {displayName}
               </span>
             </div>

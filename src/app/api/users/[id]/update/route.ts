@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { User } from "@/models/User";
+import { UserIdentity } from "@/models/UserIdentity";
 import { verifyToken } from "@/lib/auth/auth-server";
 import bcrypt from "bcryptjs";
 import { IUser } from "@/types";
+
+const SALT_ROUNDS = 12;
 
 export async function PUT(
   req: NextRequest,
@@ -86,8 +89,9 @@ export async function PUT(
     }
 
     // Ažuriraj lozinku samo ako je data
+    let hashedPassword: string | undefined;
     if (password && password.trim() !== "") {
-      const hashedPassword = await bcrypt.hash(password, 10);
+      hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
       updateData.password = hashedPassword;
     }
 
@@ -105,6 +109,19 @@ export async function PUT(
         },
         { status: 404 },
       );
+    }
+
+    // Passive sync — only runs when password was actually changed.
+    // No upsert: if UserIdentity is absent (pre-migration account), do nothing.
+    if (hashedPassword) {
+      try {
+        await UserIdentity.findOneAndUpdate(
+          { legacyUserId: id },
+          { passwordHash: hashedPassword },
+        );
+      } catch (identityErr) {
+        console.error("⚠️ UserIdentity password sync failed (non-fatal):", identityErr);
+      }
     }
 
     return NextResponse.json(updatedUser);

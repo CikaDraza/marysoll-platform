@@ -1,16 +1,33 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Testimonial } from "@/models/Testimonial";
+import { Tenant } from "@/models/Tenant";
+import type { Types } from "mongoose";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     await connectToDB();
+
+    // Tenant resolution — fail closed: no tenant context means no data returned.
+    const tenantSlug = req.headers.get("x-tenant-slug")?.trim().toLowerCase() ?? "";
+    if (!tenantSlug || tenantSlug === "default") {
+      return NextResponse.json([]);
+    }
+
+    const tenant = await Tenant.findOne({ slug: tenantSlug, status: "active" })
+      .select("_id")
+      .lean<{ _id: Types.ObjectId }>();
+
+    if (!tenant) {
+      return NextResponse.json([]);
+    }
 
     // Aggregation pipeline za dobijanje 5 najnovijih testimoniala od različitih osoba
     const uniqueTestimonials = await Testimonial.aggregate([
       {
         $match: {
           isRead: true,
+          tenantId: tenant._id,
         },
       },
       // Sortiraj od najnovijeg

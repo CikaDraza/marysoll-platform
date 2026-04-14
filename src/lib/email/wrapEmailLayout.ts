@@ -36,6 +36,7 @@ interface SalonData {
 const PLATFORM: SalonData = {
   name: "Marysoll",
   description: "Platforma za online zakazivanje",
+  logo: process.env.PLATFORM_LOGO_URL ?? null,
 };
 
 async function resolveSalon(tenantId?: string | null): Promise<SalonData> {

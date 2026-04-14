@@ -88,6 +88,7 @@ export async function emailVerificationTemplate(data: {
 export async function passwordResetTemplate(data: {
   name: string;
   resetUrl: string;
+  tenantId?: string | null;
 }): Promise<string> {
   const content = `
     <p style="margin:0 0 16px 0;">Poštovani/a <strong>${data.name}</strong>,</p>
@@ -108,7 +109,7 @@ export async function passwordResetTemplate(data: {
       Ako niste vi zatražili resetovanje, slobodno ignorišite ovaj email. Vaša lozinka ostaje nepromenjena.
     </p>
   `;
-  return wrapEmailLayout({ title: "Resetovanje lozinke", content });
+  return wrapEmailLayout({ title: "Resetovanje lozinke", content, tenantId: data.tenantId });
 }
 
 // ── Owner verification (salon registration) ───────────────────────────────────

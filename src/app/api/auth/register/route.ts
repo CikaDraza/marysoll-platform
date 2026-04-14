@@ -8,12 +8,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import type { Types } from "mongoose";
 import { connectToDB } from "@/lib/db/mongodb";
 import { User } from "@/models/User";
+import { UserIdentity } from "@/models/UserIdentity";
 import { Tenant } from "@/models/Tenant";
 import { AudienceContact } from "@/models/AudienceContact";
+import { resolveOrCreateIdentity } from "@/lib/auth/identity";
 import { sendClientVerificationEmail } from "@/lib/email/onboarding";
-import toast from "react-hot-toast";
 
 export async function POST(req: NextRequest) {
   try {
@@ -51,20 +53,29 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const existingUser = await User.findOne({ email: normalizedEmail });
+    // Scope the lookup to this tenant — same email is allowed on different tenants.
+    const tenantFilter = tenant
+      ? { email: normalizedEmail, tenantId: tenant._id }
+      : { email: normalizedEmail, tenantId: null };
+    const existingUser = await User.findOne(tenantFilter);
+
+    if (existingUser?.userType === "legal") {
+      return NextResponse.json(
+        { error: "Korisnik sa ovom email adresom već postoji." },
+        { status: 400 },
+      );
+    }
 
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // ── Guest upgrade path ──────────────────────────────────────────────────────
+    // resolveOrCreateIdentity uses $setOnInsert — it will NOT overwrite an existing
+    // User document. A guest account that booked an appointment must be upgraded
+    // directly here, before the identity chain is resolved.
+
     if (existingUser) {
-      if (existingUser.userType === "legal") {
-        return NextResponse.json(
-          { error: "Korisnik sa ovom email adresom već postoji." },
-          { status: 400 },
-        );
-      }
-      // Gost koji je zakazivao termin — upgrejduj nalog
       existingUser.name = name.trim();
       existingUser.password = hashedPassword;
       existingUser.phone = phone?.trim() ?? existingUser.phone;
@@ -73,34 +84,85 @@ export async function POST(req: NextRequest) {
       existingUser.isEmailVerified = false;
       existingUser.verificationToken = verificationToken;
       existingUser.verificationTokenExpiry = verificationTokenExpiry;
-
       if (tenant && !existingUser.tenantId) {
-        existingUser.tenantId = tenant._id as import("mongoose").Types.ObjectId;
+        existingUser.tenantId = tenant._id as Types.ObjectId;
       }
       await existingUser.save();
-    } else {
-      const newUser = new User({
-        name: name.trim(),
-        email: normalizedEmail,
-        phone: phone?.trim() ?? "",
-        password: hashedPassword,
-        agreedToPrivacy: true,
-        isAdmin: false,
-        isSuperAdmin: false,
-        isEmailVerified: false,
-        verificationToken,
-        verificationTokenExpiry,
-        userType: "legal",
-        tenantId: tenant?._id ?? null,
-        isOnline: true,
-        lastActive: new Date(),
-      });
-      await newUser.save();
     }
 
-    // Kreiraj ili ažuriraj AudienceContact entry
-    const savedUser =
-      existingUser ?? (await User.findOne({ email: normalizedEmail }));
+    // ── Identity chain ──────────────────────────────────────────────────────────
+    // resolveOrCreateIdentity atomically resolves or creates:
+    //   UserIdentity  — global, one per email across the entire platform
+    //   TenantProfile — per-tenant, one per (identityId × tenantId) pair
+    //   User          — legacy document; $setOnInsert is a no-op for guest upgrade
+    //
+    // TenantProfile requires a real tenantId — tenantless registrations fall back
+    // to a direct User create and a non-blocking UserIdentity dual-write.
+
+    let savedUser = existingUser;
+
+    if (tenant) {
+      const { legacyUser } = await resolveOrCreateIdentity(
+        normalizedEmail,
+        hashedPassword,
+        tenant._id as Types.ObjectId,
+        {
+          name: name.trim(),
+          phone: phone?.trim() ?? "",
+          agreedToPrivacy: true,
+          isEmailVerified: false,
+          verificationToken,
+          verificationTokenExpiry,
+        },
+      );
+      if (!existingUser) {
+        // New user: all three layers just created — use the returned User doc.
+        savedUser = legacyUser;
+      }
+      // Guest upgrade: existingUser already saved above; legacyUser $setOnInsert
+      // was a no-op. Keep savedUser = existingUser.
+    } else {
+      // Tenantless fallback — TenantProfile cannot exist without a tenant.
+      if (!existingUser) {
+        const newUser = new User({
+          name: name.trim(),
+          email: normalizedEmail,
+          phone: phone?.trim() ?? "",
+          password: hashedPassword,
+          agreedToPrivacy: true,
+          isAdmin: false,
+          isSuperAdmin: false,
+          isEmailVerified: false,
+          verificationToken,
+          verificationTokenExpiry,
+          userType: "legal",
+          tenantId: null,
+          isOnline: true,
+          lastActive: new Date(),
+        });
+        await newUser.save();
+        savedUser = newUser;
+      }
+      // Non-blocking UserIdentity dual-write for the tenantless path.
+      try {
+        await UserIdentity.findOneAndUpdate(
+          { email: normalizedEmail },
+          {
+            $setOnInsert: {
+              email: normalizedEmail,
+              passwordHash: hashedPassword,
+              isEmailVerified: false,
+              legacyUserId: null,
+            },
+          },
+          { upsert: true, new: false, setDefaultsOnInsert: true },
+        );
+      } catch (identityErr) {
+        console.error("⚠️ UserIdentity sync failed (tenantless path):", identityErr);
+      }
+    }
+
+    // ── AudienceContact ─────────────────────────────────────────────────────────
     if (savedUser) {
       try {
         await AudienceContact.findOneAndUpdate(
@@ -124,7 +186,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Pošalji verifikacioni email
+    // ── Verification email ──────────────────────────────────────────────────────
     try {
       await sendClientVerificationEmail({
         email: normalizedEmail,
@@ -144,7 +206,6 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     console.error("❌ Register error:", error);
-    toast.error(error instanceof Error ? error.message : "Greška na serveru");
     return NextResponse.json({ error: "Greška na serveru" }, { status: 500 });
   }
 }

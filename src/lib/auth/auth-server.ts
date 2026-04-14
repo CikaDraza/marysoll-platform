@@ -15,6 +15,7 @@ import { User } from "@/models/User";
 import { Tenant } from "@/models/Tenant";
 import type { ITenant } from "@/models/Tenant";
 import { DecodedToken } from "@/types/auth/types";
+import { assertTenantMatch } from "@/lib/audit/tenant-guard";
 
 export function generateAccessToken(
   id: string,
@@ -158,11 +159,34 @@ export async function requireAdmin(request: Request): Promise<AdminAuthResult> {
     };
   }
 
+  // Cross-check: token's tenant must match the subdomain this request arrived on.
+  // SUPER_ADMIN is exempt — they operate across all tenants.
+  const isSuperAdmin = decoded.isSuperAdmin ?? false;
+  const requestTenantSlug = request.headers.get("x-tenant-slug") ?? "";
+  const tokenTenantSlug = decoded.tenantSlug ?? "";
+
+  if (
+    requestTenantSlug !== "" &&
+    requestTenantSlug !== "default" &&
+    !isSuperAdmin &&
+    tokenTenantSlug !== requestTenantSlug
+  ) {
+    // Log the mismatch via the audit utility before rejecting.
+    assertTenantMatch(decoded, requestTenantSlug, request.url);
+    return {
+      success: false,
+      response: NextResponse.json(
+        { error: "Forbidden: tenant mismatch" },
+        { status: 403 },
+      ),
+    };
+  }
+
   try {
     await connectToDB();
     const user = await User.findById(decoded.id)
-      .select("isAdmin") // tenantId već imaš u tokenu → ne treba dodatno tražiti
-      .lean();
+      .select("isAdmin")
+      .lean<{ isAdmin: boolean }>();
 
     if (!user) {
       return {
@@ -174,7 +198,8 @@ export async function requireAdmin(request: Request): Promise<AdminAuthResult> {
       };
     }
 
-    if (!user) {
+    // SUPER_ADMIN bypasses the isAdmin flag — they manage the platform, not a salon.
+    if (!user.isAdmin && !isSuperAdmin) {
       return {
         success: false,
         response: NextResponse.json(
@@ -207,6 +232,9 @@ export function requireAuth(
   if (!decoded) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  // Observe-only: log mismatches but never block — requireAuth is used on
+  // client routes where tenant context is informational, not a hard gate.
+  assertTenantMatch(decoded, request.headers.get("x-tenant-slug") ?? "", request.url);
   return { decoded };
 }
 

@@ -216,9 +216,10 @@ export async function sendResetEmail(
   email: string,
   token: string,
   name = "korisniče",
+  tenantId?: string | null,
 ): Promise<void> {
   const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
-  const html = await passwordResetTemplate({ name, resetUrl });
+  const html = await passwordResetTemplate({ name, resetUrl, tenantId });
   await sendEmail({
     to: email,
     subject: `Resetovanje lozinke — ${name}`,
@@ -308,6 +309,7 @@ export async function sendRegisterVerificationEmail(
   email: string,
   verificationToken: string,
   clientName = "korisniče",
+  tenantId?: string | null,
 ): Promise<void> {
   const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${verificationToken}&type=client`;
   const { emailVerificationTemplate } =
@@ -316,6 +318,7 @@ export async function sendRegisterVerificationEmail(
     clientName,
     verificationUrl: verifyUrl,
     ctaLabel: "Potvrdite email adresu →",
+    tenantId,
   });
   await sendEmail({
     to: email,

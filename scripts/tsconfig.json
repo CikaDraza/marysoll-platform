@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "ignoreDeprecations": "6.0",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "baseUrl": "../",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "types": ["node"],
+    "noEmit": false
+  },
+  "include": ["./**/*.ts"],
+  "exclude": ["../node_modules"]
+}

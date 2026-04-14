@@ -1338,9 +1338,15 @@ function ProfilTab() {
   // Fetch full profile from DB on mount (JWT doesn't carry extra fields)
   useEffect(() => {
     api
-      .get<{ user: { name: string; phone: string; marketingPhone?: string; newsletterEmail?: string; contactEmail?: string } }>(
-        "/auth/me",
-      )
+      .get<{
+        user: {
+          name: string;
+          phone: string;
+          marketingPhone?: string;
+          newsletterEmail?: string;
+          contactEmail?: string;
+        };
+      }>("/auth/me")
       .then((res) => {
         const u = res.data.user;
         setAccountForm({
@@ -1415,167 +1421,186 @@ function ProfilTab() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-full">
       <h2 className="text-lg font-bold">Profil superadmina</h2>
 
       {/* Account info */}
       {/* Account info + emails — single form saved to User document */}
-      <div className={card}>
-        <h3 className="font-semibold text-sm mb-4 text-violet-400">
-          Informacije naloga
-        </h3>
-        <form onSubmit={handleSaveAccount} className="space-y-4">
-          {/* Read-only fields */}
-          <div>
-            <label className={lbl}>Email adresa</label>
-            <div className={inp + " opacity-60 cursor-not-allowed select-none"}>
-              {user?.email ?? "—"}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className={card}>
+          <h3 className="font-semibold text-sm mb-4 text-violet-400">
+            Informacije naloga
+          </h3>
+          <form onSubmit={handleSaveAccount} className="space-y-4">
+            {/* Read-only fields */}
+            <div>
+              <label className={lbl}>Email adresa</label>
+              <div
+                className={inp + " opacity-60 cursor-not-allowed select-none"}
+              >
+                {user?.email ?? "—"}
+              </div>
             </div>
-          </div>
-          <div>
-            <label className={lbl}>Rola</label>
-            <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-violet-900/60 text-violet-300 border border-violet-700 uppercase tracking-widest">
-              SUPER ADMIN
-            </span>
-          </div>
+            <div>
+              <label className={lbl}>Rola</label>
+              <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-violet-900/60 text-violet-300 border border-violet-700 uppercase tracking-widest">
+                SUPER ADMIN
+              </span>
+            </div>
 
-          {/* Editable fields */}
-          <div>
-            <label className={lbl}>Ime</label>
-            <input
-              type="text"
-              className={inp}
-              value={accountForm.name}
-              onChange={(e) =>
-                setAccountForm((p) => ({ ...p, name: e.target.value }))
-              }
-              placeholder="Vaše ime"
-            />
-          </div>
-          <div>
-            <label className={lbl}>Kontakt telefon</label>
-            <input
-              type="tel"
-              className={inp}
-              value={accountForm.phone}
-              onChange={(e) =>
-                setAccountForm((p) => ({ ...p, phone: e.target.value }))
-              }
-              placeholder="+381 60 000 0000"
-            />
-            <p className="text-xs text-slate-500 mt-1">
-              Interni kontakt broj za tehničku podršku.
-            </p>
-          </div>
-          <div>
-            <label className={lbl}>Marketing telefon</label>
-            <input
-              type="tel"
-              className={inp}
-              value={accountForm.marketingPhone}
-              onChange={(e) =>
-                setAccountForm((p) => ({ ...p, marketingPhone: e.target.value }))
-              }
-              placeholder="+381 60 000 0001"
-            />
-            <p className="text-xs text-slate-500 mt-1">
-              Broj koji se prikazuje u marketinškim materijalima.
-            </p>
-          </div>
-          <div>
-            <label className={lbl}>Newsletter email</label>
-            <input
-              type="email"
-              className={inp}
-              value={accountForm.newsletterEmail}
-              onChange={(e) =>
-                setAccountForm((p) => ({ ...p, newsletterEmail: e.target.value }))
-              }
-              placeholder="newsletter@marysoll.com"
-            />
-            <p className="text-xs text-slate-500 mt-1">
-              Adresa sa koje se šalju platformski newsletter emailovi.
-            </p>
-          </div>
-          <div>
-            <label className={lbl}>Kontakt email</label>
-            <input
-              type="email"
-              className={inp}
-              value={accountForm.contactEmail}
-              onChange={(e) =>
-                setAccountForm((p) => ({ ...p, contactEmail: e.target.value }))
-              }
-              placeholder="kontakt@marysoll.com"
-            />
-            <p className="text-xs text-slate-500 mt-1">
-              Adresa za klijentske upite prema platformi.
-            </p>
-          </div>
+            {/* Editable fields */}
+            <div>
+              <label className={lbl}>Ime</label>
+              <input
+                type="text"
+                className={inp}
+                value={accountForm.name}
+                onChange={(e) =>
+                  setAccountForm((p) => ({ ...p, name: e.target.value }))
+                }
+                placeholder="Vaše ime"
+              />
+            </div>
+            <div>
+              <label className={lbl}>Kontakt telefon</label>
+              <input
+                type="tel"
+                className={inp}
+                value={accountForm.phone}
+                onChange={(e) =>
+                  setAccountForm((p) => ({ ...p, phone: e.target.value }))
+                }
+                placeholder="+381 60 000 0000"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Interni kontakt broj za tehničku podršku.
+              </p>
+            </div>
+            <div>
+              <label className={lbl}>Marketing telefon</label>
+              <input
+                type="tel"
+                className={inp}
+                value={accountForm.marketingPhone}
+                onChange={(e) =>
+                  setAccountForm((p) => ({
+                    ...p,
+                    marketingPhone: e.target.value,
+                  }))
+                }
+                placeholder="+381 60 000 0001"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Broj koji se prikazuje u marketinškim materijalima.
+              </p>
+            </div>
+            <div>
+              <label className={lbl}>Newsletter email</label>
+              <input
+                type="email"
+                className={inp}
+                value={accountForm.newsletterEmail}
+                onChange={(e) =>
+                  setAccountForm((p) => ({
+                    ...p,
+                    newsletterEmail: e.target.value,
+                  }))
+                }
+                placeholder="newsletter@marysoll.com"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Adresa sa koje se šalju platformski newsletter emailovi.
+              </p>
+            </div>
+            <div>
+              <label className={lbl}>Kontakt email</label>
+              <input
+                type="email"
+                className={inp}
+                value={accountForm.contactEmail}
+                onChange={(e) =>
+                  setAccountForm((p) => ({
+                    ...p,
+                    contactEmail: e.target.value,
+                  }))
+                }
+                placeholder="kontakt@marysoll.com"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Adresa za klijentske upite prema platformi.
+              </p>
+            </div>
 
-          {accountError && <p className="text-red-400 text-xs">{accountError}</p>}
-          <button type="submit" disabled={accountLoading} className={btnPrimary}>
-            {accountLoading ? "Snimanje..." : "Sačuvaj podatke naloga"}
-          </button>
-        </form>
-      </div>
+            {accountError && (
+              <p className="text-red-400 text-xs">{accountError}</p>
+            )}
+            <button
+              type="submit"
+              disabled={accountLoading}
+              className={btnPrimary}
+            >
+              {accountLoading ? "Snimanje..." : "Sačuvaj podatke naloga"}
+            </button>
+          </form>
+        </div>
 
-      {/* Change password */}
-      <div className={card}>
-        <h3 className="font-semibold text-sm mb-4 text-violet-400">
-          Promena lozinke
-        </h3>
-        <form onSubmit={handlePasswordChange} className="space-y-4">
-          <div>
-            <label className={lbl}>Trenutna lozinka</label>
-            <input
-              type="password"
-              className={inp}
-              value={pwForm.currentPassword}
-              onChange={(e) =>
-                setPwForm((p) => ({ ...p, currentPassword: e.target.value }))
-              }
-              autoComplete="current-password"
-              placeholder="••••••••"
-            />
-          </div>
-          <div>
-            <label className={lbl}>Nova lozinka</label>
-            <input
-              type="password"
-              className={inp}
-              value={pwForm.newPassword}
-              onChange={(e) =>
-                setPwForm((p) => ({ ...p, newPassword: e.target.value }))
-              }
-              autoComplete="new-password"
-              placeholder="Najmanje 8 karaktera"
-            />
-          </div>
-          <div>
-            <label className={lbl}>Potvrdite novu lozinku</label>
-            <input
-              type="password"
-              className={inp}
-              value={pwForm.confirmPassword}
-              onChange={(e) =>
-                setPwForm((p) => ({ ...p, confirmPassword: e.target.value }))
-              }
-              autoComplete="new-password"
-              placeholder="••••••••"
-            />
-            {pwForm.confirmPassword &&
-              pwForm.newPassword !== pwForm.confirmPassword && (
-                <p className="text-red-400 text-xs mt-1">
-                  Lozinke se ne poklapaju.
-                </p>
-              )}
-          </div>
-          {pwError && <p className="text-red-400 text-xs">{pwError}</p>}
-          <button type="submit" disabled={pwLoading} className={btnPrimary}>
-            {pwLoading ? "Menjam lozinku..." : "Promeni lozinku"}
-          </button>
-        </form>
+        {/* Change password */}
+        <div className={card}>
+          <h3 className="font-semibold text-sm mb-4 text-violet-400">
+            Promena lozinke
+          </h3>
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            <div>
+              <label className={lbl}>Trenutna lozinka</label>
+              <input
+                type="password"
+                className={inp}
+                value={pwForm.currentPassword}
+                onChange={(e) =>
+                  setPwForm((p) => ({ ...p, currentPassword: e.target.value }))
+                }
+                autoComplete="current-password"
+                placeholder="••••••••"
+              />
+            </div>
+            <div>
+              <label className={lbl}>Nova lozinka</label>
+              <input
+                type="password"
+                className={inp}
+                value={pwForm.newPassword}
+                onChange={(e) =>
+                  setPwForm((p) => ({ ...p, newPassword: e.target.value }))
+                }
+                autoComplete="new-password"
+                placeholder="Najmanje 8 karaktera"
+              />
+            </div>
+            <div>
+              <label className={lbl}>Potvrdite novu lozinku</label>
+              <input
+                type="password"
+                className={inp}
+                value={pwForm.confirmPassword}
+                onChange={(e) =>
+                  setPwForm((p) => ({ ...p, confirmPassword: e.target.value }))
+                }
+                autoComplete="new-password"
+                placeholder="••••••••"
+              />
+              {pwForm.confirmPassword &&
+                pwForm.newPassword !== pwForm.confirmPassword && (
+                  <p className="text-red-400 text-xs mt-1">
+                    Lozinke se ne poklapaju.
+                  </p>
+                )}
+            </div>
+            {pwError && <p className="text-red-400 text-xs">{pwError}</p>}
+            <button type="submit" disabled={pwLoading} className={btnPrimary}>
+              {pwLoading ? "Menjam lozinku..." : "Promeni lozinku"}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
