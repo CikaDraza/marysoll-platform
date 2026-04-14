@@ -13,7 +13,7 @@ const SUPPORT_LINK = "https://marysoll.com/kontakt";
 export async function POST(request: NextRequest) {
   try {
     await connectToDB();
-    const { email, password } = await request.json();
+    const { email, password, tenantSlug: tenantSlugFromBody } = await request.json();
 
     if (!email || !password) {
       return NextResponse.json(
@@ -24,12 +24,18 @@ export async function POST(request: NextRequest) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Resolve tenant from header (injected by proxy middleware for tenant subdomains).
-    // OWNER/SUPER_ADMIN logins have no tenant header — they have tenantId: null.
+    // Resolve tenant from header (injected by proxy for subdomain requests) or from
+    // the request body (sent by path-based tenant login pages — localhost / marketing domain).
+    // OWNER/SUPER_ADMIN logins carry no tenant context — their User.tenantId is null.
     const tenantSlugFromHeader = request.headers.get("x-tenant-slug");
+    const resolvedTenantSlug =
+      (tenantSlugFromHeader && tenantSlugFromHeader !== "default")
+        ? tenantSlugFromHeader
+        : (typeof tenantSlugFromBody === "string" && tenantSlugFromBody) ? tenantSlugFromBody : null;
+
     let loginTenantId: import("mongoose").Types.ObjectId | null = null;
-    if (tenantSlugFromHeader && tenantSlugFromHeader !== "default") {
-      const tenantDoc = await Tenant.findOne({ slug: tenantSlugFromHeader }).select("_id").lean<{ _id: import("mongoose").Types.ObjectId }>();
+    if (resolvedTenantSlug) {
+      const tenantDoc = await Tenant.findOne({ slug: resolvedTenantSlug }).select("_id").lean<{ _id: import("mongoose").Types.ObjectId }>();
       if (tenantDoc) loginTenantId = tenantDoc._id;
     }
 
@@ -114,7 +120,7 @@ export async function POST(request: NextRequest) {
     // OWNER users have tenantId: null on their User document — resolve their tenant
     // via Tenant.ownerId so the JWT carries the correct tenantId and tenantSlug.
     let tenantId = user.tenantId?.toString() ?? null;
-    let tenantSlug = tenantSlugFromHeader ?? null;
+    let tenantSlug = resolvedTenantSlug ?? null;
 
     if (effectiveRole === "OWNER" && !tenantId) {
       const ownerTenant = await Tenant.findOne({ ownerId: user._id })

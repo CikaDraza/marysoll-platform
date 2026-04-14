@@ -21,7 +21,7 @@ import { useClientRouting } from "@/hooks/useClientRouting";
 
 export default function ClientLoginPage() {
   const searchParams = useSearchParams();
-  const { base } = useClientRouting();
+  const { base, tenantSlug } = useClientRouting();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,7 +45,7 @@ export default function ClientLoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, tenantSlug }),
       });
       const data = await res.json();
 
