@@ -25,7 +25,8 @@ const messageSchema = new Schema(
 const appointmentSchema = new Schema(
   {
     tenantId: { type: Schema.Types.ObjectId, ref: "Tenant", required: true },
-    clientId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    clientProfileId: { type: Schema.Types.ObjectId, ref: "TenantUser", required: true },
+    staffProfileId: { type: Schema.Types.ObjectId, ref: "TenantUser" },
     clientName: { type: String, required: true },
     clientEmail: { type: String, required: true },
     serviceName: { type: String, required: true },
@@ -62,7 +63,8 @@ const appointmentSchema = new Schema(
   { timestamps: true },
 );
 
-appointmentSchema.index({ tenantId: 1, date: 1, clientId: 1 });
+appointmentSchema.index({ tenantId: 1, clientProfileId: 1 });
+appointmentSchema.index({ tenantId: 1, date: 1 });
 
 export const Appointment =
   models.Appointment || model("Appointment", appointmentSchema);

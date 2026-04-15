@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectToDB } from "@/lib/db/mongodb";
-import { User } from "@/models/User";
-import { UserIdentity } from "@/models/UserIdentity";
+import { TenantUser } from "@/models/TenantUser";
 
+/**
+ * POST /api/auth/reset-password
+ *
+ * Tenant-scoped password reset — finds TenantUser by resetPasswordToken.
+ * Token is tenant-specific (generated in forgot-password on TenantUser).
+ */
 export async function POST(request: Request) {
   try {
     const { token, newPassword } = await request.json();
@@ -11,46 +16,34 @@ export async function POST(request: Request) {
     if (!token || !newPassword) {
       return NextResponse.json(
         { error: "Token i nova lozinka su obavezni" },
-        { status: 400 }
+        { status: 400 },
       );
     }
-
     if (newPassword.length < 8) {
       return NextResponse.json(
         { error: "Lozinka mora imati najmanje 8 karaktera" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     await connectToDB();
 
-    const user = await User.findOne({
+    const tenantUser = await TenantUser.findOne({
       resetPasswordToken: token,
-      resetPasswordExpires: { $gt: new Date() },
+      resetPasswordExpiry: { $gt: new Date() },
     });
 
-    if (!user) {
+    if (!tenantUser) {
       return NextResponse.json(
         { error: "Token je nevažeći ili je istekao" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    user.password = await bcrypt.hash(newPassword, 12);
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-    await user.save();
-
-    // Passive sync — user.password is already the bcrypt hash at this point.
-    // No upsert: if UserIdentity is absent (pre-migration account), do nothing.
-    try {
-      await UserIdentity.findOneAndUpdate(
-        { legacyUserId: user._id },
-        { passwordHash: user.password },
-      );
-    } catch (identityErr) {
-      console.error("⚠️ UserIdentity passwordHash sync failed (non-fatal):", identityErr);
-    }
+    tenantUser.password = await bcrypt.hash(newPassword, 12);
+    tenantUser.resetPasswordToken = null;
+    tenantUser.resetPasswordExpiry = null;
+    await tenantUser.save();
 
     return NextResponse.json({ message: "Lozinka je uspešno promenjena" });
   } catch (error) {

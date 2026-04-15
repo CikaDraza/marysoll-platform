@@ -14,7 +14,7 @@ import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
 
 interface AggregationTestimonial {
   _id: mongoose.Types.ObjectId;
-  clientId: mongoose.Types.ObjectId;
+  clientProfileId: mongoose.Types.ObjectId;
   clientName: string;
   clientEmail: string;
   appointmentId: mongoose.Types.ObjectId;
@@ -171,7 +171,7 @@ export async function GET(req: Request) {
       date: string;
     }>[] = testimonials.map((testimonial) => ({
       _id: testimonial._id.toString(),
-      clientId: testimonial.clientId.toString(),
+      clientProfileId: testimonial.clientProfileId.toString(),
       clientName: testimonial.clientName,
       clientEmail: testimonial.clientEmail,
       appointmentId: {

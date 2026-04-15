@@ -1,9 +1,10 @@
 export interface DecodedToken {
-  id: string;
+  id: string;           // AuthUser._id
   email: string;
   name: string;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  tenantUserId: string | null;  // TenantUser._id — null for superadmin
   tenantId: string | null;
   tenantSlug: string | null;
   globalRole?: string;
@@ -20,10 +21,10 @@ export interface DecodedUser {
   phone: string;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  tenantUserId: string | null;  // TenantUser._id
   tenantId: string | null;
   tenantSlug: string | null;
   globalRole?: string;
-  userType: "guest" | "legal";
   isEmailVerified: boolean;
   isOnline?: boolean;
   lastActive?: string;
@@ -36,19 +37,22 @@ export interface UserWithToken extends DecodedUser {
   _id: string;
 }
 
-export interface AuthUser {
+/** Client-facing logged-in user shape (renamed from AuthUser to avoid collision with AuthUser Mongoose model) */
+export interface LoggedInUser {
   id: string;
   email: string;
   name: string;
   isAdmin: boolean;
   token: string;
+  tenantUserId?: string | null;
+  tenantId?: string | null;
   isOnline?: boolean;
 }
 
 export interface LoginResponse {
   message: string;
   token: string;
-  user: Omit<AuthUser, "token">;
+  user: Omit<LoggedInUser, "token">;
 }
 
 export interface RegisterPayload {

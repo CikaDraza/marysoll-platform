@@ -2,7 +2,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AuthUser } from "@/types/auth/types";
+import { LoggedInUser } from "@/types/auth/types";
 import { jwtDecode } from "jwt-decode";
 import { DecodedUser } from "@/types/auth/types";
 
@@ -12,9 +12,9 @@ import { DecodedUser } from "@/types/auth/types";
  * Ne uvozi server-only funcije.
  */
 export function useServerSideAuth() {
-  return useQuery<AuthUser | null>({
+  return useQuery<LoggedInUser | null>({
     queryKey: ["serverSideAuth"],
-    queryFn: (): AuthUser | null => {
+    queryFn: (): LoggedInUser | null => {
       if (typeof document === "undefined") return null;
 
       const match = document.cookie.match(/(?:^|;\s*)token=([^;]+)/);
@@ -33,7 +33,7 @@ export function useServerSideAuth() {
           isAdmin: decoded.isAdmin ?? false,
           token,
           isOnline: decoded.isOnline,
-        } satisfies AuthUser;
+        } satisfies LoggedInUser;
       } catch {
         return null;
       }

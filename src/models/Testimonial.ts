@@ -10,7 +10,7 @@ const TestimonialSchema = new Schema(
       required: true,
       index: true,
     },
-    clientId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    clientProfileId: { type: Schema.Types.ObjectId, ref: "TenantUser", required: true },
     clientName: { type: String, required: true },
     clientEmail: { type: String, required: true },
     appointmentId: {

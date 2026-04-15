@@ -13,7 +13,7 @@ const NewsletterLogSchema = new Schema(
       required: true,
     },
     recipientEmail: { type: String, required: true },
-    recipientUserId: { type: Schema.Types.ObjectId, ref: "User" },
+    recipientProfileId: { type: Schema.Types.ObjectId, ref: "TenantUser" },
     status: {
       type: String,
       enum: [

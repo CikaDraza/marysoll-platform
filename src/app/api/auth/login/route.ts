@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectToDB } from "@/lib/db/mongodb";
-import { User } from "@/models/User";
+import { AuthUser } from "@/models/AuthUser";
+import { TenantUser } from "@/models/TenantUser";
 import { Tenant } from "@/models/Tenant";
 import {
   generateAccessToken,
@@ -24,62 +25,109 @@ export async function POST(request: NextRequest) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Resolve tenant from header (injected by proxy for subdomain requests) or from
-    // the request body (sent by path-based tenant login pages — localhost / marketing domain).
-    // OWNER/SUPER_ADMIN logins carry no tenant context — their User.tenantId is null.
+    // Resolve tenant slug from header (middleware/proxy) or request body (path-based routing).
     const tenantSlugFromHeader = request.headers.get("x-tenant-slug");
     const resolvedTenantSlug =
-      (tenantSlugFromHeader && tenantSlugFromHeader !== "default")
+      tenantSlugFromHeader && tenantSlugFromHeader !== "default"
         ? tenantSlugFromHeader
-        : (typeof tenantSlugFromBody === "string" && tenantSlugFromBody) ? tenantSlugFromBody : null;
+        : typeof tenantSlugFromBody === "string" && tenantSlugFromBody
+          ? tenantSlugFromBody
+          : null;
 
-    let loginTenantId: import("mongoose").Types.ObjectId | null = null;
-    if (resolvedTenantSlug) {
-      const tenantDoc = await Tenant.findOne({ slug: resolvedTenantSlug }).select("_id").lean<{ _id: import("mongoose").Types.ObjectId }>();
-      if (tenantDoc) loginTenantId = tenantDoc._id;
-    }
+    // ── SUPER_ADMIN platform login (no tenant slug) ────────────────────────
+    // Only SUPER_ADMIN can log in without a tenant context.
+    if (!resolvedTenantSlug) {
+      const authUser = await AuthUser.findOne({ email: normalizedEmail });
 
-    // Find the user scoped to this tenant (same email can exist on multiple tenants).
-    // OWNER users always have tenantId: null — they are platform-level identities.
-    // Their tenant is linked via Tenant.ownerId, not User.tenantId.
-    let user = await User.findOne({ email: normalizedEmail, tenantId: loginTenantId });
-
-    // Fallback: logging in on a tenant subdomain but user not found there.
-    // Check if this is the tenant owner (tenantId: null) logging in from their own subdomain.
-    if (!user && loginTenantId) {
-      const candidate = await User.findOne({
-        email: normalizedEmail,
-        tenantId: null,
-        globalRole: "OWNER",
-      });
-      if (candidate) {
-        const ownerTenant = await Tenant.findOne({
-          ownerId: candidate._id,
-          _id: loginTenantId,
-        })
-          .select("_id")
-          .lean();
-        if (ownerTenant) user = candidate;
+      if (!authUser || authUser.platformRole !== "SUPER_ADMIN") {
+        return NextResponse.json(
+          {
+            error: "Pristup nije dozvoljen bez konteksta salona.",
+            hint: SUPPORT_LINK,
+          },
+          { status: 403 },
+        );
       }
+
+      const isValid = await bcrypt.compare(password, authUser.passwordHash);
+      if (!isValid) {
+        return NextResponse.json(
+          { error: "Pogrešna lozinka." },
+          { status: 401 },
+        );
+      }
+
+      if (!authUser.isEmailVerified) {
+        return NextResponse.json(
+          { error: "Email adresa nije verifikovana.", code: "EMAIL_NOT_VERIFIED" },
+          { status: 401 },
+        );
+      }
+
+      const accessToken = generateAccessToken(
+        authUser._id.toString(),
+        authUser.email,
+        true,
+        "Super Admin",
+        null,
+        null,
+        true,
+        "SUPER_ADMIN",
+        null,
+      );
+      const refreshToken = generateRefreshToken(
+        authUser._id.toString(),
+        authUser.email,
+        true,
+        null,
+        null,
+        true,
+      );
+
+      return buildTokenResponse(accessToken, refreshToken, {
+        id: authUser._id.toString(),
+        email: authUser.email,
+        name: "Super Admin",
+        globalRole: "SUPER_ADMIN",
+        isAdmin: true,
+        isSuperAdmin: true,
+        tenantId: null,
+        tenantUserId: null,
+      });
     }
 
-    // Second fallback: platform login (no tenant header) but owner record still has
-    // tenantId set from a pre-fix registration. Find by email + OWNER role only.
-    if (!user && !loginTenantId) {
-      user = await User.findOne({ email: normalizedEmail, globalRole: "OWNER" }) ?? null;
-    }
+    // ── Tenant-scoped login (all other roles) ─────────────────────────────
+    const tenant = await Tenant.findOne({ slug: resolvedTenantSlug })
+      .select("_id slug")
+      .lean<{ _id: import("mongoose").Types.ObjectId; slug: string }>();
 
-    if (!user) {
+    if (!tenant) {
       return NextResponse.json(
         {
-          error: "Korisnik sa ovom email adresom nije pronađen.",
-          hint: `Kontaktirajte podršku: ${SUPPORT_LINK}`,
+          error: "Salon nije pronađen. Proverite link ili kontaktirajte podršku.",
+          hint: SUPPORT_LINK,
         },
         { status: 404 },
       );
     }
 
-    const isValid = await bcrypt.compare(password, user.password);
+    // Find user by { tenantId, email } — completely tenant-isolated.
+    const tenantUser = await TenantUser.findOne({
+      tenantId: tenant._id,
+      email: normalizedEmail,
+    });
+
+    if (!tenantUser) {
+      return NextResponse.json(
+        {
+          error: "Nemate nalog na ovom salonu. Molimo registrujte se.",
+          code: "NO_TENANT_ACCOUNT",
+        },
+        { status: 404 },
+      );
+    }
+
+    const isValid = await bcrypt.compare(password, tenantUser.password);
     if (!isValid) {
       return NextResponse.json(
         { error: "Pogrešna lozinka. Pokušajte ponovo ili resetujte lozinku." },
@@ -87,111 +135,120 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!user.isEmailVerified) {
+    if (!tenantUser.isEmailVerified) {
       return NextResponse.json(
         {
-          error:
-            "Email adresa nije verifikovana. Proverite inbox ili zatražite novi verifikacioni link.",
+          error: "Email adresa nije verifikovana. Proverite inbox ili zatražite novi verifikacioni link.",
           code: "EMAIL_NOT_VERIFIED",
         },
         { status: 401 },
       );
     }
 
-    // Normalize globalRole — guard against stale documents without the field
-    const effectiveRole = user.globalRole ?? "USER";
-    const allowedRoles = ["SUPER_ADMIN", "OWNER", "ADMIN", "STAFF", "USER"];
-    if (!allowedRoles.includes(effectiveRole)) {
+    if (tenantUser.status === "suspended") {
       return NextResponse.json(
-        {
-          error: "Vaš nalog nema ispravno podešenu rolu. Kontaktirajte podršku.",
-          hint: SUPPORT_LINK,
-          code: "INVALID_ROLE",
-        },
+        { error: "Vaš nalog je suspendovan. Kontaktirajte salon." },
         { status: 403 },
       );
     }
 
-    await User.findByIdAndUpdate(user._id, {
+    // Mark as online
+    await TenantUser.findByIdAndUpdate(tenantUser._id, {
       isOnline: true,
       lastActive: new Date(),
     });
 
-    // OWNER users have tenantId: null on their User document — resolve their tenant
-    // via Tenant.ownerId so the JWT carries the correct tenantId and tenantSlug.
-    let tenantId = user.tenantId?.toString() ?? null;
-    let tenantSlug = resolvedTenantSlug ?? null;
+    const isAdmin = ["OWNER", "ADMIN", "STAFF"].includes(tenantUser.role);
+    const displayName = tenantUser.name || normalizedEmail.split("@")[0];
 
-    if (effectiveRole === "OWNER" && !tenantId) {
-      const ownerTenant = await Tenant.findOne({ ownerId: user._id })
-        .select("_id slug")
-        .lean<{ _id: import("mongoose").Types.ObjectId; slug: string }>();
-      if (ownerTenant) {
-        tenantId = ownerTenant._id.toString();
-        tenantSlug = ownerTenant.slug;
-      }
-    }
-
+    // JWT: id = TenantUser._id (primary identifier for tenant-scoped operations)
     const accessToken = generateAccessToken(
-      user._id.toString(),
-      user.email,
-      user.isAdmin,
-      user.name ?? user.email.split("@")[0],
-      tenantId,
-      user.isSuperAdmin ?? false,
-      effectiveRole,
-      tenantSlug,
+      tenantUser._id.toString(),
+      tenantUser.email,
+      isAdmin,
+      displayName,
+      tenantUser._id.toString(),  // tenantUserId = same as id
+      tenant._id.toString(),
+      false,
+      tenantUser.role,
+      tenant.slug,
     );
     const refreshToken = generateRefreshToken(
-      user._id.toString(),
-      user.email,
-      user.isAdmin,
-      tenantId,
-      user.isSuperAdmin ?? false,
+      tenantUser._id.toString(),
+      tenantUser.email,
+      isAdmin,
+      tenantUser._id.toString(),
+      tenant._id.toString(),
+      false,
     );
 
-    const isProd = process.env.NODE_ENV === "production";
-    const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
-
-    const response = NextResponse.json({
-      message: "Prijava uspešna",
-      token: accessToken,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        globalRole: user.globalRole ?? "USER",
-        isAdmin: user.isAdmin,
-        isSuperAdmin: user.isSuperAdmin ?? false,
-        tenantId,
-        isOnline: true,
-        lastActive: new Date(),
-      },
+    return buildTokenResponse(accessToken, refreshToken, {
+      id: tenantUser._id.toString(),
+      email: tenantUser.email,
+      name: displayName,
+      globalRole: tenantUser.role,
+      isAdmin,
+      isSuperAdmin: false,
+      tenantId: tenant._id.toString(),
+      tenantUserId: tenantUser._id.toString(),
     });
-
-    // refreshToken cookie: dostupan na SVIM subdomenima (.marysoll.com)
-    response.cookies.set("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60,
-      path: "/",
-      domain: isProd ? `.${baseDomain}` : undefined,
-    });
-
-    // accessToken cookie: čitljiv JS-om, shared across subdomains
-    response.cookies.set("auth-token", accessToken, {
-      httpOnly: false,
-      secure: isProd,
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60,
-      path: "/",
-      domain: isProd ? `.${baseDomain}` : undefined,
-    });
-
-    return response;
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Greška na serveru" }, { status: 500 });
   }
+}
+
+function buildTokenResponse(
+  accessToken: string,
+  refreshToken: string,
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    globalRole: string;
+    isAdmin: boolean;
+    isSuperAdmin: boolean;
+    tenantId: string | null;
+    tenantUserId: string | null;
+  },
+) {
+  const isProd = process.env.NODE_ENV === "production";
+  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+
+  const response = NextResponse.json({
+    message: "Prijava uspešna",
+    token: accessToken,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      globalRole: user.globalRole,
+      isAdmin: user.isAdmin,
+      isSuperAdmin: user.isSuperAdmin,
+      tenantId: user.tenantId,
+      tenantUserId: user.tenantUserId,
+      isOnline: true,
+      lastActive: new Date(),
+    },
+  });
+
+  response.cookies.set("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: "lax",
+    maxAge: 30 * 24 * 60 * 60,
+    path: "/",
+    domain: isProd ? `.${baseDomain}` : undefined,
+  });
+
+  response.cookies.set("auth-token", accessToken, {
+    httpOnly: false,
+    secure: isProd,
+    sameSite: "lax",
+    maxAge: 30 * 24 * 60 * 60,
+    path: "/",
+    domain: isProd ? `.${baseDomain}` : undefined,
+  });
+
+  return response;
 }

@@ -1,47 +1,61 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
-import { User } from "@/models/User";
-
-interface UserFilter {
-  $or?: Array<{ [key: string]: { $regex: RegExp } }>;
-  isAdmin?: boolean;
-  createdAt?: {
-    $gte: Date;
-    $lte: Date;
-  };
-}
+import { TenantUser } from "@/models/TenantUser";
+import { Types } from "mongoose";
+import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
 
 export async function GET(req: Request) {
   try {
     await connectToDB();
 
+    const token = getTokenFromRequest(req);
+    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const decoded = verifyToken(token);
+    if (!decoded) return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
+
+    if (!decoded.isAdmin && !decoded.isSuperAdmin) {
+      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
+    if (!decoded.tenantId) {
+      return NextResponse.json({ error: "No tenant context" }, { status: 403 });
+    }
+
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("query")?.trim() ?? "";
     const date = searchParams.get("date")?.trim() ?? "";
 
-    const filter: UserFilter = {
-      isAdmin: false, // ❗ ne vraćaj admina nikad
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const filter: Record<string, any> = {
+      tenantId: new Types.ObjectId(decoded.tenantId),
     };
 
-    // 🔍 Pretraga po name i email
     if (query) {
       const regex = new RegExp(query, "i");
-      filter.$or = [{ name: { $regex: regex } }, { email: { $regex: regex } }];
+      filter.$or = [
+        { name: { $regex: regex } },
+        { email: { $regex: regex } },
+      ];
     }
 
-    // 🔍 Pretraga po datumu kreiranja
     if (date) {
-      // createdAt je ISO → filtriramo po početku dana i kraju dana
       const start = new Date(date + "T00:00:00.000Z");
       const end = new Date(date + "T23:59:59.999Z");
-
-      filter.createdAt = {
-        $gte: start,
-        $lte: end,
-      };
+      filter.createdAt = { $gte: start, $lte: end };
     }
 
-    const users = await User.find(filter).sort({ createdAt: -1 });
+    const users = await TenantUser.find(filter, {
+      _id: 1,
+      name: 1,
+      email: 1,
+      phone: 1,
+      role: 1,
+      isOnline: 1,
+      isEmailVerified: 1,
+      lastActive: 1,
+      createdAt: 1,
+    })
+      .sort({ createdAt: -1 })
+      .lean();
 
     return NextResponse.json(users);
   } catch (error) {

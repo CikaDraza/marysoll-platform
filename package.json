@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
-    "backfill:identity": "ts-node -r tsconfig-paths/register --project scripts/tsconfig.json scripts/backfill-user-identity.ts"
+    "backfill:identity": "echo 'Deprecated — backfill-user-identity script removed'"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.19",

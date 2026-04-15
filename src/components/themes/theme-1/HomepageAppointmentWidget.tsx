@@ -276,7 +276,7 @@ function BookingModal({
     });
 
     const payload: IAppointment = {
-      clientId: user._id,
+      clientProfileId: user.tenantUserId ?? undefined,
       clientName: user.name,
       clientEmail: user.email,
       serviceName: `${selectedService.name}${selectedVariant ? ` - ${selectedVariant}` : ""}`,

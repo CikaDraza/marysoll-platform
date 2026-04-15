@@ -2,11 +2,11 @@
 "use client";
 import { createContext, useContext, ReactNode } from "react";
 import { getUserFromToken } from "@/lib/auth/auth-client";
-import { AuthUser } from "@/types/auth/types";
+import { LoggedInUser } from "@/types/auth/types";
 
 interface AuthContextType {
   token: string | null;
-  user: AuthUser | null;
+  user: LoggedInUser | null;
 }
 
 const AuthContext = createContext<AuthContextType>({ token: null, user: null });
@@ -22,7 +22,7 @@ export const AuthProvider = ({
   // getUserFromToken with explicit token arg (avoids localStorage read in SSR)
   const decoded = isValidToken ? getUserFromToken(token) : null;
 
-  const user: AuthUser | null = decoded
+  const user: LoggedInUser | null = decoded
     ? {
         id:      decoded.id,
         email:   decoded.email,

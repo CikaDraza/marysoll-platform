@@ -7,7 +7,7 @@ import { Testimonial } from "@/models/Testimonial";
 
 interface TestimonialForNotification {
   _id: string;
-  clientId: string;
+  clientProfileId: string;
   clientName: string;
   rating: number;
   comment: string;
@@ -62,7 +62,7 @@ export async function PUT(req: Request, { params }: Params) {
 
     const updateData: TestimonialForNotification = {
       _id: oldTestimonial._id.toString(),
-      clientId: oldTestimonial.clientId.toString(),
+      clientProfileId: oldTestimonial.clientProfileId.toString(),
       clientName: oldTestimonial.clientName,
       rating: oldTestimonial.rating,
       comment: oldTestimonial.comment,
@@ -119,7 +119,7 @@ export async function PUT(req: Request, { params }: Params) {
         {
           _id: updatedTestimonial._id.toString(),
           tenantId: updatedTestimonial.tenantId,
-          clientId: updatedTestimonial.clientId.toString(),
+          clientProfileId: updatedTestimonial.clientProfileId.toString(),
           clientName: updatedTestimonial.clientName,
           rating: updatedTestimonial.rating,
           isRead: updatedTestimonial.isRead,
@@ -147,7 +147,7 @@ export async function PUT(req: Request, { params }: Params) {
         {
           _id: updatedTestimonial._id.toString(),
           tenantId: updatedTestimonial.tenantId.toString(),
-          clientId: updatedTestimonial.clientId.toString(),
+          clientProfileId: updatedTestimonial.clientProfileId.toString(),
           clientName: updatedTestimonial.clientName,
           rating: updatedTestimonial.rating,
           isRead: updatedTestimonial.isRead,

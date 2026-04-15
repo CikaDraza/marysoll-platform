@@ -166,7 +166,7 @@ export default function AdminCreateModal({
 
     // Kreiranje payload-a za appointment
     const payload: CreateAppointmentPayload = {
-      clientId: client._id ?? "",
+      clientProfileId: client._id ?? "",
       clientName: client.name,
       clientEmail: client.email,
       serviceName: `${selectedService.name}${

@@ -5,7 +5,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
-import { User } from "@/models/User";
+import { AuthUser } from "@/models/AuthUser";
+import { TenantUser } from "@/models/TenantUser";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
 
 export async function GET(req: NextRequest) {
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
       Tenant.countDocuments({ paid: true }),
       Tenant.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
       Tenant.countDocuments({ createdAt: { $gte: sevenDaysAgo } }),
-      User.countDocuments({ isSuperAdmin: false }),
+      AuthUser.countDocuments({ platformRole: { $ne: "SUPER_ADMIN" } }),
       Tenant.aggregate([
         { $group: { _id: "$plan", count: { $sum: 1 } } },
       ]),

@@ -18,10 +18,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // proveri admina
-    const { User } = await import("@/models/User");
-    const dbUser = await User.findById(user.id);
-    const isAdmin = dbUser?.isAdmin;
+    const isAdmin = user.isAdmin;
 
     const appointmentId = id;
 

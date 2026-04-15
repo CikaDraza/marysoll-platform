@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { verifyToken } from "@/lib/auth/auth-server";
-import { User } from "@/models/User";
+import { TenantUser } from "@/models/TenantUser";
 import { createTestimonialNotification } from "@/lib/notificationService";
 import { Testimonial } from "@/models/Testimonial";
 
@@ -21,6 +21,10 @@ export async function POST(req: Request) {
 
     if (!user || user?.isAdmin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!user.tenantUserId) {
+      return NextResponse.json({ error: "No tenant context" }, { status: 403 });
     }
 
     const body = await req.json();
@@ -55,12 +59,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const userName = await User.findOne({ email: user.email });
+    // Get name from TenantUser
+    const tenantUser = await TenantUser.findById(user.tenantUserId).select("name").lean<{ name: string }>();
+    const clientName = tenantUser?.name || user.name || user.email.split("@")[0];
 
     const testimonial = await Testimonial.create({
-      clientId: user.id,
+      clientProfileId: user.tenantUserId,
       tenantId: user.tenantId,
-      clientName: userName?.name || user.email.split("@")[0],
+      clientName,
       clientEmail: user.email,
       appointmentId: {
         serviceName: appointment.serviceName,

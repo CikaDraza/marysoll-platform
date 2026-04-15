@@ -11,38 +11,39 @@ import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
-import { User } from "@/models/User";
 import { Tenant } from "@/models/Tenant";
 import type { ITenant } from "@/models/Tenant";
 import { DecodedToken } from "@/types/auth/types";
 import { assertTenantMatch } from "@/lib/audit/tenant-guard";
 
 export function generateAccessToken(
-  id: string,
+  id: string,           // AuthUser._id
   email: string,
   isAdmin: boolean,
   name: string,
+  tenantUserId: string | null,  // TenantUser._id — null for superadmin
   tenantId: string | null = null,
   isSuperAdmin = false,
   globalRole = "USER",
   tenantSlug: string | null = null,
 ): string {
   return jwt.sign(
-    { id, email, isAdmin, name, tenantId, isSuperAdmin, globalRole, tenantSlug },
+    { id, email, isAdmin, name, tenantUserId, tenantId, isSuperAdmin, globalRole, tenantSlug },
     process.env.JWT_SECRET!,
     { expiresIn: "30d" },
   );
 }
 
 export function generateRefreshToken(
-  id: string,
+  id: string,           // AuthUser._id
   email: string,
   isAdmin: boolean,
+  tenantUserId: string | null,  // TenantUser._id
   tenantId: string | null = null,
   isSuperAdmin = false,
 ): string {
   return jwt.sign(
-    { id, email, isAdmin, tenantId, isSuperAdmin },
+    { id, email, isAdmin, tenantUserId, tenantId, isSuperAdmin },
     process.env.JWT_REFRESH_SECRET!,
     { expiresIn: "30d" },
   );
@@ -136,7 +137,7 @@ export type AdminAuthResult =
   | { success: true; decoded: DecodedToken }
   | { success: false; response: NextResponse };
 
-export async function requireAdmin(request: Request): Promise<AdminAuthResult> {
+export function requireAdmin(request: Request): AdminAuthResult {
   const token = getTokenFromRequest(request);
   if (!token) {
     return {
@@ -182,44 +183,20 @@ export async function requireAdmin(request: Request): Promise<AdminAuthResult> {
     };
   }
 
-  try {
-    await connectToDB();
-    const user = await User.findById(decoded.id)
-      .select("isAdmin")
-      .lean<{ isAdmin: boolean }>();
-
-    if (!user) {
-      return {
-        success: false,
-        response: NextResponse.json(
-          { error: "Korisnik nije pronađen" },
-          { status: 401 },
-        ),
-      };
-    }
-
-    // SUPER_ADMIN bypasses the isAdmin flag — they manage the platform, not a salon.
-    if (!user.isAdmin && !isSuperAdmin) {
-      return {
-        success: false,
-        response: NextResponse.json(
-          { error: "Nemate administratorska prava" },
-          { status: 403 },
-        ),
-      };
-    }
-
-    return { success: true, decoded };
-  } catch (err) {
-    console.error("requireAdmin error:", err);
+  // For tenant users (OWNER/ADMIN/STAFF): trust JWT isAdmin flag.
+  // isAdmin is computed at login time from TenantUser.role and embedded in the token.
+  // No DB round-trip needed — all roles are verified at token issuance.
+  if (!isSuperAdmin && !decoded.isAdmin) {
     return {
       success: false,
       response: NextResponse.json(
-        { error: "Greška na serveru" },
-        { status: 500 },
+        { error: "Nemate administratorska prava" },
+        { status: 403 },
       ),
     };
   }
+
+  return { success: true, decoded };
 }
 
 /**

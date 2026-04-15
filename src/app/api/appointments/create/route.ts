@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
     const appointment = new Appointment({
       ...data,
       tenantId, // Sada je ovo string
-      clientId: decoded.id,
+      clientProfileId: decoded.tenantUserId,
       duration: data.duration,
       services: data.services.map((s: IAppointmentService) => ({
         ...s,
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
       {
         _id: appointment._id.toString(),
         tenantId: tenant!._id,
-        clientId: appointment.clientId,
+        clientProfileId: appointment.clientProfileId?.toString() ?? "",
         clientName: appointment.clientName,
         serviceName: appointment.serviceName,
         date: appointment.date,

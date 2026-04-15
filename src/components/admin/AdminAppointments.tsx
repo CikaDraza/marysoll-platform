@@ -24,7 +24,7 @@ function AppointmentListItem({
   const { updateAppointmentStatus } = useAppointmentMutations();
   const { data: response, isLoading, isError, isFetching } = useAppointments();
   const { isOnline } = useUsers().data?.find(
-    (u) => u._id === appointment.clientId,
+    (u) => u._id === appointment.clientProfileId,
   ) || { isOnline: false };
 
   const appointments = useMemo(() => {

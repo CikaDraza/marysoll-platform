@@ -72,7 +72,7 @@ export default function ClientTestimonials() {
   const appointmentsWithoutTestimonial = useMemo(() => {
     return appointments.filter((appointment) => {
       try {
-        const isClientAppointment = appointment.clientId === currentUser?.id;
+        const isClientAppointment = appointment.clientProfileId === currentUser?.tenantUserId;
 
         if (!isClientAppointment) return false;
 

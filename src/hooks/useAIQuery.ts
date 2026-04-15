@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AuthUser } from "@/types/auth/types";
+import { LoggedInUser } from "@/types/auth/types";
 import { useChatHistory } from "./useChatHistory";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore — no type declarations for partial-json-parser
@@ -30,7 +30,7 @@ interface AskAIOptions {
   preserveHistory?: boolean;
 }
 
-export function useAIQuery(user?: AuthUser | null) {
+export function useAIQuery(user?: LoggedInUser | null) {
   const {
     thread,
     saveToHistory,

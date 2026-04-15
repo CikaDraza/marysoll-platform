@@ -15,9 +15,9 @@ export async function POST(req: Request) {
     }
 
     const token = authHeader.split(" ")[1];
-    const user = verifyToken(token);
+    const decoded = verifyToken(token);
 
-    if (!user) {
+    if (!decoded) {
       return NextResponse.json({ error: "Invalid token" }, { status: 403 });
     }
 
@@ -37,7 +37,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const isAdmin = await checkIfUserIsAdmin(user.id);
+    // Use isAdmin from JWT — no extra DB call needed
+    const isAdmin = decoded.isAdmin ?? false;
 
     // Dodaj poruku
     const newMessage = {
@@ -70,8 +71,8 @@ export async function POST(req: Request) {
     await createAppointmentNotification(
       {
         _id: appointment._id.toString(),
-        tenantId: appointment!._id,
-        clientId: appointment.clientId,
+        tenantId: appointment.tenantId,
+        clientProfileId: appointment.clientProfileId?.toString() ?? "",
         clientName: appointment.clientName,
         serviceName: appointment.serviceName,
       },
@@ -89,16 +90,5 @@ export async function POST(req: Request) {
       { error: "Greška pri slanju poruke" },
       { status: 500 },
     );
-  }
-}
-
-async function checkIfUserIsAdmin(userId: string): Promise<boolean> {
-  try {
-    const { User } = await import("@/models/User");
-    const user = await User.findById(userId);
-    return user?.isAdmin || false;
-  } catch (error) {
-    console.error("Error checking admin status:", error);
-    return false;
   }
 }

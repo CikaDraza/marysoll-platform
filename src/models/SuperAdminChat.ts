@@ -2,7 +2,7 @@ import { Schema, Document, Types, model, models } from "mongoose";
 
 const messageSchema = new Schema(
   {
-    senderId: { type: Types.ObjectId, ref: "User", required: true },
+    senderId: { type: Types.ObjectId, ref: "AuthUser", required: true },
     senderRole: { type: String, enum: ["superadmin", "owner"], required: true },
     message: { type: String, required: true },
     isRead: { type: Boolean, default: false },
@@ -37,7 +37,7 @@ const SuperAdminChatSchema = new Schema<ISuperAdminChat>(
       required: true,
       unique: true,
     },
-    ownerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    ownerId: { type: Schema.Types.ObjectId, ref: "AuthUser", required: true },
     messages: [messageSchema],
     unreadBySuperAdmin: { type: Number, default: 0 },
     unreadByOwner: { type: Number, default: 0 },

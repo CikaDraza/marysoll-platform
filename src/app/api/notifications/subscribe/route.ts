@@ -1,7 +1,7 @@
 // app/api/notifications/subscribe/route.ts
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
-import { User } from "@/models/User";
+import { TenantUser } from "@/models/TenantUser";
 import { verifyToken } from "@/lib/auth/auth-server";
 import webpush from "web-push";
 import { getVapidKeys } from "@/lib/vapid";
@@ -16,17 +16,17 @@ export async function POST(req: Request) {
     }
 
     const token = authHeader.split(" ")[1];
-    const user = verifyToken(token);
+    const decoded = verifyToken(token);
 
-    if (!user) {
+    if (!decoded) {
       return NextResponse.json({ error: "Invalid token" }, { status: 403 });
     }
 
-    const { subscription, userId } = await req.json();
-
-    if (user.id !== userId) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!decoded.tenantUserId) {
+      return NextResponse.json({ error: "No tenant context" }, { status: 403 });
     }
+
+    const { subscription } = await req.json();
 
     // Konfiguriši web-push sa VAPID ključevima
     const vapidKeys = getVapidKeys();
@@ -37,8 +37,8 @@ export async function POST(req: Request) {
     );
 
     // Sačuvaj ili ažuriraj subscription
-    await User.findByIdAndUpdate(
-      userId,
+    await TenantUser.findByIdAndUpdate(
+      decoded.tenantUserId,
       {
         $addToSet: {
           pushSubscriptions: {

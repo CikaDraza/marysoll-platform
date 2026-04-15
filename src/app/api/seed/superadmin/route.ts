@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectToDB } from "@/lib/db/mongodb";
-import { User } from "@/models/User";
+import { AuthUser } from "@/models/AuthUser";
 
 /**
  * POST /api/seed/superadmin
@@ -13,12 +13,14 @@ import { User } from "@/models/User";
  * Optional env var:  SUPERADMIN_NAME (defaults to "Super Admin")
  *
  * Body: { secret: string }
+ *
+ * Creates an AuthUser with platformRole: "SUPER_ADMIN".
+ * SuperAdmin has no TenantUser — they operate across all tenants.
  */
 async function runSeed(secret: string | null) {
   const seedSecret = process.env.SEED_SECRET;
   const email = process.env.SUPERADMIN_EMAIL;
   const password = process.env.SUPERADMIN_PASSWORD;
-  const name = process.env.SUPERADMIN_NAME || "Super Admin";
 
   if (!seedSecret) {
     return NextResponse.json(
@@ -50,7 +52,8 @@ async function runSeed(secret: string | null) {
 
   await connectToDB();
 
-  const existing = await User.findOne({ email: email.toLowerCase().trim() });
+  const normalizedEmail = email.toLowerCase().trim();
+  const existing = await AuthUser.findOne({ email: normalizedEmail });
   if (existing) {
     return NextResponse.json(
       { error: "A user with this email already exists." },
@@ -60,27 +63,24 @@ async function runSeed(secret: string | null) {
 
   const hashed = await bcrypt.hash(password, 12);
 
-  const user = await User.create({
-    email: email.toLowerCase().trim(),
-    password: hashed,
-    name: name?.trim() || "Super Admin",
-    phone: "000000000",
-    globalRole: "SUPER_ADMIN",
-    isAdmin: true,
-    isSuperAdmin: true,
+  const authUser = await AuthUser.create({
+    email: normalizedEmail,
+    passwordHash: hashed,
     isEmailVerified: true,
-    agreedToPrivacy: true,
-    tenantId: null,
+    platformRole: "SUPER_ADMIN",
+    verificationToken: null,
+    verificationTokenExpiry: null,
+    resetPasswordToken: null,
+    resetPasswordExpires: null,
   });
 
   return NextResponse.json({
     success: true,
     message: "Superadmin created successfully.",
     user: {
-      id: user._id,
-      email: user.email,
-      name: user.name,
-      globalRole: user.globalRole,
+      id: authUser._id,
+      email: authUser.email,
+      platformRole: authUser.platformRole,
     },
   });
 }

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
-import { User } from "@/models/User";
-import { UserIdentity } from "@/models/UserIdentity";
+import { AuthUser } from "@/models/AuthUser";
+import { TenantUser } from "@/models/TenantUser";
 import { SalonProfile } from "@/models/SalonProfile";
 import { sendOwnerVerificationEmail, TRIAL_DAYS } from "@/lib/email/onboarding";
 import crypto from "crypto";
@@ -11,9 +11,14 @@ import bcrypt from "bcryptjs";
 /**
  * POST /api/tenants/register
  *
- * Kreira: User (isAdmin) + Tenant (pending) + SalonProfile
- * Šalje: verifikacioni email vlasniku
- * Trial se aktivira TEK posle verifikacije emaila.
+ * Registers a new salon OWNER.
+ * Creates:
+ *   AuthUser  — global platform identity (for marysoll.com platform access)
+ *   Tenant    — the salon record (status: pending)
+ *   TenantUser — OWNER profile WITH email+password (for salon login)
+ *   SalonProfile — empty profile scaffold
+ *
+ * Trial activates only after email verification.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -28,7 +33,7 @@ export async function POST(request: NextRequest) {
     if (password.length < 8) {
       return NextResponse.json(
         { error: "Lozinka mora imati najmanje 8 karaktera" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -36,17 +41,17 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    // Only block if a platform-level user (tenantId: null) already exists with this email.
-    // The same email is allowed on tenant-scoped accounts (clients on different salons).
-    const existingUser = await User.findOne({ email: normalizedEmail, tenantId: null });
-    if (existingUser) {
+
+    // Block if an AuthUser already exists with this email (platform-level uniqueness for owners).
+    const existingAuthUser = await AuthUser.findOne({ email: normalizedEmail });
+    if (existingAuthUser) {
       return NextResponse.json(
         { error: "Nalog sa ovim emailom već postoji" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
-    // Generisanje jedinstvenog slug-a (čisti dijakritike)
+    // Generate unique slug
     const baseSlug = salonName
       .toLowerCase()
       .normalize("NFD")
@@ -62,32 +67,22 @@ export async function POST(request: NextRequest) {
     }
 
     const subdomain = `${slug}.marysoll.com`;
-
-    // Verifikacioni token — crypto random, ne JWT (kraći, sigurniji za ovu namenu)
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-    // 1. Kreiraj vlasnika
     const hashedPassword = await bcrypt.hash(password, 12);
-    const owner = new User({
-      name: ownerName.trim(),
+
+    // 1. AuthUser — platform-level identity for OWNER (marysoll.com access)
+    const authUser = new AuthUser({
       email: normalizedEmail,
-      password: hashedPassword,
-      phone: phone?.trim() ?? "",
-      isAdmin: true,
-      isSuperAdmin: false,
-      globalRole: "OWNER",
-      agreedToPrivacy: true,
+      passwordHash: hashedPassword,
       isEmailVerified: false,
       verificationToken,
       verificationTokenExpiry,
-      userType: "legal",
-      isOnline: false,
-      lastActive: new Date(),
+      platformRole: "OWNER",
     });
-    await owner.save();
+    await authUser.save();
 
-    // 2. Kreiraj tenant — status "pending", trial NE počinje jos
+    // 2. Tenant (pending — trial starts after email verification)
     const tenant = new Tenant({
       name: salonName.trim(),
       slug,
@@ -100,7 +95,7 @@ export async function POST(request: NextRequest) {
       planExpiresAt: null,
       trialEndsAt: null,
       isTrialActive: false,
-      ownerId: owner._id,
+      ownerId: authUser._id,
       cloudinaryFolder: `salons/salon-${slug}`,
       status: "pending",
       aiSettings: {
@@ -119,29 +114,25 @@ export async function POST(request: NextRequest) {
     });
     await tenant.save();
 
-    // 3. Dual-write UserIdentity — non-blocking, must never break registration.
-    // $setOnInsert + upsert is the only race-condition-safe idempotent pattern:
-    // - email already exists → no-op (setOnInsert does not run on updates)
-    // - email does not exist → atomic insert
-    try {
-      await UserIdentity.findOneAndUpdate(
-        { email: normalizedEmail },
-        {
-          $setOnInsert: {
-            email: normalizedEmail,
-            passwordHash: hashedPassword,
-            isEmailVerified: owner.isEmailVerified,
-            platformRole: "OWNER",
-            legacyUserId: owner._id,
-          },
-        },
-        { upsert: true, new: false },
-      );
-    } catch (identityErr) {
-      console.error("⚠️ UserIdentity dual-write failed (non-fatal):", identityErr);
-    }
+    // 3. TenantUser — OWNER profile WITH per-tenant credentials.
+    //    email + password here are for tenant login (salon URL).
+    //    authUserId links to AuthUser for platform access.
+    const tenantUser = new TenantUser({
+      tenantId: tenant._id,
+      authUserId: authUser._id,
+      email: normalizedEmail,
+      password: hashedPassword,
+      name: ownerName.trim(),
+      phone: phone?.trim() ?? "",
+      role: "OWNER",
+      isEmailVerified: false,
+      verificationToken,
+      verificationTokenExpiry,
+      status: "active",
+    });
+    await tenantUser.save();
 
-    // 4. Prazan profil salona
+    // 4. Empty salon profile
     const salonProfile = new SalonProfile({
       tenantId: tenant._id,
       name: salonName.trim(),
@@ -154,7 +145,7 @@ export async function POST(request: NextRequest) {
     tenant.salonProfileId = salonProfile._id as Parameters<typeof tenant.set>[1];
     await tenant.save();
 
-    // 5. Verifikacioni email — ne blokira registraciju ako ne uspe
+    // 5. Verification email
     try {
       await sendOwnerVerificationEmail({
         email: normalizedEmail,
@@ -174,13 +165,13 @@ export async function POST(request: NextRequest) {
         subdomain,
         trialDays: TRIAL_DAYS,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("❌ Tenant registration error:", error);
     return NextResponse.json(
       { error: "Greška pri registraciji. Pokušajte ponovo." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -37,7 +37,7 @@ export async function GET(req: Request) {
       // Grupiši po klijentu (prvi će biti najnoviji zbog sortiranja)
       {
         $group: {
-          _id: "$clientId",
+          _id: "$clientProfileId",
           testimonial: { $first: "$$ROOT" },
           clientEmail: { $first: "$clientEmail" },
         },
@@ -57,7 +57,7 @@ export async function GET(req: Request) {
     // Transformacija podataka
     const transformedTestimonials = uniqueTestimonials.map((testimonial) => ({
       _id: testimonial._id?.toString(),
-      clientId: testimonial.clientId.toString(),
+      clientProfileId: testimonial.clientProfileId?.toString(),
       clientName: testimonial.clientName,
       clientEmail: testimonial.clientEmail,
       appointmentId: {

@@ -7,7 +7,7 @@ export interface IAudienceContact extends Document {
   lastName?: string;
 
   tenantId?: Types.ObjectId;   // salon tenant for campaign targeting
-  userId?: Types.ObjectId;     // reference if registered
+  profileId?: Types.ObjectId;  // TenantUser reference if registered
 
   contactType:
     | "CLIENT"
@@ -33,6 +33,9 @@ export interface IAudienceContact extends Document {
 
   lastEmailSent?: Date;
 
+  verificationToken?: string;
+  unsubscribeToken?: string;
+
   openCount: number;
   clickCount: number;
   engagementScore: number;
@@ -47,7 +50,7 @@ const AudienceContactSchema = new Schema<IAudienceContact>(
     firstName: { type: String },
     lastName: { type: String },
     tenantId: { type: Schema.Types.ObjectId, ref: "Tenant" },
-    userId: { type: Schema.Types.ObjectId, ref: "User" },
+    profileId: { type: Schema.Types.ObjectId, ref: "TenantUser" },
     contactType: {
       type: String,
       enum: ["CLIENT", "NEWSLETTER", "SALON_OWNER", "LEAD", "STAFF"],
@@ -67,6 +70,8 @@ const AudienceContactSchema = new Schema<IAudienceContact>(
     subscribed: { type: Boolean, default: true },
     unsubscribedAt: { type: Date },
     lastEmailSent: { type: Date },
+    verificationToken: { type: String },
+    unsubscribeToken: { type: String },
     openCount: { type: Number, default: 0 },
     clickCount: { type: Number, default: 0 },
     engagementScore: { type: Number, default: 0 },

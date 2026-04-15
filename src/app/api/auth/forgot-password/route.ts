@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { connectToDB } from "@/lib/db/mongodb";
-import { User } from "@/models/User";
+import { TenantUser } from "@/models/TenantUser";
 import { Tenant } from "@/models/Tenant";
 import { sendResetEmail, sendResetEmailOnAssistant } from "@/lib/email/email";
 
+/**
+ * POST /api/auth/forgot-password
+ *
+ * Tenant-scoped password reset.
+ * Finds TenantUser by { tenantId, email } — completely isolated per salon.
+ * The same email on a different salon gets a separate reset token.
+ */
 export async function POST(request: NextRequest) {
   try {
-    const { email, assistantSlug, isAssistant } = await request.json();
+    const { email, assistantSlug, isAssistant, tenantSlug: bodyTenantSlug } =
+      await request.json();
 
     if (!email) {
       return NextResponse.json({ error: "Email je obavezan" }, { status: 400 });
@@ -15,35 +23,60 @@ export async function POST(request: NextRequest) {
 
     await connectToDB();
 
-    // Resolve tenant from header (injected by proxy for subdomain requests).
-    // Platform-level password reset (owner/superadmin) has no tenant header.
-    const tenantSlug = request.headers.get("x-tenant-slug");
-    let tenantId: import("mongoose").Types.ObjectId | null = null;
-    if (tenantSlug && tenantSlug !== "default") {
-      const tenant = await Tenant.findOne({ slug: tenantSlug }).select("_id").lean<{ _id: import("mongoose").Types.ObjectId }>();
-      if (tenant) tenantId = tenant._id;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Resolve tenant from header or body
+    const tenantSlugFromHeader = request.headers.get("x-tenant-slug");
+    const resolvedTenantSlug =
+      tenantSlugFromHeader && tenantSlugFromHeader !== "default"
+        ? tenantSlugFromHeader
+        : bodyTenantSlug || null;
+
+    if (!resolvedTenantSlug) {
+      // Security: same generic message whether tenant found or not
+      return NextResponse.json({
+        message: "Ako nalog postoji, reset link će biti poslat na email",
+      });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim(), tenantId });
+    const tenant = await Tenant.findOne({ slug: resolvedTenantSlug })
+      .select("_id name")
+      .lean<{ _id: import("mongoose").Types.ObjectId; name: string }>();
 
-    // Security: uvek vraćaj istu poruku — ne otkrivaj da li nalog postoji
-    if (!user) {
+    if (!tenant) {
+      return NextResponse.json({
+        message: "Ako nalog postoji, reset link će biti poslat na email",
+      });
+    }
+
+    const tenantUser = await TenantUser.findOne({
+      tenantId: tenant._id,
+      email: normalizedEmail,
+    });
+
+    // Security: always return same message — don't reveal whether account exists
+    if (!tenantUser) {
       return NextResponse.json({
         message: "Ako nalog postoji, reset link će biti poslat na email",
       });
     }
 
     const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 sat
+    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-    user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = resetTokenExpiry;
-    await user.save();
+    tenantUser.resetPasswordToken = resetToken;
+    tenantUser.resetPasswordExpiry = resetTokenExpiry;
+    await tenantUser.save();
 
     if (isAssistant && assistantSlug) {
-      await sendResetEmailOnAssistant(user.email, resetToken, assistantSlug);
+      await sendResetEmailOnAssistant(tenantUser.email, resetToken, assistantSlug);
     } else {
-      await sendResetEmail(user.email, resetToken, user.name, tenantId?.toString() ?? null);
+      await sendResetEmail(
+        tenantUser.email,
+        resetToken,
+        tenantUser.name,
+        tenant._id.toString(),
+      );
     }
 
     return NextResponse.json({

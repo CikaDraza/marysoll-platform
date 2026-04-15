@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
-import { User } from "@/models/User";
-import { UserIdentity } from "@/models/UserIdentity";
+import { TenantUser } from "@/models/TenantUser";
+import { AuthUser } from "@/models/AuthUser";
 import { Tenant } from "@/models/Tenant";
-import { SalonProfile } from "@/models/SalonProfile";
-import { sendOwnerWelcomeEmail, sendClientWelcomeEmail, TRIAL_DAYS } from "@/lib/email/onboarding";
+import {
+  sendOwnerWelcomeEmail,
+  sendClientWelcomeEmail,
+  TRIAL_DAYS,
+} from "@/lib/email/onboarding";
 
 /**
  * GET /api/auth/verify?token=xxx&type=owner|client
  *
- * Koristi se kada korisnik klikne link iz emaila.
- * type=owner  → aktivira tenant + trial, šalje welcome email vlasniku
- * type=client → aktivira klijentski nalog, šalje welcome email klijentu
+ * Verifies email by finding TenantUser with matching verificationToken.
+ * type=owner  → also activates the tenant (trial start) + also verifies AuthUser
+ * type=client → activates client account, sends welcome email
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -28,47 +31,46 @@ export async function GET(request: NextRequest) {
     await connectToDB();
 
     const now = new Date();
-    const user = await User.findOne({
+
+    // Look up TenantUser by verificationToken (tenant-scoped verification)
+    const tenantUser = await TenantUser.findOne({
       verificationToken: token,
       verificationTokenExpiry: { $gt: now },
     });
 
-    if (!user) {
+    if (!tenantUser) {
       return NextResponse.redirect(`${baseUrl}/verify-email?error=invalid_or_expired`);
     }
 
-    if (user.isEmailVerified) {
-      // Već verifikovan — preusmeri na login
-      return NextResponse.redirect(`${baseUrl}/login?already_verified=true`);
+    if (tenantUser.isEmailVerified) {
+      return NextResponse.redirect(`${baseUrl}/verify-email?already_verified=true`);
     }
 
-    // Označi email kao verifikovan
-    user.isEmailVerified = true;
-    user.verificationToken = undefined;
-    user.verificationTokenExpiry = undefined;
-    await user.save();
-
-    // Passive sync — propagate verified state to UserIdentity if one exists.
-    // No upsert: if UserIdentity is absent (pre-migration account), do nothing.
-    try {
-      await UserIdentity.findOneAndUpdate(
-        { legacyUserId: user._id },
-        { isEmailVerified: true },
-      );
-    } catch (identityErr) {
-      console.error("⚠️ UserIdentity isEmailVerified sync failed (non-fatal):", identityErr);
-    }
+    // Mark TenantUser email as verified
+    tenantUser.isEmailVerified = true;
+    tenantUser.verificationToken = null;
+    tenantUser.verificationTokenExpiry = null;
+    await tenantUser.save();
 
     if (type === "owner") {
-      // ─── Aktivacija salona i probnog perioda ───────────────────────────────
-      const tenant = await Tenant.findOne({ ownerId: user._id });
+      // Also verify the AuthUser (platform access)
+      if (tenantUser.authUserId) {
+        await AuthUser.findByIdAndUpdate(tenantUser.authUserId, {
+          $set: {
+            isEmailVerified: true,
+            verificationToken: null,
+            verificationTokenExpiry: null,
+          },
+        });
+      }
+
+      // Activate tenant + trial
+      const tenant = await Tenant.findById(tenantUser.tenantId);
       if (tenant) {
-        // Use DEFAULT_TRIAL_DAYS env var if set, else fall back to TRIAL_DAYS constant
         const trialDays = parseInt(process.env.DEFAULT_TRIAL_DAYS ?? String(TRIAL_DAYS));
         const trialEndsAt = new Date();
         trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
 
-        // Auto-approve trial unless platform settings say otherwise
         const autoApprove = process.env.AUTO_APPROVE_TRIALS !== "false";
 
         tenant.verified = true;
@@ -77,46 +79,41 @@ export async function GET(request: NextRequest) {
         tenant.trialEndsAt = autoApprove ? trialEndsAt : null;
         await tenant.save();
 
-        // Pošalji welcome email sa info o trialu
         try {
-          const salonProfile = await SalonProfile.findOne({ tenantId: tenant._id });
           await sendOwnerWelcomeEmail({
-            email: user.email,
-            ownerName: user.name,
+            email: tenantUser.email,
+            ownerName: tenantUser.name,
             salonName: tenant.name,
             subdomain: `${tenant.slug}.marysoll.com`,
             trialEndsAt,
           });
-        } catch (emailErr) {
-          console.error("⚠️ Owner welcome email nije poslat:", emailErr);
+        } catch (e) {
+          console.error("⚠️ Owner welcome email failed:", e);
         }
       }
 
       return NextResponse.redirect(`${baseUrl}/verify-email?success=owner`);
     } else {
-      // ─── Aktivacija klijentskog naloga ─────────────────────────────────────
-      // Nađi salon kom pripada klijent (via tenantId)
+      // Client verification — find tenant for welcome email branding
       let salonName = "salon";
       let salonUrl = baseUrl;
 
-      if (user.tenantId) {
-        const tenant = await Tenant.findById(user.tenantId);
-        if (tenant) {
-          salonName = tenant.name;
-          salonUrl = `https://${tenant.slug}.marysoll.com`;
-        }
+      const tenant = await Tenant.findById(tenantUser.tenantId);
+      if (tenant) {
+        salonName = tenant.name;
+        salonUrl = `https://${tenant.slug}.marysoll.com`;
       }
 
       try {
         await sendClientWelcomeEmail({
-          email: user.email,
-          clientName: user.name,
+          email: tenantUser.email,
+          clientName: tenantUser.name,
           salonName,
           salonUrl,
-          tenantId: user.tenantId?.toString() ?? null,
+          tenantId: tenantUser.tenantId.toString(),
         });
-      } catch (emailErr) {
-        console.error("⚠️ Client welcome email nije poslat:", emailErr);
+      } catch (e) {
+        console.error("⚠️ Client welcome email failed:", e);
       }
 
       return NextResponse.redirect(`${baseUrl}/verify-email?success=client`);
@@ -128,8 +125,7 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/auth/verify
- * Alternativno — API poziv umesto GET redirect (za custom implementacije)
+ * POST /api/auth/verify — API call (no redirect)
  */
 export async function POST(request: NextRequest) {
   const { token, type = "client" } = await request.json();
@@ -142,39 +138,39 @@ export async function POST(request: NextRequest) {
     await connectToDB();
 
     const now = new Date();
-    const user = await User.findOne({
+    const tenantUser = await TenantUser.findOne({
       verificationToken: token,
       verificationTokenExpiry: { $gt: now },
     });
 
-    if (!user) {
+    if (!tenantUser) {
       return NextResponse.json(
         { error: "Link za verifikaciju je nevažeći ili je istekao." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    if (user.isEmailVerified) {
+    if (tenantUser.isEmailVerified) {
       return NextResponse.json({ message: "Email je već verifikovan." });
     }
 
-    user.isEmailVerified = true;
-    user.verificationToken = undefined;
-    user.verificationTokenExpiry = undefined;
-    await user.save();
-
-    // Passive sync — same as GET handler above.
-    try {
-      await UserIdentity.findOneAndUpdate(
-        { legacyUserId: user._id },
-        { isEmailVerified: true },
-      );
-    } catch (identityErr) {
-      console.error("⚠️ UserIdentity isEmailVerified sync failed (non-fatal):", identityErr);
-    }
+    tenantUser.isEmailVerified = true;
+    tenantUser.verificationToken = null;
+    tenantUser.verificationTokenExpiry = null;
+    await tenantUser.save();
 
     if (type === "owner") {
-      const tenant = await Tenant.findOne({ ownerId: user._id });
+      if (tenantUser.authUserId) {
+        await AuthUser.findByIdAndUpdate(tenantUser.authUserId, {
+          $set: {
+            isEmailVerified: true,
+            verificationToken: null,
+            verificationTokenExpiry: null,
+          },
+        });
+      }
+
+      const tenant = await Tenant.findById(tenantUser.tenantId);
       if (tenant) {
         const trialEndsAt = new Date();
         trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DAYS);
@@ -183,18 +179,6 @@ export async function POST(request: NextRequest) {
         tenant.isTrialActive = true;
         tenant.trialEndsAt = trialEndsAt;
         await tenant.save();
-
-        try {
-          await sendOwnerWelcomeEmail({
-            email: user.email,
-            ownerName: user.name,
-            salonName: tenant.name,
-            subdomain: `${tenant.slug}.marysoll.com`,
-            trialEndsAt,
-          });
-        } catch (e) {
-          console.error("⚠️ Welcome email error:", e);
-        }
       }
     }
 

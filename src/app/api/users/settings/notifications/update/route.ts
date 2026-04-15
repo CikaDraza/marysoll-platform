@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { verifyToken } from "@/lib/auth/auth-server";
-import { User } from "@/models/User";
+import { TenantUser } from "@/models/TenantUser";
 
 // DEFAULT postavke za SVE korisnike
 const DEFAULT_SETTINGS = {
@@ -44,10 +44,14 @@ export async function PUT(req: Request) {
     }
 
     const token = authHeader.split(" ")[1];
-    const user = verifyToken(token);
+    const decoded = verifyToken(token);
 
-    if (!user) {
+    if (!decoded) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!decoded.tenantUserId) {
+      return NextResponse.json({ error: "No tenant context" }, { status: 403 });
     }
 
     const settings = await req.json();
@@ -55,11 +59,11 @@ export async function PUT(req: Request) {
     if (!settings || typeof settings !== "object") {
       return NextResponse.json(
         { error: "Invalid settings data" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // Validacija - SVI korisnici mogu da menjaju sve postavke
+    // Validacija
     const validKeys = Object.keys(DEFAULT_SETTINGS);
 
     for (const key of validKeys) {
@@ -69,28 +73,27 @@ export async function PUT(req: Request) {
           if (typeof hours !== "number" || hours < 1 || hours > 48) {
             return NextResponse.json(
               { error: `Invalid value for ${key}` },
-              { status: 400 }
+              { status: 400 },
             );
           }
         } else if (typeof settings[key] !== "boolean") {
           return NextResponse.json(
             { error: `Invalid value for ${key}` },
-            { status: 400 }
+            { status: 400 },
           );
         }
       }
     }
 
-    // Ažuriraj korisničke settings (ZA SVE KORISNIKE)
-    const updatedUser = await User.findByIdAndUpdate(
-      user.id,
+    const updatedUser = await TenantUser.findByIdAndUpdate(
+      decoded.tenantUserId,
       {
         $set: {
           notificationSettings: settings,
           updatedAt: new Date(),
         },
       },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedUser) {
@@ -105,7 +108,7 @@ export async function PUT(req: Request) {
     console.error("Error saving notification settings:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

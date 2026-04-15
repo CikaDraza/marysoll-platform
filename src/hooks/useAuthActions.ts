@@ -4,21 +4,21 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import toast from "react-hot-toast";
 import { getUserFromToken } from "@/lib/auth/auth-utils";
-import { AuthUser, LoginResponse, RegisterPayload } from "@/types/auth/types";
+import { LoggedInUser, LoginResponse, RegisterPayload } from "@/types/auth/types";
 
 export function useAuthActions() {
   const queryClient = useQueryClient();
 
   // 1. Fetch trenutnog korisnika iz localStorage
-  const { data: user, isLoading } = useQuery<AuthUser | null>({
+  const { data: user, isLoading } = useQuery<LoggedInUser | null>({
     queryKey: ["authUser"],
-    queryFn: (): AuthUser | null => {
+    queryFn: (): LoggedInUser | null => {
       if (typeof window === "undefined") return null;
       const token = localStorage.getItem("assistant_token");
       if (!token) return null;
       const decoded = getUserFromToken(token);
       if (!decoded) return null;
-      // Map DecodedUser → AuthUser (add token field)
+      // Map DecodedUser → LoggedInUser (add token field)
       return {
         id:      decoded.id,
         email:   decoded.email,
@@ -34,7 +34,7 @@ export function useAuthActions() {
   // 2. Login Mutacija
   const loginMutation = useMutation({
     mutationFn: async (
-      credentials: Pick<AuthUser, "email"> & { password: string },
+      credentials: Pick<LoggedInUser, "email"> & { password: string },
     ) => {
       const { data } = await axios.post<LoginResponse>(
         "/api/external/auth/login",
@@ -130,8 +130,8 @@ export function useAuthActions() {
     toast.success("Odjavljeni ste.");
   };
 
-  // Explicit cast ensures components can access AuthUser properties without TS inference issues
-  const typedUser = user as AuthUser | null;
+  // Explicit cast ensures components can access LoggedInUser properties without TS inference issues
+  const typedUser = user as LoggedInUser | null;
 
   return {
     user: typedUser,

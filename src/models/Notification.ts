@@ -7,7 +7,7 @@ const NotificationSchema = new Schema(
       ref: "Tenant",
       required: true,
     },
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    recipientProfileId: { type: Schema.Types.ObjectId, ref: "TenantUser", required: true },
     type: {
       type: String,
       enum: [
@@ -37,7 +37,7 @@ const NotificationSchema = new Schema(
       newDate: String,
       newTime: String,
       sender: { type: String, enum: ["client", "admin"] },
-      clientId: String,
+      clientProfileId: String,
       serviceName: String,
       clientName: String,
       rating: Number,

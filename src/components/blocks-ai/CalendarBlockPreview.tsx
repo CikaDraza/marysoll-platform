@@ -40,7 +40,7 @@ export function CalendarBlockPreview({ onSlotClick }: Props) {
   const { data: response, isLoading } = useAppointments({
     date: format(selectedDate, "yyyy-MM-dd"),
     limit: 100,
-    clientId: user?.id,
+    clientId: user?.tenantUserId ?? undefined,
   });
 
   // Narednih 14 dana
@@ -139,7 +139,7 @@ export function CalendarBlockPreview({ onSlotClick }: Props) {
             );
 
             const isTaken = !!appointment;
-            const isMyAppointment = appointment?.clientId === user?.id;
+            const isMyAppointment = appointment?.clientProfileId === user?.tenantUserId;
 
             // 3. Ako usluga traje duže → proveri da li bi preklopila sledeći slot (opciono)
             // const wouldOverlap = ... (možeš dodati kasnije)

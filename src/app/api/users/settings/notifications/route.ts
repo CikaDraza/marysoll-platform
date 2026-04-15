@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { verifyToken } from "@/lib/auth/auth-server";
-import { User } from "@/models/User";
+import { TenantUser } from "@/models/TenantUser";
 
 // DEFAULT postavke za SVE korisnike
 const DEFAULT_SETTINGS = {
@@ -44,26 +44,30 @@ export async function GET(req: Request) {
     }
 
     const token = authHeader.split(" ")[1];
-    const user = verifyToken(token);
+    const decoded = verifyToken(token);
 
-    if (!user) {
+    if (!decoded) {
       return NextResponse.json({ error: "Invalid token" }, { status: 403 });
     }
 
-    // Pronađi korisnika (BILO DA JE ADMIN ILI KLIJENT)
-    const dbUser = await User.findById(user.id);
+    if (!decoded.tenantUserId) {
+      return NextResponse.json(DEFAULT_SETTINGS);
+    }
 
-    if (!dbUser) {
+    const tenantUser = await TenantUser.findById(decoded.tenantUserId)
+      .select("notificationSettings")
+      .lean<{ notificationSettings: typeof DEFAULT_SETTINGS | null }>();
+
+    if (!tenantUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Vrati korisnikove postavke ili default
-    return NextResponse.json(dbUser.notificationSettings || DEFAULT_SETTINGS);
+    return NextResponse.json(tenantUser.notificationSettings || DEFAULT_SETTINGS);
   } catch (error) {
     console.error("Error fetching notification settings:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

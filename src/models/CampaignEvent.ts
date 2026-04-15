@@ -6,7 +6,7 @@ export interface CampaignEventDocument extends Document {
   campaignId: Types.ObjectId;
   tenantId: Types.ObjectId;
   recipientEmail: string;
-  recipientUserId?: Types.ObjectId;
+  recipientProfileId?: Types.ObjectId;
   type: CampaignEventType;
   /** A/B variant this recipient received */
   variantId?: "A" | "B";
@@ -30,7 +30,7 @@ const CampaignEventSchema = new Schema<CampaignEventDocument>(
       index: true,
     },
     recipientEmail: { type: String, required: true },
-    recipientUserId: { type: Schema.Types.ObjectId, ref: "User" },
+    recipientProfileId: { type: Schema.Types.ObjectId, ref: "TenantUser" },
     type: {
       type: String,
       enum: ["sent", "open", "click"],

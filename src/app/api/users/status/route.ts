@@ -1,7 +1,7 @@
 // app/api/users/status/route.ts
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
-import { User } from "@/models/User";
+import { TenantUser } from "@/models/TenantUser";
 import { verifyToken } from "@/lib/auth/auth-server";
 
 export async function POST(req: Request) {
@@ -14,17 +14,20 @@ export async function POST(req: Request) {
     }
 
     const token = authHeader.split(" ")[1];
-    const user = verifyToken(token);
+    const decoded = verifyToken(token);
 
-    if (!user) {
+    if (!decoded) {
       return NextResponse.json({ error: "Invalid token" }, { status: 403 });
+    }
+
+    if (!decoded.tenantUserId) {
+      return NextResponse.json({ success: true });
     }
 
     const { isOnline } = await req.json();
 
-    // ✅ Ažuriraj online status
-    const updatedUser = await User.findByIdAndUpdate(
-      user.id,
+    const updatedUser = await TenantUser.findByIdAndUpdate(
+      decoded.tenantUserId,
       {
         isOnline,
         lastActive: new Date(),

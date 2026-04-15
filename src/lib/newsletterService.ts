@@ -1,7 +1,8 @@
 import "server-only";
 
 import { NewsletterStats, NewsletterSubscriptionData } from "@/types";
-import { User } from "@/models/User";
+import { TenantUser } from "@/models/TenantUser";
+import { AuthUser } from "@/models/AuthUser";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 import { Tenant } from "@/models/Tenant";
 import { AudienceContact } from "@/models/AudienceContact";
@@ -12,6 +13,7 @@ import {
   sendNewsletterEmail,
   sendNewsletterVerificationEmail,
 } from "./email/email";
+import { Types } from "mongoose";
 
 const trackingDomain = process.env.NEXT_PUBLIC_APP_URL;
 const websiteDomain = process.env.NEXT_PUBLIC_API_URL;
@@ -47,103 +49,57 @@ function getNewsletterLandingUrl(
 export async function subscribeToNewsletter(data: NewsletterSubscriptionData) {
   await connectToDB();
 
-  let user = await User.findOne({ email: data.email });
+  const existingContact = await AudienceContact.findOne({
+    email: data.email,
+    tenantId: data.tenantId ?? null,
+    contactType: "NEWSLETTER",
+  });
 
-  if (!user) {
-    // Kreiraj novog user-a ako ne postoji (guest subscriber)
-    user = new User({
-      email: data.email,
-      name: data.name || `Guest - ${data.email}`,
-      phone: data.phone || "000000000",
-      password: `Guset-${data.email}`,
-      birthday: null,
-      isAdmin: false,
-      userType: "guest",
-      isEmailVerified: false,
-      agreedToPrivacy: true,
-    });
-    const verificationToken = crypto.randomBytes(32).toString("hex");
-    const unsubscribeToken = crypto.randomBytes(32).toString("hex");
-
-    user.newsletterPreferences = {
-      subscribed: true,
-      subscriptionDate: new Date(),
-      subscriptionSource: data.source,
-      emailVerified: false,
-      verificationToken,
-      unsubscribeToken,
-      openCount: 0,
-      clickCount: 0,
-    };
-
-    await user.save();
-
-    // Kreiraj AudienceContact za novog newsletter pretplatnika
-    try {
-      await AudienceContact.findOneAndUpdate(
-        { email: data.email, tenantId: null },
-        {
-          $setOnInsert: {
-            email: data.email,
-            userId: user._id,
-            contactType: "NEWSLETTER",
-            source: "newsletter",
-            subscribed: true,
-            status: "ACTIVE",
-          },
-        },
-        { upsert: true },
-      );
-    } catch (contactErr) {
-      console.error("⚠️ AudienceContact upsert failed (newsletter):", contactErr);
-    }
-
-    // Pošalji verifikacioni email
-    await sendNewsletterVerificationEmail(data.email, verificationToken);
-
-    return { success: true, message: "Verification email sent" };
-  } else if (user.newsletterPreferences?.subscribed) {
-    // Već je pretplaćen
+  if (existingContact?.subscribed) {
     return { success: false, message: "Već ste pretplaćeni na newsletter!" };
-  } else {
-    const verificationToken = crypto.randomBytes(32).toString("hex");
-    const unsubscribeToken = crypto.randomBytes(32).toString("hex");
+  }
 
-    user.newsletterPreferences = {
+  const verificationToken = crypto.randomBytes(32).toString("hex");
+  const unsubscribeToken = crypto.randomBytes(32).toString("hex");
+
+  if (existingContact) {
+    existingContact.subscribed = true;
+    existingContact.status = "ACTIVE";
+    existingContact.verificationToken = verificationToken;
+    existingContact.unsubscribeToken = unsubscribeToken;
+    existingContact.unsubscribedAt = undefined;
+    await existingContact.save();
+  } else {
+    await AudienceContact.create({
+      email: data.email,
+      firstName: data.name?.split(" ")[0],
+      lastName: data.name?.split(" ").slice(1).join(" ") || undefined,
+      tenantId: data.tenantId ?? null,
+      contactType: "NEWSLETTER",
+      source: "newsletter",
       subscribed: true,
-      subscriptionDate: new Date(),
-      subscriptionSource: data.source,
-      emailVerified: false,
+      status: "ACTIVE",
       verificationToken,
       unsubscribeToken,
-      openCount: 0,
-      clickCount: 0,
-    };
-
-    await user.save();
-    return {
-      success: true,
-      message: "Uspešno ste se prijavili na naš newsletter!",
-    };
+    });
   }
+
+  await sendNewsletterVerificationEmail(data.email, verificationToken);
+
+  return { success: true, message: "Verification email sent" };
 }
 
 export async function verifyNewsletterSubscription(token: string) {
   await connectToDB();
 
-  const user = await User.findOne({
-    "newsletterPreferences.verificationToken": token,
-  });
+  const contact = await AudienceContact.findOne({ verificationToken: token });
 
-  if (!user || !user.newsletterPreferences) {
+  if (!contact) {
     throw new Error("Invalid token");
   }
 
-  user.newsletterPreferences.emailVerified = true;
-  user.newsletterPreferences.verifiedAt = new Date();
-  user.newsletterPreferences.verificationToken = undefined;
-
-  await user.save();
+  contact.verificationToken = undefined;
+  await contact.save();
 
   return { success: true, message: "Subscription verified" };
 }
@@ -151,19 +107,17 @@ export async function verifyNewsletterSubscription(token: string) {
 export async function unsubscribeFromNewsletter(token: string) {
   await connectToDB();
 
-  const user = await User.findOne({
-    "newsletterPreferences.unsubscribeToken": token,
-  });
+  const contact = await AudienceContact.findOne({ unsubscribeToken: token });
 
-  if (!user || !user.newsletterPreferences) {
+  if (!contact) {
     throw new Error("Invalid token");
   }
 
-  user.newsletterPreferences.subscribed = false;
-  user.newsletterPreferences.unsubscribedAt = new Date();
-  user.newsletterPreferences.unsubscribeToken = undefined;
-
-  await user.save();
+  contact.subscribed = false;
+  contact.status = "UNSUBSCRIBED";
+  contact.unsubscribedAt = new Date();
+  contact.unsubscribeToken = undefined;
+  await contact.save();
 
   return { success: true, message: "Unsubscribed successfully" };
 }
@@ -182,29 +136,73 @@ export async function sendCampaignEmails(campaignId: string) {
       customDomainVerified?: boolean;
     }>();
 
-  let recipients: string[] = [];
+  interface Recipient {
+    email: string;
+    name: string;
+    unsubscribeToken: string;
+    subscriberId: string;
+  }
+
+  let recipients: Recipient[] = [];
 
   if (campaign.sendToAll) {
-    // Svi pretplatnici
-    const subscribers = await User.find({
-      $or: [
-        {
-          "newsletterPreferences.subscribed": true,
-          "newsletterPreferences.emailVerified": true,
-        },
-        { "notificationSettings.newsletterPromotions": true },
-        { "notificationSettings.newsletterUpdates": true },
-        { "notificationSettings.newsletterTips": true },
-      ],
-    }).select("email name newsletterPreferences.unsubscribeToken");
+    // Registered subscribers (TenantUser + AuthUser join)
+    const tenantUsers = await TenantUser.find({
+      tenantId: campaign.tenantId,
+      "newsletterPreferences.subscribed": true,
+      "newsletterPreferences.emailVerified": true,
+    }).lean<{
+      _id: Types.ObjectId;
+      authUserId: Types.ObjectId;
+      name: string;
+      newsletterPreferences: { unsubscribeToken?: string };
+    }[]>();
 
-    recipients = subscribers.map((s) => s.email);
-  } else if (
-    campaign.manualRecipients &&
-    campaign.manualRecipients.length > 0
-  ) {
-    // Ručno odabrani
-    recipients = campaign.manualRecipients;
+    for (const tu of tenantUsers) {
+      const auth = await AuthUser.findById(tu.authUserId).select("email").lean<{ email: string }>();
+      if (auth?.email) {
+        recipients.push({
+          email: auth.email,
+          name: tu.name || auth.email.split("@")[0],
+          unsubscribeToken: tu.newsletterPreferences?.unsubscribeToken ?? "invalid",
+          subscriberId: tu._id.toString(),
+        });
+      }
+    }
+
+    // Anonymous AudienceContact subscribers
+    const contacts = await AudienceContact.find({
+      tenantId: campaign.tenantId,
+      subscribed: true,
+      status: "ACTIVE",
+      contactType: { $in: ["NEWSLETTER", "CLIENT"] },
+    }).lean<{
+      _id: Types.ObjectId;
+      email: string;
+      firstName?: string;
+      lastName?: string;
+      unsubscribeToken?: string;
+    }[]>();
+
+    // Avoid duplicate emails already covered by TenantUser lookup
+    const registeredEmails = new Set(recipients.map((r) => r.email));
+    for (const c of contacts) {
+      if (!registeredEmails.has(c.email)) {
+        recipients.push({
+          email: c.email,
+          name: [c.firstName, c.lastName].filter(Boolean).join(" ") || c.email.split("@")[0],
+          unsubscribeToken: c.unsubscribeToken ?? "invalid",
+          subscriberId: c._id.toString(),
+        });
+      }
+    }
+  } else if (campaign.manualRecipients && campaign.manualRecipients.length > 0) {
+    recipients = campaign.manualRecipients.map((email: string) => ({
+      email,
+      name: email.split("@")[0],
+      unsubscribeToken: "invalid",
+      subscriberId: "",
+    }));
   } else {
     campaign.status = "sent";
     campaign.sentCount = 0;
@@ -215,20 +213,14 @@ export async function sendCampaignEmails(campaignId: string) {
   let sentCount = 0;
   let bounceCount = 0;
 
-  for (const email of recipients) {
-    const subscriber = await User.findOne({ email });
-    if (!subscriber) continue; // ako je obrisan
-
-    const unsubscribeToken =
-      subscriber.newsletterPreferences?.unsubscribeToken || "invalid";
-    const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/newsletter/unsubscribe?token=${unsubscribeToken}`;
+  for (const recipient of recipients) {
+    const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/newsletter/unsubscribe?token=${recipient.unsubscribeToken}`;
 
     const trackingData = {
       campaignId: campaign._id.toString(),
-      subscriberId: subscriber._id.toString(),
+      subscriberId: recipient.subscriberId,
     };
 
-    // Generiši tracking CTA URL
     let finalUrl: string;
     if (
       campaign.campaignType === "email-landing" &&
@@ -257,9 +249,8 @@ export async function sendCampaignEmails(campaignId: string) {
       `&subscriber=${trackingData.subscriberId}` +
       `&url=${encodeURIComponent(finalUrl)}`;
 
-    // Zameni varijable u contentu
     const personalizedContent = campaign.content
-      .replace(/{{clientName}}/g, subscriber.name || "poštovana")
+      .replace(/{{clientName}}/g, recipient.name || "poštovana")
       .replace(/{{unsubscribeUrl}}/g, unsubscribeUrl)
       .replace(/{{trackingCtaUrl}}/g, trackingCtaUrl)
       .replace(
@@ -269,7 +260,7 @@ export async function sendCampaignEmails(campaignId: string) {
 
     try {
       await sendNewsletterEmail(
-        email,
+        recipient.email,
         campaign.subject,
         personalizedContent,
         unsubscribeUrl,
@@ -278,41 +269,31 @@ export async function sendCampaignEmails(campaignId: string) {
 
       sentCount++;
       campaign.sentCount = sentCount;
-
-      // Opcionalno: ažuriraj lastEmailSent
-      if (subscriber.newsletterPreferences) {
-        subscriber.newsletterPreferences.lastEmailSent = new Date();
-        await subscriber.save();
-      }
     } catch (err) {
-      console.error(`Greška pri slanju na ${email}:`, err);
+      console.error(`Greška pri slanju na ${recipient.email}:`, err);
       bounceCount++;
       campaign.bounceCount = bounceCount;
     }
   }
 
-  // Završi kampanju
   campaign.status = "sent";
   campaign.sentCount = sentCount;
   campaign.bounceCount = bounceCount;
   await campaign.save();
 }
 
-// Dodatne funkcije za tracking (open/click)
 export async function trackOpen(campaignId: string, subscriberId: string) {
   await connectToDB();
 
-  // 1. Povećaj brojače (atomično)
   await Promise.all([
     NewsletterCampaign.findByIdAndUpdate(campaignId, {
       $inc: { openCount: 1 },
     }),
-    User.findByIdAndUpdate(subscriberId, {
-      $inc: { "newsletterPreferences.openCount": 1 },
+    AudienceContact.findByIdAndUpdate(subscriberId, {
+      $inc: { openCount: 1 },
     }),
   ]);
 
-  // 2. Zabeleži u logove
   await NewsletterLog.create({
     campaignId,
     subscriberId,
@@ -327,17 +308,15 @@ export async function trackClick(
 ) {
   await connectToDB();
 
-  // 1. Povećaj brojače
   await Promise.all([
     NewsletterCampaign.findByIdAndUpdate(campaignId, {
       $inc: { clickCount: 1 },
     }),
-    User.findByIdAndUpdate(subscriberId, {
-      $inc: { "newsletterPreferences.clickCount": 1 },
+    AudienceContact.findByIdAndUpdate(subscriberId, {
+      $inc: { clickCount: 1 },
     }),
   ]);
 
-  // 2. Zabeleži u logove sa URL-om
   await NewsletterLog.create({
     campaignId,
     subscriberId,
@@ -346,20 +325,19 @@ export async function trackClick(
   });
 }
 
-// Stats
 export async function getNewsletterStats(): Promise<NewsletterStats> {
   await connectToDB();
 
-  const totalSubscribers = await User.countDocuments({
-    "newsletterPreferences.subscribed": true,
-    "newsletterPreferences.emailVerified": true,
+  const totalSubscribers = await AudienceContact.countDocuments({
+    subscribed: true,
+    status: "ACTIVE",
   });
 
-  const recentSubscribers = await User.countDocuments({
-    "newsletterPreferences.subscribed": true,
-    "newsletterPreferences.emailVerified": true,
-    "newsletterPreferences.subscriptionDate": {
-      $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Poslednjih 30 dana
+  const recentSubscribers = await AudienceContact.countDocuments({
+    subscribed: true,
+    status: "ACTIVE",
+    createdAt: {
+      $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
     },
   });
 

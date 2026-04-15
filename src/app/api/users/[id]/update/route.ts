@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
-import { User } from "@/models/User";
-import { UserIdentity } from "@/models/UserIdentity";
+import { TenantUser } from "@/models/TenantUser";
 import { verifyToken } from "@/lib/auth/auth-server";
 import bcrypt from "bcryptjs";
-import { IUser } from "@/types";
 
 const SALT_ROUNDS = 12;
 
@@ -17,57 +15,33 @@ export async function PUT(
 
     const { id } = await context.params;
 
-    // Provera tokena iz Authorization headera
     const authHeader = req.headers.get("authorization");
-
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json(
-        {
-          error: "Not authenticated",
-        },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
     const token = authHeader.split(" ")[1];
     const decoded = verifyToken(token);
 
     if (!decoded) {
-      return NextResponse.json(
-        {
-          error: "Invalid or expired token",
-        },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
     }
 
-    // Pronađi trenutnog korisnika (admina)
-    const currentUser = await User.findById(decoded.id);
-    if (!currentUser) {
-      return NextResponse.json(
-        {
-          error: "User not found",
-        },
-        { status: 404 },
-      );
+    if (!decoded.isAdmin && !decoded.isSuperAdmin) {
+      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
     }
 
-    // Pronađi target korisnika
-    const targetUser = await User.findById(id);
+    // id = TenantUser._id
+    const targetUser = await TenantUser.findById(id);
     if (!targetUser) {
-      return NextResponse.json(
-        {
-          error: "User not found",
-        },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Admin ne može da menja podatke drugog admina (osim superadmin)
+    // Non-superadmin cannot modify OWNER/ADMIN accounts (except their own)
     if (
-      targetUser.isAdmin &&
-      currentUser.id !== targetUser.id &&
-      !currentUser.isSuperAdmin
+      ["OWNER", "ADMIN"].includes(targetUser.role) &&
+      !decoded.isSuperAdmin &&
+      decoded.tenantUserId !== id
     ) {
       return NextResponse.json(
         { error: "Only superadmin can update admin users" },
@@ -75,56 +49,27 @@ export async function PUT(
       );
     }
 
-    // Pročitaj telo zahteva
     const body = await req.json();
-    const { name, password, phone, birthday } = body;
+    const { name, password, phone } = body;
 
-    // Ažuriraj samo dozvoljena polja
-    const updateData: Partial<IUser> = {};
+    const profileUpdate: Record<string, unknown> = {};
+    if (name !== undefined) profileUpdate.name = name;
+    if (phone !== undefined) profileUpdate.phone = phone;
 
-    if (name !== undefined) updateData.name = name;
-    if (phone !== undefined) updateData.phone = phone;
-    if (birthday !== undefined) {
-      updateData.birthday = birthday ? new Date(birthday) : null;
-    }
-
-    // Ažuriraj lozinku samo ako je data
-    let hashedPassword: string | undefined;
+    // Password is now on TenantUser directly
     if (password && password.trim() !== "") {
-      hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-      updateData.password = hashedPassword;
+      profileUpdate.password = await bcrypt.hash(password, SALT_ROUNDS);
     }
 
-    // Izvrši update
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      { $set: updateData },
-      { new: true, projection: { password: 0 } },
-    );
-
-    if (!updatedUser) {
-      return NextResponse.json(
-        {
-          error: "User not found during update",
-        },
-        { status: 404 },
-      );
+    if (Object.keys(profileUpdate).length > 0) {
+      await TenantUser.findByIdAndUpdate(id, { $set: profileUpdate });
     }
 
-    // Passive sync — only runs when password was actually changed.
-    // No upsert: if UserIdentity is absent (pre-migration account), do nothing.
-    if (hashedPassword) {
-      try {
-        await UserIdentity.findOneAndUpdate(
-          { legacyUserId: id },
-          { passwordHash: hashedPassword },
-        );
-      } catch (identityErr) {
-        console.error("⚠️ UserIdentity password sync failed (non-fatal):", identityErr);
-      }
-    }
+    const updated = await TenantUser.findById(id)
+      .select("-pushSubscriptions -password")
+      .lean();
 
-    return NextResponse.json(updatedUser);
+    return NextResponse.json(updated);
   } catch (error) {
     console.error("Error updating user:", error);
     return NextResponse.json(

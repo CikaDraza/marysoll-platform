@@ -25,7 +25,9 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const unreadOnly = searchParams.get("unreadOnly") === "true";
 
-    const query: { userId: string; isRead?: boolean } = { userId: user.id };
+    const query: { recipientProfileId: string; isRead?: boolean } = {
+      recipientProfileId: user.tenantUserId ?? user.id,
+    };
     if (unreadOnly) {
       query.isRead = false;
     }

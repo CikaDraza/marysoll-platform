@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
-import { User } from "@/models/User";
+import { TenantUser } from "@/models/TenantUser";
+import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
+import { Types } from "mongoose";
 import "@/models/Appointment";
 import "@/models/Service";
 
@@ -32,7 +34,7 @@ export interface IAppointmentServiceItem {
 
 export interface IAppointment {
   _id?: string;
-  clientId: string | IUser;
+  clientProfileId?: string;
   clientName: string;
   clientEmail: string;
   services: IAppointmentServiceItem[];
@@ -61,6 +63,11 @@ export async function GET(req: Request) {
   try {
     await connectToDB();
 
+    // Extract tenant context from token
+    const token = getTokenFromRequest(req);
+    const decoded = token ? verifyToken(token) : null;
+    const tenantId = decoded?.tenantId ?? null;
+
     const { searchParams } = new URL(req.url);
 
     const month = searchParams.get("month"); // 1–12
@@ -79,13 +86,22 @@ export async function GET(req: Request) {
     // -------------------------
     // Fetch data
     // -------------------------
-    const appointments = (await Appointment.find({
+    const appointmentFilter: Record<string, unknown> = {
       createdAt: { $gte: start, $lt: end },
-    })
-      .populate("clientId")
+    };
+    if (tenantId) {
+      appointmentFilter.tenantId = new Types.ObjectId(tenantId);
+    }
+
+    const appointments = (await Appointment.find(appointmentFilter)
+      .populate("clientProfileId")
       .populate("services.serviceId")) as unknown as IAppointment[];
 
-    const users = (await User.find({})) as unknown as IUser[];
+    // TenantUser list scoped to tenant for client stats
+    const userFilter = tenantId
+      ? { tenantId: new Types.ObjectId(tenantId), role: { $nin: ["OWNER", "ADMIN"] } }
+      : { role: { $nin: ["OWNER", "ADMIN"] } };
+    const users = (await TenantUser.find(userFilter).select("_id name email createdAt").lean()) as unknown as IUser[];
 
     // -------------------------
     // 1. DISTRIBUCIJA USLUGA

@@ -5,7 +5,8 @@ import { Notification } from "@/models/Notification";
 import { connectToDB } from "@/lib/db/mongodb";
 import { INotification, UserNotificationSettings } from "@/types";
 import { Types } from "mongoose";
-import { User } from "@/models/User";
+import { TenantUser } from "@/models/TenantUser";
+import { AuthUser } from "@/models/AuthUser";
 import {
   sendAppointmentMessageNotification,
   sendAppointmentNotification,
@@ -13,7 +14,7 @@ import {
 } from "./email/email";
 
 interface CreateNotificationParams {
-  userId: string | Types.ObjectId;
+  recipientProfileId: string | Types.ObjectId;  // TenantUser._id
   tenantId: Types.ObjectId | string;
   type: INotification["type"];
   title: string;
@@ -46,16 +47,18 @@ export async function createNotification(params: CreateNotificationParams) {
   }
 
   try {
-    const notificationData = {
-      ...params,
+    const notification = new Notification({
+      recipientProfileId:
+        typeof params.recipientProfileId === "string"
+          ? new Types.ObjectId(params.recipientProfileId)
+          : params.recipientProfileId,
       tenantId:
         typeof params.tenantId === "string"
           ? new Types.ObjectId(params.tenantId)
           : params.tenantId,
-      userId:
-        typeof params.userId === "string"
-          ? new Types.ObjectId(params.userId)
-          : params.userId,
+      type: params.type,
+      title: params.title,
+      message: params.message,
       appointmentId: params.appointmentId
         ? typeof params.appointmentId === "string"
           ? new Types.ObjectId(params.appointmentId)
@@ -66,9 +69,8 @@ export async function createNotification(params: CreateNotificationParams) {
           ? new Types.ObjectId(params.testimonialId)
           : params.testimonialId
         : undefined,
-    };
-
-    const notification = new Notification(notificationData);
+      metadata: params.metadata,
+    });
     await notification.save();
     return notification;
   } catch (error) {
@@ -77,15 +79,22 @@ export async function createNotification(params: CreateNotificationParams) {
   }
 }
 
-// Funkcija za dobijanje SVIH admin user ID-jeva
-async function getAllAdminUserIds(): Promise<string[]> {
+// Fetch all OWNER/ADMIN TenantUser IDs for a specific tenant
+async function getAllAdminTenantUserIds(
+  tenantId: Types.ObjectId | string,
+): Promise<string[]> {
   await connectToDB();
 
   try {
-    const adminUsers = await User.find({ isAdmin: true });
-    return adminUsers.map((user) => user._id.toString());
+    const adminProfiles = await TenantUser.find({
+      tenantId:
+        typeof tenantId === "string" ? new Types.ObjectId(tenantId) : tenantId,
+      role: { $in: ["OWNER", "ADMIN"] },
+    }).select("_id").lean<{ _id: Types.ObjectId }[]>();
+
+    return adminProfiles.map((p) => p._id.toString());
   } catch (error) {
-    console.error("Error getting admin users:", error);
+    console.error("Error getting admin TenantUsers:", error);
     return [];
   }
 }
@@ -94,7 +103,7 @@ async function getAllAdminUserIds(): Promise<string[]> {
 interface AppointmentForNotification {
   _id: string;
   tenantId: Types.ObjectId | string;
-  clientId: string;
+  clientProfileId: string;    // TenantUser._id
   clientName: string;
   serviceName: string;
   date?: string;
@@ -105,7 +114,7 @@ interface AppointmentForNotification {
 interface TestimonialForNotification {
   _id: string;
   tenantId: Types.ObjectId | string;
-  clientId: string;
+  clientProfileId: string;    // TenantUser._id
   clientName: string;
   rating: number;
   comment: string;
@@ -157,7 +166,6 @@ const testimonialSettingMap: Record<
   message: "testimonialMessage",
 } as const;
 
-// Utility funkcija za type-safe pristup settings
 function getAppointmentSettingKey(
   type: AppointmentType,
 ): keyof UserNotificationSettings {
@@ -170,7 +178,6 @@ function getTestimonialSettingKey(
   return testimonialSettingMap[type];
 }
 
-// Type guard za proveru validnosti key-a
 function isValidNotificationKey(
   key: string,
 ): key is keyof UserNotificationSettings {
@@ -180,40 +187,106 @@ function isValidNotificationKey(
     ...Object.values(appointmentSettingMap),
     ...Object.values(testimonialSettingMap),
   ];
-
   return validKeys.includes(key as keyof UserNotificationSettings);
 }
 
-// Helper funkcija za type-safe pristup settings
 function getSettingValue(
   settings: UserNotificationSettings | null | undefined,
   key: keyof UserNotificationSettings,
   defaultValue: boolean | number,
 ): boolean | number {
   if (!settings) return defaultValue;
-
   const value = settings[key];
   if (value === undefined) return defaultValue;
-
   return value;
 }
 
-// Specifične funkcije za različite tipove notifikacija
+// Get notification settings from TenantUser
+async function getTenantUserNotificationSettings(
+  tenantUserId: string,
+): Promise<UserNotificationSettings | null> {
+  try {
+    const tenantUser = await TenantUser.findById(tenantUserId)
+      .select("notificationSettings")
+      .lean<{ notificationSettings: UserNotificationSettings }>();
+    if (!tenantUser) return null;
+    return (tenantUser.notificationSettings as UserNotificationSettings) || null;
+  } catch (error) {
+    console.error("Error getting TenantUser notification settings:", error);
+    return null;
+  }
+}
+
+// Get email for a TenantUser by joining to AuthUser
+async function getTenantUserEmail(tenantUserId: string): Promise<string | null> {
+  try {
+    const tenantUser = await TenantUser.findById(tenantUserId)
+      .select("authUserId")
+      .lean<{ authUserId: Types.ObjectId }>();
+    if (!tenantUser) return null;
+
+    const authUser = await AuthUser.findById(tenantUser.authUserId)
+      .select("email")
+      .lean<{ email: string }>();
+
+    return authUser?.email ?? null;
+  } catch (error) {
+    console.error("Error getting email for TenantUser:", error);
+    return null;
+  }
+}
+
+// Get all OWNER/ADMIN TenantUsers with their emails for a tenant
+async function getAdminTenantUsersWithEmails(
+  tenantId: Types.ObjectId | string,
+): Promise<Array<{ id: string; email: string; notificationSettings: UserNotificationSettings | null }>> {
+  await connectToDB();
+
+  try {
+    const resolvedTenantId =
+      typeof tenantId === "string" ? new Types.ObjectId(tenantId) : tenantId;
+
+    const adminProfiles = await TenantUser.find({
+      tenantId: resolvedTenantId,
+      role: { $in: ["OWNER", "ADMIN"] },
+    })
+      .select("_id authUserId notificationSettings")
+      .lean<{ _id: Types.ObjectId; authUserId: Types.ObjectId; notificationSettings: UserNotificationSettings }[]>();
+
+    const results = await Promise.all(
+      adminProfiles.map(async (profile) => {
+        const authUser = await AuthUser.findById(profile.authUserId)
+          .select("email")
+          .lean<{ email: string }>();
+
+        return {
+          id: profile._id.toString(),
+          email: authUser?.email ?? "",
+          notificationSettings: (profile.notificationSettings as UserNotificationSettings) || null,
+        };
+      }),
+    );
+
+    return results.filter((r) => r.email !== "");
+  } catch (error) {
+    console.error("Error getting admin TenantUsers with emails:", error);
+    return [];
+  }
+}
+
 export async function createAppointmentNotification(
   appointment: AppointmentForNotification,
-  type: AppointmentType, // Ovo je "approved", "rejected", itd.
+  type: AppointmentType,
   additionalData?: { sender?: "client" | "admin"; message?: string },
 ) {
-  // Prvo pošalji email notifikacije
   await sendAppointmentEmailNotifications(appointment, type, additionalData);
 
-  // Mapiraj kratke tipove na pune tipove za bazu
   const fullTypeMap = {
     created: "appointment_created",
-    approved: "appointment_approved", // ✅
-    rejected: "appointment_rejected", // ✅
-    rescheduled: "appointment_rescheduled", // ✅
-    cancelled: "appointment_cancelled", // ✅
+    approved: "appointment_approved",
+    rejected: "appointment_rejected",
+    rescheduled: "appointment_rescheduled",
+    cancelled: "appointment_cancelled",
     message: "appointment_message",
   } as const;
 
@@ -260,16 +333,13 @@ export async function createAppointmentNotification(
 
   const config = notificationConfig[type];
 
-  // Za poruke - različita logika za admina i klijenta
   if (type === "message") {
     if (additionalData?.sender === "client") {
-      // Klijent šalje poruku - obavesti SVE admine
-      const adminUserIds = await getAllAdminUserIds();
-
+      const adminIds = await getAllAdminTenantUserIds(appointment.tenantId);
       const notifications = [];
-      for (const adminId of adminUserIds) {
+      for (const adminId of adminIds) {
         const notification = await createNotification({
-          userId: adminId,
+          recipientProfileId: adminId,
           tenantId: appointment.tenantId,
           type: fullType,
           title: config.adminTitle,
@@ -286,9 +356,8 @@ export async function createAppointmentNotification(
       }
       return notifications;
     } else {
-      // Admin šalje poruku - obavesti klijenta
       return await createNotification({
-        userId: appointment.clientId,
+        recipientProfileId: appointment.clientProfileId,
         tenantId: appointment.tenantId,
         type: fullType,
         title: config.clientTitle,
@@ -303,15 +372,12 @@ export async function createAppointmentNotification(
     }
   }
 
-  // Za ostale tipove notifikacija
   if (type === "created") {
-    // Novi termin - obavesti SVE admine
-    const adminUserIds = await getAllAdminUserIds();
-
+    const adminIds = await getAllAdminTenantUserIds(appointment.tenantId);
     const notifications = [];
-    for (const adminId of adminUserIds) {
+    for (const adminId of adminIds) {
       const notification = await createNotification({
-        userId: adminId,
+        recipientProfileId: adminId,
         tenantId: appointment.tenantId,
         type: fullType,
         title: config.adminTitle,
@@ -324,13 +390,11 @@ export async function createAppointmentNotification(
       });
       notifications.push(notification);
     }
-
     return notifications;
   } else {
-    // Ostali statusi (approved, rejected, rescheduled, cancelled) - obavesti klijenta
     try {
       const notification = await createNotification({
-        userId: appointment.clientId,
+        recipientProfileId: appointment.clientProfileId,
         tenantId: appointment.tenantId,
         type: fullType,
         title: config.clientTitle,
@@ -350,20 +414,6 @@ export async function createAppointmentNotification(
   }
 }
 
-async function getUserNotificationSettings(
-  userId: string,
-): Promise<UserNotificationSettings | null> {
-  try {
-    const user = await User.findById(userId);
-    if (!user) return null;
-
-    return (user.notificationSettings as UserNotificationSettings) || null;
-  } catch (error) {
-    console.error("Error getting user notification settings:", error);
-    return null;
-  }
-}
-
 async function sendAppointmentEmailNotifications(
   appointment: AppointmentForNotification,
   type: AppointmentType,
@@ -380,35 +430,29 @@ async function sendAppointmentEmailNotifications(
       adminNote: additionalData?.message,
     };
 
-    // TYPE-SAFE: Dobij setting key
     const settingKey = getAppointmentSettingKey(type);
 
-    // Proveri da li je validan key
     if (!isValidNotificationKey(settingKey)) {
       console.error(`Invalid setting key: ${settingKey}`);
       return;
     }
 
-    // ✅ SCENARIO 1: ADMIN ŠALJE PORUKU KLIJENTU
+    // SCENARIO 1: ADMIN ŠALJE PORUKU KLIJENTU
     if (type === "message" && additionalData?.sender === "admin") {
-      const clientSettings = await getUserNotificationSettings(
-        appointment.clientId,
+      const clientSettings = await getTenantUserNotificationSettings(
+        appointment.clientProfileId,
       );
 
       const shouldSendEmail =
         getSettingValue(clientSettings, "emailNotifications", true) === true &&
         getSettingValue(clientSettings, settingKey, true) === true;
 
-      if (!shouldSendEmail) {
-        return;
-      }
+      if (!shouldSendEmail) return;
 
-      const client = await User.findById(appointment.clientId);
-      if (!client?.email) {
-        return;
-      }
+      const clientEmail = await getTenantUserEmail(appointment.clientProfileId);
+      if (!clientEmail) return;
 
-      await sendAppointmentMessageNotification(client.email, {
+      await sendAppointmentMessageNotification(clientEmail, {
         clientName: appointment.clientName,
         serviceName: appointment.serviceName,
         date: appointment.date,
@@ -422,23 +466,16 @@ async function sendAppointmentEmailNotifications(
       return;
     }
 
-    // ✅ SCENARIO 2: KLIJENT ŠALJE PORUKU ADMINU
+    // SCENARIO 2: KLIJENT ŠALJE PORUKU ADMINU
     if (type === "message" && additionalData?.sender === "client") {
-      // Dohvati SVE admine i proveri postavke za SVAKOG
-      const adminUsers = await User.find({ isAdmin: true });
+      const adminUsers = await getAdminTenantUsersWithEmails(appointment.tenantId);
 
       for (const admin of adminUsers) {
-        const adminSettings = await getUserNotificationSettings(
-          admin._id.toString(),
-        );
-
         const shouldSendEmail =
-          getSettingValue(adminSettings, "emailNotifications", true) === true &&
-          getSettingValue(adminSettings, settingKey, true) === true;
+          getSettingValue(admin.notificationSettings, "emailNotifications", true) === true &&
+          getSettingValue(admin.notificationSettings, settingKey, true) === true;
 
-        if (!shouldSendEmail || !admin.email) {
-          continue;
-        }
+        if (!shouldSendEmail) continue;
 
         await sendAppointmentMessageNotification(admin.email, {
           clientName: appointment.clientName,
@@ -451,63 +488,46 @@ async function sendAppointmentEmailNotifications(
           isAdminSender: false,
         });
       }
-
       return;
     }
 
-    // ✅ SCENARIO 3: NOVI TERMIN (klijent zakazuje)
+    // SCENARIO 3: NOVI TERMIN (klijent zakazuje)
     if (type === "created") {
-      // Dohvati SVE admine i proveri postavke za SVAKOG
-      const adminUsers = await User.find({ isAdmin: true });
+      const adminUsers = await getAdminTenantUsersWithEmails(appointment.tenantId);
 
       for (const admin of adminUsers) {
-        const adminSettings = await getUserNotificationSettings(
-          admin._id.toString(),
-        );
-
         const shouldSendEmail =
-          getSettingValue(adminSettings, "emailNotifications", true) === true &&
-          getSettingValue(adminSettings, settingKey, true) === true;
+          getSettingValue(admin.notificationSettings, "emailNotifications", true) === true &&
+          getSettingValue(admin.notificationSettings, settingKey, true) === true;
 
-        if (!shouldSendEmail || !admin.email) {
-          continue;
-        }
+        if (!shouldSendEmail) continue;
 
-        await sendAppointmentNotification(
-          admin.email,
-          "created",
-          appointmentData,
-        );
+        await sendAppointmentNotification(admin.email, "created", appointmentData);
       }
-
       return;
     }
 
-    // ✅ SCENARIO 4: PROMENA STATUSA TERMINA (admin menja status)
+    // SCENARIO 4: PROMENA STATUSA (admin menja status → obavesti klijenta)
     if (
       type === "approved" ||
       type === "rejected" ||
       type === "rescheduled" ||
       type === "cancelled"
     ) {
-      const clientSettings = await getUserNotificationSettings(
-        appointment.clientId,
+      const clientSettings = await getTenantUserNotificationSettings(
+        appointment.clientProfileId,
       );
 
       const shouldSendEmail =
         getSettingValue(clientSettings, "emailNotifications", true) === true &&
         getSettingValue(clientSettings, settingKey, true) === true;
 
-      if (!shouldSendEmail) {
-        return;
-      }
+      if (!shouldSendEmail) return;
 
-      const client = await User.findById(appointment.clientId);
-      if (!client?.email) {
-        return;
-      }
+      const clientEmail = await getTenantUserEmail(appointment.clientProfileId);
+      if (!clientEmail) return;
 
-      await sendAppointmentNotification(client.email, type, appointmentData);
+      await sendAppointmentNotification(clientEmail, type, appointmentData);
     }
   } catch (error) {
     console.error("Error sending appointment email notifications:", error);
@@ -560,7 +580,6 @@ export async function createTestimonialNotification(
 
   const config = notificationConfig[type];
 
-  // Mapiranje kratke tipove na pune tipove za bazu
   const fullTypeMap = {
     created: "testimonial_created",
     replied: "testimonial_replied",
@@ -578,13 +597,11 @@ export async function createTestimonialNotification(
     type === "deleted" ||
     type === "message"
   ) {
-    // Novi ili ažurirani komentar - obavesti SVE admine
-    const adminUserIds = await getAllAdminUserIds();
-
+    const adminIds = await getAllAdminTenantUserIds(testimonial.tenantId);
     const notifications = [];
-    for (const adminId of adminUserIds) {
+    for (const adminId of adminIds) {
       const notification = await createNotification({
-        userId: adminId,
+        recipientProfileId: adminId,
         tenantId: testimonial.tenantId,
         type: fullType,
         title: config.adminTitle,
@@ -600,9 +617,8 @@ export async function createTestimonialNotification(
     }
     return notifications;
   } else {
-    // Odgovor na komentar - obavesti klijenta
     return await createNotification({
-      userId: testimonial.clientId,
+      recipientProfileId: testimonial.clientProfileId,
       tenantId: testimonial.tenantId,
       type: fullType,
       title: config.clientTitle,
@@ -635,54 +651,37 @@ async function sendTestimonialEmailNotifications(
 
     const settingKey = getTestimonialSettingKey(type);
 
-    if (!isValidNotificationKey(settingKey)) {
-      return;
-    }
+    if (!isValidNotificationKey(settingKey)) return;
 
-    // ✅ SCENARIO 1: ADMIN ODGOVARA NA KOMENTAR
+    // SCENARIO 1: ADMIN ODGOVARA NA KOMENTAR
     if (type === "replied") {
-      const clientSettings = await getUserNotificationSettings(
-        testimonial.clientId,
+      const clientSettings = await getTenantUserNotificationSettings(
+        testimonial.clientProfileId,
       );
 
       const shouldSendEmail =
         getSettingValue(clientSettings, "emailNotifications", true) === true &&
         getSettingValue(clientSettings, settingKey, true) === true;
 
-      if (!shouldSendEmail) {
-        return;
-      }
+      if (!shouldSendEmail) return;
 
-      const client = await User.findById(testimonial.clientId);
-      if (client?.email) {
-        await sendTestimonialNotification(
-          client.email,
-          "replied",
-          testimonialData,
-        );
+      const clientEmail = await getTenantUserEmail(testimonial.clientProfileId);
+      if (clientEmail) {
+        await sendTestimonialNotification(clientEmail, "replied", testimonialData);
       }
-
       return;
     }
 
-    // ✅ SCENARIO 2: KLIJENT DODAJE/MENJA/BRISE KOMENTAR
-    // Obavesti SVE admine koji žele notifikacije
-    const adminUsers = await User.find({ isAdmin: true });
+    // SCENARIO 2: KLIJENT DODAJE/MENJA/BRISE KOMENTAR — obavesti admine
+    const adminUsers = await getAdminTenantUsersWithEmails(testimonial.tenantId);
 
     for (const admin of adminUsers) {
-      const adminSettings = await getUserNotificationSettings(
-        admin._id.toString(),
-      );
-
       const shouldSendEmail =
-        getSettingValue(adminSettings, "emailNotifications", true) === true &&
-        getSettingValue(adminSettings, settingKey, true) === true;
+        getSettingValue(admin.notificationSettings, "emailNotifications", true) === true &&
+        getSettingValue(admin.notificationSettings, settingKey, true) === true;
 
-      if (!shouldSendEmail || !admin.email) {
-        continue;
-      }
+      if (!shouldSendEmail) continue;
 
-      // Prilagodi podatke za specifične tipove
       let dataToSend = testimonialData;
       if (type === "updated" && additionalData?.oldComment) {
         dataToSend = {
@@ -705,17 +704,16 @@ async function sendTestimonialEmailNotifications(
   }
 }
 
-// Funkcija za kreiranje generičke notifikacije
 export async function createGenericNotification(
-  userId: string,
+  tenantUserId: string,
   tenantId: string | Types.ObjectId,
   title: string,
   message: string,
   metadata?: Record<string, unknown>,
 ) {
   return await createNotification({
-    userId,
-    tenantId, // Generic notifikacije nisu vezane za tenant
+    recipientProfileId: tenantUserId,
+    tenantId,
     type: "generic",
     title,
     message,

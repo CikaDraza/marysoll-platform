@@ -116,7 +116,7 @@ export default function ClientBlockAppointments() {
   } = useAppointments({
     page,
     limit: 10,
-    clientId: user?.id,
+    clientId: user?.tenantUserId ?? undefined,
   });
 
   const appointments = useMemo(() => {

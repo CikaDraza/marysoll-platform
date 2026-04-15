@@ -6,7 +6,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
-import { User } from "@/models/User";
+import { AuthUser } from "@/models/AuthUser";
+import { TenantUser } from "@/models/TenantUser";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
 
 export async function GET(req: NextRequest) {
@@ -25,9 +26,27 @@ export async function GET(req: NextRequest) {
     const enriched = await Promise.all(
       tenants.map(async (t) => {
         const tenant = t as Record<string, unknown>;
-        const owner = await User.findById(tenant.ownerId)
-          .select("name email isEmailVerified createdAt")
+        // ownerId now refs AuthUser (since Tenant.ownerId: ref AuthUser)
+        const authOwner = await AuthUser.findById(tenant.ownerId)
+          .select("email isEmailVerified createdAt")
           .lean() as Record<string, unknown> | null;
+
+        // Get owner name from TenantUser
+        const ownerProfile = authOwner
+          ? await TenantUser.findOne({ authUserId: tenant.ownerId, tenantId: tenant._id })
+              .select("name")
+              .lean() as { name?: string } | null
+          : null;
+
+        const owner = authOwner
+          ? {
+              _id: String(authOwner._id),
+              name: ownerProfile?.name ?? "",
+              email: String(authOwner.email ?? ""),
+              isEmailVerified: Boolean(authOwner.isEmailVerified),
+              createdAt: (authOwner.createdAt as Date).toISOString(),
+            }
+          : null;
 
         const trialEndsAt = tenant.trialEndsAt as Date | null;
         const trialDaysLeft = trialEndsAt
@@ -54,15 +73,7 @@ export async function GET(req: NextRequest) {
           lemonsqueezySubscriptionId: tenant.lemonsqueezySubscriptionId
             ? String(tenant.lemonsqueezySubscriptionId)
             : null,
-          owner: owner
-            ? {
-                _id: String(owner._id),
-                name: String(owner.name ?? ""),
-                email: String(owner.email ?? ""),
-                isEmailVerified: Boolean(owner.isEmailVerified),
-                createdAt: (owner.createdAt as Date).toISOString(),
-              }
-            : null,
+          owner,
         };
       })
     );

@@ -57,6 +57,13 @@ export default function ClientLoginPage() {
           );
           return;
         }
+        if (data.code === "NO_TENANT_ACCOUNT") {
+          toast.error(
+            "Nemate nalog na ovom salonu. Registrujte se da biste nastavili.",
+            { duration: 6000 },
+          );
+          return;
+        }
         toast.error(data.error ?? "Greška pri prijavi");
         return;
       }

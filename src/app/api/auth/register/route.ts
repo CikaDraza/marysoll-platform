@@ -1,27 +1,35 @@
 /**
  * POST /api/auth/register
  *
- * Registracija KLIJENTA salona (nije vlasnik).
- * Klijent se registruje na stranici konkretnog salona.
- * tenantId se čita iz x-tenant-slug headera (injektuje middleware).
+ * Registers a CLIENT on a specific tenant (salon).
+ * Tenant-isolated: each salon has its own user system.
+ *
+ * Same email CAN exist on different tenants with different passwords.
+ * Uniqueness enforced only within { tenantId, email }.
+ *
+ * No AuthUser is created — clients live in TenantUser only.
  */
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import type { Types } from "mongoose";
 import { connectToDB } from "@/lib/db/mongodb";
-import { User } from "@/models/User";
-import { UserIdentity } from "@/models/UserIdentity";
+import { TenantUser } from "@/models/TenantUser";
 import { Tenant } from "@/models/Tenant";
 import { AudienceContact } from "@/models/AudienceContact";
-import { resolveOrCreateIdentity } from "@/lib/auth/identity";
 import { sendClientVerificationEmail } from "@/lib/email/onboarding";
 
 export async function POST(req: NextRequest) {
   try {
     await connectToDB();
 
-    const { name, email, password, phone, agreedToPrivacy, tenantSlug: bodyTenantSlug } = await req.json();
+    const {
+      name,
+      email,
+      password,
+      phone,
+      agreedToPrivacy,
+      tenantSlug: bodyTenantSlug,
+    } = await req.json();
 
     if (!name || !email || !password || !agreedToPrivacy) {
       return NextResponse.json(
@@ -38,166 +46,118 @@ export async function POST(req: NextRequest) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Nađi tenant: header (middleware) ili body (path-based routing fallback)
+    // Resolve tenant from header (middleware) or body (path-based routing fallback)
     const tenantSlug = req.headers.get("x-tenant-slug") || bodyTenantSlug || null;
-    let tenant = null;
-    let salonName = "salon";
-    let salonBaseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3006";
 
-    if (tenantSlug && tenantSlug !== "default") {
-      tenant = await Tenant.findOne({ slug: tenantSlug, status: "active" });
-      if (tenant) {
-        salonName = tenant.name;
-        salonBaseUrl = `https://${tenant.slug}.marysoll.com`;
-      }
-    }
-
-    // Scope the lookup to this tenant — same email is allowed on different tenants.
-    const tenantFilter = tenant
-      ? { email: normalizedEmail, tenantId: tenant._id }
-      : { email: normalizedEmail, tenantId: null };
-    const existingUser = await User.findOne(tenantFilter);
-
-    if (existingUser?.userType === "legal") {
+    if (!tenantSlug || tenantSlug === "default") {
       return NextResponse.json(
-        { error: "Korisnik sa ovom email adresom već postoji." },
+        { error: "Registracija zahteva kontekst salona." },
         { status: 400 },
       );
     }
 
+    const tenant = await Tenant.findOne({ slug: tenantSlug, status: "active" });
+    if (!tenant) {
+      return NextResponse.json(
+        { error: "Salon nije pronađen ili nije aktivan." },
+        { status: 404 },
+      );
+    }
+
+    // ── Check for existing account on THIS tenant only ─────────────────────
+    const existing = await TenantUser.findOne({
+      tenantId: tenant._id,
+      email: normalizedEmail,
+    });
+
+    if (existing) {
+      if (existing.isEmailVerified) {
+        // Tenant-scoped block: this email is already registered on this salon.
+        return NextResponse.json(
+          { error: "Korisnik sa ovom email adresom već postoji u ovom salonu." },
+          { status: 400 },
+        );
+      } else {
+        // Not yet verified — resend the verification email.
+        const verificationToken = crypto.randomBytes(32).toString("hex");
+        const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+        existing.verificationToken = verificationToken;
+        existing.verificationTokenExpiry = verificationTokenExpiry;
+        await existing.save();
+
+        try {
+          await sendClientVerificationEmail({
+            email: normalizedEmail,
+            clientName: existing.name,
+            salonName: tenant.name,
+            verificationToken,
+            salonBaseUrl: `https://${tenant.slug}.marysoll.com`,
+            tenantId: tenant._id.toString(),
+          });
+        } catch (e) {
+          console.error("⚠️ Resend verification email failed:", e);
+        }
+
+        return NextResponse.json(
+          { message: "Verifikacioni email je ponovo poslat. Proverite inbox." },
+          { status: 200 },
+        );
+      }
+    }
+
+    // ── New user — create TenantUser directly ─────────────────────────────
+    const hashedPassword = await bcrypt.hash(password, 10);
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ── Guest upgrade path ──────────────────────────────────────────────────────
-    // resolveOrCreateIdentity uses $setOnInsert — it will NOT overwrite an existing
-    // User document. A guest account that booked an appointment must be upgraded
-    // directly here, before the identity chain is resolved.
+    const tenantUser = await TenantUser.create({
+      tenantId: tenant._id,
+      email: normalizedEmail,
+      password: hashedPassword,
+      name: name.trim(),
+      phone: phone?.trim() ?? "",
+      role: "USER",
+      authUserId: null,
+      isEmailVerified: false,
+      verificationToken,
+      verificationTokenExpiry,
+      status: "active",
+    });
 
-    if (existingUser) {
-      existingUser.name = name.trim();
-      existingUser.password = hashedPassword;
-      existingUser.phone = phone?.trim() ?? existingUser.phone;
-      existingUser.agreedToPrivacy = true;
-      existingUser.userType = "legal";
-      existingUser.isEmailVerified = false;
-      existingUser.verificationToken = verificationToken;
-      existingUser.verificationTokenExpiry = verificationTokenExpiry;
-      if (tenant && !existingUser.tenantId) {
-        existingUser.tenantId = tenant._id as Types.ObjectId;
-      }
-      await existingUser.save();
-    }
-
-    // ── Identity chain ──────────────────────────────────────────────────────────
-    // resolveOrCreateIdentity atomically resolves or creates:
-    //   UserIdentity  — global, one per email across the entire platform
-    //   TenantProfile — per-tenant, one per (identityId × tenantId) pair
-    //   User          — legacy document; $setOnInsert is a no-op for guest upgrade
-    //
-    // TenantProfile requires a real tenantId — tenantless registrations fall back
-    // to a direct User create and a non-blocking UserIdentity dual-write.
-
-    let savedUser = existingUser;
-
-    if (tenant) {
-      const { legacyUser } = await resolveOrCreateIdentity(
-        normalizedEmail,
-        hashedPassword,
-        tenant._id as Types.ObjectId,
+    // ── AudienceContact (newsletter list) ────────────────────────────────
+    try {
+      await AudienceContact.findOneAndUpdate(
+        { email: normalizedEmail, tenantId: tenant._id },
         {
-          name: name.trim(),
-          phone: phone?.trim() ?? "",
-          agreedToPrivacy: true,
-          isEmailVerified: false,
-          verificationToken,
-          verificationTokenExpiry,
+          $setOnInsert: {
+            email: normalizedEmail,
+            profileId: tenantUser._id,
+            tenantId: tenant._id,
+            contactType: "CLIENT",
+            source: "user",
+            subscribed: true,
+            status: "ACTIVE",
+          },
         },
+        { upsert: true },
       );
-      if (!existingUser) {
-        // New user: all three layers just created — use the returned User doc.
-        savedUser = legacyUser;
-      }
-      // Guest upgrade: existingUser already saved above; legacyUser $setOnInsert
-      // was a no-op. Keep savedUser = existingUser.
-    } else {
-      // Tenantless fallback — TenantProfile cannot exist without a tenant.
-      if (!existingUser) {
-        const newUser = new User({
-          name: name.trim(),
-          email: normalizedEmail,
-          phone: phone?.trim() ?? "",
-          password: hashedPassword,
-          agreedToPrivacy: true,
-          isAdmin: false,
-          isSuperAdmin: false,
-          isEmailVerified: false,
-          verificationToken,
-          verificationTokenExpiry,
-          userType: "legal",
-          tenantId: null,
-          isOnline: true,
-          lastActive: new Date(),
-        });
-        await newUser.save();
-        savedUser = newUser;
-      }
-      // Non-blocking UserIdentity dual-write for the tenantless path.
-      try {
-        await UserIdentity.findOneAndUpdate(
-          { email: normalizedEmail },
-          {
-            $setOnInsert: {
-              email: normalizedEmail,
-              passwordHash: hashedPassword,
-              isEmailVerified: false,
-              legacyUserId: null,
-            },
-          },
-          { upsert: true, new: false, setDefaultsOnInsert: true },
-        );
-      } catch (identityErr) {
-        console.error("⚠️ UserIdentity sync failed (tenantless path):", identityErr);
-      }
+    } catch (e) {
+      console.error("⚠️ AudienceContact upsert failed:", e);
     }
 
-    // ── AudienceContact ─────────────────────────────────────────────────────────
-    if (savedUser) {
-      try {
-        await AudienceContact.findOneAndUpdate(
-          { email: normalizedEmail, tenantId: tenant?._id ?? null },
-          {
-            $setOnInsert: {
-              email: normalizedEmail,
-              userId: savedUser._id,
-              tenantId: tenant?._id ?? undefined,
-              contactType:
-                savedUser.globalRole === "OWNER" ? "SALON_OWNER" : "CLIENT",
-              source: "user",
-              subscribed: true,
-              status: "ACTIVE",
-            },
-          },
-          { upsert: true },
-        );
-      } catch (contactErr) {
-        console.error("⚠️ AudienceContact upsert failed:", contactErr);
-      }
-    }
-
-    // ── Verification email ──────────────────────────────────────────────────────
+    // ── Send verification email ───────────────────────────────────────────
     try {
       await sendClientVerificationEmail({
         email: normalizedEmail,
         clientName: name.trim(),
-        salonName,
+        salonName: tenant.name,
         verificationToken,
-        salonBaseUrl,
-        tenantId: tenant?._id?.toString() ?? null,
+        salonBaseUrl: `https://${tenant.slug}.marysoll.com`,
+        tenantId: tenant._id.toString(),
       });
-    } catch (emailErr) {
-      console.error("⚠️ Client verification email nije poslat:", emailErr);
+    } catch (e) {
+      console.error("⚠️ Client verification email failed:", e);
     }
 
     return NextResponse.json(

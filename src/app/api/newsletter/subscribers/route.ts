@@ -1,12 +1,10 @@
 // app/api/newsletter/subscribers/route.ts
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
-import { User } from "@/models/User";
+import { TenantUser } from "@/models/TenantUser";
+import { AudienceContact } from "@/models/AudienceContact";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
-import { FilterQuery } from "mongoose";
-import { IUser } from "@/types";
-
-type NewsletterSubscribersQuery = FilterQuery<IUser>;
+import { Types } from "mongoose";
 
 export async function GET(request: Request) {
   await connectToDB();
@@ -16,52 +14,77 @@ export async function GET(request: Request) {
     return authResult.response;
   }
 
+  const tenantId = authResult.decoded?.tenantId;
+  if (!tenantId) {
+    return NextResponse.json({ error: "No tenant context" }, { status: 403 });
+  }
+
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search")?.trim() || "";
   const page = parseInt(searchParams.get("page") || "1");
   const limit = parseInt(searchParams.get("limit") || "50");
+  const skip = (page - 1) * limit;
 
-  const subscriptionCondition = {
-    $or: [
-      { "newsletterPreferences.subscribed": true },
-      { "notificationSettings.newsletterPromotions": true },
-      { "notificationSettings.newsletterUpdates": true },
-      { "notificationSettings.newsletterTips": true },
-    ],
+  // Get registered tenant subscribers — email is now on TenantUser directly
+  const registeredFilter: Record<string, unknown> = {
+    tenantId: new Types.ObjectId(tenantId),
+    "newsletterPreferences.subscribed": true,
   };
-
-  let query: NewsletterSubscribersQuery = subscriptionCondition;
-
   if (search) {
-    query = {
-      $and: [
-        subscriptionCondition,
-        {
-          $or: [
-            { email: { $regex: search, $options: "i" } },
-            { name: { $regex: search, $options: "i" } },
-          ],
-        },
-      ],
-    };
+    const regex = new RegExp(search, "i");
+    registeredFilter.$or = [
+      { email: { $regex: regex } },
+      { name: { $regex: regex } },
+    ];
   }
 
-  const subscribers = await User.find(query)
-    .select("email name newsletterPreferences notificationSettings")
-    .skip((page - 1) * limit)
+  const tenantUsersRaw = await TenantUser.find(registeredFilter)
+    .select("_id email name")
+    .skip(skip)
     .limit(limit)
-    .sort({ "newsletterPreferences.subscriptionDate": -1 })
-    .lean();
+    .lean<{ _id: Types.ObjectId; email: string; name: string }[]>();
 
-  const total = await User.countDocuments(query);
+  const registered = tenantUsersRaw.map((tu) => ({
+    _id: tu._id.toString(),
+    email: tu.email,
+    name: tu.name || tu.email.split("@")[0],
+    source: "registered",
+  }));
+
+  // Get anonymous AudienceContact subscribers for this tenant
+  const contactFilter: Record<string, unknown> = {
+    tenantId: new Types.ObjectId(tenantId),
+    subscribed: true,
+    status: "ACTIVE",
+    contactType: "NEWSLETTER",
+  };
+
+  if (search) {
+    const regex = new RegExp(search, "i");
+    contactFilter.$or = [
+      { email: { $regex: regex } },
+      { firstName: { $regex: regex } },
+      { lastName: { $regex: regex } },
+    ];
+  }
+
+  const contacts = await AudienceContact.find(contactFilter)
+    .select("email firstName lastName")
+    .skip(skip)
+    .limit(limit)
+    .lean<{ _id: Types.ObjectId; email: string; firstName?: string; lastName?: string }[]>();
+
+  const anonymous = contacts.map((c) => ({
+    _id: c._id.toString(),
+    email: c.email,
+    name: [c.firstName, c.lastName].filter(Boolean).join(" ") || c.email.split("@")[0],
+    source: "newsletter",
+  }));
+
+  const total = registered.length + anonymous.length;
 
   return NextResponse.json({
-    subscribers: subscribers.map((s) => ({
-      _id: s._id,
-      email: s.email,
-      name: s.name || "Bez imena",
-      source: s.newsletterPreferences ? "guest" : "registered",
-    })),
+    subscribers: [...registered, ...anonymous],
     pagination: {
       page,
       limit,

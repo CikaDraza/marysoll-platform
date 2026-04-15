@@ -158,7 +158,9 @@ export interface IMessage {
 
 export interface IAppointment {
   _id?: string;
-  clientId: string;
+  tenantId?: string;
+  clientProfileId?: string;   // TenantUser._id
+  staffProfileId?: string;    // TenantUser._id (optional)
   clientName: string;
   clientEmail: string;
   serviceName: string;
@@ -451,6 +453,7 @@ export interface NewsletterSubscriptionData {
   source: INewsletterPreferences["subscriptionSource"];
   name?: string;
   phone?: string;
+  tenantId?: string | null;
 }
 
 export interface CampaignCreateData {
@@ -473,7 +476,7 @@ export interface CampaignCreateData {
 
 export interface ITestimonial<T = string> {
   _id: string;
-  clientId: string;
+  clientProfileId: string;  // TenantUser._id
   clientName: string;
   clientEmail: string;
   appointmentId: T;
@@ -527,7 +530,8 @@ export interface UpdateTestimonialData {
 
 export interface INotification {
   _id: string;
-  userId: string;
+  recipientProfileId: string;  // TenantUser._id
+  tenantId?: string;
   type:
     | "appointment_created"
     | "appointment_approved"
@@ -552,7 +556,7 @@ export interface INotification {
     newDate?: string;
     newTime?: string;
     sender?: "client" | "admin";
-    clientId?: string;
+    clientProfileId?: string;
     serviceName?: string;
     clientName?: string;
     rating?: number;
@@ -563,7 +567,7 @@ export interface INotification {
 
 export interface AppointmentForNotification {
   _id: string;
-  clientId: string;
+  clientProfileId: string;  // TenantUser._id
   clientName: string;
   serviceName: string;
   date?: string;
@@ -572,7 +576,7 @@ export interface AppointmentForNotification {
 
 export interface TestimonialForNotification {
   _id: string;
-  clientId: string;
+  clientProfileId: string;  // TenantUser._id
   clientName: string;
   rating: number;
   appointmentId: { serviceName: string; _id: string };

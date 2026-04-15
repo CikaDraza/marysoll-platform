@@ -115,7 +115,7 @@ export default function ClientCreateModal({
 
     // Kreiranje payload-a za appointment
     const payload: IAppointment = {
-      clientId: user._id,
+      clientProfileId: user.tenantUserId ?? undefined,
       clientName: user.name,
       clientEmail: user.email,
       serviceName: `${selectedService.name}${

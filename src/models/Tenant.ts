@@ -74,7 +74,7 @@ const TenantSchema = new Schema<ITenant>(
       default: "free",
     },
     trialRequiredCard: { type: Boolean, default: false },
-    ownerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    ownerId: { type: Schema.Types.ObjectId, ref: "AuthUser", required: true },
     salonProfileId: {
       type: Schema.Types.ObjectId,
       ref: "SalonProfile",

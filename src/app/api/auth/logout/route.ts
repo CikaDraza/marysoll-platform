@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
-import { User } from "@/models/User";
+import { TenantUser } from "@/models/TenantUser";
 import { verifyToken } from "@/lib/auth/auth-server";
 
 export async function POST(req: Request) {
@@ -13,9 +13,8 @@ export async function POST(req: Request) {
       const token = authHeader.split(" ")[1];
       const user = verifyToken(token);
 
-      if (user) {
-        // ✅ Ažuriraj online status na false i lastActive
-        await User.findByIdAndUpdate(user.id, {
+      if (user?.tenantUserId) {
+        await TenantUser.findByIdAndUpdate(user.tenantUserId, {
           isOnline: false,
           lastActive: new Date(),
         });

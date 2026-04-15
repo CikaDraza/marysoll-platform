@@ -5,7 +5,6 @@ import { Appointment } from "@/models/Appointment";
 import { resolveTenant, verifyToken } from "@/lib/auth/auth-server";
 import { createAppointmentNotification } from "@/lib/notificationService";
 import { IAppointment } from "@/types";
-import { User } from "@/models/User";
 import { Notification } from "@/models/Notification";
 import { Types } from "mongoose";
 
@@ -39,9 +38,9 @@ export async function PUT(
     }
 
     const token = authHeader.split(" ")[1];
-    const user = verifyToken(token);
+    const decoded = verifyToken(token);
 
-    if (!user) {
+    if (!decoded) {
       return NextResponse.json({ error: "Invalid token" }, { status: 403 });
     }
 
@@ -74,9 +73,8 @@ export async function PUT(
       );
     }
 
-    // Proveri da li je admin na osnovu user objekta iz tokena
-    // Ako nemate isAdmin u tokenu, možete proveriti preko baze
-    const isAdmin = await checkIfUserIsAdmin(user.id);
+    // Use isAdmin from JWT — no extra DB call needed
+    const isAdmin = decoded.isAdmin ?? false;
 
     // Postavi ko je poslednji ažurirao
     updatedData.lastUpdatedBy = isAdmin ? "admin" : "client";
@@ -87,7 +85,8 @@ export async function PUT(
 
       // Kreiraj notifikaciju za predlog novog termina
       await Notification.create({
-        userId: appointment.clientId,
+        recipientProfileId: appointment.clientProfileId,
+        tenantId: appointment.tenantId,
         appointmentId: appointment._id,
         type: "appointment_rescheduled",
         title: "Novi termin predložen",
@@ -116,7 +115,8 @@ export async function PUT(
 
       // Notifikacija za admina da je klijent prihvatio termin
       await Notification.create({
-        userId: appointment.clientId,
+        recipientProfileId: appointment.clientProfileId,
+        tenantId: appointment.tenantId,
         appointmentId: appointment._id,
         type: "appointment_approved",
         title: "Termin prihvaćen",
@@ -137,7 +137,8 @@ export async function PUT(
       updatedData.proposedTime = undefined;
 
       await Notification.create({
-        userId: appointment.clientId,
+        recipientProfileId: appointment.clientProfileId,
+        tenantId: appointment.tenantId,
         appointmentId: appointment._id,
         type: "appointment_rejected",
         title: "Predlog odbijen",
@@ -173,17 +174,6 @@ export async function PUT(
   }
 }
 
-// Pomocna funkcija za proveru admin statusa
-async function checkIfUserIsAdmin(userId: string): Promise<boolean> {
-  try {
-    const user = await User.findById(userId);
-    return user?.isAdmin || false;
-  } catch (error) {
-    console.error("Error checking admin status:", error);
-    return false;
-  }
-}
-
 async function handleStatusChangeNotification(
   appointment: IAppointment,
   newStatus:
@@ -194,7 +184,6 @@ async function handleStatusChangeNotification(
     | "appointment_cancelled",
   tenantId: Types.ObjectId | string,
 ) {
-  // Mapiraj duge statuse iz baze na kratke tipove za notifikacije
   const statusToNotificationType: Record<
     string,
     "approved" | "rejected" | "rescheduled" | "cancelled"
@@ -206,19 +195,16 @@ async function handleStatusChangeNotification(
   };
 
   const notificationType = statusToNotificationType[newStatus];
+  if (!notificationType) return;
 
-  // Dohvati klijenta
-  const client = await User.findById(appointment.clientId);
-  const clientName = client?.name || appointment.clientName || "Klijent";
+  const clientName = appointment.clientName || "Klijent";
 
-  // Koristite createAppointmentNotification koja će kreirati notifikaciju u bazi
-  // i poslati email/push notifikacije
   try {
     await createAppointmentNotification(
       {
         _id: appointment._id?.toString() || "",
         tenantId: tenantId!,
-        clientId: appointment.clientId?.toString() || "",
+        clientProfileId: appointment.clientProfileId?.toString() || "",
         clientName: clientName,
         serviceName: appointment.serviceName,
         date: appointment.date,

@@ -60,7 +60,7 @@ export async function GET(req: Request) {
 
     if (clientId) {
       if (Types.ObjectId.isValid(clientId)) {
-        filter.clientId = new Types.ObjectId(clientId);
+        filter.clientProfileId = new Types.ObjectId(clientId);
       } else {
         return NextResponse.json({
           appointments: [],

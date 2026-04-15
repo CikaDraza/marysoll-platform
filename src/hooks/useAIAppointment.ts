@@ -5,12 +5,12 @@ import toast from "react-hot-toast";
 import { formatDatePretty } from "@/helpers/formatISODate";
 import { AppointmentCalendarBlockType } from "@/types/landing-block";
 import { IAppointment, IService } from "@/types";
-import { AuthUser } from "@/types/auth/types";
+import { LoggedInUser } from "@/types/auth/types";
 
 interface UseAIAppointmentProps {
   block: AppointmentCalendarBlockType;
   services: IService[];
-  user: AuthUser | null;
+  user: LoggedInUser | null;
   onSuccess?: (msg: string) => void;
 }
 
@@ -103,7 +103,7 @@ export function useAIAppointment({
     const duration = activeVariant?.duration || selectedService.duration || 60;
 
     const payload: IAppointment = {
-      clientId: user.id,
+      clientProfileId: user.tenantUserId ?? undefined,
       clientName: user.name || user.email,
       clientEmail: user.email,
       serviceName: `${selectedService.name}${activeVariant ? ` - ${activeVariant.name}` : ""}`,

@@ -22,7 +22,7 @@ function ClientAppointmentListItem({
   onOpenChat,
 }: ClientAppointmentListItemProps) {
   const { isOnline } = useUsers().data?.find(
-    (u: IUser) => u._id === appointment.clientId,
+    (u: IUser) => u._id === appointment.clientProfileId,
   ) || { isOnline: false };
 
   const unreadClient = appointment.unreadCount?.client ?? 0;
@@ -435,7 +435,7 @@ export default function ClientAppointments() {
     search: debouncedText,
     date: debouncedDate,
     status: debouncedStatus,
-    clientId: user?._id,
+    clientId: user?.tenantUserId ?? undefined,
   });
 
   const appointments = useMemo(() => {
