@@ -7,7 +7,6 @@ import { formatPriceToString } from "@/helpers/formatPrice";
 import { useAuthActions } from "@/hooks/useAuthActions";
 import { generateTimes } from "@/helpers/generateTimes";
 import { useAIAppointment } from "@/hooks/useAIAppointment";
-import { Toaster } from "react-hot-toast";
 import { useSalonProfile } from "@/hooks/useSalonProfile";
 import { getDay } from "date-fns";
 import { Reveal } from "../motion/Reveal";
@@ -113,7 +112,6 @@ export default function AppointmentCalendarBlockView({
     <div ref={containerRef} className="scroll-mt-20">
       <Reveal>
         <div className="bg-white rounded-3xl p-6 shadow-xl max-w-md mx-auto my-6">
-          <Toaster position="top-right" />
           {/* AI Suggestion Alert */}
           {isAiSuggested && (
             <div className="bg-blue-50 p-4 rounded-xl mb-4 border border-blue-100 flex justify-between items-center">

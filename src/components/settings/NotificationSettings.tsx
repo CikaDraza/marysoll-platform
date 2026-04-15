@@ -3,7 +3,6 @@
 
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
 import { useAuth } from "@/hooks/useAuth";
-import { Toaster } from "react-hot-toast";
 import { useState } from "react";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import Loader from "../elements/Loader";
@@ -41,7 +40,6 @@ export default function NotificationSettings() {
 
   return (
     <div className="py-6">
-      <Toaster position="top-right" />
 
       {/* Naslov zavisno od uloge */}
       <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8">

@@ -8,7 +8,6 @@ import { ITestimonial, IAppointment, PaginationInfo } from "@/types";
 import TestimonialForm from "./TestimonialForm";
 import { ChatBubbleOvalLeftEllipsisIcon } from "@heroicons/react/24/outline";
 import { getUserFromToken } from "@/lib/auth/auth-client";
-import { Toaster } from "react-hot-toast";
 import { useTestimonialActions } from "@/hooks/useTestimonialActions";
 import { useBrowserNotifications } from "@/hooks/useNotifications";
 import Loader from "../elements/Loader";
@@ -192,7 +191,6 @@ export default function ClientTestimonials() {
 
   return (
     <div className="space-y-6">
-      <Toaster position="top-right" />
 
       {/* Header */}
       <div className={card}>

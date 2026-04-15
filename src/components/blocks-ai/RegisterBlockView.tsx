@@ -2,7 +2,7 @@
 
 import { ChevronDownIcon } from "@heroicons/react/16/solid";
 import Link from "next/link";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { useEffect, useRef, useState } from "react";
 import { CheckCircleIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import { Reveal } from "../motion/Reveal";
@@ -96,7 +96,6 @@ export function RegisterBlockView({
     <div ref={containerRef} className="scroll-mt-20">
       <Reveal>
         <div className="isolate relative bg-gray-900 px-6 py-24 lg:px-8 rounded-2xl">
-          <Toaster position="top-right" />
           <div
             aria-hidden="true"
             className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80"

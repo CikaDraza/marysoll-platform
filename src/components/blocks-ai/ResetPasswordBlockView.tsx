@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { useAuthActions } from "@/hooks/useAuthActions";
 import { Reveal } from "../motion/Reveal";
 import { motion } from "framer-motion";
@@ -88,7 +88,6 @@ export function ResetPasswordBlockView({
     <div ref={containerRef} className="scroll-mt-20">
       <Reveal>
         <div className="isolate relative bg-gray-900 rounded-2xl">
-          <Toaster position="top-right" />
           <div
             aria-hidden="true"
             className="absolute inset-x-0 -top-44 -z-10 transform-gpu overflow-hidden blur-3xl lg:-top-96"

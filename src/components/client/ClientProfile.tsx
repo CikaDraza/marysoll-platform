@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useUserMutations } from "@/hooks/useUserMutations";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import Link from "next/link";
 import Loader from "../elements/Loader";
 
@@ -113,7 +113,6 @@ export default function ClientProfile() {
 
   return (
     <div className={card}>
-      <Toaster position="top-right" />
       <div className="flex flex-col lg:flex-row justify-between items-center mb-6">
         <h2 className="text-xl! lg:text-2xl! mb-6 lg:mb-0 font-bold text-gray-900 dark:text-gray-100">
           Moje Lične informacije

@@ -39,7 +39,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useAppointmentMutations } from "@/hooks/useAppointmentMutations";
 import { formatPriceToString } from "@/helpers/formatPrice";
@@ -931,7 +931,6 @@ export default function HomepageAppointmentWidget({
 
   return (
     <>
-      <Toaster position="top-right" />
 
       <div className="space-y-4">
         {/* Calendar card */}

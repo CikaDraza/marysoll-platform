@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { useSearchUsers } from "@/hooks/useSearchUsers";
 import { IUser } from "@/types";
 import ClientModalActionButtons from "./ClientModalActionButtons";
-import { Toaster } from "react-hot-toast";
 
 export default function ClientsList() {
   const [query, setQuery] = useState("");
@@ -36,7 +35,7 @@ export default function ClientsList() {
   // ⭐ Rezultati pretrage
   const { data: filteredUsers = [], isLoading: searching } = useSearchUsers(
     debouncedText,
-    debouncedDate
+    debouncedDate,
   );
 
   const users =
@@ -49,7 +48,6 @@ export default function ClientsList() {
 
   return (
     <div>
-      <Toaster position="top-right" />
       <div className="max-w-full flex flex-col lg:flex-row items-center mb-3">
         <h3 className="flex-1 font-semibold text-(--primary-color) text-2xl!">
           Lista svih klijenata

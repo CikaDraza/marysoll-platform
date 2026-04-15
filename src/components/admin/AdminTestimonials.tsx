@@ -4,7 +4,6 @@
 import { useState, useMemo } from "react";
 import { useAdminTestimonials } from "@/hooks/useAdminTestimonials";
 import Loader from "../elements/Loader";
-import { Toaster } from "react-hot-toast";
 import TestimonialCard from "./TestimonialCard";
 import { useTestimonialActions } from "@/hooks/useTestimonialActions";
 import { useBrowserNotifications } from "@/hooks/useNotifications";
@@ -94,7 +93,6 @@ export default function AdminTestimonials() {
 
   return (
     <div className="space-y-6">
-      <Toaster position="top-right" />
 
       {/* Filteri */}
       <div className="py-4 rounded-lg">

@@ -9,7 +9,7 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import {
   format,
   startOfWeek,
@@ -553,7 +553,6 @@ export default function AppointmentCalendar() {
 
   return (
     <>
-      <Toaster position="top-right" />
 
       <div className="space-y-5">
         {/* Info row */}

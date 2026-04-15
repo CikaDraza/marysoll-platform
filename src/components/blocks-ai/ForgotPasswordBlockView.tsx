@@ -2,7 +2,6 @@
 
 import { EnvelopeOpenIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import { useEffect, useRef, useState } from "react";
-import { Toaster } from "react-hot-toast";
 import { Reveal } from "../motion/Reveal";
 import { useAuthActions } from "@/hooks/useAuthActions";
 import { motion } from "framer-motion";
@@ -77,7 +76,6 @@ export default function ForgotPasswordBlockView({
     <div ref={containerRef} className="scroll-mt-20">
       <Reveal>
         <div className="isolate reltaive bg-gray-900 rounded-2xl">
-          <Toaster position="top-right" />
           <div
             aria-hidden="true"
             className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80"

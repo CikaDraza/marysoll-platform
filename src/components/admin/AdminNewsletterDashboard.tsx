@@ -4,7 +4,7 @@
 import { useState, useRef } from "react";
 import { useNewsletterAdmin } from "@/hooks/useNewsletterAdmin";
 import { INewsletterCampaign, INewsletterTemplate } from "@/types";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { format } from "date-fns";
 import Loader from "../elements/Loader";
 import { cleanEmailHtml } from "@/lib/htmlUtils";
@@ -403,7 +403,6 @@ export default function AdminNewsletterDashboard() {
 
   return (
     <div>
-      <Toaster position="top-right" />
       {/* ===== NEWSLETTER EMAIL TEMPLATES SEKCIJA ===== */}
       <div className="mb-12">
         <div className="flex flex-col items-start gap-6 mb-8">

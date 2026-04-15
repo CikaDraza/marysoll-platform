@@ -2,7 +2,6 @@
 "use client";
 import { useAuthActions } from "@/hooks/useAuthActions";
 import { useEffect, useRef, useState } from "react";
-import { Toaster } from "react-hot-toast";
 import { LockClosedIcon } from "@heroicons/react/24/outline";
 import { LockOpenIcon } from "@heroicons/react/24/outline";
 import { Reveal } from "../motion/Reveal";
@@ -70,7 +69,6 @@ export function LoginBlockView({
     <div ref={containerRef} className="scroll-mt-20">
       <Reveal>
         <div className="isolate relative bg-gray-900 rounded-2xl">
-          <Toaster position="top-right" />
           <div
             aria-hidden="true"
             className="absolute inset-x-0 -top-44 -z-10 transform-gpu overflow-hidden blur-3xl lg:-top-96"

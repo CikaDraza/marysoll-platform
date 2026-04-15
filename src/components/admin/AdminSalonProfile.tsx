@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Toaster } from "react-hot-toast";
 import { PhotoIcon } from "@heroicons/react/24/outline";
 import { useSalonProfileForm } from "@/hooks/useSalonProfileForm";
 import { useSalonProfile } from "@/hooks/useSalonProfile";
@@ -127,7 +126,6 @@ export default function AdminSalonProfile() {
 
   return (
     <div className="isolate py-24 sm:py-32 px-1 lg:px-8">
-      <Toaster position="top-right" />
 
       {/* Header */}
       <div className="mx-auto text-left">
@@ -357,7 +355,9 @@ export default function AdminSalonProfile() {
                   <input
                     type="email"
                     name="contactEmail"
-                    value={(form as { contactEmail?: string }).contactEmail || ""}
+                    value={
+                      (form as { contactEmail?: string }).contactEmail || ""
+                    }
                     onChange={handleChange}
                     placeholder="kontakt@vašsalon.com"
                     className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-(--secondary-color)"
@@ -373,7 +373,9 @@ export default function AdminSalonProfile() {
                   <input
                     type="tel"
                     name="marketingPhone"
-                    value={(form as { marketingPhone?: string }).marketingPhone || ""}
+                    value={
+                      (form as { marketingPhone?: string }).marketingPhone || ""
+                    }
                     onChange={handleChange}
                     placeholder="+381 60 000 0000"
                     className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-(--secondary-color)"

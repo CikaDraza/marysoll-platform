@@ -1,7 +1,6 @@
 import AdminServiceModal from "./AdminServiceModal";
 import { useServices } from "@/hooks/useServices";
 import { useAdminServiceForm } from "@/hooks/useAdminServiceForm";
-import { Toaster } from "react-hot-toast";
 import { formatISODate } from "@/helpers/formatISODate";
 import { CheckIcon } from "@heroicons/react/24/outline";
 import { useServiceMutations } from "@/hooks/useServiceMutations";
@@ -33,7 +32,6 @@ export default function AdminServices() {
 
   return (
     <div className="lg:p-6">
-      <Toaster position="top-right" />
       <div className="flex flex-col lg:flex-row justify-between items-center mb-6">
         <h3 className="text-2xl! text-(--primary-color) font-bold">Usluge</h3>
         <button
@@ -58,16 +56,16 @@ export default function AdminServices() {
                 idx === 1
                   ? ""
                   : idx === 0
-                  ? "rounded-t-3xl sm:rounded-b-none lg:rounded-tr-none lg:rounded-bl-3xl"
-                  : "sm:rounded-t-none lg:rounded-tr-3xl lg:rounded-bl-none",
-                "rounded-3xl p-8 sm:p-10"
+                    ? "rounded-t-3xl sm:rounded-b-none lg:rounded-tr-none lg:rounded-bl-3xl"
+                    : "sm:rounded-t-none lg:rounded-tr-3xl lg:rounded-bl-none",
+                "rounded-3xl p-8 sm:p-10",
               )}
             >
               {/* -------------------- TITLE -------------------- */}
               <h3
                 className={classNames(
                   dark ? "text-(--secondary-color)" : "text-(--primary-color)",
-                  "text-base/7 font-semibold"
+                  "text-base/7 font-semibold",
                 )}
               >
                 {srv.name}
@@ -76,7 +74,7 @@ export default function AdminServices() {
               <p
                 className={classNames(
                   dark ? "text-gray-400" : "text-gray-500",
-                  "text-xs mt-1"
+                  "text-xs mt-1",
                 )}
               >
                 {srv.category}
@@ -92,7 +90,7 @@ export default function AdminServices() {
                     <span
                       className={classNames(
                         dark ? "text-gray-50" : "text-gray-900",
-                        "text-5xl lg:text-7xl font-semibold tracking-tight"
+                        "text-5xl lg:text-7xl font-semibold tracking-tight",
                       )}
                     >
                       {formatPriceToString(srv.subscription?.priceMonthly)}
@@ -100,7 +98,7 @@ export default function AdminServices() {
                     <span
                       className={classNames(
                         dark ? "text-gray-400" : "text-gray-500",
-                        "text-base"
+                        "text-base",
                       )}
                     >
                       /mesečno
@@ -121,7 +119,7 @@ export default function AdminServices() {
                             className={classNames(
                               srv.subscription?.enabled
                                 ? "text-gray-100 font-semibold"
-                                : "text-(--secondary-color) font-semibold"
+                                : "text-(--secondary-color) font-semibold",
                             )}
                           >
                             {formatISODate(srv.subscription.startDate)}
@@ -140,7 +138,7 @@ export default function AdminServices() {
                             className={classNames(
                               srv.subscription?.enabled
                                 ? "text-gray-100 font-semibold"
-                                : "text-(--secondary-color) font-semibold"
+                                : "text-(--secondary-color) font-semibold",
                             )}
                           >
                             {formatISODate(srv.subscription.endDate)}
@@ -162,7 +160,7 @@ export default function AdminServices() {
                     className={classNames(
                       dark ? "text-white" : "text-gray-900",
                       "font-semibold tracking-tight",
-                      dark ? "text-4xl lg:text-7xl" : "text-4xl lg:text-7xl"
+                      dark ? "text-4xl lg:text-7xl" : "text-4xl lg:text-7xl",
                     )}
                   >
                     {formatPriceToString(srv.basePrice)}
@@ -170,7 +168,7 @@ export default function AdminServices() {
                   <span
                     className={classNames(
                       dark ? "text-gray-400" : "text-gray-500",
-                      "text-base"
+                      "text-base",
                     )}
                   >
                     /terminu
@@ -185,7 +183,7 @@ export default function AdminServices() {
                 <p
                   className={classNames(
                     dark ? "text-gray-300" : "text-gray-600",
-                    "mt-6 text-xs lg:text-base/7"
+                    "mt-6 text-xs lg:text-base/7",
                   )}
                 >
                   {srv.description}
@@ -203,7 +201,7 @@ export default function AdminServices() {
                   <ul
                     className={classNames(
                       dark ? "text-gray-200" : "text-gray-700",
-                      "mt-8 space-y-3 text-sm/6"
+                      "mt-8 space-y-3 text-sm/6",
                     )}
                   >
                     {srv?.variants.map((v, idx) => (
@@ -214,7 +212,7 @@ export default function AdminServices() {
                             dark
                               ? "text-indigo-400"
                               : "text-(--secondary-color)",
-                            "h-6 w-5 flex-none"
+                            "h-6 w-5 flex-none",
                           )}
                         />
                         {v.name}
@@ -230,7 +228,7 @@ export default function AdminServices() {
                   <ul
                     className={classNames(
                       dark ? "text-gray-300" : "text-gray-600",
-                      "mt-8 space-y-3 text-sm/6"
+                      "mt-8 space-y-3 text-sm/6",
                     )}
                   >
                     {srv.variants.map((v, idx) => (
@@ -256,7 +254,7 @@ export default function AdminServices() {
                   role="list"
                   className={classNames(
                     dark ? "text-gray-300" : "text-gray-600",
-                    "mt-8 space-y-3 text-sm/6"
+                    "mt-8 space-y-3 text-sm/6",
                   )}
                 >
                   {srv.items.map((item) => (
@@ -265,7 +263,7 @@ export default function AdminServices() {
                         aria-hidden="true"
                         className={classNames(
                           dark ? "text-indigo-400" : "text-(--secondary-color)",
-                          "h-6 w-5 flex-none"
+                          "h-6 w-5 flex-none",
                         )}
                       />
                       {item}
@@ -285,7 +283,7 @@ export default function AdminServices() {
                     dark
                       ? "bg-(--secondary-color) text-white shadow-xs hover:bg-(--secondary-color)/80"
                       : "text-(--secondary-color) inset-ring inset-ring-indigo-200 hover:inset-ring-(--secondary-color)",
-                    "mt-8 block rounded-md px-3.5 py-2.5 text-center text-sm font-semibold opacity-50 cursor-not-allowed"
+                    "mt-8 block rounded-md px-3.5 py-2.5 text-center text-sm font-semibold opacity-50 cursor-not-allowed",
                   )}
                 >
                   Pretplati se danas
@@ -295,7 +293,7 @@ export default function AdminServices() {
                 <button
                   onClick={() => deleteService.mutate(srv._id!)}
                   className={classNames(
-                    "flex-1 bg-(--red-color) text-white cursor-pointer shadow-xs hover:bg-(--red-color)/80 focus-visible:outline-(--primary-color) mt-8 block rounded-md px-3.5 py-2.5 text-center text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 sm:mt-10"
+                    "flex-1 bg-(--red-color) text-white cursor-pointer shadow-xs hover:bg-(--red-color)/80 focus-visible:outline-(--primary-color) mt-8 block rounded-md px-3.5 py-2.5 text-center text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 sm:mt-10",
                   )}
                 >
                   Obriši
@@ -303,7 +301,7 @@ export default function AdminServices() {
                 <button
                   onClick={() => openEdit(srv)}
                   className={classNames(
-                    "flex-2 bg-(--secondary-color) cursor-pointer text-white shadow-xs hover:text-white/80 hover:bg-(--secondary-color)/80 focus-visible:outline-(--primary-color) mt-8 block rounded-md px-3.5 py-2.5 text-center text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 sm:mt-10"
+                    "flex-2 bg-(--secondary-color) cursor-pointer text-white shadow-xs hover:text-white/80 hover:bg-(--secondary-color)/80 focus-visible:outline-(--primary-color) mt-8 block rounded-md px-3.5 py-2.5 text-center text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 sm:mt-10",
                   )}
                 >
                   Izmeni
