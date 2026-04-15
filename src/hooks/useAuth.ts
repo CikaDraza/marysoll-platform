@@ -76,56 +76,74 @@ function isProductionDomain(): boolean {
  *   3. {base}/[slug]/login → tenant auth
  *   4. Any subdomain or custom domain → tenant auth
  */
-function getLoginEndpoint(): "/api/tenant-auth/login" | "/api/auth/login" {
-  if (typeof window === "undefined") return "/api/tenant-auth/login";
+function getLoginEndpoint(): "/tenant-auth/login" | "/auth/login" {
+  if (typeof window === "undefined") return "/tenant-auth/login";
   const hostname = window.location.hostname;
   const pathname = window.location.pathname;
   const base = getBaseDomain();
 
   // Superadmin domain → platform auth
-  if (hostname === `superadmin.${base}`) return "/api/auth/login";
+  if (hostname === `superadmin.${base}`) return "/auth/login";
 
   // Base domain or www: decide by path prefix
   if (hostname === base || hostname === `www.${base}`) {
     const firstSegment = pathname.split("/").filter(Boolean)[0] ?? "";
     // Non-reserved first segment = tenant slug → tenant auth
     const PLATFORM_PATHS = new Set([
-      "login", "register", "dashboard", "superadmin",
-      "api", "newsletter", "privacy", "terms", "unauthorized",
-      "forgot-password", "reset-password", "verify-email",
+      "login",
+      "register",
+      "dashboard",
+      "superadmin",
+      "api",
+      "newsletter",
+      "privacy",
+      "terms",
+      "unauthorized",
+      "forgot-password",
+      "reset-password",
+      "verify-email",
     ]);
     if (firstSegment && !PLATFORM_PATHS.has(firstSegment)) {
-      return "/api/tenant-auth/login";
+      return "/tenant-auth/login";
     }
-    return "/api/auth/login";
+    return "/auth/login";
   }
 
   // Any subdomain or custom domain → tenant auth
-  return "/api/tenant-auth/login";
+  return "/tenant-auth/login";
 }
 
-function getRegisterEndpoint(): "/api/tenant-auth/register" | "/api/auth/register" {
-  if (typeof window === "undefined") return "/api/tenant-auth/register";
+function getRegisterEndpoint(): "/tenant-auth/register" | "/auth/register" {
+  if (typeof window === "undefined") return "/tenant-auth/register";
   const hostname = window.location.hostname;
   const pathname = window.location.pathname;
   const base = getBaseDomain();
 
-  if (hostname === `superadmin.${base}`) return "/api/auth/register";
+  if (hostname === `superadmin.${base}`) return "/auth/register";
 
   if (hostname === base || hostname === `www.${base}`) {
     const firstSegment = pathname.split("/").filter(Boolean)[0] ?? "";
     const PLATFORM_PATHS = new Set([
-      "login", "register", "dashboard", "superadmin",
-      "api", "newsletter", "privacy", "terms", "unauthorized",
-      "forgot-password", "reset-password", "verify-email",
+      "login",
+      "register",
+      "dashboard",
+      "superadmin",
+      "api",
+      "newsletter",
+      "privacy",
+      "terms",
+      "unauthorized",
+      "forgot-password",
+      "reset-password",
+      "verify-email",
     ]);
     if (firstSegment && !PLATFORM_PATHS.has(firstSegment)) {
-      return "/api/tenant-auth/register";
+      return "/tenant-auth/register";
     }
-    return "/api/auth/register";
+    return "/auth/register";
   }
 
-  return "/api/tenant-auth/register";
+  return "/tenant-auth/register";
 }
 
 function clearAllTokens(): void {
@@ -249,7 +267,8 @@ export function useAuth() {
       const base = getBaseDomain();
       const encoded = encodeURIComponent(data.token);
       const prod = isProductionDomain();
-      const host = typeof window !== "undefined" ? window.location.hostname : "";
+      const host =
+        typeof window !== "undefined" ? window.location.hostname : "";
 
       if (host === `superadmin.${base}`) {
         // Platform login — go directly to superadmin dashboard

@@ -57,7 +57,13 @@ api.interceptors.response.use(
     ) {
       originalRequest._retry = true;
       try {
-        const res = await publicApi.post<{ token: string }>("/auth/refresh");
+        // Detect which refresh endpoint to call based on available cookies.
+        // tenant-refresh-token → tenant endpoint; platform-refresh-token → platform endpoint.
+        const hasTenantRefresh = document.cookie.includes("tenant-refresh-token=");
+        const refreshEndpoint = hasTenantRefresh
+          ? "/tenant-auth/refresh"
+          : "/auth/refresh";
+        const res = await publicApi.post<{ token: string }>(refreshEndpoint);
         const newToken = res.data.token;
         localStorage.setItem("token", newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
