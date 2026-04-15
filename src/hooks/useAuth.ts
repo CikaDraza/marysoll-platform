@@ -67,14 +67,32 @@ function isProductionDomain(): boolean {
   );
 }
 
+// Paths that belong to the platform — not tenant slugs
+const PLATFORM_PATHS = new Set([
+  "login",
+  "register",
+  "dashboard",
+  "superadmin",
+  "api",
+  "newsletter",
+  "privacy",
+  "terms",
+  "unauthorized",
+  "forgot-password",
+  "reset-password",
+  "verify-email",
+  "resend-verification",
+]);
+
 /**
  * Determine the auth endpoint based purely on URL context.
  *
  * Rules:
- *   1. superadmin.{base} → platform auth
- *   2. {base}/login or www.{base}/login (no slug prefix) → platform auth
- *   3. {base}/[slug]/login → tenant auth
- *   4. Any subdomain or custom domain → tenant auth
+ *   1. superadmin.{base}              → platform auth
+ *   2. localhost / 127.x / 192.168.x  → path-based (same logic as base domain)
+ *   3. {base}/login or www.{base}/login (no slug prefix) → platform auth
+ *   4. {base}/[slug]/login            → tenant auth
+ *   5. Any subdomain or custom domain → tenant auth
  */
 function getLoginEndpoint(): "/tenant-auth/login" | "/auth/login" {
   if (typeof window === "undefined") return "/tenant-auth/login";
@@ -85,24 +103,16 @@ function getLoginEndpoint(): "/tenant-auth/login" | "/auth/login" {
   // Superadmin domain → platform auth
   if (hostname === `superadmin.${base}`) return "/auth/login";
 
-  // Base domain or www: decide by path prefix
-  if (hostname === base || hostname === `www.${base}`) {
+  // Dev / LAN environments: use path-based routing identical to base domain
+  const isLocal =
+    hostname === "localhost" ||
+    hostname.startsWith("127.") ||
+    hostname.startsWith("192.168.");
+
+  // Base domain, www, or local dev: decide by path prefix
+  if (isLocal || hostname === base || hostname === `www.${base}`) {
     const firstSegment = pathname.split("/").filter(Boolean)[0] ?? "";
     // Non-reserved first segment = tenant slug → tenant auth
-    const PLATFORM_PATHS = new Set([
-      "login",
-      "register",
-      "dashboard",
-      "superadmin",
-      "api",
-      "newsletter",
-      "privacy",
-      "terms",
-      "unauthorized",
-      "forgot-password",
-      "reset-password",
-      "verify-email",
-    ]);
     if (firstSegment && !PLATFORM_PATHS.has(firstSegment)) {
       return "/tenant-auth/login";
     }
@@ -121,22 +131,13 @@ function getRegisterEndpoint(): "/tenant-auth/register" | "/auth/register" {
 
   if (hostname === `superadmin.${base}`) return "/auth/register";
 
-  if (hostname === base || hostname === `www.${base}`) {
+  const isLocal =
+    hostname === "localhost" ||
+    hostname.startsWith("127.") ||
+    hostname.startsWith("192.168.");
+
+  if (isLocal || hostname === base || hostname === `www.${base}`) {
     const firstSegment = pathname.split("/").filter(Boolean)[0] ?? "";
-    const PLATFORM_PATHS = new Set([
-      "login",
-      "register",
-      "dashboard",
-      "superadmin",
-      "api",
-      "newsletter",
-      "privacy",
-      "terms",
-      "unauthorized",
-      "forgot-password",
-      "reset-password",
-      "verify-email",
-    ]);
     if (firstSegment && !PLATFORM_PATHS.has(firstSegment)) {
       return "/tenant-auth/register";
     }
