@@ -10,13 +10,16 @@
  * Unique constraint: { tenantId, email } — no duplicates within one salon,
  * duplicates freely allowed across different salons.
  *
- * AuthUser is only used for platform-level access:
- *   SUPER_ADMIN, OWNER, ADMIN, STAFF → have AuthUser for marysoll.com login
- *   USER, GUEST                       → TenantUser only, no AuthUser
+ * Auth separation:
+ *   - ALL roles authenticate via /api/tenant-auth/login using TenantUser only.
+ *   - SUPER_ADMIN authenticates via /api/auth/login using AuthUser only.
+ *   - TenantUser is NEVER used in platform auth logic; AuthUser is NEVER used in tenant auth.
  *
- * authUserId is optional on TenantUser:
- *   - Set for OWNER/ADMIN/STAFF (links to their AuthUser)
- *   - Null for USER/GUEST clients
+ * authUserId (Option B — kept for internal linking only):
+ *   - Optionally set for OWNER/ADMIN/STAFF who also have a platform AuthUser record.
+ *   - Used only for internal features: push notifications, newsletter delivery, etc.
+ *   - MUST NOT be used for login, token generation, or any auth decision.
+ *   - Null for USER/GUEST clients.
  *
  * Roles:
  *   OWNER  — tenant owner, full access
@@ -79,7 +82,11 @@ export interface ITenantUserPushSubscription {
 export interface ITenantUser extends Document {
   _id: Types.ObjectId;
   tenantId: Types.ObjectId;
-  /** Only set for OWNER/ADMIN/STAFF who also have a platform AuthUser */
+  /**
+   * Optional link to a platform AuthUser.
+   * Used only for internal features (notifications, newsletter delivery).
+   * MUST NOT be used in any auth/login logic.
+   */
   authUserId?: Types.ObjectId | null;
 
   // ── Per-tenant identity ──────────────────────────────────────────────────

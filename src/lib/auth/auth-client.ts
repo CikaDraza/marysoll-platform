@@ -4,54 +4,82 @@
  * CLIENT-ONLY auth funkcije.
  * Koristi se u hooks i Client Components.
  * NE importovati u Server Components, API routes, ili middleware!
+ *
+ * Cookie priority (in order):
+ *   1. localStorage["token"]            — set by useAuth on login / callback
+ *   2. tenant-access-token cookie       — set by /api/tenant-auth/login
+ *   3. platform-access-token cookie     — set by /api/auth/login (SUPER_ADMIN)
  */
 
 import { DecodedUser } from "@/types/auth/types";
 import { jwtDecode } from "jwt-decode";
 
+// ─── Internal helpers ─────────────────────────────────────────────────────────
+
+function readCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(
+    new RegExp(`(?:^|;\\s*)${name}=([^;]+)`),
+  );
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 /**
- * Čita i dekodira JWT token.
- * Ako token nije prosleđen, čita iz localStorage (browser context).
- * Vraća null ako token ne postoji, nije validan, ili je istekao.
+ * Returns raw JWT string from storage/cookies.
+ * Does NOT validate expiry — callers must check themselves.
+ * No legacy cookie fallbacks.
+ */
+function readRawToken(): string | null {
+  if (typeof window === "undefined") return null;
+
+  // 1. localStorage (highest priority — set explicitly by useAuth on login)
+  const fromStorage = localStorage.getItem("token");
+  if (fromStorage) return fromStorage;
+
+  // 2. Tenant scoped cookie (set by /api/tenant-auth/login, domain: undefined)
+  const tenantCookie = readCookie("tenant-access-token");
+  if (tenantCookie) {
+    try { localStorage.setItem("token", tenantCookie); } catch { /* ignore */ }
+    return tenantCookie;
+  }
+
+  // 3. Platform scoped cookie (set by /api/auth/login, domain: .marysoll.com)
+  const platformCookie = readCookie("platform-access-token");
+  if (platformCookie) {
+    try { localStorage.setItem("token", platformCookie); } catch { /* ignore */ }
+    return platformCookie;
+  }
+
+  return null;
+}
+
+// ─── Public API ───────────────────────────────────────────────────────────────
+
+/**
+ * Decodes and validates a JWT token.
+ * If no token passed, reads from storage/cookies.
+ * Returns null if missing, invalid, or expired.
  */
 export function getUserFromToken(token?: string): DecodedUser | null {
   if (typeof window === "undefined") return null;
 
-  // Priority: explicit arg > localStorage > cookie (shared across subdomains)
-  let raw = token ?? localStorage.getItem("token");
-
-  // Fallback: čitaj iz cookie "auth-token" koji je shared na .marysoll.com
-  if (!raw) {
-    const cookieMatch = document.cookie.match(/(?:^|;\s*)auth-token=([^;]+)/);
-    if (cookieMatch) {
-      raw = decodeURIComponent(cookieMatch[1]);
-      // Sačuvaj u localStorage za buduće pozive
-      try {
-        localStorage.setItem("token", raw);
-      } catch {
-        /* ignore */
-      }
-    }
-  }
-
+  const raw = token ?? readRawToken();
   if (!raw) return null;
 
   try {
     const decoded = jwtDecode<
       DecodedUser & {
-        id?: string; // nekim JWT-ovima id umesto _id
+        id?: string;
         sub?: string;
       }
     >(raw);
 
     if (decoded.exp * 1000 < Date.now()) {
-      if (!token) localStorage.removeItem("token"); // samo ako čitamo iz LS
+      if (!token) localStorage.removeItem("token");
       return null;
     }
 
     return {
-      // Normalizujemo id → koristimo onako kako je u JWT-u
-      // DecodedUser koristi `id` (ne `_id`) - vidi types/auth/types.ts
       id: decoded.id ?? decoded.sub ?? "",
       email: decoded.email ?? "",
       name: decoded.name ?? "",
@@ -73,39 +101,21 @@ export function getUserFromToken(token?: string): DecodedUser | null {
 }
 
 /**
- * Čita raw token string iz localStorage.
+ * Returns the raw JWT string (no expiry validation).
  */
 export function getRawToken(): string | null {
-  if (typeof window === "undefined") return null;
-
-  // Najpre localStorage, pa cookie kao fallback
-  const fromStorage = localStorage.getItem("token");
-  if (fromStorage) return fromStorage;
-
-  // Cookie fallback (shared .marysoll.com cookie)
-  const cookieMatch = document.cookie.match(/(?:^|;\s*)auth-token=([^;]+)/);
-  if (cookieMatch) {
-    const token = decodeURIComponent(cookieMatch[1]);
-    try {
-      localStorage.setItem("token", token);
-    } catch {
-      /* ignore */
-    }
-    return token;
-  }
-
-  return null;
+  return readRawToken();
 }
 
 /**
- * Proverava da li je token validan (postoji i nije istekao).
+ * Returns true if a valid, non-expired token exists.
  */
 export function isTokenValid(): boolean {
   return getUserFromToken() !== null;
 }
 
 /**
- * Proverava da li je token blizu isteka (default: 5 minuta).
+ * Returns true if the current token expires within `thresholdMinutes`.
  */
 export function isTokenExpiringSoon(thresholdMinutes = 5): boolean {
   const token = getRawToken();

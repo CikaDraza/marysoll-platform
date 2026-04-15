@@ -1,6 +1,17 @@
 // src/proxy.ts
 /**
  * proxy.ts — Multi-tenant Next.js middleware
+ *
+ * Security responsibilities:
+ *  1. Resolves tenant from subdomain / custom-domain / path segment.
+ *  2. Injects x-tenant-slug and x-tenant-id into every request.
+ *  3. Guards protected routes (admin / superadmin / client).
+ *  4. Validates tenant tokens: if token.type === "tenant", the token's
+ *     tenantId MUST match the resolved tenant's DB id (cross-tenant leakage guard).
+ *     Token/id mismatch returns 401 immediately.
+ *
+ * Security boundary: tenantId (DB _id) — never slug alone.
+ * Slug is used only for routing and display; tenantId is the trust anchor.
  */
 
 import { NextResponse } from "next/server";
@@ -13,6 +24,8 @@ interface DecodedToken {
   isAdmin: boolean;
   isSuperAdmin?: boolean;
   tenantId?: string;
+  /** "platform" = SUPER_ADMIN (AuthUser). "tenant" = any TenantUser role. */
+  type?: "platform" | "tenant";
   exp: number;
 }
 
@@ -84,20 +97,28 @@ const RESERVED_TOP_SEGMENTS = new Set([
   "privacy",
   "terms",
   "unauthorized",
-  "logout", // Dodaj logout ovde
+  "logout",
 ]);
 
 // ─── Custom domain DB lookup ──────────────────────────────────────────────────
-const domainCache = new Map<string, { slug: string | null; ts: number }>();
+/** Caches custom-domain → { slug, id } resolutions (5-min TTL). */
+const domainCache = new Map<
+  string,
+  { slug: string | null; id: string | null; ts: number }
+>();
+
+/** Caches subdomain slug → tenantId resolutions (5-min TTL). */
+const tenantIdCache = new Map<string, { id: string; ts: number }>();
+
 const CACHE_TTL = 5 * 60 * 1000;
 
 async function resolveCustomDomain(
   request: NextRequest,
   host: string,
-): Promise<string | null> {
+): Promise<{ slug: string; id: string } | null> {
   const cached = domainCache.get(host);
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
-    return cached.slug;
+    return cached.slug && cached.id ? { slug: cached.slug, id: cached.id } : null;
   }
 
   try {
@@ -107,16 +128,49 @@ async function resolveCustomDomain(
       headers: { "x-internal-secret": process.env.INTERNAL_API_SECRET ?? "" },
     });
     if (!res.ok) {
-      domainCache.set(host, { slug: null, ts: Date.now() });
+      domainCache.set(host, { slug: null, id: null, ts: Date.now() });
       return null;
     }
 
     const data = await res.json();
     const slug = data.slug ?? null;
-    domainCache.set(host, { slug, ts: Date.now() });
-    return slug;
+    const id = data.id ?? null;
+    domainCache.set(host, { slug, id, ts: Date.now() });
+    return slug && id ? { slug, id } : null;
   } catch {
-    console.error("🔍 Error occurred while resolving custom domain:", host);
+    console.error("🔍 Error resolving custom domain:", host);
+    return null;
+  }
+}
+
+/**
+ * Resolves the DB tenantId (_id) for a given tenant slug.
+ * Used for subdomain routing where the slug comes from the hostname,
+ * not a DB lookup.
+ */
+async function resolveSlugToTenantId(
+  request: NextRequest,
+  slug: string,
+): Promise<string | null> {
+  const cached = tenantIdCache.get(slug);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) {
+    return cached.id;
+  }
+
+  try {
+    const url = new URL("/api/internal/resolve-tenant", request.nextUrl.origin);
+    url.searchParams.set("slug", slug);
+    const res = await fetch(url.toString(), {
+      headers: { "x-internal-secret": process.env.INTERNAL_API_SECRET ?? "" },
+    });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const id = data.id ?? null;
+    if (id) tenantIdCache.set(slug, { id, ts: Date.now() });
+    return id;
+  } catch {
+    console.error("🔍 Error resolving tenant slug:", slug);
     return null;
   }
 }
@@ -125,81 +179,78 @@ async function resolveCustomDomain(
 async function detectDomainType(
   request: NextRequest,
   hostname: string,
-): Promise<{ type: DomainType; tenantSlug: string | null }> {
+): Promise<{ type: DomainType; tenantSlug: string | null; tenantId: string | null }> {
   const host = hostname.split(":")[0];
 
   // 1. Base domain (marketing)
   if (host === BASE_DOMAIN || host === `www.${BASE_DOMAIN}`) {
-    return { type: "marketing", tenantSlug: null };
+    return { type: "marketing", tenantSlug: null, tenantId: null };
   }
 
   // 2. Admin subdomains
   if (host === `admin.${BASE_DOMAIN}`) {
-    return { type: "admin", tenantSlug: null };
+    return { type: "admin", tenantSlug: null, tenantId: null };
   }
 
   if (host === `superadmin.${BASE_DOMAIN}`) {
-    return { type: "superadmin", tenantSlug: null };
+    return { type: "superadmin", tenantSlug: null, tenantId: null };
   }
 
-  // 3. Wildcard subdomains
+  // 3. Wildcard subdomains (tenant subdomain)
   if (host.endsWith(`.${BASE_DOMAIN}`)) {
     const subdomain = host.slice(0, -(BASE_DOMAIN.length + 1));
     if (!["admin", "superadmin", "app", "www"].includes(subdomain)) {
-      return { type: "client", tenantSlug: subdomain };
+      const tenantId = await resolveSlugToTenantId(request, subdomain);
+      return { type: "client", tenantSlug: subdomain, tenantId };
     }
   }
 
-  // 4. Custom domain - PROVERI PRVO env var, pa onda DB
+  // 4. Custom domain — check env var first, then DB
   if (host !== "localhost" && !host.endsWith(BASE_DOMAIN)) {
-    // Ako je env var postavljen i odgovara hostu
     if (CUSTOM_CLIENT_DOMAIN && host === CUSTOM_CLIENT_DOMAIN) {
-      // Moramo naći slug iz DB za ovaj domain
-      const slug = await resolveCustomDomain(request, host);
-      if (slug) {
-        return { type: "client", tenantSlug: slug };
-      }
-      // Ako nema u DB, ali je env var postavljen, probaj sa null slug-om
-      // (možda je hardkodovano negde drugde)
-      return { type: "client", tenantSlug: null };
+      const resolved = await resolveCustomDomain(request, host);
+      if (resolved) return { type: "client", tenantSlug: resolved.slug, tenantId: resolved.id };
+      return { type: "client", tenantSlug: null, tenantId: null };
     }
 
-    // Inače probaj DB lookup
-    const slug = await resolveCustomDomain(request, host);
-    if (slug !== null) {
-      return { type: "client", tenantSlug: slug };
-    }
+    const resolved = await resolveCustomDomain(request, host);
+    if (resolved) return { type: "client", tenantSlug: resolved.slug, tenantId: resolved.id };
 
-    // Unknown custom domain - treat as client (will 404 gracefully)
-    return { type: "client", tenantSlug: null };
+    return { type: "client", tenantSlug: null, tenantId: null };
   }
 
   // 5. LOCALHOST
   if (!IS_PROD && host.startsWith("localhost")) {
     const devType = process.env.DEV_DOMAIN_TYPE as DomainType | undefined;
-    if (devType === "admin") return { type: "admin", tenantSlug: null };
-    if (devType === "superadmin")
-      return { type: "superadmin", tenantSlug: null };
-    if (devType === "client")
-      return {
-        type: "client",
-        tenantSlug: process.env.DEV_TENANT_SLUG ?? "default",
-      };
-    return { type: "marketing", tenantSlug: null };
+    if (devType === "admin") return { type: "admin", tenantSlug: null, tenantId: null };
+    if (devType === "superadmin") return { type: "superadmin", tenantSlug: null, tenantId: null };
+    if (devType === "client") {
+      const slug = process.env.DEV_TENANT_SLUG ?? "default";
+      const tenantId = slug !== "default" ? await resolveSlugToTenantId(request, slug) : null;
+      return { type: "client", tenantSlug: slug, tenantId };
+    }
+    return { type: "marketing", tenantSlug: null, tenantId: null };
   }
 
-  return { type: "client", tenantSlug: null };
+  return { type: "client", tenantSlug: null, tenantId: null };
 }
 
 // ─── Token helpers ────────────────────────────────────────────────────────────
+
+/**
+ * Reads the access token from the request.
+ * Priority: Authorization header → tenant-access-token → platform-access-token.
+ * No legacy fallbacks.
+ */
 function getToken(request: NextRequest): string | null {
   const auth = request.headers.get("authorization");
   if (auth?.startsWith("Bearer ")) return auth.slice(7);
 
-  const authTokenCookie = request.cookies.get("auth-token")?.value;
-  if (authTokenCookie) return authTokenCookie;
-
-  return request.cookies.get("token")?.value ?? null;
+  return (
+    request.cookies.get("tenant-access-token")?.value ??
+    request.cookies.get("platform-access-token")?.value ??
+    null
+  );
 }
 
 function decodeToken(token: string): DecodedToken | null {
@@ -211,13 +262,33 @@ function decodeToken(token: string): DecodedToken | null {
   }
 }
 
+/**
+ * Attempts to refresh the access token using the appropriate refresh endpoint.
+ * Strict: only scoped cookies, no legacy fallbacks.
+ */
 async function tryRefreshToken(request: NextRequest): Promise<string | null> {
-  const refreshToken = request.cookies.get("refreshToken")?.value;
-  if (!refreshToken) return null;
+  const tenantRefresh = request.cookies.get("tenant-refresh-token")?.value;
+  const platformRefresh = request.cookies.get("platform-refresh-token")?.value;
+
+  if (tenantRefresh) {
+    return attemptRefresh(request, "tenant-refresh-token", tenantRefresh, "/api/tenant-auth/refresh");
+  }
+  if (platformRefresh) {
+    return attemptRefresh(request, "platform-refresh-token", platformRefresh, "/api/auth/refresh");
+  }
+  return null;
+}
+
+async function attemptRefresh(
+  request: NextRequest,
+  cookieName: string,
+  cookieValue: string,
+  endpoint: string,
+): Promise<string | null> {
   try {
-    const res = await fetch(`${request.nextUrl.origin}/api/auth/refresh`, {
+    const res = await fetch(`${request.nextUrl.origin}${endpoint}`, {
       method: "POST",
-      headers: { Cookie: `refreshToken=${refreshToken}` },
+      headers: { Cookie: `${cookieName}=${cookieValue}` },
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -228,8 +299,34 @@ async function tryRefreshToken(request: NextRequest): Promise<string | null> {
 }
 
 // ─── Auth guards ──────────────────────────────────────────────────────────────
+
+/**
+ * Validates the tenant token against the resolved tenantId.
+ * Returns 401 if the token is a tenant token but belongs to a different tenant.
+ * SUPER_ADMIN and platform tokens are exempt.
+ *
+ * Security boundary: tenantId (DB ObjectId) — never slug.
+ */
+function validateTenantTokenId(
+  decoded: DecodedToken,
+  resolvedTenantId: string | null,
+): NextResponse | null {
+  if (!resolvedTenantId) return null;
+  if (decoded.isSuperAdmin) return null; // SUPER_ADMIN can access any tenant
+  if (decoded.type === "platform") return null; // platform tokens have no tenant scope
+
+  if (!decoded.tenantId || decoded.tenantId !== resolvedTenantId) {
+    return NextResponse.json(
+      { error: "Unauthorized: token does not belong to this tenant" },
+      { status: 401 },
+    );
+  }
+  return null;
+}
+
 async function guardApi(
   request: NextRequest,
+  resolvedTenantId: string | null,
   needAdmin = false,
   needSuperAdmin = false,
 ): Promise<NextResponse | null> {
@@ -241,6 +338,10 @@ async function guardApi(
     if (!decoded)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const tenantMismatch = validateTenantTokenId(decoded, resolvedTenantId);
+  if (tenantMismatch) return tenantMismatch;
+
   if (needSuperAdmin && !decoded.isSuperAdmin)
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (needAdmin && !decoded.isAdmin && !decoded.isSuperAdmin)
@@ -250,18 +351,14 @@ async function guardApi(
 
 async function guardPage(
   request: NextRequest,
+  resolvedTenantId: string | null,
   needAdmin = false,
   needSuperAdmin = false,
 ): Promise<NextResponse | null> {
   const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
-
-  // Redirect unauthenticated users to the login page that matches their domain.
-  // admin.marysoll.com → admin.marysoll.com/login (then next.config redirects to marysoll.com/login)
-  // superadmin.marysoll.com → same
-  // anything else → marysoll.com/login
   const loginUrl = new URL(`https://${baseDomain}/login`);
-
   const unauthorizedUrl = new URL("/unauthorized", request.url);
+
   let token = getToken(request);
   let decoded = token ? decodeToken(token) : null;
   if (!decoded) {
@@ -269,6 +366,10 @@ async function guardPage(
     decoded = token ? decodeToken(token) : null;
     if (!decoded) return NextResponse.redirect(loginUrl);
   }
+
+  const tenantMismatch = validateTenantTokenId(decoded, resolvedTenantId);
+  if (tenantMismatch) return NextResponse.redirect(loginUrl);
+
   if (needSuperAdmin && !decoded.isSuperAdmin)
     return NextResponse.redirect(unauthorizedUrl);
   if (needAdmin && !decoded.isAdmin && !decoded.isSuperAdmin)
@@ -298,10 +399,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
-  let { type: domainType, tenantSlug } = await detectDomainType(
-    request,
-    hostname,
-  );
+  let { type: domainType, tenantSlug, tenantId } = await detectDomainType(request, hostname);
 
   // Path-based tenant routing (marysoll.com/[slug] or localhost/[slug])
   const isMarketingOrLocalhost =
@@ -318,18 +416,26 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     ) {
       domainType = "client";
       tenantSlug = firstSegment;
+      // Resolve tenantId for path-based routing if not already resolved
+      if (!tenantId) {
+        tenantId = await resolveSlugToTenantId(request, firstSegment);
+      }
     }
   }
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-domain-type", domainType);
   requestHeaders.set("x-tenant-slug", tenantSlug ?? "");
+  requestHeaders.set("x-tenant-id", tenantId ?? "");
 
   const pass = () =>
     NextResponse.next({ request: { headers: requestHeaders } });
 
   // Public API — always pass
   if (pathname.startsWith("/api/public/")) return pass();
+
+  // tenant-auth routes are always public (they ARE the auth endpoints)
+  if (pathname.startsWith("/api/tenant-auth/")) return pass();
 
   // SuperAdmin
   if (
@@ -338,8 +444,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   ) {
     if (!pathname.startsWith("/auth/callback")) {
       const fail = pathname.startsWith("/api/")
-        ? await guardApi(request, false, true)
-        : await guardPage(request, false, true);
+        ? await guardApi(request, null, false, true)
+        : await guardPage(request, null, false, true);
       if (fail) return fail;
     }
     return pass();
@@ -349,7 +455,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (domainType === "admin") {
     if (pathname.startsWith("/api/")) {
       if (ADMIN_PROTECTED_API_ROUTES.some((r) => pathname.startsWith(r))) {
-        const fail = await guardApi(request, true);
+        const fail = await guardApi(request, tenantId, true);
         if (fail) return fail;
       }
     } else if (
@@ -357,7 +463,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       !pathname.startsWith("/forgot-password") &&
       !pathname.startsWith("/auth/callback")
     ) {
-      const fail = await guardPage(request, true);
+      const fail = await guardPage(request, tenantId, true);
       if (fail) return fail;
     }
     return pass();
@@ -368,17 +474,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   // Client
   if (domainType === "client") {
-    // Proveri da li imamo tenantSlug - ako ne, redirect na "not found"
     if (!tenantSlug && pathname === "/") {
-      // Custom domain bez slug-a - pokušaj da pronađeš tenant po domenu
-      // Ovo bi već trebalo da je uradio detectDomainType, ali ako nije:
       return NextResponse.rewrite(new URL("/not-found", request.url));
     }
 
-    // Custom domain rewriting: on kikikiss.beauty, /login must serve
-    // app/[tenantSlug]/login/page.tsx, not app/login/page.tsx.
-    // We rewrite root-relative client paths to their tenantSlug-prefixed
-    // equivalents so Next.js file-system routing picks the right page.
     const CLIENT_TENANT_PATHS = new Set([
       "/login",
       "/register",
@@ -393,17 +492,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       "/newsletter",
     ]);
 
-    // Match exact path OR path that starts with one of the client tenant paths
-    // e.g. /panel?tab=Zakazivanja → pathname is "/panel", matches fine
-    // e.g. /panel/something → also caught by startsWith check below
     const matchesClientPath =
       CLIENT_TENANT_PATHS.has(pathname) ||
       [...CLIENT_TENANT_PATHS].some((p) => pathname.startsWith(p + "/"));
 
-    // Rewrite root-relative paths to tenantSlug-prefixed equivalents for any
-    // host-based routing: custom domains (kikikiss.beauty) AND tenant subdomains
-    // (kiki-kiss.marysoll.com). Path-based routing (marysoll.com/kiki-kiss/panel)
-    // doesn't need a rewrite — Next.js file-system routing already handles it.
     const host = hostname.split(":")[0];
     const PLATFORM_SUBDOMAINS = new Set(["admin", "superadmin", "app", "www"]);
     const isTenantSubdomain =
@@ -426,7 +518,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       pathname.startsWith("/api/") &&
       CLIENT_PROTECTED_API_ROUTES.some((r) => pathname.startsWith(r))
     ) {
-      const fail = await guardApi(request);
+      const fail = await guardApi(request, tenantId);
       if (fail) return fail;
     }
     return pass();

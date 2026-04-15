@@ -7,7 +7,6 @@ export async function POST(req: Request) {
   try {
     await connectToDB();
 
-    // Proveri token iz Authorization headera
     const authHeader = req.headers.get("authorization");
     if (authHeader?.startsWith("Bearer ")) {
       const token = authHeader.split(" ")[1];
@@ -26,29 +25,32 @@ export async function POST(req: Request) {
 
     const res = NextResponse.json({ message: "Odjavljen" });
 
-    // Očisti sve cookie varijante (lokalni i shared)
-    const cookieOptions = {
+    // Tenant cookies — scoped to current domain only
+    res.cookies.set("tenant-access-token", "", {
       httpOnly: false,
       secure: isProd,
-      sameSite: "lax" as const,
+      sameSite: "lax",
       maxAge: 0,
       path: "/",
-    };
-
-    res.cookies.set("token", "", cookieOptions);
-    res.cookies.set("auth-token", "", cookieOptions);
-    res.cookies.set("auth-token", "", {
-      ...cookieOptions,
-      domain: isProd ? `.${baseDomain}` : undefined,
     });
-    res.cookies.set("refreshToken", "", {
+    res.cookies.set("tenant-refresh-token", "", {
       httpOnly: true,
       secure: isProd,
       sameSite: "lax",
       maxAge: 0,
       path: "/",
     });
-    res.cookies.set("refreshToken", "", {
+
+    // Platform cookies — scoped to .marysoll.com
+    res.cookies.set("platform-access-token", "", {
+      httpOnly: false,
+      secure: isProd,
+      sameSite: "lax",
+      maxAge: 0,
+      path: "/",
+      domain: isProd ? `.${baseDomain}` : undefined,
+    });
+    res.cookies.set("platform-refresh-token", "", {
       httpOnly: true,
       secure: isProd,
       sameSite: "lax",

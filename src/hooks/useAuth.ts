@@ -5,11 +5,11 @@
  * Jedini auth hook — sva logika za prijavu, registraciju, odjavu.
  * Komponente koriste SAMO ovaj hook, ne pišu fetch/axios direktno.
  *
- * Vraća:
- *   user, token, isAdmin, isSuperAdmin, tenantId
- *   login(email, password)   + isLoggingIn
- *   register(payload)        + isRegistering
- *   logout()                 + isLoggingOut
+ * Auth endpoint routing (URL-context-based, no role inspection):
+ *   - superadmin.marysoll.com              → /api/auth/login (platform)
+ *   - marysoll.com/login (no slug prefix)  → /api/auth/login (platform)
+ *   - marysoll.com/[slug]/login            → /api/tenant-auth/login
+ *   - [slug].marysoll.com / custom domain  → /api/tenant-auth/login
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -67,16 +67,80 @@ function isProductionDomain(): boolean {
   );
 }
 
+/**
+ * Determine the auth endpoint based purely on URL context.
+ *
+ * Rules:
+ *   1. superadmin.{base} → platform auth
+ *   2. {base}/login or www.{base}/login (no slug prefix) → platform auth
+ *   3. {base}/[slug]/login → tenant auth
+ *   4. Any subdomain or custom domain → tenant auth
+ */
+function getLoginEndpoint(): "/api/tenant-auth/login" | "/api/auth/login" {
+  if (typeof window === "undefined") return "/api/tenant-auth/login";
+  const hostname = window.location.hostname;
+  const pathname = window.location.pathname;
+  const base = getBaseDomain();
+
+  // Superadmin domain → platform auth
+  if (hostname === `superadmin.${base}`) return "/api/auth/login";
+
+  // Base domain or www: decide by path prefix
+  if (hostname === base || hostname === `www.${base}`) {
+    const firstSegment = pathname.split("/").filter(Boolean)[0] ?? "";
+    // Non-reserved first segment = tenant slug → tenant auth
+    const PLATFORM_PATHS = new Set([
+      "login", "register", "dashboard", "superadmin",
+      "api", "newsletter", "privacy", "terms", "unauthorized",
+      "forgot-password", "reset-password", "verify-email",
+    ]);
+    if (firstSegment && !PLATFORM_PATHS.has(firstSegment)) {
+      return "/api/tenant-auth/login";
+    }
+    return "/api/auth/login";
+  }
+
+  // Any subdomain or custom domain → tenant auth
+  return "/api/tenant-auth/login";
+}
+
+function getRegisterEndpoint(): "/api/tenant-auth/register" | "/api/auth/register" {
+  if (typeof window === "undefined") return "/api/tenant-auth/register";
+  const hostname = window.location.hostname;
+  const pathname = window.location.pathname;
+  const base = getBaseDomain();
+
+  if (hostname === `superadmin.${base}`) return "/api/auth/register";
+
+  if (hostname === base || hostname === `www.${base}`) {
+    const firstSegment = pathname.split("/").filter(Boolean)[0] ?? "";
+    const PLATFORM_PATHS = new Set([
+      "login", "register", "dashboard", "superadmin",
+      "api", "newsletter", "privacy", "terms", "unauthorized",
+      "forgot-password", "reset-password", "verify-email",
+    ]);
+    if (firstSegment && !PLATFORM_PATHS.has(firstSegment)) {
+      return "/api/tenant-auth/register";
+    }
+    return "/api/auth/register";
+  }
+
+  return "/api/tenant-auth/register";
+}
+
 function clearAllTokens(): void {
   localStorage.removeItem("token");
-  localStorage.removeItem("refreshToken");
+
   if (isProductionDomain()) {
     const domain = `.${getBaseDomain()}`;
-    document.cookie = `auth-token=; max-age=0; path=/; domain=${domain}`;
-    document.cookie = `refreshToken=; max-age=0; path=/; domain=${domain}`;
+    // Platform cookies (domain-scoped)
+    document.cookie = `platform-access-token=; max-age=0; path=/; domain=${domain}`;
+    document.cookie = `platform-refresh-token=; max-age=0; path=/; domain=${domain}`;
   }
-  document.cookie = "auth-token=; max-age=0; path=/";
-  document.cookie = "token=; max-age=0; path=/";
+
+  // Tenant cookies (current domain only)
+  document.cookie = "tenant-access-token=; max-age=0; path=/";
+  document.cookie = "tenant-refresh-token=; max-age=0; path=/";
 }
 
 // ─── fetchUser ────────────────────────────────────────────────────────────────
@@ -169,7 +233,8 @@ export function useAuth() {
   // ── Login ─────────────────────────────────────────────────────────────────
   const loginMutation = useMutation<LoginApiResponse, unknown, LoginPayload>({
     mutationFn: async ({ email, password }) => {
-      const { data } = await publicApi.post<LoginApiResponse>("/auth/login", {
+      const endpoint = getLoginEndpoint();
+      const { data } = await publicApi.post<LoginApiResponse>(endpoint, {
         email,
         password,
       });
@@ -184,22 +249,24 @@ export function useAuth() {
       const base = getBaseDomain();
       const encoded = encodeURIComponent(data.token);
       const prod = isProductionDomain();
+      const host = typeof window !== "undefined" ? window.location.hostname : "";
 
-      if (data.user.isSuperAdmin) {
-        // replace() avoids a back-button history entry that would loop back to login
+      if (host === `superadmin.${base}`) {
+        // Platform login — go directly to superadmin dashboard
         window.location.replace(
           prod
-            ? `https://superadmin.${base}/auth/callback?token=${encoded}&redirect=/superadmin/dashboard`
+            ? `https://superadmin.${base}/superadmin/dashboard`
             : `/superadmin/dashboard`,
         );
       } else if (data.user.isAdmin) {
+        // Admin users on tenant domains → admin panel via callback
         window.location.replace(
           prod
             ? `https://admin.${base}/auth/callback?token=${encoded}&redirect=/dashboard`
             : `/dashboard`,
         );
       }
-      // Klijenti — login page radi window.location.href sama
+      // Clients — login page handles redirect
     },
     onError: (err: unknown) => {
       const apiErr = err as {
@@ -221,7 +288,8 @@ export function useAuth() {
   // ── Register ──────────────────────────────────────────────────────────────
   const registerMutation = useMutation<void, unknown, RegisterPayload>({
     mutationFn: async (payload) => {
-      await publicApi.post("/auth/register", payload);
+      const endpoint = getRegisterEndpoint();
+      await publicApi.post(endpoint, payload);
     },
     onSuccess: () => {
       toast.success("Uspešno! Molimo proverite vaš email da potvrdite nalog.");
@@ -236,12 +304,7 @@ export function useAuth() {
   });
 
   // ── Logout ────────────────────────────────────────────────────────────────
-  // ── Logout ────────────────────────────────────────────────────────────────
 
-  /**
-   * tenantSlug — when provided (client pages), redirects to /{tenantSlug}/login
-   * instead of the global marysoll.com/login (admin login).
-   */
   interface LogoutOptions {
     tenantSlug?: string;
   }
@@ -267,8 +330,6 @@ export function useAuth() {
       const tenantSlug = variables?.tenantSlug;
 
       if (tenantSlug) {
-        // Client logout — if on a custom domain, stay on /login (root-relative).
-        // Otherwise use the marysoll.com/{tenantSlug}/login path.
         const host = window.location.hostname;
         const base = getBaseDomain();
         const onCustomDomain =
@@ -285,7 +346,6 @@ export function useAuth() {
         return;
       }
 
-      // Admin / marketing logout — go to main login
       const base = getBaseDomain();
       window.location.href = isProductionDomain()
         ? `https://${base}/login`

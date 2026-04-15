@@ -1,5 +1,5 @@
 export interface DecodedToken {
-  id: string;           // AuthUser._id
+  id: string;           // AuthUser._id for platform; TenantUser._id for tenant
   email: string;
   name: string;
   isAdmin: boolean;
@@ -8,6 +8,8 @@ export interface DecodedToken {
   tenantId: string | null;
   tenantSlug: string | null;
   globalRole?: string;
+  /** Distinguishes platform tokens (SUPER_ADMIN) from tenant tokens (all tenant roles) */
+  type: "platform" | "tenant";
   exp: number;
   iat: number;
 }

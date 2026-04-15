@@ -12,8 +12,8 @@
 import type { DecodedToken } from "@/types/auth/types";
 
 /**
- * Logs a structured warning when the tenant slug embedded in the JWT
- * does not match the tenant slug resolved from the incoming request header.
+ * Logs a structured warning when the tenantId embedded in the JWT
+ * does not match the tenantId resolved from the incoming request header.
  *
  * A mismatch indicates one of:
  *   - A JWT from Tenant A presented on Tenant B's subdomain
@@ -22,30 +22,27 @@ import type { DecodedToken } from "@/types/auth/types";
  *
  * SUPER_ADMIN tokens are exempt — cross-tenant access is their intended mode.
  * Enforcement (returning 403) is always the caller's responsibility.
+ *
+ * @param requestTenantId — the tenantId resolved by proxy from x-tenant-id header (DB ObjectId)
  */
 export function assertTenantMatch(
   decoded: DecodedToken,
-  requestTenantSlug: string,
+  requestTenantId: string,
   routePath: string,
 ): void {
   // SUPER_ADMIN operates across all tenants by design — not a mismatch.
   if (decoded.isSuperAdmin) return;
 
-  const tokenTenantSlug = decoded.tenantSlug ?? "";
-  const normalizedRequest = requestTenantSlug?.trim().toLowerCase() ?? "";
+  const tokenTenantId = decoded.tenantId ?? "";
 
-  if (
-    normalizedRequest !== "" &&
-    normalizedRequest !== "default" &&
-    tokenTenantSlug !== normalizedRequest
-  ) {
+  if (requestTenantId !== "" && tokenTenantId !== requestTenantId) {
     try {
       console.error(
         JSON.stringify({
-          event: "TENANT_SLUG_MISMATCH",
+          event: "TENANT_ID_MISMATCH",
           severity: "WARN",
-          routeTenantSlug: normalizedRequest,
-          tokenTenantSlug,
+          routeTenantId: requestTenantId,
+          tokenTenantId,
           userId: decoded.id,
           userEmail: decoded.email,
           globalRole: decoded.globalRole ?? "unknown",

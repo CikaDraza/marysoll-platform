@@ -17,33 +17,35 @@ import { DecodedToken } from "@/types/auth/types";
 import { assertTenantMatch } from "@/lib/audit/tenant-guard";
 
 export function generateAccessToken(
-  id: string,           // AuthUser._id
+  id: string,           // AuthUser._id for platform; TenantUser._id for tenant
   email: string,
   isAdmin: boolean,
   name: string,
-  tenantUserId: string | null,  // TenantUser._id — null for superadmin
+  tenantUserId: string | null,  // TenantUser._id — null for platform tokens
   tenantId: string | null = null,
   isSuperAdmin = false,
   globalRole = "USER",
   tenantSlug: string | null = null,
+  type: "platform" | "tenant" = "tenant",
 ): string {
   return jwt.sign(
-    { id, email, isAdmin, name, tenantUserId, tenantId, isSuperAdmin, globalRole, tenantSlug },
+    { id, email, isAdmin, name, tenantUserId, tenantId, isSuperAdmin, globalRole, tenantSlug, type },
     process.env.JWT_SECRET!,
     { expiresIn: "30d" },
   );
 }
 
 export function generateRefreshToken(
-  id: string,           // AuthUser._id
+  id: string,           // AuthUser._id for platform; TenantUser._id for tenant
   email: string,
   isAdmin: boolean,
-  tenantUserId: string | null,  // TenantUser._id
+  tenantUserId: string | null,  // TenantUser._id — null for platform tokens
   tenantId: string | null = null,
   isSuperAdmin = false,
+  type: "platform" | "tenant" = "tenant",
 ): string {
   return jwt.sign(
-    { id, email, isAdmin, tenantUserId, tenantId, isSuperAdmin },
+    { id, email, isAdmin, tenantUserId, tenantId, isSuperAdmin, type },
     process.env.JWT_REFRESH_SECRET!,
     { expiresIn: "30d" },
   );
@@ -72,12 +74,12 @@ export function getTokenFromRequest(
   const authHeader = request.headers.get("authorization");
   if (authHeader?.startsWith("Bearer ")) return authHeader.split(" ")[1];
 
-  // 2. NextRequest cookies API
+  // 2. NextRequest cookies API — scoped cookies only, no legacy fallbacks
   if ("cookies" in request) {
     const req = request as NextRequest;
     const token =
-      req.cookies.get("auth-token")?.value ??
-      req.cookies.get("token")?.value ??
+      req.cookies.get("tenant-access-token")?.value ??
+      req.cookies.get("platform-access-token")?.value ??
       null;
     if (token) return token;
   }
@@ -86,8 +88,8 @@ export function getTokenFromRequest(
   const cookieHeader = request.headers.get("cookie");
   if (cookieHeader) {
     const match =
-      cookieHeader.match(/(?:^|;\s*)auth-token=([^;]+)/) ??
-      cookieHeader.match(/(?:^|;\s*)token=([^;]+)/);
+      cookieHeader.match(/(?:^|;\s*)tenant-access-token=([^;]+)/) ??
+      cookieHeader.match(/(?:^|;\s*)platform-access-token=([^;]+)/);
     if (match?.[1]) return decodeURIComponent(match[1]);
   }
 
@@ -160,20 +162,15 @@ export function requireAdmin(request: Request): AdminAuthResult {
     };
   }
 
-  // Cross-check: token's tenant must match the subdomain this request arrived on.
+  // Cross-check: token's tenantId must match the tenantId resolved by proxy.
   // SUPER_ADMIN is exempt — they operate across all tenants.
   const isSuperAdmin = decoded.isSuperAdmin ?? false;
-  const requestTenantSlug = request.headers.get("x-tenant-slug") ?? "";
-  const tokenTenantSlug = decoded.tenantSlug ?? "";
+  const requestTenantId = request.headers.get("x-tenant-id") ?? "";
+  const tokenTenantId = decoded.tenantId ?? "";
 
-  if (
-    requestTenantSlug !== "" &&
-    requestTenantSlug !== "default" &&
-    !isSuperAdmin &&
-    tokenTenantSlug !== requestTenantSlug
-  ) {
+  if (requestTenantId !== "" && !isSuperAdmin && tokenTenantId !== requestTenantId) {
     // Log the mismatch via the audit utility before rejecting.
-    assertTenantMatch(decoded, requestTenantSlug, request.url);
+    assertTenantMatch(decoded, requestTenantId, request.url);
     return {
       success: false,
       response: NextResponse.json(
@@ -211,7 +208,7 @@ export function requireAuth(
   }
   // Observe-only: log mismatches but never block — requireAuth is used on
   // client routes where tenant context is informational, not a hard gate.
-  assertTenantMatch(decoded, request.headers.get("x-tenant-slug") ?? "", request.url);
+  assertTenantMatch(decoded, request.headers.get("x-tenant-id") ?? "", request.url);
   return { decoded };
 }
 

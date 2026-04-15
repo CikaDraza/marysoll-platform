@@ -43,14 +43,14 @@ export async function GET(req: NextRequest) {
       customDomainVerified: true,
       status: "active",
     })
-      .select("slug")
-      .lean<{ slug: string }>();
+      .select("_id slug")
+      .lean<{ _id: import("mongoose").Types.ObjectId; slug: string }>();
 
     if (!tenant) {
       return NextResponse.json({ slug: null }, { status: 404 });
     }
 
-    return NextResponse.json({ slug: String(tenant.slug) });
+    return NextResponse.json({ slug: String(tenant.slug), id: tenant._id.toString() });
   } catch (err) {
     console.error("GET /api/internal/resolve-domain:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
