@@ -75,14 +75,14 @@ export default function ResendVerificationForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-purple-600 text-white py-2.5 rounded-xl font-semibold hover:bg-purple-700 transition disabled:opacity-50"
+                className="text-black w-full bg-purple-600 text-white py-2.5 rounded-xl font-semibold hover:bg-purple-700 transition disabled:opacity-50"
               >
                 {loading ? "Slanje..." : "Pošalji link →"}
               </button>
             </form>
             <Link
               href="/login"
-              className="text-gray-400 text-xs mt-6 block hover:underline"
+              className="text-gray-500 text-xs mt-6 block hover:underline"
             >
               Nazad na prijavu
             </Link>
