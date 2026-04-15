@@ -4,6 +4,7 @@ import { Tenant } from "@/models/Tenant";
 import { AuthUser } from "@/models/AuthUser";
 import { TenantUser } from "@/models/TenantUser";
 import { SalonProfile } from "@/models/SalonProfile";
+import { Subscription } from "@/models/Subscription";
 import { sendOwnerVerificationEmail, TRIAL_DAYS } from "@/lib/email/onboarding";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
@@ -132,7 +133,25 @@ export async function POST(request: NextRequest) {
     });
     await tenantUser.save();
 
-    // 4. Empty salon profile
+    // 4. Subscription — free plan, trialing
+    const trialDays = parseInt(process.env.DEFAULT_TRIAL_DAYS ?? String(TRIAL_DAYS));
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
+
+    await Subscription.create({
+      tenantId: tenant._id,
+      plan: "free",
+      status: "trialing",
+      currentPeriodStart: new Date(),
+      currentPeriodEnd: trialEndsAt,
+      cancelAtPeriodEnd: false,
+      lsCustomerId: null,
+      lsSubscriptionId: null,
+      lsVariantId: null,
+      lsOrderId: null,
+    });
+
+    // 5. Empty salon profile
     const salonProfile = new SalonProfile({
       tenantId: tenant._id,
       name: salonName.trim(),
@@ -145,7 +164,7 @@ export async function POST(request: NextRequest) {
     tenant.salonProfileId = salonProfile._id as Parameters<typeof tenant.set>[1];
     await tenant.save();
 
-    // 5. Verification email
+    // 6. Verification email
     try {
       await sendOwnerVerificationEmail({
         email: normalizedEmail,

@@ -1,28 +1,36 @@
 /**
  * POST /api/auth/login
  *
- * Platform-only login. Uses AuthUser ONLY.
- * Only SUPER_ADMIN can authenticate here.
- * Tenant users MUST use /api/tenant-auth/login instead.
+ * Unified platform login — for all management roles:
+ *   SUPER_ADMIN  → platform token  → superadmin.marysoll.com/superadmin/dashboard
+ *   OWNER/ADMIN/STAFF → tenant token → admin.marysoll.com/auth/callback?token=...
+ *
+ * CLIENT role is rejected here — clients use /api/tenant-auth/login (salon URL).
  *
  * Issues:
- *   - platform-access-token cookie  (JS-readable,  domain: .marysoll.com)
- *   - platform-refresh-token cookie (HttpOnly,      domain: .marysoll.com)
+ *   SUPER_ADMIN:
+ *     - platform-access-token cookie  (JS-readable,  domain: .marysoll.com)
+ *     - platform-refresh-token cookie (HttpOnly,      domain: .marysoll.com)
+ *   OWNER/ADMIN/STAFF:
+ *     - tenant-access-token cookie  (JS-readable,  domain: undefined)
+ *     - tenant-refresh-token cookie (HttpOnly,      domain: undefined)
  *
- * JWT payload type = "platform"
+ * JWT type = "platform" for SUPER_ADMIN, "tenant" for management roles.
  *
- * NEVER mixes TenantUser here.
+ * NEVER mixes CLIENT login here — clients use /api/tenant-auth/login.
  */
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectToDB } from "@/lib/db/mongodb";
 import { AuthUser } from "@/models/AuthUser";
+import { TenantUser } from "@/models/TenantUser";
+import { Tenant } from "@/models/Tenant";
 import {
   generateAccessToken,
   generateRefreshToken,
 } from "@/lib/auth/auth-server";
 
-const SUPPORT_LINK = "https://marysoll.com/kontakt";
+const MANAGEMENT_ROLES = ["OWNER", "ADMIN", "STAFF"] as const;
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,63 +46,137 @@ export async function POST(request: NextRequest) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Platform login is exclusively for SUPER_ADMIN via AuthUser
+    // ── 1. Try SUPER_ADMIN via AuthUser ────────────────────────────────────────
     const authUser = await AuthUser.findOne({ email: normalizedEmail });
 
-    if (!authUser || authUser.platformRole !== "SUPER_ADMIN") {
+    if (authUser && authUser.platformRole === "SUPER_ADMIN") {
+      const isValid = await bcrypt.compare(password, authUser.passwordHash);
+      if (!isValid) {
+        return NextResponse.json({ error: "Pogrešna lozinka." }, { status: 401 });
+      }
+      if (!authUser.isEmailVerified) {
+        return NextResponse.json(
+          { error: "Email adresa nije verifikovana.", code: "EMAIL_NOT_VERIFIED" },
+          { status: 401 },
+        );
+      }
+
+      const accessToken = generateAccessToken(
+        authUser._id.toString(),
+        authUser.email,
+        true,
+        "Super Admin",
+        null,
+        null,
+        true,
+        "SUPER_ADMIN",
+        null,
+        "platform",
+      );
+      const refreshToken = generateRefreshToken(
+        authUser._id.toString(),
+        authUser.email,
+        true,
+        null,
+        null,
+        true,
+        "platform",
+      );
+
+      return buildPlatformTokenResponse(accessToken, refreshToken, {
+        id: authUser._id.toString(),
+        email: authUser.email,
+        name: "Super Admin",
+        globalRole: "SUPER_ADMIN",
+        isAdmin: true,
+        isSuperAdmin: true,
+      });
+    }
+
+    // ── 2. Try management roles via TenantUser ─────────────────────────────────
+    // Prioritize OWNER, then ADMIN, then STAFF
+    const tenantUser = await TenantUser.findOne({
+      email: normalizedEmail,
+      role: { $in: MANAGEMENT_ROLES },
+    }).sort({ role: 1 }); // ADMIN < OWNER < STAFF — for consistent ordering
+
+    if (!tenantUser) {
+      // Could be a CLIENT trying to use this endpoint, or simply no account
       return NextResponse.json(
-        {
-          error: "Pristup nije dozvoljen. Koristite /api/tenant-auth/login za prijavu na salon.",
-          hint: SUPPORT_LINK,
-        },
+        { error: "Pristup nije dozvoljen." },
         { status: 403 },
       );
     }
 
-    const isValid = await bcrypt.compare(password, authUser.passwordHash);
+    const isValid = await bcrypt.compare(password, tenantUser.password);
     if (!isValid) {
-      return NextResponse.json(
-        { error: "Pogrešna lozinka." },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Pogrešna lozinka." }, { status: 401 });
     }
 
-    if (!authUser.isEmailVerified) {
+    if (!tenantUser.isEmailVerified) {
       return NextResponse.json(
         { error: "Email adresa nije verifikovana.", code: "EMAIL_NOT_VERIFIED" },
         { status: 401 },
       );
     }
 
+    if (tenantUser.status === "suspended") {
+      return NextResponse.json(
+        { error: "Vaš nalog je suspendovan. Kontaktirajte salon." },
+        { status: 403 },
+      );
+    }
+
+    const tenant = await Tenant.findById(tenantUser.tenantId)
+      .select("_id slug")
+      .lean<{ _id: import("mongoose").Types.ObjectId; slug: string }>();
+
+    if (!tenant) {
+      return NextResponse.json(
+        { error: "Salon nije pronađen." },
+        { status: 404 },
+      );
+    }
+
+    // Mark as online
+    await TenantUser.findByIdAndUpdate(tenantUser._id, {
+      isOnline: true,
+      lastActive: new Date(),
+    });
+
+    const displayName = tenantUser.name || normalizedEmail.split("@")[0];
+
     const accessToken = generateAccessToken(
-      authUser._id.toString(),
-      authUser.email,
+      tenantUser._id.toString(),
+      tenantUser.email,
       true,
-      "Super Admin",
-      null,   // no tenantUserId for platform
-      null,   // no tenantId for platform
-      true,
-      "SUPER_ADMIN",
-      null,   // no tenantSlug for platform
-      "platform",
+      displayName,
+      tenantUser._id.toString(),
+      tenant._id.toString(),
+      false,
+      tenantUser.role,
+      tenant.slug,
+      "tenant",
     );
     const refreshToken = generateRefreshToken(
-      authUser._id.toString(),
-      authUser.email,
+      tenantUser._id.toString(),
+      tenantUser.email,
       true,
-      null,   // no tenantUserId
-      null,   // no tenantId
-      true,
-      "platform",
+      tenantUser._id.toString(),
+      tenant._id.toString(),
+      false,
+      "tenant",
     );
 
-    return buildPlatformTokenResponse(accessToken, refreshToken, {
-      id: authUser._id.toString(),
-      email: authUser.email,
-      name: "Super Admin",
-      globalRole: "SUPER_ADMIN",
+    return buildTenantTokenResponse(accessToken, refreshToken, {
+      id: tenantUser._id.toString(),
+      email: tenantUser.email,
+      name: displayName,
+      globalRole: tenantUser.role,
       isAdmin: true,
-      isSuperAdmin: true,
+      isSuperAdmin: false,
+      tenantId: tenant._id.toString(),
+      tenantUserId: tenantUser._id.toString(),
     });
   } catch (error) {
     console.error("❌ Platform login error:", error);
@@ -134,7 +216,6 @@ function buildPlatformTokenResponse(
     },
   });
 
-  // domain: .marysoll.com → accessible from all platform subdomains
   response.cookies.set("platform-refresh-token", refreshToken, {
     httpOnly: true,
     secure: isProd,
@@ -151,6 +232,60 @@ function buildPlatformTokenResponse(
     maxAge: 30 * 24 * 60 * 60,
     path: "/",
     domain: isProd ? `.${baseDomain}` : undefined,
+  });
+
+  return response;
+}
+
+function buildTenantTokenResponse(
+  accessToken: string,
+  refreshToken: string,
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    globalRole: string;
+    isAdmin: boolean;
+    isSuperAdmin: boolean;
+    tenantId: string;
+    tenantUserId: string;
+  },
+) {
+  const isProd = process.env.NODE_ENV === "production";
+
+  const response = NextResponse.json({
+    message: "Prijava uspešna",
+    token: accessToken,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      globalRole: user.globalRole,
+      isAdmin: user.isAdmin,
+      isSuperAdmin: user.isSuperAdmin,
+      tenantId: user.tenantId,
+      tenantUserId: user.tenantUserId,
+      isOnline: true,
+      lastActive: new Date(),
+    },
+  });
+
+  response.cookies.set("tenant-refresh-token", refreshToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: "lax",
+    maxAge: 30 * 24 * 60 * 60,
+    path: "/",
+    domain: undefined,
+  });
+
+  response.cookies.set("tenant-access-token", accessToken, {
+    httpOnly: false,
+    secure: isProd,
+    sameSite: "lax",
+    maxAge: 30 * 24 * 60 * 60,
+    path: "/",
+    domain: undefined,
   });
 
   return response;

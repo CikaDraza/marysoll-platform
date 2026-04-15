@@ -267,18 +267,16 @@ export function useAuth() {
       const base = getBaseDomain();
       const encoded = encodeURIComponent(data.token);
       const prod = isProductionDomain();
-      const host =
-        typeof window !== "undefined" ? window.location.hostname : "";
 
-      if (host === `superadmin.${base}`) {
-        // Platform login — go directly to superadmin dashboard
+      if (data.user.isSuperAdmin) {
+        // SUPER_ADMIN → superadmin dashboard (from any login page)
         window.location.replace(
           prod
             ? `https://superadmin.${base}/superadmin/dashboard`
             : `/superadmin/dashboard`,
         );
       } else if (data.user.isAdmin) {
-        // Admin users on tenant domains → admin panel via callback
+        // OWNER/ADMIN/STAFF → admin panel via callback token handoff
         window.location.replace(
           prod
             ? `https://admin.${base}/auth/callback?token=${encoded}&redirect=/dashboard`

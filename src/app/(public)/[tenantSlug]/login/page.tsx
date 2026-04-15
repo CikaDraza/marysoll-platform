@@ -42,7 +42,7 @@ export default function ClientLoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("/api/tenant-auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, tenantSlug }),
@@ -69,8 +69,6 @@ export default function ClientLoginPage() {
       }
 
       localStorage.setItem("token", data.token);
-      if (data.refreshToken)
-        localStorage.setItem("refreshToken", data.refreshToken);
 
       // Full page navigation — forces useAuth to re-read localStorage on mount.
       // router.push would keep the React tree alive and the login page visible
