@@ -452,19 +452,16 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   }
 
   // Admin
+  // Page-level auth is NOT guarded here — the admin panel is a client-side SPA
+  // that reads tokens from localStorage (set by /auth/callback after login).
+  // Cookies are not domain-scoped to admin.marysoll.com so the proxy cannot
+  // read the tenant token on page requests. API routes ARE still guarded.
   if (domainType === "admin") {
     if (pathname.startsWith("/api/")) {
       if (ADMIN_PROTECTED_API_ROUTES.some((r) => pathname.startsWith(r))) {
         const fail = await guardApi(request, tenantId, true);
         if (fail) return fail;
       }
-    } else if (
-      !pathname.startsWith("/login") &&
-      !pathname.startsWith("/forgot-password") &&
-      !pathname.startsWith("/auth/callback")
-    ) {
-      const fail = await guardPage(request, tenantId, true);
-      if (fail) return fail;
     }
     return pass();
   }
