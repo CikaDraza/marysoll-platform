@@ -16,7 +16,7 @@
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { jwtDecode } from "jwt-decode";
+import { jwtVerify } from "jose";
 
 interface DecodedToken {
   id: string;
@@ -27,6 +27,11 @@ interface DecodedToken {
   /** "platform" = SUPER_ADMIN (AuthUser). "tenant" = any TenantUser role. */
   type?: "platform" | "tenant";
   exp: number;
+}
+
+/** Populated by guards when a token refresh occurs; caller sets the cookie on the response. */
+interface AuthOut {
+  refreshedCookie?: { name: string; value: string };
 }
 
 type DomainType = "marketing" | "admin" | "superadmin" | "client";
@@ -98,6 +103,7 @@ const RESERVED_TOP_SEGMENTS = new Set([
   "terms",
   "unauthorized",
   "logout",
+  "tenant", // internal route prefix — must never be treated as a tenant slug
 ]);
 
 // ─── Custom domain DB lookup ──────────────────────────────────────────────────
@@ -240,7 +246,6 @@ async function detectDomainType(
 /**
  * Reads the access token from the request.
  * Priority: Authorization header → tenant-access-token → platform-access-token.
- * No legacy fallbacks.
  */
 function getToken(request: NextRequest): string | null {
   const auth = request.headers.get("authorization");
@@ -253,10 +258,16 @@ function getToken(request: NextRequest): string | null {
   );
 }
 
-function decodeToken(token: string): DecodedToken | null {
+/**
+ * Verifies a JWT using the server-side secret (jose jwtVerify).
+ * Returns null if the token is invalid, expired, or the signature fails.
+ */
+async function verifyToken(token: string): Promise<DecodedToken | null> {
   try {
-    const d = jwtDecode<DecodedToken>(token);
-    return d.exp * 1000 > Date.now() ? d : null;
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+    const { payload } = await jwtVerify(token, secret);
+    if (!payload.exp || payload.exp * 1000 < Date.now()) return null;
+    return payload as unknown as DecodedToken;
   } catch {
     return null;
   }
@@ -264,7 +275,6 @@ function decodeToken(token: string): DecodedToken | null {
 
 /**
  * Attempts to refresh the access token using the appropriate refresh endpoint.
- * Strict: only scoped cookies, no legacy fallbacks.
  */
 async function tryRefreshToken(request: NextRequest): Promise<string | null> {
   const tenantRefresh = request.cookies.get("tenant-refresh-token")?.value;
@@ -298,22 +308,31 @@ async function attemptRefresh(
   }
 }
 
+/** Applies a refreshed token cookie to a response. */
+function applyRefreshedCookie(response: NextResponse, out: AuthOut): void {
+  if (!out.refreshedCookie) return;
+  response.cookies.set(out.refreshedCookie.name, out.refreshedCookie.value, {
+    httpOnly: false,
+    sameSite: "lax",
+    secure: IS_PROD,
+    path: "/",
+  });
+}
+
 // ─── Auth guards ──────────────────────────────────────────────────────────────
 
 /**
  * Validates the tenant token against the resolved tenantId.
  * Returns 401 if the token is a tenant token but belongs to a different tenant.
  * SUPER_ADMIN and platform tokens are exempt.
- *
- * Security boundary: tenantId (DB ObjectId) — never slug.
  */
 function validateTenantTokenId(
   decoded: DecodedToken,
   resolvedTenantId: string | null,
 ): NextResponse | null {
   if (!resolvedTenantId) return null;
-  if (decoded.isSuperAdmin) return null; // SUPER_ADMIN can access any tenant
-  if (decoded.type === "platform") return null; // platform tokens have no tenant scope
+  if (decoded.isSuperAdmin) return null;
+  if (decoded.type === "platform") return null;
 
   if (!decoded.tenantId || decoded.tenantId !== resolvedTenantId) {
     return NextResponse.json(
@@ -329,14 +348,18 @@ async function guardApi(
   resolvedTenantId: string | null,
   needAdmin = false,
   needSuperAdmin = false,
+  out: AuthOut = {},
 ): Promise<NextResponse | null> {
   let token = getToken(request);
-  let decoded = token ? decodeToken(token) : null;
+  let decoded = token ? await verifyToken(token) : null;
   if (!decoded) {
     token = await tryRefreshToken(request);
-    decoded = token ? decodeToken(token) : null;
+    decoded = token ? await verifyToken(token) : null;
     if (!decoded)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Token was refreshed — store cookie info so caller can set it on the response
+    const cookieName = decoded.type === "tenant" ? "tenant-access-token" : "platform-access-token";
+    out.refreshedCookie = { name: cookieName, value: token! };
   }
 
   const tenantMismatch = validateTenantTokenId(decoded, resolvedTenantId);
@@ -354,17 +377,21 @@ async function guardPage(
   resolvedTenantId: string | null,
   needAdmin = false,
   needSuperAdmin = false,
+  out: AuthOut = {},
 ): Promise<NextResponse | null> {
   const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
   const loginUrl = new URL(`https://${baseDomain}/login`);
   const unauthorizedUrl = new URL("/unauthorized", request.url);
 
   let token = getToken(request);
-  let decoded = token ? decodeToken(token) : null;
+  let decoded = token ? await verifyToken(token) : null;
   if (!decoded) {
     token = await tryRefreshToken(request);
-    decoded = token ? decodeToken(token) : null;
+    decoded = token ? await verifyToken(token) : null;
     if (!decoded) return NextResponse.redirect(loginUrl);
+    // Token was refreshed — store cookie info so caller can set it on the response
+    const cookieName = decoded.type === "tenant" ? "tenant-access-token" : "platform-access-token";
+    out.refreshedCookie = { name: cookieName, value: token! };
   }
 
   const tenantMismatch = validateTenantTokenId(decoded, resolvedTenantId);
@@ -401,10 +428,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   let { type: domainType, tenantSlug, tenantId } = await detectDomainType(request, hostname);
 
-  // Path-based tenant routing (marysoll.com/[slug] or localhost/[slug])
+  // Path-based tenant routing (marysoll.com/[slug] or localhost/[slug] — dev only)
   const isMarketingOrLocalhost =
     domainType === "marketing" ||
-    (!IS_PROD && hostname.startsWith("localhost"));
+    (!IS_PROD && hostname.split(":")[0].startsWith("localhost"));
+
+  // wasPathBasedDev: true when the slug came from the URL path on localhost (not from env/subdomain)
+  let wasPathBasedDev = false;
 
   if (isMarketingOrLocalhost) {
     const segments = pathname.split("/").filter(Boolean);
@@ -416,10 +446,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     ) {
       domainType = "client";
       tenantSlug = firstSegment;
-      // Resolve tenantId for path-based routing if not already resolved
       if (!tenantId) {
         tenantId = await resolveSlugToTenantId(request, firstSegment);
       }
+      wasPathBasedDev = !IS_PROD && hostname.split(":")[0].startsWith("localhost");
     }
   }
 
@@ -427,9 +457,20 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   requestHeaders.set("x-domain-type", domainType);
   requestHeaders.set("x-tenant-slug", tenantSlug ?? "");
   requestHeaders.set("x-tenant-id", tenantId ?? "");
+  // x-tenant-base-path: used by the tenant layout to set the client-side navigation base.
+  // Empty on prod/subdomain (URLs are root-relative); "/{slug}" on localhost path-based dev.
+  requestHeaders.set("x-tenant-base-path", wasPathBasedDev ? `/${tenantSlug}` : "");
 
   const pass = () =>
     NextResponse.next({ request: { headers: requestHeaders } });
+
+  // Block direct browser access to the internal /tenant/* route on non-client domains.
+  if (
+    (pathname === "/tenant" || pathname.startsWith("/tenant/")) &&
+    domainType !== "client"
+  ) {
+    return NextResponse.rewrite(new URL("/not-found", request.url));
+  }
 
   // Public API — always pass
   if (pathname.startsWith("/api/public/")) return pass();
@@ -443,24 +484,28 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     SUPERADMIN_API_ROUTES.some((r) => pathname.startsWith(r))
   ) {
     if (!pathname.startsWith("/auth/callback")) {
+      const authCtx: AuthOut = {};
       const fail = pathname.startsWith("/api/")
-        ? await guardApi(request, null, false, true)
-        : await guardPage(request, null, false, true);
+        ? await guardApi(request, null, false, true, authCtx)
+        : await guardPage(request, null, false, true, authCtx);
       if (fail) return fail;
+      const res = pass();
+      applyRefreshedCookie(res, authCtx);
+      return res;
     }
     return pass();
   }
 
   // Admin
-  // Page-level auth is NOT guarded here — the admin panel is a client-side SPA
-  // that reads tokens from localStorage (set by /auth/callback after login).
-  // Cookies are not domain-scoped to admin.marysoll.com so the proxy cannot
-  // read the tenant token on page requests. API routes ARE still guarded.
   if (domainType === "admin") {
     if (pathname.startsWith("/api/")) {
       if (ADMIN_PROTECTED_API_ROUTES.some((r) => pathname.startsWith(r))) {
-        const fail = await guardApi(request, tenantId, true);
+        const authCtx: AuthOut = {};
+        const fail = await guardApi(request, tenantId, true, false, authCtx);
         if (fail) return fail;
+        const res = pass();
+        applyRefreshedCookie(res, authCtx);
+        return res;
       }
     }
     return pass();
@@ -469,9 +514,22 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // Marketing
   if (domainType === "marketing") return pass();
 
-  // Client
+  // Client — rewrite to /tenant/* (single source of truth for tenant routing)
   if (domainType === "client") {
-    if (!tenantSlug && pathname === "/") {
+    // Block immediately if tenant couldn't be resolved — slug without a valid DB id is a security gap
+    if (tenantId === null) {
+      return NextResponse.rewrite(new URL("/not-found", request.url));
+    }
+
+    const host = hostname.split(":")[0];
+    const PLATFORM_SUBDOMAINS = new Set(["admin", "superadmin", "app", "www"]);
+    const isTenantSubdomain =
+      host.endsWith(`.${BASE_DOMAIN}`) &&
+      !PLATFORM_SUBDOMAINS.has(host.slice(0, -(BASE_DOMAIN.length + 1)));
+    const isHostBased = isCustomDomain(hostname, BASE_DOMAIN) || isTenantSubdomain;
+
+    // In production, path-based tenant routing (marysoll.com/slug/...) is NOT supported.
+    if (IS_PROD && !isHostBased) {
       return NextResponse.rewrite(new URL("/not-found", request.url));
     }
 
@@ -485,40 +543,58 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       "/resend-verification",
       "/cookie-policy",
       "/pravila-privatnosti",
+      "/politika-privatnosti",
       "/pravila-zakazivanja",
       "/newsletter",
     ]);
 
-    const matchesClientPath =
-      CLIENT_TENANT_PATHS.has(pathname) ||
-      [...CLIENT_TENANT_PATHS].some((p) => pathname.startsWith(p + "/"));
+    // PRODUCTION: subdomain or custom domain — rewrite /path → /tenant/path
+    if (tenantSlug && isHostBased) {
+      const matchesClientPath =
+        CLIENT_TENANT_PATHS.has(pathname) ||
+        [...CLIENT_TENANT_PATHS].some((p) => pathname.startsWith(p + "/"));
 
-    const host = hostname.split(":")[0];
-    const PLATFORM_SUBDOMAINS = new Set(["admin", "superadmin", "app", "www"]);
-    const isTenantSubdomain =
-      host.endsWith(`.${BASE_DOMAIN}`) &&
-      !PLATFORM_SUBDOMAINS.has(host.slice(0, -(BASE_DOMAIN.length + 1)));
-    const isHostBased = isCustomDomain(hostname, BASE_DOMAIN) || isTenantSubdomain;
-
-    if (tenantSlug && isHostBased && (matchesClientPath || pathname === "/")) {
-      const rewriteUrl = new URL(
-        `/${tenantSlug}${pathname === "/" ? "" : pathname}`,
-        request.nextUrl.origin,
-      );
-      rewriteUrl.search = request.nextUrl.search;
-      return NextResponse.rewrite(rewriteUrl, {
-        request: { headers: requestHeaders },
-      });
+      if (matchesClientPath || pathname === "/") {
+        const internalPath = pathname === "/" ? "/tenant" : `/tenant${pathname}`;
+        const rewriteUrl = new URL(internalPath, request.nextUrl.origin);
+        rewriteUrl.search = request.nextUrl.search;
+        return NextResponse.rewrite(rewriteUrl, {
+          request: { headers: requestHeaders },
+        });
+      }
     }
 
+    // DEV (localhost path-based): strip slug, rewrite /{slug}/path → /tenant/path
+    if (tenantSlug && wasPathBasedDev) {
+      const segments = pathname.split("/").filter(Boolean);
+      const pathAfterSlug = segments.slice(1).join("/");
+      const restPath = pathAfterSlug ? `/${pathAfterSlug}` : "";
+
+      const matchesAfterSlug =
+        CLIENT_TENANT_PATHS.has(restPath) ||
+        [...CLIENT_TENANT_PATHS].some((p) => restPath.startsWith(p + "/"));
+
+      if (matchesAfterSlug || restPath === "") {
+        const internalPath = restPath ? `/tenant${restPath}` : "/tenant";
+        const rewriteUrl = new URL(internalPath, request.nextUrl.origin);
+        rewriteUrl.search = request.nextUrl.search;
+        return NextResponse.rewrite(rewriteUrl, {
+          request: { headers: requestHeaders },
+        });
+      }
+    }
+
+    const authCtx: AuthOut = {};
     if (
       pathname.startsWith("/api/") &&
       CLIENT_PROTECTED_API_ROUTES.some((r) => pathname.startsWith(r))
     ) {
-      const fail = await guardApi(request, tenantId);
+      const fail = await guardApi(request, tenantId, false, false, authCtx);
       if (fail) return fail;
     }
-    return pass();
+    const res = pass();
+    applyRefreshedCookie(res, authCtx);
+    return res;
   }
 
   return pass();

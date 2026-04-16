@@ -1,36 +1,27 @@
 /**
- * useClientRouting — resolves correct paths and redirect helpers for client
- * pages that can be served in two modes:
+ * useClientRouting — resolves correct paths and redirect helpers for tenant
+ * pages served at /tenant/* internally.
  *
- *   1. Path-based:   marysoll.com/kiki-makeup/login
- *   2. Custom domain: kikikiss.beauty/login  (middleware rewrites → /kiki-makeup/login internally)
+ * Tenant context (slug, id, base) is injected by proxy.ts into x-tenant-*
+ * headers and provided to client components via TenantContext (set in
+ * app/tenant/layout.tsx).
  *
- * On a custom domain the URL the browser shows is root-relative (/login, /panel),
- * but `useParams().tenantSlug` still returns "kiki-makeup" because Next.js file-
- * system routing always serves app/[tenantSlug]/* pages internally.
- *
- * Rule:
- *   - Custom domain  → use "" as base  → links are /login, /panel, /
- *   - Path-based     → use "/kiki-makeup" as base → links are /kiki-makeup/login etc.
+ * `base` rules (set server-side by the proxy, never guessed client-side):
+ *   - ""          on production — subdomain / custom domain — links: /login, /panel
+ *   - "/{slug}"   on localhost path-based dev — links: /kiki-kiss/panel
  */
 "use client";
 
-import { useParams } from "next/navigation";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface ClientRouting {
-  /** The raw tenantSlug from params — always the DB slug e.g. "kiki-makeup". */
   tenantSlug: string;
-  /**
-   * Whether we are on a custom domain (kikikiss.beauty).
-   * Derived client-side from window.location.hostname.
-   */
   isCustomDomain: boolean;
   /**
-   * "" on custom domain, "/kiki-makeup" on path-based.
-   * Use to build all intra-salon links: `${base}/login`, `${base}/panel` etc.
+   * "" on production; "/{slug}" in dev path-based mode.
+   * Use to build all intra-salon links: `${base}/login`, `${base}/panel`.
    */
   base: string;
-  /** Resolve a salon-relative path to the correct href. */
   path: (slug: string) => string;
 }
 
@@ -39,7 +30,6 @@ export function detectCustomDomain(): boolean {
   const host = window.location.hostname;
   const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
 
-  // Fully custom domain (e.g. kikikiss.beauty)
   if (
     host !== "localhost" &&
     !host.startsWith("127.") &&
@@ -50,8 +40,6 @@ export function detectCustomDomain(): boolean {
     return true;
   }
 
-  // Tenant subdomain (e.g. kiki-kiss.marysoll.com) — treated the same as a
-  // custom domain for routing: base="" so links are root-relative (/panel, /login).
   const PLATFORM_SUBDOMAINS = new Set(["admin", "superadmin", "app", "www"]);
   if (host.endsWith(`.${baseDomain}`)) {
     const sub = host.slice(0, -(baseDomain.length + 1));
@@ -62,10 +50,8 @@ export function detectCustomDomain(): boolean {
 }
 
 export function useClientRouting(): ClientRouting {
-  const params = useParams();
-  const tenantSlug = (params?.tenantSlug as string) ?? "";
+  const { tenantSlug, base } = useTenant();
   const isCustomDomain = detectCustomDomain();
-  const base = isCustomDomain ? "" : `/${tenantSlug}`;
 
   return {
     tenantSlug,
