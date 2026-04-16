@@ -104,8 +104,12 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
               {srv.type === "variant" && srv.variants && (
                 <ul className="mt-4 space-y-2 text-sm">
                   {srv.variants.map((v, i) => (
-                    <li key={i} className="flex justify-between">
+                    <li
+                      key={i}
+                      className="flex justify-between items-center gap-x-4"
+                    >
                       <span>{v.name}</span>
+                      <hr className="flex-1 border-dashed border-gray-300" />
                       <span className="font-semibold">
                         {formatPriceToString(v.price)}
                       </span>

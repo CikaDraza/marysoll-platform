@@ -41,7 +41,8 @@ import type {
   DayOfWeek,
   ITimeSlot,
 } from "@/types";
-import { useSalonProfile } from "@/hooks/useSalonProfile";
+import { usePublicSalonProfile } from "@/hooks/useSalonProfile";
+import { useTenant } from "@/contexts/TenantContext";
 import { toFullCalendarBusinessHours } from "@/helpers/parseWorkingHours";
 import { WorkingHoursWidget } from "../widgets/WorkingHoursWidget";
 
@@ -366,6 +367,7 @@ type ViewMode = "day" | "week" | "fullcalendar";
 
 export default function AppointmentCalendar() {
   const { user } = useAuth();
+  const { tenantSlug } = useTenant();
 
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -409,7 +411,7 @@ export default function AppointmentCalendar() {
     isLoading,
     isError,
   } = useAppointments({ page: 1, limit: 100 });
-  const { data: salonProfile } = useSalonProfile();
+  const { data: salonProfile } = usePublicSalonProfile(tenantSlug);
 
   const safeProfile: SalonProfileData = salonProfile ?? {
     _id: "",

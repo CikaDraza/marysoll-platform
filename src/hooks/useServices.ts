@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { publicApi } from "@/lib/api";
 import { IService } from "@/types";
-import { useParams } from "next/navigation";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface UseServicesOptions {
   query?: string;
@@ -9,8 +9,7 @@ interface UseServicesOptions {
 }
 
 export function useServices({ query = "", token }: UseServicesOptions = {}) {
-  const params = useParams();
-  const tenantSlug = params?.tenantSlug as string;
+  const { tenantSlug } = useTenant();
 
   const adminQuery = useQuery<IService[]>({
     queryKey: ["services", "admin", query],

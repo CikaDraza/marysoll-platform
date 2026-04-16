@@ -261,7 +261,10 @@ export function ThemeLayout({
   // ── Theme 2: Dark luxury ──────────────────────────────────────────────────
   if (theme === "theme-2") {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-950" style={brandingVars}>
+      <div
+        className="min-h-screen flex flex-col bg-gray-950"
+        style={brandingVars}
+      >
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="stylesheet" href={googleFontHref} />
         <Theme2Header {...headerProps} />
@@ -283,7 +286,10 @@ export function ThemeLayout({
 
   // ── Theme 3: Soft minimal ─────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF8F5]" style={brandingVars}>
+    <div
+      className="min-h-screen flex flex-col bg-[#FAF8F5]"
+      style={brandingVars}
+    >
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="stylesheet" href={googleFontHref} />
       <Theme3Header {...headerProps} />

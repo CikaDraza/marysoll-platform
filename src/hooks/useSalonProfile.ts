@@ -1,7 +1,7 @@
 // src/hooks/useSalonProfile.ts
 import { useQuery } from "@tanstack/react-query";
 import { SalonProfile } from "@/types";
-import { api } from "@/lib/api";
+import { api, publicApi } from "@/lib/api";
 
 async function fetchProfile(): Promise<SalonProfile | null> {
   try {
@@ -20,6 +20,20 @@ export function useSalonProfile() {
     queryKey: ["salonProfile"],
     queryFn: fetchProfile,
     staleTime: 1000 * 60 * 5,
-    refetchOnWindowFocus: false, // bolje za admin
+    refetchOnWindowFocus: false,
+  });
+}
+
+/** Public variant — no admin token required. Used in client-facing components. */
+export function usePublicSalonProfile(tenantSlug: string) {
+  return useQuery<SalonProfile | null>({
+    queryKey: ["salonProfile", "public", tenantSlug],
+    queryFn: async () => {
+      const { data } = await publicApi.get(`/public/${tenantSlug}/salon-profile`);
+      return (data.data as SalonProfile) ?? null;
+    },
+    enabled: !!tenantSlug,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
   });
 }
