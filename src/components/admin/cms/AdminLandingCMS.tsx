@@ -7,6 +7,7 @@ import type { LandingStructure } from "@/types";
 import { ImageSelect } from "@/components/elements/ImageSelect";
 import toast from "react-hot-toast";
 import LoaderButton from "@/components/elements/LoaderButton";
+import Image from "next/image";
 
 // ─── Style tokens (match dashboard) ──────────────────────────────────────────
 
@@ -182,7 +183,10 @@ function ImageInputField({
   const uploadToCloudinary = async (file: File): Promise<string> => {
     const fd = new FormData();
     fd.append("image", file);
-    const res = await fetch("/api/cloudinary/images", { method: "POST", body: fd });
+    const res = await fetch("/api/cloudinary/images", {
+      method: "POST",
+      body: fd,
+    });
     if (!res.ok) throw new Error("Upload failed");
     const { secure_url } = await res.json();
     return secure_url;
@@ -202,7 +206,10 @@ function ImageInputField({
   };
 
   const handleAiGenerate = async () => {
-    if (!aiPrompt.trim()) { toast.error("Unesite prompt za sliku"); return; }
+    if (!aiPrompt.trim()) {
+      toast.error("Unesite prompt za sliku");
+      return;
+    }
     setGenerating(true);
     try {
       // 1. Generate via AI → base64
@@ -217,7 +224,9 @@ function ImageInputField({
       // 2. Convert base64 to File and upload to Cloudinary
       const base64 = dataUrl.split(",")[1];
       const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-      const file = new File([bytes], `ai-gallery-${Date.now()}.png`, { type: "image/png" });
+      const file = new File([bytes], `ai-gallery-${Date.now()}.png`, {
+        type: "image/png",
+      });
       const url = await uploadToCloudinary(file);
       onChange(url);
       setShowAi(false);
@@ -242,14 +251,20 @@ function ImageInputField({
         />
         <button
           type="button"
-          onClick={() => { setShowPicker((p) => !p); setShowAi(false); }}
+          onClick={() => {
+            setShowPicker((p) => !p);
+            setShowAi(false);
+          }}
           className="cursor-pointer shrink-0 px-3 py-2 text-xs font-semibold rounded-xl border border-violet-300 text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 dark:border-violet-700 dark:text-violet-400 transition"
         >
           Galerija
         </button>
         <button
           type="button"
-          onClick={() => { setShowAi((p) => !p); setShowPicker(false); }}
+          onClick={() => {
+            setShowAi((p) => !p);
+            setShowPicker(false);
+          }}
           className="cursor-pointer shrink-0 px-3 py-2 text-xs font-semibold rounded-xl border border-pink-300 text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-900/20 dark:border-pink-700 dark:text-pink-400 transition"
         >
           AI
@@ -285,8 +300,13 @@ function ImageInputField({
             className="shrink-0 px-3 py-2 text-xs font-semibold rounded-xl bg-pink-600 text-white hover:bg-pink-700 disabled:opacity-50 transition flex items-center gap-1.5"
           >
             {generating ? (
-              <><span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin inline-block" /> Generiše...</>
-            ) : "Generiši"}
+              <>
+                <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin inline-block" />{" "}
+                Generiše...
+              </>
+            ) : (
+              "Generiši"
+            )}
           </button>
         </div>
       )}
@@ -302,7 +322,9 @@ function ImageInputField({
       )}
       {value && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
+          width={100}
+          height={100}
           src={value}
           alt="preview"
           className="mt-2 h-24 w-auto rounded-xl object-cover border border-gray-200 dark:border-gray-700"
@@ -644,10 +666,10 @@ export function AdminLandingCMS({ sp }: Props) {
           {(
             [
               { key: "instagram", placeholder: "https://instagram.com/..." },
-              { key: "facebook",  placeholder: "https://facebook.com/..." },
-              { key: "tiktok",    placeholder: "https://tiktok.com/@..." },
-              { key: "whatsapp",  placeholder: "https://wa.me/381601234567" },
-              { key: "telegram",  placeholder: "https://t.me/username" },
+              { key: "facebook", placeholder: "https://facebook.com/..." },
+              { key: "tiktok", placeholder: "https://tiktok.com/@..." },
+              { key: "whatsapp", placeholder: "https://wa.me/381601234567" },
+              { key: "telegram", placeholder: "https://t.me/username" },
             ] as const
           ).map(({ key, placeholder }) => (
             <div key={key} className="flex items-center gap-3">
@@ -1094,7 +1116,10 @@ export function AdminLandingCMS({ sp }: Props) {
                 onChange={(e) =>
                   updateLandingSection("gallery", {
                     ...gallery,
-                    instagram: { ...gallery.instagram, username: e.target.value },
+                    instagram: {
+                      ...gallery.instagram,
+                      username: e.target.value,
+                    },
                   })
                 }
                 placeholder="@marysoll"
@@ -1122,7 +1147,10 @@ export function AdminLandingCMS({ sp }: Props) {
                 onChange={(e) =>
                   updateLandingSection("gallery", {
                     ...gallery,
-                    instagram: { ...gallery.instagram, ctaText: e.target.value },
+                    instagram: {
+                      ...gallery.instagram,
+                      ctaText: e.target.value,
+                    },
                   })
                 }
                 placeholder="Pogledaj na Instagramu"
@@ -1169,7 +1197,9 @@ export function AdminLandingCMS({ sp }: Props) {
             <p className="text-sm text-gray-400 dark:text-gray-500 italic text-center py-4">
               Nema stavki. Kliknite &quot;+ Dodaj stavku&quot; da dodate prvu.
               <br />
-              <span className="text-xs">Ako nema stavki, prikazuju se podrazumevane slike.</span>
+              <span className="text-xs">
+                Ako nema stavki, prikazuju se podrazumevane slike.
+              </span>
             </p>
           )}
 
@@ -1180,7 +1210,9 @@ export function AdminLandingCMS({ sp }: Props) {
               updateLandingSection("gallery", { ...gallery, treatments: all });
             };
             const removeTreatment = () => {
-              const all = (gallery.treatments ?? []).filter((_, idx) => idx !== ti);
+              const all = (gallery.treatments ?? []).filter(
+                (_, idx) => idx !== ti,
+              );
               updateLandingSection("gallery", { ...gallery, treatments: all });
             };
 
@@ -1210,7 +1242,12 @@ export function AdminLandingCMS({ sp }: Props) {
                     <input
                       className={inp}
                       value={treatment.category ?? ""}
-                      onChange={(e) => updateTreatment({ ...treatment, category: e.target.value })}
+                      onChange={(e) =>
+                        updateTreatment({
+                          ...treatment,
+                          category: e.target.value,
+                        })
+                      }
                       placeholder="npr. Makeup"
                     />
                   </div>
@@ -1219,7 +1256,9 @@ export function AdminLandingCMS({ sp }: Props) {
                     <input
                       className={inp}
                       value={treatment.href ?? ""}
-                      onChange={(e) => updateTreatment({ ...treatment, href: e.target.value })}
+                      onChange={(e) =>
+                        updateTreatment({ ...treatment, href: e.target.value })
+                      }
                       placeholder="/termini"
                     />
                   </div>
@@ -1228,7 +1267,9 @@ export function AdminLandingCMS({ sp }: Props) {
                     <input
                       className={inp}
                       value={treatment.title ?? ""}
-                      onChange={(e) => updateTreatment({ ...treatment, title: e.target.value })}
+                      onChange={(e) =>
+                        updateTreatment({ ...treatment, title: e.target.value })
+                      }
                       placeholder="npr. Dnevna šminka"
                     />
                   </div>
@@ -1238,7 +1279,12 @@ export function AdminLandingCMS({ sp }: Props) {
                       className={inp + " resize-none"}
                       rows={2}
                       value={treatment.description ?? ""}
-                      onChange={(e) => updateTreatment({ ...treatment, description: e.target.value })}
+                      onChange={(e) =>
+                        updateTreatment({
+                          ...treatment,
+                          description: e.target.value,
+                        })
+                      }
                       placeholder="Kratki opis tretmana..."
                     />
                   </div>
@@ -1249,7 +1295,9 @@ export function AdminLandingCMS({ sp }: Props) {
                   <div className="flex items-center justify-between">
                     <label className={lbl + " mb-0"}>
                       Slike
-                      <span className="ml-1.5 font-normal normal-case text-gray-400">· max 2</span>
+                      <span className="ml-1.5 font-normal normal-case text-gray-400">
+                        · max 2
+                      </span>
                     </label>
                     {(treatment.images ?? []).length < 2 && (
                       <button
@@ -1257,7 +1305,10 @@ export function AdminLandingCMS({ sp }: Props) {
                         onClick={() =>
                           updateTreatment({
                             ...treatment,
-                            images: [...(treatment.images ?? []), { src: "", alt: "" }],
+                            images: [
+                              ...(treatment.images ?? []),
+                              { src: "", alt: "" },
+                            ],
                           })
                         }
                         className="text-xs text-violet-600 dark:text-violet-400 hover:underline"
@@ -1268,13 +1319,18 @@ export function AdminLandingCMS({ sp }: Props) {
                   </div>
 
                   {(treatment.images ?? []).map((img, ii) => {
-                    const updateImg = (updated: { src: string; alt: string }) => {
+                    const updateImg = (updated: {
+                      src: string;
+                      alt: string;
+                    }) => {
                       const imgs = [...(treatment.images ?? [])];
                       imgs[ii] = updated;
                       updateTreatment({ ...treatment, images: imgs });
                     };
                     const removeImg = () => {
-                      const imgs = (treatment.images ?? []).filter((_, idx) => idx !== ii);
+                      const imgs = (treatment.images ?? []).filter(
+                        (_, idx) => idx !== ii,
+                      );
                       updateTreatment({ ...treatment, images: imgs });
                     };
 
@@ -1305,7 +1361,9 @@ export function AdminLandingCMS({ sp }: Props) {
                           <input
                             className={inp}
                             value={img.alt ?? ""}
-                            onChange={(e) => updateImg({ ...img, alt: e.target.value })}
+                            onChange={(e) =>
+                              updateImg({ ...img, alt: e.target.value })
+                            }
                             placeholder="Opis slike za pristupačnost..."
                           />
                         </div>
@@ -1329,12 +1387,18 @@ export function AdminLandingCMS({ sp }: Props) {
                       category: "",
                       title: "",
                       description: "",
-                      images: [{ src: "", alt: "" }, { src: "", alt: "" }],
+                      images: [
+                        { src: "", alt: "" },
+                        { src: "", alt: "" },
+                      ],
                       href: "/termini",
                     };
                     const all = [...(gallery.treatments ?? [])];
                     all.splice(ti + 1, 0, newItem);
-                    updateLandingSection("gallery", { ...gallery, treatments: all });
+                    updateLandingSection("gallery", {
+                      ...gallery,
+                      treatments: all,
+                    });
                   }}
                   className="w-full mt-1 py-2 text-xs font-semibold rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-700 text-violet-500 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/10 transition"
                 >
@@ -1354,7 +1418,10 @@ export function AdminLandingCMS({ sp }: Props) {
                   category: "",
                   title: "",
                   description: "",
-                  images: [{ src: "", alt: "" }, { src: "", alt: "" }],
+                  images: [
+                    { src: "", alt: "" },
+                    { src: "", alt: "" },
+                  ],
                   href: "/termini",
                 };
                 updateLandingSection("gallery", {

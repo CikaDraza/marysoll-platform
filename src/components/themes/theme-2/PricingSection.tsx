@@ -60,9 +60,17 @@ export function Theme2PricingSection({ services }: Props) {
                       key={i}
                       className="flex justify-between items-center gap-x-4 text-sm mb-1"
                     >
-                      <span className="text-gray-950">{v.name}</span>
-                      <hr className="flex-1 border-dashed border-gray-300" />
-                      <span className="text-gray-950 font-bold">
+                      <span
+                        className={`${gold ? "text-gray-950" : "text-white"}`}
+                      >
+                        {v.name}
+                      </span>
+                      <hr
+                        className={`flex-1 border-dashed ${gold ? "border-gray-900" : "border-gray-600"}`}
+                      />
+                      <span
+                        className={`${gold ? "text-gray-950" : "text-white"} font-bold`}
+                      >
                         {formatPriceToString(v.price)}
                       </span>
                     </div>

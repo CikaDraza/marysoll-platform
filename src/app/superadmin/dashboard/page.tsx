@@ -511,49 +511,52 @@ function TrialTab({
             Aktiviraj sve Pro ili Enterprise feature-e kao privremeni override
             za trajanje triala.
           </p>
-          <div className="flex gap-3 flex-wrap">
-            <button
-              onClick={async () => {
-                await sa.setFeatureOverride(selectedId, {
-                  overrides: PRO_TRIAL_PRESET,
-                  expiresAt: tenant.trialEndsAt
-                    ? new Date(tenant.trialEndsAt).toISOString()
-                    : new Date(
-                        Date.now() + 30 * 24 * 60 * 60 * 1000,
-                      ).toISOString(),
-                  note: "Pro trial override",
-                });
-              }}
-              disabled={sa.isSettingOverride}
-              className={`px-4 py-2 text-white text-xs font-bold rounded-lg transition disabled:opacity-40 ${
-                activatedPreset === "pro"
-                  ? "bg-violet-500 cursor-default"
-                  : "bg-violet-700 hover:bg-violet-600"
-              }`}
-            >
-              {activatedPreset === "pro" ? "✓ Pro funkcionalnosti aktivirane" : "Aktiviraj Pro funkcionalnosti"}
-            </button>
-            <button
-              onClick={async () => {
-                await sa.setFeatureOverride(selectedId, {
-                  overrides: ENTERPRISE_TRIAL_PRESET,
-                  expiresAt: tenant.trialEndsAt
-                    ? new Date(tenant.trialEndsAt).toISOString()
-                    : new Date(
-                        Date.now() + 30 * 24 * 60 * 60 * 1000,
-                      ).toISOString(),
-                  note: "Enterprise trial override",
-                });
-              }}
-              disabled={sa.isSettingOverride}
-              className={`px-4 py-2 text-white text-xs font-bold rounded-lg transition disabled:opacity-40 ${
-                activatedPreset === "enterprise"
-                  ? "bg-amber-500 cursor-default"
-                  : "bg-amber-700 hover:bg-amber-600"
-              }`}
-            >
-              {activatedPreset === "enterprise" ? "✓ Enterprise funkcionalnosti aktivirane" : "Aktiviraj Enterprise funkcionalnosti"}
-            </button>
+          <div className="flex gap-3 flex-wrap items-center">
+            {activatedPreset ? (
+              <>
+                <span className={`px-4 py-2 text-white text-xs font-bold rounded-lg ${
+                  activatedPreset === "pro" ? "bg-violet-500" : "bg-amber-500"
+                }`}>
+                  ✓ {activatedPreset === "pro" ? "Pro" : "Enterprise"} funkcionalnosti aktivirane
+                </span>
+                <button
+                  onClick={() => sa.removeFeatureOverride(selectedId)}
+                  disabled={sa.isRemovingOverride}
+                  className="px-4 py-2 text-xs font-bold rounded-lg border border-red-500 text-red-400 hover:bg-red-500 hover:text-white transition disabled:opacity-40"
+                >
+                  {sa.isRemovingOverride ? "Deaktiviranje..." : "Deaktiviraj"}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => sa.setFeatureOverride(selectedId, {
+                    overrides: PRO_TRIAL_PRESET,
+                    expiresAt: tenant.trialEndsAt
+                      ? new Date(tenant.trialEndsAt).toISOString()
+                      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                    note: "Pro trial override",
+                  })}
+                  disabled={sa.isSettingOverride}
+                  className="px-4 py-2 bg-violet-700 hover:bg-violet-600 text-white text-xs font-bold rounded-lg transition disabled:opacity-40"
+                >
+                  Aktiviraj Pro funkcionalnosti
+                </button>
+                <button
+                  onClick={() => sa.setFeatureOverride(selectedId, {
+                    overrides: ENTERPRISE_TRIAL_PRESET,
+                    expiresAt: tenant.trialEndsAt
+                      ? new Date(tenant.trialEndsAt).toISOString()
+                      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                    note: "Enterprise trial override",
+                  })}
+                  disabled={sa.isSettingOverride}
+                  className="px-4 py-2 bg-amber-700 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition disabled:opacity-40"
+                >
+                  Aktiviraj Enterprise funkcionalnosti
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

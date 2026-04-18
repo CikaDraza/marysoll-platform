@@ -21,6 +21,12 @@ import { Theme1GallerySection } from "./theme-1/GallerySection";
 import { Theme1PricingSection } from "./theme-1/PricingSection";
 import { Theme1AppointmentSection } from "./theme-1/AppointmentSection";
 import { Theme1TestimonialsSection } from "./theme-1/TestimonialsSection";
+import {
+  Theme1AboutUs,
+  Theme1CTABookingSection,
+  Theme1FAQSection,
+  Theme1SocialProof,
+} from "./theme-1";
 
 // Theme 2
 import { Theme2Header } from "./theme-2/Header";
@@ -33,29 +39,25 @@ import { Theme2TestimonialsSection } from "./theme-2/TestimonialsSection";
 import {
   Theme2AboutSplit,
   Theme2GalleryGrid,
+  Theme2ServicesPreview,
   Theme2Testimonials,
 } from "./theme-2";
 
 // Theme 3
 import { Theme3Header } from "./theme-3/Header";
 import { Theme3Footer } from "./theme-3/Footer";
-import { Theme3Hero } from "./theme-3/Hero";
-import { Theme3HeroSecond } from "./theme-3/HeroSecond";
-import { Theme3WhatOffer } from "./theme-3/WhatOffer";
-import { Theme3WhyChooseUs } from "./theme-3/WhyChooseUs";
-import { Theme3GallerySection } from "./theme-3/GallerySection";
-import { Theme3PricingSection } from "./theme-3/PricingSection";
-import { Theme3ImageGenerationSection } from "./theme-3/ImageGenerationSection";
-import { Theme3AppointmentSection } from "./theme-3/AppointmentSection";
-import { Theme3TestimonialsSection } from "./theme-3/TestimonialsSection";
 import { Theme1ImageGenerationSection } from "./theme-1/ImageGenerationSection";
+import { Theme3HeroSoft } from "./theme-3/Hero";
 import {
-  Theme1AboutUs,
-  Theme1CTABookingSection,
-  Theme1FAQSection,
-  Theme1SocialProof,
-} from "./theme-1";
-import { Theme2PricingMinimal } from "./theme-2/Theme2PricingMinimal";
+  Theme3AboutSoft,
+  Theme3CTA,
+  Theme3FAQSoft,
+  Theme3GalleryMasonry,
+  Theme3GallerySoft,
+  Theme3PricingSoft,
+  Theme3ServicesSoft,
+  Theme3TestimonialsSoft,
+} from "./theme-3";
 
 interface Testimonial {
   _id: string;
@@ -170,7 +172,7 @@ export function ThemeLayout({
       : undefined,
   };
 
-  // ── Theme 1: Light gradient ───────────────────────────────────────────────
+  // ── Theme 1: white luxury ───────────────────────────────────────────────
   if (theme === "theme-1") {
     return (
       <div className="min-h-screen flex flex-col bg-white" style={brandingVars}>
@@ -260,7 +262,7 @@ export function ThemeLayout({
     );
   }
 
-  // ── Theme 2: Dark luxury ──────────────────────────────────────────────────
+  // ── Theme 2: Dark Gold luxury ──────────────────────────────────────────────────
   if (theme === "theme-2") {
     return (
       <div
@@ -288,19 +290,12 @@ export function ThemeLayout({
               "https://res.cloudinary.com/dufo1t5li/image/upload/v1776463003/Gemini_Generated_Image_dvp99xdvp99xdvp9_uaamaf.png"
             }
           />
-          {appointmentEnabled && (
-            <Theme1AppointmentSection
-              tenantSlug={tenantSlug}
-              clientSlug={clientSlug ?? tenantSlug}
-              salon={salon}
-              services={services}
-              headline={ls?.landing?.appointmentSection?.headline}
-              subheadline={ls?.landing?.appointmentSection?.subheadline}
-              instructions={ls?.landing?.appointmentSection?.instructions}
-            />
-          )}
-          <Theme2PricingMinimal services={services} />
-          <Theme2WhyChooseUs />
+          <Theme2ServicesPreview
+            services={services}
+            headline={ls?.landing?.servicesPreview?.headline}
+            subheadline={ls?.landing?.servicesPreview?.subheadline}
+            tenantSlug={tenantSlug}
+          />
           {galleryEnabled && (
             <Theme2GalleryGrid
               instagramUrl={ls?.landing?.gallery?.instagram?.link || instagram}
@@ -317,6 +312,18 @@ export function ThemeLayout({
               }
             />
           )}
+          {appointmentEnabled && (
+            <Theme1AppointmentSection
+              tenantSlug={tenantSlug}
+              clientSlug={clientSlug ?? tenantSlug}
+              salon={salon}
+              services={services}
+              headline={ls?.landing?.appointmentSection?.headline}
+              subheadline={ls?.landing?.appointmentSection?.subheadline}
+              instructions={ls?.landing?.appointmentSection?.instructions}
+            />
+          )}
+          <Theme2WhyChooseUs />
           <Theme2PricingSection services={services} />
           <Theme2Testimonials testimonials={testimonials} headline="" />
           <Theme2CTAAppointmentSection salonName={salon.name} />
@@ -327,30 +334,80 @@ export function ThemeLayout({
     );
   }
 
-  // ── Theme 3: Soft minimal ─────────────────────────────────────────────────
-  return (
-    <div
-      className="min-h-screen flex flex-col bg-[#FAF8F5]"
-      style={brandingVars}
-    >
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="stylesheet" href={googleFontHref} />
-      <Theme3Header {...headerProps} />
-      <main className="flex-1 overflow-x-hidden flex flex-col">
-        <Theme3Hero salon={salon} />
-        <Theme3HeroSecond
-          salonName={salon.name}
-          description={salon.description}
-        />
-        {services.length > 0 && <Theme3WhatOffer services={services} />}
-        <Theme3WhyChooseUs />
-        {galleryEnabled && <Theme3GallerySection instagramUrl={instagram} />}
-        <Theme3PricingSection services={services} />
-        <Theme3ImageGenerationSection />
-        <Theme3AppointmentSection salonName={salon.name} />
-        <Theme3TestimonialsSection testimonials={testimonials} />
-      </main>
-      <Theme3Footer {...footerProps} />
-    </div>
-  );
+  // ── Theme 3: Soft Beauty ─────────────────────────────────────────────
+  if (theme === "theme-3") {
+    return (
+      <div
+        className="min-h-screen flex flex-col bg-[#FAF8F5]"
+        style={brandingVars}
+      >
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="stylesheet" href={googleFontHref} />
+
+        <Theme3Header {...headerProps} />
+
+        <main className="flex-1 flex flex-col overflow-x-hidden">
+          {/* 1. HERO */}
+          {heroEnabled && (
+            <Theme3HeroSoft
+              headline={ls?.landing?.hero?.headline}
+              subheadline={ls?.landing?.hero?.subheadline}
+              cta={resolvedCta}
+            />
+          )}
+
+          {/* 2. MINI GALLERY (4 slike kao na mockupu) */}
+          {galleryEnabled && <Theme3GallerySoft />}
+
+          {/* 3. ABOUT */}
+          {aboutEnabled && <Theme3AboutSoft />}
+
+          {/* 4. SERVICES PREVIEW */}
+          {servicesPreviewEnabled && (
+            <Theme3ServicesSoft
+              services={services}
+              headline={ls?.landing?.servicesPreview?.headline}
+              subheadline={ls?.landing?.servicesPreview?.subheadline}
+              tenantSlug={tenantSlug}
+            />
+          )}
+
+          {/* 5. TESTIMONIALS */}
+          {testimonialsEnabled && <Theme3TestimonialsSoft />}
+
+          {/* 6. FULL GALLERY */}
+          {galleryEnabled && <Theme3GalleryMasonry />}
+
+          {/* 7. PRICING */}
+          <Theme3PricingSoft services={services} headline="Cenovnik" />
+
+          {/* 8. APPOINTMENT */}
+          {appointmentEnabled && (
+            <Theme1AppointmentSection
+              tenantSlug={tenantSlug}
+              clientSlug={clientSlug ?? tenantSlug}
+              salon={salon}
+              services={services}
+              headline={ls?.landing?.appointmentSection?.headline}
+              subheadline={ls?.landing?.appointmentSection?.subheadline}
+              instructions={ls?.landing?.appointmentSection?.instructions}
+            />
+          )}
+
+          {/* 9. FAQ */}
+          {faqEnabled && (
+            <Theme3FAQSoft
+              items={ls?.landing?.faq?.items}
+              headline={ls?.landing?.faq?.headline}
+            />
+          )}
+
+          {/* 10. FINAL CTA */}
+          <Theme3CTA tenantSlug={tenantSlug} />
+        </main>
+
+        <Theme3Footer {...footerProps} />
+      </div>
+    );
+  }
 }

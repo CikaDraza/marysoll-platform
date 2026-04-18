@@ -1,17 +1,29 @@
-import Link from "next/link";
+import Image from "next/image";
 
-interface Props { instagramUrl: string }
+const IMAGES = [
+  "https://res.cloudinary.com/dufo1t5li/image/upload/v1772025932/salon/dd8p6j5stlaynb5p83qc.jpg",
+  "https://res.cloudinary.com/dufo1t5li/image/upload/v1771732589/salon/natipzrwnxngxf54lcxb.jpg",
+  "https://res.cloudinary.com/dufo1t5li/image/upload/v1772025932/salon/dd8p6j5stlaynb5p83qc.jpg",
+  "https://res.cloudinary.com/dufo1t5li/image/upload/v1771732589/salon/natipzrwnxngxf54lcxb.jpg",
+  "https://res.cloudinary.com/dufo1t5li/image/upload/v1772025932/salon/dd8p6j5stlaynb5p83qc.jpg",
+  "https://res.cloudinary.com/dufo1t5li/image/upload/v1771732589/salon/natipzrwnxngxf54lcxb.jpg",
+];
 
-export function Theme3GallerySection({ instagramUrl }: Props) {
+export function Theme3GallerySoft() {
   return (
-    <section className="bg-[#F5EEE8] py-20 lg:py-28 px-6 text-center">
-      <p className="text-[#C9A990] text-xs font-semibold tracking-[0.25em] uppercase mb-3">galerija</p>
-      <h2 className="text-3xl font-light text-[#3D2B1F] mb-4">Naši radovi</h2>
-      <p className="text-[#9E7E6E] text-sm mb-8 max-w-sm mx-auto">Pogledajte kolekciju naših slika i radova na Instagramu</p>
-      <Link href={instagramUrl} target="_blank"
-        className="inline-block px-8 py-3.5 border border-[#C9A990] text-[#C9A990] text-sm font-medium rounded-full hover:bg-[#C9A990] hover:text-white transition">
-        Istraži galeriju →
-      </Link>
+    <section className="bg-[#F3EFEA] py-24">
+      <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-3 gap-4">
+        {IMAGES.map((img, i) => (
+          <Image
+            width={500}
+            height={400}
+            alt={`Gallery image ${i + 1}`}
+            key={i}
+            src={img}
+            className="rounded-2xl object-cover w-full h-56"
+          />
+        ))}
+      </div>
     </section>
   );
 }

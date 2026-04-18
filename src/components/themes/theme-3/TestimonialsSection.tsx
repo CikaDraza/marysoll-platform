@@ -1,34 +1,42 @@
-import { StarIcon, UserIcon } from "@heroicons/react/24/outline";
-interface Testimonial { _id: string; clientName: string; rating: number; comment: string; adminReply?: string }
-interface Props { testimonials: Testimonial[] }
+const TESTIMONIALS = [
+  {
+    comment:
+      "MarySoll mi je pomogao da pronađem savršeni tretman za moju kožu. Rezultati su nevjerojatni!",
+    clientName: "Ana K.",
+  },
+  {
+    comment:
+      "Nakon što sam koristila preporuke s MarySolla, moja koža nikada nije izgledala bolje. Toplo preporučujem!",
+    clientName: "Marko P.",
+  },
+  {
+    comment:
+      "Volim kako MarySoll personalizira savjete prema mojim potrebama. Osjećam se kao da imam vlastitog stručnjaka za njegu kože!",
+    clientName: "Ivana S.",
+  },
+  {
+    comment:
+      "MarySoll mi je uštedio puno vremena i novca. Više ne moram eksperimentirati s proizvodima koji mi ne odgovaraju.",
+    clientName: "Luka M.",
+  },
+];
 
-export function Theme3TestimonialsSection({ testimonials }: Props) {
-  if (!testimonials.length) return null;
+export function Theme3TestimonialsSoft() {
   return (
-    <section className="bg-white py-20 lg:py-28 px-6">
-      <div className="max-w-5xl mx-auto">
-        <p className="text-[#C9A990] text-xs font-semibold tracking-[0.25em] uppercase text-center mb-3">utisci</p>
-        <h2 className="text-3xl font-light text-[#3D2B1F] text-center mb-14">Klijenti o nama</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonials.slice(0, 3).map(t => (
-            <div key={t._id} className="bg-[#FAF8F5] rounded-3xl p-6 border border-[#EDE5DC] hover:border-[#C9A990] transition">
-              <div className="flex gap-1 mb-4">
-                {Array.from({length: 5}).map((_, i) => (
-                  <StarIcon key={i} className={`w-4 h-4 ${i < t.rating ? "text-[#C9A990] fill-[#C9A990]" : "text-[#E0D5CC]"}`} />
-                ))}
-              </div>
-              <p className="text-[#7C6A5E] text-sm italic leading-relaxed">&ldquo;{t.comment}&rdquo;</p>
-              {t.adminReply && (
-                <div className="mt-4 p-3 bg-[#F5EEE8] rounded-xl border-l-2 border-[#C9A990]">
-                  <p className="text-xs text-[#9E7E6E]"><span className="font-medium">Salon: </span>{t.adminReply}</p>
-                </div>
-              )}
-              <div className="flex items-center gap-3 mt-5 pt-4 border-t border-[#EDE5DC]">
-                <div className="w-8 h-8 rounded-full bg-[#EDE5DC] flex items-center justify-center">
-                  <UserIcon className="w-4 h-4 text-[#C9A990]" />
-                </div>
-                <span className="text-[#5C4033] text-sm font-medium">{t.clientName}</span>
-              </div>
+    <section className="bg-[#FAF8F5] py-24">
+      <div className="max-w-5xl mx-auto px-6 text-center">
+        <h2 className="text-4xl font-serif mb-12 text-[#2B2B2B]">
+          Iskustva klijenata
+        </h2>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          {TESTIMONIALS.map((t, i) => (
+            <div
+              key={i}
+              className="bg-white p-6 rounded-2xl border border-[#E5E0DA]"
+            >
+              <p className="text-[#6B6B6B] mb-4">&quot;{t.comment}&quot;</p>
+              <p className="font-semibold text-[#2B2B2B]">{t.clientName}</p>
             </div>
           ))}
         </div>

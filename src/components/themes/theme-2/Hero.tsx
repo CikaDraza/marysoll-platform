@@ -70,7 +70,7 @@ export function Theme2Hero({
 
           {/* CTA */}
           <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap gap-4 justify-center">
+            <div className="flex flex-wrap gap-4 justify-start">
               <Link
                 href={cta?.primary?.href || "/termini"}
                 className="px-10 py-4 bg-yellow-500 text-gray-950 font-black text-sm tracking-wider rounded hover:bg-yellow-400 transition shadow-2xl shadow-yellow-500/20"
@@ -85,7 +85,7 @@ export function Theme2Hero({
               </Link>
             </div>
             {(salonPhone || salonCity) && (
-              <div className="mt-16 flex flex-wrap items-center justify-center gap-8 text-gray-600 text-sm border-t border-gray-800 pt-8">
+              <div className="mt-16 flex flex-wrap items-center justify-start gap-8 text-gray-600 text-sm border-t border-gray-800 pt-8">
                 {salonPhone && (
                   <Link
                     href={`tel:${salonPhone}`}
