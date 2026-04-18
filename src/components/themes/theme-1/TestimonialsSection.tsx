@@ -14,7 +14,10 @@ interface Props {
   headline?: string;
 }
 
-export function Theme1TestimonialsSection({ testimonials = [], headline }: Props) {
+export function Theme1TestimonialsSection({
+  testimonials = [],
+  headline,
+}: Props) {
   if (testimonials.length === 0) return null;
   return (
     <section className="py-16 lg:py-24 bg-white">

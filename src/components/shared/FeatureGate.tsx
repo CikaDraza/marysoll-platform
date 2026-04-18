@@ -53,6 +53,7 @@ const FEATURE_LABELS: Partial<Record<keyof PlanFeatures, string>> = {
   googleBusinessOptimization: "Google Business optimizacija",
   videoCreation: "Kreiranje videa",
   aeoGeoOptimization: "AEO/GEO optimizacija",
+  emailCampaignAi: "Email Campaign AI",
 };
 
 const FEATURE_TO_MIN_PLAN: Partial<Record<keyof PlanFeatures, PlanName>> = {
@@ -70,6 +71,7 @@ const FEATURE_TO_MIN_PLAN: Partial<Record<keyof PlanFeatures, PlanName>> = {
   paymentIntegration: "pro",
   loyaltySystem: "pro",
   clientSubscriptions: "pro",
+  emailCampaignAi: "enterprise",
   socialMediaAds: "enterprise",
   googleBusinessOptimization: "enterprise",
   videoCreation: "enterprise",

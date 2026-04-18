@@ -26,14 +26,15 @@ import { Theme1TestimonialsSection } from "./theme-1/TestimonialsSection";
 import { Theme2Header } from "./theme-2/Header";
 import { Theme2Footer } from "./theme-2/Footer";
 import { Theme2Hero } from "./theme-2/Hero";
-import { Theme2HeroSecond } from "./theme-2/HeroSecond";
-import { Theme2WhatOffer } from "./theme-2/WhatOffer";
 import { Theme2WhyChooseUs } from "./theme-2/WhyChooseUs";
-import { Theme2GallerySection } from "./theme-2/GallerySection";
 import { Theme2PricingSection } from "./theme-2/PricingSection";
-import { Theme2ImageGenerationSection } from "./theme-2/ImageGenerationSection";
-import { Theme2AppointmentSection } from "./theme-2/AppointmentSection";
+import { Theme2CTAAppointmentSection } from "./theme-2/CTAAppointmentSection";
 import { Theme2TestimonialsSection } from "./theme-2/TestimonialsSection";
+import {
+  Theme2AboutSplit,
+  Theme2GalleryGrid,
+  Theme2Testimonials,
+} from "./theme-2";
 
 // Theme 3
 import { Theme3Header } from "./theme-3/Header";
@@ -54,6 +55,7 @@ import {
   Theme1FAQSection,
   Theme1SocialProof,
 } from "./theme-1";
+import { Theme2PricingMinimal } from "./theme-2/Theme2PricingMinimal";
 
 interface Testimonial {
   _id: string;
@@ -269,14 +271,55 @@ export function ThemeLayout({
         <link rel="stylesheet" href={googleFontHref} />
         <Theme2Header {...headerProps} />
         <main className="flex-1 overflow-x-hidden flex flex-col">
-          <Theme2Hero salon={salon} />
-          <Theme2HeroSecond salonName={salon.name} />
-          {services.length > 0 && <Theme2WhatOffer services={services} />}
+          <Theme2Hero
+            salonName={salon.name}
+            salonDescription={salon.description}
+            salonPhone={salon.phone}
+            salonCity={salon.city}
+            salonStreet={salon.street}
+            headline={ls?.landing?.hero?.headline}
+            subheadline={ls?.landing?.hero?.subheadline}
+            cta={resolvedCta}
+          />
+          <Theme2AboutSplit
+            title={ls?.landing?.about?.headline || "O nama"}
+            text={ls?.landing?.about?.paragraphs || "Saznajte više o nama"}
+            imageUrl={
+              "https://res.cloudinary.com/dufo1t5li/image/upload/v1776463003/Gemini_Generated_Image_dvp99xdvp99xdvp9_uaamaf.png"
+            }
+          />
+          {appointmentEnabled && (
+            <Theme1AppointmentSection
+              tenantSlug={tenantSlug}
+              clientSlug={clientSlug ?? tenantSlug}
+              salon={salon}
+              services={services}
+              headline={ls?.landing?.appointmentSection?.headline}
+              subheadline={ls?.landing?.appointmentSection?.subheadline}
+              instructions={ls?.landing?.appointmentSection?.instructions}
+            />
+          )}
+          <Theme2PricingMinimal services={services} />
           <Theme2WhyChooseUs />
-          {galleryEnabled && <Theme2GallerySection instagramUrl={instagram} />}
+          {galleryEnabled && (
+            <Theme2GalleryGrid
+              instagramUrl={ls?.landing?.gallery?.instagram?.link || instagram}
+              instagramTag={
+                ls?.landing?.gallery?.instagram?.username || instagram
+              }
+              headline={ls?.landing?.gallery?.headline}
+              subheadline={ls?.landing?.gallery?.subheadline}
+              treatments={
+                ls?.landing?.gallery?.treatments &&
+                ls.landing.gallery.treatments.length > 0
+                  ? ls.landing.gallery.treatments
+                  : undefined
+              }
+            />
+          )}
           <Theme2PricingSection services={services} />
-          <Theme2ImageGenerationSection />
-          <Theme2AppointmentSection salonName={salon.name} />
+          <Theme2Testimonials testimonials={testimonials} headline="" />
+          <Theme2CTAAppointmentSection salonName={salon.name} />
           <Theme2TestimonialsSection testimonials={testimonials} />
         </main>
         <Theme2Footer {...footerProps} />

@@ -1,11 +1,16 @@
 export { Theme2Header } from "./Header";
 export { Theme2Footer } from "./Footer";
 export { Theme2Hero } from "./Hero";
-export { Theme2HeroSecond } from "./HeroSecond";
+export { Theme2HeroSplit } from "./HeroSplit";
 export { Theme2WhatOffer } from "./WhatOffer";
 export { Theme2WhyChooseUs } from "./WhyChooseUs";
 export { Theme2GallerySection } from "./GallerySection";
 export { Theme2PricingSection } from "./PricingSection";
 export { Theme2ImageGenerationSection } from "./ImageGenerationSection";
+export { Theme2CTAAppointmentSection } from "./CTAAppointmentSection";
 export { Theme2AppointmentSection } from "./AppointmentSection";
 export { Theme2TestimonialsSection } from "./TestimonialsSection";
+export { Theme2ServicesPreview } from "./Theme2ServicesPreview";
+export { Theme2GalleryGrid } from "./Theme2GalleryGrid";
+export { Theme2AboutSplit } from "./Theme2AboutSplit";
+export { Theme2Testimonials } from "./Theme2Testimonials";

@@ -75,6 +75,8 @@ export interface PlanFeatures {
 
   // ── Enterprise ────────────────────────────────────────────────────────────
   /** Viral social media ads */
+  /** AI-powered email campaign creation and management */
+  emailCampaignAi: boolean;
   socialMediaAds: boolean;
   /** Google Business Profile optimizacija */
   googleBusinessOptimization: boolean;
@@ -139,6 +141,7 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     clientSubscriptions: false,
 
     // Enterprise
+    emailCampaignAi: false,
     socialMediaAds: false,
     googleBusinessOptimization: false,
     videoCreation: false,
@@ -184,6 +187,7 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     loyaltySystem: false,
     clientSubscriptions: false,
 
+    emailCampaignAi: false,
     socialMediaAds: false,
     googleBusinessOptimization: false,
     videoCreation: false,
@@ -229,6 +233,7 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     loyaltySystem: true,
     clientSubscriptions: true,
 
+    emailCampaignAi: false,
     socialMediaAds: false,
     googleBusinessOptimization: false,
     videoCreation: false,
@@ -274,6 +279,7 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     loyaltySystem: true,
     clientSubscriptions: true,
 
+    emailCampaignAi: true,
     socialMediaAds: true,
     googleBusinessOptimization: true,
     videoCreation: true,

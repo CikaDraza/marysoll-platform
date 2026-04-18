@@ -104,6 +104,7 @@ const RESERVED_TOP_SEGMENTS = new Set([
   "unauthorized",
   "logout",
   "tenant", // internal route prefix — must never be treated as a tenant slug
+  "marketing",
 ]);
 
 // ─── Custom domain DB lookup ──────────────────────────────────────────────────

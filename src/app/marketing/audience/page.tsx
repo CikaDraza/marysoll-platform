@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { FeatureGate } from "@/components/shared/FeatureGate";
 import {
   useAudienceSegments,
   useCreateAudienceSegment,
@@ -201,6 +202,7 @@ export default function AudiencePage() {
   };
 
   return (
+    <FeatureGate feature="emailCampaignAi">
     <div>
       <div className="mb-6">
         <Link
@@ -345,5 +347,6 @@ export default function AudiencePage() {
         </div>
       )}
     </div>
+    </FeatureGate>
   );
 }

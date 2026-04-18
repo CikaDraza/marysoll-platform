@@ -42,7 +42,7 @@ export function Theme2Header({
   if (isLoading) return null;
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 bg-gray-950/95 backdrop-blur border-b border-yellow-900/30">
+    <header className="fixed inset-x-0 top-0 z-50 bg-gray-950/80 backdrop-blur">
       <nav className="flex items-center justify-between max-w-7xl mx-auto px-6 py-4">
         <Link href={`${base}/`} className="flex items-center gap-3">
           {salonLogo ? (

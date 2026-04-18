@@ -688,6 +688,7 @@ export interface SalonProfile {
   social: SocialLinks;
   newsletterEmail: string;
   contactEmail?: string;
+  marketingPhone?: string;
   createdAt?: string;
   updatedAt?: string;
   workingHours?: WorkingHoursMap | Record<string, unknown>;
@@ -708,6 +709,7 @@ export interface ISalonProfileForm {
   city: string;
   newsletterEmail: string;
   contactEmail: string;
+  marketingPhone: string;
   logo: string | null;
   social: SocialLinks;
   workingHours: WorkingHoursMap;

@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { PLAN_FEATURES } from "@/lib/plans/planFeatures";
 import { AuthStatusButton } from "@/components/auth/AuthStatusButton";
 import {
   UsersIcon,
@@ -332,6 +333,18 @@ function SaloniTab({
 }
 
 // ─── Tab: Trial ───────────────────────────────────────────────────────────────
+const PRO_TRIAL_PRESET = Object.fromEntries(
+  (Object.entries(PLAN_FEATURES.pro) as [string, unknown][]).filter(
+    ([, v]) => typeof v === "boolean" && v === true,
+  ),
+) as Record<string, boolean>;
+
+const ENTERPRISE_TRIAL_PRESET = Object.fromEntries(
+  (Object.entries(PLAN_FEATURES.enterprise) as [string, unknown][]).filter(
+    ([, v]) => typeof v === "boolean" && v === true,
+  ),
+) as Record<string, boolean>;
+
 function TrialTab({
   sa,
   tenants,
@@ -344,6 +357,12 @@ function TrialTab({
   // const [customTrialDays, setCustomTrialDays] = useState("");
 
   const tenant = tenants.find((t) => t._id === selectedId);
+  const activatedPreset: "pro" | "enterprise" | null =
+    tenant?.overrideNote === "Pro trial override"
+      ? "pro"
+      : tenant?.overrideNote === "Enterprise trial override"
+      ? "enterprise"
+      : null;
   const trialTenants = tenants.filter((t) => t.isTrialActive);
   const expiredTrials = tenants.filter(
     (t) =>
@@ -437,11 +456,11 @@ function TrialTab({
           )}
 
           <div className="grid grid-cols-2 gap-3">
-            <div>
+            <div className="w-auto">
               <label className={lbl}>Broj dana</label>
               <input
                 type="number"
-                className={inp}
+                className={`${inp} w-auto!`}
                 value={days}
                 onChange={(e) => setDays(e.target.value)}
                 min={1}
@@ -481,6 +500,63 @@ function TrialTab({
           </div>
         </div>
       </div>
+
+      {/* Trial plan presets */}
+      {tenant && (
+        <div className={card}>
+          <h3 className="font-semibold text-sm mb-2 text-white">
+            Funkcionalnosti tokom triala
+          </h3>
+          <p className="text-xs text-slate-400 mb-4">
+            Aktiviraj sve Pro ili Enterprise feature-e kao privremeni override
+            za trajanje triala.
+          </p>
+          <div className="flex gap-3 flex-wrap">
+            <button
+              onClick={async () => {
+                await sa.setFeatureOverride(selectedId, {
+                  overrides: PRO_TRIAL_PRESET,
+                  expiresAt: tenant.trialEndsAt
+                    ? new Date(tenant.trialEndsAt).toISOString()
+                    : new Date(
+                        Date.now() + 30 * 24 * 60 * 60 * 1000,
+                      ).toISOString(),
+                  note: "Pro trial override",
+                });
+              }}
+              disabled={sa.isSettingOverride}
+              className={`px-4 py-2 text-white text-xs font-bold rounded-lg transition disabled:opacity-40 ${
+                activatedPreset === "pro"
+                  ? "bg-violet-500 cursor-default"
+                  : "bg-violet-700 hover:bg-violet-600"
+              }`}
+            >
+              {activatedPreset === "pro" ? "✓ Pro funkcionalnosti aktivirane" : "Aktiviraj Pro funkcionalnosti"}
+            </button>
+            <button
+              onClick={async () => {
+                await sa.setFeatureOverride(selectedId, {
+                  overrides: ENTERPRISE_TRIAL_PRESET,
+                  expiresAt: tenant.trialEndsAt
+                    ? new Date(tenant.trialEndsAt).toISOString()
+                    : new Date(
+                        Date.now() + 30 * 24 * 60 * 60 * 1000,
+                      ).toISOString(),
+                  note: "Enterprise trial override",
+                });
+              }}
+              disabled={sa.isSettingOverride}
+              className={`px-4 py-2 text-white text-xs font-bold rounded-lg transition disabled:opacity-40 ${
+                activatedPreset === "enterprise"
+                  ? "bg-amber-500 cursor-default"
+                  : "bg-amber-700 hover:bg-amber-600"
+              }`}
+            >
+              {activatedPreset === "enterprise" ? "✓ Enterprise funkcionalnosti aktivirane" : "Aktiviraj Enterprise funkcionalnosti"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Trial overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -582,6 +658,7 @@ const FEATURE_GROUPS: {
   {
     label: "Enterprise",
     keys: [
+      "emailCampaignAi",
       "socialMediaAds",
       "googleBusinessOptimization",
       "videoCreation",
@@ -611,6 +688,7 @@ const FEATURE_LABELS: Record<string, string> = {
   paymentIntegration: "Integracija plaćanja",
   loyaltySystem: "Loyalty bodovi",
   clientSubscriptions: "Mesečna pretplata klijenata",
+  emailCampaignAi: "Email Campaign AI",
   socialMediaAds: "Social media ads",
   googleBusinessOptimization: "Google Business",
   videoCreation: "Kreiranje videa",

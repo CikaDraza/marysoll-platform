@@ -144,6 +144,7 @@ const SalonProfileSchema = new mongoose.Schema(
     },
     newsletterEmail: { type: String, required: false, default: "" },
     contactEmail: { type: String, required: false, default: "" },
+    marketingPhone: { type: String, required: false, default: "" },
     workingHours: { type: Object, default: {} },
 
     seo: {
@@ -169,6 +170,10 @@ const SalonProfileSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+if (process.env.NODE_ENV !== "production" && models.SalonProfile) {
+  delete models.SalonProfile;
+}
 
 export const SalonProfile =
   models.SalonProfile || model("SalonProfile", SalonProfileSchema);

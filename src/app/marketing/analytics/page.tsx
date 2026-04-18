@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { FeatureGate } from "@/components/shared/FeatureGate";
 import { motion } from "framer-motion";
 import {
   BarChart,
@@ -34,6 +35,7 @@ export default function CampaignAnalyticsOverviewPage() {
   const { data, isLoading } = useAggregatedAnalytics();
 
   return (
+    <FeatureGate feature="emailCampaignAi">
     <div>
       <div className="mb-6">
         <Link
@@ -290,5 +292,6 @@ export default function CampaignAnalyticsOverviewPage() {
         </div>
       )}
     </div>
+    </FeatureGate>
   );
 }

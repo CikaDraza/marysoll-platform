@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { FeatureGate } from "@/components/shared/FeatureGate";
 import { motion } from "framer-motion";
 import {
   BarChart,
@@ -33,6 +34,7 @@ export default function AbTestPage() {
   const abCampaigns = data?.campaigns.filter((c) => c.hasAbTest) ?? [];
 
   return (
+    <FeatureGate feature="emailCampaignAi">
     <div>
       <div className="mb-6">
         <Link
@@ -159,5 +161,6 @@ export default function AbTestPage() {
         </div>
       )}
     </div>
+    </FeatureGate>
   );
 }

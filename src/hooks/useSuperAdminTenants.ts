@@ -27,6 +27,7 @@ export interface TenantRow {
   createdAt: string;
   lemonsqueezyCustomerId: string | null;
   lemonsqueezySubscriptionId: string | null;
+  overrideNote: string | null;
   owner: {
     _id: string;
     name: string;

@@ -17,10 +17,10 @@ export function Theme2PricingSection({ services }: Props) {
   if (!featured.length) return null;
 
   return (
-    <section className="bg-gray-900 py-24 px-6">
-      <div className="max-w-5xl mx-auto">
+    <section className="bg-white py-24 px-6">
+      <div className="max-w-7xl mx-auto">
         <div className="w-12 h-0.5 bg-yellow-500 mx-auto mb-4" />
-        <h2 className="text-3xl font-black text-white text-center mb-4">
+        <h2 className="text-3xl font-black text-black text-center mb-4">
           Cenovnik
         </h2>
         <p className="text-gray-600 text-center text-sm mb-16">
@@ -32,18 +32,22 @@ export function Theme2PricingSection({ services }: Props) {
             return (
               <div
                 key={srv._id}
-                className={`rounded-2xl p-7 border ${gold ? "bg-yellow-500/10 border-yellow-500/40" : "bg-gray-800 border-gray-700 hover:border-yellow-500/20 transition"}`}
+                className={`rounded-2xl p-7 border ${gold ? "bg-yellow-500" : "bg-gray-950 border-gray-950 hover:border-yellow-500/20 transition"}`}
               >
                 <h3
-                  className={`font-bold text-base mb-1 ${gold ? "text-yellow-400" : "text-white"}`}
+                  className={`font-bold text-base mb-1 ${gold ? "text-gray-950" : "text-white"}`}
                 >
                   {srv.name}
                 </h3>
-                <p className="text-gray-600 text-xs mb-5">{srv.category}</p>
+                <p
+                  className={`${gold ? "text-gray-950" : "text-white"} text-xs mb-5`}
+                >
+                  {srv.category}
+                </p>
                 {srv.type !== "variant" && (
                   <p className="mb-4">
                     <span
-                      className={`text-4xl font-black ${gold ? "text-yellow-400" : "text-white"}`}
+                      className={`text-4xl font-black ${gold ? "text-gray-950" : "text-white"}`}
                     >
                       {formatPriceToString(srv.basePrice)}
                     </span>
@@ -56,21 +60,21 @@ export function Theme2PricingSection({ services }: Props) {
                       key={i}
                       className="flex justify-between items-center gap-x-4 text-sm mb-1"
                     >
-                      <span className="text-gray-400">{v.name}</span>
+                      <span className="text-gray-950">{v.name}</span>
                       <hr className="flex-1 border-dashed border-gray-300" />
-                      <span className="text-yellow-400 font-bold">
+                      <span className="text-gray-950 font-bold">
                         {formatPriceToString(v.price)}
                       </span>
                     </div>
                   ))}
                 {srv.description && (
-                  <p className="text-gray-600 text-xs mt-3 leading-relaxed">
+                  <p className="text-gray-800 text-xs mt-3 leading-relaxed">
                     {srv.description}
                   </p>
                 )}
                 <Link
                   href="/termini"
-                  className={`mt-6 block text-center py-2.5 rounded-lg text-sm font-bold transition ${gold ? "bg-yellow-500 text-gray-950 hover:bg-yellow-400" : "border border-yellow-500/30 text-yellow-400 hover:border-yellow-500"}`}
+                  className={`mt-6 block text-center py-2.5 rounded-lg text-sm font-bold transition border border-black ${gold ? "bg-transparent text-gray-950 hover:bg-black hover:text-white" : "border border-yellow-500/30 text-yellow-400 hover:border-yellow-500"}`}
                 >
                   Zakaži
                 </Link>

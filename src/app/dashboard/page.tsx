@@ -139,13 +139,6 @@ function AdminDashboard() {
   // All hooks before early return
   const { user, isLoading: authLoading } = useAuth();
 
-  // Account fields stored on User document (not SalonProfile)
-  const [accountFields, setAccountFields] = useState({
-    contactEmail: "",
-    marketingPhone: "",
-  });
-  const [accountSaving, setAccountSaving] = useState(false);
-
   // Change password state
   const [pwForm, setPwForm] = useState({
     currentPassword: "",
@@ -155,34 +148,8 @@ function AdminDashboard() {
   const [pwLoading, setPwLoading] = useState(false);
   const [pwError, setPwError] = useState("");
 
-  useEffect(() => {
-    api
-      .get<{ user: { contactEmail?: string; marketingPhone?: string } }>(
-        "/auth/me",
-      )
-      .then((res) => {
-        const u = res.data.user;
-        setAccountFields({
-          contactEmail: u.contactEmail ?? "",
-          marketingPhone: u.marketingPhone ?? "",
-        });
-      })
-      .catch(console.error);
-  }, []);
-
-  async function handleSaveWithAccount() {
-    setAccountSaving(true);
-    try {
-      await Promise.all([
-        sp.save(),
-        api.patch("/auth/update-profile", {
-          contactEmail: accountFields.contactEmail,
-          marketingPhone: accountFields.marketingPhone,
-        }),
-      ]);
-    } finally {
-      setAccountSaving(false);
-    }
+  function handleSaveWithAccount() {
+    sp.save();
   }
 
   async function handlePasswordChange(e: React.FormEvent) {
@@ -469,8 +436,8 @@ function AdminDashboard() {
                     ["Grad", sp.profile!.city || "—"],
                     ["Adresa", sp.profile!.street || "—"],
                     ["Newsletter email", sp.profile!.newsletterEmail || "—"],
-                    ["Kontakt email", accountFields.contactEmail || "—"],
-                    ["Marketing telefon", accountFields.marketingPhone || "—"],
+                    ["Kontakt email", sp.profile!.contactEmail || "—"],
+                    ["Marketing telefon", sp.profile!.marketingPhone || "—"],
                   ].map(([l, v]) => (
                     <div key={l}>
                       <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
@@ -555,12 +522,9 @@ function AdminDashboard() {
                       <input
                         type="email"
                         className={inp}
-                        value={accountFields.contactEmail}
+                        value={sp.form.contactEmail}
                         onChange={(e) =>
-                          setAccountFields((p) => ({
-                            ...p,
-                            contactEmail: e.target.value,
-                          }))
+                          sp.setField("contactEmail", e.target.value)
                         }
                         placeholder="kontakt@salon.com"
                       />
@@ -570,12 +534,9 @@ function AdminDashboard() {
                       <input
                         type="tel"
                         className={inp}
-                        value={accountFields.marketingPhone}
+                        value={sp.form.marketingPhone}
                         onChange={(e) =>
-                          setAccountFields((p) => ({
-                            ...p,
-                            marketingPhone: e.target.value,
-                          }))
+                          sp.setField("marketingPhone", e.target.value)
                         }
                         placeholder="+381 60 000 0001"
                       />
@@ -596,10 +557,10 @@ function AdminDashboard() {
                   <div className="flex items-center gap-3 pt-1">
                     <button
                       onClick={handleSaveWithAccount}
-                      disabled={sp.isSaving || accountSaving}
+                      disabled={sp.isSaving}
                       className="px-6 py-2.5 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition disabled:opacity-50"
                     >
-                      {sp.isSaving || accountSaving
+                      {sp.isSaving
                         ? "Snimanje..."
                         : hasProfile
                           ? "Sačuvaj izmene"

@@ -8,6 +8,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { AuthUser } from "@/models/AuthUser";
 import { TenantUser } from "@/models/TenantUser";
+import { Subscription } from "@/models/Subscription";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
 
 export async function GET(req: NextRequest) {
@@ -48,6 +49,10 @@ export async function GET(req: NextRequest) {
             }
           : null;
 
+        const sub = await Subscription.findOne({ tenantId: tenant._id })
+          .select("overrideNote")
+          .lean() as { overrideNote?: string | null } | null;
+
         const trialEndsAt = tenant.trialEndsAt as Date | null;
         const trialDaysLeft = trialEndsAt
           ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
@@ -74,6 +79,7 @@ export async function GET(req: NextRequest) {
             ? String(tenant.lemonsqueezySubscriptionId)
             : null,
           owner,
+          overrideNote: sub?.overrideNote ?? null,
         };
       })
     );
