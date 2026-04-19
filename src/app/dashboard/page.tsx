@@ -64,9 +64,9 @@ const THEMES: {
 }[] = [
   {
     id: "theme-1",
-    label: "Light Gradient",
-    description: "Moderan, svetao dizajn sa gradijentima",
-    previewColors: ["#a855f7", "#ec4899", "#fff"],
+    label: "Makeup Theme",
+    description: "Čist, elegantan dizajn u beloj i sivoj sa crnim akcentima",
+    previewColors: ["#ffffff", "#e5e7eb", "#111111"],
   },
   {
     id: "theme-2",

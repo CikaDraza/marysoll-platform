@@ -34,7 +34,7 @@ export function Theme1AboutUs({ about }: Props) {
             {paragraphs.length > 1 && (
               <>
                 <div
-                  className="hidden lg:block h-26 w-1 bg-gray-700"
+                  className="hidden lg:block h-26 w-2 bg-gray-400"
                   aria-hidden="true"
                 />
                 <p className="text-justify lg:text-left">{paragraphs[1]}</p>

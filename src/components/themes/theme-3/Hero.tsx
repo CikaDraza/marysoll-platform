@@ -20,6 +20,7 @@ const IMAGEGRID = [
   "https://res.cloudinary.com/dufo1t5li/image/upload/v1771740371/marysoll-ai-look-1771740341957_nfxa1m.jpg",
   "https://res.cloudinary.com/dufo1t5li/image/upload/v1770903577/salon/zysz4hhfrghqftptog50.jpg",
 ];
+console.log(IMAGEGRID);
 
 export function Theme3HeroSoft({
   headline,
@@ -61,7 +62,7 @@ export function Theme3HeroSoft({
 
         {/* RIGHT GRID */}
         <div className="grid grid-cols-2 gap-4">
-          {(IMAGEGRID || []).slice(0, 4).map((img, i) => (
+          {IMAGEGRID.map((img, i) => (
             <Image
               width={500}
               height={400}

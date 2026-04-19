@@ -8,7 +8,7 @@ interface Props {
 export function Theme1CTABookingSection({ salonName, tenantSlug }: Props) {
   const servicesHref = tenantSlug ? `/${tenantSlug}/termini` : "/termini";
   return (
-    <section className="py-16 lg:py-24 bg-(--secondary-color) py-20 px-6 text-center">
+    <section className="py-24 lg:py-44 bg-(--secondary-color) py-20 px-6 text-center">
       <h2 className="text-white text-3xl lg:text-4xl font-bold mb-4">
         Rezerviši termin za 30 sekundi.
       </h2>

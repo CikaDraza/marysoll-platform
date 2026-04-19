@@ -726,14 +726,39 @@ export interface IServiceLanding {
   lists: string[];
 }
 
+/** Shared image shape used across hero, gallery and about sections. */
+export interface HeroImage {
+  src: string;
+  alt?: string;
+}
+
+/** One gallery entry — compatible with both zigzag (Theme1/2) and masonry (Theme3) layouts. */
+export interface GalleryItem {
+  id?: string;
+  category?: string;
+  title?: string;
+  description?: string;
+  /** 1–4 images depending on layout variant. */
+  images: HeroImage[];
+  href?: string;
+}
+
 export interface LandingStructure {
   landing: {
     hero: {
       enabled: boolean;
 
+      variant?: "center-image" | "split-left-image" | "grid-right-images";
+
       headline?: string; // fallback: salon name
       subheadline?: string;
       whereWhatForWhom?: string;
+
+      /** Single hero image — used by Theme2 (imageUrl) and Theme3 center/split variants. */
+      image?: HeroImage;
+
+      /** Multi-image grid — used by Theme3 grid-right-images variant. */
+      images?: HeroImage[];
 
       contact: {
         location?: string;
@@ -765,6 +790,9 @@ export interface LandingStructure {
 
       headline?: string;
       paragraphs: string[]; // max 2 u UI
+
+      /** Optional about-section image. Layout falls back gracefully when absent. */
+      image?: HeroImage;
     };
 
     servicesPreview: {
@@ -797,6 +825,9 @@ export interface LandingStructure {
     gallery: {
       enabled: boolean;
 
+      /** "zigzag" = Theme1/2 alternating rows. "masonry" = Theme3 column layout. */
+      variant?: "zigzag" | "masonry";
+
       headline?: string;
       subheadline?: string;
 
@@ -806,6 +837,10 @@ export interface LandingStructure {
         ctaText?: string;
       };
 
+      /**
+       * Legacy zigzag treatments used by Theme1GallerySection / Theme2GalleryGrid.
+       * Kept as-is for full backward compatibility.
+       */
       treatments: {
         id: string;
         category: string;
@@ -814,6 +849,12 @@ export interface LandingStructure {
         images: { src: string; alt: string }[];
         href: string;
       }[];
+
+      /**
+       * Normalised gallery items for Theme3GalleryMasonry and future layouts.
+       * Falls back to DEFAULT_TREATMENTS inside the component when empty.
+       */
+      items?: GalleryItem[];
     };
 
     faq: {

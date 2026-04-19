@@ -691,6 +691,89 @@ export function AdminLandingCMS({ sp }: Props) {
           ))}
         </div>
 
+        {/* ── Hero Images (theme-2: single | theme-3: 4 images) ─────────────── */}
+        {sp.form.landingTheme === "theme-2" && (
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-3">
+            <p className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 inline-block px-2.5 py-1 rounded-lg">
+              Hero Slika
+            </p>
+            <ImageInputField
+              label="URL slike"
+              value={hero.image?.src ?? ""}
+              onChange={(url) =>
+                updateLandingSection("hero", {
+                  ...hero,
+                  image: { src: url, alt: hero.image?.alt ?? "" },
+                })
+              }
+            />
+            <div>
+              <label className={lbl}>Alt tekst</label>
+              <input
+                className={inp}
+                value={hero.image?.alt ?? ""}
+                onChange={(e) =>
+                  updateLandingSection("hero", {
+                    ...hero,
+                    image: { src: hero.image?.src ?? "", alt: e.target.value },
+                  })
+                }
+                placeholder="Opis slike za pristupačnost..."
+              />
+            </div>
+          </div>
+        )}
+
+        {sp.form.landingTheme === "theme-3" && (
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-4">
+            <div>
+              <p className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 inline-block px-2.5 py-1 rounded-lg">
+                Hero Slike
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+                Koristi se za varijantu &quot;Grid desno&quot;. Preporučeno: 3–4 slike.
+              </p>
+            </div>
+            {([0, 1, 2, 3] as const).map((idx) => {
+              const img = hero.images?.[idx];
+              const updateHeroImages = (src: string, alt: string) => {
+                const imgs = Array.from(
+                  { length: Math.max((hero.images?.length ?? 0), idx + 1) },
+                  (_, i) => hero.images?.[i] ?? { src: "", alt: "" },
+                );
+                imgs[idx] = { src, alt };
+                updateLandingSection("hero", { ...hero, images: imgs });
+              };
+              return (
+                <div
+                  key={idx}
+                  className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 space-y-2"
+                >
+                  <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                    Slika {idx + 1}
+                  </span>
+                  <ImageInputField
+                    label="URL slike"
+                    value={img?.src ?? ""}
+                    onChange={(url) => updateHeroImages(url, img?.alt ?? "")}
+                  />
+                  <div>
+                    <label className={lbl}>Alt tekst</label>
+                    <input
+                      className={inp}
+                      value={img?.alt ?? ""}
+                      onChange={(e) =>
+                        updateHeroImages(img?.src ?? "", e.target.value)
+                      }
+                      placeholder="Opis slike za pristupačnost..."
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* CTAs */}
         <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-4">
           <p className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 inline-block px-2.5 py-1 rounded-lg">

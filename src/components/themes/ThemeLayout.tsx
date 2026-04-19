@@ -47,7 +47,7 @@ import {
 import { Theme3Header } from "./theme-3/Header";
 import { Theme3Footer } from "./theme-3/Footer";
 import { Theme1ImageGenerationSection } from "./theme-1/ImageGenerationSection";
-import { Theme3HeroSoft } from "./theme-3/Hero";
+import { Theme3Hero } from "./theme-3/Theme3Hero";
 import {
   Theme3AboutSoft,
   Theme3CTA,
@@ -349,10 +349,18 @@ export function ThemeLayout({
         <main className="flex-1 flex flex-col overflow-x-hidden">
           {/* 1. HERO */}
           {heroEnabled && (
-            <Theme3HeroSoft
-              headline={ls?.landing?.hero?.headline}
-              subheadline={ls?.landing?.hero?.subheadline}
+            <Theme3Hero
+              variant={ls?.landing?.hero?.variant}
+              data={{
+                headline: ls?.landing?.hero?.headline,
+                subheadline: ls?.landing?.hero?.subheadline,
+                whereWhatForWhom: ls?.landing?.hero?.whereWhatForWhom,
+                image: ls?.landing?.hero?.image,
+                images: ls?.landing?.hero?.images,
+                contact: ls?.landing?.hero?.contact,
+              }}
               cta={resolvedCta}
+              tenantSlug={tenantSlug}
             />
           )}
 
