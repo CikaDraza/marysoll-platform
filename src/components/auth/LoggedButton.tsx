@@ -20,12 +20,16 @@ interface LoggedButtonProps {
    * Wenn nicht gesetzt, werden globale /dashboard Links verwendet.
    */
   tenantSlug?: string;
+  color?: string;
+  backgroundColor?: string;
 }
 
 export default function LoggedButton({
   user,
   onCloseMobileMenu,
   tenantSlug,
+  color,
+  backgroundColor,
 }: LoggedButtonProps) {
   const { logout } = useAuth();
   // useClientRouting gives us the correct base ("" or "/slug") for this domain mode.
@@ -43,7 +47,7 @@ export default function LoggedButton({
     return (
       <Link
         href={loginHref}
-        className="px-4 py-2 rounded-lg bg-black text-white text-sm font-semibold hover:bg-gray-800"
+        className={`px-4 py-2 rounded-lg ${backgroundColor ? `border-[${backgroundColor}]` : "bg-black"} ${backgroundColor ? `bg-[${backgroundColor}]` : "bg-black"} ${color ? `text-[${color}]` : "text-white"} text-sm font-semibold ${backgroundColor ? `hover:bg-[${backgroundColor}]` : "hover:bg-black"} transition`}
         onClick={onCloseMobileMenu}
       >
         Prijavi se
@@ -108,9 +112,15 @@ export default function LoggedButton({
 
   return (
     <Menu as="div" className="relative inline-block text-left">
-      <MenuButton className="inline-flex items-center gap-x-1.5 rounded-md bg-black px-3 py-2 text-xs 2xl:text-sm font-semibold text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-(--secondary-color) focus:ring-offset-2 focus:ring-offset-white">
+      <MenuButton
+        style={{
+          color: color || "#fff",
+          backgroundColor: backgroundColor || "#000000",
+        }}
+        className={`inline-flex items-center gap-x-1.5 rounded-md px-3 py-2 text-xs 2xl:text-sm font-semibold focus:outline-none focus:ring-offset-2 focus:ring-offset-white`}
+      >
         {user.name ?? "Korisnik"}
-        <ChevronDownIcon aria-hidden="true" className="size-4 text-gray-400" />
+        <ChevronDownIcon aria-hidden="true" className="size-4 text-gray-500" />
       </MenuButton>
 
       <MenuItems

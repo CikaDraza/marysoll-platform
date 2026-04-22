@@ -54,7 +54,7 @@ export async function PUT(req: NextRequest) {
     const branding = parseJSON("branding");
     if (branding) profile.branding = branding;
     const landingTheme = (form.get("landingTheme") as string) || "theme-1";
-    if (["theme-1", "theme-2", "theme-3"].includes(landingTheme)) {
+    if (["theme-1", "theme-2", "theme-3", "theme-4"].includes(landingTheme)) {
       profile.landingTheme = landingTheme;
     }
     const landingStructure = parseJSON("landingStructure");

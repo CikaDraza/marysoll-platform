@@ -9,7 +9,7 @@ export function Theme3AboutSoft() {
           height={500}
           alt="About us image"
           src="https://res.cloudinary.com/dufo1t5li/image/upload/v1770896288/salon/svgc0l829bx5e62n2xg2.jpg"
-          className="rounded-3xl object-cover w-full h-[500px]"
+          className="rounded-3xl object-cover w-auto h-[500px]"
         />
 
         <div>

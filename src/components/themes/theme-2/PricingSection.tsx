@@ -3,6 +3,21 @@ import Link from "next/link";
 import { formatPriceToString } from "@/helpers/formatPrice";
 import type { IService } from "@/types";
 
+function minPrice(s: IService): number | null {
+  if (s.type === "single") return s.basePrice ?? null;
+  if (s.type === "variant") {
+    const p = (s.variants ?? []).map((v) => v.price);
+    return p.length ? Math.min(...p) : null;
+  }
+  if (s.type === "group") {
+    const p = (s.services ?? [])
+      .map((sv) => sv.price)
+      .filter((x): x is number => x != null);
+    return p.length ? Math.min(...p) : null;
+  }
+  return null;
+}
+
 interface Props {
   services: IService[];
 }
@@ -44,37 +59,63 @@ export function Theme2PricingSection({ services }: Props) {
                 >
                   {srv.category}
                 </p>
-                {srv.type !== "variant" && (
+                {srv.type === "single" && (
                   <p className="mb-4">
-                    <span
-                      className={`text-4xl font-black ${gold ? "text-gray-950" : "text-white"}`}
-                    >
+                    <span className={`text-4xl font-black ${gold ? "text-gray-950" : "text-white"}`}>
                       {formatPriceToString(srv.basePrice)}
                     </span>
-                    <span className="text-gray-600 text-sm ml-1">/terminu</span>
+                    <span className="text-gray-600 text-sm ml-1">RSD /terminu</span>
                   </p>
                 )}
-                {srv.type === "variant" &&
-                  srv.variants?.map((v, i) => (
-                    <div
-                      key={i}
-                      className="flex justify-between items-center gap-x-4 text-sm mb-1"
-                    >
-                      <span
-                        className={`${gold ? "text-gray-950" : "text-white"}`}
-                      >
-                        {v.name}
-                      </span>
-                      <hr
-                        className={`flex-1 border-dashed ${gold ? "border-gray-900" : "border-gray-600"}`}
-                      />
-                      <span
-                        className={`${gold ? "text-gray-950" : "text-white"} font-bold`}
-                      >
-                        {formatPriceToString(v.price)}
-                      </span>
-                    </div>
-                  ))}
+                {(srv.type === "variant" || srv.type === "group") && (() => {
+                  const mp = minPrice(srv);
+                  return (
+                    <>
+                      {mp != null && (
+                        <p className="mb-3 flex items-baseline gap-1">
+                          <span className="text-gray-500 text-sm">od</span>
+                          <span className={`text-3xl font-black ${gold ? "text-gray-950" : "text-white"}`}>
+                            {formatPriceToString(mp)}
+                          </span>
+                          <span className="text-gray-500 text-sm">RSD</span>
+                        </p>
+                      )}
+                      {srv.type === "variant" && (srv.variants ?? []).map((v, i) => (
+                        <div key={i} className="flex justify-between items-center gap-x-4 text-sm mb-1">
+                          <span className={gold ? "text-gray-950" : "text-white"}>{v.name}</span>
+                          <hr className={`flex-1 border-dashed ${gold ? "border-gray-900" : "border-gray-600"}`} />
+                          <span className={`${gold ? "text-gray-950" : "text-white"} font-bold`}>
+                            {formatPriceToString(v.price)} RSD
+                          </span>
+                        </div>
+                      ))}
+                      {srv.type === "group" && (srv.services ?? []).map((sv, i) => (
+                        <div key={i} className="flex justify-between items-center gap-x-4 text-sm mb-1">
+                          <span className={gold ? "text-gray-950" : "text-white"}>{sv.name}</span>
+                          {sv.price != null && (
+                            <>
+                              <hr className={`flex-1 border-dashed ${gold ? "border-gray-900" : "border-gray-600"}`} />
+                              <span className={`${gold ? "text-gray-950" : "text-white"} font-bold`}>
+                                {formatPriceToString(sv.price)} RSD
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </>
+                  );
+                })()}
+                {(srv.extras ?? []).length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Dodaci</p>
+                    {srv.extras!.map((e, i) => (
+                      <div key={i} className="flex justify-between text-xs mb-0.5">
+                        <span className={gold ? "text-gray-700" : "text-gray-400"}>+ {e.name}</span>
+                        <span className={gold ? "text-gray-700" : "text-gray-400"}>{formatPriceToString(e.price)} RSD</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {srv.description && (
                   <p className="text-gray-800 text-xs mt-3 leading-relaxed">
                     {srv.description}

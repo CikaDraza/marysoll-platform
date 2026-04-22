@@ -4,6 +4,21 @@ import { CheckIcon } from "@heroicons/react/20/solid";
 import { formatPriceToString } from "@/helpers/formatPrice";
 import type { IService } from "@/types";
 
+function minPrice(s: IService): number | null {
+  if (s.type === "single") return s.basePrice ?? null;
+  if (s.type === "variant") {
+    const p = (s.variants ?? []).map((v) => v.price);
+    return p.length ? Math.min(...p) : null;
+  }
+  if (s.type === "group") {
+    const p = (s.services ?? [])
+      .map((sv) => sv.price)
+      .filter((x): x is number => x != null);
+    return p.length ? Math.min(...p) : null;
+  }
+  return null;
+}
+
 interface Props {
   services: IService[];
 }
@@ -46,32 +61,57 @@ export function Theme3PricingSection({ services }: Props) {
                 >
                   {srv.category}
                 </p>
-                {srv.type !== "variant" && (
-                  <p
-                    className={`text-4xl font-light mb-1 ${highlight ? "text-white" : "text-[#3D2B1F]"}`}
-                  >
+                {srv.type === "single" && (
+                  <p className={`text-4xl font-light mb-1 ${highlight ? "text-white" : "text-[#3D2B1F]"}`}>
                     {formatPriceToString(srv.basePrice)}
-                    <span
-                      className={`text-sm ${highlight ? "text-white/70" : "text-[#9E7E6E]"}`}
-                    >
-                      {" "}
-                      /terminu
-                    </span>
+                    <span className={`text-sm ${highlight ? "text-white/70" : "text-[#9E7E6E]"}`}> RSD /terminu</span>
                   </p>
                 )}
-                {srv.type === "variant" &&
-                  srv.variants?.map((v, i) => (
-                    <div
-                      key={i}
-                      className={`flex justify-between items-center gap-x-4 text-sm mb-1 ${highlight ? "text-white" : "text-[#7C6A5E]"}`}
-                    >
-                      <span>{v.name}</span>
-                      <hr className="flex-1 border-dashed border-gray-300" />
-                      <span className="font-medium">
-                        {formatPriceToString(v.price)}
-                      </span>
-                    </div>
-                  ))}
+                {(srv.type === "variant" || srv.type === "group") && (() => {
+                  const mp = minPrice(srv);
+                  return (
+                    <>
+                      {mp != null && (
+                        <p className="mb-2 flex items-baseline gap-1">
+                          <span className={`text-sm ${highlight ? "text-white/70" : "text-[#9E7E6E]"}`}>od</span>
+                          <span className={`text-3xl font-light ${highlight ? "text-white" : "text-[#3D2B1F]"}`}>
+                            {formatPriceToString(mp)}
+                          </span>
+                          <span className={`text-sm ${highlight ? "text-white/70" : "text-[#9E7E6E]"}`}>RSD</span>
+                        </p>
+                      )}
+                      {srv.type === "variant" && (srv.variants ?? []).map((v, i) => (
+                        <div key={i} className={`flex justify-between items-center gap-x-4 text-sm mb-1 ${highlight ? "text-white" : "text-[#7C6A5E]"}`}>
+                          <span>{v.name}</span>
+                          <hr className="flex-1 border-dashed border-gray-300" />
+                          <span className="font-medium">{formatPriceToString(v.price)} RSD</span>
+                        </div>
+                      ))}
+                      {srv.type === "group" && (srv.services ?? []).map((sv, i) => (
+                        <div key={i} className={`flex justify-between items-center gap-x-4 text-sm mb-1 ${highlight ? "text-white" : "text-[#7C6A5E]"}`}>
+                          <span>{sv.name}</span>
+                          {sv.price != null && (
+                            <>
+                              <hr className="flex-1 border-dashed border-gray-300" />
+                              <span className="font-medium">{formatPriceToString(sv.price)} RSD</span>
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </>
+                  );
+                })()}
+                {(srv.extras ?? []).length > 0 && (
+                  <div className="mt-2">
+                    <p className={`text-[10px] font-semibold uppercase tracking-wider mb-1 ${highlight ? "text-white/60" : "text-[#9E7E6E]"}`}>Dodaci</p>
+                    {srv.extras!.map((e, i) => (
+                      <div key={i} className={`flex justify-between text-xs mb-0.5 ${highlight ? "text-white/80" : "text-[#7C6A5E]"}`}>
+                        <span>+ {e.name}</span>
+                        <span>{formatPriceToString(e.price)} RSD</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {srv.description && (
                   <p
                     className={`text-xs mt-3 leading-relaxed ${highlight ? "text-white/80" : "text-[#9E7E6E]"}`}

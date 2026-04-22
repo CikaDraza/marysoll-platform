@@ -159,8 +159,8 @@ export interface IMessage {
 export interface IAppointment {
   _id?: string;
   tenantId?: string;
-  clientProfileId?: string;   // TenantUser._id
-  staffProfileId?: string;    // TenantUser._id (optional)
+  clientProfileId?: string; // TenantUser._id
+  staffProfileId?: string; // TenantUser._id (optional)
   clientName: string;
   clientEmail: string;
   serviceName: string;
@@ -476,7 +476,7 @@ export interface CampaignCreateData {
 
 export interface ITestimonial<T = string> {
   _id: string;
-  clientProfileId: string;  // TenantUser._id
+  clientProfileId: string; // TenantUser._id
   clientName: string;
   clientEmail: string;
   appointmentId: T;
@@ -530,7 +530,7 @@ export interface UpdateTestimonialData {
 
 export interface INotification {
   _id: string;
-  recipientProfileId: string;  // TenantUser._id
+  recipientProfileId: string; // TenantUser._id
   tenantId?: string;
   type:
     | "appointment_created"
@@ -567,7 +567,7 @@ export interface INotification {
 
 export interface AppointmentForNotification {
   _id: string;
-  clientProfileId: string;  // TenantUser._id
+  clientProfileId: string; // TenantUser._id
   clientName: string;
   serviceName: string;
   date?: string;
@@ -576,7 +576,7 @@ export interface AppointmentForNotification {
 
 export interface TestimonialForNotification {
   _id: string;
-  clientProfileId: string;  // TenantUser._id
+  clientProfileId: string; // TenantUser._id
   clientName: string;
   rating: number;
   appointmentId: { serviceName: string; _id: string };
@@ -698,7 +698,7 @@ export interface SalonProfile {
   isDemo?: boolean;
 }
 
-export type LandingTheme = "theme-1" | "theme-2" | "theme-3";
+export type LandingTheme = "theme-1" | "theme-2" | "theme-3" | "theme-4";
 
 export interface ISalonProfileForm {
   name: string;
@@ -784,7 +784,7 @@ export interface LandingStructure {
         };
       };
     };
-
+    stats: { value: string; label: string }[]; // max 4 u UI
     about: {
       enabled: boolean;
 
@@ -855,6 +855,9 @@ export interface LandingStructure {
        * Falls back to DEFAULT_TREATMENTS inside the component when empty.
        */
       items?: GalleryItem[];
+
+      /** Flat image array — powers Theme3GallerySoft and Theme3GalleryMasonry. */
+      images?: HeroImage[];
     };
 
     faq: {

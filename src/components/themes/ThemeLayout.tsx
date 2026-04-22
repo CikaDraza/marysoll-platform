@@ -47,17 +47,29 @@ import {
 import { Theme3Header } from "./theme-3/Header";
 import { Theme3Footer } from "./theme-3/Footer";
 import { Theme1ImageGenerationSection } from "./theme-1/ImageGenerationSection";
-import { Theme3Hero } from "./theme-3/Theme3Hero";
 import {
   Theme3AboutSoft,
   Theme3CTA,
   Theme3FAQSoft,
   Theme3GalleryMasonry,
   Theme3GallerySoft,
+  Theme3HeroSoft,
   Theme3PricingSoft,
   Theme3ServicesSoft,
   Theme3TestimonialsSoft,
 } from "./theme-3";
+
+// Theme 4
+import {
+  Theme4AppointmentSection,
+  Theme4CTA,
+  Theme4Footer,
+  Theme4Header,
+  Theme4HeroSoft,
+  Theme4ServicesSoft,
+  Theme4WorkingHours,
+} from "./theme-4";
+import { Theme4AboutSoft } from "./theme-4";
 
 interface Testimonial {
   _id: string;
@@ -281,6 +293,7 @@ export function ThemeLayout({
             salonStreet={salon.street}
             headline={ls?.landing?.hero?.headline}
             subheadline={ls?.landing?.hero?.subheadline}
+            imageUrl={ls?.landing?.hero?.image?.src}
             cta={resolvedCta}
           />
           <Theme2AboutSplit
@@ -349,23 +362,19 @@ export function ThemeLayout({
         <main className="flex-1 flex flex-col overflow-x-hidden">
           {/* 1. HERO */}
           {heroEnabled && (
-            <Theme3Hero
-              variant={ls?.landing?.hero?.variant}
-              data={{
-                headline: ls?.landing?.hero?.headline,
-                subheadline: ls?.landing?.hero?.subheadline,
-                whereWhatForWhom: ls?.landing?.hero?.whereWhatForWhom,
-                image: ls?.landing?.hero?.image,
-                images: ls?.landing?.hero?.images,
-                contact: ls?.landing?.hero?.contact,
-              }}
+            <Theme3HeroSoft
+              headline={ls?.landing?.hero?.headline}
+              subheadline={ls?.landing?.hero?.subheadline}
+              imageMain={ls?.landing?.hero?.image}
+              imageGrid={ls?.landing?.hero?.images}
               cta={resolvedCta}
-              tenantSlug={tenantSlug}
             />
           )}
 
           {/* 2. MINI GALLERY (4 slike kao na mockupu) */}
-          {galleryEnabled && <Theme3GallerySoft />}
+          {galleryEnabled && (
+            <Theme3GallerySoft images={ls?.landing?.gallery?.images} />
+          )}
 
           {/* 3. ABOUT */}
           {aboutEnabled && <Theme3AboutSoft />}
@@ -384,7 +393,12 @@ export function ThemeLayout({
           {testimonialsEnabled && <Theme3TestimonialsSoft />}
 
           {/* 6. FULL GALLERY */}
-          {galleryEnabled && <Theme3GalleryMasonry />}
+          {galleryEnabled && (
+            <Theme3GalleryMasonry
+              images={ls?.landing?.gallery?.images}
+              headline={ls?.landing?.gallery?.headline}
+            />
+          )}
 
           {/* 7. PRICING */}
           <Theme3PricingSoft services={services} headline="Cenovnik" />
@@ -415,6 +429,97 @@ export function ThemeLayout({
         </main>
 
         <Theme3Footer {...footerProps} />
+      </div>
+    );
+  }
+
+  // ── Theme 4: Modern Spa ─────────────────────────────────────────────
+  if (theme === "theme-4") {
+    return (
+      <div className="min-h-screen flex flex-col" style={brandingVars}>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="stylesheet" href={googleFontHref} />
+
+        <Theme4Header
+          {...headerProps}
+          cta={resolvedCta.primary}
+          salon={salonWithMergedSocial}
+          salonPhone={salon.phone}
+        />
+
+        <main className="flex-1 flex flex-col overflow-x-hidden">
+          {/* 1. HERO */}
+          {heroEnabled && (
+            <Theme4HeroSoft
+              headline={ls?.landing?.hero?.headline}
+              subheadline={ls?.landing?.hero?.subheadline}
+              imageMain={ls?.landing?.hero?.image}
+              cta={resolvedCta.primary}
+            />
+          )}
+
+          {/* 2. ABOUT */}
+          {aboutEnabled && (
+            <Theme4AboutSoft
+              headline={ls?.landing?.about?.headline || "O nama"}
+              paragraphs={
+                ls?.landing?.about?.paragraphs || ["Saznajte više o nama"]
+              }
+              stats={
+                ls?.landing?.stats || [
+                  { value: "10+", label: "Godina iskustva" },
+                  { value: "500+", label: "Zadovoljnih klijenata" },
+                  { value: "20+", label: "Stručnjaka" },
+                ]
+              }
+              imageUrl={
+                "https://res.cloudinary.com/dufo1t5li/image/upload/v1776463003/Gemini_Generated_Image_dvp99xdvp99xdvp9_uaamaf.png"
+              }
+            />
+          )}
+
+          {servicesPreviewEnabled && (
+            <Theme4ServicesSoft
+              services={services}
+              headline={ls?.landing?.servicesPreview?.headline}
+              subheadline={ls?.landing?.servicesPreview?.subheadline}
+              tenantSlug={tenantSlug}
+            />
+          )}
+
+          {/* 4. WORKING HOURS */}
+          {salon?.workingHours && (
+            <Theme4WorkingHours workingHours={salon.workingHours} />
+          )}
+
+          <Theme4CTA
+            headline={ls?.landing.about.headline}
+            cta={ls?.landing.hero.ctas.primary}
+          />
+
+          {/* 6. FULL GALLERY */}
+          {galleryEnabled && (
+            <Theme3GalleryMasonry
+              images={ls?.landing?.gallery?.images}
+              headline={ls?.landing?.gallery?.headline}
+            />
+          )}
+
+          {/* 8. APPOINTMENT */}
+          {appointmentEnabled && (
+            <Theme4AppointmentSection
+              tenantSlug={tenantSlug}
+              clientSlug={clientSlug ?? tenantSlug}
+              salon={salon}
+              services={services}
+              headline={ls?.landing?.appointmentSection?.headline}
+              subheadline={ls?.landing?.appointmentSection?.subheadline}
+              instructions={ls?.landing?.appointmentSection?.instructions}
+            />
+          )}
+        </main>
+
+        <Theme4Footer {...footerProps} />
       </div>
     );
   }

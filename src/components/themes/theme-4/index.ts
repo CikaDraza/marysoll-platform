@@ -1,0 +1,8 @@
+export { Theme4Header } from "./Header";
+export { Theme4HeroSoft } from "./Hero";
+export { Theme4AboutSoft } from "./About";
+export { Theme4ServicesSoft } from "./Services";
+export { Theme4WorkingHours } from "./WorkingHours";
+export { Theme4CTA } from "./CTASection";
+export { Theme4AppointmentSection } from "./AppointmentSection";
+export { Theme4Footer } from "./Footer";

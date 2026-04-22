@@ -52,6 +52,7 @@ export const emptyLandingStructure = (): LandingStructure => ({
       subheadline: "",
       instructions: [],
     },
+    stats: [],
     testimonials: { enabled: true, headline: "" },
     gallery: {
       enabled: true,
@@ -185,6 +186,7 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
         subheadline: rawLanding.appointmentSection?.subheadline ?? "",
         instructions: rawLanding.appointmentSection?.instructions ?? [],
       },
+      stats: rawLanding.stats ?? [],
       testimonials: {
         enabled: rawLanding.testimonials?.enabled ?? true,
         headline: rawLanding.testimonials?.headline ?? "",

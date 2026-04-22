@@ -13,6 +13,21 @@ function classNames(...c: string[]) {
   return c.filter(Boolean).join(" ");
 }
 
+function minPrice(s: IService): number | null {
+  if (s.type === "single") return s.basePrice ?? null;
+  if (s.type === "variant") {
+    const p = (s.variants ?? []).map((v) => v.price);
+    return p.length ? Math.min(...p) : null;
+  }
+  if (s.type === "group") {
+    const p = (s.services ?? [])
+      .map((sv) => sv.price)
+      .filter((x): x is number => x != null);
+    return p.length ? Math.min(...p) : null;
+  }
+  return null;
+}
+
 export function Theme1PricingSection({ services, tenantSlug }: Props) {
   const servicesHref = tenantSlug ? `/${tenantSlug}/usluge` : "/usluge";
   const featured = [...services]
@@ -81,7 +96,7 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
                 {srv.category}
                 {srv.subcategory ? ` · ${srv.subcategory}` : ""}
               </p>
-              {srv.type !== "variant" && (
+              {srv.type === "single" && (
                 <p className="mt-4 flex items-baseline gap-2">
                   <span
                     className={classNames(
@@ -97,25 +112,66 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
                       "text-sm",
                     )}
                   >
-                    /terminu
+                    RSD /terminu
                   </span>
                 </p>
               )}
-              {srv.type === "variant" && srv.variants && (
-                <ul className="mt-4 space-y-2 text-sm">
-                  {srv.variants.map((v, i) => (
-                    <li
-                      key={i}
-                      className="flex justify-between items-center gap-x-4"
-                    >
-                      <span>{v.name}</span>
-                      <hr className="flex-1 border-dashed border-gray-300" />
-                      <span className="font-semibold">
-                        {formatPriceToString(v.price)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+              {(srv.type === "variant" || srv.type === "group") && (() => {
+                const mp = minPrice(srv);
+                return (
+                  <>
+                    {mp != null && (
+                      <p className="mt-4 flex items-baseline gap-1">
+                        <span className={classNames(dark ? "text-gray-400" : "text-gray-500", "text-sm")}>od</span>
+                        <span className={classNames(dark ? "text-white" : "text-gray-900", "text-3xl font-bold")}>
+                          {formatPriceToString(mp)}
+                        </span>
+                        <span className={classNames(dark ? "text-gray-400" : "text-gray-500", "text-sm")}>RSD</span>
+                      </p>
+                    )}
+                    {srv.type === "variant" && (srv.variants ?? []).length > 0 && (
+                      <ul className="mt-3 space-y-2 text-sm">
+                        {srv.variants!.map((v, i) => (
+                          <li key={i} className="flex justify-between items-center gap-x-4">
+                            <span>{v.name}</span>
+                            <hr className="flex-1 border-dashed border-gray-300" />
+                            <span className="font-semibold">{formatPriceToString(v.price)} RSD</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {srv.type === "group" && (srv.services ?? []).length > 0 && (
+                      <ul className="mt-3 space-y-2 text-sm">
+                        {srv.services!.map((sv, i) => (
+                          <li key={i} className="flex justify-between items-center gap-x-4">
+                            <span>{sv.name}</span>
+                            {sv.price != null && (
+                              <>
+                                <hr className="flex-1 border-dashed border-gray-300" />
+                                <span className="font-semibold">{formatPriceToString(sv.price)} RSD</span>
+                              </>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                );
+              })()}
+              {(srv.extras ?? []).length > 0 && (
+                <div className="mt-3">
+                  <p className={classNames(dark ? "text-gray-400" : "text-gray-500", "text-xs font-semibold uppercase tracking-wider mb-1")}>
+                    Dodaci
+                  </p>
+                  <ul className="space-y-1 text-xs">
+                    {srv.extras!.map((e, i) => (
+                      <li key={i} className="flex justify-between items-center gap-x-4">
+                        <span className={dark ? "text-gray-300" : "text-gray-600"}>+ {e.name}</span>
+                        <span className={dark ? "text-gray-300" : "text-gray-600"}>{formatPriceToString(e.price)} RSD</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
               {srv.description && (
                 <p

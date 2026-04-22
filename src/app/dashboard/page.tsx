@@ -80,6 +80,13 @@ const THEMES: {
     description: "Nežni, minimalistički dizajn u toplim tonovima",
     previewColors: ["#C9A990", "#FAF8F5", "#EDE5DC"],
   },
+  {
+    id: "theme-4",
+    label: "Editorial Luxury",
+    description:
+      "Elegantni dizajn sa jakim kontrastom i sofisticiranim fontovima",
+    previewColors: ["#4C2D4A", "#2C1E29", "#E8D4AD"],
+  },
 ];
 
 // ─── Style tokens ─────────────────────────────────────────────────────────────

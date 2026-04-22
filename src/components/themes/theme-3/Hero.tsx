@@ -6,21 +6,39 @@ import Link from "next/link";
 interface Props {
   headline?: string;
   subheadline?: string;
-  imageMain?: string;
-  imageGrid?: string[];
+  imageMain?: { src: string; alt?: string };
+  imageGrid?: { src: string; alt?: string }[];
   cta?: {
     primary: { text: string; href: string };
     secondary?: { text: string; href: string };
   };
 }
 
-const IMAGEGRID = [
-  "https://res.cloudinary.com/dufo1t5li/image/upload/v1772071241/salon/h4qlp46szqnkosbnjztp.jpg",
-  "https://res.cloudinary.com/dufo1t5li/image/upload/v1772025932/salon/dd8p6j5stlaynb5p83qc.jpg",
-  "https://res.cloudinary.com/dufo1t5li/image/upload/v1771740371/marysoll-ai-look-1771740341957_nfxa1m.jpg",
-  "https://res.cloudinary.com/dufo1t5li/image/upload/v1770903577/salon/zysz4hhfrghqftptog50.jpg",
+const IMAGESINGLE = [
+  {
+    src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1772071241/salon/h4qlp46szqnkosbnjztp.jpg",
+    alt: "Gallery image 1",
+  },
 ];
-console.log(IMAGEGRID);
+
+const IMAGEGRID = [
+  {
+    src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1772071241/salon/h4qlp46szqnkosbnjztp.jpg",
+    alt: "Gallery image 1",
+  },
+  {
+    src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1772025932/salon/dd8p6j5stlaynb5p83qc.jpg",
+    alt: "Gallery image 2",
+  },
+  {
+    src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1771740371/marysoll-ai-look-1771740341957_nfxa1m.jpg",
+    alt: "Gallery image 3",
+  },
+  {
+    src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1770903577/salon/zysz4hhfrghqftptog50.jpg",
+    alt: "Gallery image 4",
+  },
+];
 
 export function Theme3HeroSoft({
   headline,
@@ -31,7 +49,7 @@ export function Theme3HeroSoft({
 }: Props) {
   return (
     <section className="bg-[#FAF8F5] py-44">
-      <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+      <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
         {/* LEFT TEXT */}
         <div>
           <h1 className="text-5xl lg:text-6xl font-serif text-[#2B2B2B] mb-6 leading-tight">
@@ -62,16 +80,29 @@ export function Theme3HeroSoft({
 
         {/* RIGHT GRID */}
         <div className="grid grid-cols-2 gap-4">
-          {IMAGEGRID.map((img, i) => (
-            <Image
-              width={500}
-              height={400}
-              alt={subheadline || `Gallery image ${i + 1}`}
-              key={i}
-              src={img}
-              className="rounded-2xl object-cover w-full h-40"
-            />
-          ))}
+          {imageMain
+            ? (imageGrid || IMAGESINGLE).map((img, i) => (
+                <Image
+                  width={500}
+                  height={400}
+                  alt={img?.alt || subheadline || `Gallery image ${i + 1}`}
+                  key="main"
+                  src={img?.src}
+                  className="rounded-2xl object-cover w-full h-auto col-span-2"
+                />
+              ))
+            : (imageGrid || IMAGEGRID).map((img, i) => (
+                <Image
+                  width={500}
+                  height={400}
+                  // Access img.alt if it exists, otherwise fallback to the default
+                  alt={img?.alt || subheadline || `Gallery image ${i + 1}`}
+                  key={i}
+                  // Access img.src because 'img' is an object
+                  src={img?.src}
+                  className="rounded-2xl object-cover w-full h-40"
+                />
+              ))}
         </div>
       </div>
     </section>

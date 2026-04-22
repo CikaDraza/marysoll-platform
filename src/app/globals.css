@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https: //fonts.googleapis.com/css2?family=Abril+Fatface&family=Meddon&family=Oswald:wght@200..700&family=Outfit:wght@100..900&display=swap');
 @import "tailwindcss";
 
 /* Dark mode via class strategy */
@@ -6,6 +6,9 @@
 
 @theme {
   --font-outfit: Outfit, sans-serif;
+  --font-oswald: Oswald, sans-serif;
+  --font-abril: Abril Fatface, serif;
+  --font-meddon: Meddon, cursive;
 
   /* Marysoll brand */
   --color-brand-50: #f2f0ff;

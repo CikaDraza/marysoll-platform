@@ -1,6 +1,6 @@
 import mongoose, { model, models, Types } from "mongoose";
 
-export type LandingTheme = "theme-1" | "theme-2" | "theme-3";
+export type LandingTheme = "theme-1" | "theme-2" | "theme-3" | "theme-4";
 
 const ctaSchema = new mongoose.Schema({
   text: { type: String },
@@ -52,6 +52,16 @@ const SalonProfileSchema = new mongoose.Schema(
             primary: ctaSchema,
             secondary: ctaSchema,
           },
+          /** Single hero image — theme-1 and theme-2. */
+          image: {
+            src: { type: String },
+            alt: { type: String },
+          },
+          /** Four-image hero grid — theme-3. */
+          images: {
+            type: [{ src: { type: String }, alt: { type: String } }],
+            default: [],
+          },
         },
         about: {
           enabled: { type: Boolean, default: true },
@@ -101,6 +111,11 @@ const SalonProfileSchema = new mongoose.Schema(
                 href: { type: String, default: "/termini" },
               },
             ],
+            default: [],
+          },
+          /** Flat image array for gallery sections (no treatment metadata). */
+          images: {
+            type: [{ src: { type: String }, alt: { type: String } }],
             default: [],
           },
         },
@@ -164,7 +179,7 @@ const SalonProfileSchema = new mongoose.Schema(
 
     landingTheme: {
       type: String,
-      enum: ["theme-1", "theme-2", "theme-3"],
+      enum: ["theme-1", "theme-2", "theme-3", "theme-4"],
       default: "theme-1",
     },
   },
