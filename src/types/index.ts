@@ -698,7 +698,20 @@ export interface SalonProfile {
   isDemo?: boolean;
 }
 
-export type LandingTheme = "theme-1" | "theme-2" | "theme-3" | "theme-4";
+export type LandingTheme =
+  | "theme-1"
+  | "theme-2"
+  | "theme-3"
+  | "theme-4"
+  | "theme-5";
+
+/**
+ * Controls which gallery editor UI is shown in the CMS and
+ * which data structure the theme components consume.
+ *   "images-only"           — flat HeroImage array (masonry layouts)
+ *   "images-with-category"  — treatments array with category/title/description (zigzag layouts)
+ */
+export type GalleryVariant = "images-only" | "images-with-category";
 
 export interface ISalonProfileForm {
   name: string;
@@ -827,6 +840,13 @@ export interface LandingStructure {
 
       /** "zigzag" = Theme1/2 alternating rows. "masonry" = Theme3 column layout. */
       variant?: "zigzag" | "masonry";
+
+      /**
+       * Controls which data structure is active and which CMS editor is shown.
+       * Derived from THEME_CONFIG[landingTheme].gallery.variant at runtime.
+       * Persisted here so the document is self-describing.
+       */
+      galleryVariant?: GalleryVariant;
 
       headline?: string;
       subheadline?: string;

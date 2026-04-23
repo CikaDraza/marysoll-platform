@@ -57,7 +57,7 @@ export function Theme4Footer({ salonName, tenantSlug }: Theme4FooterProps) {
             <CalendarDaysIcon className="text-[#4C2D4A]" />
           </div>
         </div>
-        <div className="mt-12 pt-6 border-t border-white/10 text-center text-xs text-gray-500">
+        <div className="mt-12 pt-6 border-t border-white/10 text-center text-xs text-gray-300">
           © {new Date().getFullYear()} {salonName}. Powered by Marysoll.
         </div>
       </div>

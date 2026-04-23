@@ -28,7 +28,7 @@ export default function AdminServiceModal({
     >
       <DialogBackdrop className="fixed inset-0 bg-black/50" />
       <div className="fixed inset-0 flex items-center justify-center p-2">
-        <DialogPanel className="max-w-xl w-full bg-white rounded-lg shadow-xl p-3 max-h-screen overflow-scroll lg:max-h-auto">
+        <DialogPanel className="max-w-xl w-full bg-white rounded-lg shadow-xl p-3 max-h-[90vh] overflow-y-auto">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">
               {editing ? "Izmeni uslugu" : "Nova usluga"}

@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     await connectToDB();
-    const auth: AdminAuthResult = await requireAdmin(request);
+    const auth: AdminAuthResult = requireAdmin(request);
     if (!auth.success) {
       return auth.response;
     }
@@ -23,9 +23,9 @@ export async function GET(request: NextRequest) {
 
     // Backfill: if SalonProfile.phone is empty, pull it from the owner's TenantUser
     if (!profile.phone && auth.decoded.tenantUserId) {
-      const ownerProfile = await TenantUser.findById(auth.decoded.tenantUserId)
+      const ownerProfile = (await TenantUser.findById(auth.decoded.tenantUserId)
         .select("phone")
-        .lean() as { phone?: string } | null;
+        .lean()) as { phone?: string } | null;
       if (ownerProfile?.phone) {
         profile.phone = ownerProfile.phone;
         await profile.save();

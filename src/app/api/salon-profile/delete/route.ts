@@ -7,9 +7,7 @@ import { DecodedToken } from "@/types/auth/types";
 export async function DELETE(req: NextRequest) {
   try {
     await connectToDB();
-    const auth = (await requireAdmin(req)) as
-      | { decoded: DecodedToken }
-      | NextResponse;
+    const auth = requireAdmin(req) as { decoded: DecodedToken } | NextResponse;
     if (auth instanceof NextResponse) return auth;
     const tenantId = auth.decoded.tenantId;
 

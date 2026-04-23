@@ -1,0 +1,13 @@
+export { Theme5Header } from "./Header";
+export { Theme5Hero } from "./Hero";
+export { Theme5Services } from "./Services";
+export { Theme5WorkingHours } from "./WorkingHours";
+export { Theme5CTA } from "./CTA";
+// export { Theme5Blog } from "./Blog";
+export { Theme5HowItWorks } from "./HowItWorks";
+export { Theme5Pricing } from "./Pricing";
+export { Theme5Stats } from "./Stats";
+export { Theme5Artists } from "./Artists";
+export { Theme5Testimonials } from "./Testimonials";
+export { Theme5Gallery } from "./Gallery";
+export { Theme5Footer } from "./Footer";

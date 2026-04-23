@@ -84,14 +84,12 @@ export function useAdminServiceForm() {
 
   const save = async () => {
     try {
+      const payload = { ...form, items: form.items.map((i) => i.trim()).filter(Boolean) };
       if (editing) {
-        await updateService.mutateAsync({
-          id: editing._id!,
-          payload: form,
-        });
+        await updateService.mutateAsync({ id: editing._id!, payload });
         toast.success("Usluga uspešno izmenjena!");
       } else {
-        await createService.mutateAsync(form);
+        await createService.mutateAsync(payload);
         toast.success("Usluga uspešno kreirana!");
       }
       onClose();

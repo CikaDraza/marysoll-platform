@@ -42,8 +42,8 @@ export function Theme2Hero({
           alt={`${salonName || "Salon"} luksuzni tretmani`}
           className="w-full h-full object-contain lg:object-cover"
           initial={{ scale: 1 }}
-          animate={{ scale: 1.05 }}
-          transition={{ duration: 8, ease: "easeOut" }}
+          animate={{ scale: 1.25 }}
+          transition={{ duration: 3, ease: "easeOut", delay: 1.25 }}
         />
 
         {/* Overlay gradient (luxury feel) */}

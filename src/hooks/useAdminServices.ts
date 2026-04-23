@@ -303,9 +303,10 @@ export function useAdminServices() {
       if (!token) throw new Error("Niste prijavljeni");
       const err = validateService(form);
       if (err) throw new Error(err);
+      const payload = { ...form, items: form.items.map((i) => i.trim()).filter(Boolean) };
       if (modalMode === "edit" && editingService)
-        return updateService(editingService._id, form, token);
-      return createService(form, token);
+        return updateService(editingService._id, payload, token);
+      return createService(payload, token);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["services"] });

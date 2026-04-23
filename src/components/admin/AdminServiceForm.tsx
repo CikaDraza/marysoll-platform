@@ -433,18 +433,12 @@ export default function AdminServiceForm({
       {/* LIST ITEMS */}
       <div>
         <label className="block text-xs lg:text-sm font-semibold text-gray-700">
-          Opis (svaka stavka novi red)
+          Navedite šta usluga uključuje (svaka stavka u novom redu)
         </label>
         <textarea
           value={form.items.join("\n")}
           onChange={(e) =>
-            setForm({
-              ...form,
-              items: e.target.value
-                .split("\n")
-                .map((it) => it.trim())
-                .filter(Boolean),
-            })
+            setForm({ ...form, items: e.target.value.split("\n") })
           }
           rows={4}
           className="mt-1 block w-full rounded-md border-gray-200 p-2 bg-gray-100"

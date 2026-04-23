@@ -87,6 +87,12 @@ const THEMES: {
       "Elegantni dizajn sa jakim kontrastom i sofisticiranim fontovima",
     previewColors: ["#4C2D4A", "#2C1E29", "#E8D4AD"],
   },
+  {
+    id: "theme-5",
+    label: "Makeup Luxury",
+    description: "Elegantni dizajn sa blog postom",
+    previewColors: ["#FFFFFF", "#F3F3F3", "#DCAB28"],
+  },
 ];
 
 // ─── Style tokens ─────────────────────────────────────────────────────────────
@@ -1442,6 +1448,19 @@ function ServiceModal({ s }: { s: ReturnType<typeof useAdminServices> }) {
               value={form.description}
               onChange={(e) => s.setField("description", e.target.value)}
               placeholder="Šta je uključeno, napomene za klijente..."
+            />
+          </div>
+
+          <div>
+            <label className={l2}>Наведи шта услуга садржи (свака ставка нови ред)</label>
+            <textarea
+              className={i2 + " resize-none"}
+              rows={4}
+              value={(form.items ?? []).join("\n")}
+              onChange={(e) =>
+                s.setField("items", e.target.value.split("\n"))
+              }
+              placeholder={"Stavka 1\nStavka 2\nStavka 3"}
             />
           </div>
 

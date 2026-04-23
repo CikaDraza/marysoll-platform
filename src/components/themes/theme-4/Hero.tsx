@@ -25,10 +25,10 @@ export function Theme4HeroSoft({
             ? imageMain.src
             : "https://res.cloudinary.com/dufo1t5li/image/upload/v1776724254/image-gen-27-Copy-Copy-Copy-min_s9kqfo.webp"
         }
-        className="absolute inset-0 w-full h-full object-cover object-center opacity-70"
+        className="absolute inset-0 w-full h-full object-cover object-center"
       />
 
-      <div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-0 bg-black/50" />
 
       <div className="relative z-10 max-w-7xl min-w-7xl mx-auto px-6 text-white">
         <div className="mr-auto">

@@ -70,6 +70,21 @@ import {
   Theme4WorkingHours,
 } from "./theme-4";
 import { Theme4AboutSoft } from "./theme-4";
+import { mapCMS } from "@/lib/CMSMapper/mapCMS";
+import {
+  Theme5Artists,
+  Theme5CTA,
+  Theme5Footer,
+  Theme5Gallery,
+  Theme5Header,
+  Theme5Hero,
+  Theme5HowItWorks,
+  Theme5Pricing,
+  Theme5Services,
+  Theme5Stats,
+  Theme5Testimonials,
+  Theme5WorkingHours,
+} from "./theme-5";
 
 interface Testimonial {
   _id: string;
@@ -520,6 +535,44 @@ export function ThemeLayout({
         </main>
 
         <Theme4Footer {...footerProps} />
+      </div>
+    );
+  }
+
+  // ── Theme 5: Modern Spa ─────────────────────────────────────────────
+  if (theme === "theme-5") {
+    const ui = mapCMS(salon, services, testimonials);
+
+    return (
+      <div className="min-h-screen flex flex-col" style={brandingVars}>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="stylesheet" href={googleFontHref} />
+        {/* HEADER */}
+        <Theme5Header data={ui.header} />
+        <main className="flex-1 flex flex-col overflow-x-hidden">
+          {/* 1. HERO */}
+          <Theme5Hero data={ui.hero} />
+          {/* 2. SERVICES */}
+          <Theme5Services data={ui.services} services={ui.services.services} />
+          {/* 3. WORKING HOURS */}
+          <Theme5WorkingHours workingHours={ui.workingHours.workingHours} />
+          {/* 4. HOW IT WORKS */}
+          <Theme5HowItWorks data={ui.howItWorks} />
+          {/* 5. PRICING */}
+          <Theme5Pricing services={services} />
+          {/* 6. CTA */}
+          <Theme5CTA data={ui.cta} />
+          {/* 7. ARTISTS */}
+          <Theme5Artists data={ui.about} />
+          {/* 8. STATS */}
+          <Theme5Stats data={ui.about} />
+          {/* 9. TESTIMONIALS */}
+          <Theme5Testimonials data={ui.testimonials} />
+          {/* 10. GALLERY */}
+          <Theme5Gallery data={ui.gallery} />
+        </main>
+        {/* FOOTER */}
+        <Theme5Footer data={ui.footer} />
       </div>
     );
   }

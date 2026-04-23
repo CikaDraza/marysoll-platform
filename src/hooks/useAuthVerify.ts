@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { AxiosError } from "axios";
 import { useState } from "react";
 
 export const useVerifyRegistration = () => {
@@ -21,13 +22,13 @@ export const useVerifyRegistration = () => {
       await api.post("/auth/verify", { token });
 
       setIsSuccess(true);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Greška pri verifikaciji:", err);
 
-      // Hvatamo tačnu grešku sa servera
+      const axiosErr = err as AxiosError<{ error?: string }>;
       const errorMessage =
-        err.response?.data?.error ||
-        err.message ||
+        axiosErr.response?.data?.error ||
+        axiosErr.message ||
         "Došlo je do greške pri verifikaciji naloga.";
 
       setError(errorMessage);

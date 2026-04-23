@@ -57,7 +57,13 @@ export async function POST(req: NextRequest) {
       contactEmail: form.get("contactEmail") ?? "",
       marketingPhone: form.get("marketingPhone") ?? "",
       logo: logoUrl,
-      landingTheme: ["theme-1", "theme-2", "theme-3"].includes(landingTheme)
+      landingTheme: [
+        "theme-1",
+        "theme-2",
+        "theme-3",
+        "theme-4",
+        "theme-5",
+      ].includes(landingTheme)
         ? landingTheme
         : "theme-1",
       social: parseJSON("social"),

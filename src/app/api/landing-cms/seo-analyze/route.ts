@@ -6,9 +6,7 @@ import type { LandingStructure } from "@/types";
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = (await requireAdmin(req)) as
-      | { decoded: DecodedToken }
-      | NextResponse;
+    const auth = requireAdmin(req) as { decoded: DecodedToken } | NextResponse;
     if (auth instanceof NextResponse) return auth;
 
     const body = await req.json();
@@ -25,9 +23,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result);
   } catch (err) {
     console.error("POST /api/landing-cms/seo-analyze:", err);
-    return NextResponse.json(
-      { error: "SEO analysis failed" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "SEO analysis failed" }, { status: 500 });
   }
 }

@@ -1,6 +1,11 @@
 import mongoose, { model, models, Types } from "mongoose";
 
-export type LandingTheme = "theme-1" | "theme-2" | "theme-3" | "theme-4";
+export type LandingTheme =
+  | "theme-1"
+  | "theme-2"
+  | "theme-3"
+  | "theme-4"
+  | "theme-5";
 
 const ctaSchema = new mongoose.Schema({
   text: { type: String },
@@ -85,6 +90,16 @@ const SalonProfileSchema = new mongoose.Schema(
         },
         gallery: {
           enabled: { type: Boolean, default: true },
+          /**
+           * Mirrors THEME_CONFIG[landingTheme].gallery.variant.
+           * "images-only"          → flat `images` array (masonry — themes 3/4/5)
+           * "images-with-category" → `treatments` array (zigzag — themes 1/2)
+           */
+          galleryVariant: {
+            type: String,
+            enum: ["images-only", "images-with-category"],
+            default: "images-with-category",
+          },
           headline: { type: String },
           subheadline: { type: String },
           instagram: {
@@ -179,7 +194,7 @@ const SalonProfileSchema = new mongoose.Schema(
 
     landingTheme: {
       type: String,
-      enum: ["theme-1", "theme-2", "theme-3", "theme-4"],
+      enum: ["theme-1", "theme-2", "theme-3", "theme-4", "theme-5"],
       default: "theme-1",
     },
   },

@@ -3,11 +3,12 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSalonProfileAdmin } from "@/hooks/useSalonProfileAdmin";
-import type { LandingStructure } from "@/types";
+import type { LandingStructure, LandingTheme } from "@/types";
 import { ImageSelect } from "@/components/elements/ImageSelect";
 import toast from "react-hot-toast";
 import LoaderButton from "@/components/elements/LoaderButton";
 import Image from "next/image";
+import { THEME_CONFIG } from "@/lib/themeConfig";
 
 // ─── Style tokens (match dashboard) ──────────────────────────────────────────
 
@@ -321,7 +322,6 @@ function ImageInputField({
         />
       )}
       {value && (
-        // eslint-disable-next-line @next/next/no-img-element
         <Image
           width={100}
           height={100}
@@ -343,6 +343,7 @@ interface Props {
 export function AdminLandingCMS({ sp }: Props) {
   const { token } = useAuth();
   const ls = sp.form.landingStructure;
+  const themeConf = THEME_CONFIG[(sp.form.landingTheme as LandingTheme) ?? "theme-1"];
 
   const [seoResult, setSeoResult] = useState<SeoAnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -691,88 +692,108 @@ export function AdminLandingCMS({ sp }: Props) {
           ))}
         </div>
 
-        {/* ── Hero Images (theme-2: single | theme-3: 4 images) ─────────────── */}
-        {sp.form.landingTheme === "theme-2" && (
-          <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-3">
-            <p className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 inline-block px-2.5 py-1 rounded-lg">
-              Hero Slika
-            </p>
-            <ImageInputField
-              label="URL slike"
-              value={hero.image?.src ?? ""}
-              onChange={(url) =>
-                updateLandingSection("hero", {
-                  ...hero,
-                  image: { src: url, alt: hero.image?.alt ?? "" },
-                })
-              }
-            />
-            <div>
-              <label className={lbl}>Alt tekst</label>
-              <input
-                className={inp}
-                value={hero.image?.alt ?? ""}
-                onChange={(e) =>
-                  updateLandingSection("hero", {
-                    ...hero,
-                    image: { src: hero.image?.src ?? "", alt: e.target.value },
-                  })
-                }
-                placeholder="Opis slike za pristupačnost..."
-              />
-            </div>
-          </div>
-        )}
+        {/* ── Hero Images — driven by THEME_CONFIG ──────────────────────────── */}
+        {(() => {
+          const heroConf = themeConf.hero;
 
-        {sp.form.landingTheme === "theme-3" && (
-          <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-4">
-            <div>
-              <p className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 inline-block px-2.5 py-1 rounded-lg">
-                Hero Slike
+          if (!heroConf.hasImage) {
+            return (
+              <p className="text-xs text-gray-400 dark:text-gray-500 italic px-1">
+                Ova tema koristi podrazumevanu sliku za hero sekciju — nije potrebno dodavati sliku.
               </p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
-                Koristi se za varijantu &quot;Grid desno&quot;. Preporučeno: 3–4 slike.
-              </p>
-            </div>
-            {([0, 1, 2, 3] as const).map((idx) => {
-              const img = hero.images?.[idx];
-              const updateHeroImages = (src: string, alt: string) => {
-                const imgs = Array.from(
-                  { length: Math.max((hero.images?.length ?? 0), idx + 1) },
-                  (_, i) => hero.images?.[i] ?? { src: "", alt: "" },
-                );
-                imgs[idx] = { src, alt };
-                updateLandingSection("hero", { ...hero, images: imgs });
-              };
-              return (
-                <div
-                  key={idx}
-                  className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 space-y-2"
-                >
-                  <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-                    Slika {idx + 1}
-                  </span>
-                  <ImageInputField
-                    label="URL slike"
-                    value={img?.src ?? ""}
-                    onChange={(url) => updateHeroImages(url, img?.alt ?? "")}
+            );
+          }
+
+          if (heroConf.maxImages === 1) {
+            return (
+              <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-3">
+                <p className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 inline-block px-2.5 py-1 rounded-lg">
+                  Hero Slika
+                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  Ako ne dodate sliku, prikazaće se podrazumevana slika.
+                </p>
+                <ImageInputField
+                  label="URL slike"
+                  value={hero.image?.src ?? ""}
+                  onChange={(url) =>
+                    updateLandingSection("hero", {
+                      ...hero,
+                      image: { src: url, alt: hero.image?.alt ?? "" },
+                    })
+                  }
+                />
+                <div>
+                  <label className={lbl}>Alt tekst</label>
+                  <input
+                    className={inp}
+                    value={hero.image?.alt ?? ""}
+                    onChange={(e) =>
+                      updateLandingSection("hero", {
+                        ...hero,
+                        image: { src: hero.image?.src ?? "", alt: e.target.value },
+                      })
+                    }
+                    placeholder="Opis slike za pristupačnost..."
                   />
-                  <div>
-                    <label className={lbl}>Alt tekst</label>
-                    <input
-                      className={inp}
-                      value={img?.alt ?? ""}
-                      onChange={(e) =>
-                        updateHeroImages(img?.src ?? "", e.target.value)
-                      }
-                      placeholder="Opis slike za pristupačnost..."
-                    />
-                  </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              </div>
+            );
+          }
+
+          // maxImages > 1 — image grid (e.g. theme-3 with up to 4 images)
+          const slots = Array.from({ length: heroConf.maxImages }, (_, i) => i);
+          return (
+            <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-4">
+              <div>
+                <p className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 inline-block px-2.5 py-1 rounded-lg">
+                  Hero Slike
+                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+                  Koristi se za varijantu &quot;Grid desno&quot;. Preporučeno: {heroConf.maxImages} slike.
+                  Ako ne dodate slike, prikazaće se podrazumevane slike.
+                </p>
+              </div>
+              {slots.map((idx) => {
+                const img = hero.images?.[idx];
+                const updateHeroImages = (src: string, alt: string) => {
+                  const imgs = Array.from(
+                    { length: Math.max(hero.images?.length ?? 0, idx + 1) },
+                    (_, i) => hero.images?.[i] ?? { src: "", alt: "" },
+                  );
+                  imgs[idx] = { src, alt };
+                  updateLandingSection("hero", { ...hero, images: imgs });
+                };
+                return (
+                  <div
+                    key={idx}
+                    className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 space-y-2"
+                  >
+                    <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                      Slika {idx + 1}
+                    </span>
+                    <ImageInputField
+                      label="URL slike"
+                      value={img?.src ?? ""}
+                      onChange={(url) => updateHeroImages(url, img?.alt ?? "")}
+                    />
+                    <div>
+                      <label className={lbl}>Alt tekst</label>
+                      <input
+                        className={inp}
+                        value={img?.alt ?? ""}
+                        onChange={(e) =>
+                          updateHeroImages(img?.src ?? "", e.target.value)
+                        }
+                        placeholder="Opis slike za pristupačnost..."
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
 
         {/* CTAs */}
         <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-4">
@@ -1242,282 +1263,335 @@ export function AdminLandingCMS({ sp }: Props) {
           </div>
         </div>
 
-        {/* Treatments */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <label className={lbl + " mb-0"}>
-              Stavke galerije
-              <span className="ml-1.5 font-normal normal-case text-gray-400">
-                · slika1, slika2, tekst
-              </span>
-            </label>
-            <button
-              type="button"
-              onClick={() => {
-                const newItem = {
-                  id: String(Date.now()),
-                  category: "",
-                  title: "",
-                  description: "",
-                  images: [
-                    { src: "", alt: "" },
-                    { src: "", alt: "" },
-                  ],
-                  href: "/termini",
-                };
-                updateLandingSection("gallery", {
-                  ...gallery,
-                  treatments: [...(gallery.treatments ?? []), newItem],
-                });
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-violet-600 text-white hover:bg-violet-700 transition"
-            >
-              + Dodaj stavku
-            </button>
+        {/* Gallery content — variant driven by THEME_CONFIG */}
+        {themeConf.gallery.variant === "images-only" ? (
+
+          /* ── images-only: flat image list (masonry — Theme 3/4/5) ───────── */
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className={lbl + " mb-0"}>
+                Slike galerije
+                <span className="ml-1.5 font-normal normal-case text-gray-400">
+                  · samo slike
+                </span>
+              </label>
+              <button
+                type="button"
+                onClick={() =>
+                  updateLandingSection("gallery", {
+                    ...gallery,
+                    images: [...(gallery.images ?? []), { src: "", alt: "" }],
+                  })
+                }
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-violet-600 text-white hover:bg-violet-700 transition"
+              >
+                + Dodaj sliku
+              </button>
+            </div>
+
+            {(gallery.images ?? []).length === 0 && (
+              <p className="text-sm text-gray-400 dark:text-gray-500 italic text-center py-4">
+                Nema slika. Kliknite &quot;+ Dodaj sliku&quot; da dodate prvu.
+                <br />
+                <span className="text-xs">
+                  Ako nema slika, prikazuju se podrazumevane slike.
+                </span>
+              </p>
+            )}
+
+            {(gallery.images ?? []).map((img, ii) => {
+              const updateImg = (src: string, alt: string) => {
+                const imgs = [...(gallery.images ?? [])];
+                imgs[ii] = { src, alt };
+                updateLandingSection("gallery", { ...gallery, images: imgs });
+              };
+              const removeImg = () => {
+                const imgs = (gallery.images ?? []).filter((_, idx) => idx !== ii);
+                updateLandingSection("gallery", { ...gallery, images: imgs });
+              };
+              return (
+                <div
+                  key={ii}
+                  className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3 space-y-2"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                      Slika {ii + 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={removeImg}
+                      className="cursor-pointer w-6 h-6 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition text-sm font-bold"
+                    >
+                      —
+                    </button>
+                  </div>
+                  <ImageInputField
+                    label="URL slike"
+                    value={img.src ?? ""}
+                    onChange={(url) => updateImg(url, img.alt ?? "")}
+                  />
+                  <div>
+                    <label className={lbl}>Alt tekst</label>
+                    <input
+                      className={inp}
+                      value={img.alt ?? ""}
+                      onChange={(e) => updateImg(img.src ?? "", e.target.value)}
+                      placeholder="Opis slike za pristupačnost..."
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          {(gallery.treatments ?? []).length === 0 && (
-            <p className="text-sm text-gray-400 dark:text-gray-500 italic text-center py-4">
-              Nema stavki. Kliknite &quot;+ Dodaj stavku&quot; da dodate prvu.
-              <br />
-              <span className="text-xs">
-                Ako nema stavki, prikazuju se podrazumevane slike.
-              </span>
-            </p>
-          )}
+        ) : (
 
-          {(gallery.treatments ?? []).map((treatment, ti) => {
-            const updateTreatment = (updated: typeof treatment) => {
-              const all = [...(gallery.treatments ?? [])];
-              all[ti] = updated;
-              updateLandingSection("gallery", { ...gallery, treatments: all });
-            };
-            const removeTreatment = () => {
-              const all = (gallery.treatments ?? []).filter(
-                (_, idx) => idx !== ti,
-              );
-              updateLandingSection("gallery", { ...gallery, treatments: all });
-            };
-
-            return (
-              <div
-                key={treatment.id || ti}
-                className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-4"
+          /* ── images-with-category: treatments list (zigzag — Theme 1/2) ── */
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className={lbl + " mb-0"}>
+                Stavke galerije
+                <span className="ml-1.5 font-normal normal-case text-gray-400">
+                  · slika1, slika2, tekst
+                </span>
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  const newItem = {
+                    id: String(Date.now()),
+                    category: "",
+                    title: "",
+                    description: "",
+                    images: [{ src: "", alt: "" }, { src: "", alt: "" }],
+                    href: "/termini",
+                  };
+                  updateLandingSection("gallery", {
+                    ...gallery,
+                    treatments: [...(gallery.treatments ?? []), newItem],
+                  });
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-violet-600 text-white hover:bg-violet-700 transition"
               >
-                {/* Card header */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 px-2.5 py-1 rounded-lg">
-                    Stavka {ti + 1}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={removeTreatment}
-                    className="w-7 h-7 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition text-base font-bold"
-                  >
-                    −
-                  </button>
-                </div>
+                + Dodaj stavku
+              </button>
+            </div>
 
-                {/* Meta fields */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={lbl}>Kategorija</label>
-                    <input
-                      className={inp}
-                      value={treatment.category ?? ""}
-                      onChange={(e) =>
-                        updateTreatment({
-                          ...treatment,
-                          category: e.target.value,
-                        })
-                      }
-                      placeholder="npr. Makeup"
-                    />
-                  </div>
-                  <div>
-                    <label className={lbl}>Link (href)</label>
-                    <input
-                      className={inp}
-                      value={treatment.href ?? ""}
-                      onChange={(e) =>
-                        updateTreatment({ ...treatment, href: e.target.value })
-                      }
-                      placeholder="/termini"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className={lbl}>Naziv</label>
-                    <input
-                      className={inp}
-                      value={treatment.title ?? ""}
-                      onChange={(e) =>
-                        updateTreatment({ ...treatment, title: e.target.value })
-                      }
-                      placeholder="npr. Dnevna šminka"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className={lbl}>Opis</label>
-                    <textarea
-                      className={inp + " resize-none"}
-                      rows={2}
-                      value={treatment.description ?? ""}
-                      onChange={(e) =>
-                        updateTreatment({
-                          ...treatment,
-                          description: e.target.value,
-                        })
-                      }
-                      placeholder="Kratki opis tretmana..."
-                    />
-                  </div>
-                </div>
+            {(gallery.treatments ?? []).length === 0 && (
+              <p className="text-sm text-gray-400 dark:text-gray-500 italic text-center py-4">
+                Nema stavki. Kliknite &quot;+ Dodaj stavku&quot; da dodate prvu.
+                <br />
+                <span className="text-xs">
+                  Ako nema stavki, prikazuju se podrazumevane slike.
+                </span>
+              </p>
+            )}
 
-                {/* Images */}
-                <div className="space-y-3">
+            {(gallery.treatments ?? []).map((treatment, ti) => {
+              const updateTreatment = (updated: typeof treatment) => {
+                const all = [...(gallery.treatments ?? [])];
+                all[ti] = updated;
+                updateLandingSection("gallery", { ...gallery, treatments: all });
+              };
+              const removeTreatment = () => {
+                const all = (gallery.treatments ?? []).filter((_, idx) => idx !== ti);
+                updateLandingSection("gallery", { ...gallery, treatments: all });
+              };
+
+              return (
+                <div
+                  key={treatment.id || ti}
+                  className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-4"
+                >
+                  {/* Card header */}
                   <div className="flex items-center justify-between">
-                    <label className={lbl + " mb-0"}>
-                      Slike
-                      <span className="ml-1.5 font-normal normal-case text-gray-400">
-                        · max 2
-                      </span>
-                    </label>
-                    {(treatment.images ?? []).length < 2 && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          updateTreatment({
-                            ...treatment,
-                            images: [
-                              ...(treatment.images ?? []),
-                              { src: "", alt: "" },
-                            ],
-                          })
+                    <span className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 px-2.5 py-1 rounded-lg">
+                      Stavka {ti + 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={removeTreatment}
+                      className="cursor-pointer w-7 h-7 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition text-base font-bold"
+                    >
+                      —
+                    </button>
+                  </div>
+
+                  {/* Meta fields */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={lbl}>Kategorija</label>
+                      <input
+                        className={inp}
+                        value={treatment.category ?? ""}
+                        onChange={(e) =>
+                          updateTreatment({ ...treatment, category: e.target.value })
                         }
-                        className="text-xs text-violet-600 dark:text-violet-400 hover:underline"
-                      >
-                        + Dodaj sliku
-                      </button>
+                        placeholder="npr. Makeup"
+                      />
+                    </div>
+                    <div>
+                      <label className={lbl}>Link (href)</label>
+                      <input
+                        className={inp}
+                        value={treatment.href ?? ""}
+                        onChange={(e) =>
+                          updateTreatment({ ...treatment, href: e.target.value })
+                        }
+                        placeholder="/termini"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className={lbl}>Naziv</label>
+                      <input
+                        className={inp}
+                        value={treatment.title ?? ""}
+                        onChange={(e) =>
+                          updateTreatment({ ...treatment, title: e.target.value })
+                        }
+                        placeholder="npr. Dnevna šminka"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className={lbl}>Opis</label>
+                      <textarea
+                        className={inp + " resize-none"}
+                        rows={2}
+                        value={treatment.description ?? ""}
+                        onChange={(e) =>
+                          updateTreatment({ ...treatment, description: e.target.value })
+                        }
+                        placeholder="Kratki opis tretmana..."
+                      />
+                    </div>
+                  </div>
+
+                  {/* Images (max 2 per treatment) */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className={lbl + " mb-0"}>
+                        Slike
+                        <span className="ml-1.5 font-normal normal-case text-gray-400">
+                          · max 2
+                        </span>
+                      </label>
+                      {(treatment.images ?? []).length < 2 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateTreatment({
+                              ...treatment,
+                              images: [...(treatment.images ?? []), { src: "", alt: "" }],
+                            })
+                          }
+                          className="text-xs text-violet-600 dark:text-violet-400 hover:underline"
+                        >
+                          + Dodaj sliku
+                        </button>
+                      )}
+                    </div>
+
+                    {(treatment.images ?? []).map((img, ii) => {
+                      const updateImg = (updated: { src: string; alt: string }) => {
+                        const imgs = [...(treatment.images ?? [])];
+                        imgs[ii] = updated;
+                        updateTreatment({ ...treatment, images: imgs });
+                      };
+                      const removeImg = () => {
+                        const imgs = (treatment.images ?? []).filter((_, idx) => idx !== ii);
+                        updateTreatment({ ...treatment, images: imgs });
+                      };
+                      return (
+                        <div
+                          key={ii}
+                          className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 space-y-2"
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                              Slika {ii + 1}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={removeImg}
+                              className="cursor-pointer w-6 h-6 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition text-sm font-bold"
+                            >
+                              —
+                            </button>
+                          </div>
+                          <ImageInputField
+                            label="URL slike"
+                            value={img.src ?? ""}
+                            onChange={(url) => updateImg({ ...img, src: url })}
+                          />
+                          <div>
+                            <label className={lbl}>Alt tekst</label>
+                            <input
+                              className={inp}
+                              value={img.alt ?? ""}
+                              onChange={(e) => updateImg({ ...img, alt: e.target.value })}
+                              placeholder="Opis slike za pristupačnost..."
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {(treatment.images ?? []).length === 0 && (
+                      <p className="text-xs text-gray-400 dark:text-gray-500 italic">
+                        Nema slika. Kliknite &quot;+ Dodaj sliku&quot;.
+                      </p>
                     )}
                   </div>
 
-                  {(treatment.images ?? []).map((img, ii) => {
-                    const updateImg = (updated: {
-                      src: string;
-                      alt: string;
-                    }) => {
-                      const imgs = [...(treatment.images ?? [])];
-                      imgs[ii] = updated;
-                      updateTreatment({ ...treatment, images: imgs });
-                    };
-                    const removeImg = () => {
-                      const imgs = (treatment.images ?? []).filter(
-                        (_, idx) => idx !== ii,
-                      );
-                      updateTreatment({ ...treatment, images: imgs });
-                    };
-
-                    return (
-                      <div
-                        key={ii}
-                        className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 space-y-2"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                            Slika {ii + 1}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={removeImg}
-                            className="w-6 h-6 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition text-sm font-bold"
-                          >
-                            −
-                          </button>
-                        </div>
-                        <ImageInputField
-                          label="URL slike"
-                          value={img.src ?? ""}
-                          onChange={(url) => updateImg({ ...img, src: url })}
-                        />
-                        <div>
-                          <label className={lbl}>Alt tekst</label>
-                          <input
-                            className={inp}
-                            value={img.alt ?? ""}
-                            onChange={(e) =>
-                              updateImg({ ...img, alt: e.target.value })
-                            }
-                            placeholder="Opis slike za pristupačnost..."
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {(treatment.images ?? []).length === 0 && (
-                    <p className="text-xs text-gray-400 dark:text-gray-500 italic">
-                      Nema slika. Kliknite &quot;+ Dodaj sliku&quot;.
-                    </p>
-                  )}
+                  {/* Insert after this card */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newItem = {
+                        id: String(Date.now()),
+                        category: "",
+                        title: "",
+                        description: "",
+                        images: [{ src: "", alt: "" }, { src: "", alt: "" }],
+                        href: "/termini",
+                      };
+                      const all = [...(gallery.treatments ?? [])];
+                      all.splice(ti + 1, 0, newItem);
+                      updateLandingSection("gallery", { ...gallery, treatments: all });
+                    }}
+                    className="w-full mt-1 py-2 text-xs font-semibold rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-700 text-violet-500 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/10 transition"
+                  >
+                    + Dodaj stavku ispod
+                  </button>
                 </div>
+              );
+            })}
 
-                {/* + Add item button after each card */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newItem = {
-                      id: String(Date.now()),
-                      category: "",
-                      title: "",
-                      description: "",
-                      images: [
-                        { src: "", alt: "" },
-                        { src: "", alt: "" },
-                      ],
-                      href: "/termini",
-                    };
-                    const all = [...(gallery.treatments ?? [])];
-                    all.splice(ti + 1, 0, newItem);
-                    updateLandingSection("gallery", {
-                      ...gallery,
-                      treatments: all,
-                    });
-                  }}
-                  className="w-full mt-1 py-2 text-xs font-semibold rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-700 text-violet-500 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/10 transition"
-                >
-                  + Dodaj stavku ispod
-                </button>
-              </div>
-            );
-          })}
-
-          {/* Bottom add button when list is non-empty */}
-          {(gallery.treatments ?? []).length > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                const newItem = {
-                  id: String(Date.now()),
-                  category: "",
-                  title: "",
-                  description: "",
-                  images: [
-                    { src: "", alt: "" },
-                    { src: "", alt: "" },
-                  ],
-                  href: "/termini",
-                };
-                updateLandingSection("gallery", {
-                  ...gallery,
-                  treatments: [...(gallery.treatments ?? []), newItem],
-                });
-              }}
-              className="w-full py-3 text-xs font-semibold rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-700 text-violet-500 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/10 transition"
-            >
-              + Dodaj stavku na kraj
-            </button>
-          )}
-        </div>
+            {(gallery.treatments ?? []).length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const newItem = {
+                    id: String(Date.now()),
+                    category: "",
+                    title: "",
+                    description: "",
+                    images: [{ src: "", alt: "" }, { src: "", alt: "" }],
+                    href: "/termini",
+                  };
+                  updateLandingSection("gallery", {
+                    ...gallery,
+                    treatments: [...(gallery.treatments ?? []), newItem],
+                  });
+                }}
+                className="w-full py-3 text-xs font-semibold rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-700 text-violet-500 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/10 transition"
+              >
+                + Dodaj stavku na kraj
+              </button>
+            )}
+          </div>
+        )}
       </SectionCard>
 
       {/* ── FAQ ──────────────────────────────────────────────────────────── */}

@@ -39,8 +39,8 @@ export function Theme4AboutSoft({
           </div>
         </div>
         <Image
-          width={360}
-          height={300}
+          width={600}
+          height={600}
           alt="About us image"
           src={
             imageUrl ||

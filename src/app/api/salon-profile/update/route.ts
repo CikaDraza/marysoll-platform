@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { SalonProfile } from "@/models/SalonProfile";
-import { uploadToCloudinary, deleteFromCloudinary, getTenantFolder } from "@/lib/cloudinary";
+import {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+  getTenantFolder,
+} from "@/lib/cloudinary";
 import { requireAdmin } from "@/lib/auth/auth-server";
 import { DecodedToken } from "@/types/auth/types";
 
 export async function PUT(req: NextRequest) {
   try {
     await connectToDB();
-    const auth = (await requireAdmin(req)) as
-      | { decoded: DecodedToken }
-      | NextResponse;
+    const auth = requireAdmin(req) as { decoded: DecodedToken } | NextResponse;
     if (auth instanceof NextResponse) return auth;
     const tenantId = auth.decoded.tenantId;
 
@@ -54,7 +56,11 @@ export async function PUT(req: NextRequest) {
     const branding = parseJSON("branding");
     if (branding) profile.branding = branding;
     const landingTheme = (form.get("landingTheme") as string) || "theme-1";
-    if (["theme-1", "theme-2", "theme-3", "theme-4"].includes(landingTheme)) {
+    if (
+      ["theme-1", "theme-2", "theme-3", "theme-4", "theme-5"].includes(
+        landingTheme,
+      )
+    ) {
       profile.landingTheme = landingTheme;
     }
     const landingStructure = parseJSON("landingStructure");
