@@ -296,7 +296,9 @@ export default function AppointmentCalendarPage({
                   {/* Time label */}
                   <div
                     className={`flex items-start justify-end pr-2 pt-0.5 bg-white ${
-                      showHourLine ? "border-t border-gray-200" : "border-t border-gray-50"
+                      showHourLine
+                        ? "border-t border-gray-200"
+                        : "border-t border-gray-50"
                     }`}
                     style={{ height: "32px" }}
                   >
@@ -314,7 +316,8 @@ export default function AppointmentCalendarPage({
                     const working = isInWorkingHours(srName, slotMin);
                     const isToday = dateStr === todayStr;
                     const booked = working && isBooked(dateStr, slotMin);
-                    const blockStart = booked && isBookedBlockStart(dateStr, slotMin, srName);
+                    const blockStart =
+                      booked && isBookedBlockStart(dateStr, slotMin, srName);
 
                     let bg: string;
                     if (!working) {
@@ -329,7 +332,9 @@ export default function AppointmentCalendarPage({
                       <div
                         key={di}
                         className={`relative border-l border-gray-100 ${
-                          showHourLine ? "border-t border-gray-200" : "border-t border-gray-50"
+                          showHourLine
+                            ? "border-t border-gray-200"
+                            : "border-t border-gray-50"
                         } ${bg}`}
                         style={{
                           height: "32px",
@@ -359,15 +364,15 @@ export default function AppointmentCalendarPage({
           <span className="text-[11px] text-gray-500">Slobodan termin</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-gray-200 inline-block" />
+          <span className="w-3 h-3 rounded bg-purple-700 inline-block" />
           <span className="text-[11px] text-gray-500">Zauzeto</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-[#f8f8f8] border border-gray-200 inline-block" />
+          <span className="w-3 h-3 rounded bg-gray-300 border border-gray-200 inline-block" />
           <span className="text-[11px] text-gray-500">Salon ne radi</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-[#fffbf0] border border-amber-200 inline-block" />
+          <span className="w-3 h-3 rounded bg-red-100 inline-block" />
           <span className="text-[11px] text-gray-500">Danas</span>
         </div>
       </div>

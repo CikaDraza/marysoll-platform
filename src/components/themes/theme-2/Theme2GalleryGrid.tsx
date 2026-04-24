@@ -1,4 +1,4 @@
-import InstagramIcon from "@/components/assets/icons/InstagramIcon copy";
+import InstagramIcon from "@/components/assets/icons/InstagramIcon";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -87,7 +87,7 @@ function GalleryText({ title, description, href }: GalleryTextProps) {
   return (
     <Link
       href={href}
-      className="flex flex-col justify-center p-8 rounded-xl bg-(--secondary-color) shadow-sm hover:shadow-md transition h-full"
+      className="flex flex-col justify-center p-8 rounded-xl bg-(--primary-color) shadow-sm hover:shadow-md transition h-full"
     >
       <h3 className="text-xl text-gray-900 font-semibold mb-3">{title}</h3>
       <p className="text-gray-800 leading-relaxed">{description}</p>

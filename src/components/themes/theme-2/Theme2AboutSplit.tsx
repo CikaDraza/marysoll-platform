@@ -30,7 +30,7 @@ export function Theme2AboutSplit({ title, text, imageUrl }: Props) {
       {/* TEXT */}
       <div className="lg:order-1 relative w-full lg:w-3/5 min-h-[60vh] lg:h-auto overflow-hidden flex items-center justify-center px-6 py-12 lg:py-0">
         <div className="px-6 py-8 max-w-4xl">
-          <p className="text-yellow-400 uppercase tracking-[0.3em] text-xs mb-4">
+          <p className="text-(--primary-color) uppercase tracking-[0.3em] text-xs mb-4">
             O meni
           </p>
 

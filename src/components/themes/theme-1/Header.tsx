@@ -21,6 +21,8 @@ interface Theme1HeaderProps {
   clientSlug?: string;
   salonName?: string;
   salonLogo?: string | null;
+  primaryColor?: string;
+  secondaryColor?: string;
 }
 
 export function Theme1Header({
@@ -29,6 +31,8 @@ export function Theme1Header({
   salonName,
   salonLogo,
   clientSlug,
+  primaryColor = "#a855f7",
+  secondaryColor = "#ec4899",
 }: Theme1HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, isLoggedIn, isLoading } = useAuth();
@@ -99,8 +103,8 @@ export function Theme1Header({
                 target={item.external ? "_blank" : "_self"}
                 className={
                   item.cta
-                    ? "px-5 py-2 bg-(--secondary-color)/90 text-white text-sm font-semibold rounded-full hover:bg-(--secondary-color) transition-colors"
-                    : `text-sm font-medium transition-colors ${isActive ? "text-(--secondary-color)" : "text-gray-700 hover:text-(--secondary-color)"}`
+                    ? "px-5 py-2 bg-(--primary-color)/90 text-white text-sm font-semibold rounded-full hover:bg-(--primary-color) transition-colors"
+                    : `text-sm font-medium transition-colors ${isActive ? "text-(--primary-color)" : "text-gray-700 hover:text-(--primary-color)"}`
                 }
               >
                 {item.name}
@@ -137,7 +141,7 @@ export function Theme1Header({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="absolute inset-0 bg-black/50" />
+          <div className="absolute inset-0 bg-black/50 z-10" />
         </TransitionChild>
         <TransitionChild
           as="div"
@@ -149,16 +153,24 @@ export function Theme1Header({
           leaveFrom="translate-x-0"
           leaveTo="translate-x-full"
         >
-          <DialogPanel className="h-full bg-white px-6 py-6 shadow-2xl">
+          <DialogPanel
+            className="h-full bg-white px-6 py-6 shadow-2xl"
+            style={
+              {
+                "--primary-color": primaryColor,
+                "--secondary-color": secondaryColor,
+              } as React.CSSProperties
+            }
+          >
             <div className="flex items-center justify-between mb-8">
-              <span className="font-bold text-lg text-(--secondary-color)">
+              <span className="font-bold text-lg text-(--primary-color)">
                 {displayName}
               </span>
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-2 cursor-pointer"
               >
-                <XMarkIcon className="size-5 text-(--secondary-color) transition" />
+                <XMarkIcon className="size-5 text-(--primary-color) transition" />
               </button>
             </div>
             <div className="space-y-4">
@@ -170,8 +182,8 @@ export function Theme1Header({
                   onClick={() => setMobileMenuOpen(false)}
                   className={
                     item.cta
-                      ? "block text-center py-3 bg-(--secondary-color) text-white font-semibold rounded-xl"
-                      : "block py-2 text-gray-700 font-medium hover:text-(--secondary-color)"
+                      ? "block text-center py-3 bg-(--primary-color) text-white font-semibold rounded-xl"
+                      : "block py-2 text-gray-700 font-medium hover:text-(--primary-color)"
                   }
                 >
                   {item.name}

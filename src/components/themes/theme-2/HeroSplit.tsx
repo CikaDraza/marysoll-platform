@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 interface Theme2HeroSplitProps {
   imageUrl?: string;
@@ -57,12 +58,12 @@ export function Theme2HeroSplit({
           {/* CTA */}
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Primary CTA */}
-            <a
+            <Link
               href={cta?.primary?.href || "/termini"}
               className="px-6 py-3 text-center font-medium rounded-md bg-[var(--secondary-color)] text-black hover:opacity-90 transition"
             >
               {cta?.primary?.text || "Zakaži termin"}
-            </a>
+            </Link>
 
             {/* Secondary CTA */}
             {cta?.secondary && (

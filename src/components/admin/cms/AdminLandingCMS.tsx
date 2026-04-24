@@ -3,12 +3,22 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSalonProfileAdmin } from "@/hooks/useSalonProfileAdmin";
+import { useAdminServices } from "@/hooks/useAdminServices";
+import { useQueryClient } from "@tanstack/react-query";
 import type { LandingStructure, LandingTheme } from "@/types";
 import { ImageSelect } from "@/components/elements/ImageSelect";
 import toast from "react-hot-toast";
 import LoaderButton from "@/components/elements/LoaderButton";
 import Image from "next/image";
 import { THEME_CONFIG } from "@/lib/themeConfig";
+import BlowDryingIcon from "@/components/assets/icons/services/BlowDryingIcon";
+import EyebrowsIcon from "@/components/assets/icons/services/EyebrowsIcon";
+import FigaroIcon from "@/components/assets/icons/services/FigaroIcon";
+import FlowerIcon from "@/components/assets/icons/services/FlowerIcon";
+import HairIcon from "@/components/assets/icons/services/Hair";
+import HaircutIcon from "@/components/assets/icons/services/HaricutIcon";
+import MakeupFaceIcon from "@/components/assets/icons/services/MakeupFaceIcon";
+import MassageIcon from "@/components/assets/icons/services/MassageIcon";
 
 // ─── Style tokens (match dashboard) ──────────────────────────────────────────
 
@@ -54,6 +64,35 @@ const HEROICON_OPTIONS = [
   "FireIcon",
   "FaceSmileIcon",
 ];
+
+// ─── Service icons ────────────────────────────────────────────────────────────
+
+import type { ComponentType } from "react";
+
+type ServiceIconProps = { bgColor?: string; width?: number; height?: number; hasCircle?: boolean };
+type ServiceIconComp = ComponentType<ServiceIconProps>;
+
+const SERVICE_ICONS: Record<string, ServiceIconComp> = {
+  BlowDryingIcon,
+  EyebrowsIcon,
+  FigaroIcon,
+  FlowerIcon,
+  HairIcon,
+  HaircutIcon,
+  MakeupFaceIcon,
+  MassageIcon,
+};
+
+const SERVICE_ICON_LABELS: Record<string, string> = {
+  BlowDryingIcon: "Feniranje",
+  EyebrowsIcon: "Obrve",
+  FigaroIcon: "Figaro",
+  FlowerIcon: "Cvet",
+  HairIcon: "Kosa",
+  HaircutIcon: "Šišanje",
+  MakeupFaceIcon: "Šminka",
+  MassageIcon: "Masaža",
+};
 
 // ─── SEO types ────────────────────────────────────────────────────────────────
 
@@ -345,9 +384,34 @@ export function AdminLandingCMS({ sp }: Props) {
   const ls = sp.form.landingStructure;
   const themeConf = THEME_CONFIG[(sp.form.landingTheme as LandingTheme) ?? "theme-1"];
 
+  const { services } = useAdminServices();
+  const qc = useQueryClient();
+
   const [seoResult, setSeoResult] = useState<SeoAnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isAutoFixing, setIsAutoFixing] = useState(false);
+  const [iconPickerServiceId, setIconPickerServiceId] = useState<string | null>(null);
+  const [iconSaving, setIconSaving] = useState<string | null>(null);
+
+  const updateServiceIcon = async (serviceId: string, icon: string) => {
+    if (!token) return;
+    setIconSaving(serviceId);
+    try {
+      const res = await fetch(`/api/services/${serviceId}/update`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ icon }),
+      });
+      if (!res.ok) throw new Error();
+      qc.invalidateQueries({ queryKey: ["services"] });
+      setIconPickerServiceId(null);
+      toast.success("Ikonica sačuvana!");
+    } catch {
+      toast.error("Greška pri čuvanju ikonice");
+    } finally {
+      setIconSaving(null);
+    }
+  };
 
   // ── Deep update helpers ──────────────────────────────────────────────────
 
@@ -1002,9 +1066,86 @@ export function AdminLandingCMS({ sp }: Props) {
             />
           </div>
         </div>
+        <div className="flex items-center justify-between py-2 px-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700">
+          <div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Prikaži ikonice</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">Ikonice usluga u sekciji na landing stranici</p>
+          </div>
+          <ToggleSwitch
+            checked={servicesPreview.showIcons ?? true}
+            onChange={(v) =>
+              updateLandingSection("servicesPreview", {
+                ...servicesPreview,
+                showIcons: v,
+              })
+            }
+            label="Prikaži ikonice"
+          />
+        </div>
         <p className="text-xs text-gray-400 dark:text-gray-500">
           Usluge se automatski učitavaju iz baze podataka.
         </p>
+
+        {services.length > 0 && (
+          <div>
+            <label className={lbl}>Ikonice usluga</label>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
+              Kliknite na uslugu da dodelite ikonicu koja se prikazuje na landing stranici.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {services.map((service) => {
+                const IconComp = service.icon ? SERVICE_ICONS[service.icon] : null;
+                const isOpen = iconPickerServiceId === service._id;
+                return (
+                  <div key={service._id} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setIconPickerServiceId(isOpen ? null : service._id)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs transition ${
+                        service.icon
+                          ? "border-violet-300 dark:border-violet-700 bg-violet-50 dark:bg-violet-900/20 text-violet-800 dark:text-violet-300"
+                          : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                      } hover:border-violet-400`}
+                    >
+                      {IconComp ? (
+                        <IconComp width={18} height={18} hasCircle={false} />
+                      ) : (
+                        <span className="w-4 h-4 rounded-full border border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-[9px] text-gray-400">
+                          +
+                        </span>
+                      )}
+                      <span className="max-w-[140px] truncate">{service.name}</span>
+                    </button>
+
+                    {isOpen && (
+                      <div className="absolute z-20 top-full mt-1 left-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-3 grid grid-cols-4 gap-2 min-w-[220px]">
+                        {Object.entries(SERVICE_ICONS).map(([name, Comp]) => (
+                          <button
+                            key={name}
+                            type="button"
+                            onClick={() => updateServiceIcon(service._id, name)}
+                            title={SERVICE_ICON_LABELS[name]}
+                            disabled={iconSaving === service._id}
+                            className={`flex flex-col items-center gap-1 p-1.5 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 transition cursor-pointer ${
+                              service.icon === name
+                                ? "ring-2 ring-violet-500 bg-violet-50 dark:bg-violet-900/20"
+                                : ""
+                            }`}
+                          >
+                            <Comp width={30} height={30} hasCircle={false} />
+                            <span className="text-[9px] text-gray-500 dark:text-gray-400 truncate w-full text-center leading-tight">
+                              {SERVICE_ICON_LABELS[name]}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </SectionCard>
 
       {/* ── APPOINTMENT SECTION ──────────────────────────────────────────── */}

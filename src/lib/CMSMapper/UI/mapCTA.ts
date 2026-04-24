@@ -1,6 +1,7 @@
 import { LandingStructure } from "@/types";
 
-export function mapCTA(ls: LandingStructure | undefined) {
+export function mapCTA(ls: LandingStructure | undefined, tenantSlug?: string) {
+  const p = tenantSlug ? `/${tenantSlug}` : "";
   const cta = ls?.landing?.hero?.ctas;
 
   return {
@@ -13,7 +14,7 @@ export function mapCTA(ls: LandingStructure | undefined) {
 
     cta: {
       label: cta?.primary?.text ?? "Book Now",
-      href: cta?.primary?.href ?? "#booking",
+      href: cta?.primary?.href ?? `${p}/termini`,
     },
   };
 }

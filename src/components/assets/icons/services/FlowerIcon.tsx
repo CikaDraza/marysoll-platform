@@ -1,5 +1,5 @@
 export default function FlowerIcon({
-  bgColor = "#5D0156",
+  bgColor = "#ffffff",
 }: {
   bgColor?: string;
   width?: number;

@@ -79,12 +79,12 @@ export function Theme3HeroSoft({
         </div>
 
         {/* RIGHT GRID */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-1">
           {imageMain
             ? (imageGrid || IMAGESINGLE).map((img, i) => (
                 <Image
                   width={500}
-                  height={400}
+                  height={500}
                   alt={img?.alt || subheadline || `Gallery image ${i + 1}`}
                   key="main"
                   src={img?.src}
@@ -94,13 +94,13 @@ export function Theme3HeroSoft({
             : (imageGrid || IMAGEGRID).map((img, i) => (
                 <Image
                   width={500}
-                  height={400}
+                  height={500}
                   // Access img.alt if it exists, otherwise fallback to the default
                   alt={img?.alt || subheadline || `Gallery image ${i + 1}`}
                   key={i}
                   // Access img.src because 'img' is an object
                   src={img?.src}
-                  className="rounded-2xl object-cover w-full h-40"
+                  className="rounded-2xl object-cover w-full h-full"
                 />
               ))}
         </div>

@@ -1,4 +1,4 @@
-import InstagramIcon from "@/components/assets/icons/InstagramIcon copy";
+import InstagramIcon from "@/components/assets/icons/InstagramIcon";
 import Image from "next/image";
 import Link from "next/link";
 

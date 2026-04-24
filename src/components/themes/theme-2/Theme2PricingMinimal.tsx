@@ -14,7 +14,7 @@ export function Theme2PricingMinimal({ services }: { services: IService[] }) {
             >
               <span className="text-gray-300">{s.name}</span>
               <hr className="flex-1 border-dashed border-gray-300" />
-              <span className="text-yellow-400 font-semibold">
+              <span className="text-(--primary-color) font-semibold">
                 {s.basePrice} RSD
               </span>
             </div>

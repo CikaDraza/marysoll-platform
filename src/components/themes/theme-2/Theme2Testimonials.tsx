@@ -30,14 +30,14 @@ export function Theme2Testimonials({ testimonials = [], headline }: Props) {
                 {Array.from({ length: 5 }).map((_, i) => (
                   <StarIcon
                     key={i}
-                    className={`w-4 h-4 ${i < t.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-200"}`}
+                    className={`w-4 h-4 ${i < t.rating ? "text-(--primary-color) fill-(--primary-color)" : "text-gray-200"}`}
                   />
                 ))}
               </div>
               <p className="text-gray-400 text-sm mb-4">
                 &quot;{t.comment}&quot;
               </p>
-              <div className="text-yellow-400">★★★★★</div>
+              <div className="text-(--primary-color)">★★★★★</div>
               <p className="text-white mt-2 text-sm font-semibold">
                 {t.clientName}
               </p>

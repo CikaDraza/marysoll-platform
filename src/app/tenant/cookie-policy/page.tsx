@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import type { Metadata } from "next";
 import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
 import CookiePolicyClient from "./CookiePolicyClient";
+import { TenantPageShell } from "@/components/themes/TenantPageShell";
 
 export const dynamic = "force-dynamic";
 
@@ -27,10 +28,12 @@ export default async function CookiePolicyPage() {
   const contactEmail = profile?.contactEmail ?? profile?.email ?? "";
 
   return (
-    <CookiePolicyClient
-      salonName={salonName}
-      contactEmail={contactEmail}
-      tenantSlug={tenantSlug}
-    />
+    <TenantPageShell tenantSlug={tenantSlug}>
+      <CookiePolicyClient
+        salonName={salonName}
+        contactEmail={contactEmail}
+        tenantSlug={tenantSlug}
+      />
+    </TenantPageShell>
   );
 }

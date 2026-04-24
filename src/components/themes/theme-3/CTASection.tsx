@@ -2,8 +2,8 @@ import Link from "next/link";
 
 export function Theme3CTA({ tenantSlug }: { tenantSlug?: string }) {
   return (
-    <section className="bg-[#E7B8A4] py-44 text-center text-white">
-      <h2 className="text-5xl lg:text-6xl font-serif mb-6">
+    <section className="bg-[#bfa37a] py-44 text-center text-white">
+      <h2 className="text-5xl lg:text-6xl font-serif mb-12">
         Spremna za promenu?
       </h2>
 

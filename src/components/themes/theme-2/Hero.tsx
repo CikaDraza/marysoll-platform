@@ -91,8 +91,8 @@ export function Theme2Hero({
                     href={`tel:${salonPhone}`}
                     className="relative flex items-center text-center lg:text-left group"
                   >
-                    <PhoneArrowUpRightIcon className="size-5 text-white group-hover:text-(--secondary-color) transition-colors" />
-                    <span className="text-white group-hover:text-(--secondary-color)">
+                    <PhoneArrowUpRightIcon className="size-5 text-white group-hover:text-(--primary-color) transition-colors" />
+                    <span className="text-white group-hover:text-(--primary-color)">
                       {salonPhone}
                     </span>
                   </Link>

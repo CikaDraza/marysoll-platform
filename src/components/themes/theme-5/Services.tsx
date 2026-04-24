@@ -1,79 +1,84 @@
 "use client";
 
 import { useState } from "react";
-import BlowDryingIcon from "@/components/assets/icons/BlowDryingIcon";
-import EyebrowsIcon from "@/components/assets/icons/EyebrowsIcon";
-import FigaroIcon from "@/components/assets/icons/FigaroIcon";
-import FlowerIcon from "@/components/assets/icons/FlowerIcon";
-import MakeupFaceIcon from "@/components/assets/icons/MakeupFaceIcon";
-import MassageIcon from "@/components/assets/icons/MassageIcon";
-import { IService } from "@/types";
 import Image from "next/image";
+import BlowDryingIcon from "@/components/assets/icons/services/BlowDryingIcon";
+import EyebrowsIcon from "@/components/assets/icons/services/EyebrowsIcon";
+import FigaroIcon from "@/components/assets/icons/services/FigaroIcon";
+import FlowerIcon from "@/components/assets/icons/services/FlowerIcon";
+import HairIcon from "@/components/assets/icons/services/Hair";
+import HaircutIcon from "@/components/assets/icons/services/HaricutIcon";
+import MakeupFaceIcon from "@/components/assets/icons/services/MakeupFaceIcon";
+import MassageIcon from "@/components/assets/icons/services/MassageIcon";
+import { IService } from "@/types";
+import type { ComponentType } from "react";
 
-interface Props {
+interface DataProps {
   label: string;
   headline: string;
   subheadline: string;
+  showIcons?: boolean;
 }
 
 const ACTIVE_BG = "#FFB633";
 
-const iconProps = (active: boolean) => ({
+type ServiceIconProps = {
+  bgColor?: string;
+  width?: number;
+  height?: number;
+  hasCircle?: boolean;
+};
+type ServiceIconComp = ComponentType<ServiceIconProps>;
+
+const SERVICE_ICONS: Record<string, ServiceIconComp> = {
+  BlowDryingIcon,
+  EyebrowsIcon,
+  FigaroIcon,
+  FlowerIcon,
+  HairIcon,
+  HaircutIcon,
+  MakeupFaceIcon,
+  MassageIcon,
+};
+
+const iconProps = (active: boolean): ServiceIconProps => ({
   width: 132,
   height: 132,
   hasCircle: false,
   bgColor: active ? "#ffffff" : "#9ca3af",
 });
 
-function CategoryIcon({
-  category,
-  active,
-}: {
-  category: string;
-  active: boolean;
-}) {
-  const lower = category.toLowerCase();
-  const p = iconProps(active);
-
-  if (/kos|friz|hair|blow/.test(lower)) return <BlowDryingIcon {...p} />;
-  if (/obr|trepav|eye|brow/.test(lower)) return <EyebrowsIcon {...p} />;
-  if (/šmink|makeup|make|lice|nega|facial/.test(lower))
-    return <MakeupFaceIcon {...p} />;
-  if (/masaž|massage|relax/.test(lower)) return <MassageIcon {...p} />;
-  return <FigaroIcon {...p} />;
+function CategoryIcon({ iconKey, active }: { iconKey?: string; active: boolean }) {
+  if (!iconKey || !SERVICE_ICONS[iconKey]) return null;
+  const Comp = SERVICE_ICONS[iconKey];
+  return <Comp {...iconProps(active)} />;
 }
 
 export function Theme5Services({
   data,
   services,
 }: {
-  data: Props;
+  data: DataProps;
   services: IService[];
 }) {
-  const categories = Array.from(
-    new Set(services.map((s) => s.category).filter(Boolean)),
-  );
+  const showIcons = data.showIcons ?? true;
 
-  const [activeCategory, setActiveCategory] = useState<string>(
-    categories[0] ?? "",
-  );
-
+  const categories = Array.from(new Set(services.map((s) => s.category).filter(Boolean)));
+  const [activeCategory, setActiveCategory] = useState<string>(categories[0] ?? "");
   const activeServices = services.filter((s) => s.category === activeCategory);
+  const getCategoryIconKey = (cat: string): string | undefined =>
+    services.find((s) => s.category === cat && s.icon)?.icon;
 
   return (
     <section className="py-16 bg-white text-center">
-      <h2 className="text-sm tracking-widest text-gray-500 uppercase">
-        {data?.label}
-      </h2>
-      <h3 className="text-2xl text-gray-700 mt-2">{data?.headline}</h3>
+      <p className="text-sm tracking-widest text-gray-500 uppercase">{data?.label}</p>
+      <h2 className="text-5xl text-gray-700 mt-2">{data?.headline}</h2>
       <p className="text-sm text-gray-500 mt-2">{data?.subheadline}</p>
 
-      {/* Category cards */}
+      {/* Category tab strip */}
       <div
         className="mt-10 max-w-7xl mx-auto px-4 grid"
-        style={{
-          gridTemplateColumns: `repeat(${categories.length}, minmax(0, 1fr))`,
-        }}
+        style={{ gridTemplateColumns: `repeat(${categories.length}, minmax(0, 1fr))` }}
       >
         {categories.map((cat) => {
           const active = cat === activeCategory;
@@ -87,7 +92,7 @@ export function Theme5Services({
                 borderColor: active ? ACTIVE_BG : "#e5e7eb",
               }}
             >
-              <CategoryIcon category={cat} active={active} />
+              {showIcons && <CategoryIcon iconKey={getCategoryIconKey(cat)} active={active} />}
               <span
                 className="text-xs font-semibold uppercase tracking-wider"
                 style={{ color: active ? "#ffffff" : "#6b7280" }}
@@ -99,7 +104,7 @@ export function Theme5Services({
         })}
       </div>
 
-      {/* Static image + active category services */}
+      {/* Image + active category service list */}
       <div className="grid grid-cols-1 md:grid-cols-2 max-w-7xl mx-auto mt-12">
         <Image
           width={600}
@@ -108,22 +113,13 @@ export function Theme5Services({
           src="https://res.cloudinary.com/dufo1t5li/image/upload/v1776888255/makeup-services-img_mamndj.jpg"
           className="w-full object-cover h-full"
         />
-
         <div className="text-left p-8 space-y-6 overflow-y-auto max-h-[560px]">
           {activeServices.map((s) => (
-            <div
-              key={s._id}
-              className="pb-5 border-b border-gray-100 last:border-0 last:pb-0"
-            >
+            <div key={s._id} className="pb-5 border-b border-gray-100 last:border-0 last:pb-0">
               <h4 className="font-semibold text-gray-800">{s.name}</h4>
-              {s.description && (
-                <p className="text-sm text-gray-500 mt-1.5">{s.description}</p>
-              )}
+              {s.description && <p className="text-sm text-gray-500 mt-1.5">{s.description}</p>}
               {s.items && s.items.filter(Boolean).length > 0 && (
-                <ul
-                  role="list"
-                  className="mt-3 space-y-1.5 text-sm text-gray-600"
-                >
+                <ul role="list" className="mt-3 space-y-1.5 text-sm text-gray-600">
                   {s.items.filter(Boolean).map((item) => (
                     <li key={item} className="flex gap-x-3 items-center">
                       <FlowerIcon bgColor={ACTIVE_BG} />

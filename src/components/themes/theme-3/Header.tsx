@@ -6,14 +6,21 @@ import { usePathname } from "next/navigation";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/hooks/useAuth";
 import LoggedButton from "@/components/auth/LoggedButton";
+import {
+  Dialog,
+  DialogPanel,
+  Transition,
+  TransitionChild,
+} from "@headlessui/react";
 
 interface Props {
   instagramUrl?: string;
   tenantSlug?: string;
-  /** Real DB slug — always set, used for LoggedButton panel links */
   clientSlug?: string;
   salonName?: string;
   salonLogo?: string | null;
+  primaryColor?: string;
+  secondaryColor?: string;
 }
 
 export function Theme3Header({
@@ -22,6 +29,8 @@ export function Theme3Header({
   salonName,
   salonLogo,
   clientSlug,
+  primaryColor = "#a855f7",
+  secondaryColor = "#ec4899",
 }: Props) {
   const [open, setOpen] = useState(false);
   const { user, isLoggedIn, isLoading } = useAuth();
@@ -102,18 +111,42 @@ export function Theme3Header({
         </div>
       </nav>
 
-      {open && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/30"
-            onClick={() => setOpen(false)}
-          />
-          <div className="absolute right-0 top-0 bottom-0 w-72 bg-[#FAF8F5] border-l border-[#E8E0D5] p-6">
+      {/* Mobile menu */}
+      <Transition show={open} as={Dialog} onClose={setOpen} className="lg:hidden">
+        <TransitionChild
+          as="div"
+          className="fixed inset-0"
+          enter="ease-in-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in-out duration-300"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="absolute inset-0 bg-black/50 z-10" />
+        </TransitionChild>
+        <TransitionChild
+          as="div"
+          className="fixed inset-y-0 right-0 z-50 w-full max-w-sm"
+          enter="transform transition ease-in-out duration-300"
+          enterFrom="translate-x-full"
+          enterTo="translate-x-0"
+          leave="transform transition ease-in-out duration-300"
+          leaveFrom="translate-x-0"
+          leaveTo="translate-x-full"
+        >
+          <DialogPanel
+            className="h-full bg-[#FAF8F5] px-6 py-6 shadow-2xl"
+            style={
+              {
+                "--primary-color": primaryColor,
+                "--secondary-color": secondaryColor,
+              } as React.CSSProperties
+            }
+          >
             <div className="flex items-center justify-between mb-8">
-              <span className="text-[#5C4033] font-semibold">
-                {displayName}
-              </span>
-              <button onClick={() => setOpen(false)}>
+              <span className="font-semibold text-[#5C4033]">{displayName}</span>
+              <button onClick={() => setOpen(false)} className="cursor-pointer">
                 <XMarkIcon className="size-5 text-[#9E7E6E]" />
               </button>
             </div>
@@ -126,7 +159,7 @@ export function Theme3Header({
                   onClick={() => setOpen(false)}
                   className={
                     item.cta
-                      ? "block text-center py-3 bg-[#C9A990] text-white font-medium rounded-full text-sm"
+                      ? "block text-center py-3 bg-(--primary-color) text-white font-medium rounded-full text-sm"
                       : "block py-2 text-[#7C6A5E] hover:text-[#5C4033] text-sm"
                   }
                 >
@@ -149,9 +182,9 @@ export function Theme3Header({
                 />
               )}
             </div>
-          </div>
-        </div>
-      )}
+          </DialogPanel>
+        </TransitionChild>
+      </Transition>
     </header>
   );
 }

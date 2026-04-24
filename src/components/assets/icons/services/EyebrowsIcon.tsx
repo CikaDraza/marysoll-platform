@@ -1,5 +1,5 @@
 export default function EyebrowsIcon({
-  bgColor = "#5D0156",
+  bgColor = "#ffffff",
   width = 132,
   height = 132,
   stroke = 2,

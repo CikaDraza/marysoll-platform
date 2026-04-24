@@ -55,13 +55,13 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
           className="mx-auto aspect-[1155/678] w-[72rem] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-30"
         />
       </div>
-      <h2 className="text-center text-5xl lg:text-6xl font-bold text-black mb-4">
+      <h2 className="text-center text-5xl lg:text-6xl font-bold text-black mb-1">
         Cenovnik
       </h2>
-      <p className="text-center text-sm text-(--secondary-color) mb-12">
+      <p className="text-center text-sm text-(--primary-color)">
         Transparentne cene za vrhunsku uslugu.
       </p>
-      <div className="mx-auto my-8 grid max-w-7xl gap-y-6 grid-cols-1 lg:grid-cols-3">
+      <div className="mx-auto my-8 lg:my-24 grid max-w-7xl gap-y-6 grid-cols-1 lg:grid-cols-3">
         {featured.map((srv, idx) => {
           const dark = srv.featured === "main";
           return (
@@ -81,7 +81,7 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
             >
               <h3
                 className={classNames(
-                  dark ? "text-white" : "text-(--secondary-color)",
+                  dark ? "text-white" : "text-(--primary-color)",
                   "font-semibold text-base mb-1",
                 )}
               >
@@ -116,58 +116,106 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
                   </span>
                 </p>
               )}
-              {(srv.type === "variant" || srv.type === "group") && (() => {
-                const mp = minPrice(srv);
-                return (
-                  <>
-                    {mp != null && (
-                      <p className="mt-4 flex items-baseline gap-1">
-                        <span className={classNames(dark ? "text-gray-400" : "text-gray-500", "text-sm")}>od</span>
-                        <span className={classNames(dark ? "text-white" : "text-gray-900", "text-3xl font-bold")}>
-                          {formatPriceToString(mp)}
-                        </span>
-                        <span className={classNames(dark ? "text-gray-400" : "text-gray-500", "text-sm")}>RSD</span>
-                      </p>
-                    )}
-                    {srv.type === "variant" && (srv.variants ?? []).length > 0 && (
-                      <ul className="mt-3 space-y-2 text-sm">
-                        {srv.variants!.map((v, i) => (
-                          <li key={i} className="flex justify-between items-center gap-x-4">
-                            <span>{v.name}</span>
-                            <hr className="flex-1 border-dashed border-gray-300" />
-                            <span className="font-semibold">{formatPriceToString(v.price)} RSD</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    {srv.type === "group" && (srv.services ?? []).length > 0 && (
-                      <ul className="mt-3 space-y-2 text-sm">
-                        {srv.services!.map((sv, i) => (
-                          <li key={i} className="flex justify-between items-center gap-x-4">
-                            <span>{sv.name}</span>
-                            {sv.price != null && (
-                              <>
-                                <hr className="flex-1 border-dashed border-gray-300" />
-                                <span className="font-semibold">{formatPriceToString(sv.price)} RSD</span>
-                              </>
+              {(srv.type === "variant" || srv.type === "group") &&
+                (() => {
+                  const mp = minPrice(srv);
+                  return (
+                    <>
+                      {mp != null && (
+                        <p className="mt-4 flex items-baseline gap-1">
+                          <span
+                            className={classNames(
+                              dark ? "text-gray-400" : "text-gray-500",
+                              "text-sm",
                             )}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </>
-                );
-              })()}
+                          >
+                            od
+                          </span>
+                          <span
+                            className={classNames(
+                              dark ? "text-white" : "text-gray-900",
+                              "text-3xl font-bold",
+                            )}
+                          >
+                            {formatPriceToString(mp)}
+                          </span>
+                          <span
+                            className={classNames(
+                              dark ? "text-gray-400" : "text-gray-500",
+                              "text-sm",
+                            )}
+                          >
+                            RSD
+                          </span>
+                        </p>
+                      )}
+                      {srv.type === "variant" &&
+                        (srv.variants ?? []).length > 0 && (
+                          <ul className="mt-3 space-y-2 text-sm">
+                            {srv.variants!.map((v, i) => (
+                              <li
+                                key={i}
+                                className="flex justify-between items-center gap-x-4"
+                              >
+                                <span>{v.name}</span>
+                                <hr className="flex-1 border-dashed border-gray-300" />
+                                <span className="font-semibold">
+                                  {formatPriceToString(v.price)} RSD
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      {srv.type === "group" &&
+                        (srv.services ?? []).length > 0 && (
+                          <ul className="mt-3 space-y-2 text-sm">
+                            {srv.services!.map((sv, i) => (
+                              <li
+                                key={i}
+                                className="flex justify-between items-center gap-x-4"
+                              >
+                                <span>{sv.name}</span>
+                                {sv.price != null && (
+                                  <>
+                                    <hr className="flex-1 border-dashed border-gray-300" />
+                                    <span className="font-semibold">
+                                      {formatPriceToString(sv.price)} RSD
+                                    </span>
+                                  </>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                    </>
+                  );
+                })()}
               {(srv.extras ?? []).length > 0 && (
                 <div className="mt-3">
-                  <p className={classNames(dark ? "text-gray-400" : "text-gray-500", "text-xs font-semibold uppercase tracking-wider mb-1")}>
+                  <p
+                    className={classNames(
+                      dark ? "text-gray-400" : "text-gray-500",
+                      "text-xs font-semibold uppercase tracking-wider mb-1",
+                    )}
+                  >
                     Dodaci
                   </p>
                   <ul className="space-y-1 text-xs">
                     {srv.extras!.map((e, i) => (
-                      <li key={i} className="flex justify-between items-center gap-x-4">
-                        <span className={dark ? "text-gray-300" : "text-gray-600"}>+ {e.name}</span>
-                        <span className={dark ? "text-gray-300" : "text-gray-600"}>{formatPriceToString(e.price)} RSD</span>
+                      <li
+                        key={i}
+                        className="flex justify-between items-center gap-x-4"
+                      >
+                        <span
+                          className={dark ? "text-gray-300" : "text-gray-600"}
+                        >
+                          + {e.name}
+                        </span>
+                        <span
+                          className={dark ? "text-gray-300" : "text-gray-600"}
+                        >
+                          {formatPriceToString(e.price)} RSD
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -194,7 +242,7 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
                     <li key={i} className="flex gap-x-3">
                       <CheckIcon
                         className={classNames(
-                          dark ? "text-indigo-400" : "text-(--secondary-color)",
+                          dark ? "text-indigo-400" : "text-(--primary-color)",
                           "h-5 w-4 flex-none",
                         )}
                       />
@@ -209,7 +257,7 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
       </div>
       <Link
         href={servicesHref}
-        className="text-sm text-(--secondary-color) font-semibold hover:underline"
+        className="text-sm text-(--primary-color) font-semibold hover:underline"
       >
         Pogledaj sve cene →
       </Link>

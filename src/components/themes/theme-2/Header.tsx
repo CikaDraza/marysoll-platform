@@ -6,6 +6,12 @@ import { usePathname } from "next/navigation";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/hooks/useAuth";
 import LoggedButton from "@/components/auth/LoggedButton";
+import {
+  Dialog,
+  DialogPanel,
+  Transition,
+  TransitionChild,
+} from "@headlessui/react";
 
 interface Props {
   instagramUrl?: string;
@@ -14,6 +20,8 @@ interface Props {
   clientSlug?: string;
   salonName?: string;
   salonLogo?: string | null;
+  primaryColor?: string;
+  secondaryColor?: string;
 }
 
 export function Theme2Header({
@@ -22,8 +30,10 @@ export function Theme2Header({
   salonName,
   salonLogo,
   clientSlug,
+  primaryColor = "#a855f7",
+  secondaryColor = "#ec4899",
 }: Props) {
-  const [open, setOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, isLoggedIn, isLoading } = useAuth();
   const pathname = usePathname();
   const showGallery = !!instagramUrl;
@@ -61,7 +71,7 @@ export function Theme2Header({
         </Link>
 
         <button
-          onClick={() => setOpen(true)}
+          onClick={() => setMobileMenuOpen(true)}
           className="lg:hidden p-2 text-gray-300 hover:text-yellow-400"
         >
           <Bars3Icon className="size-6" />
@@ -102,30 +112,66 @@ export function Theme2Header({
         </div>
       </nav>
 
-      {open && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/70"
-            onClick={() => setOpen(false)}
-          />
-          <div className="absolute right-0 top-0 bottom-0 w-72 bg-gray-950 border-l border-yellow-900/30 p-6">
+      {/* Mobile menu */}
+      <Transition
+        show={mobileMenuOpen}
+        as={Dialog}
+        onClose={setMobileMenuOpen}
+        className="lg:hidden"
+      >
+        <TransitionChild
+          as="div"
+          className="fixed inset-0"
+          enter="ease-in-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in-out duration-300"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="absolute inset-0 bg-black/50 z-10" />
+        </TransitionChild>
+        <TransitionChild
+          as="div"
+          className="fixed inset-y-0 right-0 z-50 w-full max-w-sm"
+          enter="transform transition ease-in-out duration-300"
+          enterFrom="translate-x-full"
+          enterTo="translate-x-0"
+          leave="transform transition ease-in-out duration-300"
+          leaveFrom="translate-x-0"
+          leaveTo="translate-x-full"
+        >
+          <DialogPanel
+            className="h-full bg-white px-6 py-6 shadow-2xl"
+            style={
+              {
+                "--primary-color": primaryColor,
+                "--secondary-color": secondaryColor,
+              } as React.CSSProperties
+            }
+          >
             <div className="flex items-center justify-between mb-8">
-              <span className="text-yellow-400 font-bold">{displayName}</span>
-              <button onClick={() => setOpen(false)}>
-                <XMarkIcon className="size-5 text-gray-400" />
+              <span className="font-bold text-lg text-(--primary-color)">
+                {displayName}
+              </span>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 cursor-pointer"
+              >
+                <XMarkIcon className="size-5 text-(--primary-color) transition" />
               </button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {nav.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
                   target={item.external ? "_blank" : "_self"}
-                  onClick={() => setOpen(false)}
+                  onClick={() => setMobileMenuOpen(false)}
                   className={
                     item.cta
-                      ? "block text-center py-3 bg-yellow-500 text-gray-950 font-bold rounded"
-                      : "block py-2 text-gray-300 hover:text-white"
+                      ? "block text-center py-3 bg-(--primary-color) text-white font-semibold rounded-xl"
+                      : "block py-2 text-gray-700 font-medium hover:text-(--primary-color)"
                   }
                 >
                   {item.name}
@@ -134,22 +180,22 @@ export function Theme2Header({
               {!isLoggedIn ? (
                 <Link
                   href={`${base}/login`}
-                  onClick={() => setOpen(false)}
-                  className="block text-center py-2 border border-gray-700 text-gray-400 rounded"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-center py-3 border border-gray-200 rounded-xl text-gray-700 font-medium"
                 >
                   Prijava
                 </Link>
               ) : (
                 <LoggedButton
                   user={user!}
-                  tenantSlug={clientSlug ?? tenantSlug}
-                  onCloseMobileMenu={() => setOpen(false)}
+                  tenantSlug={tenantSlug}
+                  onCloseMobileMenu={() => setMobileMenuOpen(false)}
                 />
               )}
             </div>
-          </div>
-        </div>
-      )}
+          </DialogPanel>
+        </TransitionChild>
+      </Transition>
     </header>
   );
 }

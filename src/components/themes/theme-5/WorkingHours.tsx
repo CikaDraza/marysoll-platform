@@ -11,9 +11,9 @@ export function Theme5WorkingHours({ workingHours }: Props) {
   );
 
   return (
-    <section className="bg-[#2b1e26] text-white py-20">
+    <section className="bg-[#FFB633] text-white py-20">
       <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 px-6">
-        <div>
+        <div className="col-span-2">
           <p className="italic">otvoreni smo za vas</p>
           <h2 className="text-3xl mb-6">RADNO VREME</h2>
 
@@ -21,12 +21,12 @@ export function Theme5WorkingHours({ workingHours }: Props) {
             {formattedHours.map(({ day, hours: h, isOpen }) => (
               <li
                 key={day}
-                className="flex justify-between border-b border-[#E8D4AD] pb-2"
+                className="flex justify-between border-b border-gray-200 pb-2"
               >
                 <span>{day}</span>
                 <span
                   className={`${
-                    isOpen ? "text-[#E8D4AD] font-medium" : "text-gray-400"
+                    isOpen ? "text-white font-medium" : "text-gray-500"
                   }`}
                 >
                   {h}

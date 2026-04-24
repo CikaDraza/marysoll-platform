@@ -124,6 +124,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     name: String(s?.name ?? ""),
     email: String(s?.email ?? ""),
     description: String(s?.description ?? ""),
+    landingTheme,
     landingStructure: s?.landingStructure
       ? (JSON.parse(JSON.stringify(s.landingStructure)) as LandingStructure)
       : undefined,
@@ -193,6 +194,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
           };
         })
       : [],
+    icon: sv.icon ? String(sv.icon) : undefined,
     featured:
       (sv.featured as "main" | "second" | "third" | "none" | null) ?? null,
     subscription: (() => {

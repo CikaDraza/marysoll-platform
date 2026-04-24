@@ -100,6 +100,7 @@ export interface IServiceInput {
   type: "single" | "group" | "variant";
   items: string[];
   featured?: HomePagePosition;
+  icon?: string;
   subscription: ISubscription;
 }
 
@@ -118,6 +119,7 @@ export interface IService {
   description: string;
   items: string[];
   featured?: HomePagePosition;
+  icon?: string;
   subscription: ISubscription;
   createdAt: string;
   updatedAt: string;
@@ -813,6 +815,7 @@ export interface LandingStructure {
 
       headline?: string;
       subheadline?: string;
+      showIcons?: boolean;
       // services se ucitavaju iz DB
     };
 
@@ -927,6 +930,7 @@ export interface SalonProfileData {
   name: string;
   email: string;
   description: string;
+  landingTheme?: LandingTheme;
   landingStructure?: LandingStructure;
   isDemo?: boolean;
   logo?: string | null;

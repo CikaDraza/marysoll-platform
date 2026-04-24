@@ -23,11 +23,7 @@ function minPrice(s: IService): number | null {
   return null;
 }
 
-export function Theme3ServicesSoft({
-  services,
-  headline,
-  subheadline,
-}: Props) {
+export function Theme3ServicesSoft({ services, headline, subheadline }: Props) {
   const grouped = services.reduce<Record<string, IService[]>>((acc, s) => {
     (acc[s.category] ??= []).push(s);
     return acc;
@@ -75,21 +71,22 @@ export function Theme3ServicesSoft({
                       </div>
 
                       {/* Variants */}
-                      {s.type === "variant" && (s.variants ?? []).length > 0 && (
-                        <ul className="space-y-1">
-                          {s.variants!.map((v, i) => (
-                            <li
-                              key={i}
-                              className="flex justify-between items-center text-xs text-[#5C4033]"
-                            >
-                              <span>{v.name}</span>
-                              <span className="font-medium">
-                                {formatPriceToString(v.price)} RSD
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
+                      {s.type === "variant" &&
+                        (s.variants ?? []).length > 0 && (
+                          <ul className="space-y-1">
+                            {s.variants!.map((v, i) => (
+                              <li
+                                key={i}
+                                className="flex justify-between items-center text-xs text-[#5C4033]"
+                              >
+                                <span>{v.name}</span>
+                                <span className="font-medium">
+                                  {formatPriceToString(v.price)} RSD
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
 
                       {/* Group sub-services */}
                       {s.type === "group" && (s.services ?? []).length > 0 && (

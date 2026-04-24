@@ -9,6 +9,7 @@
  * the correct tenant-scoped routes (/{slug}/login, /{slug}/panel).
  */
 
+import type { ComponentProps } from "react";
 import type { LandingTheme } from "@/models/SalonProfile";
 import type { IService, SalonProfileData } from "@/types";
 
@@ -153,14 +154,6 @@ export function ThemeLayout({
   const galleryEnabled = ls?.landing?.gallery?.enabled ?? true;
   const faqEnabled = ls?.landing?.faq?.enabled ?? true;
 
-  const headerProps = {
-    tenantSlug,
-    clientSlug: clientSlug ?? tenantSlug,
-    salonName: salon.name,
-    salonLogo: salon.logo ?? null,
-    instagramUrl: galleryEnabled ? instagram : undefined,
-  };
-
   const footerProps = {
     tenantSlug,
     salonName: salon.name,
@@ -174,6 +167,16 @@ export function ThemeLayout({
   // classes in the theme pick up this tenant's palette automatically.
   const primaryColor = salon.branding?.primaryColor || "#a855f7";
   const secondaryColor = salon.branding?.secondaryColor || "#ec4899";
+
+  const headerProps = {
+    tenantSlug,
+    clientSlug: clientSlug ?? tenantSlug,
+    salonName: salon.name,
+    salonLogo: salon.logo ?? null,
+    instagramUrl: galleryEnabled ? instagram : undefined,
+    primaryColor,
+    secondaryColor,
+  };
   const fontFamily = salon.branding?.fontFamily || "Inter";
   const brandingVars = {
     "--primary-color": primaryColor,
@@ -388,7 +391,10 @@ export function ThemeLayout({
 
           {/* 2. MINI GALLERY (4 slike kao na mockupu) */}
           {galleryEnabled && (
-            <Theme3GallerySoft images={ls?.landing?.gallery?.images} />
+            <>
+              <Theme3GallerySoft images={ls?.landing?.gallery?.images} />
+              <Theme3GalleryMasonry images={ls?.landing?.gallery?.images} />
+            </>
           )}
 
           {/* 3. ABOUT */}
@@ -541,14 +547,18 @@ export function ThemeLayout({
 
   // ── Theme 5: Modern Spa ─────────────────────────────────────────────
   if (theme === "theme-5") {
-    const ui = mapCMS(salon, services, testimonials);
+    const ui = mapCMS(salon, services, testimonials, tenantSlug);
 
     return (
       <div className="min-h-screen flex flex-col" style={brandingVars}>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="stylesheet" href={googleFontHref} />
         {/* HEADER */}
-        <Theme5Header data={ui.header} />
+        <Theme5Header
+          data={ui.header}
+          primaryColor={primaryColor}
+          secondaryColor={secondaryColor}
+        />
         <main className="flex-1 flex flex-col overflow-x-hidden">
           {/* 1. HERO */}
           <Theme5Hero data={ui.hero} />
@@ -557,9 +567,13 @@ export function ThemeLayout({
           {/* 3. WORKING HOURS */}
           <Theme5WorkingHours workingHours={ui.workingHours.workingHours} />
           {/* 4. HOW IT WORKS */}
-          <Theme5HowItWorks data={ui.howItWorks} />
+          <Theme5HowItWorks
+            data={
+              ui.howItWorks as ComponentProps<typeof Theme5HowItWorks>["data"]
+            }
+          />
           {/* 5. PRICING */}
-          <Theme5Pricing services={services} />
+          <Theme5Pricing services={services} tenantSlug={tenantSlug} />
           {/* 6. CTA */}
           <Theme5CTA data={ui.cta} />
           {/* 7. ARTISTS */}

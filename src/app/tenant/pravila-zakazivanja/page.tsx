@@ -5,6 +5,7 @@
 import { headers } from "next/headers";
 import type { Metadata } from "next";
 import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
+import { TenantPageShell } from "@/components/themes/TenantPageShell";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,7 @@ export default async function AppointmentRulesPage() {
   const contactEmail = profile?.contactEmail ?? profile?.email ?? "";
 
   return (
+    <TenantPageShell tenantSlug={tenantSlug}>
     <div className="bg-white py-24 lg:py-44">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl lg:text-center">
@@ -87,5 +89,6 @@ export default async function AppointmentRulesPage() {
         </div>
       </div>
     </div>
+    </TenantPageShell>
   );
 }

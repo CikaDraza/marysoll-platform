@@ -12,6 +12,7 @@ import {
 import AppointmentCalendarPage from "@/components/public/AppointmentCalendarPage";
 import type { IAppointment, SalonProfileData } from "@/types";
 import { formatWorkingHoursForDisplay } from "@/helpers/parseWorkingHours";
+import { TenantPageShell } from "@/components/themes/TenantPageShell";
 
 export const dynamic = "force-dynamic";
 
@@ -62,145 +63,133 @@ export default async function TerminiPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <section className="bg-white border-b border-gray-100 py-16 px-6 text-center">
-        <p className="text-purple-600 text-xs font-bold tracking-[0.25em] uppercase mb-3">
-          {salonName}
-        </p>
-        <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-          Termini
-        </h1>
-        <p className="text-gray-500 text-sm max-w-2xl mx-auto mb-8">
-          Pogledajte slobodne termine u kalendaru ispod. Zakazivanje je dostupno
-          registrovanim korisnicima.
-        </p>
-        <div className="flex flex-wrap gap-3 justify-center">
-          <Link
-            href={`${base}/panel?tab=Zakazivanja`}
-            className="px-7 py-3 bg-purple-600 text-white font-semibold rounded-full hover:bg-purple-700 transition text-sm"
-          >
-            Zakaži termin →
-          </Link>
-          <Link
-            href={`${base}/usluge`}
-            className="px-7 py-3 border border-gray-200 text-gray-700 font-semibold rounded-full hover:border-gray-400 transition text-sm"
-          >
-            Cenovnik usluga
-          </Link>
-        </div>
-      </section>
+    <TenantPageShell tenantSlug={tenantSlug}>
+      <div className="min-h-screen bg-gray-50">
+        <section className="bg-white border-b border-gray-100 py-16 px-6 text-center">
+          <p className="text-(--primary-color) text-xs font-bold tracking-[0.25em] uppercase mb-3">
+            {salonName}
+          </p>
+          <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+            Termini
+          </h1>
+          <p className="text-gray-500 text-sm max-w-2xl mx-auto mb-8">
+            Pogledajte slobodne termine u kalendaru ispod. Zakazivanje je
+            dostupno registrovanim korisnicima.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Link
+              href={`${base}/panel?tab=Zakazivanja`}
+              className="px-3 lg:px-7 py-3 bg-(--primary-color) text-white font-semibold rounded-full hover:bg-purple-700 transition text-sm"
+            >
+              Zakaži termin →
+            </Link>
+            <Link
+              href={`${base}/usluge`}
+              className="px-3 lg:px-7 py-3 border border-gray-200 text-gray-700 font-semibold rounded-full hover:border-gray-400 transition text-sm"
+            >
+              Cenovnik usluga
+            </Link>
+          </div>
+        </section>
 
-      <div className="max-w-7xl mx-auto px-4 py-10">
-        <div
-          className="grid grid-cols-1 lg:grid-cols-2 gap-2 gap-x-3"
-          style={{
-            display: "grid",
-            gridTemplateRows: "repeat(5, minmax(0, 1fr))",
-            gridTemplateAreas: `
-        "working legend"
-        "working legend"
-        "working howto"
-        "working howto"
-        "working rules"
-      `,
-          }}
-        >
-          <div
-            style={{ gridArea: "working" }}
-            className="h-full bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col"
-          >
-            <div>
-              <p className="font-bold text-gray-800 mb-3 text-sm">
-                Radno vreme salona
-              </p>
-              <div className="space-y-1.5">
-                <ul className="space-y-1.5">
-                  {hours.map(({ day, hours: h, isOpen }) => (
-                    <li key={day} className="flex items-center justify-between">
-                      <span
-                        className={`text-xs font-medium w-28 ${isOpen ? "text-zinc-500" : "text-gray-400"}`}
+        <div className="max-w-7xl mx-auto px-4 py-10">
+          <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-2 lg:gap-x-3 lg:[grid-template-rows:repeat(5,minmax(0,1fr))] lg:[grid-template-areas:'working_legend'_'working_legend'_'working_howto'_'working_howto'_'working_rules']">
+            <div className="h-full bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col lg:[grid-area:working]">
+              <div>
+                <p className="font-bold text-gray-800 mb-3 text-sm">
+                  Radno vreme salona
+                </p>
+                <div className="space-y-1.5">
+                  <ul className="space-y-1.5">
+                    {hours.map(({ day, hours: h, isOpen }) => (
+                      <li
+                        key={day}
+                        className="flex items-center justify-between"
                       >
-                        {day}
-                      </span>
-                      <span
-                        className={`text-xs font-semibold px-1.5 py-0.5 rounded-full text-zinc-800 ${
-                          isOpen
-                            ? "bg-green-100 text-green-700 font-medium"
-                            : "bg-gray-100 text-gray-400"
-                        }`}
-                      >
-                        {h}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                        <span
+                          className={`text-xs font-medium w-28 ${isOpen ? "text-zinc-500" : "text-gray-400"}`}
+                        >
+                          {day}
+                        </span>
+                        <span
+                          className={`text-xs font-semibold px-1.5 py-0.5 rounded-full text-zinc-800 ${
+                            isOpen
+                              ? "bg-green-100 text-green-700 font-medium"
+                              : "bg-gray-100 text-gray-400"
+                          }`}
+                        >
+                          {h}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col justify-center lg:[grid-area:legend]">
+              <h3 className="font-bold text-gray-800 mb-3 text-sm">
+                📋 Legenda
+              </h3>
+              <ul className="space-y-2 text-xs text-gray-600">
+                <li className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded border border-gray-200 bg-white" />{" "}
+                  Radno vreme
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded border border-gray-200 bg-red-100" />{" "}
+                  Današnji dan
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded border border-gray-300 bg-gray-200" />{" "}
+                  Salon ne radi
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded bg-purple-500" /> Zauzet
+                  termin
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-purple-50 border border-purple-100 rounded-2xl p-6 flex flex-col justify-center lg:[grid-area:howto]">
+              <h3 className="font-bold font-semibold text-(--secondary-color) mb-2">
+                Kako zakazati?
+              </h3>
+              <ol className="text-xs text-(--secondary-color) space-y-1 list-decimal pl-4 mb-3">
+                <li>Registrujte se</li>
+                <li>Kliknite &quot;Zakaži termin&quot;</li>
+                <li>Odaberite uslugu</li>
+              </ol>
+              <Link
+                href={`${base}/register`}
+                className="w-fit px-4 py-2 bg-(--primary-color) text-white text-xs font-bold rounded-xl"
+              >
+                Kreiraj nalog →
+              </Link>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col items-start justify-between lg:[grid-area:rules]">
+              <h3 className="font-bold text-gray-800 text-md">
+                Pravila salona
+              </h3>
+              <Link
+                href={`${base}/pravila-zakazivanja`}
+                className="text-gray-600 text-sm font-bold hover:underline"
+              >
+                Saznaj više →
+              </Link>
             </div>
           </div>
 
-          <div
-            style={{ gridArea: "legend" }}
-            className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col justify-center"
-          >
-            <h3 className="font-bold text-gray-800 mb-3 text-sm">📋 Legenda</h3>
-            <ul className="space-y-2 text-xs text-gray-600">
-              <li className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded border border-gray-200 bg-white" /> Radno vreme
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded border border-gray-200 bg-[#fffadf]" /> Današnji dan
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded border border-gray-200 bg-[#f3f3f3]" /> Salon ne radi
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded bg-purple-500" /> Zauzet termin
-              </li>
-            </ul>
+          <div className="mt-8">
+            <AppointmentCalendarPage
+              initialAppointments={appointments as IAppointment[]}
+              salonProfile={safeProfile}
+              tenantSlug={tenantSlug}
+            />
           </div>
-
-          <div
-            style={{ gridArea: "howto" }}
-            className="bg-purple-50 border border-purple-100 rounded-2xl p-6 flex flex-col justify-center"
-          >
-            <h3 className="font-bold font-semibold text-purple-800 mb-2">
-              Kako zakazati?
-            </h3>
-            <ol className="text-xs text-purple-700 space-y-1 list-decimal pl-4 mb-3">
-              <li>Registrujte se</li>
-              <li>Kliknite &quot;Zakaži termin&quot;</li>
-              <li>Odaberite uslugu</li>
-            </ol>
-            <Link
-              href={`${base}/register`}
-              className="w-fit px-4 py-2 bg-purple-600 text-white text-xs font-bold rounded-xl"
-            >
-              Kreiraj nalog →
-            </Link>
-          </div>
-
-          <div
-            style={{ gridArea: "rules" }}
-            className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col items-start justify-between"
-          >
-            <h3 className="font-bold text-gray-800 text-md">Pravila salona</h3>
-            <Link
-              href={`${base}/pravila-zakazivanja`}
-              className="text-gray-600 text-sm font-bold hover:underline"
-            >
-              Saznaj više →
-            </Link>
-          </div>
-        </div>
-
-        <div className="mt-8">
-          <AppointmentCalendarPage
-            initialAppointments={appointments as IAppointment[]}
-            salonProfile={safeProfile}
-            tenantSlug={tenantSlug}
-          />
         </div>
       </div>
-    </div>
+    </TenantPageShell>
   );
 }

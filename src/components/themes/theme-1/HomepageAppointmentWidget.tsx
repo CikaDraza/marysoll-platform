@@ -346,7 +346,7 @@ function BookingModal({
                 Zakazivanje termina
               </h3>
               {isPendingMode && (
-                <p className="text-sm text-(--secondary-color) font-medium mt-1">
+                <p className="text-sm text-(--primary-color) font-medium mt-1">
                   Dobrodošli nazad! Vaš termin čeka potvrdu.
                 </p>
               )}
@@ -361,8 +361,8 @@ function BookingModal({
 
           {/* Auth info */}
           {isLoggedIn ? (
-            <div className="mb-4 p-3 bg-(--secondary-color)/10 rounded-xl border border-(--secondary-color)/10">
-              <p className="text-xs text-(--secondary-color) font-semibold">
+            <div className="mb-4 p-3 bg-(--primary-color)/10 rounded-xl border border-(--primary-color)/10">
+              <p className="text-xs text-(--primary-color) font-semibold">
                 Zakazujete kao: {userName} ({userEmail})
               </p>
             </div>
@@ -390,7 +390,7 @@ function BookingModal({
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="block w-full rounded-xl border border-gray-200 bg-gray-50 text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--secondary-color)/80"
+                  className="block w-full rounded-xl border border-gray-200 bg-gray-50 text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--primary-color)/80"
                   required
                   min={new Date().toISOString().split("T")[0]}
                 />
@@ -404,7 +404,7 @@ function BookingModal({
                   value={selectedTime}
                   onChange={(e) => setSelectedTime(e.target.value)}
                   step={1800}
-                  className="block w-full rounded-xl border border-gray-200 bg-gray-50 text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--secondary-color)/80"
+                  className="block w-full rounded-xl border border-gray-200 bg-gray-50 text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--primary-color)/80"
                   required
                 />
               </div>
@@ -421,8 +421,8 @@ function BookingModal({
                     key={s._id}
                     className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border cursor-pointer transition-colors ${
                       selectedServiceId === s._id
-                        ? "border-(--secondary-color) bg-(--secondary-color)/10"
-                        : "border-gray-200 hover:border-(--secondary-color)/20 bg-gray-50"
+                        ? "border-(--primary-color) bg-(--primary-color)/10"
+                        : "border-gray-200 hover:border-(--primary-color)/20 bg-gray-50"
                     }`}
                   >
                     <input
@@ -440,7 +440,7 @@ function BookingModal({
                     <span
                       className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 ${
                         selectedServiceId === s._id
-                          ? "border-(--secondary-color) bg-(--secondary-color)"
+                          ? "border-(--primary-color) bg-(--primary-color)"
                           : "border-gray-300 bg-white"
                       }`}
                     />
@@ -465,8 +465,8 @@ function BookingModal({
                           key={idx}
                           className={`flex items-start p-3 rounded-xl border cursor-pointer transition-colors ${
                             selectedVariant === v.name
-                              ? "border-(--secondary-color) bg-(--secondary-color)/10"
-                              : "border-gray-200 hover:border-(--secondary-color)/20 bg-gray-50"
+                              ? "border-(--primary-color) bg-(--primary-color)/10"
+                              : "border-gray-200 hover:border-(--primary-color)/20 bg-gray-50"
                           }`}
                         >
                           <input
@@ -502,7 +502,7 @@ function BookingModal({
                     {selectedService.extras.map((extra, idx) => (
                       <label
                         key={idx}
-                        className="flex items-center justify-between px-3 py-2 rounded-xl border border-gray-200 cursor-pointer hover:border-(--secondary-color)/20 bg-gray-50"
+                        className="flex items-center justify-between px-3 py-2 rounded-xl border border-gray-200 cursor-pointer hover:border-(--primary-color)/20 bg-gray-50"
                       >
                         <div className="flex items-center gap-2">
                           <input
@@ -515,13 +515,13 @@ function BookingModal({
                                   : [...prev, extra.name],
                               )
                             }
-                            className="rounded text-(--secondary-color)"
+                            className="rounded text-(--primary-color)"
                           />
                           <span className="text-sm text-gray-800">
                             {extra.name}
                           </span>
                         </div>
-                        <span className="text-xs font-semibold text-(--secondary-color)">
+                        <span className="text-xs font-semibold text-(--primary-color)">
                           +{formatPriceToString(extra.price || 0)} RSD
                         </span>
                       </label>
@@ -539,7 +539,7 @@ function BookingModal({
                       {totalDuration} min
                     </div>
                   </div>
-                  <div className="text-xl font-bold text-(--secondary-color)">
+                  <div className="text-xl font-bold text-(--primary-color)">
                     {formatPriceToString(totalPrice)} RSD
                   </div>
                 </div>
@@ -554,7 +554,7 @@ function BookingModal({
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                className="block w-full rounded-xl border border-gray-200 bg-gray-50 text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--secondary-color)/80 placeholder:text-gray-400"
+                className="block w-full rounded-xl border border-gray-200 bg-gray-50 text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--primary-color)/80 placeholder:text-gray-400"
                 rows={2}
                 placeholder="Dodatne napomene..."
               />
@@ -577,7 +577,7 @@ function BookingModal({
                     createAppointment.isPending ||
                     (selectedService?.type === "variant" && !selectedVariant)
                   }
-                  className="px-5 py-2 text-sm font-semibold text-white bg-(--secondary-color)/90 hover:bg-(--secondary-color) rounded-xl transition disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2 text-sm font-semibold text-white bg-(--primary-color)/90 hover:bg-(--primary-color) rounded-xl transition disabled:opacity-50 cursor-pointer"
                 >
                   {createAppointment.isPending
                     ? "Zakazivanje..."
@@ -668,12 +668,12 @@ function DayView({
           <button
             key={slot}
             onClick={() => onSlotClick(dateStr, slot)}
-            className="flex flex-col items-center justify-center gap-0.5 px-3 py-3 rounded-xl border-2 border-gray-200 hover:border-(--secondary-color)/80 hover:bg-(--secondary-color)/10 hover:text-(--secondary-color) transition-all group cursor-pointer bg-white"
+            className="flex flex-col items-center justify-center gap-0.5 px-3 py-3 rounded-xl border-2 border-gray-200 hover:border-(--primary-color)/80 hover:bg-(--primary-color)/10 hover:text-(--primary-color) transition-all group cursor-pointer bg-white"
           >
-            <span className="text-xs font-bold text-gray-600 group-hover:text-(--secondary-color)">
+            <span className="text-xs font-bold text-gray-600 group-hover:text-(--primary-color)">
               {slot}
             </span>
-            <span className="text-[10px] text-gray-300 group-hover:text-(--secondary-color)/80 font-medium">
+            <span className="text-[10px] text-gray-300 group-hover:text-(--primary-color)/80 font-medium">
               + Zakaži
             </span>
           </button>
@@ -704,82 +704,96 @@ function WeekView({
   });
 
   return (
-    <div className="grid grid-cols-7 gap-1.5">
-      {days.map((day) => {
-        const dateStr = format(day, "yyyy-MM-dd");
-        const { isWorking, start, end } = getWorkingRange(workingHours, day);
-        const slots = isWorking ? generateSlots(start, end) : [];
-        const fullyBooked =
-          isWorking && isDayFullyBooked(appointments, slots, dateStr);
-        const bookedCount = slots.filter((s) =>
-          isSlotBooked(appointments, dateStr, s),
-        ).length;
-        const isSelected = isSameDay(day, selectedDate);
-        const isToday = isSameDay(day, new Date());
+    <div className="overflow-x-auto -mx-1 px-1">
+      <div className="grid grid-cols-7 gap-1 sm:gap-1.5 min-w-[336px]">
+        {days.map((day) => {
+          const dateStr = format(day, "yyyy-MM-dd");
+          const { isWorking, start, end } = getWorkingRange(workingHours, day);
+          const slots = isWorking ? generateSlots(start, end) : [];
+          const fullyBooked =
+            isWorking && isDayFullyBooked(appointments, slots, dateStr);
+          const bookedCount = slots.filter((s) =>
+            isSlotBooked(appointments, dateStr, s),
+          ).length;
+          const isSelected = isSameDay(day, selectedDate);
+          const isToday = isSameDay(day, new Date());
 
-        return (
-          <button
-            key={dateStr}
-            onClick={() => isWorking && onDayClick(day)}
-            className={`flex flex-col items-stretch gap-1 p-2 rounded-xl border-2 transition min-h-[90px] text-left ${
-              !isWorking
-                ? "border-red-200 bg-red-50 cursor-default"
-                : isSelected
-                  ? "border-(--secondary-color) bg-(--secondary-color)/10 cursor-pointer"
-                  : isToday
-                    ? "border-amber-300 bg-amber-50 cursor-pointer hover:border-(--secondary-color)/30"
-                    : "border-gray-200 bg-white cursor-pointer hover:border-(--secondary-color)/30 hover:bg-(--secondary-color)/10 shadow-sm"
-            }`}
-          >
-            {/* Day header */}
-            <div className="text-center">
-              <span
-                className={`text-[9px] font-bold uppercase tracking-wide ${
-                  !isWorking
-                    ? "text-red-300"
+          return (
+            <button
+              key={dateStr}
+              onClick={() => isWorking && onDayClick(day)}
+              className={`flex flex-col items-center gap-1 p-1 sm:p-2 rounded-xl border-2 transition min-h-[72px] sm:min-h-[90px] ${
+                !isWorking
+                  ? "border-red-200 bg-red-50 cursor-default"
+                  : isSelected
+                    ? "border-(--primary-color) bg-(--primary-color)/10 cursor-pointer"
                     : isToday
-                      ? "text-amber-500"
-                      : "text-gray-400"
-                }`}
-              >
-                {format(day, "EEE", { locale: sr })}
-              </span>
-              <p
-                className={`text-sm font-bold leading-none mt-0.5 ${
-                  !isWorking
-                    ? "text-red-300"
-                    : isToday
-                      ? "text-amber-600"
-                      : isSelected
-                        ? "text-(--secondary-color)"
-                        : "text-gray-700"
-                }`}
-              >
-                {format(day, "d")}
-              </p>
-            </div>
+                      ? "border-amber-300 bg-amber-50 cursor-pointer hover:border-(--primary-color)/30"
+                      : "border-gray-200 bg-white cursor-pointer hover:border-(--primary-color)/30 hover:bg-(--primary-color)/10 shadow-sm"
+              }`}
+            >
+              {/* Day header */}
+              <div className="text-center">
+                <span
+                  className={`text-[9px] font-bold uppercase tracking-wide ${
+                    !isWorking
+                      ? "text-red-300"
+                      : isToday
+                        ? "text-amber-500"
+                        : "text-gray-400"
+                  }`}
+                >
+                  {format(day, "EEE", { locale: sr })}
+                </span>
+                <p
+                  className={`text-sm font-bold leading-none mt-0.5 ${
+                    !isWorking
+                      ? "text-red-300"
+                      : isToday
+                        ? "text-amber-600"
+                        : isSelected
+                          ? "text-(--primary-color)"
+                          : "text-gray-700"
+                  }`}
+                >
+                  {format(day, "d")}
+                </p>
+              </div>
 
-            {/* Status */}
-            {!isWorking ? (
-              <span className="text-[8px] text-red-400 font-semibold text-center leading-tight">
-                Neradan
-              </span>
-            ) : fullyBooked ? (
-              <span className="text-[8px] bg-black text-white font-semibold text-center px-1 py-0.5 rounded-md leading-tight">
-                Popunjeno
-              </span>
-            ) : bookedCount > 0 ? (
-              <span className="text-[8px] text-(--secondary-color) font-semibold text-center leading-tight">
-                {slots.length - bookedCount} slobodnih
-              </span>
-            ) : (
-              <span className="text-[8px] text-green-500 font-semibold text-center leading-tight">
-                Slobodan
-              </span>
-            )}
-          </button>
-        );
-      })}
+              {/* Status — circle on mobile, text on sm+ */}
+              {!isWorking ? (
+                <>
+                  <span className="sm:hidden w-2.5 h-2.5 rounded-full bg-red-400 mt-auto mb-0.5" />
+                  <span className="hidden sm:block text-[8px] text-red-400 font-semibold text-center leading-tight">
+                    Neradan
+                  </span>
+                </>
+              ) : fullyBooked ? (
+                <>
+                  <span className="sm:hidden w-2.5 h-2.5 rounded-full bg-gray-800 mt-auto mb-0.5" />
+                  <span className="hidden sm:block text-[8px] bg-black text-white font-semibold text-center px-1 py-0.5 rounded-md leading-tight">
+                    Popunjeno
+                  </span>
+                </>
+              ) : bookedCount > 0 ? (
+                <>
+                  <span className="sm:hidden w-2.5 h-2.5 rounded-full bg-(--primary-color) mt-auto mb-0.5" />
+                  <span className="hidden sm:block text-[8px] text-(--primary-color) font-semibold text-center leading-tight">
+                    {slots.length - bookedCount} slobodnih
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="sm:hidden w-1.5 h-1.5 rounded-full bg-green-500 mt-auto mb-0.5" />
+                  <span className="hidden sm:block text-[8px] text-green-500 font-semibold text-center leading-tight">
+                    Slobodan
+                  </span>
+                </>
+              )}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -931,31 +945,43 @@ export default function HomepageAppointmentWidget({
 
   return (
     <>
-
       <div className="space-y-4">
         {/* Calendar card */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           {/* Toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-gray-100">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-gray-100 w-full">
             {/* View toggle */}
-            <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
-              {(["week", "day"] as ViewMode[]).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setViewMode(v)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer ${
-                    viewMode === v
-                      ? "bg-white text-(--secondary-color) shadow-sm"
-                      : "text-gray-400 hover:text-gray-700"
-                  }`}
-                >
-                  {v === "week" ? "Sedmica" : "Dan"}
-                </button>
-              ))}
+            <div className="flex items-center gap-3 w-full justify-between lg:w-auto lg:justify-start mb-3">
+              <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+                {(["week", "day"] as ViewMode[]).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setViewMode(v)}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer ${
+                      viewMode === v
+                        ? "bg-white text-(--primary-color) shadow-sm"
+                        : "text-gray-400 hover:text-gray-700"
+                    }`}
+                  >
+                    {v === "week" ? "Sedmica" : "Dan"}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  const today = new Date();
+                  setSelectedDate(today);
+                  setWeekStart(startOfWeek(today, { weekStartsOn: 1 }));
+                  setStripOffset(-3);
+                }}
+                className="px-3 py-1.5 text-xs font-semibold bg-(--primary-color)/20 text-(--primary-color) rounded-lg hover:bg-(--primary-color)/30 transition cursor-pointer"
+              >
+                Danas
+              </button>
             </div>
 
             {/* Navigation */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-3">
               <button
                 onClick={() =>
                   viewMode === "week"
@@ -979,17 +1005,6 @@ export default function HomepageAppointmentWidget({
               >
                 <ChevronRightIcon className="w-4 h-4" />
               </button>
-              <button
-                onClick={() => {
-                  const today = new Date();
-                  setSelectedDate(today);
-                  setWeekStart(startOfWeek(today, { weekStartsOn: 1 }));
-                  setStripOffset(-3);
-                }}
-                className="ml-1 px-3 py-1.5 text-xs font-semibold bg-(--secondary-color)/20 text-(--secondary-color) rounded-lg hover:bg-(--secondary-color)/30 transition cursor-pointer"
-              >
-                Danas
-              </button>
             </div>
 
             {/* Book CTA */}
@@ -1000,7 +1015,7 @@ export default function HomepageAppointmentWidget({
                 setPendingDefaults(null);
                 setModalOpen(true);
               }}
-              className="px-4 py-2 bg-(--secondary-color)/90 text-white text-xs font-bold rounded-xl hover:bg-(--secondary-color) transition cursor-pointer"
+              className="px-4 py-2 bg-(--primary-color)/90 text-white text-xs font-bold rounded-xl hover:bg-(--primary-color) transition cursor-pointer"
             >
               + Zakaži termin
             </button>
@@ -1010,7 +1025,7 @@ export default function HomepageAppointmentWidget({
           <div className="p-4">
             {isLoading ? (
               <div className="flex items-center justify-center h-40 text-gray-400 text-sm gap-2">
-                <div className="w-4 h-4 border-2 border-(--secondary-color)/30 border-t-(--secondary-color) rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-(--primary-color)/30 border-t-(--primary-color) rounded-full animate-spin" />
                 Učitavanje termina...
               </div>
             ) : viewMode === "week" ? (
@@ -1047,12 +1062,12 @@ export default function HomepageAppointmentWidget({
                           onClick={() => setSelectedDate(day)}
                           className={`flex flex-col items-center flex-shrink-0 w-11 h-14 rounded-xl border-2 transition cursor-pointer ${
                             isSelected
-                              ? "bg-(--secondary-color) border-(--secondary-color) text-white"
+                              ? "bg-(--primary-color) border-(--primary-color) text-white"
                               : isToday
                                 ? "border-amber-300 bg-amber-50 text-amber-700"
                                 : !isWorking
                                   ? "border-red-200 bg-red-50 text-red-300"
-                                  : "border-gray-200 bg-white text-gray-600 hover:border-(--secondary-color)/30"
+                                  : "border-gray-200 bg-white text-gray-600 hover:border-(--primary-color)/30"
                           }`}
                         >
                           <span className="text-[9px] uppercase font-bold mt-2">

@@ -11,6 +11,7 @@ import {
   LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
+import { TenantPageShell } from "@/components/themes/TenantPageShell";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,7 @@ export default async function PrivacyPolicyPage() {
   ];
 
   return (
+    <TenantPageShell tenantSlug={tenantSlug}>
     <div className="privacy-policy bg-white py-24 lg:py-44">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl lg:text-center">
@@ -103,5 +105,6 @@ export default async function PrivacyPolicyPage() {
         )}
       </div>
     </div>
+    </TenantPageShell>
   );
 }

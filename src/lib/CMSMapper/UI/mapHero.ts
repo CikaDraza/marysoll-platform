@@ -1,6 +1,7 @@
 import { LandingStructure, SalonProfileData } from "@/types";
 
-export function mapHero(ls: LandingStructure | undefined, profile: SalonProfileData) {
+export function mapHero(ls: LandingStructure | undefined, profile: SalonProfileData, tenantSlug?: string) {
+  const p = tenantSlug ? `/${tenantSlug}` : "";
   const hero = ls?.landing?.hero ?? ({} as Partial<LandingStructure["landing"]["hero"]>);
 
   return {
@@ -12,7 +13,7 @@ export function mapHero(ls: LandingStructure | undefined, profile: SalonProfileD
 
     cta: {
       text: hero.ctas?.primary?.text ?? "Book now",
-      href: hero.ctas?.primary?.href ?? "/booking",
+      href: hero.ctas?.primary?.href ?? `${p}/termini`,
     },
 
     contact: {

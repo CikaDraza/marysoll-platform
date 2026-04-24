@@ -22,7 +22,8 @@ function mapGallery(ls: LandingStructure | undefined) {
     headline: gallery?.headline,
     subheadline: gallery?.subheadline,
     instagram: gallery?.instagram,
-    enabled: gallery !== undefined ? (ls?.landing?.gallery?.enabled ?? true) : true,
+    enabled:
+      gallery !== undefined ? (ls?.landing?.gallery?.enabled ?? true) : true,
   };
 }
 
@@ -54,17 +55,18 @@ export function mapCMS(
   salon: SalonProfileData,
   services: IService[],
   testimonials: Testimonial[],
+  tenantSlug?: string,
 ) {
   const ls = salon.landingStructure;
 
   return {
-    header: mapHeader(salon),
-    hero: mapHero(ls, salon),
+    header: mapHeader(salon, tenantSlug),
+    hero: mapHero(ls, salon, tenantSlug),
     about: mapAbout(ls),
     services: mapServices(ls, services),
     workingHours: mapWorkingHours(salon),
     howItWorks: mapHowItWorks(ls, services),
-    cta: mapCTA(ls),
+    cta: mapCTA(ls, tenantSlug),
     gallery: mapGallery(ls),
     testimonials: mapTestimonials(testimonials),
     footer: mapFooter(salon),

@@ -1,20 +1,21 @@
 import { SalonProfileData } from "@/types";
 
-export function mapHeader(profile: SalonProfileData) {
+export function mapHeader(profile: SalonProfileData, tenantSlug?: string) {
+  const p = tenantSlug ? `/${tenantSlug}` : "";
+
   return {
     logo: profile.logo || profile.name,
 
     navigation: [
-      { label: "Home", href: "/" },
-      { label: "Services", href: "/services" },
-      { label: "Booking", href: "/booking" },
-      { label: "Gallery", href: "/gallery" },
-      { label: "Contact", href: "/contact" },
+      { label: "Naslovna", href: `${p}/` },
+      { label: "Usluge", href: `${p}/usluge` },
+      { label: "Termini", href: `${p}/termini` },
+      { label: "Login", href: `${p}/login` },
     ],
 
     cta: {
-      label: "Book Now",
-      href: "/booking",
+      label: "Zakazi sada",
+      href: `${p}/termini`,
     },
 
     social: {

@@ -49,13 +49,13 @@ export function Theme1ImageGenerationSection() {
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Npr. 'dramatičan večernji makeup sa zlatnim sjajem'"
-              className="w-full px-6 py-3 rounded-full text-gray-800 ring-1 ring-gray-200 bg-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-(--secondary-color)/70 transition-all"
+              className="w-full px-6 py-3 rounded-full text-gray-800 ring-1 ring-gray-200 bg-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-(--primary-color)/70 transition-all"
               disabled={isLoading}
             />
             <button
               onClick={handleGenerate}
               disabled={isLoading}
-              className="bg-(--secondary-color) text-white font-bold py-3 px-8 rounded-full hover:bg-white hover:text-(--secondary-color) cursor-pointer transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="bg-(--primary-color) text-white font-bold py-3 px-8 rounded-full hover:bg-white hover:text-(--primary-color) cursor-pointer transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {isLoading ? (
                 <>
@@ -104,7 +104,7 @@ export function Theme1ImageGenerationSection() {
                     link.download = `marysoll-ai-look-${Date.now()}.jpg`;
                     link.click();
                   }}
-                  className="mt-4 bg-white text-brand-secondary font-semibold py-2 px-6 rounded-full shadow hover:bg-(--secondary-color) hover:text-white transition-all duration-300"
+                  className="mt-4 bg-white text-brand-secondary font-semibold py-2 px-6 rounded-full shadow hover:bg-(--primary-color) hover:text-white transition-all duration-300"
                 >
                   Sačuvaj sliku
                 </button>

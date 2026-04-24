@@ -40,7 +40,7 @@ export function Theme1TestimonialsSection({
                 &ldquo;{t.comment}&rdquo;
               </p>
               {t.adminReply && (
-                <div className="mt-3 p-3 bg-(--primary-color)/10 rounded-lg border-l-2 border-(--secondary-color)">
+                <div className="mt-3 p-3 bg-(--primary-color)/10 rounded-lg border-l-2 border-(--primary-color)">
                   <p className="text-xs text-gray-600">
                     <span className="font-semibold">Salon: </span>
                     {t.adminReply}

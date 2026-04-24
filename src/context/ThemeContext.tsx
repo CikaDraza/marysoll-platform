@@ -6,14 +6,19 @@ type ThemeContextType = { theme: Theme; toggleTheme: () => void };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [theme, setTheme] = useState<Theme>("light");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("marysoll-theme") as Theme | null;
-    setTheme(saved ?? "light");
-    setReady(true);
+    async function handleTheme() {
+      const saved = localStorage.getItem("marysoll-theme") as Theme | null;
+      setTheme(saved ?? "light");
+      setReady(true);
+    }
+    handleTheme();
   }, []);
 
   useEffect(() => {
@@ -24,7 +29,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [theme, ready]);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme: () => setTheme((p) => (p === "light" ? "dark" : "light")) }}>
+    <ThemeContext.Provider
+      value={{
+        theme,
+        toggleTheme: () => setTheme((p) => (p === "light" ? "dark" : "light")),
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );

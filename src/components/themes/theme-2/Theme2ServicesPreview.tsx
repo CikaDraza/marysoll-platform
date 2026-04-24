@@ -18,7 +18,7 @@ export function Theme2ServicesPreview({
   return (
     <section className="bg-white py-40 lg:py-24 px-4">
       <div className="max-w-6xl mx-auto">
-        <p className="text-sm pb-2 font-semibold text-(--secondary-color) tracking-widest text-center mb-2">
+        <p className="text-sm pb-2 font-semibold text-(--primary-color) tracking-widest text-center mb-2">
           {subheadline || "šta nudimo"}
         </p>
         <h2 className="text-5xl lg:text-6xl font-bold text-black text-center mb-16">
@@ -32,9 +32,7 @@ export function Theme2ServicesPreview({
                   <div className={`col-span-1 rounded-2xl p-5 text-black`}>
                     <h3 className="font-bold text-md mb-1">{s.name}</h3>
                     {s.description && (
-                      <p className="text-black/80 text-xs line-clamp-2">
-                        {s.description}
-                      </p>
+                      <p className="text-black/80 text-xs">{s.description}</p>
                     )}
                   </div>
                 </div>
@@ -43,7 +41,7 @@ export function Theme2ServicesPreview({
             <div className="m-auto">
               <Link
                 href={servicesHref}
-                className="px-7 py-3 border border-black hover:border-(--secondary-color) text-black font-semibold rounded-full hover:bg-(--secondary-color) hover:text-white transition text-sm"
+                className="px-7 py-3 border border-black hover:border-(--primary-color) text-black font-semibold rounded-full hover:bg-(--primary-color) hover:text-white transition text-sm"
               >
                 Naše usluge
               </Link>

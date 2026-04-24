@@ -30,7 +30,7 @@ export function Theme4HeroSoft({
 
       <div className="absolute inset-0 bg-black/50" />
 
-      <div className="relative z-10 max-w-7xl min-w-7xl mx-auto px-6 text-white">
+      <div className="relative z-10 max-w-7xl lg:min-w-7xl mx-auto px-6 text-white">
         <div className="mr-auto">
           <p className="text-xl text-[#E8D4AD] font-meddon mb-2">
             {subheadline}

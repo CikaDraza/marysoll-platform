@@ -9,6 +9,7 @@ export interface IServiceDoc extends Document {
   basePrice?: number;
   duration?: number;
   description?: string;
+  icon?: string;
   services?: {
     name: string;
     price?: number;
@@ -82,6 +83,7 @@ const ServiceSchema = new Schema<IServiceDoc>(
       startDate: Date,
       endDate: Date,
     },
+    icon: { type: String },
     items: [{ type: String }],
     featured: {
       type: String,

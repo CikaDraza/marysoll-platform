@@ -10,21 +10,6 @@ interface Props {
   tenantSlug?: string;
 }
 
-function minPrice(s: IService): number | null {
-  if (s.type === "single") return s.basePrice ?? null;
-  if (s.type === "variant") {
-    const p = (s.variants ?? []).map((v) => v.price);
-    return p.length ? Math.min(...p) : null;
-  }
-  if (s.type === "group") {
-    const p = (s.services ?? [])
-      .map((sv) => sv.price)
-      .filter((x): x is number => x != null);
-    return p.length ? Math.min(...p) : null;
-  }
-  return null;
-}
-
 export function Theme3PricingSoft({ services, headline, tenantSlug }: Props) {
   if (!services.length) return null;
 
@@ -54,7 +39,6 @@ export function Theme3PricingSoft({ services, headline, tenantSlug }: Props) {
 
               <div className="space-y-4">
                 {items.map((service) => {
-                  const mp = minPrice(service);
                   return (
                     <div key={service._id}>
                       <div className="flex items-start justify-between border-b border-[#eeeae4] pb-3 gap-4">
@@ -133,21 +117,6 @@ export function Theme3PricingSoft({ services, headline, tenantSlug }: Props) {
                             </div>
                           )}
                         </div>
-
-                        <div className="flex items-center gap-4 shrink-0">
-                          {mp != null && (
-                            <span className="text-base font-semibold text-[#bfa37a] whitespace-nowrap">
-                              {service.type !== "single" ? "od " : ""}
-                              {formatPriceToString(mp)} RSD
-                            </span>
-                          )}
-                          <Link
-                            href={resolveHref("/termini")}
-                            className="text-sm text-[#2d2d2d] border border-[#e5e2dc] px-4 py-2 rounded-full hover:bg-[#f3eee8] transition"
-                          >
-                            Zakaži
-                          </Link>
-                        </div>
                       </div>
                     </div>
                   );
@@ -156,7 +125,6 @@ export function Theme3PricingSoft({ services, headline, tenantSlug }: Props) {
             </div>
           ))}
         </div>
-
         <div className="text-center mt-16">
           <Link
             href={resolveHref("/termini")}
