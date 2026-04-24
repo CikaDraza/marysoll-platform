@@ -68,19 +68,14 @@ async function getTenantData(tenantSlug: string) {
 export async function ClientHomePage({ tenantSlug }: Props) {
   const data = await getTenantData(tenantSlug);
 
-  // Detect whether we are being served from a custom domain.
-  // On a custom domain (e.g. kikikiss.beauty) theme headers must use
-  // root-relative paths (/login, /panel) not path-prefixed ones
-  // (/kiki-kiss/login). Passing undefined to ThemeLayout achieves this
-  // because all themes guard their base with `tenantSlug ? `/${tenantSlug}` : ""`.
+  // x-tenant-base-path is set by the proxy to "/{slug}" only on localhost
+  // path-based dev. On subdomain and custom domain it is always "".
+  // Theme headers use `tenantSlug ? `/${tenantSlug}` : ""` to build hrefs, so
+  // passing undefined produces correct root-relative links (/login, /usluge)
+  // for every host-based routing mode.
   const headersList = await headers();
-  const hostname = headersList.get("host")?.split(":")[0] ?? "";
-  const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
-  const isCustomDomain =
-    hostname !== "" &&
-    hostname !== "localhost" &&
-    !hostname.endsWith(BASE_DOMAIN);
-  const themeSlug = isCustomDomain ? undefined : tenantSlug || undefined;
+  const basePath = headersList.get("x-tenant-base-path") ?? "";
+  const themeSlug = basePath ? tenantSlug || undefined : undefined;
 
   if (!data) {
     return (
