@@ -14,7 +14,7 @@ import type { SalonProfileData } from "@/types";
 
 interface Props {
   salon: SalonProfileData;
-  tenantSlug: string;
+  tenantSlug?: string;
   children: React.ReactNode;
 }
 
@@ -107,6 +107,7 @@ export function TenantShellClient({ salon, tenantSlug, children }: Props) {
         { label: "Naslovna", href: `${base}/` },
         { label: "Usluge", href: `${base}/usluge` },
         { label: "Termini", href: `${base}/termini` },
+        { label: "Login", href: `${base}/login` },
       ],
       cta: { label: "Termini", href: `${base}/termini` },
       social: {
@@ -126,7 +127,7 @@ export function TenantShellClient({ salon, tenantSlug, children }: Props) {
           primaryColor={primaryColor}
           secondaryColor={secondaryColor}
         />
-        <div className="pt-0">{children}</div>
+        <div className="pt-16">{children}</div>
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         <Theme5Footer data={theme5FooterData as any} />
       </div>

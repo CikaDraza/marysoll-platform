@@ -17,8 +17,14 @@ export async function TenantPageShell({ tenantSlug, children }: Props) {
   const slugFromHeader = headersList.get("x-tenant-slug") || tenantSlug;
   const salon = await fetchPublicSalonProfile(slugFromHeader);
   if (!salon) return <>{children}</>;
+
+  // Only prefix links with the slug on localhost path-based dev.
+  // On subdomains and custom domains the proxy sets this header to "".
+  const basePath = headersList.get("x-tenant-base-path") ?? "";
+  const themeSlug = basePath ? tenantSlug : undefined;
+
   return (
-    <TenantShellClient salon={salon} tenantSlug={tenantSlug}>
+    <TenantShellClient salon={salon} tenantSlug={themeSlug}>
       {children}
     </TenantShellClient>
   );
