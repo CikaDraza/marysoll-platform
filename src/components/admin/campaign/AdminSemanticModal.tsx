@@ -246,7 +246,9 @@ export default function AdminSemanticModal({
         <DialogPanel className="w-full max-w-xl bg-white rounded-lg shadow-xl p-6 max-h-[90vh] overflow-y-auto">
           {/* HEADER */}
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold">Semantika kampanje</h3>
+            <h3 className="text-lg dark:text-gray-800 font-semibold">
+              Semantika kampanje
+            </h3>
             <button onClick={handleClose}>
               <XMarkIcon className="w-5 h-5 text-gray-600" />
             </button>
@@ -262,7 +264,8 @@ export default function AdminSemanticModal({
               Sumirano: {campaign.semanticContent?.summary || "—"}
             </p>
             <div>
-              <strong>CTA:</strong> {campaign.ctaSlug || "—"}
+              <strong className="dark:text-gray-800">CTA:</strong>{" "}
+              {campaign.ctaSlug || "—"}
             </div>
             <div className="flex justify-between text-xs text-gray-500">
               <div>
@@ -311,7 +314,7 @@ export default function AdminSemanticModal({
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             {/* Campaign type */}
             <div>
-              <label className="block text-sm font-semibold">
+              <label className="block text-sm dark:text-gray-800 font-semibold">
                 Tip kampanje
               </label>
               <select
@@ -322,7 +325,7 @@ export default function AdminSemanticModal({
                     campaignType: e.target.value as CampaignType,
                   })
                 }
-                className="mt-1 w-full rounded-md bg-gray-100 p-2"
+                className="mt-1 w-full dark:text-gray-800 rounded-md bg-gray-100 p-2"
               >
                 <option value="email-only">Email only</option>
                 <option value="email-landing">Email + landing page</option>
@@ -331,7 +334,7 @@ export default function AdminSemanticModal({
 
             {/* Intent */}
             <div>
-              <label className="block text-sm font-semibold">
+              <label className="block dark:text-gray-800 text-sm font-semibold">
                 Svrha kampanje
               </label>
               <select
@@ -345,7 +348,7 @@ export default function AdminSemanticModal({
                     },
                   })
                 }
-                className="mt-1 w-full rounded-md bg-gray-100 p-2"
+                className="mt-1 w-full dark:text-gray-800 rounded-md bg-gray-100 p-2"
                 required
               >
                 <option value="promotion">Promocija</option>
@@ -358,7 +361,9 @@ export default function AdminSemanticModal({
 
             {/* CTA Slug */}
             <div className="mt-3">
-              <label className="block text-sm font-semibold">CTA slug</label>
+              <label className="block dark:text-gray-800 text-sm font-semibold">
+                CTA slug
+              </label>
 
               {form.campaignType === "email-only" ? (
                 <select
@@ -372,7 +377,7 @@ export default function AdminSemanticModal({
                       },
                     })
                   }
-                  className="mt-1 w-full rounded-md bg-gray-100 p-2"
+                  className="mt-1 w-full dark:text-gray-800 rounded-md bg-gray-100 p-2"
                 >
                   {EMAIL_ONLY_CTA_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -399,7 +404,7 @@ export default function AdminSemanticModal({
                         },
                       })
                     }
-                    className="mt-1 w-full rounded-md bg-gray-100 p-2"
+                    className="mt-1 w-full dark:text-gray-800 rounded-md bg-gray-100 p-2"
                     placeholder="/termini"
                   />
                   <p className="text-xs text-gray-500 mt-1">
@@ -453,8 +458,10 @@ export default function AdminSemanticModal({
                       </option>
                     ))}
                   </select>
-                  {preview.aiLanding?.seo?.ogImage && (
-                    preview.aiLanding.seo.ogImage.startsWith("https://res.cloudinary.com/") ? (
+                  {preview.aiLanding?.seo?.ogImage &&
+                    (preview.aiLanding.seo.ogImage.startsWith(
+                      "https://res.cloudinary.com/",
+                    ) ? (
                       <div className="mt-2 h-20 w-32 relative overflow-hidden rounded">
                         <Image
                           fill
@@ -465,10 +472,10 @@ export default function AdminSemanticModal({
                       </div>
                     ) : (
                       <p className="mt-2 text-xs text-red-500">
-                        OG slika nije sa Cloudinary-a. Izaberi validnu sliku iz liste iznad.
+                        OG slika nije sa Cloudinary-a. Izaberi validnu sliku iz
+                        liste iznad.
                       </p>
-                    )
-                  )}
+                    ))}
                 </div>
               )}
 
@@ -569,7 +576,9 @@ export default function AdminSemanticModal({
                       return;
                     }
                     if (!form.semanticContent.intent) {
-                      toast.error("Izaberite svrhu kampanje pre generisanja landinga");
+                      toast.error(
+                        "Izaberite svrhu kampanje pre generisanja landinga",
+                      );
                       return;
                     }
                     if (!form.semanticContent.tone) {

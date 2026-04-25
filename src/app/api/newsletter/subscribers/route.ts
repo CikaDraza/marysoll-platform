@@ -56,7 +56,6 @@ export async function GET(request: Request) {
     tenantId: new Types.ObjectId(tenantId),
     subscribed: true,
     status: "ACTIVE",
-    contactType: "NEWSLETTER",
   };
 
   if (search) {

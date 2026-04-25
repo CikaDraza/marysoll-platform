@@ -1386,7 +1386,7 @@ export default function AdminNewsletterDashboard() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-4xl w-full max-h-full overflow-auto">
             <div className="p-6 border-b flex justify-between items-center">
-              <h3 className="text-2xl font-semibold">
+              <h3 className="text-2xl text-gray-800 font-semibold">
                 Preview: {previewCampaign.name}
               </h3>
               <button
