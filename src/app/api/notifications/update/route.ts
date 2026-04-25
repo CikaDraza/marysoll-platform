@@ -24,14 +24,16 @@ export async function PUT(req: Request) {
 
     const { notificationIds, markAll } = await req.json();
 
+    const recipientId = user.tenantUserId ?? user.id;
+
     if (markAll) {
       await Notification.updateMany(
-        { userId: user.id, isRead: false },
+        { recipientProfileId: recipientId, isRead: false },
         { $set: { isRead: true } },
       );
     } else if (notificationIds?.length > 0) {
       await Notification.updateMany(
-        { _id: { $in: notificationIds }, userId: user.id },
+        { _id: { $in: notificationIds }, recipientProfileId: recipientId },
         { $set: { isRead: true } },
       );
     }

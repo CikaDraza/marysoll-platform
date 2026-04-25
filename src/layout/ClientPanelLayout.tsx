@@ -279,7 +279,7 @@ function ClientHeader({ activeTab }: { activeTab: PanelTab }) {
   const { isMobileOpen, isExpanded, toggleSidebar, toggleMobileSidebar } =
     useSidebar();
   const { user } = useAuth();
-  const { tenantSlug } = useClientRouting();
+  const { base } = useClientRouting();
 
   const handleToggle = () => {
     if (typeof window !== "undefined" && window.innerWidth >= 1024) {
@@ -340,7 +340,7 @@ function ClientHeader({ activeTab }: { activeTab: PanelTab }) {
           </p>
         </div>
         <ThemeToggleButton />
-        <NotificationBell tenantSlug={tenantSlug} />
+        <NotificationBell base={base} />
       </div>
     </header>
   );

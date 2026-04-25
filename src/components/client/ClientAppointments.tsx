@@ -362,7 +362,7 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyPress}
               placeholder="Unesite poruku..."
-              className="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-(--primary-color)"
+              className="flex-1 text-white border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-(--primary-color)"
               disabled={isSending}
             />
             <button

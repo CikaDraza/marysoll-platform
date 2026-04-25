@@ -59,6 +59,7 @@ export default function VerifyEmailForm() {
   const success = searchParams.get("success");
   const error = searchParams.get("error");
   const alreadyVerified = searchParams.get("already_verified");
+  const loginUrl = searchParams.get("loginUrl") ?? "/login";
 
   const status = useMemo<Status>(() => {
     if (alreadyVerified) return "already_verified";
@@ -105,7 +106,7 @@ export default function VerifyEmailForm() {
 
         {msg.cta && (
           <Link
-            href={msg.cta.href}
+            href={msg.cta.href === "/login" ? loginUrl : msg.cta.href}
             className="inline-block bg-purple-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-purple-700 transition"
           >
             {msg.cta.label}

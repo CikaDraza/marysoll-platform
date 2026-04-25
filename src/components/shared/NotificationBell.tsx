@@ -28,11 +28,12 @@ import Link from "next/link";
 
 interface NotificationBellProps {
   /**
-   * tenantSlug — kada je postavljeno, klijentske navigacione rute koriste
-   * /${tenantSlug}/panel?tab=... umjesto /dashboard?tab=...
-   * Ako nije postavljeno (admin panel), koristi /dashboard?tab=...
+   * base — routing prefix from useClientRouting().
+   * "" on subdomain/custom domain → links become /panel?tab=...
+   * "/{slug}" on localhost dev → links become /{slug}/panel?tab=...
+   * undefined (admin panel) → links use /dashboard?tab=...
    */
-  tenantSlug?: string;
+  base?: string;
 }
 
 // ─── Helper: navigaciona ruta po tipu notifikacije ────────────────────────────
@@ -40,23 +41,21 @@ interface NotificationBellProps {
 function getNotificationHref(
   notification: INotification,
   isAdmin: boolean,
-  tenantSlug?: string,
+  base?: string,
 ): string {
-  const base = tenantSlug ? `/${tenantSlug}/panel` : "/dashboard";
-  const adminTerminiTab = "termini";
-  const clientTerminiTab = "Moji Termini";
+  const panelBase = base !== undefined ? `${base}/panel` : "/dashboard";
 
   if (notification.type.includes("appointment")) {
-    const tab = isAdmin ? adminTerminiTab : clientTerminiTab;
-    return `${base}?tab=${encodeURIComponent(tab)}`;
+    const tab = isAdmin ? "termini" : "Moji Termini";
+    return `${panelBase}?tab=${encodeURIComponent(tab)}`;
   }
 
   if (notification.type.includes("testimonial")) {
     const tab = isAdmin ? "Preporuke Klijenata" : "Moje Preporuke";
-    return `${base}?tab=${encodeURIComponent(tab)}`;
+    return `${panelBase}?tab=${encodeURIComponent(tab)}`;
   }
 
-  return base;
+  return panelBase;
 }
 
 // ─── Helper: ikona po tipu ────────────────────────────────────────────────────
@@ -73,14 +72,14 @@ function NotificationItem({
   notification,
   onRead,
   isAdmin,
-  tenantSlug,
+  base,
 }: {
   notification: INotification;
   onRead: (id: string) => void;
   isAdmin: boolean;
-  tenantSlug?: string;
+  base?: string;
 }) {
-  const href = getNotificationHref(notification, isAdmin, tenantSlug);
+  const href = getNotificationHref(notification, isAdmin, base);
 
   return (
     <MenuItem>
@@ -141,7 +140,7 @@ function NotificationItem({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function NotificationBell({ tenantSlug }: NotificationBellProps) {
+export function NotificationBell({ base }: NotificationBellProps) {
   const [deleteMode, setDeleteMode] = useState<"all" | "old">("old");
   const { user } = useAuth();
   const isAdmin = user?.isAdmin ?? false;
@@ -168,7 +167,11 @@ export function NotificationBell({ tenantSlug }: NotificationBellProps) {
   }
 
   function handleMarkAllRead() {
-    if (notifications.length > 0) markAllAsRead.mutate();
+    if (notifications.length === 0) return;
+    markAllAsRead.mutate(undefined, {
+      onSuccess: () => toast.success("Sve notifikacije označene kao pročitane"),
+      onError: () => toast.error("Greška pri označavanju notifikacija"),
+    });
   }
 
   function handleDelete() {
@@ -246,7 +249,7 @@ export function NotificationBell({ tenantSlug }: NotificationBellProps) {
                       notification={n}
                       onRead={handleRead}
                       isAdmin={isAdmin}
-                      tenantSlug={tenantSlug}
+                      base={base}
                     />
                   ))}
                 </div>
@@ -265,7 +268,7 @@ export function NotificationBell({ tenantSlug }: NotificationBellProps) {
                       notification={n}
                       onRead={handleRead}
                       isAdmin={isAdmin}
-                      tenantSlug={tenantSlug}
+                      base={base}
                     />
                   ))}
                 </div>
@@ -284,7 +287,7 @@ export function NotificationBell({ tenantSlug }: NotificationBellProps) {
                       notification={n}
                       onRead={handleRead}
                       isAdmin={isAdmin}
-                      tenantSlug={tenantSlug}
+                      base={base}
                     />
                   ))}
                 </div>

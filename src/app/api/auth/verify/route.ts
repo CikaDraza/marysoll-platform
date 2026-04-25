@@ -43,6 +43,16 @@ export async function GET(request: NextRequest) {
     }
 
     if (tenantUser.isEmailVerified) {
+      if (type === "client") {
+        const existingTenant = await Tenant.findById(tenantUser.tenantId).lean() as { slug: string } | null;
+        const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+        const tenantLoginUrl = existingTenant
+          ? `https://${existingTenant.slug}.${BASE_DOMAIN}/login`
+          : `${baseUrl}/login`;
+        return NextResponse.redirect(
+          `${baseUrl}/verify-email?already_verified=true&loginUrl=${encodeURIComponent(tenantLoginUrl)}`,
+        );
+      }
       return NextResponse.redirect(`${baseUrl}/verify-email?already_verified=true`);
     }
 
@@ -116,7 +126,13 @@ export async function GET(request: NextRequest) {
         console.error("⚠️ Client welcome email failed:", e);
       }
 
-      return NextResponse.redirect(`${baseUrl}/verify-email?success=client`);
+      const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+      const tenantLoginUrl = tenant
+        ? `https://${tenant.slug}.${BASE_DOMAIN}/login`
+        : `${baseUrl}/login`;
+      return NextResponse.redirect(
+        `${baseUrl}/verify-email?success=client&loginUrl=${encodeURIComponent(tenantLoginUrl)}`,
+      );
     }
   } catch (error) {
     console.error("❌ Verify error:", error);
