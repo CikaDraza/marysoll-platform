@@ -84,6 +84,11 @@ const AdminNav: NavItem[] = [
     ],
   },
   {
+    name: "Klijenti",
+    icon: <Icon d={icons.users} />,
+    path: "/dashboard?tab=klijenti",
+  },
+  {
     name: "Statistika",
     icon: <Icon d={icons.chart} />,
     path: "/dashboard?tab=statistika",

@@ -99,7 +99,7 @@ export const StatsTable: React.FC<StatsTableProps> = ({ month, year }) => {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-zinc-300">
+            <tbody className="divide-y divide-gray-200 dark:divide-zinc-700">
               {topClients && topClients.length > 0 ? (
                 topClients.map(
                   (client: { email: string; count: number }, index: number) => (

@@ -1,4 +1,4 @@
-import HomepageAppointmentWidget from "./HomepageAppointmentWidget";
+import HomepageAppointmentWidget from "../shared/HomepageAppointmentWidget";
 import * as HeroIcons from "@heroicons/react/24/outline";
 import {
   BuildingOffice2Icon,

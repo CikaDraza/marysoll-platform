@@ -104,6 +104,8 @@ export interface ITenantUser extends Document {
   phone: string;
   role: TenantUserRole;
   permissions?: Record<string, unknown>;
+  instagram?: string;
+  tiktok?: string;
 
   // ── Activity ─────────────────────────────────────────────────────────────
   isOnline: boolean;
@@ -187,6 +189,14 @@ const tenantUserSchema = new Schema<ITenantUser>(
     },
     permissions: {
       type: Schema.Types.Mixed,
+      default: null,
+    },
+    instagram: {
+      type: String,
+      default: null,
+    },
+    tiktok: {
+      type: String,
       default: null,
     },
 

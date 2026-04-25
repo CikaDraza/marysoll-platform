@@ -8,7 +8,7 @@ import {
 } from "@heroicons/react/20/solid";
 import { formatWorkingHoursForDisplay } from "@/helpers/parseWorkingHours";
 import type { IService, SalonProfileData } from "@/types";
-import HomepageAppointmentWidget from "../theme-1/HomepageAppointmentWidget";
+import HomepageAppointmentWidget from "../shared/HomepageAppointmentWidget";
 
 const DEFAULT_INSTRUCTIONS = [
   { name: "Izaberite uslugu i termin.", icon: CalendarDaysIcon },

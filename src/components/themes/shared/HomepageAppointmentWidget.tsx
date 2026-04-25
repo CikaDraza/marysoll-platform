@@ -160,6 +160,7 @@ function BookingModal({
   userName,
   userEmail,
   token,
+  tenantSlug,
   onConfirmedByGuest,
   pendingDefaults,
 }: {
@@ -172,6 +173,7 @@ function BookingModal({
   userName?: string;
   userEmail?: string;
   token?: string;
+  tenantSlug?: string;
   onConfirmedByGuest: (data: Omit<PendingAppointment, "tenantSlug">) => void;
   pendingDefaults?: Omit<PendingAppointment, "tenantSlug"> | null;
 }) {
@@ -190,6 +192,15 @@ function BookingModal({
     pendingDefaults?.extras || [],
   );
   const [note, setNote] = useState(pendingDefaults?.note || "");
+  const [showGuestForm, setShowGuestForm] = useState(false);
+  const [guestData, setGuestData] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    instagram: "",
+    tiktok: "",
+  });
+  const [guestLoading, setGuestLoading] = useState(false);
 
   // Sync when defaults change (pending appointment restore)
   useEffect(() => {
@@ -253,6 +264,8 @@ function BookingModal({
     setSelectedVariant("");
     setSelectedExtras([]);
     setNote("");
+    setShowGuestForm(false);
+    setGuestData({ name: "", phone: "", email: "", instagram: "", tiktok: "" });
     onClose();
   }
 
@@ -312,8 +325,7 @@ function BookingModal({
     }
   }
 
-  function handleGuestReserve(e: React.FormEvent) {
-    e.preventDefault();
+  function doGuestReserve() {
     if (!selectedDate || !selectedTime)
       return toast.error("Molimo izaberite datum i vreme.");
     if (!selectedService) return toast.error("Izabrana usluga nije pronađena.");
@@ -330,6 +342,88 @@ function BookingModal({
       totalPrice,
       totalDuration,
     });
+  }
+
+  function handleGuestReserve(e: React.FormEvent) {
+    e.preventDefault();
+    doGuestReserve();
+  }
+
+  async function handleGuestSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedDate || !selectedTime)
+      return toast.error("Molimo izaberite datum i vreme.");
+    if (!selectedService) return toast.error("Izabrana usluga nije pronađena.");
+    if (selectedService.type === "variant" && !selectedVariant)
+      return toast.error("Molimo izaberite varijantu usluge.");
+    if (!guestData.name.trim()) return toast.error("Unesite ime i prezime.");
+    if (!guestData.phone.trim()) return toast.error("Unesite broj telefona.");
+    if (!tenantSlug)
+      return toast.error("Greška: nedostaje identifikator salona.");
+
+    const extrasForStorage = selectedExtras.map((extraName) => {
+      const extra = selectedService.extras?.find((e) => e.name === extraName);
+      return {
+        name: extraName,
+        price: extra?.price || 0,
+        duration: extra?.duration || 0,
+        perItem: extra?.perItem || false,
+      };
+    });
+
+    const noteParts = [note || ""];
+    if (guestData.instagram.trim())
+      noteParts.push(`Instagram: @${guestData.instagram.trim()}`);
+    if (guestData.tiktok.trim())
+      noteParts.push(`TikTok: @${guestData.tiktok.trim()}`);
+    const noteWithInstagram = noteParts.filter(Boolean).join("\n") || undefined;
+
+    setGuestLoading(true);
+    try {
+      const res = await fetch(`/api/public/${tenantSlug}/appointments/guest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: guestData.name.trim(),
+          phone: guestData.phone.trim(),
+          email: guestData.email.trim() || null,
+          instagram: guestData.instagram.trim() || null,
+          tiktok: guestData.tiktok.trim() || null,
+          serviceId: selectedServiceId,
+          serviceName: `${selectedService.name}${selectedVariant ? ` - ${selectedVariant}` : ""}`,
+          services: [
+            {
+              serviceId: selectedServiceId,
+              serviceName:
+                selectedService.type === "variant"
+                  ? selectedVariant
+                  : selectedService.name,
+              extras:
+                extrasForStorage.length > 0 ? extrasForStorage : undefined,
+              quantity: 1,
+              price: totalPrice,
+              duration: totalDuration,
+            },
+          ],
+          date: selectedDate,
+          time: selectedTime,
+          duration: totalDuration,
+          note: noteWithInstagram,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Greška");
+      }
+
+      toast.success("Zakazano — čeka odobrenje.");
+      handleClose();
+    } catch (err: unknown) {
+      toast.error((err as Error).message || "Greška pri zakazivanju.");
+    } finally {
+      setGuestLoading(false);
+    }
   }
 
   const isPendingMode = !!pendingDefaults;
@@ -367,19 +461,162 @@ function BookingModal({
               </p>
             </div>
           ) : (
-            <div className="mb-4 p-3 bg-amber-50 rounded-xl border border-amber-100">
-              <p className="text-xs text-amber-700 font-semibold">
-                Niste prijavljeni. Popunite formu i kliknite &quot;Postavi za
-                rezervaciju&quot; — bićete preusmereni na prijavu. Nakon prijave
-                vaš termin će biti potvrđen.
-              </p>
+            <div className="mb-4 p-3 bg-amber-50 rounded-xl border border-amber-100 space-y-2">
+              {!showGuestForm ? (
+                <>
+                  <div className="flex items-start gap-2">
+                    <p className="flex-1 text-xs text-amber-700 font-semibold leading-relaxed">
+                      Niste prijavljeni. Popunite formu i kliknite &quot;Postavi
+                      za rezervaciju&quot; — bićete preusmereni na prijavu.
+                      Nakon prijave vaš termin će biti potvrđen.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={doGuestReserve}
+                      className="shrink-0 text-xs font-bold text-amber-700 border border-amber-300 bg-white hover:bg-amber-50 px-2.5 py-1 rounded-lg transition"
+                    >
+                      Prijavi se →
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between pt-1.5 border-t border-amber-100">
+                    <span className="text-xs text-amber-600">
+                      Ili zakažite termin kao gost
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowGuestForm(true)}
+                      className="text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg transition"
+                    >
+                      Nastavljam kao gost
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-amber-700 font-semibold">
+                    Zakazujete kao gost — unesite podatke ispod
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowGuestForm(false)}
+                    className="text-xs text-amber-600 hover:text-amber-800 underline"
+                  >
+                    ← Imam nalog
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
           <form
-            onSubmit={isLoggedIn ? handleSubmitLoggedIn : handleGuestReserve}
+            onSubmit={
+              isLoggedIn
+                ? handleSubmitLoggedIn
+                : showGuestForm
+                  ? handleGuestSubmit
+                  : handleGuestReserve
+            }
             className="flex-1 flex flex-col gap-4"
           >
+            {/* Guest contact form — shown at top when guest mode is active */}
+            {!isLoggedIn && showGuestForm && (
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+                <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                  Vaši podaci
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Ime i prezime *
+                    </label>
+                    <input
+                      type="text"
+                      value={guestData.name}
+                      onChange={(e) =>
+                        setGuestData((p) => ({ ...p, name: e.target.value }))
+                      }
+                      placeholder="Ana Jovanović"
+                      required
+                      className="block w-full rounded-xl border border-gray-200 bg-white text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--primary-color)/80 placeholder:text-gray-400"
+                    />
+                  </div>
+                  <div className="col-span-2 lg:col-span-1">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Telefon *
+                    </label>
+                    <input
+                      type="tel"
+                      value={guestData.phone}
+                      onChange={(e) =>
+                        setGuestData((p) => ({ ...p, phone: e.target.value }))
+                      }
+                      placeholder="+381 60 123 4567"
+                      required
+                      className="block w-full rounded-xl border border-gray-200 bg-white text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--primary-color)/80 placeholder:text-gray-400"
+                    />
+                  </div>
+                  <div className="col-span-2 lg:col-span-1">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Email (opciono)
+                    </label>
+                    <input
+                      type="email"
+                      value={guestData.email}
+                      onChange={(e) =>
+                        setGuestData((p) => ({ ...p, email: e.target.value }))
+                      }
+                      placeholder="ana@email.com"
+                      className="block w-full rounded-xl border border-gray-200 bg-white text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--primary-color)/80 placeholder:text-gray-400"
+                    />
+                  </div>
+                  <div className="col-span-2 lg:col-span-1">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Instagram (opciono)
+                    </label>
+                    <div className="flex items-center rounded-xl border border-gray-200 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-(--primary-color)/80">
+                      <span className="px-2.5 text-sm text-gray-400 select-none">
+                        @
+                      </span>
+                      <input
+                        type="text"
+                        value={guestData.instagram}
+                        onChange={(e) =>
+                          setGuestData((p) => ({
+                            ...p,
+                            instagram: e.target.value,
+                          }))
+                        }
+                        placeholder="username"
+                        className="flex-1 bg-transparent text-gray-800 py-2 pr-3 text-sm focus:outline-none placeholder:text-gray-400"
+                      />
+                    </div>
+                  </div>
+                  <div className="col-span-2 lg:col-span-1">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      TikTok (opciono)
+                    </label>
+                    <div className="flex items-center rounded-xl border border-gray-200 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-(--primary-color)/80">
+                      <span className="px-2.5 text-sm text-gray-400 select-none">
+                        @
+                      </span>
+                      <input
+                        type="text"
+                        value={guestData.tiktok}
+                        onChange={(e) =>
+                          setGuestData((p) => ({
+                            ...p,
+                            tiktok: e.target.value,
+                          }))
+                        }
+                        placeholder="username"
+                        className="flex-1 bg-transparent text-gray-800 py-2 pr-3 text-sm focus:outline-none placeholder:text-gray-400"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Date & Time */}
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -582,6 +819,17 @@ function BookingModal({
                   {createAppointment.isPending
                     ? "Zakazivanje..."
                     : "Zakaži termin"}
+                </button>
+              ) : showGuestForm ? (
+                <button
+                  type="submit"
+                  disabled={
+                    guestLoading ||
+                    (selectedService?.type === "variant" && !selectedVariant)
+                  }
+                  className="px-5 py-2 text-sm font-semibold text-white bg-(--primary-color)/90 hover:bg-(--primary-color) rounded-xl transition disabled:opacity-50 cursor-pointer"
+                >
+                  {guestLoading ? "Zakazivanje..." : "Zakaži kao gost"}
                 </button>
               ) : (
                 <button
@@ -1116,6 +1364,7 @@ export default function HomepageAppointmentWidget({
         userName={user?.name}
         userEmail={user?.email}
         token={token ?? undefined}
+        tenantSlug={tenantSlug}
         onConfirmedByGuest={handleGuestConfirm}
         pendingDefaults={pendingDefaults}
       />

@@ -17,6 +17,7 @@ import { StatisticsPage } from "@/components/admin/statistics/StatisticPage";
 import AdminNewsletterDashboard from "@/components/admin/AdminNewsletterDashboard";
 import { EmailCampaignAIGenerator } from "@/components/email-campaign/EmailCampaignAIGenerator";
 import { AdminLandingCMS } from "@/components/admin/cms/AdminLandingCMS";
+import ClientsList from "@/components/admin/ClientsList";
 import { FeatureGate } from "@/components/shared/FeatureGate";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import DashboardLayout from "@/layout/DashboardLayout";
@@ -37,7 +38,8 @@ type Tab =
   | "newsletter"
   | "email-campaign-ai"
   | "preporuke"
-  | "domen";
+  | "domen"
+  | "klijenti";
 
 const ALL_TABS: Tab[] = [
   "profil",
@@ -52,6 +54,7 @@ const ALL_TABS: Tab[] = [
   "email-campaign-ai",
   "preporuke",
   "domen",
+  "klijenti",
 ];
 
 // ─── Themes ───────────────────────────────────────────────────────────────────
@@ -1115,6 +1118,7 @@ function AdminDashboard() {
       )}
       {tab === "preporuke" && <AdminTestimonials />}
       {tab === "domen" && <AdminCustomDomain />}
+      {tab === "klijenti" && <ClientsList />}
 
       {/* Service modal */}
       {svc.modalMode !== "closed" && <ServiceModal s={svc} />}

@@ -60,25 +60,28 @@ export default function ClientsList() {
             autoComplete="off"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="min-w-0 w-full flex-auto border border-gray-200 rounded-md bg-white/5 px-3.5 py-2 text-base text-gray-600 outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color) sm:text-sm/6"
+            className="min-w-0 w-full flex-auto border border-gray-200 dark:border-gray-700 rounded-md bg-white/5 px-3.5 py-2 text-base text-gray-600 outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color) sm:text-sm/6"
           />
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-200 bg-gray-100 p-2 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+            className="mt-1 block w-full rounded-md border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-950 dark:text-gray-500 p-2 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
           />
         </div>
       </div>
       {loadingAll ? (
         <Loader />
       ) : (
-        <ul role="list" className="divide-y divide-gray-100">
+        <ul
+          role="list"
+          className="divide-y divide-gray-100 dark:divide-gray-700"
+        >
           {users.map((user: IUser) => (
             <li key={user.email} className="flex justify-between gap-x-6 py-5">
               <div className="flex flex-col min-w-0 gap-x-4">
                 <div className="min-w-0 flex-auto">
-                  <p className="text-sm/6 font-semibold text-gray-900">
+                  <p className="text-sm/6 font-semibold text-gray-900 dark:text-gray-300">
                     {user.name}
                   </p>
                   <p className="mt-1 truncate text-xs/5 text-gray-500">

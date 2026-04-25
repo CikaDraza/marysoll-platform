@@ -1,0 +1,221 @@
+/**
+ * POST /api/public/[tenantSlug]/appointments/guest
+ *
+ * Public — no auth required.
+ * Creates a GUEST TenantUser profile + Appointment in pending status.
+ * The guest is identified by name + phone; email is optional and used
+ * for deduplication (re-uses existing profile if email already exists).
+ */
+import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
+import { connectToDB } from "@/lib/db/mongodb";
+import { Appointment } from "@/models/Appointment";
+import { Service } from "@/models/Service";
+import { Tenant } from "@/models/Tenant";
+import { TenantUser } from "@/models/TenantUser";
+import { createAppointmentNotification } from "@/lib/notificationService";
+import type { IAppointmentService } from "@/types";
+import type { ITenant } from "@/models/Tenant";
+
+type Params = { params: Promise<{ tenantSlug: string }> };
+
+export async function POST(request: NextRequest, { params }: Params) {
+  try {
+    await connectToDB();
+
+    const { tenantSlug } = await params;
+
+    // ── Resolve tenant ────────────────────────────────────────────────────────
+    const tenantDoc = await Tenant.findOne({
+      slug: tenantSlug,
+      status: "active",
+    }).lean();
+
+    if (!tenantDoc) {
+      return NextResponse.json(
+        { error: "Salon nije pronađen ili nije aktivan." },
+        { status: 404 },
+      );
+    }
+
+    const tenant = tenantDoc as unknown as ITenant;
+    const tenantId = tenant._id?.toString();
+
+    // ── Check salon can accept bookings ───────────────────────────────────────
+    const now = new Date();
+    const trialEndsAt = tenant.trialEndsAt ? new Date(tenant.trialEndsAt) : null;
+    const isTrialActive = tenant.isTrialActive && trialEndsAt && trialEndsAt > now;
+    const canAcceptBookings =
+      tenant.paid === true || isTrialActive === true || tenant.plan === "free";
+
+    if (!canAcceptBookings) {
+      return NextResponse.json(
+        { error: "Salon nije aktivan. Zakazivanje nije moguće." },
+        { status: 403 },
+      );
+    }
+
+    // ── Parse body ────────────────────────────────────────────────────────────
+    const data = await request.json();
+    const { name, phone, email, instagram, tiktok, serviceId, serviceName, services, date, time, duration, note } = data;
+
+    // ── Validate required fields ──────────────────────────────────────────────
+    if (!name?.trim()) {
+      return NextResponse.json({ error: "Ime je obavezno." }, { status: 400 });
+    }
+    if (!phone?.trim()) {
+      return NextResponse.json(
+        { error: "Broj telefona je obavezan." },
+        { status: 400 },
+      );
+    }
+    if (!serviceId) {
+      return NextResponse.json(
+        { error: "Nedostaje ID usluge." },
+        { status: 400 },
+      );
+    }
+    if (!date || !time) {
+      return NextResponse.json(
+        { error: "Datum i vreme su obavezni." },
+        { status: 400 },
+      );
+    }
+
+    // ── Validate service exists ───────────────────────────────────────────────
+    const service = await Service.findById(serviceId);
+    if (!service) {
+      return NextResponse.json(
+        { error: "Usluga nije pronađena." },
+        { status: 404 },
+      );
+    }
+
+    // ── Check slot availability ───────────────────────────────────────────────
+    const existing = await Appointment.findOne({
+      tenantId,
+      date,
+      time,
+      status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
+    });
+
+    if (existing) {
+      return NextResponse.json({ error: "Termin je zauzet." }, { status: 400 });
+    }
+
+    // ── Find or create GUEST TenantUser ───────────────────────────────────────
+    let guestUser = null;
+    const normalizedEmail = email?.trim()?.toLowerCase();
+
+    if (normalizedEmail) {
+      // Reuse existing profile (any role) if email matches this tenant
+      guestUser = await TenantUser.findOne({
+        tenantId: tenant._id,
+        email: normalizedEmail,
+      });
+    }
+
+    if (!guestUser) {
+      // Generate a placeholder email for guests who didn't provide one
+      const guestEmail =
+        normalizedEmail ||
+        `guest_${Date.now()}_${crypto.randomBytes(4).toString("hex")}@noemail.guest`;
+
+      // Random placeholder password — guests cannot log in
+      const placeholderPassword = await bcrypt.hash(
+        crypto.randomBytes(16).toString("hex"),
+        10,
+      );
+
+      guestUser = await TenantUser.create({
+        tenantId: tenant._id,
+        email: guestEmail,
+        password: placeholderPassword,
+        name: name.trim(),
+        phone: phone.trim(),
+        role: "GUEST",
+        status: "invited",
+        isEmailVerified: false,
+        ...(instagram?.trim() && { instagram: instagram.trim() }),
+        ...(tiktok?.trim() && { tiktok: tiktok.trim() }),
+      });
+    }
+
+    // ── Create appointment ────────────────────────────────────────────────────
+    const resolvedServiceName = serviceName || service.name;
+
+    const appointment = new Appointment({
+      tenantId,
+      clientProfileId: guestUser._id.toString(),
+      clientName: name.trim(),
+      clientEmail: guestUser.email,
+      serviceName: resolvedServiceName,
+      services: (services as IAppointmentService[]).map((s) => ({
+        ...s,
+        serviceName: s.serviceName,
+        duration: s.duration,
+      })),
+      date,
+      time,
+      duration: duration || service.duration || 60,
+      note: note || undefined,
+      status: "pending",
+      messages: [],
+      adminNotified: true,
+      clientNotified: false,
+      lastUpdatedBy: "client",
+      unreadCount: { client: 0, admin: 0 },
+    });
+
+    await appointment.save();
+
+    // ── Notify admin ──────────────────────────────────────────────────────────
+    await createAppointmentNotification(
+      {
+        _id: appointment._id.toString(),
+        tenantId: tenant._id,
+        clientProfileId: guestUser._id.toString(),
+        clientName: name.trim(),
+        serviceName: resolvedServiceName,
+        date,
+        time,
+      },
+      "created",
+    );
+
+    return NextResponse.json(
+      {
+        message: "Termin uspešno zakazan. Čeka odobrenje.",
+        appointmentId: appointment._id.toString(),
+      },
+      { status: 201 },
+    );
+  } catch (error) {
+    console.error("❌ Guest appointment error:", error);
+
+    // Return Mongoose validation errors as 400 with a readable message
+    if (
+      error &&
+      typeof error === "object" &&
+      "name" in error &&
+      (error as { name: string }).name === "ValidationError" &&
+      "errors" in error
+    ) {
+      const fields = Object.values(
+        (error as { errors: Record<string, { message: string }> }).errors,
+      )
+        .map((e) => e.message)
+        .join("; ");
+      return NextResponse.json(
+        { error: `Validacija nije prošla: ${fields}` },
+        { status: 400 },
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Greška pri kreiranju termina.", details: String(error) },
+      { status: 500 },
+    );
+  }
+}

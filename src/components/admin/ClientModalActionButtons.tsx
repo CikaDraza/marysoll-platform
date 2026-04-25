@@ -137,7 +137,7 @@ export function ClientUpdateModal({
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-200 p-2 bg-gray-100 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+                className="mt-1 text-gray-900 block w-full rounded-md border-gray-200 p-2 bg-gray-100 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
                 required
               />
             </div>
@@ -163,7 +163,7 @@ export function ClientUpdateModal({
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-200 p-2 bg-gray-100 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+                className="mt-1 text-gray-900 block w-full rounded-md border-gray-200 p-2 bg-gray-100 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
               />
             </div>
 
@@ -176,7 +176,7 @@ export function ClientUpdateModal({
                 name="birthday"
                 value={formData.birthday}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-200 p-2 bg-gray-100 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+                className="mt-1 text-gray-900 block w-full rounded-md border-gray-200 p-2 bg-gray-100 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
               />
             </div>
 
