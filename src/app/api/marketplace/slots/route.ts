@@ -1,4 +1,5 @@
-// GET /api/slots?salonId=...&serviceId=...&date=YYYY-MM-DD — HMAC-signed
+// GET /api/marketplace/slots?salonId=&serviceId=&date=YYYY-MM-DD
+// Marketplace — available slots for a salon (no admin auth)
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { SalonProfile } from "@/models/SalonProfile";
@@ -27,17 +28,14 @@ function parseWorkingHours(wh: unknown, dayKey: string): { from: string; to: str
   if (!wh || typeof wh !== "object") return null;
   const daySlots = (wh as Record<string, unknown>)[dayKey];
   if (!daySlots) return null;
-
   if (Array.isArray(daySlots) && daySlots.length > 0) {
     const s = daySlots[0] as { from?: string; to?: string };
     if (s.from && s.to) return { from: s.from, to: s.to };
   }
-
   if (typeof daySlots === "string") {
     const parts = daySlots.split(" - ");
     if (parts.length === 2) return { from: parts[0].trim(), to: parts[1].trim() };
   }
-
   return null;
 }
 
@@ -64,12 +62,15 @@ export async function GET(req: NextRequest) {
   try {
     await connectToDB();
 
-    const salon = await SalonProfile.findById(salonId).select("tenantId workingHours").lean();
+    const salon = await SalonProfile.findById(salonId)
+      .select("tenantId workingHours")
+      .lean();
     if (!salon) {
       return NextResponse.json({ error: "Salon nije pronađen" }, { status: 404 });
     }
 
     const s = salon as Record<string, unknown>;
+    const tenantId = String(s.tenantId ?? "");
     const hours = parseWorkingHours(s.workingHours, dateToDayKey(date));
     if (!hours) return NextResponse.json([]);
 
@@ -83,7 +84,7 @@ export async function GET(req: NextRequest) {
     }
 
     const booked = await Appointment.find({
-      tenantId: s.tenantId,
+      tenantId,
       date,
       status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
     })
@@ -99,7 +100,13 @@ export async function GET(req: NextRequest) {
 
     const startMin = timeToMin(hours.from);
     const endMin = timeToMin(hours.to);
-    const slots: { _id: string; salonId: string; startTime: string; endTime: string; isAvailable: boolean }[] = [];
+    const slots: {
+      _id: string;
+      salonId: string;
+      startTime: string;
+      endTime: string;
+      isAvailable: boolean;
+    }[] = [];
 
     for (let t = startMin; t + slotDuration <= endMin; t += SLOT_INTERVAL) {
       const slotEnd = t + slotDuration;
@@ -117,7 +124,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(slots);
   } catch (err) {
-    console.error("[GET /api/slots]", err);
+    console.error("[GET /api/marketplace/slots]", err);
     return NextResponse.json({ error: "Greška pri učitavanju termina" }, { status: 500 });
   }
 }
