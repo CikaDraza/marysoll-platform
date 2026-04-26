@@ -1,6 +1,8 @@
 import { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
+import { SalonShowcaseLoader } from "./SalonShowcaseLoader";
 
 export const metadata: Metadata = {
   title: "Marysoll — Platforma za beauty salone",
@@ -39,6 +41,11 @@ export function MarketingHomePage() {
           </Link>
         </div>
       </section>
+
+      {/* Salon Showcase */}
+      <Suspense fallback={null}>
+        <SalonShowcaseLoader />
+      </Suspense>
 
       {/* Features */}
       <section id="features" className="py-20 relative bg-gray-50">
