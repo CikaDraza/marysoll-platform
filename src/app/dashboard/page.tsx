@@ -1,7 +1,7 @@
 // app/dashboard/page.tsx
 "use client";
 
-import { useRef, useState, useEffect, Suspense } from "react";
+import { useRef, useState, useEffect, Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
@@ -22,6 +22,7 @@ import { FeatureGate } from "@/components/shared/FeatureGate";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import DashboardLayout from "@/layout/DashboardLayout";
 import Loader from "@/components/elements/Loader";
+import { useCategories } from "@/hooks/useCategories";
 import { api } from "@/lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -1131,11 +1132,11 @@ function AdminDashboard() {
 function ServiceModal({ s }: { s: ReturnType<typeof useAdminServices> }) {
   const { form } = s;
   const isEdit = s.modalMode === "edit";
-  const categories: string[] = s
-    ? Array.from(
-        new Set(s.services.map((s: IService) => String(s.category ?? ""))),
-      )
-    : [];
+  const { data: categories = [] } = useCategories();
+  const selectedCategory = useMemo(
+    () => categories.find((c) => c.key === form.categorySlug) ?? null,
+    [categories, form.categorySlug],
+  );
 
   const i2 = [
     "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
@@ -1179,41 +1180,40 @@ function ServiceModal({ s }: { s: ReturnType<typeof useAdminServices> }) {
                 placeholder="npr. Gel lak — ceo set"
               />
             </div>
-            {categories.length > 0 && (
+            <div className="col-span-2">
+              <label className={l2}>Kategorija *</label>
+              <select
+                className={i2}
+                value={form.categorySlug ?? ""}
+                onChange={(e) => {
+                  const selected = categories.find((c) => c.key === e.target.value);
+                  s.setField("categorySlug", selected?.key ?? "");
+                  s.setField("category", selected?.label ?? "");
+                  s.setField("subcategory", "");
+                }}
+                required
+              >
+                <option value="">-- Izaberi kategoriju --</option>
+                {categories.map((c) => (
+                  <option key={c.key} value={c.key}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+            {selectedCategory && selectedCategory.subcategories.length > 0 && (
               <div className="col-span-2">
-                <label className={l2}>Postojeće kategorije</label>
+                <label className={l2}>Podkategorija</label>
                 <select
-                  value={form.category}
-                  onChange={(e) => s.setField("category", e.target.value)}
                   className={i2}
+                  value={form.subcategory ?? ""}
+                  onChange={(e) => s.setField("subcategory", e.target.value)}
                 >
-                  <option value="">-- izaberi --</option>
-                  {categories.map((c, i) => (
-                    <option key={`cat-${i}`} value={c}>
-                      {c}
-                    </option>
+                  <option value="">-- Podkategorija --</option>
+                  {selectedCategory.subcategories.map((sub) => (
+                    <option key={sub.key} value={sub.label}>{sub.label}</option>
                   ))}
                 </select>
               </div>
             )}
-            <div>
-              <label className={l2}>Kategorija *</label>
-              <input
-                className={i2}
-                value={form.category}
-                onChange={(e) => s.setField("category", e.target.value)}
-                placeholder="Nokti, Šminkanje..."
-              />
-            </div>
-            <div>
-              <label className={l2}>Podkategorija</label>
-              <input
-                className={i2}
-                value={form.subcategory ?? ""}
-                onChange={(e) => s.setField("subcategory", e.target.value)}
-                placeholder="Gel, Akril..."
-              />
-            </div>
             <div>
               <label className={l2}>Tip *</label>
               <select

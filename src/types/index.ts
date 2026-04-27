@@ -89,6 +89,7 @@ export interface IServiceGroupItem {
 export interface IServiceInput {
   name: string;
   category: string;
+  categorySlug?: string;
   subcategory?: string;
   price?: number | null;
   basePrice?: number | null;
@@ -108,6 +109,7 @@ export interface IService {
   _id: string;
   name: string;
   category: string;
+  categorySlug?: string;
   subcategory?: string;
   price?: number | null;
   basePrice?: number | null;

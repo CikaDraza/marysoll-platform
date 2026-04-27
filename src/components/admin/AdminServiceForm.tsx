@@ -1,14 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { HomePagePosition, IService, IServiceInput } from "@/types";
-import { api } from "@/lib/api";
-
-interface CategoryOption {
-  key: string;
-  label: string;
-  subcategories: { key: string; label: string }[];
-}
+import { useCategories } from "@/hooks/useCategories";
 
 interface Props {
   editing?: IService | null;
@@ -25,18 +19,12 @@ export default function AdminServiceForm({
   save,
   onClose,
 }: Props) {
-  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const { data: categories = [] } = useCategories();
 
-  useEffect(() => {
-    api.get<CategoryOption[]>("/admin/categories").then((res) => {
-      setCategories(res.data);
-    }).catch(() => {/* silent fallback */});
-  }, []);
-
-  const subcategories = useMemo(() => {
-    const matched = categories.find((c) => c.label === form.category || c.key === form.category);
-    return matched?.subcategories ?? [];
-  }, [form.category, categories]);
+  const selectedCategory = useMemo(
+    () => categories.find((c) => c.key === form.categorySlug) ?? null,
+    [categories, form.categorySlug],
+  );
 
   useEffect(() => {
     if (editing) {
@@ -85,62 +73,52 @@ export default function AdminServiceForm({
         </select>
       </div>
 
-      {/* CATEGORY BLOCK */}
+      {/* CATEGORY */}
       <div>
         <label className="block text-sm font-semibold text-gray-700">
           Kategorija
         </label>
-        {categories.length > 0 ? (
-          <select
-            value={form.category}
-            onChange={(e) => setForm({ ...form, category: e.target.value, subcategory: "" })}
-            className="mt-1 block w-full rounded-md border-gray-200 bg-gray-100 p-2"
-          >
-            <option value="">-- izaberi kategoriju --</option>
-            {categories.map((c) => (
-              <option key={c.key} value={c.label}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <input
-            type="text"
-            value={form.category}
-            onChange={(e) => setForm({ ...form, category: e.target.value })}
-            placeholder="naziv kategorije"
-            className="mt-1 w-full rounded-md border-gray-200 p-2 bg-gray-100"
-          />
-        )}
+        <select
+          value={form.categorySlug ?? ""}
+          onChange={(e) => {
+            const selected = categories.find((c) => c.key === e.target.value);
+            setForm({
+              ...form,
+              categorySlug: selected?.key ?? "",
+              category: selected?.label ?? "",
+              subcategory: "",
+            });
+          }}
+          className="mt-1 block w-full rounded-md border-gray-200 bg-gray-100 p-2"
+          required
+        >
+          <option value="">-- Izaberi kategoriju --</option>
+          {categories.map((c) => (
+            <option key={c.key} value={c.key}>
+              {c.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* SUBCATEGORY */}
-      {form.category && (
+      {selectedCategory && selectedCategory.subcategories.length > 0 && (
         <div>
           <label className="block text-sm font-semibold text-gray-700">
             Podkategorija (opciono)
           </label>
-          {subcategories.length > 0 ? (
-            <select
-              value={form.subcategory ?? ""}
-              onChange={(e) => setForm({ ...form, subcategory: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-200 bg-gray-100 p-2"
-            >
-              <option value="">-- izaberi podkategoriju --</option>
-              {subcategories.map((s) => (
-                <option key={s.key} value={s.label}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <input
-              type="text"
-              value={form.subcategory ?? ""}
-              onChange={(e) => setForm({ ...form, subcategory: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-200 p-2 bg-gray-100"
-            />
-          )}
+          <select
+            value={form.subcategory ?? ""}
+            onChange={(e) => setForm({ ...form, subcategory: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-200 bg-gray-100 p-2"
+          >
+            <option value="">-- Podkategorija --</option>
+            {selectedCategory.subcategories.map((s) => (
+              <option key={s.key} value={s.label}>
+                {s.label}
+              </option>
+            ))}
+          </select>
         </div>
       )}
 

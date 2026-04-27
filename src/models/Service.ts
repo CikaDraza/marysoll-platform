@@ -4,6 +4,7 @@ export interface IServiceDoc extends Document {
   tenantId: Types.ObjectId;
   name: string;
   category: string;
+  categorySlug?: string;
   subcategory?: string;
   type: "single" | "group" | "variant";
   basePrice?: number;
@@ -49,6 +50,7 @@ const ServiceSchema = new Schema<IServiceDoc>(
     },
     name: { type: String, required: true },
     category: { type: String, required: true },
+    categorySlug: { type: String },
     subcategory: { type: String },
     type: {
       type: String,

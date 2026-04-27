@@ -26,6 +26,7 @@ import { useAuth } from "@/hooks/useAuth";
 export const emptyServiceForm = (): IServiceInput => ({
   name: "",
   category: "",
+  categorySlug: "",
   subcategory: "",
   type: "single",
   basePrice: undefined,
@@ -55,6 +56,7 @@ export function mapServiceToForm(s: IService): IServiceInput {
   return {
     name: s.name ?? "",
     category: s.category ?? "",
+    categorySlug: s.categorySlug ?? "",
     subcategory: s.subcategory ?? "",
     type: s.type ?? "single",
     basePrice: s.basePrice ?? undefined,
@@ -76,7 +78,7 @@ export function mapServiceToForm(s: IService): IServiceInput {
 
 function validateService(f: IServiceInput): string | null {
   if (!f.name.trim()) return "Naziv usluge je obavezan.";
-  if (!f.category.trim()) return "Kategorija je obavezna.";
+  if (!f.categorySlug?.trim()) return "Kategorija je obavezna.";
   if (f.type === "single") {
     if (!f.basePrice || f.basePrice <= 0) return "Cena mora biti veća od 0.";
     if (!f.duration || f.duration <= 0) return "Trajanje mora biti veće od 0.";

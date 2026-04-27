@@ -9,6 +9,7 @@ export function useAdminServiceForm() {
   const emptyForm: IServiceInput = {
     name: "",
     category: "",
+    categorySlug: "",
     subcategory: "",
     basePrice: undefined,
     items: [],
@@ -43,6 +44,7 @@ export function useAdminServiceForm() {
 
     setForm({
       ...rest,
+      categorySlug: rest.categorySlug ?? "",
       basePrice: rest.basePrice ?? undefined,
       duration: rest.duration ?? undefined,
       items: rest.items || [],

@@ -38,7 +38,5 @@ const CategorySchema = new Schema<ICategoryDoc>(
   { timestamps: true },
 );
 
-CategorySchema.index({ key: 1 });
-
 export const Category =
   models.Category || model<ICategoryDoc>("Category", CategorySchema);
