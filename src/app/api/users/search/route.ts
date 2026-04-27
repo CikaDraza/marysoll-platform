@@ -27,6 +27,7 @@ export async function GET(req: Request) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filter: Record<string, any> = {
       tenantId: new Types.ObjectId(decoded.tenantId),
+      role: { $nin: ["OWNER", "ADMIN"] },
     };
 
     if (query) {
