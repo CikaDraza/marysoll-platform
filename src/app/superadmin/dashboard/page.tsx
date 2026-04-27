@@ -1,7 +1,7 @@
 // app/superadmin/dashboard/page.tsx
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { PLAN_FEATURES } from "@/lib/plans/planFeatures";
 import { AuthStatusButton } from "@/components/auth/AuthStatusButton";
 import {
@@ -26,6 +26,7 @@ type Tab =
   | "trial"
   | "planovi"
   | "statistika"
+  | "korisnici"
   | "podesavanja"
   | "chat"
   | "profil";
@@ -35,6 +36,7 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "trial", label: "Trial period", icon: ShieldCheckIcon },
   { id: "planovi", label: "Planovi", icon: CreditCardIcon },
   { id: "statistika", label: "Statistika", icon: ChartBarIcon },
+  { id: "korisnici", label: "Korisnici", icon: UsersIcon },
   { id: "podesavanja", label: "Podešavanja", icon: CogIcon },
   { id: "chat", label: "Chat", icon: ChatBubbleLeftRightIcon },
   { id: "profil", label: "Profil", icon: UserCircleIcon },
@@ -178,6 +180,7 @@ export default function SuperAdminDashboard() {
           {activeTab === "statistika" && (
             <StatistikaTab stats={sa.stats} tenants={sa.tenants} />
           )}
+          {activeTab === "korisnici" && <KorisniciTab />}
           {activeTab === "podesavanja" && <PodesavanjaTab sa={sa} />}
           {activeTab === "profil" && <ProfilTab />}
           {activeTab === "chat" && (
@@ -1683,6 +1686,266 @@ function ProfilTab() {
           </form>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Tab: Korisnici ───────────────────────────────────────────────────────────
+
+interface AuthUserRow {
+  _id: string;
+  tenantId: string;
+  tenantName: string;
+  tenantSlug: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  role: string;
+  isOnline: boolean;
+  lastActive: string | null;
+  isEmailVerified: boolean;
+  createdAt: string | null;
+}
+
+const ROLE_COLORS: Record<string, string> = {
+  OWNER: "bg-violet-900/60 text-violet-300 border-violet-700",
+  ADMIN: "bg-blue-900/60 text-blue-300 border-blue-700",
+  STAFF: "bg-emerald-900/60 text-emerald-300 border-emerald-700",
+};
+
+function RoleBadge({ role }: { role: string }) {
+  return (
+    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ROLE_COLORS[role] ?? "bg-slate-700 text-slate-300 border-slate-600"}`}>
+      {role}
+    </span>
+  );
+}
+
+function KorisniciTab() {
+  const [users, setUsers] = useState<AuthUserRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [editUser, setEditUser] = useState<AuthUserRow | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", role: "" });
+  const [editLoading, setEditLoading] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const qs = new URLSearchParams();
+      if (search) qs.set("query", search);
+      if (roleFilter !== "all") qs.set("role", roleFilter);
+      const res = await api.get<AuthUserRow[]>(`/superadmin/auth-users?${qs}`);
+      setUsers(res.data);
+    } catch {
+      // silent
+    } finally {
+      setLoading(false);
+    }
+  }, [search, roleFilter]);
+
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+  function openEdit(u: AuthUserRow) {
+    setEditUser(u);
+    setEditForm({ name: u.name, email: u.email, phone: u.phone ?? "", role: u.role });
+  }
+
+  async function handleEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editUser) return;
+    setEditLoading(true);
+    try {
+      await api.patch(`/superadmin/auth-users/${editUser._id}`, editForm);
+      setEditUser(null);
+      fetchUsers();
+    } catch {
+      // silent
+    } finally {
+      setEditLoading(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      await api.delete(`/superadmin/auth-users/${id}`);
+      setDeleteId(null);
+      setUsers((prev) => prev.filter((u) => u._id !== id));
+    } catch {
+      // silent
+    }
+  }
+
+  function formatDate(iso: string | null) {
+    if (!iso) return "—";
+    return new Date(iso).toLocaleDateString("sr-RS");
+  }
+
+  function formatRelative(iso: string | null) {
+    if (!iso) return "—";
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "Upravo";
+    if (mins < 60) return `pre ${mins}min`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `pre ${hrs}h`;
+    return formatDate(iso);
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h2 className="text-lg font-bold">Korisnici ({users.length})</h2>
+        <div className="flex gap-2 flex-wrap">
+          <input
+            className={inp + " w-52"}
+            placeholder="Pretraga po imenu ili emailu..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <select
+            className={inp + " w-36"}
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+          >
+            <option value="all">Sve role</option>
+            <option value="OWNER">OWNER</option>
+            <option value="ADMIN">ADMIN</option>
+            <option value="STAFF">STAFF</option>
+          </select>
+        </div>
+      </div>
+
+      {loading && (
+        <div className="flex items-center gap-2 text-slate-400 py-8">
+          <div className="w-4 h-4 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+          Učitavanje...
+        </div>
+      )}
+
+      {!loading && users.length === 0 && (
+        <p className="text-slate-500 text-sm py-8 text-center">Nema korisnika.</p>
+      )}
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="text-slate-500 border-b border-slate-700 text-left">
+              <th className="pb-2 pr-4 font-semibold">Korisnik</th>
+              <th className="pb-2 pr-4 font-semibold">Salon</th>
+              <th className="pb-2 pr-4 font-semibold">Rola</th>
+              <th className="pb-2 pr-4 font-semibold">Status</th>
+              <th className="pb-2 pr-4 font-semibold">Poslednja aktivnost</th>
+              <th className="pb-2 pr-4 font-semibold">Registrovan</th>
+              <th className="pb-2 font-semibold">Akcije</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800">
+            {users.map((u) => (
+              <tr key={u._id} className="text-slate-300 hover:bg-slate-800/50 transition">
+                <td className="py-3 pr-4">
+                  <p className="font-medium text-white">{u.name || "—"}</p>
+                  <p className="text-slate-500">{u.email}</p>
+                  {u.phone && <p className="text-slate-600">{u.phone}</p>}
+                </td>
+                <td className="py-3 pr-4">
+                  <p className="font-medium">{u.tenantName}</p>
+                  {u.tenantSlug && <p className="text-slate-500">{u.tenantSlug}</p>}
+                </td>
+                <td className="py-3 pr-4">
+                  <RoleBadge role={u.role} />
+                </td>
+                <td className="py-3 pr-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${u.isOnline ? "bg-emerald-400" : "bg-slate-600"}`} />
+                    <span className={u.isOnline ? "text-emerald-400" : "text-slate-500"}>
+                      {u.isOnline ? "Online" : "Offline"}
+                    </span>
+                  </div>
+                  {!u.isEmailVerified && (
+                    <span className="text-[10px] text-red-400 mt-0.5 block">Email nepotvrđen</span>
+                  )}
+                </td>
+                <td className="py-3 pr-4 text-slate-400">{formatRelative(u.lastActive)}</td>
+                <td className="py-3 pr-4 text-slate-400">{formatDate(u.createdAt)}</td>
+                <td className="py-3">
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={() => openEdit(u)}
+                      className="px-2.5 py-1 bg-slate-700 text-slate-300 text-[11px] font-semibold rounded-lg hover:bg-slate-600 transition"
+                    >
+                      Uredi
+                    </button>
+                    <button
+                      onClick={() => setDeleteId(u._id)}
+                      className="px-2.5 py-1 bg-red-900/50 text-red-400 text-[11px] font-semibold rounded-lg hover:bg-red-800/60 transition"
+                    >
+                      Obriši
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Edit modal */}
+      {editUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <h3 className="text-base font-bold text-white mb-4">Uredi korisnika</h3>
+            <form onSubmit={handleEdit} className="space-y-3">
+              <div>
+                <label className={lbl}>Ime</label>
+                <input className={inp} value={editForm.name} onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))} />
+              </div>
+              <div>
+                <label className={lbl}>Email</label>
+                <input type="email" className={inp} value={editForm.email} onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))} />
+              </div>
+              <div>
+                <label className={lbl}>Telefon</label>
+                <input type="tel" className={inp} value={editForm.phone} onChange={(e) => setEditForm((p) => ({ ...p, phone: e.target.value }))} />
+              </div>
+              <div>
+                <label className={lbl}>Rola</label>
+                <select className={inp} value={editForm.role} onChange={(e) => setEditForm((p) => ({ ...p, role: e.target.value }))}>
+                  <option value="OWNER">OWNER</option>
+                  <option value="ADMIN">ADMIN</option>
+                  <option value="STAFF">STAFF</option>
+                </select>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button type="submit" disabled={editLoading} className={btnPrimary}>
+                  {editLoading ? "Čuvanje..." : "Sačuvaj"}
+                </button>
+                <button type="button" onClick={() => setEditUser(null)} className="px-4 py-2 border border-slate-600 text-slate-400 text-xs font-bold rounded-lg hover:border-slate-400 transition">
+                  Otkaži
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirm modal */}
+      {deleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="text-base font-bold text-white mb-2">Potvrda brisanja</h3>
+            <p className="text-slate-400 text-sm mb-5">Da li ste sigurni da želite da obrišete ovog korisnika? Akcija je nepovratna.</p>
+            <div className="flex gap-2">
+              <button onClick={() => handleDelete(deleteId)} className={btnDanger}>Obriši</button>
+              <button onClick={() => setDeleteId(null)} className="px-4 py-2 border border-slate-600 text-slate-400 text-xs font-bold rounded-lg hover:border-slate-400 transition">
+                Otkaži
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
