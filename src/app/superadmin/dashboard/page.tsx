@@ -12,6 +12,7 @@ import {
   ChatBubbleLeftRightIcon,
   ShieldCheckIcon,
   UserCircleIcon,
+  TagIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
@@ -27,6 +28,7 @@ type Tab =
   | "planovi"
   | "statistika"
   | "korisnici"
+  | "kategorije"
   | "podesavanja"
   | "chat"
   | "profil";
@@ -37,6 +39,7 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "planovi", label: "Planovi", icon: CreditCardIcon },
   { id: "statistika", label: "Statistika", icon: ChartBarIcon },
   { id: "korisnici", label: "Korisnici", icon: UsersIcon },
+  { id: "kategorije", label: "Kategorije", icon: TagIcon },
   { id: "podesavanja", label: "Podešavanja", icon: CogIcon },
   { id: "chat", label: "Chat", icon: ChatBubbleLeftRightIcon },
   { id: "profil", label: "Profil", icon: UserCircleIcon },
@@ -181,6 +184,7 @@ export default function SuperAdminDashboard() {
             <StatistikaTab stats={sa.stats} tenants={sa.tenants} />
           )}
           {activeTab === "korisnici" && <KorisniciTab />}
+          {activeTab === "kategorije" && <KategorijeTab />}
           {activeTab === "podesavanja" && <PodesavanjaTab sa={sa} />}
           {activeTab === "profil" && <ProfilTab />}
           {activeTab === "chat" && (
@@ -1718,6 +1722,428 @@ function RoleBadge({ role }: { role: string }) {
     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ROLE_COLORS[role] ?? "bg-slate-700 text-slate-300 border-slate-600"}`}>
       {role}
     </span>
+  );
+}
+
+// ─── Tab: Kategorije ──────────────────────────────────────────────────────────
+interface CategoryRow {
+  _id: string;
+  key: string;
+  label: string;
+  synonyms: string[];
+  subcategories: { key: string; label: string; synonyms: string[] }[];
+  isActive: boolean;
+  popularityScore: number;
+  createdAt: string;
+}
+
+interface SubcategoryForm {
+  key: string;
+  label: string;
+  synonyms: string;
+}
+
+interface CategoryForm {
+  key: string;
+  label: string;
+  synonyms: string;
+  subcategories: SubcategoryForm[];
+  isActive: boolean;
+  popularityScore: number;
+}
+
+const emptyCategoryForm = (): CategoryForm => ({
+  key: "",
+  label: "",
+  synonyms: "",
+  subcategories: [],
+  isActive: true,
+  popularityScore: 0,
+});
+
+function KategorijeTab() {
+  const [categories, setCategories] = useState<CategoryRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editCategory, setEditCategory] = useState<CategoryRow | null>(null);
+  const [form, setForm] = useState<CategoryForm>(emptyCategoryForm());
+  const [saving, setSaving] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const fetchCategories = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get<CategoryRow[]>("/superadmin/categories");
+      setCategories(res.data);
+    } catch {
+      // silent
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchCategories(); }, [fetchCategories]);
+
+  function openCreate() {
+    setEditCategory(null);
+    setForm(emptyCategoryForm());
+    setShowForm(true);
+  }
+
+  function openEdit(cat: CategoryRow) {
+    setEditCategory(cat);
+    setForm({
+      key: cat.key,
+      label: cat.label,
+      synonyms: cat.synonyms.join(", "),
+      subcategories: cat.subcategories.map((s) => ({
+        key: s.key,
+        label: s.label,
+        synonyms: s.synonyms.join(", "),
+      })),
+      isActive: cat.isActive,
+      popularityScore: cat.popularityScore,
+    });
+    setShowForm(true);
+  }
+
+  function addSubcategory() {
+    setForm((f) => ({
+      ...f,
+      subcategories: [...f.subcategories, { key: "", label: "", synonyms: "" }],
+    }));
+  }
+
+  function removeSubcategory(index: number) {
+    setForm((f) => ({
+      ...f,
+      subcategories: f.subcategories.filter((_, i) => i !== index),
+    }));
+  }
+
+  function updateSubcategory(index: number, field: keyof SubcategoryForm, value: string) {
+    setForm((f) => {
+      const updated = [...f.subcategories];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...f, subcategories: updated };
+    });
+  }
+
+  function parseSynonyms(raw: string): string[] {
+    return raw.split(",").map((s) => s.trim()).filter(Boolean);
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.key.trim() || !form.label.trim()) return;
+    setSaving(true);
+    try {
+      const payload = {
+        key: form.key.trim(),
+        label: form.label.trim(),
+        synonyms: parseSynonyms(form.synonyms),
+        subcategories: form.subcategories.map((s) => ({
+          key: s.key.trim(),
+          label: s.label.trim(),
+          synonyms: parseSynonyms(s.synonyms),
+        })),
+        isActive: form.isActive,
+        popularityScore: form.popularityScore,
+      };
+
+      if (editCategory) {
+        await api.put(`/superadmin/categories/${editCategory._id}`, payload);
+      } else {
+        await api.post("/superadmin/categories", payload);
+      }
+      setShowForm(false);
+      fetchCategories();
+    } catch {
+      // silent
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      await api.delete(`/superadmin/categories/${id}`);
+      setDeleteId(null);
+      setCategories((prev) => prev.filter((c) => c._id !== id));
+    } catch {
+      // silent
+    }
+  }
+
+  async function toggleActive(cat: CategoryRow) {
+    try {
+      await api.put(`/superadmin/categories/${cat._id}`, { isActive: !cat.isActive });
+      setCategories((prev) =>
+        prev.map((c) => c._id === cat._id ? { ...c, isActive: !c.isActive } : c),
+      );
+    } catch {
+      // silent
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h2 className="text-lg font-bold">Kategorije ({categories.length})</h2>
+        <button onClick={openCreate} className={btnPrimary}>
+          + Nova kategorija
+        </button>
+      </div>
+
+      {loading ? (
+        <p className="text-slate-400 text-sm">Učitavanje...</p>
+      ) : categories.length === 0 ? (
+        <div className={card + " text-center text-slate-400 text-sm py-10"}>
+          Nema kategorija. Dodajte prvu.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {categories.map((cat) => (
+            <div key={cat._id} className={card + " space-y-3"}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold text-white">{cat.label}</span>
+                    <span className="text-[10px] font-mono text-slate-400 bg-slate-700 px-1.5 py-0.5 rounded">
+                      {cat.key}
+                    </span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        cat.isActive
+                          ? "bg-emerald-900/60 text-emerald-400 border-emerald-700"
+                          : "bg-slate-700 text-slate-400 border-slate-600"
+                      }`}
+                    >
+                      {cat.isActive ? "Aktivna" : "Neaktivna"}
+                    </span>
+                    {cat.popularityScore > 0 && (
+                      <span className="text-[10px] text-amber-400">
+                        ★ {cat.popularityScore}
+                      </span>
+                    )}
+                  </div>
+                  {cat.synonyms.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {cat.synonyms.map((s) => (
+                        <span
+                          key={s}
+                          className="text-[10px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded"
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {cat.subcategories.length > 0 && (
+                    <button
+                      onClick={() => setExpandedId(expandedId === cat._id ? null : cat._id)}
+                      className="text-xs text-slate-400 hover:text-white transition"
+                    >
+                      {expandedId === cat._id ? "▲" : "▼"} {cat.subcategories.length} sub
+                    </button>
+                  )}
+                  <button
+                    onClick={() => toggleActive(cat)}
+                    className="text-xs text-slate-400 hover:text-white border border-slate-600 rounded px-2 py-1 transition"
+                  >
+                    {cat.isActive ? "Deaktiviraj" : "Aktiviraj"}
+                  </button>
+                  <button onClick={() => openEdit(cat)} className={btnPrimary}>
+                    Uredi
+                  </button>
+                  <button onClick={() => setDeleteId(cat._id)} className={btnDanger}>
+                    Briši
+                  </button>
+                </div>
+              </div>
+
+              {expandedId === cat._id && cat.subcategories.length > 0 && (
+                <div className="border-t border-slate-700 pt-3 space-y-1.5">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">
+                    Podkategorije
+                  </p>
+                  {cat.subcategories.map((sub) => (
+                    <div
+                      key={sub.key}
+                      className="flex items-center gap-2 bg-slate-700/50 rounded-lg px-3 py-2"
+                    >
+                      <span className="text-sm text-white">{sub.label}</span>
+                      <span className="text-[10px] font-mono text-slate-400">
+                        {sub.key}
+                      </span>
+                      {sub.synonyms.map((s) => (
+                        <span
+                          key={s}
+                          className="text-[10px] bg-slate-600 text-slate-300 px-1 py-0.5 rounded"
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Create / Edit modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-xl max-h-[90vh] overflow-y-auto p-6 space-y-4">
+            <h3 className="text-lg font-bold">
+              {editCategory ? "Uredi kategoriju" : "Nova kategorija"}
+            </h3>
+            <form onSubmit={handleSave} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={lbl}>Ključ (key)</label>
+                  <input
+                    className={inp}
+                    placeholder="npr. nails"
+                    value={form.key}
+                    disabled={!!editCategory}
+                    onChange={(e) => setForm({ ...form, key: e.target.value.toLowerCase().replace(/\s+/g, "-") })}
+                    required
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">Jedinstven, ne može se menjati</p>
+                </div>
+                <div>
+                  <label className={lbl}>Naziv (label)</label>
+                  <input
+                    className={inp}
+                    placeholder="npr. Nokti"
+                    value={form.label}
+                    onChange={(e) => setForm({ ...form, label: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={lbl}>Sinonimi (razdvojeni zarezom)</label>
+                <input
+                  className={inp}
+                  placeholder="npr. nokti, manikir, pedikir"
+                  value={form.synonyms}
+                  onChange={(e) => setForm({ ...form, synonyms: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={lbl}>Popularnost</label>
+                  <input
+                    type="number"
+                    className={inp}
+                    min={0}
+                    value={form.popularityScore}
+                    onChange={(e) => setForm({ ...form, popularityScore: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="flex items-end pb-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.isActive}
+                      onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm text-slate-300">Aktivna</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Subcategories */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className={lbl}>Podkategorije</label>
+                  <button type="button" onClick={addSubcategory} className={btnGreen + " py-1 text-[11px]"}>
+                    + Dodaj
+                  </button>
+                </div>
+                {form.subcategories.map((sub, i) => (
+                  <div key={i} className="bg-slate-700/50 rounded-lg p-3 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        className={inp + " text-xs"}
+                        placeholder="key (npr. gel)"
+                        value={sub.key}
+                        onChange={(e) => updateSubcategory(i, "key", e.target.value.toLowerCase().replace(/\s+/g, "-"))}
+                      />
+                      <input
+                        className={inp + " text-xs"}
+                        placeholder="Naziv (npr. Gel lak)"
+                        value={sub.label}
+                        onChange={(e) => updateSubcategory(i, "label", e.target.value)}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        className={inp + " text-xs flex-1"}
+                        placeholder="Sinonimi, razdvojeni zarezom"
+                        value={sub.synonyms}
+                        onChange={(e) => updateSubcategory(i, "synonyms", e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeSubcategory(i)}
+                        className="px-2 py-1 bg-red-700 hover:bg-red-600 text-white text-xs rounded-lg"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="px-4 py-2 border border-slate-600 text-slate-300 text-xs font-semibold rounded-lg hover:border-slate-400 hover:text-white transition"
+                >
+                  Otkaži
+                </button>
+                <button type="submit" disabled={saving} className={btnPrimary}>
+                  {saving ? "Čuvanje..." : editCategory ? "Sačuvaj" : "Kreiraj"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation */}
+      {deleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6 max-w-sm w-full space-y-4">
+            <h3 className="font-bold text-white">Obriši kategoriju?</h3>
+            <p className="text-sm text-slate-400">Ova akcija je nepovratna.</p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteId(null)}
+                className="px-4 py-2 border border-slate-600 text-slate-300 text-xs font-semibold rounded-lg hover:border-slate-400 hover:text-white transition"
+              >
+                Otkaži
+              </button>
+              <button onClick={() => handleDelete(deleteId)} className={btnDanger}>
+                Obriši
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

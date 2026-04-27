@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { HomePagePosition, IService, IServiceInput } from "@/types";
-import { useServices } from "@/hooks/useServices";
+import { api } from "@/lib/api";
+
+interface CategoryOption {
+  key: string;
+  label: string;
+  subcategories: { key: string; label: string }[];
+}
 
 interface Props {
   editing?: IService | null;
@@ -19,11 +25,18 @@ export default function AdminServiceForm({
   save,
   onClose,
 }: Props) {
-  const { data: services = [] } = useServices();
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
 
-  const categories = services
-    ? Array.from(new Set(services.map((s) => s.category)))
-    : [];
+  useEffect(() => {
+    api.get<CategoryOption[]>("/admin/categories").then((res) => {
+      setCategories(res.data);
+    }).catch(() => {/* silent fallback */});
+  }, []);
+
+  const subcategories = useMemo(() => {
+    const matched = categories.find((c) => c.label === form.category || c.key === form.category);
+    return matched?.subcategories ?? [];
+  }, [form.category, categories]);
 
   useEffect(() => {
     if (editing) {
@@ -74,42 +87,31 @@ export default function AdminServiceForm({
 
       {/* CATEGORY BLOCK */}
       <div>
-        <div className="mt-1 flex flex-col lg:flex-row items-center gap-x-2">
-          {/* NEW CATEGORY */}
-          <div className="w-full mb-3 lg:mb-0 lg:flex-2">
-            <label className="block text-sm font-semibold text-gray-700">
-              Nova Kategorija
-            </label>
-            <input
-              type="text"
-              value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
-              placeholder="naziv nove kategorije"
-              className="w-full rounded-md border-gray-200 p-2 bg-gray-100"
-            />
-          </div>
-
-          {/* SELECT EXISTING CATEGORY */}
-          {categories.length > 0 && (
-            <div className="w-full lg:flex-1">
-              <label className="block text-sm font-semibold text-gray-700">
-                Postojeće kategorije
-              </label>
-              <select
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-200 bg-gray-100 p-2"
-              >
-                <option value="">-- izaberi --</option>
-                {categories.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
+        <label className="block text-sm font-semibold text-gray-700">
+          Kategorija
+        </label>
+        {categories.length > 0 ? (
+          <select
+            value={form.category}
+            onChange={(e) => setForm({ ...form, category: e.target.value, subcategory: "" })}
+            className="mt-1 block w-full rounded-md border-gray-200 bg-gray-100 p-2"
+          >
+            <option value="">-- izaberi kategoriju --</option>
+            {categories.map((c) => (
+              <option key={c.key} value={c.label}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            type="text"
+            value={form.category}
+            onChange={(e) => setForm({ ...form, category: e.target.value })}
+            placeholder="naziv kategorije"
+            className="mt-1 w-full rounded-md border-gray-200 p-2 bg-gray-100"
+          />
+        )}
       </div>
 
       {/* SUBCATEGORY */}
@@ -118,12 +120,27 @@ export default function AdminServiceForm({
           <label className="block text-sm font-semibold text-gray-700">
             Podkategorija (opciono)
           </label>
-          <input
-            type="text"
-            value={form.subcategory ?? ""}
-            onChange={(e) => setForm({ ...form, subcategory: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-200 p-2 bg-gray-100"
-          />
+          {subcategories.length > 0 ? (
+            <select
+              value={form.subcategory ?? ""}
+              onChange={(e) => setForm({ ...form, subcategory: e.target.value })}
+              className="mt-1 block w-full rounded-md border-gray-200 bg-gray-100 p-2"
+            >
+              <option value="">-- izaberi podkategoriju --</option>
+              {subcategories.map((s) => (
+                <option key={s.key} value={s.label}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              value={form.subcategory ?? ""}
+              onChange={(e) => setForm({ ...form, subcategory: e.target.value })}
+              className="mt-1 block w-full rounded-md border-gray-200 p-2 bg-gray-100"
+            />
+          )}
         </div>
       )}
 
