@@ -31,6 +31,8 @@ export interface IServiceDoc extends Document {
   }[];
   subscription?: {
     enabled: boolean;
+    subscriptionType?: "monthly" | "package";
+    treatmentCount?: number;
     priceMonthly?: number;
     startDate?: Date;
     endDate?: Date;
@@ -81,6 +83,12 @@ const ServiceSchema = new Schema<IServiceDoc>(
     ],
     subscription: {
       enabled: { type: Boolean, default: false },
+      subscriptionType: {
+        type: String,
+        enum: ["monthly", "package"],
+        default: "monthly",
+      },
+      treatmentCount: Number,
       priceMonthly: Number,
       startDate: Date,
       endDate: Date,

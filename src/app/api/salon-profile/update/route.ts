@@ -71,8 +71,8 @@ export async function PUT(req: NextRequest) {
     if (logoFile instanceof File && logoFile.size > 0) {
       if (profile.logo)
         await deleteFromCloudinary(profile.logo).catch(console.error);
-      const folder = await getTenantFolder(tenantId);
-      profile.logo = await uploadToCloudinary(logoFile, folder);
+      const base = await getTenantFolder(tenantId);
+      profile.logo = await uploadToCloudinary(logoFile, `${base}/logo`);
     }
 
     await profile.save();

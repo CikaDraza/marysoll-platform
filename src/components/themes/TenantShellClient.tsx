@@ -43,6 +43,7 @@ export function TenantShellClient({ salon, tenantSlug, children }: Props) {
   };
 
   const footerProps = {
+    salon,
     tenantSlug,
     salonName: salon.name,
     instagram: salon.social?.instagram,

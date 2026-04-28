@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { IService, IServiceInput } from "@/types";
+import { IService, IServiceInput, ISubscription } from "@/types";
 import toast from "react-hot-toast";
 import { useServiceMutations } from "@/hooks/useServiceMutations";
 
@@ -20,6 +20,8 @@ export function useAdminServiceForm() {
     extras: [],
     subscription: {
       enabled: false,
+      subscriptionType: "monthly",
+      treatmentCount: null,
       features: [],
       usage: {},
       featureOverrides: null,
@@ -50,12 +52,20 @@ export function useAdminServiceForm() {
       items: rest.items || [],
       variants: rest.variants || [],
       extras: rest.extras || [],
-      subscription: rest.subscription || {
-        enabled: false,
-        priceMonthly: null,
-        startDate: "",
-        endDate: "",
-      },
+      subscription: rest.subscription
+        ? {
+            ...rest.subscription,
+            subscriptionType: rest.subscription.subscriptionType ?? "monthly",
+            treatmentCount: rest.subscription.treatmentCount ?? null,
+          }
+        : ({
+            enabled: false,
+            subscriptionType: "monthly",
+            treatmentCount: null,
+            priceMonthly: null,
+            startDate: "",
+            endDate: "",
+          } as ISubscription),
     });
   };
 

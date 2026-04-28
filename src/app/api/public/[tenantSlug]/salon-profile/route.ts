@@ -55,6 +55,7 @@ function serializeProfile(doc: Record<string, unknown>) {
       fontFamily: String((doc.branding as Record<string, string>)?.fontFamily ?? "Inter"),
     },
     landingTheme: String(doc.landingTheme ?? "theme-1"),
+    landingStructure: doc.landingStructure ?? null,
   };
 }
 

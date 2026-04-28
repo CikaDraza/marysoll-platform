@@ -1,7 +1,10 @@
 // PATCH / DELETE /api/superadmin/auth-users/[id]
+// Supports both TenantUser records and orphaned AuthUser records.
+// Pass ?type=auth to delete an orphaned AuthUser directly.
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { TenantUser } from "@/models/TenantUser";
+import { AuthUser } from "@/models/AuthUser";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
 
 export async function PATCH(
@@ -46,7 +49,16 @@ export async function DELETE(
   try {
     await connectToDB();
     const { id } = await params;
+    const isOrphan = req.nextUrl.searchParams.get("type") === "auth";
 
+    if (isOrphan) {
+      // Delete orphaned AuthUser directly
+      const authUser = await AuthUser.findByIdAndDelete(id);
+      if (!authUser) return NextResponse.json({ error: "Korisnik nije pronađen" }, { status: 404 });
+      return NextResponse.json({ ok: true });
+    }
+
+    // Standard TenantUser deletion
     const user = await TenantUser.findByIdAndDelete(id);
     if (!user) return NextResponse.json({ error: "Korisnik nije pronađen" }, { status: 404 });
 

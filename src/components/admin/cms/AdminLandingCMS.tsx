@@ -214,6 +214,7 @@ function ImageInputField({
   value: string;
   onChange: (url: string) => void;
 }) {
+  const { token } = useAuth();
   const [showPicker, setShowPicker] = useState(false);
   const [showAi, setShowAi] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -225,6 +226,7 @@ function ImageInputField({
     fd.append("image", file);
     const res = await fetch("/api/cloudinary/images", {
       method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: fd,
     });
     if (!res.ok) throw new Error("Upload failed");
@@ -1022,6 +1024,39 @@ export function AdminLandingCMS({ sp }: Props) {
             </button>
           )}
         </div>
+
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-3">
+          <p className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 inline-block px-2.5 py-1 rounded-lg">
+            Slika (O nama)
+          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            Ako ne dodate sliku, prikazaće se podrazumevana slika.
+          </p>
+          <ImageInputField
+            label="URL slike"
+            value={about.image?.src ?? ""}
+            onChange={(url) =>
+              updateLandingSection("about", {
+                ...about,
+                image: { src: url, alt: about.image?.alt ?? "" },
+              })
+            }
+          />
+          <div>
+            <label className={lbl}>Alt tekst</label>
+            <input
+              className={inp}
+              value={about.image?.alt ?? ""}
+              onChange={(e) =>
+                updateLandingSection("about", {
+                  ...about,
+                  image: { src: about.image?.src ?? "", alt: e.target.value },
+                })
+              }
+              placeholder="Opis slike za pristupačnost..."
+            />
+          </div>
+        </div>
       </SectionCard>
 
       {/* ── SERVICES PREVIEW ─────────────────────────────────────────────── */}
@@ -1085,6 +1120,39 @@ export function AdminLandingCMS({ sp }: Props) {
         <p className="text-xs text-gray-400 dark:text-gray-500">
           Usluge se automatski učitavaju iz baze podataka.
         </p>
+
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-3">
+          <p className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 inline-block px-2.5 py-1 rounded-lg">
+            Slika (Usluge)
+          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            Prikazuje se uz listu usluga na landing stranici. Ako ne dodate, prikazaće se podrazumevana slika.
+          </p>
+          <ImageInputField
+            label="URL slike"
+            value={servicesPreview.image?.src ?? ""}
+            onChange={(url) =>
+              updateLandingSection("servicesPreview", {
+                ...servicesPreview,
+                image: { src: url, alt: servicesPreview.image?.alt ?? "" },
+              })
+            }
+          />
+          <div>
+            <label className={lbl}>Alt tekst</label>
+            <input
+              className={inp}
+              value={servicesPreview.image?.alt ?? ""}
+              onChange={(e) =>
+                updateLandingSection("servicesPreview", {
+                  ...servicesPreview,
+                  image: { src: servicesPreview.image?.src ?? "", alt: e.target.value },
+                })
+              }
+              placeholder="Opis slike za pristupačnost..."
+            />
+          </div>
+        </div>
 
         {services.length > 0 && (
           <div>

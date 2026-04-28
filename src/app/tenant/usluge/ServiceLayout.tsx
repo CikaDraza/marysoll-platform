@@ -3,7 +3,15 @@ import { formatPriceToString } from "@/helpers/formatPrice";
 import { CheckIcon } from "@heroicons/react/24/outline";
 import { IService } from "@/types";
 
-export default function ServicesLayout({ services }: { services: IService[] }) {
+export default function ServicesLayout({
+  services,
+  headline,
+  subheadline,
+}: {
+  services: IService[];
+  headline: string;
+  subheadline: string;
+}) {
   const groupedServices = groupAndSortServices(services);
 
   return (
@@ -13,12 +21,10 @@ export default function ServicesLayout({ services }: { services: IService[] }) {
           usluge
         </span>
         <h1 className="text-5xl lg:text-7xl text-pretty text-gray-900 text-center font-bold">
-          Nase usluge i cene bez trikova
+          {headline}
         </h1>
         <p className="mt-8 w-4xl text-center text-sm lg:text-lg font-medium text-pretty text-gray-500 sm:text-xl/8 px-6 lg:px-8">
-          Profesionalna šminka za sve prilike, od dnevne do večernje. Nega lica,
-          obrva i noktiju. Otkrijte našu paletu usluga i tretmana dizajniranih
-          da istaknu vašu prirodnu lepotu.
+          {subheadline}
         </p>
       </div>
       <div className="pt-16 lg:pt-24 flex flex-col gap-y-8">

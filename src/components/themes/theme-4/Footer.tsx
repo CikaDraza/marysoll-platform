@@ -1,8 +1,14 @@
 import Link from "next/link";
-import { CalendarDaysIcon } from "@heroicons/react/24/outline";
 import FooterNewsletterForm from "@/components/marketing/FooterNewsletterForm";
+import InstagramIcon from "@/components/assets/icons/InstagramIcon";
+import WhatsappIcon from "@/components/assets/icons/WhatsappIcon";
+import TiktokIcon from "@/components/assets/icons/TiktokIcon";
+import FacebookIcon from "@/components/assets/icons/FacebookIcon";
+import TelegramIcon from "@/components/assets/icons/TelegramIcon";
+import { SalonProfileData } from "@/types";
 
 interface Theme4FooterProps {
+  salon: SalonProfileData;
   salonName?: string;
   instagram?: string;
   facebook?: string;
@@ -11,7 +17,11 @@ interface Theme4FooterProps {
   tenantSlug?: string;
 }
 
-export function Theme4Footer({ salonName, tenantSlug }: Theme4FooterProps) {
+export function Theme4Footer({
+  salonName,
+  tenantSlug,
+  salon,
+}: Theme4FooterProps) {
   const base = tenantSlug ? `/${tenantSlug}` : "";
 
   const navItems = [
@@ -22,6 +32,10 @@ export function Theme4Footer({ salonName, tenantSlug }: Theme4FooterProps) {
     { name: "Politika privatnosti", href: `${base}/politika-privatnosti` },
     { name: "Termini", href: `${base}/termini`, cta: true },
   ];
+
+  const whatsapp =
+    salon?.social?.whatsapp ||
+    (salon?.phone ? `https://wa.me/${salon.phone.replace(/\D/g, "")}` : null);
 
   return (
     <footer className="relative isolate overflow-y-visible overflow-x-hidden lg:overflow-x-visible px-8 2xl:px-16 bg-[#4C2D4A] py-16">
@@ -53,8 +67,90 @@ export function Theme4Footer({ salonName, tenantSlug }: Theme4FooterProps) {
               ))}
             </ul>
           </div>
-          <div>
-            <CalendarDaysIcon className="text-[#4C2D4A]" />
+          {/* Social icons */}
+          <div className="flex flex-0 justify-center lg:justify-end items-start gap-4">
+            <dt className="w-auto h-auto border rounded-2xl scale-90 px-3 py-1 text-base/7 font-light border-[#E8D4AD] font-main-font text-left flex">
+              {salon.social?.instagram ? (
+                <Link
+                  href={salon.social.instagram}
+                  target="_blank"
+                  className="flex px-2 items-center gap-1 text-xs text-gray-600 hover:text-(--secondary-color) transition"
+                >
+                  <InstagramIcon bgColor="#E8D4AD" />
+                </Link>
+              ) : (
+                <button
+                  disabled
+                  className="flex px-2 items-center disabled:cursor-not-allowed disabled:text-gray-400 gap-1 text-xs"
+                >
+                  <InstagramIcon bgColor="#E8D4AD" />
+                </button>
+              )}
+              {whatsapp ? (
+                <Link
+                  href={whatsapp}
+                  target="_blank"
+                  className="flex px-2 items-center gap-1 text-xs text-gray-600 hover:text-(--secondary-color) transition"
+                >
+                  <WhatsappIcon bgColor="#E8D4AD" width={24} height={24} />
+                </Link>
+              ) : (
+                <button
+                  disabled
+                  className="flex px-2 items-center disabled:cursor-not-allowed disabled:opacity-30 gap-1 text-xs"
+                >
+                  <WhatsappIcon bgColor="#E8D4AD" width={24} height={24} />
+                </button>
+              )}
+              {salon.social?.tiktok ? (
+                <Link
+                  href={salon.social.tiktok}
+                  target="_blank"
+                  className="flex items-center px-2 gap-1 text-xs text-gray-600 hover:text-(--secondary-color) transition"
+                >
+                  <TiktokIcon bgColor="#E8D4AD" width={24} height={24} />
+                </Link>
+              ) : (
+                <button
+                  disabled
+                  className="flex px-2 items-center disabled:cursor-not-allowed disabled:text-gray-400 gap-1 text-xs"
+                >
+                  <TiktokIcon bgColor="#E8D4AD" width={24} height={24} />
+                </button>
+              )}
+              {salon.social?.facebook ? (
+                <Link
+                  href={salon.social.facebook}
+                  target="_blank"
+                  className="flex items-center px-2 gap-1 text-xs text-gray-600 hover:text-(--secondary-color) transition"
+                >
+                  <FacebookIcon bgColor="#E8D4AD" width={24} height={24} />
+                </Link>
+              ) : (
+                <button
+                  disabled
+                  className="flex px-2 items-center disabled:cursor-not-allowed disabled:text-gray-400 gap-1 text-xs"
+                >
+                  <FacebookIcon bgColor="#E8D4AD" width={24} height={24} />
+                </button>
+              )}
+              {salon.social?.telegram ? (
+                <Link
+                  href={salon.social.telegram}
+                  target="_blank"
+                  className="flex items-center gap-1 text-xs text-gray-600 hover:text-(--secondary-color) transition"
+                >
+                  <TelegramIcon bgColor="#E8D4AD" width={24} height={24} />
+                </Link>
+              ) : (
+                <button
+                  disabled
+                  className="flex px-2 items-center disabled:cursor-not-allowed disabled:text-gray-400 gap-1 text-xs"
+                >
+                  <TelegramIcon bgColor="#E8D4AD" width={24} height={24} />
+                </button>
+              )}
+            </dt>
           </div>
         </div>
         <div className="mt-12 pt-6 border-t border-white/10 text-center text-xs text-gray-300">

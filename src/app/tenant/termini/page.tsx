@@ -10,7 +10,7 @@ import {
   fetchPublicAppointments,
 } from "@/lib/tenant/fetchTenantData";
 import AppointmentCalendarPage from "@/components/public/AppointmentCalendarPage";
-import type { IAppointment, SalonProfileData } from "@/types";
+import type { IAppointment, LandingStructure, SalonProfileData } from "@/types";
 import { formatWorkingHoursForDisplay } from "@/helpers/parseWorkingHours";
 import { TenantPageShell } from "@/components/themes/TenantPageShell";
 
@@ -62,6 +62,13 @@ export default async function TerminiPage() {
     safeProfile.workingHours as Record<string, unknown> | null,
   );
 
+  const landingStructure = safeProfile.landingStructure as LandingStructure & {
+    appointmentsPage?: {
+      headline?: string;
+      subheadline?: string;
+    };
+  };
+
   return (
     <TenantPageShell tenantSlug={tenantSlug}>
       <div className="min-h-screen bg-gray-50">
@@ -70,11 +77,10 @@ export default async function TerminiPage() {
             {salonName}
           </p>
           <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-            Termini
+            {landingStructure?.appointmentsPage?.headline}
           </h1>
           <p className="text-gray-500 text-sm max-w-2xl mx-auto mb-8">
-            Pogledajte slobodne termine u kalendaru ispod. Zakazivanje je
-            dostupno registrovanim korisnicima.
+            {landingStructure?.appointmentsPage?.subheadline}
           </p>
           <div className="flex gap-3 justify-center">
             <Link

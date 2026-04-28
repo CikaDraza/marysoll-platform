@@ -493,9 +493,7 @@ export function ThemeLayout({
                   { value: "20+", label: "Stručnjaka" },
                 ]
               }
-              imageUrl={
-                "https://res.cloudinary.com/dufo1t5li/image/upload/v1776463003/Gemini_Generated_Image_dvp99xdvp99xdvp9_uaamaf.png"
-              }
+              imageUrl={ls?.landing?.about?.image?.src}
             />
           )}
 
@@ -505,6 +503,7 @@ export function ThemeLayout({
               headline={ls?.landing?.servicesPreview?.headline}
               subheadline={ls?.landing?.servicesPreview?.subheadline}
               tenantSlug={tenantSlug}
+              imageUrl={ls?.landing?.servicesPreview?.image?.src}
             />
           )}
 
@@ -540,7 +539,7 @@ export function ThemeLayout({
           )}
         </main>
 
-        <Theme4Footer {...footerProps} />
+        <Theme4Footer {...footerProps} salon={salon} />
       </div>
     );
   }

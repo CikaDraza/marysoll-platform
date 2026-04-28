@@ -39,6 +39,8 @@ export const emptyServiceForm = (): IServiceInput => ({
   featured: "none",
   subscription: {
     enabled: false,
+    subscriptionType: "monthly",
+    treatmentCount: null,
     features: [],
     usage: {},
     featureOverrides: null,
@@ -67,12 +69,20 @@ export function mapServiceToForm(s: IService): IServiceInput {
     extras: s.extras ?? [],
     services: s.services ?? [],
     featured: s.featured ?? "none",
-    subscription: s.subscription ?? {
-      enabled: false,
-      priceMonthly: null,
-      startDate: null,
-      endDate: null,
-    },
+    subscription: s.subscription
+      ? {
+          ...s.subscription,
+          subscriptionType: s.subscription.subscriptionType ?? "monthly",
+          treatmentCount: s.subscription.treatmentCount ?? null,
+        }
+      : ({
+          enabled: false,
+          subscriptionType: "monthly",
+          treatmentCount: null,
+          priceMonthly: null,
+          startDate: null,
+          endDate: null,
+        } as ISubscription),
   };
 }
 

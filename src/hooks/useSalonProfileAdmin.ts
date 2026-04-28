@@ -149,6 +149,8 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
         headline: rawLanding.hero?.headline ?? "",
         subheadline: rawLanding.hero?.subheadline ?? "",
         whereWhatForWhom: rawLanding.hero?.whereWhatForWhom ?? "",
+        image: rawLanding.hero?.image,
+        images: rawLanding.hero?.images,
         contact: {
           location: rawLanding.hero?.contact?.location ?? "",
           phone: rawLanding.hero?.contact?.phone ?? "",
@@ -174,12 +176,14 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
         enabled: rawLanding.about?.enabled ?? true,
         headline: rawLanding.about?.headline ?? "",
         paragraphs: rawLanding.about?.paragraphs ?? [],
+        image: rawLanding.about?.image,
       },
       servicesPreview: {
         enabled: rawLanding.servicesPreview?.enabled ?? true,
         headline: rawLanding.servicesPreview?.headline ?? "",
         subheadline: rawLanding.servicesPreview?.subheadline ?? "",
         showIcons: rawLanding.servicesPreview?.showIcons ?? true,
+        image: rawLanding.servicesPreview?.image,
       },
       appointmentSection: {
         enabled: rawLanding.appointmentSection?.enabled ?? true,

@@ -47,6 +47,8 @@ export interface PaginationInfo {
 
 export interface ISubscription {
   enabled: boolean;
+  subscriptionType?: "monthly" | "package";
+  treatmentCount?: number | null;
   priceMonthly: number | null;
   startDate: string | null;
   endDate: string | null;
@@ -818,6 +820,7 @@ export interface LandingStructure {
       headline?: string;
       subheadline?: string;
       showIcons?: boolean;
+      image?: HeroImage;
       // services se ucitavaju iz DB
     };
 

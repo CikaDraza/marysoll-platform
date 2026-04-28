@@ -368,8 +368,8 @@ function TrialTab({
     tenant?.overrideNote === "Pro trial override"
       ? "pro"
       : tenant?.overrideNote === "Enterprise trial override"
-      ? "enterprise"
-      : null;
+        ? "enterprise"
+        : null;
   const trialTenants = tenants.filter((t) => t.isTrialActive);
   const expiredTrials = tenants.filter(
     (t) =>
@@ -521,10 +521,13 @@ function TrialTab({
           <div className="flex gap-3 flex-wrap items-center">
             {activatedPreset ? (
               <>
-                <span className={`px-4 py-2 text-white text-xs font-bold rounded-lg ${
-                  activatedPreset === "pro" ? "bg-violet-500" : "bg-amber-500"
-                }`}>
-                  ✓ {activatedPreset === "pro" ? "Pro" : "Enterprise"} funkcionalnosti aktivirane
+                <span
+                  className={`px-4 py-2 text-white text-xs font-bold rounded-lg ${
+                    activatedPreset === "pro" ? "bg-violet-500" : "bg-amber-500"
+                  }`}
+                >
+                  ✓ {activatedPreset === "pro" ? "Pro" : "Enterprise"}{" "}
+                  funkcionalnosti aktivirane
                 </span>
                 <button
                   onClick={() => sa.removeFeatureOverride(selectedId)}
@@ -537,26 +540,34 @@ function TrialTab({
             ) : (
               <>
                 <button
-                  onClick={() => sa.setFeatureOverride(selectedId, {
-                    overrides: PRO_TRIAL_PRESET,
-                    expiresAt: tenant.trialEndsAt
-                      ? new Date(tenant.trialEndsAt).toISOString()
-                      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                    note: "Pro trial override",
-                  })}
+                  onClick={() =>
+                    sa.setFeatureOverride(selectedId, {
+                      overrides: PRO_TRIAL_PRESET,
+                      expiresAt: tenant.trialEndsAt
+                        ? new Date(tenant.trialEndsAt).toISOString()
+                        : new Date(
+                            Date.now() + 30 * 24 * 60 * 60 * 1000,
+                          ).toISOString(),
+                      note: "Pro trial override",
+                    })
+                  }
                   disabled={sa.isSettingOverride}
                   className="px-4 py-2 bg-violet-700 hover:bg-violet-600 text-white text-xs font-bold rounded-lg transition disabled:opacity-40"
                 >
                   Aktiviraj Pro funkcionalnosti
                 </button>
                 <button
-                  onClick={() => sa.setFeatureOverride(selectedId, {
-                    overrides: ENTERPRISE_TRIAL_PRESET,
-                    expiresAt: tenant.trialEndsAt
-                      ? new Date(tenant.trialEndsAt).toISOString()
-                      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                    note: "Enterprise trial override",
-                  })}
+                  onClick={() =>
+                    sa.setFeatureOverride(selectedId, {
+                      overrides: ENTERPRISE_TRIAL_PRESET,
+                      expiresAt: tenant.trialEndsAt
+                        ? new Date(tenant.trialEndsAt).toISOString()
+                        : new Date(
+                            Date.now() + 30 * 24 * 60 * 60 * 1000,
+                          ).toISOString(),
+                      note: "Enterprise trial override",
+                    })
+                  }
                   disabled={sa.isSettingOverride}
                   className="px-4 py-2 bg-amber-700 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition disabled:opacity-40"
                 >
@@ -1709,6 +1720,7 @@ interface AuthUserRow {
   lastActive: string | null;
   isEmailVerified: boolean;
   createdAt: string | null;
+  isOrphan?: boolean;
 }
 
 const ROLE_COLORS: Record<string, string> = {
@@ -1719,7 +1731,9 @@ const ROLE_COLORS: Record<string, string> = {
 
 function RoleBadge({ role }: { role: string }) {
   return (
-    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ROLE_COLORS[role] ?? "bg-slate-700 text-slate-300 border-slate-600"}`}>
+    <span
+      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ROLE_COLORS[role] ?? "bg-slate-700 text-slate-300 border-slate-600"}`}
+    >
       {role}
     </span>
   );
@@ -1783,7 +1797,9 @@ function KategorijeTab() {
     }
   }, []);
 
-  useEffect(() => { fetchCategories(); }, [fetchCategories]);
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   function openCreate() {
     setEditCategory(null);
@@ -1822,7 +1838,11 @@ function KategorijeTab() {
     }));
   }
 
-  function updateSubcategory(index: number, field: keyof SubcategoryForm, value: string) {
+  function updateSubcategory(
+    index: number,
+    field: keyof SubcategoryForm,
+    value: string,
+  ) {
     setForm((f) => {
       const updated = [...f.subcategories];
       updated[index] = { ...updated[index], [field]: value };
@@ -1831,7 +1851,10 @@ function KategorijeTab() {
   }
 
   function parseSynonyms(raw: string): string[] {
-    return raw.split(",").map((s) => s.trim()).filter(Boolean);
+    return raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -1878,9 +1901,13 @@ function KategorijeTab() {
 
   async function toggleActive(cat: CategoryRow) {
     try {
-      await api.put(`/superadmin/categories/${cat._id}`, { isActive: !cat.isActive });
+      await api.put(`/superadmin/categories/${cat._id}`, {
+        isActive: !cat.isActive,
+      });
       setCategories((prev) =>
-        prev.map((c) => c._id === cat._id ? { ...c, isActive: !c.isActive } : c),
+        prev.map((c) =>
+          c._id === cat._id ? { ...c, isActive: !c.isActive } : c,
+        ),
       );
     } catch {
       // silent
@@ -1944,10 +1971,13 @@ function KategorijeTab() {
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {cat.subcategories.length > 0 && (
                     <button
-                      onClick={() => setExpandedId(expandedId === cat._id ? null : cat._id)}
+                      onClick={() =>
+                        setExpandedId(expandedId === cat._id ? null : cat._id)
+                      }
                       className="text-xs text-slate-400 hover:text-white transition"
                     >
-                      {expandedId === cat._id ? "▲" : "▼"} {cat.subcategories.length} sub
+                      {expandedId === cat._id ? "▲" : "▼"}{" "}
+                      {cat.subcategories.length} sub
                     </button>
                   )}
                   <button
@@ -1959,7 +1989,10 @@ function KategorijeTab() {
                   <button onClick={() => openEdit(cat)} className={btnPrimary}>
                     Uredi
                   </button>
-                  <button onClick={() => setDeleteId(cat._id)} className={btnDanger}>
+                  <button
+                    onClick={() => setDeleteId(cat._id)}
+                    className={btnDanger}
+                  >
                     Briši
                   </button>
                 </div>
@@ -2012,10 +2045,17 @@ function KategorijeTab() {
                     placeholder="npr. nails"
                     value={form.key}
                     disabled={!!editCategory}
-                    onChange={(e) => setForm({ ...form, key: e.target.value.toLowerCase().replace(/\s+/g, "-") })}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        key: e.target.value.toLowerCase().replace(/\s+/g, "-"),
+                      })
+                    }
                     required
                   />
-                  <p className="text-[10px] text-slate-500 mt-1">Jedinstven, ne može se menjati</p>
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Jedinstven, ne može se menjati
+                  </p>
                 </div>
                 <div>
                   <label className={lbl}>Naziv (label)</label>
@@ -2023,7 +2063,9 @@ function KategorijeTab() {
                     className={inp}
                     placeholder="npr. Nokti"
                     value={form.label}
-                    onChange={(e) => setForm({ ...form, label: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, label: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -2035,7 +2077,9 @@ function KategorijeTab() {
                   className={inp}
                   placeholder="npr. nokti, manikir, pedikir"
                   value={form.synonyms}
-                  onChange={(e) => setForm({ ...form, synonyms: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, synonyms: e.target.value })
+                  }
                 />
               </div>
 
@@ -2047,7 +2091,12 @@ function KategorijeTab() {
                     className={inp}
                     min={0}
                     value={form.popularityScore}
-                    onChange={(e) => setForm({ ...form, popularityScore: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        popularityScore: Number(e.target.value),
+                      })
+                    }
                   />
                 </div>
                 <div className="flex items-end pb-2">
@@ -2055,7 +2104,9 @@ function KategorijeTab() {
                     <input
                       type="checkbox"
                       checked={form.isActive}
-                      onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+                      onChange={(e) =>
+                        setForm({ ...form, isActive: e.target.checked })
+                      }
                       className="w-4 h-4"
                     />
                     <span className="text-sm text-slate-300">Aktivna</span>
@@ -2067,24 +2118,39 @@ function KategorijeTab() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className={lbl}>Podkategorije</label>
-                  <button type="button" onClick={addSubcategory} className={btnGreen + " py-1 text-[11px]"}>
+                  <button
+                    type="button"
+                    onClick={addSubcategory}
+                    className={btnGreen + " py-1 text-[11px]"}
+                  >
                     + Dodaj
                   </button>
                 </div>
                 {form.subcategories.map((sub, i) => (
-                  <div key={i} className="bg-slate-700/50 rounded-lg p-3 space-y-2">
+                  <div
+                    key={i}
+                    className="bg-slate-700/50 rounded-lg p-3 space-y-2"
+                  >
                     <div className="grid grid-cols-2 gap-2">
                       <input
                         className={inp + " text-xs"}
                         placeholder="key (npr. gel)"
                         value={sub.key}
-                        onChange={(e) => updateSubcategory(i, "key", e.target.value.toLowerCase().replace(/\s+/g, "-"))}
+                        onChange={(e) =>
+                          updateSubcategory(
+                            i,
+                            "key",
+                            e.target.value.toLowerCase().replace(/\s+/g, "-"),
+                          )
+                        }
                       />
                       <input
                         className={inp + " text-xs"}
                         placeholder="Naziv (npr. Gel lak)"
                         value={sub.label}
-                        onChange={(e) => updateSubcategory(i, "label", e.target.value)}
+                        onChange={(e) =>
+                          updateSubcategory(i, "label", e.target.value)
+                        }
                       />
                     </div>
                     <div className="flex gap-2">
@@ -2092,7 +2158,9 @@ function KategorijeTab() {
                         className={inp + " text-xs flex-1"}
                         placeholder="Sinonimi, razdvojeni zarezom"
                         value={sub.synonyms}
-                        onChange={(e) => updateSubcategory(i, "synonyms", e.target.value)}
+                        onChange={(e) =>
+                          updateSubcategory(i, "synonyms", e.target.value)
+                        }
                       />
                       <button
                         type="button"
@@ -2136,7 +2204,10 @@ function KategorijeTab() {
               >
                 Otkaži
               </button>
-              <button onClick={() => handleDelete(deleteId)} className={btnDanger}>
+              <button
+                onClick={() => handleDelete(deleteId)}
+                className={btnDanger}
+              >
                 Obriši
               </button>
             </div>
@@ -2153,7 +2224,12 @@ function KorisniciTab() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [editUser, setEditUser] = useState<AuthUserRow | null>(null);
-  const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", role: "" });
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    role: "",
+  });
   const [editLoading, setEditLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -2172,11 +2248,18 @@ function KorisniciTab() {
     }
   }, [search, roleFilter]);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   function openEdit(u: AuthUserRow) {
     setEditUser(u);
-    setEditForm({ name: u.name, email: u.email, phone: u.phone ?? "", role: u.role });
+    setEditForm({
+      name: u.name,
+      email: u.email,
+      phone: u.phone ?? "",
+      role: u.role,
+    });
   }
 
   async function handleEdit(e: React.FormEvent) {
@@ -2196,7 +2279,11 @@ function KorisniciTab() {
 
   async function handleDelete(id: string) {
     try {
-      await api.delete(`/superadmin/auth-users/${id}`);
+      const user = users.find((u) => u._id === id);
+      const url = user?.isOrphan
+        ? `/superadmin/auth-users/${id}?type=auth`
+        : `/superadmin/auth-users/${id}`;
+      await api.delete(url);
       setDeleteId(null);
       setUsers((prev) => prev.filter((u) => u._id !== id));
     } catch {
@@ -2252,7 +2339,9 @@ function KorisniciTab() {
       )}
 
       {!loading && users.length === 0 && (
-        <p className="text-slate-500 text-sm py-8 text-center">Nema korisnika.</p>
+        <p className="text-slate-500 text-sm py-8 text-center">
+          Nema korisnika.
+        </p>
       )}
 
       <div className="overflow-x-auto">
@@ -2270,40 +2359,77 @@ function KorisniciTab() {
           </thead>
           <tbody className="divide-y divide-slate-800">
             {users.map((u) => (
-              <tr key={u._id} className="text-slate-300 hover:bg-slate-800/50 transition">
+              <tr
+                key={u._id}
+                className={`text-slate-300 hover:bg-slate-800/50 transition ${u.isOrphan ? "opacity-70" : ""}`}
+              >
                 <td className="py-3 pr-4">
-                  <p className="font-medium text-white">{u.name || "—"}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-medium text-white">{u.name || "—"}</p>
+                    {u.isOrphan && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-900/60 text-amber-400 border border-amber-700 uppercase tracking-wide">
+                        Orphan
+                      </span>
+                    )}
+                  </div>
                   <p className="text-slate-500">{u.email}</p>
                   {u.phone && <p className="text-slate-600">{u.phone}</p>}
+                  {u.isOrphan && (
+                    <p className="text-[10px] text-amber-500/70 mt-0.5">
+                      Nalog bez salona
+                    </p>
+                  )}
                 </td>
                 <td className="py-3 pr-4">
                   <p className="font-medium">{u.tenantName}</p>
-                  {u.tenantSlug && <p className="text-slate-500">{u.tenantSlug}</p>}
+                  {u.tenantSlug && (
+                    <p className="text-slate-500">{u.tenantSlug}</p>
+                  )}
                 </td>
                 <td className="py-3 pr-4">
                   <RoleBadge role={u.role} />
                 </td>
                 <td className="py-3 pr-4">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${u.isOnline ? "bg-emerald-400" : "bg-slate-600"}`} />
-                    <span className={u.isOnline ? "text-emerald-400" : "text-slate-500"}>
-                      {u.isOnline ? "Online" : "Offline"}
-                    </span>
-                  </div>
-                  {!u.isEmailVerified && (
-                    <span className="text-[10px] text-red-400 mt-0.5 block">Email nepotvrđen</span>
+                  {u.isOrphan ? (
+                    <span className="text-slate-600 text-[11px]">—</span>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`w-2 h-2 rounded-full flex-shrink-0 ${u.isOnline ? "bg-emerald-400" : "bg-slate-600"}`}
+                        />
+                        <span
+                          className={
+                            u.isOnline ? "text-emerald-400" : "text-slate-500"
+                          }
+                        >
+                          {u.isOnline ? "Online" : "Offline"}
+                        </span>
+                      </div>
+                      {!u.isEmailVerified && (
+                        <span className="text-[10px] text-red-400 mt-0.5 block">
+                          Email nepotvrđen
+                        </span>
+                      )}
+                    </>
                   )}
                 </td>
-                <td className="py-3 pr-4 text-slate-400">{formatRelative(u.lastActive)}</td>
-                <td className="py-3 pr-4 text-slate-400">{formatDate(u.createdAt)}</td>
+                <td className="py-3 pr-4 text-slate-400">
+                  {formatRelative(u.lastActive)}
+                </td>
+                <td className="py-3 pr-4 text-slate-400">
+                  {formatDate(u.createdAt)}
+                </td>
                 <td className="py-3">
                   <div className="flex gap-1.5">
-                    <button
-                      onClick={() => openEdit(u)}
-                      className="px-2.5 py-1 bg-slate-700 text-slate-300 text-[11px] font-semibold rounded-lg hover:bg-slate-600 transition"
-                    >
-                      Uredi
-                    </button>
+                    {!u.isOrphan && (
+                      <button
+                        onClick={() => openEdit(u)}
+                        className="px-2.5 py-1 bg-slate-700 text-slate-300 text-[11px] font-semibold rounded-lg hover:bg-slate-600 transition"
+                      >
+                        Uredi
+                      </button>
+                    )}
                     <button
                       onClick={() => setDeleteId(u._id)}
                       className="px-2.5 py-1 bg-red-900/50 text-red-400 text-[11px] font-semibold rounded-lg hover:bg-red-800/60 transition"
@@ -2322,33 +2448,69 @@ function KorisniciTab() {
       {editUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <h3 className="text-base font-bold text-white mb-4">Uredi korisnika</h3>
+            <h3 className="text-base font-bold text-white mb-4">
+              Uredi korisnika
+            </h3>
             <form onSubmit={handleEdit} className="space-y-3">
               <div>
                 <label className={lbl}>Ime</label>
-                <input className={inp} value={editForm.name} onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))} />
+                <input
+                  className={inp}
+                  value={editForm.name}
+                  onChange={(e) =>
+                    setEditForm((p) => ({ ...p, name: e.target.value }))
+                  }
+                />
               </div>
               <div>
                 <label className={lbl}>Email</label>
-                <input type="email" className={inp} value={editForm.email} onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))} />
+                <input
+                  type="email"
+                  className={inp}
+                  value={editForm.email}
+                  onChange={(e) =>
+                    setEditForm((p) => ({ ...p, email: e.target.value }))
+                  }
+                />
               </div>
               <div>
                 <label className={lbl}>Telefon</label>
-                <input type="tel" className={inp} value={editForm.phone} onChange={(e) => setEditForm((p) => ({ ...p, phone: e.target.value }))} />
+                <input
+                  type="tel"
+                  className={inp}
+                  value={editForm.phone}
+                  onChange={(e) =>
+                    setEditForm((p) => ({ ...p, phone: e.target.value }))
+                  }
+                />
               </div>
               <div>
                 <label className={lbl}>Rola</label>
-                <select className={inp} value={editForm.role} onChange={(e) => setEditForm((p) => ({ ...p, role: e.target.value }))}>
+                <select
+                  className={inp}
+                  value={editForm.role}
+                  onChange={(e) =>
+                    setEditForm((p) => ({ ...p, role: e.target.value }))
+                  }
+                >
                   <option value="OWNER">OWNER</option>
                   <option value="ADMIN">ADMIN</option>
                   <option value="STAFF">STAFF</option>
                 </select>
               </div>
               <div className="flex gap-2 pt-2">
-                <button type="submit" disabled={editLoading} className={btnPrimary}>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className={btnPrimary}
+                >
                   {editLoading ? "Čuvanje..." : "Sačuvaj"}
                 </button>
-                <button type="button" onClick={() => setEditUser(null)} className="px-4 py-2 border border-slate-600 text-slate-400 text-xs font-bold rounded-lg hover:border-slate-400 transition">
+                <button
+                  type="button"
+                  onClick={() => setEditUser(null)}
+                  className="px-4 py-2 border border-slate-600 text-slate-400 text-xs font-bold rounded-lg hover:border-slate-400 transition"
+                >
                   Otkaži
                 </button>
               </div>
@@ -2361,12 +2523,25 @@ function KorisniciTab() {
       {deleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-            <h3 className="text-base font-bold text-white mb-2">Potvrda brisanja</h3>
-            <p className="text-slate-400 text-sm mb-5">Da li ste sigurni da želite da obrišete ovog korisnika? Akcija je nepovratna.</p>
-            <div className="flex gap-2">
-              <button onClick={() => handleDelete(deleteId)} className={btnDanger}>Obriši</button>
-              <button onClick={() => setDeleteId(null)} className="px-4 py-2 border border-slate-600 text-slate-400 text-xs font-bold rounded-lg hover:border-slate-400 transition">
+            <h3 className="text-base font-bold text-white mb-2">
+              Potvrda brisanja
+            </h3>
+            <p className="text-slate-400 text-sm mb-5">
+              Da li ste sigurni da želite da obrišete ovog korisnika? Akcija je
+              nepovratna.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setDeleteId(null)}
+                className="px-4 py-2 border border-slate-600 text-slate-400 text-xs font-bold rounded-lg hover:border-slate-400 transition"
+              >
                 Otkaži
+              </button>
+              <button
+                onClick={() => handleDelete(deleteId)}
+                className={btnDanger}
+              >
+                Obriši
               </button>
             </div>
           </div>

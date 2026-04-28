@@ -203,6 +203,12 @@ export async function ClientHomePage({ tenantSlug }: Props) {
         };
       return {
         enabled: Boolean(sub.enabled ?? false),
+        subscriptionType: sub.subscriptionType as
+          | "monthly"
+          | "package"
+          | undefined,
+        treatmentCount:
+          sub.treatmentCount != null ? Number(sub.treatmentCount) : null,
         priceMonthly:
           sub.priceMonthly != null ? Number(sub.priceMonthly) : null,
         startDate: sub.startDate ? String(sub.startDate) : null,

@@ -11,6 +11,7 @@ import {
 } from "@/lib/tenant/fetchTenantData";
 import ServicesLayout from "./ServiceLayout";
 import { TenantPageShell } from "@/components/themes/TenantPageShell";
+import { LandingStructure, SalonProfileData } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -43,43 +44,69 @@ export default async function UslugePage() {
     fetchPublicServices(tenantSlug),
   ]);
 
+  const safeProfile: SalonProfileData = profile ?? {
+    _id: "",
+    name: "",
+    email: "",
+    description: "",
+    phone: "",
+    street: "",
+    city: "",
+    social: {},
+    newsletterEmail: "",
+  };
+
   const salonName = profile?.name ?? "Salon";
+
+  const landingStructure = safeProfile.landingStructure as LandingStructure;
+  const servicesPage = landingStructure?.pages?.servicesPage;
+  const appointmentsPage = landingStructure?.pages?.appointmentsPage;
 
   return (
     <TenantPageShell tenantSlug={tenantSlug}>
       <div className="min-h-screen bg-gray-50">
         <section className="max-w-7xl mx-auto px-6 py-16">
-          <ServicesLayout services={services} />
+          <ServicesLayout
+            services={services}
+            headline={
+              servicesPage?.headline ||
+              "Nase usluge i cene bez trikova"
+            }
+            subheadline={
+              servicesPage?.subheadline ||
+              "Profesionalna šminka za sve prilike, od dnevne do večernje. Nega lica, obrva i noktiju. Otkrijte našu paletu usluga i tretmana dizajniranih da istaknu vašu prirodnu lepotu."
+            }
+          />
         </section>
 
-        <section className="bg-white border-b border-gray-100 py-20 px-6 text-center">
-          {services.length === 0 && (
+        {services.length === 0 && (
+          <section className="bg-white border-b border-gray-100 py-20 px-6 text-center">
             <p className="text-center bg-white text-gray-500 text-md py-12">
               Usluge još uvek nisu dodate.
             </p>
-          )}
-        </section>
+          </section>
+        )}
 
-        <section className="bg-purple-600 py-20 px-6 text-center">
+        <section className="bg-(--secondary-color) py-44 px-6 text-center">
           <p className="text-purple-100 text-xs font-bold tracking-[0.25em] uppercase mb-3">
             {salonName}
           </p>
-          <h2 className="text-3xl font-bold text-white mb-4">
-            Spremni za zakazivanje?
+          <h2 className="text-3xl font-bold text-(--primary-color) mb-4">
+            {appointmentsPage?.headline}
           </h2>
-          <p className="text-white/80 text-sm mb-8 max-w-sm mx-auto">
-            Pogledajte slobodne termine i odaberite onaj koji vam odgovara.
+          <p className="text-(--primary-color)/80 text-sm mb-8 max-w-sm mx-auto">
+            {appointmentsPage?.subheadline}
           </p>
           <div className="flex items-center justify-center space-x-6">
             <Link
               href={`${base}/termini`}
-              className="inline-block px-10 py-4 text-white font-bold rounded-full hover:bg-purple-900 transition"
+              className="inline-block px-10 py-4 text-white font-bold rounded-full hover:bg-(--primary-color) transition"
             >
               Pogledaj slobodne termine →
             </Link>
             <Link
               href={`${base}/termini`}
-              className="inline-block px-10 py-4 bg-white text-purple-600 font-bold rounded-full hover:bg-gray-100 transition shadow-lg"
+              className="inline-block px-10 py-4 bg-white text-(--primary-color) font-bold rounded-full hover:bg-gray-100 transition shadow-lg"
             >
               Zakaži termin →
             </Link>

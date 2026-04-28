@@ -58,8 +58,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No image file provided" }, { status: 400 });
     }
 
-    const folder = await getTenantFolder(authResult.decoded.tenantId);
-    const secure_url = await uploadToCloudinary(file, folder);
+    const base = await getTenantFolder(authResult.decoded.tenantId);
+    const secure_url = await uploadToCloudinary(file, `${base}/landing`);
 
     return NextResponse.json({ secure_url });
   } catch (err) {

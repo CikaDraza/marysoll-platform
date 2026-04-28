@@ -36,13 +36,13 @@ export function Theme4HeroSoft({
             {subheadline}
           </p>
 
-          <h1 className="text-3xl md:text-5xl font-semibold leading-tight max-w-xl">
+          <h1 className="text-3xl md:text-5xl font-semibold leading-tight max-w-2xl">
             {headline}
           </h1>
 
           <Link
             href={cta?.href || "/termini"}
-            className="border px-6 py-3 text-sm border border-[#E8D4AD] hover:bg-[#E8D4AD] hover:text-black transition mt-6 inline-block"
+            className="bg-(--secondary-color) text-(--primary-color) px-6 py-3 text-sm hover:bg-(--primary-color) hover:text-(--secondary-color) transition mt-6 inline-block"
           >
             {cta?.text}
           </Link>

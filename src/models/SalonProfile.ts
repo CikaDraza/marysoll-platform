@@ -72,11 +72,20 @@ const SalonProfileSchema = new mongoose.Schema(
           enabled: { type: Boolean, default: true },
           headline: { type: String },
           paragraphs: { type: [String], default: [] },
+          image: {
+            src: { type: String },
+            alt: { type: String },
+          },
         },
         servicesPreview: {
           enabled: { type: Boolean, default: true },
           headline: { type: String },
           subheadline: { type: String },
+          showIcons: { type: Boolean, default: true },
+          image: {
+            src: { type: String },
+            alt: { type: String },
+          },
         },
         appointmentSection: {
           enabled: { type: Boolean, default: true },

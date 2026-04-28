@@ -305,7 +305,7 @@ export default function AdminServiceForm({
         </div>
       </div>
 
-      {/* MONTHLY SUBSCRIPTION TOGGLE */}
+      {/* SUBSCRIPTION TOGGLE */}
       <div className="flex gap-x-4 items-center border-gray-200 p-2 bg-gray-100">
         <input
           type="checkbox"
@@ -321,71 +321,129 @@ export default function AdminServiceForm({
           }
         />
         <span className="text-sm font-semibold text-gray-600">
-          Uključi mesečnu pretplatu
+          Pretplata za ovu uslugu
         </span>
       </div>
 
-      {/* MONTHLY SUBSCRIPTION INPUTS */}
+      {/* SUBSCRIPTION INPUTS */}
       {form.subscription.enabled && (
-        <div className="flex flex-col lg:flex-row gap-x-3">
-          <div className="flex-1">
+        <div className="space-y-3">
+          {/* TYPE DROPDOWN */}
+          <div>
             <label className="block text-sm font-semibold text-gray-700">
-              Mesečna cena (RSD)
+              Vrsta pretplate
             </label>
-            <input
-              type="number"
-              value={form.subscription.priceMonthly ?? ""}
+            <select
+              value={form.subscription.subscriptionType ?? "monthly"}
               onChange={(e) =>
                 setForm({
                   ...form,
                   subscription: {
                     ...form.subscription,
-                    priceMonthly: Number(e.target.value),
+                    subscriptionType: e.target.value as "monthly" | "package",
+                    treatmentCount:
+                      e.target.value === "monthly"
+                        ? null
+                        : form.subscription.treatmentCount,
                   },
                 })
               }
-              className="mt-1 block w-full rounded-md bg-gray-100 p-2"
-            />
+              className="mt-1 block w-full rounded-md border-gray-200 bg-gray-100 p-2"
+            >
+              <option value="monthly">Mesečna pretplata</option>
+              <option value="package">Paket tretmana</option>
+            </select>
           </div>
 
-          <div className="flex-1">
-            <label className="block text-sm font-semibold text-gray-700">
-              Od
-            </label>
-            <input
-              type="date"
-              value={form.subscription.startDate ?? ""}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  subscription: {
-                    ...form.subscription,
-                    startDate: e.target.value,
-                  },
-                })
-              }
-              className="mt-1 block w-full rounded-md bg-gray-100 p-2"
-            />
-          </div>
+          {/* TREATMENT COUNT — only for package */}
+          {form.subscription.subscriptionType === "package" && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700">
+                Broj tretmana
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={form.subscription.treatmentCount ?? ""}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    subscription: {
+                      ...form.subscription,
+                      treatmentCount: e.target.value
+                        ? Number(e.target.value)
+                        : null,
+                    },
+                  })
+                }
+                className="mt-1 block w-full rounded-md bg-gray-100 p-2"
+              />
+            </div>
+          )}
 
-          <div className="flex-1">
-            <label className="block text-sm font-semibold text-gray-700">
-              Do
-            </label>
-            <input
-              type="date"
-              value={form.subscription.endDate ?? ""}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  subscription: {
-                    ...form.subscription,
-                    endDate: e.target.value,
-                  },
-                })
-              }
-              className="mt-1 block w-full rounded-md bg-gray-100 p-2"
-            />
+          {/* PRICE + DATES */}
+          <div className="flex flex-col lg:flex-row gap-x-3">
+            <div className="flex-1">
+              <label className="block text-sm font-semibold text-gray-700">
+                {form.subscription.subscriptionType === "package"
+                  ? "Cena paketa (RSD)"
+                  : "Mesečna cena (RSD)"}
+              </label>
+              <input
+                type="number"
+                value={form.subscription.priceMonthly ?? ""}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    subscription: {
+                      ...form.subscription,
+                      priceMonthly: Number(e.target.value),
+                    },
+                  })
+                }
+                className="mt-1 block w-full rounded-md bg-gray-100 p-2"
+              />
+            </div>
+
+            <div className="flex-1">
+              <label className="block text-sm font-semibold text-gray-700">
+                Od
+              </label>
+              <input
+                type="date"
+                value={form.subscription.startDate ?? ""}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    subscription: {
+                      ...form.subscription,
+                      startDate: e.target.value,
+                    },
+                  })
+                }
+                className="mt-1 block w-full rounded-md bg-gray-100 p-2"
+              />
+            </div>
+
+            <div className="flex-1">
+              <label className="block text-sm font-semibold text-gray-700">
+                Do
+              </label>
+              <input
+                type="date"
+                value={form.subscription.endDate ?? ""}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    subscription: {
+                      ...form.subscription,
+                      endDate: e.target.value,
+                    },
+                  })
+                }
+                className="mt-1 block w-full rounded-md bg-gray-100 p-2"
+              />
+            </div>
           </div>
         </div>
       )}
