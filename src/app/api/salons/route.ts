@@ -28,7 +28,14 @@ export async function GET(req: Request) {
   } catch (error: unknown) {
     console.error("[GET /api/salons] Error:", error);
     return NextResponse.json(
-      { error: "Greška pri učitavanju salona" },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to fetch salons",
+        stack:
+          process.env.NODE_ENV === "development" && error instanceof Error
+            ? error.stack
+            : undefined,
+      },
       { status: 500 },
     );
   }
