@@ -41,6 +41,7 @@ export async function PUT(req: NextRequest) {
       "newsletterEmail",
       "contactEmail",
       "marketingPhone",
+      "resendApiKey",
     ]) {
       const val = form.get(field);
       if (val && typeof val === "string") profile[field] = val;

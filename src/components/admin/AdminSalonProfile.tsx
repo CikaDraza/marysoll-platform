@@ -381,6 +381,27 @@ export default function AdminSalonProfile() {
                     className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-(--secondary-color)"
                   />
                 </div>
+                <div className="sm:col-span-6">
+                  <label className="block text-sm/6 font-medium text-gray-900">
+                    Resend API ključ
+                  </label>
+                  <p className="text-xs text-gray-500 mb-1">
+                    Vaš Resend API ključ za slanje mejlova sa vaše domene (npr.{" "}
+                    <code className="bg-gray-100 px-1 rounded">newsletter@vaš-salon.com</code>).
+                    Ostavite prazno da biste koristili platformski email.
+                  </p>
+                  <input
+                    type="password"
+                    name="resendApiKey"
+                    value={
+                      (form as { resendApiKey?: string }).resendApiKey || ""
+                    }
+                    onChange={handleChange}
+                    placeholder="re_••••••••••••••••"
+                    autoComplete="off"
+                    className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-(--secondary-color) font-mono"
+                  />
+                </div>
               </div>
             </div>
           )}

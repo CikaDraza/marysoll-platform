@@ -601,6 +601,7 @@ export interface EmailOptions {
   text?: string;
   from?: string;
   type?: "salon" | "newsletter" | "system";
+  tenantId?: string | null;
 }
 
 export interface AppointmentNotificationData {
@@ -695,6 +696,7 @@ export interface SalonProfile {
   newsletterEmail: string;
   contactEmail?: string;
   marketingPhone?: string;
+  resendApiKey?: string;
   createdAt?: string;
   updatedAt?: string;
   workingHours?: WorkingHoursMap | Record<string, unknown>;
@@ -729,6 +731,7 @@ export interface ISalonProfileForm {
   newsletterEmail: string;
   contactEmail: string;
   marketingPhone: string;
+  resendApiKey: string;
   logo: string | null;
   social: SocialLinks;
   workingHours: WorkingHoursMap;

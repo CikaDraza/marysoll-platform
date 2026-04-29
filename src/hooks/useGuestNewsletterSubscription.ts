@@ -14,14 +14,22 @@ export async function useGuestNewsletterSubscription(
   }
 
   const email = emailValue.trim();
+  const tenantIdValue = formData.get("tenantId");
+  const tenantId = typeof tenantIdValue === "string" && tenantIdValue.trim()
+    ? tenantIdValue.trim()
+    : undefined;
 
   try {
-    await subscribeToNewsletter({
+    const result = await subscribeToNewsletter({
       email,
       source: "footer",
+      tenantId,
     });
 
-    // Uspešno — možemo vratiti poruku ili redirect-ovati
+    if (!result.success) {
+      return { message: result.message, success: false };
+    }
+
     return {
       message: "Proverite email da potvrdite pretplatu!",
       success: true,

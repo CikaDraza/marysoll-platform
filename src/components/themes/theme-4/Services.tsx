@@ -2,6 +2,22 @@ import { IService } from "@/types";
 import { formatPriceToString } from "@/helpers/formatPrice";
 import Image from "next/image";
 import Link from "next/link";
+import BlowDryingIcon from "@/components/assets/icons/services/BlowDryingIcon";
+import EyebrowsIcon from "@/components/assets/icons/services/EyebrowsIcon";
+import FigaroIcon from "@/components/assets/icons/services/FigaroIcon";
+import FlowerIcon from "@/components/assets/icons/services/FlowerIcon";
+import HairIcon from "@/components/assets/icons/services/Hair";
+import HaircutIcon from "@/components/assets/icons/services/HaricutIcon";
+import MakeupFaceIcon from "@/components/assets/icons/services/MakeupFaceIcon";
+import MassageIcon from "@/components/assets/icons/services/MassageIcon";
+import { ComponentType } from "react";
+import { LymphDrainageIcon } from "@/components/assets/icons/services/LymphDrainageIcon";
+import { ManualMassageIcon } from "@/components/assets/icons/services/ManualMassageIcon";
+import { VacuumTreatmentIcon } from "@/components/assets/icons/services/VacuumTreatmentIcon";
+import { ThermoBlanketIcon } from "@/components/assets/icons/services/ThermoBlanketIcon";
+import { MaderoTherapyHandIcon } from "@/components/assets/icons/services/MaderoTherapyHandIcon";
+import { MaderoTherapyRollerIcon } from "@/components/assets/icons/services/MaderoTherapyRollerIcon";
+import { BodyShapeSlimIcon } from "@/components/assets/icons/services/BodyShapeSlimIcon";
 
 const FALLBACK_SERVICES_IMAGE =
   "https://res.cloudinary.com/dufo1t5li/image/upload/v1771541591/salon/zycqbewvuphkygo2hr8w.jpg";
@@ -12,6 +28,7 @@ interface Props {
   subheadline?: string;
   tenantSlug?: string;
   imageUrl?: string;
+  showIcons?: boolean;
 }
 
 function minPrice(s: IService): number | null {
@@ -29,12 +46,58 @@ function minPrice(s: IService): number | null {
   return null;
 }
 
+type ServiceIconProps = {
+  bgColor?: string;
+  width?: number;
+  height?: number;
+  hasCircle?: boolean;
+};
+type ServiceIconComp = ComponentType<ServiceIconProps>;
+
+const SERVICE_ICONS: Record<string, ServiceIconComp> = {
+  BlowDryingIcon,
+  EyebrowsIcon,
+  FigaroIcon,
+  FlowerIcon,
+  HairIcon,
+  HaircutIcon,
+  MakeupFaceIcon,
+  MassageIcon,
+  LymphDrainageIcon,
+  ManualMassageIcon,
+  VacuumTreatmentIcon,
+  ThermoBlanketIcon,
+  MaderoTherapyHandIcon,
+  MaderoTherapyRollerIcon,
+  BodyShapeSlimIcon,
+};
+
+function CategoryIcon({
+  iconKey,
+  oddCard,
+}: {
+  iconKey?: string;
+  oddCard: boolean;
+}) {
+  if (!iconKey || !SERVICE_ICONS[iconKey]) return null;
+  const Comp = SERVICE_ICONS[iconKey];
+  return <Comp {...iconProps(oddCard)} />;
+}
+
+const iconProps = (oddCard: boolean): ServiceIconProps => ({
+  width: 96,
+  height: 96,
+  hasCircle: false,
+  bgColor: oddCard ? "#ffffff" : "#2b1e26",
+});
+
 export function Theme4ServicesSoft({
   services,
   headline,
   subheadline,
   tenantSlug,
   imageUrl,
+  showIcons,
 }: Props) {
   const grouped = services.reduce<Record<string, IService[]>>((acc, s) => {
     (acc[s.category] ??= []).push(s);
@@ -58,7 +121,7 @@ export function Theme4ServicesSoft({
             <h2 className="text-4xl mb-8">{headline}</h2>
             <div className="mt-12">
               {Object.entries(grouped).map(([category, items]) => (
-                <div key={category}>
+                <div key={category} className="mt-8">
                   <p className="text-xs uppercase tracking-widest text-[#E8D4AD] mb-3 border-b border-[#E8D4AD]/20 pb-2">
                     {category}
                   </p>
@@ -156,16 +219,22 @@ export function Theme4ServicesSoft({
             const mp = minPrice(s);
             const priceMonthly = s.subscription.priceMonthly;
             const isOddCard = idx % 2 === 0;
+
             return (
               <div
                 key={s._id}
                 className={`p-6 transition flex flex-col ${isOddCard ? "bg-[#4C2D4A] text-white" : "bg-[#E8D4AD] hover:bg-[var(--secondary-color)]/40"}`}
               >
-                <p
-                  className={`text-[10px] uppercase tracking-widest mb-1 ${isOddCard ? "text-white/60" : "text-[#2b1e26]/60"}`}
-                >
-                  {s.category}
-                </p>
+                <div className="flex justify-between w-full">
+                  <p
+                    className={`text-[10px] uppercase tracking-widest mb-1 ${isOddCard ? "text-white/60" : "text-[#2b1e26]/60"}`}
+                  >
+                    {s.category}
+                  </p>
+                  {showIcons && (
+                    <CategoryIcon iconKey={s?.icon || ""} oddCard={isOddCard} />
+                  )}
+                </div>
                 <h3
                   className={`text-xl pt-8 mb-1 font-medium tracking-widest mb-3 border-b pb-2 ${isOddCard ? "text-white border-white/20" : "text-[#2b1e26] border-[#2b1e26]/20"}`}
                 >

@@ -8,7 +8,7 @@ interface Props {
   headline?: string;
 }
 
-export function Theme3GalleryMasonry({ images, headline }: Props) {
+export function Theme4GalleryMasonry({ images, headline }: Props) {
   if (!images || images.length === 0) return null;
 
   // Pomoćna funkcija za renderovanje slike sa motion efektom
@@ -38,9 +38,9 @@ export function Theme3GalleryMasonry({ images, headline }: Props) {
   };
 
   return (
-    <section className="py-24 bg-[#FAF8F5]">
+    <section className="py-24 bg-[#2b1e26]">
       <div className="container mx-auto px-5 lg:px-32">
-        <h2 className="text-4xl text-center font-semibold text-[#2d2d2d] mb-16">
+        <h2 className="text-5xl text-center font-semibold text-white mb-16">
           {headline || "Naši radovi"}
         </h2>
 

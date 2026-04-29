@@ -11,13 +11,14 @@ export function Theme4CTA({ headline, cta }: Props) {
     <section className="relative h-[600px] flex items-center justify-center text-white">
       <Image
         fill
-        alt={headline || "Zakazite odmah"}
+        alt={headline || "Zakažite odmah"}
         src="https://res.cloudinary.com/dufo1t5li/image/upload/v1764565548/samples/ecommerce/analog-classic.jpg"
         className="absolute inset-0 w-auto h-full object-cover"
       />
       <div className="absolute inset-0 bg-black/50" />
 
       <div className="relative text-center">
+        <span className="italic mb-2 text-xs text-[#E8D4AD]">Vreme je</span>
         <h2 className="text-3xl mb-8">{headline}</h2>
 
         <Link

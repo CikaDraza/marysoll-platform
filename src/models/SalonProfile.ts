@@ -183,6 +183,7 @@ const SalonProfileSchema = new mongoose.Schema(
     },
     newsletterEmail: { type: String, required: false, default: "" },
     contactEmail: { type: String, required: false, default: "" },
+    resendApiKey: { type: String, required: false, default: "" },
     marketingPhone: { type: String, required: false, default: "" },
     workingHours: { type: Object, default: {} },
 

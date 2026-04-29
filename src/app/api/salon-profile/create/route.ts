@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
       newsletterEmail: form.get("newsletterEmail") ?? "",
       contactEmail: form.get("contactEmail") ?? "",
       marketingPhone: form.get("marketingPhone") ?? "",
+      resendApiKey: form.get("resendApiKey") ?? "",
       logo: logoUrl,
       landingTheme: [
         "theme-1",

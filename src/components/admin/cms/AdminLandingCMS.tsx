@@ -68,8 +68,20 @@ const HEROICON_OPTIONS = [
 // ─── Service icons ────────────────────────────────────────────────────────────
 
 import type { ComponentType } from "react";
+import { LymphDrainageIcon } from "@/components/assets/icons/services/LymphDrainageIcon";
+import { ManualMassageIcon } from "@/components/assets/icons/services/ManualMassageIcon";
+import { VacuumTreatmentIcon } from "@/components/assets/icons/services/VacuumTreatmentIcon";
+import { ThermoBlanketIcon } from "@/components/assets/icons/services/ThermoBlanketIcon";
+import { MaderoTherapyHandIcon } from "@/components/assets/icons/services/MaderoTherapyHandIcon";
+import { MaderoTherapyRollerIcon } from "@/components/assets/icons/services/MaderoTherapyRollerIcon";
+import { BodyShapeSlimIcon } from "@/components/assets/icons/services/BodyShapeSlimIcon";
 
-type ServiceIconProps = { bgColor?: string; width?: number; height?: number; hasCircle?: boolean };
+type ServiceIconProps = {
+  bgColor?: string;
+  width?: number;
+  height?: number;
+  hasCircle?: boolean;
+};
 type ServiceIconComp = ComponentType<ServiceIconProps>;
 
 const SERVICE_ICONS: Record<string, ServiceIconComp> = {
@@ -81,6 +93,13 @@ const SERVICE_ICONS: Record<string, ServiceIconComp> = {
   HaircutIcon,
   MakeupFaceIcon,
   MassageIcon,
+  LymphDrainageIcon,
+  ManualMassageIcon,
+  VacuumTreatmentIcon,
+  ThermoBlanketIcon,
+  MaderoTherapyHandIcon,
+  MaderoTherapyRollerIcon,
+  BodyShapeSlimIcon,
 };
 
 const SERVICE_ICON_LABELS: Record<string, string> = {
@@ -92,6 +111,13 @@ const SERVICE_ICON_LABELS: Record<string, string> = {
   HaircutIcon: "Šišanje",
   MakeupFaceIcon: "Šminka",
   MassageIcon: "Masaža",
+  LymphDrainageIcon: "Limfna Drenaza",
+  ManualMassageIcon: "Rucna Masaza",
+  VacuumTreatmentIcon: "Vakuum Tretman",
+  ThermoBlanketIcon: "Termo Cebe",
+  MaderoTherapyHandIcon: "Maderoterapija-telo-ruke",
+  MaderoTherapyRollerIcon: "Maderoterapija",
+  BodyShapeSlimIcon: "Shape-Slim",
 };
 
 // ─── SEO types ────────────────────────────────────────────────────────────────
@@ -384,7 +410,8 @@ interface Props {
 export function AdminLandingCMS({ sp }: Props) {
   const { token } = useAuth();
   const ls = sp.form.landingStructure;
-  const themeConf = THEME_CONFIG[(sp.form.landingTheme as LandingTheme) ?? "theme-1"];
+  const themeConf =
+    THEME_CONFIG[(sp.form.landingTheme as LandingTheme) ?? "theme-1"];
 
   const { services } = useAdminServices();
   const qc = useQueryClient();
@@ -392,7 +419,9 @@ export function AdminLandingCMS({ sp }: Props) {
   const [seoResult, setSeoResult] = useState<SeoAnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isAutoFixing, setIsAutoFixing] = useState(false);
-  const [iconPickerServiceId, setIconPickerServiceId] = useState<string | null>(null);
+  const [iconPickerServiceId, setIconPickerServiceId] = useState<string | null>(
+    null,
+  );
   const [iconSaving, setIconSaving] = useState<string | null>(null);
 
   const updateServiceIcon = async (serviceId: string, icon: string) => {
@@ -401,7 +430,10 @@ export function AdminLandingCMS({ sp }: Props) {
     try {
       const res = await fetch(`/api/services/${serviceId}/update`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ icon }),
       });
       if (!res.ok) throw new Error();
@@ -765,7 +797,8 @@ export function AdminLandingCMS({ sp }: Props) {
           if (!heroConf.hasImage) {
             return (
               <p className="text-xs text-gray-400 dark:text-gray-500 italic px-1">
-                Ova tema koristi podrazumevanu sliku za hero sekciju — nije potrebno dodavati sliku.
+                Ova tema koristi podrazumevanu sliku za hero sekciju — nije
+                potrebno dodavati sliku.
               </p>
             );
           }
@@ -797,7 +830,10 @@ export function AdminLandingCMS({ sp }: Props) {
                     onChange={(e) =>
                       updateLandingSection("hero", {
                         ...hero,
-                        image: { src: hero.image?.src ?? "", alt: e.target.value },
+                        image: {
+                          src: hero.image?.src ?? "",
+                          alt: e.target.value,
+                        },
                       })
                     }
                     placeholder="Opis slike za pristupačnost..."
@@ -816,8 +852,9 @@ export function AdminLandingCMS({ sp }: Props) {
                   Hero Slike
                 </p>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
-                  Koristi se za varijantu &quot;Grid desno&quot;. Preporučeno: {heroConf.maxImages} slike.
-                  Ako ne dodate slike, prikazaće se podrazumevane slike.
+                  Koristi se za varijantu &quot;Grid desno&quot;. Preporučeno:{" "}
+                  {heroConf.maxImages} slike. Ako ne dodate slike, prikazaće se
+                  podrazumevane slike.
                 </p>
               </div>
               {slots.map((idx) => {
@@ -1103,8 +1140,12 @@ export function AdminLandingCMS({ sp }: Props) {
         </div>
         <div className="flex items-center justify-between py-2 px-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700">
           <div>
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Prikaži ikonice</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500">Ikonice usluga u sekciji na landing stranici</p>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Prikaži ikonice
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Ikonice usluga u sekciji na landing stranici
+            </p>
           </div>
           <ToggleSwitch
             checked={servicesPreview.showIcons ?? true}
@@ -1126,7 +1167,8 @@ export function AdminLandingCMS({ sp }: Props) {
             Slika (Usluge)
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            Prikazuje se uz listu usluga na landing stranici. Ako ne dodate, prikazaće se podrazumevana slika.
+            Prikazuje se uz listu usluga na landing stranici. Ako ne dodate,
+            prikazaće se podrazumevana slika.
           </p>
           <ImageInputField
             label="URL slike"
@@ -1146,7 +1188,10 @@ export function AdminLandingCMS({ sp }: Props) {
               onChange={(e) =>
                 updateLandingSection("servicesPreview", {
                   ...servicesPreview,
-                  image: { src: servicesPreview.image?.src ?? "", alt: e.target.value },
+                  image: {
+                    src: servicesPreview.image?.src ?? "",
+                    alt: e.target.value,
+                  },
                 })
               }
               placeholder="Opis slike za pristupačnost..."
@@ -1158,17 +1203,22 @@ export function AdminLandingCMS({ sp }: Props) {
           <div>
             <label className={lbl}>Ikonice usluga</label>
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
-              Kliknite na uslugu da dodelite ikonicu koja se prikazuje na landing stranici.
+              Kliknite na uslugu da dodelite ikonicu koja se prikazuje na
+              landing stranici.
             </p>
             <div className="flex flex-wrap gap-2">
               {services.map((service) => {
-                const IconComp = service.icon ? SERVICE_ICONS[service.icon] : null;
+                const IconComp = service.icon
+                  ? SERVICE_ICONS[service.icon]
+                  : null;
                 const isOpen = iconPickerServiceId === service._id;
                 return (
                   <div key={service._id} className="relative">
                     <button
                       type="button"
-                      onClick={() => setIconPickerServiceId(isOpen ? null : service._id)}
+                      onClick={() =>
+                        setIconPickerServiceId(isOpen ? null : service._id)
+                      }
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs transition ${
                         service.icon
                           ? "border-violet-300 dark:border-violet-700 bg-violet-50 dark:bg-violet-900/20 text-violet-800 dark:text-violet-300"
@@ -1182,7 +1232,9 @@ export function AdminLandingCMS({ sp }: Props) {
                           +
                         </span>
                       )}
-                      <span className="max-w-[140px] truncate">{service.name}</span>
+                      <span className="max-w-[140px] truncate">
+                        {service.name}
+                      </span>
                     </button>
 
                     {isOpen && (
@@ -1415,6 +1467,56 @@ export function AdminLandingCMS({ sp }: Props) {
           </div>
         </div>
 
+        {/* Gallery type picker */}
+        {(() => {
+          const effectiveVariant: import("@/lib/themeConfig").GalleryVariant =
+            gallery.galleryVariant ?? themeConf.gallery.variant;
+          return (
+            <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-2">
+              <p className={lbl}>Tip galerije</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateLandingSection("gallery", {
+                      ...gallery,
+                      galleryVariant: "images-only",
+                    })
+                  }
+                  className={`flex-1 py-2 px-3 rounded-xl text-sm font-semibold border transition ${
+                    effectiveVariant === "images-only"
+                      ? "bg-violet-600 text-white border-violet-600"
+                      : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-violet-400"
+                  }`}
+                >
+                  Masonry
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateLandingSection("gallery", {
+                      ...gallery,
+                      galleryVariant: "images-with-category",
+                    })
+                  }
+                  className={`flex-1 py-2 px-3 rounded-xl text-sm font-semibold border transition ${
+                    effectiveVariant === "images-with-category"
+                      ? "bg-violet-600 text-white border-violet-600"
+                      : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-violet-400"
+                  }`}
+                >
+                  Slika + Slika + Tekst
+                </button>
+              </div>
+              <p className="text-[11px] text-gray-400 dark:text-gray-500">
+                {effectiveVariant === "images-only"
+                  ? "Masonry — slobodna mreža slika bez opisa."
+                  : "Zigzag — parovi slika sa kategorijom i opisom."}
+              </p>
+            </div>
+          );
+        })()}
+
         {/* Instagram */}
         <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-3">
           <p className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 inline-block px-2.5 py-1 rounded-lg">
@@ -1472,9 +1574,9 @@ export function AdminLandingCMS({ sp }: Props) {
           </div>
         </div>
 
-        {/* Gallery content — variant driven by THEME_CONFIG */}
-        {themeConf.gallery.variant === "images-only" ? (
-
+        {/* Gallery content — variant driven by galleryVariant or THEME_CONFIG fallback */}
+        {(gallery.galleryVariant ?? themeConf.gallery.variant) ===
+        "images-only" ? (
           /* ── images-only: flat image list (masonry — Theme 3/4/5) ───────── */
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -1515,7 +1617,9 @@ export function AdminLandingCMS({ sp }: Props) {
                 updateLandingSection("gallery", { ...gallery, images: imgs });
               };
               const removeImg = () => {
-                const imgs = (gallery.images ?? []).filter((_, idx) => idx !== ii);
+                const imgs = (gallery.images ?? []).filter(
+                  (_, idx) => idx !== ii,
+                );
                 updateLandingSection("gallery", { ...gallery, images: imgs });
               };
               return (
@@ -1553,9 +1657,7 @@ export function AdminLandingCMS({ sp }: Props) {
               );
             })}
           </div>
-
         ) : (
-
           /* ── images-with-category: treatments list (zigzag — Theme 1/2) ── */
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -1573,7 +1675,10 @@ export function AdminLandingCMS({ sp }: Props) {
                     category: "",
                     title: "",
                     description: "",
-                    images: [{ src: "", alt: "" }, { src: "", alt: "" }],
+                    images: [
+                      { src: "", alt: "" },
+                      { src: "", alt: "" },
+                    ],
                     href: "/termini",
                   };
                   updateLandingSection("gallery", {
@@ -1601,11 +1706,19 @@ export function AdminLandingCMS({ sp }: Props) {
               const updateTreatment = (updated: typeof treatment) => {
                 const all = [...(gallery.treatments ?? [])];
                 all[ti] = updated;
-                updateLandingSection("gallery", { ...gallery, treatments: all });
+                updateLandingSection("gallery", {
+                  ...gallery,
+                  treatments: all,
+                });
               };
               const removeTreatment = () => {
-                const all = (gallery.treatments ?? []).filter((_, idx) => idx !== ti);
-                updateLandingSection("gallery", { ...gallery, treatments: all });
+                const all = (gallery.treatments ?? []).filter(
+                  (_, idx) => idx !== ti,
+                );
+                updateLandingSection("gallery", {
+                  ...gallery,
+                  treatments: all,
+                });
               };
 
               return (
@@ -1635,7 +1748,10 @@ export function AdminLandingCMS({ sp }: Props) {
                         className={inp}
                         value={treatment.category ?? ""}
                         onChange={(e) =>
-                          updateTreatment({ ...treatment, category: e.target.value })
+                          updateTreatment({
+                            ...treatment,
+                            category: e.target.value,
+                          })
                         }
                         placeholder="npr. Makeup"
                       />
@@ -1646,7 +1762,10 @@ export function AdminLandingCMS({ sp }: Props) {
                         className={inp}
                         value={treatment.href ?? ""}
                         onChange={(e) =>
-                          updateTreatment({ ...treatment, href: e.target.value })
+                          updateTreatment({
+                            ...treatment,
+                            href: e.target.value,
+                          })
                         }
                         placeholder="/termini"
                       />
@@ -1657,7 +1776,10 @@ export function AdminLandingCMS({ sp }: Props) {
                         className={inp}
                         value={treatment.title ?? ""}
                         onChange={(e) =>
-                          updateTreatment({ ...treatment, title: e.target.value })
+                          updateTreatment({
+                            ...treatment,
+                            title: e.target.value,
+                          })
                         }
                         placeholder="npr. Dnevna šminka"
                       />
@@ -1669,7 +1791,10 @@ export function AdminLandingCMS({ sp }: Props) {
                         rows={2}
                         value={treatment.description ?? ""}
                         onChange={(e) =>
-                          updateTreatment({ ...treatment, description: e.target.value })
+                          updateTreatment({
+                            ...treatment,
+                            description: e.target.value,
+                          })
                         }
                         placeholder="Kratki opis tretmana..."
                       />
@@ -1691,7 +1816,10 @@ export function AdminLandingCMS({ sp }: Props) {
                           onClick={() =>
                             updateTreatment({
                               ...treatment,
-                              images: [...(treatment.images ?? []), { src: "", alt: "" }],
+                              images: [
+                                ...(treatment.images ?? []),
+                                { src: "", alt: "" },
+                              ],
                             })
                           }
                           className="text-xs text-violet-600 dark:text-violet-400 hover:underline"
@@ -1702,13 +1830,18 @@ export function AdminLandingCMS({ sp }: Props) {
                     </div>
 
                     {(treatment.images ?? []).map((img, ii) => {
-                      const updateImg = (updated: { src: string; alt: string }) => {
+                      const updateImg = (updated: {
+                        src: string;
+                        alt: string;
+                      }) => {
                         const imgs = [...(treatment.images ?? [])];
                         imgs[ii] = updated;
                         updateTreatment({ ...treatment, images: imgs });
                       };
                       const removeImg = () => {
-                        const imgs = (treatment.images ?? []).filter((_, idx) => idx !== ii);
+                        const imgs = (treatment.images ?? []).filter(
+                          (_, idx) => idx !== ii,
+                        );
                         updateTreatment({ ...treatment, images: imgs });
                       };
                       return (
@@ -1738,7 +1871,9 @@ export function AdminLandingCMS({ sp }: Props) {
                             <input
                               className={inp}
                               value={img.alt ?? ""}
-                              onChange={(e) => updateImg({ ...img, alt: e.target.value })}
+                              onChange={(e) =>
+                                updateImg({ ...img, alt: e.target.value })
+                              }
                               placeholder="Opis slike za pristupačnost..."
                             />
                           </div>
@@ -1762,12 +1897,18 @@ export function AdminLandingCMS({ sp }: Props) {
                         category: "",
                         title: "",
                         description: "",
-                        images: [{ src: "", alt: "" }, { src: "", alt: "" }],
+                        images: [
+                          { src: "", alt: "" },
+                          { src: "", alt: "" },
+                        ],
                         href: "/termini",
                       };
                       const all = [...(gallery.treatments ?? [])];
                       all.splice(ti + 1, 0, newItem);
-                      updateLandingSection("gallery", { ...gallery, treatments: all });
+                      updateLandingSection("gallery", {
+                        ...gallery,
+                        treatments: all,
+                      });
                     }}
                     className="w-full mt-1 py-2 text-xs font-semibold rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-700 text-violet-500 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/10 transition"
                   >
@@ -1786,7 +1927,10 @@ export function AdminLandingCMS({ sp }: Props) {
                     category: "",
                     title: "",
                     description: "",
-                    images: [{ src: "", alt: "" }, { src: "", alt: "" }],
+                    images: [
+                      { src: "", alt: "" },
+                      { src: "", alt: "" },
+                    ],
                     href: "/termini",
                   };
                   updateLandingSection("gallery", {

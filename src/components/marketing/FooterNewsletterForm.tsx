@@ -5,8 +5,10 @@ import { useGuestNewsletterSubscription } from "@/hooks/useGuestNewsletterSubscr
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import LoaderButton from "../elements/LoaderButton";
+import { useTenant } from "@/contexts/TenantContext";
 
 export default function FooterNewsletterForm() {
+  const { tenantId } = useTenant();
   const [state, formAction, isLoading] = useActionState(
     useGuestNewsletterSubscription,
     null,
@@ -24,6 +26,7 @@ export default function FooterNewsletterForm() {
           action={formAction}
           className="mt-6 flex flex-col lg:flex-row max-w-md gap-x-1"
         >
+          <input type="hidden" name="tenantId" value={tenantId} />
           <label htmlFor="email-address" className="sr-only">
             Email adresa
           </label>

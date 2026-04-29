@@ -595,6 +595,22 @@ function AdminDashboard() {
                         placeholder="Kratki opis vašeg salona koji klijenti vide na sajtu..."
                       />
                     </div>
+                    {user?.globalRole === "OWNER" && (
+                      <div className="col-span-2">
+                        <label className={lbl}>Resend API ključ</label>
+                        <p className="text-[11px] text-gray-400 dark:text-gray-500 mb-1">
+                          Vaš sopstveni Resend API ključ (Full Access) za slanje emailova sa vašeg domena.
+                        </p>
+                        <input
+                          type="password"
+                          className={inp + " font-mono"}
+                          value={(sp.form as { resendApiKey?: string }).resendApiKey ?? ""}
+                          onChange={(e) => sp.setField("resendApiKey", e.target.value)}
+                          placeholder="re_••••••••••••••••"
+                          autoComplete="off"
+                        />
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 pt-1">
                     <button

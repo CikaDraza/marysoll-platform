@@ -84,7 +84,7 @@ export async function subscribeToNewsletter(data: NewsletterSubscriptionData) {
     });
   }
 
-  await sendNewsletterVerificationEmail(data.email, verificationToken);
+  await sendNewsletterVerificationEmail(data.email, verificationToken, data.tenantId ?? null);
 
   return { success: true, message: "Verification email sent" };
 }

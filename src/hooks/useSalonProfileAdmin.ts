@@ -92,6 +92,7 @@ const emptyForm = (): ISalonProfileForm => ({
   street: "",
   city: "",
   newsletterEmail: "",
+  resendApiKey: "",
   logo: null,
   social: { instagram: "", facebook: "", tiktok: "", whatsapp: "", telegram: "" },
   workingHours: emptyWorkingHours(),
@@ -206,6 +207,9 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
           ctaText: rawLanding.gallery?.instagram?.ctaText ?? "",
         },
         treatments: rawLanding.gallery?.treatments ?? [],
+        images: rawLanding.gallery?.images ?? [],
+        variant: rawLanding.gallery?.variant,
+        galleryVariant: rawLanding.gallery?.galleryVariant,
       },
       faq: {
         enabled: rawLanding.faq?.enabled ?? true,
@@ -253,6 +257,7 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
     street: p.street ?? "",
     city: p.city ?? "",
     newsletterEmail: p.newsletterEmail ?? "",
+    resendApiKey: p.resendApiKey ?? "",
     logo: p.logo ?? null,
     social: {
       instagram: p.social?.instagram ?? "",
@@ -467,6 +472,7 @@ export function useSalonProfileAdmin() {
       fd.append("newsletterEmail", form.newsletterEmail);
       fd.append("contactEmail", form.contactEmail);
       fd.append("marketingPhone", form.marketingPhone);
+      fd.append("resendApiKey", form.resendApiKey);
       fd.append("social", JSON.stringify(form.social));
       fd.append("workingHours", JSON.stringify(form.workingHours));
       fd.append("seo", JSON.stringify(form.seo));

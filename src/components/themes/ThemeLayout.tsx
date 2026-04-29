@@ -64,7 +64,9 @@ import {
 import {
   Theme4AppointmentSection,
   Theme4CTA,
+  Theme4FAQSection,
   Theme4Footer,
+  Theme4GalleryMasonry,
   Theme4Header,
   Theme4HeroSoft,
   Theme4ServicesSoft,
@@ -153,6 +155,22 @@ export function ThemeLayout({
   const testimonialsEnabled = ls?.landing?.testimonials?.enabled ?? true;
   const galleryEnabled = ls?.landing?.gallery?.enabled ?? true;
   const faqEnabled = ls?.landing?.faq?.enabled ?? true;
+
+  // ── Effective gallery variant (CMS override > theme default) ────────────
+  const THEME_GALLERY_DEFAULTS: Record<
+    string,
+    "images-only" | "images-with-category"
+  > = {
+    "theme-1": "images-with-category",
+    "theme-2": "images-with-category",
+    "theme-3": "images-only",
+    "theme-4": "images-only",
+    "theme-5": "images-only",
+  };
+  const effectiveGalleryVariant: "images-only" | "images-with-category" =
+    ls?.landing?.gallery?.galleryVariant ??
+    THEME_GALLERY_DEFAULTS[theme] ??
+    "images-only";
 
   const footerProps = {
     tenantSlug,
@@ -255,22 +273,30 @@ export function ThemeLayout({
               headline={ls?.landing?.testimonials?.headline}
             />
           )}
-          {galleryEnabled && (
-            <Theme1GallerySection
-              instagramUrl={ls?.landing?.gallery?.instagram?.link || instagram}
-              instagramTag={
-                ls?.landing?.gallery?.instagram?.username || instagram
-              }
-              headline={ls?.landing?.gallery?.headline}
-              subheadline={ls?.landing?.gallery?.subheadline}
-              treatments={
-                ls?.landing?.gallery?.treatments &&
-                ls.landing.gallery.treatments.length > 0
-                  ? ls.landing.gallery.treatments
-                  : undefined
-              }
-            />
-          )}
+          {galleryEnabled &&
+            (effectiveGalleryVariant === "images-only" ? (
+              <Theme3GalleryMasonry
+                images={ls?.landing?.gallery?.images}
+                headline={ls?.landing?.gallery?.headline}
+              />
+            ) : (
+              <Theme1GallerySection
+                instagramUrl={
+                  ls?.landing?.gallery?.instagram?.link || instagram
+                }
+                instagramTag={
+                  ls?.landing?.gallery?.instagram?.username || instagram
+                }
+                headline={ls?.landing?.gallery?.headline}
+                subheadline={ls?.landing?.gallery?.subheadline}
+                treatments={
+                  ls?.landing?.gallery?.treatments &&
+                  ls.landing.gallery.treatments.length > 0
+                    ? ls.landing.gallery.treatments
+                    : undefined
+                }
+              />
+            ))}
           <Theme1PricingSection services={services} tenantSlug={tenantSlug} />
           {faqEnabled && (
             <Theme1FAQSection
@@ -327,22 +353,30 @@ export function ThemeLayout({
             subheadline={ls?.landing?.servicesPreview?.subheadline}
             tenantSlug={tenantSlug}
           />
-          {galleryEnabled && (
-            <Theme2GalleryGrid
-              instagramUrl={ls?.landing?.gallery?.instagram?.link || instagram}
-              instagramTag={
-                ls?.landing?.gallery?.instagram?.username || instagram
-              }
-              headline={ls?.landing?.gallery?.headline}
-              subheadline={ls?.landing?.gallery?.subheadline}
-              treatments={
-                ls?.landing?.gallery?.treatments &&
-                ls.landing.gallery.treatments.length > 0
-                  ? ls.landing.gallery.treatments
-                  : undefined
-              }
-            />
-          )}
+          {galleryEnabled &&
+            (effectiveGalleryVariant === "images-only" ? (
+              <Theme3GalleryMasonry
+                images={ls?.landing?.gallery?.images}
+                headline={ls?.landing?.gallery?.headline}
+              />
+            ) : (
+              <Theme2GalleryGrid
+                instagramUrl={
+                  ls?.landing?.gallery?.instagram?.link || instagram
+                }
+                instagramTag={
+                  ls?.landing?.gallery?.instagram?.username || instagram
+                }
+                headline={ls?.landing?.gallery?.headline}
+                subheadline={ls?.landing?.gallery?.subheadline}
+                treatments={
+                  ls?.landing?.gallery?.treatments &&
+                  ls.landing.gallery.treatments.length > 0
+                    ? ls.landing.gallery.treatments
+                    : undefined
+                }
+              />
+            ))}
           {appointmentEnabled && (
             <Theme1AppointmentSection
               tenantSlug={tenantSlug}
@@ -390,7 +424,7 @@ export function ThemeLayout({
           )}
 
           {/* 2. MINI GALLERY (4 slike kao na mockupu) */}
-          {galleryEnabled && (
+          {galleryEnabled && effectiveGalleryVariant === "images-only" && (
             <>
               <Theme3GallerySoft images={ls?.landing?.gallery?.images} />
               <Theme3GalleryMasonry images={ls?.landing?.gallery?.images} />
@@ -414,12 +448,30 @@ export function ThemeLayout({
           {testimonialsEnabled && <Theme3TestimonialsSoft />}
 
           {/* 6. FULL GALLERY */}
-          {galleryEnabled && (
-            <Theme3GalleryMasonry
-              images={ls?.landing?.gallery?.images}
-              headline={ls?.landing?.gallery?.headline}
-            />
-          )}
+          {galleryEnabled &&
+            (effectiveGalleryVariant === "images-only" ? (
+              <Theme3GalleryMasonry
+                images={ls?.landing?.gallery?.images}
+                headline={ls?.landing?.gallery?.headline}
+              />
+            ) : (
+              <Theme1GallerySection
+                instagramUrl={
+                  ls?.landing?.gallery?.instagram?.link || instagram
+                }
+                instagramTag={
+                  ls?.landing?.gallery?.instagram?.username || instagram
+                }
+                headline={ls?.landing?.gallery?.headline}
+                subheadline={ls?.landing?.gallery?.subheadline}
+                treatments={
+                  ls?.landing?.gallery?.treatments &&
+                  ls.landing.gallery.treatments.length > 0
+                    ? ls.landing.gallery.treatments
+                    : undefined
+                }
+              />
+            ))}
 
           {/* 7. PRICING */}
           <Theme3PricingSoft services={services} headline="Cenovnik" />
@@ -499,6 +551,7 @@ export function ThemeLayout({
 
           {servicesPreviewEnabled && (
             <Theme4ServicesSoft
+              showIcons={ls?.landing?.servicesPreview?.showIcons ?? true}
               services={services}
               headline={ls?.landing?.servicesPreview?.headline}
               subheadline={ls?.landing?.servicesPreview?.subheadline}
@@ -513,17 +566,14 @@ export function ThemeLayout({
           )}
 
           <Theme4CTA
-            headline={ls?.landing.about.headline}
-            cta={ls?.landing.hero.ctas.primary}
+            headline={
+              "Slobodni termini danas. Masaže, tela i lica, nega vašeg tela"
+            }
+            cta={{
+              href: "#termini-sekcija",
+              text: "Zakaži termin",
+            }}
           />
-
-          {/* 6. FULL GALLERY */}
-          {galleryEnabled && (
-            <Theme3GalleryMasonry
-              images={ls?.landing?.gallery?.images}
-              headline={ls?.landing?.gallery?.headline}
-            />
-          )}
 
           {/* 8. APPOINTMENT */}
           {appointmentEnabled && (
@@ -535,6 +585,40 @@ export function ThemeLayout({
               headline={ls?.landing?.appointmentSection?.headline}
               subheadline={ls?.landing?.appointmentSection?.subheadline}
               instructions={ls?.landing?.appointmentSection?.instructions}
+            />
+          )}
+          {/* 6. FULL GALLERY */}
+          {galleryEnabled &&
+            (effectiveGalleryVariant === "images-only" ? (
+              <Theme4GalleryMasonry
+                images={ls?.landing?.gallery?.images}
+                headline={ls?.landing?.gallery?.headline}
+              />
+            ) : (
+              <Theme1GallerySection
+                instagramUrl={
+                  ls?.landing?.gallery?.instagram?.link || instagram
+                }
+                instagramTag={
+                  ls?.landing?.gallery?.instagram?.username || instagram
+                }
+                headline={ls?.landing?.gallery?.headline}
+                subheadline={ls?.landing?.gallery?.subheadline}
+                treatments={
+                  ls?.landing?.gallery?.treatments &&
+                  ls.landing.gallery.treatments.length > 0
+                    ? ls.landing.gallery.treatments
+                    : undefined
+                }
+              />
+            ))}
+          {faqEnabled && (
+            <Theme4FAQSection
+              headline={ls?.landing?.faq?.headline}
+              subheadline={ls?.landing?.faq?.subheadline}
+              items={ls?.landing?.faq?.items}
+              supportText={ls?.landing?.faq?.support?.text}
+              supportEmail={ls?.landing?.faq?.support?.email}
             />
           )}
         </main>

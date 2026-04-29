@@ -15,14 +15,16 @@ function serializeWorkingHours(wh: unknown): Record<string, unknown> {
   for (const [day, slots] of Object.entries(wh as Record<string, unknown>)) {
     if (Array.isArray(slots)) {
       // New format: [{ from: "08:00", to: "17:00" }, ...]
-      result[day] = slots.map((slot: unknown) => {
-        if (typeof slot === "object" && slot !== null) {
-          const s = slot as Record<string, unknown>;
-          // Strip any ObjectId _id from embedded subdocs
-          return { from: String(s.from ?? ""), to: String(s.to ?? "") };
-        }
-        return null;
-      }).filter(Boolean);
+      result[day] = slots
+        .map((slot: unknown) => {
+          if (typeof slot === "object" && slot !== null) {
+            const s = slot as Record<string, unknown>;
+            // Strip any ObjectId _id from embedded subdocs
+            return { from: String(s.from ?? ""), to: String(s.to ?? "") };
+          }
+          return null;
+        })
+        .filter(Boolean);
     } else if (typeof slots === "string") {
       // Legacy: "08:00 - 17:00"
       result[day] = slots;
@@ -42,20 +44,29 @@ function serializeProfile(doc: Record<string, unknown>) {
     street: String(doc.street ?? ""),
     city: String(doc.city ?? ""),
     social: {
-      instagram: String((doc.social as Record<string, string>)?.instagram ?? ""),
+      instagram: String(
+        (doc.social as Record<string, string>)?.instagram ?? "",
+      ),
       facebook: String((doc.social as Record<string, string>)?.facebook ?? ""),
       tiktok: String((doc.social as Record<string, string>)?.tiktok ?? ""),
     },
-    newsletterEmail: String(doc.newsletterEmail ?? ""),
     workingHours: serializeWorkingHours(doc.workingHours),
     seo: doc.seo ?? {},
     branding: {
-      primaryColor: String((doc.branding as Record<string, string>)?.primaryColor ?? "#a855f7"),
-      secondaryColor: String((doc.branding as Record<string, string>)?.secondaryColor ?? "#ec4899"),
-      fontFamily: String((doc.branding as Record<string, string>)?.fontFamily ?? "Inter"),
+      primaryColor: String(
+        (doc.branding as Record<string, string>)?.primaryColor ?? "#a855f7",
+      ),
+      secondaryColor: String(
+        (doc.branding as Record<string, string>)?.secondaryColor ?? "#ec4899",
+      ),
+      fontFamily: String(
+        (doc.branding as Record<string, string>)?.fontFamily ?? "Inter",
+      ),
     },
     landingTheme: String(doc.landingTheme ?? "theme-1"),
     landingStructure: doc.landingStructure ?? null,
+    contactEmail: String((doc.contactEmail as string) ?? ""),
+    newsletterEmail: String((doc.newsletterEmail as string) ?? ""),
   };
 }
 
@@ -67,7 +78,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
     await connectToDB();
     const tenant = await Tenant.findOne({ slug: tenantSlug }).lean();
     if (!tenant) {
-      return NextResponse.json({ success: false, error: "Salon nije pronađen" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "Salon nije pronađen" },
+        { status: 404 },
+      );
     }
     const profile = await SalonProfile.findOne({
       tenantId: (tenant as Record<string, unknown>)._id,
@@ -75,10 +89,15 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     return NextResponse.json({
       success: true,
-      data: profile ? serializeProfile(profile as Record<string, unknown>) : null,
+      data: profile
+        ? serializeProfile(profile as Record<string, unknown>)
+        : null,
     });
   } catch (err) {
     console.error("GET /api/public/[tenantSlug]/salon-profile:", err);
-    return NextResponse.json({ success: false, error: "Server error" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Server error" },
+      { status: 500 },
+    );
   }
 }

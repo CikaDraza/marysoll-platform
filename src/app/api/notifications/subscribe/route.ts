@@ -2,9 +2,11 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { TenantUser } from "@/models/TenantUser";
+import { SalonProfile } from "@/models/SalonProfile";
 import { verifyToken } from "@/lib/auth/auth-server";
 import webpush from "web-push";
 import { getVapidKeys } from "@/lib/vapid";
+import { Types } from "mongoose";
 
 export async function POST(req: Request) {
   try {
@@ -27,6 +29,22 @@ export async function POST(req: Request) {
     }
 
     const { subscription } = await req.json();
+
+    // Resolve salon logo for the notification icon
+    let notificationIcon = "/notification-icon.png";
+    try {
+      const tenantUser = (await TenantUser.findById(decoded.tenantUserId)
+        .select("tenantId")
+        .lean()) as { tenantId?: Types.ObjectId } | null;
+      if (tenantUser?.tenantId) {
+        const profile = (await SalonProfile.findOne({
+          tenantId: tenantUser.tenantId,
+        })
+          .select("logo")
+          .lean()) as { logo?: string } | null;
+        if (profile?.logo) notificationIcon = profile.logo;
+      }
+    } catch { /* fall through */ }
 
     // Konfiguriši web-push sa VAPID ključevima
     const vapidKeys = getVapidKeys();
@@ -58,7 +76,7 @@ export async function POST(req: Request) {
         JSON.stringify({
           title: "Push notifikacije su aktivirane!",
           body: "Sada ćete primati obaveštenja čak i kada niste na sajtu.",
-          icon: "/notification-icon.png",
+          icon: notificationIcon,
           tag: "subscription-success",
           data: {
             url: "/",

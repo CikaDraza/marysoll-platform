@@ -6,6 +6,10 @@ import {
   EmailOptions,
   TestimonialNotificationData,
 } from "@/types";
+import { connectToDB } from "@/lib/db/mongodb";
+import { SalonProfile } from "@/models/SalonProfile";
+import { Tenant } from "@/models/Tenant";
+import { Types } from "mongoose";
 import {
   appointmentCreatedTemplate,
   appointmentApprovedTemplate,
@@ -25,6 +29,7 @@ import {
   newsletterPromotionTemplate,
 } from "@/lib/email/templates/otherTemplates";
 import { wrapEmailLayout } from "@/lib/email/wrapEmailLayout";
+import { Resend } from "resend";
 import { resend } from "./resend";
 
 // Helper: strip HTML tags to produce plain-text fallback
@@ -35,11 +40,75 @@ function htmlToText(html: string): string {
     .trim();
 }
 
+// ── Resolve per-tenant Resend client (falls back to platform client) ──────────
+async function resolveResendClient(
+  tenantId: string | null | undefined,
+): Promise<Resend> {
+  if (!tenantId) return resend;
+  try {
+    await connectToDB();
+    const profile = (await SalonProfile.findOne({
+      tenantId: new Types.ObjectId(tenantId),
+    })
+      .select("resendApiKey")
+      .lean()) as { resendApiKey?: string } | null;
+    if (profile?.resendApiKey) return new Resend(profile.resendApiKey);
+  } catch {
+    // fall through to platform client
+  }
+  return resend;
+}
+
+// ── Resolve tenant-specific sender address ────────────────────────────────────
+type EmailPurpose = "system" | "notification" | "newsletter";
+
+async function resolveSalonFrom(
+  tenantId: string | null | undefined,
+  purpose: EmailPurpose,
+): Promise<string | undefined> {
+  if (!tenantId) return undefined;
+  try {
+    await connectToDB();
+    const profile = (await SalonProfile.findOne({
+      tenantId: new Types.ObjectId(tenantId),
+    })
+      .select("name newsletterEmail contactEmail")
+      .lean()) as {
+      name?: string;
+      newsletterEmail?: string;
+      contactEmail?: string;
+    } | null;
+
+    const name = profile?.name ?? "";
+
+    if (purpose === "newsletter" && profile?.newsletterEmail) {
+      return `"${name}" <${profile.newsletterEmail}>`;
+    }
+    if (purpose === "notification" && profile?.contactEmail) {
+      return `"${name}" <${profile.contactEmail}>`;
+    }
+    if (purpose === "system") {
+      const tenant = (await Tenant.findById(tenantId)
+        .select("customDomain customDomainVerified")
+        .lean()) as {
+        customDomain?: string;
+        customDomainVerified?: boolean;
+      } | null;
+      if (tenant?.customDomain && tenant.customDomainVerified) {
+        return `"${name}" <noreply@${tenant.customDomain}>`;
+      }
+    }
+  } catch {
+    // fall through to platform default
+  }
+  return undefined;
+}
+
 // ── Core send function ────────────────────────────────────────────────────────
 export async function sendEmail(
   options: EmailOptions,
 ): Promise<{ success: boolean; messageId?: string }> {
-  const { to, subject, html, text } = options;
+  const { to, subject, html, text, tenantId } = options;
 
   const fromEmail =
     options.from ||
@@ -47,8 +116,10 @@ export async function sendEmail(
       process.env.EMAIL_FROM || "onboarding@resend.dev"
     }>`;
 
+  const client = await resolveResendClient(tenantId);
+
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await client.emails.send({
       from: fromEmail,
       to: Array.isArray(to) ? to : [to],
       subject,
@@ -98,7 +169,8 @@ export async function sendAppointmentNotification(
   };
 
   const html = await templateFns[type]();
-  return sendEmail({ to, subject: subjects[type], html });
+  const from = await resolveSalonFrom(tenantId, "notification");
+  return sendEmail({ to, subject: subjects[type], html, from, tenantId });
 }
 
 export async function sendAppointmentMessageNotification(
@@ -266,36 +338,35 @@ export async function sendNewsletterEmail(
     tenantId,
   });
 
-  const { data, error } = await resend.emails.send({
-    from: `"Marysoll small business platform" <${
-      process.env.NEWSLETTER_FROM_EMAIL || "onboarding@resend.dev"
-    }>`,
-    replyTo: process.env.SUPPORT_FROM_EMAIL,
-    to: Array.isArray(to) ? to : [to],
+  const campaignFrom =
+    (await resolveSalonFrom(tenantId, "newsletter")) ??
+    `"Marysoll small business platform" <${process.env.NEWSLETTER_FROM_EMAIL || process.env.EMAIL_FROM}>`;
+
+  return sendEmail({
+    from: campaignFrom,
+    to,
     subject,
     html,
-    text: htmlToText(html),
+    tenantId,
   });
-
-  if (error) {
-    console.error("Greška pri slanju newslettera:", error);
-    throw error;
-  }
-
-  return { success: true, messageId: data?.id };
 }
 
 /**
  * Send newsletter opt-in verification email.
+ * Verify link always points to the platform API; the API then redirects to the
+ * tenant's own domain after successful verification.
  */
 export async function sendNewsletterVerificationEmail(
   email: string,
   verificationToken: string,
   tenantId?: string | null,
 ): Promise<void> {
-  const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/newsletter/verify?token=${verificationToken}`;
+  const platformUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const verifyUrl = `${platformUrl}/api/newsletter/verify?token=${verificationToken}`;
   const html = await newsletterVerificationTemplate({ verifyUrl, tenantId });
+  const from = `"Marysoll" <${process.env.SYSTEM_FROM_EMAIL || process.env.EMAIL_FROM}>`;
   await sendEmail({
+    from,
     to: email,
     subject: "Potvrdite svoju pretplatu na newsletter",
     html,
