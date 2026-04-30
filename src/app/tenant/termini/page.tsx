@@ -8,6 +8,7 @@ import { headers } from "next/headers";
 import {
   fetchPublicSalonProfile,
   fetchPublicAppointments,
+  fetchPublicServices,
 } from "@/lib/tenant/fetchTenantData";
 import AppointmentCalendarPage from "@/components/public/AppointmentCalendarPage";
 import type { IAppointment, LandingStructure, SalonProfileData } from "@/types";
@@ -40,9 +41,10 @@ export default async function TerminiPage() {
   const tenantSlug = h.get("x-tenant-slug") ?? "";
   const base = h.get("x-tenant-base-path") ?? "";
 
-  const [profile, appointments] = await Promise.all([
+  const [profile, appointments, services] = await Promise.all([
     fetchPublicSalonProfile(tenantSlug),
     fetchPublicAppointments(tenantSlug),
+    fetchPublicServices(tenantSlug),
   ]);
 
   const salonName = profile?.name ?? "Salon";
@@ -193,6 +195,8 @@ export default async function TerminiPage() {
               initialAppointments={appointments as IAppointment[]}
               salonProfile={safeProfile}
               tenantSlug={tenantSlug}
+              clientSlug={base || undefined}
+              services={services}
             />
           </div>
         </div>
