@@ -162,7 +162,7 @@ export function MarketingHomePage() {
                     MarySoll
                   </span>
                   <small className="text-[0.5rem] text-white -mt-1">
-                    je napravila nešto posebno
+                    je napravila nešto sasvim drugačije
                   </small>
                 </div>
               </Link>

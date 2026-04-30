@@ -515,7 +515,7 @@ export function ThemeLayout({
 
         <Theme4Header
           {...headerProps}
-          cta={resolvedCta.primary}
+          cta={resolvedCta.secondary}
           salon={salonWithMergedSocial}
           salonPhone={salon.phone}
         />

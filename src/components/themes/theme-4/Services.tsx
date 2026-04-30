@@ -105,7 +105,7 @@ export function Theme4ServicesSoft({
   }, {});
 
   return (
-    <section className="bg-[#2b1e26] text-white py-20">
+    <section id="services" className="bg-[#2b1e26] text-white py-20">
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid md:grid-cols-3 gap-12 items-start">
           <Image
@@ -203,13 +203,6 @@ export function Theme4ServicesSoft({
                 </div>
               ))}
             </div>
-
-            <Link
-              href={`/${tenantSlug}/termini`}
-              className="mt-8 border px-5 py-2 inline-block hover:bg-[#E8D4AD] hover:text-black transition border-[#E8D4AD]"
-            >
-              Zakaži termin
-            </Link>
           </div>
         </div>
 

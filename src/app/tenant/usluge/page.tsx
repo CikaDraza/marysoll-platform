@@ -64,13 +64,12 @@ export default async function UslugePage() {
 
   return (
     <TenantPageShell tenantSlug={tenantSlug}>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-100">
         <section className="max-w-7xl mx-auto px-6 py-16">
           <ServicesLayout
             services={services}
             headline={
-              servicesPage?.headline ||
-              "Nase usluge i cene bez trikova"
+              servicesPage?.headline || "Nase usluge i cene bez trikova"
             }
             subheadline={
               servicesPage?.subheadline ||
@@ -88,7 +87,7 @@ export default async function UslugePage() {
         )}
 
         <section className="bg-(--secondary-color) py-44 px-6 text-center">
-          <p className="text-purple-100 text-xs font-bold tracking-[0.25em] uppercase mb-3">
+          <p className="text-(--primary-color) text-xs font-bold tracking-[0.25em] uppercase mb-3">
             {salonName}
           </p>
           <h2 className="text-3xl font-bold text-(--primary-color) mb-4">
@@ -100,7 +99,7 @@ export default async function UslugePage() {
           <div className="flex items-center justify-center space-x-6">
             <Link
               href={`${base}/termini`}
-              className="inline-block px-10 py-4 text-white font-bold rounded-full hover:bg-(--primary-color) transition"
+              className="inline-block px-10 py-4 text-(--primary-color) hover:text-white font-bold rounded-full outline-1 outline-(--primary-color) hover:bg-(--primary-color) transition"
             >
               Pogledaj slobodne termine →
             </Link>

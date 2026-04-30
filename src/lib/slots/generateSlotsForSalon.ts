@@ -26,6 +26,27 @@ function addMinutes(date: Date, minutes: number): Date {
   return new Date(date.getTime() + minutes * 60_000);
 }
 
+// Interprets HH:MM as Europe/Belgrade local time and returns the correct UTC Date.
+// Without this, `new Date("2026-04-30T08:00:00")` on a UTC server stores 08:00Z
+// which displays as 10:00 in Belgrade (UTC+2 offset applied at display time).
+function belgradToUTC(dateStr: string, timeStr: string): Date {
+  const midnight = new Date(`${dateStr}T00:00:00Z`);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Belgrade",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(midnight);
+  const bH = parseInt(parts.find((p) => p.type === "hour")!.value, 10);
+  const bM = parseInt(parts.find((p) => p.type === "minute")!.value, 10);
+  const offsetMin = (bH % 24) * 60 + bM; // offset from UTC (e.g. 120 for CEST)
+  const [tH, tM] = timeStr.split(":").map(Number);
+  const utcMin = tH * 60 + tM - offsetMin;
+  const result = new Date(`${dateStr}T00:00:00Z`);
+  result.setUTCMinutes(result.getUTCMinutes() + utcMin);
+  return result;
+}
+
 /**
  * Returns working hour slots for a given date from a salon's workingHours value.
  * Handles three formats:
@@ -89,7 +110,7 @@ function buildSlotsForDay(
     for (let t = startMin; t + SLOT_DURATION_MIN <= endMin; t += SLOT_DURATION_MIN) {
       const h = Math.floor(t / 60).toString().padStart(2, "0");
       const m = (t % 60).toString().padStart(2, "0");
-      const start = new Date(`${dateStr}T${h}:${m}:00`);
+      const start = belgradToUTC(dateStr, `${h}:${m}`);
       const end = addMinutes(start, SLOT_DURATION_MIN);
       slots.push({ salonId, startTime: start, endTime: end, status: "free" });
     }

@@ -485,7 +485,7 @@ export function MarketingHomePageSecond() {
                   MarySoll
                 </span>
                 <small className="text-[0.5rem] text-(--tetra-color) -mt-1">
-                  je napravila nešto sasvim posebno
+                  je napravila nešto sasvim drugačije
                 </small>
               </div>
             </Link>

@@ -72,20 +72,20 @@ export default async function TerminiPage() {
   return (
     <TenantPageShell tenantSlug={tenantSlug}>
       <div className="min-h-screen bg-gray-50">
-        <section className="bg-white border-b border-gray-100 py-16 px-6 text-center">
+        <section className="py-16 px-6 text-center">
           <p className="text-(--primary-color) text-xs font-bold tracking-[0.25em] uppercase mb-3">
             {salonName}
           </p>
           <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-            {landingStructure?.appointmentsPage?.headline}
+            {landingStructure?.pages?.appointmentsPage?.headline}
           </h1>
           <p className="text-gray-500 text-sm max-w-2xl mx-auto mb-8">
-            {landingStructure?.appointmentsPage?.subheadline}
+            {landingStructure?.pages?.appointmentsPage?.subheadline}
           </p>
           <div className="flex gap-3 justify-center">
             <Link
               href={`${base}/panel?tab=Zakazivanja`}
-              className="px-3 lg:px-7 py-3 bg-(--primary-color) text-white font-semibold rounded-full hover:bg-purple-700 transition text-sm"
+              className="px-3 lg:px-7 py-3 bg-(--primary-color) text-white hover:text-(--primary-color) font-semibold rounded-full hover:bg-(--secondary-color) transition text-sm"
             >
               Zakaži termin →
             </Link>
@@ -158,11 +158,12 @@ export default async function TerminiPage() {
             </div>
 
             <div className="bg-purple-50 border border-purple-100 rounded-2xl p-6 flex flex-col justify-center lg:[grid-area:howto]">
-              <h3 className="font-bold font-semibold text-(--secondary-color) mb-2">
+              <h3 className="font-bold font-semibold text-gray-950 mb-2">
                 Kako zakazati?
               </h3>
-              <ol className="text-xs text-(--secondary-color) space-y-1 list-decimal pl-4 mb-3">
-                <li>Registrujte se</li>
+              <ol className="text-xs text-gray-900 space-y-1 list-decimal pl-4 mb-3">
+                <li>Zakažite bez prijave</li>
+                <li>Ili registrujte se</li>
                 <li>Kliknite &quot;Zakaži termin&quot;</li>
                 <li>Odaberite uslugu</li>
               </ol>

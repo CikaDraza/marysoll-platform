@@ -43,7 +43,7 @@ export default function FooterNewsletterForm() {
           <button
             type="submit"
             disabled={pending}
-            className="cursor-pointer flex-none mt-3 lg:mt-0 rounded-md bg-(--secondary-color) px-3.5 py-2.5 text-sm font-semibold text-(--primary-color) shadow-xs hover:bg-(--primary-color) hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--secondary-color) disabled:opacity-50"
+            className="cursor-pointer flex-none mt-3 lg:mt-0 rounded-md bg-(--secondary-color) px-3.5 py-2.5 text-sm font-semibold text-(--primary-color) shadow-xs outline-1 outline-(--secondary-color) hover:bg-(--primary-color) hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--secondary-color) disabled:opacity-50"
           >
             {isLoading ? <LoaderButton /> : "Pretplatite se"}
           </button>

@@ -15,12 +15,12 @@ export default function ServicesLayout({
   const groupedServices = groupAndSortServices(services);
 
   return (
-    <div className="bg-transparent py-12 lg:py-32">
+    <div className="py-12 lg:py-32">
       <div className="flex justify-center flex-wrap px-1 lg:px-8">
-        <span className="text-sm font-bold pb-8 w-full text-center text-(--primary-color)">
+        <span className="text-sm font-bold pb-0 w-full text-center text-(--primary-color)">
           usluge
         </span>
-        <h1 className="text-5xl lg:text-7xl text-pretty text-gray-900 text-center font-bold">
+        <h1 className="text-5xl lg:text-7xl w-full text-pretty text-gray-900 text-center font-bold">
           {headline}
         </h1>
         <p className="mt-8 w-4xl text-center text-sm lg:text-lg font-medium text-pretty text-gray-500 sm:text-xl/8 px-6 lg:px-8">
@@ -66,7 +66,7 @@ export default function ServicesLayout({
                       Trajanje: {service?.duration} minuta
                     </time>
                     {service.basePrice && (
-                      <span className="relative z-10 rounded-full bg-(--secondary-color) px-3 py-1.5 font-semibold text-white">
+                      <span className="relative z-10 rounded-full bg-(--primary-color) px-3 py-1.5 font-semibold text-white">
                         {formatPriceToString(service.basePrice)} RSD
                       </span>
                     )}
