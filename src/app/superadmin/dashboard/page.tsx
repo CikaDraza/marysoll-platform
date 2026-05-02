@@ -20,6 +20,7 @@ import { useSuperAdminTenants } from "@/hooks/useSuperAdminTenants";
 import type { TenantRow } from "@/hooks/useSuperAdminTenants";
 import Image from "next/image";
 import Link from "next/link";
+import AlertModal from "@/components/modals/AlertModal";
 
 // ─── Tab types ────────────────────────────────────────────────────────────────
 type Tab =
@@ -212,6 +213,7 @@ function SaloniTab({
 }) {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [deleteTarget, setDeleteTarget] = useState<TenantRow | null>(null);
 
   const filtered = useMemo(() => {
     return sa.tenants.filter((t) => {
@@ -325,6 +327,13 @@ function SaloniTab({
                   Trial 30d
                 </button>
               )}
+              <button
+                onClick={() => setDeleteTarget(t)}
+                disabled={sa.isDeletingTenant}
+                className={btnDanger}
+              >
+                Obriši
+              </button>
             </div>
           </div>
         ))}
@@ -335,6 +344,19 @@ function SaloniTab({
           </p>
         )}
       </div>
+
+      <AlertModal
+        open={!!deleteTarget}
+        setOpen={(v) => { if (!v) setDeleteTarget(null); }}
+        title="Trajno brisanje salona"
+        message={`Da li ste sigurni da želite trajno obrisati salon "${deleteTarget?.name}"? Ova akcija će obrisati sve podatke salona i ne može se opozvati.`}
+        onConfirm={() => {
+          if (deleteTarget) {
+            sa.deleteTenant(deleteTarget._id);
+            setDeleteTarget(null);
+          }
+        }}
+      />
     </div>
   );
 }

@@ -204,6 +204,26 @@ export function useSuperAdminTenants() {
     onError: () => toast.error("Greška pri snimanju podešavanja"),
   });
 
+  // ── Delete mutation ─────────────────────────────────────────────────────────
+  const deleteMutation = useMutation({
+    mutationFn: async (tenantId: string) => {
+      const res = await fetch(`/api/superadmin/tenants/${tenantId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e.error ?? "Greška pri brisanju");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast.success(data.message ?? "Salon obrisan");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   // ─── Feature override mutations ───────────────────────────────────────────
 
   const setOverrideMutation = useMutation({
@@ -290,6 +310,10 @@ export function useSuperAdminTenants() {
     removeFeatureOverride: (tenantId: string) =>
       removeOverrideMutation.mutate(tenantId),
     isRemovingOverride: removeOverrideMutation.isPending,
+
+    // Delete
+    deleteTenant: (tenantId: string) => deleteMutation.mutate(tenantId),
+    isDeletingTenant: deleteMutation.isPending,
 
     // Platform settings
     savePlatformSettings: settingsMutation.mutate,
