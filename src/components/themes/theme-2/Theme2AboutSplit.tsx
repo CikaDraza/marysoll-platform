@@ -43,8 +43,7 @@ export function Theme2AboutSplit({ title, text, imageUrl }: Props) {
               "Naš salon kombinuje iskustvo, estetiku i preciznost kako bismo pružili vrhunske rezultate svakom klijentu."}
           </p>
           <p className="text-gray-300 leading-relaxed pt-4">
-            {paragraphs[1] ||
-              "Naš salon kombinuje iskustvo, estetiku i preciznost kako bismo pružili vrhunske rezultate svakom klijentu."}
+            {paragraphs[1] || ""}
           </p>
         </div>
       </div>

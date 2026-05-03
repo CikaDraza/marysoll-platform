@@ -4,7 +4,7 @@ interface Props {
 }
 export function Theme2CTAAppointmentSection({ salonName }: Props) {
   return (
-    <section className="bg-(--primary-color) py-44 px-6 text-center">
+    <section className="bg-yellow-500 py-44 px-6 text-center">
       <h2 className="text-3xl lg:text-4xl font-black text-gray-950 mb-4">
         {salonName ?? "Zakažite termin"}
       </h2>

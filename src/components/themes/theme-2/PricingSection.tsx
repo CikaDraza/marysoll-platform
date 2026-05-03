@@ -47,7 +47,7 @@ export function Theme2PricingSection({ services }: Props) {
             return (
               <div
                 key={srv._id}
-                className={`rounded-2xl p-7 border ${gold ? "bg-(--primary-color)" : "bg-gray-950 border-gray-950 transition"}`}
+                className={`rounded-2xl p-7 border ${gold ? "bg-yellow-500" : "bg-gray-950 border-gray-950 transition"}`}
               >
                 <h3
                   className={`font-bold text-base mb-1 ${gold ? "text-gray-950" : "text-white"}`}

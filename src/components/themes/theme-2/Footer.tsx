@@ -18,7 +18,7 @@ export function Theme2Footer({
       <div className="max-w-7xl mx-auto px-6 py-14">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           <div>
-            <h3 className="text-(--primary-color) font-bold text-xl tracking-widest uppercase mb-4">
+            <h3 className="text-yellow-500 font-bold text-xl tracking-widest uppercase mb-4">
               {salonName}
             </h3>
             <p className="text-gray-500 text-sm">

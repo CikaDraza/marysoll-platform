@@ -28,8 +28,8 @@ const DEFAULT_TREATMENTS: Treatment[] = [
       "Profesionalna šminka za dnevne svakodnevnice. Koristim profesionalnu kozmetiku renomiranih svetskih brendova.",
     images: [
       {
-        src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1770900184/salon/uktpvxy0bc9ijufba9r8.jpg",
-        alt: "Dnevna šminka",
+        src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1776608764/salons/salon-shi-sham-frizerski-salon/drjn82yvrwhjzbyargei.png",
+        alt: "Preliv / Toniranje",
       },
       {
         src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1768705206/marysoll-ai-look-1768705168082_xyfogh.jpg",
@@ -87,7 +87,7 @@ function GalleryText({ title, description, href }: GalleryTextProps) {
   return (
     <Link
       href={href}
-      className="flex flex-col justify-center p-8 rounded-xl bg-(--primary-color) shadow-sm hover:shadow-md transition h-full"
+      className="flex flex-col justify-center p-8 rounded-xl bg-yellow-500 shadow-sm hover:shadow-md transition h-full"
     >
       <h3 className="text-xl text-gray-900 font-semibold mb-3">{title}</h3>
       <p className="text-gray-800 leading-relaxed">{description}</p>
