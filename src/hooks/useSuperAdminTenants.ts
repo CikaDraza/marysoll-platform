@@ -15,6 +15,8 @@ export interface TenantRow {
   _id: string;
   name: string;
   slug: string;
+  subdomain: string;
+  cloudinaryFolder: string;
   customDomain: string | null;
   status: "active" | "suspended" | "pending" | "cancelled";
   plan: "free" | "starter" | "pro" | "enterprise";
@@ -204,6 +206,40 @@ export function useSuperAdminTenants() {
     onError: () => toast.error("Greška pri snimanju podešavanja"),
   });
 
+  // ── Identity mutation (slug / customDomain / cloudinaryFolder) ─────────────
+  const identityMutation = useMutation({
+    mutationFn: async ({
+      tenantId,
+      slug,
+      customDomain,
+      cloudinaryFolder,
+    }: {
+      tenantId: string;
+      slug?: string;
+      customDomain?: string | null;
+      cloudinaryFolder?: string;
+    }) => {
+      const res = await fetch(`/api/superadmin/tenants/${tenantId}/identity`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ slug, customDomain, cloudinaryFolder }),
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e.error ?? "Greška pri čuvanju");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast.success(data.message ?? "Podaci sačuvani");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   // ── Delete mutation ─────────────────────────────────────────────────────────
   const deleteMutation = useMutation({
     mutationFn: async (tenantId: string) => {
@@ -310,6 +346,13 @@ export function useSuperAdminTenants() {
     removeFeatureOverride: (tenantId: string) =>
       removeOverrideMutation.mutate(tenantId),
     isRemovingOverride: removeOverrideMutation.isPending,
+
+    // Identity
+    updateIdentity: (
+      tenantId: string,
+      data: { slug?: string; customDomain?: string | null; cloudinaryFolder?: string },
+    ) => identityMutation.mutate({ tenantId, ...data }),
+    isUpdatingIdentity: identityMutation.isPending,
 
     // Delete
     deleteTenant: (tenantId: string) => deleteMutation.mutate(tenantId),

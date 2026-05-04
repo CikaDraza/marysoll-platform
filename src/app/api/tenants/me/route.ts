@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 
     const tenant = await Tenant.findById(decoded.tenantId)
       .select(
-        "slug subdomain customDomain customDomainVerified plan status isTrialActive trialEndsAt",
+        "slug subdomain customDomain customDomainVerified plan status isTrialActive trialEndsAt cloudinaryFolder",
       )
       .lean();
 
@@ -41,6 +41,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       slug: String(t.slug ?? ""),
       subdomain: String(t.subdomain ?? ""),
+      cloudinaryFolder: String(t.cloudinaryFolder ?? ""),
       customDomain: t.customDomain ? String(t.customDomain) : null,
       customDomainVerified: Boolean(t.customDomainVerified),
       plan: String(t.plan ?? "free"),

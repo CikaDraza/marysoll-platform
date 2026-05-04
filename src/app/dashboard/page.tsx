@@ -24,6 +24,8 @@ import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import DashboardLayout from "@/layout/DashboardLayout";
 import Loader from "@/components/elements/Loader";
 import { api } from "@/lib/api";
+import { useTenantAdmin } from "@/hooks/useTenantAdmin";
+import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -168,6 +170,20 @@ function AdminDashboard() {
   });
   const [pwLoading, setPwLoading] = useState(false);
   const [pwError, setPwError] = useState("");
+
+  const { tenant, updateIdentity, isUpdatingIdentity } = useTenantAdmin();
+  const isOwner = user?.globalRole === "OWNER";
+  const [identityOpen, setIdentityOpen] = useState(false);
+  const [identityForm, setIdentityForm] = useState({ slug: "", cloudinaryFolder: "" });
+
+  useEffect(() => {
+    if (tenant) {
+      setIdentityForm({
+        slug: tenant.slug ?? "",
+        cloudinaryFolder: tenant.cloudinaryFolder ?? "",
+      });
+    }
+  }, [tenant]);
 
   function handleSaveWithAccount() {
     sp.save();
@@ -714,6 +730,67 @@ function AdminDashboard() {
                   </div>
                 </form>
               </div>
+
+            {/* Tehnička podešavanja — OWNER only */}
+            {isOwner && (
+              <div className={card + " lg:col-span-3 mt-8"}>
+                <button
+                  type="button"
+                  onClick={() => setIdentityOpen((o) => !o)}
+                  className="flex items-center gap-2 font-bold text-gray-900 dark:text-white w-full text-left"
+                >
+                  Tehnička podešavanja
+                  {identityOpen ? (
+                    <ChevronUpIcon className="size-4 text-gray-400" />
+                  ) : (
+                    <ChevronDownIcon className="size-4 text-gray-400" />
+                  )}
+                </button>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  Slug određuje URL salona ({tenant?.slug ? `${tenant.slug}.marysoll.com` : "slug.marysoll.com"}).
+                  Promena sluga šalje obaveštenje superadminu.
+                </p>
+                {identityOpen && (
+                  <div className="mt-6 space-y-5 max-w-xl">
+                    <div>
+                      <label className={lbl}>Slug</label>
+                      <p className="text-[11px] text-gray-400 mb-1">Samo mala slova, brojevi i crtice. Automatski ažurira subdomen.</p>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={identityForm.slug}
+                          onChange={(e) => setIdentityForm((f) => ({ ...f, slug: e.target.value }))}
+                          placeholder="ime-salona"
+                          className={inp + " font-mono"}
+                        />
+                        <span className="text-xs text-gray-400 whitespace-nowrap">.marysoll.com</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className={lbl}>Cloudinary folder</label>
+                      <p className="text-[11px] text-gray-400 mb-1">Putanja do foldera sa slikama (npr. salons/salon-ime).</p>
+                      <input
+                        type="text"
+                        value={identityForm.cloudinaryFolder}
+                        onChange={(e) => setIdentityForm((f) => ({ ...f, cloudinaryFolder: e.target.value }))}
+                        placeholder="salons/salon-ime"
+                        className={inp + " font-mono"}
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        disabled={isUpdatingIdentity}
+                        onClick={() => updateIdentity({ slug: identityForm.slug, cloudinaryFolder: identityForm.cloudinaryFolder })}
+                        className="px-6 py-2.5 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition disabled:opacity-50"
+                      >
+                        {isUpdatingIdentity ? "Čuvam..." : "Sačuvaj tehničke podatke"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             </div>
 
             {/* Danger zone */}

@@ -70,6 +70,7 @@ const ADMIN_PROTECTED_API_ROUTES = [
   "/api/users",
   "/api/cloudinary",
   "/api/statistics",
+  "/api/tenants/identity",
   "/api/tenants/update",
   "/api/subscriptions",
 ];

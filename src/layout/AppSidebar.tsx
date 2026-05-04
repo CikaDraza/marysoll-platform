@@ -370,14 +370,14 @@ const AppSidebar: React.FC = () => {
               Ostalo
             </p>
             <Link
-              href="/"
+              href="https://marysoll.com"
               target="_blank"
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200 transition-colors"
             >
               <span className="text-gray-500 dark:text-gray-400">
                 <Icon d={icons.globe} />
               </span>
-              <span>Sajt Platfrme</span>
+              <span>Sajt Platforme</span>
               <svg
                 className="w-3.5 h-3.5 ml-auto text-gray-300"
                 viewBox="0 0 24 24"

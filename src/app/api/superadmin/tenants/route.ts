@@ -62,6 +62,8 @@ export async function GET(req: NextRequest) {
           _id: String(tenant._id),
           name: String(tenant.name ?? ""),
           slug: String(tenant.slug ?? ""),
+          subdomain: String(tenant.subdomain ?? ""),
+          cloudinaryFolder: String(tenant.cloudinaryFolder ?? ""),
           customDomain: tenant.customDomain ? String(tenant.customDomain) : null,
           status: String(tenant.status ?? "pending"),
           plan: String(tenant.plan ?? "free"),

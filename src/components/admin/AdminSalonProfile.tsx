@@ -11,11 +11,26 @@ import LoaderButton from "../elements/LoaderButton";
 import NotificationSettings from "../settings/NotificationSettings";
 import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
+import { useTenantAdmin } from "@/hooks/useTenantAdmin";
+import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 
 export default function AdminSalonProfile() {
   const { user } = useAuth();
   const isOwner = user?.globalRole === "OWNER";
   const { data: salonProfile, isLoading } = useSalonProfile();
+  const { tenant, updateIdentity, isUpdatingIdentity } = useTenantAdmin();
+
+  const [identityOpen, setIdentityOpen] = useState(false);
+  const [identityForm, setIdentityForm] = useState({ slug: "", cloudinaryFolder: "" });
+
+  useEffect(() => {
+    if (tenant) {
+      setIdentityForm({
+        slug: tenant.slug ?? "",
+        cloudinaryFolder: tenant.cloudinaryFolder ?? "",
+      });
+    }
+  }, [tenant]);
 
   const {
     isOpen,
@@ -542,6 +557,79 @@ export default function AdminSalonProfile() {
           </div>
         </form>
       </div>
+
+      {/* TEHNIČKA PODEŠAVANJA (slug + cloudinaryFolder) — OWNER only */}
+      {isOwner && (
+        <div className="pt-12 mt-12 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={() => setIdentityOpen((o) => !o)}
+            className="flex items-center gap-2 text-2xl font-semibold text-gray-900 w-full text-left"
+          >
+            Tehnička podešavanja
+            {identityOpen ? (
+              <ChevronUpIcon className="size-5 text-gray-500" />
+            ) : (
+              <ChevronDownIcon className="size-5 text-gray-500" />
+            )}
+          </button>
+          <p className="mt-1 text-sm text-gray-500">
+            Slug određuje URL vašeg salona ({tenant?.slug ? `${tenant.slug}.marysoll.com` : "slug.marysoll.com"}).
+            Promena sluga šalje automatsko obaveštenje superadminu.
+          </p>
+
+          {identityOpen && (
+            <div className="mt-8 space-y-6 max-w-xl">
+              <div>
+                <label className="block text-sm/6 font-medium text-gray-900">Slug</label>
+                <p className="text-xs text-gray-500 mb-1">
+                  Samo mala slova, brojevi i crtice. Automatski ažurira subdomen.
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={identityForm.slug}
+                    onChange={(e) => setIdentityForm((f) => ({ ...f, slug: e.target.value }))}
+                    placeholder="ime-salona"
+                    className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-(--secondary-color) font-mono"
+                  />
+                  <span className="text-sm text-gray-400 whitespace-nowrap">.marysoll.com</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm/6 font-medium text-gray-900">Cloudinary folder</label>
+                <p className="text-xs text-gray-500 mb-1">
+                  Putanja do foldera sa slikama u Cloudinaryu (npr. salons/salon-ime).
+                </p>
+                <input
+                  type="text"
+                  value={identityForm.cloudinaryFolder}
+                  onChange={(e) => setIdentityForm((f) => ({ ...f, cloudinaryFolder: e.target.value }))}
+                  placeholder="salons/salon-ime"
+                  className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-(--secondary-color) font-mono"
+                />
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  disabled={isUpdatingIdentity}
+                  onClick={() =>
+                    updateIdentity({
+                      slug: identityForm.slug,
+                      cloudinaryFolder: identityForm.cloudinaryFolder,
+                    })
+                  }
+                  className="px-6 py-2.5 rounded-md bg-(--secondary-color) text-white text-sm font-semibold hover:bg-(--secondary-color)/90 disabled:opacity-60 cursor-pointer"
+                >
+                  {isUpdatingIdentity ? "Čuvam..." : "Sačuvaj tehničke podatke"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* SEO & META PODACI */}
       <div className="pt-12 mt-12">

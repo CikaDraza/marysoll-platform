@@ -51,7 +51,7 @@ export function Theme2Hero({
       </div>
 
       {/* ── RIGHT: CONTENT ───────────────────────────────────── */}
-      <div className="w-full lg:w-2/5 flex items-center justify-center px-6 py-12 lg:py-0">
+      <div className="w-full lg:w-2/5 flex items-center justify-center px-6 py-12 lg:py-0 lg:mt-40">
         <div className="max-w-xl w-full">
           <p className="text-yellow-400 text-xs font-bold tracking-[0.3em] uppercase mb-6">
             Premium Beauty Salon

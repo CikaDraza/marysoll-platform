@@ -19,11 +19,12 @@ import { api } from "@/lib/api";
 
 interface TenantPublicData {
   slug: string;
+  subdomain: string;
+  cloudinaryFolder: string;
   customDomain: string | null;
   customDomainVerified: boolean;
   plan: string;
   status: string;
-  subdomain: string;
   isTrialActive: boolean;
   trialEndsAt: string | null;
 }
@@ -75,6 +76,30 @@ export function useTenantAdmin() {
   const [customDomainInput, setCustomDomainInput] = useState(
     tenant?.customDomain ?? "",
   );
+
+  // ── Update identity (slug + cloudinaryFolder) ───────────────────────────
+  const identityMutation = useMutation({
+    mutationFn: async (data: { slug?: string; cloudinaryFolder?: string }) => {
+      const res = await fetch("/api/tenants/identity", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? "Greška pri čuvanju");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["myTenant"] });
+      toast.success(data.message ?? "Sačuvano!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
 
   // ── Save / remove custom domain ─────────────────────────────────────────
 
@@ -189,6 +214,10 @@ export function useTenantAdmin() {
   return {
     tenant,
     isLoading,
+
+    // Identity
+    updateIdentity: identityMutation.mutate,
+    isUpdatingIdentity: identityMutation.isPending,
 
     // Custom domain set/remove
     customDomainInput,

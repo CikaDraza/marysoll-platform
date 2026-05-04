@@ -201,6 +201,103 @@ export default function SuperAdminDashboard() {
   );
 }
 
+// ─── Salon identity edit panel ────────────────────────────────────────────────
+function SalonIdentityPanel({
+  t,
+  sa,
+}: {
+  t: TenantRow;
+  sa: ReturnType<typeof useSuperAdminTenants>;
+}) {
+  const [form, setForm] = useState({
+    slug: t.slug,
+    customDomain: t.customDomain ?? "",
+    cloudinaryFolder: t.cloudinaryFolder,
+  });
+
+  // Sync when parent row updates (after save)
+  useEffect(() => {
+    setForm({
+      slug: t.slug,
+      customDomain: t.customDomain ?? "",
+      cloudinaryFolder: t.cloudinaryFolder,
+    });
+  }, [t.slug, t.customDomain, t.cloudinaryFolder]);
+
+  const handleSave = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    sa.updateIdentity(t._id, {
+      slug: form.slug,
+      customDomain: form.customDomain || null,
+      cloudinaryFolder: form.cloudinaryFolder,
+    });
+  };
+
+  return (
+    <div
+      className="mt-4 pt-4 border-t border-slate-700 grid grid-cols-1 sm:grid-cols-2 gap-4"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Slug */}
+      <div>
+        <label className={lbl}>Slug</label>
+        <input
+          className={inp + " font-mono"}
+          value={form.slug}
+          onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
+          placeholder="ime-salona"
+        />
+        <p className="mt-1 text-[10px] text-slate-500">
+          Subdomen: <span className="text-slate-300 font-mono">{form.slug || "—"}.marysoll.com</span>
+        </p>
+      </div>
+
+      {/* Custom domain */}
+      <div>
+        <label className={lbl}>Custom domen</label>
+        <input
+          className={inp + " font-mono"}
+          value={form.customDomain}
+          onChange={(e) => setForm((f) => ({ ...f, customDomain: e.target.value }))}
+          placeholder="salon.rs (bez https://)"
+        />
+        <p className="mt-1 text-[10px] text-slate-500">
+          Ostavite prazno da biste uklonili custom domen.
+        </p>
+      </div>
+
+      {/* Cloudinary folder */}
+      <div className="sm:col-span-2">
+        <label className={lbl}>Cloudinary folder</label>
+        <input
+          className={inp + " font-mono"}
+          value={form.cloudinaryFolder}
+          onChange={(e) => setForm((f) => ({ ...f, cloudinaryFolder: e.target.value }))}
+          placeholder="salons/salon-ime"
+        />
+      </div>
+
+      {/* Actions */}
+      <div className="sm:col-span-2 flex items-center justify-between gap-3">
+        <button
+          disabled
+          className="px-4 py-2 bg-slate-700 text-slate-400 text-xs font-bold rounded-lg cursor-not-allowed"
+          title="Uskoro dostupno"
+        >
+          Statistika
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={sa.isUpdatingIdentity}
+          className={btnPrimary}
+        >
+          {sa.isUpdatingIdentity ? "Čuvam..." : "Sačuvaj"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Tab: Saloni ──────────────────────────────────────────────────────────────
 function SaloniTab({
   sa,
@@ -214,6 +311,7 @@ function SaloniTab({
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [deleteTarget, setDeleteTarget] = useState<TenantRow | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return sa.tenants.filter((t) => {
@@ -226,6 +324,10 @@ function SaloniTab({
       return matchSearch && matchStatus;
     });
   }, [sa.tenants, search, filterStatus]);
+
+  const toggleExpand = (id: string) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+  };
 
   return (
     <div className="space-y-4">
@@ -260,83 +362,104 @@ function SaloniTab({
       )}
 
       <div className="space-y-2">
-        {filtered.map((t) => (
-          <div
-            key={t._id}
-            className={`${card} flex items-center gap-4 cursor-pointer hover:border-slate-500 transition ${
-              selectedId === t._id
-                ? "border-violet-500 ring-1 ring-violet-500/30"
-                : ""
-            }`}
-            onClick={() => onSelect(t)}
-          >
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-white">{t.name}</span>
-                <StatusBadge status={t.status} />
-                <PlanBadge plan={t.plan} />
-                {t.isTrialActive && (
-                  <span className="text-[10px] bg-amber-900/60 text-amber-400 border border-amber-700 px-2 py-0.5 rounded-full font-bold">
-                    TRIAL {t.trialDaysLeft}d
-                  </span>
-                )}
-                {!t.owner?.isEmailVerified && (
-                  <span className="text-[10px] bg-red-900/40 text-red-400 px-2 py-0.5 rounded-full">
-                    Email nepotvrđen
-                  </span>
-                )}
-              </div>
-              <div className="flex gap-4 mt-1 text-xs text-slate-400">
-                <span>{t.slug}</span>
-                <span>{t.owner?.email ?? "—"}</span>
-                <span>{t.owner?.name ?? "—"}</span>
-                <span>{new Date(t.createdAt).toLocaleDateString("sr-RS")}</span>
-              </div>
-            </div>
-
-            {/* Quick actions */}
+        {filtered.map((t) => {
+          const isExpanded = expandedId === t._id;
+          return (
             <div
-              className="flex gap-2 flex-shrink-0"
-              onClick={(e) => e.stopPropagation()}
+              key={t._id}
+              className={`${card} transition ${
+                selectedId === t._id
+                  ? "border-violet-500 ring-1 ring-violet-500/30"
+                  : "hover:border-slate-500"
+              }`}
             >
-              {t.status !== "active" && (
-                <button
-                  onClick={() => sa.setStatus(t._id, "active")}
-                  disabled={sa.isUpdatingStatus}
-                  className={btnGreen}
-                >
-                  Aktiviraj
-                </button>
-              )}
-              {t.status === "active" && (
-                <button
-                  onClick={() => sa.setStatus(t._id, "suspended")}
-                  disabled={sa.isUpdatingStatus}
-                  className={btnDanger}
-                >
-                  Suspenduj
-                </button>
-              )}
-              {!t.isTrialActive && (
-                <button
-                  onClick={() => sa.activateTrial(t._id, 30)}
-                  disabled={sa.isUpdatingTrial}
-                  className={btnPrimary}
-                >
-                  Trial 30d
-                </button>
-              )}
-              <button
-                onClick={() => setDeleteTarget(t)}
-                disabled={sa.isDeletingTenant}
-                className={btnDanger}
+              {/* Card header row */}
+              <div
+                className="flex items-center gap-4 cursor-pointer"
+                onClick={() => {
+                  onSelect(t);
+                  toggleExpand(t._id);
+                }}
               >
-                Obriši
-              </button>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-white">{t.name}</span>
+                    <StatusBadge status={t.status} />
+                    <PlanBadge plan={t.plan} />
+                    {t.isTrialActive && (
+                      <span className="text-[10px] bg-amber-900/60 text-amber-400 border border-amber-700 px-2 py-0.5 rounded-full font-bold">
+                        TRIAL {t.trialDaysLeft}d
+                      </span>
+                    )}
+                    {!t.owner?.isEmailVerified && (
+                      <span className="text-[10px] bg-red-900/40 text-red-400 px-2 py-0.5 rounded-full">
+                        Email nepotvrđen
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-4 mt-1 text-xs text-slate-400">
+                    <span className="font-mono">{t.slug}</span>
+                    <span>{t.owner?.email ?? "—"}</span>
+                    <span>{t.owner?.name ?? "—"}</span>
+                    <span>{new Date(t.createdAt).toLocaleDateString("sr-RS")}</span>
+                  </div>
+                </div>
+
+                {/* Quick actions */}
+                <div
+                  className="flex gap-2 flex-shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {t.status !== "active" && (
+                    <button
+                      onClick={() => sa.setStatus(t._id, "active")}
+                      disabled={sa.isUpdatingStatus}
+                      className={btnGreen}
+                    >
+                      Aktiviraj
+                    </button>
+                  )}
+                  {t.status === "active" && (
+                    <button
+                      onClick={() => sa.setStatus(t._id, "suspended")}
+                      disabled={sa.isUpdatingStatus}
+                      className={btnDanger}
+                    >
+                      Suspenduj
+                    </button>
+                  )}
+                  {!t.isTrialActive && (
+                    <button
+                      onClick={() => sa.activateTrial(t._id, 30)}
+                      disabled={sa.isUpdatingTrial}
+                      className={btnPrimary}
+                    >
+                      Trial 30d
+                    </button>
+                  )}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setDeleteTarget(t); }}
+                    disabled={sa.isDeletingTenant}
+                    className={btnDanger}
+                  >
+                    Obriši
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleExpand(t._id); }}
+                    className="px-2 py-2 text-slate-400 hover:text-white transition"
+                    title={isExpanded ? "Zatvori" : "Otvori podešavanja"}
+                  >
+                    {isExpanded ? "▲" : "▼"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Expandable identity panel */}
+              {isExpanded && <SalonIdentityPanel t={t} sa={sa} />}
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {filtered.length === 0 && !sa.isLoading && (
           <p className="text-slate-500 text-sm py-8 text-center">
