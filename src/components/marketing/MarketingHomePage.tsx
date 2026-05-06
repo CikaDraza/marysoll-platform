@@ -19,8 +19,8 @@ export function MarketingHomePage() {
       {/* Hero */}
       <section className="text-center py-24 px-4">
         <span>Ne zaboravi ipak!</span>
-        <h2 className="text-4xl lg:text-9xl font-bold text-gray-900 leading-tight heading-font">
-          Platforma za <span className="text-purple-600">male biznise</span>
+        <h2 className="text-4xl lg:text-8xl font-bold text-gray-900 leading-tight heading-font">
+          Beauty business <span className="text-purple-600">growth system</span>
         </h2>
         <p className="mt-6 text-md text-gray-500 max-w-2xl mx-auto">
           Zakazivanje, klijenti, newsletter, tim asistenta — sve na jednom
