@@ -1,8 +1,10 @@
 import Link from "next/link";
 interface Props {
   salonName?: string;
+  tenantSlug?: string;
 }
-export function Theme2CTAAppointmentSection({ salonName }: Props) {
+export function Theme2CTAAppointmentSection({ salonName, tenantSlug }: Props) {
+  const base = tenantSlug ? `/${tenantSlug}` : "";
   return (
     <section className="bg-yellow-500 py-44 px-6 text-center">
       <h2 className="text-3xl lg:text-4xl font-black text-gray-950 mb-4">
@@ -12,7 +14,7 @@ export function Theme2CTAAppointmentSection({ salonName }: Props) {
         Online zakazivanje dostupno 24/7. Izaberite uslugu, datum i vreme.
       </p>
       <Link
-        href="/termini"
+        href={base + "/termini"}
         className="inline-block px-12 py-4 bg-gray-950 text-yellow-400 font-black text-sm tracking-widest rounded hover:bg-gray-800 transition shadow-2xl"
       >
         ZAKAŽI ODMAH

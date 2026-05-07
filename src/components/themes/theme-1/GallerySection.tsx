@@ -28,7 +28,7 @@ const DEFAULT_TREATMENTS: Treatment[] = [
       "Profesionalna šminka za dnevne svakodnevnice. Koristim profesionalnu kozmetiku renomiranih svetskih brendova.",
     images: [
       {
-        src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1770900184/salon/uktpvxy0bc9ijufba9r8.jpg",
+        src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1776608764/salons/salon-shi-sham-frizerski-salon/drjn82yvrwhjzbyargei.png",
         alt: "Dnevna šminka",
       },
       {

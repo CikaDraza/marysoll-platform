@@ -20,9 +20,11 @@ function minPrice(s: IService): number | null {
 
 interface Props {
   services: IService[];
+  tenantSlug?: string;
 }
 
-export function Theme2PricingSection({ services }: Props) {
+export function Theme2PricingSection({ services, tenantSlug }: Props) {
+  const base = tenantSlug ? `/${tenantSlug}` : "";
   const featured = [...services]
     .filter((s) => s.featured && s.featured !== "none")
     .sort((a, b) => {
@@ -181,7 +183,7 @@ export function Theme2PricingSection({ services }: Props) {
         </div>
         <p className="text-center mt-8">
           <Link
-            href="/usluge"
+            href={base + "/usluge"}
             className="text-sm text-(--primary-color) hover:text-yellow-400 font-semibold"
           >
             Pogledaj sve usluge →

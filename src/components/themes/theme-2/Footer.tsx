@@ -5,6 +5,7 @@ interface Props {
   instagram?: string;
   facebook?: string;
   tiktok?: string;
+  tenantSlug?: string;
 }
 
 export function Theme2Footer({
@@ -12,7 +13,9 @@ export function Theme2Footer({
   instagram,
   facebook,
   tiktok,
+  tenantSlug,
 }: Props) {
+  const base = tenantSlug ? `/${tenantSlug}` : "";
   return (
     <footer className="bg-gray-950">
       <div className="max-w-7xl mx-auto px-6 py-14">
@@ -33,7 +36,7 @@ export function Theme2Footer({
             <ul className="space-y-2 text-sm text-gray-500">
               <li>
                 <Link
-                  href="/"
+                  href={base + "/"}
                   className="hover:text-(--primary-color) transition"
                 >
                   Naslovna
@@ -41,7 +44,7 @@ export function Theme2Footer({
               </li>
               <li>
                 <Link
-                  href="/usluge"
+                  href={base + "/usluge"}
                   className="hover:text-(--primary-color) transition"
                 >
                   Usluge
@@ -49,7 +52,7 @@ export function Theme2Footer({
               </li>
               <li>
                 <Link
-                  href="/termini"
+                  href={base + "/termini"}
                   className="hover:text-(--primary-color) transition"
                 >
                   Zakaži
@@ -91,7 +94,7 @@ export function Theme2Footer({
               )}
             </div>
             <Link
-              href="/termini"
+              href={base + "/termini"}
               className="mt-6 inline-block px-6 py-2.5 bg-yellow-500 text-gray-950 text-sm font-bold rounded hover:bg-yellow-400 transition"
             >
               Zakaži termin

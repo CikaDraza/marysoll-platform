@@ -21,9 +21,10 @@ function minPrice(s: IService): number | null {
 
 interface Props {
   services: IService[];
+  tenantSlug?: string;
 }
 
-export function Theme3PricingSection({ services }: Props) {
+export function Theme3PricingSection({ services, tenantSlug }: Props) {
   const featured = [...services]
     .filter((s) => s.featured && s.featured !== "none")
     .sort((a, b) => {
@@ -32,6 +33,8 @@ export function Theme3PricingSection({ services }: Props) {
         (order[a.featured ?? "none"] ?? 9) - (order[b.featured ?? "none"] ?? 9)
       );
     });
+  const base = tenantSlug ? `/${tenantSlug}` : "";
+
   if (!featured.length) return null;
 
   return (
@@ -62,50 +65,87 @@ export function Theme3PricingSection({ services }: Props) {
                   {srv.category}
                 </p>
                 {srv.type === "single" && (
-                  <p className={`text-4xl font-light mb-1 ${highlight ? "text-white" : "text-[#3D2B1F]"}`}>
+                  <p
+                    className={`text-4xl font-light mb-1 ${highlight ? "text-white" : "text-[#3D2B1F]"}`}
+                  >
                     {formatPriceToString(srv.basePrice)}
-                    <span className={`text-sm ${highlight ? "text-white/70" : "text-[#9E7E6E]"}`}> RSD /terminu</span>
+                    <span
+                      className={`text-sm ${highlight ? "text-white/70" : "text-[#9E7E6E]"}`}
+                    >
+                      {" "}
+                      RSD /terminu
+                    </span>
                   </p>
                 )}
-                {(srv.type === "variant" || srv.type === "group") && (() => {
-                  const mp = minPrice(srv);
-                  return (
-                    <>
-                      {mp != null && (
-                        <p className="mb-2 flex items-baseline gap-1">
-                          <span className={`text-sm ${highlight ? "text-white/70" : "text-[#9E7E6E]"}`}>od</span>
-                          <span className={`text-3xl font-light ${highlight ? "text-white" : "text-[#3D2B1F]"}`}>
-                            {formatPriceToString(mp)}
-                          </span>
-                          <span className={`text-sm ${highlight ? "text-white/70" : "text-[#9E7E6E]"}`}>RSD</span>
-                        </p>
-                      )}
-                      {srv.type === "variant" && (srv.variants ?? []).map((v, i) => (
-                        <div key={i} className={`flex justify-between items-center gap-x-4 text-sm mb-1 ${highlight ? "text-white" : "text-[#7C6A5E]"}`}>
-                          <span>{v.name}</span>
-                          <hr className="flex-1 border-dashed border-gray-300" />
-                          <span className="font-medium">{formatPriceToString(v.price)} RSD</span>
-                        </div>
-                      ))}
-                      {srv.type === "group" && (srv.services ?? []).map((sv, i) => (
-                        <div key={i} className={`flex justify-between items-center gap-x-4 text-sm mb-1 ${highlight ? "text-white" : "text-[#7C6A5E]"}`}>
-                          <span>{sv.name}</span>
-                          {sv.price != null && (
-                            <>
+                {(srv.type === "variant" || srv.type === "group") &&
+                  (() => {
+                    const mp = minPrice(srv);
+                    return (
+                      <>
+                        {mp != null && (
+                          <p className="mb-2 flex items-baseline gap-1">
+                            <span
+                              className={`text-sm ${highlight ? "text-white/70" : "text-[#9E7E6E]"}`}
+                            >
+                              od
+                            </span>
+                            <span
+                              className={`text-3xl font-light ${highlight ? "text-white" : "text-[#3D2B1F]"}`}
+                            >
+                              {formatPriceToString(mp)}
+                            </span>
+                            <span
+                              className={`text-sm ${highlight ? "text-white/70" : "text-[#9E7E6E]"}`}
+                            >
+                              RSD
+                            </span>
+                          </p>
+                        )}
+                        {srv.type === "variant" &&
+                          (srv.variants ?? []).map((v, i) => (
+                            <div
+                              key={i}
+                              className={`flex justify-between items-center gap-x-4 text-sm mb-1 ${highlight ? "text-white" : "text-[#7C6A5E]"}`}
+                            >
+                              <span>{v.name}</span>
                               <hr className="flex-1 border-dashed border-gray-300" />
-                              <span className="font-medium">{formatPriceToString(sv.price)} RSD</span>
-                            </>
-                          )}
-                        </div>
-                      ))}
-                    </>
-                  );
-                })()}
+                              <span className="font-medium">
+                                {formatPriceToString(v.price)} RSD
+                              </span>
+                            </div>
+                          ))}
+                        {srv.type === "group" &&
+                          (srv.services ?? []).map((sv, i) => (
+                            <div
+                              key={i}
+                              className={`flex justify-between items-center gap-x-4 text-sm mb-1 ${highlight ? "text-white" : "text-[#7C6A5E]"}`}
+                            >
+                              <span>{sv.name}</span>
+                              {sv.price != null && (
+                                <>
+                                  <hr className="flex-1 border-dashed border-gray-300" />
+                                  <span className="font-medium">
+                                    {formatPriceToString(sv.price)} RSD
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          ))}
+                      </>
+                    );
+                  })()}
                 {(srv.extras ?? []).length > 0 && (
                   <div className="mt-2">
-                    <p className={`text-[10px] font-semibold uppercase tracking-wider mb-1 ${highlight ? "text-white/60" : "text-[#9E7E6E]"}`}>Dodaci</p>
+                    <p
+                      className={`text-[10px] font-semibold uppercase tracking-wider mb-1 ${highlight ? "text-white/60" : "text-[#9E7E6E]"}`}
+                    >
+                      Dodaci
+                    </p>
                     {srv.extras!.map((e, i) => (
-                      <div key={i} className={`flex justify-between text-xs mb-0.5 ${highlight ? "text-white/80" : "text-[#7C6A5E]"}`}>
+                      <div
+                        key={i}
+                        className={`flex justify-between text-xs mb-0.5 ${highlight ? "text-white/80" : "text-[#7C6A5E]"}`}
+                      >
                         <span>+ {e.name}</span>
                         <span>{formatPriceToString(e.price)} RSD</span>
                       </div>
@@ -135,7 +175,7 @@ export function Theme3PricingSection({ services }: Props) {
                   </ul>
                 )}
                 <Link
-                  href="/termini"
+                  href={base + "/termini"}
                   className={`mt-6 block text-center py-2.5 rounded-full text-sm font-medium transition ${highlight ? "bg-white text-[#C9A990] hover:bg-gray-50" : "bg-[#C9A990] text-white hover:bg-[#B8957A]"}`}
                 >
                   Zakaži
@@ -146,7 +186,7 @@ export function Theme3PricingSection({ services }: Props) {
         </div>
         <p className="text-center mt-8">
           <Link
-            href="/usluge"
+            href={base + "/usluge"}
             className="text-sm text-[#C9A990] font-medium hover:underline"
           >
             Pogledaj sve usluge →

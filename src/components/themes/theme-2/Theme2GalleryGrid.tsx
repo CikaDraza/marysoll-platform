@@ -17,6 +17,7 @@ interface Props {
   headline?: string;
   subheadline?: string;
   treatments?: Treatment[];
+  tenantSlug?: string;
 }
 
 const DEFAULT_TREATMENTS: Treatment[] = [
@@ -101,9 +102,12 @@ export function Theme2GalleryGrid({
   instagramTag = "@marysoll_makeup_nails",
   headline,
   subheadline,
+  tenantSlug,
 }: Props) {
   const finalTreatments =
     treatments && treatments.length > 0 ? treatments : DEFAULT_TREATMENTS;
+
+  const base = tenantSlug ? `/${tenantSlug}` : "";
 
   return (
     <section className="relative bg-black py-28">
@@ -130,15 +134,17 @@ export function Theme2GalleryGrid({
         <div className="flex flex-col gap-6">
           {finalTreatments.map((t, i) => {
             const reverse = i % 2 !== 0;
-            const image1 = <GalleryImage img={t.images[0]} href={t.href} />;
+            const image1 = (
+              <GalleryImage img={t.images[0]} href={base + t.href} />
+            );
             const image2 = t.images[1] ? (
-              <GalleryImage img={t.images[1]} href={t.href} />
+              <GalleryImage img={t.images[1]} href={base + t.href} />
             ) : null;
             const text = (
               <GalleryText
                 title={t.title}
                 description={t.description}
-                href={t.href}
+                href={base + t.href}
               />
             );
 

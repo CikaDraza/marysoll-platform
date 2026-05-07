@@ -152,7 +152,7 @@ export async function wrapEmailLayout(
                     ${
                       salon.logo
                         ? `<img src="${salon.logo}" width="200" alt="${salonName}" class="logo-img" style="display:block;max-width:200px;height:200px;border:0;outline:none;text-decoration:none;">`
-                        : `<img src="${appUrl}/icon-192x192.png" width="64" height="64" alt="Marysoll" class="logo-img" style="display:block;width:64px;height:64px;border:0;outline:none;text-decoration:none;border-radius:12px;">`
+                        : `<img src="${appUrl}/icon-192x192.png" width="128" height="128" alt="Marysoll" class="logo-img" style="display:block;width:128px;height:128px;border:0;outline:none;text-decoration:none;border-radius:12px;">`
                     }
                   </td>
                 </tr>

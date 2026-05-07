@@ -13,10 +13,7 @@ interface Props {
 export function Theme3PricingSoft({ services, headline, tenantSlug }: Props) {
   if (!services.length) return null;
 
-  const resolveHref = (href: string) => {
-    const prefix = tenantSlug ? `/${tenantSlug}` : "";
-    return `${prefix}${href}`;
-  };
+  const base = tenantSlug ? `/${tenantSlug}` : "";
 
   const grouped = services.reduce<Record<string, IService[]>>((acc, s) => {
     (acc[s.category] ??= []).push(s);
@@ -127,7 +124,7 @@ export function Theme3PricingSoft({ services, headline, tenantSlug }: Props) {
         </div>
         <div className="text-center mt-16">
           <Link
-            href={resolveHref("/termini")}
+            href={base + "/termini"}
             className="px-10 py-4 bg-[#2d2d2d] text-white rounded-full text-sm tracking-wide hover:bg-black transition"
           >
             Pogledaj slobodne termine

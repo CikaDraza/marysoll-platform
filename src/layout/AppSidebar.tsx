@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -172,6 +173,7 @@ const AppSidebar: React.FC = () => {
   const { user } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
+  const tenant = useTenantAdmin();
 
   const [openSubmenu, setOpenSubmenu] = useState<number | null>(() => {
     // Auto-open the Marketing submenu when on /marketing/* routes
@@ -224,6 +226,8 @@ const AppSidebar: React.FC = () => {
   const handleNav = (path?: string) => {
     if (path) router.push(path);
   };
+
+  const salonUrl = tenant.getTenantUrl?.();
 
   const plan = "free"; // TODO: wire to usePlanFeatures
 
@@ -392,6 +396,33 @@ const AppSidebar: React.FC = () => {
                 />
               </svg>
             </Link>
+            {/* Salon website */}
+            {salonUrl && (
+              <Link
+                href={salonUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex md:hidden items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-violet-600 bg-violet-50 dark:bg-violet-500/10 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200 transition-colors"
+              >
+                <span className="text-gray-500 dark:text-gray-400">
+                  <Icon d={icons.globe} />
+                </span>
+                <span>Sajt Salona</span>
+                <svg
+                  className="w-3.5 h-3.5 ml-auto text-gray-300"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <path
+                    d="M7 17L17 7M17 7H7M17 7v10"
+                    stroke="rgb(127, 34, 254)"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </Link>
+            )}
           </div>
         )}
       </nav>

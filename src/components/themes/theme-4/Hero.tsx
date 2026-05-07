@@ -42,7 +42,7 @@ export function Theme4HeroSoft({
 
           <Link
             href={cta?.href || "/termini"}
-            className="bg-(--secondary-color) text-(--primary-color) px-6 py-3 text-sm hover:bg-(--primary-color) hover:text-(--secondary-color) transition mt-6 inline-block"
+            className="bg-[#E8D4AD] text-[#4C2D4A] px-6 py-3 text-sm hover:bg-[#4C2D4A] hover:text-[#E8D4AD] transition mt-6 inline-block"
           >
             {cta?.text}
           </Link>

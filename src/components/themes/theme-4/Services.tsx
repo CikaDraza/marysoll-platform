@@ -95,7 +95,6 @@ export function Theme4ServicesSoft({
   services,
   headline,
   subheadline,
-  tenantSlug,
   imageUrl,
   showIcons,
 }: Props) {

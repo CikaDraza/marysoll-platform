@@ -38,7 +38,7 @@ export function Theme4Footer({
     (salon?.phone ? `https://wa.me/${salon.phone.replace(/\D/g, "")}` : null);
 
   return (
-    <footer className="relative isolate overflow-y-visible overflow-x-hidden lg:overflow-x-visible px-8 2xl:px-16 bg-[#4C2D4A] py-16">
+    <footer className="relative isolate overflow-y-visible overflow-x-hidden lg:overflow-x-visible px-8 2xl:px-16 bg-gray-900 py-16">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16 border-t border-[#E8D4AD]">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           <div>

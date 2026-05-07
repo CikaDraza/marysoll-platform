@@ -348,6 +348,7 @@ export function ThemeLayout({
             }
           />
           <Theme2ServicesPreview
+            showIcons={ls?.landing?.servicesPreview?.showIcons ?? true}
             services={services}
             headline={ls?.landing?.servicesPreview?.headline}
             subheadline={ls?.landing?.servicesPreview?.subheadline}
@@ -375,6 +376,7 @@ export function ThemeLayout({
                     ? ls.landing.gallery.treatments
                     : undefined
                 }
+                tenantSlug={tenantSlug}
               />
             ))}
           {appointmentEnabled && (
@@ -389,12 +391,15 @@ export function ThemeLayout({
             />
           )}
           <Theme2WhyChooseUs />
-          <Theme2PricingSection services={services} />
+          <Theme2PricingSection services={services} tenantSlug={tenantSlug} />
           <Theme2Testimonials testimonials={testimonials} headline="" />
-          <Theme2CTAAppointmentSection salonName={salon.name} />
+          <Theme2CTAAppointmentSection
+            salonName={salon.name}
+            tenantSlug={tenantSlug}
+          />
           <Theme2TestimonialsSection testimonials={testimonials} />
         </main>
-        <Theme2Footer {...footerProps} />
+        <Theme2Footer {...footerProps} tenantSlug={tenantSlug} />
       </div>
     );
   }
@@ -474,7 +479,11 @@ export function ThemeLayout({
             ))}
 
           {/* 7. PRICING */}
-          <Theme3PricingSoft services={services} headline="Cenovnik" />
+          <Theme3PricingSoft
+            services={services}
+            tenantSlug={tenantSlug}
+            headline="Cenovnik"
+          />
 
           {/* 8. APPOINTMENT */}
           {appointmentEnabled && (

@@ -221,21 +221,11 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
                   </ul>
                 </div>
               )}
-              {srv.description && (
-                <p
-                  className={classNames(
-                    dark ? "text-gray-300" : "text-gray-500",
-                    "mt-4 text-xs leading-relaxed",
-                  )}
-                >
-                  {srv.description}
-                </p>
-              )}
               {(srv.items?.length ?? 0) > 0 && (
                 <ul
                   className={classNames(
                     dark ? "text-gray-200" : "text-gray-700",
-                    "mt-8 space-y-3 text-sm/6",
+                    "mt-8 space-y-3 text-xs",
                   )}
                 >
                   {srv.items.map((item, i) => (
