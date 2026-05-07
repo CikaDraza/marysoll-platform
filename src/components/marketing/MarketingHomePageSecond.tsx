@@ -652,8 +652,12 @@ export function MarketingHomePageSecond() {
             >
               <div className="flex -space-x-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <div
+                  <Image
                     key={i}
+                    src={`/assets/thumbnails/client-${i}.png`}
+                    width={32}
+                    height={32}
+                    alt={`Avatar ${i}`}
                     className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-300 to-purple-400 border-2 border-white"
                   />
                 ))}
@@ -774,7 +778,7 @@ export function MarketingHomePageSecond() {
             <rect width="100%" height="100%" fill="url(#dots)" />
           </svg>
         </div>
-        <div className="relative z-10 max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+        <div className="relative z-10 max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <motion.h2
               initial={{ opacity: 0, y: 30 }}
@@ -782,7 +786,7 @@ export function MarketingHomePageSecond() {
               viewport={{ once: true }}
               className="text-4xl font-bold text-white mb-6"
             >
-              &quot;Zakazala sam preko Mary&quot; 💅
+              &quot;Zakazala sam preko Marysoll&quot; 💅
             </motion.h2>
 
             <motion.p
@@ -832,7 +836,7 @@ export function MarketingHomePageSecond() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Mary rešava, ti uživaš
+              Marysoll rešava, ti uživaš
             </h2>
             <p className="text-gray-500">
               Sve što ti je smetalo — Mary pretvara u prednost

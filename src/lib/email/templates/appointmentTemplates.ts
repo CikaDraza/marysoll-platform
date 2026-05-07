@@ -40,13 +40,17 @@ function appointmentDetailTable(data: {
               <p style="margin:4px 0 0 0;font-family:'Georgia',serif;font-size:16px;font-weight:700;color:#2d1b40;">${data.time}</p>
             </td>
           </tr>
-          ${data.note ? `
+          ${
+            data.note
+              ? `
           <tr>
             <td style="padding-top:10px;border-top:1px solid #f0e0f0;">
               <p style="margin:0;font-family:'Georgia',serif;font-size:11px;color:#b08db5;letter-spacing:1.5px;text-transform:uppercase;">Napomena</p>
               <p style="margin:4px 0 0 0;font-family:'Georgia',serif;font-size:14px;font-style:italic;color:#6b5b7e;">${translateAdminNote(data.note)}</p>
             </td>
-          </tr>` : ""}
+          </tr>`
+              : ""
+          }
         </table>
       </td>
     </tr>
@@ -72,7 +76,8 @@ function ctaButton(label: string, url: string): string {
   </table>`;
 }
 
-const appUrl = () => process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "";
+const appUrl = () =>
+  process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "";
 
 // ── Templates ─────────────────────────────────────────────────────────────────
 
@@ -90,7 +95,7 @@ export async function appointmentCreatedTemplate(data: {
     <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 16px 0;">
       <tr>
         <td>
-          <span style="display:inline-block;background-color:#5D0156;color:#f4f4f4;font-weight:bold;padding:5px 12px;border-radius:6px;font-family:'Georgia',serif;font-size:14px;">
+          <span style="display:inline-block;background-color:#801cf8;color:#ffffff;font-weight:bold;padding:5px 12px;border-radius:6px;font-family:'Georgia',serif;font-size:14px;">
             🗓 Termin čeka odobrenje
           </span>
         </td>
@@ -100,7 +105,11 @@ export async function appointmentCreatedTemplate(data: {
     ${ctaButton("Pogledaj termin", `${appUrl()}/dashboard?tab=Moji+Termini`)}
     <p style="margin:8px 0 0 0;font-size:13px;color:#9089b0;">Obaveštićemo vas čim termin bude potvrđen. ✦</p>
   `;
-  return wrapEmailLayout({ title: "Termin zakazan", content, tenantId: data.tenantId });
+  return wrapEmailLayout({
+    title: "Termin zakazan",
+    content,
+    tenantId: data.tenantId,
+  });
 }
 
 export async function appointmentApprovedTemplate(data: {
@@ -126,7 +135,11 @@ export async function appointmentApprovedTemplate(data: {
     ${appointmentDetailTable(data)}
     <p style="margin:0;">Ako imate pitanja, slobodno nas kontaktirajte. ✦</p>
   `;
-  return wrapEmailLayout({ title: "Termin potvrđen ✓", content, tenantId: data.tenantId });
+  return wrapEmailLayout({
+    title: "Termin potvrđen ✓",
+    content,
+    tenantId: data.tenantId,
+  });
 }
 
 export async function appointmentRejectedTemplate(data: {
@@ -149,7 +162,9 @@ export async function appointmentRejectedTemplate(data: {
         </td>
       </tr>
     </table>
-    ${data.note ? `
+    ${
+      data.note
+        ? `
     <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
       style="background:#fff5f8;border-left:3px solid #ff80b5;border-radius:0 8px 8px 0;margin:0 0 20px 0;">
       <tr>
@@ -157,12 +172,18 @@ export async function appointmentRejectedTemplate(data: {
           <p style="margin:0;font-family:'Georgia',serif;font-size:14px;color:#6b5b7e;font-style:italic;">${data.note}</p>
         </td>
       </tr>
-    </table>` : ""}
+    </table>`
+        : ""
+    }
     <p style="margin:0 0 16px 0;">Možete zakazati novi termin putem naše platforme.</p>
     ${ctaButton("Zakaži novi termin", `${appUrl()}/dashboard?tab=Zakazivanja`)}
     <p style="margin:8px 0 0 0;">Ispričavamo se zbog neprijatnosti. ✦</p>
   `;
-  return wrapEmailLayout({ title: "Informacija o vašem terminu", content, tenantId: data.tenantId });
+  return wrapEmailLayout({
+    title: "Informacija o vašem terminu",
+    content,
+    tenantId: data.tenantId,
+  });
 }
 
 export async function appointmentRescheduledTemplate(data: {
@@ -200,7 +221,11 @@ export async function appointmentRescheduledTemplate(data: {
     ${ctaButton("Potvrdite termin", `${appUrl()}/dashboard?tab=Moji+Termini`)}
     <p style="margin:8px 0 0 0;">Vidimo se uskoro! ✦</p>
   `;
-  return wrapEmailLayout({ title: "Vaš termin je pomeren", content, tenantId: data.tenantId });
+  return wrapEmailLayout({
+    title: "Vaš termin je pomeren",
+    content,
+    tenantId: data.tenantId,
+  });
 }
 
 export async function appointmentMessageTemplate(data: {
@@ -243,7 +268,11 @@ export async function appointmentMessageTemplate(data: {
     </table>
     ${ctaButton("Idi na chat", `${appUrl()}/dashboard?tab=${dashboardTab}&appointment=${data.appointmentId}`)}
   `;
-  return wrapEmailLayout({ title: "Nova poruka za termin", content, tenantId: data.tenantId });
+  return wrapEmailLayout({
+    title: "Nova poruka za termin",
+    content,
+    tenantId: data.tenantId,
+  });
 }
 
 export async function appointmentCancelledTemplate(data: {
@@ -258,9 +287,11 @@ export async function appointmentCancelledTemplate(data: {
   const content = `
     <p style="margin:0 0 16px 0;">Poštovani/a <strong>${data.clientName}</strong>,</p>
     <p style="margin:0 0 20px 0;">
-      ${byClient
-        ? "Potvrđujemo da ste otkazali vaš termin."
-        : "Obaveštavamo vas da je vaš termin otkazan od strane salona."}
+      ${
+        byClient
+          ? "Potvrđujemo da ste otkazali vaš termin."
+          : "Obaveštavamo vas da je vaš termin otkazan od strane salona."
+      }
     </p>
     <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
       style="background:#fdf0f5;border-radius:12px;margin:0 0 20px 0;">
@@ -276,5 +307,9 @@ export async function appointmentCancelledTemplate(data: {
     ${!byClient ? `<p style="margin:16px 0 0 0;">Ispričavamo se zbog neprijatnosti.</p>` : ""}
     <p style="margin:8px 0 0 0;">Hvala na razumevanju. ✦</p>
   `;
-  return wrapEmailLayout({ title: "Termin otkazan", content, tenantId: data.tenantId });
+  return wrapEmailLayout({
+    title: "Termin otkazan",
+    content,
+    tenantId: data.tenantId,
+  });
 }

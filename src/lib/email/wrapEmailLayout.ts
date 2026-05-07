@@ -58,9 +58,13 @@ async function resolveSalon(tenantId?: string | null): Promise<SalonData> {
       city: raw.city ? String(raw.city) : undefined,
       phone: raw.phone ? String(raw.phone) : undefined,
       social: {
-        instagram: String((raw.social as Record<string, string>)?.instagram ?? ""),
+        instagram: String(
+          (raw.social as Record<string, string>)?.instagram ?? "",
+        ),
         tiktok: String((raw.social as Record<string, string>)?.tiktok ?? ""),
-        facebook: String((raw.social as Record<string, string>)?.facebook ?? ""),
+        facebook: String(
+          (raw.social as Record<string, string>)?.facebook ?? "",
+        ),
       },
     };
   } catch {
@@ -147,7 +151,7 @@ export async function wrapEmailLayout(
                   <td align="center" style="padding-bottom:20px;">
                     ${
                       salon.logo
-                        ? `<img src="${salon.logo}" width="200" alt="${salonName}" class="logo-img" style="display:block;max-width:200px;height:auto;border:0;outline:none;text-decoration:none;">`
+                        ? `<img src="${salon.logo}" width="200" alt="${salonName}" class="logo-img" style="display:block;max-width:200px;height:200px;border:0;outline:none;text-decoration:none;">`
                         : `<img src="${appUrl}/icon-192x192.png" width="64" height="64" alt="Marysoll" class="logo-img" style="display:block;width:64px;height:64px;border:0;outline:none;text-decoration:none;border-radius:12px;">`
                     }
                   </td>
@@ -228,7 +232,9 @@ export async function wrapEmailLayout(
 
                 ${
                   salon.social &&
-                  (salon.social.instagram || salon.social.tiktok || salon.social.facebook)
+                  (salon.social.instagram ||
+                    salon.social.tiktok ||
+                    salon.social.facebook)
                     ? `
                 <tr>
                   <td align="center" style="padding-bottom:16px;">
