@@ -1,15 +1,34 @@
 import { Schema, Document, Types, model, models } from "mongoose";
 
+const attachmentSchema = new Schema(
+  {
+    url: { type: String, required: true },
+    type: { type: String, enum: ["image", "pdf"], required: true },
+    name: { type: String, required: true },
+    size: { type: Number, required: true },
+  },
+  { _id: false },
+);
+
 const messageSchema = new Schema(
   {
     senderId: { type: Types.ObjectId, ref: "AuthUser", required: true },
     senderRole: { type: String, enum: ["superadmin", "owner"], required: true },
-    message: { type: String, required: true },
+    message: { type: String, default: "" },
+    attachments: { type: [attachmentSchema], default: [] },
+    isDeleted: { type: Boolean, default: false },
     isRead: { type: Boolean, default: false },
     timestamp: { type: Date, default: Date.now },
   },
   { _id: true },
 );
+
+export interface IChatAttachment {
+  url: string;
+  type: "image" | "pdf";
+  name: string;
+  size: number;
+}
 
 export interface ISuperAdminChat extends Document {
   tenantId: Types.ObjectId;
@@ -19,6 +38,8 @@ export interface ISuperAdminChat extends Document {
     senderId: Types.ObjectId;
     senderRole: "superadmin" | "owner";
     message: string;
+    attachments: IChatAttachment[];
+    isDeleted: boolean;
     isRead: boolean;
     timestamp: Date;
   }[];

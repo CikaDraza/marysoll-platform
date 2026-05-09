@@ -21,6 +21,7 @@ import type { TenantRow } from "@/hooks/useSuperAdminTenants";
 import Image from "next/image";
 import Link from "next/link";
 import AlertModal from "@/components/modals/AlertModal";
+import { SuperAdminChatWorkspace } from "@/components/admin/chat/SuperAdminChatWorkspace";
 
 // ─── Tab types ────────────────────────────────────────────────────────────────
 type Tab =
@@ -2738,34 +2739,13 @@ function ChatTab({
         </div>
 
         {/* Chat area */}
-        <div className={card + " lg:col-span-2 flex flex-col"}>
+        <div className={card + " lg:col-span-2 flex flex-col overflow-hidden p-4"}>
           {selected ? (
-            <>
-              <div className="flex items-center gap-3 pb-3 border-b border-slate-700 mb-4">
-                <div>
-                  <p className="font-semibold">{selected.name}</p>
-                  <p className="text-xs text-slate-400">
-                    {selected.owner?.email}
-                  </p>
-                </div>
-                <StatusBadge status={selected.status} />
-              </div>
-              <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">
-                {/* Chat component integration point */}
-                <div className="text-center">
-                  <ChatBubbleLeftRightIcon className="size-12 mx-auto mb-3 opacity-30" />
-                  <p>
-                    Chat sa <strong>{selected.name}</strong>
-                  </p>
-                  <p className="text-xs mt-1 text-slate-600">
-                    Tenant ID: {selected._id}
-                  </p>
-                  <p className="text-xs mt-3 text-slate-600">
-                    Integrisati SuperAdminChat komponentu ovde.
-                  </p>
-                </div>
-              </div>
-            </>
+            <SuperAdminChatWorkspace
+              tenantId={selected._id}
+              tenantName={selected.name}
+              ownerEmail={selected.owner?.email}
+            />
           ) : (
             <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">
               <div className="text-center">

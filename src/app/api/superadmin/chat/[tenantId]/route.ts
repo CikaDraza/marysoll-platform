@@ -1,23 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { SuperAdminChat } from "@/models/SuperAdminChat";
-import { requireSuperAdmin, requireAuth } from "@/lib/auth/auth-server";
+import { requireAuth } from "@/lib/auth/auth-server";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ tenantId: string }> }
 ) {
   const { tenantId } = await params;
-  // Allow both superadmin and the salon owner
   const authResult = requireAuth(request);
   if (authResult instanceof NextResponse) return authResult;
+  const { decoded } = authResult;
 
   await connectToDB();
-  let chat = await SuperAdminChat.findOne({ tenantId }).lean();
+
+  const chat = await SuperAdminChat.findOne({ tenantId });
   if (!chat) {
     return NextResponse.json({ messages: [] });
   }
-  return NextResponse.json(chat);
+
+  // Mark as read for the side that is fetching
+  if (decoded.isSuperAdmin && chat.unreadBySuperAdmin > 0) {
+    chat.unreadBySuperAdmin = 0;
+    await chat.save();
+  }
+
+  return NextResponse.json(chat.toObject());
 }
 
 export async function POST(
@@ -30,7 +38,14 @@ export async function POST(
   const { decoded } = authResult;
 
   await connectToDB();
-  const { message } = await request.json();
+
+  const body = await request.json() as { content?: string; message?: string; attachments?: Array<{ url: string; type: string; name: string; size: number }> };
+  const content = (body.content ?? body.message ?? "").trim();
+  const attachments = body.attachments ?? [];
+
+  if (!content && attachments.length === 0) {
+    return NextResponse.json({ error: "Poruka ne može biti prazna" }, { status: 400 });
+  }
 
   const senderRole = decoded.isSuperAdmin ? "superadmin" : "owner";
 
@@ -49,7 +64,9 @@ export async function POST(
   chat.messages.push({
     senderId: decoded.id,
     senderRole,
-    message,
+    message: content,
+    attachments,
+    isDeleted: false,
     isRead: false,
     timestamp: new Date(),
   } as Parameters<typeof chat.messages.push>[0]);
