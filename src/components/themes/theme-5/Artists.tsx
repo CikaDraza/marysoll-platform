@@ -1,26 +1,31 @@
+import FlowerIcon from "@/components/assets/icons/services/FlowerIcon";
+import { LandingStructure } from "@/types";
 import Image from "next/image";
 
 interface Props {
-  data: {
-    headline?: string;
-    images?: { src: string; alt?: string }[];
-  };
+  data: LandingStructure["landing"]["artists"];
 }
-
 export function Theme5Artists({ data }: Props) {
   return (
     <section className="py-16 bg-white text-center">
-      <h3 className="mb-10">{data?.headline}</h3>
+      <h2>{data?.headline}</h2>
+      <div className="flex mb-10 items-center justify-between w-48 mx-auto">
+        <div className="border border-gray-100 w-24"></div>
+        <div className="p-2">
+          <FlowerIcon bgColor="#FFB633" />
+        </div>
+        <div className="border border-gray-100 w-24"></div>
+      </div>
 
-      <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
-        {data?.images?.map((a) => (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 max-w-7xl mx-auto">
+        {data?.members?.map((member) => (
           <Image
             width={720}
             height={720}
-            key={a.src}
-            src={a.src}
-            alt={a.alt || "Nasi artisti"}
-            className="rounded size-64"
+            key={member.image.src}
+            src={member.image.src}
+            alt={member.image.alt || data?.headline || "Nasi artisti"}
+            className="rounded size-64 object-cover"
           />
         ))}
       </div>

@@ -32,12 +32,11 @@ interface Props {
 }
 
 export function Theme3GallerySoft({ images }: Props) {
-  const finalImages =
-    images && images.length > 0 ? images : DEFAULT_IMAGES;
+  const finalImages = images && images.length > 0 ? images : DEFAULT_IMAGES;
 
   return (
     <section className="bg-[#F3EFEA] py-24">
-      <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-3 gap-4">
         {finalImages.map((img, i) => (
           <Image
             width={500}

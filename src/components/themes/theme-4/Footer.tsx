@@ -6,6 +6,7 @@ import TiktokIcon from "@/components/assets/icons/TiktokIcon";
 import FacebookIcon from "@/components/assets/icons/FacebookIcon";
 import TelegramIcon from "@/components/assets/icons/TelegramIcon";
 import { SalonProfileData } from "@/types";
+import Image from "next/image";
 
 interface Theme4FooterProps {
   salon: SalonProfileData;
@@ -68,7 +69,7 @@ export function Theme4Footer({
             </ul>
           </div>
           {/* Social icons */}
-          <div className="flex flex-0 justify-center lg:justify-end items-start gap-4">
+          <div className="flex flex-0 flex-wrap justify-center lg:justify-end items-start gap-4">
             <dt className="w-auto h-auto border rounded-2xl scale-90 px-3 py-1 text-base/7 font-light border-[#E8D4AD] font-main-font text-left flex">
               {salon.social?.instagram ? (
                 <Link
@@ -151,10 +152,19 @@ export function Theme4Footer({
                 </button>
               )}
             </dt>
+            <div className="w-full">
+              <Image
+                width={128}
+                height={128}
+                src={salon?.logo || "/placeholder-logo.png"}
+                alt={salon?.name}
+                className="w-32 h-32 object-contain ml-auto"
+              />
+            </div>
           </div>
         </div>
         <div className="mt-12 pt-6 border-t border-white/10 text-center text-xs text-gray-300">
-          © {new Date().getFullYear()} {salonName}. Powered by Marysoll.
+          © {new Date().getFullYear()} {salon?.name}. Powered by Marysoll.
         </div>
       </div>
       <div

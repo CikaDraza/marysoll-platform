@@ -1,4 +1,4 @@
-import { LandingStructure } from "@/types";
+import { HeroImage, LandingStructure } from "@/types";
 
 export function mapAbout(ls: LandingStructure | undefined) {
   const about = ls?.landing?.about;
@@ -10,9 +10,14 @@ export function mapAbout(ls: LandingStructure | undefined) {
         ? about.paragraphs
         : ["Default salon description"],
 
-    items: [
+    stats: [
       { label: "Clients", value: "120+" },
       { label: "Treatments", value: "800+" },
     ],
+    image: about?.image as HeroImage,
+    alt: about?.image
+      ? about.image.alt
+      : "Salon interior with stylist and client",
+    enabled: about !== undefined ? about.enabled : true,
   };
 }

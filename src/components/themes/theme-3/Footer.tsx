@@ -18,7 +18,7 @@ export function Theme3Footer({
   const base = tenantSlug ? `/${tenantSlug}` : "";
   return (
     <footer className="bg-[#F2EDE8] border-t border-[#E0D5CC]">
-      <div className="max-w-6xl mx-auto px-6 py-14">
+      <div className="max-w-7xl mx-auto px-6 py-14">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           <div>
             <h3 className="text-[#5C4033] font-semibold text-base mb-3">
@@ -65,33 +65,27 @@ export function Theme3Footer({
               Pratite nas
             </h4>
             <div className="flex gap-4 mb-5">
-              {instagram && (
-                <a
-                  href={instagram}
-                  target="_blank"
-                  className="text-[#9E7E6E] hover:text-[#5C4033] transition text-sm"
-                >
-                  Instagram
-                </a>
-              )}
-              {facebook && (
-                <a
-                  href={facebook}
-                  target="_blank"
-                  className="text-[#9E7E6E] hover:text-[#5C4033] transition text-sm"
-                >
-                  Facebook
-                </a>
-              )}
-              {tiktok && (
-                <a
-                  href={tiktok}
-                  target="_blank"
-                  className="text-[#9E7E6E] hover:text-[#5C4033] transition text-sm"
-                >
-                  TikTok
-                </a>
-              )}
+              <Link
+                href={instagram || "https://www.instagram.com/"}
+                target="_blank"
+                className="text-[#9E7E6E] hover:text-[#5C4033] transition text-sm"
+              >
+                Instagram
+              </Link>
+              <Link
+                href={facebook || "https://www.facebook.com/"}
+                target="_blank"
+                className="text-[#9E7E6E] hover:text-[#5C4033] transition text-sm"
+              >
+                Facebook
+              </Link>
+              <Link
+                href={tiktok || "https://www.tiktok.com/"}
+                target="_blank"
+                className="text-[#9E7E6E] hover:text-[#5C4033] transition text-sm"
+              >
+                TikTok
+              </Link>
             </div>
             <Link
               href={base + "/termini"}

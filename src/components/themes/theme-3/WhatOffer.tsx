@@ -61,12 +61,17 @@ const PASTEL = [
   "bg-[#E5EDE8]",
 ];
 
-export function Theme3WhatOffer({ services, headline, subheadline, tenantSlug }: Props) {
+export function Theme3WhatOffer({
+  services,
+  headline,
+  subheadline,
+  tenantSlug,
+}: Props) {
   const grouped = groupServices(services);
 
   return (
     <section className="bg-[#FAF8F5] py-20 lg:py-28 px-6">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <p className="text-[#C9A990] text-xs font-semibold tracking-[0.25em] uppercase text-center mb-3">
           šta nudimo
         </p>
@@ -92,85 +97,88 @@ export function Theme3WhatOffer({ services, headline, subheadline, tenantSlug }:
               </h3>
 
               <div className="space-y-8">
-                {subcategories.map(({ name: subName, services: subServices }, subIdx) => (
-                  <div key={subName ?? subIdx}>
-                    {subName && (
-                      <h4 className="text-[#A07060] text-[11px] font-semibold tracking-widest uppercase mb-4 ml-0.5">
-                        {subName}
-                      </h4>
-                    )}
+                {subcategories.map(
+                  ({ name: subName, services: subServices }, subIdx) => (
+                    <div key={subName ?? subIdx}>
+                      {subName && (
+                        <h4 className="text-[#A07060] text-[11px] font-semibold tracking-widest uppercase mb-4 ml-0.5">
+                          {subName}
+                        </h4>
+                      )}
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {subServices.map((s, i) => {
-                        const price = resolvePrice(s);
-                        const bgClass = PASTEL[(i + subIdx * 2) % PASTEL.length];
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {subServices.map((s, i) => {
+                          const price = resolvePrice(s);
+                          const bgClass =
+                            PASTEL[(i + subIdx * 2) % PASTEL.length];
 
-                        return (
-                          <div
-                            key={s._id}
-                            className={`${bgClass} rounded-2xl p-5 hover:shadow-sm transition-shadow`}
-                          >
-                            <h5 className="text-[#5C4033] text-sm font-medium mb-1 leading-snug">
-                              {s.name}
-                            </h5>
+                          return (
+                            <div
+                              key={s._id}
+                              className={`${bgClass} rounded-2xl p-5 hover:shadow-sm transition-shadow`}
+                            >
+                              <h5 className="text-[#5C4033] text-sm font-medium mb-1 leading-snug">
+                                {s.name}
+                              </h5>
 
-                            {s.description && (
-                              <p className="text-[#9E7E6E] text-xs line-clamp-2 leading-relaxed mb-2">
-                                {s.description}
-                              </p>
-                            )}
-
-                            {s.type === "variant" &&
-                              s.variants &&
-                              s.variants.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mb-2">
-                                  {s.variants.slice(0, 3).map((v, vi) => (
-                                    <span
-                                      key={vi}
-                                      className="text-[10px] bg-white/70 text-[#7C6A5E] rounded-full px-2 py-0.5 leading-none"
-                                    >
-                                      {v.name}
-                                    </span>
-                                  ))}
-                                  {s.variants.length > 3 && (
-                                    <span className="text-[10px] text-[#9E7E6E]">
-                                      +{s.variants.length - 3}
-                                    </span>
-                                  )}
-                                </div>
+                              {s.description && (
+                                <p className="text-[#9E7E6E] text-xs line-clamp-2 leading-relaxed mb-2">
+                                  {s.description}
+                                </p>
                               )}
 
-                            {s.type === "group" &&
-                              s.services &&
-                              s.services.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mb-2">
-                                  {s.services.slice(0, 3).map((g, gi) => (
-                                    <span
-                                      key={gi}
-                                      className="text-[10px] bg-white/70 text-[#7C6A5E] rounded-full px-2 py-0.5 leading-none"
-                                    >
-                                      {g.name}
-                                    </span>
-                                  ))}
-                                  {s.services.length > 3 && (
-                                    <span className="text-[10px] text-[#9E7E6E]">
-                                      +{s.services.length - 3}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
+                              {s.type === "variant" &&
+                                s.variants &&
+                                s.variants.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mb-2">
+                                    {s.variants.slice(0, 3).map((v, vi) => (
+                                      <span
+                                        key={vi}
+                                        className="text-[10px] bg-white/70 text-[#7C6A5E] rounded-full px-2 py-0.5 leading-none"
+                                      >
+                                        {v.name}
+                                      </span>
+                                    ))}
+                                    {s.variants.length > 3 && (
+                                      <span className="text-[10px] text-[#9E7E6E]">
+                                        +{s.variants.length - 3}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
 
-                            {price && (
-                              <span className="text-[#C9A990] text-xs font-semibold">
-                                {price}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
+                              {s.type === "group" &&
+                                s.services &&
+                                s.services.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mb-2">
+                                    {s.services.slice(0, 3).map((g, gi) => (
+                                      <span
+                                        key={gi}
+                                        className="text-[10px] bg-white/70 text-[#7C6A5E] rounded-full px-2 py-0.5 leading-none"
+                                      >
+                                        {g.name}
+                                      </span>
+                                    ))}
+                                    {s.services.length > 3 && (
+                                      <span className="text-[10px] text-[#9E7E6E]">
+                                        +{s.services.length - 3}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+
+                              {price && (
+                                <span className="text-[#C9A990] text-xs font-semibold">
+                                  {price}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ),
+                )}
               </div>
             </div>
           ))}
@@ -182,8 +190,18 @@ export function Theme3WhatOffer({ services, headline, subheadline, tenantSlug }:
             className="inline-flex items-center gap-2 text-sm text-[#C9A990] hover:text-[#b8947a] transition-colors font-medium"
           >
             Pogledaj sve usluge
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 8l4 4m0 0l-4 4m4-4H3"
+              />
             </svg>
           </a>
         </div>

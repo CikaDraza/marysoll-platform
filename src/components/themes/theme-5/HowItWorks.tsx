@@ -23,14 +23,13 @@ export function Theme5HowItWorks({ data }: Props) {
           const Icon = Icons[s.icon];
           return (
             <div key={i} className="flex flex-col items-center gap-6 px-6 py-3">
-              <div className="text-3xl border border-[#FFB633] rounded-full w-33 h-33 flex items-center justify-center">
-                {Icon && <Icon className="w-16 h-16 fill-1 text-[#FFB633]" />}
+              <div className="text-3xl border border-[#FFB633] rounded-full size-24 lg:size-33 flex items-center justify-center">
+                {Icon && (
+                  <Icon className="size-12 lg:size-16 fill-1 text-[#FFB633]" />
+                )}
               </div>
               <div>
                 <h4 className="font-medium text-gray-500">{s.title}</h4>
-                {/* <p className="text-sm opacity-70 text-gray-500">
-                  {s.description}
-                </p> */}
               </div>
             </div>
           );

@@ -816,6 +816,19 @@ export interface LandingStructure {
       /** Optional about-section image. Layout falls back gracefully when absent. */
       image?: HeroImage;
     };
+    artists: {
+      enabled: boolean;
+      headline: string;
+      members: {
+        name: string;
+        role: string;
+        bio: string;
+        image: {
+          src: string;
+          alt: string;
+        };
+      }[];
+    };
 
     servicesPreview: {
       enabled: boolean;
@@ -951,6 +964,7 @@ export interface SalonProfileData {
   workingHours?: WorkingHoursMap | Record<string, unknown>;
   seo?: SeoData;
   branding?: IBranding;
+  tenantSlug?: string;
 }
 
 // ─── Notification Settings (standalone) ──────────────────────────────────────

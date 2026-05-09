@@ -48,7 +48,7 @@ export function Theme5Header({
               height={720}
               alt={data?.logo}
               src={data?.logo}
-              className="size-8 object-cover"
+              className="size-12 object-contain"
             />
           ) : (
             "MINA"
@@ -57,7 +57,11 @@ export function Theme5Header({
 
         <nav className="hidden md:flex gap-6 text-sm uppercase">
           {data?.navigation?.map((l) => (
-            <Link key={l.href} href={l.href} className="hover:text-yellow-500">
+            <Link
+              key={l.href}
+              href={l.href}
+              className="text-gray-300 font-bold hover:text-yellow-500"
+            >
               {l.label}
             </Link>
           ))}
@@ -111,19 +115,19 @@ export function Theme5Header({
             }
           >
             <div className="flex items-center justify-between mb-8">
-              <span className="font-bold text-lg text-(--primary-color)">
+              <figure className="font-bold text-lg text-(--primary-color)">
                 {data?.logo ? (
                   <Image
                     width={80}
-                    height={32}
+                    height={80}
                     alt="logo"
                     src={data.logo}
-                    className="h-8 w-auto object-contain"
+                    className="h-8 w-auto object-cover"
                   />
                 ) : (
                   "MINA"
                 )}
-              </span>
+              </figure>
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-2 cursor-pointer"

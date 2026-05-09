@@ -47,14 +47,14 @@ export function Theme5Pricing({
           <div className="border border-gray-100 w-24"></div>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 px-6 gap-y-18 gap-x-6">
+      <div className="max-w-7xl grid grid-cols-1 gap-8 mx-auto px-6">
         {Object.entries(grouped).map(([category, items]) => (
-          <div key={category} className="h-full">
-            <h3 className="text-xs font-semibold tracking-widest uppercase text-[#FFB633] mb-5 border-b border-gray-200 pb-2">
+          <div key={category} className="h-auto">
+            <h3 className="text-sm font-bold tracking-widest uppercase text-[#FFB633] mb-5 border-b border-gray-200 pb-2">
               {category}
             </h3>
 
-            <div className="h-full">
+            <div className="h-auto grid grid-cols-1 md:grid-cols-3 gap-6">
               {items.map((s) => {
                 const mp = minPrice(s);
                 return (

@@ -1,27 +1,50 @@
 import Image from "next/image";
 
-export function Theme3AboutSoft() {
+interface Props {
+  about: {
+    headline?: string;
+    paragraphs?: string[];
+    image?: {
+      src: string;
+      alt?: string;
+    };
+  };
+}
+
+export function Theme3AboutSoft({ about }: Props) {
   return (
     <section className="bg-[#F3EFEA] py-24">
-      <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
+      <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
         <Image
           width={600}
           height={500}
-          alt="About us image"
-          src="https://res.cloudinary.com/dufo1t5li/image/upload/v1770896288/salon/svgc0l829bx5e62n2xg2.jpg"
+          alt={about.image?.alt || "About us image"}
+          src={
+            about.image?.src ||
+            "https://res.cloudinary.com/dufo1t5li/image/upload/v1775758480/salons/salon-kiki-kiss/xvxnmkwisrocqnia1gcm.png"
+          }
           className="rounded-3xl object-cover w-auto h-[500px]"
         />
 
         <div>
           <h2 className="text-4xl font-serif text-[#2B2B2B] mb-6">
-            {"O nama"}
+            {about.headline || "O nama"}
           </h2>
 
-          <p className="text-[#6B6B6B] leading-relaxed">
-            {
-              "Naš salon pruža nežnu i profesionalnu negu uz pažnju prema svakom detalju."
-            }
-          </p>
+          <div className="flex flex-col gap-3">
+            <p className="text-[#6B6B6B] leading-relaxed">
+              {about.paragraphs?.[0] ||
+                "Naš salon pruža nežnu i profesionalnu negu uz pažnju prema svakom detalju."}
+            </p>
+            <p className="text-[#6B6B6B] leading-relaxed">
+              {about.paragraphs?.[1] ||
+                "Naš salon pruža nežnu i profesionalnu negu uz pažnju prema svakom detalju."}
+            </p>
+            <p className="text-[#6B6B6B] leading-relaxed">
+              {about.paragraphs?.[2] ||
+                "Naš salon pruža nežnu i profesionalnu negu uz pažnju prema svakom detalju."}
+            </p>
+          </div>
         </div>
       </div>
     </section>

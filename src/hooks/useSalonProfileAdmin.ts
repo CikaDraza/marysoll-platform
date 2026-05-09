@@ -45,6 +45,7 @@ export const emptyLandingStructure = (): LandingStructure => ({
       ctas: { primary: { text: "Zakaži termin", href: "/termini" } },
     },
     about: { enabled: true, headline: "", paragraphs: [] },
+    artists: { enabled: false, headline: "", members: [] },
     servicesPreview: { enabled: true, headline: "", subheadline: "", showIcons: true },
     appointmentSection: {
       enabled: true,
@@ -178,6 +179,11 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
         headline: rawLanding.about?.headline ?? "",
         paragraphs: rawLanding.about?.paragraphs ?? [],
         image: rawLanding.about?.image,
+      },
+      artists: {
+        enabled: rawLanding.artists?.enabled ?? false,
+        headline: rawLanding.artists?.headline ?? "",
+        members: rawLanding.artists?.members ?? [],
       },
       servicesPreview: {
         enabled: rawLanding.servicesPreview?.enabled ?? true,

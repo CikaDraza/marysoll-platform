@@ -4,15 +4,13 @@ interface Props {
   headline?: string;
   paragraphs?: string[];
   stats?: { value: string; label: string }[];
-  imageUrl?: string;
+  image?: {
+    src: string;
+    alt?: string;
+  };
 }
 
-export function Theme4AboutSoft({
-  headline,
-  paragraphs,
-  stats,
-  imageUrl,
-}: Props) {
+export function Theme4AboutSoft({ headline, paragraphs, stats, image }: Props) {
   return (
     <section className="bg-[#4C2D4A] text-white py-20">
       <div className="max-w-7xl mx-auto px-6 flex flex-col lg:flex-row items-center gap-16">
@@ -41,9 +39,9 @@ export function Theme4AboutSoft({
         <Image
           width={600}
           height={600}
-          alt="About us image"
+          alt={image?.alt || "About us image"}
           src={
-            imageUrl ||
+            image?.src ||
             "https://res.cloudinary.com/dufo1t5li/image/upload/v1770896288/salon/svgc0l829bx5e62n2xg2.jpg"
           }
           className="rounded-3xl object-cover w-auto h-[360px]"

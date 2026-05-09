@@ -53,7 +53,6 @@ import {
   Theme3CTA,
   Theme3FAQSoft,
   Theme3GalleryMasonry,
-  Theme3GallerySoft,
   Theme3HeroSoft,
   Theme3PricingSoft,
   Theme3ServicesSoft,
@@ -75,6 +74,7 @@ import {
 import { Theme4AboutSoft } from "./theme-4";
 import { mapCMS } from "@/lib/CMSMapper/mapCMS";
 import {
+  Theme5About,
   Theme5Artists,
   Theme5CTA,
   Theme5Footer,
@@ -84,7 +84,6 @@ import {
   Theme5HowItWorks,
   Theme5Pricing,
   Theme5Services,
-  Theme5Stats,
   Theme5Testimonials,
   Theme5WorkingHours,
 } from "./theme-5";
@@ -153,6 +152,7 @@ export function ThemeLayout({
   const servicesPreviewEnabled = ls?.landing?.servicesPreview?.enabled ?? true;
   const appointmentEnabled = ls?.landing?.appointmentSection?.enabled ?? true;
   const testimonialsEnabled = ls?.landing?.testimonials?.enabled ?? true;
+  const artistsEnabled = ls?.landing?.artists?.enabled ?? true;
   const galleryEnabled = ls?.landing?.gallery?.enabled ?? true;
   const faqEnabled = ls?.landing?.faq?.enabled ?? true;
 
@@ -428,16 +428,15 @@ export function ThemeLayout({
             />
           )}
 
-          {/* 2. MINI GALLERY (4 slike kao na mockupu) */}
-          {galleryEnabled && effectiveGalleryVariant === "images-only" && (
-            <>
-              <Theme3GallerySoft images={ls?.landing?.gallery?.images} />
-              <Theme3GalleryMasonry images={ls?.landing?.gallery?.images} />
-            </>
-          )}
-
           {/* 3. ABOUT */}
-          {aboutEnabled && <Theme3AboutSoft />}
+          {aboutEnabled && (
+            <Theme3AboutSoft
+              about={{
+                headline: ls?.landing?.about?.headline,
+                paragraphs: ls?.landing?.about?.paragraphs ?? [],
+              }}
+            />
+          )}
 
           {/* 4. SERVICES PREVIEW */}
           {servicesPreviewEnabled && (
@@ -554,7 +553,7 @@ export function ThemeLayout({
                   { value: "20+", label: "Stručnjaka" },
                 ]
               }
-              imageUrl={ls?.landing?.about?.image?.src}
+              image={ls?.landing?.about?.image}
             />
           )}
 
@@ -669,11 +668,11 @@ export function ThemeLayout({
           {/* 6. CTA */}
           <Theme5CTA data={ui.cta} />
           {/* 7. ARTISTS */}
-          <Theme5Artists data={ui.about} />
+          {artistsEnabled && <Theme5Artists data={ui?.artists} />}
           {/* 8. STATS */}
-          <Theme5Stats data={ui.about} />
+          <Theme5About data={ui.about} />
           {/* 9. TESTIMONIALS */}
-          <Theme5Testimonials data={ui.testimonials} />
+          {testimonialsEnabled && <Theme5Testimonials data={ui.testimonials} />}
           {/* 10. GALLERY */}
           <Theme5Gallery data={ui.gallery} />
         </main>

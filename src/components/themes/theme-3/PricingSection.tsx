@@ -39,7 +39,7 @@ export function Theme3PricingSection({ services, tenantSlug }: Props) {
 
   return (
     <section className="bg-[#FAF8F5] py-20 lg:py-28 px-6">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <p className="text-[#C9A990] text-xs font-semibold tracking-[0.25em] uppercase text-center mb-3">
           cenovnik
         </p>

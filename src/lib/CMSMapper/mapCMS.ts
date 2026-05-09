@@ -6,6 +6,7 @@ import { mapServices } from "./UI/mapServices";
 import { mapWorkingHours } from "./UI/mapWorkingHours";
 import { mapCTA } from "./UI/mapCTA";
 import { mapFooter } from "./UI/mapFooter";
+import { mapArtists } from "./UI/mapArtists";
 
 interface Testimonial {
   _id: string;
@@ -22,6 +23,8 @@ function mapGallery(ls: LandingStructure | undefined) {
     headline: gallery?.headline,
     subheadline: gallery?.subheadline,
     instagram: gallery?.instagram,
+    instagramTag: gallery?.instagram?.ctaText,
+    instagramUrl: gallery?.instagram?.link,
     enabled:
       gallery !== undefined ? (ls?.landing?.gallery?.enabled ?? true) : true,
   };
@@ -63,6 +66,7 @@ export function mapCMS(
     header: mapHeader(salon, tenantSlug),
     hero: mapHero(ls, salon, tenantSlug),
     about: mapAbout(ls),
+    artists: mapArtists(ls),
     services: mapServices(ls, services),
     workingHours: mapWorkingHours(salon),
     howItWorks: mapHowItWorks(ls, services),
@@ -77,6 +81,7 @@ export function mapCMS(
       services: ls?.landing?.servicesPreview?.enabled !== false,
       gallery: ls?.landing?.gallery?.enabled !== false,
       testimonials: ls?.landing?.testimonials?.enabled !== false,
+      artists: ls?.landing?.artists?.enabled !== false,
       faq: ls?.landing?.faq?.enabled !== false,
     },
   };

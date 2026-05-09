@@ -52,7 +52,7 @@ export function Theme3Header({
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 bg-[#FAF8F5]/95 backdrop-blur border-b border-[#E8E0D5]">
-      <nav className="flex items-center justify-between max-w-6xl mx-auto px-6 py-4">
+      <nav className="flex items-center justify-between max-w-7xl mx-auto px-6 py-4">
         <Link href={`${base}/`} className="flex items-center gap-3">
           {salonLogo ? (
             <Image
@@ -112,7 +112,12 @@ export function Theme3Header({
       </nav>
 
       {/* Mobile menu */}
-      <Transition show={open} as={Dialog} onClose={setOpen} className="lg:hidden">
+      <Transition
+        show={open}
+        as={Dialog}
+        onClose={setOpen}
+        className="lg:hidden"
+      >
         <TransitionChild
           as="div"
           className="fixed inset-0"
@@ -145,7 +150,9 @@ export function Theme3Header({
             }
           >
             <div className="flex items-center justify-between mb-8">
-              <span className="font-semibold text-[#5C4033]">{displayName}</span>
+              <span className="font-semibold text-[#5C4033]">
+                {displayName}
+              </span>
               <button onClick={() => setOpen(false)} className="cursor-pointer">
                 <XMarkIcon className="size-5 text-[#9E7E6E]" />
               </button>

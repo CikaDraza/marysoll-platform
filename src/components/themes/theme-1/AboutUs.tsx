@@ -20,26 +20,27 @@ export function Theme1AboutUs({ about }: Props) {
     <section className="relative isolate overflow-hidden bg-white px-6 py-24 sm:py-32 lg:px-8">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(45rem_50rem_at_top,var(--color-indigo-100),white)] opacity-20" />
       <div className="absolute inset-y-0 right-1/2 -z-10 mr-16 w-[200%] origin-bottom-left skew-x-[-30deg] bg-white shadow-xl ring-1 shadow-indigo-600/10 ring-indigo-50 sm:mr-28 lg:mr-0 xl:mr-16 xl:origin-center" />
-      <div className="mx-auto max-w-2xl lg:max-w-4xl">
-        <div className="mx-auto max-w-4xl text-center">
-          <h2 className="mt-2 text-5xl font-semibold tracking-tight text-balance text-gray-900 sm:text-6xl">
+      <div className="mx-auto grid grid-cols-1 lg:grid-cols-2 max-w-7xl">
+        <div className="mx-auto max-w-7xl text-center">
+          <h2 className="text-5xl mb-6 lg:mb-0 text-left font-semibold tracking-tight text-balance text-gray-900 sm:text-6xl">
             {about.headline || "O nama"}
           </h2>
         </div>
-        <div className="mt-16 lg:mt-24">
-          <blockquote className="relative flex flex-col lg:flex-row gap-6 items-center text-center text-sm lg:text-md font-medium text-gray-900">
+        <div className="mt-0">
+          <blockquote className="relative flex flex-col gap-6 items-center text-center text-sm lg:text-md font-medium text-gray-900">
             {paragraphs[0] && (
-              <p className="text-justify lg:text-right">{paragraphs[0]}</p>
+              <p className="text-3xl font-semibold text-left">
+                {paragraphs[0]}
+              </p>
             )}
-            {paragraphs.length > 1 && (
-              <>
-                <div
-                  className="hidden lg:block h-26 w-2 bg-gray-400"
-                  aria-hidden="true"
-                />
+            <div className="flex flex-col lg:flex-row items-center gap-6">
+              {paragraphs.length > 1 && (
                 <p className="text-justify lg:text-left">{paragraphs[1]}</p>
-              </>
-            )}
+              )}
+              {paragraphs.length > 2 && (
+                <p className="text-justify lg:text-left">{paragraphs[2]}</p>
+              )}
+            </div>
           </blockquote>
         </div>
       </div>

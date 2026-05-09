@@ -1,8 +1,8 @@
 import { LandingStructure } from "@/types";
 
 export function mapCTA(ls: LandingStructure | undefined, tenantSlug?: string) {
-  const p = tenantSlug ? `/${tenantSlug}` : "";
   const cta = ls?.landing?.hero?.ctas;
+  const p = tenantSlug ? `/${tenantSlug}` : "";
 
   return {
     headline: "Professional makeup for every occasion",
@@ -16,5 +16,6 @@ export function mapCTA(ls: LandingStructure | undefined, tenantSlug?: string) {
       label: cta?.primary?.text ?? "Book Now",
       href: cta?.primary?.href ?? `${p}/termini`,
     },
+    tenantSlug: p,
   };
 }
