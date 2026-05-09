@@ -483,6 +483,19 @@ export function AdminLandingCMS({ sp }: Props) {
   // ── Save + SEO analysis ──────────────────────────────────────────────────
 
   const handleSave = () => {
+    if (artists?.enabled) {
+      if (!(artists?.headline ?? "").trim()) {
+        toast.error("Artists: Naslov sekcije je obavezan.");
+        return;
+      }
+      const missingImage = (artists?.members ?? []).some(
+        (m) => !m.image?.src?.trim(),
+      );
+      if (missingImage) {
+        toast.error("Artists: Svaki artist mora imati sliku.");
+        return;
+      }
+    }
     sp.save(undefined, {
       onSuccess: () => runSeoAnalysis(),
     });
@@ -540,6 +553,7 @@ export function AdminLandingCMS({ sp }: Props) {
 
   const hero = ls.landing.hero;
   const about = ls.landing.about;
+  const artists = ls.landing.artists;
   const servicesPreview = ls.landing.servicesPreview;
   const appointmentSection = ls.landing.appointmentSection;
   const testimonials = ls.landing.testimonials;
@@ -1094,6 +1108,167 @@ export function AdminLandingCMS({ sp }: Props) {
             />
           </div>
         </div>
+      </SectionCard>
+
+      {/* ── ARTISTS ──────────────────────────────────────────────────────── */}
+      <SectionCard
+        title="Landing / Naši Artisti"
+        badge="Artists"
+        enabled={artists?.enabled ?? true}
+        onToggle={(v) =>
+          updateLandingSection("artists", { ...artists, enabled: v })
+        }
+      >
+        <div>
+          <label className={lbl}>
+            Naslov sekcije{" "}
+            <span className="text-red-400 normal-case font-normal">
+              * obavezno
+            </span>
+          </label>
+          <input
+            className={inp}
+            value={artists?.headline ?? ""}
+            onChange={(e) =>
+              updateLandingSection("artists", {
+                ...artists,
+                headline: e.target.value,
+              })
+            }
+            placeholder="Naši Artisti"
+          />
+          {!(artists?.headline ?? "").trim() && (
+            <p className="text-xs text-red-400 mt-1">
+              Naslov sekcije je obavezan.
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <label className={lbl}>Članovi tima</label>
+            <button
+              type="button"
+              onClick={() =>
+                updateLandingSection("artists", {
+                  ...artists,
+                  members: [
+                    ...(artists?.members ?? []),
+                    { name: "", role: "", bio: "", image: { src: "", alt: "" } },
+                  ],
+                })
+              }
+              className="text-sm text-violet-600 dark:text-violet-400 hover:underline"
+            >
+              + Dodaj artista
+            </button>
+          </div>
+
+          {(artists?.members ?? []).length === 0 && (
+            <p className="text-xs text-amber-500 dark:text-amber-400">
+              Dodajte bar jednog artista da bi sekcija imala sadržaj.
+            </p>
+          )}
+
+          {(artists?.members ?? []).map((member, idx) => {
+            const members = artists?.members ?? [];
+            const update = (patch: Partial<(typeof members)[number]>) => {
+              const updated = members.map((m, i) =>
+                i === idx ? { ...m, ...patch } : m,
+              );
+              updateLandingSection("artists", { ...artists, members: updated });
+            };
+            const hasImage = !!member.image?.src?.trim();
+
+            return (
+              <div
+                key={idx}
+                className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 inline-block px-2.5 py-1 rounded-lg">
+                    Artist #{idx + 1}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = members.filter((_, i) => i !== idx);
+                      updateLandingSection("artists", {
+                        ...artists,
+                        members: updated,
+                      });
+                    }}
+                    className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition text-lg leading-none"
+                  >
+                    −
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={lbl}>Ime</label>
+                    <input
+                      className={inp}
+                      value={member.name ?? ""}
+                      onChange={(e) => update({ name: e.target.value })}
+                      placeholder="Ime artista"
+                    />
+                  </div>
+                  <div>
+                    <label className={lbl}>Uloga</label>
+                    <input
+                      className={inp}
+                      value={member.role ?? ""}
+                      onChange={(e) => update({ role: e.target.value })}
+                      placeholder="npr. Šminker, Frizer..."
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className={lbl}>
+                    Slika{" "}
+                    <span className="text-red-400 normal-case font-normal">
+                      * obavezna
+                    </span>
+                  </label>
+                  <ImageInputField
+                    label="URL slike"
+                    value={member.image?.src ?? ""}
+                    onChange={(url) =>
+                      update({ image: { src: url, alt: member.image?.alt ?? "" } })
+                    }
+                  />
+                  {!hasImage && (
+                    <p className="text-xs text-red-400 mt-1">
+                      Slika je obavezna za prikaz artista.
+                    </p>
+                  )}
+                </div>
+
+                {member.image?.src && (
+                  <div>
+                    <label className={lbl}>Alt tekst slike</label>
+                    <input
+                      className={inp}
+                      value={member.image?.alt ?? ""}
+                      onChange={(e) =>
+                        update({
+                          image: { src: member.image?.src ?? "", alt: e.target.value },
+                        })
+                      }
+                      placeholder="Opis slike..."
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <p className="text-xs text-gray-400 dark:text-gray-500">
+          Sekcija se prikazuje samo u Theme 5. Ime i uloga nisu obavezni.
+        </p>
       </SectionCard>
 
       {/* ── SERVICES PREVIEW ─────────────────────────────────────────────── */}
