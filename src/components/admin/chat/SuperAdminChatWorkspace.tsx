@@ -1,14 +1,18 @@
 "use client";
 
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useEffect, useCallback, memo } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useSuperAdminChat } from "@/hooks/useSuperAdminChat";
 import type { SAMessage, SAAttachment } from "@/hooks/useSuperAdminChat";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatTime(ts: string) {
-  return new Date(ts).toLocaleTimeString("sr-RS", { hour: "2-digit", minute: "2-digit" });
+  return new Date(ts).toLocaleTimeString("sr-RS", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 // ─── AttachmentBubble ─────────────────────────────────────────────────────────
@@ -16,7 +20,7 @@ function formatTime(ts: string) {
 function AttachmentBubble({ att }: { att: SAAttachment }) {
   if (att.type === "image") {
     return (
-      <a href={att.url} target="_blank" rel="noopener noreferrer" className="block mt-1">
+      <Link href={att.url} target="_blank" rel="noopener noreferrer" className="block mt-1">
         <Image
           src={att.url}
           alt={att.name}
@@ -24,11 +28,11 @@ function AttachmentBubble({ att }: { att: SAAttachment }) {
           height={200}
           className="rounded-xl max-h-48 object-cover border border-white/20"
         />
-      </a>
+      </Link>
     );
   }
   return (
-    <a
+    <Link
       href={att.url}
       target="_blank"
       rel="noopener noreferrer"
@@ -45,13 +49,13 @@ function AttachmentBubble({ att }: { att: SAAttachment }) {
         />
       </svg>
       <span className="text-xs font-medium truncate max-w-[150px]">{att.name}</span>
-    </a>
+    </Link>
   );
 }
 
-// ─── MessageBubble ────────────────────────────────────────────────────────────
+// ─── MessageBubble — memoized so polling re-fetches don't re-render unchanged bubbles ──
 
-function MessageBubble({
+const MessageBubble = memo(function MessageBubble({
   msg,
   myId,
   onDelete,
@@ -66,7 +70,9 @@ function MessageBubble({
   if (msg.isDeleted) {
     return (
       <div className={`flex ${isMe ? "justify-end" : "justify-start"} mb-1`}>
-        <span className="text-xs text-slate-500 italic px-4 py-1">Poruka je obrisana</span>
+        <span className="text-xs text-slate-500 italic px-4 py-1">
+          Poruka je obrisana
+        </span>
       </div>
     );
   }
@@ -114,7 +120,7 @@ function MessageBubble({
       </div>
     </div>
   );
-}
+});
 
 // ─── TypingIndicator ──────────────────────────────────────────────────────────
 
@@ -147,6 +153,8 @@ interface Props {
 export function SuperAdminChatWorkspace({ tenantId, tenantName, ownerEmail }: Props) {
   const chat = useSuperAdminChat(tenantId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // fileInputRef lives here — never accessed during render, only in event handlers
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -230,7 +238,10 @@ export function SuperAdminChatWorkspace({ tenantId, tenantName, ownerEmail }: Pr
                 </svg>
               )}
               <span className="text-xs text-slate-300 max-w-[100px] truncate">{att.name}</span>
-              <button onClick={() => chat.removePendingAttachment(i)} className="text-slate-400 hover:text-red-400 transition ml-0.5">
+              <button
+                onClick={() => chat.removePendingAttachment(i)}
+                className="text-slate-400 hover:text-red-400 transition ml-0.5"
+              >
                 ×
               </button>
             </div>
@@ -244,7 +255,7 @@ export function SuperAdminChatWorkspace({ tenantId, tenantName, ownerEmail }: Pr
           {/* File upload */}
           <button
             type="button"
-            onClick={() => chat.fileInputRef.current?.click()}
+            onClick={() => fileInputRef.current?.click()}
             disabled={chat.isUploading}
             title="Priloži fajl (JPG, PNG, WebP, PDF – max 20MB)"
             className="flex-shrink-0 w-10 h-10 flex items-center justify-center text-slate-400 hover:text-violet-400 hover:bg-violet-900/20 rounded-xl transition disabled:opacity-50"
@@ -261,7 +272,7 @@ export function SuperAdminChatWorkspace({ tenantId, tenantName, ownerEmail }: Pr
             )}
           </button>
           <input
-            ref={chat.fileInputRef}
+            ref={fileInputRef}
             type="file"
             accept="image/jpeg,image/png,image/webp,application/pdf"
             className="hidden"
@@ -283,7 +294,10 @@ export function SuperAdminChatWorkspace({ tenantId, tenantName, ownerEmail }: Pr
           {/* Send */}
           <button
             onClick={() => void chat.sendMessage()}
-            disabled={(!chat.inputText.trim() && chat.pendingAttachments.length === 0) || chat.isSending}
+            disabled={
+              (!chat.inputText.trim() && chat.pendingAttachments.length === 0) ||
+              chat.isSending
+            }
             className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             title="Pošalji (Enter)"
           >
@@ -291,8 +305,10 @@ export function SuperAdminChatWorkspace({ tenantId, tenantName, ownerEmail }: Pr
               <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
             ) : (
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                <path d="M22 2L11 13M22 2L15 22 11 13 2 9l20-7z"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M22 2L11 13M22 2L15 22 11 13 2 9l20-7z"
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                />
               </svg>
             )}
           </button>

@@ -1,10 +1,15 @@
 "use client";
 
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useEffect, useCallback, memo } from "react";
 import Image from "next/image";
 import { useAdminChat } from "@/hooks/useAdminChat";
 import { useAuth } from "@/hooks/useAuth";
-import type { ChatContact, ChatMessage, ChatAttachment } from "@/hooks/useAdminChat";
+import type {
+  ChatContact,
+  ChatMessage,
+  ChatAttachment,
+} from "@/hooks/useAdminChat";
+import Link from "next/link";
 
 // ─── Style tokens ─────────────────────────────────────────────────────────────
 
@@ -15,10 +20,13 @@ const card =
 
 function roleBadge(role: string) {
   const map: Record<string, string> = {
-    superadmin: "bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300",
-    OWNER: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300",
+    superadmin:
+      "bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300",
+    OWNER:
+      "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300",
     ADMIN: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
-    STAFF: "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300",
+    STAFF:
+      "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300",
   };
   const label: Record<string, string> = {
     superadmin: "SuperAdmin",
@@ -26,7 +34,9 @@ function roleBadge(role: string) {
     ADMIN: "Admin",
     STAFF: "Staff",
   };
-  const cls = map[role] ?? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400";
+  const cls =
+    map[role] ??
+    "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400";
   return (
     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${cls}`}>
       {label[role] ?? role}
@@ -55,7 +65,12 @@ function formatDate(ts: string) {
 function AttachmentBubble({ att }: { att: ChatAttachment }) {
   if (att.type === "image") {
     return (
-      <a href={att.url} target="_blank" rel="noopener noreferrer" className="block mt-1">
+      <Link
+        href={att.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block mt-1"
+      >
         <Image
           src={att.url}
           alt={att.name}
@@ -63,11 +78,11 @@ function AttachmentBubble({ att }: { att: ChatAttachment }) {
           height={200}
           className="rounded-xl max-h-48 object-cover border border-gray-200 dark:border-gray-700"
         />
-      </a>
+      </Link>
     );
   }
   return (
-    <a
+    <Link
       href={att.url}
       target="_blank"
       rel="noopener noreferrer"
@@ -89,14 +104,16 @@ function AttachmentBubble({ att }: { att: ChatAttachment }) {
           strokeLinejoin="round"
         />
       </svg>
-      <span className="text-xs font-medium truncate max-w-[150px]">{att.name}</span>
-    </a>
+      <span className="text-xs font-medium truncate max-w-[150px]">
+        {att.name}
+      </span>
+    </Link>
   );
 }
 
-// ─── MessageBubble ────────────────────────────────────────────────────────────
+// ─── MessageBubble — memoized so polling re-fetches don't re-render unchanged bubbles ──
 
-function MessageBubble({
+const MessageBubble = memo(function MessageBubble({
   msg,
   myId,
   onDelete,
@@ -119,8 +136,12 @@ function MessageBubble({
   }
 
   return (
-    <div className={`group flex ${isMe ? "justify-end" : "justify-start"} mb-2`}>
-      <div className={`relative max-w-[70%] ${isMe ? "items-end" : "items-start"} flex flex-col`}>
+    <div
+      className={`group flex ${isMe ? "justify-end" : "justify-start"} mb-2`}
+    >
+      <div
+        className={`relative max-w-[70%] ${isMe ? "items-end" : "items-start"} flex flex-col`}
+      >
         {!isMe && (
           <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-0.5 px-1">
             {msg.senderName}
@@ -134,7 +155,9 @@ function MessageBubble({
               : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-sm"
           } ${isTemp ? "opacity-70" : ""}`}
         >
-          {msg.content && <p className="text-sm leading-relaxed">{msg.content}</p>}
+          {msg.content && (
+            <p className="text-sm leading-relaxed">{msg.content}</p>
+          )}
           {(msg.attachments ?? []).map((att, i) => (
             <AttachmentBubble key={i} att={att} />
           ))}
@@ -168,7 +191,7 @@ function MessageBubble({
       </div>
     </div>
   );
-}
+});
 
 // ─── Typing indicator ─────────────────────────────────────────────────────────
 
@@ -287,7 +310,9 @@ export function AdminChat() {
   return (
     <div className="flex gap-4 h-[calc(100vh-13rem)]">
       {/* ── Left panel: contacts ─────────────────────────────────────────── */}
-      <div className={card + " w-72 flex-shrink-0 flex flex-col overflow-hidden"}>
+      <div
+        className={card + " w-72 flex-shrink-0 flex flex-col overflow-hidden"}
+      >
         <div className="p-4 border-b border-gray-100 dark:border-gray-800">
           <h2 className="font-bold text-gray-900 dark:text-white">Chat</h2>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
@@ -325,7 +350,11 @@ export function AdminChat() {
         {!chat.selectedContact ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
             <div className="w-16 h-16 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mb-4">
-              <svg className="w-8 h-8 text-violet-500" viewBox="0 0 24 24" fill="none">
+              <svg
+                className="w-8 h-8 text-violet-500"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
                 <path
                   d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"
                   stroke="currentColor"
@@ -416,7 +445,11 @@ export function AdminChat() {
                         className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
                       />
                     ) : (
-                      <svg className="w-5 h-5 text-red-500 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                      <svg
+                        className="w-5 h-5 text-red-500 flex-shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
                         <path
                           d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"
                           stroke="currentColor"
@@ -489,7 +522,8 @@ export function AdminChat() {
                 <button
                   onClick={chat.sendMessage}
                   disabled={
-                    (!chat.inputText.trim() && chat.pendingAttachments.length === 0) ||
+                    (!chat.inputText.trim() &&
+                      chat.pendingAttachments.length === 0) ||
                     chat.isSending
                   }
                   className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
@@ -511,7 +545,8 @@ export function AdminChat() {
                 </button>
               </div>
               <p className="text-[10px] text-gray-400 dark:text-gray-600 mt-1.5 ml-12">
-                Enter za slanje · Shift+Enter za novi red · JPG, PNG, WebP, PDF do 20MB
+                Enter za slanje · Shift+Enter za novi red · JPG, PNG, WebP, PDF
+                do 20MB
               </p>
             </div>
           </>

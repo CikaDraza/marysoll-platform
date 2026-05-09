@@ -34,6 +34,41 @@ export interface ChatContact {
   isSuperAdmin?: boolean;
 }
 
+// ─── Stable merge — preserves object references so React.memo skips unchanged bubbles ──
+
+function mergeMessages(prev: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] {
+  const realPrev = prev.filter((m) => !m._id.startsWith("temp-"));
+
+  if (
+    realPrev.length === incoming.length &&
+    (incoming.length === 0 ||
+      realPrev[realPrev.length - 1]._id === incoming[incoming.length - 1]._id)
+  ) {
+    return prev;
+  }
+
+  const prevById = new Map(prev.map((m) => [m._id, m]));
+
+  const merged = incoming.map((m) => {
+    const existing = prevById.get(m._id);
+    if (
+      existing &&
+      existing.isDeleted === m.isDeleted &&
+      existing.content === m.content
+    ) {
+      return existing;
+    }
+    return m;
+  });
+
+  const incomingIds = new Set(incoming.map((m) => m._id));
+  const temps = prev.filter(
+    (m) => m._id.startsWith("temp-") && !incomingIds.has(m._id),
+  );
+
+  return temps.length > 0 ? [...merged, ...temps] : merged;
+}
+
 // ─── useAdminChat ──────────────────────────────────────────────────────────────
 
 export function useAdminChat() {
@@ -54,7 +89,6 @@ export function useAdminChat() {
   const [totalUnread, setTotalUnread] = useState(0);
 
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // ── Fetch contacts ──────────────────────────────────────────────────────────
 
@@ -92,9 +126,9 @@ export function useAdminChat() {
 
   // ── Fetch messages for selected contact ─────────────────────────────────────
 
-  const fetchMessages = useCallback(async (contact: ChatContact) => {
+  const fetchMessages = useCallback(async (contact: ChatContact, showLoading = false) => {
     if (!token) return;
-    setMessagesLoading(true);
+    if (showLoading) setMessagesLoading(true);
     try {
       const url = contact.isSuperAdmin
         ? "/api/admin/chat/superadmin"
@@ -115,27 +149,25 @@ export function useAdminChat() {
 
       if (contact.isSuperAdmin) {
         const raw = (data.messages ?? []) as RawSuperAdminMessage[];
-        setMessages(
-          raw.map((m) => ({
-            _id: m._id,
-            senderId: m.senderId,
-            senderName: m.senderRole === "superadmin" ? "SuperAdmin" : "Admin",
-            senderRole: m.senderRole,
-            content: m.message,
-            attachments: [],
-            isDeleted: false,
-            timestamp: m.timestamp,
-          })),
-        );
+        const incoming: ChatMessage[] = raw.map((m) => ({
+          _id: m._id,
+          senderId: m.senderId,
+          senderName: m.senderRole === "superadmin" ? "SuperAdmin" : "Admin",
+          senderRole: m.senderRole,
+          content: m.message,
+          attachments: [],
+          isDeleted: false,
+          timestamp: m.timestamp,
+        }));
+        setMessages((prev) => mergeMessages(prev, incoming));
       } else {
-        setMessages(
-          ((data.messages ?? []) as ChatMessage[]).filter((m) => !m.isDeleted),
-        );
+        const incoming = ((data.messages ?? []) as ChatMessage[]).filter((m) => !m.isDeleted);
+        setMessages((prev) => mergeMessages(prev, incoming));
       }
     } catch {
-      // silently fail
+      // silently fail on poll
     } finally {
-      setMessagesLoading(false);
+      if (showLoading) setMessagesLoading(false);
     }
   }, [token]);
 
@@ -144,7 +176,7 @@ export function useAdminChat() {
   const selectContact = useCallback(async (contact: ChatContact) => {
     setSelectedContactState(contact);
     setMessages([]);
-    await fetchMessages(contact);
+    await fetchMessages(contact, true);
     // Mark as read
     await markRead(contact);
     // Update local unread to 0
@@ -326,7 +358,6 @@ export function useAdminChat() {
     isUploading,
     pendingAttachments,
     totalUnread,
-    fileInputRef,
     // Actions
     selectContact,
     sendMessage,
