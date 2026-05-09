@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
+import { useChatUnread } from "@/hooks/useChatUnread";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -154,6 +155,21 @@ const AdminNav: NavItem[] = [
     icon: <Icon d={icons.link} />,
     path: "/dashboard?tab=domen",
   },
+  {
+    name: "Chat",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+    path: "/dashboard?tab=chat",
+  },
 ];
 
 // ─── Plan badge in sidebar footer ─────────────────────────────────────────────
@@ -174,6 +190,8 @@ const AppSidebar: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const tenant = useTenantAdmin();
+
+  const chatUnread = useChatUnread();
 
   const [openSubmenu, setOpenSubmenu] = useState<number | null>(() => {
     // Auto-open the Marketing submenu when on /marketing/* routes
@@ -303,6 +321,11 @@ const AppSidebar: React.FC = () => {
                     <span className="flex-1 text-left truncate">
                       {item.name}
                     </span>
+                    {item.name === "Chat" && chatUnread > 0 && (
+                      <span className="flex-shrink-0 min-w-[18px] h-[18px] rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center px-1 animate-pulse">
+                        {chatUnread > 9 ? "9+" : chatUnread}
+                      </span>
+                    )}
                     {item.subItems && (
                       <svg
                         className={`w-4 h-4 transition-transform duration-200 text-gray-400 ${isMounted && submenuOpen ? "rotate-180 text-violet-500" : "rotate-0 text-gray-400"}`}

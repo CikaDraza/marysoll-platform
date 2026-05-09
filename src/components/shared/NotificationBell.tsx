@@ -45,6 +45,10 @@ function getNotificationHref(
 ): string {
   const panelBase = base !== undefined ? `${base}/panel` : "/dashboard";
 
+  if (notification.type === "chat_message") {
+    return `${panelBase}?tab=chat`;
+  }
+
   if (notification.type.includes("appointment")) {
     const tab = isAdmin ? "termini" : "Moji Termini";
     return `${panelBase}?tab=${encodeURIComponent(tab)}`;
@@ -61,6 +65,7 @@ function getNotificationHref(
 // ─── Helper: ikona po tipu ────────────────────────────────────────────────────
 
 function getIcon(type: INotification["type"]): string {
+  if (type === "chat_message") return "💬";
   if (type.includes("appointment")) return "📅";
   if (type.includes("testimonial")) return "⭐";
   return "🔔";

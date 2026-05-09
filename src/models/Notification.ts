@@ -22,6 +22,7 @@ const NotificationSchema = new Schema(
         "testimonial_updated",
         "testimonial_deleted",
         "testimonial_message",
+        "chat_message",
         "generic",
       ],
       required: true,

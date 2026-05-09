@@ -550,6 +550,7 @@ export interface INotification {
     | "testimonial_updated"
     | "testimonial_deleted"
     | "testimonial_message"
+    | "chat_message"
     | "generic";
   title: string;
   message: string;
