@@ -142,6 +142,8 @@ export function useAdminChat() {
         senderId: string;
         senderRole: string;
         message: string;
+        attachments?: ChatAttachment[];
+        isDeleted?: boolean;
         isRead: boolean;
         timestamp: string;
       };
@@ -149,16 +151,18 @@ export function useAdminChat() {
 
       if (contact.isSuperAdmin) {
         const raw = (data.messages ?? []) as RawSuperAdminMessage[];
-        const incoming: ChatMessage[] = raw.map((m) => ({
-          _id: m._id,
-          senderId: m.senderId,
-          senderName: m.senderRole === "superadmin" ? "SuperAdmin" : "Admin",
-          senderRole: m.senderRole,
-          content: m.message,
-          attachments: [],
-          isDeleted: false,
-          timestamp: m.timestamp,
-        }));
+        const incoming: ChatMessage[] = raw
+          .filter((m) => !m.isDeleted)
+          .map((m) => ({
+            _id: m._id,
+            senderId: m.senderId,
+            senderName: m.senderRole === "superadmin" ? "SuperAdmin" : "Admin",
+            senderRole: m.senderRole,
+            content: m.message,
+            attachments: m.attachments ?? [],
+            isDeleted: false,
+            timestamp: m.timestamp,
+          }));
         setMessages((prev) => mergeMessages(prev, incoming));
       } else {
         const incoming = ((data.messages ?? []) as ChatMessage[]).filter((m) => !m.isDeleted);
@@ -256,7 +260,8 @@ export function useAdminChat() {
         return;
       }
 
-      // Refresh messages from server
+      // Remove all temp messages before fetching so they don't linger alongside the real one
+      setMessages((prev) => prev.filter((m) => !m._id.startsWith("temp-")));
       await fetchMessages(selectedContact);
     } catch {
       setMessages((prev) => prev.filter((m) => m._id !== tempId));

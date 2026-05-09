@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { SuperAdminChat } from "@/models/SuperAdminChat";
-import { TenantUser } from "@/models/TenantUser";
-import { Notification } from "@/models/Notification";
 import mongoose from "mongoose";
 
 // GET /api/admin/chat/superadmin — returns chat messages with superadmin
@@ -32,10 +30,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Poruka ne može biti prazna" }, { status: 400 });
   }
 
-  const me = await TenantUser.findById(decoded.tenantUserId)
-    .select("name role")
-    .lean<{ name: string; role: string }>();
-
   let chat = await SuperAdminChat.findOne({ tenantId: decoded.tenantId });
   if (!chat) {
     chat = new SuperAdminChat({
@@ -47,10 +41,12 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  (chat.messages as Array<{ senderId: mongoose.Types.ObjectId | string; senderRole: string; message: string; isRead: boolean; timestamp: Date }>).push({
+  (chat.messages as Array<{ senderId: mongoose.Types.ObjectId | string; senderRole: string; message: string; attachments: typeof attachments; isDeleted: boolean; isRead: boolean; timestamp: Date }>).push({
     senderId: decoded.tenantUserId!,
     senderRole: "owner",
     message: content?.trim() ?? "",
+    attachments,
+    isDeleted: false,
     isRead: false,
     timestamp: new Date(),
   });

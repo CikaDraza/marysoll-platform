@@ -166,7 +166,8 @@ export function useSuperAdminChat(tenantId: string | null) {
         return;
       }
 
-      // Fetch after send — temp message will be replaced by real one from server
+      // Remove all temp messages before fetching so they don't linger alongside the real one
+      setMessages((prev) => prev.filter((m) => !m._id.startsWith("temp-")));
       await fetchMessages(tenantId);
     } catch {
       setMessages((prev) => prev.filter((m) => m._id !== tempId));
