@@ -115,7 +115,7 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     testimonials: true,
 
     // Teme
-    landingThemes: ["theme-1", "theme-2", "theme-3"],
+    landingThemes: ["theme-1", "theme-2", "theme-3", "theme-4", "theme-5", "theme-6"],
     customTheme: false,
 
     // Newsletter
@@ -166,7 +166,7 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     pushNotifications: true,
     testimonials: true,
 
-    landingThemes: ["theme-1", "theme-2", "theme-3"],
+    landingThemes: ["theme-1", "theme-2", "theme-3", "theme-4", "theme-5", "theme-6"],
     customTheme: true,
 
     newsletter: true,
@@ -212,7 +212,7 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     pushNotifications: true,
     testimonials: true,
 
-    landingThemes: ["theme-1", "theme-2", "theme-3"],
+    landingThemes: ["theme-1", "theme-2", "theme-3", "theme-4", "theme-5", "theme-6"],
     customTheme: true,
 
     newsletter: true,
@@ -258,7 +258,7 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     pushNotifications: true,
     testimonials: true,
 
-    landingThemes: ["theme-1", "theme-2", "theme-3"],
+    landingThemes: ["theme-1", "theme-2", "theme-3", "theme-4", "theme-5", "theme-6"],
     customTheme: true,
 
     newsletter: true,

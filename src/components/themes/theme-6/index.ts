@@ -1,0 +1,14 @@
+export { Theme6Header } from "./Header";
+export { Theme6Hero } from "./Hero";
+export { Theme6AboutEditorial } from "./AboutEditorial";
+export { Theme6FeatureCards } from "./FeatureCards";
+export { Theme6ServicesGrid } from "./ServicesGrid";
+export { Theme6PortfolioGallery } from "./PortfolioGallery";
+export { Theme6PricingSection } from "./PricingSection";
+export { Theme6Testimonials } from "./Testimonials";
+export { Theme6TeamSection } from "./TeamSection";
+export { Theme6InstagramStrip } from "./InstagramStrip";
+export { Theme6PromoBanner } from "./PromoBanner";
+export { Theme6BlogPreview } from "./BlogPreview";
+export { Theme6Newsletter } from "./Newsletter";
+export { Theme6Footer } from "./Footer";

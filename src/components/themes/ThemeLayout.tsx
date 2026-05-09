@@ -87,6 +87,21 @@ import {
   Theme5Testimonials,
   Theme5WorkingHours,
 } from "./theme-5";
+import {
+  Theme6Header,
+  Theme6Hero,
+  Theme6AboutEditorial,
+  Theme6FeatureCards,
+  Theme6ServicesGrid,
+  Theme6PortfolioGallery,
+  Theme6PricingSection,
+  Theme6Testimonials,
+  Theme6TeamSection,
+  Theme6InstagramStrip,
+  Theme6PromoBanner,
+  Theme6Newsletter,
+  Theme6Footer,
+} from "./theme-6";
 
 interface Testimonial {
   _id: string;
@@ -166,6 +181,7 @@ export function ThemeLayout({
     "theme-3": "images-only",
     "theme-4": "images-only",
     "theme-5": "images-only",
+    "theme-6": "images-only",
   };
   const effectiveGalleryVariant: "images-only" | "images-with-category" =
     ls?.landing?.gallery?.galleryVariant ??
@@ -678,6 +694,127 @@ export function ThemeLayout({
         </main>
         {/* FOOTER */}
         <Theme5Footer data={ui.footer} />
+      </div>
+    );
+  }
+
+  // ── Theme 6: Nail Art Elegance ─────────────────────────────────────────────
+  if (theme === "theme-6") {
+    const galleryImages = (ls?.landing?.gallery?.images ?? []).map((img) => ({
+      src: img.src,
+      title: img.alt,
+    }));
+    const instagramImages = (ls?.landing?.gallery?.images ?? [])
+      .slice(0, 6)
+      .map((img) => ({ src: img.src }));
+
+    return (
+      <div
+        className="min-h-screen flex flex-col"
+        style={
+          {
+            ...brandingVars,
+            "--background": "#FFFFFF",
+            "--foreground": "#2A2825",
+            "--muted": "#6B6560",
+            "--primary": "#C4A595",
+            "--border": "#E5E0DB",
+          } as React.CSSProperties
+        }
+      >
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="stylesheet" href={googleFontHref} />
+        <Theme6Header
+          salonName={salon.name}
+          logo={salon.logo ?? undefined}
+          cta={{ label: "Zakaži", href: resolvedCta.primary.href }}
+        />
+        <main className="flex-1 flex flex-col overflow-x-hidden">
+          {heroEnabled && (
+            <Theme6Hero
+              salonName={salon.name}
+              salonDescription={salon.description}
+              headline={ls?.landing?.hero?.headline}
+              subheadline={ls?.landing?.hero?.subheadline}
+              imageUrl={ls?.landing?.hero?.image?.src}
+              cta={{
+                label: resolvedCta.primary.text || "Zakaži",
+                href: resolvedCta.primary.href,
+              }}
+            />
+          )}
+          {aboutEnabled && (
+            <Theme6AboutEditorial
+              headline={ls?.landing?.about?.headline}
+              paragraphs={
+                Array.isArray(ls?.landing?.about?.paragraphs)
+                  ? ls.landing.about.paragraphs
+                  : undefined
+              }
+            />
+          )}
+          <Theme6FeatureCards />
+          {servicesPreviewEnabled && services.length > 0 && (
+            <Theme6ServicesGrid
+              services={services}
+              headline={ls?.landing?.servicesPreview?.headline}
+              subheadline={ls?.landing?.servicesPreview?.subheadline}
+              tenantSlug={tenantSlug}
+            />
+          )}
+          <Theme6PricingSection
+            services={services}
+            tenantSlug={tenantSlug}
+            headline={ls?.landing?.servicesPreview?.headline}
+          />
+          {testimonialsEnabled && testimonials.length > 0 && (
+            <Theme6Testimonials
+              testimonials={testimonials.map((t) => ({
+                name: t.clientName,
+                text: t.comment,
+              }))}
+            />
+          )}
+          {artistsEnabled && (
+            <Theme6TeamSection
+              headline={ls?.landing?.artists?.headline}
+              members={ls?.landing?.artists?.members?.map((m) => ({
+                name: m.name,
+                role: m.role,
+                image: m.image?.src,
+              }))}
+            />
+          )}
+          {galleryEnabled && galleryImages.length > 0 && (
+            <Theme6PortfolioGallery
+              headline={ls?.landing?.gallery?.headline}
+              subheadline={ls?.landing?.gallery?.subheadline}
+              images={galleryImages}
+            />
+          )}
+          <Theme6PromoBanner
+            cta={{
+              label: resolvedCta.primary.text || "Zakaži",
+              href: resolvedCta.primary.href,
+            }}
+          />
+          {galleryEnabled && (
+            <Theme6InstagramStrip
+              instagramUrl={ls?.landing?.gallery?.instagram?.link || instagram}
+              instagramTag={ls?.landing?.gallery?.instagram?.username}
+              images={instagramImages.length > 0 ? instagramImages : undefined}
+            />
+          )}
+          <Theme6Newsletter />
+        </main>
+        <Theme6Footer
+          salonName={salon.name}
+          phone={salon.phone}
+          email={salon.email}
+          instagram={salon.social?.instagram}
+          facebook={salon.social?.facebook}
+          tenantSlug={tenantSlug}
+        />
       </div>
     );
   }

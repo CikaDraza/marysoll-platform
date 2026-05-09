@@ -14,10 +14,8 @@ export function mapAbout(ls: LandingStructure | undefined) {
       { label: "Clients", value: "120+" },
       { label: "Treatments", value: "800+" },
     ],
-    image: about?.image as HeroImage,
-    alt: about?.image
-      ? about.image.alt
-      : "Salon interior with stylist and client",
+    image: about?.image ?? ({ src: "", alt: "Salon interior with stylist and client" } as HeroImage),
+    alt: about?.image?.alt ?? "Salon interior with stylist and client",
     enabled: about !== undefined ? about.enabled : true,
   };
 }

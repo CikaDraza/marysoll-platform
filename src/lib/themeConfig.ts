@@ -51,4 +51,9 @@ export const THEME_CONFIG: Record<LandingTheme, ThemeSectionConfig> = {
     hero: { hasImage: true, maxImages: 1 },
     gallery: { variant: "images-only" },
   },
+  /** Theme-6 "Nail Art Elegance" — hero has one image, gallery is portfolio grid. */
+  "theme-6": {
+    hero: { hasImage: true, maxImages: 1 },
+    gallery: { variant: "images-only" },
+  },
 };

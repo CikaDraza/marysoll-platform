@@ -102,6 +102,12 @@ const THEMES: {
     description: "Elegantni dizajn sa blog postom",
     previewColors: ["#FFFFFF", "#F3F3F3", "#DCAB28"],
   },
+  {
+    id: "theme-6",
+    label: "Nail Art Elegance",
+    description: "Svetli, editorijalni dizajn za nail studio",
+    previewColors: ["#FFFFFF", "#FAF8F5", "#C4A595"],
+  },
 ];
 
 // ─── Style tokens ─────────────────────────────────────────────────────────────

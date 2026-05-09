@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
         "theme-3",
         "theme-4",
         "theme-5",
+        "theme-6",
       ].includes(landingTheme)
         ? landingTheme
         : "theme-1",
