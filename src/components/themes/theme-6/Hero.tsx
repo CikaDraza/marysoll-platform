@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 interface Props {
@@ -21,7 +22,7 @@ export function Theme6Hero({
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-[#FAF8F5] to-[#F5F1EB]">
-      <div className="max-w-7xl mx-auto px-6 lg:px-12 py-20 lg:py-32">
+      <div className="relative max-w-7xl mx-auto px-6 lg:px-12 py-20 lg:py-32">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div className="space-y-8 lg:pr-8">
             <div className="space-y-6">
@@ -51,18 +52,25 @@ export function Theme6Hero({
             </div>
           </div>
 
-          <div className="relative lg:ml-auto">
-            <div className="relative bg-white p-6 lg:p-8 shadow-xl">
-              <div className="aspect-[3/4] overflow-hidden">
+          <div className="absolute bottom-0 right-0 lg:ml-auto">
+            <div className="relative w-full h-full">
+              <div className="aspect-[16/9] overflow-hidden">
                 {imageUrl ? (
-                  <img
-                    src={imageUrl}
+                  <Image
+                    width={720}
+                    height={720}
+                    src={
+                      imageUrl ||
+                      "https://res.cloudinary.com/dufo1t5li/image/upload/v1778346734/salons/salon-kiki-kiss-beauty/landing/apqpmsnmgue7xcg9nozq.png"
+                    }
                     alt="Hero"
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                    className="w-[960px] h-[542px] object-cover hover:scale-105 transition-transform duration-700"
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-[#E8D5C4] to-[#D4B5A0] flex items-center justify-center">
-                    <span className="text-[#6B6560] text-sm font-mono">[Hero Image]</span>
+                    <span className="text-[#6B6560] text-sm font-mono">
+                      [Hero Image]
+                    </span>
                   </div>
                 )}
               </div>

@@ -709,19 +709,7 @@ export function ThemeLayout({
       .map((img) => ({ src: img.src }));
 
     return (
-      <div
-        className="min-h-screen flex flex-col"
-        style={
-          {
-            ...brandingVars,
-            "--background": "#FFFFFF",
-            "--foreground": "#2A2825",
-            "--muted": "#6B6560",
-            "--primary": "#C4A595",
-            "--border": "#E5E0DB",
-          } as React.CSSProperties
-        }
-      >
+      <div className="min-h-screen flex flex-col" style={brandingVars}>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="stylesheet" href={googleFontHref} />
         <Theme6Header
