@@ -5,6 +5,7 @@ import React, { useRef, useState } from "react";
 import Image from "next/image";
 import { useSingleImage } from "@/hooks/newsletter/useSingleImage";
 import { useCloudinaryImages } from "@/hooks/useCloudinaryImages";
+import { useAuth } from "@/hooks/useAuth";
 import LoaderButton from "@/components/elements/LoaderButton";
 import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,11 +22,12 @@ interface SingleImageFieldProps {
  * Koristi se za email-only kampanje (Glavna slika)
  */
 export function SingleImageField({ value, onChange }: SingleImageFieldProps) {
+  const { token } = useAuth();
   const {
     data: cloudinaryData,
     isLoading: isLoadingImages,
     refetch,
-  } = useCloudinaryImages();
+  } = useCloudinaryImages(token);
   const singleImage = useSingleImage(value);
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);

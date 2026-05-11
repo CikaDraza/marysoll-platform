@@ -64,6 +64,7 @@ interface GalleryImageProps {
 }
 
 function GalleryImage({ img, href }: GalleryImageProps) {
+  if (!img.src) return null;
   return (
     <Link href={href} className="group block relative">
       <Image

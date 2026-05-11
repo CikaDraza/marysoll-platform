@@ -450,6 +450,7 @@ export function ThemeLayout({
               about={{
                 headline: ls?.landing?.about?.headline,
                 paragraphs: ls?.landing?.about?.paragraphs ?? [],
+                image: ls?.landing?.about?.image,
               }}
             />
           )}

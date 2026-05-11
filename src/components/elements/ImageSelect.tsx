@@ -9,6 +9,7 @@ import {
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
 import { CloudinaryImage } from "@/types/cloudinary";
 import { useCloudinaryImages } from "@/hooks/useCloudinaryImages";
+import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 
 interface Props {
@@ -17,7 +18,8 @@ interface Props {
 }
 
 export function ImageSelect({ value, onChange }: Props) {
-  const { data, isLoading } = useCloudinaryImages();
+  const { token } = useAuth();
+  const { data, isLoading } = useCloudinaryImages(token);
 
   const images = data?.images ?? [];
   const selected =
