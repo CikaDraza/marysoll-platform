@@ -60,7 +60,7 @@ export function Theme3Header({
               alt={displayName}
               width={120}
               height={40}
-              className="h-10 w-auto"
+              className="h-10 w-auto object-cover rounded-sm"
             />
           ) : (
             <span className="text-base font-semibold text-[#5C4033] tracking-wide">

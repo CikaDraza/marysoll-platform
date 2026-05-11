@@ -3,6 +3,7 @@ import { api } from "@/lib/api";
 import { useEffect } from "react";
 import { INotification } from "@/types";
 import { useAuth } from "./useAuth";
+import { useSalonProfile } from "./useSalonProfile";
 
 export function useNotifications(unreadOnly: boolean = false) {
   const { user } = useAuth();
@@ -96,7 +97,9 @@ export function useNotificationMutations() {
 }
 
 // Hook za browser notifikacije
-export function useBrowserNotifications() {
+export function useBrowserNotifications(salonLogo?: string | null) {
+  const { data: profile } = useSalonProfile();
+  const resolvedLogo = salonLogo ?? profile?.logo ?? null;
   const { data: notifications = [], error } = useNotifications(true);
 
   // ✅ Dodaj error handling
@@ -143,7 +146,7 @@ export function useBrowserNotifications() {
             showNotification(notification.title, {
               body: notification.message,
               tag: notification._id,
-              icon: "/logo-marysoll.png",
+              icon: resolvedLogo || "/logo-marysoll.png",
             });
           });
         }

@@ -191,8 +191,10 @@ export async function sendAppointmentMessageNotification(
     ? `Nova poruka od salona — ${data.serviceName}`
     : `Nova poruka od klijenta — ${data.serviceName}`;
 
+  const tenantId = data.tenantId ?? null;
   const html = await appointmentMessageTemplate(data);
-  return sendEmail({ to, subject, html });
+  const from = await resolveSalonFrom(tenantId, "notification");
+  return sendEmail({ to, subject, html, from, tenantId });
 }
 
 // ── Testimonial notifications ─────────────────────────────────────────────────
@@ -213,10 +215,13 @@ export async function sendTestimonialNotification(
         adminReply: data.adminReply,
         tenantId,
       });
+      const from = await resolveSalonFrom(tenantId, "notification");
       return sendEmail({
         to,
         subject: `Hvala na recenziji! — ${data.serviceName}`,
         html,
+        from,
+        tenantId,
       });
     }
 
@@ -229,10 +234,13 @@ export async function sendTestimonialNotification(
         adminReply: data.adminReply ?? "",
         tenantId,
       });
+      const from = await resolveSalonFrom(tenantId, "notification");
       return sendEmail({
         to,
         subject: `Odgovor na vašu recenziju — ${data.serviceName}`,
         html,
+        from,
+        tenantId,
       });
     }
 
@@ -244,10 +252,13 @@ export async function sendTestimonialNotification(
         comment: data.comment ?? "",
         tenantId,
       });
+      const from = await resolveSalonFrom(tenantId, "notification");
       return sendEmail({
         to,
         subject: `Recenzija izmenjena — ${data.serviceName}`,
         html,
+        from,
+        tenantId,
       });
     }
 
@@ -258,10 +269,13 @@ export async function sendTestimonialNotification(
         comment: data.comment,
         tenantId,
       });
+      const from = await resolveSalonFrom(tenantId, "notification");
       return sendEmail({
         to,
         subject: `Recenzija obrisana — ${data.serviceName}`,
         html,
+        from,
+        tenantId,
       });
     }
 
@@ -274,10 +288,13 @@ export async function sendTestimonialNotification(
         adminReply: data.adminReply,
         tenantId,
       });
+      const from = await resolveSalonFrom(tenantId, "notification");
       return sendEmail({
         to,
         subject: `Sistemska poruka — ${data.serviceName}`,
         html,
+        from,
+        tenantId,
       });
     }
   }
@@ -292,10 +309,13 @@ export async function sendResetEmail(
 ): Promise<void> {
   const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
   const html = await passwordResetTemplate({ name, resetUrl, tenantId });
+  const from = await resolveSalonFrom(tenantId, "system");
   await sendEmail({
     to: email,
     subject: `Resetovanje lozinke — ${name}`,
     html,
+    from,
+    tenantId,
   });
 }
 
@@ -364,12 +384,15 @@ export async function sendNewsletterVerificationEmail(
   const platformUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const verifyUrl = `${platformUrl}/api/newsletter/verify?token=${verificationToken}`;
   const html = await newsletterVerificationTemplate({ verifyUrl, tenantId });
-  const from = `"Marysoll" <${process.env.SYSTEM_FROM_EMAIL || process.env.EMAIL_FROM}>`;
+  const from =
+    (await resolveSalonFrom(tenantId, "newsletter")) ??
+    `"Marysoll" <${process.env.SYSTEM_FROM_EMAIL || process.env.EMAIL_FROM}>`;
   await sendEmail({
     from,
     to: email,
     subject: "Potvrdite svoju pretplatu na newsletter",
     html,
+    tenantId,
   });
 }
 
@@ -391,10 +414,13 @@ export async function sendRegisterVerificationEmail(
     ctaLabel: "Potvrdite email adresu →",
     tenantId,
   });
+  const from = await resolveSalonFrom(tenantId, "system");
   await sendEmail({
     to: email,
     subject: "Potvrdite vašu email adresu",
     html,
+    from,
+    tenantId,
   });
 }
 

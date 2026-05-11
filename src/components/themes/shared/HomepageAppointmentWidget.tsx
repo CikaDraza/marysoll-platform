@@ -347,6 +347,10 @@ export default function HomepageAppointmentWidget({
   const { user, token } = useAuth();
   const isLoggedIn = !!user;
 
+  // On custom domains tenantSlug is undefined (it's only set for path-based dev URLs).
+  // clientSlug is always the real DB slug — use it as the authoritative identifier.
+  const effectiveSlug = clientSlug ?? tenantSlug;
+
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [weekStart, setWeekStart] = useState(
@@ -366,14 +370,14 @@ export default function HomepageAppointmentWidget({
 
   // ── Fetch public appointments ──────────────────────────────────────────────
   const { data: appointments = [], isLoading } = useQuery<PublicAppt[]>({
-    queryKey: ["pub-appts-widget", tenantSlug],
+    queryKey: ["pub-appts-widget", effectiveSlug],
     queryFn: async () => {
-      if (!tenantSlug) return [];
-      const res = await fetch(`/api/public/${tenantSlug}/appointments`);
+      if (!effectiveSlug) return [];
+      const res = await fetch(`/api/public/${effectiveSlug}/appointments`);
       if (!res.ok) return [];
       return res.json();
     },
-    enabled: !!tenantSlug,
+    enabled: !!effectiveSlug,
     refetchInterval: 30_000,
     staleTime: 0,
     refetchOnWindowFocus: true,
@@ -443,7 +447,7 @@ export default function HomepageAppointmentWidget({
   function handleGuestConfirm(data: Omit<PendingAppointment, "tenantSlug">) {
     const pending: PendingAppointment = {
       ...data,
-      tenantSlug: clientSlug ?? tenantSlug ?? "",
+      tenantSlug: effectiveSlug ?? "",
     };
     try {
       sessionStorage.setItem(PENDING_STORAGE_KEY, JSON.stringify(pending));
@@ -645,7 +649,7 @@ export default function HomepageAppointmentWidget({
         userName={user?.name}
         userEmail={user?.email}
         token={token ?? undefined}
-        tenantSlug={tenantSlug}
+        tenantSlug={effectiveSlug}
         onConfirmedByGuest={handleGuestConfirm}
         pendingDefaults={pendingDefaults}
       />

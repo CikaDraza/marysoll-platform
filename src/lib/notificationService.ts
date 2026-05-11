@@ -426,6 +426,7 @@ async function sendAppointmentEmailNotifications(
       date: appointment.date || "Nije naveden",
       time: appointment.time || "Nije navedeno",
       appointmentId: appointment._id,
+      tenantId: appointment.tenantId?.toString() ?? null,
       note: appointment.note,
       adminNote: additionalData?.message,
     };
@@ -458,7 +459,8 @@ async function sendAppointmentEmailNotifications(
         date: appointment.date,
         time: appointment.time,
         appointmentId: appointment._id,
-        senderName: "Marysoll Makeup Salon",
+        tenantId: appointment.tenantId?.toString() ?? null,
+        senderName: "Salon",
         message: additionalData?.message || "",
         isAdminSender: true,
       });
@@ -483,6 +485,7 @@ async function sendAppointmentEmailNotifications(
           date: appointment.date,
           time: appointment.time,
           appointmentId: appointment._id,
+          tenantId: appointment.tenantId?.toString() ?? null,
           senderName: appointment.clientName,
           message: additionalData?.message || "",
           isAdminSender: false,
