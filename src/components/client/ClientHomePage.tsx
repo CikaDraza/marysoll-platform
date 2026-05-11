@@ -152,7 +152,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     category: String(sv.category ?? ""),
     subcategory: sv.subcategory ? String(sv.subcategory) : undefined,
     type: (sv.type as "single" | "group" | "variant") ?? "single",
-    basePrice: sv.basePrice ? Number(sv.basePrice) : undefined,
+    basePrice: sv.basePrice != null ? Number(sv.basePrice) : undefined,
     duration: sv.duration ? Number(sv.duration) : undefined,
     description: String(sv.description ?? ""),
     items: Array.isArray(sv.items) ? sv.items.map(String) : [],

@@ -10,6 +10,22 @@ interface Props {
   tenantSlug?: string;
 }
 
+function minPrice(s: IService): number | null {
+  if (s.type === "variant") {
+    const prices = (s.variants ?? [])
+      .map((v) => v.price)
+      .filter((x): x is number => x != null);
+    return prices.length ? Math.min(...prices) : (s.basePrice ?? null);
+  }
+  if (s.type === "group") {
+    const prices = (s.services ?? [])
+      .map((sv) => sv.price)
+      .filter((x): x is number => x != null);
+    return prices.length ? Math.min(...prices) : (s.basePrice ?? null);
+  }
+  return s.basePrice ?? null;
+}
+
 export function Theme3PricingSoft({ services, headline, tenantSlug }: Props) {
   if (!services.length) return null;
 
@@ -114,6 +130,17 @@ export function Theme3PricingSoft({ services, headline, tenantSlug }: Props) {
                             </div>
                           )}
                         </div>
+
+                        {/* Price — shown for all service types */}
+                        {(() => {
+                            const mp = minPrice(service);
+                            return mp != null ? (
+                              <p className="shrink-0 text-sm font-semibold text-[#bfa37a]">
+                                {service.type === "variant" ? "od " : ""}
+                                {formatPriceToString(mp)} RSD
+                              </p>
+                            ) : null;
+                          })()}
                       </div>
                     </div>
                   );
