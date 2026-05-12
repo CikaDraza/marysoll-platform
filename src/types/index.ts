@@ -693,6 +693,8 @@ export interface SalonProfile {
   phone: string;
   street: string;
   city: string;
+  lat?: number | null;
+  lng?: number | null;
   social: SocialLinks;
   newsletterEmail: string;
   contactEmail?: string;
@@ -960,6 +962,8 @@ export interface SalonProfileData {
   phone: string;
   street: string;
   city: string;
+  lat?: number | null;
+  lng?: number | null;
   social: SocialLinks;
   newsletterEmail?: string;
   contactEmail?: string;

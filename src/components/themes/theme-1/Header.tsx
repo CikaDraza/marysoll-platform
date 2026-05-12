@@ -65,9 +65,9 @@ export function Theme1Header({
               <Image
                 src={logoSrc}
                 alt={displayName}
-                width={140}
-                height={48}
-                className="h-12 w-auto"
+                width={192}
+                height={192}
+                className="h-12 w-12 object-contain"
                 preload={true}
               />
               <span className="ml-2 text-sm font-bold text-black">

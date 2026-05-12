@@ -193,6 +193,8 @@ const SalonProfileSchema = new mongoose.Schema(
     phone: { type: String, required: false, default: "" },
     city: { type: String, required: false, default: "" },
     street: { type: String, required: false, default: "" },
+    lat: { type: Number, required: false, default: null },
+    lng: { type: Number, required: false, default: null },
     social: {
       instagram: { type: String, default: "" },
       facebook: { type: String, default: "" },

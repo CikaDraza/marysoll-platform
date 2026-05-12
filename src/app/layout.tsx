@@ -20,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="sr" suppressHydrationWarning>
+    <html lang="sr" suppressHydrationWarning data-scroll-behavior="smooth">
       <body className={`${outfit.variable} font-outfit antialiased`}>
         <ThemeProvider>
           <SidebarProvider>

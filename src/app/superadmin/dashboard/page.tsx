@@ -23,6 +23,7 @@ import Link from "next/link";
 import AlertModal from "@/components/modals/AlertModal";
 import { SuperAdminChatWorkspace } from "@/components/admin/chat/SuperAdminChatWorkspace";
 import { SuperAdminNotificationBell } from "@/components/superadmin/SuperAdminNotificationBell";
+import { SuperAdminSalonGeoLocationPanel } from "@/components/superadmin/SuperAdminSalonGeoLocationPanel";
 
 // ─── Tab types ────────────────────────────────────────────────────────────────
 type Tab =
@@ -458,8 +459,18 @@ function SaloniTab({
                 </div>
               </div>
 
-              {/* Expandable identity panel */}
-              {isExpanded && <SalonIdentityPanel t={t} sa={sa} />}
+              {/* Expandable management panels */}
+              {isExpanded && (
+                <>
+                  <SalonIdentityPanel t={t} sa={sa} />
+                  <div
+                    className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <SuperAdminSalonGeoLocationPanel tenantId={t._id} />
+                  </div>
+                </>
+              )}
             </div>
           );
         })}
