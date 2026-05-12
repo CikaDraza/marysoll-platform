@@ -33,7 +33,7 @@ export function Theme3FAQSoft({ items = [], headline }: Props) {
             return (
               <div
                 key={index}
-                className="border border-[#e5e2dc] rounded-2xl bg-white overflow-hidden"
+                className="border border-[#e5e2dc] rounded-2xl bg-white"
               >
                 <button
                   onClick={() => setOpenIndex(isOpen ? null : index)}
@@ -43,9 +43,13 @@ export function Theme3FAQSoft({ items = [], headline }: Props) {
                     {item.question}
                   </span>
 
-                  <span className="text-xl text-[#bfa37a]">
-                    {isOpen ? "−" : "+"}
-                  </span>
+                  <motion.span
+                    animate={{ rotate: isOpen ? 45 : 0 }}
+                    transition={{ duration: 0.25, ease: "easeInOut" }}
+                    className="text-xl text-[#bfa37a] shrink-0 ml-4 origin-center"
+                  >
+                    +
+                  </motion.span>
                 </button>
 
                 <AnimatePresence initial={false}>
@@ -54,9 +58,12 @@ export function Theme3FAQSoft({ items = [], headline }: Props) {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      className="px-6 pb-5 text-[#6b6b6b]"
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      style={{ overflow: "hidden" }}
                     >
-                      {item.answer}
+                      <div className="px-6 pb-5 text-[#6b6b6b]">
+                        {item.answer}
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>

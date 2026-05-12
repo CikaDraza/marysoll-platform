@@ -44,7 +44,7 @@ export default function ClientsList() {
       : allUsers;
 
   if (loadingAll) return <Loader />;
-  if (errorAll) return <p>Greška pri učitavanju termina.</p>;
+  if (errorAll) return <p>Greška pri učitavanju klijenata.</p>;
 
   return (
     <div>
