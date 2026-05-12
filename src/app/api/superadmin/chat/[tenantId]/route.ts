@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { SuperAdminChat } from "@/models/SuperAdminChat";
 import { requireAuth } from "@/lib/auth/auth-server";
+import { sendWebPushToUser } from "@/lib/webPush";
 
 export async function GET(
   request: NextRequest,
@@ -76,6 +77,19 @@ export async function POST(
 
   chat.lastMessageAt = new Date();
   await chat.save();
+
+  // Push to owner when superadmin sends — ownerId is a TenantUser._id
+  if (senderRole === "superadmin" && chat.ownerId) {
+    try {
+      await sendWebPushToUser(chat.ownerId.toString(), {
+        title: "Marysoll",
+        body: `💬 Marysoll Support: ${content.slice(0, 80)}`,
+        icon: "/logo-marysoll.png",
+        tag: `superadmin-chat-${tenantId}`,
+        url: "/admin/chat/superadmin",
+      });
+    } catch { /* push is non-critical */ }
+  }
 
   return NextResponse.json({ success: true });
 }

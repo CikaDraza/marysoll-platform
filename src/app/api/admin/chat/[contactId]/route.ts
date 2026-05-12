@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { SalonInternalChat } from "@/models/SalonInternalChat";
+import { SalonProfile } from "@/models/SalonProfile";
 import { TenantUser } from "@/models/TenantUser";
 import { Notification } from "@/models/Notification";
+import { sendWebPushToUser } from "@/lib/webPush";
 import mongoose from "mongoose";
 
 function participantKey(a: string, b: string): [string, string] {
@@ -132,6 +134,20 @@ export async function POST(
       clientName: me.name,
     },
   });
+
+  // Web push to recipient
+  try {
+    const profile = (await SalonProfile.findOne({ tenantId: decoded.tenantId })
+      .select("logo name")
+      .lean()) as { logo?: string; name?: string } | null;
+    await sendWebPushToUser(contactId, {
+      title: profile?.name || "Salon",
+      body: `💬 ${me.name}: ${content?.trim() ? content.trim().slice(0, 80) : "📎 Prilog"}`,
+      icon: profile?.logo || "/notification-icon.png",
+      tag: `chat-internal-${decoded.tenantUserId}`,
+      url: "/admin/chat",
+    });
+  } catch { /* push is non-critical */ }
 
   return NextResponse.json({ success: true });
 }

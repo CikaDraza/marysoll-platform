@@ -19,26 +19,23 @@ self.addEventListener("push", function (event) {
 self.addEventListener("notificationclick", function (event) {
   event.notification.close();
 
+  var targetUrl = (event.notification.data && event.notification.data.url) || "/";
+
   event.waitUntil(
     clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then(function (clientList) {
-        if (clientList.length > 0) {
-          let client = clientList[0];
-          for (let i = 0; i < clientList.length; i++) {
-            if (clientList[i].focused) {
-              client = clientList[i];
-            }
+        // Try to find an existing window on the same origin and navigate it
+        for (var i = 0; i < clientList.length; i++) {
+          var client = clientList[i];
+          if ("navigate" in client) {
+            return client.navigate(targetUrl).then(function (c) {
+              return c ? c.focus() : null;
+            });
           }
-          return client.focus();
         }
-        return clients.openWindow(event.notification.data.url || "/");
+        // No existing window — open a new one
+        return clients.openWindow(targetUrl);
       }),
   );
-});
-
-self.addEventListener("sync", function (event) {
-  if (event.tag === "sync-notifications") {
-    event.waitUntil(syncNotifications());
-  }
 });

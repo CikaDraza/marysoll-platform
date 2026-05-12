@@ -7,11 +7,30 @@ import { INotification, UserNotificationSettings } from "@/types";
 import { Types } from "mongoose";
 import { TenantUser } from "@/models/TenantUser";
 import { AuthUser } from "@/models/AuthUser";
+import { SalonProfile } from "@/models/SalonProfile";
 import {
   sendAppointmentMessageNotification,
   sendAppointmentNotification,
   sendTestimonialNotification,
 } from "./email/email";
+import { sendWebPushToUser, sendWebPushToMany } from "@/lib/webPush";
+import type { PushPayload } from "@/lib/webPush";
+
+// ── Salon branding for push payloads ─────────────────────────────────────────
+
+async function getSalonBranding(tenantId: Types.ObjectId | string): Promise<{ icon: string; name: string }> {
+  try {
+    const profile = (await SalonProfile.findOne({ tenantId })
+      .select("logo name")
+      .lean()) as { logo?: string; name?: string } | null;
+    return {
+      icon: profile?.logo || "/notification-icon.png",
+      name: profile?.name || "Salon",
+    };
+  } catch {
+    return { icon: "/notification-icon.png", name: "Salon" };
+  }
+}
 
 interface CreateNotificationParams {
   recipientProfileId: string | Types.ObjectId;  // TenantUser._id
@@ -333,6 +352,10 @@ export async function createAppointmentNotification(
 
   const config = notificationConfig[type];
 
+  const { icon, name: salonName } = await getSalonBranding(appointment.tenantId);
+  const panelUrl = "/panel?tab=Moji%20Termini";
+  const adminUrl = "/admin/termini";
+
   if (type === "message") {
     if (additionalData?.sender === "client") {
       const adminIds = await getAllAdminTenantUserIds(appointment.tenantId);
@@ -354,9 +377,16 @@ export async function createAppointmentNotification(
         });
         notifications.push(notification);
       }
+      await sendWebPushToMany(adminIds, {
+        title: salonName,
+        body: `💬 ${appointment.clientName}: ${additionalData.message?.substring(0, 80) || "Nova poruka za " + appointment.serviceName}`,
+        icon,
+        tag: `appt-msg-${appointment._id}`,
+        url: adminUrl,
+      });
       return notifications;
     } else {
-      return await createNotification({
+      const notification = await createNotification({
         recipientProfileId: appointment.clientProfileId,
         tenantId: appointment.tenantId,
         type: fullType,
@@ -369,6 +399,14 @@ export async function createAppointmentNotification(
           preview: additionalData?.message?.substring(0, 50) || "Nova poruka",
         },
       });
+      await sendWebPushToUser(appointment.clientProfileId, {
+        title: salonName,
+        body: `💬 Nova poruka za ${appointment.serviceName}`,
+        icon,
+        tag: `appt-msg-${appointment._id}`,
+        url: panelUrl,
+      });
+      return notification;
     }
   }
 
@@ -390,8 +428,21 @@ export async function createAppointmentNotification(
       });
       notifications.push(notification);
     }
+    await sendWebPushToMany(adminIds, {
+      title: salonName,
+      body: `📅 ${appointment.clientName} je zakazao/la ${appointment.serviceName}${appointment.date ? " — " + appointment.date : ""}`,
+      icon,
+      tag: `appt-created-${appointment._id}`,
+      url: adminUrl,
+    });
     return notifications;
   } else {
+    const pushBodyMap: Record<string, string> = {
+      approved: `✅ Termin odobren — ${appointment.serviceName}${appointment.date ? " " + appointment.date : ""}`,
+      rejected: `❌ Termin odbijen — ${appointment.serviceName}`,
+      rescheduled: `🔄 Predložen novi termin za ${appointment.serviceName}`,
+      cancelled: `🚫 Termin otkazan — ${appointment.serviceName}`,
+    };
     try {
       const notification = await createNotification({
         recipientProfileId: appointment.clientProfileId,
@@ -405,6 +456,13 @@ export async function createAppointmentNotification(
           date: appointment.date,
           time: appointment.time,
         },
+      });
+      await sendWebPushToUser(appointment.clientProfileId, {
+        title: salonName,
+        body: pushBodyMap[type] ?? config.clientMessage,
+        icon,
+        tag: `appt-${type}-${appointment._id}`,
+        url: panelUrl,
       });
       return notification;
     } catch (error) {
@@ -592,6 +650,11 @@ export async function createTestimonialNotification(
   } as const;
 
   const fullType = fullTypeMap[type];
+  const { icon, name: salonName } = await getSalonBranding(testimonial.tenantId);
+  const adminUrl = "/admin/preporuke";
+  const panelUrl = "/panel?tab=Moje%20Preporuke";
+
+  const stars = "⭐".repeat(Math.min(testimonial.rating ?? 5, 5));
 
   if (
     type === "created" ||
@@ -618,9 +681,39 @@ export async function createTestimonialNotification(
       });
       notifications.push(notification);
     }
+
+    const adminPushBodyMap: Partial<Record<TestimonialType, string>> = {
+      created: `${stars} ${testimonial.clientName}: "${testimonial.comment?.substring(0, 60) || testimonial.appointmentId.serviceName}"`,
+      updated: `✏️ ${testimonial.clientName} je izmenio/la recenziju za ${testimonial.appointmentId.serviceName}`,
+      deleted: `🗑️ ${testimonial.clientName} je obrisao/la recenziju za ${testimonial.appointmentId.serviceName}`,
+      message: `💬 ${testimonial.clientName}: nova poruka za ${testimonial.appointmentId.serviceName}`,
+    };
+
+    // Push to admins for client-originated events
+    if (type !== "replied") {
+      await sendWebPushToMany(adminIds, {
+        title: salonName,
+        body: adminPushBodyMap[type] ?? config.adminMessage,
+        icon,
+        tag: `testimonial-${type}-${testimonial._id}`,
+        url: adminUrl,
+      });
+    }
+
+    // Push to client when admin replies
+    if (type === "replied") {
+      await sendWebPushToUser(testimonial.clientProfileId, {
+        title: salonName,
+        body: `💬 Salon je odgovorio na Vašu recenziju za ${testimonial.appointmentId.serviceName}`,
+        icon,
+        tag: `testimonial-replied-${testimonial._id}`,
+        url: panelUrl,
+      });
+    }
+
     return notifications;
   } else {
-    return await createNotification({
+    const notification = await createNotification({
       recipientProfileId: testimonial.clientProfileId,
       tenantId: testimonial.tenantId,
       type: fullType,
@@ -631,6 +724,14 @@ export async function createTestimonialNotification(
         serviceName: testimonial.appointmentId.serviceName,
       },
     });
+    await sendWebPushToUser(testimonial.clientProfileId, {
+      title: salonName,
+      body: config.clientMessage,
+      icon,
+      tag: `testimonial-${type}-${testimonial._id}`,
+      url: panelUrl,
+    });
+    return notification;
   }
 }
 
