@@ -22,6 +22,7 @@ import Image from "next/image";
 import Link from "next/link";
 import AlertModal from "@/components/modals/AlertModal";
 import { SuperAdminChatWorkspace } from "@/components/admin/chat/SuperAdminChatWorkspace";
+import { SuperAdminNotificationBell } from "@/components/superadmin/SuperAdminNotificationBell";
 
 // ─── Tab types ────────────────────────────────────────────────────────────────
 type Tab =
@@ -143,6 +144,7 @@ export default function SuperAdminDashboard() {
           <span className="bg-violet-900/40 text-violet-400 px-2 py-1 rounded">
             {sa.stats?.paidTenants ?? "—"} plaćenih
           </span>
+          <SuperAdminNotificationBell onChatClick={() => setActiveTab("chat")} />
           <AuthStatusButton theme="dark" logoutRedirect="/login" />
         </div>
       </header>

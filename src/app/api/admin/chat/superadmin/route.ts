@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { SuperAdminChat } from "@/models/SuperAdminChat";
+import { AuthUser } from "@/models/AuthUser";
+import { Notification } from "@/models/Notification";
+import { TenantUser } from "@/models/TenantUser";
+import { SalonProfile } from "@/models/SalonProfile";
 import mongoose from "mongoose";
 
 // GET /api/admin/chat/superadmin — returns chat messages with superadmin
@@ -55,8 +59,41 @@ export async function POST(req: NextRequest) {
   chat.lastMessageAt = new Date();
   await chat.save();
 
-  // Notify superadmin via Notification (generic since superadmin uses AuthUser not TenantUser)
-  // SuperAdmin checks their own notification system — we skip tenant Notification here
+  // Create notification for superadmin using their AuthUser._id as recipientProfileId
+  try {
+    const superadminEmail = process.env.SUPERADMIN_EMAIL;
+    if (superadminEmail) {
+      const superadminUser = (await AuthUser.findOne({ email: superadminEmail })
+        .select("_id")
+        .lean()) as { _id: mongoose.Types.ObjectId } | null;
+
+      if (superadminUser) {
+        const senderProfile = (await TenantUser.findById(decoded.tenantUserId)
+          .select("name tenantId")
+          .lean()) as { name?: string; tenantId?: mongoose.Types.ObjectId } | null;
+
+        const salonName = senderProfile?.tenantId
+          ? ((await SalonProfile.findOne({ tenantId: senderProfile.tenantId })
+              .select("name")
+              .lean()) as { name?: string } | null)?.name ?? "Salon"
+          : "Salon";
+
+        await Notification.create({
+          recipientProfileId: superadminUser._id,
+          tenantId: decoded.tenantId ?? new mongoose.Types.ObjectId(),
+          type: "chat_message",
+          title: `${salonName}`,
+          message: content?.trim() ? content.trim().slice(0, 80) : "📎 Prilog",
+          isRead: false,
+          metadata: {
+            sender: "admin",
+            clientName: senderProfile?.name ?? "Admin",
+            salonName,
+          },
+        });
+      }
+    }
+  } catch { /* notification is non-critical */ }
 
   return NextResponse.json({ success: true });
 }
