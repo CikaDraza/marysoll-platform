@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useClientRouting } from "@/hooks/useClientRouting";
-import { useSalonProfile } from "@/hooks/useSalonProfile";
+import { usePublicSalonProfile } from "@/hooks/useSalonProfile";
 import ClientAppointments from "@/components/client/ClientAppointments";
 import AppointmentCalendar from "@/components/client/AppointmentCalendar";
 import ClientTestimonials from "@/components/client/ClientTestimonials";
@@ -21,9 +21,9 @@ const ALL_TAB_IDS = PANEL_TABS.map((t) => t.id);
 export default function ClientPanelPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { base } = useClientRouting();
+  const { base, tenantSlug } = useClientRouting();
   const { isLoggedIn, isLoading } = useAuth();
-  const { data: salon } = useSalonProfile();
+  const { data: salon } = usePublicSalonProfile(tenantSlug);
 
   const tabParam = searchParams.get("tab") as PanelTab | null;
   const [activeTab, setActiveTab] = useState<PanelTab>(
