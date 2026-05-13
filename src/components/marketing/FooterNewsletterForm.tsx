@@ -45,7 +45,7 @@ export default function FooterNewsletterForm() {
             disabled={pending}
             className="cursor-pointer flex-none mt-3 lg:mt-0 rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-xs outline-1 outline-white hover:bg-gray-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--secondary-color) disabled:opacity-50"
           >
-            {isLoading ? <LoaderButton /> : "Pretplatite se"}
+            {isLoading ? <LoaderButton color="black" /> : "Pretplatite se"}
           </button>
         </form>
       )}
