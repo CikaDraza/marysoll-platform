@@ -49,6 +49,7 @@ import { Theme3Header } from "./theme-3/Header";
 import { Theme3Footer } from "./theme-3/Footer";
 import { Theme1ImageGenerationSection } from "./theme-1/ImageGenerationSection";
 import {
+  NewsletterSection,
   Theme3AboutSoft,
   Theme3CTA,
   Theme3FAQSoft,
@@ -524,6 +525,7 @@ export function ThemeLayout({
 
           {/* 10. FINAL CTA */}
           <Theme3CTA tenantSlug={tenantSlug} />
+          <NewsletterSection />
         </main>
 
         <Theme3Footer {...footerProps} />

@@ -32,6 +32,7 @@ const NewsletterLogSchema = new Schema(
     clickedAt: Date,
     trackingPixelId: String,
     clickTrackingId: String,
+    clickedUrl: String,
   },
   { timestamps: true },
 );

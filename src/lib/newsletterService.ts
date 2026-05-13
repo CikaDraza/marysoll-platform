@@ -2,7 +2,6 @@ import "server-only";
 
 import { NewsletterStats, NewsletterSubscriptionData } from "@/types";
 import { TenantUser } from "@/models/TenantUser";
-import { AuthUser } from "@/models/AuthUser";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 import { Tenant } from "@/models/Tenant";
 import { AudienceContact } from "@/models/AudienceContact";
@@ -15,9 +14,24 @@ import {
 } from "./email/email";
 import { Types } from "mongoose";
 
-const trackingDomain = process.env.NEXT_PUBLIC_APP_URL;
-const websiteDomain = process.env.NEXT_PUBLIC_API_URL;
-const platformBaseUrl = process.env.NEXT_PUBLIC_APP_URL;
+const platformBaseUrl =
+  process.env.NEXTAUTH_URL ||
+  process.env.NEXT_PUBLIC_APP_URL ||
+  "https://marysoll.com";
+const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "marysoll.com";
+const trackingDomain = platformBaseUrl;
+const bookingBaseUrl =
+  process.env.NEXT_PUBLIC_BOOKING_BASE_URL || "https://booking.marysoll.com";
+
+function normalizeNewsletterLandingSlug(slug: string) {
+  return slug
+    .trim()
+    .replace(/^https?:\/\/[^/]+/i, "")
+    .replace(/^\/+/, "")
+    .replace(/^blog\/+/i, "")
+    .replace(/\s+/g, "-")
+    .toLowerCase();
+}
 
 function getLandingBaseUrl(
   tenant: {
@@ -29,33 +43,42 @@ function getLandingBaseUrl(
   if (tenant?.customDomain && tenant.customDomainVerified) {
     return `https://${tenant.customDomain}`;
   }
-  return `${platformBaseUrl}/${tenant?.slug ?? ""}`;
+  if (tenant?.slug) {
+    return `https://${tenant.slug}.${baseDomain}`;
+  }
+  return platformBaseUrl;
 }
 
 function getNewsletterLandingUrl(
-  tenant: {
-    slug: string;
-    customDomain?: string | null;
-    customDomainVerified?: boolean;
-  } | null,
   landingSlug: string,
 ): string {
-  const cleanSlug = landingSlug.startsWith("/")
-    ? landingSlug.slice(1)
-    : landingSlug;
-  return `${getLandingBaseUrl(tenant)}/newsletter/${cleanSlug}`;
+  if (landingSlug.startsWith("http://") || landingSlug.startsWith("https://")) {
+    return landingSlug;
+  }
+
+  const cleanSlug = normalizeNewsletterLandingSlug(landingSlug);
+  return `${bookingBaseUrl.replace(/\/+$/, "")}/blog/${cleanSlug}`;
 }
 
 export async function subscribeToNewsletter(data: NewsletterSubscriptionData) {
   await connectToDB();
 
+  const email = data.email.trim().toLowerCase();
+  const tenantId = data.tenantId ?? null;
   const existingContact = await AudienceContact.findOne({
-    email: data.email,
-    tenantId: data.tenantId ?? null,
-    contactType: "NEWSLETTER",
+    email,
+    tenantId,
   });
 
-  if (existingContact?.subscribed) {
+  const existingTenantUser = tenantId
+    ? await TenantUser.findOne({ tenantId, email })
+    : null;
+
+  if (
+    existingContact?.subscribed &&
+    !existingContact.verificationToken &&
+    (!existingTenantUser || existingTenantUser.newsletterPreferences?.subscribed)
+  ) {
     return { success: false, message: "Već ste pretplaćeni na newsletter!" };
   }
 
@@ -67,15 +90,31 @@ export async function subscribeToNewsletter(data: NewsletterSubscriptionData) {
     existingContact.status = "ACTIVE";
     existingContact.verificationToken = verificationToken;
     existingContact.unsubscribeToken = unsubscribeToken;
+    if (existingTenantUser?._id) {
+      existingContact.profileId = existingTenantUser._id;
+      existingContact.contactType =
+        existingTenantUser.role === "USER" || existingTenantUser.role === "GUEST"
+          ? "CLIENT"
+          : existingTenantUser.role === "STAFF"
+            ? "STAFF"
+            : "SALON_OWNER";
+    }
     existingContact.unsubscribedAt = undefined;
     await existingContact.save();
   } else {
     await AudienceContact.create({
-      email: data.email,
+      email,
       firstName: data.name?.split(" ")[0],
       lastName: data.name?.split(" ").slice(1).join(" ") || undefined,
-      tenantId: data.tenantId ?? null,
-      contactType: "NEWSLETTER",
+      tenantId,
+      profileId: existingTenantUser?._id,
+      contactType: existingTenantUser
+        ? existingTenantUser.role === "USER" || existingTenantUser.role === "GUEST"
+          ? "CLIENT"
+          : existingTenantUser.role === "STAFF"
+            ? "STAFF"
+            : "SALON_OWNER"
+        : "NEWSLETTER",
       source: "newsletter",
       subscribed: true,
       status: "ACTIVE",
@@ -84,7 +123,24 @@ export async function subscribeToNewsletter(data: NewsletterSubscriptionData) {
     });
   }
 
-  await sendNewsletterVerificationEmail(data.email, verificationToken, data.tenantId ?? null);
+  if (existingTenantUser) {
+    existingTenantUser.newsletterPreferences = {
+      ...existingTenantUser.newsletterPreferences,
+      subscribed: true,
+      subscriptionDate:
+        existingTenantUser.newsletterPreferences?.subscriptionDate ?? new Date(),
+      subscriptionSource: data.source ?? "footer",
+      emailVerified: false,
+      verificationToken,
+      unsubscribeToken,
+      unsubscribedAt: undefined,
+      openCount: existingTenantUser.newsletterPreferences?.openCount ?? 0,
+      clickCount: existingTenantUser.newsletterPreferences?.clickCount ?? 0,
+    };
+    await existingTenantUser.save();
+  }
+
+  await sendNewsletterVerificationEmail(email, verificationToken, tenantId);
 
   return { success: true, message: "Verification email sent" };
 }
@@ -96,6 +152,29 @@ export async function verifyNewsletterSubscription(token: string) {
 
   if (!contact) {
     throw new Error("Invalid token");
+  }
+
+  contact.subscribed = true;
+  contact.status = "ACTIVE";
+  if (contact.tenantId) {
+    await TenantUser.findOneAndUpdate(
+      {
+        tenantId: contact.tenantId,
+        email: contact.email,
+      },
+      {
+        $set: {
+          "newsletterPreferences.subscribed": true,
+          "newsletterPreferences.emailVerified": true,
+          "newsletterPreferences.verifiedAt": new Date(),
+          "newsletterPreferences.unsubscribeToken": contact.unsubscribeToken,
+        },
+        $unset: {
+          "newsletterPreferences.verificationToken": "",
+          "newsletterPreferences.unsubscribedAt": "",
+        },
+      },
+    );
   }
 
   contact.verificationToken = undefined;
@@ -146,24 +225,23 @@ export async function sendCampaignEmails(campaignId: string) {
   let recipients: Recipient[] = [];
 
   if (campaign.sendToAll) {
-    // Registered subscribers (TenantUser + AuthUser join)
+    // Registered tenant subscribers.
     const tenantUsers = await TenantUser.find({
       tenantId: campaign.tenantId,
       "newsletterPreferences.subscribed": true,
       "newsletterPreferences.emailVerified": true,
     }).lean<{
       _id: Types.ObjectId;
-      authUserId: Types.ObjectId;
+      email: string;
       name: string;
       newsletterPreferences: { unsubscribeToken?: string };
     }[]>();
 
     for (const tu of tenantUsers) {
-      const auth = await AuthUser.findById(tu.authUserId).select("email").lean<{ email: string }>();
-      if (auth?.email) {
+      if (tu.email) {
         recipients.push({
-          email: auth.email,
-          name: tu.name || auth.email.split("@")[0],
+          email: tu.email,
+          name: tu.name || tu.email.split("@")[0],
           unsubscribeToken: tu.newsletterPreferences?.unsubscribeToken ?? "invalid",
           subscriberId: tu._id.toString(),
         });
@@ -175,6 +253,7 @@ export async function sendCampaignEmails(campaignId: string) {
       tenantId: campaign.tenantId,
       subscribed: true,
       status: "ACTIVE",
+      verificationToken: { $exists: false },
       contactType: { $in: ["NEWSLETTER", "CLIENT"] },
     }).lean<{
       _id: Types.ObjectId;
@@ -215,10 +294,14 @@ export async function sendCampaignEmails(campaignId: string) {
 
   for (const recipient of recipients) {
     const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/newsletter/unsubscribe?token=${recipient.unsubscribeToken}`;
+    const trackingPixelId = crypto.randomUUID();
+    const clickTrackingId = crypto.randomUUID();
 
     const trackingData = {
       campaignId: campaign._id.toString(),
       subscriberId: recipient.subscriberId,
+      trackingPixelId,
+      clickTrackingId,
     };
 
     let finalUrl: string;
@@ -226,7 +309,7 @@ export async function sendCampaignEmails(campaignId: string) {
       campaign.campaignType === "email-landing" &&
       campaign.landingPage?.slug
     ) {
-      finalUrl = getNewsletterLandingUrl(tenant, campaign.landingPage.slug);
+      finalUrl = getNewsletterLandingUrl(campaign.landingPage.slug);
     } else {
       function normalizeSlug(slug?: string) {
         if (!slug) return "/";
@@ -240,23 +323,41 @@ export async function sendCampaignEmails(campaignId: string) {
         return slug.startsWith("/") ? slug : `/${slug}`;
       }
       const ctaSlug = normalizeSlug(campaign.ctaSlug);
-      finalUrl = `${websiteDomain}${ctaSlug}`;
+      finalUrl = campaign.ctaSlug?.startsWith("http")
+        ? campaign.ctaSlug
+        : `${getLandingBaseUrl(tenant)}${ctaSlug}`;
     }
 
     const trackingCtaUrl =
       `${trackingDomain}/api/newsletter/track/click` +
       `?campaign=${trackingData.campaignId}` +
       `&subscriber=${trackingData.subscriberId}` +
+      `&log=${trackingData.clickTrackingId}` +
       `&url=${encodeURIComponent(finalUrl)}`;
+
+    const trackingOpenUrl =
+      `${trackingDomain}/api/newsletter/track/open` +
+      `?campaign=${trackingData.campaignId}` +
+      `&subscriber=${trackingData.subscriberId}` +
+      `&log=${trackingData.trackingPixelId}`;
+
+    const newsletterLog = await NewsletterLog.create({
+      tenantId: campaign.tenantId,
+      campaignId: campaign._id,
+      recipientEmail: recipient.email,
+      ...(Types.ObjectId.isValid(recipient.subscriberId) && {
+        recipientProfileId: new Types.ObjectId(recipient.subscriberId),
+      }),
+      status: "sent",
+      trackingPixelId,
+      clickTrackingId,
+    });
 
     const personalizedContent = campaign.content
       .replace(/{{clientName}}/g, recipient.name || "poštovana")
       .replace(/{{unsubscribeUrl}}/g, unsubscribeUrl)
       .replace(/{{trackingCtaUrl}}/g, trackingCtaUrl)
-      .replace(
-        /{{trackingOpenUrl}}/g,
-        `${websiteDomain}/api/newsletter/track/open?campaign=${trackingData.campaignId}&subscriber=${trackingData.subscriberId}`,
-      );
+      .replace(/{{trackingOpenUrl}}/g, trackingOpenUrl);
 
     try {
       await sendNewsletterEmail(
@@ -265,12 +366,15 @@ export async function sendCampaignEmails(campaignId: string) {
         personalizedContent,
         unsubscribeUrl,
         trackingData,
+        campaign.tenantId.toString(),
       );
 
       sentCount++;
       campaign.sentCount = sentCount;
     } catch (err) {
       console.error(`Greška pri slanju na ${recipient.email}:`, err);
+      newsletterLog.status = "bounced";
+      await newsletterLog.save();
       bounceCount++;
       campaign.bounceCount = bounceCount;
     }
@@ -282,47 +386,153 @@ export async function sendCampaignEmails(campaignId: string) {
   await campaign.save();
 }
 
-export async function trackOpen(campaignId: string, subscriberId: string) {
-  await connectToDB();
+async function incrementRecipientOpen(subscriberId: string) {
+  if (!Types.ObjectId.isValid(subscriberId)) return;
 
   await Promise.all([
-    NewsletterCampaign.findByIdAndUpdate(campaignId, {
-      $inc: { openCount: 1 },
-    }),
     AudienceContact.findByIdAndUpdate(subscriberId, {
       $inc: { openCount: 1 },
     }),
+    TenantUser.findByIdAndUpdate(subscriberId, {
+      $inc: { "newsletterPreferences.openCount": 1 },
+    }),
   ]);
+}
 
-  await NewsletterLog.create({
-    campaignId,
-    subscriberId,
-    type: "open",
-  });
+async function incrementRecipientClick(subscriberId: string) {
+  if (!Types.ObjectId.isValid(subscriberId)) return;
+
+  await Promise.all([
+    AudienceContact.findByIdAndUpdate(subscriberId, {
+      $inc: { clickCount: 1 },
+    }),
+    TenantUser.findByIdAndUpdate(subscriberId, {
+      $inc: { "newsletterPreferences.clickCount": 1 },
+    }),
+  ]);
+}
+
+async function incrementCampaignMetricOnce(
+  campaignId: string,
+  metric: "openCount" | "clickCount",
+) {
+  const campaign = await NewsletterCampaign.findOneAndUpdate(
+    {
+      _id: campaignId,
+      $expr: { $lt: [`$${metric}`, "$sentCount"] },
+    },
+    {
+      $inc: { [metric]: 1 },
+    },
+  );
+
+  return Boolean(campaign);
+}
+
+export async function trackOpen(
+  campaignId: string,
+  subscriberId: string,
+  trackingPixelId?: string | null,
+) {
+  await connectToDB();
+
+  let logUpdated = false;
+
+  if (trackingPixelId) {
+    const updated = await NewsletterLog.findOneAndUpdate(
+      {
+        campaignId,
+        trackingPixelId,
+        openedAt: { $exists: false },
+      },
+      {
+        $set: {
+          status: "opened",
+          openedAt: new Date(),
+        },
+      },
+    );
+
+    if (!updated) return;
+    logUpdated = true;
+  } else if (subscriberId) {
+    const updated = await NewsletterLog.findOneAndUpdate(
+      {
+        campaignId,
+        $or: [{ recipientProfileId: subscriberId }, { subscriberId }],
+        openedAt: { $exists: false },
+      },
+      {
+        $set: {
+          status: "opened",
+          openedAt: new Date(),
+        },
+      },
+    );
+
+    if (!updated) return;
+    logUpdated = true;
+  }
+
+  if (logUpdated && (await incrementCampaignMetricOnce(campaignId, "openCount"))) {
+    await incrementRecipientOpen(subscriberId);
+  }
 }
 
 export async function trackClick(
   campaignId: string,
   subscriberId: string,
   url: string,
+  clickTrackingId?: string | null,
 ) {
   await connectToDB();
 
-  await Promise.all([
-    NewsletterCampaign.findByIdAndUpdate(campaignId, {
-      $inc: { clickCount: 1 },
-    }),
-    AudienceContact.findByIdAndUpdate(subscriberId, {
-      $inc: { clickCount: 1 },
-    }),
-  ]);
+  let logUpdated = false;
 
-  await NewsletterLog.create({
-    campaignId,
-    subscriberId,
-    type: "click",
-    url,
-  });
+  if (clickTrackingId) {
+    const updated = await NewsletterLog.findOneAndUpdate(
+      {
+        campaignId,
+        clickTrackingId,
+        clickedAt: { $exists: false },
+      },
+      {
+        $set: {
+          status: "clicked",
+          clickedAt: new Date(),
+          clickedUrl: url,
+        },
+      },
+    );
+
+    if (!updated) return;
+    logUpdated = true;
+  } else if (subscriberId) {
+    const updated = await NewsletterLog.findOneAndUpdate(
+      {
+        campaignId,
+        $or: [{ recipientProfileId: subscriberId }, { subscriberId }],
+        clickedAt: { $exists: false },
+      },
+      {
+        $set: {
+          status: "clicked",
+          clickedAt: new Date(),
+          clickedUrl: url,
+        },
+      },
+    );
+
+    if (!updated) return;
+    logUpdated = true;
+  }
+
+  if (
+    logUpdated &&
+    (await incrementCampaignMetricOnce(campaignId, "clickCount"))
+  ) {
+    await incrementRecipientClick(subscriberId);
+  }
 }
 
 export async function getNewsletterStats(): Promise<NewsletterStats> {

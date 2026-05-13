@@ -5,6 +5,18 @@ import { requireFeature } from "@/lib/plans/planEnforcement";
 import { NextResponse } from "next/server";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 
+function normalizeNewsletterLandingSlug(slug?: string) {
+  return (
+    slug
+      ?.trim()
+      .replace(/^https?:\/\/[^/]+/i, "")
+      .replace(/^\/+/, "")
+      .replace(/^blog\/+/i, "")
+      .replace(/\s+/g, "-")
+      .toLowerCase() || ""
+  );
+}
+
 export async function PATCH(
   request: Request,
   context: { params: Promise<{ id: string }> },
@@ -26,6 +38,7 @@ export async function PATCH(
 
     const { id } = await context.params;
     const payload = await request.json();
+    const landingSlug = normalizeNewsletterLandingSlug(payload.landingPage?.slug);
 
     const campaignId = id;
 
@@ -33,8 +46,8 @@ export async function PATCH(
       { _id: campaignId, tenantId },
       {
         ...(payload.campaignType && { campaignType: payload.campaignType }),
-        ...(payload.landingPage.slug && {
-          ctaSlug: payload.landingPage.slug,
+        ...(landingSlug && {
+          ctaSlug: landingSlug,
         }),
         ...(payload.semanticContent && {
           semanticContent: {
@@ -45,7 +58,7 @@ export async function PATCH(
         ...(payload.landingPage && {
           landingPage: {
             ...payload.landingPage,
-            slug: payload.landingPage.slug,
+            slug: landingSlug,
           },
         }),
       },

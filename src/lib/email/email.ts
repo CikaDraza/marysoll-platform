@@ -346,7 +346,11 @@ export async function sendNewsletterEmail(
   subject: string,
   htmlContent: string,
   unsubscribeUrl: string,
-  trackingData?: { campaignId: string; subscriberId: string },
+  trackingData?: {
+    campaignId: string;
+    subscriberId: string;
+    trackingPixelId?: string;
+  },
   tenantId?: string | null,
 ): Promise<{ success: boolean; messageId?: string }> {
   const html = await newsletterPromotionTemplate({

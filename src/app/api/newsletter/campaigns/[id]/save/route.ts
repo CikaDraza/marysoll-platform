@@ -7,6 +7,18 @@ import { requireFeature } from "@/lib/plans/planEnforcement";
 import { SaveCampaignSemanticPayload } from "@/types/newsletter";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 
+function normalizeNewsletterLandingSlug(slug?: string) {
+  return (
+    slug
+      ?.trim()
+      .replace(/^https?:\/\/[^/]+/i, "")
+      .replace(/^\/+/, "")
+      .replace(/^blog\/+/i, "")
+      .replace(/\s+/g, "-")
+      .toLowerCase() || ""
+  );
+}
+
 export async function PATCH(
   request: Request,
   context: { params: Promise<{ id: string }> },
@@ -46,9 +58,11 @@ export async function PATCH(
     };
 
     if (payload.campaignType === "email-landing" && payload.landingPage) {
+      const slug = normalizeNewsletterLandingSlug(payload.landingPage.slug);
+
       campaign.landingPage = {
         enabled: true,
-        slug: payload.landingPage.slug,
+        slug,
         layout: payload.landingPage.layout || [],
         seo: payload.landingPage.seo || {},
         score: payload.landingPage.score || 0,
@@ -57,7 +71,7 @@ export async function PATCH(
         status: "generated", // Uvek "generated" za save
         regeneratedCount: (campaign.landingPage?.regeneratedCount || 0) + 1,
       };
-      campaign.ctaSlug = payload.landingPage.slug;
+      campaign.ctaSlug = slug;
     }
 
     await campaign.save();

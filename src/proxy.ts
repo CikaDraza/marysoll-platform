@@ -552,6 +552,17 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
     // PRODUCTION: subdomain or custom domain — rewrite /path → /tenant/path
     if (tenantSlug && isHostBased) {
+      if (pathname === "/blog" || pathname.startsWith("/blog/")) {
+        const rewriteUrl = new URL(
+          `/tenant/newsletter${pathname}`,
+          request.nextUrl.origin,
+        );
+        rewriteUrl.search = request.nextUrl.search;
+        return NextResponse.rewrite(rewriteUrl, {
+          request: { headers: requestHeaders },
+        });
+      }
+
       const matchesClientPath =
         CLIENT_TENANT_PATHS.has(pathname) ||
         [...CLIENT_TENANT_PATHS].some((p) => pathname.startsWith(p + "/"));

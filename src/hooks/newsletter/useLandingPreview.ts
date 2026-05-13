@@ -110,7 +110,10 @@ export function useLandingPreview({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               campaignType: form.campaignType,
-              semanticContent: form.semanticContent,
+              semanticContent: {
+                ...form.semanticContent,
+                intent: form.semanticContent.intent || "promotion",
+              },
               customPrompt: form.semanticContent.summary,
               imagesUrl: imagesUrls,
             }),

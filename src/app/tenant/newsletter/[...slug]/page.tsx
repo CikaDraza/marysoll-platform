@@ -11,10 +11,10 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const { slugId } = normalizeCampaignSlug(slug);
+  const { fullPath } = normalizeCampaignSlug(slug);
 
   try {
-    const data = await getCampaign(slugId);
+    const data = await getCampaign(fullPath);
     const seo = data?.landingPage?.seo;
 
     return {
@@ -34,10 +34,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function NewsletterLandingPage({ params }: Props) {
   const { slug } = await params;
-  const { slugId } = normalizeCampaignSlug(slug);
+  const { slugId, fullPath } = normalizeCampaignSlug(slug);
 
   const [data, cookieStore] = await Promise.all([
-    getCampaign(slugId).catch(() => null),
+    getCampaign(fullPath).catch(() => null),
     cookies(),
   ]);
 

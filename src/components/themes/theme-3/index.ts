@@ -2,7 +2,12 @@ export { Theme3Header } from "./Header";
 export { Theme3Footer } from "./Footer";
 export { Theme3HeroSoft } from "./Hero";
 export { Theme3Hero } from "./Theme3Hero";
-export type { HeroVariant, HeroCmsData, HeroCtaData, HeroSharedProps } from "./Theme3Hero";
+export type {
+  HeroVariant,
+  HeroCmsData,
+  HeroCtaData,
+  HeroSharedProps,
+} from "./Theme3Hero";
 export { Theme3AboutSoft } from "./About";
 export { Theme3ServicesSoft } from "./Services";
 export { Theme3HeroSecond } from "./HeroSecond";
@@ -16,3 +21,4 @@ export { Theme3TestimonialsSoft } from "./TestimonialsSection";
 export { Theme3GalleryMasonry } from "./GalleryMasonry";
 export { Theme3PricingSoft } from "./PricingSoft";
 export { Theme3FAQSoft } from "./FAQ";
+export { NewsletterSection } from "./NewsletterSection";

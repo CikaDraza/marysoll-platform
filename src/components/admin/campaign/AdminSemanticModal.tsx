@@ -52,6 +52,46 @@ const EMAIL_ONLY_CTA_OPTIONS = [
   { label: "Termini", value: "/termini" },
 ];
 
+const DEFAULT_CAMPAIGN_INTENT = CampaignIntent.Promotion;
+
+function normalizeLandingSlug(slug?: string | null) {
+  return (
+    slug
+      ?.trim()
+      .replace(/^https?:\/\/[^/]+/i, "")
+      .replace(/^\/+/, "")
+      .replace(/^blog\/+/i, "")
+      .replace(/\s+/g, "-")
+      .toLowerCase() || ""
+  );
+}
+
+function getInitialForm(
+  campaign: INewsletterCampaign,
+): UpdateCampaignSemanticPayload {
+  const campaignType = (campaign.campaignType ?? "email-only") as CampaignType;
+
+  return {
+    campaignType,
+    semanticContent: {
+      intent:
+        (campaign.semanticContent?.intent as CampaignIntent) ||
+        DEFAULT_CAMPAIGN_INTENT,
+      summary: campaign.semanticContent?.summary ?? "",
+      tone: (campaign.semanticContent?.tone ?? "friendly") as SemanticTone,
+      status: campaign.semanticContent?.status ?? "draft",
+      source: "manual",
+    },
+    landingPage: {
+      enabled: campaign.campaignType === "email-landing",
+      slug:
+        campaignType === "email-landing"
+          ? normalizeLandingSlug(campaign.ctaSlug || campaign.landingPage?.slug)
+          : campaign.ctaSlug || "/termini",
+    },
+  };
+}
+
 function scoreLabel(score: number) {
   if (score > 0.85)
     return { label: "Excellent", color: "bg-green-100 text-green-800" };
@@ -66,22 +106,9 @@ export default function AdminSemanticModal({
   campaign,
 }: Props) {
   // Form state
-  const [form, setForm] = useState<UpdateCampaignSemanticPayload>({
-    campaignType: (campaign.campaignType ?? "email-only") as CampaignType,
-    semanticContent: {
-      intent:
-        (campaign.semanticContent?.intent as CampaignIntent) ??
-        ("promotion" as CampaignIntent),
-      summary: campaign.semanticContent?.summary ?? "",
-      tone: (campaign.semanticContent?.tone ?? "friendly") as SemanticTone,
-      status: campaign.semanticContent?.status ?? "draft",
-      source: "manual",
-    },
-    landingPage: {
-      enabled: campaign.campaignType === "email-landing",
-      slug: campaign.ctaSlug || "/termini",
-    },
-  });
+  const [form, setForm] = useState<UpdateCampaignSemanticPayload>(() =>
+    getInitialForm(campaign),
+  );
 
   // Initialize images from existing landing
   const existingImages =
@@ -169,6 +196,12 @@ export default function AdminSemanticModal({
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
 
+    const intent = form.semanticContent.intent || DEFAULT_CAMPAIGN_INTENT;
+    const landingSlug =
+      form.campaignType === "email-landing"
+        ? normalizeLandingSlug(form.landingPage.slug)
+        : form.landingPage.slug || "/termini";
+
     try {
       await saveCampaign({
         campaignId: campaign._id.toString(),
@@ -176,18 +209,19 @@ export default function AdminSemanticModal({
           campaignType: form.campaignType,
           semanticContent: {
             ...form.semanticContent,
+            intent,
             status: "generated",
             source: "manual",
             keyPoints: [],
             keywords: campaign.semanticContent?.keywords || [],
           },
           landingPage: {
-            slug: form.landingPage.slug || "/termini",
+            slug: landingSlug,
             layout: preview.layout?.layout || [],
             seo: preview.aiLanding?.seo,
             score: preview.layout?.score?.total,
             semanticType:
-              preview.layout?.meta?.semanticType || form.semanticContent.intent,
+              preview.layout?.meta?.semanticType || intent,
             generatedAt: new Date(),
             status: "generated",
           },
@@ -214,7 +248,9 @@ export default function AdminSemanticModal({
           layout: preview.layout.layout,
           seo: preview.aiLanding?.seo,
           semanticType:
-            preview.layout.meta?.semanticType || form.semanticContent.intent,
+            preview.layout.meta?.semanticType ||
+            form.semanticContent.intent ||
+            DEFAULT_CAMPAIGN_INTENT,
           generatedAt: new Date().toISOString(),
           status: "published",
           score: preview.layout.score?.total,
@@ -338,7 +374,7 @@ export default function AdminSemanticModal({
                 Svrha kampanje
               </label>
               <select
-                value={form.semanticContent.intent}
+                value={form.semanticContent.intent || DEFAULT_CAMPAIGN_INTENT}
                 onChange={(e) =>
                   setForm({
                     ...form,
@@ -395,20 +431,16 @@ export default function AdminSemanticModal({
                         ...form,
                         landingPage: {
                           ...form.landingPage,
-                          slug:
-                            "/" +
-                            e.target.value
-                              .replace(/^\/+/, "")
-                              .replace(/\s+/g, "-")
-                              .toLowerCase(),
+                          slug: normalizeLandingSlug(e.target.value),
                         },
                       })
                     }
                     className="mt-1 w-full dark:text-gray-800 rounded-md bg-gray-100 p-2"
-                    placeholder="/termini"
+                    placeholder="depend-gel-iq"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    URL gde vodi CTA dugme (npr /krema-za-lice)
+                    URL gde vodi CTA dugme: booking.marysoll.com/blog/
+                    {form.landingPage.slug || "depend-gel-iq"}
                   </p>
                 </>
               )}
@@ -572,12 +604,6 @@ export default function AdminSemanticModal({
                     if (!form.semanticContent.summary?.trim()) {
                       toast.error(
                         "Unesite opis kampanje (summary) pre generisanja landinga",
-                      );
-                      return;
-                    }
-                    if (!form.semanticContent.intent) {
-                      toast.error(
-                        "Izaberite svrhu kampanje pre generisanja landinga",
                       );
                       return;
                     }

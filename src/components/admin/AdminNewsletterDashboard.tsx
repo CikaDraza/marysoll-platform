@@ -1223,11 +1223,24 @@ export default function AdminNewsletterDashboard() {
                 Još nema kreiranih kampanja
               </p>
             ) : (
-              campaigns.map((c) => (
-                <div
-                  key={c._id}
-                  className="p-4 flex flex-col items-start gap-3"
-                >
+              campaigns.map((c) => {
+                const normalizedOpenCount = Math.min(
+                  c.openCount,
+                  c.sentCount,
+                );
+                const normalizedClickCount = Math.min(
+                  c.clickCount,
+                  c.sentCount,
+                );
+                const normalizedOpenRate = Math.round(
+                  (normalizedOpenCount / (c.sentCount || 1)) * 100,
+                );
+
+                return (
+                  <div
+                    key={c._id}
+                    className="p-4 flex flex-col items-start gap-3"
+                  >
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg">{c.name}</h3>
                     <div className="text-sm text-gray-600 mt-1">
@@ -1237,11 +1250,10 @@ export default function AdminNewsletterDashboard() {
                       {" • "}
                       <span>Poslato: {c.sentCount}</span>
                       {" • "}
-                      <span>Kliknuto: {c.clickCount}</span>
+                      <span>Kliknuto: {normalizedClickCount}</span>
                       {" • "}
                       <span>
-                        Otvoreno: {c.openCount} (
-                        {Math.round((c.openCount / (c.sentCount || 1)) * 100)}%)
+                        Otvoreno: {normalizedOpenCount} ({normalizedOpenRate}%)
                       </span>
                       {c.scheduledFor && (
                         <>
@@ -1376,8 +1388,9 @@ export default function AdminNewsletterDashboard() {
                       {c.status.toUpperCase()}
                     </span>
                   </div>
-                </div>
-              ))
+                  </div>
+                );
+              })
             )}
           </div>
         </div>

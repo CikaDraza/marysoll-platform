@@ -7,6 +7,7 @@ import { Tenant } from "@/models/Tenant";
 import { Types } from "mongoose";
 
 const platformUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://marysoll.com";
+const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
 
 async function resolveTenantBaseUrl(token: string): Promise<string> {
   try {
@@ -31,7 +32,7 @@ async function resolveTenantBaseUrl(token: string): Promise<string> {
       return `https://${tenant.customDomain}`;
     }
     if (tenant?.slug) {
-      return `${platformUrl}/${tenant.slug}`;
+      return `https://${tenant.slug}.${baseDomain}`;
     }
   } catch {
     // fall through

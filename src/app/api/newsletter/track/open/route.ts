@@ -5,9 +5,10 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
   const campaign = req.nextUrl.searchParams.get("campaign");
   const subscriber = req.nextUrl.searchParams.get("subscriber");
+  const log = req.nextUrl.searchParams.get("log");
 
-  if (campaign && subscriber) {
-    await trackOpen(campaign, subscriber);
+  if (campaign && (subscriber || log)) {
+    await trackOpen(campaign, subscriber ?? "", log);
   }
 
   // Vrati 1x1 transparent pixel

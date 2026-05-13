@@ -10,13 +10,17 @@ export async function GET(
   await connectToDB();
   const { slug } = await context.params;
   const { slugId, fullPath } = normalizeCampaignSlug(slug);
+  const blogSlug = fullPath.replace(/^\/blog\/+/i, "");
 
   const campaign = await NewsletterCampaign.findOne({
     campaignType: "email-landing",
     $or: [
       { "landingPage.slug": fullPath },
+      { "landingPage.slug": blogSlug },
       { "landingPage.slug": `/${slugId}` },
+      { "landingPage.slug": slugId },
       { ctaSlug: `/newsletter/${slugId}` },
+      { ctaSlug: blogSlug },
     ],
   }).lean();
 

@@ -343,10 +343,14 @@ export async function newsletterPromotionTemplate(data: {
   ctaLabel?: string;
   unsubscribeUrl: string;
   tenantId?: string | null;
-  trackingData?: { campaignId: string; subscriberId: string };
+  trackingData?: {
+    campaignId: string;
+    subscriberId: string;
+    trackingPixelId?: string;
+  };
 }): Promise<string> {
   const trackingPixel = data.trackingData
-    ? `<img alt="" style="display:none" src="${appUrl()}/api/newsletter/track/open?campaign=${data.trackingData.campaignId}&subscriber=${data.trackingData.subscriberId}" width="1" height="1" />`
+    ? `<img alt="" style="display:none" src="${appUrl()}/api/newsletter/track/open?campaign=${data.trackingData.campaignId}&subscriber=${data.trackingData.subscriberId}${data.trackingData.trackingPixelId ? `&log=${data.trackingData.trackingPixelId}` : ""}" width="1" height="1" />`
     : "";
 
   const innerContent = `
