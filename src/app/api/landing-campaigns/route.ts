@@ -2,11 +2,17 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     await connectToDB();
+    const tenantId = req.headers.get("x-tenant-id");
+
+    if (!tenantId) {
+      return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
+    }
 
     const campaigns = await NewsletterCampaign.find({
+      tenantId,
       campaignType: "email-landing",
       "landingPage.enabled": true,
       "landingPage.status": "published",

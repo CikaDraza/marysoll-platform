@@ -2,7 +2,7 @@ import CampaignClientShell from "@/components/CampaignClientShell";
 import { normalizeCampaignSlug } from "@/helpers/slugNormalizer";
 import { getCampaign } from "@/lib/server/getCampaign";
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 
 interface Props {
@@ -12,9 +12,12 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const { fullPath } = normalizeCampaignSlug(slug);
+  const tenantId = (await headers()).get("x-tenant-id");
+
+  if (!tenantId) return { title: "Marysoll Assistant AI" };
 
   try {
-    const data = await getCampaign(fullPath);
+    const data = await getCampaign(fullPath, tenantId);
     const seo = data?.landingPage?.seo;
 
     return {
@@ -35,9 +38,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function NewsletterLandingPage({ params }: Props) {
   const { slug } = await params;
   const { slugId, fullPath } = normalizeCampaignSlug(slug);
+  const headerStore = await headers();
+  const tenantId = headerStore.get("x-tenant-id");
+
+  if (!tenantId) notFound();
 
   const [data, cookieStore] = await Promise.all([
-    getCampaign(fullPath).catch(() => null),
+    getCampaign(fullPath, tenantId).catch(() => null),
     cookies(),
   ]);
 

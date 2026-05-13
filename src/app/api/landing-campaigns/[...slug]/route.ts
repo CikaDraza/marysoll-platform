@@ -4,15 +4,22 @@ import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 import { NextResponse } from "next/server";
 
 export async function GET(
-  _req: Request,
+  req: Request,
   context: { params: Promise<{ slug: string[] }> },
 ) {
   await connectToDB();
+  const tenantId = req.headers.get("x-tenant-id");
+
+  if (!tenantId) {
+    return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
+  }
+
   const { slug } = await context.params;
   const { slugId, fullPath } = normalizeCampaignSlug(slug);
   const blogSlug = fullPath.replace(/^\/blog\/+/i, "");
 
   const campaign = await NewsletterCampaign.findOne({
+    tenantId,
     campaignType: "email-landing",
     $or: [
       { "landingPage.slug": fullPath },
