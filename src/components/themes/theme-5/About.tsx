@@ -1,5 +1,6 @@
 import { mapCMS } from "@/lib/CMSMapper/mapCMS";
 import Image from "next/image";
+import { renderLinkedText } from "@/helpers/renderLinkedText";
 
 type AboutData = ReturnType<typeof mapCMS>["about"];
 
@@ -14,7 +15,7 @@ export function Theme5About({ data }: { data: AboutData }) {
 
           {data.paragraphs?.map((p, i) => (
             <p className="max-w-xl pb-4 text-gray-800" key={i}>
-              {p}
+              {renderLinkedText(p, data.links)}
             </p>
           ))}
 

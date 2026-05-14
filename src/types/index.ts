@@ -43,6 +43,14 @@ export interface PaginationInfo {
   hasPrevPage: boolean;
 }
 
+export type AboutTextLinkType = "link" | "mention" | "tag";
+
+export interface AboutTextLink {
+  text: string;
+  url: string;
+  type: AboutTextLinkType;
+}
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 export interface ISubscription {
@@ -823,6 +831,7 @@ export interface LandingStructure {
 
       headline?: string;
       paragraphs: string[]; // max 2 u UI
+      links?: AboutTextLink[];
 
       /** Optional about-section image. Layout falls back gracefully when absent. */
       image?: HeroImage;

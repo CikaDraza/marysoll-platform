@@ -261,6 +261,7 @@ export function ThemeLayout({
               about={{
                 headline: ls?.landing?.about?.headline,
                 paragraphs: ls?.landing?.about?.paragraphs ?? [],
+                links: ls?.landing?.about?.links ?? [],
               }}
             />
           )}
@@ -360,6 +361,7 @@ export function ThemeLayout({
           <Theme2AboutSplit
             title={ls?.landing?.about?.headline || "O nama"}
             text={ls?.landing?.about?.paragraphs || "Saznajte više o nama"}
+            links={ls?.landing?.about?.links ?? []}
             imageUrl={
               "https://res.cloudinary.com/dufo1t5li/image/upload/v1776463003/Gemini_Generated_Image_dvp99xdvp99xdvp9_uaamaf.png"
             }
@@ -451,6 +453,7 @@ export function ThemeLayout({
               about={{
                 headline: ls?.landing?.about?.headline,
                 paragraphs: ls?.landing?.about?.paragraphs ?? [],
+                links: ls?.landing?.about?.links ?? [],
                 image: ls?.landing?.about?.image,
               }}
             />
@@ -565,6 +568,7 @@ export function ThemeLayout({
               paragraphs={
                 ls?.landing?.about?.paragraphs || ["Saznajte više o nama"]
               }
+              links={ls?.landing?.about?.links ?? []}
               stats={
                 ls?.landing?.stats || [
                   { value: "10+", label: "Godina iskustva" },
@@ -742,6 +746,7 @@ export function ThemeLayout({
                   ? ls.landing.about.paragraphs
                   : undefined
               }
+              links={ls?.landing?.about?.links ?? []}
             />
           )}
           <Theme6FeatureCards />

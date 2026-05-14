@@ -1,8 +1,11 @@
 import Image from "next/image";
+import type { AboutTextLink } from "@/types";
+import { renderLinkedText } from "@/helpers/renderLinkedText";
 
 interface Props {
   headline?: string;
   paragraphs?: string[];
+  links?: AboutTextLink[];
   stats?: { value: string; label: string }[];
   image?: {
     src: string;
@@ -10,7 +13,13 @@ interface Props {
   };
 }
 
-export function Theme4AboutSoft({ headline, paragraphs, stats, image }: Props) {
+export function Theme4AboutSoft({
+  headline,
+  paragraphs,
+  links = [],
+  stats,
+  image,
+}: Props) {
   return (
     <section className="bg-[#4C2D4A] text-white py-20">
       <div className="max-w-7xl mx-auto px-6 flex flex-col lg:flex-row items-center gap-16">
@@ -21,7 +30,7 @@ export function Theme4AboutSoft({ headline, paragraphs, stats, image }: Props) {
 
           {paragraphs?.map((p, i) => (
             <p className="max-w-xl pb-4 text-gray-100" key={i}>
-              {p}
+              {renderLinkedText(p, links)}
             </p>
           ))}
 

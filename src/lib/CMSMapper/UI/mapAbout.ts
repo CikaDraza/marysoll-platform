@@ -9,6 +9,7 @@ export function mapAbout(ls: LandingStructure | undefined) {
       about?.paragraphs && about.paragraphs.length > 0
         ? about.paragraphs
         : ["Default salon description"],
+    links: about?.links ?? [],
 
     stats: [
       { label: "Clients", value: "120+" },

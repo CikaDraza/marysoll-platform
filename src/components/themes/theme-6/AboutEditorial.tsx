@@ -1,4 +1,6 @@
 import Image from "next/image";
+import type { AboutTextLink } from "@/types";
+import { renderLinkedText } from "@/helpers/renderLinkedText";
 
 interface EditorialImage {
   src: string;
@@ -8,6 +10,7 @@ interface EditorialImage {
 interface Props {
   headline?: string;
   paragraphs?: string[];
+  links?: AboutTextLink[];
   images?: EditorialImage[];
 }
 
@@ -17,6 +20,7 @@ export function Theme6AboutEditorial({
     "At our studio, we believe that nails are a canvas for self-expression. Our talented artists combine traditional techniques with modern innovation to create stunning, wearable art.",
     "Every detail matters. From the initial consultation to the final polish, we ensure an experience that is both luxurious and personalized to your unique style.",
   ],
+  links = [],
   images = [
     { src: "", alt: "Editorial 1" },
     { src: "", alt: "Editorial 2" },
@@ -37,7 +41,7 @@ export function Theme6AboutEditorial({
                 key={idx}
                 className="text-base lg:text-lg font-light text-[var(--muted)] leading-relaxed"
               >
-                {paragraph}
+                {renderLinkedText(paragraph, links)}
               </p>
             ))}
           </div>

@@ -44,7 +44,7 @@ export const emptyLandingStructure = (): LandingStructure => ({
       socialLinks: { instagram: "", facebook: "", tiktok: "", whatsapp: "", telegram: "" },
       ctas: { primary: { text: "Zakaži termin", href: "/termini" } },
     },
-    about: { enabled: true, headline: "", paragraphs: [] },
+    about: { enabled: true, headline: "", paragraphs: [], links: [] },
     artists: { enabled: false, headline: "", members: [] },
     servicesPreview: { enabled: true, headline: "", subheadline: "", showIcons: true },
     appointmentSection: {
@@ -178,6 +178,7 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
         enabled: rawLanding.about?.enabled ?? true,
         headline: rawLanding.about?.headline ?? "",
         paragraphs: rawLanding.about?.paragraphs ?? [],
+        links: rawLanding.about?.links ?? [],
         image: rawLanding.about?.image,
       },
       artists: {

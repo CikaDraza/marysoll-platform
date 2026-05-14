@@ -1,3 +1,6 @@
+import type { AboutTextLink } from "@/types";
+import { renderLinkedText } from "@/helpers/renderLinkedText";
+
 const DEFAULT_PARAGRAPHS = [
   "Kiki Kiss Beauty salon predstavlja krunu trogodišnjeg uspešnog rada i posvećenosti Kristine, čija je strast prema lepoti oblikovana kroz vrhunsku edukaciju i praksu. Osnovu našeg rada čine prestižni sertifikati sa zvaničnih kurseva za šminkanje i negu noktiju, koji garantuju stručnost u svakom pokretu. Svaki tretman u salonu osmišljen je tako da naglasi vašu prirodnu lepotu, koristeći samo najkvalitetnije materijale i tehnike koje su se dokazale kroz stotine zadovoljnih klijentkinja.",
   "Konstantno usavršavanje je srž našeg poslovanja, o čemu svedoči aktivno učešće na najvećim sajmovima kozmetike i prestižnim svetskim konferencijama. Kristina redovno uči od globalno poznatih šminkera, donoseći svetske trendove i inovativne metode direktno u naš salon. Spoj bogatog iskustva, edukacije kod najboljih stručnjaka i neprestane želje za napretkom čini Kiki Kiss Beauty mestom gde se vrhunska estetika susreće sa profesionalnom uslugom po najvišim standardima.",
@@ -7,6 +10,7 @@ interface Props {
   about: {
     headline?: string;
     paragraphs?: string[];
+    links?: AboutTextLink[];
   };
 }
 
@@ -30,15 +34,19 @@ export function Theme1AboutUs({ about }: Props) {
           <blockquote className="relative flex flex-col gap-6 items-center text-center text-sm lg:text-md font-medium text-gray-900">
             {paragraphs[0] && (
               <p className="text-3xl font-semibold text-left">
-                {paragraphs[0]}
+                {renderLinkedText(paragraphs[0], about.links)}
               </p>
             )}
             <div className="flex flex-col lg:flex-row items-center gap-6">
               {paragraphs.length > 1 && (
-                <p className="text-justify lg:text-left">{paragraphs[1]}</p>
+                <p className="text-justify lg:text-left">
+                  {renderLinkedText(paragraphs[1], about.links)}
+                </p>
               )}
               {paragraphs.length > 2 && (
-                <p className="text-justify lg:text-left">{paragraphs[2]}</p>
+                <p className="text-justify lg:text-left">
+                  {renderLinkedText(paragraphs[2], about.links)}
+                </p>
               )}
             </div>
           </blockquote>

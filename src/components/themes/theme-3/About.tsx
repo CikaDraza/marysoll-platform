@@ -1,9 +1,12 @@
 import Image from "next/image";
+import type { AboutTextLink } from "@/types";
+import { renderLinkedText } from "@/helpers/renderLinkedText";
 
 interface Props {
   about: {
     headline?: string;
     paragraphs?: string[];
+    links?: AboutTextLink[];
     image?: {
       src: string;
       alt?: string;
@@ -33,16 +36,25 @@ export function Theme3AboutSoft({ about }: Props) {
 
           <div className="flex flex-col gap-3">
             <p className="text-[#6B6B6B] leading-relaxed">
-              {about.paragraphs?.[0] ||
-                "Naš salon pruža nežnu i profesionalnu negu uz pažnju prema svakom detalju."}
+              {renderLinkedText(
+                about.paragraphs?.[0] ||
+                  "Naš salon pruža nežnu i profesionalnu negu uz pažnju prema svakom detalju.",
+                about.links,
+              )}
             </p>
             <p className="text-[#6B6B6B] leading-relaxed">
-              {about.paragraphs?.[1] ||
-                "Naš salon pruža nežnu i profesionalnu negu uz pažnju prema svakom detalju."}
+              {renderLinkedText(
+                about.paragraphs?.[1] ||
+                  "Naš salon pruža nežnu i profesionalnu negu uz pažnju prema svakom detalju.",
+                about.links,
+              )}
             </p>
             <p className="text-[#6B6B6B] leading-relaxed">
-              {about.paragraphs?.[2] ||
-                "Naš salon pruža nežnu i profesionalnu negu uz pažnju prema svakom detalju."}
+              {renderLinkedText(
+                about.paragraphs?.[2] ||
+                  "Naš salon pruža nežnu i profesionalnu negu uz pažnju prema svakom detalju.",
+                about.links,
+              )}
             </p>
           </div>
         </div>

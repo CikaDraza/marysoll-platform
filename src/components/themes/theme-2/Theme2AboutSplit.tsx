@@ -1,14 +1,17 @@
 "use client";
 
 import { motion } from "framer-motion";
+import type { AboutTextLink } from "@/types";
+import { renderLinkedText } from "@/helpers/renderLinkedText";
 
 interface Props {
   title?: string;
   text?: string[] | string;
+  links?: AboutTextLink[];
   imageUrl?: string;
 }
 
-export function Theme2AboutSplit({ title, text, imageUrl }: Props) {
+export function Theme2AboutSplit({ title, text, links = [], imageUrl }: Props) {
   const paragraphs = Array.isArray(text) ? text : [text];
   return (
     <section className="w-full min-h-screen flex flex-col lg:flex-row bg-black text-white">
@@ -39,11 +42,14 @@ export function Theme2AboutSplit({ title, text, imageUrl }: Props) {
           </h2>
 
           <p className="text-gray-300 leading-relaxed">
-            {paragraphs[0] ||
-              "Naš salon kombinuje iskustvo, estetiku i preciznost kako bismo pružili vrhunske rezultate svakom klijentu."}
+            {renderLinkedText(
+              paragraphs[0] ||
+                "Naš salon kombinuje iskustvo, estetiku i preciznost kako bismo pružili vrhunske rezultate svakom klijentu.",
+              links,
+            )}
           </p>
           <p className="text-gray-300 leading-relaxed pt-4">
-            {paragraphs[1] || ""}
+            {renderLinkedText(paragraphs[1] || "", links)}
           </p>
         </div>
       </div>

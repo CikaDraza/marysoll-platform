@@ -1077,6 +1077,105 @@ export function AdminLandingCMS({ sp }: Props) {
         </div>
 
         <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/30 inline-block px-2.5 py-1 rounded-lg">
+                Linkovi u tekstu
+              </p>
+              <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                Tekst mora da postoji u paragrafu. Pronađeni tekst će biti
+                prikazan kao link, mention ili tag.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                updateLandingSection("about", {
+                  ...about,
+                  links: [
+                    ...(about.links ?? []),
+                    { text: "", url: "", type: "link" },
+                  ],
+                })
+              }
+              className="shrink-0 text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+            >
+              + Dodaj
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {(about.links ?? []).map((link, i) => (
+              <div
+                key={i}
+                className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_140px_32px] gap-2 items-start"
+              >
+                <input
+                  className={inp}
+                  value={link.text}
+                  onChange={(e) => {
+                    const updated = [...(about.links ?? [])];
+                    updated[i] = { ...link, text: e.target.value };
+                    updateLandingSection("about", {
+                      ...about,
+                      links: updated,
+                    });
+                  }}
+                  placeholder="Tekst za link, npr. MAGNETIC nail"
+                />
+                <input
+                  className={inp}
+                  value={link.url}
+                  onChange={(e) => {
+                    const updated = [...(about.links ?? [])];
+                    updated[i] = { ...link, url: e.target.value };
+                    updateLandingSection("about", {
+                      ...about,
+                      links: updated,
+                    });
+                  }}
+                  placeholder="https://..."
+                />
+                <select
+                  className={inp}
+                  value={link.type}
+                  onChange={(e) => {
+                    const updated = [...(about.links ?? [])];
+                    updated[i] = {
+                      ...link,
+                      type: e.target.value as "link" | "mention" | "tag",
+                    };
+                    updateLandingSection("about", {
+                      ...about,
+                      links: updated,
+                    });
+                  }}
+                >
+                  <option value="link">Link</option>
+                  <option value="mention">Mention</option>
+                  <option value="tag">Tag</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = (about.links ?? []).filter(
+                      (_, idx) => idx !== i,
+                    );
+                    updateLandingSection("about", {
+                      ...about,
+                      links: updated,
+                    });
+                  }}
+                  className="shrink-0 w-8 h-8 mt-1 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                >
+                  −
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-3">
           <p className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 inline-block px-2.5 py-1 rounded-lg">
             Slika (O nama)
           </p>
