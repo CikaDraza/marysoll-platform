@@ -10,6 +10,7 @@ import "server-only";
 
 import { connectToDB } from "@/lib/db/mongodb";
 import { SalonProfile } from "@/models/SalonProfile";
+import { ProfilPlatforme } from "@/models/ProfilPlatforme";
 import { Types } from "mongoose";
 
 export interface EmailLayoutData {
@@ -39,8 +40,25 @@ const PLATFORM: SalonData = {
   logo: process.env.PLATFORM_LOGO_URL ?? null,
 };
 
+async function resolvePlatform(): Promise<SalonData> {
+  try {
+    await connectToDB();
+    const profile = (await ProfilPlatforme.findOne({})
+      .sort({ updatedAt: -1 })
+      .select("logoUrl")
+      .lean()) as { logoUrl?: string } | null;
+
+    return {
+      ...PLATFORM,
+      logo: profile?.logoUrl || PLATFORM.logo,
+    };
+  } catch {
+    return PLATFORM;
+  }
+}
+
 async function resolveSalon(tenantId?: string | null): Promise<SalonData> {
-  if (!tenantId) return PLATFORM;
+  if (!tenantId) return resolvePlatform();
 
   try {
     await connectToDB();
@@ -110,7 +128,7 @@ export async function wrapEmailLayout(
       .content-cell { padding: 28px 24px !important; }
       .footer-cell { padding: 20px 24px 28px 24px !important; }
       .divider-cell { padding: 0 24px !important; }
-      .logo-img { width: 150px !important; max-width: 150px !important; }
+      .logo-img { width: 150px !important; height: 150px !important; max-width: 150px !important; max-height: 150px !important; object-fit: contain !important; }
       .salon-name { font-size: 22px !important; }
       .tagline { font-size: 12px !important; }
     }
@@ -151,8 +169,8 @@ export async function wrapEmailLayout(
                   <td align="center" style="padding-bottom:20px;">
                     ${
                       salon.logo
-                        ? `<img src="${salon.logo}" width="200" alt="${salonName}" class="logo-img" style="display:block;max-width:200px;height:200px;border:0;outline:none;text-decoration:none;">`
-                        : `<img src="${appUrl}/icon-192x192.png" width="128" height="128" alt="Marysoll" class="logo-img" style="display:block;width:128px;height:128px;border:0;outline:none;text-decoration:none;border-radius:12px;">`
+                        ? `<img src="${salon.logo}" width="200" height="200" alt="${salonName}" class="logo-img" style="display:block;width:200px;height:200px;max-width:200px;max-height:200px;object-fit:contain;border:0;outline:none;text-decoration:none;">`
+                        : `<img src="${appUrl}/notification-icon.png" width="128" height="128" alt="Marysoll" class="logo-img" style="display:block;width:128px;height:128px;max-width:128px;max-height:128px;object-fit:contain;border:0;outline:none;text-decoration:none;border-radius:12px;">`
                     }
                   </td>
                 </tr>
