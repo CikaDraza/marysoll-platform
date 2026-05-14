@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
         const s = doc as Record<string, unknown>;
 
         const rawServices = await Service.find({ tenantId: s.tenantId })
-          .select("name category duration basePrice")
+          .select("name category duration basePrice priceMode")
           .limit(5)
           .lean();
 
@@ -70,6 +70,7 @@ export async function GET(req: NextRequest) {
               category: String(r.category ?? ""),
               duration: r.duration != null ? Number(r.duration) : null,
               price: r.basePrice != null ? Number(r.basePrice) : null,
+              priceMode: r.priceMode === "on_request" ? "on_request" : "fixed",
             };
           }),
         };

@@ -79,6 +79,7 @@ export async function GET(req: NextRequest) {
                 category: 1,
                 duration: 1,
                 basePrice: 1,
+                priceMode: 1,
               },
             },
           ],
@@ -153,6 +154,7 @@ export async function GET(req: NextRequest) {
           category: String(sv.category ?? ""),
           duration: sv.duration != null ? Number(sv.duration) : null,
           price: sv.basePrice != null ? Number(sv.basePrice) : null,
+          priceMode: sv.priceMode === "on_request" ? "on_request" : "fixed",
         })),
       };
     });

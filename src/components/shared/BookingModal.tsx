@@ -6,7 +6,7 @@ import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
 import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useAppointmentMutations } from "@/hooks/useAppointmentMutations";
-import { formatPriceToString } from "@/helpers/formatPrice";
+import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import type { IService, IAppointment } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -590,7 +590,7 @@ export function BookingModal({
                               {v.name}
                             </div>
                             <div className="text-xs text-gray-500 mt-0.5">
-                              {formatPriceToString(v.price)} RSD
+                              {formatServicePrice(v.price, v.priceMode)}
                               {v.duration ? ` • ${v.duration} min` : ""}
                             </div>
                           </div>
@@ -630,7 +630,7 @@ export function BookingModal({
                           </span>
                         </div>
                         <span className="text-xs font-semibold text-(--primary-color)">
-                          +{formatPriceToString(extra.price || 0)} RSD
+                          +{formatServicePrice(extra.price || 0, extra.priceMode)}
                         </span>
                       </label>
                     ))}

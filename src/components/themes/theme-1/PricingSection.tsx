@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { CheckIcon } from "@heroicons/react/20/solid";
-import { formatPriceToString } from "@/helpers/formatPrice";
+import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import type { IService } from "@/types";
 
 interface Props {
@@ -104,16 +104,18 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
                       "text-4xl font-bold",
                     )}
                   >
-                    {formatPriceToString(srv.basePrice)}
+                    {formatServicePrice(srv.basePrice, srv.priceMode, "")}
                   </span>
-                  <span
-                    className={classNames(
-                      dark ? "text-gray-400" : "text-gray-500",
-                      "text-sm",
-                    )}
-                  >
-                    RSD /terminu
-                  </span>
+                  {srv.priceMode !== "on_request" && (
+                    <span
+                      className={classNames(
+                        dark ? "text-gray-400" : "text-gray-500",
+                        "text-sm",
+                      )}
+                    >
+                      RSD /terminu
+                    </span>
+                  )}
                 </p>
               )}
               {(srv.type === "variant" || srv.type === "group") &&
@@ -160,7 +162,7 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
                                 <span>{v.name}</span>
                                 <hr className="flex-1 border-dashed border-gray-300" />
                                 <span className="font-semibold">
-                                  {formatPriceToString(v.price)} RSD
+                                  {formatServicePrice(v.price, v.priceMode)}
                                 </span>
                               </li>
                             ))}
@@ -179,7 +181,7 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
                                   <>
                                     <hr className="flex-1 border-dashed border-gray-300" />
                                     <span className="font-semibold">
-                                      {formatPriceToString(sv.price)} RSD
+                                      {formatServicePrice(sv.price, sv.priceMode)}
                                     </span>
                                   </>
                                 )}
@@ -214,7 +216,7 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
                         <span
                           className={dark ? "text-gray-300" : "text-gray-600"}
                         >
-                          {formatPriceToString(e.price)} RSD
+                          {formatServicePrice(e.price || 0, e.priceMode)}
                         </span>
                       </li>
                     ))}

@@ -1,6 +1,6 @@
 import { CheckIcon } from "@heroicons/react/24/outline";
 import { groupAndSortServices } from "@/helpers/groupeAndSortServices";
-import { formatPriceToString } from "@/helpers/formatPrice";
+import { formatServicePrice } from "@/helpers/formatPrice";
 import { useServices } from "@/hooks/useServices";
 import { Reveal } from "../motion/Reveal";
 import { useEffect, useRef } from "react";
@@ -95,11 +95,14 @@ export default function PricingBlockView({ block }: Props) {
                             {service.name}
                             {service.subcategory && ` - ${service.subcategory}`}
                           </h3>
-                          {service.basePrice && (
+                          {(service.basePrice || service.priceMode === "on_request") && (
                             <>
                               <hr className="flex-1 border-dashed text-gray-700" />
                               <span className="relative text-xs md:text-sm z-0 rounded-full bg-(--secondary-color) px-1 md:px-3 py-1.5 font-semibold text-white">
-                                {formatPriceToString(service.basePrice)} RSD
+                                {formatServicePrice(
+                                  service.basePrice,
+                                  service.priceMode,
+                                )}
                               </span>
                             </>
                           )}
@@ -125,8 +128,7 @@ export default function PricingBlockView({ block }: Props) {
                               </span>
                               <hr className="flex-1 border-dashed text-gray-700" />
                               <span className="rounded-full text-[.65rem] lg:text-sm bg-white px-3 py-0.5 font-semibold text-(--secondary-color)">
-                                {formatPriceToString(item.price)}{" "}
-                                <small>RSD</small>
+                                {formatServicePrice(item.price, item.priceMode)}
                               </span>
                             </li>
                           ))}

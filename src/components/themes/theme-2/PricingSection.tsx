@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { formatPriceToString } from "@/helpers/formatPrice";
+import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import type { IService } from "@/types";
 
 function minPrice(s: IService): number | null {
@@ -66,11 +66,13 @@ export function Theme2PricingSection({ services, tenantSlug }: Props) {
                     <span
                       className={`text-4xl font-black ${gold ? "text-gray-950" : "text-white"}`}
                     >
-                      {formatPriceToString(srv.basePrice)}
+                      {formatServicePrice(srv.basePrice, srv.priceMode, "")}
                     </span>
-                    <span className="text-gray-600 text-sm ml-1">
-                      RSD /terminu
-                    </span>
+                    {srv.priceMode !== "on_request" && (
+                      <span className="text-gray-600 text-sm ml-1">
+                        RSD /terminu
+                      </span>
+                    )}
                   </p>
                 )}
                 {(srv.type === "variant" || srv.type === "group") &&
@@ -108,7 +110,7 @@ export function Theme2PricingSection({ services, tenantSlug }: Props) {
                               <span
                                 className={`${gold ? "text-gray-950" : "text-white"} font-bold`}
                               >
-                                {formatPriceToString(v.price)} RSD
+                                {formatServicePrice(v.price, v.priceMode)}
                               </span>
                             </div>
                           ))}
@@ -133,7 +135,7 @@ export function Theme2PricingSection({ services, tenantSlug }: Props) {
                                   <span
                                     className={`${gold ? "text-gray-950" : "text-white"} font-bold`}
                                   >
-                                    {formatPriceToString(sv.price)} RSD
+                                    {formatServicePrice(sv.price, sv.priceMode)}
                                   </span>
                                 </>
                               )}
@@ -160,7 +162,7 @@ export function Theme2PricingSection({ services, tenantSlug }: Props) {
                         <span
                           className={gold ? "text-gray-900" : "text-gray-200"}
                         >
-                          {formatPriceToString(e.price)} RSD
+                          {formatServicePrice(e.price || 0, e.priceMode)}
                         </span>
                       </div>
                     ))}

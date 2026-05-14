@@ -60,6 +60,7 @@ interface ServiceDoc {
   categorySlug?: string;
   duration?: number;
   basePrice?: number;
+  priceMode?: "fixed" | "on_request";
 }
 
 // ── Category resolution ───────────────────────────────────────────────────────
@@ -196,7 +197,7 @@ export async function GET(req: NextRequest) {
         { categorySlug: cat.slug },
       ],
     })
-      .select("_id tenantId name category categorySlug duration basePrice")
+      .select("_id tenantId name category categorySlug duration basePrice priceMode")
       .lean() as unknown as ServiceDoc[];
 
     tenantIds = [...new Map(services.map((s) => [String(s.tenantId), s.tenantId])).values()];
@@ -343,6 +344,7 @@ export async function GET(req: NextRequest) {
             slug:     svc.categorySlug ?? cat?.slug ?? "",
             duration: svc.duration ?? 60,
             price:    svc.basePrice ?? null,
+            priceMode: svc.priceMode === "on_request" ? "on_request" : "fixed",
           }
         : null,
       salon: {

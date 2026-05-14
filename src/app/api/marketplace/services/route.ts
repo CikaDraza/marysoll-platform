@@ -48,6 +48,7 @@ export async function GET(req: NextRequest) {
           type: String(r.type ?? "single"),
           duration: r.duration != null ? Number(r.duration) : null,
           basePrice: r.basePrice != null ? Number(r.basePrice) : null,
+          priceMode: r.priceMode === "on_request" ? "on_request" : "fixed",
           variants: Array.isArray(r.variants) ? r.variants : [],
         };
       }),

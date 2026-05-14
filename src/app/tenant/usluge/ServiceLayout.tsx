@@ -1,5 +1,5 @@
 import { groupAndSortServices } from "@/helpers/groupeAndSortServices";
-import { formatPriceToString } from "@/helpers/formatPrice";
+import { formatServicePrice } from "@/helpers/formatPrice";
 import { CheckIcon } from "@heroicons/react/24/outline";
 import { IService } from "@/types";
 
@@ -65,9 +65,9 @@ export default function ServicesLayout({
                     >
                       Trajanje: {service?.duration} minuta
                     </time>
-                    {service.basePrice && (
+                    {(service.basePrice || service.priceMode === "on_request") && (
                       <span className="relative z-10 rounded-full bg-(--primary-color) px-3 py-1.5 font-semibold text-white">
-                        {formatPriceToString(service.basePrice)} RSD
+                        {formatServicePrice(service.basePrice, service.priceMode)}
                       </span>
                     )}
                   </div>
@@ -97,7 +97,7 @@ export default function ServicesLayout({
                           </span>
                           <hr className="flex-1 border-dashed text-gray-700" />
                           <span className="rounded-full text-[.65rem] lg:text-sm bg-white px-3 py-0.5 font-semibold text-(--secondary-color)">
-                            {formatPriceToString(item.price)} <small>RSD</small>
+                            {formatServicePrice(item.price, item.priceMode)}
                           </span>
                         </li>
                       ))}

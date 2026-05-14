@@ -13,6 +13,10 @@ const i2 = [
 
 const l2 =
   "block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5";
+const priceModeOptions = [
+  { value: "fixed", label: "Fiksna cena" },
+  { value: "on_request", label: "Cena na upit" },
+] as const;
 
 interface Props {
   s: ReturnType<typeof useAdminServices>;
@@ -143,12 +147,35 @@ export function ServiceModal({ s }: Props) {
 
           {form.type === "single" && (
             <div className="grid grid-cols-2 gap-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4">
+              <div className="col-span-2">
+                <label className={l2}>Tip cene</label>
+                <select
+                  className={i2}
+                  value={form.priceMode ?? "fixed"}
+                  onChange={(e) => {
+                    const priceMode = e.target.value as
+                      | "fixed"
+                      | "on_request";
+                    s.setField("priceMode", priceMode);
+                    if (priceMode === "on_request") {
+                      s.setField("basePrice", null);
+                    }
+                  }}
+                >
+                  {priceModeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className={l2}>Cena (RSD) *</label>
                 <input
                   type="number"
                   className={i2}
                   value={form.basePrice ?? ""}
+                  disabled={form.priceMode === "on_request"}
                   onChange={(e) =>
                     s.setField(
                       "basePrice",
@@ -201,12 +228,32 @@ export function ServiceModal({ s }: Props) {
                     type="number"
                     className={i2 + " flex-1"}
                     value={v.price || ""}
+                    disabled={v.priceMode === "on_request"}
                     onChange={(e) =>
                       s.updateVariant(i, "price", Number(e.target.value))
                     }
                     placeholder="RSD"
                     min={0}
                   />
+                  <select
+                    className={i2 + " flex-1"}
+                    value={v.priceMode ?? "fixed"}
+                    onChange={(e) => {
+                      const priceMode = e.target.value as
+                        | "fixed"
+                        | "on_request";
+                      s.updateVariant(i, "priceMode", priceMode);
+                      if (priceMode === "on_request") {
+                        s.updateVariant(i, "price", 0);
+                      }
+                    }}
+                  >
+                    {priceModeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                   <input
                     type="number"
                     className={i2 + " flex-0 min-w-26"}
@@ -253,12 +300,32 @@ export function ServiceModal({ s }: Props) {
                     type="number"
                     className={i2 + " flex-1"}
                     value={sv.price || ""}
+                    disabled={sv.priceMode === "on_request"}
                     onChange={(e) =>
                       s.updateGroupService(i, "price", Number(e.target.value))
                     }
                     placeholder="RSD"
                     min={0}
                   />
+                  <select
+                    className={i2 + " flex-1"}
+                    value={sv.priceMode ?? "fixed"}
+                    onChange={(e) => {
+                      const priceMode = e.target.value as
+                        | "fixed"
+                        | "on_request";
+                      s.updateGroupService(i, "priceMode", priceMode);
+                      if (priceMode === "on_request") {
+                        s.updateGroupService(i, "price", 0);
+                      }
+                    }}
+                  >
+                    {priceModeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                   <input
                     type="number"
                     className={i2 + " flex-0 min-w-26"}
@@ -307,12 +374,32 @@ export function ServiceModal({ s }: Props) {
                     type="number"
                     className={i2 + " flex-1"}
                     value={ex.price || ""}
+                    disabled={ex.priceMode === "on_request"}
                     onChange={(e) =>
                       s.updateExtra(i, "price", Number(e.target.value))
                     }
                     placeholder="RSD"
                     min={0}
                   />
+                  <select
+                    className={i2 + " flex-1"}
+                    value={ex.priceMode ?? "fixed"}
+                    onChange={(e) => {
+                      const priceMode = e.target.value as
+                        | "fixed"
+                        | "on_request";
+                      s.updateExtra(i, "priceMode", priceMode);
+                      if (priceMode === "on_request") {
+                        s.updateExtra(i, "price", 0);
+                      }
+                    }}
+                  >
+                    {priceModeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                   <input
                     type="number"
                     className={i2 + " flex-0 min-w-26"}

@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { CheckIcon } from "@heroicons/react/20/solid";
-import { formatPriceToString } from "@/helpers/formatPrice";
+import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import type { IService } from "@/types";
 
 function minPrice(s: IService): number | null {
@@ -68,13 +68,15 @@ export function Theme3PricingSection({ services, tenantSlug }: Props) {
                   <p
                     className={`text-4xl font-light mb-1 ${highlight ? "text-white" : "text-[#3D2B1F]"}`}
                   >
-                    {formatPriceToString(srv.basePrice)}
-                    <span
-                      className={`text-sm ${highlight ? "text-white/70" : "text-[#9E7E6E]"}`}
-                    >
-                      {" "}
-                      RSD /terminu
-                    </span>
+                    {formatServicePrice(srv.basePrice, srv.priceMode, "")}
+                    {srv.priceMode !== "on_request" && (
+                      <span
+                        className={`text-sm ${highlight ? "text-white/70" : "text-[#9E7E6E]"}`}
+                      >
+                        {" "}
+                        RSD /terminu
+                      </span>
+                    )}
                   </p>
                 )}
                 {(srv.type === "variant" || srv.type === "group") &&
@@ -110,7 +112,7 @@ export function Theme3PricingSection({ services, tenantSlug }: Props) {
                               <span>{v.name}</span>
                               <hr className="flex-1 border-dashed border-gray-300" />
                               <span className="font-medium">
-                                {formatPriceToString(v.price)} RSD
+                                {formatServicePrice(v.price, v.priceMode)}
                               </span>
                             </div>
                           ))}
@@ -125,7 +127,7 @@ export function Theme3PricingSection({ services, tenantSlug }: Props) {
                                 <>
                                   <hr className="flex-1 border-dashed border-gray-300" />
                                   <span className="font-medium">
-                                    {formatPriceToString(sv.price)} RSD
+                                    {formatServicePrice(sv.price, sv.priceMode)}
                                   </span>
                                 </>
                               )}
@@ -147,7 +149,7 @@ export function Theme3PricingSection({ services, tenantSlug }: Props) {
                         className={`flex justify-between text-xs mb-0.5 ${highlight ? "text-white/80" : "text-[#7C6A5E]"}`}
                       >
                         <span>+ {e.name}</span>
-                        <span>{formatPriceToString(e.price)} RSD</span>
+                        <span>{formatServicePrice(e.price || 0, e.priceMode)}</span>
                       </div>
                     ))}
                   </div>

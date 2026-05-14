@@ -153,6 +153,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     subcategory: sv.subcategory ? String(sv.subcategory) : undefined,
     type: (sv.type as "single" | "group" | "variant") ?? "single",
     basePrice: sv.basePrice != null ? Number(sv.basePrice) : undefined,
+    priceMode: sv.priceMode === "on_request" ? "on_request" : "fixed",
     duration: sv.duration ? Number(sv.duration) : undefined,
     description: String(sv.description ?? ""),
     items: Array.isArray(sv.items) ? sv.items.map(String) : [],
@@ -162,6 +163,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
           return {
             name: String(vv.name ?? ""),
             price: Number(vv.price ?? 0),
+            priceMode: vv.priceMode === "on_request" ? "on_request" : "fixed",
             duration: Number(vv.duration ?? 0),
             perItem: Boolean(vv.perItem),
           };
@@ -173,6 +175,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
           return {
             name: String(ee.name ?? ""),
             price: Number(ee.price ?? 0),
+            priceMode: ee.priceMode === "on_request" ? "on_request" : "fixed",
             duration: Number(ee.duration ?? 0),
             perItem: Boolean(ee.perItem),
           };
@@ -184,6 +187,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
           return {
             name: String(ss.name ?? ""),
             price: Number(ss.price ?? 0),
+            priceMode: ss.priceMode === "on_request" ? "on_request" : "fixed",
             duration: Number(ss.duration ?? 0),
             description: String(ss.description ?? ""),
           };

@@ -1,4 +1,5 @@
 import { IService } from "@/types";
+import { formatServicePrice } from "@/helpers/formatPrice";
 
 export function Theme2PricingMinimal({ services }: { services: IService[] }) {
   return (
@@ -15,7 +16,7 @@ export function Theme2PricingMinimal({ services }: { services: IService[] }) {
               <span className="text-gray-300">{s.name}</span>
               <hr className="flex-1 border-dashed border-gray-300" />
               <span className="text-(--primary-color) font-semibold">
-                {s.basePrice} RSD
+                {formatServicePrice(s.basePrice, s.priceMode)}
               </span>
             </div>
           ))}

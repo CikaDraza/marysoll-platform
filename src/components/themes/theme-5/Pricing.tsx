@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { IService } from "@/types";
-import { formatPriceToString } from "@/helpers/formatPrice";
+import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import FlowerIcon from "@/components/assets/icons/services/FlowerIcon";
 
 function minPrice(s: IService): number | null {
@@ -87,7 +87,7 @@ export function Theme5Pricing({
                           >
                             <span>{v.name}</span>
                             <span className="font-medium">
-                              {formatPriceToString(v.price)} RSD
+                              {formatServicePrice(v.price, v.priceMode)}
                             </span>
                           </li>
                         ))}
@@ -104,7 +104,7 @@ export function Theme5Pricing({
                             <span>{sv.name}</span>
                             {sv.price != null && (
                               <span className="font-medium">
-                                {formatPriceToString(sv.price)} RSD
+                                {formatServicePrice(sv.price, sv.priceMode)}
                               </span>
                             )}
                           </li>
@@ -124,7 +124,7 @@ export function Theme5Pricing({
                               className="flex justify-between items-center text-xs text-gray-500"
                             >
                               <span>+ {e.name}</span>
-                              <span>{formatPriceToString(e.price)} RSD</span>
+                              <span>{formatServicePrice(e.price || 0, e.priceMode)}</span>
                             </li>
                           ))}
                         </ul>

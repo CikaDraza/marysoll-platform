@@ -67,9 +67,12 @@ export interface ISubscription {
     | "expired";
 }
 
+export type PriceMode = "fixed" | "on_request";
+
 export interface IServiceVariant {
   name: string;
   price: number;
+  priceMode?: PriceMode;
   duration: number;
   perItem: boolean;
 }
@@ -77,6 +80,7 @@ export interface IServiceVariant {
 export interface IServiceExtra {
   name: string;
   price: number;
+  priceMode?: PriceMode;
   duration: number;
   perItem: boolean;
 }
@@ -84,6 +88,7 @@ export interface IServiceExtra {
 export interface IServiceGroupItem {
   name: string;
   price: number;
+  priceMode?: PriceMode;
   duration: number;
   description: string;
 }
@@ -95,6 +100,7 @@ export interface IServiceInput {
   subcategory?: string;
   price?: number | null;
   basePrice?: number | null;
+  priceMode?: PriceMode;
   duration?: number;
   description: string;
   variants?: IServiceVariant[];
@@ -115,6 +121,7 @@ export interface IService {
   subcategory?: string;
   price?: number | null;
   basePrice?: number | null;
+  priceMode?: PriceMode;
   duration?: number;
   variants?: IServiceVariant[];
   extras?: IServiceExtra[];

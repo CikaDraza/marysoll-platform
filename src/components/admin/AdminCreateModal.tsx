@@ -10,7 +10,7 @@ import { useUsers } from "@/hooks/useUsers";
 import { generateTimes } from "@/helpers/generateTimes";
 import { IAppointment, IUser } from "@/types";
 import { useServices } from "@/hooks/useServices";
-import { formatPriceToString } from "@/helpers/formatPrice";
+import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface Props {
@@ -524,7 +524,7 @@ export default function AdminCreateModal({
                                   {variant.name}
                                 </div>
                                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                                  {formatPriceToString(variant.price)} RSD
+                                  {formatServicePrice(variant.price, variant.priceMode)}
                                   {variant.duration && ` • ${variant.duration} min`}
                                 </div>
                               </div>
@@ -564,7 +564,7 @@ export default function AdminCreateModal({
                               </div>
                             </div>
                             <div className="text-(--secondary-color) font-semibold">
-                              +{formatPriceToString(extra.price || 0)} RSD
+                              +{formatServicePrice(extra.price || 0, extra.priceMode)}
                             </div>
                           </label>
                         ))}

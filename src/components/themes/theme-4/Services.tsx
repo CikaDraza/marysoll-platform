@@ -1,5 +1,5 @@
 import { IService } from "@/types";
-import { formatPriceToString } from "@/helpers/formatPrice";
+import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import Image from "next/image";
 import Link from "next/link";
 import BlowDryingIcon from "@/components/assets/icons/services/BlowDryingIcon";
@@ -152,7 +152,7 @@ export function Theme4ServicesSoft({
                                   >
                                     <span>{v.name}</span>
                                     <span>
-                                      {formatPriceToString(v.price)} RSD
+                                      {formatServicePrice(v.price, v.priceMode)}
                                     </span>
                                   </li>
                                 ))}
@@ -171,7 +171,7 @@ export function Theme4ServicesSoft({
                                     <span>{sv.name}</span>
                                     {sv.price != null && (
                                       <span>
-                                        {formatPriceToString(sv.price)} RSD
+                                        {formatServicePrice(sv.price, sv.priceMode)}
                                       </span>
                                     )}
                                   </li>
@@ -189,7 +189,7 @@ export function Theme4ServicesSoft({
                                 >
                                   <span>+ {e.name}</span>
                                   <span>
-                                    {formatPriceToString(e.price)} RSD
+                                    {formatServicePrice(e.price || 0, e.priceMode)}
                                   </span>
                                 </li>
                               ))}

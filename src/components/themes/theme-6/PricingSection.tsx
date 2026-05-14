@@ -1,4 +1,5 @@
 import type { IService } from "@/types";
+import { formatServicePrice } from "@/helpers/formatPrice";
 
 interface Props {
   headline?: string;
@@ -62,9 +63,14 @@ export function Theme6PricingSection({
                             <p className="text-sm font-light text-[var(--muted)]">{service.description}</p>
                           )}
                         </div>
-                        {service.price !== undefined && (
+                        {(service.basePrice !== undefined ||
+                          service.price !== undefined ||
+                          service.priceMode === "on_request") && (
                           <div className="text-lg font-light text-[var(--foreground)] whitespace-nowrap">
-                            {service.price} RSD
+                            {formatServicePrice(
+                              service.basePrice ?? service.price,
+                              service.priceMode,
+                            )}
                           </div>
                         )}
                       </div>

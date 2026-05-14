@@ -1,4 +1,4 @@
-import { formatPriceToString } from "@/helpers/formatPrice";
+import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import { generateTimes } from "@/helpers/generateTimes";
 import { useAppointmentMutations } from "@/hooks/useAppointmentMutations";
 import { useAuth } from "@/hooks/useAuth";
@@ -327,7 +327,7 @@ export default function ClientCreateModal({
                                     {variant.name}
                                   </div>
                                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                                    {formatPriceToString(variant.price)} RSD
+                                    {formatServicePrice(variant.price, variant.priceMode)}
                                     {variant.duration &&
                                       ` • ${variant.duration} min`}
                                   </div>
@@ -379,7 +379,7 @@ export default function ClientCreateModal({
                                   </div>
                                 </div>
                                 <div className="text-(--secondary-color) font-semibold">
-                                  +{formatPriceToString(extra.price || 0)} RSD
+                                  +{formatServicePrice(extra.price || 0, extra.priceMode)}
                                 </div>
                               </label>
                             ))}

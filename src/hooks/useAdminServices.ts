@@ -30,6 +30,7 @@ export const emptyServiceForm = (): IServiceInput => ({
   subcategory: "",
   type: "single",
   basePrice: undefined,
+  priceMode: "fixed",
   duration: undefined,
   description: "",
   items: [],
@@ -62,6 +63,7 @@ export function mapServiceToForm(s: IService): IServiceInput {
     subcategory: s.subcategory ?? "",
     type: s.type ?? "single",
     basePrice: s.basePrice ?? undefined,
+    priceMode: s.priceMode ?? "fixed",
     duration: s.duration ?? undefined,
     description: s.description ?? "",
     items: s.items ?? [],
@@ -90,7 +92,9 @@ function validateService(f: IServiceInput): string | null {
   if (!f.name.trim()) return "Naziv usluge je obavezan.";
   if (!f.categorySlug?.trim()) return "Kategorija je obavezna.";
   if (f.type === "single") {
-    if (!f.basePrice || f.basePrice <= 0) return "Cena mora biti veća od 0.";
+    if (f.priceMode !== "on_request" && (!f.basePrice || f.basePrice <= 0)) {
+      return "Cena mora biti veća od 0.";
+    }
     if (!f.duration || f.duration <= 0) return "Trajanje mora biti veće od 0.";
   }
   if (f.type === "variant" && (!f.variants || f.variants.length === 0))
@@ -217,7 +221,13 @@ export function useAdminServices() {
       ...p,
       variants: [
         ...(p.variants ?? []),
-        { name: "", price: 0, duration: 30, perItem: false } as IServiceVariant,
+        {
+          name: "",
+          price: 0,
+          priceMode: "fixed",
+          duration: 30,
+          perItem: false,
+        } as IServiceVariant,
       ],
     }));
   }, []);
@@ -244,7 +254,13 @@ export function useAdminServices() {
       ...p,
       extras: [
         ...(p.extras ?? []),
-        { name: "", price: 0, duration: 0, perItem: false } as IServiceExtra,
+        {
+          name: "",
+          price: 0,
+          priceMode: "fixed",
+          duration: 0,
+          perItem: false,
+        } as IServiceExtra,
       ],
     }));
   }, []);
@@ -274,6 +290,7 @@ export function useAdminServices() {
         {
           name: "",
           price: 0,
+          priceMode: "fixed",
           duration: 30,
           description: "",
         } as IServiceGroupItem,

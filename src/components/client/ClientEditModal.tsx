@@ -8,7 +8,7 @@ import { generateTimes } from "@/helpers/generateTimes";
 import { IAppointment } from "@/types";
 import { useAppointmentMutations } from "@/hooks/useAppointmentMutations";
 import { useServices } from "@/hooks/useServices";
-import { formatPriceToString } from "@/helpers/formatPrice";
+import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import { motion } from "framer-motion";
 import AlertModal from "../modals/AlertModal";
 
@@ -340,7 +340,7 @@ export default function ClientEditModal({
                                       {v.name}
                                     </div>
                                     <div className="text-sm text-gray-600 dark:text-gray-400">
-                                      {formatPriceToString(v.price)} RSD
+                                      {formatServicePrice(v.price, v.priceMode)}
                                       {v.duration && ` • ${v.duration} min`}
                                     </div>
                                   </div>
@@ -386,8 +386,11 @@ export default function ClientEditModal({
                                     </div>
                                   </div>
                                   <div className="text-(--secondary-color) font-semibold">
-                                    +{formatPriceToString(extra.price || 0)}{" "}
-                                    RSD
+                                    +
+                                    {formatServicePrice(
+                                      extra.price || 0,
+                                      extra.priceMode,
+                                    )}
                                   </div>
                                 </label>
                               ))}

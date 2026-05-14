@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { formatPriceToString } from "@/helpers/formatPrice";
+import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import type { IService } from "@/types";
 
 interface Props {
@@ -81,7 +81,7 @@ export function Theme3PricingSoft({ services, headline, tenantSlug }: Props) {
                                   >
                                     <span>{v.name}</span>
                                     <span className="font-medium text-[#bfa37a]">
-                                      {formatPriceToString(v.price)} RSD
+                                      {formatServicePrice(v.price, v.priceMode)}
                                     </span>
                                   </li>
                                 ))}
@@ -100,7 +100,7 @@ export function Theme3PricingSoft({ services, headline, tenantSlug }: Props) {
                                     <span>{sv.name}</span>
                                     {sv.price != null && (
                                       <span className="font-medium text-[#bfa37a]">
-                                        {formatPriceToString(sv.price)} RSD
+                                        {formatServicePrice(sv.price, sv.priceMode)}
                                       </span>
                                     )}
                                   </li>
@@ -122,7 +122,7 @@ export function Theme3PricingSoft({ services, headline, tenantSlug }: Props) {
                                   >
                                     <span>+ {e.name}</span>
                                     <span>
-                                      {formatPriceToString(e.price)} RSD
+                                      {formatServicePrice(e.price || 0, e.priceMode)}
                                     </span>
                                   </li>
                                 ))}

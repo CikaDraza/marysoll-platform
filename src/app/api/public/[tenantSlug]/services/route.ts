@@ -17,6 +17,7 @@ function serializeService(s: Record<string, unknown>) {
     subcategory: s.subcategory ? String(s.subcategory) : undefined,
     type: String(s.type ?? "single"),
     basePrice: s.basePrice != null ? Number(s.basePrice) : null,
+    priceMode: s.priceMode === "on_request" ? "on_request" : "fixed",
     duration: s.duration != null ? Number(s.duration) : null,
     description: String(s.description ?? ""),
     items: Array.isArray(s.items) ? s.items.map(String) : [],
@@ -28,6 +29,7 @@ function serializeService(s: Record<string, unknown>) {
           return {
             name: String(vv.name ?? ""),
             price: Number(vv.price ?? 0),
+            priceMode: vv.priceMode === "on_request" ? "on_request" : "fixed",
             duration: Number(vv.duration ?? 0),
             perItem: Boolean(vv.perItem),
           };
@@ -39,6 +41,7 @@ function serializeService(s: Record<string, unknown>) {
           return {
             name: String(ee.name ?? ""),
             price: Number(ee.price ?? 0),
+            priceMode: ee.priceMode === "on_request" ? "on_request" : "fixed",
             duration: Number(ee.duration ?? 0),
             perItem: Boolean(ee.perItem),
           };
@@ -50,6 +53,7 @@ function serializeService(s: Record<string, unknown>) {
           return {
             name: String(ss.name ?? ""),
             price: Number(ss.price ?? 0),
+            priceMode: ss.priceMode === "on_request" ? "on_request" : "fixed",
             duration: Number(ss.duration ?? 0),
             description: String(ss.description ?? ""),
           };

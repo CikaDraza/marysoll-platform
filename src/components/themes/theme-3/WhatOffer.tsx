@@ -1,4 +1,5 @@
 import type { IService } from "@/types";
+import { formatServicePrice, isPriceOnRequest } from "@/helpers/formatPrice";
 
 interface Props {
   services: IService[];
@@ -38,17 +39,24 @@ function groupServices(services: IService[]): CategoryGroup[] {
 }
 
 function resolvePrice(s: IService): string {
+  if (isPriceOnRequest(s.priceMode)) return formatServicePrice(s.basePrice, s.priceMode);
   if (s.type === "variant" && s.variants && s.variants.length > 0) {
+    if (s.variants.some((v) => isPriceOnRequest(v.priceMode))) {
+      return formatServicePrice(null, "on_request");
+    }
     const prices = s.variants.map((v) => v.price);
     const min = Math.min(...prices);
     return `od ${min} RSD`;
   }
   if (s.type === "group" && s.services && s.services.length > 0) {
+    if (s.services.some((g) => isPriceOnRequest(g.priceMode))) {
+      return formatServicePrice(null, "on_request");
+    }
     const prices = s.services.map((g) => g.price).filter(Boolean);
     if (prices.length > 0) return `od ${Math.min(...prices)} RSD`;
   }
-  if (s.price) return `${s.price} RSD`;
-  if (s.basePrice) return `od ${s.basePrice} RSD`;
+  if (s.price) return formatServicePrice(s.price, s.priceMode);
+  if (s.basePrice) return formatServicePrice(s.basePrice, s.priceMode);
   return "";
 }
 

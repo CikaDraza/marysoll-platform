@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { useServices } from "@/hooks/useServices";
-import { formatPriceToString } from "@/helpers/formatPrice";
+import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import { useAuthActions } from "@/hooks/useAuthActions";
 import { generateTimes } from "@/helpers/generateTimes";
 import { useAIAppointment } from "@/hooks/useAIAppointment";

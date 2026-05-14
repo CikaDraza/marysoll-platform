@@ -4,7 +4,7 @@ import { useAdminServiceForm } from "@/hooks/useAdminServiceForm";
 import { formatISODate } from "@/helpers/formatISODate";
 import { CheckIcon } from "@heroicons/react/24/outline";
 import { useServiceMutations } from "@/hooks/useServiceMutations";
-import { formatPriceToString } from "@/helpers/formatPrice";
+import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import Link from "next/link";
 
 export default function AdminServices() {
@@ -163,16 +163,18 @@ export default function AdminServices() {
                       dark ? "text-4xl lg:text-7xl" : "text-4xl lg:text-7xl",
                     )}
                   >
-                    {formatPriceToString(srv.basePrice)}
+                    {formatServicePrice(srv.basePrice, srv.priceMode, "")}
                   </span>
-                  <span
-                    className={classNames(
-                      dark ? "text-gray-400" : "text-gray-500",
-                      "text-base",
-                    )}
-                  >
-                    /terminu
-                  </span>
+                  {srv.priceMode !== "on_request" && (
+                    <span
+                      className={classNames(
+                        dark ? "text-gray-400" : "text-gray-500",
+                        "text-base",
+                      )}
+                    >
+                      /terminu
+                    </span>
+                  )}
                 </p>
               )}
 
@@ -239,7 +241,7 @@ export default function AdminServices() {
                         <span className="font-semibold">{v.name}</span>
                         <hr className="border-dashed border-gray-200 flex-1" />
                         <span className="font-semibold">
-                          {formatPriceToString(v.price)}
+                          {formatServicePrice(v.price, v.priceMode)}
                         </span>
                       </li>
                     ))}

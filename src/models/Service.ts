@@ -8,24 +8,28 @@ export interface IServiceDoc extends Document {
   subcategory?: string;
   type: "single" | "group" | "variant";
   basePrice?: number;
+  priceMode?: "fixed" | "on_request";
   duration?: number;
   description?: string;
   icon?: string;
   services?: {
     name: string;
     price?: number;
+    priceMode?: "fixed" | "on_request";
     duration: number;
     description?: string;
   }[];
   variants?: {
     name: string;
     price: number;
+    priceMode?: "fixed" | "on_request";
     duration: number;
     perItem: boolean;
   }[];
   extras?: {
     name: string;
     price: number;
+    priceMode?: "fixed" | "on_request";
     duration: number;
     perItem: boolean;
   }[];
@@ -60,15 +64,35 @@ const ServiceSchema = new Schema<IServiceDoc>(
       required: true,
     },
     basePrice: Number,
+    priceMode: {
+      type: String,
+      enum: ["fixed", "on_request"],
+      default: "fixed",
+    },
     duration: Number,
     description: String,
     services: [
-      { name: String, price: Number, duration: Number, description: String },
+      {
+        name: String,
+        price: Number,
+        priceMode: {
+          type: String,
+          enum: ["fixed", "on_request"],
+          default: "fixed",
+        },
+        duration: Number,
+        description: String,
+      },
     ],
     variants: [
       {
         name: String,
         price: Number,
+        priceMode: {
+          type: String,
+          enum: ["fixed", "on_request"],
+          default: "fixed",
+        },
         duration: Number,
         perItem: { type: Boolean, default: false },
       },
@@ -77,6 +101,11 @@ const ServiceSchema = new Schema<IServiceDoc>(
       {
         name: String,
         price: Number,
+        priceMode: {
+          type: String,
+          enum: ["fixed", "on_request"],
+          default: "fixed",
+        },
         duration: Number,
         perItem: { type: Boolean, default: false },
       },
