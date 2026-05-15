@@ -9,6 +9,7 @@ import partialParse from "partial-json-parser";
 import { TextMessage } from "@/types/ai/ai.text-engine";
 import { BaseBlock } from "@/types/landing-block";
 import { ThreadItem } from "@/types/ai/chat-thread";
+import { useDrawerSeek } from "@/hooks/useDrawerSeek";
 
 interface PartialAIResponse {
   messages?: Pick<TextMessage, "content">[];
@@ -37,6 +38,7 @@ export function useAIQuery(user?: LoggedInUser | null) {
     updateThread: setThread,
     clearHistory,
   } = useChatHistory();
+  const { closeDrawer } = useDrawerSeek();
   const userRef = useRef(user);
   const [streamingText, setStreamingText] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -102,12 +104,27 @@ export function useAIQuery(user?: LoggedInUser | null) {
       return updated;
     });
 
+    const hasVisibleBlock = newElements.some((item) => item.type === "block");
+    const isMobileViewport =
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 767px)").matches;
+
+    if (hasVisibleBlock && isMobileViewport) {
+      closeDrawer();
+    }
+
     setIsStreaming(false);
     setIsTextLoading(false);
     setPendingResponse(null);
     setStreamingText("");
     activeTempIdRef.current = null; // Resetujemo ID nakon završetka
-  }, [pendingResponse, saveToHistory, setThread, buildThreadItems]);
+  }, [
+    pendingResponse,
+    saveToHistory,
+    setThread,
+    buildThreadItems,
+    closeDrawer,
+  ]);
 
   // Typewriter efekat: Svakih 30ms dodajemo po jedan karakter
   useEffect(() => {
