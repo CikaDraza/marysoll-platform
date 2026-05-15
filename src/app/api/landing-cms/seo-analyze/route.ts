@@ -11,6 +11,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const landingStructure = body.landingStructure as LandingStructure;
+    const seoContext = body.seoContext;
 
     if (!landingStructure) {
       return NextResponse.json(
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await analyzeLandingPageSeo({ landingStructure });
+    const result = await analyzeLandingPageSeo({ landingStructure, seoContext });
     return NextResponse.json(result);
   } catch (err) {
     console.error("POST /api/landing-cms/seo-analyze:", err);

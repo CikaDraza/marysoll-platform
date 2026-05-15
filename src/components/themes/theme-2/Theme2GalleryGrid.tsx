@@ -110,7 +110,7 @@ export function Theme2GalleryGrid({
   const base = tenantSlug ? `/${tenantSlug}` : "";
 
   return (
-    <section className="relative bg-black py-28">
+    <section id="gallery" className="relative bg-black py-28">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex flex-col lg:flex-row items-baseline items-center justify-between pb-8 lg:pb-3">
           <h2 className="mb-8 lg:mb-0 text-5xl font-semibold tracking-tight text-balance text-white sm:text-6xl">

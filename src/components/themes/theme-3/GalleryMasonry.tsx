@@ -38,7 +38,7 @@ export function Theme3GalleryMasonry({ images, headline }: Props) {
   };
 
   return (
-    <section className="py-24 bg-[#FAF8F5]">
+    <section id="gallery" className="py-24 bg-[#FAF8F5]">
       <div className="container mx-auto px-5 lg:px-32">
         <h2 className="text-4xl text-center font-semibold text-[#2d2d2d] mb-16">
           {headline || "Naši radovi"}

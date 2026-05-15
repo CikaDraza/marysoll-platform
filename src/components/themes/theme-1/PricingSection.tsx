@@ -42,7 +42,7 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
   if (featured.length === 0) return null;
 
   return (
-    <section className="relative isolate max-w-7xl mx-auto px-3 lg:px-0 py-12 lg:py-24">
+    <section id="prices" className="relative isolate max-w-7xl mx-auto px-3 lg:px-0 py-12 lg:py-24">
       <div
         aria-hidden="true"
         className="absolute inset-x-0 -top-3 -z-10 transform-gpu overflow-hidden px-36 blur-3xl"

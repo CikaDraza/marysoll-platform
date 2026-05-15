@@ -71,10 +71,11 @@ export const emptyLandingStructure = (): LandingStructure => ({
     },
   },
   pages: {
-    servicesPage: { headline: "", subheadline: "" },
+    servicesPage: { headline: "", subheadline: "", paragraph: "" },
     appointmentsPage: {
       headline: "",
       subheadline: "",
+      paragraph: "",
       ctas: {
         primary: { text: "", href: "" },
         secondary: { text: "", href: "" },
@@ -233,10 +234,12 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
       servicesPage: {
         headline: rawPages.servicesPage?.headline ?? "",
         subheadline: rawPages.servicesPage?.subheadline ?? "",
+        paragraph: rawPages.servicesPage?.paragraph ?? "",
       },
       appointmentsPage: {
         headline: rawPages.appointmentsPage?.headline ?? "",
         subheadline: rawPages.appointmentsPage?.subheadline ?? "",
+        paragraph: rawPages.appointmentsPage?.paragraph ?? "",
         ctas: {
           primary: {
             text: rawPages.appointmentsPage?.ctas?.primary?.text ?? "",

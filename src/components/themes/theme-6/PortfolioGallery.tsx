@@ -24,7 +24,7 @@ export function Theme6PortfolioGallery({
   ],
 }: Props) {
   return (
-    <section className="py-20 lg:py-32 bg-[var(--background)]">
+    <section id="gallery" className="py-20 lg:py-32 bg-[var(--background)]">
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
         <div className="text-center mb-16 lg:mb-20">
           <h2 className="text-4xl lg:text-5xl font-light text-[var(--foreground)] mb-4">{headline}</h2>

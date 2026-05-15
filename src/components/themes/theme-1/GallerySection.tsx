@@ -107,7 +107,7 @@ export function Theme1GallerySection({
     treatments && treatments.length > 0 ? treatments : DEFAULT_TREATMENTS;
 
   return (
-    <section className="relative py-28">
+    <section id="gallery" className="relative py-28">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(45rem_50rem_at_top,var(--color-indigo-100),white)] opacity-20" />
 
       <div className="max-w-7xl mx-auto px-6">

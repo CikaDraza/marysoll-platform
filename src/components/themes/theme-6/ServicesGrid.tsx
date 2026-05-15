@@ -17,7 +17,7 @@ export function Theme6ServicesGrid({
   const base = tenantSlug ? `/${tenantSlug}` : "";
 
   return (
-    <section className="py-20 lg:py-32 bg-[var(--background)]">
+    <section id="services" className="py-20 lg:py-32 bg-[var(--background)]">
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
         <div className="flex items-end justify-between mb-12 lg:mb-16">
           <div className="max-w-2xl">

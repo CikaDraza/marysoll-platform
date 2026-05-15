@@ -37,7 +37,7 @@ export function Theme3PricingSoft({ services, headline, tenantSlug }: Props) {
   }, {});
 
   return (
-    <section className="py-24 bg-white">
+    <section id="prices" className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-6">
         <h2 className="text-4xl text-center font-semibold text-[#2d2d2d] mb-16">
           {headline || "Usluge i cene"}

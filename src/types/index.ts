@@ -946,11 +946,13 @@ export interface LandingStructure {
     servicesPage: {
       headline?: string;
       subheadline?: string;
+      paragraph?: string;
     };
 
     appointmentsPage: {
       headline?: string;
       subheadline?: string;
+      paragraph?: string;
 
       ctas?: {
         primary?: {

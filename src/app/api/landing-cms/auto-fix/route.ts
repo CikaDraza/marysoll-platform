@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const landingStructure = body.landingStructure as LandingStructure;
     const seoResult = body.seoResult as SeoLandingAnalysisOutput;
+    const seoContext = body.seoContext;
 
     if (!landingStructure || !seoResult) {
       return NextResponse.json(
@@ -21,7 +22,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await autoFixLandingContent({ landingStructure, seoResult });
+    const result = await autoFixLandingContent({
+      landingStructure,
+      seoResult,
+      seoContext,
+    });
     return NextResponse.json(result);
   } catch (err) {
     console.error("POST /api/landing-cms/auto-fix:", err);

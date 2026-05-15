@@ -75,6 +75,7 @@ export default async function UslugePage() {
               servicesPage?.subheadline ||
               "Profesionalna šminka za sve prilike, od dnevne do večernje. Nega lica, obrva i noktiju. Otkrijte našu paletu usluga i tretmana dizajniranih da istaknu vašu prirodnu lepotu."
             }
+            paragraph={servicesPage?.paragraph}
           />
         </section>
 
@@ -96,6 +97,11 @@ export default async function UslugePage() {
           <p className="text-(--primary-color)/80 text-sm mb-8 max-w-sm mx-auto">
             {appointmentsPage?.subheadline}
           </p>
+          {appointmentsPage?.paragraph && (
+            <p className="text-(--primary-color)/75 text-sm leading-7 mb-8 max-w-2xl mx-auto">
+              {appointmentsPage.paragraph}
+            </p>
+          )}
           <div className="flex items-center justify-center space-x-6">
             <Link
               href={`${base}/termini`}

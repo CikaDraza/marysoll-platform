@@ -7,6 +7,7 @@ import { useAdminServices } from "@/hooks/useAdminServices";
 import { useQueryClient } from "@tanstack/react-query";
 import type { LandingStructure, LandingTheme } from "@/types";
 import { ImageSelect } from "@/components/elements/ImageSelect";
+import { ArrowUpIcon } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
 import LoaderButton from "@/components/elements/LoaderButton";
 import Image from "next/image";
@@ -34,6 +35,23 @@ const lbl =
 
 const card =
   "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
+
+const sectionCardBase =
+  "rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
+
+const sectionCardTone = {
+  odd: "bg-white dark:bg-gray-900",
+  even: "bg-gray-50 dark:bg-gray-950",
+};
+
+const PAGE_PARAGRAPH_MAX = 310;
+
+const CTA_ANCHORS = [
+  { label: "Zakazivanje", value: "#booking" },
+  { label: "Usluge", value: "#services" },
+  { label: "Cenovnik", value: "#prices" },
+  { label: "Galerija", value: "#gallery" },
+];
 
 // ─── Heroicons name list for appointment instructions ─────────────────────────
 
@@ -170,6 +188,7 @@ function SectionCard({
   onToggle,
   children,
   readonly,
+  tone = "odd",
 }: {
   title: string;
   badge?: string;
@@ -177,9 +196,10 @@ function SectionCard({
   onToggle: (v: boolean) => void;
   children: React.ReactNode;
   readonly?: boolean;
+  tone?: keyof typeof sectionCardTone;
 }) {
   return (
-    <div className={card}>
+    <div className={`${sectionCardBase} ${sectionCardTone[tone]}`}>
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           <h3 className="font-bold text-gray-900 dark:text-white">{title}</h3>
@@ -206,6 +226,23 @@ function SectionCard({
           Sekcija je isključena — neće se prikazati na landing stranici.
         </p>
       )}
+    </div>
+  );
+}
+
+function CtaAnchorBadges({ onSelect }: { onSelect: (href: string) => void }) {
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {CTA_ANCHORS.map((anchor) => (
+        <button
+          key={anchor.value}
+          type="button"
+          onClick={() => onSelect(anchor.value)}
+          className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-600 transition hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-900/20 dark:text-violet-300 dark:hover:bg-violet-900/30"
+        >
+          {anchor.label} {anchor.value}
+        </button>
+      ))}
     </div>
   );
 }
@@ -337,7 +374,9 @@ function ImageInputField({
         >
           AI
         </button>
-        <label className="shrink-0 px-3 py-2.5 text-xs font-semibold rounded-xl border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition cursor-pointer flex items-center">
+        <label
+          className={`shrink-0 px-3 py-2.5 text-xs font-semibold rounded-xl border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 ${uploading ? "bg-gray-500 dark:bg-gray-800" : "hover:bg-gray-100 dark:hover:bg-gray-800"} transition cursor-pointer flex items-center`}
+        >
           {uploading ? <LoaderButton /> : "Upload"}
           <input
             type="file"
@@ -417,6 +456,7 @@ export function AdminLandingCMS({ sp }: Props) {
   const qc = useQueryClient();
 
   const [seoResult, setSeoResult] = useState<SeoAnalysisResult | null>(null);
+  const [showSeoPanel, setShowSeoPanel] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isAutoFixing, setIsAutoFixing] = useState(false);
   const [iconPickerServiceId, setIconPickerServiceId] = useState<string | null>(
@@ -480,7 +520,95 @@ export function AdminLandingCMS({ sp }: Props) {
     [ls, updateLS],
   );
 
-  // ── Save + SEO analysis ──────────────────────────────────────────────────
+  // ── Save + on-demand SEO analysis ────────────────────────────────────────
+
+  const scrollToTop = () => {
+    window.requestAnimationFrame(() => {
+      document.scrollingElement?.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: "smooth",
+      });
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: "smooth",
+      });
+    });
+  };
+
+  const buildSeoContext = () => ({
+    salon: {
+      name: sp.form.name,
+      city: sp.form.city,
+      street: sp.form.street,
+    },
+    services: services.map((service) => {
+      const variantPrices = (service.variants ?? [])
+        .map((variant) => variant.price)
+        .filter((price): price is number => Number.isFinite(price));
+      const groupedPrices = (service.services ?? [])
+        .map((item) => item.price)
+        .filter((price): price is number => Number.isFinite(price));
+      const prices = [
+        ...(service.basePrice != null ? [service.basePrice] : []),
+        ...variantPrices,
+        ...groupedPrices,
+      ];
+      const variantDurations = (service.variants ?? [])
+        .map((variant) => variant.duration)
+        .filter((duration): duration is number => Number.isFinite(duration));
+      const groupedDurations = (service.services ?? [])
+        .map((item) => item.duration)
+        .filter((duration): duration is number => Number.isFinite(duration));
+      const durations = [
+        ...(service.duration != null ? [service.duration] : []),
+        ...variantDurations,
+        ...groupedDurations,
+      ];
+
+      return {
+        name: service.name,
+        category: service.category,
+        subcategory: service.subcategory,
+        description: service.description,
+        basePrice: service.basePrice,
+        priceMode: service.priceMode,
+        duration: service.duration,
+        type: service.type,
+        priceFrom: prices.length > 0 ? Math.min(...prices) : null,
+        durationFrom: durations.length > 0 ? Math.min(...durations) : null,
+        hasPriceOnRequest:
+          service.priceMode === "on_request" ||
+          service.variants?.some(
+            (variant) => variant.priceMode === "on_request",
+          ) ||
+          service.services?.some((item) => item.priceMode === "on_request") ||
+          false,
+        variants: service.variants?.map((variant) => ({
+          name: variant.name,
+          price: variant.price,
+          priceMode: variant.priceMode,
+          duration: variant.duration,
+        })),
+        groupedServices: service.services?.map((item) => ({
+          name: item.name,
+          price: item.price,
+          priceMode: item.priceMode,
+          duration: item.duration,
+          description: item.description,
+        })),
+      };
+    }),
+    workingHours: sp.form.workingHours,
+    platformKnowledge: {
+      servicesPreviewHasCatalogWidget: true,
+      servicesPageHasFullCatalogPricesDurationsAndBookingLinks: true,
+      appointmentSectionHasBookingWidget: true,
+      appointmentsPageHasBookingCalendarServiceSelectionAndWorkingHours: true,
+      testimonialsContentComesFromDatabase: true,
+    },
+  });
 
   const handleSave = () => {
     if (artists?.enabled) {
@@ -497,12 +625,19 @@ export function AdminLandingCMS({ sp }: Props) {
       }
     }
     sp.save(undefined, {
-      onSuccess: () => runSeoAnalysis(),
+      onSuccess: () => {
+        setSeoResult(null);
+        setShowSeoPanel(true);
+        scrollToTop();
+      },
     });
   };
 
   const runSeoAnalysis = async () => {
-    if (!token) return;
+    if (!token) {
+      toast.error("Niste prijavljeni.");
+      return;
+    }
     setIsAnalyzing(true);
     try {
       const res = await fetch("/api/landing-cms/seo-analyze", {
@@ -511,11 +646,15 @@ export function AdminLandingCMS({ sp }: Props) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ landingStructure: ls }),
+        body: JSON.stringify({
+          landingStructure: ls,
+          seoContext: buildSeoContext(),
+        }),
       });
       if (!res.ok) throw new Error("SEO analiza neuspešna");
       const data = await res.json();
       setSeoResult(data);
+      setShowSeoPanel(true);
     } catch {
       toast.error("SEO analiza nije uspela");
     } finally {
@@ -536,6 +675,7 @@ export function AdminLandingCMS({ sp }: Props) {
         body: JSON.stringify({
           landingStructure: ls,
           seoResult,
+          seoContext: buildSeoContext(),
         }),
       });
       if (!res.ok) throw new Error("Auto-fix neuspešan");
@@ -563,7 +703,7 @@ export function AdminLandingCMS({ sp }: Props) {
   const appointmentsPage = ls.pages.appointmentsPage;
 
   return (
-    <div className="space-y-6">
+    <div className="relative mt-6 min-h-screen space-y-6">
       {/* ── Save bar ─────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <div>
@@ -582,6 +722,15 @@ export function AdminLandingCMS({ sp }: Props) {
             </span>
           )}
           <button
+            type="button"
+            onClick={scrollToTop}
+            title="Na vrh stranice"
+            className="fixed bottom-6 right-6 z-30 inline-flex size-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-lg transition hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-violet-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+          >
+            <ArrowUpIcon className="size-5" aria-hidden="true" />
+            <span className="sr-only">Na vrh stranice</span>
+          </button>
+          <button
             onClick={handleSave}
             disabled={sp.isSaving}
             className="px-5 py-2.5 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition disabled:opacity-50"
@@ -592,32 +741,60 @@ export function AdminLandingCMS({ sp }: Props) {
       </div>
 
       {/* ── SEO Panel ────────────────────────────────────────────────────── */}
-      {seoResult && (
+      {showSeoPanel && (
         <div className={card + " space-y-4"}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <h3 className="font-bold text-gray-900 dark:text-white">
                 SEO Analiza
               </h3>
-              <SeoBadge score={seoResult.score} />
+              {seoResult && <SeoBadge score={seoResult.score} />}
             </div>
-            <button
-              onClick={handleAutoFix}
-              disabled={isAutoFixing}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-pink-600 text-white text-xs font-bold rounded-xl hover:opacity-90 transition disabled:opacity-50"
-            >
-              {isAutoFixing ? (
-                <>
-                  <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin inline-block" />
-                  Popravljanje...
-                </>
-              ) : (
-                "✦ Auto-fix sadržaj"
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={runSeoAnalysis}
+                disabled={isAnalyzing}
+                className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white text-xs font-bold rounded-xl hover:bg-violet-700 transition disabled:opacity-50"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin inline-block" />
+                    Analiziram...
+                  </>
+                ) : (
+                  "Pokreni SEO analizu"
+                )}
+              </button>
+              {seoResult && (
+                <button
+                  type="button"
+                  onClick={handleAutoFix}
+                  disabled={isAutoFixing}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-pink-600 text-white text-xs font-bold rounded-xl hover:opacity-90 transition disabled:opacity-50"
+                >
+                  {isAutoFixing ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin inline-block" />
+                      Popravljanje...
+                    </>
+                  ) : (
+                    "✦ Auto-fix sadržaj"
+                  )}
+                </button>
               )}
-            </button>
+            </div>
           </div>
 
-          {seoResult.issues.length > 0 && (
+          {!seoResult && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Izmene su sačuvane. SEO agent se pokreće samo kada ručno kliknete
+              na dugme, pa se analiza ne troši na manje izmene poput telefona
+              ili adrese.
+            </p>
+          )}
+
+          {seoResult && seoResult.issues.length > 0 && (
             <div>
               <p className={lbl}>Problemi</p>
               <ul className="space-y-1.5">
@@ -634,7 +811,7 @@ export function AdminLandingCMS({ sp }: Props) {
             </div>
           )}
 
-          {seoResult.suggestions.length > 0 && (
+          {seoResult && seoResult.suggestions.length > 0 && (
             <div>
               <p className={lbl}>Preporuke</p>
               <ul className="space-y-1.5">
@@ -651,7 +828,7 @@ export function AdminLandingCMS({ sp }: Props) {
             </div>
           )}
 
-          {seoResult.keywords.length > 0 && (
+          {seoResult && seoResult.keywords.length > 0 && (
             <div>
               <p className={lbl}>Predloženi ključni pojmovi</p>
               <div className="flex flex-wrap gap-2">
@@ -677,6 +854,7 @@ export function AdminLandingCMS({ sp }: Props) {
       <SectionCard
         title="Landing / Hero"
         badge="Hero"
+        tone="odd"
         enabled={hero.enabled}
         onToggle={(v) => updateLandingSection("hero", { ...hero, enabled: v })}
       >
@@ -937,6 +1115,7 @@ export function AdminLandingCMS({ sp }: Props) {
             </div>
             <div>
               <label className={lbl}>Primarni CTA — link *</label>
+
               <input
                 className={inp}
                 value={hero.ctas?.primary?.href ?? ""}
@@ -950,6 +1129,17 @@ export function AdminLandingCMS({ sp }: Props) {
                   })
                 }
                 placeholder="/termini"
+              />
+              <CtaAnchorBadges
+                onSelect={(href) =>
+                  updateLandingSection("hero", {
+                    ...hero,
+                    ctas: {
+                      ...hero.ctas,
+                      primary: { ...hero.ctas.primary, href },
+                    },
+                  })
+                }
               />
             </div>
             <div>
@@ -974,6 +1164,7 @@ export function AdminLandingCMS({ sp }: Props) {
             </div>
             <div>
               <label className={lbl}>Sekundarni CTA — link</label>
+
               <input
                 className={inp}
                 value={hero.ctas?.secondary?.href ?? ""}
@@ -991,6 +1182,20 @@ export function AdminLandingCMS({ sp }: Props) {
                 }
                 placeholder="/usluge"
               />
+              <CtaAnchorBadges
+                onSelect={(href) =>
+                  updateLandingSection("hero", {
+                    ...hero,
+                    ctas: {
+                      ...hero.ctas,
+                      secondary: {
+                        href,
+                        text: hero.ctas?.secondary?.text ?? "",
+                      },
+                    },
+                  })
+                }
+              />
             </div>
           </div>
         </div>
@@ -1000,6 +1205,7 @@ export function AdminLandingCMS({ sp }: Props) {
       <SectionCard
         title="Landing / O Nama"
         badge="About"
+        tone="even"
         enabled={about.enabled}
         onToggle={(v) =>
           updateLandingSection("about", { ...about, enabled: v })
@@ -1213,6 +1419,7 @@ export function AdminLandingCMS({ sp }: Props) {
       <SectionCard
         title="Landing / Naši Artisti"
         badge="Artists"
+        tone="odd"
         enabled={artists?.enabled ?? true}
         onToggle={(v) =>
           updateLandingSection("artists", { ...artists, enabled: v })
@@ -1253,7 +1460,12 @@ export function AdminLandingCMS({ sp }: Props) {
                   ...artists,
                   members: [
                     ...(artists?.members ?? []),
-                    { name: "", role: "", bio: "", image: { src: "", alt: "" } },
+                    {
+                      name: "",
+                      role: "",
+                      bio: "",
+                      image: { src: "", alt: "" },
+                    },
                   ],
                 })
               }
@@ -1335,7 +1547,9 @@ export function AdminLandingCMS({ sp }: Props) {
                     label="URL slike"
                     value={member.image?.src ?? ""}
                     onChange={(url) =>
-                      update({ image: { src: url, alt: member.image?.alt ?? "" } })
+                      update({
+                        image: { src: url, alt: member.image?.alt ?? "" },
+                      })
                     }
                   />
                   {!hasImage && (
@@ -1353,7 +1567,10 @@ export function AdminLandingCMS({ sp }: Props) {
                       value={member.image?.alt ?? ""}
                       onChange={(e) =>
                         update({
-                          image: { src: member.image?.src ?? "", alt: e.target.value },
+                          image: {
+                            src: member.image?.src ?? "",
+                            alt: e.target.value,
+                          },
                         })
                       }
                       placeholder="Opis slike..."
@@ -1374,6 +1591,7 @@ export function AdminLandingCMS({ sp }: Props) {
       <SectionCard
         title="Landing / Pregled Usluga"
         badge="Services"
+        tone="even"
         enabled={servicesPreview.enabled}
         onToggle={(v) =>
           updateLandingSection("servicesPreview", {
@@ -1546,6 +1764,7 @@ export function AdminLandingCMS({ sp }: Props) {
       <SectionCard
         title="Landing / Zakazivanje"
         badge="Appointment"
+        tone="odd"
         enabled={appointmentSection.enabled}
         onToggle={(v) =>
           updateLandingSection("appointmentSection", {
@@ -1675,6 +1894,7 @@ export function AdminLandingCMS({ sp }: Props) {
       <SectionCard
         title="Landing / Preporuke"
         badge="Testimonials"
+        tone="even"
         enabled={testimonials.enabled}
         onToggle={(v) =>
           updateLandingSection("testimonials", { ...testimonials, enabled: v })
@@ -1705,6 +1925,7 @@ export function AdminLandingCMS({ sp }: Props) {
       <SectionCard
         title="Landing / Galerija"
         badge="Gallery"
+        tone="odd"
         enabled={gallery.enabled}
         onToggle={(v) =>
           updateLandingSection("gallery", { ...gallery, enabled: v })
@@ -2225,6 +2446,7 @@ export function AdminLandingCMS({ sp }: Props) {
       <SectionCard
         title="Landing / FAQ"
         badge="FAQ"
+        tone="even"
         enabled={faq.enabled}
         onToggle={(v) => updateLandingSection("faq", { ...faq, enabled: v })}
       >
@@ -2397,6 +2619,28 @@ export function AdminLandingCMS({ sp }: Props) {
                   placeholder="Kompletna ponuda tretmana"
                 />
               </div>
+              <div className="col-span-2">
+                <div className="flex items-center justify-between">
+                  <label className={lbl}>Paragraf</label>
+                  <span className="mb-1.5 text-[11px] font-semibold text-gray-400 dark:text-gray-500">
+                    {(servicesPage.paragraph ?? "").length}/{PAGE_PARAGRAPH_MAX}{" "}
+                    characters with spaces
+                  </span>
+                </div>
+                <textarea
+                  className={inp + " resize-none"}
+                  rows={4}
+                  maxLength={PAGE_PARAGRAPH_MAX}
+                  value={servicesPage.paragraph ?? ""}
+                  onChange={(e) =>
+                    updatePagesSection("servicesPage", {
+                      ...servicesPage,
+                      paragraph: e.target.value.slice(0, PAGE_PARAGRAPH_MAX),
+                    })
+                  }
+                  placeholder="Jedan kratak SEO paragraf za stranicu usluga..."
+                />
+              </div>
             </div>
           </div>
 
@@ -2434,6 +2678,28 @@ export function AdminLandingCMS({ sp }: Props) {
                   placeholder="Izaberi slobodan termin..."
                 />
               </div>
+              <div className="col-span-2">
+                <div className="flex items-center justify-between">
+                  <label className={lbl}>Paragraf</label>
+                  <span className="mb-1.5 text-[11px] font-semibold text-gray-400 dark:text-gray-500">
+                    {(appointmentsPage.paragraph ?? "").length}/
+                    {PAGE_PARAGRAPH_MAX} characters with spaces
+                  </span>
+                </div>
+                <textarea
+                  className={inp + " resize-none"}
+                  rows={4}
+                  maxLength={PAGE_PARAGRAPH_MAX}
+                  value={appointmentsPage.paragraph ?? ""}
+                  onChange={(e) =>
+                    updatePagesSection("appointmentsPage", {
+                      ...appointmentsPage,
+                      paragraph: e.target.value.slice(0, PAGE_PARAGRAPH_MAX),
+                    })
+                  }
+                  placeholder="Jedan kratak SEO paragraf za stranicu termina..."
+                />
+              </div>
               <div>
                 <label className={lbl}>CTA Primarni — tekst</label>
                 <input
@@ -2457,6 +2723,7 @@ export function AdminLandingCMS({ sp }: Props) {
               </div>
               <div>
                 <label className={lbl}>CTA Primarni — link</label>
+
                 <input
                   className={inp}
                   value={appointmentsPage.ctas?.primary?.href ?? ""}
@@ -2474,6 +2741,21 @@ export function AdminLandingCMS({ sp }: Props) {
                     })
                   }
                   placeholder="/termini"
+                />
+                <CtaAnchorBadges
+                  onSelect={(href) =>
+                    updatePagesSection("appointmentsPage", {
+                      ...appointmentsPage,
+                      ctas: {
+                        ...appointmentsPage.ctas,
+                        primary: {
+                          ...appointmentsPage.ctas?.primary,
+                          href,
+                          text: appointmentsPage.ctas?.primary?.text ?? "",
+                        },
+                      },
+                    })
+                  }
                 />
               </div>
               <div>
@@ -2499,6 +2781,7 @@ export function AdminLandingCMS({ sp }: Props) {
               </div>
               <div>
                 <label className={lbl}>CTA Sekundarni — link</label>
+
                 <input
                   className={inp}
                   value={appointmentsPage.ctas?.secondary?.href ?? ""}
@@ -2516,6 +2799,21 @@ export function AdminLandingCMS({ sp }: Props) {
                     })
                   }
                   placeholder="/usluge"
+                />
+                <CtaAnchorBadges
+                  onSelect={(href) =>
+                    updatePagesSection("appointmentsPage", {
+                      ...appointmentsPage,
+                      ctas: {
+                        ...appointmentsPage.ctas,
+                        secondary: {
+                          ...appointmentsPage.ctas?.secondary,
+                          href,
+                          text: appointmentsPage.ctas?.secondary?.text ?? "",
+                        },
+                      },
+                    })
+                  }
                 />
               </div>
             </div>

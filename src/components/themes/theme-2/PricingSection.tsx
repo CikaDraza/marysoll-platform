@@ -34,7 +34,7 @@ export function Theme2PricingSection({ services, tenantSlug }: Props) {
   if (!featured.length) return null;
 
   return (
-    <section className="bg-white py-24 px-6">
+    <section id="prices" className="bg-white py-24 px-6">
       <div className="max-w-7xl mx-auto">
         <div className="w-12 h-0.5 bg-(--primary-color) mx-auto mb-4" />
         <h2 className="text-3xl font-black text-black text-center mb-4">

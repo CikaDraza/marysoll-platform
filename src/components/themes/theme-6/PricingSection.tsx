@@ -30,7 +30,7 @@ export function Theme6PricingSection({
   ];
 
   return (
-    <section className="py-20 lg:py-32 bg-gradient-to-b from-[var(--background)] to-[#FAF8F5]">
+    <section id="prices" className="py-20 lg:py-32 bg-gradient-to-b from-[var(--background)] to-[#FAF8F5]">
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
         <div className="text-center mb-16 lg:mb-20">
           <h2 className="text-4xl lg:text-5xl font-light text-[var(--foreground)] mb-4">{headline}</h2>

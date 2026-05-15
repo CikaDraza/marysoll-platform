@@ -15,7 +15,6 @@ import { ThermoBlanketIcon } from "@/components/assets/icons/services/ThermoBlan
 import { VacuumTreatmentIcon } from "@/components/assets/icons/services/VacuumTreatmentIcon";
 import { formatPriceToString } from "@/helpers/formatPrice";
 import type { IService } from "@/types";
-import Link from "next/link";
 import { ComponentType } from "react";
 
 interface Props {
@@ -90,12 +89,10 @@ export function Theme2ServicesPreview({
   services,
   headline,
   subheadline,
-  tenantSlug,
   showIcons,
 }: Props) {
-  const servicesHref = tenantSlug ? `/${tenantSlug}/usluge` : "/usluge";
   return (
-    <section className="bg-white py-40 lg:py-24 px-4">
+    <section id="services" className="bg-white py-40 lg:py-24 px-4">
       <div className="max-w-6xl mx-auto">
         <p className="text-sm pb-2 font-semibold text-(--primary-color) tracking-widest text-center mb-2">
           {subheadline || "šta nudimo"}

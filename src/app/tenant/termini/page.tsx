@@ -68,6 +68,7 @@ export default async function TerminiPage() {
     appointmentsPage?: {
       headline?: string;
       subheadline?: string;
+      paragraph?: string;
     };
   };
 
@@ -84,6 +85,11 @@ export default async function TerminiPage() {
           <p className="text-gray-500 text-sm max-w-2xl mx-auto mb-8">
             {landingStructure?.pages?.appointmentsPage?.subheadline}
           </p>
+          {landingStructure?.pages?.appointmentsPage?.paragraph && (
+            <p className="text-gray-600 text-sm leading-7 max-w-3xl mx-auto mb-8">
+              {landingStructure.pages.appointmentsPage.paragraph}
+            </p>
+          )}
           <div className="flex gap-3 justify-center">
             <Link
               href={`${base}/panel?tab=Zakazivanja`}

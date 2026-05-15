@@ -1,6 +1,6 @@
 import Image from "next/image";
-import type { AboutTextLink } from "@/types";
 import { renderLinkedText } from "@/helpers/renderLinkedText";
+import { AboutTextLink } from "@/types";
 
 interface Props {
   about: {

@@ -33,7 +33,7 @@ export function Theme5Pricing({
   }, {});
 
   return (
-    <section className="py-20 bg-white">
+    <section id="prices" className="py-20 bg-white">
       <div className="max-w-7xl mx-auto text-center mb-24">
         <span className="text-xs text-gray-500">naše ponude</span>
         <h2 className="text-2xl font-light uppercase text-gray-800 mb-10">

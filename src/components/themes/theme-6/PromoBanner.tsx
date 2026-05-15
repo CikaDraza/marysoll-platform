@@ -12,7 +12,7 @@ export function Theme6PromoBanner({
   cta = { label: "Claim Offer", href: "#booking" },
 }: Props) {
   return (
-    <section className="py-20 lg:py-32 bg-gradient-to-br from-[#F5EDE5] to-[#EAE0D5]">
+    <section id="booking" className="py-20 lg:py-32 bg-gradient-to-br from-[#F5EDE5] to-[#EAE0D5]">
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center bg-white overflow-hidden shadow-lg">
           <div className="order-2 lg:order-1">

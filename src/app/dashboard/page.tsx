@@ -21,7 +21,6 @@ import { AdminChat } from "@/components/admin/chat/AdminChat";
 import ClientsList from "@/components/admin/ClientsList";
 import { ServiceModal } from "@/components/admin/ServiceModal";
 import { FeatureGate } from "@/components/shared/FeatureGate";
-import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import DashboardLayout from "@/layout/DashboardLayout";
 import Loader from "@/components/elements/Loader";
 import { api } from "@/lib/api";
@@ -124,6 +123,13 @@ const lbl =
 const card =
   "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
 
+interface SeoAnalysisResult {
+  score: number;
+  issues: string[];
+  suggestions: string[];
+  keywords: string[];
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function servicePrice(s: IService): string {
@@ -134,6 +140,23 @@ function servicePrice(s: IService): string {
       ? `od ${s.variants[0].price.toLocaleString("sr-RS")} RSD`
       : "—";
   return "Paket";
+}
+
+function SeoBadge({ score }: { score: number }) {
+  const color =
+    score >= 75
+      ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
+      : score >= 50
+        ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800"
+        : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800";
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-sm font-bold ${color}`}
+    >
+      SEO Score: {score}/100
+    </span>
+  );
 }
 
 const TYPE_BADGE: Record<string, string> = {
@@ -187,6 +210,11 @@ function AdminDashboard() {
     slug: "",
     cloudinaryFolder: "",
   });
+  const [metadataSeoResult, setMetadataSeoResult] =
+    useState<SeoAnalysisResult | null>(null);
+  const [showMetadataSeoPanel, setShowMetadataSeoPanel] = useState(false);
+  const [isAnalyzingMetadataSeo, setIsAnalyzingMetadataSeo] = useState(false);
+  const [isAutoFixingMetadataSeo, setIsAutoFixingMetadataSeo] = useState(false);
 
   useEffect(() => {
     async function fetchTenant() {
@@ -255,8 +283,135 @@ function AdminDashboard() {
 
   const sp = useSalonProfileAdmin();
   const svc = useAdminServices();
-  const { hasFeature } = usePlanFeatures();
   const hasProfile = !!sp.profile;
+
+  const buildMetadataSeoContext = () => ({
+    salon: {
+      name: sp.form.name,
+      city: sp.form.city,
+      street: sp.form.street,
+    },
+    services: svc.services.map((service) => {
+      const variantPrices = (service.variants ?? [])
+        .map((variant) => variant.price)
+        .filter((price): price is number => Number.isFinite(price));
+      const groupedPrices = (service.services ?? [])
+        .map((item) => item.price)
+        .filter((price): price is number => Number.isFinite(price));
+      const prices = [
+        ...(service.basePrice != null ? [service.basePrice] : []),
+        ...variantPrices,
+        ...groupedPrices,
+      ];
+      const variantDurations = (service.variants ?? [])
+        .map((variant) => variant.duration)
+        .filter((duration): duration is number => Number.isFinite(duration));
+      const groupedDurations = (service.services ?? [])
+        .map((item) => item.duration)
+        .filter((duration): duration is number => Number.isFinite(duration));
+      const durations = [
+        ...(service.duration != null ? [service.duration] : []),
+        ...variantDurations,
+        ...groupedDurations,
+      ];
+
+      return {
+        name: service.name,
+        category: service.category,
+        subcategory: service.subcategory,
+        description: service.description,
+        basePrice: service.basePrice,
+        priceMode: service.priceMode,
+        duration: service.duration,
+        type: service.type,
+        priceFrom: prices.length > 0 ? Math.min(...prices) : null,
+        durationFrom: durations.length > 0 ? Math.min(...durations) : null,
+        hasPriceOnRequest:
+          service.priceMode === "on_request" ||
+          service.variants?.some((variant) => variant.priceMode === "on_request") ||
+          service.services?.some((item) => item.priceMode === "on_request") ||
+          false,
+      };
+    }),
+  });
+
+  const handleSaveMetadataSeo = () => {
+    sp.save(undefined, {
+      onSuccess: () => {
+        setMetadataSeoResult(null);
+        setShowMetadataSeoPanel(true);
+      },
+    });
+  };
+
+  const runMetadataSeoAnalysis = async () => {
+    if (!token) {
+      alert("Niste prijavljeni.");
+      return;
+    }
+    setIsAnalyzingMetadataSeo(true);
+    try {
+      const res = await fetch("/api/salon-profile/seo-metadata-analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          seo: sp.form.seo,
+          seoContext: buildMetadataSeoContext(),
+        }),
+      });
+      if (!res.ok) throw new Error("SEO analiza neuspešna");
+      const data = (await res.json()) as SeoAnalysisResult;
+      setMetadataSeoResult(data);
+      setShowMetadataSeoPanel(true);
+    } catch {
+      alert("SEO analiza nije uspela");
+    } finally {
+      setIsAnalyzingMetadataSeo(false);
+    }
+  };
+
+  const handleMetadataSeoAutoFix = async () => {
+    if (!token || !metadataSeoResult) return;
+    setIsAutoFixingMetadataSeo(true);
+    try {
+      const res = await fetch("/api/salon-profile/seo-metadata-auto-fix", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          seo: sp.form.seo,
+          seoResult: metadataSeoResult,
+          seoContext: buildMetadataSeoContext(),
+        }),
+      });
+      if (!res.ok) throw new Error("Auto-fix neuspešan");
+      const data = (await res.json()) as {
+        seo: Record<string, string | undefined>;
+      };
+      (
+        [
+          "homeTitle",
+          "homeDescription",
+          "uslugeTitle",
+          "uslugeDescription",
+          "terminiTitle",
+          "terminiDescription",
+        ] as const
+      ).forEach((key) => {
+        sp.setSeoField(key, data.seo[key] ?? "");
+      });
+      alert("SEO metadata je poboljšan. Kliknite Sačuvaj SEO da primenite.");
+    } catch {
+      alert("Auto-fix nije uspeo");
+    } finally {
+      setIsAutoFixingMetadataSeo(false);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && (!user || (!user.isAdmin && !user.isSuperAdmin))) {
@@ -1132,6 +1287,114 @@ function AdminDashboard() {
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-5">
               Title i description koji se prikazuju u Google pretrazi.
             </p>
+            {showMetadataSeoPanel && (
+              <div className="mb-5 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-5 space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <h3 className="font-bold text-gray-900 dark:text-white">
+                      SEO Analiza
+                    </h3>
+                    {metadataSeoResult && (
+                      <SeoBadge score={metadataSeoResult.score} />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={runMetadataSeoAnalysis}
+                      disabled={isAnalyzingMetadataSeo}
+                      className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white text-xs font-bold rounded-xl hover:bg-violet-700 transition disabled:opacity-50"
+                    >
+                      {isAnalyzingMetadataSeo ? (
+                        <>
+                          <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin inline-block" />
+                          Analiziram...
+                        </>
+                      ) : (
+                        "Pokreni SEO analizu"
+                      )}
+                    </button>
+                    {metadataSeoResult && (
+                      <button
+                        type="button"
+                        onClick={handleMetadataSeoAutoFix}
+                        disabled={isAutoFixingMetadataSeo}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-pink-600 text-white text-xs font-bold rounded-xl hover:opacity-90 transition disabled:opacity-50"
+                      >
+                        {isAutoFixingMetadataSeo ? (
+                          <>
+                            <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin inline-block" />
+                            Popravljam...
+                          </>
+                        ) : (
+                          "✦ Auto-fix metadata"
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {!metadataSeoResult && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Izmene su sačuvane. SEO agent se pokreće samo kada ručno
+                    kliknete na dugme.
+                  </p>
+                )}
+
+                {metadataSeoResult && metadataSeoResult.issues.length > 0 && (
+                  <div>
+                    <p className={lbl}>Problemi</p>
+                    <ul className="space-y-1.5">
+                      {metadataSeoResult.issues.map((issue, i) => (
+                        <li
+                          key={i}
+                          className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400"
+                        >
+                          <span className="mt-0.5 shrink-0">✕</span>
+                          {issue}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {metadataSeoResult &&
+                  metadataSeoResult.suggestions.length > 0 && (
+                    <div>
+                      <p className={lbl}>Preporuke</p>
+                      <ul className="space-y-1.5">
+                        {metadataSeoResult.suggestions.map((suggestion, i) => (
+                          <li
+                            key={i}
+                            className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300"
+                          >
+                            <span className="mt-0.5 shrink-0 text-violet-500">
+                              →
+                            </span>
+                            {suggestion}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                {metadataSeoResult && metadataSeoResult.keywords.length > 0 && (
+                  <div>
+                    <p className={lbl}>Predloženi ključni pojmovi</p>
+                    <div className="flex flex-wrap gap-2">
+                      {metadataSeoResult.keywords.map((keyword, i) => (
+                        <span
+                          key={i}
+                          className="px-2.5 py-1 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 text-xs font-medium"
+                        >
+                          {keyword}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="space-y-5">
               {(
                 [
@@ -1197,7 +1460,7 @@ function AdminDashboard() {
             </div>
             <div className="mt-5 flex justify-end">
               <button
-                onClick={() => sp.save()}
+                onClick={handleSaveMetadataSeo}
                 disabled={sp.isSaving}
                 className="px-5 py-2.5 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition disabled:opacity-50"
               >

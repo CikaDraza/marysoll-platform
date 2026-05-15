@@ -89,11 +89,10 @@ export function Theme1WhatOffer({
   services,
   headline,
   subheadline,
-  tenantSlug,
   showIcons,
 }: Props) {
   return (
-    <section className="py-40 lg:py-24 px-4">
+    <section id="services" className="py-40 lg:py-24 px-4">
       <div className="max-w-7xl px-6 lg:px-8 mx-auto">
         <p className="text-sm pb-2 font-semibold text-(--primary-color) tracking-widest text-center mb-2">
           {subheadline || "šta nudimo"}

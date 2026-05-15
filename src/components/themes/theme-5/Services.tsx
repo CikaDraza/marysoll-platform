@@ -80,7 +80,7 @@ export function Theme5Services({
     services.find((s) => s.category === cat && s.icon)?.icon;
 
   return (
-    <section className="py-16 bg-white text-center">
+    <section id="services" className="py-16 bg-white text-center">
       <p className="text-sm tracking-widest text-gray-500 uppercase">
         {data?.label}
       </p>

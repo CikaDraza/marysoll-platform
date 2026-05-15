@@ -7,7 +7,7 @@ type GalleryData = ReturnType<typeof mapCMS>["gallery"];
 
 export function Theme5Gallery({ data }: { data: GalleryData }) {
   return (
-    <section id="theme5-gallery">
+    <section id="gallery">
       <div className="grid grid-cols-2 md:grid-cols-6">
         {data?.images?.map((img: string, i: number) => (
           <Image

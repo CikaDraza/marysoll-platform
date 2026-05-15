@@ -26,6 +26,7 @@ export type AgentType =
   | "campaignTemplate"
   | "campaignOptimization"
   | "seoLandingTheme"
+  | "metadataSeo"
   | "landingContent";
 
 export interface AgentConfig {
@@ -110,6 +111,17 @@ export const AGENTS: Record<AgentType, AgentConfig> = {
     maxTokens: 2000,
     rpmLimit: 5,
   },
+  metadataSeo: {
+    type: "metadataSeo",
+    apiKey:
+      process.env.API_KEY_SEO_METADATA ??
+      process.env.API_KEY_SEO_LADNING_THEME ??
+      "",
+    model: "deepseek-chat",
+    temperature: 0.2,
+    maxTokens: 2000,
+    rpmLimit: 5,
+  },
   landingContent: {
     type: "landingContent",
     apiKey: process.env.API_KEY_LANDING_CONTENT ?? "",
@@ -165,6 +177,11 @@ export const AGENT_PERSONAS = {
     name: "Scout",
     role: "Landing SEO Analyst",
     color: "text-emerald-500",
+  },
+  metadataSeo: {
+    name: "Meta",
+    role: "Metadata SEO Analyst",
+    color: "text-sky-500",
   },
   landingContent: {
     name: "Mira",

@@ -11,8 +11,53 @@ import "server-only";
 import { callDeepSeek, DeepSeekMessage } from "../agents";
 import type { LandingStructure } from "@/types";
 
+export interface SeoCmsServiceContext {
+  name?: string;
+  category?: string;
+  subcategory?: string;
+  description?: string;
+  basePrice?: number | null;
+  priceMode?: string;
+  duration?: number | null;
+  priceFrom?: number | null;
+  durationFrom?: number | null;
+  hasPriceOnRequest?: boolean;
+  type?: string;
+  variants?: {
+    name?: string;
+    price?: number | null;
+    priceMode?: string;
+    duration?: number | null;
+  }[];
+  groupedServices?: {
+    name?: string;
+    price?: number | null;
+    priceMode?: string;
+    duration?: number | null;
+    description?: string;
+  }[];
+}
+
+export interface SeoCmsContext {
+  salon?: {
+    name?: string;
+    city?: string;
+    street?: string;
+  };
+  services?: SeoCmsServiceContext[];
+  workingHours?: unknown;
+  platformKnowledge?: {
+    servicesPreviewHasCatalogWidget?: boolean;
+    servicesPageHasFullCatalogPricesDurationsAndBookingLinks?: boolean;
+    appointmentSectionHasBookingWidget?: boolean;
+    appointmentsPageHasBookingCalendarServiceSelectionAndWorkingHours?: boolean;
+    testimonialsContentComesFromDatabase?: boolean;
+  };
+}
+
 export interface SeoLandingAnalysisInput {
   landingStructure: LandingStructure;
+  seoContext?: SeoCmsContext;
 }
 
 export interface SeoLandingAnalysisOutput {
@@ -43,6 +88,25 @@ Focus on:
 - Headline strength
 - CTA effectiveness
 - Content completeness
+- Image alt text quality and missing alt tags
+- Services page and appointments page SEO completeness
+
+Important platform knowledge:
+- The CMS controls headings, subheadlines, paragraphs, CTAs, FAQ copy, image alt text and section visibility.
+- The Services Preview section automatically renders service cards from the service database when services exist.
+- The Services page automatically renders the full service catalog with categories, descriptions, prices, durations and booking links when services exist.
+- Variant and grouped services may not have basePrice/base duration. Use priceFrom and durationFrom as the resolved "from" price and shortest duration.
+- The Appointment section automatically renders a booking widget.
+- The Appointments page automatically renders service selection, booking calendar, availability and working-hours driven appointment flow.
+- Testimonials content comes from database records; CMS controls only the section heading.
+- Schema markup is technical implementation outside this CMS screen. Do not lower the score for missing schema markup in this CMS analysis.
+
+Scoring rules:
+- Do not penalize CMS content for missing service descriptions, pricing, durations, appointment slots or working hours when provided in PLATFORM CONTEXT.
+- Do not report "services lack prices/durations" when priceFrom or durationFrom is present, even if basePrice/duration is empty.
+- Penalize only CMS-controllable gaps: weak/empty headings, missing location/service intent in headings/subheadlines/paragraphs, missing FAQ copy, missing CTAs, missing/weak image alt text, poor internal-link CTA copy.
+- If the owner keeps H1 short or brand-focused, accept local/service keywords in subheadline, whereWhatForWhom, page paragraphs, FAQ and alt text.
+- After a solid auto-fix of CMS-controllable fields, the realistic score should be 75-90 even if the H1 remains concise.
 
 Be strict and realistic. Do not give generic advice.
 
@@ -59,36 +123,116 @@ export async function analyzeLandingPageSeo(
   input: SeoLandingAnalysisInput,
 ): Promise<SeoLandingAnalysisOutput> {
   const { landingStructure } = input;
+  const { seoContext } = input;
   const l = landingStructure.landing;
+  const pages = landingStructure.pages;
 
-  const contentSummary = `
+  const imageLine = (
+    label: string,
+    image?: { src?: string; alt?: string | null },
+  ) => {
+    if (!image?.src) return "";
+    return `  ${label}: image present, alt: ${image.alt?.trim() || "(missing)"}`;
+  };
+
+  const imageList = (
+    label: string,
+    images?: { src?: string; alt?: string | null }[],
+  ) => {
+    const present = (images ?? []).filter((image) => image.src);
+    if (present.length === 0) return "";
+    return `  ${label}: ${present
+      .map((image, index) => `#${index + 1} alt: ${image.alt?.trim() || "(missing)"}`)
+      .join(" | ")}`;
+  };
+
+  const enabledSections = Object.entries(l)
+    .filter(
+      ([, value]) =>
+        value &&
+        typeof value === "object" &&
+        "enabled" in value &&
+        (value as { enabled: boolean }).enabled,
+    )
+    .map(([key]) => key);
+
+  const sectionSummaries: string[] = [];
+
+  if (l.hero.enabled) {
+    sectionSummaries.push(`
 HERO:
   Headline: ${l.hero.headline || "(empty)"}
   Subheadline: ${l.hero.subheadline || "(empty)"}
   WhereWhatForWhom: ${l.hero.whereWhatForWhom || "(empty)"}
   Location: ${l.hero.contact?.location || "(empty)"}
   Primary CTA: ${l.hero.ctas?.primary?.text || "(empty)"} → ${l.hero.ctas?.primary?.href || "(empty)"}
+${imageLine("Hero image", l.hero.image)}
+${imageList("Hero grid images", l.hero.images)}
+`.trim());
+  }
 
+  if (l.about.enabled) {
+    sectionSummaries.push(`
 ABOUT:
   Headline: ${l.about.headline || "(empty)"}
   Paragraphs: ${(l.about.paragraphs ?? []).join(" | ") || "(empty)"}
+${imageLine("About image", l.about.image)}
+`.trim());
+  }
 
+  if (l.artists.enabled) {
+    sectionSummaries.push(`
+ARTISTS:
+  Headline: ${l.artists.headline || "(empty)"}
+  Members: ${(l.artists.members ?? [])
+    .map((member) => `${member.name || "(empty name)"} / ${member.role || "(empty role)"} / image alt: ${member.image?.alt?.trim() || "(missing)"}`)
+    .join(" | ") || "(empty)"}
+`.trim());
+  }
+
+  if (l.servicesPreview.enabled) {
+    sectionSummaries.push(`
 SERVICES PREVIEW:
   Headline: ${l.servicesPreview.headline || "(empty)"}
   Subheadline: ${l.servicesPreview.subheadline || "(empty)"}
+${imageLine("Services image", l.servicesPreview.image)}
+`.trim());
+  }
 
+  if (l.appointmentSection.enabled) {
+    sectionSummaries.push(`
 APPOINTMENT SECTION:
   Headline: ${l.appointmentSection.headline || "(empty)"}
   Subheadline: ${l.appointmentSection.subheadline || "(empty)"}
   Instructions: ${(l.appointmentSection.instructions ?? []).map((i) => i.name).join(", ") || "(empty)"}
+`.trim());
+  }
 
+  if (l.testimonials.enabled) {
+    sectionSummaries.push(`
 TESTIMONIALS:
   Headline: ${l.testimonials.headline || "(empty)"}
+`.trim());
+  }
 
+  if (l.gallery.enabled) {
+    sectionSummaries.push(`
 GALLERY:
   Headline: ${l.gallery.headline || "(empty)"}
+  Subheadline: ${l.gallery.subheadline || "(empty)"}
   Instagram username: ${l.gallery.instagram?.username || "(empty)"}
+${imageList("Gallery images", l.gallery.images)}
+  Treatments: ${(l.gallery.treatments ?? [])
+    .map((item) => `${item.title || "(empty title)"} / ${item.description || "(empty description)"} / images: ${(item.images ?? []).map((image, index) => `#${index + 1} alt: ${image.alt?.trim() || "(missing)"}`).join(", ") || "(none)"}`)
+    .join(" | ") || "(empty)"}
+  Items: ${(l.gallery.items ?? [])
+    .map((item) => `${item.title || "(empty title)"} / ${item.description || "(empty description)"} / images: ${(item.images ?? []).map((image, index) => `#${index + 1} alt: ${image.alt?.trim() || "(missing)"}`).join(", ") || "(none)"}`)
+    .join(" | ") || "(empty)"}
+`.trim());
+  }
 
+  if (l.faq.enabled) {
+    sectionSummaries.push(`
 FAQ:
   Headline: ${l.faq.headline || "(empty)"}
   Subheadline: ${l.faq.subheadline || "(empty)"}
@@ -97,11 +241,52 @@ FAQ:
     .slice(0, 3)
     .map((q) => q.question)
     .join(" | ") || "(none)"}
+`.trim());
+  }
 
-ENABLED SECTIONS: ${Object.entries(l)
-    .filter(([, v]) => v && typeof v === "object" && "enabled" in v && (v as { enabled: boolean }).enabled)
-    .map(([k]) => k)
-    .join(", ")}
+  const contentSummary = `
+PLATFORM CONTEXT:
+  Salon: ${seoContext?.salon?.name || "(empty)"}
+  City: ${seoContext?.salon?.city || "(empty)"}
+  Street: ${seoContext?.salon?.street || "(empty)"}
+  Services in database: ${seoContext?.services?.length ?? 0}
+  Service catalog sample: ${(seoContext?.services ?? [])
+    .slice(0, 8)
+    .map((service) => {
+      const price =
+        service.hasPriceOnRequest || service.priceMode === "on_request"
+          ? "price on request"
+          : service.priceFrom
+            ? `from ${service.priceFrom}`
+            : "price missing";
+      const duration = service.durationFrom
+        ? `from ${service.durationFrom} min`
+        : "duration missing";
+      return `${service.name || "(unnamed)"} / ${service.category || "(no category)"} / ${price} / ${duration}`;
+    })
+    .join(" | ") || "(empty)"}
+  Working hours configured: ${seoContext?.workingHours ? "yes" : "no"}
+  Services Preview has automatic service catalog widget: ${seoContext?.platformKnowledge?.servicesPreviewHasCatalogWidget ? "yes" : "no"}
+  Services Page has full catalog, prices, durations and booking links: ${seoContext?.platformKnowledge?.servicesPageHasFullCatalogPricesDurationsAndBookingLinks ? "yes" : "no"}
+  Appointment Section has booking widget: ${seoContext?.platformKnowledge?.appointmentSectionHasBookingWidget ? "yes" : "no"}
+  Appointments Page has booking calendar/service selection/working hours: ${seoContext?.platformKnowledge?.appointmentsPageHasBookingCalendarServiceSelectionAndWorkingHours ? "yes" : "no"}
+  Testimonials content comes from database: ${seoContext?.platformKnowledge?.testimonialsContentComesFromDatabase ? "yes" : "no"}
+
+ENABLED LANDING SECTIONS ANALYZED: ${enabledSections.join(", ") || "(none)"}
+
+${sectionSummaries.join("\n\n")}
+
+SERVICES PAGE:
+  Headline: ${pages.servicesPage?.headline || "(empty)"}
+  Subheadline: ${pages.servicesPage?.subheadline || "(empty)"}
+  Paragraph: ${pages.servicesPage?.paragraph || "(empty)"}
+
+APPOINTMENTS PAGE:
+  Headline: ${pages.appointmentsPage?.headline || "(empty)"}
+  Subheadline: ${pages.appointmentsPage?.subheadline || "(empty)"}
+  Paragraph: ${pages.appointmentsPage?.paragraph || "(empty)"}
+  Primary CTA: ${pages.appointmentsPage?.ctas?.primary?.text || "(empty)"} → ${pages.appointmentsPage?.ctas?.primary?.href || "(empty)"}
+  Secondary CTA: ${pages.appointmentsPage?.ctas?.secondary?.text || "(empty)"} → ${pages.appointmentsPage?.ctas?.secondary?.href || "(empty)"}
   `.trim();
 
   const messages: DeepSeekMessage[] = [

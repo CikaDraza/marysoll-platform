@@ -7,10 +7,12 @@ export default function ServicesLayout({
   services,
   headline,
   subheadline,
+  paragraph,
 }: {
   services: IService[];
   headline: string;
   subheadline: string;
+  paragraph?: string;
 }) {
   const groupedServices = groupAndSortServices(services);
 
@@ -26,6 +28,11 @@ export default function ServicesLayout({
         <p className="mt-8 w-4xl text-center text-sm lg:text-lg font-medium text-pretty text-gray-500 sm:text-xl/8 px-6 lg:px-8">
           {subheadline}
         </p>
+        {paragraph && (
+          <p className="mt-5 max-w-3xl text-center text-sm leading-7 text-gray-600 px-6 lg:px-8">
+            {paragraph}
+          </p>
+        )}
       </div>
       <div className="pt-16 lg:pt-24 flex flex-col gap-y-8">
         {groupedServices?.map((group) => (

@@ -6,7 +6,7 @@ type CTAData = ReturnType<typeof mapCMS>["cta"];
 
 export function Theme5CTA({ data }: { data: CTAData }) {
   return (
-    <section className="relative py-20 min-h-96 text-white text-center">
+    <section id="booking" className="relative py-20 min-h-96 text-white text-center">
       <Image
         fill
         alt={data?.headline || "Zakažite odmah"}

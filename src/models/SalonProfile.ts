@@ -191,10 +191,12 @@ const SalonProfileSchema = new mongoose.Schema(
         servicesPage: {
           headline: { type: String },
           subheadline: { type: String },
+          paragraph: { type: String },
         },
         appointmentsPage: {
           headline: { type: String },
           subheadline: { type: String },
+          paragraph: { type: String },
           ctas: {
             primary: ctaSchema,
             secondary: ctaSchema,
