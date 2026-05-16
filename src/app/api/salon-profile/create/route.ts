@@ -38,6 +38,12 @@ export async function POST(req: NextRequest) {
     };
 
     const landingTheme = (form.get("landingTheme") as string) || "theme-1";
+    const cancellationWindowHoursRaw = form.get("cancellationWindowHours");
+    const cancellationWindowHours =
+      typeof cancellationWindowHoursRaw === "string" &&
+      /^\d+$/.test(cancellationWindowHoursRaw)
+        ? Number(cancellationWindowHoursRaw)
+        : 1;
 
     const landingStructureRaw = form.get("landingStructure");
     const landingStructure =
@@ -70,6 +76,7 @@ export async function POST(req: NextRequest) {
         : "theme-1",
       social: parseJSON("social"),
       workingHours: parseJSON("workingHours"),
+      cancellationWindowHours,
       seo: parseJSON("seo"),
       branding: parseJSON("branding"),
       ...(landingStructure ? { landingStructure } : {}),

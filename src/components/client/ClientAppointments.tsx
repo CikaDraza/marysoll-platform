@@ -42,6 +42,10 @@ function ClientAppointmentListItem({
         return "bg-blue-100 text-blue-800";
       case "appointment_cancelled":
         return "bg-gray-100 text-gray-800";
+      case "completed":
+        return "bg-teal-100 text-teal-800";
+      case "no_show":
+        return "bg-purple-100 text-purple-700";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -84,6 +88,8 @@ function ClientAppointmentListItem({
                 "Pomerano"}
               {currentAppointment.status === "appointment_cancelled" &&
                 "Otkazano"}
+              {currentAppointment.status === "completed" && "Završeno"}
+              {currentAppointment.status === "no_show" && "Nije došao"}
             </span>
             {unreadClient !== 0 && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-(--secondary-color) text-white animate-pulse">
@@ -121,12 +127,13 @@ function ClientAppointmentListItem({
         </p>
         <div className="mt-1 flex flex-col items-end gap-x-1.5">
           <p className="text-xs/5 text-gray-500">
-            {`${
-              currentAppointment.lastUpdatedBy === "client"
-                ? "Klijent"
-                : "Salon"
-            } predložio termin`}
-            :{" "}
+            {currentAppointment.status === "appointment_rescheduled"
+              ? `${
+                  currentAppointment.lastUpdatedBy === "client"
+                    ? "Klijent"
+                    : "Salon"
+                } predložio termin: `
+              : "Termin: "}
             <time dateTime={currentAppointment.date}>
               {formatISODate(
                 currentAppointment.date + "T" + currentAppointment.time,

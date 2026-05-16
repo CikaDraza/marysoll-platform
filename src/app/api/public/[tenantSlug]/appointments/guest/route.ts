@@ -14,6 +14,7 @@ import { Appointment } from "@/models/Appointment";
 import { Service } from "@/models/Service";
 import { Tenant } from "@/models/Tenant";
 import { TenantUser } from "@/models/TenantUser";
+import { SalonProfile } from "@/models/SalonProfile";
 import { createAppointmentNotification } from "@/lib/notificationService";
 import {
   hasGuestBookingContact,
@@ -116,6 +117,13 @@ export async function POST(request: NextRequest, { params }: Params) {
         { status: 404 },
       );
     }
+    const salonProfile = await SalonProfile.findOne({ tenantId })
+      .select("cancellationWindowHours")
+      .lean<{ cancellationWindowHours?: number }>();
+    const cancellationWindowHours =
+      typeof salonProfile?.cancellationWindowHours === "number"
+        ? salonProfile.cancellationWindowHours
+        : 1;
 
     // ── Check slot availability ───────────────────────────────────────────────
     const existing = await Appointment.findOne({
@@ -179,6 +187,8 @@ export async function POST(request: NextRequest, { params }: Params) {
         preferredContact ||
         inferPreferredContact({ phone, email, instagram }),
       contactNote: contactNote?.trim() ?? "",
+      cancellationWindowHours,
+      cancellationStatus: "can_cancel",
       serviceName: resolvedServiceName,
       services: (services as IAppointmentService[]).map((s) => ({
         ...s,

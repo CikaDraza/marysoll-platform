@@ -61,6 +61,56 @@ export function useAppointmentMutations(token?: string) {
     },
   });
 
+  const updateClientAppointment = useMutation({
+    mutationFn: async ({
+      id,
+      updatedData,
+    }: {
+      id: string;
+      updatedData: Partial<IAppointment>;
+    }) => {
+      const res = await fetch(`/api/appointments/client/${id}/update`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updatedData),
+      });
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || "Greška pri ažuriranju termina");
+      }
+      return json;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      toast.success("Termin je ažuriran.");
+    },
+  });
+
+  const cancelClientAppointment = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/appointments/client/${id}/cancel`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || "Greška pri otkazivanju termina");
+      }
+      return json;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      toast.success("Termin je otkazan.");
+    },
+  });
+
   const updateAppointmentStatus = useMutation({
     mutationFn: async ({
       id,
@@ -147,6 +197,8 @@ export function useAppointmentMutations(token?: string) {
   return {
     createAppointment,
     updateAppointment,
+    updateClientAppointment,
+    cancelClientAppointment,
     deleteAppointment,
     updateAppointmentStatus,
     sendMessage,

@@ -12,7 +12,7 @@ export function translateAppointmentStatus(status: string): string {
     appointment_rejected: "Odbijen",
     appointment_rescheduled: "Ponovo zakazan",
     appointment_cancelled: "Otkazan",
-    appointment_completed: "Završen",
+    completed: "Završen",
     no_show: "Nije se pojavio",
   };
   return statusMap[status] || status;
@@ -27,7 +27,7 @@ export function translateAdminNote(adminNote?: string): string {
   if (!adminNote) return "";
 
   const statusMatch = adminNote.match(
-    /(pending|appointment_approved|appointment_rejected|appointment_rescheduled|appointment_cancelled|appointment_completed|no_show)/
+    /(pending|appointment_approved|appointment_rejected|appointment_rescheduled|appointment_cancelled|completed|no_show)/
   );
 
   if (statusMatch) {

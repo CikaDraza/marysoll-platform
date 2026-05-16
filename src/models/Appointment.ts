@@ -42,6 +42,20 @@ const appointmentSchema = new Schema(
     time: { type: String, required: true },
     duration: { type: Number, required: true },
     note: String,
+    cancellationWindowHours: { type: Number, default: 1, min: 0 },
+    cancellationStatus: {
+      type: String,
+      enum: ["can_cancel", "late_cancel"],
+      default: "can_cancel",
+    },
+    cancelledAt: { type: Date },
+    cancelledBy: { type: String, enum: ["client", "admin"] },
+    cancellationType: { type: String, enum: ["legitimate", "late"] },
+    noShowMarkedAt: { type: Date },
+    noShowReason: {
+      type: String,
+      enum: ["late_cancel", "missed_appointment", "admin_marked"],
+    },
     status: {
       type: String,
       enum: [
@@ -72,6 +86,7 @@ const appointmentSchema = new Schema(
 
 appointmentSchema.index({ tenantId: 1, clientProfileId: 1 });
 appointmentSchema.index({ tenantId: 1, date: 1 });
+appointmentSchema.index({ tenantId: 1, cancellationStatus: 1 });
 
 export const Appointment =
   models.Appointment || model("Appointment", appointmentSchema);

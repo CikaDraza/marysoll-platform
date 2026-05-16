@@ -1142,13 +1142,32 @@ function AdminDashboard() {
                 Prazan dan = neradan dan. Klik + dodaj smenu za više slotova.
               </p>
             </div>
-            <button
-              onClick={() => sp.save()}
-              disabled={sp.isSaving}
-              className="px-5 py-2.5 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition disabled:opacity-50"
-            >
-              {sp.isSaving ? "Snimanje..." : "Sačuvaj"}
-            </button>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-300">
+                <span>Otkazivanje najkasnije do</span>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={sp.form.cancellationWindowHours}
+                  onChange={(e) =>
+                    sp.setField(
+                      "cancellationWindowHours",
+                      Math.max(0, Math.floor(Number(e.target.value) || 0)),
+                    )
+                  }
+                  className="w-16 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1.5 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-400"
+                />
+                <span>sat</span>
+              </label>
+              <button
+                onClick={() => sp.save()}
+                disabled={sp.isSaving}
+                className="px-5 py-2.5 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition disabled:opacity-50"
+              >
+                {sp.isSaving ? "Snimanje..." : "Sačuvaj"}
+              </button>
+            </div>
           </div>
           <div className="space-y-3">
             {DAYS_OF_WEEK.map((day: DayOfWeek) => {

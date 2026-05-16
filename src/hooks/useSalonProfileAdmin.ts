@@ -98,6 +98,7 @@ const emptyForm = (): ISalonProfileForm => ({
   logo: null,
   social: { instagram: "", facebook: "", tiktok: "", whatsapp: "", telegram: "" },
   workingHours: emptyWorkingHours(),
+  cancellationWindowHours: 1,
   seo: {
     homeTitle: "",
     homeDescription: "",
@@ -277,6 +278,10 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
       telegram: p.social?.telegram ?? "",
     },
     workingHours: wh,
+    cancellationWindowHours:
+      typeof p.cancellationWindowHours === "number"
+        ? p.cancellationWindowHours
+        : 1,
     seo: {
       homeTitle: p.seo?.homeTitle ?? "",
       homeDescription: p.seo?.homeDescription ?? "",
@@ -485,6 +490,14 @@ export function useSalonProfileAdmin() {
       fd.append("resendApiKey", form.resendApiKey);
       fd.append("social", JSON.stringify(form.social));
       fd.append("workingHours", JSON.stringify(form.workingHours));
+      fd.append(
+        "cancellationWindowHours",
+        String(
+          Number.isInteger(form.cancellationWindowHours)
+            ? form.cancellationWindowHours
+            : 1,
+        ),
+      );
       fd.append("seo", JSON.stringify(form.seo));
       fd.append("branding", JSON.stringify(form.branding));
       fd.append("landingTheme", form.landingTheme);

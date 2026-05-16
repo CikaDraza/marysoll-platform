@@ -5,6 +5,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { Service } from "@/models/Service";
 import { Tenant } from "@/models/Tenant";
+import { SalonProfile } from "@/models/SalonProfile";
 import { requireAuth } from "@/lib/auth/auth-server";
 import { createAppointmentNotification } from "@/lib/notificationService";
 import {
@@ -118,6 +119,13 @@ export async function POST(request: NextRequest) {
     }
 
     const { date, time } = data;
+    const salonProfile = await SalonProfile.findOne({ tenantId })
+      .select("cancellationWindowHours")
+      .lean<{ cancellationWindowHours?: number }>();
+    const cancellationWindowHours =
+      typeof salonProfile?.cancellationWindowHours === "number"
+        ? salonProfile.cancellationWindowHours
+        : 1;
 
     const existing = await Appointment.findOne({
       tenantId,
@@ -138,6 +146,8 @@ export async function POST(request: NextRequest) {
       clientInstagram,
       preferredContact,
       contactNote,
+      cancellationWindowHours,
+      cancellationStatus: "can_cancel",
       duration: data.duration,
       services: data.services.map((s: IAppointmentService) => ({
         ...s,

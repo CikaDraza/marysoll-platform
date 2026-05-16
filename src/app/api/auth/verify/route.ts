@@ -9,6 +9,19 @@ import {
   TRIAL_DAYS,
 } from "@/lib/email/onboarding";
 
+function getTenantPublicUrl(tenant: {
+  slug: string;
+  customDomain?: string | null;
+  customDomainVerified?: boolean;
+}): string {
+  if (tenant.customDomain && tenant.customDomainVerified) {
+    return `https://${tenant.customDomain}`;
+  }
+
+  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+  return `https://${tenant.slug}.${baseDomain}`;
+}
+
 /**
  * GET /api/auth/verify?token=xxx&type=owner|client
  *
@@ -44,10 +57,15 @@ export async function GET(request: NextRequest) {
 
     if (tenantUser.isEmailVerified) {
       if (type === "client") {
-        const existingTenant = await Tenant.findById(tenantUser.tenantId).lean() as { slug: string } | null;
-        const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+        const existingTenant = (await Tenant.findById(tenantUser.tenantId)
+          .select("slug customDomain customDomainVerified")
+          .lean()) as {
+          slug: string;
+          customDomain?: string | null;
+          customDomainVerified?: boolean;
+        } | null;
         const tenantLoginUrl = existingTenant
-          ? `https://${existingTenant.slug}.${BASE_DOMAIN}/login`
+          ? `${getTenantPublicUrl(existingTenant)}/login`
           : `${baseUrl}/login`;
         return NextResponse.redirect(
           `${baseUrl}/verify-email?already_verified=true&loginUrl=${encodeURIComponent(tenantLoginUrl)}`,
@@ -111,7 +129,7 @@ export async function GET(request: NextRequest) {
       const tenant = await Tenant.findById(tenantUser.tenantId);
       if (tenant) {
         salonName = tenant.name;
-        salonUrl = `https://${tenant.slug}.marysoll.com`;
+        salonUrl = getTenantPublicUrl(tenant);
       }
 
       try {
@@ -126,9 +144,8 @@ export async function GET(request: NextRequest) {
         console.error("⚠️ Client welcome email failed:", e);
       }
 
-      const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
       const tenantLoginUrl = tenant
-        ? `https://${tenant.slug}.${BASE_DOMAIN}/login`
+        ? `${getTenantPublicUrl(tenant)}/login`
         : `${baseUrl}/login`;
       return NextResponse.redirect(
         `${baseUrl}/verify-email?success=client&loginUrl=${encodeURIComponent(tenantLoginUrl)}`,

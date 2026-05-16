@@ -4,7 +4,7 @@
  * Internal API — called only by middleware (proxy.ts).
  * Protected by INTERNAL_API_SECRET header.
  *
- * Returns: { slug: "kiki-kiss" } or 404
+ * Returns: { slug: "kiki-kiss", id: "...", customDomain: "..." } or 404
  */
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
@@ -43,14 +43,22 @@ export async function GET(req: NextRequest) {
       customDomainVerified: true,
       status: "active",
     })
-      .select("_id slug")
-      .lean<{ _id: import("mongoose").Types.ObjectId; slug: string }>();
+      .select("_id slug customDomain")
+      .lean<{
+        _id: import("mongoose").Types.ObjectId;
+        slug: string;
+        customDomain?: string | null;
+      }>();
 
     if (!tenant) {
       return NextResponse.json({ slug: null }, { status: 404 });
     }
 
-    return NextResponse.json({ slug: String(tenant.slug), id: tenant._id.toString() });
+    return NextResponse.json({
+      slug: String(tenant.slug),
+      id: tenant._id.toString(),
+      customDomain: tenant.customDomain ?? normalizedDomain,
+    });
   } catch (err) {
     console.error("GET /api/internal/resolve-domain:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

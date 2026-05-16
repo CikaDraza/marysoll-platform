@@ -52,6 +52,13 @@ export async function PUT(req: NextRequest) {
     if (social) profile.social = social;
     const wh = parseJSON("workingHours");
     if (wh) profile.workingHours = wh;
+    const cancellationWindowHours = form.get("cancellationWindowHours");
+    if (
+      typeof cancellationWindowHours === "string" &&
+      /^\d+$/.test(cancellationWindowHours)
+    ) {
+      profile.cancellationWindowHours = Number(cancellationWindowHours);
+    }
     const seo = parseJSON("seo");
     if (seo) profile.seo = seo;
     const branding = parseJSON("branding");

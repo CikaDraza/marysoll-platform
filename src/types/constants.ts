@@ -50,5 +50,7 @@ export const APPOINTMENT_STATUSES = [
   "appointment_rejected",
   "appointment_rescheduled",
   "appointment_cancelled",
+  "completed",
+  "no_show",
 ] as const;
 export type AppointmentStatusValue = (typeof APPOINTMENT_STATUSES)[number];

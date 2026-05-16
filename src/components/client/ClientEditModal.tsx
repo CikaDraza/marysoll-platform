@@ -11,6 +11,7 @@ import { useServices } from "@/hooks/useServices";
 import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import { motion } from "framer-motion";
 import AlertModal from "../modals/AlertModal";
+import { canClientCancelAppointment } from "@/lib/appointments/cancellation";
 
 interface Props {
   isOpen: boolean;
@@ -29,11 +30,8 @@ const inp = [
 const lbl =
   "block text-[11px] font-bold text-gray-400 dark:text-gray-300 uppercase tracking-widest mb-1.5";
 
-const EDIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
-
 function isWithinEditWindow(appt: IAppointment): boolean {
-  if (!appt.createdAt) return true;
-  return Date.now() - new Date(appt.createdAt).getTime() < EDIT_WINDOW_MS;
+  return canClientCancelAppointment(appt);
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -62,7 +60,7 @@ export default function ClientEditModal({
   appointment,
   token,
 }: Props) {
-  const { updateAppointment, deleteAppointment } =
+  const { updateClientAppointment, cancelClientAppointment } =
     useAppointmentMutations(token);
   const { data: services = [] } = useServices();
   const timeOptions = useMemo(() => generateTimes(0, 24, 15), []);
@@ -174,7 +172,7 @@ export default function ClientEditModal({
     };
 
     try {
-      await updateAppointment.mutateAsync({
+      await updateClientAppointment.mutateAsync({
         id: appointment._id!,
         updatedData: updateData,
       });
@@ -186,10 +184,12 @@ export default function ClientEditModal({
 
   const handleDelete = async () => {
     try {
-      await deleteAppointment.mutateAsync(appointment._id!);
+      await cancelClientAppointment.mutateAsync(appointment._id!);
       onClose();
-    } catch {
-      toast.error("Greška pri brisanju termina.");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Greška pri otkazivanju termina.",
+      );
     }
   };
 
@@ -231,7 +231,7 @@ export default function ClientEditModal({
             {!canEdit && (
               <div className="mb-4 flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
                 <ClockIcon className="w-4 h-4 shrink-0" />
-                Rok za izmenu je istekao (1 sat od zakazivanja).
+                Vreme za otkazivanje termina je isteklo. Kontaktirajte salon.
               </div>
             )}
 
@@ -442,7 +442,7 @@ export default function ClientEditModal({
                     onClick={() => setIsAlertOpen(true)}
                     className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded bg-red-100 text-red-600 hover:bg-red-600 hover:text-white transition"
                   >
-                    <TrashIcon className="w-4 h-4" /> Obriši termin
+                    <TrashIcon className="w-4 h-4" /> Otkaži termin
                   </button>
                   <div className="flex gap-2">
                     <button
@@ -456,12 +456,12 @@ export default function ClientEditModal({
                       type="button"
                       onClick={handleUpdate}
                       disabled={
-                        updateAppointment.isPending ||
+                        updateClientAppointment.isPending ||
                         (selectedService?.type === "variant" && !selectedVariant)
                       }
                       className="cursor-pointer px-4 py-2 bg-(--secondary-color) hover:bg-(--secondary-color)/90 text-white rounded disabled:opacity-50 text-sm"
                     >
-                      {updateAppointment.isPending
+                      {updateClientAppointment.isPending
                         ? "Čuvanje..."
                         : "Sačuvaj izmene"}
                     </button>
@@ -520,8 +520,8 @@ export default function ClientEditModal({
         open={isAlertOpen}
         setOpen={setIsAlertOpen}
         onConfirm={handleDelete}
-        title="Obriši termin"
-        message="Da li ste sigurni da želite da obrišete ovaj termin? Ova akcija se ne može opozvati."
+        title="Otkaži termin"
+        message="Da li ste sigurni da želite da otkažete ovaj termin?"
       />
     </>
   );

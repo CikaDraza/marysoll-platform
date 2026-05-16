@@ -13,6 +13,7 @@ import { Appointment } from "@/models/Appointment";
 import { Service } from "@/models/Service";
 import { Tenant } from "@/models/Tenant";
 import { TenantUser } from "@/models/TenantUser";
+import { SalonProfile } from "@/models/SalonProfile";
 import { requireAdmin } from "@/lib/auth/auth-server";
 import { createAppointmentNotification } from "@/lib/notificationService";
 import {
@@ -78,6 +79,13 @@ export async function POST(request: NextRequest) {
 
   const service = await Service.findById(serviceId);
   if (!service) return NextResponse.json({ error: "Usluga nije pronađena." }, { status: 404 });
+  const salonProfile = await SalonProfile.findOne({ tenantId })
+    .select("cancellationWindowHours")
+    .lean<{ cancellationWindowHours?: number }>();
+  const cancellationWindowHours =
+    typeof salonProfile?.cancellationWindowHours === "number"
+      ? salonProfile.cancellationWindowHours
+      : 1;
 
   const existing = await Appointment.findOne({
     tenantId,
@@ -131,6 +139,8 @@ export async function POST(request: NextRequest) {
       preferredContact ||
       inferPreferredContact({ phone, email, instagram }),
     contactNote: contactNote?.trim() ?? "",
+    cancellationWindowHours,
+    cancellationStatus: "can_cancel",
     serviceName: resolvedServiceName,
     services: (services as IAppointmentService[]).map((s) => ({
       ...s,

@@ -223,6 +223,7 @@ const SalonProfileSchema = new mongoose.Schema(
     resendApiKey: { type: String, required: false, default: "" },
     marketingPhone: { type: String, required: false, default: "" },
     workingHours: { type: Object, default: {} },
+    cancellationWindowHours: { type: Number, default: 1, min: 0 },
 
     seo: {
       homeTitle: { type: String, default: "" },

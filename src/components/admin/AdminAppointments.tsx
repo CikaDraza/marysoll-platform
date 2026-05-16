@@ -10,6 +10,7 @@ import { useMarkMessagesSeen } from "@/hooks/useMarkMessagesSeen";
 import Paginator from "../elements/Paginator";
 import { useDebounce } from "@/hooks/useDebounce";
 import LoaderButton from "../elements/LoaderButton";
+import { hasAppointmentStarted } from "@/lib/appointments/cancellation";
 
 interface AppointmentListItemProps {
   appointment: IAppointment;
@@ -54,6 +55,10 @@ function AppointmentListItem({
         return "bg-blue-100 text-blue-800";
       case "appointment_cancelled":
         return "bg-gray-100 text-gray-800";
+      case "completed":
+        return "bg-teal-100 text-teal-800";
+      case "no_show":
+        return "bg-purple-100 text-purple-700";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -103,6 +108,8 @@ function AppointmentListItem({
                 "Pomerano"}
               {currentAppointment.status === "appointment_cancelled" &&
                 "Otkazano"}
+              {currentAppointment.status === "completed" && "Završeno"}
+              {currentAppointment.status === "no_show" && "Nije došao"}
             </span>
             {unreadAdmin !== 0 && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-(--secondary-color) text-white animate-pulse">
@@ -140,12 +147,13 @@ function AppointmentListItem({
         </p>
         <div className="mt-1 flex flex-col items-end gap-x-1.5">
           <p className="text-xs/5 text-gray-500 dark:text-gray-300">
-            {`${
-              currentAppointment.lastUpdatedBy === "client"
-                ? "Klijent"
-                : "Salon"
-            } predložio termin`}
-            :{" "}
+            {currentAppointment.status === "appointment_rescheduled"
+              ? `${
+                  currentAppointment.lastUpdatedBy === "client"
+                    ? "Klijent"
+                    : "Salon"
+                } predložio termin: `
+              : "Termin: "}
             <time dateTime={currentAppointment.date}>
               {formatISODate(
                 currentAppointment.date + "T" + currentAppointment.time,
@@ -188,6 +196,23 @@ function AppointmentListItem({
               </button>
             </>
           )}
+          {currentAppointment.status === "appointment_approved" &&
+            hasAppointmentStarted(currentAppointment) && (
+              <>
+                <button
+                  onClick={() => handleStatusUpdate("completed")}
+                  className="cursor-pointer px-3 py-1 bg-teal-600 text-white text-xs rounded hover:bg-teal-700 transition-colors"
+                >
+                  Došao
+                </button>
+                <button
+                  onClick={() => handleStatusUpdate("no_show")}
+                  className="cursor-pointer px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
+                >
+                  Nije došao
+                </button>
+              </>
+            )}
           <button
             onClick={() => onOpenChat(currentAppointment)}
             className="relative px-3 py-1 bg-(--primary-color)/80 text-white text-xs rounded hover:bg-(--primary-color) transition-colors"

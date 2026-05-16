@@ -14,13 +14,20 @@ interface UpdateAppointmentData {
     | "appointment_approved"
     | "appointment_rejected"
     | "appointment_rescheduled"
-    | "appointment_cancelled";
+    | "appointment_cancelled"
+    | "completed"
+    | "no_show";
   proposedDate?: string;
   proposedTime?: string;
   date?: string;
   time?: string;
   note?: string;
   lastUpdatedBy?: "client" | "admin";
+  cancelledAt?: Date;
+  cancelledBy?: "client" | "admin";
+  cancellationType?: "legitimate" | "late";
+  noShowMarkedAt?: Date;
+  noShowReason?: "late_cancel" | "missed_appointment" | "admin_marked";
 }
 
 export async function PUT(
@@ -78,6 +85,15 @@ export async function PUT(
 
     // Postavi ko je poslednji ažurirao
     updatedData.lastUpdatedBy = isAdmin ? "admin" : "client";
+    if (isAdmin && updatedData.status === "appointment_cancelled") {
+      updatedData.cancelledAt = new Date();
+      updatedData.cancelledBy = "admin";
+      updatedData.cancellationType = "legitimate";
+    }
+    if (isAdmin && updatedData.status === "no_show") {
+      updatedData.noShowMarkedAt = new Date();
+      updatedData.noShowReason = "admin_marked";
+    }
 
     // Ako admin predlaže novi termin
     if (updatedData.proposedDate && updatedData.proposedTime && isAdmin) {
@@ -181,7 +197,9 @@ async function handleStatusChangeNotification(
     | "appointment_approved"
     | "appointment_rejected"
     | "appointment_rescheduled"
-    | "appointment_cancelled",
+    | "appointment_cancelled"
+    | "completed"
+    | "no_show",
   tenantId: Types.ObjectId | string,
 ) {
   const statusToNotificationType: Record<

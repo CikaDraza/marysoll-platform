@@ -194,12 +194,21 @@ export interface IAppointment {
   date: string;
   time: string;
   note?: string;
+  cancellationWindowHours?: number;
+  cancellationStatus?: "can_cancel" | "late_cancel";
+  cancelledAt?: string | Date;
+  cancelledBy?: "client" | "admin";
+  cancellationType?: "legitimate" | "late";
+  noShowMarkedAt?: string | Date;
+  noShowReason?: "late_cancel" | "missed_appointment" | "admin_marked";
   status:
     | "pending"
     | "appointment_approved"
     | "appointment_rejected"
     | "appointment_rescheduled"
-    | "appointment_cancelled";
+    | "appointment_cancelled"
+    | "completed"
+    | "no_show";
   messages: IMessage[];
   adminNotified: boolean;
   clientNotified: boolean;
@@ -729,6 +738,7 @@ export interface SalonProfile {
   createdAt?: string;
   updatedAt?: string;
   workingHours?: WorkingHoursMap | Record<string, unknown>;
+  cancellationWindowHours?: number;
   seo?: SeoData;
   branding?: IBranding;
   landingStructure?: LandingStructure;
@@ -765,6 +775,7 @@ export interface ISalonProfileForm {
   logo: string | null;
   social: SocialLinks;
   workingHours: WorkingHoursMap;
+  cancellationWindowHours: number;
   seo: SeoData;
   branding: IBranding;
   landingTheme: LandingTheme;

@@ -59,11 +59,17 @@ export async function POST(req: NextRequest) {
 
     await connectToDB();
 
-    const salon = await SalonProfile.findById(salonId).select("tenantId").lean();
+    const salon = await SalonProfile.findById(salonId)
+      .select("tenantId cancellationWindowHours")
+      .lean();
     if (!salon) {
       return NextResponse.json({ error: "Salon nije pronađen" }, { status: 404 });
     }
     const tenantId = String((salon as Record<string, unknown>).tenantId ?? "");
+    const cancellationWindowHours =
+      typeof (salon as Record<string, unknown>).cancellationWindowHours === "number"
+        ? ((salon as Record<string, unknown>).cancellationWindowHours as number)
+        : 1;
 
     const tenantDoc = await Tenant.findById(tenantId).lean();
     if (!tenantDoc) {
@@ -140,6 +146,8 @@ export async function POST(req: NextRequest) {
       clientInstagram: normalizedInstagram,
       preferredContact: user.preferredContact || inferPreferredContact(user),
       contactNote: normalizeContactValue(user.contactNote),
+      cancellationWindowHours,
+      cancellationStatus: "can_cancel",
       serviceName,
       services: [
         {

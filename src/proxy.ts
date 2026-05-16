@@ -35,6 +35,11 @@ interface AuthOut {
 }
 
 type DomainType = "marketing" | "admin" | "superadmin" | "client";
+type TenantResolution = {
+  slug: string;
+  id: string;
+  customDomain: string | null;
+};
 
 const IS_PROD = process.env.NODE_ENV === "production";
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
@@ -46,8 +51,8 @@ function isCustomDomain(hostname: string, baseDomain: string): boolean {
   return (
     host !== "localhost" &&
     !host.startsWith("127.") &&
-    !host.endsWith(baseDomain) &&
-    host !== baseDomain
+    host !== baseDomain &&
+    !host.endsWith(`.${baseDomain}`)
   );
 }
 
@@ -83,6 +88,7 @@ const SUPERADMIN_API_ROUTES = [
 
 const CLIENT_PROTECTED_API_ROUTES = [
   "/api/appointments/create",
+  "/api/appointments/client",
   "/api/testimonials/create",
   "/api/users/me",
 ];
@@ -112,21 +118,26 @@ const RESERVED_TOP_SEGMENTS = new Set([
 /** Caches custom-domain → { slug, id } resolutions (5-min TTL). */
 const domainCache = new Map<
   string,
-  { slug: string | null; id: string | null; ts: number }
+  { slug: string | null; id: string | null; customDomain: string | null; ts: number }
 >();
 
 /** Caches subdomain slug → tenantId resolutions (5-min TTL). */
-const tenantIdCache = new Map<string, { id: string; ts: number }>();
+const tenantCache = new Map<
+  string,
+  { id: string; customDomain: string | null; ts: number }
+>();
 
 const CACHE_TTL = 5 * 60 * 1000;
 
 async function resolveCustomDomain(
   request: NextRequest,
   host: string,
-): Promise<{ slug: string; id: string } | null> {
+): Promise<TenantResolution | null> {
   const cached = domainCache.get(host);
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
-    return cached.slug && cached.id ? { slug: cached.slug, id: cached.id } : null;
+    return cached.slug && cached.id
+      ? { slug: cached.slug, id: cached.id, customDomain: cached.customDomain }
+      : null;
   }
 
   try {
@@ -136,15 +147,16 @@ async function resolveCustomDomain(
       headers: { "x-internal-secret": process.env.INTERNAL_API_SECRET ?? "" },
     });
     if (!res.ok) {
-      domainCache.set(host, { slug: null, id: null, ts: Date.now() });
+      domainCache.set(host, { slug: null, id: null, customDomain: null, ts: Date.now() });
       return null;
     }
 
     const data = await res.json();
     const slug = data.slug ?? null;
     const id = data.id ?? null;
-    domainCache.set(host, { slug, id, ts: Date.now() });
-    return slug && id ? { slug, id } : null;
+    const customDomain = data.customDomain ?? null;
+    domainCache.set(host, { slug, id, customDomain, ts: Date.now() });
+    return slug && id ? { slug, id, customDomain } : null;
   } catch {
     console.error("🔍 Error resolving custom domain:", host);
     return null;
@@ -159,10 +171,10 @@ async function resolveCustomDomain(
 async function resolveSlugToTenantId(
   request: NextRequest,
   slug: string,
-): Promise<string | null> {
-  const cached = tenantIdCache.get(slug);
+): Promise<TenantResolution | null> {
+  const cached = tenantCache.get(slug);
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
-    return cached.id;
+    return { slug, id: cached.id, customDomain: cached.customDomain };
   }
 
   try {
@@ -175,8 +187,10 @@ async function resolveSlugToTenantId(
 
     const data = await res.json();
     const id = data.id ?? null;
-    if (id) tenantIdCache.set(slug, { id, ts: Date.now() });
-    return id;
+    const resolvedSlug = data.slug ?? slug;
+    const customDomain = data.customDomain ?? null;
+    if (id) tenantCache.set(slug, { id, customDomain, ts: Date.now() });
+    return id ? { slug: resolvedSlug, id, customDomain } : null;
   } catch {
     console.error("🔍 Error resolving tenant slug:", slug);
     return null;
@@ -187,21 +201,26 @@ async function resolveSlugToTenantId(
 async function detectDomainType(
   request: NextRequest,
   hostname: string,
-): Promise<{ type: DomainType; tenantSlug: string | null; tenantId: string | null }> {
+): Promise<{
+  type: DomainType;
+  tenantSlug: string | null;
+  tenantId: string | null;
+  customDomain: string | null;
+}> {
   const host = hostname.split(":")[0];
 
   // 1. Base domain (marketing)
   if (host === BASE_DOMAIN || host === `www.${BASE_DOMAIN}`) {
-    return { type: "marketing", tenantSlug: null, tenantId: null };
+    return { type: "marketing", tenantSlug: null, tenantId: null, customDomain: null };
   }
 
   // 2. Admin subdomains
   if (host === `admin.${BASE_DOMAIN}`) {
-    return { type: "admin", tenantSlug: null, tenantId: null };
+    return { type: "admin", tenantSlug: null, tenantId: null, customDomain: null };
   }
 
   if (host === `superadmin.${BASE_DOMAIN}`) {
-    return { type: "superadmin", tenantSlug: null, tenantId: null };
+    return { type: "superadmin", tenantSlug: null, tenantId: null, customDomain: null };
   }
 
   // 3. Wildcard subdomains (tenant subdomain)
@@ -209,38 +228,62 @@ async function detectDomainType(
     const subdomain = host.slice(0, -(BASE_DOMAIN.length + 1));
     if (!["admin", "superadmin", "app", "www"].includes(subdomain)) {
       const tenantId = await resolveSlugToTenantId(request, subdomain);
-      return { type: "client", tenantSlug: subdomain, tenantId };
+      return {
+        type: "client",
+        tenantSlug: tenantId?.slug ?? subdomain,
+        tenantId: tenantId?.id ?? null,
+        customDomain: tenantId?.customDomain ?? null,
+      };
     }
   }
 
   // 4. Custom domain — check env var first, then DB
-  if (host !== "localhost" && !host.endsWith(BASE_DOMAIN)) {
+  if (isCustomDomain(host, BASE_DOMAIN)) {
     if (CUSTOM_CLIENT_DOMAIN && host === CUSTOM_CLIENT_DOMAIN) {
       const resolved = await resolveCustomDomain(request, host);
-      if (resolved) return { type: "client", tenantSlug: resolved.slug, tenantId: resolved.id };
-      return { type: "client", tenantSlug: null, tenantId: null };
+      if (resolved) {
+        return {
+          type: "client",
+          tenantSlug: resolved.slug,
+          tenantId: resolved.id,
+          customDomain: resolved.customDomain,
+        };
+      }
+      return { type: "client", tenantSlug: null, tenantId: null, customDomain: null };
     }
 
     const resolved = await resolveCustomDomain(request, host);
-    if (resolved) return { type: "client", tenantSlug: resolved.slug, tenantId: resolved.id };
+    if (resolved) {
+      return {
+        type: "client",
+        tenantSlug: resolved.slug,
+        tenantId: resolved.id,
+        customDomain: resolved.customDomain,
+      };
+    }
 
-    return { type: "client", tenantSlug: null, tenantId: null };
+    return { type: "client", tenantSlug: null, tenantId: null, customDomain: null };
   }
 
   // 5. LOCALHOST
   if (!IS_PROD && host.startsWith("localhost")) {
     const devType = process.env.DEV_DOMAIN_TYPE as DomainType | undefined;
-    if (devType === "admin") return { type: "admin", tenantSlug: null, tenantId: null };
-    if (devType === "superadmin") return { type: "superadmin", tenantSlug: null, tenantId: null };
+    if (devType === "admin") return { type: "admin", tenantSlug: null, tenantId: null, customDomain: null };
+    if (devType === "superadmin") return { type: "superadmin", tenantSlug: null, tenantId: null, customDomain: null };
     if (devType === "client") {
       const slug = process.env.DEV_TENANT_SLUG ?? "default";
       const tenantId = slug !== "default" ? await resolveSlugToTenantId(request, slug) : null;
-      return { type: "client", tenantSlug: slug, tenantId };
+      return {
+        type: "client",
+        tenantSlug: tenantId?.slug ?? slug,
+        tenantId: tenantId?.id ?? null,
+        customDomain: tenantId?.customDomain ?? null,
+      };
     }
-    return { type: "marketing", tenantSlug: null, tenantId: null };
+    return { type: "marketing", tenantSlug: null, tenantId: null, customDomain: null };
   }
 
-  return { type: "client", tenantSlug: null, tenantId: null };
+  return { type: "client", tenantSlug: null, tenantId: null, customDomain: null };
 }
 
 // ─── Token helpers ────────────────────────────────────────────────────────────
@@ -428,7 +471,12 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
-  let { type: domainType, tenantSlug, tenantId } = await detectDomainType(request, hostname);
+  let {
+    type: domainType,
+    tenantSlug,
+    tenantId,
+    customDomain,
+  } = await detectDomainType(request, hostname);
 
   // Path-based tenant routing (marysoll.com/[slug] or localhost/[slug] — dev only)
   const isMarketingOrLocalhost =
@@ -448,9 +496,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     ) {
       domainType = "client";
       tenantSlug = firstSegment;
-      if (!tenantId) {
-        tenantId = await resolveSlugToTenantId(request, firstSegment);
-      }
+      const resolvedTenant = await resolveSlugToTenantId(request, firstSegment);
+      tenantId = resolvedTenant?.id ?? null;
+      customDomain = resolvedTenant?.customDomain ?? null;
       wasPathBasedDev = !IS_PROD && hostname.split(":")[0].startsWith("localhost");
     }
   }
@@ -529,6 +577,18 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       host.endsWith(`.${BASE_DOMAIN}`) &&
       !PLATFORM_SUBDOMAINS.has(host.slice(0, -(BASE_DOMAIN.length + 1)));
     const isHostBased = isCustomDomain(hostname, BASE_DOMAIN) || isTenantSubdomain;
+
+    if (
+      customDomain &&
+      isHostBased &&
+      host !== customDomain &&
+      !pathname.startsWith("/api/")
+    ) {
+      const canonicalUrl = request.nextUrl.clone();
+      canonicalUrl.protocol = "https:";
+      canonicalUrl.host = customDomain;
+      return NextResponse.redirect(canonicalUrl, 308);
+    }
 
     // In production, path-based tenant routing (marysoll.com/slug/...) is NOT supported.
     if (IS_PROD && !isHostBased) {
