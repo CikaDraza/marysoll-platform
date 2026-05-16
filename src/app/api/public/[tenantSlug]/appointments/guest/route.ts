@@ -15,6 +15,13 @@ import { Service } from "@/models/Service";
 import { Tenant } from "@/models/Tenant";
 import { TenantUser } from "@/models/TenantUser";
 import { createAppointmentNotification } from "@/lib/notificationService";
+import {
+  hasGuestBookingContact,
+  inferPreferredContact,
+  normalizeContactValue,
+  normalizeEmail,
+  normalizeInstagram,
+} from "@/lib/contactRules";
 import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant";
 
@@ -58,15 +65,33 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     // ── Parse body ────────────────────────────────────────────────────────────
     const data = await request.json();
-    const { name, phone, email, instagram, tiktok, serviceId, serviceName, services, date, time, duration, note } = data;
+    const {
+      name,
+      phone,
+      email,
+      instagram,
+      tiktok,
+      serviceId,
+      serviceName,
+      services,
+      date,
+      time,
+      duration,
+      note,
+      preferredContact,
+      contactNote,
+    } = data;
+    const normalizedPhone = normalizeContactValue(phone);
+    const normalizedEmail = normalizeEmail(email);
+    const normalizedInstagram = normalizeInstagram(instagram);
 
     // ── Validate required fields ──────────────────────────────────────────────
     if (!name?.trim()) {
       return NextResponse.json({ error: "Ime je obavezno." }, { status: 400 });
     }
-    if (!phone?.trim()) {
+    if (!hasGuestBookingContact({ phone, email, instagram })) {
       return NextResponse.json(
-        { error: "Broj telefona je obavezan." },
+        { error: "Za zakazivanje kao gost unesite telefon, email ili Instagram." },
         { status: 400 },
       );
     }
@@ -106,8 +131,6 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     // ── Find or create GUEST TenantUser ───────────────────────────────────────
     let guestUser = null;
-    const normalizedEmail = email?.trim()?.toLowerCase();
-
     if (normalizedEmail) {
       // Reuse existing profile (any role) if email matches this tenant
       guestUser = await TenantUser.findOne({
@@ -133,11 +156,11 @@ export async function POST(request: NextRequest, { params }: Params) {
         email: guestEmail,
         password: placeholderPassword,
         name: name.trim(),
-        phone: phone.trim(),
+        phone: normalizedPhone,
         role: "GUEST",
         status: "invited",
         isEmailVerified: false,
-        ...(instagram?.trim() && { instagram: instagram.trim() }),
+        ...(normalizedInstagram && { instagram: normalizedInstagram }),
         ...(tiktok?.trim() && { tiktok: tiktok.trim() }),
       });
     }
@@ -150,6 +173,12 @@ export async function POST(request: NextRequest, { params }: Params) {
       clientProfileId: guestUser._id.toString(),
       clientName: name.trim(),
       clientEmail: guestUser.email,
+      clientPhone: normalizedPhone,
+      clientInstagram: normalizedInstagram,
+      preferredContact:
+        preferredContact ||
+        inferPreferredContact({ phone, email, instagram }),
+      contactNote: contactNote?.trim() ?? "",
       serviceName: resolvedServiceName,
       services: (services as IAppointmentService[]).map((s) => ({
         ...s,
@@ -177,9 +206,15 @@ export async function POST(request: NextRequest, { params }: Params) {
         tenantId: tenant._id,
         clientProfileId: guestUser._id.toString(),
         clientName: name.trim(),
+        clientEmail: appointment.clientEmail,
         serviceName: resolvedServiceName,
         date,
         time,
+        note: appointment.note,
+        clientPhone: appointment.clientPhone,
+        clientInstagram: appointment.clientInstagram,
+        preferredContact: appointment.preferredContact,
+        contactNote: appointment.contactNote,
       },
       "created",
     );

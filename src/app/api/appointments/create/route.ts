@@ -7,6 +7,11 @@ import { Service } from "@/models/Service";
 import { Tenant } from "@/models/Tenant";
 import { requireAuth } from "@/lib/auth/auth-server";
 import { createAppointmentNotification } from "@/lib/notificationService";
+import {
+  inferPreferredContact,
+  normalizeContactValue,
+  normalizeInstagram,
+} from "@/lib/contactRules";
 import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant"; // Uveri se da imaš ovaj import
 
@@ -84,6 +89,18 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json();
+    const clientPhone = normalizeContactValue(data.clientPhone);
+    const clientInstagram = normalizeInstagram(data.clientInstagram);
+    const preferredContact =
+      data.preferredContact ??
+      (clientPhone || clientInstagram
+        ? inferPreferredContact({
+            phone: clientPhone,
+            instagram: clientInstagram,
+            fallback: "platform",
+          })
+        : "platform");
+    const contactNote = normalizeContactValue(data.contactNote);
 
     if (!data.services?.[0]?.serviceId) {
       return NextResponse.json(
@@ -117,6 +134,10 @@ export async function POST(request: NextRequest) {
       ...data,
       tenantId, // Sada je ovo string
       clientProfileId: decoded.tenantUserId,
+      clientPhone,
+      clientInstagram,
+      preferredContact,
+      contactNote,
       duration: data.duration,
       services: data.services.map((s: IAppointmentService) => ({
         ...s,
@@ -134,9 +155,15 @@ export async function POST(request: NextRequest) {
         tenantId: tenant!._id,
         clientProfileId: appointment.clientProfileId?.toString() ?? "",
         clientName: appointment.clientName,
+        clientEmail: appointment.clientEmail,
         serviceName: appointment.serviceName,
         date: appointment.date,
         time: appointment.time,
+        note: appointment.note,
+        clientPhone: appointment.clientPhone,
+        clientInstagram: appointment.clientInstagram,
+        preferredContact: appointment.preferredContact,
+        contactNote: appointment.contactNote,
       },
       "created",
     );

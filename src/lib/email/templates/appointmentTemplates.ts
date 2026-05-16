@@ -15,7 +15,37 @@ function appointmentDetailTable(data: {
   date: string;
   time: string;
   note?: string;
+  clientPhone?: string;
+  clientEmail?: string;
+  clientInstagram?: string;
+  preferredContact?: "phone" | "instagram" | "email" | "platform";
+  contactNote?: string;
 }): string {
+  const contactLabel =
+    data.preferredContact === "instagram"
+      ? "Instagram"
+      : data.preferredContact === "email"
+        ? "Email"
+        : data.preferredContact === "platform"
+          ? "Platforma"
+          : "Telefon";
+  const contactValue =
+    data.preferredContact === "instagram" && data.clientInstagram
+      ? `@${data.clientInstagram.replace(/^@+/, "")}`
+      : data.preferredContact === "phone" && data.clientPhone
+        ? data.clientPhone
+        : data.preferredContact === "email" && data.clientEmail
+          ? data.clientEmail
+        : data.clientInstagram
+          ? `@${data.clientInstagram.replace(/^@+/, "")}`
+          : data.clientPhone || data.clientEmail || "";
+  const contactText = [
+    contactValue ? `Kontakt za ovaj termin: ${contactLabel} ${contactValue}` : "",
+    data.contactNote ? `Napomena za kontakt: ${data.contactNote}` : "",
+  ]
+    .filter(Boolean)
+    .join("<br>");
+
   return `
   <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
     style="background:linear-gradient(135deg,#fff0f7 0%,#f3f0ff 100%);border-radius:12px;margin:0 0 20px 0;">
@@ -40,6 +70,17 @@ function appointmentDetailTable(data: {
               <p style="margin:4px 0 0 0;font-family:'Georgia',serif;font-size:16px;font-weight:700;color:#2d1b40;">${data.time}</p>
             </td>
           </tr>
+          ${
+            contactText
+              ? `
+          <tr>
+            <td style="padding-top:10px;border-top:1px solid #f0e0f0;">
+              <p style="margin:0;font-family:'Georgia',serif;font-size:11px;color:#b08db5;letter-spacing:1.5px;text-transform:uppercase;">Kontakt</p>
+              <p style="margin:4px 0 0 0;font-family:'Georgia',serif;font-size:14px;color:#6b5b7e;">${contactText}</p>
+            </td>
+          </tr>`
+              : ""
+          }
           ${
             data.note
               ? `
@@ -87,6 +128,11 @@ export async function appointmentCreatedTemplate(data: {
   date: string;
   time: string;
   note?: string;
+  clientPhone?: string;
+  clientEmail?: string;
+  clientInstagram?: string;
+  preferredContact?: "phone" | "instagram" | "email" | "platform";
+  contactNote?: string;
   tenantId?: string | null;
 }): Promise<string> {
   const content = `

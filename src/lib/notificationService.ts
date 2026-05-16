@@ -124,10 +124,15 @@ interface AppointmentForNotification {
   tenantId: Types.ObjectId | string;
   clientProfileId: string;    // TenantUser._id
   clientName: string;
+  clientEmail?: string;
   serviceName: string;
   date?: string;
   time?: string;
   note?: string;
+  clientPhone?: string;
+  clientInstagram?: string;
+  preferredContact?: "phone" | "instagram" | "email" | "platform";
+  contactNote?: string;
 }
 
 interface TestimonialForNotification {
@@ -424,6 +429,11 @@ export async function createAppointmentNotification(
         metadata: {
           clientName: appointment.clientName,
           serviceName: appointment.serviceName,
+          clientEmail: appointment.clientEmail,
+          clientPhone: appointment.clientPhone,
+          clientInstagram: appointment.clientInstagram,
+          preferredContact: appointment.preferredContact,
+          contactNote: appointment.contactNote,
         },
       });
       notifications.push(notification);
@@ -487,6 +497,11 @@ async function sendAppointmentEmailNotifications(
       tenantId: appointment.tenantId?.toString() ?? null,
       note: appointment.note,
       adminNote: additionalData?.message,
+      clientPhone: appointment.clientPhone,
+      clientEmail: appointment.clientEmail,
+      clientInstagram: appointment.clientInstagram,
+      preferredContact: appointment.preferredContact,
+      contactNote: appointment.contactNote,
     };
 
     const settingKey = getAppointmentSettingKey(type);

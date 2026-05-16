@@ -30,6 +30,7 @@ export function RegisterBlockView({
     email: block.defaultEmail || "",
     password: "",
     phone: "",
+    instagram: "",
     birthday: "",
     agree: false,
   });
@@ -39,7 +40,9 @@ export function RegisterBlockView({
     if (!formData.name.trim()) return "Unesite ime.";
     if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
       return "Unesite validan email.";
-    if (!formData.phone.match(/^[0-9+\-\s]{6,}$/))
+    if (!formData.phone.trim() && !formData.instagram.trim())
+      return "Unesite telefon ili Instagram profil.";
+    if (formData.phone.trim() && !formData.phone.match(/^[0-9+\-\s]{6,}$/))
       return "Unesite ispravan broj telefona.";
     if (!formData.agree) return "Morate prihvatiti politiku privatnosti.";
     return null;
@@ -59,6 +62,7 @@ export function RegisterBlockView({
         email: formData.email,
         password: formData.password,
         phone: formData.phone,
+        instagram: formData.instagram,
         agreedToPrivacy: formData.agree,
       });
       // ✅ OBAVEŠTAVAMO AGENTA
@@ -243,6 +247,36 @@ export function RegisterBlockView({
                         />
                       </div>
                     </div>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label
+                      htmlFor="instagram"
+                      className="block text-sm/6 font-semibold text-white"
+                    >
+                      Instagram
+                    </label>
+                    <div className="mt-2.5 flex rounded-md bg-white/5 outline-1 -outline-offset-1 outline-white/10 has-[input:focus-within]:outline-2 has-[input:focus-within]:-outline-offset-2 has-[input:focus-within]:outline-(--secondary-color)">
+                      <span className="px-3.5 py-2 text-base text-gray-400 sm:text-sm/6">
+                        @
+                      </span>
+                      <input
+                        id="instagram"
+                        name="instagram"
+                        type="text"
+                        placeholder="username"
+                        value={formData.instagram}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            instagram: e.target.value,
+                          })
+                        }
+                        className="block min-w-0 grow bg-transparent py-1.5 pr-3 text-base text-white placeholder:text-gray-500 focus:outline-none sm:text-sm/6"
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-gray-400">
+                      Unesite telefon ili Instagram profil.
+                    </p>
                   </div>
                   <div className="sm:col-span-2">
                     <label

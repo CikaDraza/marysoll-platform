@@ -45,8 +45,11 @@ export interface PlatformBookingPayload {
   startTime: string;
   user: {
     name: string;
-    phone: string;
+    phone?: string;
     email?: string;
+    instagram?: string;
+    preferredContact?: "phone" | "instagram" | "email" | "platform";
+    contactNote?: string;
   };
 }
 

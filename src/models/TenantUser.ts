@@ -101,7 +101,7 @@ export interface ITenantUser extends Document {
 
   // ── Profile ──────────────────────────────────────────────────────────────
   name: string;
-  phone: string;
+  phone?: string;
   role: TenantUserRole;
   permissions?: Record<string, unknown>;
   instagram?: string;
@@ -193,6 +193,7 @@ const tenantUserSchema = new Schema<ITenantUser>(
     },
     instagram: {
       type: String,
+      trim: true,
       default: null,
     },
     tiktok: {

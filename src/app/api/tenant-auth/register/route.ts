@@ -18,6 +18,11 @@ import { TenantUser } from "@/models/TenantUser";
 import { Tenant } from "@/models/Tenant";
 import { AudienceContact } from "@/models/AudienceContact";
 import { sendClientVerificationEmail } from "@/lib/email/onboarding";
+import {
+  hasRegistrationContact,
+  normalizeContactValue,
+  normalizeInstagram,
+} from "@/lib/contactRules";
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,6 +33,7 @@ export async function POST(req: NextRequest) {
       email,
       password,
       phone,
+      instagram,
       agreedToPrivacy,
       tenantSlug: bodyTenantSlug,
     } = await req.json();
@@ -35,6 +41,15 @@ export async function POST(req: NextRequest) {
     if (!name || !email || !password || !agreedToPrivacy) {
       return NextResponse.json(
         { error: "Sva polja su obavezna." },
+        { status: 400 },
+      );
+    }
+    const normalizedPhone = normalizeContactValue(phone);
+    const normalizedInstagram = normalizeInstagram(instagram);
+
+    if (!hasRegistrationContact({ phone, instagram })) {
+      return NextResponse.json(
+        { error: "Unesite telefon ili Instagram profil." },
         { status: 400 },
       );
     }
@@ -117,7 +132,8 @@ export async function POST(req: NextRequest) {
       email: normalizedEmail,
       password: hashedPassword,
       name: name.trim(),
-      phone: phone?.trim() ?? "",
+      phone: normalizedPhone,
+      instagram: normalizedInstagram || null,
       role: "USER",
       isEmailVerified: false,
       verificationToken,

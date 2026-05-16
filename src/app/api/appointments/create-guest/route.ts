@@ -15,6 +15,13 @@ import { Tenant } from "@/models/Tenant";
 import { TenantUser } from "@/models/TenantUser";
 import { requireAdmin } from "@/lib/auth/auth-server";
 import { createAppointmentNotification } from "@/lib/notificationService";
+import {
+  hasGuestBookingContact,
+  inferPreferredContact,
+  normalizeContactValue,
+  normalizeEmail,
+  normalizeInstagram,
+} from "@/lib/contactRules";
 import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant";
 
@@ -39,10 +46,33 @@ export async function POST(request: NextRequest) {
   const tenantId = tenant._id?.toString()!;
 
   const data = await request.json().catch(() => ({}));
-  const { name, phone, email, instagram, tiktok, serviceId, serviceName, services, date, time, duration, note } = data;
+  const {
+    name,
+    phone,
+    email,
+    instagram,
+    tiktok,
+    serviceId,
+    serviceName,
+    services,
+    date,
+    time,
+    duration,
+    note,
+    preferredContact,
+    contactNote,
+  } = data;
+  const normalizedPhone = normalizeContactValue(phone);
+  const normalizedEmail = normalizeEmail(email);
+  const normalizedInstagram = normalizeInstagram(instagram);
 
   if (!name?.trim()) return NextResponse.json({ error: "Ime je obavezno." }, { status: 400 });
-  if (!phone?.trim()) return NextResponse.json({ error: "Broj telefona je obavezan." }, { status: 400 });
+  if (!hasGuestBookingContact({ phone, email, instagram })) {
+    return NextResponse.json(
+      { error: "Za zakazivanje kao gost unesite telefon, email ili Instagram." },
+      { status: 400 },
+    );
+  }
   if (!serviceId) return NextResponse.json({ error: "Nedostaje ID usluge." }, { status: 400 });
   if (!date || !time) return NextResponse.json({ error: "Datum i vreme su obavezni." }, { status: 400 });
 
@@ -59,7 +89,6 @@ export async function POST(request: NextRequest) {
 
   // Find or create GUEST TenantUser
   let guestUser = null;
-  const normalizedEmail = email?.trim()?.toLowerCase();
 
   if (normalizedEmail) {
     guestUser = await TenantUser.findOne({ tenantId: tenant._id, email: normalizedEmail });
@@ -80,11 +109,11 @@ export async function POST(request: NextRequest) {
       email: guestEmail,
       password: placeholderPassword,
       name: name.trim(),
-      phone: phone.trim(),
+      phone: normalizedPhone,
       role: "GUEST",
       status: "invited",
       isEmailVerified: false,
-      ...(instagram?.trim() && { instagram: instagram.trim() }),
+      ...(normalizedInstagram && { instagram: normalizedInstagram }),
       ...(tiktok?.trim() && { tiktok: tiktok.trim() }),
     });
   }
@@ -96,6 +125,12 @@ export async function POST(request: NextRequest) {
     clientProfileId: guestUser._id.toString(),
     clientName: name.trim(),
     clientEmail: guestUser.email,
+    clientPhone: normalizedPhone,
+    clientInstagram: normalizedInstagram,
+    preferredContact:
+      preferredContact ||
+      inferPreferredContact({ phone, email, instagram }),
+    contactNote: contactNote?.trim() ?? "",
     serviceName: resolvedServiceName,
     services: (services as IAppointmentService[]).map((s) => ({
       ...s,
@@ -122,9 +157,15 @@ export async function POST(request: NextRequest) {
       tenantId: tenant._id,
       clientProfileId: guestUser._id.toString(),
       clientName: name.trim(),
+      clientEmail: appointment.clientEmail,
       serviceName: resolvedServiceName,
       date,
       time,
+      note: appointment.note,
+      clientPhone: appointment.clientPhone,
+      clientInstagram: appointment.clientInstagram,
+      preferredContact: appointment.preferredContact,
+      contactNote: appointment.contactNote,
     },
     "created",
   );

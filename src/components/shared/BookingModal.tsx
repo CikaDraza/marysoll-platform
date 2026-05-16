@@ -228,7 +228,13 @@ export function BookingModal({
     if (selectedService.type === "variant" && !selectedVariant)
       return toast.error("Molimo izaberite varijantu usluge.");
     if (!guestData.name.trim()) return toast.error("Unesite ime i prezime.");
-    if (!guestData.phone.trim()) return toast.error("Unesite broj telefona.");
+    if (
+      !guestData.phone.trim() &&
+      !guestData.email.trim() &&
+      !guestData.instagram.trim()
+    ) {
+      return toast.error("Unesite telefon, email ili Instagram.");
+    }
     if (!tenantSlug)
       return toast.error("Greška: nedostaje identifikator salona.");
 
@@ -242,9 +248,8 @@ export function BookingModal({
       };
     });
 
+    const normalizedInstagram = guestData.instagram.trim().replace(/^@+/, "");
     const noteParts = [note || ""];
-    if (guestData.instagram.trim())
-      noteParts.push(`Instagram: @${guestData.instagram.trim()}`);
     if (guestData.tiktok.trim())
       noteParts.push(`TikTok: @${guestData.tiktok.trim()}`);
     const noteWithInstagram = noteParts.filter(Boolean).join("\n") || undefined;
@@ -258,8 +263,13 @@ export function BookingModal({
           name: guestData.name.trim(),
           phone: guestData.phone.trim(),
           email: guestData.email.trim() || null,
-          instagram: guestData.instagram.trim() || null,
+          instagram: normalizedInstagram || null,
           tiktok: guestData.tiktok.trim() || null,
+          preferredContact: guestData.phone.trim()
+            ? "phone"
+            : normalizedInstagram
+              ? "instagram"
+              : "email",
           serviceId: selectedServiceId,
           serviceName: `${selectedService.name}${selectedVariant ? ` - ${selectedVariant}` : ""}`,
           services: [
@@ -413,7 +423,7 @@ export function BookingModal({
                   </div>
                   <div className="col-span-2 lg:col-span-1">
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Telefon *
+                      Telefon
                     </label>
                     <input
                       type="tel"
@@ -422,13 +432,12 @@ export function BookingModal({
                         setGuestData((p) => ({ ...p, phone: e.target.value }))
                       }
                       placeholder="+381 60 123 4567"
-                      required
                       className="block w-full rounded-xl border border-gray-200 bg-white text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--primary-color)/80 placeholder:text-gray-400"
                     />
                   </div>
                   <div className="col-span-2 lg:col-span-1">
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Email (opciono)
+                      Email
                     </label>
                     <input
                       type="email"
@@ -442,7 +451,7 @@ export function BookingModal({
                   </div>
                   <div className="col-span-2 lg:col-span-1">
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Instagram (opciono)
+                      Instagram
                     </label>
                     <div className="flex items-center rounded-xl border border-gray-200 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-(--primary-color)/80">
                       <span className="px-2.5 text-sm text-gray-400 select-none">
@@ -462,6 +471,9 @@ export function BookingModal({
                       />
                     </div>
                   </div>
+                  <p className="col-span-2 text-xs text-gray-500">
+                    Unesite bar jedan kontakt: telefon, email ili Instagram.
+                  </p>
                   <div className="col-span-2 lg:col-span-1">
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
                       TikTok (opciono)

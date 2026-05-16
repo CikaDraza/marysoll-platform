@@ -183,7 +183,13 @@ export default function AdminCreateModal({
 
   const handleSubmitGuest = async () => {
     if (!guestForm.name.trim()) return toast.error("Unesite ime i prezime.");
-    if (!guestForm.phone.trim()) return toast.error("Unesite broj telefona.");
+    if (
+      !guestForm.phone.trim() &&
+      !guestForm.email.trim() &&
+      !guestForm.instagram.trim()
+    ) {
+      return toast.error("Unesite telefon, email ili Instagram.");
+    }
     if (!selectedDate || !selectedTime) return toast.error("Datum i vreme su obavezni.");
     if (!selectedService) return toast.error("Izaberite uslugu.");
 
@@ -213,8 +219,13 @@ export default function AdminCreateModal({
           name: guestForm.name.trim(),
           phone: guestForm.phone.trim(),
           email: guestForm.email.trim() || null,
-          instagram: guestForm.instagram.trim() || null,
+          instagram: guestForm.instagram.trim().replace(/^@+/, "") || null,
           tiktok: guestForm.tiktok.trim() || null,
+          preferredContact: guestForm.phone.trim()
+            ? "phone"
+            : guestForm.instagram.trim()
+              ? "instagram"
+              : "email",
           serviceId: selectedServiceId,
           serviceName: `${selectedService.name}${selectedVariant ? ` - ${selectedVariant}` : ""}`,
           services: [
@@ -380,7 +391,7 @@ export default function AdminCreateModal({
                     />
                   </div>
                   <div>
-                    <label className={lbl}>Telefon *</label>
+                    <label className={lbl}>Telefon</label>
                     <input
                       type="tel"
                       value={guestForm.phone}
@@ -390,7 +401,7 @@ export default function AdminCreateModal({
                     />
                   </div>
                   <div>
-                    <label className={lbl}>Email (opciono)</label>
+                    <label className={lbl}>Email</label>
                     <input
                       type="email"
                       value={guestForm.email}
@@ -401,7 +412,7 @@ export default function AdminCreateModal({
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className={lbl}>Instagram (opciono)</label>
+                      <label className={lbl}>Instagram</label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">@</span>
                         <input
@@ -413,6 +424,9 @@ export default function AdminCreateModal({
                         />
                       </div>
                     </div>
+                    <p className="col-span-2 text-xs text-gray-500 dark:text-gray-400">
+                      Za gosta unesite bar jedan kontakt: telefon, email ili Instagram.
+                    </p>
                     <div>
                       <label className={lbl}>TikTok (opciono)</label>
                       <div className="relative">

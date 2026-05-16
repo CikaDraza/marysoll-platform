@@ -11,6 +11,13 @@ import { TenantUser } from "@/models/TenantUser";
 import { verifySignature } from "@/lib/middleware/verifySignature";
 import { checkRateLimit } from "@/lib/middleware/rateLimiter";
 import { createAppointmentNotification } from "@/lib/notificationService";
+import {
+  hasGuestBookingContact,
+  inferPreferredContact,
+  normalizeContactValue,
+  normalizeEmail,
+  normalizeInstagram,
+} from "@/lib/contactRules";
 import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant";
 
@@ -36,8 +43,18 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    if (!user?.name?.trim() || !user?.phone?.trim()) {
-      return NextResponse.json({ error: "Ime i telefon su obavezni" }, { status: 400 });
+    const normalizedPhone = normalizeContactValue(user?.phone);
+    const normalizedEmail = normalizeEmail(user?.email);
+    const normalizedInstagram = normalizeInstagram(user?.instagram);
+
+    if (!user?.name?.trim()) {
+      return NextResponse.json({ error: "Ime je obavezno" }, { status: 400 });
+    }
+    if (!hasGuestBookingContact(user ?? {})) {
+      return NextResponse.json(
+        { error: "Za zakazivanje kao gost unesite telefon, email ili Instagram." },
+        { status: 400 },
+      );
     }
 
     await connectToDB();
@@ -84,7 +101,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Termin je zauzet." }, { status: 400 });
     }
 
-    const normalizedEmail = user.email?.trim()?.toLowerCase();
     let guestUser = null;
 
     if (normalizedEmail) {
@@ -104,7 +120,8 @@ export async function POST(req: NextRequest) {
         email: guestEmail,
         password: placeholderPassword,
         name: user.name.trim(),
-        phone: user.phone.trim(),
+        phone: normalizedPhone,
+        instagram: normalizedInstagram || null,
         role: "GUEST",
         status: "invited",
         isEmailVerified: false,
@@ -119,6 +136,10 @@ export async function POST(req: NextRequest) {
       clientProfileId: guestUser._id.toString(),
       clientName: user.name.trim(),
       clientEmail: guestUser.email,
+      clientPhone: normalizedPhone,
+      clientInstagram: normalizedInstagram,
+      preferredContact: user.preferredContact || inferPreferredContact(user),
+      contactNote: normalizeContactValue(user.contactNote),
       serviceName,
       services: [
         {
@@ -148,9 +169,14 @@ export async function POST(req: NextRequest) {
         tenantId,
         clientProfileId: guestUser._id.toString(),
         clientName: user.name.trim(),
+        clientEmail: appointment.clientEmail,
         serviceName,
         date,
         time,
+        clientPhone: appointment.clientPhone,
+        clientInstagram: appointment.clientInstagram,
+        preferredContact: appointment.preferredContact,
+        contactNote: appointment.contactNote,
       },
       "created",
     );

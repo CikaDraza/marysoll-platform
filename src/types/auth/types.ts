@@ -21,6 +21,7 @@ export interface DecodedUser {
   email: string;
   name: string;
   phone: string;
+  instagram?: string;
   isAdmin: boolean;
   isSuperAdmin: boolean;
   tenantUserId: string | null;  // TenantUser._id
@@ -62,5 +63,6 @@ export interface RegisterPayload {
   email: string;
   password: string;
   phone: string;
+  instagram?: string;
   agreedToPrivacy: boolean;
 }

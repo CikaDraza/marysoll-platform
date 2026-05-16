@@ -19,6 +19,7 @@ export default function ClientRegisterPage() {
     email: "",
     password: "",
     phone: "",
+    instagram: "",
     agreedToPrivacy: false,
   });
 
@@ -34,6 +35,10 @@ export default function ClientRegisterPage() {
     }
     if (form.password.length < 8) {
       toast.error("Lozinka mora imati najmanje 8 karaktera");
+      return;
+    }
+    if (!form.phone.trim() && !form.instagram.trim()) {
+      toast.error("Unesite telefon ili Instagram profil.");
       return;
     }
     setLoading(true);
@@ -181,6 +186,25 @@ export default function ClientRegisterPage() {
               className="w-full border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="+381 60 123 4567"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Instagram
+            </label>
+            <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-purple-500">
+              <span className="px-3 text-sm text-gray-400 select-none">@</span>
+              <input
+                type="text"
+                value={form.instagram}
+                onChange={(e) => set("instagram", e.target.value)}
+                className="flex-1 text-gray-900 px-1 py-2.5 text-sm focus:outline-none"
+                placeholder="username"
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              Unesite telefon ili Instagram profil.
+            </p>
           </div>
 
           <label className="flex items-start gap-3 cursor-pointer pt-1">

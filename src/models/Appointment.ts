@@ -29,6 +29,13 @@ const appointmentSchema = new Schema(
     staffProfileId: { type: Schema.Types.ObjectId, ref: "TenantUser" },
     clientName: { type: String, required: true },
     clientEmail: { type: String, required: true },
+    clientPhone: { type: String, default: "" },
+    clientInstagram: { type: String, default: "" },
+    preferredContact: {
+      type: String,
+      enum: ["phone", "instagram", "email", "platform"],
+    },
+    contactNote: { type: String, default: "" },
     serviceName: { type: String, required: true },
     services: [servicesSchema],
     date: { type: String, required: true },

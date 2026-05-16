@@ -184,6 +184,10 @@ export interface IAppointment {
   staffProfileId?: string; // TenantUser._id (optional)
   clientName: string;
   clientEmail: string;
+  clientPhone?: string;
+  clientInstagram?: string;
+  preferredContact?: "phone" | "instagram" | "email" | "platform";
+  contactNote?: string;
   serviceName: string;
   services: IAppointmentService[];
   duration: number;
@@ -282,6 +286,7 @@ export interface IUser {
   name: string;
   email: string;
   phone: string;
+  instagram?: string;
   marketingPhone?: string;
   newsletterEmail?: string;
   contactEmail?: string;
@@ -312,6 +317,7 @@ export interface IUser extends Document {
   password: string;
   name: string;
   phone: string;
+  instagram?: string;
   birthday?: Date | null;
   isAdmin: boolean;
   isSuperAdmin: boolean;
@@ -629,6 +635,11 @@ export interface AppointmentNotificationData {
   appointmentId: string;
   note?: string;
   adminNote?: string;
+  clientPhone?: string;
+  clientEmail?: string;
+  clientInstagram?: string;
+  preferredContact?: "phone" | "instagram" | "email" | "platform";
+  contactNote?: string;
   /** Used for rescheduled notifications */
   proposedDate?: string;
   proposedTime?: string;
