@@ -962,6 +962,12 @@ export interface LandingStructure {
         answer: string;
       }[];
     };
+
+    blog?: {
+      enabled: boolean;
+      headline?: string;
+      paragraph?: string;
+    };
   };
 
   pages: {

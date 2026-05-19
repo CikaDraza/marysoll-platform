@@ -608,13 +608,14 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       "/politika-privatnosti",
       "/pravila-zakazivanja",
       "/newsletter",
+      "/blogs",
     ]);
 
     // PRODUCTION: subdomain or custom domain — rewrite /path → /tenant/path
     if (tenantSlug && isHostBased) {
       if (pathname === "/blog" || pathname.startsWith("/blog/")) {
         const rewriteUrl = new URL(
-          `/tenant/newsletter${pathname}`,
+          `/tenant/blogs${pathname}`,
           request.nextUrl.origin,
         );
         rewriteUrl.search = request.nextUrl.search;
@@ -642,6 +643,17 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       const segments = pathname.split("/").filter(Boolean);
       const pathAfterSlug = segments.slice(1).join("/");
       const restPath = pathAfterSlug ? `/${pathAfterSlug}` : "";
+
+      if (restPath === "/blog" || restPath.startsWith("/blog/")) {
+        const rewriteUrl = new URL(
+          `/tenant/blogs${restPath}`,
+          request.nextUrl.origin,
+        );
+        rewriteUrl.search = request.nextUrl.search;
+        return NextResponse.rewrite(rewriteUrl, {
+          request: { headers: requestHeaders },
+        });
+      }
 
       const matchesAfterSlug =
         CLIENT_TENANT_PATHS.has(restPath) ||

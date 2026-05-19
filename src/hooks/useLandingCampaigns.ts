@@ -7,7 +7,7 @@ export function useLandingCampaigns() {
     queryKey: ["landing-campaigns"],
     queryFn: async () => {
       const res = await axios.get("/api/landing-campaigns");
-      return res.data;
+      return res.data?.data ?? res.data;
     },
   });
 }

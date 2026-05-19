@@ -49,6 +49,7 @@ import { Theme3Header } from "./theme-3/Header";
 import { Theme3Footer } from "./theme-3/Footer";
 import { Theme1ImageGenerationSection } from "./theme-1/ImageGenerationSection";
 import {
+  BlogSection,
   NewsletterSection,
   Theme3AboutSoft,
   Theme3CTA,
@@ -171,6 +172,7 @@ export function ThemeLayout({
   const artistsEnabled = ls?.landing?.artists?.enabled ?? true;
   const galleryEnabled = ls?.landing?.gallery?.enabled ?? true;
   const faqEnabled = ls?.landing?.faq?.enabled ?? true;
+  const blogEnabled = ls?.landing?.blog?.enabled ?? false;
 
   // ── Effective gallery variant (CMS override > theme default) ────────────
   const THEME_GALLERY_DEFAULTS: Record<
@@ -523,6 +525,16 @@ export function ThemeLayout({
             <Theme3FAQSoft
               items={ls?.landing?.faq?.items}
               headline={ls?.landing?.faq?.headline}
+            />
+          )}
+          {/* Blog Section */}
+          {blogEnabled && (
+            <BlogSection
+              headline={ls?.landing?.blog?.headline}
+              paragraph={ls?.landing?.blog?.paragraph}
+              tenantSlug={tenantSlug}
+              authorName={salon.name}
+              authorImage={salon.logo ?? undefined}
             />
           )}
 

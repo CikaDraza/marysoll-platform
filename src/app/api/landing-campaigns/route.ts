@@ -11,18 +11,32 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
     }
 
-    const campaigns = await NewsletterCampaign.find({
+    const { searchParams } = new URL(req.url);
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10) || 50));
+
+    const filter = {
       tenantId,
       campaignType: "email-landing",
       "landingPage.enabled": true,
       "landingPage.status": "published",
+    };
+
+    const [campaigns, total] = await Promise.all([
+      NewsletterCampaign.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      NewsletterCampaign.countDocuments(filter),
+    ]);
+
+    return NextResponse.json({
+      data: campaigns,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
     });
-
-    if (!campaigns) {
-      return NextResponse.json({ error: "Not any campaign" }, { status: 403 });
-    }
-
-    return NextResponse.json(campaigns);
   } catch (error) {
     console.error("Error fetching campaigns:", error);
     return NextResponse.json(

@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     return {
       title: seo?.title ?? "Marysoll Assistant AI",
-      description: seo?.description ?? "AI Generation web app",
+      description: seo?.description ?? "",
       keywords: seo?.keywords?.join(", "),
       openGraph: {
         title: seo?.ogTitle ?? seo?.title,
@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function NewsletterLandingPage({ params }: Props) {
+export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
   const { slugId, fullPath } = normalizeCampaignSlug(slug);
   const headerStore = await headers();

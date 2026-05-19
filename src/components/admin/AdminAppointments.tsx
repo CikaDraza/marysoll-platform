@@ -255,10 +255,20 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
 
   // Inicijalizuj lokalne poruke kada se otvori modal
   useEffect(() => {
-    if (appointment?.messages) {
-      setLocalMessages(appointment.messages);
+    async function markSeen() {
+      if (appointment?.messages) {
+        setLocalMessages(appointment.messages);
+      }
     }
+    markSeen();
   }, [appointment]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  };
 
   useEffect(() => {
     scrollToBottom();
@@ -273,26 +283,27 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
     }
   }, [appointment]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "end",
-    });
-  };
-
   const currentAppointment = useMemo(() => {
     if (!appointment || !appointments) return appointment;
     const updatedAppointment =
       appointments.find((a: IAppointment) => a._id === appointment._id) ||
       appointment;
 
-    // Ažuriraj lokalne poruke kada se osveže sa servera
-    if (updatedAppointment.messages.length !== localMessages.length) {
-      setLocalMessages(updatedAppointment.messages);
-    }
-
     return updatedAppointment;
-  }, [appointment, appointments, localMessages]);
+  }, [appointment, appointments]);
+
+  // Ažuriraj lokalne poruke kada se osveže sa servera
+  useEffect(() => {
+    async function markSeen() {
+      if (currentAppointment?.messages.length !== localMessages.length) {
+        setLocalMessages(currentAppointment?.messages || []);
+      }
+    }
+    markSeen();
+    // Include the messages array and localMessages.length to ensure
+    // we sync when either the server messages change or the local
+    // messages count changes.
+  }, [currentAppointment?.messages, localMessages.length]);
 
   const handleSendMessage = async () => {
     if (!message.trim() || !currentAppointment?._id || isSending) return;

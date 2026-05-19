@@ -699,6 +699,7 @@ export function AdminLandingCMS({ sp }: Props) {
   const testimonials = ls.landing.testimonials;
   const gallery = ls.landing.gallery;
   const faq = ls.landing.faq;
+  const blog = ls.landing.blog ?? { enabled: false };
   const servicesPage = ls.pages.servicesPage;
   const appointmentsPage = ls.pages.appointmentsPage;
 
@@ -2573,6 +2574,54 @@ export function AdminLandingCMS({ sp }: Props) {
           >
             + Dodaj pitanje
           </button>
+        </div>
+      </SectionCard>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          BLOG / POST
+          ══════════════════════════════════════════════════════════════════ */}
+
+      <SectionCard
+        title="Blog / Novosti"
+        badge="Blog"
+        tone="odd"
+        enabled={blog.enabled}
+        onToggle={(v) => updateLandingSection("blog", { ...blog, enabled: v })}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className={lbl}>Naslov sekcije</label>
+            <input
+              className={inp}
+              value={blog.headline ?? ""}
+              onChange={(e) =>
+                updateLandingSection("blog", {
+                  ...blog,
+                  headline: e.target.value,
+                })
+              }
+              placeholder="Novosti i Artikli"
+            />
+          </div>
+          <div>
+            <label className={lbl}>Opis (opciono)</label>
+            <textarea
+              className={inp}
+              rows={2}
+              value={blog.paragraph ?? ""}
+              onChange={(e) =>
+                updateLandingSection("blog", {
+                  ...blog,
+                  paragraph: e.target.value,
+                })
+              }
+              placeholder="Kratki uvodni tekst ispod naslova..."
+            />
+          </div>
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            Prikazuje se max. 3 najnovija objavljena blog artikla sa linkom
+            &ldquo;Pogledaj više&rdquo;.
+          </p>
         </div>
       </SectionCard>
 

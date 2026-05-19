@@ -230,6 +230,11 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
         },
         items: rawLanding.faq?.items ?? [],
       },
+      blog: {
+        enabled: rawLanding.blog?.enabled ?? false,
+        headline: rawLanding.blog?.headline ?? "",
+        paragraph: rawLanding.blog?.paragraph ?? "",
+      },
     },
     pages: {
       servicesPage: {

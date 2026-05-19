@@ -3,7 +3,7 @@
 
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/20/solid";
 
-interface PaginationInfo {
+export interface PaginationInfo {
   page: number;
   limit: number;
   totalCount: number;

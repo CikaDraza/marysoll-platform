@@ -186,6 +186,11 @@ const SalonProfileSchema = new mongoose.Schema(
           },
           items: { type: [faqItemSchema], default: [] },
         },
+        blog: {
+          enabled: { type: Boolean, default: false },
+          headline: { type: String },
+          paragraph: { type: String },
+        },
       },
       pages: {
         servicesPage: {

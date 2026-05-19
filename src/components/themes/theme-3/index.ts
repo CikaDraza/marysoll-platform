@@ -21,4 +21,5 @@ export { Theme3TestimonialsSoft } from "./TestimonialsSection";
 export { Theme3GalleryMasonry } from "./GalleryMasonry";
 export { Theme3PricingSoft } from "./PricingSoft";
 export { Theme3FAQSoft } from "./FAQ";
+export { BlogSection } from "./BlogSection";
 export { NewsletterSection } from "./NewsletterSection";
