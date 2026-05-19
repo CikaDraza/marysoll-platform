@@ -207,7 +207,7 @@ async function detectDomainType(
   tenantId: string | null;
   customDomain: string | null;
 }> {
-  const host = hostname.split(":")[0];
+  const host = hostname.split(":")[0].toLowerCase();
 
   // 1. Base domain (marketing)
   if (host === BASE_DOMAIN || host === `www.${BASE_DOMAIN}`) {
@@ -283,6 +283,15 @@ async function detectDomainType(
     return { type: "marketing", tenantSlug: null, tenantId: null, customDomain: null };
   }
 
+  // Unrecognized host — log so we can diagnose unexpected cold-start 404s
+  console.error(
+    JSON.stringify({
+      event: "PROXY_UNKNOWN_HOST_FALLBACK",
+      host,
+      BASE_DOMAIN,
+      timestamp: new Date().toISOString(),
+    }),
+  );
   return { type: "client", tenantSlug: null, tenantId: null, customDomain: null };
 }
 
