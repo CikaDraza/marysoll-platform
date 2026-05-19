@@ -8,6 +8,7 @@ import {
   ShieldCheckIcon,
   UserCircleIcon,
   TagIcon,
+  GlobeAltIcon,
 } from "@heroicons/react/24/outline";
 import type { SuperAdminTab, SuperAdminTabConfig } from "@/types/superadmin";
 
@@ -34,6 +35,7 @@ export const SUPERADMIN_TABS: SuperAdminTabConfig[] = [
   { id: "podesavanja", label: "Podešavanja", icon: CogIcon as ComponentType<{ className?: string }> },
   { id: "chat", label: "Chat", icon: ChatBubbleLeftRightIcon as ComponentType<{ className?: string }> },
   { id: "profil", label: "Profil", icon: UserCircleIcon as ComponentType<{ className?: string }> },
+  { id: "marketing", label: "Marketing", icon: GlobeAltIcon as ComponentType<{ className?: string }> },
 ];
 
 export function StatusBadge({ status }: { status: string }) {

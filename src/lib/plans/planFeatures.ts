@@ -150,7 +150,7 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
 
     trialDays: 14,
     maxSalons: 1,
-    statisticsLevel: "basic",
+    statisticsLevel: "none",
     newsletterLevel: "email",
   },
 

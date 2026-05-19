@@ -14,6 +14,7 @@ import { ChatTab as ChatTabComponent } from "@/components/superadmin/tabs/ChatTa
 import { StatistikaTab as StatistikaTabComponent } from "@/components/superadmin/tabs/StatistikaTab";
 import { PodesavanjaTab as PodesavanjaTabComponent } from "@/components/superadmin/tabs/PodesavanjaTab";
 import { SaloniTab as SaloniTabComponent } from "@/components/superadmin/tabs/SaloniTab";
+import { MarketingTab as MarketingTabComponent } from "@/components/superadmin/tabs/MarketingTab";
 import { useSuperAdminTrialTab } from "@/hooks/useSuperAdminTrialTab";
 import { useSuperAdminPlansTab } from "@/hooks/useSuperAdminPlansTab";
 import { useSuperAdminCategories } from "@/hooks/useSuperAdminCategories";
@@ -52,14 +53,14 @@ export default function SuperAdminDashboard() {
       <header className="bg-slate-800 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
         <div>
           <Link href="/" className="flex gap-2">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white font-black text-lg shadow-lg">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white font-black text-lg shadow-lg">
               M
             </div>
             <div>
               <h1 className="text-2xl font-black text-white tracking-tight">
                 Marysoll SuperAdmin
               </h1>
-              <p className="text-xs text-violet-400 -mt-1.5">
+              <p className="text-xs text-violet-400 -mt-1">
                 Platform for small businesses
               </p>
             </div>
@@ -126,6 +127,7 @@ export default function SuperAdminDashboard() {
             <PodesavanjaTabComponent superAdmin={sa} />
           )}
           {activeTab === "profil" && <ProfilTabComponent />}
+          {activeTab === "marketing" && <MarketingTabComponent />}
           {activeTab === "chat" && (
             <ChatTabComponent
               tenants={sa.tenants}

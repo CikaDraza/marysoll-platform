@@ -1,0 +1,826 @@
+"use client";
+
+import { useState } from "react";
+import { useMarketingCms, useCmsPages } from "@/hooks/useMarketingCms";
+import type { MarketingLandingStructure, CmsPage } from "@/types/marketing-landing";
+import {
+  superAdminCardClass as card,
+  superAdminInputClass as inp,
+  superAdminLabelClass as lbl,
+  superAdminPrimaryButtonClass as btnPrimary,
+  superAdminDangerButtonClass as btnDanger,
+} from "@/components/superadmin/shared";
+
+// ─── SEO Score Badge ──────────────────────────────────────────────────────────
+
+function ScoreBadge({ score }: { score: number }) {
+  const color =
+    score >= 75
+      ? "bg-emerald-900/60 text-emerald-400 border-emerald-700"
+      : score >= 50
+        ? "bg-amber-900/60 text-amber-400 border-amber-700"
+        : "bg-red-900/60 text-red-400 border-red-700";
+  return (
+    <span className={`text-sm font-bold px-3 py-1 rounded-full border ${color}`}>
+      SEO {score}/100
+    </span>
+  );
+}
+
+// ─── Section accordion ────────────────────────────────────────────────────────
+
+function SectionHeader({
+  title,
+  open,
+  onToggle,
+}: {
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      onClick={onToggle}
+      className="w-full flex items-center justify-between px-4 py-3 bg-slate-700 rounded-lg text-sm font-semibold text-white hover:bg-slate-600 transition"
+    >
+      <span>{title}</span>
+      <span className="text-slate-400">{open ? "▲" : "▼"}</span>
+    </button>
+  );
+}
+
+// ─── Pages modal ──────────────────────────────────────────────────────────────
+
+function PageModal({
+  page,
+  onClose,
+  onSave,
+  isSaving,
+}: {
+  page: CmsPage | null;
+  onClose: () => void;
+  onSave: (data: { title: string; slug?: string; content: string }) => Promise<void>;
+  isSaving: boolean;
+}) {
+  const [title, setTitle] = useState(page?.title ?? "");
+  const [content, setContent] = useState(page?.content ?? "");
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+      <div className="bg-slate-800 rounded-xl border border-slate-700 w-full max-w-2xl flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
+          <h3 className="font-bold text-white">
+            {page ? "Uredi stranicu" : "Nova stranica"}
+          </h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-white text-lg">
+            ✕
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {!page && (
+            <div>
+              <label className={lbl}>Naziv stranice</label>
+              <input
+                className={inp}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="npr. Politika privatnosti"
+              />
+            </div>
+          )}
+          <div className="flex-1">
+            <label className={lbl}>Sadržaj (Markdown)</label>
+            <textarea
+              className={`${inp} font-mono text-xs`}
+              rows={20}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder={"# Naslov\n\n## Sekcija\n\nTekst..."}
+            />
+          </div>
+        </div>
+        <div className="flex gap-3 justify-end px-5 py-4 border-t border-slate-700">
+          <button onClick={onClose} className="px-4 py-2 text-slate-400 text-sm hover:text-white">
+            Otkaži
+          </button>
+          <button
+            className={btnPrimary}
+            disabled={isSaving || (!page && !title.trim())}
+            onClick={async () => {
+              await onSave({ title, content, slug: page?.slug });
+              onClose();
+            }}
+          >
+            {isSaving ? "Čuvanje..." : "Sačuvaj"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main MarketingTab ────────────────────────────────────────────────────────
+
+export function MarketingTab() {
+  const {
+    landing,
+    isLoading,
+    isSaving,
+    update,
+    save,
+    seoResult,
+    seoLoading,
+    autoFixLoading,
+    runSeoAnalysis,
+    runAutoFix,
+  } = useMarketingCms();
+
+  const {
+    pages,
+    isLoading: pagesLoading,
+    createPage,
+    updatePage,
+    deletePage,
+    seedDefaults,
+    isMutating,
+  } = useCmsPages();
+
+  const [openSection, setOpenSection] = useState<string | null>("hero");
+  const [modalPage, setModalPage] = useState<CmsPage | null | "new">(undefined as unknown as null);
+  const [showPageModal, setShowPageModal] = useState(false);
+  const [activePanel, setActivePanel] = useState<"landing" | "pages" | "seo">("landing");
+
+  function toggle(s: string) {
+    setOpenSection((prev) => (prev === s ? null : s));
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-40 text-slate-400 text-sm">
+        Učitavanje...
+      </div>
+    );
+  }
+
+  const ls = landing;
+
+  return (
+    <div className="space-y-4">
+      {/* Panel tabs */}
+      <div className="flex gap-2">
+        {(["landing", "pages", "seo"] as const).map((p) => (
+          <button
+            key={p}
+            onClick={() => setActivePanel(p)}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition ${
+              activePanel === p
+                ? "bg-violet-600 text-white"
+                : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+            }`}
+          >
+            {p === "landing" ? "Landing sekcije" : p === "pages" ? "Stranice" : "SEO"}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Landing sekcije ── */}
+      {activePanel === "landing" && (
+        <div className="space-y-3">
+          {/* Header */}
+          <div className={card}>
+            <SectionHeader
+              title="Header"
+              open={openSection === "header"}
+              onToggle={() => toggle("header")}
+            />
+            {openSection === "header" && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className={lbl}>Logo tekst</label>
+                  <input
+                    className={inp}
+                    value={ls.header.logoText}
+                    onChange={(e) =>
+                      update("header", { ...ls.header, logoText: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>CTA dugme tekst</label>
+                  <input
+                    className={inp}
+                    value={ls.header.ctaText}
+                    onChange={(e) =>
+                      update("header", { ...ls.header, ctaText: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>CTA link</label>
+                  <input
+                    className={inp}
+                    value={ls.header.ctaHref}
+                    onChange={(e) =>
+                      update("header", { ...ls.header, ctaHref: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Nav linkovi (jedan po redu: Tekst|/href)</label>
+                  <textarea
+                    className={`${inp} font-mono text-xs`}
+                    rows={3}
+                    value={ls.header.navLinks.map((l) => `${l.text}|${l.href}`).join("\n")}
+                    onChange={(e) => {
+                      const links = e.target.value
+                        .split("\n")
+                        .filter(Boolean)
+                        .map((line) => {
+                          const [text, href = "#"] = line.split("|");
+                          return { text: text.trim(), href: href.trim() };
+                        });
+                      update("header", { ...ls.header, navLinks: links });
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Hero */}
+          <div className={card}>
+            <SectionHeader
+              title="Hero sekcija"
+              open={openSection === "hero"}
+              onToggle={() => toggle("hero")}
+            />
+            {openSection === "hero" && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className={lbl}>Headline</label>
+                  <input
+                    className={inp}
+                    value={ls.hero.headline}
+                    onChange={(e) =>
+                      update("hero", { ...ls.hero, headline: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Subheadline</label>
+                  <input
+                    className={inp}
+                    value={ls.hero.subheadline}
+                    onChange={(e) =>
+                      update("hero", { ...ls.hero, subheadline: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Social proof tekst</label>
+                  <input
+                    className={inp}
+                    value={ls.hero.socialProofText}
+                    onChange={(e) =>
+                      update("hero", { ...ls.hero, socialProofText: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Bedževi (jedan po redu)</label>
+                  <textarea
+                    className={`${inp} font-mono text-xs`}
+                    rows={4}
+                    value={ls.hero.badges.map((b) => b.text).join("\n")}
+                    onChange={(e) => {
+                      const badges = e.target.value
+                        .split("\n")
+                        .filter(Boolean)
+                        .map((t) => ({ text: t.trim() }));
+                      update("hero", { ...ls.hero, badges });
+                    }}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={lbl}>CTA primarni tekst</label>
+                    <input
+                      className={inp}
+                      value={ls.hero.ctaPrimaryText}
+                      onChange={(e) =>
+                        update("hero", { ...ls.hero, ctaPrimaryText: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className={lbl}>CTA sekundarni tekst</label>
+                    <input
+                      className={inp}
+                      value={ls.hero.ctaSecondaryText}
+                      onChange={(e) =>
+                        update("hero", { ...ls.hero, ctaSecondaryText: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* How it works */}
+          <div className={card}>
+            <SectionHeader
+              title="Zašto Mary (4 stavke: staro vs novo)"
+              open={openSection === "how"}
+              onToggle={() => toggle("how")}
+            />
+            {openSection === "how" && (
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label className={lbl}>Naslov sekcije</label>
+                  <input
+                    className={inp}
+                    value={ls.howItWorks.headline}
+                    onChange={(e) =>
+                      update("howItWorks", { ...ls.howItWorks, headline: e.target.value })
+                    }
+                  />
+                </div>
+                {ls.howItWorks.items.map((item, i) => (
+                  <div key={i} className="bg-slate-700/40 rounded-lg p-3 space-y-2">
+                    <p className="text-xs text-slate-400 font-bold uppercase">Stavka {i + 1}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className={lbl}>Staro</label>
+                        <input
+                          className={inp}
+                          value={item.oldTitle}
+                          onChange={(e) => {
+                            const items = [...ls.howItWorks.items];
+                            items[i] = { ...items[i], oldTitle: e.target.value };
+                            update("howItWorks", { ...ls.howItWorks, items });
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label className={lbl}>Novo</label>
+                        <input
+                          className={inp}
+                          value={item.newTitle}
+                          onChange={(e) => {
+                            const items = [...ls.howItWorks.items];
+                            items[i] = { ...items[i], newTitle: e.target.value };
+                            update("howItWorks", { ...ls.howItWorks, items });
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className={lbl}>Opis</label>
+                      <input
+                        className={inp}
+                        value={item.description}
+                        onChange={(e) => {
+                          const items = [...ls.howItWorks.items];
+                          items[i] = { ...items[i], description: e.target.value };
+                          update("howItWorks", { ...ls.howItWorks, items });
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Features */}
+          <div className={card}>
+            <SectionHeader
+              title="Feature kartice (3 kartice)"
+              open={openSection === "features"}
+              onToggle={() => toggle("features")}
+            />
+            {openSection === "features" && (
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label className={lbl}>Naslov sekcije</label>
+                  <input
+                    className={inp}
+                    value={ls.features.headline}
+                    onChange={(e) =>
+                      update("features", { ...ls.features, headline: e.target.value })
+                    }
+                  />
+                </div>
+                {ls.features.cards.map((card2, i) => (
+                  <div key={i} className="bg-slate-700/40 rounded-lg p-3 space-y-2">
+                    <p className="text-xs text-slate-400 font-bold uppercase">Kartica {i + 1}</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className={lbl}>Ikona</label>
+                        <input
+                          className={inp}
+                          value={card2.icon}
+                          onChange={(e) => {
+                            const cards = [...ls.features.cards];
+                            cards[i] = { ...cards[i], icon: e.target.value };
+                            update("features", { ...ls.features, cards });
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label className={lbl}>Problem</label>
+                        <input
+                          className={inp}
+                          value={card2.problem}
+                          onChange={(e) => {
+                            const cards = [...ls.features.cards];
+                            cards[i] = { ...cards[i], problem: e.target.value };
+                            update("features", { ...ls.features, cards });
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label className={lbl}>Rešenje</label>
+                        <input
+                          className={inp}
+                          value={card2.solution}
+                          onChange={(e) => {
+                            const cards = [...ls.features.cards];
+                            cards[i] = { ...cards[i], solution: e.target.value };
+                            update("features", { ...ls.features, cards });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Pricing */}
+          <div className={card}>
+            <SectionHeader
+              title="Cene (3 plana)"
+              open={openSection === "pricing"}
+              onToggle={() => toggle("pricing")}
+            />
+            {openSection === "pricing" && (
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label className={lbl}>Naslov sekcije</label>
+                  <input
+                    className={inp}
+                    value={ls.pricing.headline}
+                    onChange={(e) =>
+                      update("pricing", { ...ls.pricing, headline: e.target.value })
+                    }
+                  />
+                </div>
+                {ls.pricing.plans.map((plan, i) => (
+                  <div key={i} className="bg-slate-700/40 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-slate-400 font-bold uppercase">Plan {i + 1}</p>
+                      {plan.popular && (
+                        <span className="text-[10px] bg-violet-600 text-white px-2 py-0.5 rounded-full">
+                          Popular
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className={lbl}>Naziv</label>
+                        <input
+                          className={inp}
+                          value={plan.name}
+                          onChange={(e) => {
+                            const plans = [...ls.pricing.plans];
+                            plans[i] = { ...plans[i], name: e.target.value };
+                            update("pricing", { ...ls.pricing, plans });
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label className={lbl}>Cena (samo broj)</label>
+                        <input
+                          className={inp}
+                          value={plan.price}
+                          onChange={(e) => {
+                            const plans = [...ls.pricing.plans];
+                            plans[i] = { ...plans[i], price: e.target.value };
+                            update("pricing", { ...ls.pricing, plans });
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className={lbl}>Opis</label>
+                      <input
+                        className={inp}
+                        value={plan.description}
+                        onChange={(e) => {
+                          const plans = [...ls.pricing.plans];
+                          plans[i] = { ...plans[i], description: e.target.value };
+                          update("pricing", { ...ls.pricing, plans });
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className={lbl}>Features (jedan po redu)</label>
+                      <textarea
+                        className={`${inp} font-mono text-xs`}
+                        rows={4}
+                        value={plan.features.join("\n")}
+                        onChange={(e) => {
+                          const plans = [...ls.pricing.plans];
+                          plans[i] = {
+                            ...plans[i],
+                            features: e.target.value.split("\n").filter(Boolean),
+                          };
+                          update("pricing", { ...ls.pricing, plans });
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className={lbl}>CTA tekst</label>
+                      <input
+                        className={inp}
+                        value={plan.ctaText}
+                        onChange={(e) => {
+                          const plans = [...ls.pricing.plans];
+                          plans[i] = { ...plans[i], ctaText: e.target.value };
+                          update("pricing", { ...ls.pricing, plans });
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className={card}>
+            <SectionHeader
+              title="Footer"
+              open={openSection === "footer"}
+              onToggle={() => toggle("footer")}
+            />
+            {openSection === "footer" && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className={lbl}>Tagline</label>
+                  <input
+                    className={inp}
+                    value={ls.footer.tagline}
+                    onChange={(e) =>
+                      update("footer", { ...ls.footer, tagline: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Linkovi (jedan po redu: Tekst|/href)</label>
+                  <textarea
+                    className={`${inp} font-mono text-xs`}
+                    rows={4}
+                    value={ls.footer.links.map((l) => `${l.text}|${l.href}`).join("\n")}
+                    onChange={(e) => {
+                      const links = e.target.value
+                        .split("\n")
+                        .filter(Boolean)
+                        .map((line) => {
+                          const [text, href = "#"] = line.split("|");
+                          return { text: text.trim(), href: href.trim() };
+                        });
+                      update("footer", { ...ls.footer, links });
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Save */}
+          <button
+            className={`${btnPrimary} w-full py-3`}
+            disabled={isSaving}
+            onClick={() => save()}
+          >
+            {isSaving ? "Čuvanje..." : "Sačuvaj landing"}
+          </button>
+        </div>
+      )}
+
+      {/* ── Stranice ── */}
+      {activePanel === "pages" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-slate-400">
+              Markdown stranice (Terms, Privacy, Refund Policy...)
+            </p>
+            <div className="flex gap-2">
+              <button
+                className="px-3 py-1.5 bg-slate-700 text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-600 transition"
+                onClick={seedDefaults}
+              >
+                Seed defaults
+              </button>
+              <button
+                className={btnPrimary}
+                onClick={() => {
+                  setModalPage(null);
+                  setShowPageModal(true);
+                }}
+              >
+                + Dodaj stranicu
+              </button>
+            </div>
+          </div>
+
+          {pagesLoading ? (
+            <p className="text-slate-400 text-sm">Učitavanje...</p>
+          ) : pages.length === 0 ? (
+            <div className={`${card} text-center py-8`}>
+              <p className="text-slate-400 text-sm mb-3">Nema stranica.</p>
+              <p className="text-slate-500 text-xs">
+                Klikni &quot;Seed defaults&quot; za Privacy, Terms i Refund Policy.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {pages.map((p) => (
+                <div
+                  key={p.slug}
+                  className={`${card} flex items-center justify-between`}
+                >
+                  <div>
+                    <p className="font-semibold text-white text-sm">{p.title}</p>
+                    <p className="text-xs text-slate-400">
+                      /{p.slug} ·{" "}
+                      {p.updatedAt
+                        ? new Date(p.updatedAt).toLocaleDateString("sr-Latn")
+                        : "—"}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      className="px-3 py-1.5 bg-slate-700 text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-600"
+                      onClick={() => {
+                        setModalPage(p);
+                        setShowPageModal(true);
+                      }}
+                    >
+                      Uredi
+                    </button>
+                    <button
+                      className={btnDanger}
+                      onClick={() => {
+                        if (confirm(`Obriši stranicu "${p.title}"?`)) {
+                          deletePage(p.slug);
+                        }
+                      }}
+                    >
+                      Obriši
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── SEO ── */}
+      {activePanel === "seo" && (
+        <div className="space-y-4">
+          <div className={card}>
+            <p className="text-xs text-slate-400 font-bold uppercase mb-3">
+              SEO Metadata
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className={lbl}>Home Title</label>
+                <input
+                  className={inp}
+                  value={ls.seo.homeTitle}
+                  onChange={(e) =>
+                    update("seo", { ...ls.seo, homeTitle: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className={lbl}>Home Description</label>
+                <textarea
+                  className={inp}
+                  rows={3}
+                  value={ls.seo.homeDescription}
+                  onChange={(e) =>
+                    update("seo", { ...ls.seo, homeDescription: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+            <button
+              className={`${btnPrimary} mt-4`}
+              disabled={isSaving}
+              onClick={() => save()}
+            >
+              {isSaving ? "Čuvanje..." : "Sačuvaj SEO"}
+            </button>
+          </div>
+
+          <div className={card}>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-slate-400 font-bold uppercase">
+                AI SEO Analiza
+              </p>
+              {seoResult && <ScoreBadge score={seoResult.score} />}
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                className={btnPrimary}
+                disabled={seoLoading}
+                onClick={runSeoAnalysis}
+              >
+                {seoLoading ? "Analiziranje..." : "Pokreni SEO analizu"}
+              </button>
+              {seoResult && (
+                <button
+                  className="px-4 py-2 bg-emerald-700 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition disabled:opacity-40"
+                  disabled={autoFixLoading}
+                  onClick={runAutoFix}
+                >
+                  {autoFixLoading ? "Popravljanje..." : "✦ Auto-fix sadržaj"}
+                </button>
+              )}
+            </div>
+
+            {seoResult && (
+              <div className="mt-4 space-y-3">
+                {seoResult.issues.length > 0 && (
+                  <div>
+                    <p className="text-xs font-bold text-red-400 mb-1">Problemi</p>
+                    <ul className="space-y-1">
+                      {seoResult.issues.map((issue, i) => (
+                        <li key={i} className="text-xs text-slate-300 flex gap-2">
+                          <span className="text-red-400 mt-0.5">•</span>
+                          {issue}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {seoResult.suggestions.length > 0 && (
+                  <div>
+                    <p className="text-xs font-bold text-amber-400 mb-1">Preporuke</p>
+                    <ul className="space-y-1">
+                      {seoResult.suggestions.map((s, i) => (
+                        <li key={i} className="text-xs text-slate-300 flex gap-2">
+                          <span className="text-amber-400 mt-0.5">→</span>
+                          {s}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {seoResult.keywords.length > 0 && (
+                  <div>
+                    <p className="text-xs font-bold text-emerald-400 mb-2">Keywords</p>
+                    <div className="flex flex-wrap gap-1">
+                      {seoResult.keywords.map((kw, i) => (
+                        <span
+                          key={i}
+                          className="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full"
+                        >
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Page modal */}
+      {showPageModal && (
+        <PageModal
+          page={modalPage as CmsPage | null}
+          onClose={() => setShowPageModal(false)}
+          isSaving={isMutating}
+          onSave={async (data) => {
+            if (modalPage && typeof modalPage === "object" && "slug" in modalPage) {
+              await updatePage({ slug: modalPage.slug, title: data.title, content: data.content });
+            } else {
+              await createPage(data);
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+}

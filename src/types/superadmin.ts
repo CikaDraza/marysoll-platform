@@ -9,7 +9,8 @@ export type SuperAdminTab =
   | "kategorije"
   | "podesavanja"
   | "chat"
-  | "profil";
+  | "profil"
+  | "marketing";
 
 export interface SuperAdminTabConfig {
   id: SuperAdminTab;

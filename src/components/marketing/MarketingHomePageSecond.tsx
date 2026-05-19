@@ -6,6 +6,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { AuthStatusButton } from "../auth/AuthStatusButton";
 import Image from "next/image";
+import { useMarketingCms } from "@/hooks/useMarketingCms";
+import { PricingCards } from "./PricingCards";
+import { DEFAULT_MARKETING_LANDING } from "@/lib/marketing-landing-defaults";
 
 // ============================================
 // ANIMATION VARIANTS
@@ -359,98 +362,12 @@ function FeatureCard({
 }
 
 // ============================================
-// PRICING CARD COMPONENT
-// ============================================
-function PricingCard({
-  plan,
-  price,
-  description,
-  features,
-  popular = false,
-  index,
-}: {
-  plan: string;
-  price: string;
-  description: string;
-  features: string[];
-  popular?: boolean;
-  index: number;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: index * 0.15 }}
-      whileHover={{ y: -10, transition: { duration: 0.2 } }}
-      className={`relative rounded-3xl p-8 ${
-        popular
-          ? "bg-gradient-to-br from-violet-600 to-purple-700 text-white shadow-2xl scale-105"
-          : "bg-white text-gray-800 shadow-lg border border-gray-100"
-      }`}
-    >
-      {popular && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-pink-500 text-white px-4 py-1 rounded-full text-xs font-bold"
-        >
-          Najpopularniji
-        </motion.div>
-      )}
-
-      <h3
-        className={`text-xl font-bold mb-2 ${popular ? "text-white" : "text-violet-600"}`}
-      >
-        {plan}
-      </h3>
-
-      <div className="flex items-baseline gap-1 mb-4">
-        <span className="text-4xl font-bold">{price}</span>
-        {price !== "0€" && <span className="text-sm opacity-70">/mes</span>}
-      </div>
-
-      <p
-        className={`text-sm mb-6 ${popular ? "text-violet-100" : "text-gray-500"}`}
-      >
-        {description}
-      </p>
-
-      <ul className="space-y-3 mb-8">
-        {features.map((feature, i) => (
-          <motion.li
-            key={i}
-            initial={{ opacity: 0, x: -10 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 * i }}
-            className="flex items-center gap-3 text-sm"
-          >
-            <span className="text-green-400">✓</span>
-            <span>{feature}</span>
-          </motion.li>
-        ))}
-      </ul>
-
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        className={`w-full py-3 rounded-xl font-semibold transition ${
-          popular
-            ? "bg-white text-violet-600 hover:bg-gray-100"
-            : "bg-violet-600 text-white hover:bg-violet-700"
-        }`}
-      >
-        {price === "0€" ? "Upoznaj Mary →" : "Izaberi Mary →"}
-      </motion.button>
-    </motion.div>
-  );
-}
-
-// ============================================
 // MAIN PAGE COMPONENT
 // ============================================
 export function MarketingHomePageSecond() {
   const [scrollY, setScrollY] = useState(0);
+  const { landing } = useMarketingCms();
+  const def = DEFAULT_MARKETING_LANDING;
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -578,18 +495,14 @@ export function MarketingHomePageSecond() {
               variants={fadeInUp}
               className="flex flex-col items-start gap-4 mt-6 leading-relaxed max-w-xl"
             >
-              <li className="w-auto items-center rounded-md bg-violet-50 px-2 py-1 text-sm font-medium text-violet-600 inset-ring inset-ring-purple-700/10">
-                ✔ sistem za zakazivanje
-              </li>
-              <li className="w-auto items-center rounded-md bg-violet-50 px-2 py-1 text-sm font-medium text-violet-600 inset-ring inset-ring-purple-700/10">
-                ✔ sistem za komunikaciju sa klijentima
-              </li>
-              <li className="w-auto items-center rounded-md bg-violet-50 px-2 py-1 text-sm font-medium text-violet-600 inset-ring inset-ring-purple-700/10">
-                ✔ automatski podsetnici
-              </li>
-              <li className="w-auto items-center rounded-md bg-violet-50 px-2 py-1 text-sm font-medium text-violet-600 inset-ring inset-ring-purple-700/10">
-                ✔ baza klijenata
-              </li>
+              {(landing.hero.badges.length ? landing.hero.badges : def.hero.badges).map((badge) => (
+                <li
+                  key={badge.text}
+                  className="w-auto items-center rounded-md bg-violet-50 px-2 py-1 text-sm font-medium text-violet-600 inset-ring inset-ring-purple-700/10"
+                >
+                  ✔ {badge.text}
+                </li>
+              ))}
             </motion.ul>
 
             <motion.p
@@ -622,12 +535,12 @@ export function MarketingHomePageSecond() {
               className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
             >
               <motion.a
-                href="/register"
+                href={landing.hero.ctaPrimaryHref || def.hero.ctaPrimaryHref}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="group inline-flex items-center justify-center gap-2 bg-violet-600 text-white px-8 py-4 rounded-xl font-semibold text-md hover:bg-violet-700 transition shadow-xl shadow-violet-200"
               >
-                Daj mi da ti pomognem
+                {landing.hero.ctaPrimaryText || def.hero.ctaPrimaryText}
                 <motion.span
                   animate={{ x: [0, 5, 0] }}
                   transition={{ duration: 1, repeat: Infinity }}
@@ -637,12 +550,12 @@ export function MarketingHomePageSecond() {
               </motion.a>
 
               <motion.a
-                href="#demo"
+                href={landing.hero.ctaSecondaryHref || def.hero.ctaSecondaryHref}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-8 py-4 rounded-xl shadow-xl shadow-violet-200 font-semibold text-md hover:text-violet-600 transition"
               >
-                👀 Vidi kako radi
+                👀 {landing.hero.ctaSecondaryText || def.hero.ctaSecondaryText}
               </motion.a>
             </motion.div>
             {/* Social Proof */}
@@ -662,9 +575,8 @@ export function MarketingHomePageSecond() {
                   />
                 ))}
               </div>
-              <p>
-                <span className="font-semibold text-gray-800">500+</span> salona
-                već koristi Mary
+              <p className="font-semibold text-gray-800">
+                {landing.hero.socialProofText || def.hero.socialProofText}
               </p>
             </motion.div>
           </motion.div>
@@ -722,15 +634,7 @@ export function MarketingHomePageSecond() {
           </motion.div>
 
           <div className="mt-12 grid md:grid-cols-2 gap-6">
-            {[
-              {
-                old: "Ne samo platforma za zakazivanje",
-                new: "Mary ti organizuje dan 💜",
-              },
-              { old: "Ne AI asistent", new: "Mary ti savetuje 💡" },
-              { old: "Automatski podsetnici", new: "Mary te podseća 🔔" },
-              { old: "Analitika", new: "Mary ti kaže šta radi 📊" },
-            ].map((item, index) => (
+            {(landing.howItWorks.items.length ? landing.howItWorks.items : def.howItWorks.items).map((item, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, x: index % 2 === 0 ? -30 : 30 }}
@@ -739,9 +643,9 @@ export function MarketingHomePageSecond() {
                 transition={{ delay: index * 0.1 }}
                 className="bg-white rounded-2xl p-6 shadow-sm"
               >
-                <p className="text-gray-400 text-sm mb-2">{item.old}</p>
+                <p className="text-gray-400 text-sm mb-2">{item.oldTitle}</p>
                 <p className="text-gray-800 font-semibold text-lg">
-                  {item.new}
+                  {item.newTitle}
                 </p>
               </motion.div>
             ))}
@@ -844,24 +748,15 @@ export function MarketingHomePageSecond() {
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <FeatureCard
-              problem="😒 Klijenti zaborave da dođu?"
-              solution="Mary ih podseća automatski. SMS, email, WhatsApp — šta god želiš."
-              emoji="🔔"
-              index={0}
-            />
-            <FeatureCard
-              problem="🤦‍♀️ Puna si zakazivanja u 3 ujutru?"
-              solution="Mary prima zakazivanja 24/7. Ti samo potvrdiš ujutru."
-              emoji="📅"
-              index={1}
-            />
-            <FeatureCard
-              problem="🤷‍♀️ Ne znaš ko ti je najbolji klijent?"
-              solution="Mary zna sve — ko dolazi redovno, ko preporučuje, ko zaslužuje popust."
-              emoji="💜"
-              index={2}
-            />
+            {(landing.features.cards.length ? landing.features.cards : def.features.cards).map((card, i) => (
+              <FeatureCard
+                key={i}
+                problem={card.problem}
+                solution={card.solution}
+                emoji={card.icon}
+                index={i}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -878,74 +773,14 @@ export function MarketingHomePageSecond() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Izaberi svoju Mary
+              {landing.pricing.headline || def.pricing.headline}
             </h2>
             <p className="text-gray-500">
               Počni besplatno. Nadograđuj kada rasteš.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8 items-center">
-            <PricingCard
-              plan="Upoznaj Mary"
-              price="0€"
-              description="Mary ti pomaže sa 10 klijenata mesečno"
-              features={[
-                "Online zakazivanje",
-                "Email podsetnici",
-                "Osnovna statistika",
-                "Mary podrška",
-              ]}
-              index={0}
-            />
-            <PricingCard
-              plan="Mary je tu"
-              price="19€"
-              description="Mary radi puno radno vreme za tebe"
-              features={[
-                "Neograničeni klijenti",
-                "SMS + WhatsApp",
-                "Mary asistent",
-                "Newsletter",
-                "Prioritetna podrška",
-              ]}
-              popular={true}
-              index={1}
-            />
-            <PricingCard
-              plan="Mary + tim"
-              price="49€"
-              description="Mary organizuje sve. A u timu su i Klaudija i Kiki"
-              features={[
-                "Više lokacija",
-                "Timski rad",
-                "API pristup",
-                "Bela oznaka",
-                "Dedicated Mary",
-              ]}
-              index={2}
-            />
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="mt-12 text-center"
-          >
-            <p className="text-gray-500 text-sm mb-4">
-              Sve cene su sa PDV-om. Bez skrivenih troškova.
-            </p>
-            <motion.a
-              href="/register"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="inline-flex items-center gap-2 bg-violet-600 text-white px-10 py-4 rounded-2xl font-semibold text-lg hover:bg-violet-700 transition shadow-xl shadow-violet-200"
-            >
-              Počni sa Mary već danas
-              <span>→</span>
-            </motion.a>
-          </motion.div>
+          <PricingCards />
         </div>
       </section>
     </div>

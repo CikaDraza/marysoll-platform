@@ -32,7 +32,8 @@ export interface IProfilPlatforme extends Document {
   logoUrl: string;
   newsletterEmail: string;
   contactEmail: string;
-  cmsPages: Record<string, unknown>;
+  cmsPages: Record<string, { title: string; slug: string; content: string; updatedAt: Date }>;
+  marketingLanding: Record<string, unknown>;
   seo: {
     homeTitle: string;
     homeDescription: string;
@@ -92,6 +93,7 @@ const ProfilPlatformeSchema = new Schema<IProfilPlatforme>(
     newsletterEmail: { type: String, default: "", lowercase: true, trim: true },
     contactEmail: { type: String, default: "", lowercase: true, trim: true },
     cmsPages: { type: Schema.Types.Mixed, default: {} },
+    marketingLanding: { type: Schema.Types.Mixed, default: {} },
     seo: {
       homeTitle: { type: String, default: "" },
       homeDescription: { type: String, default: "" },

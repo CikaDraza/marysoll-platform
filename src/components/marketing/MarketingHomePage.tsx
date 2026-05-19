@@ -172,10 +172,19 @@ export function MarketingHomePage() {
               <Link href="/privacy" className="hover:text-white transition">
                 Privatnost
               </Link>
-              <Link href="/terms" className="hover:text-white transition">
-                Uslovi
+              <Link
+                href="/terms-and-conditions"
+                className="hover:text-white transition"
+              >
+                Uslovi korišćenja
               </Link>
-              <Link href="/contact" className="hover:text-white transition">
+              <Link href="/refund" className="hover:text-white transition">
+                Politika povraćaja
+              </Link>
+              <Link href="/pricing" className="hover:text-white transition">
+                Cenovnik
+              </Link>
+              <Link href="/kontakt" className="hover:text-white transition">
                 Kontakt
               </Link>
             </div>

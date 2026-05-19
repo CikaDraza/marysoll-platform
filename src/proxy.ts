@@ -107,7 +107,9 @@ const RESERVED_TOP_SEGMENTS = new Set([
   "favicon.ico",
   "newsletter",
   "privacy",
-  "terms",
+  "terms-and-conditions",
+  "refund",
+  "pricing",
   "unauthorized",
   "logout",
   "tenant", // internal route prefix — must never be treated as a tenant slug

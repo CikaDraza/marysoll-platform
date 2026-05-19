@@ -1,8 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { TenantUser } from "@/models/TenantUser";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
+import { getPlanFeatures } from "@/lib/plans/planFeatures";
+import { Subscription } from "@/models/Subscription";
 import { Types } from "mongoose";
 import "@/models/Appointment";
 import "@/models/Service";
@@ -59,7 +61,7 @@ export interface IUser {
 //  GET /api/statistics?month=11&year=2025
 // -----------------------------------------------------------
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
     await connectToDB();
 
@@ -67,6 +69,21 @@ export async function GET(req: Request) {
     const token = getTokenFromRequest(req);
     const decoded = token ? verifyToken(token) : null;
     const tenantId = decoded?.tenantId ?? null;
+
+    // Plan gate — statistics requires starter+
+    if (tenantId) {
+      const sub = await Subscription.findOne({ tenantId }).select("plan featureOverrides overrideExpiresAt").lean() as
+        | { plan: string; featureOverrides?: Record<string, unknown> | null; overrideExpiresAt?: Date | null }
+        | null;
+      const plan = (sub?.plan ?? "free") as Parameters<typeof getPlanFeatures>[0];
+      const overrides = sub?.featureOverrides && sub.overrideExpiresAt && new Date() < new Date(sub.overrideExpiresAt)
+        ? sub.featureOverrides as Parameters<typeof getPlanFeatures>[1]
+        : null;
+      const features = getPlanFeatures(plan, overrides);
+      if (!features.statistics) {
+        return NextResponse.json({ error: "Statistika nije dostupna na vašem planu." }, { status: 403 });
+      }
+    }
 
     const { searchParams } = new URL(req.url);
 

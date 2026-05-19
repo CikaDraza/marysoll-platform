@@ -1,6 +1,7 @@
 // hooks/useStatistics.ts
 import { useQuery } from "@tanstack/react-query";
 import { StatisticsResponse } from "@/components/admin/statistics/statistics.types";
+import { api } from "@/lib/api";
 
 interface UseStatisticsParams {
   month: number;
@@ -13,10 +14,10 @@ export function useStatistics({ month, year }: UseStatisticsParams) {
   const { data, isLoading, error } = useQuery<StatisticsResponse>({
     queryKey,
     queryFn: async () => {
-      // tvoj fetch / axios / fetcher poziv
-      const res = await fetch(`/api/statistics?month=${month}&year=${year}`);
-      if (!res.ok) throw new Error("Greška pri učitavanju statistike");
-      return res.json();
+      const { data } = await api.get<StatisticsResponse>(
+        `/statistics?month=${month}&year=${year}`,
+      );
+      return data;
     },
     staleTime: 5 * 60 * 1000, // 5 minuta
   });
