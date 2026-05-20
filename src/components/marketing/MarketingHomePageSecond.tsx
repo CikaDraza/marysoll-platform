@@ -483,13 +483,15 @@ export function MarketingHomePageSecond() {
               variants={fadeInUp}
               className="mt-6 text-xl text-gray-600 leading-relaxed max-w-xl"
             >
-              <span className="text-violet-600 font-semibold">Mary</span> mi je
-              ime,{" "}
+              <span className="text-violet-600 font-semibold">Tvoja</span>{" "}
+              najbolja zaposlena u salonu.{" "}
               <span className="text-violet-600 font-semibold">
-                soll - solution
+                Sređujem ti probleme{" "}
               </span>
-              , jer sam tu da ti pružim{" "}
-              <span className="font-semibold">rešenje</span>
+              oko poruka, pitanja, zakazivanja.{" "}
+              <span className="font-semibold">
+                Dobijaćeš više termina. Salon će biti bez haosa.
+              </span>
             </motion.p>
             <motion.ul
               variants={fadeInUp}
@@ -513,25 +515,28 @@ export function MarketingHomePageSecond() {
               className="mt-6 text-xl text-gray-600 leading-relaxed max-w-xl"
             >
               Sa Marysoll:{" "}
-              <span className="text-violet-600 font-semibold">salon </span> ti
-              raste,{" "}
               <span className="text-violet-600 font-semibold">
-                fitnes centar
+                Počni besplatno{" "}
+              </span>{" "}
+              i nadograđuj kada tvoj salon poraste. <br />
+              <span className="text-violet-600 font-semibold">
+                Zaboravi na papirne beležnice,
               </span>
-              , <span className="text-violet-600 font-semibold">klinika</span>,{" "}
-              <span className="text-violet-600 font-semibold">spa</span>…
               <br />
               <span className="text-gray-500">
-                da možeš da se baviš kreativnijim stvarima. Posao da ti bude
-                hobi.
+                izgubljene poruke i haos oko termina.
+              </span>
+              <br />
+              <span className="text-violet-600 font-semibold">
+                Mary i njen tim pomažu ti da salon radi lakše, brže i
+                organizovanije.
               </span>
             </motion.p>
             <motion.p
               variants={fadeInUp}
               className="mt-4 text-gray-500 max-w-lg"
             >
-              Zaboravi na haos sa terminima, papirnim beležnicama i klijentima
-              koji ne dolaze. Ja to rešavam za tebe.
+              Marysoll to rešava za tebe.
             </motion.p>
             <motion.div
               variants={fadeInUp}

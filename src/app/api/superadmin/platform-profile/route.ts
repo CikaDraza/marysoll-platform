@@ -13,6 +13,7 @@ type PlatformProfileRecord = {
   logoUrl?: string;
   newsletterEmail?: string;
   contactEmail?: string;
+  social?: { instagram?: string; whatsapp?: string; tiktok?: string; facebook?: string; telegram?: string };
   cmsPages?: Record<string, unknown>;
   seo?: Record<string, unknown>;
   geoLocation?: Record<string, unknown>;
@@ -31,6 +32,13 @@ function serializeProfile(profile: PlatformProfileRecord) {
     logoUrl: profile.logoUrl ?? "",
     newsletterEmail: profile.newsletterEmail ?? "",
     contactEmail: profile.contactEmail ?? "",
+    social: {
+      instagram: profile.social?.instagram ?? "",
+      whatsapp: profile.social?.whatsapp ?? "",
+      tiktok: profile.social?.tiktok ?? "",
+      facebook: profile.social?.facebook ?? "",
+      telegram: profile.social?.telegram ?? "",
+    },
     cmsPages: profile.cmsPages ?? {},
     seo: profile.seo ?? {},
     geoLocation: profile.geoLocation ?? {},
@@ -115,6 +123,14 @@ export async function PATCH(req: NextRequest) {
     }
     if (typeof body.contactEmail === "string") {
       update.contactEmail = body.contactEmail.trim().toLowerCase();
+    }
+    const social = body.social as Record<string, string> | undefined;
+    if (social && typeof social === "object") {
+      for (const key of ["instagram", "whatsapp", "tiktok", "facebook", "telegram"] as const) {
+        if (typeof social[key] === "string") {
+          (update as Record<string, string>)[`social.${key}`] = social[key].trim();
+        }
+      }
     }
 
     const updated = (await ProfilPlatforme.findOneAndUpdate(

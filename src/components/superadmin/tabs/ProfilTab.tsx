@@ -179,10 +179,52 @@ export function ProfilTab() {
           </form>
         </div>
 
-        <div className={card}>
-          <h3 className="font-semibold text-sm mb-4 text-violet-400">
-            Promena lozinke
-          </h3>
+        <div className="space-y-6">
+          <div className={card}>
+            <h3 className="font-semibold text-sm mb-4 text-violet-400">
+              Socijalne mreže
+            </h3>
+            <div className="space-y-3">
+              {(
+                [
+                  { key: "instagram", label: "Instagram", placeholder: "https://instagram.com/marysoll" },
+                  { key: "whatsapp", label: "WhatsApp", placeholder: "https://wa.me/381600000000" },
+                  { key: "tiktok", label: "TikTok", placeholder: "https://tiktok.com/@marysoll" },
+                  { key: "facebook", label: "Facebook", placeholder: "https://facebook.com/marysoll" },
+                  { key: "telegram", label: "Telegram", placeholder: "https://t.me/marysoll" },
+                ] as const
+              ).map(({ key, label, placeholder }) => (
+                <div key={key}>
+                  <label className={lbl}>{label}</label>
+                  <input
+                    type="url"
+                    className={inp}
+                    value={form.social[key]}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        social: { ...p.social, [key]: e.target.value },
+                      }))
+                    }
+                    placeholder={placeholder}
+                  />
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              disabled={saveProfile.isPending}
+              onClick={() => submitProfile()}
+              className={`${btnPrimary} mt-4`}
+            >
+              {saveProfile.isPending ? "Snimanje..." : "Sačuvaj socijalne mreže"}
+            </button>
+          </div>
+
+          <div className={card}>
+            <h3 className="font-semibold text-sm mb-4 text-violet-400">
+              Promena lozinke
+            </h3>
           <form onSubmit={handlePasswordChange} className="space-y-4">
             <div>
               <label className={lbl}>Trenutna lozinka</label>
@@ -238,6 +280,7 @@ export function ProfilTab() {
               {changePassword.isPending ? "Menjam lozinku..." : "Promeni lozinku"}
             </button>
           </form>
+        </div>
         </div>
       </div>
     </div>

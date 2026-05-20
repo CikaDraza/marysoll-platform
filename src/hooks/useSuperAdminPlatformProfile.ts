@@ -14,6 +14,7 @@ interface PlatformProfileResponse {
     logoUrl?: string;
     newsletterEmail?: string;
     contactEmail?: string;
+    social?: { instagram?: string; whatsapp?: string; tiktok?: string; facebook?: string; telegram?: string };
   };
 }
 
@@ -36,6 +37,13 @@ function toForm(data?: PlatformProfileResponse): PlatformProfileForm {
     logoUrl: profile?.logoUrl ?? "",
     newsletterEmail: profile?.newsletterEmail ?? "",
     contactEmail: profile?.contactEmail ?? "",
+    social: {
+      instagram: profile?.social?.instagram ?? "",
+      whatsapp: profile?.social?.whatsapp ?? "",
+      tiktok: profile?.social?.tiktok ?? "",
+      facebook: profile?.social?.facebook ?? "",
+      telegram: profile?.social?.telegram ?? "",
+    },
   };
 }
 
@@ -70,6 +78,7 @@ export function useSuperAdminPlatformProfile() {
         logoUrl: payload.logoUrl,
         newsletterEmail: payload.newsletterEmail,
         contactEmail: payload.contactEmail,
+        social: payload.social,
       });
       return data as PlatformProfileResponse & { message?: string };
     },

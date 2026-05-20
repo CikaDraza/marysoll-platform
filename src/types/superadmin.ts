@@ -67,4 +67,11 @@ export interface PlatformProfileForm {
   logoUrl: string;
   newsletterEmail: string;
   contactEmail: string;
+  social: {
+    instagram: string;
+    whatsapp: string;
+    tiktok: string;
+    facebook: string;
+    telegram: string;
+  };
 }

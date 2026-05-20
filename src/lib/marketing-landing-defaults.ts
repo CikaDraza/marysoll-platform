@@ -15,12 +15,14 @@ export const DEFAULT_MARKETING_LANDING: MarketingLandingStructure = {
   hero: {
     enabled: true,
     headline: "Hej, ja sam Mary",
-    subheadline: "Tvoj AI asistent za beauty biznis",
+    subheadline:
+      "Tvoja najbolja zaposlena u salonu. Sređujem ti probleme oko poruka, pitanja, zakazivanja. Dobijaćeš više termina. Salon će biti bez haosa.",
     badges: [
       { text: "Online zakazivanje" },
-      { text: "AI asistent" },
-      { text: "Newsletter" },
-      { text: "Analitika" },
+      { text: "Manje vremena na telefonu i porukama" },
+      { text: "Podsetnici za klijente" },
+      { text: "Više organizacije i manje otkazivanja" },
+      { text: "Više novih klijenata kroz booking pretragu" },
     ],
     socialProofText: "500+ salona koristi Mary",
     ctaPrimaryText: "Počni besplatno",
@@ -84,7 +86,11 @@ export const DEFAULT_MARKETING_LANDING: MarketingLandingStructure = {
         price: "0",
         period: "€/mesec",
         description: "Idealno za početnike",
-        features: ["Online zakazivanje", "Do 50 termina/mesec", "Email podrška"],
+        features: [
+          "Online zakazivanje",
+          "Do 50 termina/mesec",
+          "Email podrška",
+        ],
         ctaText: "Počni besplatno",
         popular: false,
       },

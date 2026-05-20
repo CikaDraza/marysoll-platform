@@ -23,6 +23,14 @@ export interface IPlatformNotificationSettings {
   newsletterTips: boolean;
 }
 
+export interface IPlatformSocial {
+  instagram?: string;
+  whatsapp?: string;
+  tiktok?: string;
+  facebook?: string;
+  telegram?: string;
+}
+
 export interface IProfilPlatforme extends Document {
   _id: Types.ObjectId;
   authUserId: Types.ObjectId;
@@ -32,6 +40,7 @@ export interface IProfilPlatforme extends Document {
   logoUrl: string;
   newsletterEmail: string;
   contactEmail: string;
+  social: IPlatformSocial;
   cmsPages: Record<string, { title: string; slug: string; content: string; updatedAt: Date }>;
   marketingLanding: Record<string, unknown>;
   seo: {
@@ -105,6 +114,13 @@ const ProfilPlatformeSchema = new Schema<IProfilPlatforme>(
       street: { type: String, default: "" },
       lat: { type: Number, default: null },
       lng: { type: Number, default: null },
+    },
+    social: {
+      instagram: { type: String, default: "", trim: true },
+      whatsapp: { type: String, default: "", trim: true },
+      tiktok: { type: String, default: "", trim: true },
+      facebook: { type: String, default: "", trim: true },
+      telegram: { type: String, default: "", trim: true },
     },
     notificationSettings: {
       type: notificationSettingsSchema,

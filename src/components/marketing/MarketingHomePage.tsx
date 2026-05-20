@@ -3,6 +3,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { SalonShowcaseLoader } from "./SalonShowcaseLoader";
+import { getPlatformSocial } from "@/lib/server/getPlatformSocial";
+import InstagramIcon from "@/components/assets/icons/InstagramIcon";
+import WhatsappIcon from "@/components/assets/icons/WhatsappIcon";
+import TiktokIcon from "@/components/assets/icons/TiktokIcon";
+import FacebookIcon from "@/components/assets/icons/FacebookIcon";
+import TelegramIcon from "@/components/assets/icons/TelegramIcon";
 
 export const metadata: Metadata = {
   title: "Marysoll — Platforma za beauty salone",
@@ -13,7 +19,17 @@ export const metadata: Metadata = {
  * Marketing landing page — marysoll.com
  * Prikazuje se samo na glavnoj domeni.
  */
-export function MarketingHomePage() {
+export async function MarketingHomePage() {
+  const social = await getPlatformSocial();
+
+  const SOCIAL_LINKS = [
+    { href: social.instagram, Icon: InstagramIcon },
+    { href: social.whatsapp, Icon: WhatsappIcon },
+    { href: social.tiktok, Icon: TiktokIcon },
+    { href: social.facebook, Icon: FacebookIcon },
+    { href: social.telegram, Icon: TelegramIcon },
+  ];
+
   return (
     <div className="min-h-screen bg-white">
       {/* Hero */}
@@ -170,35 +186,46 @@ export function MarketingHomePage() {
 
             <div className="flex gap-8 text-sm text-gray-400">
               <Link href="/privacy" className="hover:text-white transition">
-                Privatnost
+                Privacy
               </Link>
               <Link
                 href="/terms-and-conditions"
                 className="hover:text-white transition"
               >
-                Uslovi korišćenja
+                Terms
               </Link>
               <Link href="/refund" className="hover:text-white transition">
-                Politika povraćaja
+                Refund Policy
               </Link>
               <Link href="/pricing" className="hover:text-white transition">
-                Cenovnik
+                Pricing
               </Link>
               <Link href="/kontakt" className="hover:text-white transition">
-                Kontakt
+                Contact
               </Link>
             </div>
 
-            <div className="flex gap-4">
-              {["📧", "💬", "📸"].map((emoji, i) => (
-                <Link
-                  key={i}
-                  href="#"
-                  className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-violet-600 transition"
-                >
-                  {emoji}
-                </Link>
-              ))}
+            <div className="flex gap-3">
+              {SOCIAL_LINKS.map(({ href, Icon }, i) =>
+                href ? (
+                  <Link
+                    key={i}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-violet-600 transition"
+                  >
+                    <Icon bgColor="#ffffff" width={20} height={20} />
+                  </Link>
+                ) : (
+                  <span
+                    key={i}
+                    className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center opacity-25 cursor-not-allowed"
+                  >
+                    <Icon bgColor="#ffffff" width={20} height={20} />
+                  </span>
+                ),
+              )}
             </div>
           </div>
 
