@@ -144,15 +144,15 @@ export default function SuperAdminDashboard() {
 // ─── Tab: Trial ───────────────────────────────────────────────────────────────
 const PRO_TRIAL_PRESET = Object.fromEntries(
   (Object.entries(PLAN_FEATURES.pro) as [string, unknown][]).filter(
-    ([, v]) => typeof v === "boolean" && v === true,
+    ([, v]) => !Array.isArray(v),
   ),
-) as Record<string, boolean>;
+) as Partial<typeof PLAN_FEATURES.pro>;
 
 const ENTERPRISE_TRIAL_PRESET = Object.fromEntries(
   (Object.entries(PLAN_FEATURES.enterprise) as [string, unknown][]).filter(
-    ([, v]) => typeof v === "boolean" && v === true,
+    ([, v]) => !Array.isArray(v),
   ),
-) as Record<string, boolean>;
+) as Partial<typeof PLAN_FEATURES.enterprise>;
 
 function TrialTab({
   sa,
@@ -707,7 +707,7 @@ function PlanoviTab({
                       <div className="space-y-1.5">
                         {group.keys.map((key) => {
                           const keyStr = String(key);
-                          const isOn = !!overrides[keyStr];
+                          const isOn = !!(overrides as Record<string, unknown>)[keyStr];
                           return (
                             <label
                               key={keyStr}

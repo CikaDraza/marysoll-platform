@@ -104,7 +104,7 @@ export const StatisticsPage: React.FC = () => {
 
       {/* Full stats — starter+ */}
       {statsLevel === "none" && (
-        <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-8 text-center text-sm text-zinc-400">
+        <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 dark:bg-gray-900 p-8 text-center text-sm text-zinc-400">
           Statistika nije dostupna na vašem planu.
         </div>
       )}

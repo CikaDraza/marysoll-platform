@@ -495,7 +495,10 @@ export function MarketingHomePageSecond() {
               variants={fadeInUp}
               className="flex flex-col items-start gap-4 mt-6 leading-relaxed max-w-xl"
             >
-              {(landing.hero.badges.length ? landing.hero.badges : def.hero.badges).map((badge) => (
+              {(landing.hero.badges.length
+                ? landing.hero.badges
+                : def.hero.badges
+              ).map((badge) => (
                 <li
                   key={badge.text}
                   className="w-auto items-center rounded-md bg-violet-50 px-2 py-1 text-sm font-medium text-violet-600 inset-ring inset-ring-purple-700/10"
@@ -550,7 +553,9 @@ export function MarketingHomePageSecond() {
               </motion.a>
 
               <motion.a
-                href={landing.hero.ctaSecondaryHref || def.hero.ctaSecondaryHref}
+                href={
+                  landing.hero.ctaSecondaryHref || def.hero.ctaSecondaryHref
+                }
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-8 py-4 rounded-xl shadow-xl shadow-violet-200 font-semibold text-md hover:text-violet-600 transition"
@@ -634,7 +639,10 @@ export function MarketingHomePageSecond() {
           </motion.div>
 
           <div className="mt-12 grid md:grid-cols-2 gap-6">
-            {(landing.howItWorks.items.length ? landing.howItWorks.items : def.howItWorks.items).map((item, index) => (
+            {(landing.howItWorks.items.length
+              ? landing.howItWorks.items
+              : def.howItWorks.items
+            ).map((item, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, x: index % 2 === 0 ? -30 : 30 }}
@@ -732,7 +740,7 @@ export function MarketingHomePageSecond() {
           FEATURES SECTION
       ============================================ */}
       <section id="features" className="py-24 bg-white">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -748,7 +756,10 @@ export function MarketingHomePageSecond() {
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {(landing.features.cards.length ? landing.features.cards : def.features.cards).map((card, i) => (
+            {(landing.features.cards.length
+              ? landing.features.cards
+              : def.features.cards
+            ).map((card, i) => (
               <FeatureCard
                 key={i}
                 problem={card.problem}
@@ -765,7 +776,7 @@ export function MarketingHomePageSecond() {
           PRICING SECTION
       ============================================ */}
       <section id="pricing" className="py-24 bg-gray-50">
-        <div className="max-w-5xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}

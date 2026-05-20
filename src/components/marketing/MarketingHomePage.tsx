@@ -17,7 +17,7 @@ export function MarketingHomePage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero */}
-      <section className="text-center py-24 px-4">
+      <section className="max-w-7xl mx-auto text-center py-24 px-4">
         <span>Ne zaboravi ipak!</span>
         <h2 className="text-4xl lg:text-8xl font-bold text-gray-900 leading-tight heading-font">
           Beauty business <span className="text-purple-600">growth system</span>

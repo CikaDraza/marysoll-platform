@@ -140,6 +140,11 @@ Detaljni pregled planova i cena dostupan je ispod.
 
 *Svi planovi uključuju 14-dnevni besplatni period bez kreditne kartice.*`,
   },
+  {
+    slug: "kontakt",
+    title: "Kontaktirajte nas",
+    content: "Imate pitanje? Pišite nam — odgovaramo u roku od jednog radnog dana.",
+  },
 ];
 
 export async function POST(req: NextRequest) {

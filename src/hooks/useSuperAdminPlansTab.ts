@@ -14,7 +14,7 @@ export function useSuperAdminPlansTab(
   const [selectedId, setSelectedId] = useState("");
   const [plan, setPlan] = useState<SuperAdminPlan>("starter");
   const [overrideEnabled, setOverrideEnabled] = useState(false);
-  const [overrides, setOverrides] = useState<Record<string, boolean>>({});
+  const [overrides, setOverrides] = useState<Partial<PlanFeatures>>({});
   const [overrideExpiry, setOverrideExpiry] = useState(() => {
     const date = new Date();
     date.setDate(date.getDate() + 30);
@@ -33,13 +33,13 @@ export function useSuperAdminPlansTab(
   }
 
   function toggleOverride(key: string) {
-    setOverrides((prev) => ({ ...prev, [key]: !prev[key] }));
+    setOverrides((prev) => ({ ...prev, [key]: !(prev as Record<string, unknown>)[key] }));
   }
 
   function setFeatureOverride() {
     if (!selectedId) return;
     superAdmin.setFeatureOverride(selectedId, {
-      overrides: overrides as Partial<Record<keyof PlanFeatures, boolean>>,
+      overrides,
       expiresAt: new Date(overrideExpiry).toISOString(),
       note: overrideNote,
     });

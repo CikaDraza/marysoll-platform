@@ -270,7 +270,7 @@ export function useSuperAdminTenants() {
       note,
     }: {
       tenantId: string;
-      overrides: Partial<Record<keyof PlanFeatures, boolean>>;
+      overrides: Partial<PlanFeatures>;
       expiresAt: string;
       note: string;
     }) => {
@@ -337,7 +337,7 @@ export function useSuperAdminTenants() {
     setFeatureOverride: (
       tenantId: string,
       params: {
-        overrides: Partial<Record<keyof PlanFeatures, boolean>>;
+        overrides: Partial<PlanFeatures>;
         expiresAt: string;
         note: string;
       },

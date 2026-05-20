@@ -110,6 +110,7 @@ const RESERVED_TOP_SEGMENTS = new Set([
   "terms-and-conditions",
   "refund",
   "pricing",
+  "kontakt",
   "unauthorized",
   "logout",
   "tenant", // internal route prefix — must never be treated as a tenant slug
