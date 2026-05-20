@@ -45,12 +45,19 @@ export async function PUT(req: NextRequest, { params }: Params) {
       );
     }
 
+    // Ako override uključuje statistics:true ali ne i statisticsLevel,
+    // postavi "basic" kao minimum da ne ostane "none" iz free plana
+    const overrides = { ...body.overrides };
+    if (overrides.statistics && !overrides.statisticsLevel) {
+      overrides.statisticsLevel = overrides.aiMarketingAnalysis ? "ai" : "full";
+    }
+
     const now = new Date();
     const updated = await Subscription.findOneAndUpdate(
       { tenantId },
       {
         $set: {
-          featureOverrides: body.overrides,
+          featureOverrides: overrides,
           overrideExpiresAt: expiresAt,
           overrideNote: body.note ?? "",
         },

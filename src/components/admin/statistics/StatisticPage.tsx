@@ -9,7 +9,12 @@ export const StatisticsPage: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const { features } = usePlanFeatures();
-  const statsLevel = features.statisticsLevel;
+  // Ako override ima statistics:true ali ne i statisticsLevel, odredi nivo po AI feature-ima
+  const statsLevel = (() => {
+    if (!features.statistics) return "none";
+    if (features.statisticsLevel !== "none") return features.statisticsLevel;
+    return features.aiMarketingAnalysis ? "ai" : "full";
+  })();
 
   const { clients, totalAppointments, totalRevenue } = useStatistics({
     month: selectedMonth,
@@ -154,7 +159,9 @@ export const StatisticsPage: React.FC = () => {
           </div>
         </div>
       )}
-      <StatsTable month={selectedMonth} year={selectedYear} />
+      {statsLevel === "ai" && (
+        <StatsTable month={selectedMonth} year={selectedYear} />
+      )}
       {statsLevel === "ai" && (
         <div className="bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-100 rounded-2xl p-6 mt-6">
           <div className="flex items-start gap-3">
