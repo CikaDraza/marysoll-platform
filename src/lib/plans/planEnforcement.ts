@@ -53,7 +53,7 @@ export async function requireFeature(
     ]);
     const subscription = subscriptionRaw as {
       plan?: PlanName;
-      featureOverrides?: Record<string, boolean>;
+      featureOverrides?: Partial<PlanFeatures>;
       overrideExpiresAt?: Date | string;
     } | null;
     const tenant = tenantRaw as { plan?: PlanName; paid?: boolean } | null;

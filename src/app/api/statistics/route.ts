@@ -3,8 +3,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { TenantUser } from "@/models/TenantUser";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
-import { getPlanFeatures } from "@/lib/plans/planFeatures";
-import { Subscription } from "@/models/Subscription";
+import { requireFeature } from "@/lib/plans/planEnforcement";
 import { Types } from "mongoose";
 import "@/models/Appointment";
 import "@/models/Service";
@@ -72,17 +71,8 @@ export async function GET(req: NextRequest) {
 
     // Plan gate — statistics requires starter+
     if (tenantId) {
-      const sub = await Subscription.findOne({ tenantId }).select("plan featureOverrides overrideExpiresAt").lean() as
-        | { plan: string; featureOverrides?: Record<string, unknown> | null; overrideExpiresAt?: Date | null }
-        | null;
-      const plan = (sub?.plan ?? "free") as Parameters<typeof getPlanFeatures>[0];
-      const overrides = sub?.featureOverrides && sub.overrideExpiresAt && new Date() < new Date(sub.overrideExpiresAt)
-        ? sub.featureOverrides as Parameters<typeof getPlanFeatures>[1]
-        : null;
-      const features = getPlanFeatures(plan, overrides);
-      if (!features.statistics) {
-        return NextResponse.json({ error: "Statistika nije dostupna na vašem planu." }, { status: 403 });
-      }
+      const denied = await requireFeature(tenantId, "statistics");
+      if (denied) return denied;
     }
 
     const { searchParams } = new URL(req.url);

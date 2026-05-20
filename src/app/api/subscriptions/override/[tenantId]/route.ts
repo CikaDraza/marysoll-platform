@@ -45,6 +45,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       );
     }
 
+    const now = new Date();
     const updated = await Subscription.findOneAndUpdate(
       { tenantId },
       {
@@ -53,16 +54,16 @@ export async function PUT(req: NextRequest, { params }: Params) {
           overrideExpiresAt: expiresAt,
           overrideNote: body.note ?? "",
         },
+        $setOnInsert: {
+          tenantId,
+          plan: "free",
+          status: "active",
+          currentPeriodStart: now,
+          currentPeriodEnd: new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000),
+        },
       },
-      { new: true, upsert: false },
+      { new: true, upsert: true },
     );
-
-    if (!updated) {
-      return NextResponse.json(
-        { error: "Subscription nije pronađena za ovaj tenant" },
-        { status: 404 },
-      );
-    }
 
     return NextResponse.json({
       success: true,

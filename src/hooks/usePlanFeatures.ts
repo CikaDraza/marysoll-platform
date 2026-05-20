@@ -50,8 +50,8 @@ export function usePlanFeatures() {
     queryFn: () => fetchSubscriptionFeatures(token ?? ""),
     // Samo admini imaju subscription — klijenti salona ne trebaju ovo
     enabled: !!token && isAdmin,
-    staleTime: 1000 * 60 * 5, // 5 minuta cache
-    refetchOnWindowFocus: false,
+    staleTime: 60_000, // 1 minut cache
+    refetchOnWindowFocus: true,
   });
 
   const features = data?.features ?? PLAN_FEATURES.free;
