@@ -9,6 +9,13 @@ import Image from "next/image";
 import { useMarketingCms } from "@/hooks/useMarketingCms";
 import { PricingCards } from "./PricingCards";
 import { DEFAULT_MARKETING_LANDING } from "@/lib/marketing-landing-defaults";
+import {
+  Dialog,
+  DialogPanel,
+  Transition,
+  TransitionChild,
+} from "@headlessui/react";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 
 // ============================================
 // ANIMATION VARIANTS
@@ -366,8 +373,16 @@ function FeatureCard({
 // ============================================
 export function MarketingHomePageSecond() {
   const [scrollY, setScrollY] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { landing } = useMarketingCms();
   const def = DEFAULT_MARKETING_LANDING;
+
+  const navLinks = [
+    { name: "Rešenja", href: "#features" },
+    { name: "Ko je Mary?", href: "#mary" },
+    { name: "Cene", href: "#pricing" },
+    { name: "Kontakt", href: "/kontakt" },
+  ];
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -408,31 +423,109 @@ export function MarketingHomePageSecond() {
             </Link>
           </motion.div>
 
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
-            <Link href="#features" className="hover:text-violet-600 transition">
-              Rešenja
-            </Link>
-            <Link href="#mary" className="hover:text-violet-600 transition">
-              Ko je Mary?
-            </Link>
-            <Link href="#pricing" className="hover:text-violet-600 transition">
-              Cene
-            </Link>
+          <nav className="hidden lg:flex items-center gap-8 text-sm font-medium text-gray-600">
+            {navLinks.map((link) => (
+              <Link
+                key={link.name}
+                href={link.href}
+                className="hover:text-violet-600 transition"
+              >
+                {link.name}
+              </Link>
+            ))}
           </nav>
 
-          <div className="flex items-center gap-4">
-            <AuthStatusButton theme="light" logoutRedirect="/" />
+          <div className="flex items-center gap-3">
+            <div className="hidden lg:block">
+              <AuthStatusButton theme="light" logoutRedirect="/" />
+            </div>
             <motion.a
               href="/register"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="hidden md:block bg-violet-600 text-white px-5 py-2 rounded-full text-sm font-bold transition shadow-lg shadow-violet-200"
+              className="hidden lg:block bg-violet-600 text-white px-5 py-2 rounded-full text-sm font-bold transition shadow-lg shadow-violet-200"
             >
               Počni besplatno
             </motion.a>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-2 rounded-lg bg-white/80 backdrop-blur shadow-lg shadow-violet-200 border border-violet-100"
+              aria-label="Otvori meni"
+            >
+              <Bars3Icon className="size-5 text-gray-700" />
+            </button>
           </div>
         </div>
       </motion.header>
+
+      {/* Mobile drawer */}
+      <Transition
+        show={mobileMenuOpen}
+        as={Dialog}
+        onClose={setMobileMenuOpen}
+        className="lg:hidden"
+      >
+        <TransitionChild
+          as="div"
+          className="fixed inset-0 z-50"
+          enter="ease-in-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in-out duration-300"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="absolute inset-0 bg-black/50 z-10" />
+        </TransitionChild>
+        <TransitionChild
+          as="div"
+          className="fixed inset-y-0 right-0 z-50 w-full max-w-sm"
+          enter="transform transition ease-in-out duration-300"
+          enterFrom="translate-x-full"
+          enterTo="translate-x-0"
+          leave="transform transition ease-in-out duration-300"
+          leaveFrom="translate-x-0"
+          leaveTo="translate-x-full"
+        >
+          <DialogPanel className="h-full bg-white px-6 py-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-8">
+              <span className="font-bold text-lg bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                MarySoll
+              </span>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 cursor-pointer"
+                aria-label="Zatvori meni"
+              >
+                <XMarkIcon className="size-5 text-violet-600 transition" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block py-2 text-gray-700 font-medium hover:text-violet-600"
+                >
+                  {link.name}
+                </Link>
+              ))}
+              <div className="pt-2">
+                <AuthStatusButton theme="light" logoutRedirect="/" />
+              </div>
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-center py-3 bg-violet-600 text-white font-semibold rounded-xl shadow-lg shadow-violet-200"
+              >
+                Počni besplatno
+              </Link>
+            </div>
+          </DialogPanel>
+        </TransitionChild>
+      </Transition>
 
       {/* ============================================
           HERO SECTION
@@ -458,7 +551,7 @@ export function MarketingHomePageSecond() {
           />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center pt-12">
+        <div className="relative max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center pt-12">
           {/* Left: Text */}
           <motion.div
             initial="hidden"
@@ -484,7 +577,7 @@ export function MarketingHomePageSecond() {
             initial="hidden"
             animate="visible"
             variants={staggerContainer}
-            className="text-center lg:text-left"
+            className="text-center col-span-2 lg:col-span-1 lg:text-left"
           >
             <motion.p
               variants={fadeInUp}
@@ -609,7 +702,7 @@ export function MarketingHomePageSecond() {
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="relative"
+            className="relative col-span-2 lg:col-span-1 flex justify-center lg:justify-end"
           >
             <FakeChatStream />
 

@@ -5,6 +5,11 @@ import Link from "next/link";
 import { useMarketingCms } from "@/hooks/useMarketingCms";
 import type { MarketingPricingPlan } from "@/types/marketing-landing";
 
+interface PricingCardsProps {
+  /** When provided, skip the client fetch and render directly (used on SSR'd pages). */
+  plans?: MarketingPricingPlan[];
+}
+
 // ─── Single card ──────────────────────────────────────────────────────────────
 
 function PricingCard({
@@ -22,9 +27,9 @@ function PricingCard({
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: index * 0.15 }}
       whileHover={{ y: -10, transition: { duration: 0.2 } }}
-      className={`relative rounded-3xl p-8 ${
+      className={`relative rounded-3xl p-8 h-full flex flex-col ${
         popular
-          ? "bg-gradient-to-br from-violet-600 to-purple-700 text-white shadow-2xl scale-105"
+          ? "bg-gradient-to-br from-violet-600 to-purple-700 text-white shadow-2xl scale-[1.125] z-10"
           : "bg-white text-gray-800 shadow-lg border border-gray-100"
       }`}
     >
@@ -55,7 +60,7 @@ function PricingCard({
         {plan.description}
       </p>
 
-      <ul className="space-y-3 mb-8">
+      <ul className="space-y-3 mb-8 flex-grow">
         {plan.features.map((feature, i) => (
           <motion.li
             key={i}
@@ -70,7 +75,7 @@ function PricingCard({
         ))}
       </ul>
 
-      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+      <motion.div className="mt-auto" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
         <Link
           href="/register"
           className={`block w-full py-3 rounded-xl font-semibold text-center transition ${
@@ -88,10 +93,12 @@ function PricingCard({
 
 // ─── Cards grid (shared across home + /pricing) ───────────────────────────────
 
-export function PricingCards() {
-  const { landing, isLoading } = useMarketingCms();
+export function PricingCards({ plans }: PricingCardsProps = {}) {
+  const cms = useMarketingCms();
+  const hasPlansProp = plans !== undefined;
+  const effectivePlans = hasPlansProp ? plans : cms.landing.pricing.plans;
 
-  if (isLoading) {
+  if (!hasPlansProp && cms.isLoading) {
     return (
       <div className="grid md:grid-cols-3 gap-8 items-center">
         {[0, 1, 2].map((i) => (
@@ -106,8 +113,8 @@ export function PricingCards() {
 
   return (
     <div className="space-y-8">
-      <div className="grid md:grid-cols-3 gap-8 items-center">
-        {landing.pricing.plans.map((plan, i) => (
+      <div className="grid md:grid-cols-3 gap-8 items-stretch md:gap-x-12">
+        {effectivePlans.map((plan, i) => (
           <PricingCard key={plan.name} plan={plan} index={i} />
         ))}
       </div>

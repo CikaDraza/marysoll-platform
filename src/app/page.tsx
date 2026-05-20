@@ -29,12 +29,28 @@ const DEFAULT_METADATA = {
 async function getPlatformSeo() {
   try {
     await connectToDB();
-    const profile = await ProfilPlatforme.findOne({}).select("seo logoUrl").lean() as
-      | { seo?: { homeTitle?: string; homeDescription?: string }; logoUrl?: string }
+    const profile = (await ProfilPlatforme.findOne({})
+      .select("seo marketingLanding logoUrl")
+      .lean()) as
+      | {
+          seo?: { homeTitle?: string; homeDescription?: string };
+          marketingLanding?: {
+            seo?: { homeTitle?: string; homeDescription?: string };
+          };
+          logoUrl?: string;
+        }
       | null;
+    const cmsSeo = profile?.marketingLanding?.seo;
+    const fallbackSeo = profile?.seo;
     return {
-      title: profile?.seo?.homeTitle || DEFAULT_METADATA.title,
-      description: profile?.seo?.homeDescription || DEFAULT_METADATA.description,
+      title:
+        cmsSeo?.homeTitle ||
+        fallbackSeo?.homeTitle ||
+        DEFAULT_METADATA.title,
+      description:
+        cmsSeo?.homeDescription ||
+        fallbackSeo?.homeDescription ||
+        DEFAULT_METADATA.description,
       ogImage: profile?.logoUrl || `${BASE_URL}/og-image.png`,
     };
   } catch {
