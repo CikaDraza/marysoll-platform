@@ -1,5 +1,3 @@
-import { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { SalonShowcaseLoader } from "./SalonShowcaseLoader";
@@ -9,11 +7,6 @@ import WhatsappIcon from "@/components/assets/icons/WhatsappIcon";
 import TiktokIcon from "@/components/assets/icons/TiktokIcon";
 import FacebookIcon from "@/components/assets/icons/FacebookIcon";
 import TelegramIcon from "@/components/assets/icons/TelegramIcon";
-
-export const metadata: Metadata = {
-  title: "Marysoll — Platforma za beauty salone",
-  description: "Sve što vam treba za uspešan beauty salon na jednom mestu.",
-};
 
 /**
  * Marketing landing page — marysoll.com

@@ -437,7 +437,7 @@ export function MarketingHomePageSecond() {
       {/* ============================================
           HERO SECTION
       ============================================ */}
-      <section className="relative min-h-screen flex items-center pt-20">
+      <section className="relative min-h-screen flex items-center py-20">
         {/* Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
           <motion.div
@@ -458,13 +458,13 @@ export function MarketingHomePageSecond() {
           />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+        <div className="relative max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center pt-12">
           {/* Left: Text */}
           <motion.div
             initial="hidden"
             animate="visible"
             variants={staggerContainer}
-            className="text-center lg:text-left"
+            className="text-center col-span-2 lg:text-left"
           >
             <motion.div
               variants={fadeInUp}
@@ -477,14 +477,27 @@ export function MarketingHomePageSecond() {
               variants={fadeInUp}
               className="text-5xl lg:text-7xl font-bold text-gray-900 leading-tight"
             >
-              Hej, ja sam <span className="text-violet-600">Mary</span>. 👋
+              Sve za zakazivanje, klijente i organizaciju salona
             </motion.h1>
+          </motion.div>
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={staggerContainer}
+            className="text-center lg:text-left"
+          >
+            <motion.p
+              variants={fadeInUp}
+              className="mt-6 text-2xl lg:text-4xl font-bold text-gray-600 leading-relaxed max-w-xl"
+            >
+              Hej, ja sam <span className="text-violet-600">Marysoll</span>. 👋
+            </motion.p>
             <motion.p
               variants={fadeInUp}
               className="mt-6 text-xl text-gray-600 leading-relaxed max-w-xl"
             >
-              <span className="text-violet-600 font-semibold">Tvoja</span>{" "}
-              najbolja zaposlena u salonu.{" "}
+              <span className="text-violet-600 font-semibold">Tvoja</span> pomoć
+              u salonu za poruke, pitanja, zakazivanja i podsetnike.{" "}
               <span className="text-violet-600 font-semibold">
                 Sređujem ti probleme{" "}
               </span>
