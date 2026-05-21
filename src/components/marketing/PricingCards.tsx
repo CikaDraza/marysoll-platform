@@ -24,12 +24,12 @@ function PricingCard({
     <motion.div
       initial={{ opacity: 0, y: 50 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: index * 0.15 }}
+      viewport={{ once: true, amount: 0.1 }}
+      transition={{ duration: 0.35, delay: index * 0.05 }}
       whileHover={{ y: -10, transition: { duration: 0.2 } }}
       className={`relative rounded-3xl p-8 h-full flex flex-col ${
         popular
-          ? "bg-gradient-to-br from-violet-600 to-purple-700 text-white shadow-2xl scale-[1.125] z-10"
+          ? "bg-gradient-to-br from-violet-600 to-purple-700 text-white shadow-2xl scale-[1.05] z-10"
           : "bg-white text-gray-800 shadow-lg border border-gray-100"
       }`}
     >
@@ -43,7 +43,9 @@ function PricingCard({
         </motion.div>
       )}
 
-      <h3 className={`text-xl font-bold mb-2 ${popular ? "text-white" : "text-violet-600"}`}>
+      <h3
+        className={`text-xl font-bold mb-2 ${popular ? "text-white" : "text-violet-600"}`}
+      >
         {plan.name}
       </h3>
 
@@ -56,7 +58,9 @@ function PricingCard({
         )}
       </div>
 
-      <p className={`text-sm mb-6 ${popular ? "text-violet-100" : "text-gray-500"}`}>
+      <p
+        className={`text-sm mb-6 ${popular ? "text-violet-100" : "text-gray-500"}`}
+      >
         {plan.description}
       </p>
 
@@ -66,7 +70,8 @@ function PricingCard({
             key={i}
             initial={{ opacity: 0, x: -10 }}
             whileInView={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 * i }}
+            viewport={{ once: true, amount: 0.1 }}
+            transition={{ duration: 0.25, delay: 0.03 * i }}
             className="flex items-center gap-3 text-sm"
           >
             <span className="text-green-400">✓</span>
@@ -75,7 +80,11 @@ function PricingCard({
         ))}
       </ul>
 
-      <motion.div className="mt-auto" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+      <motion.div
+        className="mt-auto"
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+      >
         <Link
           href="/register"
           className={`block w-full py-3 rounded-xl font-semibold text-center transition ${
@@ -123,7 +132,7 @@ export function PricingCards({ plans }: PricingCardsProps = {}) {
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
-        className="text-center"
+        className="text-center mt-12"
       >
         <p className="text-gray-500 text-sm mb-4">
           Sve cene su sa PDV-om. Bez skrivenih troškova.

@@ -886,7 +886,7 @@ export function MarketingHomePageSecond() {
       {/* ============================================
           PRICING SECTION
       ============================================ */}
-      <section id="pricing" className="py-24 bg-gray-50">
+      <section id="pricing" className="py-24 min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}

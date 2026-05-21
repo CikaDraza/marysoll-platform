@@ -8,7 +8,7 @@ export default function RegisterPage() {
   return (
     <AuthLayout
       heading="Kreirajte vaš salon"
-      subheading="Počnite besplatno — 14 dana trial perioda"
+      subheading="Počnite besplatno — 30 dana trial perioda"
       footerText="Već imate nalog?"
       footerLinkText="Prijavite se"
       footerLinkHref="/login"

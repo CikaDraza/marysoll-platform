@@ -12,6 +12,7 @@ import { DEFAULT_MARKETING_LANDING } from "@/lib/marketing-landing-defaults";
 
 async function fetchMarketingLanding(): Promise<MarketingLandingStructure> {
   const res = await fetch("/api/superadmin/marketing-cms");
+  if (res.status === 401 || res.status === 403) return DEFAULT_MARKETING_LANDING;
   if (!res.ok) throw new Error("Greška pri učitavanju");
   const data = (await res.json()) as { marketingLanding: MarketingLandingStructure };
   if (!data.marketingLanding || Object.keys(data.marketingLanding).length === 0) {
@@ -44,7 +45,8 @@ export function useMarketingCms() {
   const { data: remoteLanding, isLoading } = useQuery({
     queryKey: ["marketing-landing"],
     queryFn: fetchMarketingLanding,
-    staleTime: 30_000,
+    staleTime: Infinity,
+    retry: 0,
   });
 
   const landing = localLanding ?? remoteLanding ?? DEFAULT_MARKETING_LANDING;
