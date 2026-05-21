@@ -551,57 +551,124 @@ export function MarketingHomePageSecond() {
           />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center pt-12">
-          {/* Left: Text */}
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={staggerContainer}
-            className="text-center col-span-2 lg:text-left"
-          >
+        <div className="relative max-w-7xl mx-auto px-6 pt-12">
+          {/* Two-column: Left text + Right chat */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Left column */}
             <motion.div
-              variants={fadeInUp}
-              className="inline-flex items-center gap-2 bg-violet-100 text-violet-700 px-4 py-1.5 rounded-full text-sm font-medium my-6"
+              initial="hidden"
+              animate="visible"
+              variants={staggerContainer}
+              className="text-center lg:text-left"
             >
-              <span className="w-2 h-2 bg-violet-500 rounded-full animate-pulse" />
-              Nova generacija salona
+              <motion.div
+                variants={fadeInUp}
+                className="inline-flex items-center gap-2 bg-violet-100 text-violet-700 px-4 py-1.5 rounded-full text-sm font-medium my-6"
+              >
+                <span className="w-2 h-2 bg-violet-500 rounded-full animate-pulse" />
+                Nova generacija salona
+              </motion.div>
+
+              <motion.h1
+                variants={fadeInUp}
+                className="text-5xl lg:text-7xl font-bold text-gray-900 leading-tight"
+              >
+                Sve za zakazivanje, klijente i organizaciju salona
+              </motion.h1>
+
+              <motion.p
+                variants={fadeInUp}
+                className="mt-6 text-2xl lg:text-4xl font-bold text-gray-600 leading-relaxed"
+              >
+                Hej, ja sam <span className="text-violet-600">Marysoll</span>. 👋
+              </motion.p>
+
+              <motion.p
+                variants={fadeInUp}
+                className="mt-6 text-xl text-gray-600 leading-relaxed max-w-xl"
+              >
+                <span className="text-violet-600 font-semibold">Tvoja</span> pomoć
+                u salonu za poruke, pitanja, zakazivanja i podsetnike.{" "}
+                <span className="text-violet-600 font-semibold">
+                  Sređujem ti probleme{" "}
+                </span>
+                oko poruka, pitanja, zakazivanja.{" "}
+                <span className="font-semibold">
+                  Dobijaćeš više termina. Salon će biti bez haosa.
+                </span>
+              </motion.p>
+
+              <motion.div
+                variants={fadeInUp}
+                className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
+              >
+                <motion.a
+                  href={landing.hero.ctaPrimaryHref || def.hero.ctaPrimaryHref}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="group inline-flex items-center justify-center gap-2 bg-violet-600 text-white px-8 py-4 rounded-xl font-semibold text-md hover:bg-violet-700 transition shadow-xl shadow-violet-200"
+                >
+                  {landing.hero.ctaPrimaryText || def.hero.ctaPrimaryText}
+                  <motion.span
+                    animate={{ x: [0, 5, 0] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  >
+                    →
+                  </motion.span>
+                </motion.a>
+
+                <motion.a
+                  href={landing.hero.ctaSecondaryHref || def.hero.ctaSecondaryHref}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-8 py-4 rounded-xl shadow-xl shadow-violet-200 font-semibold text-md hover:text-violet-600 transition"
+                >
+                  👀 {landing.hero.ctaSecondaryText || def.hero.ctaSecondaryText}
+                </motion.a>
+              </motion.div>
             </motion.div>
-            <motion.h1
-              variants={fadeInUp}
-              className="text-5xl lg:text-7xl font-bold text-gray-900 leading-tight"
+
+            {/* Right column: Chat Demo */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="relative flex justify-center lg:justify-end"
             >
-              Sve za zakazivanje, klijente i organizaciju salona
-            </motion.h1>
-          </motion.div>
+              <FakeChatStream />
+
+              <motion.div
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 3, repeat: Infinity }}
+                className="absolute -top-4 -right-4 bg-white rounded-xl px-4 py-2 shadow-lg border border-violet-100"
+              >
+                <p className="text-xs font-medium text-violet-600">
+                  🎉 Novi klijent!
+                </p>
+              </motion.div>
+
+              <motion.div
+                animate={{ y: [0, 10, 0] }}
+                transition={{ duration: 4, repeat: Infinity, delay: 1 }}
+                className="absolute -bottom-4 -left-4 bg-white rounded-xl px-4 py-2 shadow-lg border border-violet-100"
+              >
+                <p className="text-xs font-medium text-green-600">
+                  ✓ Termin potvrđen
+                </p>
+              </motion.div>
+            </motion.div>
+          </div>
+
+          {/* Below the columns: checklist + paragraph + social proof */}
           <motion.div
             initial="hidden"
             animate="visible"
             variants={staggerContainer}
-            className="text-center col-span-2 lg:col-span-1 lg:text-left"
+            className="mt-16 text-center lg:text-left"
           >
-            <motion.p
-              variants={fadeInUp}
-              className="mt-6 text-2xl lg:text-4xl font-bold text-gray-600 leading-relaxed max-w-xl"
-            >
-              Hej, ja sam <span className="text-violet-600">Marysoll</span>. 👋
-            </motion.p>
-            <motion.p
-              variants={fadeInUp}
-              className="mt-6 text-xl text-gray-600 leading-relaxed max-w-xl"
-            >
-              <span className="text-violet-600 font-semibold">Tvoja</span> pomoć
-              u salonu za poruke, pitanja, zakazivanja i podsetnike.{" "}
-              <span className="text-violet-600 font-semibold">
-                Sređujem ti probleme{" "}
-              </span>
-              oko poruka, pitanja, zakazivanja.{" "}
-              <span className="font-semibold">
-                Dobijaćeš više termina. Salon će biti bez haosa.
-              </span>
-            </motion.p>
             <motion.ul
               variants={fadeInUp}
-              className="flex flex-col items-start gap-4 mt-6 leading-relaxed max-w-xl"
+              className="flex flex-col items-center lg:items-start gap-4 leading-relaxed"
             >
               {(landing.hero.badges.length
                 ? landing.hero.badges
@@ -618,12 +685,12 @@ export function MarketingHomePageSecond() {
 
             <motion.p
               variants={fadeInUp}
-              className="mt-6 text-xl text-gray-600 leading-relaxed max-w-xl"
+              className="mt-6 text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto lg:mx-0"
             >
               Sa Marysoll:{" "}
               <span className="text-violet-600 font-semibold">
                 Počni besplatno{" "}
-              </span>{" "}
+              </span>
               i nadograđuj kada tvoj salon poraste. <br />
               <span className="text-violet-600 font-semibold">
                 Zaboravi na papirne beležnice,
@@ -637,43 +704,10 @@ export function MarketingHomePageSecond() {
                 Mary i njen tim pomažu ti da salon radi lakše, brže i
                 organizovanije.
               </span>
+              <br />
+              <span className="text-gray-500">Marysoll to rešava za tebe.</span>
             </motion.p>
-            <motion.p
-              variants={fadeInUp}
-              className="mt-4 text-gray-500 max-w-lg"
-            >
-              Marysoll to rešava za tebe.
-            </motion.p>
-            <motion.div
-              variants={fadeInUp}
-              className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
-            >
-              <motion.a
-                href={landing.hero.ctaPrimaryHref || def.hero.ctaPrimaryHref}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="group inline-flex items-center justify-center gap-2 bg-violet-600 text-white px-8 py-4 rounded-xl font-semibold text-md hover:bg-violet-700 transition shadow-xl shadow-violet-200"
-              >
-                {landing.hero.ctaPrimaryText || def.hero.ctaPrimaryText}
-                <motion.span
-                  animate={{ x: [0, 5, 0] }}
-                  transition={{ duration: 1, repeat: Infinity }}
-                >
-                  →
-                </motion.span>
-              </motion.a>
 
-              <motion.a
-                href={
-                  landing.hero.ctaSecondaryHref || def.hero.ctaSecondaryHref
-                }
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-8 py-4 rounded-xl shadow-xl shadow-violet-200 font-semibold text-md hover:text-violet-600 transition"
-              >
-                👀 {landing.hero.ctaSecondaryText || def.hero.ctaSecondaryText}
-              </motion.a>
-            </motion.div>
             {/* Social Proof */}
             <motion.div
               variants={fadeInUp}
@@ -692,38 +726,7 @@ export function MarketingHomePageSecond() {
                 ))}
               </div>
               <p className="font-semibold text-gray-800">
-                {landing.hero.socialProofText || def.hero.socialProofText}
-              </p>
-            </motion.div>
-          </motion.div>
-
-          {/* Right: Chat Demo */}
-          <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="relative col-span-2 lg:col-span-1 flex justify-center lg:justify-end"
-          >
-            <FakeChatStream />
-
-            {/* Floating badges */}
-            <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 3, repeat: Infinity }}
-              className="absolute -top-4 -right-4 bg-white rounded-xl px-4 py-2 shadow-lg border border-violet-100"
-            >
-              <p className="text-xs font-medium text-violet-600">
-                🎉 Novi klijent!
-              </p>
-            </motion.div>
-
-            <motion.div
-              animate={{ y: [0, 10, 0] }}
-              transition={{ duration: 4, repeat: Infinity, delay: 1 }}
-              className="absolute -bottom-4 -left-4 bg-white rounded-xl px-4 py-2 shadow-lg border border-violet-100"
-            >
-              <p className="text-xs font-medium text-green-600">
-                ✓ Termin potvrđen
+                500+ salona koristi Mary
               </p>
             </motion.div>
           </motion.div>
