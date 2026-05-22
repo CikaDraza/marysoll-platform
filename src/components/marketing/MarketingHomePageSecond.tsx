@@ -560,7 +560,7 @@ export function MarketingHomePageSecond({
 
         <div className="relative max-w-7xl mx-auto px-6 pt-12">
           {/* Two-column: Left text + Right chat */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center pb-24">
             {/* Left column */}
             <motion.div
               initial="hidden"
@@ -592,7 +592,7 @@ export function MarketingHomePageSecond({
                     key={line}
                     className={
                       index === 0
-                        ? "text-2xl lg:text-4xl font-bold text-gray-600"
+                        ? "text-2xl lg:text-xl font-bold text-gray-600"
                         : index === 1
                           ? "text-violet-600 font-semibold"
                           : "font-semibold"
@@ -666,14 +666,13 @@ export function MarketingHomePageSecond({
               </motion.div>
             </motion.div>
           </div>
-          {/* ============================================
-          ABOUT SECTION
-      ============================================ */}
+
+          {/* ============================================ ABOUT SECTION ============================================ */}
           <motion.div
             initial="hidden"
             animate="visible"
             variants={staggerContainer}
-            className="mt-16 text-center lg:text-left"
+            className="mt-16 text-center lg:text-left py-24"
           >
             <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 leading-tight mb-6">
               {landing.about.headline || def.about.headline}
@@ -899,9 +898,9 @@ export function MarketingHomePageSecond({
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-24"
           >
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-4">
               {landing.pricing.headline || def.pricing.headline}
             </h2>
             <p className="text-gray-500">

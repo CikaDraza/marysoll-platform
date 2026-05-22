@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import type {
   MarketingLandingStructure,
   CmsPage,
@@ -12,6 +13,12 @@ import {
   DEFAULT_MARKETING_LANDING,
   normalizeMarketingLanding,
 } from "@/lib/marketing-landing-defaults";
+
+const CENTER_TOAST_OPTIONS = {
+  position: "top-center" as const,
+  style: { marginTop: "40vh" },
+  duration: 3000,
+};
 
 // ─── Marketing Landing ────────────────────────────────────────────────────────
 
@@ -72,6 +79,15 @@ export function useMarketingCms() {
       qc.invalidateQueries({ queryKey: ["marketing-landing"] });
       setLocalLanding(null);
       setSeoResult(null);
+      toast.success("Marketing CMS je sačuvan.", CENTER_TOAST_OPTIONS);
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Greška pri čuvanju Marketing CMS-a.",
+        CENTER_TOAST_OPTIONS,
+      );
     },
   });
 
