@@ -331,7 +331,9 @@ function AdminDashboard() {
         durationFrom: durations.length > 0 ? Math.min(...durations) : null,
         hasPriceOnRequest:
           service.priceMode === "on_request" ||
-          service.variants?.some((variant) => variant.priceMode === "on_request") ||
+          service.variants?.some(
+            (variant) => variant.priceMode === "on_request",
+          ) ||
           service.services?.some((item) => item.priceMode === "on_request") ||
           false,
       };
@@ -1358,8 +1360,8 @@ function AdminDashboard() {
 
                 {!metadataSeoResult && (
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Sačuvajte SEO metadata pre analize. Agent crawluje
-                    poslednje sačuvane javne stranice: Home, Usluge i Termini.
+                    Sačuvajte SEO metadata pre analize. Agent crawluje poslednje
+                    sačuvane javne stranice: Home, Usluge i Termini.
                   </p>
                 )}
 
@@ -1683,6 +1685,15 @@ function AdminDashboard() {
     </DashboardLayout>
   );
 }
+
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function AdminDashboardPage() {
   return (

@@ -583,13 +583,15 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       return NextResponse.rewrite(new URL("/not-found", request.url));
     }
 
-    const host = hostname.split(":")[0];
+    const host = hostname.split(":")[0].toLowerCase();
     const PLATFORM_SUBDOMAINS = new Set(["admin", "superadmin", "app", "www"]);
     const isTenantSubdomain =
       host.endsWith(`.${BASE_DOMAIN}`) &&
       !PLATFORM_SUBDOMAINS.has(host.slice(0, -(BASE_DOMAIN.length + 1)));
     const isHostBased = isCustomDomain(hostname, BASE_DOMAIN) || isTenantSubdomain;
 
+    // SEO canonicalization: once a tenant has a verified custom domain,
+    // permanently redirect the old subdomain to preserve ranking signals.
     if (
       customDomain &&
       isHostBased &&
@@ -599,7 +601,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       const canonicalUrl = request.nextUrl.clone();
       canonicalUrl.protocol = "https:";
       canonicalUrl.host = customDomain;
-      return NextResponse.redirect(canonicalUrl, 308);
+      return NextResponse.redirect(canonicalUrl, 301);
     }
 
     // In production, path-based tenant routing (marysoll.com/slug/...) is NOT supported.

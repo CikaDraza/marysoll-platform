@@ -3,6 +3,14 @@ import { useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useClientRouting } from "@/hooks/useClientRouting";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 type Step = "form" | "sent";
 
@@ -35,11 +43,16 @@ export default function ClientForgotPasswordPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 px-4">
         <div className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-md text-center">
           <div className="text-6xl mb-4">📬</div>
-          <h1 className="text-xl font-bold text-gray-900 mb-3">Proverite email!</h1>
+          <h1 className="text-xl font-bold text-gray-900 mb-3">
+            Proverite email!
+          </h1>
           <p className="text-gray-500 text-sm mb-6">
             Poslali smo link za reset lozinke na <strong>{email}</strong>.
           </p>
-          <Link href={`${base}/login`} className="text-purple-600 text-sm hover:underline">
+          <Link
+            href={`${base}/login`}
+            className="text-purple-600 text-sm hover:underline"
+          >
             Nazad na prijavu
           </Link>
         </div>
@@ -51,11 +64,18 @@ export default function ClientForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 px-4">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href={`${base}/login`} className="text-sm text-purple-600 font-semibold block mb-3">
+          <Link
+            href={`${base}/login`}
+            className="text-sm text-purple-600 font-semibold block mb-3"
+          >
             ← Nazad na prijavu
           </Link>
-          <h1 className="text-xl font-bold text-gray-900">Zaboravili ste lozinku?</h1>
-          <p className="text-gray-500 text-sm mt-1">Unesite email da dobijete link za reset.</p>
+          <h1 className="text-xl font-bold text-gray-900">
+            Zaboravili ste lozinku?
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">
+            Unesite email da dobijete link za reset.
+          </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input

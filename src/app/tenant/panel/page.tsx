@@ -15,6 +15,14 @@ import {
   PANEL_TABS,
   PanelTab,
 } from "@/layout/ClientPanelLayout";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 const ALL_TAB_IDS = PANEL_TABS.map((t) => t.id);
 

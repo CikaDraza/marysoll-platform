@@ -1,9 +1,12 @@
 import Link from "next/link";
-import { Suspense } from "react";
+import type { Metadata } from "next";
 
-function ReasonBanner() {
-  return null;
-}
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function NewsletterVerifyFailed() {
   return (
@@ -14,7 +17,8 @@ export default function NewsletterVerifyFailed() {
           Verifikacija nije uspela
         </h1>
         <p className="text-gray-500 text-sm mb-6">
-          Link za potvrdu je istekao ili je već iskorišćen. Pokušajte ponovo da se pretplatite.
+          Link za potvrdu je istekao ili je već iskorišćen. Pokušajte ponovo da
+          se pretplatite.
         </p>
         <Link
           href="/"

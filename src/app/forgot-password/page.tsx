@@ -2,6 +2,14 @@ import MiniLoader from "@/components/ai/MiniLoader";
 import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm";
 import { SearchParamsReader } from "@/components/renderingError/SearchParamsReader";
 import { Suspense } from "react";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function ForgotPasswordPage() {
   return (

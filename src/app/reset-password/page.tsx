@@ -1,7 +1,16 @@
 import MiniLoader from "@/components/ai/MiniLoader";
 import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
 import { SearchParamsReader } from "@/components/renderingError/SearchParamsReader";
+import { Metadata } from "next";
 import { Suspense } from "react";
+
+export const metadata: Metadata = {
+  title: "Reset password",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function ResetPasswordPage() {
   return (

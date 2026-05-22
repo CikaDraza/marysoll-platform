@@ -1,4 +1,12 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function NewsletterVerifySuccess() {
   return (
@@ -9,7 +17,8 @@ export default function NewsletterVerifySuccess() {
           Pretplata potvrđena!
         </h1>
         <p className="text-gray-500 text-sm mb-6">
-          Uspešno ste se pretplatili na newsletter. Uskoro ćete početi da primate naše novosti i ponude.
+          Uspešno ste se pretplatili na newsletter. Uskoro ćete početi da
+          primate naše novosti i ponude.
         </p>
         <Link
           href="/"
