@@ -18,6 +18,7 @@ import { MarketingHomePageSecond } from "@/components/marketing/MarketingHomePag
 import type { Metadata } from "next";
 import { connectToDB } from "@/lib/db/mongodb";
 import { ProfilPlatforme } from "@/models/ProfilPlatforme";
+import { getMarketingLanding } from "@/lib/server/getMarketingLanding";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://marysoll.com";
 
@@ -111,12 +112,14 @@ export default async function RootPage() {
     }
 
     case "marketing":
-    default:
+    default: {
+      const marketingLanding = await getMarketingLanding();
       return (
         <>
-          <MarketingHomePageSecond />
+          <MarketingHomePageSecond initialLanding={marketingLanding} />
           <MarketingHomePage />
         </>
       );
+    }
   }
 }

@@ -8,7 +8,10 @@ import type {
   MarketingSeoAnalysisResult,
   PerformanceSeoSnapshot,
 } from "@/types/marketing-landing";
-import { DEFAULT_MARKETING_LANDING } from "@/lib/marketing-landing-defaults";
+import {
+  DEFAULT_MARKETING_LANDING,
+  normalizeMarketingLanding,
+} from "@/lib/marketing-landing-defaults";
 
 // ─── Marketing Landing ────────────────────────────────────────────────────────
 
@@ -20,7 +23,7 @@ async function fetchMarketingLanding(): Promise<MarketingLandingStructure> {
   if (!data.marketingLanding || Object.keys(data.marketingLanding).length === 0) {
     return DEFAULT_MARKETING_LANDING;
   }
-  return data.marketingLanding;
+  return normalizeMarketingLanding(data.marketingLanding);
 }
 
 async function saveMarketingLanding(landing: MarketingLandingStructure): Promise<void> {
@@ -99,7 +102,7 @@ export function useMarketingCms() {
       });
       if (!res.ok) throw new Error("Auto-fix neuspešan");
       const data = await res.json() as { marketingLanding: MarketingLandingStructure };
-      setLocalLanding(data.marketingLanding);
+      setLocalLanding(normalizeMarketingLanding(data.marketingLanding));
     } finally {
       setAutoFixLoading(false);
     }

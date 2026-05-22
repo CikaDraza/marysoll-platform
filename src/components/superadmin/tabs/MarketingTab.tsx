@@ -540,8 +540,9 @@ export function MarketingTab() {
                 </div>
                 <div>
                   <label className={lbl}>Subheadline</label>
-                  <input
+                  <textarea
                     className={inp}
+                    rows={4}
                     value={ls.hero.subheadline}
                     onChange={(e) =>
                       update("hero", {
@@ -594,6 +595,19 @@ export function MarketingTab() {
                     />
                   </div>
                   <div>
+                    <label className={lbl}>CTA primarni link</label>
+                    <input
+                      className={inp}
+                      value={ls.hero.ctaPrimaryHref}
+                      onChange={(e) =>
+                        update("hero", {
+                          ...ls.hero,
+                          ctaPrimaryHref: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
                     <label className={lbl}>CTA sekundarni tekst</label>
                     <input
                       className={inp}
@@ -606,6 +620,80 @@ export function MarketingTab() {
                       }
                     />
                   </div>
+                  <div>
+                    <label className={lbl}>CTA sekundarni link</label>
+                    <input
+                      className={inp}
+                      value={ls.hero.ctaSecondaryHref}
+                      onChange={(e) =>
+                        update("hero", {
+                          ...ls.hero,
+                          ctaSecondaryHref: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* About */}
+          <div className={card}>
+            <SectionHeader
+              title="About sekcija"
+              open={openSection === "about"}
+              onToggle={() => toggle("about")}
+            />
+            {openSection === "about" && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className={lbl}>H2 naslov</label>
+                  <textarea
+                    className={inp}
+                    rows={2}
+                    value={ls.about.headline}
+                    onChange={(e) =>
+                      update("about", {
+                        ...ls.about,
+                        headline: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Lista benefita (jedan po redu)</label>
+                  <textarea
+                    className={`${inp} font-mono text-xs`}
+                    rows={5}
+                    value={ls.about.bullets.join("\n")}
+                    onChange={(e) =>
+                      update("about", {
+                        ...ls.about,
+                        bullets: e.target.value
+                          .split("\n")
+                          .map((line) => line.trim())
+                          .filter(Boolean),
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Paragrafi (jedan po redu)</label>
+                  <textarea
+                    className={`${inp} font-mono text-xs`}
+                    rows={6}
+                    value={ls.about.paragraphs.join("\n")}
+                    onChange={(e) =>
+                      update("about", {
+                        ...ls.about,
+                        paragraphs: e.target.value
+                          .split("\n")
+                          .map((line) => line.trim())
+                          .filter(Boolean),
+                      })
+                    }
+                  />
                 </div>
               </div>
             )}
@@ -793,6 +881,49 @@ export function MarketingTab() {
                     }
                   />
                 </div>
+                <div>
+                  <label className={lbl}>Paragraf ispod naslova</label>
+                  <textarea
+                    className={inp}
+                    rows={2}
+                    value={ls.pricing.paragraph}
+                    onChange={(e) =>
+                      update("pricing", {
+                        ...ls.pricing,
+                        paragraph: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>H3 naslov za planove</label>
+                  <input
+                    className={inp}
+                    value={ls.pricing.plansTitle}
+                    onChange={(e) =>
+                      update("pricing", {
+                        ...ls.pricing,
+                        plansTitle: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>
+                    Objašnjenje Maria, Claudia i Kiki plana
+                  </label>
+                  <textarea
+                    className={inp}
+                    rows={3}
+                    value={ls.pricing.plansDescription}
+                    onChange={(e) =>
+                      update("pricing", {
+                        ...ls.pricing,
+                        plansDescription: e.target.value,
+                      })
+                    }
+                  />
+                </div>
                 {ls.pricing.plans.map((plan, i) => (
                   <div
                     key={i}
@@ -867,17 +998,37 @@ export function MarketingTab() {
                         }}
                       />
                     </div>
-                    <div>
-                      <label className={lbl}>CTA tekst</label>
-                      <input
-                        className={inp}
-                        value={plan.ctaText}
-                        onChange={(e) => {
-                          const plans = [...ls.pricing.plans];
-                          plans[i] = { ...plans[i], ctaText: e.target.value };
-                          update("pricing", { ...ls.pricing, plans });
-                        }}
-                      />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className={lbl}>CTA tekst</label>
+                        <input
+                          className={inp}
+                          value={plan.ctaText}
+                          onChange={(e) => {
+                            const plans = [...ls.pricing.plans];
+                            plans[i] = {
+                              ...plans[i],
+                              ctaText: e.target.value,
+                            };
+                            update("pricing", { ...ls.pricing, plans });
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label className={lbl}>CTA link</label>
+                        <input
+                          className={inp}
+                          value={plan.ctaHref}
+                          onChange={(e) => {
+                            const plans = [...ls.pricing.plans];
+                            plans[i] = {
+                              ...plans[i],
+                              ctaHref: e.target.value,
+                            };
+                            update("pricing", { ...ls.pricing, plans });
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 ))}

@@ -14,9 +14,9 @@ export const DEFAULT_MARKETING_LANDING: MarketingLandingStructure = {
   },
   hero: {
     enabled: true,
-    headline: "Hej, ja sam Mary",
+    headline: "Sve za zakazivanje, klijente i organizaciju salona",
     subheadline:
-      "Tvoja najbolja zaposlena u salonu. Sređujem ti probleme oko poruka, pitanja, zakazivanja. Dobijaćeš više termina. Salon će biti bez haosa.",
+      "Hej, ja sam Marysoll. 👋\nSređujem ti probleme oko poruka, pitanja, zakazivanja.\nDobijaćeš više termina. Salon će biti bez haosa.",
     badges: [
       { text: "Online zakazivanje" },
       { text: "Manje vremena na telefonu i porukama" },
@@ -29,6 +29,23 @@ export const DEFAULT_MARKETING_LANDING: MarketingLandingStructure = {
     ctaPrimaryHref: "/register",
     ctaSecondaryText: "Saznaj više",
     ctaSecondaryHref: "#how-it-works",
+  },
+  about: {
+    enabled: true,
+    headline:
+      "Tvoja pomoć u salonu za poruke, pitanja, zakazivanja i podsetnike.",
+    bullets: [
+      "Online zakazivanje",
+      "Manje vremena na telefonu i porukama",
+      "Podsetnici za klijente",
+      "Više organizacije i manje otkazivanja",
+      "Više novih klijenata kroz booking pretragu",
+    ],
+    paragraphs: [
+      "Sa Marysoll: Počni besplatno i nadograđuj kada tvoj salon poraste.",
+      "Zaboravi na papirne beležnice, izgubljene poruke i haos oko termina.",
+      "MarySoll i njen tim pomažu ti da salon radi lakše, brže i organizovanije. Marysoll to rešava za tebe.",
+    ],
   },
   howItWorks: {
     enabled: true,
@@ -79,26 +96,31 @@ export const DEFAULT_MARKETING_LANDING: MarketingLandingStructure = {
   },
   pricing: {
     enabled: true,
-    headline: "Cene",
+    headline: "Planovi koji rastu zajedno sa salonom",
+    paragraph: "Počni besplatno. Nadograđuj kada rasteš.",
+    plansTitle: "Maria, Claudia i Kiki plan",
+    plansDescription:
+      "Maria je za početak i prve termine, Claudia za aktivan salon kome treba više automatizacije, a Kiki za tim koji želi potpunu organizaciju, podršku i rast.",
     plans: [
       {
-        name: "Upoznaj Mary",
+        name: "Maria",
         price: "0",
         period: "€/mesec",
-        description: "Idealno za početnike",
+        description: "Idealno za početak i prve online rezervacije.",
         features: [
           "Online zakazivanje",
           "Do 50 termina/mesec",
           "Email podrška",
         ],
         ctaText: "Počni besplatno",
+        ctaHref: "/register",
         popular: false,
       },
       {
-        name: "Mary je tu",
+        name: "Claudia",
         price: "19",
         period: "€/mesec",
-        description: "Za aktivne salone",
+        description: "Za aktivne salone koji žele manje poruka i više termina.",
         features: [
           "Neograničeni termini",
           "AI asistent",
@@ -107,13 +129,14 @@ export const DEFAULT_MARKETING_LANDING: MarketingLandingStructure = {
           "Prioritetna podrška",
         ],
         ctaText: "Odaberi plan",
+        ctaHref: "/register?plan=claudia",
         popular: true,
       },
       {
-        name: "Mary + tim",
+        name: "Kiki",
         price: "49",
         period: "€/mesec",
-        description: "Za salone sa timom",
+        description: "Za salone sa timom, domenom i naprednim izveštajima.",
         features: [
           "Sve iz Mary je tu",
           "Do 10 zaposlenih",
@@ -122,6 +145,7 @@ export const DEFAULT_MARKETING_LANDING: MarketingLandingStructure = {
           "Onboarding podrška",
         ],
         ctaText: "Odaberi plan",
+        ctaHref: "/register?plan=kiki",
         popular: false,
       },
     ],
@@ -146,3 +170,65 @@ export const DEFAULT_MARKETING_LANDING: MarketingLandingStructure = {
     ogImage: "",
   },
 };
+
+export function normalizeMarketingLanding(
+  input?: Partial<MarketingLandingStructure> | null,
+): MarketingLandingStructure {
+  if (!input || Object.keys(input).length === 0) return DEFAULT_MARKETING_LANDING;
+
+  return {
+    ...DEFAULT_MARKETING_LANDING,
+    ...input,
+    header: {
+      ...DEFAULT_MARKETING_LANDING.header,
+      ...input.header,
+      navLinks:
+        input.header?.navLinks ?? DEFAULT_MARKETING_LANDING.header.navLinks,
+    },
+    hero: {
+      ...DEFAULT_MARKETING_LANDING.hero,
+      ...input.hero,
+      badges: input.hero?.badges ?? DEFAULT_MARKETING_LANDING.hero.badges,
+    },
+    about: {
+      ...DEFAULT_MARKETING_LANDING.about,
+      ...input.about,
+      bullets: input.about?.bullets ?? DEFAULT_MARKETING_LANDING.about.bullets,
+      paragraphs:
+        input.about?.paragraphs ?? DEFAULT_MARKETING_LANDING.about.paragraphs,
+    },
+    howItWorks: {
+      ...DEFAULT_MARKETING_LANDING.howItWorks,
+      ...input.howItWorks,
+      items:
+        input.howItWorks?.items ?? DEFAULT_MARKETING_LANDING.howItWorks.items,
+    },
+    features: {
+      ...DEFAULT_MARKETING_LANDING.features,
+      ...input.features,
+      cards: input.features?.cards ?? DEFAULT_MARKETING_LANDING.features.cards,
+    },
+    pricing: {
+      ...DEFAULT_MARKETING_LANDING.pricing,
+      ...input.pricing,
+      plans: (input.pricing?.plans ?? DEFAULT_MARKETING_LANDING.pricing.plans).map(
+        (plan, index) => ({
+          ...DEFAULT_MARKETING_LANDING.pricing.plans[
+            index % DEFAULT_MARKETING_LANDING.pricing.plans.length
+          ],
+          ...plan,
+        }),
+      ),
+    },
+    salonShowcase: {
+      ...DEFAULT_MARKETING_LANDING.salonShowcase,
+      ...input.salonShowcase,
+    },
+    footer: {
+      ...DEFAULT_MARKETING_LANDING.footer,
+      ...input.footer,
+      links: input.footer?.links ?? DEFAULT_MARKETING_LANDING.footer.links,
+    },
+    seo: { ...DEFAULT_MARKETING_LANDING.seo, ...input.seo },
+  };
+}

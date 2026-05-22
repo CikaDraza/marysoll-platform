@@ -8,7 +8,10 @@ import {
   CmsBackgroundDecor,
   BackHomeButton,
 } from "@/components/marketing/CmsPageChrome";
-import { DEFAULT_MARKETING_LANDING } from "@/lib/marketing-landing-defaults";
+import {
+  DEFAULT_MARKETING_LANDING,
+  normalizeMarketingLanding,
+} from "@/lib/marketing-landing-defaults";
 import type {
   MarketingLandingStructure,
   MarketingPricingPlan,
@@ -37,10 +40,8 @@ async function getPageAndPlans(
     const page =
       cmsPage && typeof cmsPage === "object" ? (cmsPage as CmsPageDoc) : null;
 
-    const plans =
-      profile?.marketingLanding?.pricing?.plans?.length
-        ? profile.marketingLanding.pricing.plans
-        : DEFAULT_MARKETING_LANDING.pricing.plans;
+    const landing = normalizeMarketingLanding(profile?.marketingLanding);
+    const plans = landing.pricing.plans;
 
     return { page, plans };
   } catch {

@@ -2,8 +2,14 @@ import "server-only";
 import { connectToDB } from "@/lib/db/mongodb";
 import { ProfilPlatforme } from "@/models/ProfilPlatforme";
 import type { MarketingLandingStructure } from "@/types/marketing-landing";
-import { DEFAULT_MARKETING_LANDING } from "@/lib/marketing-landing-defaults";
-export { DEFAULT_MARKETING_LANDING } from "@/lib/marketing-landing-defaults";
+import {
+  DEFAULT_MARKETING_LANDING,
+  normalizeMarketingLanding,
+} from "@/lib/marketing-landing-defaults";
+export {
+  DEFAULT_MARKETING_LANDING,
+  normalizeMarketingLanding,
+} from "@/lib/marketing-landing-defaults";
 
 export async function getMarketingLanding(): Promise<MarketingLandingStructure> {
   try {
@@ -16,7 +22,9 @@ export async function getMarketingLanding(): Promise<MarketingLandingStructure> 
       profile?.marketingLanding &&
       Object.keys(profile.marketingLanding).length > 0
     ) {
-      return profile.marketingLanding as unknown as MarketingLandingStructure;
+      return normalizeMarketingLanding(
+        profile.marketingLanding as unknown as Partial<MarketingLandingStructure>,
+      );
     }
   } catch {
     // fallback to defaults on DB error

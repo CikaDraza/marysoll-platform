@@ -6,9 +6,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { AuthStatusButton } from "../auth/AuthStatusButton";
 import Image from "next/image";
-import { useMarketingCms } from "@/hooks/useMarketingCms";
 import { PricingCards } from "./PricingCards";
-import { DEFAULT_MARKETING_LANDING } from "@/lib/marketing-landing-defaults";
+import {
+  DEFAULT_MARKETING_LANDING,
+  normalizeMarketingLanding,
+} from "@/lib/marketing-landing-defaults";
+import type { MarketingLandingStructure } from "@/types/marketing-landing";
 import {
   Dialog,
   DialogPanel,
@@ -371,18 +374,22 @@ function FeatureCard({
 // ============================================
 // MAIN PAGE COMPONENT
 // ============================================
-export function MarketingHomePageSecond() {
+export function MarketingHomePageSecond({
+  initialLanding,
+}: {
+  initialLanding?: MarketingLandingStructure;
+}) {
   const [scrollY, setScrollY] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { landing } = useMarketingCms();
+  const landing = normalizeMarketingLanding(initialLanding);
   const def = DEFAULT_MARKETING_LANDING;
-
-  const navLinks = [
-    { name: "Rešenja", href: "#features" },
-    { name: "Ko je Mary?", href: "#mary" },
-    { name: "Cene", href: "#pricing" },
-    { name: "Kontakt", href: "/kontakt" },
-  ];
+  const navLinks = landing.header.navLinks.length
+    ? landing.header.navLinks
+    : def.header.navLinks;
+  const heroCopy = (landing.hero.subheadline || def.hero.subheadline)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -426,11 +433,11 @@ export function MarketingHomePageSecond() {
           <nav className="hidden lg:flex items-center gap-8 text-sm font-medium text-gray-600">
             {navLinks.map((link) => (
               <Link
-                key={link.name}
+                key={`${link.text}-${link.href}`}
                 href={link.href}
                 className="hover:text-violet-600 transition"
               >
-                {link.name}
+                {link.text}
               </Link>
             ))}
           </nav>
@@ -440,12 +447,12 @@ export function MarketingHomePageSecond() {
               <AuthStatusButton theme="light" logoutRedirect="/" />
             </div>
             <motion.a
-              href="/register"
+              href={landing.header.ctaHref || def.header.ctaHref}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="hidden lg:block bg-violet-600 text-white px-5 py-2 rounded-full text-sm font-bold transition shadow-lg shadow-violet-200"
             >
-              Počni besplatno
+              {landing.header.ctaText || def.header.ctaText}
             </motion.a>
             <button
               type="button"
@@ -504,23 +511,23 @@ export function MarketingHomePageSecond() {
             <div className="space-y-4">
               {navLinks.map((link) => (
                 <Link
-                  key={link.name}
+                  key={`${link.text}-${link.href}`}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className="block py-2 text-gray-700 font-medium hover:text-violet-600"
                 >
-                  {link.name}
+                  {link.text}
                 </Link>
               ))}
               <div className="pt-2">
                 <AuthStatusButton theme="light" logoutRedirect="/" />
               </div>
               <Link
-                href="/login"
+                href={landing.header.ctaHref || def.header.ctaHref}
                 onClick={() => setMobileMenuOpen(false)}
                 className="block text-center py-3 bg-violet-600 text-white font-semibold rounded-xl shadow-lg shadow-violet-200"
               >
-                Počni besplatno
+                {landing.header.ctaText || def.header.ctaText}
               </Link>
             </div>
           </DialogPanel>
@@ -573,32 +580,27 @@ export function MarketingHomePageSecond() {
                 variants={fadeInUp}
                 className="text-5xl lg:text-7xl font-bold text-gray-900 leading-tight"
               >
-                Sve za zakazivanje, klijente i organizaciju salona
+                {landing.hero.headline || def.hero.headline}
               </motion.h1>
-
-              <motion.p
-                variants={fadeInUp}
-                className="mt-6 text-2xl lg:text-4xl font-bold text-gray-600 leading-relaxed"
-              >
-                Hej, ja sam <span className="text-violet-600">Marysoll</span>.
-                👋
-              </motion.p>
 
               <motion.div
                 variants={fadeInUp}
-                className="mt-6 text-xl text-gray-600 leading-relaxed max-w-xl"
+                className="mt-6 text-xl text-gray-600 leading-relaxed max-w-xl space-y-3"
               >
-                <h2>
-                  <span className="text-violet-600 font-semibold">Tvoja</span>{" "}
-                  pomoć u salonu za poruke, pitanja, zakazivanja i podsetnike.
-                </h2>{" "}
-                <p className="text-violet-600 font-semibold">
-                  Sređujem ti probleme{" "}
-                </p>
-                oko poruka, pitanja, zakazivanja.{" "}
-                <p className="font-semibold">
-                  Dobijaćeš više termina. Salon će biti bez haosa.
-                </p>
+                {heroCopy.map((line, index) => (
+                  <p
+                    key={line}
+                    className={
+                      index === 0
+                        ? "text-2xl lg:text-4xl font-bold text-gray-600"
+                        : index === 1
+                          ? "text-violet-600 font-semibold"
+                          : "font-semibold"
+                    }
+                  >
+                    {line}
+                  </p>
+                ))}
               </motion.div>
 
               <motion.div
@@ -664,54 +666,54 @@ export function MarketingHomePageSecond() {
               </motion.div>
             </motion.div>
           </div>
-
-          {/* Below the columns: checklist + paragraph + social proof */}
+          {/* ============================================
+          ABOUT SECTION
+      ============================================ */}
           <motion.div
             initial="hidden"
             animate="visible"
             variants={staggerContainer}
             className="mt-16 text-center lg:text-left"
           >
+            <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 leading-tight mb-6">
+              {landing.about.headline || def.about.headline}
+            </h2>
             <motion.ul
               variants={fadeInUp}
               className="flex flex-col items-center lg:items-start gap-4 leading-relaxed"
             >
-              {(landing.hero.badges.length
-                ? landing.hero.badges
-                : def.hero.badges
-              ).map((badge) => (
+              {(landing.about.bullets.length
+                ? landing.about.bullets
+                : def.about.bullets
+              ).map((bullet) => (
                 <li
-                  key={badge.text}
+                  key={bullet}
                   className="w-auto items-center rounded-md bg-violet-50 px-2 py-1 text-sm font-medium text-violet-600 inset-ring inset-ring-purple-700/10"
                 >
-                  ✔ {badge.text}
+                  ✔ {bullet}
                 </li>
               ))}
             </motion.ul>
 
             <motion.p
               variants={fadeInUp}
-              className="mt-6 text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto lg:mx-0"
+              className="mt-6 text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto lg:mx-0 space-y-3"
             >
-              Sa Marysoll:{" "}
-              <span className="text-violet-600 font-semibold">
-                Počni besplatno{" "}
-              </span>
-              i nadograđuj kada tvoj salon poraste. <br />
-              <span className="text-violet-600 font-semibold">
-                Zaboravi na papirne beležnice,
-              </span>
-              <br />
-              <span className="text-gray-500">
-                izgubljene poruke i haos oko termina.
-              </span>
-              <br />
-              <span className="text-violet-600 font-semibold">
-                MarySoll i njen tim pomažu ti da salon radi lakše, brže i
-                organizovanije.
-              </span>
-              <br />
-              <span className="text-gray-500">Marysoll to rešava za tebe.</span>
+              {(landing.about.paragraphs.length
+                ? landing.about.paragraphs
+                : def.about.paragraphs
+              ).map((paragraph, index) => (
+                <span
+                  key={paragraph}
+                  className={
+                    index % 2 === 0
+                      ? "block text-violet-600 font-semibold"
+                      : "block text-gray-500"
+                  }
+                >
+                  {paragraph}
+                </span>
+              ))}
             </motion.p>
 
             {/* Social Proof */}
@@ -732,7 +734,7 @@ export function MarketingHomePageSecond() {
                 ))}
               </div>
               <p className="font-semibold text-gray-800">
-                500+ salona koristi MarySoll
+                {landing.hero.socialProofText || def.hero.socialProofText}
               </p>
             </motion.div>
           </motion.div>
@@ -740,7 +742,7 @@ export function MarketingHomePageSecond() {
       </section>
 
       {/* ============================================
-          WHO IS MARY SECTION
+          WHO IS MARYSOLL SECTION
       ============================================ */}
       <section id="mary" className="py-24 bg-gray-50">
         <div className="max-w-4xl mx-auto px-6 text-center">
@@ -750,11 +752,7 @@ export function MarketingHomePageSecond() {
             viewport={{ once: true }}
           >
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Marysoll nije samo softver
-              <br />
-              <span className="text-violet-600">
-                MarySoll = devojka koja te razume
-              </span>
+              {landing.howItWorks.headline || def.howItWorks.headline}
             </h2>
           </motion.div>
 
@@ -868,7 +866,7 @@ export function MarketingHomePageSecond() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Marysoll rešava, ti uživaš
+              {landing.features.headline || def.features.headline}
             </h2>
             <p className="text-gray-500">
               Sve što ti je smetalo — MarySoll pretvara u prednost
@@ -907,11 +905,17 @@ export function MarketingHomePageSecond() {
               {landing.pricing.headline || def.pricing.headline}
             </h2>
             <p className="text-gray-500">
-              Počni besplatno. Nadograđuj kada rasteš.
+              {landing.pricing.paragraph || def.pricing.paragraph}
+            </p>
+            <h3 className="mt-8 text-2xl font-bold text-gray-900">
+              {landing.pricing.plansTitle || def.pricing.plansTitle}
+            </h3>
+            <p className="mt-3 text-gray-500 max-w-3xl mx-auto">
+              {landing.pricing.plansDescription || def.pricing.plansDescription}
             </p>
           </motion.div>
 
-          <PricingCards />
+          <PricingCards plans={landing.pricing.plans} />
         </div>
       </section>
     </div>

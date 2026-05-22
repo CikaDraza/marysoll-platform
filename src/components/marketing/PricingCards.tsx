@@ -43,11 +43,11 @@ function PricingCard({
         </motion.div>
       )}
 
-      <h3
+      <h4
         className={`text-xl font-bold mb-2 ${popular ? "text-white" : "text-violet-600"}`}
       >
         {plan.name}
-      </h3>
+      </h4>
 
       <div className="flex items-baseline gap-1 mb-4">
         <span className="text-4xl font-bold">
@@ -86,7 +86,7 @@ function PricingCard({
         whileTap={{ scale: 0.98 }}
       >
         <Link
-          href="/register"
+          href={plan.ctaHref || "/register"}
           className={`block w-full py-3 rounded-xl font-semibold text-center transition ${
             popular
               ? "bg-white text-violet-600 hover:bg-gray-100"

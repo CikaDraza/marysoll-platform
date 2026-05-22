@@ -2,7 +2,10 @@ import type {
   MarketingLandingStructure,
   PerformanceSeoSnapshot,
 } from "@/types/marketing-landing";
-import { DEFAULT_MARKETING_LANDING } from "@/lib/marketing-landing-defaults";
+import {
+  DEFAULT_MARKETING_LANDING,
+  normalizeMarketingLanding,
+} from "@/lib/marketing-landing-defaults";
 
 export interface LandingRenderSnapshot {
   page: string;
@@ -42,6 +45,7 @@ export interface LandingRenderSnapshot {
     description: string;
     features: string[];
     ctaText: string;
+    ctaHref: string;
   }[];
   finalMetadata: {
     title: string;
@@ -67,11 +71,7 @@ export function buildMarketingLandingSnapshot(
   input: MarketingLandingStructure,
   performance?: PerformanceSeoSnapshot,
 ): LandingRenderSnapshot {
-  const ls = {
-    ...DEFAULT_MARKETING_LANDING,
-    ...input,
-    seo: { ...DEFAULT_MARKETING_LANDING.seo, ...input.seo },
-  };
+  const ls = normalizeMarketingLanding(input);
 
   const sectionsRaw: LandingRenderSnapshot["sections"] = [
     {
@@ -101,6 +101,19 @@ export function buildMarketingLandingSnapshot(
         { text: ls.hero.ctaPrimaryText, href: ls.hero.ctaPrimaryHref },
         { text: ls.hero.ctaSecondaryText, href: ls.hero.ctaSecondaryHref },
       ]),
+    },
+    {
+      id: "about",
+      enabled: ls.about.enabled,
+      heading: { level: "h2", text: text(ls.about.headline) },
+      visibleCopy: [
+        text(ls.about.headline),
+        ...ls.about.bullets.map((bullet) => text(bullet)),
+        ...ls.about.paragraphs.map((paragraph) => text(paragraph)),
+      ],
+      ctas: [],
+      images: [],
+      internalLinks: [],
     },
     {
       id: "how-it-works",
@@ -139,6 +152,9 @@ export function buildMarketingLandingSnapshot(
       heading: { level: "h2", text: text(ls.pricing.headline) },
       visibleCopy: [
         text(ls.pricing.headline),
+        text(ls.pricing.paragraph),
+        text(ls.pricing.plansTitle),
+        text(ls.pricing.plansDescription),
         ...ls.pricing.plans.flatMap((plan) => [
           text(plan.name),
           text(plan.description),
@@ -148,7 +164,7 @@ export function buildMarketingLandingSnapshot(
       ],
       ctas: ls.pricing.plans.map((plan) => ({
         text: text(plan.ctaText),
-        href: "/register",
+        href: text(plan.ctaHref, "/register"),
       })),
       images: [],
       internalLinks: [{ text: text(ls.pricing.headline, "Cene"), href: "#pricing" }],
@@ -194,6 +210,7 @@ export function buildMarketingLandingSnapshot(
       description: text(plan.description),
       features: plan.features.map((feature) => text(feature)).filter(Boolean),
       ctaText: text(plan.ctaText),
+      ctaHref: text(plan.ctaHref, "/register"),
     })),
     finalMetadata: {
       title: text(ls.seo.homeTitle, DEFAULT_MARKETING_LANDING.seo.homeTitle),

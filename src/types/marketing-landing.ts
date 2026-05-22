@@ -26,6 +26,7 @@ export interface MarketingPricingPlan {
   description: string;
   features: string[];
   ctaText: string;
+  ctaHref: string;
   popular: boolean;
 }
 
@@ -48,6 +49,12 @@ export interface MarketingLandingStructure {
     ctaSecondaryText: string;
     ctaSecondaryHref: string;
   };
+  about: {
+    enabled: boolean;
+    headline: string;
+    bullets: string[];
+    paragraphs: string[];
+  };
   howItWorks: {
     enabled: boolean;
     headline: string;
@@ -61,6 +68,9 @@ export interface MarketingLandingStructure {
   pricing: {
     enabled: boolean;
     headline: string;
+    paragraph: string;
+    plansTitle: string;
+    plansDescription: string;
     plans: MarketingPricingPlan[];
   };
   salonShowcase: {
