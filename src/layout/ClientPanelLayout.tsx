@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useClientRouting } from "@/hooks/useClientRouting";
+import { usePublicSalonProfile } from "@/hooks/useSalonProfile";
 import { NotificationBell } from "@/components/shared/NotificationBell";
 import { ThemeToggleButton } from "@/components/common/ThemeToggleButton";
 import Backdrop from "@/layout/Backdrop";
@@ -119,7 +120,10 @@ function ClientSidebar({
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const { user, logout } = useAuth();
   const { base, tenantSlug } = useClientRouting();
+  const { data: tenantSalon } = usePublicSalonProfile(tenantSlug);
   const isVisible = isExpanded || isHovered || isMobileOpen;
+  const effectiveSalonName = salonName || tenantSalon?.name || "Salon";
+  const effectiveSalonLogo = salonLogo ?? tenantSalon?.logo ?? null;
 
   return (
     <aside
@@ -141,23 +145,23 @@ function ClientSidebar({
         className={`flex items-center h-16 px-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0 ${!isVisible ? "justify-center" : ""}`}
       >
         <Link href={`${base}/`} className="flex items-center gap-2.5 min-w-0">
-          {salonLogo ? (
+          {effectiveSalonLogo ? (
             <Image
               width={64}
               height={64}
-              src={salonLogo}
-              alt={salonName || ""}
+              src={effectiveSalonLogo}
+              alt={effectiveSalonName}
               className="w-12 h-12 rounded-xl object-contain flex-shrink-0"
             />
           ) : (
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white text-xs font-black flex-shrink-0 shadow-sm">
-              {salonName?.charAt(0).toUpperCase() ?? "S"}
+              {effectiveSalonName.charAt(0).toUpperCase()}
             </div>
           )}
           {isVisible && (
             <div className="min-w-0">
               <span className="block text-sm font-bold text-gray-900 dark:text-white leading-none truncate">
-                {salonName ?? "Salon"}
+                {effectiveSalonName}
               </span>
               <span className="block text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
                 Klijentski panel
