@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
   }
 
   const tenant = tenantDoc as unknown as ITenant;
-  const tenantId = tenant._id?.toString()!;
+  const tenantId = tenant._id?.toString() ?? "";
 
   const data = await request.json().catch(() => ({}));
   const {

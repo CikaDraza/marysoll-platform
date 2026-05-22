@@ -5,6 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type {
   MarketingLandingStructure,
   CmsPage,
+  MarketingSeoAnalysisResult,
+  PerformanceSeoSnapshot,
 } from "@/types/marketing-landing";
 import { DEFAULT_MARKETING_LANDING } from "@/lib/marketing-landing-defaults";
 
@@ -33,12 +35,9 @@ async function saveMarketingLanding(landing: MarketingLandingStructure): Promise
 export function useMarketingCms() {
   const qc = useQueryClient();
   const [localLanding, setLocalLanding] = useState<MarketingLandingStructure | null>(null);
-  const [seoResult, setSeoResult] = useState<{
-    score: number;
-    issues: string[];
-    suggestions: string[];
-    keywords: string[];
-  } | null>(null);
+  const [seoResult, setSeoResult] = useState<MarketingSeoAnalysisResult | null>(
+    null,
+  );
   const [seoLoading, setSeoLoading] = useState(false);
   const [autoFixLoading, setAutoFixLoading] = useState(false);
 
@@ -73,13 +72,13 @@ export function useMarketingCms() {
     },
   });
 
-  const runSeoAnalysis = useCallback(async () => {
+  const runSeoAnalysis = useCallback(async (performance?: PerformanceSeoSnapshot) => {
     setSeoLoading(true);
     try {
       const res = await fetch("/api/superadmin/marketing-seo/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ marketingLanding: landing }),
+        body: JSON.stringify({ marketingLanding: landing, performance }),
       });
       if (!res.ok) throw new Error("SEO analiza neuspešna");
       const result = await res.json() as typeof seoResult;
@@ -89,14 +88,14 @@ export function useMarketingCms() {
     }
   }, [landing]);
 
-  const runAutoFix = useCallback(async () => {
+  const runAutoFix = useCallback(async (performance?: PerformanceSeoSnapshot) => {
     if (!seoResult) return;
     setAutoFixLoading(true);
     try {
       const res = await fetch("/api/superadmin/marketing-seo/autofix", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ marketingLanding: landing, seoResult }),
+        body: JSON.stringify({ marketingLanding: landing, seoResult, performance }),
       });
       if (!res.ok) throw new Error("Auto-fix neuspešan");
       const data = await res.json() as { marketingLanding: MarketingLandingStructure };

@@ -181,10 +181,20 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
     return response?.appointments || [];
   }, [response?.appointments]);
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  };
+
   // Inicijalizuj lokalne poruke kada se otvori modal
   useEffect(() => {
     if (appointment?.messages) {
-      setLocalMessages(appointment.messages);
+      async function init() {
+        setLocalMessages(appointment!.messages);
+      }
+      init();
     }
   }, [appointment]);
 
@@ -202,26 +212,25 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
     }
   }, [appointment]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "end",
-    });
-  };
-
   const currentAppointment = useMemo(() => {
     if (!appointment || !appointments) return appointment;
-    const updatedAppointment =
+    return (
       appointments.find((a: IAppointment) => a._id === appointment._id) ||
-      appointment;
+      appointment
+    );
+  }, [appointment, appointments]);
 
-    // Ažuriraj lokalne poruke kada se osveži sa servera
-    if (updatedAppointment.messages.length !== localMessages.length) {
-      setLocalMessages(updatedAppointment.messages);
+  useEffect(() => {
+    if (
+      currentAppointment?.messages &&
+      currentAppointment.messages.length !== localMessages.length
+    ) {
+      async function sync() {
+        setLocalMessages(currentAppointment!.messages);
+      }
+      sync();
     }
-
-    return updatedAppointment;
-  }, [appointment, appointments, localMessages]);
+  }, [currentAppointment, localMessages.length]);
 
   const handleSendMessage = async () => {
     if (!message.trim() || !currentAppointment?._id || isSending) return;

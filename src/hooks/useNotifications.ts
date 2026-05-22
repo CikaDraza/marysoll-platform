@@ -152,7 +152,7 @@ export function useBrowserNotifications(salonLogo?: string | null) {
         }
       });
     }
-  }, [notifications, error]);
+  }, [notifications, error, resolvedLogo]);
 
   return { requestPermission, showNotification };
 }

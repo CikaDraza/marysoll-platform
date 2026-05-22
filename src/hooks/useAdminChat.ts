@@ -177,22 +177,9 @@ export function useAdminChat() {
 
   // ── Select contact ──────────────────────────────────────────────────────────
 
-  const selectContact = useCallback(async (contact: ChatContact) => {
-    setSelectedContactState(contact);
-    setMessages([]);
-    await fetchMessages(contact, true);
-    // Mark as read
-    await markRead(contact);
-    // Update local unread to 0
-    setContacts((prev) =>
-      prev.map((c) => (c.id === contact.id ? { ...c, unread: 0 } : c)),
-    );
-    fetchUnread();
-  }, [fetchMessages, fetchUnread]);
-
   // ── Mark read ───────────────────────────────────────────────────────────────
 
-  const markRead = async (contact: ChatContact) => {
+  const markRead = useCallback(async (contact: ChatContact) => {
     if (!token) return;
     const url = contact.isSuperAdmin
       ? "/api/admin/chat/superadmin/read"
@@ -205,7 +192,18 @@ export function useAdminChat() {
     } catch {
       // ignore
     }
-  };
+  }, [token]);
+
+  const selectContact = useCallback(async (contact: ChatContact) => {
+    setSelectedContactState(contact);
+    setMessages([]);
+    await fetchMessages(contact, true);
+    await markRead(contact);
+    setContacts((prev) =>
+      prev.map((c) => (c.id === contact.id ? { ...c, unread: 0 } : c)),
+    );
+    fetchUnread();
+  }, [fetchMessages, fetchUnread, markRead]);
 
   // ── Send message ────────────────────────────────────────────────────────────
 
@@ -328,8 +326,11 @@ export function useAdminChat() {
 
   useEffect(() => {
     if (!token) return;
-    fetchContacts();
-    fetchUnread();
+    async function init() {
+      fetchContacts();
+      fetchUnread();
+    }
+    init();
 
     pollingRef.current = setInterval(() => {
       fetchContacts();

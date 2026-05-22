@@ -20,12 +20,14 @@ export default function ResetPasswordForm() {
 
   // Provjera tokena kad se stranica učita
   useEffect(() => {
-    if (!token || token.length < 10) {
-      setStep("invalid");
-      return;
+    async function init() {
+      if (!token || token.length < 10) {
+        setStep("invalid");
+        return;
+      }
+      setStep("form");
     }
-    // Token postoji — prikaži formu
-    setStep("form");
+    init();
   }, [token]);
 
   function validate(): string | null {

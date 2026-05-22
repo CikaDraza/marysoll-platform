@@ -52,42 +52,43 @@ export default function CampaignEditPage() {
 
   useEffect(() => {
     if (!campaign) return;
-    const c = campaign as unknown as {
-      topic: string;
-      audience?: string;
-      tone: string;
-      content?: {
-        subject?: string;
-        previewText?: string;
-        heroTitle?: string;
-        heroText?: string;
-        ctaText?: string;
-        ctaUrl?: string;
-        offerTitle?: string;
-        offerText?: string;
+    async function init() {
+      const c = campaign as unknown as {
+        topic: string;
+        audience?: string;
+        tone: string;
+        content?: {
+          subject?: string;
+          previewText?: string;
+          heroTitle?: string;
+          heroText?: string;
+          ctaText?: string;
+          ctaUrl?: string;
+          offerTitle?: string;
+          offerText?: string;
+        };
+        template?: { html?: string; imageUrl?: string };
+        recipientContactIds?: string[];
       };
-      template?: { html?: string; imageUrl?: string };
-      recipientContactIds?: string[];
-    };
-    setTopic(c.topic ?? "");
-    setAudience(c.audience ?? "");
-    setTone(c.tone ?? "");
-    setSubject(c.content?.subject ?? "");
-    setPreviewText(c.content?.previewText ?? "");
-    setHeroTitle(c.content?.heroTitle ?? "");
-    setHeroText(c.content?.heroText ?? "");
-    setCtaText(c.content?.ctaText ?? "");
-    setCtaUrl(c.content?.ctaUrl ?? "");
-    setSelectedContactIds(c.recipientContactIds ?? []);
-    // Resolve image: use explicit imageUrl first, fall back to extracting from HTML
-    const imageUrl =
-      c.template?.imageUrl ||
-      extractImageUrlFromHtml(c.template?.html ?? "");
-    if (imageUrl) {
-      imagesHook.reset([imageUrl]);
+      setTopic(c.topic ?? "");
+      setAudience(c.audience ?? "");
+      setTone(c.tone ?? "");
+      setSubject(c.content?.subject ?? "");
+      setPreviewText(c.content?.previewText ?? "");
+      setHeroTitle(c.content?.heroTitle ?? "");
+      setHeroText(c.content?.heroText ?? "");
+      setCtaText(c.content?.ctaText ?? "");
+      setCtaUrl(c.content?.ctaUrl ?? "");
+      setSelectedContactIds(c.recipientContactIds ?? []);
+      const imageUrl =
+        c.template?.imageUrl ||
+        extractImageUrlFromHtml(c.template?.html ?? "");
+      if (imageUrl) {
+        imagesHook.reset([imageUrl]);
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [campaign]);
+    init();
+  }, [campaign, imagesHook]);
 
   if (isLoading) {
     return (

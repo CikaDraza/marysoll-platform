@@ -3,6 +3,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryImage } from "@/types/cloudinary";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { getTenantFolder, uploadToCloudinary } from "@/lib/cloudinary";
+import type { DecodedToken } from "@/types/auth/types";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -10,12 +11,38 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+const SUPERADMIN_IMAGE_FOLDER = "superadmin/images";
+
+class TenantRequiredError extends Error {
+  constructor() {
+    super("Tenant nije identifikovan");
+    this.name = "TenantRequiredError";
+  }
+}
+
+async function resolveCloudinaryListFolder(decoded: DecodedToken) {
+  if (decoded.isSuperAdmin) return SUPERADMIN_IMAGE_FOLDER;
+  if (!decoded.tenantId) {
+    throw new TenantRequiredError();
+  }
+  return getTenantFolder(decoded.tenantId);
+}
+
+async function resolveCloudinaryUploadFolder(decoded: DecodedToken) {
+  if (decoded.isSuperAdmin) return SUPERADMIN_IMAGE_FOLDER;
+  if (!decoded.tenantId) {
+    throw new TenantRequiredError();
+  }
+  const base = await getTenantFolder(decoded.tenantId);
+  return `${base}/landing`;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const authResult: AdminAuthResult = await requireAdmin(req);
     if (!authResult.success) return authResult.response;
 
-    const folder = await getTenantFolder(authResult.decoded.tenantId);
+    const folder = await resolveCloudinaryListFolder(authResult.decoded);
 
     const res = await cloudinary.api.resources({
       type: "upload",
@@ -38,6 +65,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ images });
   } catch (err) {
+    if (err instanceof TenantRequiredError) {
+      return NextResponse.json({ error: err.message }, { status: 403 });
+    }
     console.error(err);
     return NextResponse.json(
       { error: "Failed to fetch images" },
@@ -58,11 +88,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No image file provided" }, { status: 400 });
     }
 
-    const base = await getTenantFolder(authResult.decoded.tenantId);
-    const secure_url = await uploadToCloudinary(file, `${base}/landing`);
+    const folder = await resolveCloudinaryUploadFolder(authResult.decoded);
+    const secure_url = await uploadToCloudinary(file, folder);
 
     return NextResponse.json({ secure_url });
   } catch (err) {
+    if (err instanceof TenantRequiredError) {
+      return NextResponse.json({ error: err.message }, { status: 403 });
+    }
     console.error(err);
     return NextResponse.json(
       { error: "Failed to upload image" },

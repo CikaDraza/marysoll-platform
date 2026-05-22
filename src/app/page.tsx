@@ -35,7 +35,11 @@ async function getPlatformSeo() {
       | {
           seo?: { homeTitle?: string; homeDescription?: string };
           marketingLanding?: {
-            seo?: { homeTitle?: string; homeDescription?: string };
+            seo?: {
+              homeTitle?: string;
+              homeDescription?: string;
+              ogImage?: string;
+            };
           };
           logoUrl?: string;
         }
@@ -51,7 +55,7 @@ async function getPlatformSeo() {
         cmsSeo?.homeDescription ||
         fallbackSeo?.homeDescription ||
         DEFAULT_METADATA.description,
-      ogImage: profile?.logoUrl || `${BASE_URL}/og-image.png`,
+      ogImage: cmsSeo?.ogImage || profile?.logoUrl || `${BASE_URL}/og-image.png`,
     };
   } catch {
     return { ...DEFAULT_METADATA, ogImage: `${BASE_URL}/og-image.png` };

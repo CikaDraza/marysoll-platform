@@ -25,10 +25,13 @@ export default function AdminSalonProfile() {
 
   useEffect(() => {
     if (tenant) {
-      setIdentityForm({
-        slug: tenant.slug ?? "",
-        cloudinaryFolder: tenant.cloudinaryFolder ?? "",
-      });
+      async function init() {
+        setIdentityForm({
+          slug: tenant!.slug ?? "",
+          cloudinaryFolder: tenant!.cloudinaryFolder ?? "",
+        });
+      }
+      init();
     }
   }, [tenant]);
 

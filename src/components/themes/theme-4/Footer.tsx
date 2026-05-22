@@ -18,11 +18,7 @@ interface Theme4FooterProps {
   tenantSlug?: string;
 }
 
-export function Theme4Footer({
-  salonName,
-  tenantSlug,
-  salon,
-}: Theme4FooterProps) {
+export function Theme4Footer({ tenantSlug, salon }: Theme4FooterProps) {
   const base = tenantSlug ? `/${tenantSlug}` : "";
 
   const navItems = [

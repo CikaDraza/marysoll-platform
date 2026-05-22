@@ -4,7 +4,7 @@
  * Fetches all tenants with owner info, trial, plan status.
  * Provides mutations for trial, status, and plan management.
  */
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { PlanFeatures } from "@/lib/plans/planFeatures";
 import toast from "react-hot-toast";
@@ -350,7 +350,11 @@ export function useSuperAdminTenants() {
     // Identity
     updateIdentity: (
       tenantId: string,
-      data: { slug?: string; customDomain?: string | null; cloudinaryFolder?: string },
+      data: {
+        slug?: string;
+        customDomain?: string | null;
+        cloudinaryFolder?: string;
+      },
     ) => identityMutation.mutate({ tenantId, ...data }),
     isUpdatingIdentity: identityMutation.isPending,
 

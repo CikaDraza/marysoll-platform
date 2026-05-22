@@ -2,62 +2,64 @@
 // Analyzes the marketing landing page for SEO quality.
 import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
-import { callDeepSeek } from "@/lib/ai/agents";
-import type { MarketingLandingStructure } from "@/types/marketing-landing";
+import { connectToDB } from "@/lib/db/mongodb";
+import { analyzeMarketingLandingSeo } from "@/lib/ai/agents/marketingLandingSeoAgents";
+import { buildMarketingLandingSnapshot } from "@/lib/seo/marketingLandingSnapshot";
+import { crawlRenderedMarketingPage } from "@/lib/seo/crawlRenderedMarketingPage";
+import { SeoAnalysisRun } from "@/models/SeoAnalysisRun";
+import type { LandingRenderSnapshot } from "@/lib/seo/marketingLandingSnapshot";
+import type {
+  MarketingLandingStructure,
+  PerformanceSeoSnapshot,
+} from "@/types/marketing-landing";
 
 export async function POST(req: NextRequest) {
   const auth = requireSuperAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const body = await req.json() as { marketingLanding: MarketingLandingStructure };
-    const { marketingLanding: ls } = body;
+    const body = (await req.json()) as {
+      marketingLanding: MarketingLandingStructure;
+      performance?: PerformanceSeoSnapshot;
+      crawlUrl?: string;
+    };
+    const crawlUrl =
+      body.crawlUrl ||
+      process.env.MARKETING_SEO_CRAWL_URL ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      "https://marysoll.com";
 
-    const contentSummary = JSON.stringify({
-      hero: ls?.hero,
-      howItWorks: ls?.howItWorks,
-      features: ls?.features,
-      pricing: ls?.pricing,
-      footer: ls?.footer,
-      seo: ls?.seo,
-    }, null, 2);
+    let crawlError: string | undefined;
+    let snapshot: LandingRenderSnapshot;
+    try {
+      snapshot = await crawlRenderedMarketingPage(crawlUrl, body.performance);
+    } catch (err) {
+      crawlError = err instanceof Error ? err.message : "Rendered crawl failed";
+      snapshot = buildMarketingLandingSnapshot(
+        body.marketingLanding,
+        body.performance,
+      );
+    }
 
-    const messages = [
-      {
-        role: "system" as const,
-        content: `You are an expert SEO strategist for SaaS marketing websites.
-Analyze the landing page content and return a JSON object with:
-- score: number 0-100
-- issues: string[] (specific problems found)
-- suggestions: string[] (actionable improvements)
-- keywords: string[] (recommended keywords to add)
-
-Return ONLY valid JSON. No markdown, no explanation.`,
-      },
-      {
-        role: "user" as const,
-        content: `Analyze this SaaS marketing landing page content for SEO:\n\n${contentSummary}`,
-      },
-    ];
-
-    const response = await callDeepSeek({
-      agent: "seoLandingTheme",
-      messages,
-      jsonMode: true,
-    });
-
-    if (!response.ok) throw new Error(`DeepSeek error: ${response.status}`);
-    const data = await response.json() as { choices: { message: { content: string } }[] };
-    const content = data.choices?.[0]?.message?.content ?? "{}";
-    const cleaned = content.replace(/```json|```/g, "").trim();
-    const result = JSON.parse(cleaned) as {
-      score: number;
-      issues: string[];
-      suggestions: string[];
-      keywords: string[];
+    const result = {
+      ...(await analyzeMarketingLandingSeo(snapshot)),
+      snapshotSource: snapshot.source ?? "cms",
+      crawlUrl,
+      crawlError,
     };
 
-    return NextResponse.json(result);
+    await connectToDB();
+    const run = await SeoAnalysisRun.create({
+      scope: "superadmin",
+      page: "marketing-home",
+      snapshot,
+      crawlUrl,
+      crawlError: crawlError ?? null,
+      performance: body.performance ?? null,
+      result,
+    });
+
+    return NextResponse.json({ ...result, runId: String(run._id) });
   } catch (err) {
     console.error("[POST /api/superadmin/marketing-seo/analyze]", err);
     return NextResponse.json({ error: "Greška pri SEO analizi" }, { status: 500 });

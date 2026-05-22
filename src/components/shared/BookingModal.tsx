@@ -80,14 +80,17 @@ export function BookingModal({
   const [guestLoading, setGuestLoading] = useState(false);
 
   useEffect(() => {
-    setSelectedDate(defaultDate);
-    setSelectedTime(defaultTime);
-    if (pendingDefaults) {
-      setSelectedServiceId(pendingDefaults.serviceId || services[0]?._id || "");
-      setSelectedVariant(pendingDefaults.variantName || "");
-      setSelectedExtras(pendingDefaults.extras || []);
-      setNote(pendingDefaults.note || "");
+    async function init() {
+      setSelectedDate(defaultDate);
+      setSelectedTime(defaultTime);
+      if (pendingDefaults) {
+        setSelectedServiceId(pendingDefaults.serviceId || services[0]?._id || "");
+        setSelectedVariant(pendingDefaults.variantName || "");
+        setSelectedExtras(pendingDefaults.extras || []);
+        setNote(pendingDefaults.note || "");
+      }
     }
+    init();
   }, [defaultDate, defaultTime, pendingDefaults, services]);
 
   const selectedService = services.find((s) => s._id === selectedServiceId);

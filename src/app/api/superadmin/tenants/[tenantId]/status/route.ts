@@ -22,22 +22,30 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   try {
     await connectToDB();
 
-    const { status, reason } = await req.json() as {
+    const { status, reason } = (await req.json()) as {
       status: TenantStatus;
       reason?: string;
     };
 
-    const validStatuses: TenantStatus[] = ["active", "suspended", "pending", "cancelled"];
+    const validStatuses: TenantStatus[] = [
+      "active",
+      "suspended",
+      "pending",
+      "cancelled",
+    ];
     if (!validStatuses.includes(status)) {
       return NextResponse.json(
         { error: `Neispravan status: ${status}` },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const tenant = await Tenant.findById(tenantId);
     if (!tenant) {
-      return NextResponse.json({ error: "Tenant nije pronađen" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Tenant nije pronađen" },
+        { status: 404 },
+      );
     }
 
     tenant.status = status;
@@ -56,6 +64,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       success: true,
       message: `Status salona promenjen na: ${status}.`,
       status: tenant.status,
+      reason: reason || null,
     });
   } catch (err) {
     console.error("PATCH /api/superadmin/tenants/[tenantId]/status:", err);

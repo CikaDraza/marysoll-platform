@@ -55,7 +55,7 @@ const typingIndicator = {
 // ============================================
 const chatScript = [
   {
-    text: "Hej! 👋 Ja sam Mary. Kako se zove tvoj salon?",
+    text: "Hej! 👋 Ja sam MarySoll. Kako se zove tvoj salon?",
     sender: "mary" as const,
   },
   { text: "Studio Anja 💅", sender: "user" as const },
@@ -221,7 +221,7 @@ const conversation = [
   { id: 5, text: "Mary? Šta je to? 🤔", sender: "left", name: "Maja" },
   {
     id: 6,
-    text: "MarySoll.com — samo joj kažeš šta ti treba i ona organizuje sve",
+    text: "marysoll.com — samo joj kažeš šta ti treba i ona organizuje sve",
     sender: "right",
     name: "Anja",
   },
@@ -580,23 +580,24 @@ export function MarketingHomePageSecond() {
                 variants={fadeInUp}
                 className="mt-6 text-2xl lg:text-4xl font-bold text-gray-600 leading-relaxed"
               >
-                Hej, ja sam <span className="text-violet-600">Marysoll</span>. 👋
+                Hej, ja sam <span className="text-violet-600">Marysoll</span>.
+                👋
               </motion.p>
 
-              <motion.p
+              <motion.div
                 variants={fadeInUp}
                 className="mt-6 text-xl text-gray-600 leading-relaxed max-w-xl"
               >
-                <span className="text-violet-600 font-semibold">Tvoja</span> pomoć
-                u salonu za poruke, pitanja, zakazivanja i podsetnike.{" "}
-                <span className="text-violet-600 font-semibold">
+                <h2 className="text-violet-600 font-semibold">Tvoja</h2> pomoć u
+                salonu za poruke, pitanja, zakazivanja i podsetnike.{" "}
+                <p className="text-violet-600 font-semibold">
                   Sređujem ti probleme{" "}
-                </span>
+                </p>
                 oko poruka, pitanja, zakazivanja.{" "}
-                <span className="font-semibold">
+                <p className="font-semibold">
                   Dobijaćeš više termina. Salon će biti bez haosa.
-                </span>
-              </motion.p>
+                </p>
+              </motion.div>
 
               <motion.div
                 variants={fadeInUp}
@@ -618,12 +619,15 @@ export function MarketingHomePageSecond() {
                 </motion.a>
 
                 <motion.a
-                  href={landing.hero.ctaSecondaryHref || def.hero.ctaSecondaryHref}
+                  href={
+                    landing.hero.ctaSecondaryHref || def.hero.ctaSecondaryHref
+                  }
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-8 py-4 rounded-xl shadow-xl shadow-violet-200 font-semibold text-md hover:text-violet-600 transition"
                 >
-                  👀 {landing.hero.ctaSecondaryText || def.hero.ctaSecondaryText}
+                  👀{" "}
+                  {landing.hero.ctaSecondaryText || def.hero.ctaSecondaryText}
                 </motion.a>
               </motion.div>
             </motion.div>
@@ -701,7 +705,7 @@ export function MarketingHomePageSecond() {
               </span>
               <br />
               <span className="text-violet-600 font-semibold">
-                Mary i njen tim pomažu ti da salon radi lakše, brže i
+                MarySoll i njen tim pomažu ti da salon radi lakše, brže i
                 organizovanije.
               </span>
               <br />
@@ -726,7 +730,7 @@ export function MarketingHomePageSecond() {
                 ))}
               </div>
               <p className="font-semibold text-gray-800">
-                500+ salona koristi Mary
+                500+ salona koristi MarySoll
               </p>
             </motion.div>
           </motion.div>
@@ -747,7 +751,7 @@ export function MarketingHomePageSecond() {
               Marysoll nije samo softver
               <br />
               <span className="text-violet-600">
-                Mary = devojka koja te razume
+                MarySoll = devojka koja te razume
               </span>
             </h2>
           </motion.div>
@@ -812,7 +816,7 @@ export function MarketingHomePageSecond() {
               viewport={{ once: true }}
               className="text-4xl font-bold text-white mb-6"
             >
-              &quot;Zakazala sam preko Marysoll&quot; 💅
+              &quot;Zakazala sam preko MarySoll&quot; 💅
             </motion.h2>
 
             <motion.p
@@ -822,8 +826,8 @@ export function MarketingHomePageSecond() {
               transition={{ delay: 0.1 }}
               className="text-violet-200 text-lg mb-8"
             >
-              Kada devojke preporučuju Mary, to nije reklama — to je
-              prijateljski savet. Mary postaje deo razgovora u kafićima, na
+              Kada devojke preporučuju MarySoll, to nije reklama — to je
+              prijateljski savet. MarySoll postaje deo razgovora u kafićima, na
               kafi, u salonima.
             </motion.p>
 
@@ -835,13 +839,13 @@ export function MarketingHomePageSecond() {
               className="flex flex-wrap gap-4"
             >
               <div className="bg-white/10 backdrop-blur rounded-xl px-4 py-2 text-white text-sm">
-                💬 &quot;Pitaj Mary&quot;
+                💬 &quot;Pitaj MarySoll&quot;
               </div>
               <div className="bg-white/10 backdrop-blur rounded-xl px-4 py-2 text-white text-sm">
-                📱 &quot;Zakazi preko Mary&quot;
+                📱 &quot;Zakazi preko MarySoll&quot;
               </div>
               <div className="bg-white/10 backdrop-blur rounded-xl px-4 py-2 text-white text-sm">
-                💜 &quot;Mary zna kako&quot;
+                💜 &quot;MarySoll zna kako&quot;
               </div>
             </motion.div>
           </div>
@@ -865,7 +869,7 @@ export function MarketingHomePageSecond() {
               Marysoll rešava, ti uživaš
             </h2>
             <p className="text-gray-500">
-              Sve što ti je smetalo — Mary pretvara u prednost
+              Sve što ti je smetalo — MarySoll pretvara u prednost
             </p>
           </motion.div>
 

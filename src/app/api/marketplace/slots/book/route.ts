@@ -7,21 +7,24 @@ import { Slot } from "@/models/Slot";
 import { verifySignature } from "@/lib/middleware/verifySignature";
 import { checkRateLimit } from "@/lib/middleware/rateLimiter";
 
-async function parseBody(
-  req: NextRequest,
-): Promise<{ salonId?: string; startTime?: string }> {
-  try {
-    return await req.clone().json();
-  } catch {
-    return {};
-  }
-}
+// async function parseBody(
+//   req: NextRequest,
+// ): Promise<{ salonId?: string; startTime?: string }> {
+//   try {
+//     return await req.clone().json();
+//   } catch {
+//     return {};
+//   }
+// }
 
 function authCheck(req: NextRequest, bodyText: string) {
   const verify = verifySignature(req, bodyText);
   const apiKey = req.headers.get("x-api-key") ?? "dev";
   if (!verify.ok)
-    return NextResponse.json({ error: verify.error }, { status: verify.status });
+    return NextResponse.json(
+      { error: verify.error },
+      { status: verify.status },
+    );
   if (!checkRateLimit(apiKey))
     return NextResponse.json({ error: "Previše zahteva" }, { status: 429 });
   return null;
@@ -50,7 +53,10 @@ export async function POST(req: NextRequest) {
 
   const start = new Date(startTime);
   if (isNaN(start.getTime())) {
-    return NextResponse.json({ error: "Neispravan startTime" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Neispravan startTime" },
+      { status: 400 },
+    );
   }
 
   const now = new Date();
@@ -97,7 +103,10 @@ export async function DELETE(req: NextRequest) {
 
   const start = new Date(startTime);
   if (isNaN(start.getTime())) {
-    return NextResponse.json({ error: "Neispravan startTime" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Neispravan startTime" },
+      { status: 400 },
+    );
   }
 
   await connectToDB();

@@ -6,7 +6,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { AuthUser } from "@/models/AuthUser";
-import { TenantUser } from "@/models/TenantUser";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
 
 export async function GET(req: NextRequest) {
@@ -18,7 +17,7 @@ export async function GET(req: NextRequest) {
 
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const sevenDaysAgo  = new Date(now.getTime() -  7 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     const [
       totalTenants,
@@ -39,9 +38,7 @@ export async function GET(req: NextRequest) {
       Tenant.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
       Tenant.countDocuments({ createdAt: { $gte: sevenDaysAgo } }),
       AuthUser.countDocuments({ platformRole: { $ne: "SUPER_ADMIN" } }),
-      Tenant.aggregate([
-        { $group: { _id: "$plan", count: { $sum: 1 } } },
-      ]),
+      Tenant.aggregate([{ $group: { _id: "$plan", count: { $sum: 1 } } }]),
     ]);
 
     const planBreakdown: Record<string, number> = {};
@@ -63,9 +60,7 @@ export async function GET(req: NextRequest) {
         totalUsers,
         planBreakdown,
         trialConversionRate:
-          totalTenants > 0
-            ? Math.round((paidTenants / totalTenants) * 100)
-            : 0,
+          totalTenants > 0 ? Math.round((paidTenants / totalTenants) * 100) : 0,
       },
     });
   } catch (err) {

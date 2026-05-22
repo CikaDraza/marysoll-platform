@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 interface BlogPost {
   title: string;
@@ -39,7 +40,7 @@ export function Theme6BlogPreview({
           <h2 className="text-4xl lg:text-5xl font-light text-[var(--foreground)]">
             {headline}
           </h2>
-          <a
+          <Link
             href="/blog"
             className="hidden md:inline-flex items-center gap-2 text-sm tracking-wide text-[var(--foreground)] hover:text-[var(--primary)] transition-colors"
           >
@@ -57,7 +58,7 @@ export function Theme6BlogPreview({
                 d="M9 5l7 7-7 7"
               />
             </svg>
-          </a>
+          </Link>
         </div>
 
         <div className="grid md:grid-cols-2 gap-10 lg:gap-12">

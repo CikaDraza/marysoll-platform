@@ -143,5 +143,6 @@ export const DEFAULT_MARKETING_LANDING: MarketingLandingStructure = {
     homeTitle: "Mary — Beauty Business Growth System",
     homeDescription:
       "Online zakazivanje, AI asistent i newsletter za tvoj beauty salon. Počni besplatno.",
+    ogImage: "",
   },
 };

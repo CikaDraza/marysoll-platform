@@ -41,8 +41,6 @@ export function useSuperAdminCategories() {
     },
   });
 
-  const categories = categoriesQuery.data ?? [];
-
   const saveCategory = useMutation({
     mutationFn: async () => {
       const payload = categoryFormToPayload(form);
@@ -58,7 +56,9 @@ export function useSuperAdminCategories() {
       return data;
     },
     onSuccess: () => {
-      toast.success(editCategory ? "Kategorija ažurirana" : "Kategorija kreirana");
+      toast.success(
+        editCategory ? "Kategorija ažurirana" : "Kategorija kreirana",
+      );
       queryClient.invalidateQueries({ queryKey });
       closeForm();
     },
@@ -118,7 +118,7 @@ export function useSuperAdminCategories() {
 
   const state = useMemo(
     () => ({
-      categories,
+      categories: categoriesQuery.data ?? [],
       isLoading: categoriesQuery.isLoading,
       showForm,
       editCategory,
@@ -128,7 +128,7 @@ export function useSuperAdminCategories() {
       isSaving: saveCategory.isPending,
     }),
     [
-      categories,
+      categoriesQuery.data,
       categoriesQuery.isLoading,
       showForm,
       editCategory,

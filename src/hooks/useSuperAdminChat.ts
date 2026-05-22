@@ -71,7 +71,9 @@ export function useSuperAdminChat(tenantId: string | null) {
   const [inputText, setInputText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [pendingAttachments, setPendingAttachments] = useState<SAAttachment[]>([]);
+  const [pendingAttachments, setPendingAttachments] = useState<SAAttachment[]>(
+    [],
+  );
 
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   // Tracks whether the initial load has completed — poll fetches skip the loading spinner
@@ -176,7 +178,15 @@ export function useSuperAdminChat(tenantId: string | null) {
     } finally {
       setIsSending(false);
     }
-  }, [token, tenantId, inputText, pendingAttachments, isSending, myId, fetchMessages]);
+  }, [
+    token,
+    tenantId,
+    inputText,
+    pendingAttachments,
+    isSending,
+    myId,
+    fetchMessages,
+  ]);
 
   // ── Upload file ─────────────────────────────────────────────────────────────
 
@@ -211,13 +221,10 @@ export function useSuperAdminChat(tenantId: string | null) {
     async (messageId: string) => {
       if (!token || !tenantId) return;
       try {
-        await fetch(
-          `/api/superadmin/chat/${tenantId}/message/${messageId}`,
-          {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
+        await fetch(`/api/superadmin/chat/${tenantId}/message/${messageId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setMessages((prev) =>
           prev.map((m) =>
             m._id === messageId
@@ -242,18 +249,24 @@ export function useSuperAdminChat(tenantId: string | null) {
 
   useEffect(() => {
     if (!token || !tenantId) {
-      setMessages([]);
+      async function reset() {
+        setMessages([]);
+      }
+      reset();
       initialLoadDone.current = false;
       return;
     }
 
+    const currentTenantId = tenantId;
     initialLoadDone.current = false;
-    // Initial load shows the spinner; poll fetches are silent
-    void fetchMessages(tenantId, true);
-    void markRead(tenantId);
+    async function init() {
+      await fetchMessages(currentTenantId, true);
+      await markRead(currentTenantId);
+    }
+    void init();
 
     pollingRef.current = setInterval(() => {
-      void fetchMessages(tenantId, false);
+      void fetchMessages(currentTenantId, false);
     }, 10000);
 
     return () => {

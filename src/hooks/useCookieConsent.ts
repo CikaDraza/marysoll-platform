@@ -17,29 +17,31 @@ export function useCookieConsent() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        setConsent(JSON.parse(raw));
-      } else {
-        // default: only necessary true
+    async function init() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          setConsent(JSON.parse(raw));
+        } else {
+          setConsent({
+            necessary: true,
+            functional: false,
+            analytics: false,
+            decided: false,
+          });
+        }
+      } catch {
         setConsent({
           necessary: true,
           functional: false,
           analytics: false,
           decided: false,
         });
+      } finally {
+        setReady(true);
       }
-    } catch {
-      setConsent({
-        necessary: true,
-        functional: false,
-        analytics: false,
-        decided: false,
-      });
-    } finally {
-      setReady(true);
     }
+    init();
   }, []);
 
   const save = useCallback((next: CookieCategories) => {

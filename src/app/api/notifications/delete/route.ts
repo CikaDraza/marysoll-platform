@@ -23,7 +23,7 @@ export async function DELETE(req: Request) {
 
     // REŠENJE: Inicijalizujemo prazan filter.
     // Pošto smo gore već proverili da je user.isAdmin, ne moramo dodavati userId u query.
-    let query: FilterQuery<INotification> = {};
+    const query: FilterQuery<INotification> = {};
 
     // Ako želiš da Admin može da obriše samo SVOJE, ovde bi dodao query.userId = user.id
     // Ali pošto želiš "Globalno" brisanje iz admin panela, ostavljamo prazno da obuhvati sve korisnike.

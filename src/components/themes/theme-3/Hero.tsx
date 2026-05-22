@@ -14,13 +14,6 @@ interface Props {
   };
 }
 
-const IMAGESINGLE = [
-  {
-    src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1775990094/salons/salon-kiki-kiss/zkp7hdikzj00mibx9rgw.png",
-    alt: "Gallery image 1",
-  },
-];
-
 const IMAGEGRID = [
   {
     src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1775990094/salons/salon-kiki-kiss/zkp7hdikzj00mibx9rgw.png",

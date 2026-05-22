@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ChevronDownIcon } from "@heroicons/react/16/solid";
 
 export interface ContactFormProps {
@@ -273,9 +274,9 @@ export function ContactForm({
             </div>
             <label htmlFor="agreed" className="text-sm/6 text-gray-600">
               Slanjem poruke prihvatate našu{" "}
-              <a href="/privacy" className="font-semibold whitespace-nowrap" style={{ color: primaryColor }}>
+              <Link href="/privacy" className="font-semibold whitespace-nowrap" style={{ color: primaryColor }}>
                 politiku privatnosti
-              </a>
+              </Link>
               .
             </label>
           </div>

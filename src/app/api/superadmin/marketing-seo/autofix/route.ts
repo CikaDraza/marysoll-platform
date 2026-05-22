@@ -2,8 +2,13 @@
 // AI rewrites marketing landing content to fix SEO issues.
 import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
-import { callDeepSeek, AGENTS } from "@/lib/ai/agents";
-import type { MarketingLandingStructure } from "@/types/marketing-landing";
+import { autoFixMarketingLandingSeo } from "@/lib/ai/agents/marketingLandingSeoAgents";
+import { buildMarketingLandingSnapshot } from "@/lib/seo/marketingLandingSnapshot";
+import type {
+  MarketingLandingStructure,
+  MarketingSeoAnalysisResult,
+  PerformanceSeoSnapshot,
+} from "@/types/marketing-landing";
 
 interface AutofixInput {
   marketingLanding: MarketingLandingStructure;
@@ -13,6 +18,7 @@ interface AutofixInput {
     suggestions: string[];
     keywords: string[];
   };
+  performance?: PerformanceSeoSnapshot;
 }
 
 export async function POST(req: NextRequest) {
@@ -22,36 +28,12 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json() as AutofixInput;
     const { marketingLanding: ls, seoResult } = body;
-
-    const messages = [
-      {
-        role: "system" as const,
-        content: `You are a SaaS marketing copywriter. Rewrite landing page text to fix SEO issues.
-Rules:
-- Return ONLY the updated JSON object with the same structure as input
-- Only modify text fields (headline, subheadline, description, features, etc.)
-- Keep href, enabled, popular, price, period, icon fields unchanged
-- Write in Serbian language (Latin script)
-- Target SEO score 75-90
-- No markdown, no explanation — pure JSON only`,
-      },
-      {
-        role: "user" as const,
-        content: `Current landing structure:\n${JSON.stringify(ls, null, 2)}\n\nSEO issues to fix:\n${seoResult.issues.join("\n")}\n\nSuggestions:\n${seoResult.suggestions.join("\n")}\n\nKeywords to include:\n${seoResult.keywords.join(", ")}`,
-      },
-    ];
-
-    const response = await callDeepSeek({
-      agent: "landingContent",
-      messages,
-      jsonMode: true,
+    const snapshot = buildMarketingLandingSnapshot(ls, body.performance);
+    const updated = await autoFixMarketingLandingSeo({
+      marketingLanding: ls,
+      snapshot,
+      seoResult: seoResult as MarketingSeoAnalysisResult,
     });
-
-    if (!response.ok) throw new Error(`DeepSeek error: ${response.status}`);
-    const data = await response.json() as { choices: { message: { content: string } }[] };
-    const content = data.choices?.[0]?.message?.content ?? "{}";
-    const cleaned = content.replace(/```json|```/g, "").trim();
-    const updated = JSON.parse(cleaned) as MarketingLandingStructure;
 
     return NextResponse.json({ marketingLanding: updated });
   } catch (err) {

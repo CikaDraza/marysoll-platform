@@ -74,7 +74,49 @@ export interface MarketingLandingStructure {
   seo: {
     homeTitle: string;
     homeDescription: string;
+    ogImage?: string;
   };
+}
+
+export interface PerformanceSeoSnapshot {
+  realExperienceScore?: number | null;
+  firstContentfulPaint?: number | null;
+  largestContentfulPaint?: number | null;
+  interactionToNextPaint?: number | null;
+  cumulativeLayoutShift?: number | null;
+  firstInputDelay?: number | null;
+  timeToFirstByte?: number | null;
+}
+
+export interface MarketingSeoAnalysisResult {
+  score: number;
+  issues: string[];
+  suggestions: string[];
+  keywords: string[];
+  snapshotSource?: "cms" | "rendered-dom";
+  crawlUrl?: string;
+  crawlError?: string;
+  sections?: {
+    landing?: {
+      score: number;
+      issues: string[];
+      suggestions: string[];
+      keywords: string[];
+    };
+    metadata?: {
+      score: number;
+      issues: string[];
+      suggestions: string[];
+      keywords: string[];
+    };
+    cta?: {
+      score: number;
+      issues: string[];
+      suggestions: string[];
+      keywords: string[];
+    };
+  };
+  runId?: string;
 }
 
 export interface CmsPage {

@@ -14,6 +14,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     async function handleTheme() {
+      if (window.location.pathname.startsWith("/superadmin")) {
+        setTheme("dark");
+        setReady(true);
+        return;
+      }
+
       const saved = localStorage.getItem("marysoll-theme") as Theme | null;
       setTheme(saved ?? "light");
       setReady(true);
@@ -23,6 +29,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     if (!ready) return;
+    if (window.location.pathname.startsWith("/superadmin")) {
+      document.documentElement.classList.add("dark");
+      return;
+    }
+
     localStorage.setItem("marysoll-theme", theme);
     if (theme === "dark") document.documentElement.classList.add("dark");
     else document.documentElement.classList.remove("dark");
@@ -32,7 +43,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     <ThemeContext.Provider
       value={{
         theme,
-        toggleTheme: () => setTheme((p) => (p === "light" ? "dark" : "light")),
+        toggleTheme: () => {
+          if (window.location.pathname.startsWith("/superadmin")) return;
+          setTheme((p) => (p === "light" ? "dark" : "light"));
+        },
       }}
     >
       {children}

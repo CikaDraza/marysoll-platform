@@ -80,14 +80,20 @@ export default function AdminCreateModal({
 
   useEffect(() => {
     if (isOpen) {
-      setSelectedDate(defaultDate ?? "");
-      setSelectedTime(defaultTime ?? "");
+      async function init() {
+        setSelectedDate(defaultDate ?? "");
+        setSelectedTime(defaultTime ?? "");
+      }
+      init();
     }
   }, [isOpen, defaultDate, defaultTime]);
 
   useEffect(() => {
     if (!servicesLoading && services.length > 0 && !selectedServiceId) {
-      setSelectedServiceId(services[0]._id);
+      async function init() {
+        setSelectedServiceId(services[0]._id);
+      }
+      init();
     }
   }, [servicesLoading, services, selectedServiceId]);
 

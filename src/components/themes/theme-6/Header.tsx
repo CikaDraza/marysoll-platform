@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface NavItem {
   label: string;
@@ -39,7 +40,13 @@ export function Theme6Header({
         <div className="flex items-center justify-between h-20">
           <Link href="/" className="flex items-center gap-3">
             {logo ? (
-              <img src={logo} alt={salonName} className="h-8 w-auto" />
+              <Image
+                width={64}
+                height={64}
+                src={logo}
+                alt={salonName}
+                className="h-8 w-auto"
+              />
             ) : (
               <span className="text-xl font-light tracking-wide text-[#2A2825]">
                 {salonName}
@@ -73,11 +80,26 @@ export function Theme6Header({
             className="md:hidden p-2 text-[#2A2825]"
             aria-label="Toggle menu"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               {mobileMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               )}
             </svg>
           </button>

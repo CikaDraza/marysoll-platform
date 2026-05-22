@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { useMarketingCms, useCmsPages } from "@/hooks/useMarketingCms";
-import type { MarketingLandingStructure, CmsPage } from "@/types/marketing-landing";
+import type {
+  CmsPage,
+  PerformanceSeoSnapshot,
+} from "@/types/marketing-landing";
+import { SingleImageField } from "@/components/admin/campaign/SingleImageField";
 import {
   superAdminCardClass as card,
   superAdminInputClass as inp,
@@ -21,11 +25,63 @@ function ScoreBadge({ score }: { score: number }) {
         ? "bg-amber-900/60 text-amber-400 border-amber-700"
         : "bg-red-900/60 text-red-400 border-red-700";
   return (
-    <span className={`text-sm font-bold px-3 py-1 rounded-full border ${color}`}>
+    <span
+      className={`text-sm font-bold px-3 py-1 rounded-full border ${color}`}
+    >
       SEO {score}/100
     </span>
   );
 }
+
+const PERFORMANCE_FIELDS: {
+  key: keyof PerformanceSeoSnapshot;
+  label: string;
+  suffix: string;
+  placeholder: string;
+}[] = [
+  {
+    key: "realExperienceScore",
+    label: "Real Experience Score",
+    suffix: "",
+    placeholder: "96",
+  },
+  {
+    key: "firstContentfulPaint",
+    label: "First Contentful Paint",
+    suffix: "sec",
+    placeholder: "1.78",
+  },
+  {
+    key: "largestContentfulPaint",
+    label: "Largest Contentful Paint",
+    suffix: "sec",
+    placeholder: "2.73",
+  },
+  {
+    key: "interactionToNextPaint",
+    label: "Interaction to Next Paint",
+    suffix: "ms",
+    placeholder: "40",
+  },
+  {
+    key: "cumulativeLayoutShift",
+    label: "Cumulative Layout Shift",
+    suffix: "",
+    placeholder: "0.01",
+  },
+  {
+    key: "firstInputDelay",
+    label: "First Input Delay",
+    suffix: "ms",
+    placeholder: "4",
+  },
+  {
+    key: "timeToFirstByte",
+    label: "Time to First Byte",
+    suffix: "sec",
+    placeholder: "0.09",
+  },
+];
 
 // ─── Section accordion ────────────────────────────────────────────────────────
 
@@ -49,6 +105,60 @@ function SectionHeader({
   );
 }
 
+function SeoResultPanel({
+  seoResult,
+}: {
+  seoResult: ReturnType<typeof useMarketingCms>["seoResult"];
+}) {
+  if (!seoResult) return null;
+
+  return (
+    <div className="mt-4 space-y-3">
+      {seoResult.issues.length > 0 && (
+        <div>
+          <p className="text-xs font-bold text-red-400 mb-1">Problemi</p>
+          <ul className="space-y-1">
+            {seoResult.issues.map((issue, i) => (
+              <li key={i} className="text-xs text-slate-300 flex gap-2">
+                <span className="text-red-400 mt-0.5">•</span>
+                {issue}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {seoResult.suggestions.length > 0 && (
+        <div>
+          <p className="text-xs font-bold text-amber-400 mb-1">Preporuke</p>
+          <ul className="space-y-1">
+            {seoResult.suggestions.map((s, i) => (
+              <li key={i} className="text-xs text-slate-300 flex gap-2">
+                <span className="text-amber-400 mt-0.5">→</span>
+                {s}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {seoResult.keywords.length > 0 && (
+        <div>
+          <p className="text-xs font-bold text-emerald-400 mb-2">Keywords</p>
+          <div className="flex flex-wrap gap-1">
+            {seoResult.keywords.map((kw, i) => (
+              <span
+                key={i}
+                className="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full"
+              >
+                {kw}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Pages modal ──────────────────────────────────────────────────────────────
 
 function PageModal({
@@ -59,7 +169,11 @@ function PageModal({
 }: {
   page: CmsPage | null;
   onClose: () => void;
-  onSave: (data: { title: string; slug?: string; content: string }) => Promise<void>;
+  onSave: (data: {
+    title: string;
+    slug?: string;
+    content: string;
+  }) => Promise<void>;
   isSaving: boolean;
 }) {
   const [title, setTitle] = useState(page?.title ?? "");
@@ -72,7 +186,10 @@ function PageModal({
           <h3 className="font-bold text-white">
             {page ? "Uredi stranicu" : "Nova stranica"}
           </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-lg">
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-white text-lg"
+          >
             ✕
           </button>
         </div>
@@ -100,7 +217,10 @@ function PageModal({
           </div>
         </div>
         <div className="flex gap-3 justify-end px-5 py-4 border-t border-slate-700">
-          <button onClick={onClose} className="px-4 py-2 text-slate-400 text-sm hover:text-white">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-slate-400 text-sm hover:text-white"
+          >
             Otkaži
           </button>
           <button
@@ -146,9 +266,14 @@ export function MarketingTab() {
   } = useCmsPages();
 
   const [openSection, setOpenSection] = useState<string | null>("hero");
-  const [modalPage, setModalPage] = useState<CmsPage | null | "new">(undefined as unknown as null);
+  const [modalPage, setModalPage] = useState<CmsPage | null | "new">(
+    undefined as unknown as null,
+  );
   const [showPageModal, setShowPageModal] = useState(false);
-  const [activePanel, setActivePanel] = useState<"landing" | "pages" | "seo">("landing");
+  const [activePanel, setActivePanel] = useState<"landing" | "pages">(
+    "landing",
+  );
+  const [performance, setPerformance] = useState<PerformanceSeoSnapshot>({});
 
   function toggle(s: string) {
     setOpenSection((prev) => (prev === s ? null : s));
@@ -168,7 +293,7 @@ export function MarketingTab() {
     <div className="space-y-4">
       {/* Panel tabs */}
       <div className="flex gap-2">
-        {(["landing", "pages", "seo"] as const).map((p) => (
+        {(["landing", "pages"] as const).map((p) => (
           <button
             key={p}
             onClick={() => setActivePanel(p)}
@@ -178,7 +303,7 @@ export function MarketingTab() {
                 : "bg-slate-700 text-slate-300 hover:bg-slate-600"
             }`}
           >
-            {p === "landing" ? "Landing sekcije" : p === "pages" ? "Stranice" : "SEO"}
+            {p === "landing" ? "Landing sekcije" : "Stranice"}
           </button>
         ))}
       </div>
@@ -186,6 +311,140 @@ export function MarketingTab() {
       {/* ── Landing sekcije ── */}
       {activePanel === "landing" && (
         <div className="space-y-3">
+          <div className={card}>
+            <div className="grid lg:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-xs text-slate-400 font-bold uppercase">
+                      SEO Metadata i AI analiza
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Analiza koristi renderovani snapshot landing stranice,
+                      metadata i CTA tok.
+                    </p>
+                    {seoResult?.snapshotSource && (
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Snapshot:{" "}
+                        <span className="text-violet-300">
+                          {seoResult.snapshotSource === "rendered-dom"
+                            ? "renderovani DOM"
+                            : "CMS fallback"}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                  {seoResult && <ScoreBadge score={seoResult.score} />}
+                </div>
+                <div>
+                  <label className={lbl}>Home Title</label>
+                  <input
+                    className={inp}
+                    value={ls.seo.homeTitle}
+                    onChange={(e) =>
+                      update("seo", { ...ls.seo, homeTitle: e.target.value })
+                    }
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    {ls.seo.homeTitle.length}/60
+                  </p>
+                </div>
+                <div>
+                  <label className={lbl}>Home Description</label>
+                  <textarea
+                    className={inp}
+                    rows={3}
+                    value={ls.seo.homeDescription}
+                    onChange={(e) =>
+                      update("seo", {
+                        ...ls.seo,
+                        homeDescription: e.target.value,
+                      })
+                    }
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    {ls.seo.homeDescription.length}/160
+                  </p>
+                </div>
+                <div>
+                  <label className={lbl}>OG image</label>
+                  <SingleImageField
+                    value={ls.seo.ogImage ?? ""}
+                    onChange={(url) =>
+                      update("seo", { ...ls.seo, ogImage: url })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-xs text-slate-400 font-bold uppercase mb-3">
+                  {"Performanse opcionalno (Speed Insights)"}
+                </h2>
+                <div className="grid sm:grid-cols-2 gap-2">
+                  {PERFORMANCE_FIELDS.map((field) => (
+                    <div key={field.key}>
+                      <label className={lbl}>
+                        {field.label}{" "}
+                        {field.suffix && (
+                          <span className="w-8 text-xs lowercase text-indigo-500">
+                            u {field.suffix}
+                          </span>
+                        )}
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <input
+                          className={inp}
+                          type="number"
+                          step="0.01"
+                          placeholder={field.placeholder}
+                          value={performance[field.key] ?? ""}
+                          onChange={(e) =>
+                            setPerformance((prev) => ({
+                              ...prev,
+                              [field.key]:
+                                e.target.value === ""
+                                  ? null
+                                  : Number(e.target.value),
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                className={btnPrimary}
+                disabled={seoLoading}
+                onClick={() => runSeoAnalysis(performance)}
+              >
+                {seoLoading ? "Analiziranje..." : "Pokreni AI SEO analizu"}
+              </button>
+              {seoResult && (
+                <button
+                  className="px-4 py-2 bg-emerald-700 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition disabled:opacity-40"
+                  disabled={autoFixLoading}
+                  onClick={() => runAutoFix(performance)}
+                >
+                  {autoFixLoading ? "Popravljanje..." : "✦ Auto-fix sadržaj"}
+                </button>
+              )}
+              <button
+                className="px-4 py-2 bg-slate-700 text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-600 transition disabled:opacity-40"
+                disabled={isSaving}
+                onClick={() => save()}
+              >
+                {isSaving ? "Čuvanje..." : "Sačuvaj SEO"}
+              </button>
+            </div>
+
+            <SeoResultPanel seoResult={seoResult} />
+          </div>
+
           {/* Header */}
           <div className={card}>
             <SectionHeader
@@ -201,7 +460,10 @@ export function MarketingTab() {
                     className={inp}
                     value={ls.header.logoText}
                     onChange={(e) =>
-                      update("header", { ...ls.header, logoText: e.target.value })
+                      update("header", {
+                        ...ls.header,
+                        logoText: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -211,7 +473,10 @@ export function MarketingTab() {
                     className={inp}
                     value={ls.header.ctaText}
                     onChange={(e) =>
-                      update("header", { ...ls.header, ctaText: e.target.value })
+                      update("header", {
+                        ...ls.header,
+                        ctaText: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -221,16 +486,23 @@ export function MarketingTab() {
                     className={inp}
                     value={ls.header.ctaHref}
                     onChange={(e) =>
-                      update("header", { ...ls.header, ctaHref: e.target.value })
+                      update("header", {
+                        ...ls.header,
+                        ctaHref: e.target.value,
+                      })
                     }
                   />
                 </div>
                 <div>
-                  <label className={lbl}>Nav linkovi (jedan po redu: Tekst|/href)</label>
+                  <label className={lbl}>
+                    Nav linkovi (jedan po redu: Tekst|/href)
+                  </label>
                   <textarea
                     className={`${inp} font-mono text-xs`}
                     rows={3}
-                    value={ls.header.navLinks.map((l) => `${l.text}|${l.href}`).join("\n")}
+                    value={ls.header.navLinks
+                      .map((l) => `${l.text}|${l.href}`)
+                      .join("\n")}
                     onChange={(e) => {
                       const links = e.target.value
                         .split("\n")
@@ -272,7 +544,10 @@ export function MarketingTab() {
                     className={inp}
                     value={ls.hero.subheadline}
                     onChange={(e) =>
-                      update("hero", { ...ls.hero, subheadline: e.target.value })
+                      update("hero", {
+                        ...ls.hero,
+                        subheadline: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -282,7 +557,10 @@ export function MarketingTab() {
                     className={inp}
                     value={ls.hero.socialProofText}
                     onChange={(e) =>
-                      update("hero", { ...ls.hero, socialProofText: e.target.value })
+                      update("hero", {
+                        ...ls.hero,
+                        socialProofText: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -308,7 +586,10 @@ export function MarketingTab() {
                       className={inp}
                       value={ls.hero.ctaPrimaryText}
                       onChange={(e) =>
-                        update("hero", { ...ls.hero, ctaPrimaryText: e.target.value })
+                        update("hero", {
+                          ...ls.hero,
+                          ctaPrimaryText: e.target.value,
+                        })
                       }
                     />
                   </div>
@@ -318,7 +599,10 @@ export function MarketingTab() {
                       className={inp}
                       value={ls.hero.ctaSecondaryText}
                       onChange={(e) =>
-                        update("hero", { ...ls.hero, ctaSecondaryText: e.target.value })
+                        update("hero", {
+                          ...ls.hero,
+                          ctaSecondaryText: e.target.value,
+                        })
                       }
                     />
                   </div>
@@ -342,13 +626,21 @@ export function MarketingTab() {
                     className={inp}
                     value={ls.howItWorks.headline}
                     onChange={(e) =>
-                      update("howItWorks", { ...ls.howItWorks, headline: e.target.value })
+                      update("howItWorks", {
+                        ...ls.howItWorks,
+                        headline: e.target.value,
+                      })
                     }
                   />
                 </div>
                 {ls.howItWorks.items.map((item, i) => (
-                  <div key={i} className="bg-slate-700/40 rounded-lg p-3 space-y-2">
-                    <p className="text-xs text-slate-400 font-bold uppercase">Stavka {i + 1}</p>
+                  <div
+                    key={i}
+                    className="bg-slate-700/40 rounded-lg p-3 space-y-2"
+                  >
+                    <p className="text-xs text-slate-400 font-bold uppercase">
+                      Stavka {i + 1}
+                    </p>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className={lbl}>Staro</label>
@@ -357,7 +649,10 @@ export function MarketingTab() {
                           value={item.oldTitle}
                           onChange={(e) => {
                             const items = [...ls.howItWorks.items];
-                            items[i] = { ...items[i], oldTitle: e.target.value };
+                            items[i] = {
+                              ...items[i],
+                              oldTitle: e.target.value,
+                            };
                             update("howItWorks", { ...ls.howItWorks, items });
                           }}
                         />
@@ -369,7 +664,10 @@ export function MarketingTab() {
                           value={item.newTitle}
                           onChange={(e) => {
                             const items = [...ls.howItWorks.items];
-                            items[i] = { ...items[i], newTitle: e.target.value };
+                            items[i] = {
+                              ...items[i],
+                              newTitle: e.target.value,
+                            };
                             update("howItWorks", { ...ls.howItWorks, items });
                           }}
                         />
@@ -382,7 +680,10 @@ export function MarketingTab() {
                         value={item.description}
                         onChange={(e) => {
                           const items = [...ls.howItWorks.items];
-                          items[i] = { ...items[i], description: e.target.value };
+                          items[i] = {
+                            ...items[i],
+                            description: e.target.value,
+                          };
                           update("howItWorks", { ...ls.howItWorks, items });
                         }}
                       />
@@ -408,13 +709,21 @@ export function MarketingTab() {
                     className={inp}
                     value={ls.features.headline}
                     onChange={(e) =>
-                      update("features", { ...ls.features, headline: e.target.value })
+                      update("features", {
+                        ...ls.features,
+                        headline: e.target.value,
+                      })
                     }
                   />
                 </div>
                 {ls.features.cards.map((card2, i) => (
-                  <div key={i} className="bg-slate-700/40 rounded-lg p-3 space-y-2">
-                    <p className="text-xs text-slate-400 font-bold uppercase">Kartica {i + 1}</p>
+                  <div
+                    key={i}
+                    className="bg-slate-700/40 rounded-lg p-3 space-y-2"
+                  >
+                    <p className="text-xs text-slate-400 font-bold uppercase">
+                      Kartica {i + 1}
+                    </p>
                     <div className="grid grid-cols-3 gap-2">
                       <div>
                         <label className={lbl}>Ikona</label>
@@ -447,7 +756,10 @@ export function MarketingTab() {
                           value={card2.solution}
                           onChange={(e) => {
                             const cards = [...ls.features.cards];
-                            cards[i] = { ...cards[i], solution: e.target.value };
+                            cards[i] = {
+                              ...cards[i],
+                              solution: e.target.value,
+                            };
                             update("features", { ...ls.features, cards });
                           }}
                         />
@@ -474,14 +786,22 @@ export function MarketingTab() {
                     className={inp}
                     value={ls.pricing.headline}
                     onChange={(e) =>
-                      update("pricing", { ...ls.pricing, headline: e.target.value })
+                      update("pricing", {
+                        ...ls.pricing,
+                        headline: e.target.value,
+                      })
                     }
                   />
                 </div>
                 {ls.pricing.plans.map((plan, i) => (
-                  <div key={i} className="bg-slate-700/40 rounded-lg p-3 space-y-2">
+                  <div
+                    key={i}
+                    className="bg-slate-700/40 rounded-lg p-3 space-y-2"
+                  >
                     <div className="flex items-center justify-between">
-                      <p className="text-xs text-slate-400 font-bold uppercase">Plan {i + 1}</p>
+                      <p className="text-xs text-slate-400 font-bold uppercase">
+                        Plan {i + 1}
+                      </p>
                       {plan.popular && (
                         <span className="text-[10px] bg-violet-600 text-white px-2 py-0.5 rounded-full">
                           Popular
@@ -521,7 +841,10 @@ export function MarketingTab() {
                         value={plan.description}
                         onChange={(e) => {
                           const plans = [...ls.pricing.plans];
-                          plans[i] = { ...plans[i], description: e.target.value };
+                          plans[i] = {
+                            ...plans[i],
+                            description: e.target.value,
+                          };
                           update("pricing", { ...ls.pricing, plans });
                         }}
                       />
@@ -536,7 +859,9 @@ export function MarketingTab() {
                           const plans = [...ls.pricing.plans];
                           plans[i] = {
                             ...plans[i],
-                            features: e.target.value.split("\n").filter(Boolean),
+                            features: e.target.value
+                              .split("\n")
+                              .filter(Boolean),
                           };
                           update("pricing", { ...ls.pricing, plans });
                         }}
@@ -575,16 +900,23 @@ export function MarketingTab() {
                     className={inp}
                     value={ls.footer.tagline}
                     onChange={(e) =>
-                      update("footer", { ...ls.footer, tagline: e.target.value })
+                      update("footer", {
+                        ...ls.footer,
+                        tagline: e.target.value,
+                      })
                     }
                   />
                 </div>
                 <div>
-                  <label className={lbl}>Linkovi (jedan po redu: Tekst|/href)</label>
+                  <label className={lbl}>
+                    Linkovi (jedan po redu: Tekst|/href)
+                  </label>
                   <textarea
                     className={`${inp} font-mono text-xs`}
                     rows={4}
-                    value={ls.footer.links.map((l) => `${l.text}|${l.href}`).join("\n")}
+                    value={ls.footer.links
+                      .map((l) => `${l.text}|${l.href}`)
+                      .join("\n")}
                     onChange={(e) => {
                       const links = e.target.value
                         .split("\n")
@@ -644,7 +976,8 @@ export function MarketingTab() {
             <div className={`${card} text-center py-8`}>
               <p className="text-slate-400 text-sm mb-3">Nema stranica.</p>
               <p className="text-slate-500 text-xs">
-                Klikni &quot;Seed defaults&quot; za Privacy, Terms i Refund Policy.
+                Klikni &quot;Seed defaults&quot; za Privacy, Terms i Refund
+                Policy.
               </p>
             </div>
           ) : (
@@ -655,7 +988,9 @@ export function MarketingTab() {
                   className={`${card} flex items-center justify-between`}
                 >
                   <div>
-                    <p className="font-semibold text-white text-sm">{p.title}</p>
+                    <p className="font-semibold text-white text-sm">
+                      {p.title}
+                    </p>
                     <p className="text-xs text-slate-400">
                       /{p.slug} ·{" "}
                       {p.updatedAt
@@ -691,121 +1026,6 @@ export function MarketingTab() {
         </div>
       )}
 
-      {/* ── SEO ── */}
-      {activePanel === "seo" && (
-        <div className="space-y-4">
-          <div className={card}>
-            <p className="text-xs text-slate-400 font-bold uppercase mb-3">
-              SEO Metadata
-            </p>
-            <div className="space-y-3">
-              <div>
-                <label className={lbl}>Home Title</label>
-                <input
-                  className={inp}
-                  value={ls.seo.homeTitle}
-                  onChange={(e) =>
-                    update("seo", { ...ls.seo, homeTitle: e.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <label className={lbl}>Home Description</label>
-                <textarea
-                  className={inp}
-                  rows={3}
-                  value={ls.seo.homeDescription}
-                  onChange={(e) =>
-                    update("seo", { ...ls.seo, homeDescription: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-            <button
-              className={`${btnPrimary} mt-4`}
-              disabled={isSaving}
-              onClick={() => save()}
-            >
-              {isSaving ? "Čuvanje..." : "Sačuvaj SEO"}
-            </button>
-          </div>
-
-          <div className={card}>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-slate-400 font-bold uppercase">
-                AI SEO Analiza
-              </p>
-              {seoResult && <ScoreBadge score={seoResult.score} />}
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                className={btnPrimary}
-                disabled={seoLoading}
-                onClick={runSeoAnalysis}
-              >
-                {seoLoading ? "Analiziranje..." : "Pokreni SEO analizu"}
-              </button>
-              {seoResult && (
-                <button
-                  className="px-4 py-2 bg-emerald-700 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition disabled:opacity-40"
-                  disabled={autoFixLoading}
-                  onClick={runAutoFix}
-                >
-                  {autoFixLoading ? "Popravljanje..." : "✦ Auto-fix sadržaj"}
-                </button>
-              )}
-            </div>
-
-            {seoResult && (
-              <div className="mt-4 space-y-3">
-                {seoResult.issues.length > 0 && (
-                  <div>
-                    <p className="text-xs font-bold text-red-400 mb-1">Problemi</p>
-                    <ul className="space-y-1">
-                      {seoResult.issues.map((issue, i) => (
-                        <li key={i} className="text-xs text-slate-300 flex gap-2">
-                          <span className="text-red-400 mt-0.5">•</span>
-                          {issue}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {seoResult.suggestions.length > 0 && (
-                  <div>
-                    <p className="text-xs font-bold text-amber-400 mb-1">Preporuke</p>
-                    <ul className="space-y-1">
-                      {seoResult.suggestions.map((s, i) => (
-                        <li key={i} className="text-xs text-slate-300 flex gap-2">
-                          <span className="text-amber-400 mt-0.5">→</span>
-                          {s}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {seoResult.keywords.length > 0 && (
-                  <div>
-                    <p className="text-xs font-bold text-emerald-400 mb-2">Keywords</p>
-                    <div className="flex flex-wrap gap-1">
-                      {seoResult.keywords.map((kw, i) => (
-                        <span
-                          key={i}
-                          className="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full"
-                        >
-                          {kw}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Page modal */}
       {showPageModal && (
         <PageModal
@@ -813,8 +1033,16 @@ export function MarketingTab() {
           onClose={() => setShowPageModal(false)}
           isSaving={isMutating}
           onSave={async (data) => {
-            if (modalPage && typeof modalPage === "object" && "slug" in modalPage) {
-              await updatePage({ slug: modalPage.slug, title: data.title, content: data.content });
+            if (
+              modalPage &&
+              typeof modalPage === "object" &&
+              "slug" in modalPage
+            ) {
+              await updatePage({
+                slug: modalPage.slug,
+                title: data.title,
+                content: data.content,
+              });
             } else {
               await createPage(data);
             }
