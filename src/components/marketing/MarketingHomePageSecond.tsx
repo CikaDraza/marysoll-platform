@@ -588,8 +588,10 @@ export function MarketingHomePageSecond() {
                 variants={fadeInUp}
                 className="mt-6 text-xl text-gray-600 leading-relaxed max-w-xl"
               >
-                <h2 className="text-violet-600 font-semibold">Tvoja</h2> pomoć u
-                salonu za poruke, pitanja, zakazivanja i podsetnike.{" "}
+                <h2>
+                  <span className="text-violet-600 font-semibold">Tvoja</span>{" "}
+                  pomoć u salonu za poruke, pitanja, zakazivanja i podsetnike.
+                </h2>{" "}
                 <p className="text-violet-600 font-semibold">
                   Sređujem ti probleme{" "}
                 </p>
