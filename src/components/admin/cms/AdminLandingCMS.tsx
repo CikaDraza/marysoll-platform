@@ -145,6 +145,9 @@ export interface SeoAnalysisResult {
   issues: string[];
   suggestions: string[];
   keywords: string[];
+  snapshotSource?: "cms" | "rendered-dom";
+  crawlUrl?: string;
+  crawlError?: string;
 }
 
 // ─── Toggle switch ────────────────────────────────────────────────────────────
@@ -789,9 +792,20 @@ export function AdminLandingCMS({ sp }: Props) {
 
           {!seoResult && (
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Izmene su sačuvane. SEO agent se pokreće samo kada ručno kliknete
-              na dugme, pa se analiza ne troši na manje izmene poput telefona
-              ili adrese.
+              Sačuvajte Landing pre AI SEO analize. Agent analizira poslednju
+              sačuvanu javnu stranicu, ne nesnimljene izmene iz CMS polja.
+            </p>
+          )}
+
+          {seoResult?.snapshotSource && (
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Snapshot:{" "}
+              <span className="font-semibold text-violet-600 dark:text-violet-400">
+                {seoResult.snapshotSource === "rendered-dom"
+                  ? "renderovana javna stranica"
+                  : "CMS fallback"}
+              </span>
+              {seoResult.crawlError ? ` — ${seoResult.crawlError}` : ""}
             </p>
           )}
 

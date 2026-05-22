@@ -10,6 +10,7 @@ import "server-only";
 
 import { callDeepSeek, DeepSeekMessage } from "../agents";
 import type { LandingStructure } from "@/types";
+import type { LandingRenderSnapshot } from "@/lib/seo/marketingLandingSnapshot";
 
 export interface SeoCmsServiceContext {
   name?: string;
@@ -58,6 +59,9 @@ export interface SeoCmsContext {
 export interface SeoLandingAnalysisInput {
   landingStructure: LandingStructure;
   seoContext?: SeoCmsContext;
+  renderedSnapshot?: LandingRenderSnapshot;
+  crawlUrl?: string;
+  crawlError?: string;
 }
 
 export interface SeoLandingAnalysisOutput {
@@ -65,6 +69,9 @@ export interface SeoLandingAnalysisOutput {
   issues: string[];
   suggestions: string[];
   keywords: string[];
+  snapshotSource?: "cms" | "rendered-dom";
+  crawlUrl?: string;
+  crawlError?: string;
 }
 
 export const SYSTEM_PROMPT = `
@@ -93,6 +100,9 @@ Focus on:
 
 Important platform knowledge:
 - The CMS controls headings, subheadlines, paragraphs, CTAs, FAQ copy, image alt text and section visibility.
+- When a rendered DOM snapshot is provided, it is the source of truth for visible headings, copy, CTAs, images, alt text and rendered widgets.
+- Framer Motion components such as motion.h1 and motion.h2 render as real h1/h2 tags in the DOM. Trust the rendered headingStructure.
+- Decorative HTML/CSS/motion elements listed in decorativeElements are not missing images and should not be penalized as image assets.
 - The Services Preview section automatically renders service cards from the service database when services exist.
 - The Services page automatically renders the full service catalog with categories, descriptions, prices, durations and booking links when services exist.
 - Variant and grouped services may not have basePrice/base duration. Use priceFrom and durationFrom as the resolved "from" price and shortest duration.
@@ -124,6 +134,7 @@ export async function analyzeLandingPageSeo(
 ): Promise<SeoLandingAnalysisOutput> {
   const { landingStructure } = input;
   const { seoContext } = input;
+  const { renderedSnapshot, crawlUrl, crawlError } = input;
   const l = landingStructure.landing;
   const pages = landingStructure.pages;
 
@@ -244,13 +255,48 @@ FAQ:
 `.trim());
   }
 
+  const renderedSummary = renderedSnapshot
+    ? `
+RENDERED DOM SNAPSHOT:
+  Source: ${renderedSnapshot.source || "rendered-dom"}
+  URL: ${renderedSnapshot.url || crawlUrl || "(empty)"}
+  Final title: ${renderedSnapshot.finalMetadata.title || "(empty)"}
+  Final description: ${renderedSnapshot.finalMetadata.description || "(empty)"}
+  OG image: ${renderedSnapshot.finalMetadata.ogImage || "(empty)"}
+  Canonical: ${renderedSnapshot.finalMetadata.canonical || "(empty)"}
+  Robots: ${renderedSnapshot.finalMetadata.robots || "(empty)"}
+  Heading structure: ${renderedSnapshot.headingStructure.map((h) => `${h.level}: ${h.text}`).join(" | ") || "(none)"}
+  CTAs: ${renderedSnapshot.ctas.map((cta) => `${cta.text} -> ${cta.href}`).join(" | ") || "(none)"}
+  Internal links: ${renderedSnapshot.internalLinks.map((link) => `${link.text} -> ${link.href}`).join(" | ") || "(none)"}
+  Images: ${renderedSnapshot.images.map((image) => `${image.src || "(empty src)"} / alt: ${image.alt || "(missing)"}`).join(" | ") || "(none)"}
+  Decorative elements: ${(renderedSnapshot.decorativeElements ?? []).map((item) => `${item.selector}: ${item.reason}`).join(" | ") || "(none)"}
+  JSON-LD schema: ${(renderedSnapshot.schemas ?? []).map((schema) => schema.type).join(", ") || "(none)"}
+
+  Visible copy:
+  ${renderedSnapshot.visibleCopy.slice(0, 30).join("\n  ")}
+
+  Sections:
+  ${renderedSnapshot.sections
+    .map(
+      (section) => `
+  - ${section.id}
+    heading: ${section.heading ? `${section.heading.level}: ${section.heading.text}` : "(none)"}
+    copy: ${section.visibleCopy.slice(0, 8).join(" | ") || "(none)"}
+    ctas: ${section.ctas.map((cta) => `${cta.text} -> ${cta.href}`).join(" | ") || "(none)"}
+    images: ${section.images.map((image) => `${image.src || "(empty src)"} / alt: ${image.alt || "(missing)"}`).join(" | ") || "(none)"}
+`.trim(),
+    )
+    .join("\n")}
+`.trim()
+    : "";
+
   const contentSummary = `
 PLATFORM CONTEXT:
   Salon: ${seoContext?.salon?.name || "(empty)"}
   City: ${seoContext?.salon?.city || "(empty)"}
   Street: ${seoContext?.salon?.street || "(empty)"}
-  Services in database: ${seoContext?.services?.length ?? 0}
-  Service catalog sample: ${(seoContext?.services ?? [])
+  Services in database: ${renderedSnapshot ? "(omitted; rendered DOM widgets are source of truth)" : (seoContext?.services?.length ?? 0)}
+  Service catalog sample: ${renderedSnapshot ? "(omitted; analyze the live rendered services/pricing widgets)" : (seoContext?.services ?? [])
     .slice(0, 8)
     .map((service) => {
       const price =
@@ -271,6 +317,10 @@ PLATFORM CONTEXT:
   Appointment Section has booking widget: ${seoContext?.platformKnowledge?.appointmentSectionHasBookingWidget ? "yes" : "no"}
   Appointments Page has booking calendar/service selection/working hours: ${seoContext?.platformKnowledge?.appointmentsPageHasBookingCalendarServiceSelectionAndWorkingHours ? "yes" : "no"}
   Testimonials content comes from database: ${seoContext?.platformKnowledge?.testimonialsContentComesFromDatabase ? "yes" : "no"}
+  Rendered crawl URL: ${crawlUrl || "(empty)"}
+  Rendered crawl error: ${crawlError || "(none)"}
+
+${renderedSummary}
 
 ENABLED LANDING SECTIONS ANALYZED: ${enabledSections.join(", ") || "(none)"}
 
@@ -313,7 +363,13 @@ APPOINTMENTS PAGE:
   if (!content) throw new Error("No content in SEO landing theme agent response");
 
   try {
-    return JSON.parse(content) as SeoLandingAnalysisOutput;
+    const parsed = JSON.parse(content) as SeoLandingAnalysisOutput;
+    return {
+      ...parsed,
+      snapshotSource: renderedSnapshot?.source ?? "cms",
+      crawlUrl,
+      crawlError,
+    };
   } catch (e) {
     throw new Error(`SEO landing theme agent returned invalid JSON: ${e}`);
   }

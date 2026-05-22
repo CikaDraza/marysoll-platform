@@ -128,6 +128,9 @@ interface SeoAnalysisResult {
   issues: string[];
   suggestions: string[];
   keywords: string[];
+  snapshotSource?: "cms" | "rendered-dom";
+  crawlUrl?: string;
+  crawlError?: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1355,8 +1358,22 @@ function AdminDashboard() {
 
                 {!metadataSeoResult && (
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Izmene su sačuvane. SEO agent se pokreće samo kada ručno
-                    kliknete na dugme.
+                    Sačuvajte SEO metadata pre analize. Agent crawluje
+                    poslednje sačuvane javne stranice: Home, Usluge i Termini.
+                  </p>
+                )}
+
+                {metadataSeoResult?.snapshotSource && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Snapshot:{" "}
+                    <span className="font-semibold text-violet-600 dark:text-violet-400">
+                      {metadataSeoResult.snapshotSource === "rendered-dom"
+                        ? "renderovane javne stranice"
+                        : "CMS fallback"}
+                    </span>
+                    {metadataSeoResult.crawlError
+                      ? ` — ${metadataSeoResult.crawlError}`
+                      : ""}
                   </p>
                 )}
 

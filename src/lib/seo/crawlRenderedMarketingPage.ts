@@ -29,6 +29,7 @@ function getBrowserlessFunctionUrl() {
 export async function crawlRenderedMarketingPage(
   url: string,
   performance?: PerformanceSeoSnapshot,
+  pageName = "marketing-home",
 ): Promise<LandingRenderSnapshot> {
   const functionUrl = getBrowserlessFunctionUrl();
   if (!functionUrl) {
@@ -39,14 +40,14 @@ export async function crawlRenderedMarketingPage(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      context: { url, performance },
+      context: { url, performance, pageName },
       code: `
 export default async ({ page, context }) => {
   const targetUrl = context.url;
   await page.goto(targetUrl, { waitUntil: "networkidle2", timeout: 45000 });
   await page.waitForTimeout(1200);
 
-  const snapshot = await page.evaluate(({ targetUrl, performance }) => {
+  const snapshot = await page.evaluate(({ targetUrl, performance, pageName }) => {
     const clean = (value) => String(value || "").replace(/\\s+/g, " ").trim();
     const isVisible = (element) => {
       const style = window.getComputedStyle(element);
@@ -172,7 +173,7 @@ export default async ({ page, context }) => {
       .slice(0, 80);
 
     return {
-      page: "marketing-home",
+        page: pageName,
       source: "rendered-dom",
       url: window.location.href,
       sections,
@@ -200,7 +201,7 @@ export default async ({ page, context }) => {
       },
       performance,
     };
-  }, { targetUrl, performance: context.performance });
+  }, { targetUrl, performance: context.performance, pageName: context.pageName });
 
   return { data: snapshot, type: "application/json" };
 };

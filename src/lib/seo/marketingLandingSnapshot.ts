@@ -5,7 +5,7 @@ import type {
 import { DEFAULT_MARKETING_LANDING } from "@/lib/marketing-landing-defaults";
 
 export interface LandingRenderSnapshot {
-  page: "marketing-home";
+  page: string;
   source?: "cms" | "rendered-dom";
   url?: string;
   sections: {
