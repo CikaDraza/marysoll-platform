@@ -12,6 +12,7 @@ interface TestimonialForNotification {
   rating: number;
   comment: string;
   adminReply?: string;
+  isApproved?: boolean;
   isClientRead?: boolean;
   isRead?: boolean;
   appointmentId: {
@@ -41,7 +42,7 @@ export async function PUT(req: Request, { params }: Params) {
 
     const body = await req.json();
 
-    const { rating, comment, adminReply, isRead, isClientRead } = body;
+    const { rating, comment, adminReply, isRead, isClientRead, isApproved } = body;
 
     const oldTestimonial = await Testimonial.findById(id);
 
@@ -88,10 +89,11 @@ export async function PUT(req: Request, { params }: Params) {
     }
 
     if (isAdmin) {
-      // Admin može da doda odgovor i označi kao pročitano
+      // Admin može da doda odgovor, označi kao pročitano i odobri
       if (adminReply !== undefined && adminReply !== oldTestimonial.adminReply)
         updateData.adminReply = adminReply;
       if (isRead !== undefined) updateData.isRead = isRead;
+      if (isApproved !== undefined) updateData.isApproved = isApproved;
     }
 
     // Ažuriraj testimonial

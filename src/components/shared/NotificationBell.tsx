@@ -55,7 +55,7 @@ function getNotificationHref(
   }
 
   if (notification.type.includes("testimonial")) {
-    const tab = isAdmin ? "Preporuke Klijenata" : "Moje Preporuke";
+    const tab = isAdmin ? "preporuke" : "Moje Preporuke";
     return `${panelBase}?tab=${encodeURIComponent(tab)}`;
   }
 

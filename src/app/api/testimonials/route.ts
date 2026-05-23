@@ -21,6 +21,7 @@ interface AggregationTestimonial {
   rating: number;
   comment: string;
   adminReply?: string;
+  isApproved: boolean;
   isRead: boolean;
   isClientRead: boolean;
   createdAt: Date;
@@ -182,6 +183,7 @@ export async function GET(req: Request) {
       rating: testimonial.rating,
       comment: testimonial.comment,
       adminReply: testimonial.adminReply,
+      isApproved: testimonial.isApproved,
       isRead: testimonial.isRead,
       isClientRead: testimonial.isClientRead,
       createdAt: testimonial.createdAt.toISOString(),

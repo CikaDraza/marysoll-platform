@@ -1,7 +1,7 @@
 // components/admin/AdminTestimonials.tsx
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAdminTestimonials } from "@/hooks/useAdminTestimonials";
 import Loader from "../elements/Loader";
 import TestimonialCard from "./TestimonialCard";
@@ -45,7 +45,7 @@ export default function AdminTestimonials() {
     date: debouncedDate,
   });
 
-  const { markAsRead } = useTestimonialActions();
+  const { markAllAsRead } = useTestimonialActions();
 
   const testimonials = useMemo(() => {
     return response?.testimonials || [];
@@ -53,19 +53,18 @@ export default function AdminTestimonials() {
 
   const pagination = response?.pagination;
 
-  // Grupisanje komentara
-  const { unreadTestimonials, readTestimonials } = useMemo(() => {
-    if (!testimonials) return { unreadTestimonials: [], readTestimonials: [] };
+  // Auto-označi sve kao pročitano čim se tab otvori
+  useEffect(() => {
+    markAllAsRead.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    const unread = testimonials.filter((t) => !t.isRead);
-    const read = testimonials.filter((t) => t.isRead);
-
-    return { unreadTestimonials: unread, readTestimonials: read };
+  // Grupisanje komentara po isApproved
+  const { pendingTestimonials, approvedTestimonials } = useMemo(() => {
+    const pending = testimonials.filter((t) => !t.isApproved);
+    const approved = testimonials.filter((t) => t.isApproved);
+    return { pendingTestimonials: pending, approvedTestimonials: approved };
   }, [testimonials]);
-
-  const handleMarkAsRead = async (testimonialId: string) => {
-    markAsRead.mutate(testimonialId);
-  };
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
@@ -221,42 +220,38 @@ export default function AdminTestimonials() {
       ) : (
         <>
           <div className="space-y-6">
-            {/* Nepročitani komentari */}
-            {unreadTestimonials.length > 0 && (
+            {/* Čekaju odobrenje */}
+            {pendingTestimonials.length > 0 && (
               <div className={card}>
                 <div className="flex items-center gap-3 mb-4">
                   <h3 className="text-md lg:text-xl font-semibold text-gray-900 dark:text-gray-100">
-                    Nepročitani komentari
+                    Čekaju odobrenje
                   </h3>
-                  <span className="px-3 py-1 bg-red-100 text-red-800 text-xs lg:text-sm font-medium rounded-full">
-                    {unreadTestimonials.length} novo
+                  <span className="px-3 py-1 bg-amber-100 text-amber-800 text-xs lg:text-sm font-medium rounded-full">
+                    {pendingTestimonials.length}
                   </span>
                 </div>
                 <div className="space-y-4">
-                  {unreadTestimonials.map((testimonial) => (
+                  {pendingTestimonials.map((testimonial) => (
                     <div key={testimonial._id} className="relative">
-                      <TestimonialCard
-                        testimonial={testimonial}
-                        handleMarkAsRead={handleMarkAsRead}
-                      />
+                      <TestimonialCard testimonial={testimonial} />
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Pročitani komentari */}
-            {readTestimonials.length > 0 && (
+            {/* Odobreni komentari */}
+            {approvedTestimonials.length > 0 && (
               <div className={card}>
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                  Pročitani komentari ({readTestimonials.length})
+                  Odobreni komentari ({approvedTestimonials.length})
                 </h3>
                 <div className="space-y-4">
-                  {readTestimonials.map((testimonial) => (
+                  {approvedTestimonials.map((testimonial) => (
                     <TestimonialCard
                       key={testimonial._id}
                       testimonial={testimonial}
-                      handleMarkAsRead={handleMarkAsRead}
                     />
                   ))}
                 </div>

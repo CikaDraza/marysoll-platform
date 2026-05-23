@@ -13,18 +13,14 @@ interface TestimonialCardProps {
     serviceName: string;
     date: string;
   }>;
-  handleMarkAsRead: (testimonialId: string) => void;
 }
 
-export default function TestimonialCard({
-  testimonial,
-  handleMarkAsRead,
-}: TestimonialCardProps) {
+export default function TestimonialCard({ testimonial }: TestimonialCardProps) {
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState(testimonial.adminReply || "");
   const [isAlertOpen, setIsAlertOpen] = useState(false);
 
-  const { updateTestimonial, deleteTestimonial, markAsRead } =
+  const { updateTestimonial, deleteTestimonial, markAsRead, approveTestimonial } =
     useTestimonialActions();
 
   // Koristi helper funkciju - sada je testimonial striktnog tipa
@@ -103,12 +99,17 @@ export default function TestimonialCard({
             {"★".repeat(testimonial.rating)}
             {"☆".repeat(5 - testimonial.rating)}
           </div>
-          {!testimonial.isRead && (
+          {testimonial.isApproved ? (
+            <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">
+              Odobreno
+            </span>
+          ) : (
             <button
-              onClick={() => handleMarkAsRead(testimonial._id)}
-              className="text-(--primary-color) hover:text-(--primary-color)/80 underline text-sm font-medium cursor-pointer"
+              onClick={() => approveTestimonial.mutate(testimonial._id)}
+              disabled={approveTestimonial.isPending}
+              className="text-green-600 hover:text-green-800 underline text-sm font-medium cursor-pointer disabled:opacity-50"
             >
-              Označi pročitanim
+              {approveTestimonial.isPending ? "..." : "Odobri"}
             </button>
           )}
           <button

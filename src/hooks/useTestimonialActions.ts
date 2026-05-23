@@ -82,6 +82,32 @@ export function useTestimonialActions() {
     },
   });
 
+  const markAllAsRead = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.put("/testimonials/mark-all-read");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-testimonials"] });
+      queryClient.invalidateQueries({ queryKey: ["unreadTestimonialsCount"] });
+    },
+  });
+
+  const approveTestimonial = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.put(`/testimonials/update/${id}`, { isApproved: true });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-testimonials"] });
+      toast.success("Preporuka odobrena.");
+    },
+    onError: (err: unknown) => {
+      toast.error(err instanceof Error ? err.message : String(err));
+      throw err;
+    },
+  });
+
   const markClientAsRead = useMutation({
     mutationFn: async (id: string) => {
       const { data } = await api.put(`/testimonials/mark-client-read/${id}`);
@@ -105,6 +131,8 @@ export function useTestimonialActions() {
     updateTestimonial,
     deleteTestimonial,
     markAsRead,
+    markAllAsRead,
+    approveTestimonial,
     markClientAsRead,
   };
 }

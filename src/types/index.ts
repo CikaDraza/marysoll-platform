@@ -519,6 +519,7 @@ export interface ITestimonial<T = string> {
   rating: number;
   comment: string;
   adminReply?: string;
+  isApproved: boolean;
   isRead: boolean;
   isClientRead: boolean;
   createdAt: string;
@@ -560,6 +561,7 @@ export interface UpdateTestimonialData {
   rating?: number;
   comment?: string;
   adminReply?: string;
+  isApproved?: boolean;
 }
 
 // ─── Notifications ────────────────────────────────────────────────────────────
