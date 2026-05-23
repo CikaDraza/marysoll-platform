@@ -3,15 +3,6 @@ import { useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useClientRouting } from "@/hooks/useClientRouting";
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
-
 export default function ClientResendVerificationPage() {
   const { base } = useClientRouting();
   const [email, setEmail] = useState("");
