@@ -212,7 +212,7 @@ export default function AdminTestimonials() {
         )}
       </div>
 
-      {testimonials.length !== 0 ? (
+      {testimonials.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
           {hasActiveFilters
             ? "Nema komentara koji odgovaraju filterima."
