@@ -529,13 +529,17 @@ export function MarketingTab() {
             {openSection === "hero" && (
               <div className="mt-4 space-y-3">
                 <div>
-                  <label className={lbl}>Headline</label>
-                  <input
-                    className={inp}
+                  <label className={lbl}>
+                    Headline (svaki novi red = novi red u H1, 2+ red je ljubičast)
+                  </label>
+                  <textarea
+                    className={`${inp} font-mono text-xs`}
+                    rows={3}
                     value={ls.hero.headline}
                     onChange={(e) =>
                       update("hero", { ...ls.hero, headline: e.target.value })
                     }
+                    placeholder={"Automatizuj\nsvoj salon"}
                   />
                 </div>
                 <div>
@@ -702,7 +706,7 @@ export function MarketingTab() {
           {/* How it works */}
           <div className={card}>
             <SectionHeader
-              title="Zašto Mary (4 stavke: staro vs novo)"
+              title="Zašto Mary (do 6 stavki: staro vs novo)"
               open={openSection === "how"}
               onToggle={() => toggle("how")}
             />
@@ -726,12 +730,25 @@ export function MarketingTab() {
                     key={i}
                     className="bg-slate-700/40 rounded-lg p-3 space-y-2"
                   >
-                    <p className="text-xs text-slate-400 font-bold uppercase">
-                      Stavka {i + 1}
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-slate-400 font-bold uppercase">
+                        Stavka {i + 1}
+                      </p>
+                      {ls.howItWorks.items.length > 1 && (
+                        <button
+                          className="text-xs text-red-400 hover:text-red-300 transition"
+                          onClick={() => {
+                            const items = ls.howItWorks.items.filter((_, idx) => idx !== i);
+                            update("howItWorks", { ...ls.howItWorks, items });
+                          }}
+                        >
+                          Obriši
+                        </button>
+                      )}
+                    </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className={lbl}>Staro</label>
+                        <label className={lbl}>Staro (✕)</label>
                         <input
                           className={inp}
                           value={item.oldTitle}
@@ -746,7 +763,7 @@ export function MarketingTab() {
                         />
                       </div>
                       <div>
-                        <label className={lbl}>Novo</label>
+                        <label className={lbl}>Novo (✓)</label>
                         <input
                           className={inp}
                           value={item.newTitle}
@@ -778,6 +795,20 @@ export function MarketingTab() {
                     </div>
                   </div>
                 ))}
+                {ls.howItWorks.items.length < 6 && (
+                  <button
+                    className="w-full py-2 border border-dashed border-slate-600 text-slate-400 text-xs font-bold rounded-lg hover:border-violet-500 hover:text-violet-400 transition"
+                    onClick={() => {
+                      const items = [
+                        ...ls.howItWorks.items,
+                        { oldTitle: "", newTitle: "", description: "" },
+                      ];
+                      update("howItWorks", { ...ls.howItWorks, items });
+                    }}
+                  >
+                    + Dodaj stavku ({ls.howItWorks.items.length}/6)
+                  </button>
+                )}
               </div>
             )}
           </div>

@@ -115,6 +115,7 @@ const RESERVED_TOP_SEGMENTS = new Set([
   "logout",
   "tenant", // internal route prefix — must never be treated as a tenant slug
   "marketing",
+  "assets", // static public assets folder
 ]);
 
 // ─── Custom domain DB lookup ──────────────────────────────────────────────────
@@ -701,6 +702,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.png|.*\\.svg|.*\\.ico|service-worker\\.js).*)",
+    "/((?!_next/static|_next/image|favicon.ico|assets/|.*\\.png|.*\\.svg|.*\\.ico|.*\\.mp4|.*\\.webm|.*\\.ogg|.*\\.mp3|service-worker\\.js).*)",
   ],
 };

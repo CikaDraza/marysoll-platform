@@ -7,6 +7,7 @@ import Link from "next/link";
 import { AuthStatusButton } from "../auth/AuthStatusButton";
 import Image from "next/image";
 import { PricingCards } from "./PricingCards";
+import PromoAnimation from "./PromoAnimation";
 import {
   DEFAULT_MARKETING_LANDING,
   normalizeMarketingLanding,
@@ -381,6 +382,7 @@ export function MarketingHomePageSecond({
 }) {
   const [scrollY, setScrollY] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [videoOpen, setVideoOpen] = useState(false);
   const landing = normalizeMarketingLanding(initialLanding);
   const def = DEFAULT_MARKETING_LANDING;
   const navLinks = landing.header.navLinks.length
@@ -578,9 +580,18 @@ export function MarketingHomePageSecond({
 
               <motion.h1
                 variants={fadeInUp}
-                className="text-5xl lg:text-7xl font-bold text-gray-900 leading-tight"
+                className="text-5xl lg:text-7xl font-bold leading-tight"
               >
-                {landing.hero.headline || def.hero.headline}
+                {(landing.hero.headline || def.hero.headline)
+                  .split("\n")
+                  .map((line, index) => (
+                    <span
+                      key={index}
+                      className={`block ${index === 0 ? "text-gray-900" : "text-violet-600"}`}
+                    >
+                      {line}
+                    </span>
+                  ))}
               </motion.h1>
 
               <motion.div
@@ -611,7 +622,7 @@ export function MarketingHomePageSecond({
                   href={landing.hero.ctaPrimaryHref || def.hero.ctaPrimaryHref}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="group inline-flex items-center justify-center gap-2 bg-violet-600 text-white px-8 py-4 rounded-xl font-semibold text-md hover:bg-violet-700 transition shadow-xl shadow-violet-200"
+                  className="group inline-flex items-center justify-center gap-2 bg-violet-600 text-white px-6 py-4 rounded-xl font-semibold text-sm hover:bg-violet-700 transition shadow-xl shadow-violet-200"
                 >
                   {landing.hero.ctaPrimaryText || def.hero.ctaPrimaryText}
                   <motion.span
@@ -622,17 +633,15 @@ export function MarketingHomePageSecond({
                   </motion.span>
                 </motion.a>
 
-                <motion.a
-                  href={
-                    landing.hero.ctaSecondaryHref || def.hero.ctaSecondaryHref
-                  }
+                <motion.button
+                  onClick={() => setVideoOpen(true)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-8 py-4 rounded-xl shadow-xl shadow-violet-200 font-semibold text-md hover:text-violet-600 transition"
+                  className="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-6 py-4 rounded-xl shadow-xl shadow-violet-200 font-semibold text-sm hover:text-violet-600 transition"
                 >
                   👀{" "}
                   {landing.hero.ctaSecondaryText || def.hero.ctaSecondaryText}
-                </motion.a>
+                </motion.button>
               </motion.div>
             </motion.div>
 
@@ -643,6 +652,12 @@ export function MarketingHomePageSecond({
               transition={{ duration: 0.8, delay: 0.3 }}
               className="relative flex justify-center lg:justify-end"
             >
+              <p className="sr-only">
+                Animacija koja prikazuje brzo kreiranje salona na Marysoll
+                platformi — Mary AI asistent pita vlasnika salona kako mu se
+                zove salon i koji je email, nakon čega je salon odmah spreman za
+                online zakazivanje.
+              </p>
               <FakeChatStream />
 
               <motion.div
@@ -672,70 +687,111 @@ export function MarketingHomePageSecond({
             initial="hidden"
             animate="visible"
             variants={staggerContainer}
-            className="mt-16 text-center lg:text-left py-24"
+            className="mt-16 py-24"
           >
-            <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 leading-tight mb-6">
-              {landing.about.headline || def.about.headline}
-            </h2>
-            <motion.ul
-              variants={fadeInUp}
-              className="flex flex-col items-center lg:items-start gap-4 leading-relaxed"
-            >
-              {(landing.about.bullets.length
-                ? landing.about.bullets
-                : def.about.bullets
-              ).map((bullet) => (
-                <li
-                  key={bullet}
-                  className="w-auto items-center rounded-md bg-violet-50 px-2 py-1 text-sm font-medium text-violet-600 inset-ring inset-ring-purple-700/10"
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+              {/* Left column — text */}
+              <div className="text-center lg:text-left">
+                <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 leading-tight mb-6">
+                  {landing.about.headline || def.about.headline}
+                </h2>
+                <motion.ul
+                  variants={fadeInUp}
+                  className="flex flex-col items-center lg:items-start gap-4 leading-relaxed"
                 >
-                  ✔ {bullet}
-                </li>
-              ))}
-            </motion.ul>
+                  {(landing.about.bullets.length
+                    ? landing.about.bullets
+                    : def.about.bullets
+                  ).map((bullet) => (
+                    <li
+                      key={bullet}
+                      className="w-auto items-center rounded-md bg-violet-50 px-2 py-1 text-sm font-medium text-violet-600 inset-ring inset-ring-purple-700/10"
+                    >
+                      ✔ {bullet}
+                    </li>
+                  ))}
+                </motion.ul>
 
-            <motion.p
-              variants={fadeInUp}
-              className="mt-6 text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto lg:mx-0 space-y-3"
-            >
-              {(landing.about.paragraphs.length
-                ? landing.about.paragraphs
-                : def.about.paragraphs
-              ).map((paragraph, index) => (
-                <span
-                  key={paragraph}
-                  className={
-                    index % 2 === 0
-                      ? "block text-violet-600 font-semibold"
-                      : "block text-gray-500"
-                  }
+                <motion.p
+                  variants={fadeInUp}
+                  className="mt-6 text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto lg:mx-0 space-y-3"
                 >
-                  {paragraph}
-                </span>
-              ))}
-            </motion.p>
+                  {(landing.about.paragraphs.length
+                    ? landing.about.paragraphs
+                    : def.about.paragraphs
+                  ).map((paragraph, index) => (
+                    <span
+                      key={paragraph}
+                      className={
+                        index % 2 === 0
+                          ? "block text-violet-600 font-semibold"
+                          : "block text-gray-500"
+                      }
+                    >
+                      {paragraph}
+                    </span>
+                  ))}
+                </motion.p>
 
-            {/* Social Proof */}
-            <motion.div
-              variants={fadeInUp}
-              className="mt-8 flex items-center gap-4 justify-center lg:justify-start text-sm text-gray-500"
-            >
-              <div className="flex -space-x-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <Image
-                    key={i}
-                    src={`/assets/thumbnails/client-${i}.png`}
-                    width={32}
-                    height={32}
-                    alt={`Avatar ${i}`}
-                    className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-300 to-purple-400 border-2 border-white"
-                  />
-                ))}
+                {/* Social Proof */}
+                <motion.div
+                  variants={fadeInUp}
+                  className="mt-8 flex items-center gap-4 justify-center lg:justify-start text-sm text-gray-500"
+                >
+                  <div className="flex -space-x-2">
+                    {[1, 2, 3, 4].map((i) => (
+                      <Image
+                        key={i}
+                        src={`/assets/thumbnails/client-${i}.png`}
+                        width={32}
+                        height={32}
+                        alt={`Avatar ${i}`}
+                        className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-300 to-purple-400 border-2 border-white"
+                      />
+                    ))}
+                  </div>
+                  <p className="font-semibold text-gray-800">
+                    {landing.hero.socialProofText || def.hero.socialProofText}
+                  </p>
+                </motion.div>
               </div>
-              <p className="font-semibold text-gray-800">
-                {landing.hero.socialProofText || def.hero.socialProofText}
-              </p>
-            </motion.div>
+
+              {/* Right column — promo animation */}
+              <motion.div
+                initial={{ opacity: 0, x: 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+                viewport={{ once: true }}
+                className="relative flex justify-center lg:justify-end"
+              >
+                <p className="sr-only">
+                  Animacija koja prikazuje online zakazivanje bez DM haosa —
+                  klijenti sami biraju uslugu i slobodan termin direktno kroz
+                  Marysoll booking sistem, bez slanja poruka u Instagram DM.
+                </p>
+                <PromoAnimation />
+
+                <motion.div
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                  className="absolute -top-4 -right-4 bg-white rounded-xl px-4 py-2 shadow-lg border border-violet-100"
+                >
+                  <p className="text-xs font-medium text-violet-600">
+                    🎉 Online zakazivanje bez DM haosa!
+                  </p>
+                </motion.div>
+
+                <motion.div
+                  animate={{ y: [0, 10, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, delay: 1 }}
+                  className="absolute -bottom-4 -left-4 bg-white rounded-xl px-4 py-2 shadow-lg border border-violet-100"
+                >
+                  <p className="text-xs font-medium text-green-600">
+                    ✓ Rast tvog beauty biznisa bez komplikacija
+                  </p>
+                </motion.div>
+              </motion.div>
+            </div>
           </motion.div>
         </div>
       </section>
@@ -755,25 +811,63 @@ export function MarketingHomePageSecond({
             </h2>
           </motion.div>
 
-          <div className="mt-12 grid md:grid-cols-2 gap-6">
+          <div className="mt-12 grid md:grid-cols-2 gap-6 text-left">
             {(landing.howItWorks.items.length
               ? landing.howItWorks.items
               : def.howItWorks.items
-            ).map((item, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: index % 2 === 0 ? -30 : 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-2xl p-6 shadow-sm"
-              >
-                <p className="text-gray-400 text-sm mb-2">{item.oldTitle}</p>
-                <p className="text-gray-800 font-semibold text-lg">
-                  {item.newTitle}
-                </p>
-              </motion.div>
-            ))}
+            ).map((item, index) => {
+              const baseDelay = index * 0.18;
+              return (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.45, delay: baseDelay }}
+                  className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100"
+                >
+                  {/* PRE */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: baseDelay + 0.1, duration: 0.3 }}
+                    className="flex items-center gap-4"
+                  >
+                    <span className="flex-shrink-0 w-9 h-9 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-sm font-bold">
+                      ✕
+                    </span>
+                    <span className="text-base text-gray-600 font-medium">
+                      {item.oldTitle}
+                    </span>
+                  </motion.div>
+
+                  <div className="border-t border-gray-200 my-4" />
+
+                  {/* POSLE */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: baseDelay + 0.42, duration: 0.35 }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <span className="flex-shrink-0 w-9 h-9 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-sm font-bold">
+                        ✓
+                      </span>
+                      <span className="text-lg font-bold text-gray-900">
+                        {item.newTitle}
+                      </span>
+                    </div>
+                    {item.description && (
+                      <p className="mt-3 ml-[52px] text-sm text-gray-500 leading-relaxed">
+                        {item.description}
+                      </p>
+                    )}
+                  </motion.div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -917,6 +1011,45 @@ export function MarketingHomePageSecond({
           <PricingCards plans={landing.pricing.plans} />
         </div>
       </section>
+
+      {/* Video modal */}
+      <AnimatePresence>
+        {videoOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            onClick={() => setVideoOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="relative w-full max-w-4xl mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <video
+                src="/assets/video/gif_design.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-auto rounded-2xl shadow-2xl"
+              />
+              <button
+                onClick={() => setVideoOpen(false)}
+                className="absolute -top-3 -right-3 w-8 h-8 bg-white/90 hover:bg-white text-gray-800 rounded-full text-sm font-bold flex items-center justify-center shadow-lg transition"
+                aria-label="Zatvori"
+              >
+                ✕
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -159,3 +159,11 @@ body {
 .dark .fc .fc-highlight {
   background: rgba(124, 58, 237, 0.15);
 }
+
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes floatParticle {
+  0%, 100% { opacity: 0.15; transform: translateY(0px); }
+  50% { opacity: 0.45; transform: translateY(-12px); }
+}
