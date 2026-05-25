@@ -31,7 +31,9 @@ export async function getOrCreateSubscription(
 ): Promise<ISubscription> {
   await connectToDB();
 
-  const existing = await Subscription.findOne({ tenantId }).lean<ISubscription>();
+  const existing = await Subscription.findOne({
+    tenantId,
+  }).lean<ISubscription>();
   if (existing) return existing;
 
   // Migracija: kreira Subscription za postojeći tenant
@@ -101,7 +103,7 @@ export async function tenantHasFeature<K extends keyof PlanFeatures>(
 // ─── Usage tracking ───────────────────────────────────────────────────────────
 
 /**
- * Povećaj broj AI zahtjeva za ovaj mjesec.
+ * Povećaj broj AI zahteva za ovaj mjesec.
  * Vraća true ako je zahtjev dozvoljen, false ako je limit prekoračen.
  */
 export async function consumeAiRequest(tenantId: string): Promise<boolean> {

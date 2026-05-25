@@ -26,6 +26,7 @@ import Loader from "@/components/elements/Loader";
 import { api } from "@/lib/api";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
+import { AdminPlanStatus } from "@/components/admin/plan/AdminPlanStatus";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -43,7 +44,8 @@ type Tab =
   | "preporuke"
   | "domen"
   | "klijenti"
-  | "chat";
+  | "chat"
+  | "pretplata";
 
 const ALL_TABS: Tab[] = [
   "profil",
@@ -60,6 +62,7 @@ const ALL_TABS: Tab[] = [
   "domen",
   "klijenti",
   "chat",
+  "pretplata",
 ];
 
 // ─── Themes ───────────────────────────────────────────────────────────────────
@@ -1679,6 +1682,7 @@ function AdminDashboard() {
       {tab === "domen" && <AdminCustomDomain />}
       {tab === "klijenti" && <ClientsList />}
       {tab === "chat" && <AdminChat />}
+      {tab === "pretplata" && <AdminPlanStatus />}
 
       {/* Service modal */}
       {svc.modalMode !== "closed" && <ServiceModal s={svc} />}

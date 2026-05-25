@@ -7,6 +7,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useChatUnread } from "@/hooks/useChatUnread";
+import { usePlanStatus } from "@/hooks/usePlanStatus";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -156,6 +157,27 @@ const AdminNav: NavItem[] = [
     path: "/dashboard?tab=domen",
   },
   {
+    name: "Pretplata",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M2 7a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V7z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M2 10h20"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+      </svg>
+    ),
+    path: "/dashboard?tab=pretplata",
+  },
+  {
     name: "Chat",
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -247,7 +269,8 @@ const AppSidebar: React.FC = () => {
 
   const salonUrl = tenant.getTenantUrl?.();
 
-  const plan = "free"; // TODO: wire to usePlanFeatures
+  const { data: planStatusData } = usePlanStatus();
+  const plan = planStatusData?.plan ?? "free";
 
   return (
     <aside

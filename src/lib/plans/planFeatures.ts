@@ -19,7 +19,7 @@ export interface PlanFeatures {
   // ── Limits ────────────────────────────────────────────────────────────────
   /** Veličina baze podataka u GB. -1 = neograničeno */
   dbStorageGb: number;
-  /** AI zahtjevi po mjesecu. -1 = neograničeno */
+  /** AI zahtevi po mjesecu. -1 = neograničeno */
   aiRequestsPerMonth: number;
   /** Broj newsletter pretplatnika. -1 = neograničeno */
   newsletterSubscribers: number;
@@ -115,7 +115,14 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     testimonials: true,
 
     // Teme
-    landingThemes: ["theme-1", "theme-2", "theme-3", "theme-4", "theme-5", "theme-6"],
+    landingThemes: [
+      "theme-1",
+      "theme-2",
+      "theme-3",
+      "theme-4",
+      "theme-5",
+      "theme-6",
+    ],
     customTheme: false,
 
     // Newsletter
@@ -166,7 +173,14 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     pushNotifications: true,
     testimonials: true,
 
-    landingThemes: ["theme-1", "theme-2", "theme-3", "theme-4", "theme-5", "theme-6"],
+    landingThemes: [
+      "theme-1",
+      "theme-2",
+      "theme-3",
+      "theme-4",
+      "theme-5",
+      "theme-6",
+    ],
     customTheme: true,
 
     newsletter: true,
@@ -212,7 +226,14 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     pushNotifications: true,
     testimonials: true,
 
-    landingThemes: ["theme-1", "theme-2", "theme-3", "theme-4", "theme-5", "theme-6"],
+    landingThemes: [
+      "theme-1",
+      "theme-2",
+      "theme-3",
+      "theme-4",
+      "theme-5",
+      "theme-6",
+    ],
     customTheme: true,
 
     newsletter: true,
@@ -258,7 +279,14 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     pushNotifications: true,
     testimonials: true,
 
-    landingThemes: ["theme-1", "theme-2", "theme-3", "theme-4", "theme-5", "theme-6"],
+    landingThemes: [
+      "theme-1",
+      "theme-2",
+      "theme-3",
+      "theme-4",
+      "theme-5",
+      "theme-6",
+    ],
     customTheme: true,
 
     newsletter: true,
