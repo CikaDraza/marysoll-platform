@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
     const normalizedCampaigns = await Promise.all(
       campaigns.map(async (campaign) => {
-        const [openCount, clickCount] = await Promise.all([
+        const [openCount, clickCount, bounceCount] = await Promise.all([
           NewsletterLog.countDocuments({
             campaignId: campaign._id,
             openedAt: { $exists: true },
@@ -33,6 +33,10 @@ export async function GET(req: NextRequest) {
             campaignId: campaign._id,
             clickedAt: { $exists: true },
           }),
+          NewsletterLog.countDocuments({
+            campaignId: campaign._id,
+            status: "bounced",
+          }),
         ]);
 
         const normalizedOpenCount = Math.min(openCount, campaign.sentCount ?? 0);
@@ -40,10 +44,18 @@ export async function GET(req: NextRequest) {
           clickCount,
           campaign.sentCount ?? 0,
         );
+        const normalizedStatus =
+          bounceCount > 0 &&
+          (campaign.sentCount ?? 0) === 0 &&
+          ["sent", "sending"].includes(campaign.status)
+            ? "failed"
+            : campaign.status;
 
         if (
           normalizedOpenCount !== campaign.openCount ||
-          normalizedClickCount !== campaign.clickCount
+          normalizedClickCount !== campaign.clickCount ||
+          bounceCount !== campaign.bounceCount ||
+          normalizedStatus !== campaign.status
         ) {
           await NewsletterCampaign.updateOne(
             { _id: campaign._id, tenantId },
@@ -51,6 +63,8 @@ export async function GET(req: NextRequest) {
               $set: {
                 openCount: normalizedOpenCount,
                 clickCount: normalizedClickCount,
+                bounceCount,
+                status: normalizedStatus,
               },
             },
           );
@@ -58,8 +72,10 @@ export async function GET(req: NextRequest) {
 
         return {
           ...campaign,
+          status: normalizedStatus,
           openCount: normalizedOpenCount,
           clickCount: normalizedClickCount,
+          bounceCount,
         };
       }),
     );

@@ -3,9 +3,24 @@ import { LandingBlock } from "@/types/landing-blocks";
 export function scoreVisualBalance(layout: LandingBlock[]): number {
   let score = 1;
 
-  const visualBlocks = layout.filter((b) =>
-    ["HeroVisualBlock", "GalleryBlock"].includes(b.type),
-  );
+  const visualBlocks = layout.filter((block) => {
+    switch (block.type) {
+      case "HeroBlock":
+        return Boolean(block.images?.length);
+      case "ArticleBlock":
+      case "ContentSplitBlock":
+      case "AffiliateCTABlock":
+        return Boolean(block.image);
+      case "FeatureBlock":
+        return block.sections.some((section) => Boolean(section.image));
+      case "PricingBlock":
+        return false;
+      default: {
+        const _exhaustive: never = block;
+        return _exhaustive;
+      }
+    }
+  });
 
   if (visualBlocks.length === 0) score -= 0.4;
   if (visualBlocks.length > 3) score -= 0.2;

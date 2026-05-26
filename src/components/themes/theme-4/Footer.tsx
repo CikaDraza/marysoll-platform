@@ -24,6 +24,7 @@ export function Theme4Footer({ tenantSlug, salon }: Theme4FooterProps) {
   const navItems = [
     { name: "Naslovna", href: `${base}/` },
     { name: "Usluge", href: `${base}/usluge` },
+    { name: "Blog", href: `${base}/blogs` },
     { name: "Cookie Policy", href: `${base}/cookie-policy` },
     { name: "Pravila zakazivanja", href: `${base}/pravila-zakazivanja` },
     { name: "Politika privatnosti", href: `${base}/politika-privatnosti` },

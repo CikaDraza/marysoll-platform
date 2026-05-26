@@ -1,77 +1,55 @@
 import { LandingBlock } from "@/types/landing-blocks";
 
-function hasText(v?: string) {
-  return Boolean(v && v.trim().length > 0);
+function hasText(value?: string) {
+  return Boolean(value && value.trim().length > 0);
 }
 
-function hasImages(arr?: string[]) {
-  return Array.isArray(arr) && arr.length > 0 && Boolean(arr[0]);
+function hasParagraphs(paragraphs?: string[]) {
+  return Array.isArray(paragraphs) && paragraphs.some(hasText);
 }
-
 
 export function sanitizeLayout(blocks: LandingBlock[]): LandingBlock[] {
   if (!blocks?.length) return [];
-
-  const seenTypes = new Set<string>();
 
   const cleaned = blocks.filter((block) => {
     if (!block || !block.type) return false;
 
     switch (block.type) {
-      // ---------- HERO ----------
-      case "HeroPrimaryBlock":
+      case "HeroBlock":
         return hasText(block.title) || hasText(block.subtitle);
 
-      // ---------- HERO VISUAL ----------
-      case "HeroVisualBlock":
+      case "ArticleBlock":
+        return hasText(block.title) && hasParagraphs(block.paragraphs);
+
+      case "FeatureBlock":
         return (
-          hasImages(block.imagesUrl) &&
-          (hasText(block.title) || hasText(block.subtitle))
+          hasText(block.title) &&
+          block.sections.some(
+            (section) =>
+              hasText(section.title) || hasParagraphs(section.paragraphs),
+          )
         );
 
-      // ---------- ARTICLE ----------
-      case "ArticleSectionBlock":
+      case "ContentSplitBlock":
         return hasText(block.title) || hasText(block.content);
 
-      // ---------- SPLIT ----------
-      case "ContentSplitBlock":
-        return hasText(block.heading) || hasText(block.content);
+      case "PricingBlock":
+        return hasText(block.title) && block.items.some((item) => hasText(item.title));
 
-      // ---------- FEATURES ----------
-      case "FeatureGridBlock":
-        return (
-          Array.isArray(block.features) &&
-          block.features.length > 0 &&
-          block.features.some((f) => hasText(f.title))
-        );
+      case "AffiliateCTABlock":
+        return hasText(block.title) && hasText(block.ctaLabel) && hasText(block.href);
 
-      default:
-        return true;
+      default: {
+        const _exhaustive: never = block;
+        return _exhaustive;
+      }
     }
   });
 
-  // ---------- REMOVE DUPLICATE SINGLETON BLOCKS ----------
-  const deduped = cleaned.filter((block) => {
-    const singleton = [
-      "HeroPrimaryBlock",
-      "HeroVisualBlock",
-      "CTABlock",
-    ];
+  const sorted = [...cleaned].sort((a, b) => a.priority - b.priority);
 
-    if (!singleton.includes(block.type)) return true;
-
-    if (seenTypes.has(block.type)) return false;
-
-    seenTypes.add(block.type);
-    return true;
-  });
-
-  // ---------- SORT BY PRIORITY ----------
-  deduped.sort((a, b) => a.priority - b.priority);
-
-  // ---------- REINDEX PRIORITY ----------
-  return deduped.map((block, i) => ({
+  return sorted.map((block, index) => ({
     ...block,
-    priority: i + 1,
+    priority: index + 1,
   }));
 }

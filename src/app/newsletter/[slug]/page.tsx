@@ -1,5 +1,7 @@
 import { connectToDB } from "@/lib/db/mongodb";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
+import { CampaignLayoutEngine } from "@/components/layout/CampaignLayoutEngine";
+import { LandingBlock } from "@/types/landing-blocks";
 import { notFound } from "next/navigation";
 
 interface Props {
@@ -18,14 +20,11 @@ export default async function NewsletterLandingPage({ params }: Props) {
   if (!campaign) notFound();
 
   const c = campaign as Record<string, unknown>;
-  const lp = c.landingPage as Record<string, unknown>;
+  const lp = c.landingPage as { layout?: LandingBlock[] };
 
   return (
     <div className="min-h-screen">
-      {/* CampaignLayoutEngine renders lp.layout blocks */}
-      <pre className="p-4 text-xs opacity-50">
-        {JSON.stringify(lp.seo, null, 2)}
-      </pre>
+      <CampaignLayoutEngine blocks={lp.layout || []} />
     </div>
   );
 }

@@ -33,7 +33,7 @@ export default function BlogsPageClient() {
 
         {!isLoading && posts.length === 0 && (
           <p className="mt-16 text-center text-gray-500">
-            Nema objavljenih članaka.
+            Trenutno nema blogova.
           </p>
         )}
 

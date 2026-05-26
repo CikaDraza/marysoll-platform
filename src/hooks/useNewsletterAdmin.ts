@@ -7,6 +7,18 @@ import {
 } from "@/types";
 import toast from "react-hot-toast";
 import { api } from "@/lib/api";
+import { AxiosError } from "axios";
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof AxiosError) {
+    const data = error.response?.data as
+      | { error?: string; upgrade?: string }
+      | undefined;
+    return data?.upgrade || data?.error || fallback;
+  }
+
+  return error instanceof Error ? error.message : fallback;
+}
 
 export function useNewsletterAdmin() {
   const queryClient = useQueryClient();
@@ -18,6 +30,8 @@ export function useNewsletterAdmin() {
       if (!res) throw new Error("Failed to load templates");
       return res.data;
     },
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
   });
 
   const campaignsQuery = useQuery<INewsletterCampaign[]>({
@@ -27,6 +41,8 @@ export function useNewsletterAdmin() {
       if (!res) throw new Error("Failed to load campaigns");
       return res.data;
     },
+    staleTime: 1000 * 60,
+    refetchOnWindowFocus: false,
   });
 
   const createCampaign = useMutation({
@@ -41,7 +57,8 @@ export function useNewsletterAdmin() {
       queryClient.invalidateQueries({ queryKey: ["newsletterCampaigns"] });
       toast.success("Kampanja uspešno kreirana!");
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: unknown) =>
+      toast.error(getApiErrorMessage(err, "Greška pri kreiranju kampanje")),
   });
 
   const sendCampaign = useMutation({
@@ -55,7 +72,8 @@ export function useNewsletterAdmin() {
       queryClient.invalidateQueries({ queryKey: ["newsletterCampaigns"] });
       toast.success("Kampanja pokrenuta! Slanje u toku...");
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: unknown) =>
+      toast.error(getApiErrorMessage(err, "Greška pri slanju kampanje")),
   });
 
   const pauseCampaign = useMutation({
@@ -69,7 +87,8 @@ export function useNewsletterAdmin() {
       queryClient.invalidateQueries({ queryKey: ["newsletterCampaigns"] });
       toast.success("Kampanja pauzirana");
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: unknown) =>
+      toast.error(getApiErrorMessage(err, "Greška pri pauziranju kampanje")),
   });
 
   const resumeCampaign = useMutation({
@@ -83,7 +102,8 @@ export function useNewsletterAdmin() {
       queryClient.invalidateQueries({ queryKey: ["newsletterCampaigns"] });
       toast.success("Kampanja nastavljena");
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: unknown) =>
+      toast.error(getApiErrorMessage(err, "Greška pri nastavljanju kampanje")),
   });
 
   const stopCampaign = useMutation({
@@ -97,7 +117,8 @@ export function useNewsletterAdmin() {
       queryClient.invalidateQueries({ queryKey: ["newsletterCampaigns"] });
       toast.success("Kampanja zaustavljena");
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: unknown) =>
+      toast.error(getApiErrorMessage(err, "Greška pri zaustavljanju kampanje")),
   });
 
   const deleteCampaign = useMutation({
@@ -111,7 +132,8 @@ export function useNewsletterAdmin() {
       queryClient.invalidateQueries({ queryKey: ["newsletterCampaigns"] });
       toast.success("Kampanja obrisana");
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: unknown) =>
+      toast.error(getApiErrorMessage(err, "Greška pri brisanju kampanje")),
   });
 
   return {

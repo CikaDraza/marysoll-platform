@@ -16,6 +16,7 @@ interface CTA {
 interface Props {
   salonName?: string;
   logo?: string;
+  homeHref?: string;
   navigation?: NavItem[];
   cta?: CTA;
 }
@@ -23,6 +24,7 @@ interface Props {
 export function Theme6Header({
   salonName = "Elegance Nails",
   logo,
+  homeHref = "/",
   navigation = [
     { label: "Home", href: "#" },
     { label: "Services", href: "#services" },
@@ -38,7 +40,7 @@ export function Theme6Header({
     <header className="sticky top-0 z-50 bg-white border-b border-[#E5E0DB]">
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
         <div className="flex items-center justify-between h-20">
-          <Link href="/" className="flex items-center gap-3">
+          <Link href={homeHref} className="flex items-center gap-3">
             {logo ? (
               <Image
                 width={64}

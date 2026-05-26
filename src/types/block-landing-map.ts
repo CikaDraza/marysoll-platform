@@ -1,19 +1,17 @@
-// ai-landing/src/types/block-registry.ts
-
 import {
-  ArticleSectionBlock,
+  AffiliateCTABlock,
+  ArticleBlock,
   ContentSplitBlock,
-  FeatureGridBlock,
-  HeroPrimaryBlock,
-  HeroVisualBlock,
+  FeatureBlock,
+  HeroBlock,
+  PricingBlock,
 } from "./landing-blocks";
-import { CTABlock } from "./landing-blocks";
 
 export interface BlockLandingTypeMap {
-  HeroPrimaryBlock: HeroPrimaryBlock;
-  HeroVisualBlock: HeroVisualBlock;
-  ArticleSectionBlock: ArticleSectionBlock;
-  FeatureGridBlock: FeatureGridBlock;
+  HeroBlock: HeroBlock;
+  ArticleBlock: ArticleBlock;
+  FeatureBlock: FeatureBlock;
   ContentSplitBlock: ContentSplitBlock;
-  CTABlock: CTABlock;
+  PricingBlock: PricingBlock;
+  AffiliateCTABlock: AffiliateCTABlock;
 }

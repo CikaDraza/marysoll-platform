@@ -9,8 +9,10 @@ export function useCampaign(id: string, initialData?: Campaign) {
       const res = await axios.get(`/api/landing-campaigns/${id}`);
       return res.data;
     },
-    enabled: !!id,
+    enabled: !!id && !initialData,
     initialData,
-    staleTime: 1000 * 60 * 5,
+    staleTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 }

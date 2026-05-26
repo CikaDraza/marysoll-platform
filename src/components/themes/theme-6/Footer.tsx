@@ -23,6 +23,7 @@ export function Theme6Footer({
   const footerLinks = {
     services: [
       { label: "Usluge", href: `${base}/usluge` },
+      { label: "Blog", href: `${base}/blogs` },
       { label: "Termini", href: `${base}/termini` },
     ],
     legal: [

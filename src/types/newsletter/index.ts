@@ -1,7 +1,7 @@
 // src/types/newsletter/index.ts
 // Centralizovani tipovi za newsletter i campaign funkcionalnosti
 
-import { LandingBlock } from "../landing-blocks";
+import { LandingBlock, LandingPageOutput } from "../landing-blocks";
 
 // ============== CAMPAIGN TYPES ==============
 
@@ -148,23 +148,7 @@ export interface ImageGenerationResult {
 // ============== API RESPONSE TYPES ==============
 
 export interface GenerateLandingResponse {
-  landing: {
-    hero: { title: string; subtitle?: string };
-    heroVisual: { title: string; subtitle?: string; imagesUrl?: string[] };
-    article: { title: string; content: string };
-    contentSplit: { heading: string; content: string };
-    features: Array<{ title: string; description: string }>;
-    pricing?: Array<{
-      id: string;
-      name: string;
-      description?: string;
-      price: number;
-      discount?: number;
-      ctaLabel?: string;
-      href?: string;
-    }>;
-    ctaSlug: { label: string; goal: string };
-  } | null;
+  landing: LandingPageOutput | null;
 }
 
 export interface GenerateSeoResponse {

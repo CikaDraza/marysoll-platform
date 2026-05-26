@@ -5,11 +5,11 @@ import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { requireFeature } from "@/lib/plans/planEnforcement";
 import { generateSeoMetadata } from "@/lib/ai/orchestrator";
 import { extractTextFromBlocks } from "@/lib/conversational/ai/extractTextFromBlocks";
-import { LayoutBlock } from "@/types/conversational/layout";
+import { LandingBlock, landingPageOutputSchema } from "@/types/landing-blocks";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 
 interface RequestBody {
-  layout: LayoutBlock[];
+  layout: LandingBlock[];
   titleSeed?: string;
   keywords?: string[];
 }
@@ -46,7 +46,15 @@ export async function POST(
       );
     }
 
-    const textContent = extractTextFromBlocks(body.layout);
+    const parsed = landingPageOutputSchema.safeParse({ blocks: body.layout });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid landing blocks for SEO generation" },
+        { status: 400 },
+      );
+    }
+
+    const textContent = extractTextFromBlocks(parsed.data.blocks);
 
     const seo = await generateSeoMetadata({
       titleSeed: body.titleSeed || campaign.subject,

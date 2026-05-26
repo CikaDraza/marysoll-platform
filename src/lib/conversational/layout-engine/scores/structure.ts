@@ -7,9 +7,9 @@ export function scoreStructure(layout: LandingBlock[]): number {
 
   const types = layout.map((b) => b.type);
 
-  const hasHero = types.includes("HeroPrimaryBlock");
+  const hasHero = types.includes("HeroBlock");
   const hasContent = types.some((t) =>
-    ["ArticleSectionBlock", "ContentSplitBlock"].includes(t),
+    ["ArticleBlock", "FeatureBlock", "ContentSplitBlock"].includes(t),
   );
 
   if (!hasHero) score -= 0.4;

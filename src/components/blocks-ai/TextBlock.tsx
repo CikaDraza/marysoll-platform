@@ -1,17 +1,23 @@
-import { TextMessage } from "@/types/ai/ai.text-engine";
-import clsx from "clsx";
+"use client";
 
-export default function TextBlock({ block }: { block: TextMessage }) {
+interface TextBlockProps {
+  block: {
+    id: string;
+    role?: string;
+    type: "TextBlock";
+    content: string;
+  };
+}
+
+export default function TextBlock({ block }: TextBlockProps) {
   return (
-    <p
-      className={clsx(
-        "max-w-full mt-1 text-sm/6 p-2 rounded-xl text-gray-700 md:col-span-2 sm:mt-0",
-        block.role === "user"
-          ? "w-sm ml-auto bg-(--secondary-color) text-white"
-          : "mr-auto",
+    <div id={block.id} className="rounded-md bg-gray-50 p-3 text-sm">
+      {block.role && (
+        <p className="mb-1 text-xs font-semibold uppercase text-gray-500">
+          {block.role}
+        </p>
       )}
-    >
-      {block.content}
-    </p>
+      <p className="whitespace-pre-wrap text-gray-800">{block.content}</p>
+    </div>
   );
 }

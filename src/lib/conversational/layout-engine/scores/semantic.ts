@@ -5,8 +5,7 @@ export function scoreSemanticMatch(layout: LandingBlock[]): number {
 
   const types = layout.map((b) => b.type);
 
-  if (types.includes("HeroVisualBlock") && !types.includes("HeroPrimaryBlock"))
-    score -= 0.4;
+  if (types.filter((type) => type === "HeroBlock").length !== 1) score -= 0.4;
 
   return clamp(score);
 }

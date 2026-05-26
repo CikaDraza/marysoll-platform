@@ -2,8 +2,11 @@
 "use client";
 
 import Image from "next/image";
-import { LandingSeo } from "@/types/newsletter";
+import { ReactNode, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { blockRegistry } from "@/components/layout/blockRegistry";
 import { LandingBlock } from "@/types/landing-blocks";
+import { LandingSeo } from "@/types/newsletter";
 
 interface PreviewRendererProps {
   blocks: LandingBlock[];
@@ -12,8 +15,129 @@ interface PreviewRendererProps {
   isSeoReady?: boolean;
 }
 
-function hasImages(arr?: string[]): boolean {
-  return Array.isArray(arr) && arr.length > 0 && Boolean(arr[0]);
+const DESKTOP_PREVIEW_WIDTH = 1280;
+
+function renderBlock(block: LandingBlock) {
+  switch (block.type) {
+    case "HeroBlock": {
+      const BlockView = blockRegistry.HeroBlock;
+      return <BlockView key={block.id} block={block} />;
+    }
+
+    case "ArticleBlock": {
+      const BlockView = blockRegistry.ArticleBlock;
+      return <BlockView key={block.id} block={block} />;
+    }
+
+    case "FeatureBlock": {
+      const BlockView = blockRegistry.FeatureBlock;
+      return <BlockView key={block.id} block={block} />;
+    }
+
+    case "ContentSplitBlock": {
+      const BlockView = blockRegistry.ContentSplitBlock;
+      return <BlockView key={block.id} block={block} />;
+    }
+
+    case "PricingBlock": {
+      const BlockView = blockRegistry.PricingBlock;
+      return <BlockView key={block.id} block={block} />;
+    }
+
+    case "AffiliateCTABlock": {
+      const BlockView = blockRegistry.AffiliateCTABlock;
+      return <BlockView key={block.id} block={block} />;
+    }
+
+    default: {
+      const _exhaustive: never = block;
+      return _exhaustive;
+    }
+  }
+}
+
+function DesktopPreviewFrame({ children }: { children: ReactNode }) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [mountNode, setMountNode] = useState<HTMLElement | null>(null);
+  const [height, setHeight] = useState(720);
+
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    const doc = iframe.contentDocument;
+    if (!doc) return;
+
+    doc.open();
+    doc.write("<!doctype html><html><head></head><body></body></html>");
+    doc.close();
+
+    const base = doc.createElement("base");
+    base.target = "_parent";
+    doc.head.appendChild(base);
+
+    document
+      .querySelectorAll<HTMLLinkElement | HTMLStyleElement>(
+        'link[rel="stylesheet"], style',
+      )
+      .forEach((node) => {
+        doc.head.appendChild(node.cloneNode(true));
+      });
+
+    const style = doc.createElement("style");
+    style.textContent = `
+      html, body {
+        margin: 0;
+        min-width: ${DESKTOP_PREVIEW_WIDTH}px;
+        background: white;
+        overflow: hidden;
+      }
+      * {
+        box-sizing: border-box;
+      }
+    `;
+    doc.head.appendChild(style);
+
+    setMountNode(doc.body);
+  }, []);
+
+  useEffect(() => {
+    if (!mountNode) return;
+
+    const doc = mountNode.ownerDocument;
+    const updateHeight = () => {
+      setHeight(Math.max(720, doc.documentElement.scrollHeight));
+    };
+
+    updateHeight();
+
+    const resizeObserver = new ResizeObserver(updateHeight);
+    resizeObserver.observe(doc.body);
+    resizeObserver.observe(doc.documentElement);
+
+    return () => resizeObserver.disconnect();
+  }, [mountNode, children]);
+
+  return (
+    <>
+      <iframe
+        ref={iframeRef}
+        title="Desktop landing preview"
+        className="block border-0 bg-white"
+        style={{
+          width: DESKTOP_PREVIEW_WIDTH,
+          height,
+        }}
+      />
+      {mountNode &&
+        createPortal(
+          <main className="w-[1280px] min-w-[1280px] bg-white">
+            {children}
+          </main>,
+          mountNode,
+        )}
+    </>
+  );
 }
 
 export function PreviewRenderer({
@@ -22,18 +146,21 @@ export function PreviewRenderer({
   isSeoLoading = false,
   isSeoReady = false,
 }: PreviewRendererProps) {
+  const visibleBlocks = [...blocks]
+    .filter((block) => block.visibility !== "hidden")
+    .sort((a, b) => a.priority - b.priority);
+
   return (
-    <div className="space-y-8 mt-6">
+    <div className="mt-6 space-y-8">
       <div className="text-sm font-semibold">
         <h6>Newsletter stranica za pregled.</h6>
       </div>
 
-      {/* SEO Section with Loading State */}
-      <div className="rounded-xl shadow bg-white p-4 text-xs space-y-1">
+      <aside className="space-y-1 rounded-xl bg-white p-4 text-xs shadow">
         {isSeoLoading ? (
           <div className="flex items-center gap-2 text-purple-600">
             <svg
-              className="animate-spin h-4 w-4"
+              className="h-4 w-4 animate-spin"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -56,9 +183,9 @@ export function PreviewRenderer({
           </div>
         ) : isSeoReady && seo ? (
           <>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-[10px] text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded border border-green-100 uppercase">
-                ✓ SEO Loaded
+            <div className="mb-3 flex items-center gap-2">
+              <span className="rounded border border-green-100 bg-green-50 px-2 py-0.5 text-[10px] font-bold uppercase text-green-600">
+                SEO Loaded
               </span>
             </div>
             <div>
@@ -74,17 +201,14 @@ export function PreviewRenderer({
               <b>OG Title:</b> {seo.ogTitle}
             </div>
             {seo.ogImage && (
-              <div className="mt-2">
-                <b>OG Image Preview:</b>
-                <div className="mt-1 h-24 w-40 relative rounded shadow-sm overflow-hidden">
-                  <Image
-                    src={seo.ogImage}
-                    alt="OG Preview"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              </div>
+              <figure className="relative mt-2 h-24 w-40 overflow-hidden rounded shadow-sm">
+                <Image
+                  src={seo.ogImage}
+                  alt="OG Preview"
+                  fill
+                  className="object-cover"
+                />
+              </figure>
             )}
           </>
         ) : (
@@ -92,92 +216,20 @@ export function PreviewRenderer({
             SEO podaci će biti generisani nakon kreiranja landing-a
           </div>
         )}
-      </div>
+      </aside>
 
-      {/* Layout Blocks */}
-      {blocks.map((block) => {
-        switch (block.type) {
-          case "HeroPrimaryBlock":
-            return (
-              <div key={block.id} className="p-6 bg-gray-200 rounded-xl">
-                <h1 className="text-2xl! font-bold">{block.title}</h1>
-                <p className="text-gray-600">{block.subtitle}</p>
-              </div>
-            );
-
-          case "HeroVisualBlock":
-            if ("imagesUrl" in block && !hasImages(block.imagesUrl)) {
-              return null;
-            }
-            return (
-              <div key={block.id} className="p-6 bg-gray-200 rounded-xl">
-                <h1 className="text-2xl! font-bold">{block.title}</h1>
-                <p className="text-gray-600">{block.subtitle}</p>
-                <div className="flex items-center gap-3 mt-4">
-                  {block.imagesUrl?.map((image: string, i: number) => (
-                    <div
-                      key={image}
-                      className="h-46 w-30 overflow-hidden rounded-lg"
-                    >
-                      <Image
-                        width={200}
-                        height={200}
-                        src={image}
-                        alt={`${block.title} - ${i}`}
-                        className="rounded-xl object-cover shadow-lg"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-
-          case "ArticleSectionBlock":
-            return (
-              <div key={block.id} className="p-6 bg-gray-200 rounded-xl">
-                <p>{block.content}</p>
-              </div>
-            );
-
-          case "ContentSplitBlock":
-            return (
-              <div key={block.id} className="p-6 bg-gray-200 rounded-xl">
-                <h3 className="text-2xl font-semibold">{block.heading}</h3>
-                <p className="leading-relaxed text-muted-foreground">
-                  {block.content}
-                </p>
-              </div>
-            );
-
-          case "FeatureGridBlock":
-            return (
-              <div key={block.id} className="p-6 bg-gray-200 rounded-xl">
-                <ul className="grid gap-4">
-                  {block.features?.map(
-                    (f: { title: string; description: string }, i: number) => (
-                      <li key={i}>
-                        <strong>{f.title}</strong>
-                        <p>{f.description}</p>
-                      </li>
-                    ),
-                  )}
-                </ul>
-              </div>
-            );
-
-          case "CTABlock":
-            return (
-              <div key={block.id} className="p-6 bg-gray-200 rounded-xl">
-                <div className="cursor-pointer flex w-full justify-center rounded-md bg-(--secondary-color) px-6 py-4 text-sm/6 font-semibold text-white hover:bg-(--secondary-color)/80">
-                  Label: {block.label} - Link: {block.href}
-                </div>
-              </div>
-            );
-
-          default:
-            return null;
-        }
-      })}
+      <section aria-label="Desktop landing preview" className="space-y-2">
+        <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+          Desktop preview 1280px
+        </div>
+        <div className="max-h-[70vh] w-full max-w-full overflow-auto rounded-lg border border-gray-200 bg-gray-100">
+          <div className="w-[1280px] min-w-[1280px]">
+            <DesktopPreviewFrame>
+              {visibleBlocks.map(renderBlock)}
+            </DesktopPreviewFrame>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

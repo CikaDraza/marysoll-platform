@@ -82,6 +82,23 @@ async function resolveSalonFrom(
     const name = profile?.name ?? "";
 
     if (purpose === "newsletter" && profile?.newsletterEmail) {
+      const tenant = (await Tenant.findById(tenantId)
+        .select("customDomain customDomainVerified")
+        .lean()) as {
+        customDomain?: string;
+        customDomainVerified?: boolean;
+      } | null;
+      const senderDomain = profile.newsletterEmail.split("@")[1]?.toLowerCase();
+      const customDomain = tenant?.customDomain?.toLowerCase();
+
+      if (
+        customDomain &&
+        senderDomain === customDomain &&
+        !tenant?.customDomainVerified
+      ) {
+        return undefined;
+      }
+
       return `"${name}" <${profile.newsletterEmail}>`;
     }
     if (purpose === "notification" && profile?.contactEmail) {
@@ -362,8 +379,9 @@ export async function sendNewsletterEmail(
     tenantId,
   });
 
+  const salonFrom = await resolveSalonFrom(tenantId, "newsletter");
   const campaignFrom =
-    (await resolveSalonFrom(tenantId, "newsletter")) ??
+    salonFrom ??
     `"Marysoll small business platform" <${process.env.NEWSLETTER_FROM_EMAIL || process.env.EMAIL_FROM}>`;
 
   return sendEmail({
@@ -371,7 +389,7 @@ export async function sendNewsletterEmail(
     to,
     subject,
     html,
-    tenantId,
+    tenantId: salonFrom ? tenantId : null,
   });
 }
 

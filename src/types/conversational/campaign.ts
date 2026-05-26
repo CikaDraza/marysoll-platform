@@ -3,100 +3,14 @@
 import { INewsletterCampaign } from "..";
 import { LayoutBlockPreview } from "./layout";
 import { LayoutScoreResult } from "./layoutScore";
-import { LandingBlock } from "@/types/landing-blocks";
+import {
+  LandingBlock,
+  LandingPageOutput,
+  landingPageOutputSchema,
+} from "@/types/landing-blocks";
 import { CampaignSemanticContent, CampaignType } from "./semantic";
-import { SchemaType, Schema } from "@google/generative-ai";
 
-export const landingPreviewSchema: Schema = {
-  type: SchemaType.OBJECT,
-  properties: {
-    hero: {
-      type: SchemaType.OBJECT,
-      properties: {
-        title: { type: SchemaType.STRING },
-        subtitle: { type: SchemaType.STRING },
-      },
-      required: ["title", "subtitle"],
-    },
-    heroVisual: {
-      type: SchemaType.OBJECT,
-      properties: {
-        title: { type: SchemaType.STRING },
-        subtitle: { type: SchemaType.STRING },
-        imagesUrl: {
-          type: SchemaType.ARRAY,
-          items: { type: SchemaType.STRING },
-        },
-      },
-      required: ["title", "subtitle", "imagesUrl"],
-    },
-    article: {
-      type: SchemaType.OBJECT,
-      properties: {
-        title: { type: SchemaType.STRING },
-        content: { type: SchemaType.STRING },
-      },
-      required: ["title", "content"],
-    },
-    contentSplit: {
-      type: SchemaType.OBJECT,
-      properties: {
-        heading: { type: SchemaType.STRING },
-        content: { type: SchemaType.STRING },
-      },
-      required: ["heading", "content"],
-    },
-    features: {
-      type: SchemaType.ARRAY,
-      items: {
-        type: SchemaType.OBJECT,
-        properties: {
-          title: { type: SchemaType.STRING },
-          description: { type: SchemaType.STRING },
-        },
-        required: ["title", "description"],
-      },
-    },
-    pricing: {
-      type: SchemaType.OBJECT,
-      properties: {
-        id: { type: SchemaType.STRING },
-        name: { type: SchemaType.STRING },
-        description: { type: SchemaType.STRING },
-        price: { type: SchemaType.NUMBER },
-        discount: { type: SchemaType.NUMBER },
-        ctaLabel: { type: SchemaType.STRING },
-        href: { type: SchemaType.STRING },
-      },
-      required: [
-        "id",
-        "name",
-        "description",
-        "price",
-        "discount",
-        "ctaLabel",
-        "href",
-      ],
-    },
-    ctaSlug: {
-      type: SchemaType.OBJECT,
-      properties: {
-        label: { type: SchemaType.STRING },
-        goal: { type: SchemaType.STRING },
-      },
-      required: ["label", "goal"],
-    },
-  },
-  required: [
-    "hero",
-    "heroVisual",
-    "article",
-    "contentSplit",
-    "features",
-    "ctaSlug",
-    "pricing",
-  ],
-};
+export const landingPreviewSchema = landingPageOutputSchema;
 
 export interface CampaignLandingContent {
   blocks: LandingBlock[];
@@ -115,50 +29,7 @@ export interface CampaignLandingContent {
   semanticType?: string;
 }
 
-export interface CampaignContent {
-  hero?: {
-    type: "HeroPrimaryBlock";
-    title: string;
-    subtitle?: string;
-  };
-  heroVisual?: {
-    type: "HeroVisualBlock";
-    title: string;
-    subtitle?: string;
-    imagesUrl?: string[];
-  };
-  article?: {
-    type: "ArticleSectionBlock";
-    title: string;
-    content: string;
-  }[];
-  features?: {
-    type: "FeatureGridBlock";
-    title: string;
-    description: string;
-  }[];
-  contentSplit?: {
-    type: "ContentSplitBlock";
-    heading: string;
-    content: string;
-  };
-  pricing?: {
-    type: "PricingBlock";
-    id: string;
-    name: string;
-    description?: string;
-    price: number;
-    currency: string;
-    discount?: number;
-    ctaLabel?: string;
-    href?: string;
-  }[];
-  cta?: {
-    type: "CTABlock";
-    ctaLabel: string;
-    href: string;
-  }[];
-}
+export type CampaignContent = LandingPageOutput;
 
 // Template Map
 export type CampaignSemanticType =

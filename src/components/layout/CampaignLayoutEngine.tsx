@@ -1,31 +1,41 @@
-import HeroPrimaryBlockView from "../blocks-ai/HeroPrimaryBlockView";
-import HeroVisualBlockView from "../blocks-ai/HeroVisualBlockView";
-import ArticleSectionBlockView from "../blocks-ai/ArticleSectionBlockView";
-import FeatureGridBlockView from "../blocks-ai/FeatureGridBlockView";
 import { LandingBlock } from "@/types/landing-blocks";
+import HeroBlock from "../blocks-ai/HeroBlock";
+import ArticleBlock from "../blocks-ai/ArticleBlock";
+import FeatureBlock from "../blocks-ai/FeatureBlock";
+import { ContentSplitBlockView } from "../blocks-ai/ContentSplitBlock";
+import PricingBlock from "../blocks-ai/PricingBlock";
+import AffiliateCTABlock from "../blocks-ai/AffiliateCTABlock";
 
 interface Props {
   blocks: LandingBlock[];
 }
 
 export function CampaignLayoutEngine({ blocks }: Props) {
-  const visibleBlocks = blocks.sort((a, b) => a.priority - b.priority);
+  const visibleBlocks = [...blocks]
+    .filter((block) => block.visibility !== "hidden")
+    .sort((a, b) => a.priority - b.priority);
 
   return (
-    <main className="relative overflow-x-visible flex flex-col min-h-screen w-full px-1 2xl:px-16 pb-36">
+    <main className="relative flex min-h-screen w-full flex-col overflow-x-hidden px-1 pb-36 2xl:px-16">
       {visibleBlocks.map((block) => {
         switch (block.type) {
-          case "HeroPrimaryBlock":
-            return <HeroPrimaryBlockView key={block.id} block={block} />;
+          case "HeroBlock":
+            return <HeroBlock key={block.id} block={block} />;
 
-          case "HeroVisualBlock":
-            return <HeroVisualBlockView key={block.id} block={block} />;
+          case "ArticleBlock":
+            return <ArticleBlock key={block.id} block={block} />;
 
-          case "ArticleSectionBlock":
-            return <ArticleSectionBlockView key={block.id} block={block} />;
+          case "FeatureBlock":
+            return <FeatureBlock key={block.id} block={block} />;
 
-          case "FeatureGridBlock":
-            return <FeatureGridBlockView key={block.id} block={block} />;
+          case "ContentSplitBlock":
+            return <ContentSplitBlockView key={block.id} block={block} />;
+
+          case "PricingBlock":
+            return <PricingBlock key={block.id} block={block} />;
+
+          case "AffiliateCTABlock":
+            return <AffiliateCTABlock key={block.id} block={block} />;
 
           default:
             return null;

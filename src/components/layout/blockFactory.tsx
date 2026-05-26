@@ -2,7 +2,7 @@
 
 import { BaseBlock } from "@/types/conversational/blocks";
 import { AuthBlockView } from "../blocks-ai/AuthBlockView";
-import PricingBlockView from "../blocks-ai/PricingBlockView";
+import ServicePricingBlock from "../blocks-ai/ServicePricingBlock";
 import {
   AppointmentCalendarBlockType,
   AuthBlockType,
@@ -31,7 +31,7 @@ export function blockFactory(
       );
     case "ServicePriceBlock":
       return (
-        <PricingBlockView key={block.id} block={block as PricingBlockType} />
+        <ServicePricingBlock key={block.id} block={block as PricingBlockType} />
       );
     case "AppointmentCalendarBlock":
       return (

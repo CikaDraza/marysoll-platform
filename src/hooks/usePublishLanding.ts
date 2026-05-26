@@ -6,18 +6,19 @@ import {
   CampaignLandingContent,
   CampaignSemanticType,
 } from "@/types/conversational/campaign";
-import { LayoutBlock } from "@/types/conversational/layout";
+import { LandingBlock } from "@/types/landing-blocks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 type PublishLandingInput = {
   campaignId: string;
   payload: {
-    layout: LayoutBlock[];
+    layout: LandingBlock[];
     semanticType: CampaignSemanticType;
     generatedAt: string;
     status: string;
     seo: CampaignLandingContent["seo"];
+    score?: number;
   };
 };
 

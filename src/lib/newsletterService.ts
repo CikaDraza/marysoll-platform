@@ -285,8 +285,9 @@ export async function sendCampaignEmails(campaignId: string) {
   } else {
     campaign.status = "sent";
     campaign.sentCount = 0;
+    campaign.bounceCount = 0;
     await campaign.save();
-    return;
+    return { sentCount: 0, bounceCount: 0, status: "sent" as const };
   }
 
   let sentCount = 0;
@@ -380,10 +381,20 @@ export async function sendCampaignEmails(campaignId: string) {
     }
   }
 
-  campaign.status = "sent";
+  campaign.status = sentCount > 0 ? "sent" : "failed";
   campaign.sentCount = sentCount;
   campaign.bounceCount = bounceCount;
   await campaign.save();
+
+  if (sentCount === 0 && bounceCount > 0) {
+    throw new Error("Newsletter slanje nije uspelo: svi primaoci su odbijeni");
+  }
+
+  return {
+    sentCount,
+    bounceCount,
+    status: campaign.status as "sent" | "failed",
+  };
 }
 
 async function incrementRecipientOpen(subscriberId: string) {

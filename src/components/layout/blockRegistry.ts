@@ -1,22 +1,23 @@
 import { BlockLandingTypeMap } from "@/types/block-landing-map";
-import ArticleSectionBlockView from "../blocks-ai/ArticleSectionBlockView";
-import { ContentSplitBlockView } from "../blocks-ai/ContentSplitBlockView";
-import { CTABlockView } from "../blocks-ai/CTABlockView";
-import FeatureGridBlockView from "../blocks-ai/FeatureGridBlockView";
-import HeroPrimaryBlockView from "../blocks-ai/HeroPrimaryBlockView";
-import HeroVisualBlockView from "../blocks-ai/HeroVisualBlockView";
+import { ComponentType } from "react";
+import HeroBlockView from "../blocks-ai/HeroBlock";
+import ArticleBlockView from "../blocks-ai/ArticleBlock";
+import FeatureBlockView from "../blocks-ai/FeatureBlock";
+import { ContentSplitBlockView } from "../blocks-ai/ContentSplitBlock";
+import PricingBlockView from "../blocks-ai/PricingBlock";
+import AffiliateCTABlockView from "../blocks-ai/AffiliateCTABlock";
 
 type BlockComponentMap = {
-  [K in keyof BlockLandingTypeMap]: React.ComponentType<{
+  [K in keyof BlockLandingTypeMap]: ComponentType<{
     block: BlockLandingTypeMap[K];
   }>;
 };
 
 export const blockRegistry = {
-  HeroPrimaryBlock: HeroPrimaryBlockView,
-  HeroVisualBlock: HeroVisualBlockView,
-  ArticleSectionBlock: ArticleSectionBlockView,
-  FeatureGridBlock: FeatureGridBlockView,
+  HeroBlock: HeroBlockView,
+  ArticleBlock: ArticleBlockView,
+  FeatureBlock: FeatureBlockView,
   ContentSplitBlock: ContentSplitBlockView,
-  CTABlock: CTABlockView,
+  PricingBlock: PricingBlockView,
+  AffiliateCTABlock: AffiliateCTABlockView,
 } satisfies BlockComponentMap;

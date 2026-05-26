@@ -1,25 +1,15 @@
 import {
-  ArticleSectionBlock,
   BlockVisibility,
-  ContentSplitBlock,
-  CTABlock,
-  FeatureGridBlock,
-  HeroPrimaryBlock,
-  HeroVisualBlock,
-  LayoutBlockType,
-} from "@/types/conversational/blocks";
+  LandingBlock,
+  LandingBlockType,
+} from "@/types/landing-blocks";
 
 /* ------------------------------------------------------------------ */
 /*  Union                                                             */
 /* ------------------------------------------------------------------ */
 
-export type LayoutBlock =
-  | HeroPrimaryBlock
-  | HeroVisualBlock
-  | ArticleSectionBlock
-  | ContentSplitBlock
-  | FeatureGridBlock
-  | CTABlock;
+export type LayoutBlock = LandingBlock;
+export type LayoutBlockType = LandingBlockType;
 
 /* ------------------------------------------------------------------ */
 /*  Preview / editor helpers                                          */

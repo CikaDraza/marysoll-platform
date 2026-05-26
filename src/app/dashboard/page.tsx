@@ -1669,7 +1669,7 @@ function AdminDashboard() {
         </FeatureGate>
       )}
       {tab === "newsletter" && (
-        <FeatureGate feature="newsletter">
+        <FeatureGate feature="newsletterCampaigns">
           <AdminNewsletterDashboard />
         </FeatureGate>
       )}

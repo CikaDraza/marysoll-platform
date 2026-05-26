@@ -58,6 +58,14 @@ export function Theme3Footer({
                   Zakaži termin
                 </Link>
               </li>
+              <li>
+                <Link
+                  href={base + "/blogs"}
+                  className="hover:text-[#5C4033] transition"
+                >
+                  Blog
+                </Link>
+              </li>
             </ul>
           </div>
           <div>

@@ -79,8 +79,10 @@ export async function POST(
 
         // Pokreni slanje (fire-and-forget)
         sendCampaignEmails(campaign._id.toString())
-          .then(() => {
-            console.log(`Kampanja ${campaign._id} uspešno poslata`);
+          .then((result) => {
+            console.log(
+              `Kampanja ${campaign._id} završena: poslato ${result?.sentCount ?? 0}, nije poslato ${result?.bounceCount ?? 0}`,
+            );
           })
           .catch((err) => {
             console.error(`Greška pri slanju kampanje ${campaign._id}:`, err);

@@ -1,4 +1,5 @@
 import CampaignClientShell from "@/components/CampaignClientShell";
+import { TenantPageShell } from "@/components/themes/TenantPageShell";
 import { normalizeCampaignSlug } from "@/helpers/slugNormalizer";
 import { getCampaign } from "@/lib/server/getCampaign";
 import type { Metadata } from "next";
@@ -40,6 +41,7 @@ export default async function BlogPostPage({ params }: Props) {
   const { slugId, fullPath } = normalizeCampaignSlug(slug);
   const headerStore = await headers();
   const tenantId = headerStore.get("x-tenant-id");
+  const tenantSlug = headerStore.get("x-tenant-slug") ?? "";
 
   if (!tenantId) notFound();
 
@@ -52,5 +54,9 @@ export default async function BlogPostPage({ params }: Props) {
 
   const token = cookieStore.get("token")?.value ?? null;
 
-  return <CampaignClientShell initialData={data} token={token} id={slugId} />;
+  return (
+    <TenantPageShell tenantSlug={tenantSlug}>
+      <CampaignClientShell initialData={data} token={token} id={slugId} />
+    </TenantPageShell>
+  );
 }

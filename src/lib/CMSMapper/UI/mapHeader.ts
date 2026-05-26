@@ -9,6 +9,7 @@ export function mapHeader(profile: SalonProfileData, tenantSlug?: string) {
     navigation: [
       { label: "Naslovna", href: `${p}/` },
       { label: "Usluge", href: `${p}/usluge` },
+      { label: "Blog", href: `${p}/blogs` },
       { label: "Termini", href: `${p}/termini` },
       { label: "Login", href: `${p}/login` },
     ],

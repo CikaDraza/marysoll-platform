@@ -1,7 +1,7 @@
 // components/admin/AdminNewsletterDashboard.tsx
 "use client";
 
-import { useState, useRef } from "react";
+import { memo, useState, useRef } from "react";
 import { useNewsletterAdmin } from "@/hooks/useNewsletterAdmin";
 import { INewsletterCampaign, INewsletterTemplate } from "@/types";
 import toast from "react-hot-toast";
@@ -44,7 +44,7 @@ const statusBadgeStyles: Record<INewsletterCampaign["status"], string> = {
   stopped: "bg-red-100 text-red-800",
 };
 
-export default function AdminNewsletterDashboard() {
+function AdminNewsletterDashboard() {
   const {
     createTemplate,
     isCreatingTemplate,
@@ -280,7 +280,7 @@ export default function AdminNewsletterDashboard() {
     }
   };
 
-  const handleCreate = (e: React.SubmitEvent) => {
+  const handleCreate = async (e: React.SubmitEvent) => {
     e.preventDefault();
 
     if (!selectedTemplate) {
@@ -313,27 +313,29 @@ export default function AdminNewsletterDashboard() {
       .toLowerCase()
       .replace(/\s+/g, "-");
 
-    createCampaign({
-      name: formData.name,
-      templateId: selectedTemplate.isDefault ? null : selectedTemplate._id,
-      defaultTemplateSlug: selectedTemplate?.isDefault
-        ? selectedTemplate.slug
-        : null,
-      subject: formData.subject,
-      previewText: formData.previewText,
-      content: finalContent, // OVO JE NAJVAŽNIJE!
-      manualRecipients: formData.sendToAll ? [] : selected,
-      sendToAll: formData.sendToAll,
-      excludeRecentSubscribers: formData.excludeRecentSubscribers,
-      excludeInactive: formData.excludeInactive,
-      scheduledFor: formData.scheduledFor
-        ? new Date(formData.scheduledFor)
-        : undefined,
-      ctaSlug: cleanCtaSlug || "termini",
-    });
-    if (isError) {
+    try {
+      await createCampaign({
+        name: formData.name,
+        templateId: selectedTemplate.isDefault ? null : selectedTemplate._id,
+        defaultTemplateSlug: selectedTemplate?.isDefault
+          ? selectedTemplate.slug
+          : null,
+        subject: formData.subject,
+        previewText: formData.previewText,
+        content: finalContent, // OVO JE NAJVAŽNIJE!
+        manualRecipients: formData.sendToAll ? [] : selected,
+        sendToAll: formData.sendToAll,
+        excludeRecentSubscribers: formData.excludeRecentSubscribers,
+        excludeInactive: formData.excludeInactive,
+        scheduledFor: formData.scheduledFor
+          ? new Date(formData.scheduledFor)
+          : undefined,
+        ctaSlug: cleanCtaSlug || "termini",
+      });
+    } catch {
       return;
     }
+
     // Reset
     setFormData({
       name: "",
@@ -1250,6 +1252,8 @@ export default function AdminNewsletterDashboard() {
                       {" • "}
                       <span>Poslato: {c.sentCount}</span>
                       {" • "}
+                      <span>Nije poslato: {c.bounceCount ?? 0}</span>
+                      {" • "}
                       <span>Kliknuto: {normalizedClickCount}</span>
                       {" • "}
                       <span>
@@ -1423,3 +1427,5 @@ export default function AdminNewsletterDashboard() {
     </div>
   );
 }
+
+export default memo(AdminNewsletterDashboard);

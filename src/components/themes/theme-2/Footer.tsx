@@ -58,6 +58,14 @@ export function Theme2Footer({
                   Zakaži
                 </Link>
               </li>
+              <li>
+                <Link
+                  href={base + "/blogs"}
+                  className="hover:text-(--primary-color) transition"
+                >
+                  Blog
+                </Link>
+              </li>
             </ul>
           </div>
           <div>

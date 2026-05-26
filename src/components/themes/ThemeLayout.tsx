@@ -734,6 +734,13 @@ export function ThemeLayout({
         <Theme6Header
           salonName={salon.name}
           logo={salon.logo ?? undefined}
+          homeHref={resolveHref("/")}
+          navigation={[
+            { label: "Naslovna", href: resolveHref("/") },
+            { label: "Usluge", href: resolveHref("/usluge") },
+            { label: "Blog", href: resolveHref("/blogs") },
+            { label: "Termini", href: resolveHref("/termini") },
+          ]}
           cta={{ label: "Zakaži", href: resolvedCta.primary.href }}
         />
         <main className="flex-1 flex flex-col overflow-x-hidden">

@@ -45,6 +45,7 @@ export function Theme3Header({
     ...(showGallery
       ? [{ name: "Galerija", href: instagramUrl!, external: true }]
       : []),
+    { name: "Blog", href: `${base}/blogs` },
     { name: "Termini", href: `${base}/termini`, cta: true },
   ];
 

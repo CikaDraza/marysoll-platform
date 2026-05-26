@@ -4,7 +4,7 @@ export function scoreReadability(layout: LandingBlock[]): number {
   let score = 1;
 
   const textBlocks = layout.filter((b) =>
-    ["ArticleSectionBlock", "ContentSplitBlock"].includes(b.type),
+    ["ArticleBlock", "FeatureBlock", "ContentSplitBlock"].includes(b.type),
   );
 
   if (textBlocks.length === 0) score -= 0.5;

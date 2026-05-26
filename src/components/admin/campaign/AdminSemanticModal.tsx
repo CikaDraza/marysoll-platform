@@ -113,8 +113,8 @@ export default function AdminSemanticModal({
   // Initialize images from existing landing
   const existingImages =
     campaign?.landingPage?.layout
-      ?.filter((b) => b.type === "HeroVisualBlock")
-      ?.flatMap((b) => b.imagesUrl || []) || [];
+      ?.filter((block) => block.type === "HeroBlock")
+      ?.flatMap((block) => block.images?.map((image) => image.src) || []) || [];
 
   const images = useGeneratedImages(existingImages);
 
@@ -279,7 +279,7 @@ export default function AdminSemanticModal({
       <DialogBackdrop className="fixed inset-0 bg-black/50" />
 
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="w-full max-w-xl bg-white rounded-lg shadow-xl p-6 max-h-[90vh] overflow-y-auto">
+        <DialogPanel className="w-full max-w-xl bg-white rounded-lg shadow-xl p-6 max-h-[90vh] overflow-auto">
           {/* HEADER */}
           <div className="flex justify-between items-center">
             <h3 className="text-lg dark:text-gray-800 font-semibold">

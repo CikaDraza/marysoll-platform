@@ -5,8 +5,8 @@ export function scoreConversion(layout: LandingBlock[]): number {
 
   const order = layout.map((b) => b.type);
 
-  const ctaIndex = order.indexOf("CTABlock");
-  const featureIndex = order.indexOf("FeatureGridBlock");
+  const ctaIndex = order.indexOf("AffiliateCTABlock");
+  const featureIndex = order.indexOf("FeatureBlock");
 
   if (ctaIndex !== -1) score += 0.2;
   if (ctaIndex > featureIndex && featureIndex !== -1) score += 0.2;
