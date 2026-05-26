@@ -8,6 +8,11 @@ import {
   PublishLandingPayload,
   UsePublishLandingReturn,
 } from "@/types/newsletter";
+import {
+  getNewsletterScopeHeaders,
+  getNewsletterScopeKey,
+  type NewsletterClientScope,
+} from "@/lib/newsletter/clientScope";
 
 interface PublishLandingArgs {
   campaignId: string;
@@ -17,19 +22,26 @@ interface PublishLandingArgs {
 /**
  * Hook za objavljivanje landing page-a (status: "published")
  */
-export function usePublishLanding(): UsePublishLandingReturn {
+export function usePublishLanding(
+  scope?: NewsletterClientScope,
+): UsePublishLandingReturn {
   const queryClient = useQueryClient();
+  const scopeKey = getNewsletterScopeKey(scope);
+  const requestConfig = { headers: getNewsletterScopeHeaders(scope) };
 
   const mutation = useMutation({
     mutationFn: async ({ campaignId, payload }: PublishLandingArgs) => {
       const res = await api.patch(
         `/newsletter/campaigns/${campaignId}/publish`,
         payload,
+        requestConfig,
       );
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["newsletterCampaigns"] });
+      queryClient.invalidateQueries({
+        queryKey: ["newsletterCampaigns", scopeKey],
+      });
       toast.success("Landing uspešno objavljen!");
     },
     onError: (err: Error) => toast.error(err.message),

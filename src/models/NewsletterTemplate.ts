@@ -5,7 +5,18 @@ const NewsletterTemplateSchema = new Schema(
     tenantId: {
       type: Schema.Types.ObjectId,
       ref: "Tenant",
-      required: true,
+      required: false,
+    },
+    platformOwnerId: {
+      type: Schema.Types.ObjectId,
+      ref: "AuthUser",
+      required: false,
+    },
+    scope: {
+      type: String,
+      enum: ["tenant", "platform"],
+      default: "tenant",
+      index: true,
     },
     name: { type: String, required: true },
     slug: { type: String, required: true },

@@ -60,6 +60,15 @@ function getNewsletterLandingUrl(
   return `${bookingBaseUrl.replace(/\/+$/, "")}/blog/${cleanSlug}`;
 }
 
+function getPlatformNewsletterLandingUrl(landingSlug: string): string {
+  if (landingSlug.startsWith("http://") || landingSlug.startsWith("https://")) {
+    return landingSlug;
+  }
+
+  const cleanSlug = normalizeNewsletterLandingSlug(landingSlug);
+  return `${platformBaseUrl.replace(/\/+$/, "")}/newsletter/${cleanSlug}`;
+}
+
 export async function subscribeToNewsletter(data: NewsletterSubscriptionData) {
   await connectToDB();
 
@@ -207,13 +216,19 @@ export async function sendCampaignEmails(campaignId: string) {
   const campaign = await NewsletterCampaign.findById(campaignId);
   if (!campaign || campaign.status !== "sending") return;
 
-  const tenant = await Tenant.findById(campaign.tenantId)
-    .select("slug customDomain customDomainVerified")
-    .lean<{
-      slug: string;
-      customDomain?: string | null;
-      customDomainVerified?: boolean;
-    }>();
+  const isPlatformCampaign = campaign.scope === "platform";
+  const campaignTenantId = campaign.tenantId?.toString();
+
+  const tenant =
+    !isPlatformCampaign && campaignTenantId
+      ? await Tenant.findById(campaignTenantId)
+          .select("slug customDomain customDomainVerified")
+          .lean<{
+            slug: string;
+            customDomain?: string | null;
+            customDomainVerified?: boolean;
+          }>()
+      : null;
 
   interface Recipient {
     email: string;
@@ -225,54 +240,84 @@ export async function sendCampaignEmails(campaignId: string) {
   let recipients: Recipient[] = [];
 
   if (campaign.sendToAll) {
-    // Registered tenant subscribers.
-    const tenantUsers = await TenantUser.find({
-      tenantId: campaign.tenantId,
-      "newsletterPreferences.subscribed": true,
-      "newsletterPreferences.emailVerified": true,
-    }).lean<{
-      _id: Types.ObjectId;
-      email: string;
-      name: string;
-      newsletterPreferences: { unsubscribeToken?: string };
-    }[]>();
+    if (isPlatformCampaign) {
+      const contacts = await AudienceContact.find({
+        $or: [{ tenantId: { $exists: false } }, { tenantId: null }],
+        subscribed: true,
+        status: "ACTIVE",
+        verificationToken: { $exists: false },
+        contactType: { $in: ["SALON_OWNER", "LEAD", "STAFF"] },
+      }).lean<
+        {
+          _id: Types.ObjectId;
+          email: string;
+          firstName?: string;
+          lastName?: string;
+          unsubscribeToken?: string;
+        }[]
+      >();
 
-    for (const tu of tenantUsers) {
-      if (tu.email) {
-        recipients.push({
-          email: tu.email,
-          name: tu.name || tu.email.split("@")[0],
-          unsubscribeToken: tu.newsletterPreferences?.unsubscribeToken ?? "invalid",
-          subscriberId: tu._id.toString(),
-        });
+      recipients = contacts.map((c) => ({
+        email: c.email,
+        name:
+          [c.firstName, c.lastName].filter(Boolean).join(" ") ||
+          c.email.split("@")[0],
+        unsubscribeToken: c.unsubscribeToken ?? "invalid",
+        subscriberId: c._id.toString(),
+      }));
+    } else if (campaignTenantId) {
+      // Registered tenant subscribers.
+      const tenantUsers = await TenantUser.find({
+        tenantId: campaign.tenantId,
+        "newsletterPreferences.subscribed": true,
+        "newsletterPreferences.emailVerified": true,
+      }).lean<{
+        _id: Types.ObjectId;
+        email: string;
+        name: string;
+        newsletterPreferences: { unsubscribeToken?: string };
+      }[]>();
+
+      for (const tu of tenantUsers) {
+        if (tu.email) {
+          recipients.push({
+            email: tu.email,
+            name: tu.name || tu.email.split("@")[0],
+            unsubscribeToken:
+              tu.newsletterPreferences?.unsubscribeToken ?? "invalid",
+            subscriberId: tu._id.toString(),
+          });
+        }
       }
-    }
 
-    // Anonymous AudienceContact subscribers
-    const contacts = await AudienceContact.find({
-      tenantId: campaign.tenantId,
-      subscribed: true,
-      status: "ACTIVE",
-      verificationToken: { $exists: false },
-      contactType: { $in: ["NEWSLETTER", "CLIENT"] },
-    }).lean<{
-      _id: Types.ObjectId;
-      email: string;
-      firstName?: string;
-      lastName?: string;
-      unsubscribeToken?: string;
-    }[]>();
+      // Anonymous AudienceContact subscribers
+      const contacts = await AudienceContact.find({
+        tenantId: campaign.tenantId,
+        subscribed: true,
+        status: "ACTIVE",
+        verificationToken: { $exists: false },
+        contactType: { $in: ["NEWSLETTER", "CLIENT"] },
+      }).lean<{
+        _id: Types.ObjectId;
+        email: string;
+        firstName?: string;
+        lastName?: string;
+        unsubscribeToken?: string;
+      }[]>();
 
-    // Avoid duplicate emails already covered by TenantUser lookup
-    const registeredEmails = new Set(recipients.map((r) => r.email));
-    for (const c of contacts) {
-      if (!registeredEmails.has(c.email)) {
-        recipients.push({
-          email: c.email,
-          name: [c.firstName, c.lastName].filter(Boolean).join(" ") || c.email.split("@")[0],
-          unsubscribeToken: c.unsubscribeToken ?? "invalid",
-          subscriberId: c._id.toString(),
-        });
+      // Avoid duplicate emails already covered by TenantUser lookup
+      const registeredEmails = new Set(recipients.map((r) => r.email));
+      for (const c of contacts) {
+        if (!registeredEmails.has(c.email)) {
+          recipients.push({
+            email: c.email,
+            name:
+              [c.firstName, c.lastName].filter(Boolean).join(" ") ||
+              c.email.split("@")[0],
+            unsubscribeToken: c.unsubscribeToken ?? "invalid",
+            subscriberId: c._id.toString(),
+          });
+        }
       }
     }
   } else if (campaign.manualRecipients && campaign.manualRecipients.length > 0) {
@@ -283,6 +328,14 @@ export async function sendCampaignEmails(campaignId: string) {
       subscriberId: "",
     }));
   } else {
+    campaign.status = "sent";
+    campaign.sentCount = 0;
+    campaign.bounceCount = 0;
+    await campaign.save();
+    return { sentCount: 0, bounceCount: 0, status: "sent" as const };
+  }
+
+  if (recipients.length === 0) {
     campaign.status = "sent";
     campaign.sentCount = 0;
     campaign.bounceCount = 0;
@@ -310,7 +363,9 @@ export async function sendCampaignEmails(campaignId: string) {
       campaign.campaignType === "email-landing" &&
       campaign.landingPage?.slug
     ) {
-      finalUrl = getNewsletterLandingUrl(campaign.landingPage.slug);
+      finalUrl = isPlatformCampaign
+        ? getPlatformNewsletterLandingUrl(campaign.landingPage.slug)
+        : getNewsletterLandingUrl(campaign.landingPage.slug);
     } else {
       function normalizeSlug(slug?: string) {
         if (!slug) return "/";
@@ -324,7 +379,11 @@ export async function sendCampaignEmails(campaignId: string) {
         return slug.startsWith("/") ? slug : `/${slug}`;
       }
       const ctaSlug = normalizeSlug(campaign.ctaSlug);
-      finalUrl = campaign.ctaSlug?.startsWith("http")
+      finalUrl = isPlatformCampaign
+        ? campaign.ctaSlug?.startsWith("http")
+          ? campaign.ctaSlug
+          : platformBaseUrl
+        : campaign.ctaSlug?.startsWith("http")
         ? campaign.ctaSlug
         : `${getLandingBaseUrl(tenant)}${ctaSlug}`;
     }
@@ -343,7 +402,11 @@ export async function sendCampaignEmails(campaignId: string) {
       `&log=${trackingData.trackingPixelId}`;
 
     const newsletterLog = await NewsletterLog.create({
-      tenantId: campaign.tenantId,
+      scope: campaign.scope ?? "tenant",
+      tenantId: isPlatformCampaign ? undefined : campaign.tenantId,
+      platformOwnerId: isPlatformCampaign
+        ? campaign.platformOwnerId
+        : undefined,
       campaignId: campaign._id,
       recipientEmail: recipient.email,
       ...(Types.ObjectId.isValid(recipient.subscriberId) && {
@@ -367,7 +430,7 @@ export async function sendCampaignEmails(campaignId: string) {
         personalizedContent,
         unsubscribeUrl,
         trackingData,
-        campaign.tenantId.toString(),
+        isPlatformCampaign ? null : campaignTenantId,
       );
 
       sentCount++;

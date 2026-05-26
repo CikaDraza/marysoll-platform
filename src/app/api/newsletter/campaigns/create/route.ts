@@ -4,6 +4,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { requireFeature } from "@/lib/plans/planEnforcement";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
+import { resolveNewsletterAdminScope } from "@/lib/newsletter/adminTenantScope";
 
 export async function POST(request: Request) {
   try {
@@ -14,10 +15,24 @@ export async function POST(request: Request) {
       return authResult.response;
     }
 
-    const tenantId = authResult.decoded.tenantId;
+    const newsletterScope = await resolveNewsletterAdminScope(
+      request,
+      authResult.decoded,
+    );
+    if (!newsletterScope) {
+      return NextResponse.json(
+        { error: "Newsletter scope nije validan" },
+        { status: 403 },
+      );
+    }
 
-    const denied = await requireFeature(tenantId, "newsletterCampaigns");
-    if (denied) return denied;
+    if (newsletterScope.scope === "tenant") {
+      const denied = await requireFeature(
+        newsletterScope.tenantId,
+        "newsletterCampaigns",
+      );
+      if (denied) return denied;
+    }
 
     const body = await request.json();
     const {
@@ -69,11 +84,19 @@ export async function POST(request: Request) {
     }
 
     const campaign = new NewsletterCampaign({
-      tenantId,
+      scope: newsletterScope.scope,
+      tenantId:
+        newsletterScope.scope === "tenant" ? newsletterScope.tenantId : undefined,
+      platformOwnerId:
+        newsletterScope.scope === "platform"
+          ? newsletterScope.platformOwnerId
+          : undefined,
       name: name.trim(),
       templateId: templateId || null,
       defaultTemplateSlug: defaultTemplateSlug,
-      ctaSlug: ctaSlug || null,
+      ctaSlug:
+        ctaSlug ||
+        (newsletterScope.scope === "platform" ? "https://marysoll.com/" : null),
       subject: subject.trim(),
       previewText: previewText.trim(),
       content,

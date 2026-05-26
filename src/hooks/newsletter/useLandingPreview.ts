@@ -1,7 +1,7 @@
 // src/hooks/newsletter/useLandingPreview.ts
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { INewsletterCampaign } from "@/types";
 import {
   UpdateCampaignSemanticPayload,
@@ -11,11 +11,16 @@ import {
 } from "@/types/newsletter";
 import { buildCampaignLayout } from "@/lib/conversational/editor/buildCampaignLayout";
 import { AICampaignResponse } from "@/types/conversational/ai-preview";
+import {
+  getNewsletterScopeHeaders,
+  type NewsletterClientScope,
+} from "@/lib/newsletter/clientScope";
 
 interface UseLandingPreviewParams {
   campaign: INewsletterCampaign;
   form: UpdateCampaignSemanticPayload;
   imagesUrls?: string[];
+  scope?: NewsletterClientScope;
 }
 
 /**
@@ -26,6 +31,7 @@ export function useLandingPreview({
   campaign,
   form,
   imagesUrls = [],
+  scope,
 }: UseLandingPreviewParams): UseLandingPreviewReturn {
   // State
   const [isGenerating, setIsGenerating] = useState(false);
@@ -41,6 +47,7 @@ export function useLandingPreview({
   // Derived state
   const seoReady = Boolean(aiLanding?.seo?.title);
   const layoutReady = Boolean(layout?.layout?.length);
+  const scopeHeaders = useMemo(() => getNewsletterScopeHeaders(scope), [scope]);
 
   /**
    * Generiše SEO na osnovu landing sadržaja
@@ -58,7 +65,7 @@ export function useLandingPreview({
           `/api/newsletter/campaigns/${campaign._id}/generate-seo`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...scopeHeaders },
             body: JSON.stringify({
               layout: landingData.layout,
               titleSeed: campaign.subject,
@@ -81,7 +88,7 @@ export function useLandingPreview({
         setIsGeneratingSeo(false);
       }
     },
-    [campaign],
+    [campaign, scopeHeaders],
   );
 
   /**
@@ -107,7 +114,7 @@ export function useLandingPreview({
           `/api/campaigns/${campaign._id}/preview`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...scopeHeaders },
             body: JSON.stringify({
               campaignType: form.campaignType,
               semanticContent: {
@@ -181,7 +188,7 @@ export function useLandingPreview({
       } finally {
         setIsGenerating(false);
       }
-    }, [campaign, form, imagesUrls, generateSeo]);
+    }, [campaign, form, imagesUrls, generateSeo, scopeHeaders]);
 
   /**
    * Postavlja preview iz postojećih podataka (za učitavanje sačuvanih kampanja)

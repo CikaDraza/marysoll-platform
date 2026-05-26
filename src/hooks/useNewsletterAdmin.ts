@@ -8,6 +8,11 @@ import {
 import toast from "react-hot-toast";
 import { api } from "@/lib/api";
 import { AxiosError } from "axios";
+import {
+  getNewsletterScopeHeaders,
+  getNewsletterScopeKey,
+  type NewsletterClientScope,
+} from "@/lib/newsletter/clientScope";
 
 function getApiErrorMessage(error: unknown, fallback: string) {
   if (error instanceof AxiosError) {
@@ -20,13 +25,18 @@ function getApiErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-export function useNewsletterAdmin() {
+export function useNewsletterAdmin(scope?: NewsletterClientScope) {
   const queryClient = useQueryClient();
+  const scopeKey = getNewsletterScopeKey(scope);
+  const requestConfig = { headers: getNewsletterScopeHeaders(scope) };
 
   const templatesQuery = useQuery<INewsletterTemplate[]>({
-    queryKey: ["newsletterTemplates"],
+    queryKey: ["newsletterTemplates", scopeKey],
     queryFn: async () => {
-      const res = await api.get<INewsletterTemplate[]>("/newsletter/templates");
+      const res = await api.get<INewsletterTemplate[]>(
+        "/newsletter/templates",
+        requestConfig,
+      );
       if (!res) throw new Error("Failed to load templates");
       return res.data;
     },
@@ -35,9 +45,9 @@ export function useNewsletterAdmin() {
   });
 
   const campaignsQuery = useQuery<INewsletterCampaign[]>({
-    queryKey: ["newsletterCampaigns"],
+    queryKey: ["newsletterCampaigns", scopeKey],
     queryFn: async () => {
-      const res = await api.get("/newsletter/campaigns");
+      const res = await api.get("/newsletter/campaigns", requestConfig);
       if (!res) throw new Error("Failed to load campaigns");
       return res.data;
     },
@@ -47,14 +57,20 @@ export function useNewsletterAdmin() {
 
   const createCampaign = useMutation({
     mutationFn: async (data: CampaignCreateData) => {
-      const res = await api.post("/newsletter/campaigns/create", data);
+      const res = await api.post(
+        "/newsletter/campaigns/create",
+        data,
+        requestConfig,
+      );
       if (!res) {
         throw new Error("Failed to create campaign");
       }
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["newsletterCampaigns"] });
+      queryClient.invalidateQueries({
+        queryKey: ["newsletterCampaigns", scopeKey],
+      });
       toast.success("Kampanja uspešno kreirana!");
     },
     onError: (err: unknown) =>
@@ -63,13 +79,19 @@ export function useNewsletterAdmin() {
 
   const sendCampaign = useMutation({
     mutationFn: async (campaignId: string) => {
-      const res = await api.post(`/newsletter/campaigns/${campaignId}/send`, {
-        action: "send",
-      });
+      const res = await api.post(
+        `/newsletter/campaigns/${campaignId}/send`,
+        {
+          action: "send",
+        },
+        requestConfig,
+      );
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["newsletterCampaigns"] });
+      queryClient.invalidateQueries({
+        queryKey: ["newsletterCampaigns", scopeKey],
+      });
       toast.success("Kampanja pokrenuta! Slanje u toku...");
     },
     onError: (err: unknown) =>
@@ -78,13 +100,19 @@ export function useNewsletterAdmin() {
 
   const pauseCampaign = useMutation({
     mutationFn: async (campaignId: string) => {
-      const res = await api.post(`/newsletter/campaigns/${campaignId}/send`, {
-        action: "pause",
-      });
+      const res = await api.post(
+        `/newsletter/campaigns/${campaignId}/send`,
+        {
+          action: "pause",
+        },
+        requestConfig,
+      );
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["newsletterCampaigns"] });
+      queryClient.invalidateQueries({
+        queryKey: ["newsletterCampaigns", scopeKey],
+      });
       toast.success("Kampanja pauzirana");
     },
     onError: (err: unknown) =>
@@ -93,13 +121,19 @@ export function useNewsletterAdmin() {
 
   const resumeCampaign = useMutation({
     mutationFn: async (campaignId: string) => {
-      const res = await api.post(`/newsletter/campaigns/${campaignId}/send`, {
-        action: "resume",
-      });
+      const res = await api.post(
+        `/newsletter/campaigns/${campaignId}/send`,
+        {
+          action: "resume",
+        },
+        requestConfig,
+      );
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["newsletterCampaigns"] });
+      queryClient.invalidateQueries({
+        queryKey: ["newsletterCampaigns", scopeKey],
+      });
       toast.success("Kampanja nastavljena");
     },
     onError: (err: unknown) =>
@@ -108,13 +142,19 @@ export function useNewsletterAdmin() {
 
   const stopCampaign = useMutation({
     mutationFn: async (campaignId: string) => {
-      const res = await api.post(`/newsletter/campaigns/${campaignId}/send`, {
-        action: "stop",
-      });
+      const res = await api.post(
+        `/newsletter/campaigns/${campaignId}/send`,
+        {
+          action: "stop",
+        },
+        requestConfig,
+      );
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["newsletterCampaigns"] });
+      queryClient.invalidateQueries({
+        queryKey: ["newsletterCampaigns", scopeKey],
+      });
       toast.success("Kampanja zaustavljena");
     },
     onError: (err: unknown) =>
@@ -124,12 +164,15 @@ export function useNewsletterAdmin() {
   const deleteCampaign = useMutation({
     mutationFn: async (campaignId: string) => {
       const res = await api.delete(
-        `/newsletter/campaigns/${campaignId}/delete`
+        `/newsletter/campaigns/${campaignId}/delete`,
+        requestConfig,
       );
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["newsletterCampaigns"] });
+      queryClient.invalidateQueries({
+        queryKey: ["newsletterCampaigns", scopeKey],
+      });
       toast.success("Kampanja obrisana");
     },
     onError: (err: unknown) =>

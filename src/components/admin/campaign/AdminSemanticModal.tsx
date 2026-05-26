@@ -48,17 +48,23 @@ import { useAutoOptimizeLayout } from "@/hooks/useAutoOptimizeLayout";
 import { PreviewRenderer } from "./PreviewRenderer";
 import { GeneratedImagesPanel } from "./GeneratedImagesPanel";
 import LoaderButton from "@/components/elements/LoaderButton";
+import type { NewsletterClientScope } from "@/lib/newsletter/clientScope";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   campaign: INewsletterCampaign;
+  scope?: NewsletterClientScope;
 }
 
 const EMAIL_ONLY_CTA_OPTIONS = [
   { label: "Početna stranica", value: "/" },
   { label: "Usluge i cene", value: "/usluge" },
   { label: "Termini", value: "/termini" },
+];
+
+const PLATFORM_EMAIL_ONLY_CTA_OPTIONS = [
+  { label: "Marysoll platforma", value: "https://marysoll.com/" },
 ];
 
 const DEFAULT_CAMPAIGN_INTENT = CampaignIntent.Promotion;
@@ -85,7 +91,8 @@ function getInitialForm(
 ): UpdateCampaignSemanticPayload {
   const campaignType = (campaign.campaignType ?? "email-only") as CampaignType;
   const audience = normalizeEditorialAudience(
-    campaign.landingPage?.audience,
+    campaign.landingPage?.audience ??
+      (campaign.scope === "platform" ? "partner" : "client"),
     true,
   );
   const editorialCategory = normalizeEditorialCategory(
@@ -202,6 +209,7 @@ export default function AdminSemanticModal({
   isOpen,
   onClose,
   campaign,
+  scope,
 }: Props) {
   // Form state
   const [form, setForm] = useState<UpdateCampaignSemanticPayload>(() =>
@@ -209,9 +217,11 @@ export default function AdminSemanticModal({
   );
   const { user } = useAuth();
   const { data: dbCategories = [] } = useCategories();
-  const canUsePartnerAudience = Boolean(user?.isSuperAdmin);
+  const isPlatformMode =
+    scope?.scope === "platform" || campaign.scope === "platform";
+  const canUsePartnerAudience = Boolean(user?.isSuperAdmin || isPlatformMode);
   const effectiveAudience = normalizeEditorialAudience(
-    form.landingPage.audience,
+    isPlatformMode ? "partner" : form.landingPage.audience,
     canUsePartnerAudience,
   );
   const selectedEditorialCategory = normalizeEditorialCategory(
@@ -230,19 +240,21 @@ export default function AdminSemanticModal({
       ?.filter((block) => block.type === "HeroBlock")
       ?.flatMap((block) => block.images?.map((image) => image.src) || []) || [];
 
-  const images = useGeneratedImages(existingImages);
+  const images = useGeneratedImages(existingImages, scope);
 
   // Hooks
   const preview = useLandingPreview({
     campaign,
     form,
     imagesUrls: images.urls,
+    scope,
   });
 
-  const { saveCampaign, isSaving, error } = useCampaignSemantic();
-  const { publishLanding, isPublishing } = usePublishLanding();
+  const { saveCampaign, isSaving, error } = useCampaignSemantic(scope);
+  const { publishLanding, isPublishing } = usePublishLanding(scope);
   const { deleteLanding, isDeleting: isDeletingLanding } = useDeleteLanding(
     campaign._id,
+    scope,
   );
   const { optimize, isOptimizing } = useAutoOptimizeLayout({
     campaign,
@@ -326,9 +338,11 @@ export default function AdminSemanticModal({
     const landingSlug =
       form.campaignType === "email-landing"
         ? normalizeLandingSlug(form.landingPage.slug)
-        : form.landingPage.slug || "/termini";
+        : isPlatformMode
+          ? "https://marysoll.com/"
+          : form.landingPage.slug || "/termini";
     const landingAudience = normalizeEditorialAudience(
-      form.landingPage.audience,
+      isPlatformMode ? "partner" : form.landingPage.audience,
       canUsePartnerAudience,
     );
     const landingEditorialCategory = normalizeEditorialCategory(
@@ -379,7 +393,7 @@ export default function AdminSemanticModal({
 
     try {
       const landingAudience = normalizeEditorialAudience(
-        form.landingPage.audience,
+        isPlatformMode ? "partner" : form.landingPage.audience,
         canUsePartnerAudience,
       );
       const landingEditorialCategory = normalizeEditorialCategory(
@@ -547,7 +561,11 @@ export default function AdminSemanticModal({
               <label className="block dark:text-gray-800 text-sm font-semibold">
                 Audience
               </label>
-              {canUsePartnerAudience ? (
+              {isPlatformMode ? (
+                <div className="mt-1 w-full rounded-md bg-gray-100 p-2 text-sm font-semibold text-gray-700">
+                  Partneri / saloni
+                </div>
+              ) : canUsePartnerAudience ? (
                 <select
                   value={effectiveAudience}
                   onChange={(e) => {
@@ -611,7 +629,11 @@ export default function AdminSemanticModal({
 
               {form.campaignType === "email-only" ? (
                 <select
-                  value={form.landingPage.slug}
+                  value={
+                    isPlatformMode
+                      ? "https://marysoll.com/"
+                      : form.landingPage.slug
+                  }
                   onChange={(e) =>
                     setForm({
                       ...form,
@@ -623,7 +645,10 @@ export default function AdminSemanticModal({
                   }
                   className="mt-1 w-full dark:text-gray-800 rounded-md bg-gray-100 p-2"
                 >
-                  {EMAIL_ONLY_CTA_OPTIONS.map((opt) => (
+                  {(isPlatformMode
+                    ? PLATFORM_EMAIL_ONLY_CTA_OPTIONS
+                    : EMAIL_ONLY_CTA_OPTIONS
+                  ).map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
                     </option>

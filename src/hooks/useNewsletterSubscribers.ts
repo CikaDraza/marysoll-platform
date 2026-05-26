@@ -3,12 +3,17 @@ import { useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
+import {
+  getNewsletterScopeHeaders,
+  getNewsletterScopeKey,
+  type NewsletterClientScope,
+} from "@/lib/newsletter/clientScope";
 
 interface Subscriber {
   _id: string;
   email: string;
   name: string;
-  source: "guest" | "registered";
+  source: "guest" | "registered" | "newsletter" | "platform";
 }
 
 interface UseNewsletterSubscribersReturn {
@@ -28,20 +33,27 @@ interface UseNewsletterSubscribersReturn {
   pages: number;
 }
 
-export function useNewsletterSubscribers(): UseNewsletterSubscribersReturn {
+export function useNewsletterSubscribers(
+  scope?: NewsletterClientScope,
+): UseNewsletterSubscribersReturn {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<string[]>([]);
+  const scopeKey = getNewsletterScopeKey(scope);
+  const requestConfig = { headers: getNewsletterScopeHeaders(scope) };
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["newsletter-subscribers", { search, page }],
+    queryKey: ["newsletter-subscribers", scopeKey, { search, page }],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       params.set("page", page.toString());
       params.set("limit", "50");
 
-      const res = await api.get(`/newsletter/subscribers?${params}`);
+      const res = await api.get(
+        `/newsletter/subscribers?${params}`,
+        requestConfig,
+      );
       return res.data;
     },
     enabled: Boolean(search || page), // ❗ ne traži ako su oba prazna
@@ -51,14 +63,14 @@ export function useNewsletterSubscribers(): UseNewsletterSubscribersReturn {
 
   const subscribers = useMemo(
     () => data?.subscribers || [],
-    [data?.subscribers]
+    [data?.subscribers],
   );
   const total = data?.pagination?.total || 0;
   const pages = data?.pagination?.pages || 1;
 
   const toggleSubscriber = useCallback((email: string) => {
     setSelected((prev) =>
-      prev.includes(email) ? prev.filter((e) => e !== email) : [...prev, email]
+      prev.includes(email) ? prev.filter((e) => e !== email) : [...prev, email],
     );
   }, []);
 

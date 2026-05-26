@@ -5,7 +5,18 @@ const NewsletterCampaignSchema = new Schema(
     tenantId: {
       type: Schema.Types.ObjectId,
       ref: "Tenant",
-      required: true,
+      required: false,
+    },
+    platformOwnerId: {
+      type: Schema.Types.ObjectId,
+      ref: "AuthUser",
+      required: false,
+    },
+    scope: {
+      type: String,
+      enum: ["tenant", "platform"],
+      default: "tenant",
+      index: true,
     },
     name: { type: String, required: true },
     templateId: { type: Schema.Types.ObjectId, ref: "NewsletterTemplate" },
@@ -84,7 +95,7 @@ const NewsletterCampaignSchema = new Schema(
         enum: ["client", "partner"],
         default: "client",
       },
-      editorialCategory: { type: String, default: "" },
+      editorialCategory: { type: String, default: "Beauty" },
       score: { type: Number, default: 0 },
       seo: {
         title: { type: String, default: "" },

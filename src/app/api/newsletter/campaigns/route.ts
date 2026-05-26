@@ -6,19 +6,29 @@ import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { requireFeature } from "@/lib/plans/planEnforcement";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 import { NewsletterLog } from "@/models/NewsletterLog";
+import {
+  newsletterScopeFilter,
+  resolveNewsletterAdminScope,
+} from "@/lib/newsletter/adminTenantScope";
 
 export async function GET(req: NextRequest) {
   try {
     const auth: AdminAuthResult = await requireAdmin(req);
     if (!auth.success) return auth.response;
 
-    const tenantId = auth.decoded.tenantId;
+    const newsletterScope = await resolveNewsletterAdminScope(req, auth.decoded);
+    if (!newsletterScope) {
+      return NextResponse.json({ error: "Newsletter scope nije validan" }, { status: 403 });
+    }
 
-    const denied = await requireFeature(tenantId, "newsletterCampaigns");
-    if (denied) return denied;
+    if (newsletterScope.scope === "tenant") {
+      const denied = await requireFeature(newsletterScope.tenantId, "newsletterCampaigns");
+      if (denied) return denied;
+    }
 
     await connectToDB();
-    const campaigns = await NewsletterCampaign.find({ tenantId })
+    const scopeFilter = newsletterScopeFilter(newsletterScope);
+    const campaigns = await NewsletterCampaign.find(scopeFilter)
       .sort({ createdAt: -1 })
       .lean();
 
@@ -58,7 +68,7 @@ export async function GET(req: NextRequest) {
           normalizedStatus !== campaign.status
         ) {
           await NewsletterCampaign.updateOne(
-            { _id: campaign._id, tenantId },
+            { _id: campaign._id, ...scopeFilter },
             {
               $set: {
                 openCount: normalizedOpenCount,

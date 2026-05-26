@@ -12,10 +12,21 @@ export default async function NewsletterLandingPage({ params }: Props) {
   const { slug } = await params;
   await connectToDB();
 
-  const campaign = await NewsletterCampaign.findOne({
+  const platformCampaign = await NewsletterCampaign.findOne({
+    scope: "platform",
+    "landingPage.audience": "partner",
     "landingPage.slug": slug,
     "landingPage.status": "published",
   }).lean();
+
+  // Legacy fallback: old newsletter landings existed before platform scope.
+  const campaign =
+    platformCampaign ??
+    (await NewsletterCampaign.findOne({
+      scope: { $exists: false },
+      "landingPage.slug": slug,
+      "landingPage.status": "published",
+    }).lean());
 
   if (!campaign) notFound();
 

@@ -21,6 +21,7 @@ import {
 import { SingleImageField } from "./campaign/SingleImageField";
 import LoaderButton from "../elements/LoaderButton";
 import AdminSemanticModal from "./campaign/AdminSemanticModal";
+import type { NewsletterClientScope } from "@/lib/newsletter/clientScope";
 
 const inp = [
   "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
@@ -44,7 +45,11 @@ const statusBadgeStyles: Record<INewsletterCampaign["status"], string> = {
   stopped: "bg-red-100 text-red-800",
 };
 
-function AdminNewsletterDashboard() {
+interface AdminNewsletterDashboardProps {
+  scope?: NewsletterClientScope;
+}
+
+function AdminNewsletterDashboard({ scope }: AdminNewsletterDashboardProps) {
   const {
     createTemplate,
     isCreatingTemplate,
@@ -52,7 +57,7 @@ function AdminNewsletterDashboard() {
     isUpdatingTemplate,
     deleteTemplate,
     isDeletingTemplate,
-  } = useNewsletterTemplates();
+  } = useNewsletterTemplates(scope);
   const {
     templates,
     campaigns,
@@ -70,7 +75,7 @@ function AdminNewsletterDashboard() {
     isResuming,
     isStopping,
     isDeleting,
-  } = useNewsletterAdmin();
+  } = useNewsletterAdmin(scope);
 
   const {
     subscribers,
@@ -85,7 +90,7 @@ function AdminNewsletterDashboard() {
     page,
     setPage,
     pages,
-  } = useNewsletterSubscribers();
+  } = useNewsletterSubscribers(scope);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -1288,6 +1293,7 @@ function AdminNewsletterDashboard() {
                         isOpen={true}
                         onClose={() => setSemanticCampaign(null)}
                         campaign={semanticCampaign}
+                        scope={scope}
                       />
                     )}
                     {c.status === "draft" || c.status === "scheduled" ? (

@@ -1,7 +1,7 @@
 // app/superadmin/dashboard/page.tsx
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { PLAN_FEATURES } from "@/lib/plans/planFeatures";
 import { AuthStatusButton } from "@/components/auth/AuthStatusButton";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +9,7 @@ import { useSuperAdminTenants } from "@/hooks/useSuperAdminTenants";
 import type { TenantRow } from "@/hooks/useSuperAdminTenants";
 import Link from "next/link";
 import { SuperAdminNotificationBell } from "@/components/superadmin/SuperAdminNotificationBell";
+import AdminNewsletterDashboard from "@/components/admin/AdminNewsletterDashboard";
 import { ProfilTab as ProfilTabComponent } from "@/components/superadmin/tabs/ProfilTab";
 import { ChatTab as ChatTabComponent } from "@/components/superadmin/tabs/ChatTab";
 import { StatistikaTab as StatistikaTabComponent } from "@/components/superadmin/tabs/StatistikaTab";
@@ -127,6 +128,13 @@ export default function SuperAdminDashboard() {
             <PodesavanjaTabComponent superAdmin={sa} />
           )}
           {activeTab === "profil" && <ProfilTabComponent />}
+          {activeTab === "newsletter" && (
+            <SuperAdminNewsletterTab
+              tenants={sa.tenants}
+              selected={selectedTenant}
+              onSelect={setSelectedTenant}
+            />
+          )}
           {activeTab === "marketing" && <MarketingTabComponent />}
           {activeTab === "chat" && (
             <ChatTabComponent
@@ -137,6 +145,101 @@ export default function SuperAdminDashboard() {
           )}
         </main>
       </div>
+    </div>
+  );
+}
+
+function SuperAdminNewsletterTab({
+  tenants,
+  selected,
+  onSelect,
+}: {
+  tenants: TenantRow[];
+  selected: TenantRow | null;
+  onSelect: (tenant: TenantRow) => void;
+}) {
+  const [mode, setMode] = useState<"platform" | "tenant">("platform");
+  const activeScope =
+    mode === "platform"
+      ? ({ scope: "platform" } as const)
+      : selected
+        ? ({ scope: "tenant", tenantId: selected._id } as const)
+        : undefined;
+
+  return (
+    <div className="space-y-4">
+      <div className={card}>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-violet-400">
+              Newsletter
+            </p>
+            <h2 className="mt-1 text-lg font-bold">Newsletter dashboard</h2>
+            <p className="mt-2 text-sm text-slate-400">
+              Dva režima: salon newsletter za tenant kampanje i Marysoll
+              platform newsletter za B2B kampanje prema salonima.
+            </p>
+          </div>
+          <div className="grid w-full max-w-2xl gap-3 lg:grid-cols-[220px_1fr]">
+            <div>
+              <label className={lbl}>Režim</label>
+              <select
+                value={mode}
+                onChange={(event) =>
+                  setMode(event.target.value as "platform" | "tenant")
+                }
+                className={inp}
+              >
+                <option value="platform">Marysoll platform newsletter</option>
+                <option value="tenant">Salon newsletter</option>
+              </select>
+            </div>
+            <div>
+              <label className={lbl}>Salon</label>
+              <select
+                value={selected?._id ?? ""}
+                disabled={mode === "platform"}
+                onChange={(event) => {
+                  const tenant = tenants.find(
+                    (item) => item._id === event.target.value,
+                  );
+                  if (tenant) {
+                    onSelect(tenant);
+                  }
+                }}
+                className={inp}
+              >
+                <option value="">Izaberi salon...</option>
+                {tenants.map((tenant) => (
+                  <option key={tenant._id} value={tenant._id}>
+                    {tenant.name} ({tenant.slug})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {activeScope ? (
+        <div className="rounded-2xl bg-slate-950/40 p-6 text-slate-100">
+          <AdminNewsletterDashboard
+            key={
+              activeScope.scope === "platform"
+                ? "platform"
+                : `tenant-${activeScope.tenantId}`
+            }
+            scope={activeScope}
+          />
+        </div>
+      ) : (
+        <div className={card}>
+          <p className="text-sm text-slate-400">
+            Prvo izaberi salon da bi Superadmin radio nad istim tenant newsletter
+            podacima kao admin/owner panel.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { TenantUser } from "@/models/TenantUser";
 import { AudienceContact } from "@/models/AudienceContact";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
+import { resolveNewsletterAdminScope } from "@/lib/newsletter/adminTenantScope";
 import { Types } from "mongoose";
 
 export async function GET(request: Request) {
@@ -14,9 +15,15 @@ export async function GET(request: Request) {
     return authResult.response;
   }
 
-  const tenantId = authResult.decoded?.tenantId;
-  if (!tenantId) {
-    return NextResponse.json({ error: "No tenant context" }, { status: 403 });
+  const newsletterScope = await resolveNewsletterAdminScope(
+    request,
+    authResult.decoded,
+  );
+  if (!newsletterScope) {
+    return NextResponse.json(
+      { error: "Newsletter scope nije validan" },
+      { status: 403 },
+    );
   }
 
   const { searchParams } = new URL(request.url);
@@ -24,6 +31,66 @@ export async function GET(request: Request) {
   const page = parseInt(searchParams.get("page") || "1");
   const limit = parseInt(searchParams.get("limit") || "50");
   const skip = (page - 1) * limit;
+
+  if (newsletterScope.scope === "platform") {
+    const platformContactConditions: Record<string, unknown>[] = [
+      {
+        $or: [{ tenantId: { $exists: false } }, { tenantId: null }],
+      },
+    ];
+
+    const contactFilter: Record<string, unknown> = {
+      $and: platformContactConditions,
+      subscribed: true,
+      status: "ACTIVE",
+      contactType: { $in: ["SALON_OWNER", "LEAD", "STAFF"] },
+    };
+
+    if (search) {
+      const regex = new RegExp(search, "i");
+      platformContactConditions.push({
+        $or: [
+          { email: { $regex: regex } },
+          { firstName: { $regex: regex } },
+          { lastName: { $regex: regex } },
+        ],
+      });
+    }
+
+    const contacts = await AudienceContact.find(contactFilter)
+      .select("email firstName lastName")
+      .skip(skip)
+      .limit(limit)
+      .lean<
+        {
+          _id: Types.ObjectId;
+          email: string;
+          firstName?: string;
+          lastName?: string;
+        }[]
+      >();
+
+    const subscribers = contacts.map((c) => ({
+      _id: c._id.toString(),
+      email: c.email,
+      name:
+        [c.firstName, c.lastName].filter(Boolean).join(" ") ||
+        c.email.split("@")[0],
+      source: "platform",
+    }));
+
+    return NextResponse.json({
+      subscribers,
+      pagination: {
+        page,
+        limit,
+        total: subscribers.length,
+        pages: Math.ceil(subscribers.length / limit),
+      },
+    });
+  }
+
+  const tenantId = newsletterScope.tenantId;
 
   // Get registered tenant subscribers — email is now on TenantUser directly
   const registeredFilter: Record<string, unknown> = {

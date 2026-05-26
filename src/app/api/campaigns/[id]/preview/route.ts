@@ -5,6 +5,10 @@ import { requireFeature } from "@/lib/plans/planEnforcement";
 import { connectToDB } from "@/lib/db/mongodb";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 import { generateLandingPreview } from "@/lib/ai/orchestrator";
+import {
+  newsletterScopeFilter,
+  resolveNewsletterAdminScope,
+} from "@/lib/newsletter/adminTenantScope";
 
 export async function POST(
   req: Request,
@@ -14,14 +18,31 @@ export async function POST(
     const authResult: AdminAuthResult = await requireAdmin(req);
     if (!authResult.success) return authResult.response;
 
-    const tenantId = authResult.decoded.tenantId;
+    const newsletterScope = await resolveNewsletterAdminScope(
+      req,
+      authResult.decoded,
+    );
+    if (!newsletterScope) {
+      return NextResponse.json(
+        { error: "Newsletter scope nije validan" },
+        { status: 403 },
+      );
+    }
 
-    const denied = await requireFeature(tenantId, "aiLandingPages");
-    if (denied) return denied;
+    if (newsletterScope.scope === "tenant") {
+      const denied = await requireFeature(
+        newsletterScope.tenantId,
+        "aiLandingPages",
+      );
+      if (denied) return denied;
+    }
 
     await connectToDB();
     const { id } = await context.params;
-    const campaign = await NewsletterCampaign.findOne({ _id: id, tenantId });
+    const campaign = await NewsletterCampaign.findOne({
+      _id: id,
+      ...newsletterScopeFilter(newsletterScope),
+    });
     if (!campaign) {
       return NextResponse.json(
         { error: "Kampanja nije pronađena" },

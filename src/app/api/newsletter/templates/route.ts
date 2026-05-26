@@ -5,6 +5,10 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { requireFeature } from "@/lib/plans/planEnforcement";
 import { NewsletterTemplate } from "@/models/NewsletterTemplate";
+import {
+  newsletterScopeFilter,
+  resolveNewsletterAdminScope,
+} from "@/lib/newsletter/adminTenantScope";
 
 export async function GET(request: Request) {
   const authResult: AdminAuthResult = await requireAdmin(request);
@@ -12,13 +16,27 @@ export async function GET(request: Request) {
     return authResult.response;
   }
 
-  const tenantId = authResult.decoded.tenantId;
+  const newsletterScope = await resolveNewsletterAdminScope(
+    request,
+    authResult.decoded,
+  );
+  if (!newsletterScope) {
+    return NextResponse.json(
+      { error: "Newsletter scope nije validan" },
+      { status: 403 },
+    );
+  }
 
-  const denied = await requireFeature(tenantId, "newsletterCampaigns");
-  if (denied) return denied;
+  if (newsletterScope.scope === "tenant") {
+    const denied = await requireFeature(
+      newsletterScope.tenantId,
+      "newsletterCampaigns",
+    );
+    if (denied) return denied;
+  }
 
   await connectToDB();
-  const templates = await NewsletterTemplate.find({ tenantId })
+  const templates = await NewsletterTemplate.find(newsletterScopeFilter(newsletterScope))
     .sort({ createdAt: -1 })
     .lean();
 

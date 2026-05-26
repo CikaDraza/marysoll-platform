@@ -1,10 +1,14 @@
 // src/hooks/newsletter/useGeneratedImages.ts
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { GeneratedImage, UseGeneratedImagesReturn } from "@/types/newsletter";
+import {
+  getNewsletterScopeHeaders,
+  type NewsletterClientScope,
+} from "@/lib/newsletter/clientScope";
 
 /**
  * Hook za upravljanje generisanim slikama za landing page
@@ -12,8 +16,10 @@ import { GeneratedImage, UseGeneratedImagesReturn } from "@/types/newsletter";
  */
 export function useGeneratedImages(
   initialUrls: string[] = [],
+  scope?: NewsletterClientScope,
 ): UseGeneratedImagesReturn {
   const queryClient = useQueryClient();
+  const scopeHeaders = useMemo(() => getNewsletterScopeHeaders(scope), [scope]);
 
   const [images, setImages] = useState<GeneratedImage[]>(() => {
     if (initialUrls.length > 0) {
@@ -47,7 +53,7 @@ export function useGeneratedImages(
       try {
         const res = await fetch("/api/newsletter/campaigns/generate-images", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...scopeHeaders },
           body: JSON.stringify({ prompt: img.prompt }),
         });
 
@@ -84,7 +90,7 @@ export function useGeneratedImages(
         return null;
       }
     },
-    [images, queryClient],
+    [images, queryClient, scopeHeaders],
   );
 
   const updatePrompt = useCallback((index: number, value: string) => {

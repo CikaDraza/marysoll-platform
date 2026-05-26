@@ -5,6 +5,10 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { requireFeature } from "@/lib/plans/planEnforcement";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
+import {
+  newsletterScopeFilter,
+  resolveNewsletterAdminScope,
+} from "@/lib/newsletter/adminTenantScope";
 
 export async function DELETE(
   request: Request,
@@ -19,15 +23,26 @@ export async function DELETE(
     }
 
     const { decoded } = authResult;
-    const tenantId = decoded.tenantId;
+    const newsletterScope = await resolveNewsletterAdminScope(request, decoded);
+    if (!newsletterScope) {
+      return NextResponse.json(
+        { error: "Newsletter scope nije validan" },
+        { status: 403 },
+      );
+    }
 
-    const denied = await requireFeature(tenantId, "newsletterLanding");
-    if (denied) return denied;
+    if (newsletterScope.scope === "tenant") {
+      const denied = await requireFeature(
+        newsletterScope.tenantId,
+        "newsletterLanding",
+      );
+      if (denied) return denied;
+    }
     const { id } = await context.params;
 
-    const campaign = await NewsletterCampaign.findOneAndDelete({
+    const campaign = await NewsletterCampaign.findOne({
       _id: id,
-      tenantId,
+      ...newsletterScopeFilter(newsletterScope),
     });
 
     if (!campaign) {

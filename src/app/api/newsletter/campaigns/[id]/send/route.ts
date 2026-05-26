@@ -5,6 +5,10 @@ import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { requireFeature } from "@/lib/plans/planEnforcement";
 import { sendCampaignEmails } from "@/lib/newsletterService";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
+import {
+  newsletterScopeFilter,
+  resolveNewsletterAdminScope,
+} from "@/lib/newsletter/adminTenantScope";
 
 interface SendRequestBody {
   action: "send" | "pause" | "resume" | "stop";
@@ -21,10 +25,21 @@ export async function POST(
   }
 
   const { decoded } = authResult;
-  const tenantId = decoded.tenantId;
+  const newsletterScope = await resolveNewsletterAdminScope(request, decoded);
+  if (!newsletterScope) {
+    return NextResponse.json(
+      { error: "Newsletter scope nije validan" },
+      { status: 403 },
+    );
+  }
 
-  const denied = await requireFeature(tenantId, "newsletterCampaigns");
-  if (denied) return denied;
+  if (newsletterScope.scope === "tenant") {
+    const denied = await requireFeature(
+      newsletterScope.tenantId,
+      "newsletterCampaigns",
+    );
+    if (denied) return denied;
+  }
   const body: SendRequestBody = await request.json();
   const { id } = await context.params;
   const { action } = body;
@@ -39,7 +54,10 @@ export async function POST(
       );
     }
 
-    const campaign = await NewsletterCampaign.findOne({ _id: id, tenantId });
+    const campaign = await NewsletterCampaign.findOne({
+      _id: id,
+      ...newsletterScopeFilter(newsletterScope),
+    });
     if (!campaign) {
       return NextResponse.json(
         { error: "Kampanja nije pronađena" },

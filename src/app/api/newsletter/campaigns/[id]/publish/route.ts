@@ -10,6 +10,10 @@ import {
   normalizeEditorialAudience,
   normalizeEditorialCategory,
 } from "@/lib/newsletter/editorialClassification";
+import {
+  newsletterScopeFilter,
+  resolveNewsletterAdminScope,
+} from "@/lib/newsletter/adminTenantScope";
 
 export async function PATCH(
   request: Request,
@@ -25,17 +29,28 @@ export async function PATCH(
     }
 
     const { decoded } = authResult;
-    const tenantId = decoded.tenantId;
+    const newsletterScope = await resolveNewsletterAdminScope(request, decoded);
+    if (!newsletterScope) {
+      return NextResponse.json(
+        { error: "Newsletter scope nije validan" },
+        { status: 403 },
+      );
+    }
 
-    const denied = await requireFeature(tenantId, "newsletterLanding");
-    if (denied) return denied;
+    if (newsletterScope.scope === "tenant") {
+      const denied = await requireFeature(
+        newsletterScope.tenantId,
+        "newsletterLanding",
+      );
+      if (denied) return denied;
+    }
     const { id } = await context.params;
     const body: PublishLandingPayload = await request.json();
 
     const campaign = await NewsletterCampaign.findOneAndUpdate(
       {
         _id: id,
-        tenantId,
+        ...newsletterScopeFilter(newsletterScope),
       },
       {
         $set: {
@@ -60,7 +75,9 @@ export async function PATCH(
 
     // Update landing page with published status
     const audience = normalizeEditorialAudience(
-      body.audience ?? campaign.landingPage?.audience,
+      body.audience ??
+        campaign.landingPage?.audience ??
+        (newsletterScope.scope === "platform" ? "partner" : "client"),
       decoded.isSuperAdmin ?? false,
     );
     const editorialCategory = normalizeEditorialCategory(

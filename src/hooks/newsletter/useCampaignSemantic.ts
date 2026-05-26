@@ -9,6 +9,11 @@ import {
   SaveCampaignSemanticPayload,
   UseCampaignSemanticReturn,
 } from "@/types/newsletter";
+import {
+  getNewsletterScopeHeaders,
+  getNewsletterScopeKey,
+  type NewsletterClientScope,
+} from "@/lib/newsletter/clientScope";
 
 interface UpdateSemanticArgs {
   campaignId: string;
@@ -23,8 +28,12 @@ interface SaveCampaignArgs {
 /**
  * Hook za upravljanje semantic podacima kampanje
  */
-export function useCampaignSemantic(): UseCampaignSemanticReturn {
+export function useCampaignSemantic(
+  scope?: NewsletterClientScope,
+): UseCampaignSemanticReturn {
   const queryClient = useQueryClient();
+  const scopeKey = getNewsletterScopeKey(scope);
+  const requestConfig = { headers: getNewsletterScopeHeaders(scope) };
 
   // Update basic semantic data
   const updateSemanticMutation = useMutation({
@@ -32,11 +41,14 @@ export function useCampaignSemantic(): UseCampaignSemanticReturn {
       const res = await api.patch(
         `/newsletter/campaigns/${campaignId}/semantic`,
         payload,
+        requestConfig,
       );
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["newsletterCampaigns"] });
+      queryClient.invalidateQueries({
+        queryKey: ["newsletterCampaigns", scopeKey],
+      });
       toast.success("Semantic podaci sačuvani");
     },
     onError: (err: Error) => toast.error(err.message),
@@ -48,11 +60,14 @@ export function useCampaignSemantic(): UseCampaignSemanticReturn {
       const res = await api.patch(
         `/newsletter/campaigns/${campaignId}/save`,
         payload,
+        requestConfig,
       );
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["newsletterCampaigns"] });
+      queryClient.invalidateQueries({
+        queryKey: ["newsletterCampaigns", scopeKey],
+      });
       toast.success("Kampanja sačuvana!");
     },
     onError: (err: Error) => toast.error(err.message),

@@ -7,6 +7,10 @@ import { generateSeoMetadata } from "@/lib/ai/orchestrator";
 import { extractTextFromBlocks } from "@/lib/conversational/ai/extractTextFromBlocks";
 import { LandingBlock, landingPageOutputSchema } from "@/types/landing-blocks";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
+import {
+  newsletterScopeFilter,
+  resolveNewsletterAdminScope,
+} from "@/lib/newsletter/adminTenantScope";
 
 interface RequestBody {
   layout: LandingBlock[];
@@ -22,10 +26,24 @@ export async function POST(
     const authResult: AdminAuthResult = await requireAdmin(req);
     if (!authResult.success) return authResult.response;
 
-    const tenantId = authResult.decoded.tenantId;
+    const newsletterScope = await resolveNewsletterAdminScope(
+      req,
+      authResult.decoded,
+    );
+    if (!newsletterScope) {
+      return NextResponse.json(
+        { error: "Newsletter scope nije validan" },
+        { status: 403 },
+      );
+    }
 
-    const denied = await requireFeature(tenantId, "aiSeoGeneration");
-    if (denied) return denied;
+    if (newsletterScope.scope === "tenant") {
+      const denied = await requireFeature(
+        newsletterScope.tenantId,
+        "aiSeoGeneration",
+      );
+      if (denied) return denied;
+    }
 
     await connectToDB();
     const { id } = await context.params;
@@ -38,7 +56,10 @@ export async function POST(
       );
     }
 
-    const campaign = await NewsletterCampaign.findOne({ _id: id, tenantId });
+    const campaign = await NewsletterCampaign.findOne({
+      _id: id,
+      ...newsletterScopeFilter(newsletterScope),
+    });
     if (!campaign) {
       return NextResponse.json(
         { error: "Campaign not found" },

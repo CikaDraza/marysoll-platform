@@ -373,6 +373,9 @@ export interface NewsletterVariable {
 
 export interface INewsletterTemplate {
   _id: string;
+  scope?: "tenant" | "platform";
+  tenantId?: string | Types.ObjectId;
+  platformOwnerId?: string | Types.ObjectId;
   name: string;
   slug: string;
   isDefault?: boolean;
@@ -388,6 +391,9 @@ export interface INewsletterTemplate {
 
 export interface INewsletterCampaign {
   _id: string;
+  scope?: "tenant" | "platform";
+  tenantId?: string | Types.ObjectId;
+  platformOwnerId?: string | Types.ObjectId;
   name: string;
   templateId: string | Types.ObjectId;
   subject: string;

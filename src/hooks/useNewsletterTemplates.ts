@@ -3,6 +3,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 import { INewsletterTemplate } from "@/types";
+import {
+  getNewsletterScopeHeaders,
+  getNewsletterScopeKey,
+  type NewsletterClientScope,
+} from "@/lib/newsletter/clientScope";
 
 interface CreateTemplateData {
   name: string;
@@ -25,17 +30,25 @@ interface UpdateTemplateData extends Partial<CreateTemplateData> {
   id: string;
 }
 
-export function useNewsletterTemplates() {
+export function useNewsletterTemplates(scope?: NewsletterClientScope) {
   const queryClient = useQueryClient();
+  const scopeKey = getNewsletterScopeKey(scope);
+  const requestConfig = { headers: getNewsletterScopeHeaders(scope) };
 
   // Kreiranje templejta
   const createTemplate = useMutation({
     mutationFn: async (data: CreateTemplateData) => {
-      const response = await api.post("/newsletter/templates/create", data);
+      const response = await api.post(
+        "/newsletter/templates/create",
+        data,
+        requestConfig,
+      );
       return response.data as INewsletterTemplate;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["newsletterTemplates"] });
+      queryClient.invalidateQueries({
+        queryKey: ["newsletterTemplates", scopeKey],
+      });
       toast.success("Templejt uspešno sačuvan!");
     },
     onError: (error: unknown) => {
@@ -52,12 +65,15 @@ export function useNewsletterTemplates() {
     mutationFn: async ({ id, ...data }: UpdateTemplateData) => {
       const response = await api.put(
         `/newsletter/templates/${id}/update`,
-        data
+        data,
+        requestConfig,
       );
       return response.data as INewsletterTemplate;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["newsletterTemplates"] });
+      queryClient.invalidateQueries({
+        queryKey: ["newsletterTemplates", scopeKey],
+      });
       toast.success("Templejt uspešno ažuriran!");
     },
     onError: (error: unknown) => {
@@ -70,11 +86,16 @@ export function useNewsletterTemplates() {
   // Brisanje templejta
   const deleteTemplate = useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.delete(`/newsletter/templates/${id}/delete`);
+      const response = await api.delete(
+        `/newsletter/templates/${id}/delete`,
+        requestConfig,
+      );
       return response.data; // obično { message: "Templejt obrisan" }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["newsletterTemplates"] });
+      queryClient.invalidateQueries({
+        queryKey: ["newsletterTemplates", scopeKey],
+      });
       toast.success("Templejt obrisan");
     },
     onError: (error: unknown) => {

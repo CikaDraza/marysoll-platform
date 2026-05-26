@@ -4,6 +4,7 @@ import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { requireFeature } from "@/lib/plans/planEnforcement";
 import { uploadBase64ToCloudinary, getTenantFolder } from "@/lib/cloudinary";
 import { generateImage } from "@/lib/ai/orchestrator";
+import { resolveNewsletterAdminScope } from "@/lib/newsletter/adminTenantScope";
 
 const SUPERADMIN_IMAGE_FOLDER = "superadmin/images";
 
@@ -15,10 +16,21 @@ export async function POST(req: Request) {
       return authResult.response;
     }
 
+    const newsletterScope = await resolveNewsletterAdminScope(
+      req,
+      authResult.decoded,
+    );
+    if (!newsletterScope) {
+      return NextResponse.json(
+        { error: "Newsletter scope nije validan" },
+        { status: 403 },
+      );
+    }
+
     // 2. Plan feature gate — AI image generation is Pro+
-    if (!authResult.decoded.isSuperAdmin) {
+    if (newsletterScope.scope === "tenant") {
       const denied = await requireFeature(
-        authResult.decoded.tenantId,
+        newsletterScope.tenantId,
         "aiImageGeneration",
       );
       if (denied) return denied;
@@ -36,9 +48,9 @@ export async function POST(req: Request) {
     const { base64Image } = await generateImage(prompt);
 
     // 5. Upload to Cloudinary in tenant folder
-    const folder = authResult.decoded.isSuperAdmin
+    const folder = newsletterScope.scope === "platform"
       ? SUPERADMIN_IMAGE_FOLDER
-      : await getTenantFolder(authResult.decoded.tenantId);
+      : await getTenantFolder(newsletterScope.tenantId);
     const url = await uploadBase64ToCloudinary(base64Image, folder);
 
     // 6. Return the secure URL

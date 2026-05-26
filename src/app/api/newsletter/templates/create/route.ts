@@ -4,6 +4,10 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { requireFeature } from "@/lib/plans/planEnforcement";
 import { NewsletterTemplate } from "@/models/NewsletterTemplate";
+import {
+  newsletterScopeFilter,
+  resolveNewsletterAdminScope,
+} from "@/lib/newsletter/adminTenantScope";
 
 export async function POST(request: Request) {
   // OBAVEZNO za kreiranje – samo admin sme
@@ -12,10 +16,24 @@ export async function POST(request: Request) {
     return authResult.response;
   }
 
-  const tenantId = authResult.decoded.tenantId;
+  const newsletterScope = await resolveNewsletterAdminScope(
+    request,
+    authResult.decoded,
+  );
+  if (!newsletterScope) {
+    return NextResponse.json(
+      { error: "Newsletter scope nije validan" },
+      { status: 403 },
+    );
+  }
 
-  const denied = await requireFeature(tenantId, "newsletterCampaigns");
-  if (denied) return denied;
+  if (newsletterScope.scope === "tenant") {
+    const denied = await requireFeature(
+      newsletterScope.tenantId,
+      "newsletterCampaigns",
+    );
+    if (denied) return denied;
+  }
 
   await connectToDB();
 
@@ -40,7 +58,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const existing = await NewsletterTemplate.findOne({ slug });
+    const scopeFilter = newsletterScopeFilter(newsletterScope);
+    const existing = await NewsletterTemplate.findOne({ slug, ...scopeFilter });
     if (existing) {
       return NextResponse.json(
         { error: `Slug "${slug}" već postoji` },
@@ -49,7 +68,13 @@ export async function POST(request: Request) {
     }
 
     const template = new NewsletterTemplate({
-      tenantId,
+      scope: newsletterScope.scope,
+      tenantId:
+        newsletterScope.scope === "tenant" ? newsletterScope.tenantId : undefined,
+      platformOwnerId:
+        newsletterScope.scope === "platform"
+          ? newsletterScope.platformOwnerId
+          : undefined,
       name,
       slug,
       subject,

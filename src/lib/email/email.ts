@@ -382,7 +382,11 @@ export async function sendNewsletterEmail(
   const salonFrom = await resolveSalonFrom(tenantId, "newsletter");
   const campaignFrom =
     salonFrom ??
-    `"Marysoll small business platform" <${process.env.NEWSLETTER_FROM_EMAIL || process.env.EMAIL_FROM}>`;
+    `"Marysoll" <${
+      process.env.NEWSLETTER_FROM_EMAIL ||
+      process.env.EMAIL_FROM ||
+      "noreply@marysoll.com"
+    }>`;
 
   return sendEmail({
     from: campaignFrom,
