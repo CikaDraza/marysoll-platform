@@ -23,9 +23,18 @@ import { INewsletterCampaign } from "@/types";
 import {
   UpdateCampaignSemanticPayload,
   CampaignType,
+  EditorialAudience,
   SemanticTone,
 } from "@/types/newsletter";
 import { CampaignIntent } from "@/types/conversational/campaign";
+import { useAuth } from "@/hooks/useAuth";
+import { useCategories, type CategoryOption } from "@/hooks/useCategories";
+import {
+  CLIENT_EDITORIAL_CATEGORIES,
+  PARTNER_EDITORIAL_CATEGORIES,
+  normalizeEditorialAudience,
+  normalizeEditorialCategory,
+} from "@/lib/newsletter/editorialClassification";
 
 import {
   useLandingPreview,
@@ -54,6 +63,11 @@ const EMAIL_ONLY_CTA_OPTIONS = [
 
 const DEFAULT_CAMPAIGN_INTENT = CampaignIntent.Promotion;
 
+type SelectOption = {
+  label: string;
+  value: string;
+};
+
 function normalizeLandingSlug(slug?: string | null) {
   return (
     slug
@@ -70,6 +84,14 @@ function getInitialForm(
   campaign: INewsletterCampaign,
 ): UpdateCampaignSemanticPayload {
   const campaignType = (campaign.campaignType ?? "email-only") as CampaignType;
+  const audience = normalizeEditorialAudience(
+    campaign.landingPage?.audience,
+    true,
+  );
+  const editorialCategory = normalizeEditorialCategory(
+    campaign.landingPage?.editorialCategory,
+    audience,
+  );
 
   return {
     campaignType,
@@ -88,8 +110,84 @@ function getInitialForm(
         campaignType === "email-landing"
           ? normalizeLandingSlug(campaign.ctaSlug || campaign.landingPage?.slug)
           : campaign.ctaSlug || "/termini",
+      audience,
+      editorialCategory,
     },
   };
+}
+
+function mapDbCategoryToEditorialValue(category: CategoryOption) {
+  switch (category.key) {
+    case "makeup":
+      return "Makeup";
+    case "nails":
+      return "Nails";
+    case "hair":
+      return "Hair";
+    case "massage":
+      return "Massage";
+    default:
+      return category.label;
+  }
+}
+
+function uniqueOptions(options: SelectOption[]) {
+  const seen = new Set<string>();
+
+  return options.filter((option) => {
+    const key = option.value.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function buildClientCategoryOptions(
+  dbCategories: CategoryOption[],
+): SelectOption[] {
+  return uniqueOptions([
+    ...CLIENT_EDITORIAL_CATEGORIES.map((category) => ({
+      label: category,
+      value: category,
+    })),
+    ...dbCategories.map((category) => ({
+      label: category.label,
+      value: mapDbCategoryToEditorialValue(category),
+    })),
+  ]);
+}
+
+function buildPartnerCategoryOptions(): SelectOption[] {
+  return PARTNER_EDITORIAL_CATEGORIES.map((category) => ({
+    label: category,
+    value: category,
+  }));
+}
+
+function getCategoryOptions(
+  audience: EditorialAudience,
+  dbCategories: CategoryOption[],
+  selectedCategory: string,
+) {
+  const options =
+    audience === "partner"
+      ? buildPartnerCategoryOptions()
+      : buildClientCategoryOptions(dbCategories);
+
+  if (
+    selectedCategory &&
+    !options.some((option) => option.value === selectedCategory)
+  ) {
+    return [
+      ...options,
+      {
+        label: selectedCategory,
+        value: selectedCategory,
+      },
+    ];
+  }
+
+  return options;
 }
 
 function scoreLabel(score: number) {
@@ -108,6 +206,22 @@ export default function AdminSemanticModal({
   // Form state
   const [form, setForm] = useState<UpdateCampaignSemanticPayload>(() =>
     getInitialForm(campaign),
+  );
+  const { user } = useAuth();
+  const { data: dbCategories = [] } = useCategories();
+  const canUsePartnerAudience = Boolean(user?.isSuperAdmin);
+  const effectiveAudience = normalizeEditorialAudience(
+    form.landingPage.audience,
+    canUsePartnerAudience,
+  );
+  const selectedEditorialCategory = normalizeEditorialCategory(
+    form.landingPage.editorialCategory,
+    effectiveAudience,
+  );
+  const editorialCategoryOptions = getCategoryOptions(
+    effectiveAudience,
+    dbCategories,
+    selectedEditorialCategory,
   );
 
   // Initialize images from existing landing
@@ -159,6 +273,14 @@ export default function AdminSemanticModal({
       const existingScore = campaign.landingPage.score ?? 0;
       const existingSemanticType =
         campaign.landingPage.semanticType ?? "promotion";
+      const existingAudience = normalizeEditorialAudience(
+        campaign.landingPage.audience,
+        true,
+      );
+      const existingEditorialCategory = normalizeEditorialCategory(
+        campaign.landingPage.editorialCategory,
+        existingAudience,
+      );
       const existingGeneratedAt = campaign.landingPage.generatedAt
         ? new Date(campaign.landingPage.generatedAt)
         : new Date();
@@ -172,6 +294,8 @@ export default function AdminSemanticModal({
         },
         meta: {
           semanticType: existingSemanticType,
+          audience: existingAudience,
+          editorialCategory: existingEditorialCategory,
           generatedAt: existingGeneratedAt,
         },
       });
@@ -184,6 +308,8 @@ export default function AdminSemanticModal({
     campaign.landingPage?.seo,
     campaign.landingPage?.score,
     campaign.landingPage?.semanticType,
+    campaign.landingPage?.audience,
+    campaign.landingPage?.editorialCategory,
     preview,
   ]);
 
@@ -201,6 +327,14 @@ export default function AdminSemanticModal({
       form.campaignType === "email-landing"
         ? normalizeLandingSlug(form.landingPage.slug)
         : form.landingPage.slug || "/termini";
+    const landingAudience = normalizeEditorialAudience(
+      form.landingPage.audience,
+      canUsePartnerAudience,
+    );
+    const landingEditorialCategory = normalizeEditorialCategory(
+      form.landingPage.editorialCategory,
+      landingAudience,
+    );
 
     try {
       await saveCampaign({
@@ -222,6 +356,8 @@ export default function AdminSemanticModal({
             score: preview.layout?.score?.total,
             semanticType:
               preview.layout?.meta?.semanticType || intent,
+            audience: landingAudience,
+            editorialCategory: landingEditorialCategory,
             generatedAt: new Date(),
             status: "generated",
           },
@@ -242,6 +378,15 @@ export default function AdminSemanticModal({
     }
 
     try {
+      const landingAudience = normalizeEditorialAudience(
+        form.landingPage.audience,
+        canUsePartnerAudience,
+      );
+      const landingEditorialCategory = normalizeEditorialCategory(
+        form.landingPage.editorialCategory,
+        landingAudience,
+      );
+
       await publishLanding({
         campaignId: campaign._id.toString(),
         payload: {
@@ -251,6 +396,8 @@ export default function AdminSemanticModal({
             preview.layout.meta?.semanticType ||
             form.semanticContent.intent ||
             DEFAULT_CAMPAIGN_INTENT,
+          audience: landingAudience,
+          editorialCategory: landingEditorialCategory,
           generatedAt: new Date().toISOString(),
           status: "published",
           score: preview.layout.score?.total,
@@ -392,6 +539,67 @@ export default function AdminSemanticModal({
                 <option value="announcement">Obaveštenje</option>
                 <option value="event">Događaj</option>
                 <option value="conversion">Konverzija</option>
+              </select>
+            </div>
+
+            {/* Editorial audience */}
+            <div>
+              <label className="block dark:text-gray-800 text-sm font-semibold">
+                Audience
+              </label>
+              {canUsePartnerAudience ? (
+                <select
+                  value={effectiveAudience}
+                  onChange={(e) => {
+                    const nextAudience = e.target.value as EditorialAudience;
+                    setForm({
+                      ...form,
+                      landingPage: {
+                        ...form.landingPage,
+                        audience: nextAudience,
+                        editorialCategory: normalizeEditorialCategory(
+                          "",
+                          nextAudience,
+                        ),
+                      },
+                    });
+                  }}
+                  className="mt-1 w-full dark:text-gray-800 rounded-md bg-gray-100 p-2"
+                >
+                  <option value="client">Klijenti</option>
+                  <option value="partner">Partneri / saloni</option>
+                </select>
+              ) : (
+                <div className="mt-1 w-full rounded-md bg-gray-100 p-2 text-sm font-semibold text-gray-700">
+                  Klijenti
+                </div>
+              )}
+            </div>
+
+            {/* Editorial category */}
+            <div>
+              <label className="block dark:text-gray-800 text-sm font-semibold">
+                Editorial kategorija
+              </label>
+              <select
+                value={selectedEditorialCategory}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    landingPage: {
+                      ...form.landingPage,
+                      audience: effectiveAudience,
+                      editorialCategory: e.target.value,
+                    },
+                  })
+                }
+                className="mt-1 w-full dark:text-gray-800 rounded-md bg-gray-100 p-2"
+              >
+                {editorialCategoryOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
 

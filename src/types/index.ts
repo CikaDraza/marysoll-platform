@@ -446,7 +446,9 @@ export interface INewsletterCampaign {
     generatedAt: Date;
     regeneratedCount: number;
     layout?: LandingBlock[];
-    semanticType?: "promotion" | "event" | "service" | "blog" | "other";
+    semanticType?: string;
+    audience?: "client" | "partner";
+    editorialCategory?: string;
     score: number;
     seo: {
       title: string;

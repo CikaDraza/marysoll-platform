@@ -79,6 +79,12 @@ const NewsletterCampaignSchema = new Schema(
       regeneratedCount: { type: Number, default: 0 },
       layout: { type: Schema.Types.Mixed, default: [] },
       semanticType: String,
+      audience: {
+        type: String,
+        enum: ["client", "partner"],
+        default: "client",
+      },
+      editorialCategory: { type: String, default: "" },
       score: { type: Number, default: 0 },
       seo: {
         title: { type: String, default: "" },

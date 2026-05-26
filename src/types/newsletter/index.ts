@@ -24,6 +24,10 @@ export type SemanticTone = "informative" | "friendly" | "urgent" | "premium";
 
 export type LandingStatus = "pending" | "generated" | "published" | "failed";
 
+export type EditorialAudience = "client" | "partner";
+
+export type EditorialCategory = string;
+
 // ============== SEO TYPES ==============
 
 export interface LandingSeo {
@@ -51,6 +55,8 @@ export interface CampaignLandingPage {
   regeneratedCount: number;
   layout?: LandingBlock[];
   semanticType?: string;
+  audience?: EditorialAudience;
+  editorialCategory?: EditorialCategory;
   score?: number;
   seo?: LandingSeo;
 }
@@ -83,6 +89,8 @@ export interface UpdateCampaignSemanticPayload {
   landingPage: {
     enabled?: boolean;
     slug: string;
+    audience?: EditorialAudience;
+    editorialCategory?: EditorialCategory;
   };
 }
 
@@ -90,6 +98,8 @@ export interface PublishLandingPayload {
   layout: LandingBlock[];
   seo?: LandingSeo;
   semanticType: string;
+  audience?: EditorialAudience;
+  editorialCategory?: EditorialCategory;
   generatedAt: string;
   status: LandingStatus;
   score?: number;
@@ -104,6 +114,8 @@ export interface SaveCampaignSemanticPayload {
     seo?: LandingSeo;
     score?: number;
     semanticType?: string;
+    audience?: EditorialAudience;
+    editorialCategory?: EditorialCategory;
     generatedAt?: Date | string;
     status: LandingStatus;
   };
@@ -120,6 +132,8 @@ export interface LandingPreviewResult {
   };
   meta?: {
     semanticType: string;
+    audience?: EditorialAudience;
+    editorialCategory?: EditorialCategory;
     generatedAt: Date;
   };
 }

@@ -4,6 +4,10 @@ import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { requireFeature } from "@/lib/plans/planEnforcement";
 import { NextResponse } from "next/server";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
+import {
+  normalizeEditorialAudience,
+  normalizeEditorialCategory,
+} from "@/lib/newsletter/editorialClassification";
 
 function normalizeNewsletterLandingSlug(slug?: string) {
   return (
@@ -39,6 +43,14 @@ export async function PATCH(
     const { id } = await context.params;
     const payload = await request.json();
     const landingSlug = normalizeNewsletterLandingSlug(payload.landingPage?.slug);
+    const landingAudience = normalizeEditorialAudience(
+      payload.landingPage?.audience,
+      decoded.isSuperAdmin ?? false,
+    );
+    const landingEditorialCategory = normalizeEditorialCategory(
+      payload.landingPage?.editorialCategory,
+      landingAudience,
+    );
 
     const campaignId = id;
 
@@ -59,6 +71,8 @@ export async function PATCH(
           landingPage: {
             ...payload.landingPage,
             slug: landingSlug,
+            audience: landingAudience,
+            editorialCategory: landingEditorialCategory,
           },
         }),
       },

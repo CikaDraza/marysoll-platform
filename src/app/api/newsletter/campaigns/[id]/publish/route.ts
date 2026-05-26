@@ -6,6 +6,10 @@ import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { requireFeature } from "@/lib/plans/planEnforcement";
 import { PublishLandingPayload } from "@/types/newsletter";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
+import {
+  normalizeEditorialAudience,
+  normalizeEditorialCategory,
+} from "@/lib/newsletter/editorialClassification";
 
 export async function PATCH(
   request: Request,
@@ -28,7 +32,7 @@ export async function PATCH(
     const { id } = await context.params;
     const body: PublishLandingPayload = await request.json();
 
-    const campaign = await await NewsletterCampaign.findOneAndUpdate(
+    const campaign = await NewsletterCampaign.findOneAndUpdate(
       {
         _id: id,
         tenantId,
@@ -55,11 +59,22 @@ export async function PATCH(
     }
 
     // Update landing page with published status
+    const audience = normalizeEditorialAudience(
+      body.audience ?? campaign.landingPage?.audience,
+      decoded.isSuperAdmin ?? false,
+    );
+    const editorialCategory = normalizeEditorialCategory(
+      body.editorialCategory ?? campaign.landingPage?.editorialCategory,
+      audience,
+    );
+
     campaign.landingPage = {
       enabled: true,
       slug: campaign.ctaSlug,
       layout: body.layout,
       semanticType: body.semanticType,
+      audience,
+      editorialCategory,
       generatedAt: body.generatedAt,
       status: "published", // Uvek "published" za publish
       score: body.score || campaign.landingPage?.score || 0,

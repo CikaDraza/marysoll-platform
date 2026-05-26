@@ -6,6 +6,10 @@ import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { requireFeature } from "@/lib/plans/planEnforcement";
 import { SaveCampaignSemanticPayload } from "@/types/newsletter";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
+import {
+  normalizeEditorialAudience,
+  normalizeEditorialCategory,
+} from "@/lib/newsletter/editorialClassification";
 
 function normalizeNewsletterLandingSlug(slug?: string) {
   return (
@@ -40,11 +44,7 @@ export async function PATCH(
     const { id } = await context.params;
     const payload: SaveCampaignSemanticPayload = await request.json();
 
-    const campaign = await NewsletterCampaign.findOneAndUpdate(
-      { _id: id, tenantId },
-      { $set: { ...payload } },
-      { new: true },
-    );
+    const campaign = await NewsletterCampaign.findOne({ _id: id, tenantId });
 
     if (!campaign) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -59,6 +59,14 @@ export async function PATCH(
 
     if (payload.campaignType === "email-landing" && payload.landingPage) {
       const slug = normalizeNewsletterLandingSlug(payload.landingPage.slug);
+      const audience = normalizeEditorialAudience(
+        payload.landingPage.audience,
+        decoded.isSuperAdmin ?? false,
+      );
+      const editorialCategory = normalizeEditorialCategory(
+        payload.landingPage.editorialCategory,
+        audience,
+      );
 
       campaign.landingPage = {
         enabled: true,
@@ -67,6 +75,8 @@ export async function PATCH(
         seo: payload.landingPage.seo || {},
         score: payload.landingPage.score || 0,
         semanticType: payload.landingPage.semanticType,
+        audience,
+        editorialCategory,
         generatedAt: payload.landingPage.generatedAt || new Date(),
         status: "generated", // Uvek "generated" za save
         regeneratedCount: (campaign.landingPage?.regeneratedCount || 0) + 1,

@@ -18,6 +18,8 @@ export interface CampaignSemanticContent {
 export interface CampaignLandingPageInput {
   enabled: boolean;
   slug?: string;
+  audience?: "client" | "partner";
+  editorialCategory?: string;
 }
 
 export interface UpdateCampaignSemanticPayload {
@@ -45,6 +47,8 @@ export interface CampaignSemanticDraft {
   landingPage: {
     enabled: boolean;
     slug?: string;
+    audience?: "client" | "partner";
+    editorialCategory?: string;
   };
 }
 
