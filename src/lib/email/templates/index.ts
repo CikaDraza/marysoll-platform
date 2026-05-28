@@ -6,6 +6,8 @@
  */
 export {
   appointmentCreatedTemplate,
+  appointmentCreatedAdminTemplate,
+  appointmentClientChangedAdminTemplate,
   appointmentApprovedTemplate,
   appointmentRejectedTemplate,
   appointmentRescheduledTemplate,

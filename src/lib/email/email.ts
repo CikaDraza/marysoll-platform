@@ -11,6 +11,8 @@ import { SalonProfile } from "@/models/SalonProfile";
 import { Tenant } from "@/models/Tenant";
 import { Types } from "mongoose";
 import {
+  appointmentClientChangedAdminTemplate,
+  appointmentCreatedAdminTemplate,
   appointmentCreatedTemplate,
   appointmentApprovedTemplate,
   appointmentRejectedTemplate,
@@ -188,6 +190,42 @@ export async function sendAppointmentNotification(
   const html = await templateFns[type]();
   const from = await resolveSalonFrom(tenantId, "notification");
   return sendEmail({ to, subject: subjects[type], html, from, tenantId });
+}
+
+export async function sendAppointmentCreatedAdminNotification(
+  to: string | string[],
+  data: AppointmentNotificationData,
+): Promise<{ success: boolean; messageId?: string }> {
+  const tenantId = data.tenantId?.toString() ?? null;
+  const html = await appointmentCreatedAdminTemplate({ ...data, tenantId });
+  const from = await resolveSalonFrom(tenantId, "notification");
+
+  return sendEmail({
+    to,
+    subject: `Novi termin čeka odobrenje — ${data.serviceName}`,
+    html,
+    from,
+    tenantId,
+  });
+}
+
+export async function sendAppointmentClientChangeAdminNotification(
+  to: string | string[],
+  type: "rescheduled" | "cancelled",
+  data: AppointmentNotificationData,
+): Promise<{ success: boolean; messageId?: string }> {
+  const tenantId = data.tenantId?.toString() ?? null;
+  const html = await appointmentClientChangedAdminTemplate(
+    { ...data, tenantId },
+    type,
+  );
+  const from = await resolveSalonFrom(tenantId, "notification");
+  const subject =
+    type === "cancelled"
+      ? `Klijent je otkazao termin — ${data.serviceName}`
+      : `Klijent je izmenio termin — ${data.serviceName}`;
+
+  return sendEmail({ to, subject, html, from, tenantId });
 }
 
 export async function sendAppointmentMessageNotification(

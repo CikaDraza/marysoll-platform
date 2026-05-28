@@ -12,6 +12,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { verifySignature } from "@/lib/middleware/verifySignature";
 import { canClientCancelAppointment } from "@/lib/appointments/cancellation";
+import { createAppointmentNotification } from "@/lib/notificationService";
 
 export async function POST(
   req: NextRequest,
@@ -77,6 +78,31 @@ export async function POST(
     }
 
     await appointment.save();
+
+    if (canCancel) {
+      await createAppointmentNotification(
+        {
+          _id: appointment._id.toString(),
+          tenantId: appointment.tenantId,
+          clientProfileId: appointment.clientProfileId?.toString() ?? "",
+          clientName: appointment.clientName,
+          clientEmail: appointment.clientEmail,
+          serviceName: appointment.serviceName,
+          date: appointment.date,
+          time: appointment.time,
+          note: appointment.note,
+          clientPhone: appointment.clientPhone,
+          clientInstagram: appointment.clientInstagram,
+          preferredContact: appointment.preferredContact,
+          contactNote: appointment.contactNote,
+        },
+        "cancelled",
+        {
+          sender: "client",
+          message: "Klijent je otkazao termin u dozvoljenom roku.",
+        },
+      );
+    }
 
     return NextResponse.json({
       message: canCancel ? "Termin je otkazan." : "Vreme za otkazivanje termina je isteklo.",

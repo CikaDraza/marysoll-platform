@@ -9,6 +9,8 @@ import { TenantUser } from "@/models/TenantUser";
 import { AuthUser } from "@/models/AuthUser";
 import { SalonProfile } from "@/models/SalonProfile";
 import {
+  sendAppointmentClientChangeAdminNotification,
+  sendAppointmentCreatedAdminNotification,
   sendAppointmentMessageNotification,
   sendAppointmentNotification,
   sendTestimonialNotification,
@@ -228,6 +230,15 @@ function getSettingValue(
   return value;
 }
 
+function isDeliverableEmail(email: string | null | undefined): email is string {
+  if (!email) return false;
+  const normalized = email.trim().toLowerCase();
+  return (
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized) &&
+    !normalized.endsWith("@noemail.guest")
+  );
+}
+
 // Get notification settings from TenantUser
 async function getTenantUserNotificationSettings(
   tenantUserId: string,
@@ -246,21 +257,27 @@ async function getTenantUserNotificationSettings(
   }
 }
 
-// Get email for a TenantUser by joining to AuthUser
+// Get email for a TenantUser, with legacy AuthUser fallback.
 async function getTenantUserEmail(
   tenantUserId: string,
 ): Promise<string | null> {
   try {
     const tenantUser = await TenantUser.findById(tenantUserId)
-      .select("authUserId")
-      .lean<{ authUserId: Types.ObjectId }>();
+      .select("email authUserId")
+      .lean<{ email?: string; authUserId?: Types.ObjectId | null }>();
     if (!tenantUser) return null;
+
+    if (isDeliverableEmail(tenantUser.email)) {
+      return tenantUser.email;
+    }
+
+    if (!tenantUser.authUserId) return null;
 
     const authUser = await AuthUser.findById(tenantUser.authUserId)
       .select("email")
       .lean<{ email: string }>();
 
-    return authUser?.email ?? null;
+    return isDeliverableEmail(authUser?.email) ? authUser.email : null;
   } catch (error) {
     console.error("Error getting email for TenantUser:", error);
     return null;
@@ -468,39 +485,76 @@ export async function createAppointmentNotification(
       url: adminUrl,
     });
     return notifications;
-  } else {
-    const pushBodyMap: Record<string, string> = {
-      approved: `✅ Termin odobren — ${appointment.serviceName}${appointment.date ? " " + appointment.date : ""}`,
-      rejected: `❌ Termin odbijen — ${appointment.serviceName}`,
-      rescheduled: `🔄 Predložen novi termin za ${appointment.serviceName}`,
-      cancelled: `🚫 Termin otkazan — ${appointment.serviceName}`,
-    };
-    try {
+  }
+
+  if (
+    (type === "rescheduled" || type === "cancelled") &&
+    additionalData?.sender === "client"
+  ) {
+    const adminIds = await getAllAdminTenantUserIds(appointment.tenantId);
+    const notifications = [];
+    for (const adminId of adminIds) {
       const notification = await createNotification({
-        recipientProfileId: appointment.clientProfileId,
+        recipientProfileId: adminId,
         tenantId: appointment.tenantId,
         type: fullType,
-        title: config.clientTitle,
-        message: config.clientMessage,
+        title: config.adminTitle,
+        message: config.adminMessage,
         appointmentId: appointment._id,
         metadata: {
+          clientName: appointment.clientName,
           serviceName: appointment.serviceName,
           date: appointment.date,
           time: appointment.time,
+          sender: "client",
         },
       });
-      await sendWebPushToUser(appointment.clientProfileId, {
-        title: salonName,
-        body: pushBodyMap[type] ?? config.clientMessage,
-        icon,
-        tag: `appt-${type}-${appointment._id}`,
-        url: panelUrl,
-      });
-      return notification;
-    } catch (error) {
-      console.error(`❌ Error creating client notification:`, error);
-      throw error;
+      notifications.push(notification);
     }
+    await sendWebPushToMany(adminIds, {
+      title: salonName,
+      body:
+        type === "cancelled"
+          ? `🚫 ${appointment.clientName} je otkazao/la ${appointment.serviceName}`
+          : `🔄 ${appointment.clientName} je izmenio/la termin za ${appointment.serviceName}${appointment.date ? " — " + appointment.date : ""}`,
+      icon,
+      tag: `appt-client-${type}-${appointment._id}`,
+      url: adminUrl,
+    });
+    return notifications;
+  }
+
+  const pushBodyMap: Record<string, string> = {
+    approved: `✅ Termin odobren — ${appointment.serviceName}${appointment.date ? " " + appointment.date : ""}`,
+    rejected: `❌ Termin odbijen — ${appointment.serviceName}`,
+    rescheduled: `🔄 Predložen novi termin za ${appointment.serviceName}`,
+    cancelled: `🚫 Termin otkazan — ${appointment.serviceName}`,
+  };
+  try {
+    const notification = await createNotification({
+      recipientProfileId: appointment.clientProfileId,
+      tenantId: appointment.tenantId,
+      type: fullType,
+      title: config.clientTitle,
+      message: config.clientMessage,
+      appointmentId: appointment._id,
+      metadata: {
+        serviceName: appointment.serviceName,
+        date: appointment.date,
+        time: appointment.time,
+      },
+    });
+    await sendWebPushToUser(appointment.clientProfileId, {
+      title: salonName,
+      body: pushBodyMap[type] ?? config.clientMessage,
+      icon,
+      tag: `appt-${type}-${appointment._id}`,
+      url: panelUrl,
+    });
+    return notification;
+  } catch (error) {
+    console.error(`❌ Error creating client notification:`, error);
+    throw error;
   }
 }
 
@@ -614,16 +668,62 @@ async function sendAppointmentEmailNotifications(
 
         if (!shouldSendEmail) continue;
 
-        await sendAppointmentNotification(
+        await sendAppointmentCreatedAdminNotification(
           admin.email,
-          "created",
+          appointmentData,
+        );
+      }
+
+      const clientSettings = await getTenantUserNotificationSettings(
+        appointment.clientProfileId,
+      );
+      const shouldSendClientEmail =
+        getSettingValue(clientSettings, "emailNotifications", true) === true &&
+        getSettingValue(clientSettings, settingKey, true) === true;
+
+      if (!shouldSendClientEmail) return;
+
+      const clientEmail = isDeliverableEmail(appointment.clientEmail)
+        ? appointment.clientEmail
+        : await getTenantUserEmail(appointment.clientProfileId);
+
+      if (!clientEmail) return;
+
+      await sendAppointmentNotification(clientEmail, "created", appointmentData);
+      return;
+    }
+
+    // SCENARIO 4: KLIJENT MENJA/OTKAZUJE TERMIN U DOZVOLJENOM ROKU
+    if (
+      (type === "rescheduled" || type === "cancelled") &&
+      additionalData?.sender === "client"
+    ) {
+      const adminUsers = await getAdminTenantUsersWithEmails(
+        appointment.tenantId,
+      );
+
+      for (const admin of adminUsers) {
+        const shouldSendEmail =
+          getSettingValue(
+            admin.notificationSettings,
+            "emailNotifications",
+            true,
+          ) === true &&
+          getSettingValue(admin.notificationSettings, settingKey, true) ===
+            true;
+
+        if (!shouldSendEmail) continue;
+
+        await sendAppointmentClientChangeAdminNotification(
+          admin.email,
+          type,
           appointmentData,
         );
       }
       return;
     }
 
-    // SCENARIO 4: PROMENA STATUSA (admin menja status → obavesti klijenta)
+    // SCENARIO 5: PROMENA STATUSA (admin menja status → obavesti klijenta)
     if (
       type === "approved" ||
       type === "rejected" ||

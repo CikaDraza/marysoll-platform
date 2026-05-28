@@ -14,6 +14,7 @@ import { Appointment } from "@/models/Appointment";
 import { Service } from "@/models/Service";
 import { verifySignature } from "@/lib/middleware/verifySignature";
 import { canClientCancelAppointment } from "@/lib/appointments/cancellation";
+import { createAppointmentNotification } from "@/lib/notificationService";
 import type { IAppointmentService } from "@/types";
 
 export async function PUT(
@@ -124,6 +125,31 @@ export async function PUT(
     }
 
     await appointment.save();
+
+    if (dateChanged || timeChanged) {
+      await createAppointmentNotification(
+        {
+          _id: appointment._id.toString(),
+          tenantId: appointment.tenantId,
+          clientProfileId: appointment.clientProfileId?.toString() ?? "",
+          clientName: appointment.clientName,
+          clientEmail: appointment.clientEmail,
+          serviceName: appointment.serviceName,
+          date: appointment.date,
+          time: appointment.time,
+          note: appointment.note,
+          clientPhone: appointment.clientPhone,
+          clientInstagram: appointment.clientInstagram,
+          preferredContact: appointment.preferredContact,
+          contactNote: appointment.contactNote,
+        },
+        "rescheduled",
+        {
+          sender: "client",
+          message: "Klijent je izmenio termin u dozvoljenom roku.",
+        },
+      );
+    }
 
     return NextResponse.json({ message: "Termin je ažuriran.", appointment });
   } catch (error) {

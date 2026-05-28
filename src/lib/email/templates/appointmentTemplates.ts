@@ -158,6 +158,107 @@ export async function appointmentCreatedTemplate(data: {
   });
 }
 
+export async function appointmentCreatedAdminTemplate(data: {
+  clientName: string;
+  serviceName: string;
+  date: string;
+  time: string;
+  note?: string;
+  clientPhone?: string;
+  clientEmail?: string;
+  clientInstagram?: string;
+  preferredContact?: "phone" | "instagram" | "email" | "platform";
+  contactNote?: string;
+  tenantId?: string | null;
+}): Promise<string> {
+  const content = `
+    <p style="margin:0 0 16px 0;">Novi termin čeka odobrenje.</p>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 16px 0;">
+      <tr>
+        <td>
+          <span style="display:inline-block;background-color:#801cf8;color:#ffffff;font-weight:bold;padding:5px 12px;border-radius:6px;font-family:'Georgia',serif;font-size:14px;">
+            Novi zahtev za termin
+          </span>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
+      style="background:#ffffff;border-left:4px solid #ff80b5;border-radius:0 8px 8px 0;margin:0 0 20px 0;">
+      <tr>
+        <td style="padding:16px 20px;">
+          <p style="margin:0 0 4px;font-family:'Georgia',serif;font-size:11px;color:#b08db5;letter-spacing:1.5px;text-transform:uppercase;">Klijent</p>
+          <p style="margin:0;font-family:'Georgia',serif;font-size:16px;font-weight:700;color:#2d1b40;">${data.clientName}</p>
+        </td>
+      </tr>
+    </table>
+    ${appointmentDetailTable(data)}
+    ${data.note ? `<p style="margin:0 0 16px 0;font-size:14px;color:#6b5b7e;font-style:italic;">Napomena klijenta: ${data.note}</p>` : ""}
+    ${ctaButton("Otvori termine", `${appUrl()}/dashboard?tab=termini`)}
+  `;
+  return wrapEmailLayout({
+    title: "Novi termin čeka odobrenje",
+    content,
+    tenantId: data.tenantId,
+  });
+}
+
+export async function appointmentClientChangedAdminTemplate(
+  data: {
+    clientName: string;
+    serviceName: string;
+    date: string;
+    time: string;
+    note?: string;
+    clientPhone?: string;
+    clientEmail?: string;
+    clientInstagram?: string;
+    preferredContact?: "phone" | "instagram" | "email" | "platform";
+    contactNote?: string;
+    tenantId?: string | null;
+  },
+  type: "rescheduled" | "cancelled",
+): Promise<string> {
+  const isCancelled = type === "cancelled";
+  const content = `
+    <p style="margin:0 0 16px 0;">
+      ${
+        isCancelled
+          ? "Klijent je otkazao termin u dozvoljenom roku."
+          : "Klijent je izmenio termin u dozvoljenom roku."
+      }
+    </p>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 16px 0;">
+      <tr>
+        <td>
+          <span style="display:inline-block;background-color:${isCancelled ? "#6b7280" : "#2563eb"};color:#ffffff;font-weight:bold;padding:5px 12px;border-radius:6px;font-family:'Georgia',serif;font-size:14px;">
+            ${isCancelled ? "Termin otkazan od strane klijenta" : "Termin izmenjen od strane klijenta"}
+          </span>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
+      style="background:#ffffff;border-left:4px solid #ff80b5;border-radius:0 8px 8px 0;margin:0 0 20px 0;">
+      <tr>
+        <td style="padding:16px 20px;">
+          <p style="margin:0 0 4px;font-family:'Georgia',serif;font-size:11px;color:#b08db5;letter-spacing:1.5px;text-transform:uppercase;">Klijent</p>
+          <p style="margin:0;font-family:'Georgia',serif;font-size:16px;font-weight:700;color:#2d1b40;">${data.clientName}</p>
+        </td>
+      </tr>
+    </table>
+    ${appointmentDetailTable(data)}
+    ${data.note ? `<p style="margin:0 0 16px 0;font-size:14px;color:#6b5b7e;font-style:italic;">Napomena klijenta: ${data.note}</p>` : ""}
+    ${ctaButton("Otvori termine", `${appUrl()}/dashboard?tab=termini`)}
+  `;
+
+  return wrapEmailLayout({
+    title: isCancelled
+      ? "Termin otkazan od strane klijenta"
+      : "Termin izmenjen od strane klijenta",
+    content,
+    tenantId: data.tenantId,
+  });
+}
+
 export async function appointmentApprovedTemplate(data: {
   clientName: string;
   serviceName: string;
