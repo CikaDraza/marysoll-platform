@@ -8,6 +8,7 @@ import { Types } from "mongoose";
 import { TenantUser } from "@/models/TenantUser";
 import { AuthUser } from "@/models/AuthUser";
 import { SalonProfile } from "@/models/SalonProfile";
+import { Tenant } from "@/models/Tenant";
 import {
   sendAppointmentClientChangeAdminNotification,
   sendAppointmentCreatedAdminNotification,
@@ -299,6 +300,31 @@ async function getAdminTenantUsersWithEmails(
   try {
     const resolvedTenantId =
       typeof tenantId === "string" ? new Types.ObjectId(tenantId) : tenantId;
+
+    const [tenant, salonProfile] = await Promise.all([
+      Tenant.findById(resolvedTenantId)
+        .select("emailHostingProvider emailHostingStatus")
+        .lean<{
+          emailHostingProvider?: string;
+          emailHostingStatus?: string;
+        } | null>(),
+      SalonProfile.findOne({ tenantId: resolvedTenantId })
+        .select("contactEmail")
+        .lean<{ contactEmail?: string } | null>(),
+    ]);
+
+    if (
+      tenant?.emailHostingStatus !== "verified" &&
+      isDeliverableEmail(salonProfile?.contactEmail)
+    ) {
+      return [
+        {
+          id: "salon-contact-email",
+          email: salonProfile.contactEmail,
+          notificationSettings: null,
+        },
+      ];
+    }
 
     const adminProfiles = await TenantUser.find({
       tenantId: resolvedTenantId,

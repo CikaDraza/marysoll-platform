@@ -27,6 +27,14 @@ interface TenantPublicData {
   status: string;
   isTrialActive: boolean;
   trialEndsAt: string | null;
+  zohoOrgId: string | null;
+  emailInboxProvider: "none" | "zoho";
+  emailInboxStatus: "not_configured" | "mx_detected" | "mailbox_verified";
+  verifiedInboxEmails: string[];
+  emailHostingProvider: "none" | "zoho" | "google" | "microsoft" | "other";
+  emailHostingStatus: "not_configured" | "mx_detected" | "verified";
+  emailInboxDomain: string;
+  hasResendApiKey: boolean;
 }
 
 export interface DomainSearchResult {
@@ -48,6 +56,27 @@ interface DomainVerificationResponse {
   }[];
   /** true when Vercel explicitly says not verified — DB flag was reset to false */
   notVerified?: boolean;
+}
+
+export interface InboxVerificationResult {
+  email: string;
+  exists: boolean;
+  message: string;
+}
+
+export interface InboxVerificationResponse {
+  domain: string;
+  zohoOrgId: string;
+  accountVerified: boolean;
+  domainDetected: boolean;
+  domainVerified: boolean;
+  emailInboxProvider: "none" | "zoho";
+  emailInboxStatus: "not_configured" | "mx_detected" | "mailbox_verified";
+  emailHostingProvider: "none" | "zoho" | "google" | "microsoft" | "other";
+  emailHostingStatus: "not_configured" | "mx_detected" | "verified";
+  emailInboxDomain: string;
+  verifiedInboxEmails: string[];
+  results: InboxVerificationResult[];
 }
 
 async function fetchMyTenant(token: string): Promise<TenantPublicData | null> {
@@ -181,6 +210,35 @@ export function useTenantAdmin() {
     onError: () => toast.error("Greška pri proveri verifikacije"),
   });
 
+  // ── Zoho inbox verification ──────────────────────────────────────────────
+
+  const verifyInboxMutation = useMutation({
+    mutationFn: async (): Promise<InboxVerificationResponse> => {
+      const res = await fetch("/api/tenants/verify-inbox", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error ?? "Greška pri proveri inbox-a");
+      }
+      return data;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["myTenant"] });
+      if (data.verifiedInboxEmails.length) {
+        toast.success("Inbox proveren.");
+      } else if (data.domainDetected) {
+        toast("Inbox nije pronađen.", {
+          icon: "⚠",
+        });
+      } else {
+        toast.error("Zoho domen nije pronađen.");
+      }
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
   // ── getTenantUrl ─────────────────────────────────────────────────────────
 
   /**
@@ -244,6 +302,9 @@ export function useTenantAdmin() {
     verifyDomain: verifyMutation.mutate,
     isVerifying: verifyMutation.isPending,
     lastVerification: verifyMutation.data ?? null,
+    verifyInbox: verifyInboxMutation.mutate,
+    isVerifyingInbox: verifyInboxMutation.isPending,
+    lastInboxVerification: verifyInboxMutation.data ?? null,
 
     getTenantUrl,
   };

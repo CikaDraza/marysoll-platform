@@ -641,6 +641,7 @@ export interface EmailOptions {
   html: string;
   text?: string;
   from?: string;
+  replyTo?: string;
   type?: "salon" | "newsletter" | "system";
   tenantId?: string | null;
 }

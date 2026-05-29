@@ -49,6 +49,9 @@ export function AdminCustomDomain() {
     verifyDomain,
     isVerifying,
     lastVerification,
+    verifyInbox,
+    isVerifyingInbox,
+    lastInboxVerification,
   } = useTenantAdmin();
 
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -105,6 +108,34 @@ export function AdminCustomDomain() {
 
   const hasDomain = !!tenant?.customDomain;
   const isVerified = tenant?.customDomainVerified ?? false;
+  const expectedInbox = hasDomain ? `booking@${tenant.customDomain}` : "";
+  const bookingInboxVerified = expectedInbox
+    ? (tenant?.verifiedInboxEmails ?? []).includes(expectedInbox)
+    : false;
+  const inboxMessage = bookingInboxVerified
+    ? `${expectedInbox} verified`
+    : expectedInbox
+      ? `${expectedInbox} not verified`
+      : "Not configured";
+  const emailProviderLabel =
+    tenant?.emailHostingProvider === "zoho"
+      ? "Zoho Mail"
+      : tenant?.emailHostingProvider === "google"
+        ? "Google Workspace"
+        : tenant?.emailHostingProvider === "microsoft"
+          ? "Microsoft 365"
+          : tenant?.emailHostingProvider === "other"
+            ? "Email hosting"
+            : "Inbox";
+  const emailHostingDetected =
+    tenant?.emailHostingStatus === "mx_detected" ||
+    tenant?.emailHostingStatus === "verified";
+  const inboxLevel =
+    tenant?.emailHostingStatus === "verified"
+      ? "Level 3: Verified inbox"
+      : emailHostingDetected
+        ? "Level 2: MX detected"
+        : "Level 1: Reply-To only";
 
   // Path-based fallback URL — always available regardless of custom domain status
   const siteUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
@@ -342,6 +373,100 @@ export function AdminCustomDomain() {
             </div>
           )}
 
+          {hasDomain && (
+            <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                <DomainHealthRow
+                  label="Website"
+                  ok={isVerified}
+                  text={
+                    isVerified ? "Connected to Vercel" : "Waiting for Vercel"
+                  }
+                />
+                <DomainHealthRow
+                  label="Email"
+                  ok={emailHostingDetected}
+                  text={
+                    emailHostingDetected
+                      ? `Email hosting detected: ${emailProviderLabel}`
+                      : "Inbox is not configured"
+                  }
+                />
+                <DomainHealthRow
+                  label="Sending"
+                  ok={tenant.hasResendApiKey}
+                  text={
+                    tenant.hasResendApiKey
+                      ? "Resend verified"
+                      : "Resend not verified"
+                  }
+                />
+                <DomainHealthRow
+                  label="Inbox"
+                  ok={bookingInboxVerified}
+                  text={`${inboxLevel} · ${inboxMessage}`}
+                />
+              </div>
+              {!emailHostingDetected && (
+                <p className="mb-3 text-xs font-medium text-amber-600">
+                  Inbox is not configured. Replies will go to salon contact
+                  email.
+                </p>
+              )}
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className={lbl + " mb-0.5"}>Inbox verification</p>
+                  <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-50">
+                    {tenant.emailInboxStatus === "mailbox_verified"
+                      ? "Mailbox verified"
+                      : tenant.emailInboxStatus === "mx_detected"
+                        ? "Zoho domain detected"
+                        : "Not configured"}
+                  </p>
+                  {tenant.verifiedInboxEmails.length > 0 && (
+                    <p className="mt-1 text-xs text-emerald-600 truncate">
+                      {tenant.verifiedInboxEmails.join(", ")}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => verifyInbox()}
+                  disabled={isVerifyingInbox}
+                  className="border border-zinc-200 text-zinc-600 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-white dark:hover:bg-zinc-900 transition disabled:opacity-40 flex items-center justify-center gap-2"
+                >
+                  {isVerifyingInbox && (
+                    <span className="w-3.5 h-3.5 border-2 border-zinc-300 border-t-zinc-600 rounded-full animate-spin inline-block" />
+                  )}
+                  {isVerifyingInbox ? "Checking..." : "Verify inbox"}
+                </button>
+              </div>
+
+              {lastInboxVerification?.results?.length ? (
+                <div className="mt-3 space-y-2">
+                  {lastInboxVerification.results.map((result) => (
+                    <p
+                      key={result.email}
+                      className={
+                        result.exists
+                          ? "text-xs font-medium text-emerald-600"
+                          : "text-xs font-medium text-amber-600"
+                      }
+                    >
+                      {result.message}
+                      {!result.exists && (
+                        <span className="text-zinc-500 dark:text-zinc-400">
+                          {" "}
+                          ({result.email})
+                        </span>
+                      )}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          )}
+
           {/* Input */}
           <div>
             <label className={lbl}>
@@ -368,7 +493,7 @@ export function AdminCustomDomain() {
               <button
                 onClick={handleSave}
                 disabled={isSavingDomain || !customDomainInput.trim()}
-                className="flex-2 bg-violet-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-violet-700 transition disabled:opacity-40"
+                className="flex-1 bg-violet-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-violet-700 transition disabled:opacity-40"
               >
                 {isSavingDomain
                   ? "Snima se..."
@@ -382,7 +507,7 @@ export function AdminCustomDomain() {
               <button
                 onClick={() => verifyDomain()}
                 disabled={isVerifying}
-                className="border border-zinc-200 text-zinc-600 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-zinc-50 transition disabled:opacity-40 flex items-center justify-center gap-2"
+                className="flex-1 border border-zinc-200 text-zinc-600 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-zinc-50 transition disabled:opacity-40 flex items-center justify-center gap-2"
               >
                 {isVerifying && (
                   <span className="w-3.5 h-3.5 border-2 border-zinc-300 border-t-zinc-600 rounded-full animate-spin inline-block" />
@@ -394,7 +519,7 @@ export function AdminCustomDomain() {
             {hasDomain && !confirmRemove && (
               <button
                 onClick={() => setConfirmRemove(true)}
-                className="border border-red-100 dark:border-red-600 text-red-500 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-red-600 hover:text-white transition"
+                className="flex-1 border border-red-100 dark:border-red-600 text-red-500 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-red-600 hover:text-white transition"
               >
                 Ukloni custom domen
               </button>
@@ -610,6 +735,33 @@ export function AdminCustomDomain() {
           </ol>
         </div>
       </div>
+    </div>
+  );
+}
+
+function DomainHealthRow({
+  label,
+  ok,
+  text,
+}: {
+  label: string;
+  ok: boolean;
+  text: string;
+}) {
+  return (
+    <div className="rounded-lg bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 px-3 py-2">
+      <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">
+        {label}
+      </p>
+      <p
+        className={
+          ok
+            ? "text-xs font-semibold text-emerald-600"
+            : "text-xs font-semibold text-amber-600"
+        }
+      >
+        {ok ? "✓" : "⚠"} {text}
+      </p>
     </div>
   );
 }

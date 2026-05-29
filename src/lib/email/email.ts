@@ -33,6 +33,7 @@ import {
 import { wrapEmailLayout } from "@/lib/email/wrapEmailLayout";
 import { Resend } from "resend";
 import { resend } from "./resend";
+import { resolveTenantNewsletterSender } from "@/lib/email/tenantEmailSettings";
 
 // Helper: strip HTML tags to produce plain-text fallback
 function htmlToText(html: string): string {
@@ -64,24 +65,29 @@ async function resolveResendClient(
 // ── Resolve tenant-specific sender address ────────────────────────────────────
 type EmailPurpose = "system" | "notification" | "newsletter";
 
-async function resolveSalonFrom(
+async function resolveSalonEmailIdentity(
   tenantId: string | null | undefined,
   purpose: EmailPurpose,
-): Promise<string | undefined> {
-  if (!tenantId) return undefined;
+): Promise<{ from?: string; replyTo?: string; useTenantClient: boolean }> {
+  if (!tenantId) return { useTenantClient: false };
   try {
     await connectToDB();
     const profile = (await SalonProfile.findOne({
       tenantId: new Types.ObjectId(tenantId),
     })
-      .select("name newsletterEmail contactEmail")
+      .select("name newsletterEmail contactEmail resendApiKey")
       .lean()) as {
       name?: string;
       newsletterEmail?: string;
       contactEmail?: string;
+      resendApiKey?: string;
     } | null;
 
     const name = profile?.name ?? "";
+    const replyTo = profile?.contactEmail || undefined;
+    if (!profile?.resendApiKey) {
+      return { replyTo, useTenantClient: false };
+    }
 
     if (purpose === "newsletter" && profile?.newsletterEmail) {
       const tenant = (await Tenant.findById(tenantId)
@@ -98,13 +104,21 @@ async function resolveSalonFrom(
         senderDomain === customDomain &&
         !tenant?.customDomainVerified
       ) {
-        return undefined;
+        return { replyTo, useTenantClient: false };
       }
 
-      return `"${name}" <${profile.newsletterEmail}>`;
+      return {
+        from: `"${name}" <${profile.newsletterEmail}>`,
+        replyTo,
+        useTenantClient: true,
+      };
     }
     if (purpose === "notification" && profile?.contactEmail) {
-      return `"${name}" <${profile.contactEmail}>`;
+      return {
+        from: `"${name}" <${profile.contactEmail}>`,
+        replyTo,
+        useTenantClient: true,
+      };
     }
     if (purpose === "system") {
       const tenant = (await Tenant.findById(tenantId)
@@ -114,13 +128,24 @@ async function resolveSalonFrom(
         customDomainVerified?: boolean;
       } | null;
       if (tenant?.customDomain && tenant.customDomainVerified) {
-        return `"${name}" <noreply@${tenant.customDomain}>`;
+        return {
+          from: `"${name}" <noreply@${tenant.customDomain}>`,
+          replyTo,
+          useTenantClient: true,
+        };
       }
     }
   } catch {
     // fall through to platform default
   }
-  return undefined;
+  return { useTenantClient: false };
+}
+
+function tenantIdForIdentity(
+  identity: { useTenantClient: boolean },
+  tenantId: string | null,
+) {
+  return identity.useTenantClient ? tenantId : null;
 }
 
 // ── Core send function ────────────────────────────────────────────────────────
@@ -135,7 +160,9 @@ export async function sendEmail(
       process.env.EMAIL_FROM || "onboarding@resend.dev"
     }>`;
 
-  const client = await resolveResendClient(tenantId);
+  const client = await resolveResendClient(
+    options.from && tenantId ? tenantId : null,
+  );
 
   try {
     const { data, error } = await client.emails.send({
@@ -144,6 +171,7 @@ export async function sendEmail(
       subject,
       html,
       text: text || htmlToText(html),
+      replyTo: options.replyTo,
     });
 
     if (error) {
@@ -188,8 +216,15 @@ export async function sendAppointmentNotification(
   };
 
   const html = await templateFns[type]();
-  const from = await resolveSalonFrom(tenantId, "notification");
-  return sendEmail({ to, subject: subjects[type], html, from, tenantId });
+  const identity = await resolveSalonEmailIdentity(tenantId, "notification");
+  return sendEmail({
+    to,
+    subject: subjects[type],
+    html,
+    from: identity.from,
+    replyTo: identity.replyTo,
+    tenantId: tenantIdForIdentity(identity, tenantId),
+  });
 }
 
 export async function sendAppointmentCreatedAdminNotification(
@@ -198,14 +233,15 @@ export async function sendAppointmentCreatedAdminNotification(
 ): Promise<{ success: boolean; messageId?: string }> {
   const tenantId = data.tenantId?.toString() ?? null;
   const html = await appointmentCreatedAdminTemplate({ ...data, tenantId });
-  const from = await resolveSalonFrom(tenantId, "notification");
+  const identity = await resolveSalonEmailIdentity(tenantId, "notification");
 
   return sendEmail({
     to,
     subject: `Novi termin čeka odobrenje — ${data.serviceName}`,
     html,
-    from,
-    tenantId,
+    from: identity.from,
+    replyTo: identity.replyTo,
+    tenantId: tenantIdForIdentity(identity, tenantId),
   });
 }
 
@@ -219,13 +255,20 @@ export async function sendAppointmentClientChangeAdminNotification(
     { ...data, tenantId },
     type,
   );
-  const from = await resolveSalonFrom(tenantId, "notification");
+  const identity = await resolveSalonEmailIdentity(tenantId, "notification");
   const subject =
     type === "cancelled"
       ? `Klijent je otkazao termin — ${data.serviceName}`
       : `Klijent je izmenio termin — ${data.serviceName}`;
 
-  return sendEmail({ to, subject, html, from, tenantId });
+  return sendEmail({
+    to,
+    subject,
+    html,
+    from: identity.from,
+    replyTo: identity.replyTo,
+    tenantId: tenantIdForIdentity(identity, tenantId),
+  });
 }
 
 export async function sendAppointmentMessageNotification(
@@ -248,8 +291,15 @@ export async function sendAppointmentMessageNotification(
 
   const tenantId = data.tenantId ?? null;
   const html = await appointmentMessageTemplate(data);
-  const from = await resolveSalonFrom(tenantId, "notification");
-  return sendEmail({ to, subject, html, from, tenantId });
+  const identity = await resolveSalonEmailIdentity(tenantId, "notification");
+  return sendEmail({
+    to,
+    subject,
+    html,
+    from: identity.from,
+    replyTo: identity.replyTo,
+    tenantId: tenantIdForIdentity(identity, tenantId),
+  });
 }
 
 // ── Testimonial notifications ─────────────────────────────────────────────────
@@ -270,13 +320,14 @@ export async function sendTestimonialNotification(
         adminReply: data.adminReply,
         tenantId,
       });
-      const from = await resolveSalonFrom(tenantId, "notification");
+      const identity = await resolveSalonEmailIdentity(tenantId, "notification");
       return sendEmail({
         to,
         subject: `Hvala na recenziji! — ${data.serviceName}`,
         html,
-        from,
-        tenantId,
+        from: identity.from,
+        replyTo: identity.replyTo,
+        tenantId: tenantIdForIdentity(identity, tenantId),
       });
     }
 
@@ -289,13 +340,14 @@ export async function sendTestimonialNotification(
         adminReply: data.adminReply ?? "",
         tenantId,
       });
-      const from = await resolveSalonFrom(tenantId, "notification");
+      const identity = await resolveSalonEmailIdentity(tenantId, "notification");
       return sendEmail({
         to,
         subject: `Odgovor na vašu recenziju — ${data.serviceName}`,
         html,
-        from,
-        tenantId,
+        from: identity.from,
+        replyTo: identity.replyTo,
+        tenantId: tenantIdForIdentity(identity, tenantId),
       });
     }
 
@@ -307,13 +359,14 @@ export async function sendTestimonialNotification(
         comment: data.comment ?? "",
         tenantId,
       });
-      const from = await resolveSalonFrom(tenantId, "notification");
+      const identity = await resolveSalonEmailIdentity(tenantId, "notification");
       return sendEmail({
         to,
         subject: `Recenzija izmenjena — ${data.serviceName}`,
         html,
-        from,
-        tenantId,
+        from: identity.from,
+        replyTo: identity.replyTo,
+        tenantId: tenantIdForIdentity(identity, tenantId),
       });
     }
 
@@ -324,13 +377,14 @@ export async function sendTestimonialNotification(
         comment: data.comment,
         tenantId,
       });
-      const from = await resolveSalonFrom(tenantId, "notification");
+      const identity = await resolveSalonEmailIdentity(tenantId, "notification");
       return sendEmail({
         to,
         subject: `Recenzija obrisana — ${data.serviceName}`,
         html,
-        from,
-        tenantId,
+        from: identity.from,
+        replyTo: identity.replyTo,
+        tenantId: tenantIdForIdentity(identity, tenantId),
       });
     }
 
@@ -343,13 +397,14 @@ export async function sendTestimonialNotification(
         adminReply: data.adminReply,
         tenantId,
       });
-      const from = await resolveSalonFrom(tenantId, "notification");
+      const identity = await resolveSalonEmailIdentity(tenantId, "notification");
       return sendEmail({
         to,
         subject: `Sistemska poruka — ${data.serviceName}`,
         html,
-        from,
-        tenantId,
+        from: identity.from,
+        replyTo: identity.replyTo,
+        tenantId: tenantIdForIdentity(identity, tenantId),
       });
     }
   }
@@ -364,13 +419,14 @@ export async function sendResetEmail(
 ): Promise<void> {
   const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
   const html = await passwordResetTemplate({ name, resetUrl, tenantId });
-  const from = await resolveSalonFrom(tenantId, "system");
+  const identity = await resolveSalonEmailIdentity(tenantId, "system");
   await sendEmail({
     to: email,
     subject: `Resetovanje lozinke — ${name}`,
     html,
-    from,
-    tenantId,
+    from: identity.from,
+    replyTo: identity.replyTo,
+    tenantId: tenantIdForIdentity(identity, tenantId ?? null),
   });
 }
 
@@ -417,22 +473,23 @@ export async function sendNewsletterEmail(
     tenantId,
   });
 
-  const salonFrom = await resolveSalonFrom(tenantId, "newsletter");
-  const campaignFrom =
-    salonFrom ??
-    `"Marysoll" <${
-      process.env.NEWSLETTER_FROM_EMAIL ||
-      process.env.EMAIL_FROM ||
-      "noreply@marysoll.com"
-    }>`;
+  const sender = await resolveTenantNewsletterSender(tenantId);
 
-  return sendEmail({
-    from: campaignFrom,
-    to,
+  const { data, error } = await sender.client.emails.send({
+    from: sender.from,
+    to: Array.isArray(to) ? to : [to],
     subject,
     html,
-    tenantId: salonFrom ? tenantId : null,
+    text: htmlToText(html),
+    replyTo: sender.replyTo,
   });
+
+  if (error) {
+    console.error("❌ Resend newsletter error:", error);
+    throw error;
+  }
+
+  return { success: true, messageId: data?.id };
 }
 
 /**
@@ -448,15 +505,14 @@ export async function sendNewsletterVerificationEmail(
   const platformUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const verifyUrl = `${platformUrl}/api/newsletter/verify?token=${verificationToken}`;
   const html = await newsletterVerificationTemplate({ verifyUrl, tenantId });
-  const from =
-    (await resolveSalonFrom(tenantId, "newsletter")) ??
-    `"Marysoll" <${process.env.SYSTEM_FROM_EMAIL || process.env.EMAIL_FROM}>`;
+  const sender = await resolveTenantNewsletterSender(tenantId);
   await sendEmail({
-    from,
+    from: sender.from,
     to: email,
     subject: "Potvrdite svoju pretplatu na newsletter",
     html,
-    tenantId,
+    replyTo: sender.replyTo,
+    tenantId: sender.usesTenantResend ? tenantId : null,
   });
 }
 
@@ -478,13 +534,14 @@ export async function sendRegisterVerificationEmail(
     ctaLabel: "Potvrdite email adresu →",
     tenantId,
   });
-  const from = await resolveSalonFrom(tenantId, "system");
+  const identity = await resolveSalonEmailIdentity(tenantId, "system");
   await sendEmail({
     to: email,
     subject: "Potvrdite vašu email adresu",
     html,
-    from,
-    tenantId,
+    from: identity.from,
+    replyTo: identity.replyTo,
+    tenantId: tenantIdForIdentity(identity, tenantId ?? null),
   });
 }
 

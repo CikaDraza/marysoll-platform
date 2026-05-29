@@ -11,8 +11,8 @@ import { EmailCampaign } from "@/models/EmailCampaign";
 import { AudienceSegment } from "@/models/AudienceSegment";
 import { AudienceContact } from "@/models/AudienceContact";
 import { CampaignEvent } from "@/models/CampaignEvent";
-import { resend } from "@/lib/email/resend";
 import { wrapEmailLayout } from "@/lib/email/wrapEmailLayout";
+import { resolveTenantNewsletterSender } from "@/lib/email/tenantEmailSettings";
 import { Types } from "mongoose";
 
 type RecipientContact = {
@@ -145,7 +145,11 @@ export async function executeSend(campaignId: string): Promise<ExecuteSendResult
     content: fixedInnerHtml,
     tenantId: campaign.tenantId?.toString() ?? null,
   });
-  const FROM = process.env.EMAIL_FROM ?? "noreply@marysoll.com";
+  const sender = await resolveTenantNewsletterSender(
+    campaign.tenantId?.toString() ?? null,
+  );
+  const FROM = sender.from;
+  const emailClient = sender.client;
   const BATCH_SIZE = 50;
   const tenantId = campaign.tenantId;
   let totalSent = 0;
@@ -186,9 +190,10 @@ export async function executeSend(campaignId: string): Promise<ExecuteSendResult
           to: r.email,
           subject,
           html: injectTracking(html, campaignId, r._id, ctaUrl, group.id),
+          replyTo: sender.replyTo,
         }));
 
-        const { error } = await resend.batch.send(emails);
+        const { error } = await emailClient.batch.send(emails);
         if (!error) {
           groupSent += batch.length;
           CampaignEvent.insertMany(
@@ -228,9 +233,10 @@ export async function executeSend(campaignId: string): Promise<ExecuteSendResult
         to: r.email,
         subject,
         html: injectTracking(html, campaignId, r._id, ctaUrl),
+        replyTo: sender.replyTo,
       }));
 
-      const { error } = await resend.batch.send(emails);
+      const { error } = await emailClient.batch.send(emails);
       if (!error) {
         totalSent += batch.length;
         CampaignEvent.insertMany(

@@ -22,6 +22,16 @@ export interface ITenant extends Document {
   ownerId: Types.ObjectId;
   salonProfileId: Types.ObjectId | null;
   cloudinaryFolder: string;
+  zohoOrgId?: string;
+  emailInboxProvider?: "none" | "zoho";
+  emailInboxStatus?:
+    | "not_configured"
+    | "mx_detected"
+    | "mailbox_verified";
+  verifiedInboxEmails?: string[];
+  emailHostingProvider?: "none" | "zoho" | "google" | "microsoft" | "other";
+  emailHostingStatus?: "not_configured" | "mx_detected" | "verified";
+  emailInboxDomain?: string;
   lemonsqueezyCustomerId: string | null;
   lemonsqueezySubscriptionId: string | null;
   aiSettings: {
@@ -81,6 +91,29 @@ const TenantSchema = new Schema<ITenant>(
       default: null,
     },
     cloudinaryFolder: { type: String, required: true },
+    zohoOrgId: { type: String, default: "" },
+    emailInboxProvider: {
+      type: String,
+      enum: ["none", "zoho"],
+      default: "none",
+    },
+    emailInboxStatus: {
+      type: String,
+      enum: ["not_configured", "mx_detected", "mailbox_verified"],
+      default: "not_configured",
+    },
+    verifiedInboxEmails: { type: [String], default: [] },
+    emailHostingProvider: {
+      type: String,
+      enum: ["none", "zoho", "google", "microsoft", "other"],
+      default: "none",
+    },
+    emailHostingStatus: {
+      type: String,
+      enum: ["not_configured", "mx_detected", "verified"],
+      default: "not_configured",
+    },
+    emailInboxDomain: { type: String, default: "" },
     lemonsqueezyCustomerId: { type: String, default: null },
     lemonsqueezySubscriptionId: { type: String, default: null },
     aiSettings: {

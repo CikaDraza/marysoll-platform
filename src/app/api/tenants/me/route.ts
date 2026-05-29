@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
+import { SalonProfile } from "@/models/SalonProfile";
 import { requireAdmin } from "@/lib/auth/auth-server";
 import { DecodedToken } from "@/types/auth/types";
 
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
 
     const tenant = await Tenant.findById(decoded.tenantId)
       .select(
-        "slug subdomain customDomain customDomainVerified plan status isTrialActive trialEndsAt cloudinaryFolder",
+        "slug subdomain customDomain customDomainVerified plan status isTrialActive trialEndsAt cloudinaryFolder zohoOrgId emailInboxProvider emailInboxStatus verifiedInboxEmails emailHostingProvider emailHostingStatus emailInboxDomain",
       )
       .lean();
 
@@ -38,6 +39,10 @@ export async function GET(req: NextRequest) {
     }
 
     const t = tenant as Record<string, unknown>;
+    const salonProfile = await SalonProfile.findOne({ tenantId: decoded.tenantId })
+      .select("resendApiKey")
+      .lean<{ resendApiKey?: string } | null>();
+
     return NextResponse.json({
       slug: String(t.slug ?? ""),
       subdomain: String(t.subdomain ?? ""),
@@ -48,6 +53,16 @@ export async function GET(req: NextRequest) {
       status: String(t.status ?? "pending"),
       isTrialActive: Boolean(t.isTrialActive),
       trialEndsAt: t.trialEndsAt ? String(t.trialEndsAt) : null,
+      zohoOrgId: t.zohoOrgId ? String(t.zohoOrgId) : null,
+      emailInboxProvider: String(t.emailInboxProvider ?? "none"),
+      emailInboxStatus: String(t.emailInboxStatus ?? "not_configured"),
+      verifiedInboxEmails: Array.isArray(t.verifiedInboxEmails)
+        ? t.verifiedInboxEmails.map(String)
+        : [],
+      emailHostingProvider: String(t.emailHostingProvider ?? "none"),
+      emailHostingStatus: String(t.emailHostingStatus ?? "not_configured"),
+      emailInboxDomain: String(t.emailInboxDomain ?? ""),
+      hasResendApiKey: Boolean(salonProfile?.resendApiKey),
     });
   } catch (err) {
     console.error("GET /api/tenants/me:", err);
