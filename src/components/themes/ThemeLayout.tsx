@@ -377,6 +377,17 @@ export function ThemeLayout({
             imageUrl={
               "https://res.cloudinary.com/dufo1t5li/image/upload/v1776463003/Gemini_Generated_Image_dvp99xdvp99xdvp9_uaamaf.png"
             }
+            stats={
+              tenantStats
+                ? [
+                    { value: formatStatValue(tenantStats.clientCount), label: "Zadovoljnih klijenata" },
+                    { value: formatStatValue(tenantStats.appointmentCount), label: "Urađenih tretmana" },
+                    ...(ls?.landing?.about?.yearsOfExperience
+                      ? [{ value: `${ls.landing.about.yearsOfExperience}+`, label: "Godina iskustva" }]
+                      : []),
+                  ]
+                : undefined
+            }
           />
           <Theme2ServicesPreview
             showIcons={ls?.landing?.servicesPreview?.showIcons ?? true}
@@ -467,6 +478,15 @@ export function ThemeLayout({
                 paragraphs: ls?.landing?.about?.paragraphs ?? [],
                 links: ls?.landing?.about?.links ?? [],
                 image: ls?.landing?.about?.image,
+                stats: tenantStats
+                  ? [
+                      { value: formatStatValue(tenantStats.clientCount), label: "Zadovoljnih klijenata" },
+                      { value: formatStatValue(tenantStats.appointmentCount), label: "Urađenih tretmana" },
+                      ...(ls?.landing?.about?.yearsOfExperience
+                        ? [{ value: `${ls.landing.about.yearsOfExperience}+`, label: "Godina iskustva" }]
+                        : []),
+                    ]
+                  : undefined,
               }}
             />
           )}
@@ -789,6 +809,17 @@ export function ThemeLayout({
                   : undefined
               }
               links={ls?.landing?.about?.links ?? []}
+              stats={
+                tenantStats
+                  ? [
+                      { value: formatStatValue(tenantStats.clientCount), label: "Zadovoljnih klijenata" },
+                      { value: formatStatValue(tenantStats.appointmentCount), label: "Urađenih tretmana" },
+                      ...(ls?.landing?.about?.yearsOfExperience
+                        ? [{ value: `${ls.landing.about.yearsOfExperience}+`, label: "Godina iskustva" }]
+                        : []),
+                    ]
+                  : undefined
+              }
             />
           )}
           <Theme6FeatureCards />

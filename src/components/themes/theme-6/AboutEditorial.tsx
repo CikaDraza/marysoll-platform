@@ -7,11 +7,17 @@ interface EditorialImage {
   alt?: string;
 }
 
+interface Stat {
+  value: string;
+  label: string;
+}
+
 interface Props {
   headline?: string;
   paragraphs?: string[];
   links?: AboutTextLink[];
   images?: EditorialImage[];
+  stats?: Stat[];
 }
 
 export function Theme6AboutEditorial({
@@ -21,6 +27,7 @@ export function Theme6AboutEditorial({
     "Every detail matters. From the initial consultation to the final polish, we ensure an experience that is both luxurious and personalized to your unique style.",
   ],
   links = [],
+  stats,
   images = [
     { src: "", alt: "Editorial 1" },
     { src: "", alt: "Editorial 2" },
@@ -44,6 +51,16 @@ export function Theme6AboutEditorial({
                 {renderLinkedText(paragraph, links)}
               </p>
             ))}
+            {stats && stats.length > 0 && (
+              <div className="flex gap-10 pt-4">
+                {stats.map((s, i) => (
+                  <div key={i}>
+                    <div className="text-2xl font-semibold text-(--primary-color)">{s.value}</div>
+                    <div className="text-sm text-[var(--muted)] mt-1">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

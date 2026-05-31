@@ -4,14 +4,20 @@ import { motion } from "framer-motion";
 import type { AboutTextLink } from "@/types";
 import { renderLinkedText } from "@/helpers/renderLinkedText";
 
+interface Stat {
+  value: string;
+  label: string;
+}
+
 interface Props {
   title?: string;
   text?: string[] | string;
   links?: AboutTextLink[];
   imageUrl?: string;
+  stats?: Stat[];
 }
 
-export function Theme2AboutSplit({ title, text, links = [], imageUrl }: Props) {
+export function Theme2AboutSplit({ title, text, links = [], imageUrl, stats }: Props) {
   const paragraphs = Array.isArray(text) ? text : [text];
   return (
     <section className="w-full min-h-screen flex flex-col lg:flex-row bg-black text-white">
@@ -51,6 +57,16 @@ export function Theme2AboutSplit({ title, text, links = [], imageUrl }: Props) {
           <p className="text-gray-300 leading-relaxed pt-4">
             {renderLinkedText(paragraphs[1] || "", links)}
           </p>
+          {stats && stats.length > 0 && (
+            <div className="flex gap-10 mt-8">
+              {stats.map((s, i) => (
+                <div key={i}>
+                  <div className="text-2xl font-bold text-(--primary-color)">{s.value}</div>
+                  <div className="text-sm text-gray-400 mt-1">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>

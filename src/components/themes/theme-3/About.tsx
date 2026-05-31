@@ -2,6 +2,11 @@ import Image from "next/image";
 import { renderLinkedText } from "@/helpers/renderLinkedText";
 import { AboutTextLink } from "@/types";
 
+interface Stat {
+  value: string;
+  label: string;
+}
+
 interface Props {
   about: {
     headline?: string;
@@ -11,6 +16,7 @@ interface Props {
       src: string;
       alt?: string;
     };
+    stats?: Stat[];
   };
 }
 
@@ -57,6 +63,16 @@ export function Theme3AboutSoft({ about }: Props) {
               )}
             </p>
           </div>
+          {about.stats && about.stats.length > 0 && (
+            <div className="flex gap-10 mt-8">
+              {about.stats.map((s, i) => (
+                <div key={i}>
+                  <div className="text-2xl font-semibold text-(--primary-color)">{s.value}</div>
+                  <div className="text-sm text-[#6B6B6B] mt-1">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>

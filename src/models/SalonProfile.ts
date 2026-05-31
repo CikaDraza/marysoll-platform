@@ -91,6 +91,7 @@ const SalonProfileSchema = new mongoose.Schema(
             src: { type: String },
             alt: { type: String },
           },
+          yearsOfExperience: { type: Number },
         },
         artists: {
           enabled: { type: Boolean, default: true },
