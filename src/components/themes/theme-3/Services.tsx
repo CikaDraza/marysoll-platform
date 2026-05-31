@@ -10,12 +10,16 @@ interface Props {
 
 function minPrice(s: IService): number | null {
   if (s.type === "variant") {
-    const p = (s.variants ?? []).map((v) => v.price).filter((x): x is number => x != null);
-    return p.length ? Math.min(...p) : s.basePrice ?? null;
+    const p = (s.variants ?? [])
+      .map((v) => v.price)
+      .filter((x): x is number => x != null);
+    return p.length ? Math.min(...p) : (s.basePrice ?? null);
   }
   if (s.type === "group") {
-    const p = (s.services ?? []).map((sv) => sv.price).filter((x): x is number => x != null);
-    return p.length ? Math.min(...p) : s.basePrice ?? null;
+    const p = (s.services ?? [])
+      .map((sv) => sv.price)
+      .filter((x): x is number => x != null);
+    return p.length ? Math.min(...p) : (s.basePrice ?? null);
   }
   return s.basePrice ?? null;
 }
@@ -39,7 +43,7 @@ export function Theme3ServicesSoft({ services, headline, subheadline }: Props) {
         <div className="space-y-12">
           {Object.entries(grouped).map(([category, items]) => (
             <div key={category}>
-              <h3 className="text-xs font-semibold tracking-widest uppercase text-[#C9A990] mb-5 border-b border-[#E5E0DA] pb-2">
+              <h3 className="text-xs font-semibold tracking-widest uppercase text-(--primary-color) mb-5 border-b border-[#E5E0DA] pb-2">
                 {category}
               </h3>
 
@@ -54,9 +58,11 @@ export function Theme3ServicesSoft({ services, headline, subheadline }: Props) {
                       <p className="text-base font-semibold text-[#2B2B2B]">
                         {s.name}
                       </p>
-                      <p className="text-xs text-[#9E7E6E]">{s.category}</p>
+                      <p className="text-xs text-(--primary-color)">
+                        {s.category}
+                      </p>
                       {mp != null && (
-                        <p className="mt-auto text-sm font-semibold text-[#E7B8A4]">
+                        <p className="mt-auto text-sm font-semibold text-(--primary-color)">
                           {s.type === "variant" ? "od " : ""}
                           {formatPriceToString(mp)} RSD
                         </p>

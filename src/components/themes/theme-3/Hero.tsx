@@ -57,14 +57,14 @@ export function Theme3HeroSoft({
           <div className="flex gap-4">
             <Link
               href={cta?.primary?.href || "/termini"}
-              className="px-8 py-3 bg-[#E7B8A4] text-white rounded-full text-sm font-semibold hover:opacity-90"
+              className="px-8 py-3 bg-(--primary-color) text-white rounded-full text-sm font-semibold hover:opacity-90"
             >
               {cta?.primary?.text || "Zakaži termin"}
             </Link>
 
             <Link
               href={cta?.secondary?.href || "/usluge"}
-              className="px-8 py-3 border border-[#E7B8A4] text-[#2B2B2B] rounded-full text-sm"
+              className="px-8 py-3 border border-(--primary-color) text-[#2B2B2B] rounded-full text-sm"
             >
               {cta?.secondary?.text || "Pogledaj usluge"}
             </Link>

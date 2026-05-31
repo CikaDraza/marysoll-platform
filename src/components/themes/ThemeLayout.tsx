@@ -543,7 +543,12 @@ export function ThemeLayout({
           <NewsletterSection />
         </main>
 
-        <Theme3Footer {...footerProps} />
+        <Theme3Footer
+          {...footerProps}
+          salonName={salon.name}
+          salonDescription={salon.description}
+          salonCity={salon.city}
+        />
       </div>
     );
   }

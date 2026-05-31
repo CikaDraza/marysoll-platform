@@ -22,27 +22,33 @@ export async function POST(
       req,
       authResult.decoded,
     );
-    if (!newsletterScope) {
+
+    await connectToDB();
+    const { id } = await context.params;
+
+    let campaign;
+    if (newsletterScope) {
+      if (newsletterScope.scope === "tenant") {
+        const denied = await requireFeature(
+          newsletterScope.tenantId,
+          "aiLandingPages",
+        );
+        if (denied) return denied;
+      }
+      campaign = await NewsletterCampaign.findOne({
+        _id: id,
+        ...newsletterScopeFilter(newsletterScope),
+      });
+    } else if (authResult.decoded.isSuperAdmin) {
+      // Superadmin accessing admin domain without explicit scope header —
+      // allow unrestricted access by campaign ID and derive feature check from campaign itself
+      campaign = await NewsletterCampaign.findById(id);
+    } else {
       return NextResponse.json(
         { error: "Newsletter scope nije validan" },
         { status: 403 },
       );
     }
-
-    if (newsletterScope.scope === "tenant") {
-      const denied = await requireFeature(
-        newsletterScope.tenantId,
-        "aiLandingPages",
-      );
-      if (denied) return denied;
-    }
-
-    await connectToDB();
-    const { id } = await context.params;
-    const campaign = await NewsletterCampaign.findOne({
-      _id: id,
-      ...newsletterScopeFilter(newsletterScope),
-    });
     if (!campaign) {
       return NextResponse.json(
         { error: "Kampanja nije pronađena" },

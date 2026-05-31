@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import toast from "react-hot-toast";
 import { INewsletterCampaign } from "@/types";
 import {
   UpdateCampaignSemanticPayload,
@@ -47,7 +48,14 @@ export function useLandingPreview({
   // Derived state
   const seoReady = Boolean(aiLanding?.seo?.title);
   const layoutReady = Boolean(layout?.layout?.length);
-  const scopeHeaders = useMemo(() => getNewsletterScopeHeaders(scope), [scope]);
+  const scopeHeaders = useMemo(() => {
+    const headers = getNewsletterScopeHeaders(scope);
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("token");
+      if (token) return { ...headers, Authorization: `Bearer ${token}` };
+    }
+    return headers;
+  }, [scope]);
 
   /**
    * Generiše SEO na osnovu landing sadržaja
@@ -184,6 +192,7 @@ export function useLandingPreview({
 
         const error = err instanceof Error ? err : new Error("Preview failed");
         setError(error);
+        toast.error(error.message);
         throw error;
       } finally {
         setIsGenerating(false);

@@ -6,6 +6,8 @@ interface Props {
   facebook?: string;
   tiktok?: string;
   tenantSlug?: string;
+  salonDescription?: string;
+  salonCity?: string;
 }
 
 export function Theme3Footer({
@@ -14,6 +16,8 @@ export function Theme3Footer({
   facebook,
   tiktok,
   tenantSlug,
+  salonDescription,
+  salonCity,
 }: Props) {
   const base = tenantSlug ? `/${tenantSlug}` : "";
   return (
@@ -22,11 +26,11 @@ export function Theme3Footer({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           <div>
             <h3 className="text-[#5C4033] font-semibold text-base mb-3">
-              {salonName}
+              {salonName} - {salonCity}
             </h3>
             <p className="text-[#9E7E6E] text-sm leading-relaxed">
-              Vaš profesionalni beauty salon sa ljubavlju prema lepoti i
-              dobrobiti.
+              {salonDescription ||
+                "Dobrodošli u naš salon lepote, gde se vaša lepota i dobrobit nalaze na prvom mestu. Naš stručni tim posvećen je pružanju vrhunskih usluga koje će vas osvežiti i učiniti da se osećate sjajno. Bilo da želite opuštajuću masažu, negu lica ili savršenu frizuru, mi smo tu da vam pružimo nezaboravno iskustvo."}
             </p>
           </div>
           <div>
