@@ -108,7 +108,7 @@ export function TenantShellClient({ salon, tenantSlug, children }: Props) {
 
   if (theme === "theme-5") {
     const theme5HeaderData = {
-      logo: salon.logo || "",
+      logo: salon.logo?.startsWith("http") ? salon.logo : undefined,
       navigation: [
         { label: "Naslovna", href: `${base}/` },
         { label: "Usluge", href: `${base}/usluge` },

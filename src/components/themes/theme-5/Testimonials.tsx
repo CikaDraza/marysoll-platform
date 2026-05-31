@@ -2,7 +2,7 @@ import type { mapCMS } from "@/lib/CMSMapper/mapCMS";
 
 type TestimonialsData = ReturnType<typeof mapCMS>["testimonials"];
 
-export function Theme5Testimonials({ data }: { data: TestimonialsData }) {
+export function Theme5Testimonials({ data, tenantSlug: _tenantSlug }: { data: TestimonialsData; tenantSlug?: string }) {
   return (
     <section className="py-16 bg-white text-center max-w-3xl mx-auto">
       {data?.items?.map((t, i) => (

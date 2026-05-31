@@ -7,9 +7,11 @@ interface Props {
     imageMain?: { src: string; alt?: string };
     cta?: { text: string; href: string };
   };
+  tenantSlug?: string;
 }
 
-export function Theme5Hero({ data }: Props) {
+export function Theme5Hero({ data, tenantSlug }: Props) {
+  const base = tenantSlug ? `/${tenantSlug}` : "";
   return (
     <section
       className="h-screen bg-cover bg-center flex items-center"
@@ -27,7 +29,7 @@ export function Theme5Hero({ data }: Props) {
             <p className="mt-4 text-lg opacity-80">{data?.subheadline}</p>
 
             <Link
-              href={data?.cta?.href || "/"}
+              href={`${base}/${data?.cta?.href || `${base}/termini`}`}
               className="inline-block mt-6 bg-yellow-500 text-black px-8 py-4 text-md font-black hover:bg-white hover:text-black transition"
             >
               {data?.cta?.text}

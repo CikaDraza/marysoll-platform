@@ -695,29 +695,30 @@ export function ThemeLayout({
         />
         <main className="flex-1 flex flex-col overflow-x-hidden">
           {/* 1. HERO */}
-          <Theme5Hero data={ui.hero} />
+          <Theme5Hero data={ui.hero} tenantSlug={tenantSlug} />
           {/* 2. SERVICES */}
-          <Theme5Services data={ui.services} services={ui.services.services} />
+          <Theme5Services data={ui.services} services={ui.services.services} tenantSlug={tenantSlug} />
           {/* 3. WORKING HOURS */}
-          <Theme5WorkingHours workingHours={ui.workingHours.workingHours} />
+          <Theme5WorkingHours workingHours={ui.workingHours.workingHours} tenantSlug={tenantSlug} />
           {/* 4. HOW IT WORKS */}
           <Theme5HowItWorks
             data={
               ui.howItWorks as ComponentProps<typeof Theme5HowItWorks>["data"]
             }
+            tenantSlug={tenantSlug}
           />
           {/* 5. PRICING */}
           <Theme5Pricing services={services} tenantSlug={tenantSlug} />
           {/* 6. CTA */}
           <Theme5CTA data={ui.cta} />
           {/* 7. ARTISTS */}
-          {artistsEnabled && <Theme5Artists data={ui?.artists} />}
+          {artistsEnabled && <Theme5Artists data={ui?.artists} tenantSlug={tenantSlug} />}
           {/* 8. STATS */}
-          <Theme5About data={ui.about} />
+          <Theme5About data={ui.about} tenantSlug={tenantSlug} />
           {/* 9. TESTIMONIALS */}
-          {testimonialsEnabled && <Theme5Testimonials data={ui.testimonials} />}
+          {testimonialsEnabled && <Theme5Testimonials data={ui.testimonials} tenantSlug={tenantSlug} />}
           {/* 10. GALLERY */}
-          <Theme5Gallery data={ui.gallery} />
+          <Theme5Gallery data={ui.gallery} tenantSlug={tenantSlug} />
         </main>
         {/* FOOTER */}
         <Theme5Footer data={ui.footer} />

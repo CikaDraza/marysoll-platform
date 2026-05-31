@@ -4,7 +4,7 @@ import { renderLinkedText } from "@/helpers/renderLinkedText";
 
 type AboutData = ReturnType<typeof mapCMS>["about"];
 
-export function Theme5About({ data }: { data: AboutData }) {
+export function Theme5About({ data, tenantSlug: _tenantSlug }: { data: AboutData; tenantSlug?: string }) {
   return (
     <section className="relative bg-gradient-to-r from-purple-50 to-purple-100 text-gray-800 py-20">
       <div className="max-w-7xl mx-auto px-6 flex flex-col lg:flex-row items-center gap-16">

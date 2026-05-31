@@ -12,7 +12,7 @@ import {
 
 interface Props {
   data: {
-    logo: string;
+    logo?: string;
     navigation: {
       label: string;
       href: string;
@@ -37,17 +37,18 @@ export function Theme5Header({
   secondaryColor = "#ec4899",
 }: Props) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const hasValidLogo = !!data?.logo && data.logo.startsWith("http");
 
   return (
     <header className="bg-black fixed inset-x-0 top-0 z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
         <div className="text-xl font-bold tracking-wide">
-          {data?.logo ? (
+          {hasValidLogo ? (
             <Image
               width={720}
               height={720}
-              alt={data?.logo}
-              src={data?.logo}
+              alt={"logo"}
+              src={data.logo!}
               className="size-12 object-contain"
             />
           ) : (
@@ -116,12 +117,12 @@ export function Theme5Header({
           >
             <div className="flex items-center justify-between mb-8">
               <figure className="font-bold text-lg text-(--primary-color)">
-                {data?.logo ? (
+                {hasValidLogo ? (
                   <Image
                     width={80}
                     height={80}
                     alt="logo"
-                    src={data.logo}
+                    src={data.logo!}
                     className="h-8 w-auto object-cover"
                   />
                 ) : (

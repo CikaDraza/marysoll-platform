@@ -141,15 +141,17 @@ export function Theme5Footer({ data }: { data: FooterData }) {
                 </button>
               )}
             </dt>
-            <div className="w-full">
-              <Image
-                width={128}
-                height={128}
-                src={data?.logo}
-                alt={data?.name}
-                className="w-32 h-32 object-contain mx-auto lg:mx-0 lg:ml-auto"
-              />
-            </div>
+            {data?.logo?.startsWith("http") && (
+              <div className="w-full">
+                <Image
+                  width={128}
+                  height={128}
+                  src={data.logo}
+                  alt={data?.name ?? ""}
+                  className="w-32 h-32 object-contain mx-auto lg:mx-0 lg:ml-auto"
+                />
+              </div>
+            )}
           </div>
         </div>
         <div className="mt-12 pt-6 border-t border-white/10 text-center text-xs text-gray-300">

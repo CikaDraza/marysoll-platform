@@ -8,9 +8,10 @@ interface Props {
     subheadline?: string;
     steps?: { title: string; description: string; icon: keyof typeof Icons }[];
   };
+  tenantSlug?: string;
 }
 
-export function Theme5HowItWorks({ data }: Props) {
+export function Theme5HowItWorks({ data, tenantSlug: _tenantSlug }: Props) {
   return (
     <section className="py-16 bg-[#f0f0f0] text-center">
       <span className="text-xs text-gray-500">Uživajte u našim ulugama</span>

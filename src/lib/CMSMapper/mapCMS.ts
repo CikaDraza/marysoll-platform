@@ -73,7 +73,7 @@ export function mapCMS(
     cta: mapCTA(ls, tenantSlug),
     gallery: mapGallery(ls),
     testimonials: mapTestimonials(testimonials),
-    footer: mapFooter(salon),
+    footer: mapFooter(salon, tenantSlug),
 
     enabled: {
       hero: ls?.landing?.hero?.enabled !== false,

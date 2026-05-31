@@ -4,8 +4,9 @@ import Image from "next/image";
 
 interface Props {
   data: LandingStructure["landing"]["artists"];
+  tenantSlug?: string;
 }
-export function Theme5Artists({ data }: Props) {
+export function Theme5Artists({ data, tenantSlug: _tenantSlug }: Props) {
   return (
     <section className="py-16 bg-white text-center">
       <h2>{data?.headline}</h2>

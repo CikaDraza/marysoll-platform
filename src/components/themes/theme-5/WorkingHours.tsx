@@ -3,9 +3,10 @@ import { SalonProfile } from "@/types";
 
 interface Props {
   workingHours: SalonProfile["workingHours"];
+  tenantSlug?: string;
 }
 
-export function Theme5WorkingHours({ workingHours }: Props) {
+export function Theme5WorkingHours({ workingHours, tenantSlug: _tenantSlug }: Props) {
   const formattedHours = formatWorkingHoursForDisplay(
     workingHours as Record<string, unknown> | null,
   );

@@ -63,9 +63,11 @@ function CategoryIcon({
 export function Theme5Services({
   data,
   services,
+  tenantSlug,
 }: {
   data: DataProps;
   services: IService[];
+  tenantSlug?: string;
 }) {
   const showIcons = data.showIcons ?? true;
 

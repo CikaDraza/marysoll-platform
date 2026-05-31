@@ -5,7 +5,7 @@ import InstagramIcon from "@/components/assets/icons/InstagramIcon";
 
 type GalleryData = ReturnType<typeof mapCMS>["gallery"];
 
-export function Theme5Gallery({ data }: { data: GalleryData }) {
+export function Theme5Gallery({ data, tenantSlug: _tenantSlug }: { data: GalleryData; tenantSlug?: string }) {
   return (
     <section id="gallery">
       <div className="grid grid-cols-2 md:grid-cols-6">
