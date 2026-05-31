@@ -36,10 +36,7 @@ export default function ServicesLayout({
       </div>
       <div className="pt-16 lg:pt-24 flex flex-col gap-y-8">
         {groupedServices?.map((group) => (
-          <div
-            key={group.category}
-            className="max-w-full lg:py-24 px-2 lg:px-8"
-          >
+          <div key={group.category} className="max-w-full px-2 lg:px-8">
             <div className="relative isolate px-1 pt-14 lg:px-8 z-0">
               <div
                 aria-hidden="true"
@@ -55,11 +52,11 @@ export default function ServicesLayout({
               </div>
             </div>
             <div className="mx-auto max-w-7xl lg:mx-0">
-              <h2 className="text-2xl! font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl! lg:text-7xl!">
+              <h2 className="text-2xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl! lg:text-7xl!">
                 {group.category || "Usluga"}
               </h2>
             </div>
-            <div className="mx-auto mt-10 grid grid-cols-1 gap-x-8 gap-y-16 border-t border-gray-100 pt-10 sm:mt-16 sm:pt-16 lg:mx-0 lg:max-w-none lg:grid-cols-2">
+            <div className="mx-auto mt-10 grid grid-cols-1 gap-x-20 gap-y-16 border-t border-gray-100 pt-10 sm:mt-16 sm:pt-16 lg:mx-0 lg:max-w-none lg:grid-cols-2">
               {group.services.map((service, index) => (
                 <article
                   key={index}
@@ -72,10 +69,18 @@ export default function ServicesLayout({
                     >
                       Trajanje: {service?.duration} minuta
                     </time>
-                    {(service.basePrice || service.priceMode === "on_request") && (
-                      <span className="relative z-10 rounded-full bg-(--primary-color) px-3 py-1.5 font-semibold text-white">
-                        {formatServicePrice(service.basePrice, service.priceMode)}
-                      </span>
+
+                    {(service.basePrice ||
+                      service.priceMode === "on_request") && (
+                      <>
+                        <hr className="flex-1 border-dashed text-gray-700" />
+                        <span className="relative z-10 rounded-full bg-(--primary-color) px-3 py-1.5 font-semibold text-white">
+                          {formatServicePrice(
+                            service.basePrice,
+                            service.priceMode,
+                          )}
+                        </span>
+                      </>
                     )}
                   </div>
                   <div className="group w-full relative grow">

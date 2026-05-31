@@ -74,7 +74,7 @@ export function TenantShellClient({ salon, tenantSlug, children }: Props) {
     return (
       <div style={brandingVars}>
         <Theme2Header {...headerProps} />
-        <div className="pt-20">{children}</div>
+        <div className="pt-18">{children}</div>
         <Theme2Footer {...footerProps} />
       </div>
     );
@@ -84,7 +84,7 @@ export function TenantShellClient({ salon, tenantSlug, children }: Props) {
     return (
       <div style={brandingVars}>
         <Theme3Header {...headerProps} />
-        <div className="pt-20">{children}</div>
+        <div className="pt-18">{children}</div>
         <Theme3Footer {...footerProps} />
       </div>
     );

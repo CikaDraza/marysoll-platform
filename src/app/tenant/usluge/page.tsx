@@ -12,6 +12,7 @@ import {
 import ServicesLayout from "./ServiceLayout";
 import { TenantPageShell } from "@/components/themes/TenantPageShell";
 import { LandingStructure, SalonProfileData } from "@/types";
+import Image from "next/image";
 
 export const dynamic = "force-dynamic";
 
@@ -87,22 +88,52 @@ export default async function UslugePage() {
           </section>
         )}
 
-        <section className="bg-(--secondary-color) py-44 px-6 text-center">
-          <p className="text-(--primary-color) text-xs font-bold tracking-[0.25em] uppercase mb-3">
-            {salonName}
-          </p>
-          <h2 className="text-3xl font-bold text-(--primary-color) mb-4">
-            {appointmentsPage?.headline}
-          </h2>
-          <p className="text-(--primary-color)/80 text-sm mb-8 max-w-sm mx-auto">
-            {appointmentsPage?.subheadline}
-          </p>
-          {appointmentsPage?.paragraph && (
-            <p className="text-(--primary-color)/75 text-sm leading-7 mb-8 max-w-2xl mx-auto">
-              {appointmentsPage.paragraph}
-            </p>
-          )}
-          <div className="flex items-center justify-center space-x-6">
+        <section className="relative isolate overflow-hidden bg-gray-950 text-left py-44 px-6 text-white lg:px-8">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 -z-10 bg-gray-950/75 backdrop-blur-[2px] md:bg-gradient-to-r md:from-gray-950/90 md:via-gray-950/70 md:to-gray-950/35"
+          />
+          <div
+            aria-hidden="true"
+            className="hidden sm:absolute sm:-top-10 sm:right-1/2 sm:-z-10 sm:mr-10 sm:block sm:transform-gpu sm:blur-3xl"
+          >
+            <div
+              style={{
+                clipPath:
+                  "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)",
+              }}
+              className="aspect-1097/845 w-274.25 bg-linear-to-tr from-[#ff4694] to-[#776fff] opacity-20"
+            />
+          </div>
+          <div
+            aria-hidden="true"
+            className="absolute -top-52 left-1/2 -z-10 -translate-x-1/2 transform-gpu blur-3xl sm:-top-112 sm:ml-16 sm:translate-x-0"
+          >
+            <div
+              style={{
+                clipPath:
+                  "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)",
+              }}
+              className="aspect-1097/845 w-274.25 bg-linear-to-tr from-[#ff4694] to-[#776fff] opacity-20"
+            />
+          </div>
+          <div className="flex flex-wrap items-center justify-center space-x-6">
+            <div className="mx-auto w-full text-center">
+              <small className="text-center text-(--primary-color) text-xs font-bold tracking-[0.25em] uppercase mb-3">
+                {salonName}
+              </small>
+              <h2 className="text-3xl font-bold text-(--primary-color) mb-4">
+                {appointmentsPage?.headline}
+              </h2>
+              <p className="text-(--primary-color)/80 text-sm mb-8 max-w-sm mx-auto">
+                {appointmentsPage?.subheadline}
+              </p>
+              {appointmentsPage?.paragraph && (
+                <p className="text-(--primary-color)/75 text-sm leading-7 mb-8 max-w-2xl mx-auto">
+                  {appointmentsPage.paragraph}
+                </p>
+              )}
+            </div>
             <Link
               href={`${base}/termini`}
               className="inline-block px-10 py-4 text-(--primary-color) hover:text-white font-bold rounded-full outline-1 outline-(--primary-color) hover:bg-(--primary-color) transition"
