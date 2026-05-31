@@ -10,20 +10,25 @@ interface Props {
   tenantSlug?: string;
 }
 
+function isValidPrice(price: unknown, priceMode?: string): boolean {
+  if (priceMode === "on_request") return false;
+  return typeof price === "number" && isFinite(price) && price > 0;
+}
+
 function minPrice(s: IService): number | null {
   if (s.type === "variant") {
-    const prices = (s.variants ?? [])
-      .map((v) => v.price)
-      .filter((x): x is number => x != null);
-    return prices.length ? Math.min(...prices) : (s.basePrice ?? null);
+    const p = (s.variants ?? [])
+      .filter((v) => isValidPrice(v.price, v.priceMode))
+      .map((v) => v.price as number);
+    if (p.length) return Math.min(...p);
   }
   if (s.type === "group") {
-    const prices = (s.services ?? [])
-      .map((sv) => sv.price)
-      .filter((x): x is number => x != null);
-    return prices.length ? Math.min(...prices) : (s.basePrice ?? null);
+    const p = (s.services ?? [])
+      .filter((sv) => isValidPrice(sv.price, sv.priceMode))
+      .map((sv) => sv.price as number);
+    if (p.length) return Math.min(...p);
   }
-  return s.basePrice ?? null;
+  return isValidPrice(s.basePrice, s.priceMode) ? (s.basePrice as number) : null;
 }
 
 export function Theme3PricingSoft({ services, headline, tenantSlug }: Props) {
@@ -136,7 +141,7 @@ export function Theme3PricingSoft({ services, headline, tenantSlug }: Props) {
                             const mp = minPrice(service);
                             return mp != null ? (
                               <p className="shrink-0 text-sm font-semibold text-[#bfa37a]">
-                                {service.type === "variant" ? "od " : ""}
+                                {(service.type === "variant" || service.type === "group") ? "od " : ""}
                                 {formatPriceToString(mp)} RSD
                               </p>
                             ) : null;
