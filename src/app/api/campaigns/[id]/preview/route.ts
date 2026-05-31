@@ -84,10 +84,7 @@ export async function POST(
   } catch (error: unknown) {
     console.error("Campaign preview AI error:", error);
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Preview generation failed",
-      },
+      { error: "Greška pri generisanju landing stranice. Pokušajte ponovo." },
       { status: 500 },
     );
   }

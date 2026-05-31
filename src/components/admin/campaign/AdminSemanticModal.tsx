@@ -234,11 +234,22 @@ export default function AdminSemanticModal({
     selectedEditorialCategory,
   );
 
-  // Initialize images from existing landing
-  const existingImages =
-    campaign?.landingPage?.layout
-      ?.filter((block) => block.type === "HeroBlock")
-      ?.flatMap((block) => block.images?.map((image) => image.src) || []) || [];
+  // Initialize images from existing landing — collect from all block types
+  const existingImages = (() => {
+    const layout = campaign?.landingPage?.layout;
+    if (!layout?.length) return [];
+    const urls: string[] = [];
+    for (const block of layout) {
+      if (block.type === "HeroBlock") {
+        block.images?.forEach((img: { src?: string }) => { if (img?.src) urls.push(img.src); });
+      } else if ("image" in block && block.image?.src) {
+        urls.push(block.image.src);
+      } else if (block.type === "FeatureBlock") {
+        block.sections?.forEach((s: { image?: { src?: string } }) => { if (s?.image?.src) urls.push(s.image.src); });
+      }
+    }
+    return [...new Set(urls)];
+  })();
 
   const images = useGeneratedImages(existingImages, scope);
 

@@ -136,6 +136,26 @@ function assertAllowedImageSources(
   }
 }
 
+function stripNullImages(obj: unknown): void {
+  if (!obj || typeof obj !== "object") return;
+  if (Array.isArray(obj)) {
+    obj.forEach(stripNullImages);
+    return;
+  }
+  const record = obj as Record<string, unknown>;
+  for (const key of ["image", "images"]) {
+    if (key in record && record[key] == null) {
+      delete record[key];
+    }
+  }
+  if (Array.isArray(record.sections)) {
+    record.sections.forEach(stripNullImages);
+  }
+  if (Array.isArray(record.blocks)) {
+    record.blocks.forEach(stripNullImages);
+  }
+}
+
 export async function generateLandingPreview(
   input: LandingPageInput,
 ): Promise<LandingPageOutput> {
@@ -145,6 +165,8 @@ export async function generateLandingPreview(
     imagesUrl && imagesUrl.length > 0
       ? imagesUrl.map((url, i) => `${i + 1}. ${url}`).join("\n")
       : "Nema slika";
+
+  const hasImages = imagesUrl && imagesUrl.length > 0;
 
   const systemPrompt = `Ti si senior landing page strategist za newsletter campaign landing/blog stranice.
 Tvoj zadatak je da generišeš SEO-ready semantic content tree.
@@ -166,7 +188,7 @@ Pravila:
 - AffiliateCTABlock should be the final CTA when there is a promoted action or link.
 - Use images only from IMAGES_URL input.
 - Do not invent image URLs.
-- Every image must have alt text.
+- Every image must have alt text.${hasImages ? "" : "\n- IMAGES_URL is empty: do NOT include any image or images field in any block. Omit the field entirely."}
 - Bez emoji-ja.
 - Ukupna dužina teksta treba da bude adekvatna za premium landing/blog stranicu.`;
 
@@ -197,7 +219,9 @@ Ton: ${semanticContent.tone}
   }
 
   try {
-    const parsed = parseLandingPageOutput(JSON.parse(content));
+    const raw = JSON.parse(content);
+    stripNullImages(raw);
+    const parsed = parseLandingPageOutput(raw);
     assertAllowedImageSources(parsed, imagesUrl || []);
     return parsed;
   } catch (error) {

@@ -4,6 +4,14 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 import { INewsletterCampaign } from "@/types";
 
+function safeDecodeSlug(slug: string): string {
+  try {
+    return decodeURIComponent(slug);
+  } catch {
+    return slug;
+  }
+}
+
 export async function getCampaign(
   slugPath: string,
   tenantId: string,
@@ -11,8 +19,8 @@ export async function getCampaign(
   await connectToDB();
 
   const cleanPath = slugPath.startsWith("/") ? slugPath : `/${slugPath}`;
-  const slugId = cleanPath.split("/").filter(Boolean).at(-1);
-  const blogSlug = cleanPath.replace(/^\/blog\/+/i, "");
+  const slugId = safeDecodeSlug(cleanPath.split("/").filter(Boolean).at(-1) ?? "");
+  const blogSlug = safeDecodeSlug(cleanPath.replace(/^\/blog\/+/i, ""));
 
   const campaign = await NewsletterCampaign.findOne({
     tenantId,
