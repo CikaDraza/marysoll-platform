@@ -39,7 +39,8 @@ function groupServices(services: IService[]): CategoryGroup[] {
 }
 
 function resolvePrice(s: IService): string {
-  if (isPriceOnRequest(s.priceMode)) return formatServicePrice(s.basePrice, s.priceMode);
+  if (isPriceOnRequest(s.priceMode))
+    return formatServicePrice(s.basePrice, s.priceMode);
   if (s.type === "variant" && s.variants && s.variants.length > 0) {
     if (s.variants.some((v) => isPriceOnRequest(v.priceMode))) {
       return formatServicePrice(null, "on_request");
@@ -80,9 +81,9 @@ export function Theme3WhatOffer({
   return (
     <section className="bg-[#FAF8F5] py-20 lg:py-28 px-6">
       <div className="max-w-7xl mx-auto">
-        <p className="text-[#C9A990] text-xs font-semibold tracking-[0.25em] uppercase text-center mb-3">
+        <span className="text-[#C9A990] text-xs font-semibold tracking-[0.25em] uppercase text-center mb-3">
           šta nudimo
-        </p>
+        </span>
         <h2 className="text-3xl lg:text-4xl font-light text-[#3D2B1F] text-center mb-4">
           {headline || (
             <>

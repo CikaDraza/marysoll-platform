@@ -8,20 +8,25 @@ interface Props {
   tenantSlug?: string;
 }
 
+function isValidPrice(price: unknown, priceMode?: string): boolean {
+  if (priceMode === "on_request") return false;
+  return typeof price === "number" && isFinite(price) && price > 0;
+}
+
 function minPrice(s: IService): number | null {
   if (s.type === "variant") {
     const p = (s.variants ?? [])
-      .map((v) => v.price)
-      .filter((x): x is number => x != null);
-    return p.length ? Math.min(...p) : (s.basePrice ?? null);
+      .filter((v) => isValidPrice(v.price, v.priceMode))
+      .map((v) => v.price as number);
+    if (p.length) return Math.min(...p);
   }
   if (s.type === "group") {
     const p = (s.services ?? [])
-      .map((sv) => sv.price)
-      .filter((x): x is number => x != null);
-    return p.length ? Math.min(...p) : (s.basePrice ?? null);
+      .filter((sv) => isValidPrice(sv.price, sv.priceMode))
+      .map((sv) => sv.price as number);
+    if (p.length) return Math.min(...p);
   }
-  return s.basePrice ?? null;
+  return isValidPrice(s.basePrice, s.priceMode) ? (s.basePrice as number) : null;
 }
 
 export function Theme3ServicesSoft({ services, headline, subheadline }: Props) {
@@ -63,7 +68,7 @@ export function Theme3ServicesSoft({ services, headline, subheadline }: Props) {
                       </p>
                       {mp != null && (
                         <p className="mt-auto text-sm font-semibold text-(--primary-color)">
-                          {s.type === "variant" ? "od " : ""}
+                          {(s.type === "variant" || s.type === "group") ? "od " : ""}
                           {formatPriceToString(mp)} RSD
                         </p>
                       )}
