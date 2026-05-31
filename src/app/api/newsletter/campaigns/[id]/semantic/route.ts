@@ -12,17 +12,16 @@ import {
   newsletterScopeFilter,
   resolveNewsletterAdminScope,
 } from "@/lib/newsletter/adminTenantScope";
+import { slugify } from "@/helpers/slugify";
 
 function normalizeNewsletterLandingSlug(slug?: string) {
-  return (
-    slug
-      ?.trim()
-      .replace(/^https?:\/\/[^/]+/i, "")
-      .replace(/^\/+/, "")
-      .replace(/^blog\/+/i, "")
-      .replace(/\s+/g, "-")
-      .toLowerCase() || ""
-  );
+  if (!slug?.trim()) return "";
+  const raw = slug
+    .trim()
+    .replace(/^https?:\/\/[^/]+/i, "")
+    .replace(/^\/+/, "")
+    .replace(/^blog\/+/i, "");
+  return slugify(raw);
 }
 
 export async function PATCH(

@@ -194,6 +194,9 @@ export function ThemeLayout({
   const footerProps = {
     tenantSlug,
     salonName: salon.name,
+    description: salon.description ?? undefined,
+    logo: salon.logo ?? undefined,
+    city: salon.city ?? undefined,
     instagram: salon.social?.instagram,
     facebook: salon.social?.facebook,
     tiktok: salon.social?.tiktok,

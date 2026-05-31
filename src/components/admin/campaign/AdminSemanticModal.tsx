@@ -49,6 +49,7 @@ import { PreviewRenderer } from "./PreviewRenderer";
 import { GeneratedImagesPanel } from "./GeneratedImagesPanel";
 import LoaderButton from "@/components/elements/LoaderButton";
 import type { NewsletterClientScope } from "@/lib/newsletter/clientScope";
+import { slugify as slugifySlug } from "@/helpers/slugify";
 
 interface Props {
   isOpen: boolean;
@@ -75,15 +76,13 @@ type SelectOption = {
 };
 
 function normalizeLandingSlug(slug?: string | null) {
-  return (
-    slug
-      ?.trim()
-      .replace(/^https?:\/\/[^/]+/i, "")
-      .replace(/^\/+/, "")
-      .replace(/^blog\/+/i, "")
-      .replace(/\s+/g, "-")
-      .toLowerCase() || ""
-  );
+  if (!slug?.trim()) return "";
+  const raw = slug
+    .trim()
+    .replace(/^https?:\/\/[^/]+/i, "")
+    .replace(/^\/+/, "")
+    .replace(/^blog\/+/i, "");
+  return slugifySlug(raw);
 }
 
 function getInitialForm(

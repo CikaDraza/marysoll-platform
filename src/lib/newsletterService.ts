@@ -1,5 +1,6 @@
 import "server-only";
 
+import { slugify } from "@/helpers/slugify";
 import { NewsletterStats, NewsletterSubscriptionData } from "@/types";
 import { TenantUser } from "@/models/TenantUser";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
@@ -24,13 +25,12 @@ const bookingBaseUrl =
   process.env.NEXT_PUBLIC_BOOKING_BASE_URL || "https://booking.marysoll.com";
 
 function normalizeNewsletterLandingSlug(slug: string) {
-  return slug
+  const raw = slug
     .trim()
     .replace(/^https?:\/\/[^/]+/i, "")
     .replace(/^\/+/, "")
-    .replace(/^blog\/+/i, "")
-    .replace(/\s+/g, "-")
-    .toLowerCase();
+    .replace(/^blog\/+/i, "");
+  return slugify(raw);
 }
 
 function getLandingBaseUrl(

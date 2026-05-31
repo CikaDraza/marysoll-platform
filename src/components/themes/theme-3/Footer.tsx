@@ -8,6 +8,8 @@ interface Props {
   tenantSlug?: string;
   salonDescription?: string;
   salonCity?: string;
+  logo?: string;
+  [key: string]: unknown;
 }
 
 export function Theme3Footer({
