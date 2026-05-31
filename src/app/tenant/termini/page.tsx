@@ -93,7 +93,7 @@ export default async function TerminiPage() {
           <div className="flex gap-3 justify-center">
             <Link
               href={`${base}/panel?tab=Zakazivanja`}
-              className="px-3 lg:px-7 py-3 bg-(--primary-color) text-white hover:text-(--primary-color) font-semibold rounded-full hover:bg-(--secondary-color) transition text-sm"
+              className="px-3 lg:px-7 py-3 bg-(--primary-color) text-white hover:text-white font-semibold rounded-full hover:bg-black transition text-sm"
             >
               Zakaži termin →
             </Link>

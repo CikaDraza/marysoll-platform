@@ -17,6 +17,8 @@ import { headers } from "next/headers";
 import { ThemeLayout } from "@/components/themes/ThemeLayout";
 import type { LandingTheme } from "@/models/SalonProfile";
 import type { IService, LandingStructure, SalonProfileData } from "@/types";
+import { getTenantStats } from "@/lib/tenant/getTenantStats";
+import type { TenantStats } from "@/lib/tenant/getTenantStats";
 
 interface Props {
   tenantSlug: string;
@@ -53,16 +55,17 @@ async function getTenantData(tenantSlug: string) {
 
   const tenantId = (tenant as Record<string, unknown>)._id;
 
-  const [salon, services, testimonials] = await Promise.all([
+  const [salon, services, testimonials, tenantStats] = await Promise.all([
     SalonProfile.findOne({ tenantId }).lean(),
     Service.find({ tenantId }).lean(),
     Testimonial.find({ tenantId, isApproved: true })
       .sort({ createdAt: -1 })
       .limit(6)
       .lean(),
+    getTenantStats(String(tenantId)),
   ]);
 
-  return { tenant, salon, services, testimonials };
+  return { tenant, salon, services, testimonials, tenantStats };
 }
 
 export async function ClientHomePage({ tenantSlug }: Props) {
@@ -105,7 +108,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     );
   }
 
-  const { salon, services, testimonials } = data;
+  const { salon, services, testimonials, tenantStats } = data;
 
   const s = salon as
     | (Record<string, unknown> & { branding?: Record<string, string> })
@@ -241,6 +244,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
       testimonials={testimonialList}
       tenantSlug={themeSlug}
       clientSlug={tenantSlug || undefined}
+      tenantStats={tenantStats}
     />
   );
 }

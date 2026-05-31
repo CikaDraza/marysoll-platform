@@ -12,6 +12,8 @@
 import type { ComponentProps } from "react";
 import type { LandingTheme } from "@/models/SalonProfile";
 import type { IService, SalonProfileData } from "@/types";
+import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
+import { formatStatValue } from "@/lib/tenant/tenantStatsUtils";
 
 // Theme 1
 import { Theme1Header } from "./theme-1/Header";
@@ -130,6 +132,7 @@ interface ThemeLayoutProps {
    * so LoggedButton can build correct /kiki-makeup/panel links (middleware rewrites these).
    */
   clientSlug?: string;
+  tenantStats?: TenantStats;
 }
 
 export function ThemeLayout({
@@ -139,6 +142,7 @@ export function ThemeLayout({
   testimonials,
   tenantSlug,
   clientSlug,
+  tenantStats,
 }: ThemeLayoutProps) {
   const instagram = salon.social?.instagram || "";
   const ls = salon.landingStructure;
@@ -270,7 +274,10 @@ export function ThemeLayout({
               }}
             />
           )}
-          <Theme1SocialProof />
+          <Theme1SocialProof
+            tenantStats={tenantStats}
+            yearsOfExperience={ls?.landing?.about?.yearsOfExperience}
+          />
           {servicesPreviewEnabled && services.length > 0 && (
             <Theme1WhatOffer
               services={services}
@@ -590,11 +597,18 @@ export function ThemeLayout({
               }
               links={ls?.landing?.about?.links ?? []}
               stats={
-                ls?.landing?.stats || [
-                  { value: "10+", label: "Godina iskustva" },
-                  { value: "500+", label: "Zadovoljnih klijenata" },
-                  { value: "20+", label: "Stručnjaka" },
-                ]
+                tenantStats
+                  ? [
+                      { value: formatStatValue(tenantStats.clientCount), label: "Zadovoljnih klijenata" },
+                      { value: formatStatValue(tenantStats.appointmentCount), label: "Urađenih tretmana" },
+                      ...(ls?.landing?.about?.yearsOfExperience
+                        ? [{ value: `${ls.landing.about.yearsOfExperience}+`, label: "Godina iskustva" }]
+                        : []),
+                    ]
+                  : ls?.landing?.stats || [
+                      { value: "500+", label: "Zadovoljnih klijenata" },
+                      { value: "800+", label: "Urađenih tretmana" },
+                    ]
               }
               image={ls?.landing?.about?.image}
             />
@@ -681,7 +695,7 @@ export function ThemeLayout({
 
   // ── Theme 5: Modern Spa ─────────────────────────────────────────────
   if (theme === "theme-5") {
-    const ui = mapCMS(salon, services, testimonials, tenantSlug);
+    const ui = mapCMS(salon, services, testimonials, tenantSlug, tenantStats);
 
     return (
       <div className="min-h-screen flex flex-col" style={brandingVars}>

@@ -119,30 +119,30 @@ export default async function UslugePage() {
           </div>
           <div className="flex flex-wrap items-center justify-center space-x-6">
             <div className="mx-auto w-full text-center">
-              <small className="text-center text-(--primary-color) text-xs font-bold tracking-[0.25em] uppercase mb-3">
+              <small className="text-center text-[#a8876c] text-xs font-bold tracking-[0.25em] uppercase mb-3">
                 {salonName}
               </small>
-              <h2 className="text-3xl font-bold text-(--primary-color) mb-4">
+              <h2 className="text-3xl font-bold text-[#a8876c] mb-4">
                 {appointmentsPage?.headline}
               </h2>
-              <p className="text-(--primary-color)/80 text-sm mb-8 max-w-sm mx-auto">
+              <p className="text-[#a8876c]/80 text-sm mb-8 max-w-sm mx-auto">
                 {appointmentsPage?.subheadline}
               </p>
               {appointmentsPage?.paragraph && (
-                <p className="text-(--primary-color)/75 text-sm leading-7 mb-8 max-w-2xl mx-auto">
+                <p className="text-[#a8876c]/75 text-sm leading-7 mb-8 max-w-2xl mx-auto">
                   {appointmentsPage.paragraph}
                 </p>
               )}
             </div>
             <Link
               href={`${base}/termini`}
-              className="inline-block px-10 py-4 text-(--primary-color) hover:text-white font-bold rounded-full outline-1 outline-(--primary-color) hover:bg-(--primary-color) transition"
+              className="inline-block px-10 py-4 text-[#a8876c] hover:text-white font-bold rounded-full outline-1 outline-[#a8876c] hover:bg-[#a8876c] transition"
             >
               Pogledaj slobodne termine →
             </Link>
             <Link
               href={`${base}/termini`}
-              className="inline-block px-10 py-4 bg-white text-(--primary-color) font-bold rounded-full hover:bg-gray-100 transition shadow-lg"
+              className="inline-block px-10 py-4 bg-white text-[#a8876c] font-bold rounded-full hover:bg-gray-100 transition shadow-lg"
             >
               Zakaži termin →
             </Link>

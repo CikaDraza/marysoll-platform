@@ -14,12 +14,13 @@ export function Theme5Hero({ data, tenantSlug }: Props) {
   const base = tenantSlug ? `/${tenantSlug}` : "";
   return (
     <section
-      className="h-screen bg-cover bg-center flex items-center"
+      className="relative h-screen bg-cover bg-center flex items-center"
       style={{
         backgroundImage: `url(${data?.imageMain ? data.imageMain.src : "https://res.cloudinary.com/dufo1t5li/image/upload/v1776998286/Gemini_Generated_Image_1esyb51esyb51esy_xvisox.png"})`,
       }}
     >
-      <div className="max-w-7xl mx-auto px-6 text-white">
+      <div className="absolute inset-0 bg-black/30" />
+      <div className="relative max-w-7xl mx-auto px-6 text-white">
         <div className="grid grid-cols-1 lg:grid-cols-2">
           <div className="text-left">
             <h1 className="text-4xl md:text-7xl font-black">

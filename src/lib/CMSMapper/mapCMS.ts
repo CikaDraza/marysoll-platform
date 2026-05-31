@@ -7,6 +7,7 @@ import { mapWorkingHours } from "./UI/mapWorkingHours";
 import { mapCTA } from "./UI/mapCTA";
 import { mapFooter } from "./UI/mapFooter";
 import { mapArtists } from "./UI/mapArtists";
+import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 
 interface Testimonial {
   _id: string;
@@ -59,13 +60,14 @@ export function mapCMS(
   services: IService[],
   testimonials: Testimonial[],
   tenantSlug?: string,
+  tenantStats?: TenantStats,
 ) {
   const ls = salon.landingStructure;
 
   return {
     header: mapHeader(salon, tenantSlug),
     hero: mapHero(ls, salon, tenantSlug),
-    about: mapAbout(ls),
+    about: mapAbout(ls, tenantStats),
     artists: mapArtists(ls),
     services: mapServices(ls, services),
     workingHours: mapWorkingHours(salon),

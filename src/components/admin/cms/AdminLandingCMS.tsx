@@ -1428,6 +1428,26 @@ export function AdminLandingCMS({ sp }: Props) {
             />
           </div>
         </div>
+
+        <div>
+          <label className={lbl}>Godina iskustva</label>
+          <input
+            className={inp}
+            type="number"
+            min={0}
+            value={about.yearsOfExperience ?? ""}
+            onChange={(e) =>
+              updateLandingSection("about", {
+                ...about,
+                yearsOfExperience: e.target.value ? Number(e.target.value) : undefined,
+              })
+            }
+            placeholder="npr. 5"
+          />
+          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+            Prikazuje se kao statistika (npr. 5+). Ostavi prazno da se ne prikazuje.
+          </p>
+        </div>
       </SectionCard>
 
       {/* ── ARTISTS ──────────────────────────────────────────────────────── */}

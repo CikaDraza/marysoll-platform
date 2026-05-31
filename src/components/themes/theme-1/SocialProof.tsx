@@ -1,14 +1,23 @@
-const stats = [
-  {
-    id: 1,
-    name: "Zadovoljnih klijentkinja svaka 24 sata",
-    value: "16 klijenata",
-  },
-  { id: 2, name: "Urađenih makeup lookova", value: "116 triliona" },
-  { id: 3, name: "Novih klijenata godisnje", value: "46" },
-];
+import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
+import { formatStatValue } from "@/lib/tenant/tenantStatsUtils";
 
-export function Theme1SocialProof() {
+interface Props {
+  tenantStats?: TenantStats;
+  yearsOfExperience?: number;
+}
+
+export function Theme1SocialProof({ tenantStats, yearsOfExperience }: Props) {
+  const stats = tenantStats
+    ? [
+        { id: 1, name: "Zadovoljnih klijenata", value: formatStatValue(tenantStats.clientCount) },
+        { id: 2, name: "Urađenih tretmana", value: formatStatValue(tenantStats.appointmentCount) },
+        ...(yearsOfExperience ? [{ id: 3, name: "Godina iskustva", value: `${yearsOfExperience}+` }] : []),
+      ]
+    : [
+        { id: 1, name: "Zadovoljnih klijenata", value: "120+" },
+        { id: 2, name: "Urađenih tretmana", value: "800+" },
+      ];
+
   return (
     <div className="relative py-24 sm:py-32">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(45rem_50rem_at_top,var(--color-indigo-100),white)] opacity-20" />

@@ -868,6 +868,9 @@ export interface LandingStructure {
 
       /** Optional about-section image. Layout falls back gracefully when absent. */
       image?: HeroImage;
+
+      /** Manually entered years of experience shown in stats. */
+      yearsOfExperience?: number;
     };
     artists: {
       enabled: boolean;
