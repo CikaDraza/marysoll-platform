@@ -271,6 +271,10 @@ export function ThemeLayout({
                 headline: ls?.landing?.about?.headline,
                 paragraphs: ls?.landing?.about?.paragraphs ?? [],
                 links: ls?.landing?.about?.links ?? [],
+                image: {
+                  src: ls?.landing?.about?.image?.src ?? "",
+                  alt: ls?.landing?.about?.image?.alt ?? "",
+                },
               }}
             />
           )}
@@ -380,10 +384,21 @@ export function ThemeLayout({
             stats={
               tenantStats
                 ? [
-                    { value: formatStatValue(tenantStats.clientCount), label: "Zadovoljnih klijenata" },
-                    { value: formatStatValue(tenantStats.appointmentCount), label: "Urađenih tretmana" },
+                    {
+                      value: formatStatValue(tenantStats.clientCount),
+                      label: "Zadovoljnih klijenata",
+                    },
+                    {
+                      value: formatStatValue(tenantStats.appointmentCount),
+                      label: "Urađenih tretmana",
+                    },
                     ...(ls?.landing?.about?.yearsOfExperience
-                      ? [{ value: `${ls.landing.about.yearsOfExperience}+`, label: "Godina iskustva" }]
+                      ? [
+                          {
+                            value: `${ls.landing.about.yearsOfExperience}+`,
+                            label: "Godina iskustva",
+                          },
+                        ]
                       : []),
                   ]
                 : undefined
@@ -480,10 +495,21 @@ export function ThemeLayout({
                 image: ls?.landing?.about?.image,
                 stats: tenantStats
                   ? [
-                      { value: formatStatValue(tenantStats.clientCount), label: "Zadovoljnih klijenata" },
-                      { value: formatStatValue(tenantStats.appointmentCount), label: "Urađenih tretmana" },
+                      {
+                        value: formatStatValue(tenantStats.clientCount),
+                        label: "Zadovoljnih klijenata",
+                      },
+                      {
+                        value: formatStatValue(tenantStats.appointmentCount),
+                        label: "Urađenih tretmana",
+                      },
                       ...(ls?.landing?.about?.yearsOfExperience
-                        ? [{ value: `${ls.landing.about.yearsOfExperience}+`, label: "Godina iskustva" }]
+                        ? [
+                            {
+                              value: `${ls.landing.about.yearsOfExperience}+`,
+                              label: "Godina iskustva",
+                            },
+                          ]
                         : []),
                     ]
                   : undefined,
@@ -619,10 +645,21 @@ export function ThemeLayout({
               stats={
                 tenantStats
                   ? [
-                      { value: formatStatValue(tenantStats.clientCount), label: "Zadovoljnih klijenata" },
-                      { value: formatStatValue(tenantStats.appointmentCount), label: "Urađenih tretmana" },
+                      {
+                        value: formatStatValue(tenantStats.clientCount),
+                        label: "Zadovoljnih klijenata",
+                      },
+                      {
+                        value: formatStatValue(tenantStats.appointmentCount),
+                        label: "Urađenih tretmana",
+                      },
                       ...(ls?.landing?.about?.yearsOfExperience
-                        ? [{ value: `${ls.landing.about.yearsOfExperience}+`, label: "Godina iskustva" }]
+                        ? [
+                            {
+                              value: `${ls.landing.about.yearsOfExperience}+`,
+                              label: "Godina iskustva",
+                            },
+                          ]
                         : []),
                     ]
                   : ls?.landing?.stats || [
@@ -731,9 +768,16 @@ export function ThemeLayout({
           {/* 1. HERO */}
           <Theme5Hero data={ui.hero} tenantSlug={tenantSlug} />
           {/* 2. SERVICES */}
-          <Theme5Services data={ui.services} services={ui.services.services} tenantSlug={tenantSlug} />
+          <Theme5Services
+            data={ui.services}
+            services={ui.services.services}
+            tenantSlug={tenantSlug}
+          />
           {/* 3. WORKING HOURS */}
-          <Theme5WorkingHours workingHours={ui.workingHours.workingHours} tenantSlug={tenantSlug} />
+          <Theme5WorkingHours
+            workingHours={ui.workingHours.workingHours}
+            tenantSlug={tenantSlug}
+          />
           {/* 4. HOW IT WORKS */}
           <Theme5HowItWorks
             data={
@@ -746,11 +790,18 @@ export function ThemeLayout({
           {/* 6. CTA */}
           <Theme5CTA data={ui.cta} />
           {/* 7. ARTISTS */}
-          {artistsEnabled && <Theme5Artists data={ui?.artists} tenantSlug={tenantSlug} />}
+          {artistsEnabled && (
+            <Theme5Artists data={ui?.artists} tenantSlug={tenantSlug} />
+          )}
           {/* 8. STATS */}
           <Theme5About data={ui.about} tenantSlug={tenantSlug} />
           {/* 9. TESTIMONIALS */}
-          {testimonialsEnabled && <Theme5Testimonials data={ui.testimonials} tenantSlug={tenantSlug} />}
+          {testimonialsEnabled && (
+            <Theme5Testimonials
+              data={ui.testimonials}
+              tenantSlug={tenantSlug}
+            />
+          )}
           {/* 10. GALLERY */}
           <Theme5Gallery data={ui.gallery} tenantSlug={tenantSlug} />
         </main>
@@ -812,10 +863,21 @@ export function ThemeLayout({
               stats={
                 tenantStats
                   ? [
-                      { value: formatStatValue(tenantStats.clientCount), label: "Zadovoljnih klijenata" },
-                      { value: formatStatValue(tenantStats.appointmentCount), label: "Urađenih tretmana" },
+                      {
+                        value: formatStatValue(tenantStats.clientCount),
+                        label: "Zadovoljnih klijenata",
+                      },
+                      {
+                        value: formatStatValue(tenantStats.appointmentCount),
+                        label: "Urađenih tretmana",
+                      },
                       ...(ls?.landing?.about?.yearsOfExperience
-                        ? [{ value: `${ls.landing.about.yearsOfExperience}+`, label: "Godina iskustva" }]
+                        ? [
+                            {
+                              value: `${ls.landing.about.yearsOfExperience}+`,
+                              label: "Godina iskustva",
+                            },
+                          ]
                         : []),
                     ]
                   : undefined

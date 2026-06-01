@@ -42,7 +42,10 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
   if (featured.length === 0) return null;
 
   return (
-    <section id="prices" className="relative isolate max-w-7xl mx-auto px-3 lg:px-0 py-12 lg:py-24">
+    <section
+      id="prices"
+      className="relative isolate max-w-7xl mx-auto px-3 lg:px-0 py-12 lg:py-24"
+    >
       <div
         aria-hidden="true"
         className="absolute inset-x-0 -top-3 -z-10 transform-gpu overflow-hidden px-36 blur-3xl"
@@ -61,7 +64,7 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
       <p className="text-center text-sm text-(--primary-color)">
         Transparentne cene za vrhunsku uslugu.
       </p>
-      <div className="mx-auto my-8 lg:my-24 grid max-w-7xl gap-y-6 grid-cols-1 lg:grid-cols-3">
+      <div className="mx-auto my-8 lg:my-24 grid lg:min-w-7xl gap-y-6 grid-cols-1 lg:grid-cols-3">
         {featured.map((srv, idx) => {
           const dark = srv.featured === "main";
           return (
@@ -181,7 +184,10 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
                                   <>
                                     <hr className="flex-1 border-dashed border-gray-300" />
                                     <span className="font-semibold">
-                                      {formatServicePrice(sv.price, sv.priceMode)}
+                                      {formatServicePrice(
+                                        sv.price,
+                                        sv.priceMode,
+                                      )}
                                     </span>
                                   </>
                                 )}
