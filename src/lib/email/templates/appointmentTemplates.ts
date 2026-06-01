@@ -8,6 +8,36 @@ import "server-only";
 
 import { wrapEmailLayout } from "@/lib/email/wrapEmailLayout";
 import { translateAdminNote } from "@/lib/email/helpers";
+import { connectToDB } from "@/lib/db/mongodb";
+import { Tenant } from "@/models/Tenant";
+import { Types } from "mongoose";
+
+// ── Tenant client panel URL resolution ────────────────────────────────────────
+/**
+ * Resolves the URL where a registered client can view their appointments on
+ * the tenant's own platform. Falls back to the platform URL when unavailable.
+ */
+async function resolveClientPanelUrl(
+  tenantId: string | null | undefined,
+  tab = "Moji+Termini",
+): Promise<string> {
+  const base = appUrl();
+  const fallback = `${base}/dashboard?tab=${tab}`;
+  if (!tenantId) return fallback;
+  try {
+    await connectToDB();
+    const tenant = (await Tenant.findById(new Types.ObjectId(tenantId))
+      .select("subdomain slug")
+      .lean()) as { subdomain?: string; slug?: string } | null;
+    const subdomain = tenant?.subdomain || tenant?.slug;
+    if (!subdomain) return fallback;
+    // Tenant-specific client panel, e.g. https://beauty-salon.marysoll.com/moji-termini
+    const platformHost = new URL(base).host.replace(/^www\./, "");
+    return `https://${subdomain}.${platformHost}/moji-termini`;
+  } catch {
+    return fallback;
+  }
+}
 
 // ── Shared: appointment detail table ──────────────────────────────────────────
 function appointmentDetailTable(data: {
@@ -148,7 +178,7 @@ export async function appointmentCreatedTemplate(data: {
       </tr>
     </table>
     ${appointmentDetailTable(data)}
-    ${ctaButton("Pogledaj termin", `${appUrl()}/dashboard?tab=Moji+Termini`)}
+    ${ctaButton("Pogledaj termin", await resolveClientPanelUrl(data.tenantId))}
     <p style="margin:8px 0 0 0;font-size:13px;color:#9089b0;">Obaveštićemo vas čim termin bude potvrđen. ✦</p>
   `;
   return wrapEmailLayout({
@@ -280,7 +310,8 @@ export async function appointmentApprovedTemplate(data: {
       </tr>
     </table>
     ${appointmentDetailTable(data)}
-    <p style="margin:0;">Ako imate pitanja, slobodno nas kontaktirajte. ✦</p>
+    ${ctaButton("Pogledaj termin", await resolveClientPanelUrl(data.tenantId))}
+    <p style="margin:8px 0 0 0;">Ako imate pitanja, slobodno nas kontaktirajte. ✦</p>
   `;
   return wrapEmailLayout({
     title: "Termin potvrđen ✓",

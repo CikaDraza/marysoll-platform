@@ -9,6 +9,8 @@ import {
   Transition,
   TransitionChild,
 } from "@headlessui/react";
+import { useAuth } from "@/hooks/useAuth";
+import LoggedButton from "@/components/auth/LoggedButton";
 
 interface Props {
   data: {
@@ -29,15 +31,23 @@ interface Props {
   };
   primaryColor?: string;
   secondaryColor?: string;
+  tenantSlug?: string;
+  clientSlug?: string;
 }
 
 export function Theme5Header({
   data,
   primaryColor = "#a855f7",
   secondaryColor = "#ec4899",
+  tenantSlug,
+  clientSlug,
 }: Props) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const hasValidLogo = !!data?.logo && data.logo.startsWith("http");
+  const { user, isLoggedIn } = useAuth();
+  const navigation = (data?.navigation ?? []).filter(
+    (l) => !isLoggedIn || !l.href.includes("/login"),
+  );
 
   return (
     <header className="bg-black fixed inset-x-0 top-0 z-50">
@@ -56,8 +66,8 @@ export function Theme5Header({
           )}
         </div>
 
-        <nav className="hidden md:flex gap-6 text-sm uppercase">
-          {data?.navigation?.map((l) => (
+        <nav className="hidden md:flex gap-6 text-sm uppercase items-center">
+          {navigation.map((l) => (
             <Link
               key={l.href}
               href={l.href}
@@ -66,6 +76,16 @@ export function Theme5Header({
               {l.label}
             </Link>
           ))}
+          {!isLoggedIn ? (
+            <Link
+              href={data.cta.href}
+              className="bg-yellow-500 text-black px-5 py-2 text-sm font-black hover:bg-white transition"
+            >
+              {data.cta.label}
+            </Link>
+          ) : (
+            <LoggedButton user={user!} tenantSlug={clientSlug ?? tenantSlug} />
+          )}
         </nav>
 
         {/* Mobile hamburger */}
@@ -137,7 +157,7 @@ export function Theme5Header({
               </button>
             </div>
             <div className="space-y-4">
-              {data?.navigation?.map((item) => (
+              {navigation.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -147,14 +167,21 @@ export function Theme5Header({
                   {item.label}
                 </Link>
               ))}
-              {data?.cta && (
-                <Link
-                  href={data.cta.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block text-center py-3 bg-(--primary-color) text-white font-semibold rounded-xl text-sm"
-                >
-                  {data.cta.label}
-                </Link>
+              {!isLoggedIn ? (
+                data?.cta && (
+                  <Link
+                    href={data.cta.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block text-center py-3 bg-(--primary-color) text-white font-semibold rounded-xl text-sm"
+                  >
+                    {data.cta.label}
+                  </Link>
+                )
+              ) : (
+                <LoggedButton
+                  user={user!}
+                  tenantSlug={clientSlug ?? tenantSlug}
+                />
               )}
             </div>
           </DialogPanel>

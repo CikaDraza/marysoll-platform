@@ -5,6 +5,7 @@ export { Theme5WorkingHours } from "./WorkingHours";
 export { Theme5CTA } from "./CTA";
 // export { Theme5Blog } from "./Blog";
 export { Theme5HowItWorks } from "./HowItWorks";
+export { Theme5AppointmentSection } from "./AppointmentSection";
 export { Theme5About } from "./About";
 export { Theme5Pricing } from "./Pricing";
 export { Theme5Artists } from "./Artists";

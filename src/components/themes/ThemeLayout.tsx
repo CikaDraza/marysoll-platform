@@ -85,6 +85,7 @@ import {
   Theme5Gallery,
   Theme5Header,
   Theme5Hero,
+  Theme5AppointmentSection,
   Theme5HowItWorks,
   Theme5Pricing,
   Theme5Services,
@@ -763,6 +764,8 @@ export function ThemeLayout({
           data={ui.header}
           primaryColor={primaryColor}
           secondaryColor={secondaryColor}
+          tenantSlug={tenantSlug}
+          clientSlug={clientSlug ?? tenantSlug}
         />
         <main className="flex-1 flex flex-col overflow-x-hidden">
           {/* 1. HERO */}
@@ -785,7 +788,14 @@ export function ThemeLayout({
             }
             tenantSlug={tenantSlug}
           />
-          {/* 5. PRICING */}
+          {/* 5. APPOINTMENT */}
+          <Theme5AppointmentSection
+            tenantSlug={tenantSlug}
+            clientSlug={clientSlug ?? tenantSlug}
+            salon={salon}
+            services={services}
+          />
+          {/* 6. PRICING */}
           <Theme5Pricing services={services} tenantSlug={tenantSlug} />
           {/* 6. CTA */}
           <Theme5CTA data={ui.cta} />

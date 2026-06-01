@@ -11,7 +11,7 @@ interface Props {
   tenantSlug?: string;
 }
 
-export function Theme5HowItWorks({ data, tenantSlug: _tenantSlug }: Props) {
+export function Theme5HowItWorks({ data }: Props) {
   return (
     <section className="py-16 bg-[#f0f0f0] text-center">
       <span className="text-xs text-gray-500">Uživajte u našim ulugama</span>

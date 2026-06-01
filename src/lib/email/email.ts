@@ -113,23 +113,36 @@ async function resolveSalonEmailIdentity(
         useTenantClient: true,
       };
     }
-    if (purpose === "notification" && profile?.contactEmail) {
-      return {
-        from: `"${name}" <${profile.contactEmail}>`,
-        replyTo,
-        useTenantClient: true,
-      };
-    }
-    if (purpose === "system") {
+    if (purpose === "notification" || purpose === "system") {
       const tenant = (await Tenant.findById(tenantId)
         .select("customDomain customDomainVerified")
         .lean()) as {
         customDomain?: string;
         customDomainVerified?: boolean;
       } | null;
-      if (tenant?.customDomain && tenant.customDomainVerified) {
+      const verifiedDomain =
+        tenant?.customDomain && tenant.customDomainVerified
+          ? tenant.customDomain.toLowerCase()
+          : null;
+
+      if (purpose === "notification" && profile?.contactEmail) {
+        const contactDomain =
+          profile.contactEmail.split("@")[1]?.toLowerCase() ?? "";
+        // Only use tenant Resend client if contactEmail is on the verified custom domain
+        if (verifiedDomain && contactDomain === verifiedDomain) {
+          return {
+            from: `"${name}" <${profile.contactEmail}>`,
+            replyTo,
+            useTenantClient: true,
+          };
+        }
+        // No verified domain match — fall back to platform client with replyTo
+        return { replyTo, useTenantClient: false };
+      }
+
+      if (purpose === "system" && verifiedDomain) {
         return {
-          from: `"${name}" <noreply@${tenant.customDomain}>`,
+          from: `"${name}" <noreply@${verifiedDomain}>`,
           replyTo,
           useTenantClient: true,
         };
