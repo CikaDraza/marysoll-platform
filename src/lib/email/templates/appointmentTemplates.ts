@@ -31,9 +31,9 @@ async function resolveClientPanelUrl(
       .lean()) as { subdomain?: string; slug?: string } | null;
     const subdomain = tenant?.subdomain || tenant?.slug;
     if (!subdomain) return fallback;
-    // Tenant-specific client panel, e.g. https://beauty-salon.marysoll.com/moji-termini
+    // Tenant-specific client panel, e.g. https://beauty-salon.marysoll.com/termini
     const platformHost = new URL(base).host.replace(/^www\./, "");
-    return `https://${subdomain}.${platformHost}/moji-termini`;
+    return `https://${subdomain}.${platformHost}/termini`;
   } catch {
     return fallback;
   }
@@ -66,11 +66,13 @@ function appointmentDetailTable(data: {
         ? data.clientPhone
         : data.preferredContact === "email" && data.clientEmail
           ? data.clientEmail
-        : data.clientInstagram
-          ? `@${data.clientInstagram.replace(/^@+/, "")}`
-          : data.clientPhone || data.clientEmail || "";
+          : data.clientInstagram
+            ? `@${data.clientInstagram.replace(/^@+/, "")}`
+            : data.clientPhone || data.clientEmail || "";
   const contactText = [
-    contactValue ? `Kontakt za ovaj termin: ${contactLabel} ${contactValue}` : "",
+    contactValue
+      ? `Kontakt za ovaj termin: ${contactLabel} ${contactValue}`
+      : "",
     data.contactNote ? `Napomena za kontakt: ${data.contactNote}` : "",
   ]
     .filter(Boolean)
