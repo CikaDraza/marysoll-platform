@@ -30,7 +30,7 @@ export function Theme5Hero({ data, tenantSlug }: Props) {
             <p className="mt-4 text-lg opacity-80">{data?.subheadline}</p>
 
             <Link
-              href={`${base}/${data?.cta?.href || `${base}/termini`}`}
+              href={`${base}/${(data?.cta?.href || "termini").replace(/^\//, "")}`}
               className="inline-block mt-6 bg-yellow-500 text-black px-8 py-4 text-md font-black hover:bg-white hover:text-black transition"
             >
               {data?.cta?.text}

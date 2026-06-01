@@ -13,7 +13,7 @@ export function mapHero(ls: LandingStructure | undefined, profile: SalonProfileD
 
     cta: {
       text: hero.ctas?.primary?.text ?? "Book now",
-      href: hero.ctas?.primary?.href ?? `${p}/termini`,
+      href: hero.ctas?.primary?.href ?? "termini",
     },
 
     contact: {

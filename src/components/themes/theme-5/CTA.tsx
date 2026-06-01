@@ -25,7 +25,7 @@ export function Theme5CTA({ data }: { data: CTAData }) {
         <h2 className="text-3xl">{data?.headline}</h2>
 
         <Link
-          href={`${base}/${data?.cta?.href ?? `${base}/termini`}`}
+          href={`${base}/${(data?.cta?.href ?? "termini").replace(/^\//, "")}`}
           className="mt-6 inline-block border px-6 py-3"
         >
           {data?.cta?.label}

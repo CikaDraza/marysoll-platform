@@ -14,7 +14,7 @@ export function mapCTA(ls: LandingStructure | undefined, tenantSlug?: string) {
 
     cta: {
       label: cta?.primary?.text ?? "Book Now",
-      href: cta?.primary?.href ?? `${p}/termini`,
+      href: cta?.primary?.href ?? "termini",
     },
     tenantSlug: p,
   };
