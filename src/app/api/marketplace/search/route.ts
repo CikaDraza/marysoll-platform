@@ -209,6 +209,7 @@ export async function GET(req: NextRequest) {
 
   const salonFilter: Record<string, unknown> = {
     isDemo: { $ne: true },
+    marketplaceEnabled: true,
   };
 
   if (tenantIds.length > 0) salonFilter.tenantId = { $in: tenantIds };
@@ -273,6 +274,7 @@ export async function GET(req: NextRequest) {
       const anyCitySalons = await SalonProfile.find({
         tenantId: { $in: tenantIds },
         isDemo: { $ne: true },
+        marketplaceEnabled: true,
       })
         .select("_id tenantId name city lat lng logo slug phone")
         .lean() as unknown as SalonDoc[];
@@ -291,6 +293,7 @@ export async function GET(req: NextRequest) {
       const cityOnlySalons = await SalonProfile.find({
         city: { $regex: new RegExp(rawCity.replace(/-/g, " "), "i") },
         isDemo: { $ne: true },
+        marketplaceEnabled: true,
       })
         .select("_id tenantId name city lat lng logo slug phone")
         .limit(20)

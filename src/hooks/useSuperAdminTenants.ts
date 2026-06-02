@@ -30,6 +30,7 @@ export interface TenantRow {
   lemonsqueezyCustomerId: string | null;
   lemonsqueezySubscriptionId: string | null;
   overrideNote: string | null;
+  isDemo: boolean;
   owner: {
     _id: string;
     name: string;
@@ -148,6 +149,36 @@ export function useSuperAdminTenants() {
     },
     onSuccess: (data) => {
       toast.success(data.message ?? "Status ažuriran");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // ── Demo mutation ─────────────────────────────────────────────────────────────
+  const demoMutation = useMutation({
+    mutationFn: async ({
+      tenantId,
+      isDemo,
+    }: {
+      tenantId: string;
+      isDemo: boolean;
+    }) => {
+      const res = await fetch(`/api/superadmin/tenants/${tenantId}/demo`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ isDemo }),
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e.error ?? "Greška");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast.success(data.message ?? "Demo status ažuriran");
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -324,6 +355,9 @@ export function useSuperAdminTenants() {
       status: "active" | "suspended" | "pending" | "cancelled",
     ) => statusMutation.mutate({ tenantId, status }),
     isUpdatingStatus: statusMutation.isPending,
+    setDemo: (tenantId: string, isDemo: boolean) =>
+      demoMutation.mutate({ tenantId, isDemo }),
+    isUpdatingDemo: demoMutation.isPending,
 
     // Plan
     setPlan: (

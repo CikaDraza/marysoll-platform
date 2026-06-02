@@ -217,6 +217,15 @@ const SalonProfileSchema = new mongoose.Schema(
     street: { type: String, required: false, default: "" },
     lat: { type: Number, required: false, default: null },
     lng: { type: Number, required: false, default: null },
+
+    // ── Marketplace visibility (booking.marysoll.com) ─────────────────────────
+    // New salons are hidden from the marketplace until a superadmin approves
+    // them. Existing salons are backfilled to `true` via the backfill endpoint.
+    marketplaceEnabled: { type: Boolean, default: false, index: true },
+    marketplaceApprovedAt: { type: Date, default: null },
+    /** Superadmin-tuned popularity weight for this salon's city (0–10).
+     *  Aggregated (max per city) into GET /api/marketplace/cities. */
+    cityPopularityScore: { type: Number, default: 0, min: 0, max: 10 },
     social: {
       instagram: { type: String, default: "" },
       facebook: { type: String, default: "" },

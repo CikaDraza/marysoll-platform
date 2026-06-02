@@ -1,7 +1,8 @@
 "use client";
 
-import { MapPinIcon } from "@heroicons/react/24/outline";
+import { MapPinIcon, GlobeAltIcon } from "@heroicons/react/24/outline";
 import { useSuperAdminSalonGeoLocation } from "@/hooks/useSuperAdminSalonGeoLocation";
+import { useSuperAdminSalonMarketplace } from "@/hooks/useSuperAdminSalonMarketplace";
 
 type Props = {
   tenantId: string;
@@ -100,6 +101,72 @@ export function SuperAdminSalonGeoLocationPanel({ tenantId }: Props) {
           className="rounded-lg bg-violet-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-violet-500 disabled:opacity-40"
         >
           {geo.isSaving ? "Čuvam..." : "Sačuvaj geo lokaciju"}
+        </button>
+      </div>
+
+      <MarketplaceControls tenantId={tenantId} />
+    </div>
+  );
+}
+
+function MarketplaceControls({ tenantId }: { tenantId: string }) {
+  const mk = useSuperAdminSalonMarketplace(tenantId);
+
+  return (
+    <div className="border-t border-slate-700 pt-4 space-y-4">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-950/60 text-emerald-300">
+          <GlobeAltIcon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+            Marketplace (booking.marysoll.com)
+          </p>
+          <p className="mt-1 text-sm text-slate-300">
+            {mk.marketplaceEnabled
+              ? "Salon je vidljiv u marketplace-u."
+              : "Salon NIJE vidljiv u marketplace-u."}
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={mk.marketplaceEnabled}
+          onClick={mk.toggleEnabled}
+          disabled={mk.isSaving || mk.isLoading}
+          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:opacity-40 ${
+            mk.marketplaceEnabled ? "bg-emerald-600" : "bg-slate-600"
+          }`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+              mk.marketplaceEnabled ? "translate-x-6" : "translate-x-1"
+            }`}
+          />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+        <div>
+          <label className={labelClass}>Popularnost grada (0–10)</label>
+          <input
+            className={inputClass}
+            inputMode="numeric"
+            value={mk.scoreInput}
+            onChange={(e) => mk.setScoreInput(e.target.value)}
+            placeholder="0"
+          />
+          <p className="mt-1 text-[10px] text-slate-500">
+            Veća vrednost gura grad više u listama i pretrazi.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={mk.saveScore}
+          disabled={mk.isSaving || mk.isLoading}
+          className="rounded-lg bg-violet-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-violet-500 disabled:opacity-40"
+        >
+          {mk.isSaving ? "Čuvam..." : "Sačuvaj popularnost"}
         </button>
       </div>
     </div>

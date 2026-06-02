@@ -26,7 +26,10 @@ export async function GET(req: NextRequest) {
 
     await connectToDB();
 
-    const query: Record<string, unknown> = { isDemo: { $ne: true } };
+    const query: Record<string, unknown> = {
+      isDemo: { $ne: true },
+      marketplaceEnabled: true,
+    };
     if (city) query.city = { $regex: new RegExp(city, "i") };
 
     const raw = await SalonProfile.find(query)

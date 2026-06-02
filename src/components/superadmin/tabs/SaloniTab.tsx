@@ -15,6 +15,7 @@ import {
 } from "@/components/superadmin/shared";
 import type { TenantRow } from "@/hooks/useSuperAdminTenants";
 import type { useSuperAdminTenants } from "@/hooks/useSuperAdminTenants";
+import { useSuperAdminMarketplaceBulk } from "@/hooks/useSuperAdminMarketplaceBulk";
 
 interface SalonIdentityPanelProps {
   tenant: TenantRow;
@@ -133,6 +134,7 @@ export function SaloniTab({
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [deleteTarget, setDeleteTarget] = useState<TenantRow | null>(null);
+  const [demoTarget, setDemoTarget] = useState<TenantRow | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
@@ -152,6 +154,12 @@ export function SaloniTab({
   const toggleExpand = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
   };
+
+  const bulk = useSuperAdminMarketplaceBulk();
+  const filteredTenantIds = useMemo(
+    () => filtered.map((t) => t._id),
+    [filtered],
+  );
 
   return (
     <div className="space-y-4">
@@ -175,6 +183,39 @@ export function SaloniTab({
             <option value="suspended">Suspendovani</option>
             <option value="cancelled">Otkazani</option>
           </select>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-700 bg-slate-900/40 p-3">
+        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
+          Marketplace ({filtered.length} prikazano)
+        </span>
+        <div className="ml-auto flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => bulk.enable(filteredTenantIds)}
+            disabled={bulk.isPending || filteredTenantIds.length === 0}
+            className="rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-600 disabled:opacity-40"
+          >
+            Omogući prikazane
+          </button>
+          <button
+            type="button"
+            onClick={() => bulk.disable(filteredTenantIds)}
+            disabled={bulk.isPending || filteredTenantIds.length === 0}
+            className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-bold text-slate-300 transition hover:border-red-600 hover:text-red-400 disabled:opacity-40"
+          >
+            Onemogući prikazane
+          </button>
+          <button
+            type="button"
+            onClick={() => bulk.backfill()}
+            disabled={bulk.isPending}
+            title="Jednokratno: omogući sve postojeće salone koji još nemaju marketplace podešavanje."
+            className="rounded-lg bg-violet-700 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-violet-600 disabled:opacity-40"
+          >
+            Backfill postojeće
+          </button>
         </div>
       </div>
 
@@ -211,6 +252,11 @@ export function SaloniTab({
                     </span>
                     <StatusBadge status={tenant.status} />
                     <PlanBadge plan={tenant.plan} />
+                    {tenant.isDemo && (
+                      <span className="text-[10px] bg-amber-900/60 text-amber-300 border border-amber-600 px-2 py-0.5 rounded-full font-bold">
+                        DEMO
+                      </span>
+                    )}
                     {tenant.isTrialActive && (
                       <span className="text-[10px] bg-amber-900/60 text-amber-400 border border-amber-700 px-2 py-0.5 rounded-full font-bold">
                         TRIAL {tenant.trialDaysLeft}d
@@ -236,6 +282,25 @@ export function SaloniTab({
                   className="flex gap-2 flex-shrink-0"
                   onClick={(e) => e.stopPropagation()}
                 >
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-slate-400">
+                      salon je:
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDemoTarget(tenant);
+                      }}
+                      disabled={superAdmin.isUpdatingDemo}
+                      className={
+                        tenant.isDemo
+                          ? "px-4 py-2 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-500 transition disabled:opacity-40"
+                          : "px-4 py-2 bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-[0_0_10px_rgba(16,185,129,0.5)] hover:bg-emerald-400 transition disabled:opacity-40"
+                      }
+                    >
+                      {tenant.isDemo ? "Demo ✓" : "Live ✓"}
+                    </button>
+                  </div>
                   {tenant.status !== "active" && (
                     <button
                       onClick={() => superAdmin.setStatus(tenant._id, "active")}
@@ -324,6 +389,25 @@ export function SaloniTab({
           if (deleteTarget) {
             superAdmin.deleteTenant(deleteTarget._id);
             setDeleteTarget(null);
+          }
+        }}
+      />
+
+      <AlertModal
+        open={!!demoTarget}
+        setOpen={(value) => {
+          if (!value) setDemoTarget(null);
+        }}
+        title={demoTarget?.isDemo ? "Označi kao live" : "Označi kao demo"}
+        message={
+          demoTarget?.isDemo
+            ? `Označiti salon "${demoTarget?.name}" kao live? Live saloni su vidljivi u marketplace-u (booking.marysoll.com).`
+            : `Označiti salon "${demoTarget?.name}" kao demo? Demo saloni su sakriveni iz marketplace-a (booking.marysoll.com).`
+        }
+        onConfirm={() => {
+          if (demoTarget) {
+            superAdmin.setDemo(demoTarget._id, !demoTarget.isDemo);
+            setDemoTarget(null);
           }
         }}
       />

@@ -29,7 +29,10 @@ export async function GET(req: NextRequest) {
 
     const now = new Date();
 
-    const matchStage: Record<string, unknown> = { isDemo: { $ne: true } };
+    const matchStage: Record<string, unknown> = {
+      isDemo: { $ne: true },
+      marketplaceEnabled: true,
+    };
     if (city) matchStage.city = { $regex: new RegExp(city, "i") };
 
     const results = await SalonProfile.aggregate([
