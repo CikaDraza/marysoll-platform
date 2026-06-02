@@ -28,6 +28,7 @@ import { CATEGORY_MAP } from "@/lib/categoryService";
 import { verifySignature } from "@/lib/middleware/verifySignature";
 import { checkRateLimit } from "@/lib/middleware/rateLimiter";
 import { getDistanceKm } from "@/lib/utils/distance";
+import { buildCityRegex } from "@/lib/utils/cityMatch";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -75,7 +76,11 @@ function resolveCategory(raw: string): {
   // Direct slug match
   const direct = CATEGORY_MAP[raw.toLowerCase()];
   if (direct) {
-    return { slug: raw.toLowerCase(), label: direct.label, synonyms: direct.synonyms };
+    return {
+      slug: raw.toLowerCase(),
+      label: direct.label,
+      synonyms: direct.synonyms,
+    };
   }
 
   // Canonical label match (e.g., "Masaža" → massage)
@@ -86,10 +91,22 @@ function resolveCategory(raw: string): {
   }
 
   // Synonym fuzzy match
-  const normRaw = raw.toLowerCase().replace(/š/g, "s").replace(/ž/g, "z").replace(/č/g, "c").replace(/ć/g, "c").replace(/đ/g, "dj");
+  const normRaw = raw
+    .toLowerCase()
+    .replace(/š/g, "s")
+    .replace(/ž/g, "z")
+    .replace(/č/g, "c")
+    .replace(/ć/g, "c")
+    .replace(/đ/g, "dj");
   for (const [slug, cat] of Object.entries(CATEGORY_MAP)) {
     const allTerms = [cat.label, ...cat.synonyms].map((s) =>
-      s.toLowerCase().replace(/š/g, "s").replace(/ž/g, "z").replace(/č/g, "c").replace(/ć/g, "c").replace(/đ/g, "dj"),
+      s
+        .toLowerCase()
+        .replace(/š/g, "s")
+        .replace(/ž/g, "z")
+        .replace(/č/g, "c")
+        .replace(/ć/g, "c")
+        .replace(/đ/g, "dj"),
     );
     if (allTerms.some((t) => t.includes(normRaw) || normRaw.includes(t))) {
       return { slug, label: cat.label, synonyms: cat.synonyms };
@@ -131,11 +148,14 @@ async function querySlots(
 ): Promise<SlotDoc[]> {
   const match: Record<string, unknown> = {
     salonId: { $in: salonIds },
-    status: "free",
+    status: "maria",
     startTime: { $gte: timeBounds.gte, $lt: timeBounds.lt },
   };
 
-  let slots = await Slot.find(match).sort({ startTime: 1 }).limit(limit).lean() as unknown as SlotDoc[];
+  let slots = (await Slot.find(match)
+    .sort({ startTime: 1 })
+    .limit(limit)
+    .lean()) as unknown as SlotDoc[];
 
   if (hourWindow) {
     const inWindow = slots.filter((s) => {
@@ -154,7 +174,10 @@ async function querySlots(
 export async function GET(req: NextRequest) {
   const verify = verifySignature(req, "");
   if (!verify.ok) {
-    return NextResponse.json({ error: verify.error }, { status: verify.status });
+    return NextResponse.json(
+      { error: verify.error },
+      { status: verify.status },
+    );
   }
 
   const apiKey = req.headers.get("x-api-key") ?? "dev";
@@ -163,13 +186,17 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = req.nextUrl;
-  const rawCategory  = searchParams.get("category") ?? "";
-  const rawCity      = searchParams.get("city") ?? "";
-  const rawDate      = searchParams.get("date") ?? todayLocalStr();
-  const rawTime      = searchParams.get("time") ?? "";
-  const lat          = searchParams.get("lat")   ? parseFloat(searchParams.get("lat")!)  : null;
-  const lng          = searchParams.get("lng")   ? parseFloat(searchParams.get("lng")!)  : null;
-  const limit        = Math.min(parseInt(searchParams.get("limit") ?? "20", 10), 50);
+  const rawCategory = searchParams.get("category") ?? "";
+  const rawCity = searchParams.get("city") ?? "";
+  const rawDate = searchParams.get("date") ?? todayLocalStr();
+  const rawTime = searchParams.get("time") ?? "";
+  const lat = searchParams.get("lat")
+    ? parseFloat(searchParams.get("lat")!)
+    : null;
+  const lng = searchParams.get("lng")
+    ? parseFloat(searchParams.get("lng")!)
+    : null;
+  const limit = Math.min(parseInt(searchParams.get("limit") ?? "20", 10), 50);
 
   await connectToDB();
 
@@ -177,7 +204,12 @@ export async function GET(req: NextRequest) {
 
   const cat = resolveCategory(rawCategory);
 
-  console.log("[search] category input:", rawCategory, "→", cat?.label ?? "none");
+  console.log(
+    "[search] category input:",
+    rawCategory,
+    "→",
+    cat?.label ?? "none",
+  );
 
   // ── 2. Find matching services (Mongo query, not JS filter) ────────────────
 
@@ -191,18 +223,26 @@ export async function GET(req: NextRequest) {
     );
     const categoryRegex = new RegExp(terms.join("|"), "i");
 
-    services = await Service.find({
-      $or: [
-        { category: categoryRegex },
-        { categorySlug: cat.slug },
-      ],
+    services = (await Service.find({
+      $or: [{ category: categoryRegex }, { categorySlug: cat.slug }],
     })
-      .select("_id tenantId name category categorySlug duration basePrice priceMode")
-      .lean() as unknown as ServiceDoc[];
+      .select(
+        "_id tenantId name category categorySlug duration basePrice priceMode",
+      )
+      .lean()) as unknown as ServiceDoc[];
 
-    tenantIds = [...new Map(services.map((s) => [String(s.tenantId), s.tenantId])).values()];
+    tenantIds = [
+      ...new Map(
+        services.map((s) => [String(s.tenantId), s.tenantId]),
+      ).values(),
+    ];
 
-    console.log("[search] matched services:", services.length, "→ tenantIds:", tenantIds.length);
+    console.log(
+      "[search] matched services:",
+      services.length,
+      "→ tenantIds:",
+      tenantIds.length,
+    );
   }
 
   // ── 3. Find salons (by tenantId + city) ───────────────────────────────────
@@ -213,18 +253,24 @@ export async function GET(req: NextRequest) {
   };
 
   if (tenantIds.length > 0) salonFilter.tenantId = { $in: tenantIds };
-  if (rawCity) salonFilter.city = { $regex: new RegExp(rawCity.replace(/-/g, " "), "i") };
+  if (rawCity) salonFilter.city = { $regex: buildCityRegex(rawCity) };
 
-  const salons = await SalonProfile.find(salonFilter)
+  const salons = (await SalonProfile.find(salonFilter)
     .select("_id tenantId name city lat lng logo slug phone")
-    .lean() as unknown as SalonDoc[];
+    .lean()) as unknown as SalonDoc[];
 
   const salonIds = salons.map((s) => s._id);
 
-  console.log("[search] matched salons:", salons.length, "(city:", rawCity || "any", ")");
+  console.log(
+    "[search] matched salons:",
+    salons.length,
+    "(city:",
+    rawCity || "any",
+    ")",
+  );
 
   // Maps for quick lookup
-  const salonById  = new Map(salons.map((s) => [String(s._id), s]));
+  const salonById = new Map(salons.map((s) => [String(s._id), s]));
   const servicesByTenantId = new Map<string, ServiceDoc>();
   for (const svc of services) {
     const tid = String(svc.tenantId);
@@ -253,61 +299,107 @@ export async function GET(req: NextRequest) {
     const { gte, lt } = dayBounds(rawDate);
     const l1Gte = gte < now ? now : gte;
 
-    slots = await querySlots(salonIds, { gte: l1Gte, lt }, hourWindow, limit * 3);
-    if (slots.length > 0) { fallbackLevel = 1; fallbackLabel = "exact-date-time"; }
+    slots = await querySlots(
+      salonIds,
+      { gte: l1Gte, lt },
+      hourWindow,
+      limit * 3,
+    );
+    if (slots.length > 0) {
+      fallbackLevel = 1;
+      fallbackLabel = "exact-date-time";
+    }
 
     // Level 2: requested date, any time
     if (slots.length === 0) {
-      slots = await querySlots(salonIds, { gte: l1Gte, lt }, undefined, limit * 3);
-      if (slots.length > 0) { fallbackLevel = 2; fallbackLabel = "exact-date-any-time"; }
+      slots = await querySlots(
+        salonIds,
+        { gte: l1Gte, lt },
+        undefined,
+        limit * 3,
+      );
+      if (slots.length > 0) {
+        fallbackLevel = 2;
+        fallbackLabel = "exact-date-any-time";
+      }
     }
 
     // Level 3: next 14 days, same category salons
     if (slots.length === 0) {
       const f = futureBounds(14);
-      slots = await querySlots(salonIds, { gte: now, lt: f.lt }, undefined, limit * 3);
-      if (slots.length > 0) { fallbackLevel = 3; fallbackLabel = "next-14-days"; }
+      slots = await querySlots(
+        salonIds,
+        { gte: now, lt: f.lt },
+        undefined,
+        limit * 3,
+      );
+      if (slots.length > 0) {
+        fallbackLevel = 3;
+        fallbackLabel = "next-14-days";
+      }
     }
 
     // Level 4: no city filter — any salon providing this category
     if (slots.length === 0 && rawCity && tenantIds.length > 0) {
-      const anyCitySalons = await SalonProfile.find({
+      const anyCitySalons = (await SalonProfile.find({
         tenantId: { $in: tenantIds },
         isDemo: { $ne: true },
         marketplaceEnabled: true,
       })
         .select("_id tenantId name city lat lng logo slug phone")
-        .lean() as unknown as SalonDoc[];
+        .lean()) as unknown as SalonDoc[];
 
       const anyCityIds = anyCitySalons.map((s) => s._id);
       // Add to salonById for later join
       for (const s of anyCitySalons) salonById.set(String(s._id), s);
 
       const f = futureBounds(14);
-      slots = await querySlots(anyCityIds, { gte: now, lt: f.lt }, undefined, limit * 3);
-      if (slots.length > 0) { fallbackLevel = 4; fallbackLabel = "any-city"; }
+      slots = await querySlots(
+        anyCityIds,
+        { gte: now, lt: f.lt },
+        undefined,
+        limit * 3,
+      );
+      if (slots.length > 0) {
+        fallbackLevel = 4;
+        fallbackLabel = "any-city";
+      }
     }
 
     // Level 5: same city, any category (no service filter)
     if (slots.length === 0 && rawCity) {
-      const cityOnlySalons = await SalonProfile.find({
-        city: { $regex: new RegExp(rawCity.replace(/-/g, " "), "i") },
+      const cityOnlySalons = (await SalonProfile.find({
+        city: { $regex: buildCityRegex(rawCity) },
         isDemo: { $ne: true },
         marketplaceEnabled: true,
       })
         .select("_id tenantId name city lat lng logo slug phone")
         .limit(20)
-        .lean() as unknown as SalonDoc[];
+        .lean()) as unknown as SalonDoc[];
 
       for (const s of cityOnlySalons) salonById.set(String(s._id), s);
       const cityIds = cityOnlySalons.map((s) => s._id);
       const f = futureBounds(14);
-      slots = await querySlots(cityIds, { gte: now, lt: f.lt }, undefined, limit * 3);
-      if (slots.length > 0) { fallbackLevel = 5; fallbackLabel = "city-any-category"; }
+      slots = await querySlots(
+        cityIds,
+        { gte: now, lt: f.lt },
+        undefined,
+        limit * 3,
+      );
+      if (slots.length > 0) {
+        fallbackLevel = 5;
+        fallbackLabel = "city-any-category";
+      }
     }
   }
 
-  console.log("[search] slots found:", slots.length, "| fallback level:", fallbackLevel, `(${fallbackLabel})`);
+  console.log(
+    "[search] slots found:",
+    slots.length,
+    "| fallback level:",
+    fallbackLevel,
+    `(${fallbackLabel})`,
+  );
 
   // ── 6. Build results (join salon + service data) ──────────────────────────
 
@@ -334,30 +426,30 @@ export async function GET(req: NextRequest) {
 
     results.push({
       slot: {
-        id:        slotId,
+        id: slotId,
         startTime: slot.startTime.toISOString(),
-        endTime:   slot.endTime.toISOString(),
-        status:    slot.status,
+        endTime: slot.endTime.toISOString(),
+        status: slot.status,
       },
       service: svc
         ? {
-            id:       String(svc._id),
-            name:     svc.name,
+            id: String(svc._id),
+            name: svc.name,
             category: svc.category,
-            slug:     svc.categorySlug ?? cat?.slug ?? "",
+            slug: svc.categorySlug ?? cat?.slug ?? "",
             duration: svc.duration ?? 60,
-            price:    svc.basePrice ?? null,
+            price: svc.basePrice ?? null,
             priceMode: svc.priceMode === "on_request" ? "on_request" : "fixed",
           }
         : null,
       salon: {
-        id:    String(salon._id),
-        name:  salon.name,
-        city:  salon.city ?? "",
-        lat:   salonLat,
-        lng:   salonLng,
-        logo:  salon.logo ?? null,
-        slug:  salon.slug ?? null,
+        id: String(salon._id),
+        name: salon.name,
+        city: salon.city ?? "",
+        lat: salonLat,
+        lng: salonLng,
+        logo: salon.logo ?? null,
+        slug: salon.slug ?? null,
         phone: salon.phone ?? null,
       },
       distanceKm,
@@ -371,20 +463,22 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     results,
-    total:     results.length,
+    total: results.length,
     fallbackLevel,
     fallbackLabel,
     debug: {
-      category:       cat?.label ?? null,
-      categorySlug:   cat?.slug ?? null,
-      city:           rawCity || null,
-      date:           rawDate,
-      timeWindow:     hourWindow ? `${hourWindow.from}:00–${hourWindow.to}:00` : null,
-      servicesFound:  services.length,
-      tenantIds:      tenantIds.length,
-      salonsFound:    salons.length,
-      slotsFound:     slots.length,
-      returned:       results.length,
+      category: cat?.label ?? null,
+      categorySlug: cat?.slug ?? null,
+      city: rawCity || null,
+      date: rawDate,
+      timeWindow: hourWindow
+        ? `${hourWindow.from}:00–${hourWindow.to}:00`
+        : null,
+      servicesFound: services.length,
+      tenantIds: tenantIds.length,
+      salonsFound: salons.length,
+      slotsFound: slots.length,
+      returned: results.length,
     },
   });
 }

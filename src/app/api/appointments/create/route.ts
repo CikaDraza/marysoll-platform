@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       tenant.isTrialActive && trialEndsAt && trialEndsAt > now;
 
     const canAcceptBookings =
-      tenant.paid === true || isTrialActive === true || tenant.plan === "free";
+      tenant.paid === true || isTrialActive === true || tenant.plan === "maria";
 
     if (!canAcceptBookings) {
       return NextResponse.json(

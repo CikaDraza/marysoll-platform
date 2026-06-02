@@ -205,6 +205,12 @@ export function useAdminChat() {
     fetchUnread();
   }, [fetchMessages, fetchUnread, markRead]);
 
+  // Deselect — used by the mobile master/detail back button
+  const clearSelectedContact = useCallback(() => {
+    setSelectedContactState(null);
+    setMessages([]);
+  }, []);
+
   // ── Send message ────────────────────────────────────────────────────────────
 
   const sendMessage = useCallback(async () => {
@@ -366,6 +372,7 @@ export function useAdminChat() {
     totalUnread,
     // Actions
     selectContact,
+    clearSelectedContact,
     sendMessage,
     uploadFile,
     deleteMessage,

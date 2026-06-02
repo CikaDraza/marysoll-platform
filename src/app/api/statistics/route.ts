@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
     const decoded = token ? verifyToken(token) : null;
     const tenantId = decoded?.tenantId ?? null;
 
-    // Plan gate — statistics requires starter+
+    // Plan gate — statistics requires claudia+
     if (tenantId) {
       const denied = await requireFeature(tenantId, "statistics");
       if (denied) return denied;

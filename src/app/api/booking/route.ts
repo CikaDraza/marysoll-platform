@@ -26,7 +26,10 @@ export async function POST(req: NextRequest) {
 
   const verify = verifySignature(req, rawBody);
   if (!verify.ok) {
-    return NextResponse.json({ error: verify.error }, { status: verify.status });
+    return NextResponse.json(
+      { error: verify.error },
+      { status: verify.status },
+    );
   }
 
   const apiKey = req.headers.get("x-api-key") ?? "dev";
@@ -52,7 +55,10 @@ export async function POST(req: NextRequest) {
     }
     if (!hasGuestBookingContact(user ?? {})) {
       return NextResponse.json(
-        { error: "Za zakazivanje kao gost unesite telefon, email ili Instagram." },
+        {
+          error:
+            "Za zakazivanje kao gost unesite telefon, email ili Instagram.",
+        },
         { status: 400 },
       );
     }
@@ -63,24 +69,34 @@ export async function POST(req: NextRequest) {
       .select("tenantId cancellationWindowHours")
       .lean();
     if (!salon) {
-      return NextResponse.json({ error: "Salon nije pronađen" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Salon nije pronađen" },
+        { status: 404 },
+      );
     }
     const tenantId = String((salon as Record<string, unknown>).tenantId ?? "");
     const cancellationWindowHours =
-      typeof (salon as Record<string, unknown>).cancellationWindowHours === "number"
+      typeof (salon as Record<string, unknown>).cancellationWindowHours ===
+      "number"
         ? ((salon as Record<string, unknown>).cancellationWindowHours as number)
         : 1;
 
     const tenantDoc = await Tenant.findById(tenantId).lean();
     if (!tenantDoc) {
-      return NextResponse.json({ error: "Tenant nije pronađen" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Tenant nije pronađen" },
+        { status: 404 },
+      );
     }
     const tenant = tenantDoc as unknown as ITenant;
 
     const now = new Date();
-    const trialEndsAt = tenant.trialEndsAt ? new Date(tenant.trialEndsAt) : null;
-    const isTrialActive = tenant.isTrialActive && trialEndsAt && trialEndsAt > now;
-    if (!tenant.paid && !isTrialActive && tenant.plan !== "free") {
+    const trialEndsAt = tenant.trialEndsAt
+      ? new Date(tenant.trialEndsAt)
+      : null;
+    const isTrialActive =
+      tenant.isTrialActive && trialEndsAt && trialEndsAt > now;
+    if (!tenant.paid && !isTrialActive && tenant.plan !== "maria") {
       return NextResponse.json(
         { error: "Salon nije aktivan. Zakazivanje nije moguće." },
         { status: 403 },
@@ -89,7 +105,10 @@ export async function POST(req: NextRequest) {
 
     const service = await Service.findById(serviceId).lean();
     if (!service) {
-      return NextResponse.json({ error: "Usluga nije pronađena" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Usluga nije pronađena" },
+        { status: 404 },
+      );
     }
     const sv = service as Record<string, unknown>;
 
@@ -110,7 +129,10 @@ export async function POST(req: NextRequest) {
     let guestUser = null;
 
     if (normalizedEmail) {
-      guestUser = await TenantUser.findOne({ tenantId, email: normalizedEmail });
+      guestUser = await TenantUser.findOne({
+        tenantId,
+        email: normalizedEmail,
+      });
     }
 
     if (!guestUser) {
@@ -195,6 +217,9 @@ export async function POST(req: NextRequest) {
     );
   } catch (err) {
     console.error("[POST /api/booking]", err);
-    return NextResponse.json({ error: "Greška pri zakazivanju" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Greška pri zakazivanju" },
+      { status: 500 },
+    );
   }
 }

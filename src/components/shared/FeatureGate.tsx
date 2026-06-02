@@ -6,7 +6,7 @@
  *     <StatisticsPage />
  *   </FeatureGate>
  *
- *   <FeatureGate feature="aiAssistant" requiredPlan="pro">
+ *   <FeatureGate feature="aiAssistant" requiredPlan="kiki">
  *     <AIPanel />
  *   </FeatureGate>
  *
@@ -57,20 +57,20 @@ const FEATURE_LABELS: Partial<Record<keyof PlanFeatures, string>> = {
 };
 
 const FEATURE_TO_MIN_PLAN: Partial<Record<keyof PlanFeatures, PlanName>> = {
-  statistics: "starter",
-  newsletterCampaigns: "starter",
-  newsletterLanding: "starter",
-  newsletterStats: "starter",
-  customTheme: "starter",
-  aiAssistant: "pro",
-  aiImageGeneration: "pro",
-  aiSeoGeneration: "pro",
-  aiEmailTemplates: "pro",
-  aiLandingPages: "pro",
-  aiMarketingAnalysis: "pro",
-  paymentIntegration: "pro",
-  loyaltySystem: "pro",
-  clientSubscriptions: "pro",
+  statistics: "claudia",
+  newsletterCampaigns: "claudia",
+  newsletterLanding: "claudia",
+  newsletterStats: "claudia",
+  customTheme: "claudia",
+  aiAssistant: "kiki",
+  aiImageGeneration: "kiki",
+  aiSeoGeneration: "kiki",
+  aiEmailTemplates: "kiki",
+  aiLandingPages: "kiki",
+  aiMarketingAnalysis: "kiki",
+  paymentIntegration: "kiki",
+  loyaltySystem: "kiki",
+  clientSubscriptions: "kiki",
   emailCampaignAi: "enterprise",
   socialMediaAds: "enterprise",
   googleBusinessOptimization: "enterprise",
@@ -87,7 +87,7 @@ function DefaultUpgradePrompt({
   requiredPlan?: PlanName;
 }) {
   const featureLabel = FEATURE_LABELS[feature] ?? String(feature);
-  const minPlan = requiredPlan ?? FEATURE_TO_MIN_PLAN[feature] ?? "starter";
+  const minPlan = requiredPlan ?? FEATURE_TO_MIN_PLAN[feature] ?? "claudia";
   const planLabel = PLAN_DISPLAY_NAMES[minPlan];
   const badgeColor = PLAN_BADGE_COLORS[minPlan];
 

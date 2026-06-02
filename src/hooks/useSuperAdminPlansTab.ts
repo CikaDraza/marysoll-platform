@@ -5,14 +5,14 @@ import type { PlanFeatures } from "@/lib/plans/planFeatures";
 import type { useSuperAdminTenants } from "@/hooks/useSuperAdminTenants";
 import type { TenantRow } from "@/hooks/useSuperAdminTenants";
 
-export type SuperAdminPlan = "free" | "starter" | "pro" | "enterprise";
+export type SuperAdminPlan = "maria" | "claudia" | "kiki" | "enterprise";
 
 export function useSuperAdminPlansTab(
   superAdmin: ReturnType<typeof useSuperAdminTenants>,
   tenants: TenantRow[],
 ) {
   const [selectedId, setSelectedId] = useState("");
-  const [plan, setPlan] = useState<SuperAdminPlan>("starter");
+  const [plan, setPlan] = useState<SuperAdminPlan>("claudia");
   const [overrideEnabled, setOverrideEnabled] = useState(false);
   const [overrides, setOverrides] = useState<Partial<PlanFeatures>>({});
   const [overrideExpiry, setOverrideExpiry] = useState(() => {
@@ -33,7 +33,10 @@ export function useSuperAdminPlansTab(
   }
 
   function toggleOverride(key: string) {
-    setOverrides((prev) => ({ ...prev, [key]: !(prev as Record<string, unknown>)[key] }));
+    setOverrides((prev) => ({
+      ...prev,
+      [key]: !(prev as Record<string, unknown>)[key],
+    }));
   }
 
   function setFeatureOverride() {

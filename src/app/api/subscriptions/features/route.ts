@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
       }
 
       const t = tenant as Record<string, unknown>;
-      const plan = (t.plan as PlanName) ?? "free";
+      const plan = (t.plan as PlanName) ?? "maria";
       const isTrialActive = Boolean(t.isTrialActive);
       const isPaid = Boolean(t.paid);
 

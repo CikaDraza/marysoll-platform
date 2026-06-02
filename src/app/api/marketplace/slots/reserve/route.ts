@@ -12,7 +12,10 @@ const RESERVATION_TTL_MS = 5 * 60 * 1000; // 5 minutes
 export async function POST(req: NextRequest) {
   const verify = verifySignature(req, await req.text());
   if (!verify.ok) {
-    return NextResponse.json({ error: verify.error }, { status: verify.status });
+    return NextResponse.json(
+      { error: verify.error },
+      { status: verify.status },
+    );
   }
 
   const apiKey = req.headers.get("x-api-key") ?? "dev";
@@ -37,7 +40,10 @@ export async function POST(req: NextRequest) {
 
   const start = new Date(startTime);
   if (isNaN(start.getTime())) {
-    return NextResponse.json({ error: "Neispravan startTime" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Neispravan startTime" },
+      { status: 400 },
+    );
   }
 
   const now = new Date();
@@ -51,7 +57,7 @@ export async function POST(req: NextRequest) {
       salonId,
       startTime: start,
       $or: [
-        { status: "free" },
+        { status: "maria" },
         { status: "reserved", expiresAt: { $lt: now } },
       ],
     },

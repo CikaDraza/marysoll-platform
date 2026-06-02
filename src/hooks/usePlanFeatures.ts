@@ -54,8 +54,8 @@ export function usePlanFeatures() {
     refetchOnWindowFocus: true,
   });
 
-  const features = data?.features ?? PLAN_FEATURES.free;
-  const plan = data?.plan ?? "free";
+  const features = data?.features ?? PLAN_FEATURES.maria;
+  const plan = data?.plan ?? "maria";
 
   /**
    * Provjeri da li aktivan plan ima feature.

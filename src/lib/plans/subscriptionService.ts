@@ -41,7 +41,7 @@ export async function getOrCreateSubscription(
   if (!tenant) throw new Error(`Tenant not found: ${tenantId}`);
 
   const t = tenant as Record<string, unknown>;
-  const plan = (t.plan as PlanName) ?? "free";
+  const plan = (t.plan as PlanName) ?? "maria";
   const isPaid = Boolean(t.paid);
   const isTrialActive = Boolean(t.isTrialActive);
 

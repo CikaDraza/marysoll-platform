@@ -19,7 +19,7 @@ export function PodesavanjaTab({ superAdmin }: PodesavanjaTabProps) {
     | undefined;
   const [form, setForm] = useState({
     defaultTrialDays: String(settings?.defaultTrialDays ?? 30),
-    trialMode: String(settings?.trialMode ?? "free"),
+    trialMode: String(settings?.trialMode ?? "maria"),
     requireEmailVerification: Boolean(
       settings?.requireEmailVerification ?? true,
     ),
@@ -68,7 +68,7 @@ export function PodesavanjaTab({ superAdmin }: PodesavanjaTabProps) {
             <div className="grid grid-cols-2 gap-3">
               {[
                 {
-                  value: "free",
+                  value: "maria",
                   label: "🎁 Besplatan trial",
                   desc: "Bez kartice, odmah pristup",
                 },

@@ -89,12 +89,17 @@ function buildSlotsForDay(
   salonId: Types.ObjectId,
   date: Date,
   hours: { from: string; to: string }[],
-): { salonId: Types.ObjectId; startTime: Date; endTime: Date; status: "free" }[] {
+): {
+  salonId: Types.ObjectId;
+  startTime: Date;
+  endTime: Date;
+  status: "maria";
+}[] {
   const slots: {
     salonId: Types.ObjectId;
     startTime: Date;
     endTime: Date;
-    status: "free";
+    status: "maria";
   }[] = [];
 
   // Use local date string to avoid UTC offset shifting the day
@@ -107,12 +112,18 @@ function buildSlotsForDay(
     const startMin = timeToMin(from);
     const endMin = timeToMin(to);
 
-    for (let t = startMin; t + SLOT_DURATION_MIN <= endMin; t += SLOT_DURATION_MIN) {
-      const h = Math.floor(t / 60).toString().padStart(2, "0");
+    for (
+      let t = startMin;
+      t + SLOT_DURATION_MIN <= endMin;
+      t += SLOT_DURATION_MIN
+    ) {
+      const h = Math.floor(t / 60)
+        .toString()
+        .padStart(2, "0");
       const m = (t % 60).toString().padStart(2, "0");
       const start = belgradToUTC(dateStr, `${h}:${m}`);
       const end = addMinutes(start, SLOT_DURATION_MIN);
-      slots.push({ salonId, startTime: start, endTime: end, status: "free" });
+      slots.push({ salonId, startTime: start, endTime: end, status: "maria" });
     }
   }
 
@@ -145,7 +156,7 @@ export async function generateSlotsForSalon(
     salonId: Types.ObjectId;
     startTime: Date;
     endTime: Date;
-    status: "free";
+    status: "maria";
   }[] = [];
 
   for (let i = 0; i < daysAhead; i++) {

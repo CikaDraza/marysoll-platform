@@ -54,7 +54,10 @@ export async function GET(req: NextRequest) {
 
   const { decoded } = auth;
   if (!decoded.tenantId) {
-    return NextResponse.json({ error: "Tenant nije pronađen" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Tenant nije pronađen" },
+      { status: 404 },
+    );
   }
 
   try {
@@ -67,10 +70,13 @@ export async function GET(req: NextRequest) {
       .lean<TenantPlanFields>();
 
     if (!tenant) {
-      return NextResponse.json({ error: "Tenant nije pronađen" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Tenant nije pronađen" },
+        { status: 404 },
+      );
     }
 
-    const plan = (tenant.plan ?? "free") as PlanName;
+    const plan = (tenant.plan ?? "maria") as PlanName;
     const features = getPlanFeatures(plan);
 
     const response: PlanStatusResponse = {

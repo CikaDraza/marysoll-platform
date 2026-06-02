@@ -52,10 +52,13 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     // ── Check salon can accept bookings ───────────────────────────────────────
     const now = new Date();
-    const trialEndsAt = tenant.trialEndsAt ? new Date(tenant.trialEndsAt) : null;
-    const isTrialActive = tenant.isTrialActive && trialEndsAt && trialEndsAt > now;
+    const trialEndsAt = tenant.trialEndsAt
+      ? new Date(tenant.trialEndsAt)
+      : null;
+    const isTrialActive =
+      tenant.isTrialActive && trialEndsAt && trialEndsAt > now;
     const canAcceptBookings =
-      tenant.paid === true || isTrialActive === true || tenant.plan === "free";
+      tenant.paid === true || isTrialActive === true || tenant.plan === "maria";
 
     if (!canAcceptBookings) {
       return NextResponse.json(
@@ -92,7 +95,10 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
     if (!hasGuestBookingContact({ phone, email, instagram })) {
       return NextResponse.json(
-        { error: "Za zakazivanje kao gost unesite telefon, email ili Instagram." },
+        {
+          error:
+            "Za zakazivanje kao gost unesite telefon, email ili Instagram.",
+        },
         { status: 400 },
       );
     }
@@ -184,8 +190,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       clientPhone: normalizedPhone,
       clientInstagram: normalizedInstagram,
       preferredContact:
-        preferredContact ||
-        inferPreferredContact({ phone, email, instagram }),
+        preferredContact || inferPreferredContact({ phone, email, instagram }),
       contactNote: contactNote?.trim() ?? "",
       cancellationWindowHours,
       cancellationStatus: "can_cancel",

@@ -13,21 +13,18 @@ export interface ITenant extends Document {
   customDomainVerified: boolean;
   paid: boolean;
   verified: boolean;
-  plan: "free" | "starter" | "pro" | "enterprise";
+  plan: "maria" | "claudia" | "kiki" | "enterprise";
   planExpiresAt: Date | null;
   trialEndsAt: Date | null;
   isTrialActive: boolean;
-  trialMode: "free" | "card_required"; // how this tenant's trial was initiated
+  trialMode: "maria" | "card_required"; // how this tenant's trial was initiated
   trialRequiredCard: boolean; // true if card was provided at signup
   ownerId: Types.ObjectId;
   salonProfileId: Types.ObjectId | null;
   cloudinaryFolder: string;
   zohoOrgId?: string;
   emailInboxProvider?: "none" | "zoho";
-  emailInboxStatus?:
-    | "not_configured"
-    | "mx_detected"
-    | "mailbox_verified";
+  emailInboxStatus?: "not_configured" | "mx_detected" | "mailbox_verified";
   verifiedInboxEmails?: string[];
   emailHostingProvider?: "none" | "zoho" | "google" | "microsoft" | "other";
   emailHostingStatus?: "not_configured" | "mx_detected" | "verified";
@@ -72,16 +69,16 @@ const TenantSchema = new Schema<ITenant>(
     verified: { type: Boolean, default: false },
     plan: {
       type: String,
-      enum: ["free", "starter", "pro", "enterprise"],
-      default: "free",
+      enum: ["maria", "claudia", "kiki", "enterprise"],
+      default: "maria",
     },
     planExpiresAt: { type: Date, default: null },
     trialEndsAt: { type: Date, default: null },
     isTrialActive: { type: Boolean, default: false },
     trialMode: {
       type: String,
-      enum: ["free", "card_required"],
-      default: "free",
+      enum: ["maria", "card_required"],
+      default: "maria",
     },
     trialRequiredCard: { type: Boolean, default: false },
     ownerId: { type: Schema.Types.ObjectId, ref: "AuthUser", required: true },

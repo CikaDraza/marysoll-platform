@@ -1,18 +1,3 @@
-/**
- * Subscription model — aktivna pretplata tenanta.
- *
- * Relacija: jedan Tenant ima jednu Subscription (1:1).
- *
- * Zašto zasebni model umjesto proširenja Tenant-a:
- * - Tenant sadrži business logiku (slug, customDomain, ownerId)
- * - Subscription sadrži billing logiku (status, period, usage, overrides)
- * - Razdvajanje olakšava billing migracije i audit
- *
- * Backward compat:
- * - Tenant.plan i Tenant.paid ostaju za JWT/middleware kompatibilnost
- * - LemonSqueezy webhook ažurira i Tenant i Subscription
- * - Subscription je autoritativni izvor za feature provjere
- */
 import { Schema, Document, Types, model, models } from "mongoose";
 import type { PlanName, PlanFeatures } from "@/lib/plans/planFeatures";
 
@@ -29,18 +14,18 @@ export interface ISubscription extends Document {
   plan: PlanName;
   status: SubscriptionStatus;
 
-  // Billing period
+  billingProvider: "internal" | "paddle";
+
   currentPeriodStart: Date;
   currentPeriodEnd: Date;
   cancelAtPeriodEnd: boolean;
 
-  // LemonSqueezy IDs
-  lsCustomerId: string | null;
-  lsSubscriptionId: string | null;
-  lsVariantId: string | null;
-  lsOrderId: string | null;
+  paddleCustomerId: string | null;
+  paddleSubscriptionId: string | null;
+  paddleProductId: string | null;
+  paddlePriceId: string | null;
+  paddleTransactionId: string | null;
 
-  // Usage tracking — resetuje se mjesečno
   usage: {
     aiRequestsThisMonth: number;
     aiRequestsResetAt: Date;
@@ -48,10 +33,6 @@ export interface ISubscription extends Document {
     storageUpdatedAt: Date;
   };
 
-  /**
-   * Superadmin override — privremeno aktivira/deaktivira feature-e
-   * bez promjene plana. Koristi se za testiranje i demo.
-   */
   featureOverrides: Partial<PlanFeatures> | null;
   overrideExpiresAt: Date | null;
   overrideNote: string | null;
@@ -66,14 +47,16 @@ const SubscriptionSchema = new Schema<ISubscription>(
       type: Schema.Types.ObjectId,
       ref: "Tenant",
       required: true,
-      unique: true, // jedan tenant, jedna pretplata
+      unique: true,
     },
+
     plan: {
       type: String,
-      enum: ["free", "starter", "pro", "enterprise"] as PlanName[],
+      enum: ["maria", "claudia", "kiki", "enterprise"] as PlanName[],
       required: true,
-      default: "free",
+      default: "maria",
     },
+
     status: {
       type: String,
       enum: [
@@ -88,20 +71,26 @@ const SubscriptionSchema = new Schema<ISubscription>(
       default: "trialing",
     },
 
+    billingProvider: {
+      type: String,
+      enum: ["internal", "paddle"],
+      default: "internal",
+      required: true,
+    },
+
     currentPeriodStart: { type: Date, default: Date.now },
     currentPeriodEnd: {
       type: Date,
-      default: () => new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 dana trial
+      default: () => new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
     },
     cancelAtPeriodEnd: { type: Boolean, default: false },
 
-    // LemonSqueezy
-    lsCustomerId: { type: String, default: null },
-    lsSubscriptionId: { type: String, default: null },
-    lsVariantId: { type: String, default: null },
-    lsOrderId: { type: String, default: null },
+    paddleCustomerId: { type: String, default: null },
+    paddleSubscriptionId: { type: String, default: null },
+    paddleProductId: { type: String, default: null },
+    paddlePriceId: { type: String, default: null },
+    paddleTransactionId: { type: String, default: null },
 
-    // Usage
     usage: {
       aiRequestsThisMonth: { type: Number, default: 0 },
       aiRequestsResetAt: { type: Date, default: Date.now },
@@ -110,7 +99,6 @@ const SubscriptionSchema = new Schema<ISubscription>(
       _id: false,
     },
 
-    // Superadmin override
     featureOverrides: { type: Schema.Types.Mixed, default: null },
     overrideExpiresAt: { type: Date, default: null },
     overrideNote: { type: String, default: null },
@@ -118,11 +106,15 @@ const SubscriptionSchema = new Schema<ISubscription>(
   { timestamps: true },
 );
 
-// Indeksi
+SubscriptionSchema.index({ tenantId: 1 }, { unique: true });
+
 SubscriptionSchema.index(
-  { tenantId: 1, status: 1, lsSubscriptionId: 1 },
+  { paddleSubscriptionId: 1 },
   { unique: true, sparse: true },
 );
+
+SubscriptionSchema.index({ status: 1, plan: 1 });
+SubscriptionSchema.index({ paddleCustomerId: 1 }, { sparse: true });
 
 export const Subscription =
   models.Subscription ||

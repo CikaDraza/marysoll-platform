@@ -39,7 +39,9 @@ export async function GET(req: NextRequest) {
     }
 
     const t = tenant as Record<string, unknown>;
-    const salonProfile = await SalonProfile.findOne({ tenantId: decoded.tenantId })
+    const salonProfile = await SalonProfile.findOne({
+      tenantId: decoded.tenantId,
+    })
       .select("resendApiKey")
       .lean<{ resendApiKey?: string } | null>();
 
@@ -49,7 +51,7 @@ export async function GET(req: NextRequest) {
       cloudinaryFolder: String(t.cloudinaryFolder ?? ""),
       customDomain: t.customDomain ? String(t.customDomain) : null,
       customDomainVerified: Boolean(t.customDomainVerified),
-      plan: String(t.plan ?? "free"),
+      plan: String(t.plan ?? "maria"),
       status: String(t.status ?? "pending"),
       isTrialActive: Boolean(t.isTrialActive),
       trialEndsAt: t.trialEndsAt ? String(t.trialEndsAt) : null,

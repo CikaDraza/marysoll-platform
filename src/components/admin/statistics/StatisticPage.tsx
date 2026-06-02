@@ -107,14 +107,14 @@ export const StatisticsPage: React.FC = () => {
       {/* Cards */}
       <StatsCards month={selectedMonth} year={selectedYear} />
 
-      {/* Full stats — starter+ */}
+      {/* Full stats — claudia+ */}
       {statsLevel === "none" && (
         <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 dark:bg-gray-900 p-8 text-center text-sm text-zinc-400">
           Statistika nije dostupna na vašem planu.
         </div>
       )}
 
-      {/* Charts and Tables — starter+ */}
+      {/* Charts and Tables — claudia+ */}
       {(statsLevel === "full" || statsLevel === "ai") && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <StatsPieChart month={selectedMonth} year={selectedYear} />
@@ -171,7 +171,7 @@ export const StatisticsPage: React.FC = () => {
                 AI Analiza statistike
               </p>
               <p className="text-xs text-violet-600">
-                AI analiza i predviđanje termina dostupno je u Pro/Enterprise
+                AI analiza i predviđanje termina dostupno je u Kiki/Enterprise
                 planu. Dolazi u sledećoj verziji.
               </p>
             </div>

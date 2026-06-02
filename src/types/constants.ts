@@ -33,7 +33,7 @@ export type ServiceType = (typeof SERVICE_TYPES)[number];
 export const HOME_PAGE_POSITIONS = ["main", "second", "third", "none"] as const;
 export type HomePagePositionValue = (typeof HOME_PAGE_POSITIONS)[number];
 
-export const PLAN_TYPES = ["free", "starter", "pro", "enterprise"] as const;
+export const PLAN_TYPES = ["maria", "claudia", "kiki", "enterprise"] as const;
 export type PlanType = (typeof PLAN_TYPES)[number];
 
 export const TENANT_STATUSES = [

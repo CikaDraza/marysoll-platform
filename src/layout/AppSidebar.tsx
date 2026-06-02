@@ -197,9 +197,9 @@ const AdminNav: NavItem[] = [
 // ─── Plan badge in sidebar footer ─────────────────────────────────────────────
 
 const PLAN_COLORS: Record<string, string> = {
-  free: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
-  starter: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
-  pro: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400",
+  maria: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+  claudia: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
+  kiki: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400",
   enterprise:
     "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
 };
@@ -270,7 +270,7 @@ const AppSidebar: React.FC = () => {
   const salonUrl = tenant.getTenantUrl?.();
 
   const { data: planStatusData } = usePlanStatus();
-  const plan = planStatusData?.plan ?? "free";
+  const plan = planStatusData?.plan ?? "maria";
 
   return (
     <aside

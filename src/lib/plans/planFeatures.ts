@@ -13,7 +13,7 @@
  *   UI gate: import { FeatureGate } from "@/components/shared/FeatureGate"
  */
 
-export type PlanName = "free" | "starter" | "pro" | "enterprise";
+export type PlanName = "maria" | "claudia" | "kiki" | "enterprise";
 
 export interface PlanFeatures {
   // ── Limits ────────────────────────────────────────────────────────────────
@@ -100,7 +100,7 @@ export interface PlanFeatures {
 // ─── Feature definicije po planu ─────────────────────────────────────────────
 
 export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
-  free: {
+  maria: {
     // Limits
     dbStorageGb: 1,
     aiRequestsPerMonth: 0,
@@ -161,7 +161,7 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     newsletterLevel: "email",
   },
 
-  starter: {
+  claudia: {
     dbStorageGb: 128,
     aiRequestsPerMonth: 0,
     newsletterSubscribers: 2000,
@@ -214,7 +214,7 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     newsletterLevel: "email",
   },
 
-  pro: {
+  kiki: {
     dbStorageGb: 512,
     aiRequestsPerMonth: 5000,
     newsletterSubscribers: 10000,
@@ -358,16 +358,16 @@ export function isWithinLimit(current: number, limit: number): boolean {
 
 /** Naziv plana za prikaz */
 export const PLAN_DISPLAY_NAMES: Record<PlanName, string> = {
-  free: "Free",
-  starter: "Starter",
-  pro: "Pro (Growth)",
+  maria: "Maria",
+  claudia: "Claudia",
+  kiki: "Kiki",
   enterprise: "Enterprise",
 };
 
 /** Badge boje za plan */
 export const PLAN_BADGE_COLORS: Record<PlanName, string> = {
-  free: "bg-zinc-100 text-zinc-600",
-  starter: "bg-blue-100 text-blue-700",
-  pro: "bg-violet-100 text-violet-700",
+  maria: "bg-zinc-100 text-zinc-600",
+  claudia: "bg-blue-100 text-blue-700",
+  kiki: "bg-violet-100 text-violet-700",
   enterprise: "bg-amber-100 text-amber-700",
 };

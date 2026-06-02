@@ -27,7 +27,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Plan feature gate — AI image generation is Pro+
+    // 2. Plan feature gate — AI image generation is Kiki+
     if (newsletterScope.scope === "tenant") {
       const denied = await requireFeature(
         newsletterScope.tenantId,

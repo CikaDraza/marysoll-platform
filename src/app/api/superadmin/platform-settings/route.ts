@@ -7,7 +7,7 @@
  *
  * Key settings:
  *   defaultTrialDays      — how many trial days new signups get (default: 30)
- *   trialMode             — "free" (no card) | "card_required" (card first, refundable)
+ *   trialMode             — "maria" (no card) | "card_required" (card first, refundable)
  *   requireEmailVerification — bool
  *   autoApproveTrials     — bool (auto-activate trial on email verify)
  */
@@ -20,7 +20,7 @@ import { requireSuperAdmin } from "@/lib/auth/auth-server";
 // For now they're initialized from env vars.
 const settings = {
   defaultTrialDays: parseInt(process.env.DEFAULT_TRIAL_DAYS ?? "30"),
-  trialMode: (process.env.TRIAL_MODE ?? "free") as "free" | "card_required",
+  trialMode: (process.env.TRIAL_MODE ?? "maria") as "maria" | "card_required",
   requireEmailVerification: process.env.REQUIRE_EMAIL_VERIFICATION !== "false",
   autoApproveTrials: process.env.AUTO_APPROVE_TRIALS !== "false",
   platformName: process.env.PLATFORM_NAME ?? "Marysoll",
@@ -50,12 +50,14 @@ export async function POST(req: NextRequest) {
       if (days >= 1 && days <= 365) settings.defaultTrialDays = days;
     }
     if (body.trialMode !== undefined) {
-      if (["free", "card_required"].includes(body.trialMode)) {
+      if (["maria", "card_required"].includes(body.trialMode)) {
         settings.trialMode = body.trialMode;
       }
     }
     if (body.requireEmailVerification !== undefined) {
-      settings.requireEmailVerification = Boolean(body.requireEmailVerification);
+      settings.requireEmailVerification = Boolean(
+        body.requireEmailVerification,
+      );
     }
     if (body.autoApproveTrials !== undefined) {
       settings.autoApproveTrials = Boolean(body.autoApproveTrials);

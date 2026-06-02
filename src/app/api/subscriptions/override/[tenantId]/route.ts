@@ -63,7 +63,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
         },
         $setOnInsert: {
           tenantId,
-          plan: "free",
+          plan: "maria",
           status: "active",
           currentPeriodStart: now,
           currentPeriodEnd: new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000),

@@ -310,8 +310,11 @@ export function AdminChat() {
   return (
     <div className="flex gap-4 h-[calc(100vh-13rem)]">
       {/* ── Left panel: contacts ─────────────────────────────────────────── */}
+      {/* Mobile: full width; hidden once a contact is selected. Desktop: fixed sidebar, always visible. */}
       <div
-        className={card + " w-72 flex-shrink-0 flex flex-col overflow-hidden"}
+        className={`${card} ${
+          chat.selectedContact ? "hidden md:flex" : "flex"
+        } w-full md:w-72 flex-shrink-0 flex-col overflow-hidden`}
       >
         <div className="p-4 border-b border-gray-100 dark:border-gray-800">
           <h2 className="font-bold text-gray-900 dark:text-white">Chat</h2>
@@ -346,7 +349,12 @@ export function AdminChat() {
       </div>
 
       {/* ── Right panel: messages ────────────────────────────────────────── */}
-      <div className={card + " flex-1 flex flex-col overflow-hidden"}>
+      {/* Mobile: hidden until a contact is selected, then full width. Desktop: always visible. */}
+      <div
+        className={`${card} ${
+          chat.selectedContact ? "flex" : "hidden md:flex"
+        } flex-1 flex-col overflow-hidden`}
+      >
         {!chat.selectedContact ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
             <div className="w-16 h-16 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mb-4">
@@ -375,6 +383,23 @@ export function AdminChat() {
           <>
             {/* Header */}
             <div className="flex items-center gap-3 p-4 border-b border-gray-100 dark:border-gray-800">
+              {/* Mobile back button — returns to the contacts list */}
+              <button
+                onClick={chat.clearSelectedContact}
+                className="md:hidden flex-shrink-0 -ml-1 w-8 h-8 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
+                title="Nazad na listu"
+                aria-label="Nazad na listu"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M15 18l-6-6 6-6"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
               <div
                 className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
                   chat.selectedContact.isSuperAdmin

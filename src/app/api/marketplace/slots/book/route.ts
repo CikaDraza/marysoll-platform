@@ -1,6 +1,6 @@
 // POST /api/marketplace/slots/book
 // Atomically marks a slot as booked (confirmation step after reserve).
-// Also exposes DELETE to cancel a booking and return the slot to "free".
+// Also exposes DELETE to cancel a booking and return the slot to "maria".
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Slot } from "@/models/Slot";
@@ -30,7 +30,7 @@ function authCheck(req: NextRequest, bodyText: string) {
   return null;
 }
 
-// Book a slot (must be "reserved" or still "free" — guards against race conditions)
+// Book a slot (must be "reserved" or still "maria" — guards against race conditions)
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
   const denied = authCheck(req, rawBody);
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
       salonId,
       startTime: start,
       $or: [
-        { status: "free" },
+        { status: "maria" },
         { status: "reserved", expiresAt: { $gt: now } }, // only valid reservation
       ],
     },
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-// Cancel a booking — returns slot to "free"
+// Cancel a booking — returns slot to "maria"
 export async function DELETE(req: NextRequest) {
   const rawBody = await req.text();
   const denied = authCheck(req, rawBody);
@@ -113,7 +113,7 @@ export async function DELETE(req: NextRequest) {
 
   const result = await Slot.updateOne(
     { salonId, startTime: start, status: "booked" },
-    { $set: { status: "free" }, $unset: { expiresAt: "" } },
+    { $set: { status: "maria" }, $unset: { expiresAt: "" } },
   );
 
   if (result.modifiedCount === 0) {

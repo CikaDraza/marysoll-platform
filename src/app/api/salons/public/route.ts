@@ -6,6 +6,7 @@ import { Service } from "@/models/Service";
 import { verifySignature } from "@/lib/middleware/verifySignature";
 import { checkRateLimit } from "@/lib/middleware/rateLimiter";
 import { getDistanceKm } from "@/lib/utils/distance";
+import { buildCityRegex } from "@/lib/utils/cityMatch";
 
 export async function GET(req: NextRequest) {
   const verify = verifySignature(req, "");
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
       isDemo: { $ne: true },
       marketplaceEnabled: true,
     };
-    if (city) query.city = { $regex: new RegExp(city, "i") };
+    if (city) query.city = { $regex: buildCityRegex(city) };
 
     const raw = await SalonProfile.find(query)
       .select("_id name city lat lng phone description logo slug tenantId workingHours")

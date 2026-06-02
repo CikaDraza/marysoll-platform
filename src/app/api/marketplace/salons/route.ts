@@ -7,11 +7,16 @@ import { SalonProfile } from "@/models/SalonProfile";
 import { verifySignature } from "@/lib/middleware/verifySignature";
 import { checkRateLimit } from "@/lib/middleware/rateLimiter";
 import { getDistanceKm } from "@/lib/utils/distance";
+import { buildCityRegex } from "@/lib/utils/cityMatch";
+import { resolveSalonLimit } from "@/lib/utils/marketplaceParams";
 
 export async function GET(req: NextRequest) {
   const verify = verifySignature(req, "");
   if (!verify.ok) {
-    return NextResponse.json({ error: verify.error }, { status: verify.status });
+    return NextResponse.json(
+      { error: verify.error },
+      { status: verify.status },
+    );
   }
 
   const apiKey = req.headers.get("x-api-key") ?? "dev";
@@ -22,8 +27,15 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
     const city = searchParams.get("city");
-    const lat = searchParams.get("lat") ? parseFloat(searchParams.get("lat")!) : null;
-    const lng = searchParams.get("lng") ? parseFloat(searchParams.get("lng")!) : null;
+    const lat = searchParams.get("lat")
+      ? parseFloat(searchParams.get("lat")!)
+      : null;
+    const lng = searchParams.get("lng")
+      ? parseFloat(searchParams.get("lng")!)
+      : null;
+    // Default 5 keeps the homepage showcase small; AI/platform-knowledge passes
+    // a higher limit so it sees every marketplace salon (and thus every city).
+    const limit = resolveSalonLimit(searchParams.get("limit"));
 
     await connectToDB();
 
@@ -33,7 +45,7 @@ export async function GET(req: NextRequest) {
       isDemo: { $ne: true },
       marketplaceEnabled: true,
     };
-    if (city) matchStage.city = { $regex: new RegExp(city, "i") };
+    if (city) matchStage.city = { $regex: buildCityRegex(city) };
 
     const results = await SalonProfile.aggregate([
       { $match: matchStage },
@@ -49,7 +61,7 @@ export async function GET(req: NextRequest) {
                 $expr: {
                   $and: [
                     { $eq: ["$salonId", "$$salonId"] },
-                    { $eq: ["$status", "free"] },
+                    { $eq: ["$status", "maria"] },
                     { $gte: ["$startTime", now] },
                   ],
                 },
@@ -123,7 +135,7 @@ export async function GET(req: NextRequest) {
         },
       },
 
-      { $limit: 5 },
+      { $limit: limit },
     ]);
 
     const salons = results.map((s) => {
@@ -145,12 +157,12 @@ export async function GET(req: NextRequest) {
         logo: s.logo ? String(s.logo) : null,
         slug: s.slug ? String(s.slug) : null,
         nextAvailableSlot: s.nextAvailableSlot ?? null,
-        nextSlots: (s.nextSlots as { startTime: Date; serviceId?: Types.ObjectId }[]).map(
-          (slot) => ({
-            startTime: slot.startTime,
-            serviceId: slot.serviceId ? String(slot.serviceId) : null,
-          }),
-        ),
+        nextSlots: (
+          s.nextSlots as { startTime: Date; serviceId?: Types.ObjectId }[]
+        ).map((slot) => ({
+          startTime: slot.startTime,
+          serviceId: slot.serviceId ? String(slot.serviceId) : null,
+        })),
         services: (s.services as Record<string, unknown>[]).map((sv) => ({
           id: String(sv._id),
           name: String(sv.name ?? ""),
@@ -165,6 +177,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(salons);
   } catch (err) {
     console.error("[GET /api/marketplace/salons]", err);
-    return NextResponse.json({ error: "Greška pri učitavanju salona" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Greška pri učitavanju salona" },
+      { status: 500 },
+    );
   }
 }

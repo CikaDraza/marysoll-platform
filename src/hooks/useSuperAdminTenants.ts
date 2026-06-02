@@ -19,7 +19,7 @@ export interface TenantRow {
   cloudinaryFolder: string;
   customDomain: string | null;
   status: "active" | "suspended" | "pending" | "cancelled";
-  plan: "free" | "starter" | "pro" | "enterprise";
+  plan: "maria" | "claudia" | "kiki" | "enterprise";
   paid: boolean;
   verified: boolean;
   isTrialActive: boolean;
@@ -192,7 +192,7 @@ export function useSuperAdminTenants() {
       expiresAt,
     }: {
       tenantId: string;
-      plan: "free" | "starter" | "pro" | "enterprise";
+      plan: "maria" | "claudia" | "kiki" | "enterprise";
       expiresAt?: string;
     }) => {
       const res = await fetch(`/api/superadmin/tenants/${tenantId}/plan`, {
@@ -362,7 +362,7 @@ export function useSuperAdminTenants() {
     // Plan
     setPlan: (
       tenantId: string,
-      plan: "free" | "starter" | "pro" | "enterprise",
+      plan: "maria" | "claudia" | "kiki" | "enterprise",
       expiresAt?: string,
     ) => planMutation.mutate({ tenantId, plan, expiresAt }),
     isUpdatingPlan: planMutation.isPending,

@@ -32,13 +32,14 @@ interface LemonSqueezyWebhookEvent {
   };
 }
 
-type PlanSlug = "free" | "starter" | "pro" | "enterprise";
+type PlanSlug = "maria" | "claudia" | "kiki" | "enterprise";
 
 const VARIANT_TO_PLAN: Record<string, PlanSlug> = {
   // Map Lemon Squeezy variant names to plan slugs
   // Fill these in after creating Lemon Squeezy products
-  Starter: "starter",
-  Pro: "pro",
+  Maria: "maria",
+  Claudia: "claudia",
+  Kiki: "kiki",
   Enterprise: "enterprise",
 };
 
@@ -65,7 +66,7 @@ export async function handleLemonSqueezyWebhook(
   switch (event_name) {
     case "subscription_created":
     case "subscription_updated": {
-      const plan = VARIANT_TO_PLAN[attributes.variant_name] ?? "starter";
+      const plan = VARIANT_TO_PLAN[attributes.variant_name] ?? "maria";
       const isPaid =
         attributes.status === "active" || attributes.status === "trialing";
 

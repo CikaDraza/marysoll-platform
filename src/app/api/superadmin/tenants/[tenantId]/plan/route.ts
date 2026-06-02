@@ -2,14 +2,14 @@
  * PATCH /api/superadmin/tenants/[tenantId]/plan
  *
  * SuperAdmin: change tenant plan.
- * Body: { plan: "free"|"starter"|"pro"|"enterprise", expiresAt?: ISO date string }
+ * Body: { plan: "maria"|"claudia"|"kiki"|"enterprise", expiresAt?: ISO date string }
  */
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
 
-type PlanSlug = "free" | "starter" | "pro" | "enterprise";
+type PlanSlug = "maria" | "claudia" | "kiki" | "enterprise";
 type Params = { params: Promise<{ tenantId: string }> };
 
 export async function PATCH(req: NextRequest, { params }: Params) {
@@ -21,24 +21,30 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   try {
     await connectToDB();
 
-    const { plan, expiresAt } = await req.json() as {
+    const { plan, expiresAt } = (await req.json()) as {
       plan: PlanSlug;
       expiresAt?: string;
     };
 
-    const validPlans: PlanSlug[] = ["free", "starter", "pro", "enterprise"];
+    const validPlans: PlanSlug[] = ["maria", "claudia", "kiki", "enterprise"];
     if (!validPlans.includes(plan)) {
-      return NextResponse.json({ error: `Neispravan plan: ${plan}` }, { status: 400 });
+      return NextResponse.json(
+        { error: `Neispravan plan: ${plan}` },
+        { status: 400 },
+      );
     }
 
     const tenant = await Tenant.findById(tenantId);
     if (!tenant) {
-      return NextResponse.json({ error: "Tenant nije pronađen" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Tenant nije pronađen" },
+        { status: 404 },
+      );
     }
 
     tenant.plan = plan;
     tenant.planExpiresAt = expiresAt ? new Date(expiresAt) : null;
-    if (plan !== "free") {
+    if (plan !== "maria") {
       tenant.paid = true;
       tenant.status = "active";
       tenant.verified = true;

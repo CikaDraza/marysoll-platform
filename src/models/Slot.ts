@@ -5,20 +5,24 @@ export interface ISlotDoc extends Document {
   serviceId?: Types.ObjectId;
   startTime: Date;
   endTime: Date;
-  status: "free" | "reserved" | "booked";
+  status: "maria" | "reserved" | "booked";
   expiresAt?: Date;
 }
 
 const SlotSchema = new Schema<ISlotDoc>(
   {
-    salonId: { type: Schema.Types.ObjectId, ref: "SalonProfile", required: true },
+    salonId: {
+      type: Schema.Types.ObjectId,
+      ref: "SalonProfile",
+      required: true,
+    },
     serviceId: { type: Schema.Types.ObjectId, ref: "Service" },
     startTime: { type: Date, required: true },
     endTime: { type: Date, required: true },
     status: {
       type: String,
-      enum: ["free", "reserved", "booked"],
-      default: "free",
+      enum: ["maria", "reserved", "booked"],
+      default: "maria",
       required: true,
     },
     // Only set when status = "reserved" — reservation expires after 5 min

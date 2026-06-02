@@ -67,16 +67,16 @@ export function StatusBadge({ status }: { status: string }) {
 
 export function PlanBadge({ plan }: { plan: string }) {
   const colors: Record<string, string> = {
-    free: "bg-slate-700 text-slate-300",
-    starter: "bg-blue-900/60 text-blue-400",
-    pro: "bg-violet-900/60 text-violet-400",
+    maria: "bg-slate-700 text-slate-300",
+    claudia: "bg-blue-900/60 text-blue-400",
+    kiki: "bg-violet-900/60 text-violet-400",
     enterprise: "bg-amber-900/60 text-amber-400",
   };
 
   return (
     <span
       className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-        colors[plan] ?? colors.free
+        colors[plan] ?? colors.maria
       }`}
     >
       {plan}

@@ -11,7 +11,7 @@
  * Plan resolution order:
  *   1. Subscription.plan  — authoritative when record exists and is synced
  *   2. Tenant.plan        — fallback when no Subscription record found
- *   3. "free"             — last resort if neither record found
+ *   3. "maria"             — last resort if neither record found
  *
  * The Subscription/Tenant mismatch happens when a superadmin edits Tenant.plan
  * directly without triggering the LemonSqueezy webhook that syncs Subscription.
@@ -97,7 +97,7 @@ export async function requireFeature(
  * Resolves the effective plan for a tenant.
  *
  * Uses Subscription.plan when it is a paid/active plan.
- * Falls back to Tenant.plan when Subscription is absent or shows "free"
+ * Falls back to Tenant.plan when Subscription is absent or shows "maria"
  * while the Tenant record indicates a paid upgrade — this handles the case
  * where Subscription was never synced after a manual Tenant plan edit.
  */
@@ -106,26 +106,26 @@ function resolvePlan(
   tenant: { plan?: PlanName; paid?: boolean } | null,
 ): PlanName {
   const subPlan = subscription?.plan ?? null;
-  const tenantPlan = tenant?.plan ?? "free";
+  const tenantPlan = tenant?.plan ?? "maria";
   const tenantPaid = tenant?.paid ?? false;
 
   // Subscription is the authoritative source when it has a paid plan.
-  if (subPlan && subPlan !== "free") return subPlan;
+  if (subPlan && subPlan !== "maria") return subPlan;
 
-  // Subscription says "free" but Tenant shows a paid plan → Tenant was updated
+  // Subscription says "maria" but Tenant shows a paid plan → Tenant was updated
   // directly (e.g. by superadmin) without syncing the Subscription record.
   // Use Tenant.plan to avoid blocking a legitimately upgraded tenant.
-  if (tenantPaid && tenantPlan !== "free") return tenantPlan;
+  if (tenantPaid && tenantPlan !== "maria") return tenantPlan;
 
-  return subPlan ?? "free";
+  return subPlan ?? "maria";
 }
 
 const UPGRADE_MESSAGES: Partial<Record<keyof PlanFeatures, string>> = {
-  newsletterCampaigns: "Nadogradite na Starter plan za kreiranje kampanja",
-  newsletterLanding: "Nadogradite na Pro plan za landing stranice",
-  aiEmailTemplates: "Nadogradite na Pro plan za AI generisanje email templejta",
-  aiImageGeneration: "Nadogradite na Pro plan za AI generisanje slika",
-  aiSeoGeneration: "Nadogradite na Pro plan za AI SEO generisanje",
-  aiLandingPages: "Nadogradite na Pro plan za AI landing stranice",
-  aiMarketingAnalysis: "Nadogradite na Pro plan za AI marketinšku analizu",
+  newsletterCampaigns: "Nadogradite na Claudia plan za kreiranje kampanja",
+  newsletterLanding: "Nadogradite na Claudia plan za landing stranice",
+  aiEmailTemplates: "Nadogradite na Kiki plan za AI generisanje email templejta",
+  aiImageGeneration: "Nadogradite na Kiki plan za AI generisanje slika",
+  aiSeoGeneration: "Nadogradite na Kiki plan za AI SEO generisanje",
+  aiLandingPages: "Nadogradite na Kiki plan za AI landing stranice",
+  aiMarketingAnalysis: "Nadogradite na Kiki plan za AI marketinšku analizu",
 };

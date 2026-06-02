@@ -28,8 +28,18 @@ export async function POST(request: NextRequest) {
     const { salonName, ownerName, email, password, phone, agreedToPrivacy } =
       await request.json();
 
-    if (!salonName || !ownerName || !email || !password || !phone || !agreedToPrivacy) {
-      return NextResponse.json({ error: "Sva polja su obavezna" }, { status: 400 });
+    if (
+      !salonName ||
+      !ownerName ||
+      !email ||
+      !password ||
+      !phone ||
+      !agreedToPrivacy
+    ) {
+      return NextResponse.json(
+        { error: "Sva polja su obavezna" },
+        { status: 400 },
+      );
     }
     if (password.length < 8) {
       return NextResponse.json(
@@ -38,7 +48,10 @@ export async function POST(request: NextRequest) {
       );
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json({ error: "Unesite ispravnu email adresu" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Unesite ispravnu email adresu" },
+        { status: 400 },
+      );
     }
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -92,7 +105,7 @@ export async function POST(request: NextRequest) {
       customDomainVerified: false,
       paid: false,
       verified: false,
-      plan: "free",
+      plan: "maria",
       planExpiresAt: null,
       trialEndsAt: null,
       isTrialActive: false,
@@ -134,13 +147,15 @@ export async function POST(request: NextRequest) {
     await tenantUser.save();
 
     // 4. Subscription — free plan, trialing
-    const trialDays = parseInt(process.env.DEFAULT_TRIAL_DAYS ?? String(TRIAL_DAYS));
+    const trialDays = parseInt(
+      process.env.DEFAULT_TRIAL_DAYS ?? String(TRIAL_DAYS),
+    );
     const trialEndsAt = new Date();
     trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
 
     await Subscription.create({
       tenantId: tenant._id,
-      plan: "free",
+      plan: "maria",
       status: "trialing",
       currentPeriodStart: new Date(),
       currentPeriodEnd: trialEndsAt,
@@ -161,7 +176,9 @@ export async function POST(request: NextRequest) {
     });
     await salonProfile.save();
 
-    tenant.salonProfileId = salonProfile._id as Parameters<typeof tenant.set>[1];
+    tenant.salonProfileId = salonProfile._id as Parameters<
+      typeof tenant.set
+    >[1];
     await tenant.save();
 
     // 6. Verification email

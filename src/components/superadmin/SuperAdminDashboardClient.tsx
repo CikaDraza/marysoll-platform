@@ -235,8 +235,8 @@ function SuperAdminNewsletterTab({
       ) : (
         <div className={card}>
           <p className="text-sm text-slate-400">
-            Prvo izaberi salon da bi Superadmin radio nad istim tenant newsletter
-            podacima kao admin/owner panel.
+            Prvo izaberi salon da bi Superadmin radio nad istim tenant
+            newsletter podacima kao admin/owner panel.
           </p>
         </div>
       )}
@@ -246,10 +246,10 @@ function SuperAdminNewsletterTab({
 
 // ─── Tab: Trial ───────────────────────────────────────────────────────────────
 const PRO_TRIAL_PRESET = Object.fromEntries(
-  (Object.entries(PLAN_FEATURES.pro) as [string, unknown][]).filter(
+  (Object.entries(PLAN_FEATURES.kiki) as [string, unknown][]).filter(
     ([, v]) => !Array.isArray(v),
   ),
-) as Partial<typeof PLAN_FEATURES.pro>;
+) as Partial<typeof PLAN_FEATURES.kiki>;
 
 const ENTERPRISE_TRIAL_PRESET = Object.fromEntries(
   (Object.entries(PLAN_FEATURES.enterprise) as [string, unknown][]).filter(
@@ -276,9 +276,9 @@ function TrialTab({
     isUpdatingTrial,
   } = useSuperAdminTrialTab(sa, tenants);
 
-  const activatedPreset: "pro" | "enterprise" | null =
-    tenant?.overrideNote === "Pro trial override"
-      ? "pro"
+  const activatedPreset: "kiki" | "enterprise" | null =
+    tenant?.overrideNote === "Kiki trial override"
+      ? "kiki"
       : tenant?.overrideNote === "Enterprise trial override"
         ? "enterprise"
         : null;
@@ -425,7 +425,7 @@ function TrialTab({
             Funkcionalnosti tokom triala
           </h3>
           <p className="text-xs text-slate-400 mb-4">
-            Aktiviraj sve Pro ili Enterprise feature-e kao privremeni override
+            Aktiviraj sve Kiki ili Enterprise feature-e kao privremeni override
             za trajanje triala.
           </p>
           <div className="flex gap-3 flex-wrap items-center">
@@ -433,10 +433,10 @@ function TrialTab({
               <>
                 <span
                   className={`px-4 py-2 text-white text-xs font-bold rounded-lg ${
-                    activatedPreset === "pro" ? "bg-violet-500" : "bg-amber-500"
+                    activatedPreset === "kiki" ? "bg-violet-500" : "bg-amber-500"
                   }`}
                 >
-                  ✓ {activatedPreset === "pro" ? "Pro" : "Enterprise"}{" "}
+                  ✓ {activatedPreset === "kiki" ? "Kiki" : "Enterprise"}{" "}
                   funkcionalnosti aktivirane
                 </span>
                 <button
@@ -458,13 +458,13 @@ function TrialTab({
                         : new Date(
                             Date.now() + 30 * 24 * 60 * 60 * 1000,
                           ).toISOString(),
-                      note: "Pro trial override",
+                      note: "Kiki trial override",
                     })
                   }
                   disabled={sa.isSettingOverride}
                   className="px-4 py-2 bg-violet-700 hover:bg-violet-600 text-white text-xs font-bold rounded-lg transition disabled:opacity-40"
                 >
-                  Aktiviraj Pro funkcionalnosti
+                  Aktiviraj Kiki funkcionalnosti
                 </button>
                 <button
                   onClick={() =>
@@ -629,20 +629,20 @@ const FEATURE_LABELS: Record<string, string> = {
 
 const PLAN_INFO = [
   {
-    id: "free",
-    label: "Free",
+    id: "maria",
+    label: "maria",
     price: "0 EUR",
     desc: "Trial, osnovna funkcionalnost",
   },
   {
-    id: "starter",
-    label: "Starter",
+    id: "claudia",
+    label: "Claudia",
     price: "19 EUR",
     desc: "Newsletter, statistika, 128GB",
   },
   {
-    id: "pro",
-    label: "Pro",
+    id: "kiki",
+    label: "Kiki",
     price: "49 EUR",
     desc: "AI, payments, loyalty, 512GB",
   },
@@ -810,7 +810,9 @@ function PlanoviTab({
                       <div className="space-y-1.5">
                         {group.keys.map((key) => {
                           const keyStr = String(key);
-                          const isOn = !!(overrides as Record<string, unknown>)[keyStr];
+                          const isOn = !!(overrides as Record<string, unknown>)[
+                            keyStr
+                          ];
                           return (
                             <label
                               key={keyStr}
