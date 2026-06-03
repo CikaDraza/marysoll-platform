@@ -102,6 +102,7 @@ const RESERVED_TOP_SEGMENTS = new Set([
   "reset-password",
   "verify-email",
   "resend-verification",
+  "checkout",
   "api",
   "_next",
   "favicon.ico",
@@ -540,6 +541,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   // tenant-auth routes are always public (they ARE the auth endpoints)
   if (pathname.startsWith("/api/tenant-auth/")) return pass();
+
+  // Paddle webhook — public, self-verifies via signature; reachable from any host
+  // (Paddle servers, tunnel za lokalni test, itd.)
+  if (pathname.startsWith("/api/paddle/webhook")) return pass();
 
   // SuperAdmin
   if (

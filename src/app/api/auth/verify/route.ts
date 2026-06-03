@@ -3,6 +3,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { TenantUser } from "@/models/TenantUser";
 import { AuthUser } from "@/models/AuthUser";
 import { Tenant } from "@/models/Tenant";
+import { Subscription } from "@/models/Subscription";
 import {
   sendOwnerWelcomeEmail,
   sendClientWelcomeEmail,
@@ -106,6 +107,21 @@ export async function GET(request: NextRequest) {
         tenant.isTrialActive = autoApprove;
         tenant.trialEndsAt = autoApprove ? trialEndsAt : null;
         await tenant.save();
+
+        // Trial počinje tek sad (verifikacija), ne pri registraciji —
+        // uskladi Subscription period sa stvarnim početkom trial-a.
+        if (autoApprove) {
+          await Subscription.findOneAndUpdate(
+            { tenantId: tenant._id },
+            {
+              $set: {
+                status: "trialing",
+                currentPeriodStart: now,
+                currentPeriodEnd: trialEndsAt,
+              },
+            },
+          );
+        }
 
         try {
           await sendOwnerWelcomeEmail({
@@ -212,6 +228,18 @@ export async function POST(request: NextRequest) {
         tenant.isTrialActive = true;
         tenant.trialEndsAt = trialEndsAt;
         await tenant.save();
+
+        // Uskladi Subscription period sa stvarnim početkom trial-a (verifikacija).
+        await Subscription.findOneAndUpdate(
+          { tenantId: tenant._id },
+          {
+            $set: {
+              status: "trialing",
+              currentPeriodStart: now,
+              currentPeriodEnd: trialEndsAt,
+            },
+          },
+        );
       }
     }
 

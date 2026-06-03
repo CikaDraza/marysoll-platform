@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { ExclamationTriangleIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import type { PlanFeatures } from "@/lib/plans/planFeatures";
 
@@ -127,10 +126,8 @@ export function PlanStatusBanner({
         >
           {bannerInfo.message}
         </p>
-        <Link
-          href="https://marysoll.com/pricing"
-          target="_blank"
-          rel="noopener noreferrer"
+        <a
+          href="#planovi"
           className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
             isError
               ? "bg-red-600 text-white hover:bg-red-700"
@@ -138,7 +135,7 @@ export function PlanStatusBanner({
           }`}
         >
           Pogledaj planove →
-        </Link>
+        </a>
       </div>
     </div>
   );

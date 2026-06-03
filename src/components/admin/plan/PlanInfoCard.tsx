@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import {
   PLAN_DISPLAY_NAMES,
   PLAN_BADGE_COLORS,
@@ -113,16 +111,13 @@ export function PlanInfoCard({
           )}
         </div>
 
-        {/* Right: upgrade button */}
-        <Link
-          href="https://marysoll.com/pricing"
-          target="_blank"
-          rel="noopener noreferrer"
+        {/* Right: upgrade button — skrol na kartice planova u istom tabu */}
+        <a
+          href="#planovi"
           className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 active:scale-95"
         >
           Obnovi / Unapredi plan
-          <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-        </Link>
+        </a>
       </div>
 
       {/* Limits grid */}

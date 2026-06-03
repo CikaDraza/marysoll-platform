@@ -16,7 +16,7 @@ import { Subscription } from "@/models/Subscription";
 import { ISubscription } from "@/types";
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  const auth = requireAdmin(req);
   if (!auth.success) return auth.response;
   const { decoded } = auth;
 
@@ -38,9 +38,7 @@ export async function GET(req: NextRequest) {
     if (!sub) {
       // Migracija: kreira Subscription za postojeći tenant
       const tenant = await Tenant.findById(decoded.tenantId)
-        .select(
-          "plan paid isTrialActive planExpiresAt lemonsqueezySubscriptionId lemonsqueezyCustomerId createdAt",
-        )
+        .select("plan paid isTrialActive planExpiresAt createdAt")
         .lean();
 
       if (!tenant) {
@@ -65,8 +63,6 @@ export async function GET(req: NextRequest) {
         currentPeriodEnd:
           (t.planExpiresAt as Date) ??
           new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        lsSubscriptionId: (t.lemonsqueezySubscriptionId as string) ?? null,
-        lsCustomerId: (t.lemonsqueezyCustomerId as string) ?? null,
       });
 
       sub = created.toObject();

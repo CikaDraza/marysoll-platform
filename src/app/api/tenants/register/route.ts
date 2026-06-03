@@ -160,10 +160,6 @@ export async function POST(request: NextRequest) {
       currentPeriodStart: new Date(),
       currentPeriodEnd: trialEndsAt,
       cancelAtPeriodEnd: false,
-      lsCustomerId: null,
-      lsSubscriptionId: null,
-      lsVariantId: null,
-      lsOrderId: null,
     });
 
     // 5. Empty salon profile

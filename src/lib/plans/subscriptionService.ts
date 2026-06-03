@@ -59,8 +59,6 @@ export async function getOrCreateSubscription(
     currentPeriodEnd:
       (t.planExpiresAt as Date) ??
       new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    lsSubscriptionId: (t.lemonsqueezySubscriptionId as string) ?? null,
-    lsCustomerId: (t.lemonsqueezyCustomerId as string) ?? null,
   });
 
   return sub.toObject() as ISubscription;
@@ -185,21 +183,23 @@ export async function clearFeatureOverride(tenantId: string): Promise<void> {
   );
 }
 
-// ─── LemonSqueezy sync ────────────────────────────────────────────────────────
+// ─── Paddle sync ──────────────────────────────────────────────────────────────
 
 /**
- * Sinkronizuj Subscription sa LemonSqueezy webhook podacima.
- * Poziva se iz webhooks/lemonsqueezy/route.ts
+ * Sinkronizuj Subscription sa Paddle webhook podacima.
+ * Poziva se iz lib/paddle.ts (api/paddle/webhook/route.ts).
  */
-export async function syncSubscriptionFromLs(params: {
+export async function syncSubscriptionFromPaddle(params: {
   tenantId: string;
   plan: PlanName;
   status: ISubscription["status"];
-  lsSubscriptionId: string;
-  lsCustomerId: string;
-  lsVariantId: string;
+  paddleSubscriptionId: string;
+  paddleCustomerId: string | null;
+  paddleProductId: string | null;
+  paddlePriceId: string | null;
   periodStart: Date;
   periodEnd: Date;
+  cancelAtPeriodEnd: boolean;
 }): Promise<void> {
   await connectToDB();
 
@@ -209,14 +209,38 @@ export async function syncSubscriptionFromLs(params: {
       $set: {
         plan: params.plan,
         status: params.status,
-        lsSubscriptionId: params.lsSubscriptionId,
-        lsCustomerId: params.lsCustomerId,
-        lsVariantId: params.lsVariantId,
+        billingProvider: "paddle",
+        paddleSubscriptionId: params.paddleSubscriptionId,
+        paddleCustomerId: params.paddleCustomerId,
+        paddleProductId: params.paddleProductId,
+        paddlePriceId: params.paddlePriceId,
         currentPeriodStart: params.periodStart,
         currentPeriodEnd: params.periodEnd,
+        cancelAtPeriodEnd: params.cancelAtPeriodEnd,
       },
     },
     { upsert: true },
+  );
+}
+
+/**
+ * Označi Subscription kao otkazanu (Paddle subscription.canceled).
+ */
+export async function cancelSubscriptionFromPaddle(params: {
+  tenantId: string;
+  periodEnd: Date;
+}): Promise<void> {
+  await connectToDB();
+
+  await Subscription.findOneAndUpdate(
+    { tenantId: params.tenantId },
+    {
+      $set: {
+        status: "cancelled",
+        cancelAtPeriodEnd: false,
+        currentPeriodEnd: params.periodEnd,
+      },
+    },
   );
 }
 
