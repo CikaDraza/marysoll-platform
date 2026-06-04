@@ -8,6 +8,7 @@ import {
 } from "@/lib/cloudinary";
 import { requireAdmin } from "@/lib/auth/auth-server";
 import { DecodedToken } from "@/types/auth/types";
+import { revalidateMarketplaceCaches } from "@/lib/marketplace/revalidateMarketplace";
 
 export async function PUT(req: NextRequest) {
   try {
@@ -84,6 +85,8 @@ export async function PUT(req: NextRequest) {
     }
 
     await profile.save();
+    // Name/city/street/phone/working-hours edits surface in booking + AI knowledge.
+    await revalidateMarketplaceCaches();
     return NextResponse.json({ success: true, data: profile });
   } catch (err) {
     console.error("PUT /api/salon-profile/update:", err);

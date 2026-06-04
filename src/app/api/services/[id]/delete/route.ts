@@ -3,6 +3,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Service } from "@/models/Service";
 import { requireAdmin } from "@/lib/auth/auth-server";
 import { DecodedToken } from "@/types/auth/types";
+import { revalidateMarketplaceCaches } from "@/lib/marketplace/revalidateMarketplace";
 
 export async function DELETE(
   req: NextRequest,
@@ -26,6 +27,8 @@ export async function DELETE(
         { error: "Usluga nije pronađena." },
         { status: 404 },
       );
+    // Removed service affects booking search + AI knowledge.
+    await revalidateMarketplaceCaches();
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("DELETE /api/services/[id]/delete:", err);

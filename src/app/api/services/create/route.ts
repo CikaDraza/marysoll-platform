@@ -3,6 +3,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Service } from "@/models/Service";
 import { requireAdmin } from "@/lib/auth/auth-server";
 import { DecodedToken } from "@/types/auth/types";
+import { revalidateMarketplaceCaches } from "@/lib/marketplace/revalidateMarketplace";
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,6 +26,8 @@ export async function POST(req: NextRequest) {
       ...body,
       tenantId: tenantId ?? undefined,
     });
+    // New service (price/category) affects booking search + AI knowledge.
+    await revalidateMarketplaceCaches();
     return NextResponse.json(service, { status: 201 });
   } catch (err) {
     console.error("POST /api/services/create:", err);

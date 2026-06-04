@@ -8,6 +8,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
 import { SalonProfile } from "@/models/SalonProfile";
 import { validateGeoCoordinates } from "@/helpers/validateGeoCoordinates";
+import { revalidateMarketplaceCaches } from "@/lib/marketplace/revalidateMarketplace";
 
 type Params = { params: Promise<{ tenantId: string }> };
 
@@ -100,6 +101,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         { status: 404 },
       );
     }
+
+    // Coordinate change affects booking's local distance ranking.
+    await revalidateMarketplaceCaches();
 
     return NextResponse.json({
       success: true,

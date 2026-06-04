@@ -3,6 +3,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Service } from "@/models/Service";
 import { requireAdmin } from "@/lib/auth/auth-server";
 import { DecodedToken } from "@/types/auth/types";
+import { revalidateMarketplaceCaches } from "@/lib/marketplace/revalidateMarketplace";
 
 export async function PUT(
   req: NextRequest,
@@ -31,6 +32,8 @@ export async function PUT(
         { error: "Usluga nije pronađena." },
         { status: 404 },
       );
+    // Price/category/duration edit affects booking search + AI knowledge.
+    await revalidateMarketplaceCaches();
     return NextResponse.json(updated);
   } catch (err) {
     console.error("PUT /api/services/[id]/update:", err);
