@@ -1,3 +1,4 @@
+import { Types } from "mongoose";
 import { TenantUser } from "@/models/TenantUser";
 import { Appointment } from "@/models/Appointment";
 import { Testimonial } from "@/models/Testimonial";
@@ -13,7 +14,7 @@ export async function getTenantStats(tenantId: string): Promise<TenantStats> {
       Appointment.countDocuments({ tenantId }),
       Appointment.countDocuments({ tenantId, status: "completed" }),
       Testimonial.aggregate([
-        { $match: { tenantId, isApproved: true } },
+        { $match: { tenantId: new Types.ObjectId(tenantId), isApproved: true } },
         { $group: { _id: null, avg: { $avg: "$rating" }, count: { $sum: 1 } } },
       ]),
     ]);
