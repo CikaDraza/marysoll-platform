@@ -1,6 +1,9 @@
 export interface TenantStats {
   clientCount: number;
   appointmentCount: number;
+  completedAppointmentCount: number;
+  averageRating: number | null;
+  reviewCount: number;
 }
 
 function roundDown(n: number): number {
