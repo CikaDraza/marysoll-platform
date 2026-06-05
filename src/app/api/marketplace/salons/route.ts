@@ -148,6 +148,7 @@ export async function GET(req: NextRequest) {
 
       return {
         id: String(s._id),
+        tenantId: s.tenantId ? String(s.tenantId) : null,
         name: String(s.name ?? ""),
         city: String(s.city ?? ""),
         location: { lat: salonLat, lng: salonLng },
