@@ -20,8 +20,12 @@ export default function TestimonialCard({ testimonial }: TestimonialCardProps) {
   const [replyText, setReplyText] = useState(testimonial.adminReply || "");
   const [isAlertOpen, setIsAlertOpen] = useState(false);
 
-  const { updateTestimonial, deleteTestimonial, markAsRead, approveTestimonial } =
-    useTestimonialActions();
+  const {
+    updateTestimonial,
+    deleteTestimonial,
+    markAsRead,
+    approveTestimonial,
+  } = useTestimonialActions();
 
   // Koristi helper funkciju - sada je testimonial striktnog tipa
   const appointmentInfo = getAppointmentInfo(testimonial);
@@ -75,13 +79,15 @@ export default function TestimonialCard({ testimonial }: TestimonialCardProps) {
   return (
     <div
       className={`rounded-lg p-4 ${
-        !testimonial.isRead ? "bg-gray-50" : "bg-white border-gray-200"
+        !testimonial.isRead
+          ? "bg-gray-50"
+          : "bg-white dark:bg-gray-800 dark:border-gray-600"
       }`}
     >
       <div className="flex flex-col lg:flex-row justify-between items-start mb-2">
         <div>
           <div className="flex items-center gap-x-4 mb-2">
-            <h3 className="font-semibold text-gray-900">
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">
               {testimonial.clientName}
             </h3>
             {!testimonial.isRead && (
@@ -90,7 +96,7 @@ export default function TestimonialCard({ testimonial }: TestimonialCardProps) {
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             {appointmentInfo.serviceName} - {appointmentInfo.date}
           </p>
         </div>
@@ -122,15 +128,21 @@ export default function TestimonialCard({ testimonial }: TestimonialCardProps) {
         </div>
       </div>
 
-      <p className="text-gray-700 mb-3">{testimonial.comment}</p>
+      <p className="text-gray-700 mb-3 dark:text-gray-300">
+        {testimonial.comment}
+      </p>
 
       {testimonial.adminReply && !isReplying ? (
-        <div className="bg-gray-50 p-3 rounded-xl">
-          <p className="text-sm font-semibold text-gray-900">Vaš odgovor:</p>
-          <p className="text-gray-700">{testimonial.adminReply}</p>
+        <div className="bg-gray-50 p-3 rounded-xl dark:bg-gray-700">
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            Vaš odgovor:
+          </p>
+          <p className="text-gray-700 dark:text-gray-300">
+            {testimonial.adminReply}
+          </p>
           <button
             onClick={handleReply}
-            className="underline cursor-pointer text-(--primary-color) hover:text-(--primary-color-dark) text-sm mt-2"
+            className="underline cursor-pointer text-(--primary-color) dark:text-gray-300 dark:hover:text-white hover:text-(--primary-color-dark) text-sm mt-2"
           >
             Izmeni odgovor
           </button>

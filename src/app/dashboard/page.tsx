@@ -448,13 +448,21 @@ function AdminDashboard() {
       {/* ── Page header ─────────────────────────────────────────────── */}
       <div className="mb-6">
         <div className="flex items-center gap-4 mb-5">
-          {sp.logoPreview && (
+          {sp.logoPreview ? (
             <Image
               src={sp.logoPreview}
               alt="logo"
               width={64}
               height={64}
-              className="w-16 h-16 rounded-xl object-contain border border-gray-200 dark:border-gray-700"
+              className="w-16 h-16 rounded-xl object-contain"
+            />
+          ) : (
+            <Image
+              src={"/image_missing.png"}
+              alt="logo"
+              width={64}
+              height={64}
+              className="w-16 h-16 bg-white rounded-xl p-2 object-contain"
             />
           )}
           <div>
