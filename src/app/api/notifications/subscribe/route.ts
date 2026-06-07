@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     const { subscription } = await req.json();
 
     // Resolve salon logo for the notification icon
-    let notificationIcon = "/notification-icon.png";
+    let notificationIcon = "/marysoll_elegant_logo.png";
     try {
       const tenantUser = (await TenantUser.findById(decoded.tenantUserId)
         .select("tenantId")
@@ -44,7 +44,9 @@ export async function POST(req: Request) {
           .lean()) as { logo?: string } | null;
         if (profile?.logo) notificationIcon = profile.logo;
       }
-    } catch { /* fall through */ }
+    } catch {
+      /* fall through */
+    }
 
     // Konfiguriši web-push sa VAPID ključevima
     const vapidKeys = getVapidKeys();

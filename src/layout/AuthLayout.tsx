@@ -8,6 +8,7 @@
  */
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -62,9 +63,13 @@ function LeftPanel() {
       {/* Logo */}
       <div className="relative z-10">
         <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center text-white font-black text-lg shadow-lg">
-            M
-          </div>
+          <Image
+            src="/marysoll_elegant_logo.png"
+            alt="Marysoll logo"
+            width={40}
+            height={40}
+            className="rounded-2xl"
+          />
           <span className="text-xl font-bold text-white">Marysoll</span>
         </Link>
         <p className="text-violet-300 text-sm mt-1 ml-1">

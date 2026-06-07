@@ -418,9 +418,14 @@ export function MarketingHomePageSecond({
           >
             <Link href="/" className="flex gap-2">
               {/* Monogram icon — always visible */}
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white text-sm font-black flex-shrink-0 shadow-sm">
-                M
-              </div>
+              <Image
+                src={"/marysoll_elegant_logo.png"}
+                alt={"Marysoll logo"}
+                width={192}
+                height={192}
+                className="h-12 w-12 object-contain"
+                preload={true}
+              />
               <div className="flex flex-col">
                 <span className="text-md/9 text-(--tetra-color) heading-font">
                   MarySoll
@@ -499,9 +504,19 @@ export function MarketingHomePageSecond({
         >
           <DialogPanel className="h-full bg-white px-6 py-6 shadow-2xl">
             <div className="flex items-center justify-between mb-8">
-              <span className="font-bold text-lg bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-                MarySoll
-              </span>
+              <div className="flex items-center gap-2">
+                <Image
+                  src={"/marysoll_elegant_logo.png"}
+                  alt={"Marysoll logo"}
+                  width={192}
+                  height={192}
+                  className="h-12 w-12 object-contain"
+                  preload={true}
+                />
+                <span className="font-bold text-lg bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                  MarySoll
+                </span>
+              </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-2 cursor-pointer"
@@ -800,7 +815,7 @@ export function MarketingHomePageSecond({
           WHO IS MARYSOLL SECTION
       ============================================ */}
       <section id="mary" className="py-24 bg-gray-50">
-        <div className="max-w-4xl mx-auto px-6 text-center">
+        <div className="max-w-7xl mx-auto px-6 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}

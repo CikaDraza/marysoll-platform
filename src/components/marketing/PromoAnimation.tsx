@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const DURATIONS = [2500, 3000, 3000, 2500];
@@ -14,26 +15,146 @@ interface Particle {
 }
 
 const PARTICLES: Particle[] = [
-  { left: "8%",  top: "12%", opacity: 0.25, animationDelay: "0.0s", animationDuration: "4.2s" },
-  { left: "23%", top: "34%", opacity: 0.18, animationDelay: "1.1s", animationDuration: "5.0s" },
-  { left: "41%", top: "7%",  opacity: 0.30, animationDelay: "2.3s", animationDuration: "3.8s" },
-  { left: "57%", top: "55%", opacity: 0.22, animationDelay: "0.7s", animationDuration: "4.6s" },
-  { left: "74%", top: "19%", opacity: 0.15, animationDelay: "3.5s", animationDuration: "5.5s" },
-  { left: "88%", top: "72%", opacity: 0.28, animationDelay: "1.8s", animationDuration: "3.3s" },
-  { left: "15%", top: "81%", opacity: 0.20, animationDelay: "4.2s", animationDuration: "4.9s" },
-  { left: "33%", top: "63%", opacity: 0.35, animationDelay: "0.4s", animationDuration: "3.6s" },
-  { left: "50%", top: "90%", opacity: 0.17, animationDelay: "2.9s", animationDuration: "5.2s" },
-  { left: "67%", top: "44%", opacity: 0.26, animationDelay: "1.5s", animationDuration: "4.0s" },
-  { left: "82%", top: "28%", opacity: 0.14, animationDelay: "3.8s", animationDuration: "3.4s" },
-  { left: "6%",  top: "50%", opacity: 0.32, animationDelay: "0.9s", animationDuration: "5.8s" },
-  { left: "28%", top: "17%", opacity: 0.19, animationDelay: "2.1s", animationDuration: "4.4s" },
-  { left: "45%", top: "76%", opacity: 0.24, animationDelay: "4.6s", animationDuration: "3.1s" },
-  { left: "62%", top: "5%",  opacity: 0.38, animationDelay: "1.3s", animationDuration: "5.6s" },
-  { left: "79%", top: "88%", opacity: 0.16, animationDelay: "3.0s", animationDuration: "4.1s" },
-  { left: "94%", top: "40%", opacity: 0.29, animationDelay: "0.2s", animationDuration: "3.9s" },
-  { left: "18%", top: "95%", opacity: 0.21, animationDelay: "4.8s", animationDuration: "5.3s" },
-  { left: "37%", top: "30%", opacity: 0.33, animationDelay: "2.6s", animationDuration: "4.7s" },
-  { left: "55%", top: "68%", opacity: 0.12, animationDelay: "1.7s", animationDuration: "3.5s" },
+  {
+    left: "8%",
+    top: "12%",
+    opacity: 0.25,
+    animationDelay: "0.0s",
+    animationDuration: "4.2s",
+  },
+  {
+    left: "23%",
+    top: "34%",
+    opacity: 0.18,
+    animationDelay: "1.1s",
+    animationDuration: "5.0s",
+  },
+  {
+    left: "41%",
+    top: "7%",
+    opacity: 0.3,
+    animationDelay: "2.3s",
+    animationDuration: "3.8s",
+  },
+  {
+    left: "57%",
+    top: "55%",
+    opacity: 0.22,
+    animationDelay: "0.7s",
+    animationDuration: "4.6s",
+  },
+  {
+    left: "74%",
+    top: "19%",
+    opacity: 0.15,
+    animationDelay: "3.5s",
+    animationDuration: "5.5s",
+  },
+  {
+    left: "88%",
+    top: "72%",
+    opacity: 0.28,
+    animationDelay: "1.8s",
+    animationDuration: "3.3s",
+  },
+  {
+    left: "15%",
+    top: "81%",
+    opacity: 0.2,
+    animationDelay: "4.2s",
+    animationDuration: "4.9s",
+  },
+  {
+    left: "33%",
+    top: "63%",
+    opacity: 0.35,
+    animationDelay: "0.4s",
+    animationDuration: "3.6s",
+  },
+  {
+    left: "50%",
+    top: "90%",
+    opacity: 0.17,
+    animationDelay: "2.9s",
+    animationDuration: "5.2s",
+  },
+  {
+    left: "67%",
+    top: "44%",
+    opacity: 0.26,
+    animationDelay: "1.5s",
+    animationDuration: "4.0s",
+  },
+  {
+    left: "82%",
+    top: "28%",
+    opacity: 0.14,
+    animationDelay: "3.8s",
+    animationDuration: "3.4s",
+  },
+  {
+    left: "6%",
+    top: "50%",
+    opacity: 0.32,
+    animationDelay: "0.9s",
+    animationDuration: "5.8s",
+  },
+  {
+    left: "28%",
+    top: "17%",
+    opacity: 0.19,
+    animationDelay: "2.1s",
+    animationDuration: "4.4s",
+  },
+  {
+    left: "45%",
+    top: "76%",
+    opacity: 0.24,
+    animationDelay: "4.6s",
+    animationDuration: "3.1s",
+  },
+  {
+    left: "62%",
+    top: "5%",
+    opacity: 0.38,
+    animationDelay: "1.3s",
+    animationDuration: "5.6s",
+  },
+  {
+    left: "79%",
+    top: "88%",
+    opacity: 0.16,
+    animationDelay: "3.0s",
+    animationDuration: "4.1s",
+  },
+  {
+    left: "94%",
+    top: "40%",
+    opacity: 0.29,
+    animationDelay: "0.2s",
+    animationDuration: "3.9s",
+  },
+  {
+    left: "18%",
+    top: "95%",
+    opacity: 0.21,
+    animationDelay: "4.8s",
+    animationDuration: "5.3s",
+  },
+  {
+    left: "37%",
+    top: "30%",
+    opacity: 0.33,
+    animationDelay: "2.6s",
+    animationDuration: "4.7s",
+  },
+  {
+    left: "55%",
+    top: "68%",
+    opacity: 0.12,
+    animationDelay: "1.7s",
+    animationDuration: "3.5s",
+  },
 ];
 
 export default function PromoAnimation() {
@@ -511,19 +632,13 @@ export default function PromoAnimation() {
           />
           {/* Brand content */}
           <div className="flex flex-col items-center gap-4 relative z-10">
-            <div
-              className="w-20 h-20 rounded-[22px] flex items-center justify-center text-4xl font-extrabold text-white"
-              style={{
-                background: "linear-gradient(135deg,#7c3aed,#a855f7)",
-                boxShadow:
-                  "0 0 40px rgba(167,139,250,0.6), 0 0 80px rgba(139,92,246,0.3)",
-                opacity: currentScene === 3 ? 1 : 0,
-                transform: currentScene === 3 ? "scale(1)" : "scale(0.7)",
-                transition: "all 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s",
-              }}
-            >
-              M
-            </div>
+            <Image
+              src="/marysoll_elegant_logo.png"
+              alt="Marysoll logo"
+              width={80}
+              height={80}
+              className="rounded-2xl"
+            />
             <div
               className="text-white text-3xl font-extrabold tracking-tight"
               style={{

@@ -7,6 +7,7 @@ import WhatsappIcon from "@/components/assets/icons/WhatsappIcon";
 import TiktokIcon from "@/components/assets/icons/TiktokIcon";
 import FacebookIcon from "@/components/assets/icons/FacebookIcon";
 import TelegramIcon from "@/components/assets/icons/TelegramIcon";
+import Image from "next/image";
 
 /**
  * Marketing landing page — marysoll.com
@@ -43,10 +44,10 @@ export async function MarketingHomePage() {
             Registruj salon
           </Link>
           <Link
-            href="#features"
+            href="/pricing"
             className="border border-gray-300 text-gray-700 px-8 py-3 rounded-xl font-semibold hover:bg-gray-50 transition"
           >
-            Saznaj više
+            Saznaj šta je uključeno
           </Link>
         </div>
       </section>
@@ -58,52 +59,18 @@ export async function MarketingHomePage() {
 
       {/* Features */}
       <section id="features" className="py-20 relative bg-gray-50">
-        <div className="max-w-5xl mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-4xl! font-bold text-center text-gray-800 mb-12">
-            Sve što tvom salonu treba
+            Sve što tvom salonu treba u jednoj slici
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: "📅",
-                title: "Online zakazivanje",
-                desc: "Klijenti zakazuju 24/7. Automatska potvrda i podsetnici.",
-              },
-              {
-                icon: "👩",
-                title: "Mary Asistent",
-                desc: "Odgovara na pitanja klijenata, predlaže termine, generiše sadržaj.",
-              },
-              {
-                icon: "📧",
-                title: "Newsletter kampanje",
-                desc: "Mary ti pomaže u kreiranju landing stranice i email kampanje za tvoje klijente.",
-              },
-              {
-                icon: "🌐",
-                title: "Tvoj domen",
-                desc: "Salon dobija subdomen besplatno. Kasnije možeš da povežeš svoj domen.",
-              },
-              {
-                icon: "📊",
-                title: "Analitika",
-                desc: "Prati rast klijenata, prihode, popunjenost termina.",
-              },
-              {
-                icon: "⭐",
-                title: "Recenzije klijenata",
-                desc: "Sakupi i prikaži utiske. Admin odobrava pre objave.",
-              },
-            ].map((f) => (
-              <div
-                key={f.title}
-                className="bg-white rounded-xl p-6 relative isolate "
-              >
-                <div className="text-3xl mb-3">{f.icon}</div>
-                <h3 className="font-semibold text-gray-800 mb-2">{f.title}</h3>
-                <p className="text-gray-500 text-sm">{f.desc}</p>
-              </div>
-            ))}
+          <div className="grid grid-cols-1">
+            <Image
+              width={1200}
+              height={600}
+              src="/marysoll-banner.png"
+              alt="MarySoll beauty business growth system"
+              className="rounded-xl shadow-lg"
+            />
           </div>
         </div>
       </section>
@@ -163,9 +130,14 @@ export async function MarketingHomePage() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="text-2xl">
               <Link href="/" className="flex gap-2">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
-                  M
-                </div>
+                <Image
+                  src={"/marysoll_elegant_logo.png"}
+                  alt={"Marysoll logo"}
+                  width={192}
+                  height={192}
+                  className="h-12 w-12 object-contain"
+                  preload={true}
+                />
                 <div className="flex flex-col">
                   <span className="text-md/9 text-white heading-font">
                     MarySoll

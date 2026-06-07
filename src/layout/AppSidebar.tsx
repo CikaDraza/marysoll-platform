@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useChatUnread } from "@/hooks/useChatUnread";
 import { usePlanStatus } from "@/hooks/usePlanStatus";
+import Image from "next/image";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -286,9 +287,13 @@ const AppSidebar: React.FC = () => {
       >
         <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0">
           {/* Monogram icon — always visible */}
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white text-xs font-black flex-shrink-0 shadow-sm">
-            M
-          </div>
+          <Image
+            src="/marysoll_elegant_logo.png"
+            alt="Marysoll logo"
+            width={40}
+            height={40}
+            className="rounded-2xl"
+          />
           {isVisible && (
             <div className="min-w-0">
               <span className="block text-sm font-bold text-gray-900 dark:text-white leading-none">

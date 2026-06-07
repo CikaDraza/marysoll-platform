@@ -32,6 +32,7 @@ import {
   superAdminLabelClass as lbl,
   superAdminPrimaryButtonClass as btnPrimary,
 } from "@/components/superadmin/shared";
+import Image from "next/image";
 
 const today = Date.now();
 
@@ -54,9 +55,14 @@ export default function SuperAdminDashboard() {
       <header className="bg-slate-800 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
         <div>
           <Link href="/" className="flex gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white font-black text-lg shadow-lg">
-              M
-            </div>
+            <Image
+              src={"/marysoll_elegant_logo.png"}
+              alt={"Marysoll logo"}
+              width={192}
+              height={192}
+              className="h-12 w-12 object-contain"
+              preload={true}
+            />
             <div>
               <h1 className="text-2xl font-black text-white tracking-tight">
                 Marysoll SuperAdmin
@@ -433,7 +439,9 @@ function TrialTab({
               <>
                 <span
                   className={`px-4 py-2 text-white text-xs font-bold rounded-lg ${
-                    activatedPreset === "kiki" ? "bg-violet-500" : "bg-amber-500"
+                    activatedPreset === "kiki"
+                      ? "bg-violet-500"
+                      : "bg-amber-500"
                   }`}
                 >
                   ✓ {activatedPreset === "kiki" ? "Kiki" : "Enterprise"}{" "}

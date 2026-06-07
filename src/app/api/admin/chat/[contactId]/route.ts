@@ -51,18 +51,32 @@ export async function POST(
   const body = await req.json();
   const { content, attachments = [] } = body as {
     content: string;
-    attachments: Array<{ url: string; type: string; name: string; size: number }>;
+    attachments: Array<{
+      url: string;
+      type: string;
+      name: string;
+      size: number;
+    }>;
   };
 
   if (!content?.trim() && attachments.length === 0) {
-    return NextResponse.json({ error: "Poruka ne može biti prazna" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Poruka ne može biti prazna" },
+      { status: 400 },
+    );
   }
 
   const me = await TenantUser.findById(decoded.tenantUserId)
     .select("name role permissions tenantId")
-    .lean<{ name: string; role: string; permissions: Record<string, unknown> | null; tenantId: mongoose.Types.ObjectId }>();
+    .lean<{
+      name: string;
+      role: string;
+      permissions: Record<string, unknown> | null;
+      tenantId: mongoose.Types.ObjectId;
+    }>();
 
-  if (!me) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (!me)
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   // Verify contact exists in the same tenant and has chat access
   const contact = await TenantUser.findOne({
@@ -71,15 +85,24 @@ export async function POST(
     role: { $in: ["OWNER", "ADMIN", "STAFF"] },
   })
     .select("_id name role permissions")
-    .lean<{ _id: mongoose.Types.ObjectId; name: string; role: string; permissions: Record<string, unknown> | null }>();
+    .lean<{
+      _id: mongoose.Types.ObjectId;
+      name: string;
+      role: string;
+      permissions: Record<string, unknown> | null;
+    }>();
 
-  if (!contact) return NextResponse.json({ error: "Contact not found" }, { status: 404 });
+  if (!contact)
+    return NextResponse.json({ error: "Contact not found" }, { status: 404 });
 
   if (
     contact.role === "STAFF" &&
     (contact.permissions as Record<string, unknown> | null)?.chat !== true
   ) {
-    return NextResponse.json({ error: "Contact does not have chat access" }, { status: 403 });
+    return NextResponse.json(
+      { error: "Contact does not have chat access" },
+      { status: 403 },
+    );
   }
 
   const myId = decoded.tenantUserId!;
@@ -94,7 +117,10 @@ export async function POST(
   if (!chat) {
     chat = new SalonInternalChat({
       tenantId: decoded.tenantId,
-      participants: [new mongoose.Types.ObjectId(p0), new mongoose.Types.ObjectId(p1)],
+      participants: [
+        new mongoose.Types.ObjectId(p0),
+        new mongoose.Types.ObjectId(p1),
+      ],
       messages: [],
       unreadCount: {},
       lastMessageAt: new Date(),
@@ -111,7 +137,9 @@ export async function POST(
     timestamp: new Date(),
   };
 
-  (chat.messages as typeof chat.messages).push(newMsg as Parameters<typeof chat.messages.push>[0]);
+  (chat.messages as typeof chat.messages).push(
+    newMsg as Parameters<typeof chat.messages.push>[0],
+  );
   chat.lastMessageAt = new Date();
 
   // Increment unread for the recipient
@@ -143,11 +171,13 @@ export async function POST(
     await sendWebPushToUser(contactId, {
       title: profile?.name || "Salon",
       body: `💬 ${me.name}: ${content?.trim() ? content.trim().slice(0, 80) : "📎 Prilog"}`,
-      icon: profile?.logo || "/notification-icon.png",
+      icon: profile?.logo || "/marysoll_elegant_logo.png",
       tag: `chat-internal-${decoded.tenantUserId}`,
       url: "/admin/chat",
     });
-  } catch { /* push is non-critical */ }
+  } catch {
+    /* push is non-critical */
+  }
 
   return NextResponse.json({ success: true });
 }
