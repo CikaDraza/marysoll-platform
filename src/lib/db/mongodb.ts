@@ -39,6 +39,10 @@ export async function connectToDB(): Promise<typeof mongoose> {
       .connect(MONGODB_URI, {
         bufferCommands: false,
         dbName: DB_NAME,
+        maxPoolSize: 5,
+        minPoolSize: 0,
+
+        serverSelectionTimeoutMS: 5000,
       })
       .then((m) => m);
   }
