@@ -8,6 +8,7 @@ import {
   CmsBackgroundDecor,
   BackHomeButton,
 } from "@/components/marketing/CmsPageChrome";
+import { PlatformFooter } from "@/components/marketing/PlatformFooter";
 import {
   DEFAULT_MARKETING_LANDING,
   normalizeMarketingLanding,
@@ -77,6 +78,7 @@ export default async function CmsPage({
           <BackHomeButton />
         </div>
         <ContactForm headline={page.title} subheadline={page.content} />
+        <PlatformFooter />
       </div>
     );
   }
@@ -157,6 +159,8 @@ export default async function CmsPage({
           </div>
         </section>
       )}
+
+      <PlatformFooter />
     </div>
   );
 }

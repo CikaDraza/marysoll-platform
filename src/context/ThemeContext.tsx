@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 type Theme = "light" | "dark";
 type ThemeContextType = { theme: Theme; toggleTheme: () => void };
@@ -9,42 +10,45 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const pathname = usePathname();
   const [theme, setTheme] = useState<Theme>("light");
   const [ready, setReady] = useState(false);
 
-  useEffect(() => {
-    async function handleTheme() {
-      if (window.location.pathname.startsWith("/superadmin")) {
-        setTheme("dark");
-        setReady(true);
-        return;
-      }
+  // Routes that force a fixed theme regardless of the user's saved preference.
+  //  - /superadmin  → always dark
+  //  - /newsletter  → always light (public platform landings)
+  const forcedTheme: Theme | null = pathname?.startsWith("/superadmin")
+    ? "dark"
+    : pathname?.startsWith("/newsletter")
+      ? "light"
+      : null;
 
+  // Load saved preference once.
+  useEffect(() => {
+    function init() {
       const saved = localStorage.getItem("marysoll-theme") as Theme | null;
       setTheme(saved ?? "light");
       setReady(true);
     }
-    handleTheme();
+    init();
   }, []);
 
+  // Apply the effective theme to <html>. Forced routes win and are NOT persisted,
+  // so the user's own preference is restored once they leave the forced route.
+  // Depends on `forcedTheme` (derived from pathname) so it re-applies on client nav.
   useEffect(() => {
     if (!ready) return;
-    if (window.location.pathname.startsWith("/superadmin")) {
-      document.documentElement.classList.add("dark");
-      return;
-    }
-
-    localStorage.setItem("marysoll-theme", theme);
-    if (theme === "dark") document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
-  }, [theme, ready]);
+    const effective = forcedTheme ?? theme;
+    document.documentElement.classList.toggle("dark", effective === "dark");
+    if (!forcedTheme) localStorage.setItem("marysoll-theme", theme);
+  }, [theme, ready, forcedTheme]);
 
   return (
     <ThemeContext.Provider
       value={{
-        theme,
+        theme: forcedTheme ?? theme,
         toggleTheme: () => {
-          if (window.location.pathname.startsWith("/superadmin")) return;
+          if (forcedTheme) return; // theme is locked on forced routes
           setTheme((p) => (p === "light" ? "dark" : "light"));
         },
       }}

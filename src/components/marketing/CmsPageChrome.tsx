@@ -6,7 +6,7 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 export function CmsBackgroundDecor() {
   return (
-    <div className="absolute inset-0 pointer-events-none -z-10">
+    <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
       <motion.div
         animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }}
         transition={{ duration: 20, repeat: Infinity }}
