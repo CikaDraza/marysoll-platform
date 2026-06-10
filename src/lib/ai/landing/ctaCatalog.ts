@@ -64,25 +64,67 @@ export const ctaKeys = Object.keys(CTA_CATALOG) as [CtaKey, ...CtaKey[]];
 
 export const DEFAULT_CTA_KEY: CtaKey = "start-free";
 
+export type CtaPlacement = "auto" | "hero" | "final" | "pricing";
+
+/**
+ * Campaign-defined CTA — lets the user add destinations (incl. external/affiliate
+ * URLs) beyond the static catalog, without reopening free-form hrefs to the AI:
+ * the agent still only picks a key; the href comes from this user-supplied entry.
+ */
+export interface CustomCta {
+  label: string;
+  href: string;
+  placement?: CtaPlacement;
+}
+
+/** Stable key for the Nth campaign-defined custom CTA (0-based). */
+export function customCtaKey(index: number): string {
+  return `custom-${index + 1}`;
+}
+
 export interface ResolvedCta {
-  key: CtaKey;
+  key: string;
   label: string;
   href: string;
 }
 
 /**
  * Resolve a (possibly unknown) ctaKey to a curated destination.
- * Falls back to DEFAULT_CTA_KEY for anything not in the allowlist.
+ * Checks the static catalog, then the campaign's custom CTAs, and finally
+ * falls back to DEFAULT_CTA_KEY — so the AI can never inject an arbitrary URL.
  */
-export function resolveCta(key: string | undefined | null): ResolvedCta {
-  const safeKey: CtaKey = key && key in CTA_CATALOG ? (key as CtaKey) : DEFAULT_CTA_KEY;
-  const entry = CTA_CATALOG[safeKey];
-  return { key: safeKey, label: entry.label, href: entry.href };
+export function resolveCta(
+  key: string | undefined | null,
+  customCtas?: CustomCta[],
+): ResolvedCta {
+  if (key && key in CTA_CATALOG) {
+    const entry = CTA_CATALOG[key as CtaKey];
+    return { key, label: entry.label, href: entry.href };
+  }
+
+  if (key && customCtas?.length) {
+    const idx = customCtas.findIndex((_, i) => customCtaKey(i) === key);
+    if (idx !== -1) {
+      const c = customCtas[idx];
+      return { key, label: c.label, href: c.href };
+    }
+  }
+
+  const fallback = CTA_CATALOG[DEFAULT_CTA_KEY];
+  return { key: DEFAULT_CTA_KEY, label: fallback.label, href: fallback.href };
 }
 
 /** Bullet list of allowed keys + descriptions, injected into the agent prompt. */
-export function ctaCatalogPromptList(): string {
-  return (Object.keys(CTA_CATALOG) as CtaKey[])
-    .map((key) => `- ${key}: ${CTA_CATALOG[key].description}`)
-    .join("\n");
+export function ctaCatalogPromptList(customCtas?: CustomCta[]): string {
+  const base = (Object.keys(CTA_CATALOG) as CtaKey[]).map(
+    (key) => `- ${key}: ${CTA_CATALOG[key].description}`,
+  );
+  const custom = (customCtas ?? []).map((c, i) => {
+    const place =
+      c.placement && c.placement !== "auto"
+        ? ` (preporučena pozicija: ${c.placement})`
+        : "";
+    return `- ${customCtaKey(i)}: "${c.label}" → vodi na ${c.href}${place}`;
+  });
+  return [...base, ...custom].join("\n");
 }

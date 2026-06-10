@@ -25,6 +25,7 @@ import {
   CampaignType,
   EditorialAudience,
   SemanticTone,
+  type CustomCta,
 } from "@/types/newsletter";
 import { CampaignIntent } from "@/types/conversational/campaign";
 import { useAuth } from "@/hooks/useAuth";
@@ -118,6 +119,7 @@ function getInitialForm(
           : campaign.ctaSlug || "/termini",
       audience,
       editorialCategory,
+      customCtas: campaign.landingPage?.customCtas ?? [],
     },
   };
 }
@@ -232,6 +234,23 @@ export default function AdminSemanticModal({
     dbCategories,
     selectedEditorialCategory,
   );
+
+  // Custom CTA buttons (campaign-defined) — extend the static CTA catalog so the
+  // landing agent can place user-chosen destinations (incl. affiliate/external).
+  const customCtas = form.landingPage.customCtas ?? [];
+  const setCustomCtas = (next: CustomCta[]) =>
+    setForm({
+      ...form,
+      landingPage: { ...form.landingPage, customCtas: next },
+    });
+  const addCustomCta = () =>
+    setCustomCtas([...customCtas, { label: "", href: "", placement: "auto" }]);
+  const removeCustomCta = (index: number) =>
+    setCustomCtas(customCtas.filter((_, i) => i !== index));
+  const patchCustomCta = (index: number, patch: Partial<CustomCta>) =>
+    setCustomCtas(
+      customCtas.map((c, i) => (i === index ? { ...c, ...patch } : c)),
+    );
 
   // Initialize images from existing landing — collect from all block types
   const existingImages = (() => {
@@ -376,6 +395,9 @@ export default function AdminSemanticModal({
           landingPage: {
             slug: landingSlug,
             layout: preview.layout?.layout || [],
+            customCtas: customCtas.filter(
+              (c) => c.label.trim() && c.href.trim(),
+            ),
             seo: preview.aiLanding?.seo,
             score: preview.layout?.score?.total,
             semanticType:
@@ -805,6 +827,73 @@ export default function AdminSemanticModal({
                   className="mt-1 w-full rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 p-2"
                   required
                 />
+              </div>
+            )}
+
+            {/* Custom CTA dugmad - samo za email-landing */}
+            {form.campaignType === "email-landing" && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                  Custom CTA dugmad (opciono)
+                </label>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Dodaj sopstvene CTA pored sistemskih (npr. afilijate/eksterni
+                  linkovi). AI ih raspoređuje u landing prema poziciji.
+                </p>
+                <div className="mt-2 space-y-2">
+                  {customCtas.map((cta, i) => (
+                    <div key={i} className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="text"
+                        value={cta.label}
+                        onChange={(e) =>
+                          patchCustomCta(i, { label: e.target.value })
+                        }
+                        placeholder="Tekst dugmeta"
+                        className="min-w-[120px] flex-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 p-2 text-sm"
+                      />
+                      <input
+                        type="text"
+                        value={cta.href}
+                        onChange={(e) =>
+                          patchCustomCta(i, { href: e.target.value })
+                        }
+                        placeholder="https://… ili /putanja"
+                        className="min-w-[160px] flex-[2] rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 p-2 text-sm"
+                      />
+                      <select
+                        value={cta.placement ?? "auto"}
+                        onChange={(e) =>
+                          patchCustomCta(i, {
+                            placement: e.target
+                              .value as CustomCta["placement"],
+                          })
+                        }
+                        className="rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 p-2 text-sm"
+                      >
+                        <option value="auto">Auto</option>
+                        <option value="hero">Hero</option>
+                        <option value="final">Finalni CTA</option>
+                        <option value="pricing">Pricing</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => removeCustomCta(i)}
+                        className="rounded-md px-2 py-1 text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                        aria-label="Ukloni CTA"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={addCustomCta}
+                    className="text-xs font-semibold text-(--primary-color) hover:underline"
+                  >
+                    + Dodaj CTA
+                  </button>
+                </div>
               </div>
             )}
 

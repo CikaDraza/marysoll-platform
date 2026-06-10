@@ -95,6 +95,23 @@ const NewsletterCampaignSchema = new Schema(
       generatedAt: Date,
       regeneratedCount: { type: Number, default: 0 },
       layout: { type: Schema.Types.Mixed, default: [] },
+      // User-defined CTA buttons that extend the static CTA catalog for the
+      // landing AI agent (incl. external/affiliate links).
+      customCtas: {
+        type: [
+          {
+            label: { type: String, required: true },
+            href: { type: String, required: true },
+            placement: {
+              type: String,
+              enum: ["auto", "hero", "final", "pricing"],
+              default: "auto",
+            },
+            _id: false,
+          },
+        ],
+        default: [],
+      },
       semanticType: String,
       audience: {
         type: String,

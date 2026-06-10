@@ -56,7 +56,7 @@ export async function POST(
       );
     }
 
-    const { campaignType, semanticContent, customPrompt, imagesUrl } =
+    const { campaignType, semanticContent, customPrompt, imagesUrl, customCtas } =
       await req.json();
 
     // Guard: nema landing preview za email-only
@@ -78,6 +78,7 @@ export async function POST(
       semanticContent: { intent, summary, tone },
       customPrompt,
       imagesUrl,
+      customCtas,
     });
 
     return NextResponse.json({ landing });

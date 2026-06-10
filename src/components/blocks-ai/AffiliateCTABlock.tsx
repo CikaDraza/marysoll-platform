@@ -19,7 +19,7 @@ export default function AffiliateCTABlock({ block }: AffiliateCTABlockProps) {
           height={400}
           alt={image.alt}
           src={image.src}
-          className="absolute inset-0 -z-10 size-full object-cover object-right md:object-center"
+          className="absolute inset-0 -z-10 size-full max-h-150 min-h-120 object-cover object-right md:object-center"
         />
       )}
       <div

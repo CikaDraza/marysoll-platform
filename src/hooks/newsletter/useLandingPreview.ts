@@ -131,6 +131,9 @@ export function useLandingPreview({
               },
               customPrompt: form.semanticContent.summary,
               imagesUrl: imagesUrls,
+              customCtas: (form.landingPage?.customCtas ?? []).filter(
+                (c) => c.label?.trim() && c.href?.trim(),
+              ),
             }),
             signal: controller.signal,
           },

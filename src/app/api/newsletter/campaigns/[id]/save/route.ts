@@ -90,6 +90,10 @@ export async function PATCH(
         enabled: true,
         slug,
         layout: payload.landingPage.layout || [],
+        customCtas:
+          payload.landingPage.customCtas ??
+          campaign.landingPage?.customCtas ??
+          [],
         seo: payload.landingPage.seo || {},
         score: payload.landingPage.score || 0,
         semanticType: payload.landingPage.semanticType,

@@ -55,10 +55,10 @@ export default function HeroBlock({ block }: HeroBlockProps) {
             <figure key={image.src} className={galleryLayout.images[index]}>
               <Image
                 width={1200}
-                height={800}
+                height={1200}
                 alt={image.alt}
                 src={image.src}
-                className="size-full object-cover sm:rounded-lg"
+                className="size-full max-h-150 min-h-120 object-cover sm:rounded-lg"
               />
             </figure>
           ))}

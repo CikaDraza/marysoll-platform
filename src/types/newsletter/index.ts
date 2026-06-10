@@ -2,6 +2,9 @@
 // Centralizovani tipovi za newsletter i campaign funkcionalnosti
 
 import { LandingBlock, LandingPageOutput } from "../landing-blocks";
+import type { CustomCta } from "@/lib/ai/landing/ctaCatalog";
+
+export type { CustomCta, CtaPlacement } from "@/lib/ai/landing/ctaCatalog";
 
 // ============== CAMPAIGN TYPES ==============
 
@@ -91,6 +94,7 @@ export interface UpdateCampaignSemanticPayload {
     slug: string;
     audience?: EditorialAudience;
     editorialCategory?: EditorialCategory;
+    customCtas?: CustomCta[];
   };
 }
 
@@ -111,6 +115,7 @@ export interface SaveCampaignSemanticPayload {
   landingPage: {
     slug: string;
     layout?: LandingBlock[];
+    customCtas?: CustomCta[];
     seo?: LandingSeo;
     score?: number;
     semanticType?: string;

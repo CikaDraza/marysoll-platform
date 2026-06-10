@@ -8,7 +8,11 @@ import {
 } from "@/types/landing-blocks";
 import { parseLandingPageOutput } from "@/lib/conversational/editor/aiToLayoutAdapter";
 import { getLandingClient } from "../providers/deepseek";
-import { resolveCta, ctaCatalogPromptList } from "../landing/ctaCatalog";
+import {
+  resolveCta,
+  ctaCatalogPromptList,
+  type CustomCta,
+} from "../landing/ctaCatalog";
 
 export type { LandingPageOutput } from "@/types/landing-blocks";
 
@@ -21,6 +25,8 @@ export interface LandingPageInput {
   };
   customPrompt: string;
   imagesUrl?: string[];
+  /** Campaign-defined CTA buttons that extend the static catalog for this run. */
+  customCtas?: CustomCta[];
 }
 
 const outputContract = `{
@@ -167,13 +173,16 @@ function stripNullImages(obj: unknown): void {
  * agent can never inject a raw URL — while `ctaLabel` keeps the agent's copy
  * (falling back to the catalog label). Unknown keys fall back to the default.
  */
-function resolveLandingCtas(output: LandingPageAiOutput): LandingPageOutput {
+function resolveLandingCtas(
+  output: LandingPageAiOutput,
+  customCtas?: CustomCta[],
+): LandingPageOutput {
   const blocks = output.blocks.map((block) => {
     switch (block.type) {
       case "HeroBlock": {
         // Hero CTA is optional — only resolve when the agent signalled a button.
         if (!block.ctaKey && !block.ctaLabel) return block;
-        const cta = resolveCta(block.ctaKey);
+        const cta = resolveCta(block.ctaKey, customCtas);
         return {
           ...block,
           ctaKey: cta.key,
@@ -183,7 +192,7 @@ function resolveLandingCtas(output: LandingPageAiOutput): LandingPageOutput {
       }
       case "AffiliateCTABlock": {
         // Final CTA always renders a button.
-        const cta = resolveCta(block.ctaKey);
+        const cta = resolveCta(block.ctaKey, customCtas);
         return {
           ...block,
           ctaKey: cta.key,
@@ -196,7 +205,7 @@ function resolveLandingCtas(output: LandingPageAiOutput): LandingPageOutput {
           ...block,
           items: block.items.map((item) => {
             if (!item.ctaKey && !item.ctaLabel) return item;
-            const cta = resolveCta(item.ctaKey);
+            const cta = resolveCta(item.ctaKey, customCtas);
             return {
               ...item,
               ctaKey: cta.key,
@@ -218,7 +227,7 @@ function resolveLandingCtas(output: LandingPageAiOutput): LandingPageOutput {
 export async function generateLandingPreview(
   input: LandingPageInput,
 ): Promise<LandingPageOutput> {
-  const { semanticContent, customPrompt, imagesUrl } = input;
+  const { semanticContent, customPrompt, imagesUrl, customCtas } = input;
 
   const imagesSection =
     imagesUrl && imagesUrl.length > 0
@@ -249,7 +258,7 @@ Pravila:
 - "ctaLabel" is the visible button copy — write short, compelling Serbian (Latin) copy (max 4 words).
 - Pick the most relevant ctaKey for the context; default to "start-free" if unsure. For PricingBlock items choose the matching "plan-*" key.
 - Allowed ctaKey values:
-${ctaCatalogPromptList()}
+${ctaCatalogPromptList(customCtas)}
 - Use images only from IMAGES_URL input.
 - Do not invent image URLs.
 - Every image must have alt text.${hasImages ? "" : "\n- IMAGES_URL is empty: do NOT include any image or images field in any block. Omit the field entirely."}
@@ -286,7 +295,7 @@ Ton: ${semanticContent.tone}
     const raw = JSON.parse(content);
     stripNullImages(raw);
     const aiOutput = landingPageAiOutputSchema.parse(raw);
-    const resolved = resolveLandingCtas(aiOutput);
+    const resolved = resolveLandingCtas(aiOutput, customCtas);
     assertAllowedImageSources(resolved, imagesUrl || []);
     return resolved;
   } catch (error) {

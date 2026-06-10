@@ -11,6 +11,7 @@
 
 import type { CampaignIntent } from "./conversational/campaign";
 import type { PlatformAudienceFilter } from "@/lib/newsletter/audienceFilter";
+import type { CustomCta } from "@/lib/ai/landing/ctaCatalog";
 import type { Types } from "mongoose";
 import { LandingBlock } from "./landing-blocks";
 
@@ -454,6 +455,7 @@ export interface INewsletterCampaign {
     generatedAt: Date;
     regeneratedCount: number;
     layout?: LandingBlock[];
+    customCtas?: CustomCta[];
     semanticType?: string;
     audience?: "client" | "partner";
     editorialCategory?: string;

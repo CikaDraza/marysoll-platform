@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { ctaKeys, type CtaKey } from "@/lib/ai/landing/ctaCatalog";
 
 export type { CtaKey } from "@/lib/ai/landing/ctaCatalog";
 
@@ -37,7 +36,7 @@ export interface HeroBlock extends LandingBlockBase {
   subtitle?: string;
   ctaLabel?: string;
   /** Catalog key chosen by the agent; resolved server-side into `href`. */
-  ctaKey?: CtaKey;
+  ctaKey?: string;
   href?: string;
   images?: LandingImage[];
 }
@@ -82,7 +81,7 @@ export interface PricingBlock extends LandingBlockBase {
     };
     features?: string[];
     /** Catalog key chosen by the agent; resolved server-side into `href`. */
-    ctaKey?: CtaKey;
+    ctaKey?: string;
     href?: string;
     ctaLabel?: string;
     highlight?: "none" | "popular" | "bestValue";
@@ -96,7 +95,7 @@ export interface AffiliateCTABlock extends LandingBlockBase {
   description?: string;
   ctaLabel: string;
   /** Catalog key chosen by the agent; resolved server-side into `href`. */
-  ctaKey?: CtaKey;
+  ctaKey?: string;
   href: string;
   image?: LandingImage;
 }
@@ -131,7 +130,7 @@ export const heroBlockSchema = blockBaseSchema.extend({
   title: z.string().min(1),
   subtitle: z.string().optional(),
   ctaLabel: z.string().optional(),
-  ctaKey: z.enum(ctaKeys).optional(),
+  ctaKey: z.string().optional(),
   href: z.string().optional(),
   images: z.array(imageSchema).optional(),
 });
@@ -183,7 +182,7 @@ export const pricingBlockSchema = blockBaseSchema.extend({
           })
           .optional(),
         features: z.array(z.string().min(1)).optional(),
-        ctaKey: z.enum(ctaKeys).optional(),
+        ctaKey: z.string().optional(),
         href: z.string().optional(),
         ctaLabel: z.string().optional(),
         highlight: z.enum(["none", "popular", "bestValue"]).optional(),
@@ -198,7 +197,7 @@ export const affiliateCtaBlockSchema = blockBaseSchema.extend({
   title: z.string().min(1),
   description: z.string().optional(),
   ctaLabel: z.string().min(1),
-  ctaKey: z.enum(ctaKeys).optional(),
+  ctaKey: z.string().optional(),
   href: z.string().min(1),
   image: imageSchema.optional(),
 });
