@@ -357,7 +357,7 @@ export default function AppointmentCalendarPage({
                 return (
                   <div
                     key={i}
-                    className={`py-2 px-1 text-center border-l border-gray-100 ${
+                    className={`py-2 px-1 text-center border-l border-gray-200 ${
                       isToday ? "bg-[#fffbf0]" : "bg-white"
                     }`}
                   >
@@ -444,7 +444,7 @@ export default function AppointmentCalendarPage({
                           <button
                             key={di}
                             onClick={() => handleSlotClick(dateStr, slotMin)}
-                            className={`relative border-l border-gray-100 ${
+                            className={`relative border-l border-gray-200 ${
                               showHourLine
                                 ? "border-t border-gray-200"
                                 : "border-t border-gray-50"
@@ -464,7 +464,7 @@ export default function AppointmentCalendarPage({
                       return (
                         <div
                           key={di}
-                          className={`relative border-l border-gray-100 ${
+                          className={`relative border-l border-gray-200 ${
                             showHourLine
                               ? "border-t border-gray-200"
                               : "border-t border-gray-50"
@@ -487,22 +487,26 @@ export default function AppointmentCalendarPage({
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap gap-4 px-4 py-2.5 border-t border-gray-100 bg-gray-50">
+        <div className="flex flex-wrap gap-4 px-4 py-2.5 border-t border-gray-200 bg-gray-50">
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded border border-gray-200 bg-white inline-block" />
-            <span className="text-[11px] text-gray-500">Slobodan termin</span>
+            <span className="w-3 h-3 rounded border border-gray-300 bg-white inline-block" />
+            <span className="text-[11px] font-medium text-gray-700">
+              Slobodan termin
+            </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-gray-300 border border-gray-200 inline-block" />
-            <span className="text-[11px] text-gray-500">Zauzeto</span>
+            <span className="w-3 h-3 rounded bg-gray-200 border border-gray-400 inline-block" />
+            <span className="text-[11px] font-medium text-gray-700">Zauzeto</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-[#f8f8f8] border border-gray-200 inline-block" />
-            <span className="text-[11px] text-gray-500">Salon ne radi</span>
+            <span className="w-3 h-3 rounded bg-[#f8f8f8] border border-gray-300 inline-block" />
+            <span className="text-[11px] font-medium text-gray-700">
+              Salon ne radi
+            </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-[#fffbf0] border border-amber-200 inline-block" />
-            <span className="text-[11px] text-gray-500">Danas</span>
+            <span className="w-3 h-3 rounded bg-[#fffbf0] border border-amber-300 inline-block" />
+            <span className="text-[11px] font-medium text-gray-700">Danas</span>
           </div>
         </div>
       </div>

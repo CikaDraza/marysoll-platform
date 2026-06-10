@@ -15,7 +15,9 @@ interface PreviewRendererProps {
   isSeoReady?: boolean;
 }
 
-const DESKTOP_PREVIEW_WIDTH = 1280;
+// Newsletter landings are responsive — preview at mobile width so the whole
+// page fits inside the (narrow) modal without horizontal scrolling.
+const MOBILE_PREVIEW_WIDTH = 390;
 
 function renderBlock(block: LandingBlock) {
   switch (block.type) {
@@ -56,10 +58,10 @@ function renderBlock(block: LandingBlock) {
   }
 }
 
-function DesktopPreviewFrame({ children }: { children: ReactNode }) {
+function MobilePreviewFrame({ children }: { children: ReactNode }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [mountNode, setMountNode] = useState<HTMLElement | null>(null);
-  const [height, setHeight] = useState(720);
+  const [height, setHeight] = useState(480);
 
   useEffect(() => {
     const iframe = iframeRef.current;
@@ -88,7 +90,7 @@ function DesktopPreviewFrame({ children }: { children: ReactNode }) {
     style.textContent = `
       html, body {
         margin: 0;
-        min-width: ${DESKTOP_PREVIEW_WIDTH}px;
+        width: ${MOBILE_PREVIEW_WIDTH}px;
         background: white;
         overflow: hidden;
       }
@@ -106,7 +108,7 @@ function DesktopPreviewFrame({ children }: { children: ReactNode }) {
 
     const doc = mountNode.ownerDocument;
     const updateHeight = () => {
-      setHeight(Math.max(720, doc.documentElement.scrollHeight));
+      setHeight(Math.max(480, doc.documentElement.scrollHeight));
     };
 
     updateHeight();
@@ -122,16 +124,22 @@ function DesktopPreviewFrame({ children }: { children: ReactNode }) {
     <>
       <iframe
         ref={iframeRef}
-        title="Desktop landing preview"
+        title="Mobilni landing preview"
         className="block border-0 bg-white"
         style={{
-          width: DESKTOP_PREVIEW_WIDTH,
+          width: MOBILE_PREVIEW_WIDTH,
           height,
         }}
       />
       {mountNode &&
         createPortal(
-          <main className="w-[1280px] min-w-[1280px] bg-white">
+          <main
+            style={{
+              width: MOBILE_PREVIEW_WIDTH,
+              minWidth: MOBILE_PREVIEW_WIDTH,
+            }}
+            className="bg-white"
+          >
             {children}
           </main>,
           mountNode,
@@ -156,9 +164,9 @@ export function PreviewRenderer({
         <h6>Newsletter stranica za pregled.</h6>
       </div>
 
-      <aside className="space-y-1 rounded-xl bg-white p-4 text-xs shadow">
+      <aside className="space-y-1 rounded-xl bg-white dark:bg-gray-800 p-4 text-xs shadow">
         {isSeoLoading ? (
-          <div className="flex items-center gap-2 text-purple-600">
+          <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
             <svg
               className="h-4 w-4 animate-spin"
               xmlns="http://www.w3.org/2000/svg"
@@ -184,7 +192,7 @@ export function PreviewRenderer({
         ) : isSeoReady && seo ? (
           <>
             <div className="mb-3 flex items-center gap-2">
-              <span className="rounded border border-green-100 bg-green-50 px-2 py-0.5 text-[10px] font-bold uppercase text-green-600">
+              <span className="rounded border border-green-100 bg-green-50 px-2 py-0.5 text-[10px] font-bold uppercase text-green-600 dark:border-green-900 dark:bg-green-950 dark:text-green-400">
                 SEO Loaded
               </span>
             </div>
@@ -218,15 +226,15 @@ export function PreviewRenderer({
         )}
       </aside>
 
-      <section aria-label="Desktop landing preview" className="space-y-2">
-        <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
-          Desktop preview 1280px
+      <section aria-label="Mobilni landing preview" className="space-y-2">
+        <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          Mobilni pregled
         </div>
-        <div className="max-h-[70vh] w-full max-w-full overflow-auto rounded-lg border border-gray-200 bg-gray-100">
-          <div className="w-[1280px] min-w-[1280px]">
-            <DesktopPreviewFrame>
+        <div className="max-h-[70vh] overflow-auto rounded-lg border border-gray-200 bg-gray-100 p-4 dark:border-gray-700 dark:bg-gray-800">
+          <div className="mx-auto" style={{ width: MOBILE_PREVIEW_WIDTH }}>
+            <MobilePreviewFrame>
               {visibleBlocks.map(renderBlock)}
-            </DesktopPreviewFrame>
+            </MobilePreviewFrame>
           </div>
         </div>
       </section>
