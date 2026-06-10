@@ -47,6 +47,7 @@ import {
 import { useAutoOptimizeLayout } from "@/hooks/useAutoOptimizeLayout";
 
 import { PreviewRenderer } from "./PreviewRenderer";
+import { LandingBlocksEditor } from "./LandingBlocksEditor";
 import { GeneratedImagesPanel } from "./GeneratedImagesPanel";
 import LoaderButton from "@/components/elements/LoaderButton";
 import type { NewsletterClientScope } from "@/lib/newsletter/clientScope";
@@ -1007,6 +1008,42 @@ export default function AdminSemanticModal({
               )}
             </div>
           </form>
+
+          {/* MANUAL EDITOR — deterministic edits, no AI regeneration */}
+          {form.campaignType === "email-landing" &&
+            !!preview.layout?.layout?.length && (
+              <Disclosure as="div" className="border-t border-gray-200 dark:border-gray-700 px-0 py-6">
+                <h3 className="flow-root">
+                  <DisclosureButton className="group flex w-full items-center justify-between rounded-md bg-gray-100 dark:bg-gray-800 p-2 hover:text-gray-500">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      Uredi blokove (ručno)
+                    </span>
+                    <span className="flex items-center">
+                      <PlusIcon className="size-5 cursor-pointer text-(--primary-color) hover:text-(--primary-color)/90 group-data-open:hidden" />
+                      <MinusIcon className="size-5 cursor-pointer text-(--primary-color) hover:text-(--primary-color)/90 group-not-data-open:hidden" />
+                    </span>
+                  </DisclosureButton>
+                </h3>
+                <DisclosurePanel className="pt-4">
+                  <LandingBlocksEditor
+                    blocks={preview.layout.layout}
+                    customCtas={customCtas}
+                    onChange={(blocks) =>
+                      preview.setPreviewFromExisting({
+                        layout: blocks,
+                        seo: preview.aiLanding?.seo,
+                        score: preview.layout?.score,
+                        meta: preview.layout?.meta,
+                      })
+                    }
+                  />
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    Izmene se čuvaju tačno ovakve („Sačuvaj” / „Objavi landing”),
+                    bez ponovnog AI generisanja.
+                  </p>
+                </DisclosurePanel>
+              </Disclosure>
+            )}
 
           {/* PREVIEW */}
           {form.campaignType === "email-landing" && (

@@ -114,6 +114,24 @@ export function resolveCta(
   return { key: DEFAULT_CTA_KEY, label: fallback.label, href: fallback.href };
 }
 
+/**
+ * Selectable CTA options (catalog + valid custom CTAs) for the manual block
+ * editor. Custom keys use the same index scheme as the agent/resolver, so a
+ * key chosen here resolves to the same destination.
+ */
+export function getCtaKeyOptions(
+  customCtas?: CustomCta[],
+): { key: string; label: string }[] {
+  const base = (Object.keys(CTA_CATALOG) as CtaKey[]).map((key) => ({
+    key,
+    label: CTA_CATALOG[key].label,
+  }));
+  const custom = (customCtas ?? [])
+    .filter((c) => c.label?.trim() && c.href?.trim())
+    .map((c, i) => ({ key: customCtaKey(i), label: `${c.label} (custom)` }));
+  return [...base, ...custom];
+}
+
 /** Bullet list of allowed keys + descriptions, injected into the agent prompt. */
 export function ctaCatalogPromptList(customCtas?: CustomCta[]): string {
   const base = (Object.keys(CTA_CATALOG) as CtaKey[]).map(
