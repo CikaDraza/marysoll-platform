@@ -20,11 +20,11 @@ export const superAdminLabelClass =
 export const superAdminCardClass =
   "bg-slate-800 rounded-xl border border-slate-700 p-5";
 export const superAdminPrimaryButtonClass =
-  "px-4 py-2 bg-violet-600 text-white text-xs font-bold rounded-lg hover:bg-violet-500 transition disabled:opacity-40";
+  "px-4 py-2 bg-violet-600 text-white text-xs font-bold rounded-lg hover:bg-violet-500 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed";
 export const superAdminDangerButtonClass =
-  "px-4 py-2 bg-red-700 text-white text-xs font-bold rounded-lg hover:bg-red-600 transition disabled:opacity-40";
+  "px-4 py-2 bg-red-700 text-white text-xs font-bold rounded-lg hover:bg-red-600 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed";
 export const superAdminGreenButtonClass =
-  "px-4 py-2 bg-emerald-700 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition disabled:opacity-40";
+  "px-4 py-2 bg-emerald-700 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed";
 
 export const SUPERADMIN_TABS: SuperAdminTabConfig[] = [
   { id: "saloni", label: "Saloni", icon: UsersIcon as ComponentType<{ className?: string }> },

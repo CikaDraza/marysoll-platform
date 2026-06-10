@@ -15,6 +15,10 @@ function formatMb(mb: number): string {
   if (mb >= 1024) {
     return `${(mb / 1024).toFixed(2)} GB`;
   }
+  // Sitne vrednosti (ispod 1 MB) prikaži u KB da se vidi da potrošnja postoji.
+  if (mb > 0 && mb < 1) {
+    return `${Math.round(mb * 1024)} KB`;
+  }
   return `${mb.toFixed(1)} MB`;
 }
 

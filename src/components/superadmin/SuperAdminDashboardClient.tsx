@@ -1,7 +1,7 @@
 // app/superadmin/dashboard/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PLAN_FEATURES } from "@/lib/plans/planFeatures";
 import { AuthStatusButton } from "@/components/auth/AuthStatusButton";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +25,7 @@ import {
   PlanBadge,
   StatusBadge,
   SUPERADMIN_TABS,
+  isSuperAdminTab,
   superAdminCardClass as card,
   superAdminDangerButtonClass as btnDanger,
   superAdminGreenButtonClass as btnGreen,
@@ -48,6 +49,26 @@ export default function SuperAdminDashboard() {
       window.location.replace("/login");
     }
   }, [authLoading, user]);
+
+  // Vrati poslednji aktivni tab posle refresh-a (čita se posle mount-a da ne bi
+  // bilo hydration mismatch-a).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    async function restoreTab() {
+      const saved = localStorage.getItem("superadmin-active-tab");
+      if (saved && isSuperAdminTab(saved)) setActiveTab(saved);
+    }
+    restoreTab();
+  }, []);
+
+  const selectTab = useCallback((tab: SuperAdminTab) => {
+    setActiveTab(tab);
+    try {
+      localStorage.setItem("superadmin-active-tab", tab);
+    } catch {
+      // ignore (npr. privatni režim bez storage-a)
+    }
+  }, []);
 
   return (
     <div className="h-screen bg-slate-900 text-white flex flex-col overflow-hidden">
@@ -84,7 +105,7 @@ export default function SuperAdminDashboard() {
             {sa.stats?.paidTenants ?? "—"} plaćenih
           </span>
           <SuperAdminNotificationBell
-            onChatClick={() => setActiveTab("chat")}
+            onChatClick={() => selectTab("chat")}
           />
           <AuthStatusButton theme="dark" logoutRedirect="/login" />
         </div>
@@ -97,7 +118,7 @@ export default function SuperAdminDashboard() {
             {SUPERADMIN_TABS.map((t) => (
               <li key={t.id}>
                 <button
-                  onClick={() => setActiveTab(t.id)}
+                  onClick={() => selectTab(t.id)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                     activeTab === t.id
                       ? "bg-violet-600 text-white font-semibold"

@@ -8,7 +8,12 @@ cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
 });
+
+// Re-export konfigurisane instance — importovanjem ovog modula izvršava se
+// gornji cloudinary.config(...) (single source of truth za kredencijale).
+export { cloudinary };
 
 export type UploadResult = {
   secure_url: string;

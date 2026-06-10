@@ -134,18 +134,20 @@ export default async function UslugePage() {
                 </p>
               )}
             </div>
-            <Link
-              href={`${base}/termini`}
-              className="inline-block px-10 py-4 text-[#a8876c] hover:text-white font-bold rounded-full outline-1 outline-[#a8876c] hover:bg-[#a8876c] transition"
-            >
-              Pogledaj slobodne termine →
-            </Link>
-            <Link
-              href={`${base}/termini`}
-              className="inline-block px-10 py-4 bg-white text-[#a8876c] font-bold rounded-full hover:bg-gray-100 transition shadow-lg"
-            >
-              Zakaži termin →
-            </Link>
+            <div className="mt-10 flex flex-col md:flex-row items-center justify-center gap-x-6">
+              <Link
+                href={`${base}/termini`}
+                className="inline-block px-10 py-4 text-[#a8876c] hover:text-white font-bold rounded-full outline-1 outline-[#a8876c] hover:bg-[#a8876c] transition"
+              >
+                Pogledaj slobodne termine →
+              </Link>
+              <Link
+                href={`${base}/termini`}
+                className="mt-4 w-full text-center md:w-auto md:mt-0 inline-block px-10 py-4 bg-white text-[#a8876c] font-bold rounded-full hover:bg-gray-100 transition shadow-lg"
+              >
+                Zakaži termin →
+              </Link>
+            </div>
           </div>
         </section>
       </div>

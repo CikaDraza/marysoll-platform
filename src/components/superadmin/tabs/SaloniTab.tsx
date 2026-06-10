@@ -136,6 +136,15 @@ export function SaloniTab({
   const [deleteTarget, setDeleteTarget] = useState<TenantRow | null>(null);
   const [demoTarget, setDemoTarget] = useState<TenantRow | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  // Spreči hydration mismatch na data-zavisnim disabled dugmadima: SSR i prvi
+  // klijentski render daju istu vrednost dok se ne montira.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    async function markMounted() {
+      setMounted(true);
+    }
+    markMounted();
+  }, []);
 
   const filtered = useMemo(() => {
     return superAdmin.tenants.filter((tenant) => {
@@ -194,7 +203,7 @@ export function SaloniTab({
           <button
             type="button"
             onClick={() => bulk.enable(filteredTenantIds)}
-            disabled={bulk.isPending || filteredTenantIds.length === 0}
+            disabled={!mounted || bulk.isPending || filteredTenantIds.length === 0}
             className="rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-600 disabled:opacity-40"
           >
             Omogući prikazane
@@ -202,7 +211,7 @@ export function SaloniTab({
           <button
             type="button"
             onClick={() => bulk.disable(filteredTenantIds)}
-            disabled={bulk.isPending || filteredTenantIds.length === 0}
+            disabled={!mounted || bulk.isPending || filteredTenantIds.length === 0}
             className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-bold text-slate-300 transition hover:border-red-600 hover:text-red-400 disabled:opacity-40"
           >
             Onemogući prikazane

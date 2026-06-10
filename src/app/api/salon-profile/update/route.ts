@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { SalonProfile } from "@/models/SalonProfile";
+import { Tenant } from "@/models/Tenant";
 import {
   uploadToCloudinary,
   deleteFromCloudinary,
@@ -85,6 +86,18 @@ export async function PUT(req: NextRequest) {
     }
 
     await profile.save();
+
+    // Sinhronizuj Tenant.name sa nazivom salona — superadmin dashboard i
+    // marketplace čitaju Tenant.name, pa bi inače ostao stari naziv.
+    const nameVal = form.get("name");
+    const targetTenantId = profile.tenantId ?? tenantId;
+    if (targetTenantId && typeof nameVal === "string" && nameVal.trim()) {
+      await Tenant.updateOne(
+        { _id: targetTenantId },
+        { $set: { name: nameVal.trim() } },
+      );
+    }
+
     // Name/city/street/phone/working-hours edits surface in booking + AI knowledge.
     await revalidateMarketplaceCaches();
     return NextResponse.json({ success: true, data: profile });

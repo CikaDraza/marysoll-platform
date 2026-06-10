@@ -8,6 +8,7 @@ import {
   StatusBadge,
   superAdminCardClass as card,
 } from "@/components/superadmin/shared";
+import { PlatformUsageSection } from "@/components/superadmin/tabs/PlatformUsageSection";
 import type { SalonMonthStats } from "@/app/api/superadmin/appointment-stats/route";
 
 // ─── Appointment stats section ────────────────────────────────────────────────
@@ -183,6 +184,9 @@ export function StatistikaTab({ stats, tenants }: StatistikaTabProps) {
           </div>
         ))}
       </div>
+
+      {/* ── Platform Usage (MongoDB + Cloudinary potrošnja) ── */}
+      <PlatformUsageSection />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className={card}>
