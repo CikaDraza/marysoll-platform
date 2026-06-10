@@ -1,9 +1,20 @@
 "use client";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import { usePathname } from "next/navigation";
 
 type Theme = "light" | "dark";
-type ThemeContextType = { theme: Theme; toggleTheme: () => void };
+type ThemeContextType = {
+  theme: Theme;
+  toggleTheme: () => void;
+  /** Route-scoped override: pass a theme to lock it, or null to release. */
+  setForcedTheme: (theme: Theme | null) => void;
+};
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
@@ -12,16 +23,23 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const pathname = usePathname();
   const [theme, setTheme] = useState<Theme>("light");
+  const [forced, setForced] = useState<Theme | null>(null);
   const [ready, setReady] = useState(false);
 
-  // Routes that force a fixed theme regardless of the user's saved preference.
-  //  - /superadmin  → always dark
-  //  - /newsletter  → always light (public platform landings)
-  const forcedTheme: Theme | null = pathname?.startsWith("/superadmin")
+  // Path-based forced themes (highest priority):
+  //  - /superadmin → always dark
+  //  - /newsletter → always light (public platform landings)
+  const pathForcedTheme: Theme | null = pathname?.startsWith("/superadmin")
     ? "dark"
     : pathname?.startsWith("/newsletter")
       ? "light"
       : null;
+
+  // Effective override = path rule, else whatever a subtree requested
+  // (e.g. public tenant pages force light via <TenantThemeController />).
+  const forcedTheme = pathForcedTheme ?? forced;
+
+  const setForcedTheme = useCallback((t: Theme | null) => setForced(t), []);
 
   // Load saved preference once.
   useEffect(() => {
@@ -33,9 +51,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     init();
   }, []);
 
-  // Apply the effective theme to <html>. Forced routes win and are NOT persisted,
-  // so the user's own preference is restored once they leave the forced route.
-  // Depends on `forcedTheme` (derived from pathname) so it re-applies on client nav.
+  // Apply the effective theme to <html>. Forced themes win and are NOT persisted,
+  // so the user's own preference is restored once the override is released.
   useEffect(() => {
     if (!ready) return;
     const effective = forcedTheme ?? theme;
@@ -48,9 +65,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
       value={{
         theme: forcedTheme ?? theme,
         toggleTheme: () => {
-          if (forcedTheme) return; // theme is locked on forced routes
+          if (forcedTheme) return; // theme is locked while an override is active
           setTheme((p) => (p === "light" ? "dark" : "light"));
         },
+        setForcedTheme,
       }}
     >
       {children}

@@ -99,8 +99,8 @@ export default function AppointmentCalendarPage({
     "tenantSlug"
   > | null>(null);
 
-  // Real-time polling — refresh every 30 s
-  const { data: appointments = [] } = useQuery<PublicAppt[]>({
+  // Real-time polling — refresh every 30 s (plus an immediate refetch on booking)
+  const { data: appointments = [], refetch } = useQuery<PublicAppt[]>({
     queryKey: ["pub-appts", tenantSlug],
     queryFn: async () => {
       const res = await fetch(`/api/public/${tenantSlug}/appointments`);
@@ -527,6 +527,7 @@ export default function AppointmentCalendarPage({
         token={token ?? undefined}
         tenantSlug={tenantSlug}
         onConfirmedByGuest={handleGuestConfirm}
+        onBooked={() => refetch()}
         pendingDefaults={pendingDefaults}
       />
     </>

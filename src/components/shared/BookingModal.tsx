@@ -39,6 +39,7 @@ export function BookingModal({
   token,
   tenantSlug,
   onConfirmedByGuest,
+  onBooked,
   pendingDefaults,
 }: {
   isOpen: boolean;
@@ -52,6 +53,9 @@ export function BookingModal({
   token?: string;
   tenantSlug?: string;
   onConfirmedByGuest: (data: Omit<PendingAppointment, "tenantSlug">) => void;
+  /** Fired after a successful booking (logged-in or direct guest) so the
+   *  caller can refresh its calendar and mark the new slot as taken. */
+  onBooked?: () => void;
   pendingDefaults?: Omit<PendingAppointment, "tenantSlug"> | null;
 }) {
   const { user } = useAuth();
@@ -193,6 +197,7 @@ export function BookingModal({
 
     try {
       await createAppointment.mutateAsync(payload);
+      onBooked?.();
       handleClose();
     } catch {
       toast.error("Greška pri kreiranju termina.");
@@ -302,6 +307,7 @@ export function BookingModal({
       }
 
       toast.success("Zakazano — čeka odobrenje.");
+      onBooked?.();
       handleClose();
     } catch (err: unknown) {
       toast.error((err as Error).message || "Greška pri zakazivanju.");

@@ -14,6 +14,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { CookiesModal } from "@/components/client/CookiesModal";
+import { TenantThemeController } from "@/components/themes/TenantThemeController";
 
 export default async function TenantLayout({
   children,
@@ -31,6 +32,7 @@ export default async function TenantLayout({
 
   return (
     <TenantProvider tenantSlug={tenantSlug} tenantId={tenantId} base={base}>
+      <TenantThemeController />
       {children}
       <CookiesModal tenantSlug={tenantSlug} />
     </TenantProvider>
