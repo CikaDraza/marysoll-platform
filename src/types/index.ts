@@ -10,6 +10,7 @@
  */
 
 import type { CampaignIntent } from "./conversational/campaign";
+import type { PlatformAudienceFilter } from "@/lib/newsletter/audienceFilter";
 import type { Types } from "mongoose";
 import { LandingBlock } from "./landing-blocks";
 
@@ -401,6 +402,7 @@ export interface INewsletterCampaign {
   previewText?: string;
   manualRecipients: string[];
   sendToAll: boolean;
+  audienceFilter?: PlatformAudienceFilter;
   ctaSlug: string;
   excludeRecentSubscribers?: boolean;
   excludeInactive?: boolean;
@@ -510,6 +512,7 @@ export interface CampaignCreateData {
   previewText: string;
   manualRecipients: string[];
   sendToAll: boolean;
+  audienceFilter?: PlatformAudienceFilter;
   scheduledFor?: Date;
   isABTest?: boolean;
   excludeRecentSubscribers: boolean;

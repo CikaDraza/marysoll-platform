@@ -8,6 +8,7 @@ import {
   getNewsletterScopeKey,
   type NewsletterClientScope,
 } from "@/lib/newsletter/clientScope";
+import type { PlatformAudienceFilter } from "@/lib/newsletter/audienceFilter";
 
 interface Subscriber {
   _id: string;
@@ -35,6 +36,7 @@ interface UseNewsletterSubscribersReturn {
 
 export function useNewsletterSubscribers(
   scope?: NewsletterClientScope,
+  audience: PlatformAudienceFilter = "all",
 ): UseNewsletterSubscribersReturn {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -43,12 +45,13 @@ export function useNewsletterSubscribers(
   const requestConfig = { headers: getNewsletterScopeHeaders(scope) };
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["newsletter-subscribers", scopeKey, { search, page }],
+    queryKey: ["newsletter-subscribers", scopeKey, { search, page, audience }],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       params.set("page", page.toString());
       params.set("limit", "50");
+      if (audience !== "all") params.set("audience", audience);
 
       const res = await api.get(
         `/newsletter/subscribers?${params}`,

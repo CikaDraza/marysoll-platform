@@ -1,9 +1,14 @@
 // lib/ai/agents/landingPageAgent.ts
 import "server-only";
 
-import { LandingPageOutput } from "@/types/landing-blocks";
+import {
+  LandingPageOutput,
+  type LandingPageAiOutput,
+  landingPageAiOutputSchema,
+} from "@/types/landing-blocks";
 import { parseLandingPageOutput } from "@/lib/conversational/editor/aiToLayoutAdapter";
 import { getLandingClient } from "../providers/deepseek";
+import { resolveCta, ctaCatalogPromptList } from "../landing/ctaCatalog";
 
 export type { LandingPageOutput } from "@/types/landing-blocks";
 
@@ -26,8 +31,8 @@ const outputContract = `{
       "priority": 1,
       "title": "H1 naslov",
       "subtitle": "Opcioni podnaslov",
-      "ctaLabel": "Opciona CTA labela",
-      "href": "Opcioni URL",
+      "ctaLabel": "Opciona CTA labela (vidljivi tekst dugmeta)",
+      "ctaKey": "start-free",
       "images": [{ "src": "URL iz IMAGES_URL", "alt": "Opis slike" }]
     },
     {
@@ -74,8 +79,8 @@ const outputContract = `{
           "description": "Opis paketa",
           "price": { "amount": 1200, "currency": "RSD" },
           "features": ["Stavka"],
-          "href": "/termini",
-          "ctaLabel": "Zakaži",
+          "ctaKey": "plan-claudia",
+          "ctaLabel": "Izaberi plan",
           "highlight": "none"
         }
       ]
@@ -88,7 +93,7 @@ const outputContract = `{
       "title": "H2 CTA naslov",
       "description": "Opcioni opis",
       "ctaLabel": "CTA labela",
-      "href": "/termini",
+      "ctaKey": "start-free",
       "image": { "src": "URL iz IMAGES_URL", "alt": "Opis slike" }
     }
   ]
@@ -156,6 +161,60 @@ function stripNullImages(obj: unknown): void {
   }
 }
 
+/**
+ * Resolver/validator: maps each block's `ctaKey` to a curated destination from
+ * the CTA catalog (allowlist). `href` is always taken from the catalog — the
+ * agent can never inject a raw URL — while `ctaLabel` keeps the agent's copy
+ * (falling back to the catalog label). Unknown keys fall back to the default.
+ */
+function resolveLandingCtas(output: LandingPageAiOutput): LandingPageOutput {
+  const blocks = output.blocks.map((block) => {
+    switch (block.type) {
+      case "HeroBlock": {
+        // Hero CTA is optional — only resolve when the agent signalled a button.
+        if (!block.ctaKey && !block.ctaLabel) return block;
+        const cta = resolveCta(block.ctaKey);
+        return {
+          ...block,
+          ctaKey: cta.key,
+          href: cta.href,
+          ctaLabel: block.ctaLabel || cta.label,
+        };
+      }
+      case "AffiliateCTABlock": {
+        // Final CTA always renders a button.
+        const cta = resolveCta(block.ctaKey);
+        return {
+          ...block,
+          ctaKey: cta.key,
+          href: cta.href,
+          ctaLabel: block.ctaLabel || cta.label,
+        };
+      }
+      case "PricingBlock": {
+        return {
+          ...block,
+          items: block.items.map((item) => {
+            if (!item.ctaKey && !item.ctaLabel) return item;
+            const cta = resolveCta(item.ctaKey);
+            return {
+              ...item,
+              ctaKey: cta.key,
+              href: cta.href,
+              ctaLabel: item.ctaLabel || cta.label,
+            };
+          }),
+        };
+      }
+      default:
+        return block;
+    }
+  });
+
+  // Strict re-validation; `href` is now guaranteed where the schema requires it.
+  return parseLandingPageOutput({ blocks });
+}
+
 export async function generateLandingPreview(
   input: LandingPageInput,
 ): Promise<LandingPageOutput> {
@@ -186,6 +245,11 @@ Pravila:
 - ContentSplitBlock is optional.
 - PricingBlock is optional and only when prices, services or packages are relevant.
 - AffiliateCTABlock should be the final CTA when there is a promoted action or link.
+- CTA buttons: NEVER output a raw URL or "href". For every button choose a "ctaKey" from the allowed catalog below.
+- "ctaLabel" is the visible button copy — write short, compelling Serbian (Latin) copy (max 4 words).
+- Pick the most relevant ctaKey for the context; default to "start-free" if unsure. For PricingBlock items choose the matching "plan-*" key.
+- Allowed ctaKey values:
+${ctaCatalogPromptList()}
 - Use images only from IMAGES_URL input.
 - Do not invent image URLs.
 - Every image must have alt text.${hasImages ? "" : "\n- IMAGES_URL is empty: do NOT include any image or images field in any block. Omit the field entirely."}
@@ -221,9 +285,10 @@ Ton: ${semanticContent.tone}
   try {
     const raw = JSON.parse(content);
     stripNullImages(raw);
-    const parsed = parseLandingPageOutput(raw);
-    assertAllowedImageSources(parsed, imagesUrl || []);
-    return parsed;
+    const aiOutput = landingPageAiOutputSchema.parse(raw);
+    const resolved = resolveLandingCtas(aiOutput);
+    assertAllowedImageSources(resolved, imagesUrl || []);
+    return resolved;
   } catch (error) {
     console.error("Failed to parse DeepSeek response:", content);
     throw new Error(`Invalid landing JSON from DeepSeek: ${error}`);

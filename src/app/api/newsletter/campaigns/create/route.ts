@@ -5,6 +5,7 @@ import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { requireFeature } from "@/lib/plans/planEnforcement";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 import { resolveNewsletterAdminScope } from "@/lib/newsletter/adminTenantScope";
+import { normalizePlatformAudienceFilter } from "@/lib/newsletter/audienceFilter";
 
 export async function POST(request: Request) {
   try {
@@ -45,6 +46,7 @@ export async function POST(request: Request) {
       content,
       manualRecipients,
       sendToAll = true,
+      audienceFilter = "all",
       excludeRecentSubscribers = false,
       excludeInactive = false,
       scheduledFor,
@@ -102,6 +104,7 @@ export async function POST(request: Request) {
       content,
       manualRecipients,
       sendToAll,
+      audienceFilter: normalizePlatformAudienceFilter(audienceFilter),
       excludeRecentSubscribers,
       excludeInactive,
       scheduledFor: scheduledFor ? new Date(scheduledFor) : undefined,

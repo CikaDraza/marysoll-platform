@@ -25,6 +25,12 @@ const NewsletterCampaignSchema = new Schema(
     previewText: String,
     manualRecipients: [String],
     sendToAll: { type: Boolean, default: false },
+    // Platform-only audience segment. "all" applies no contactType gate.
+    audienceFilter: {
+      type: String,
+      enum: ["all", "leads", "owners"],
+      default: "all",
+    },
     ctaSlug: { type: String, default: "" },
     excludeRecentSubscribers: { type: Boolean, default: false },
     excludeInactive: { type: Boolean, default: false },

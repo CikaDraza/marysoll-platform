@@ -5,6 +5,10 @@ import { TenantUser } from "@/models/TenantUser";
 import { AudienceContact } from "@/models/AudienceContact";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { resolveNewsletterAdminScope } from "@/lib/newsletter/adminTenantScope";
+import {
+  normalizePlatformAudienceFilter,
+  platformAudienceContactTypeCondition,
+} from "@/lib/newsletter/audienceFilter";
 import { Types } from "mongoose";
 
 export async function GET(request: Request) {
@@ -39,11 +43,15 @@ export async function GET(request: Request) {
       },
     ];
 
+    const audienceFilter = normalizePlatformAudienceFilter(
+      searchParams.get("audience"),
+    );
+
     const contactFilter: Record<string, unknown> = {
       $and: platformContactConditions,
       subscribed: true,
       status: "ACTIVE",
-      contactType: { $in: ["SALON_OWNER", "LEAD", "STAFF"] },
+      ...platformAudienceContactTypeCondition(audienceFilter),
     };
 
     if (search) {

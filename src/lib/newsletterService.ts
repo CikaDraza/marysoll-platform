@@ -10,6 +10,10 @@ import crypto from "crypto";
 import { connectToDB } from "./db/mongodb";
 import { NewsletterLog } from "@/models/NewsletterLog";
 import {
+  normalizePlatformAudienceFilter,
+  platformAudienceContactTypeCondition,
+} from "@/lib/newsletter/audienceFilter";
+import {
   sendNewsletterEmail,
   sendNewsletterVerificationEmail,
 } from "./email/email";
@@ -241,12 +245,15 @@ export async function sendCampaignEmails(campaignId: string) {
 
   if (campaign.sendToAll) {
     if (isPlatformCampaign) {
+      const audienceFilter = normalizePlatformAudienceFilter(
+        campaign.audienceFilter,
+      );
       const contacts = await AudienceContact.find({
         $or: [{ tenantId: { $exists: false } }, { tenantId: null }],
         subscribed: true,
         status: "ACTIVE",
         verificationToken: { $exists: false },
-        contactType: { $in: ["SALON_OWNER", "LEAD", "STAFF"] },
+        ...platformAudienceContactTypeCondition(audienceFilter),
       }).lean<
         {
           _id: Types.ObjectId;

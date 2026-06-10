@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(/home/dmdevelo/.nvm/versions/node/v24.13.1/bin/node -v)"
+      "Bash(/home/dmdevelo/.nvm/versions/node/v24.13.1/bin/node -v)",
+      "Bash(grep -iv 'find\\\\|query\\\\|$in')"
     ]
   }
 }

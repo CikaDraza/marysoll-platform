@@ -22,6 +22,11 @@ import { SingleImageField } from "./campaign/SingleImageField";
 import LoaderButton from "../elements/LoaderButton";
 import AdminSemanticModal from "./campaign/AdminSemanticModal";
 import type { NewsletterClientScope } from "@/lib/newsletter/clientScope";
+import {
+  PLATFORM_AUDIENCE_FILTERS,
+  PLATFORM_AUDIENCE_FILTER_LABELS,
+  type PlatformAudienceFilter,
+} from "@/lib/newsletter/audienceFilter";
 
 const inp = [
   "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
@@ -77,6 +82,10 @@ function AdminNewsletterDashboard({ scope }: AdminNewsletterDashboardProps) {
     isDeleting,
   } = useNewsletterAdmin(scope);
 
+  const isPlatform = scope?.scope === "platform";
+  const [audienceFilter, setAudienceFilter] =
+    useState<PlatformAudienceFilter>("all");
+
   const {
     subscribers,
     selected,
@@ -90,7 +99,7 @@ function AdminNewsletterDashboard({ scope }: AdminNewsletterDashboardProps) {
     page,
     setPage,
     pages,
-  } = useNewsletterSubscribers(scope);
+  } = useNewsletterSubscribers(scope, isPlatform ? audienceFilter : "all");
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -330,6 +339,7 @@ function AdminNewsletterDashboard({ scope }: AdminNewsletterDashboardProps) {
         content: finalContent, // OVO JE NAJVAŽNIJE!
         manualRecipients: formData.sendToAll ? [] : selected,
         sendToAll: formData.sendToAll,
+        audienceFilter: isPlatform ? audienceFilter : "all",
         excludeRecentSubscribers: formData.excludeRecentSubscribers,
         excludeInactive: formData.excludeInactive,
         scheduledFor: formData.scheduledFor
@@ -354,6 +364,7 @@ function AdminNewsletterDashboard({ scope }: AdminNewsletterDashboardProps) {
       scheduledFor: "",
       variables: {},
     });
+    setAudienceFilter("all");
     setSelectedTemplate(null);
     setIsFormOpen(false);
   };
@@ -1038,6 +1049,30 @@ function AdminNewsletterDashboard({ scope }: AdminNewsletterDashboardProps) {
               </div>
 
               <div className="md:col-span-2">
+                {isPlatform && (
+                  <div className="mb-4">
+                    <label className={lbl}>Ciljna grupa</label>
+                    <select
+                      value={audienceFilter}
+                      onChange={(e) =>
+                        setAudienceFilter(
+                          e.target.value as PlatformAudienceFilter,
+                        )
+                      }
+                      className={inp}
+                    >
+                      {PLATFORM_AUDIENCE_FILTERS.map((f) => (
+                        <option key={f} value={f}>
+                          {PLATFORM_AUDIENCE_FILTER_LABELS[f]}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Određuje kome „Pošalji svim pretplatnicima” šalje, i listu
+                      za ručni odabir.
+                    </p>
+                  </div>
+                )}
                 <label className="flex items-center gap-3 mb-4">
                   <input
                     type="checkbox"

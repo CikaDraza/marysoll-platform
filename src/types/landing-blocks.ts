@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { ctaKeys, type CtaKey } from "@/lib/ai/landing/ctaCatalog";
+
+export type { CtaKey } from "@/lib/ai/landing/ctaCatalog";
 
 export const landingBlockTypes = [
   "HeroBlock",
@@ -33,6 +36,8 @@ export interface HeroBlock extends LandingBlockBase {
   title: string;
   subtitle?: string;
   ctaLabel?: string;
+  /** Catalog key chosen by the agent; resolved server-side into `href`. */
+  ctaKey?: CtaKey;
   href?: string;
   images?: LandingImage[];
 }
@@ -76,6 +81,8 @@ export interface PricingBlock extends LandingBlockBase {
       currency: "RSD" | "EUR";
     };
     features?: string[];
+    /** Catalog key chosen by the agent; resolved server-side into `href`. */
+    ctaKey?: CtaKey;
     href?: string;
     ctaLabel?: string;
     highlight?: "none" | "popular" | "bestValue";
@@ -88,6 +95,8 @@ export interface AffiliateCTABlock extends LandingBlockBase {
   title: string;
   description?: string;
   ctaLabel: string;
+  /** Catalog key chosen by the agent; resolved server-side into `href`. */
+  ctaKey?: CtaKey;
   href: string;
   image?: LandingImage;
 }
@@ -122,6 +131,7 @@ export const heroBlockSchema = blockBaseSchema.extend({
   title: z.string().min(1),
   subtitle: z.string().optional(),
   ctaLabel: z.string().optional(),
+  ctaKey: z.enum(ctaKeys).optional(),
   href: z.string().optional(),
   images: z.array(imageSchema).optional(),
 });
@@ -173,6 +183,7 @@ export const pricingBlockSchema = blockBaseSchema.extend({
           })
           .optional(),
         features: z.array(z.string().min(1)).optional(),
+        ctaKey: z.enum(ctaKeys).optional(),
         href: z.string().optional(),
         ctaLabel: z.string().optional(),
         highlight: z.enum(["none", "popular", "bestValue"]).optional(),
@@ -187,6 +198,7 @@ export const affiliateCtaBlockSchema = blockBaseSchema.extend({
   title: z.string().min(1),
   description: z.string().optional(),
   ctaLabel: z.string().min(1),
+  ctaKey: z.enum(ctaKeys).optional(),
   href: z.string().min(1),
   image: imageSchema.optional(),
 });
@@ -203,3 +215,27 @@ export const landingBlockSchema = z.discriminatedUnion("type", [
 export const landingPageOutputSchema = z.object({
   blocks: z.array(landingBlockSchema).min(1),
 });
+
+// ─── Relaxed schema for raw agent output ───────────────────────────────────────
+// The agent emits a `ctaKey` instead of a destination URL, so for the final-CTA
+// block `href`/`ctaLabel` are not yet present at parse time — the server-side
+// resolver fills them from the CTA catalog before strict validation runs.
+const affiliateCtaBlockAiSchema = affiliateCtaBlockSchema.extend({
+  href: z.string().optional(),
+  ctaLabel: z.string().optional(),
+});
+
+export const landingBlockAiSchema = z.discriminatedUnion("type", [
+  heroBlockSchema,
+  articleBlockSchema,
+  featureBlockSchema,
+  contentSplitBlockSchema,
+  pricingBlockSchema,
+  affiliateCtaBlockAiSchema,
+]);
+
+export const landingPageAiOutputSchema = z.object({
+  blocks: z.array(landingBlockAiSchema).min(1),
+});
+
+export type LandingPageAiOutput = z.infer<typeof landingPageAiOutputSchema>;
