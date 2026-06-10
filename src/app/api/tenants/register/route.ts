@@ -6,6 +6,7 @@ import { TenantUser } from "@/models/TenantUser";
 import { SalonProfile } from "@/models/SalonProfile";
 import { Subscription } from "@/models/Subscription";
 import { sendOwnerVerificationEmail, TRIAL_DAYS } from "@/lib/email/onboarding";
+import { upsertOwnerNewsletterContact } from "@/lib/newsletterService";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 
@@ -25,8 +26,15 @@ export async function POST(request: NextRequest) {
   try {
     await connectToDB();
 
-    const { salonName, ownerName, email, password, phone, agreedToPrivacy } =
-      await request.json();
+    const {
+      salonName,
+      ownerName,
+      email,
+      password,
+      phone,
+      agreedToPrivacy,
+      newsletterOptIn = false,
+    } = await request.json();
 
     if (
       !salonName ||
@@ -177,7 +185,21 @@ export async function POST(request: NextRequest) {
     >[1];
     await tenant.save();
 
-    // 6. Verification email
+    // 6. Newsletter opt-in (optional) — create a platform-level SALON_OWNER
+    //    contact, pending until the registration email link is verified.
+    if (newsletterOptIn) {
+      try {
+        await upsertOwnerNewsletterContact({
+          email: normalizedEmail,
+          name: ownerName.trim(),
+          profileId: tenantUser._id,
+        });
+      } catch (newsletterErr) {
+        console.error("⚠️ Newsletter opt-in nije sačuvan:", newsletterErr);
+      }
+    }
+
+    // 7. Verification email
     try {
       await sendOwnerVerificationEmail({
         email: normalizedEmail,

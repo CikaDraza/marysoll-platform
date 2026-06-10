@@ -13,6 +13,7 @@ type FormFields = {
   password: string;
   phone: string;
   agreedToPrivacy: boolean;
+  newsletterOptIn: boolean;
 };
 
 type FieldErrors = Partial<Record<keyof FormFields, string>>;
@@ -49,6 +50,7 @@ export default function RegisterForm() {
     password: "",
     phone: "",
     agreedToPrivacy: false,
+    newsletterOptIn: false,
   });
   const [errors, setErrors] = useState<FieldErrors>({});
 
@@ -230,6 +232,22 @@ export default function RegisterForm() {
           {errors.phone && (
             <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
           )}
+        </div>
+
+        <div>
+          <label className="flex items-start gap-3 cursor-pointer pt-1">
+            <input
+              type="checkbox"
+              checked={form.newsletterOptIn}
+              onChange={(e) => set("newsletterOptIn", e.target.checked)}
+              className="mt-0.5 accent-purple-600"
+              disabled={loading}
+            />
+            <span className="text-sm text-gray-600">
+              Želim da primam obaveštenja i promocije{" "}
+              <span className="text-gray-400">(opciono)</span>
+            </span>
+          </label>
         </div>
 
         <div>

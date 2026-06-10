@@ -450,31 +450,31 @@ export default function AdminSemanticModal({
       <DialogBackdrop className="fixed inset-0 bg-black/50" />
 
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="w-full max-w-xl bg-white rounded-lg shadow-xl p-6 max-h-[90vh] overflow-auto">
+        <DialogPanel className="w-full max-w-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-lg shadow-xl p-6 max-h-[90vh] overflow-auto">
           {/* HEADER */}
           <div className="flex justify-between items-center">
-            <h3 className="text-lg dark:text-gray-800 font-semibold">
+            <h3 className="text-lg font-semibold">
               Semantika kampanje
             </h3>
             <button onClick={handleClose}>
-              <XMarkIcon className="w-5 h-5 text-gray-600" />
+              <XMarkIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </button>
           </div>
 
           {/* CAMPAIGN INFO */}
-          <div className="mt-4 p-3 bg-gray-50 rounded">
-            <p className="text-sm font-medium text-gray-800">
+          <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded">
+            <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
               Kampanja: {campaign.name}
             </p>
-            <p className="text-xs text-gray-500">Subject: {campaign.subject}</p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 dark:text-gray-400">Subject: {campaign.subject}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               Sumirano: {campaign.semanticContent?.summary || "—"}
             </p>
             <div>
-              <strong className="dark:text-gray-800">CTA:</strong>{" "}
+              <strong>CTA:</strong>{" "}
               {campaign.ctaSlug || "—"}
             </div>
-            <div className="flex justify-between text-xs text-gray-500">
+            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
               <div>
                 Status:{" "}
                 {campaign.landingPage?.status === "published" ? (
@@ -505,7 +505,7 @@ export default function AdminSemanticModal({
                   </span>
                 </div>
                 {score.breakdown && (
-                  <div className="mt-1 text-gray-500 space-y-0.5">
+                  <div className="mt-1 text-gray-500 dark:text-gray-400 space-y-0.5">
                     <div>Structure: {score.breakdown.structure}</div>
                     <div>Readability: {score.breakdown.readability}</div>
                     <div>Conversion: {score.breakdown.conversion}</div>
@@ -521,7 +521,7 @@ export default function AdminSemanticModal({
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             {/* Campaign type */}
             <div>
-              <label className="block text-sm dark:text-gray-800 font-semibold">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
                 Tip kampanje
               </label>
               <select
@@ -532,7 +532,7 @@ export default function AdminSemanticModal({
                     campaignType: e.target.value as CampaignType,
                   })
                 }
-                className="mt-1 w-full dark:text-gray-800 rounded-md bg-gray-100 p-2"
+                className="mt-1 w-full rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 p-2"
               >
                 <option value="email-only">Email only</option>
                 <option value="email-landing">Email + landing page</option>
@@ -541,7 +541,7 @@ export default function AdminSemanticModal({
 
             {/* Intent */}
             <div>
-              <label className="block dark:text-gray-800 text-sm font-semibold">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
                 Svrha kampanje
               </label>
               <select
@@ -555,7 +555,7 @@ export default function AdminSemanticModal({
                     },
                   })
                 }
-                className="mt-1 w-full dark:text-gray-800 rounded-md bg-gray-100 p-2"
+                className="mt-1 w-full rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 p-2"
                 required
               >
                 <option value="promotion">Promocija</option>
@@ -568,11 +568,11 @@ export default function AdminSemanticModal({
 
             {/* Editorial audience */}
             <div>
-              <label className="block dark:text-gray-800 text-sm font-semibold">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
                 Audience
               </label>
               {isPlatformMode ? (
-                <div className="mt-1 w-full rounded-md bg-gray-100 p-2 text-sm font-semibold text-gray-700">
+                <div className="mt-1 w-full rounded-md bg-gray-100 dark:bg-gray-800 p-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
                   Partneri / saloni
                 </div>
               ) : canUsePartnerAudience ? (
@@ -592,13 +592,13 @@ export default function AdminSemanticModal({
                       },
                     });
                   }}
-                  className="mt-1 w-full dark:text-gray-800 rounded-md bg-gray-100 p-2"
+                  className="mt-1 w-full rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 p-2"
                 >
                   <option value="client">Klijenti</option>
                   <option value="partner">Partneri / saloni</option>
                 </select>
               ) : (
-                <div className="mt-1 w-full rounded-md bg-gray-100 p-2 text-sm font-semibold text-gray-700">
+                <div className="mt-1 w-full rounded-md bg-gray-100 dark:bg-gray-800 p-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
                   Klijenti
                 </div>
               )}
@@ -606,7 +606,7 @@ export default function AdminSemanticModal({
 
             {/* Editorial category */}
             <div>
-              <label className="block dark:text-gray-800 text-sm font-semibold">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
                 Editorial kategorija
               </label>
               <select
@@ -621,7 +621,7 @@ export default function AdminSemanticModal({
                     },
                   })
                 }
-                className="mt-1 w-full dark:text-gray-800 rounded-md bg-gray-100 p-2"
+                className="mt-1 w-full rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 p-2"
               >
                 {editorialCategoryOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -633,7 +633,7 @@ export default function AdminSemanticModal({
 
             {/* CTA Slug */}
             <div className="mt-3">
-              <label className="block dark:text-gray-800 text-sm font-semibold">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
                 CTA slug
               </label>
 
@@ -653,7 +653,7 @@ export default function AdminSemanticModal({
                       },
                     })
                   }
-                  className="mt-1 w-full dark:text-gray-800 rounded-md bg-gray-100 p-2"
+                  className="mt-1 w-full rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 p-2"
                 >
                   {(isPlatformMode
                     ? PLATFORM_EMAIL_ONLY_CTA_OPTIONS
@@ -678,10 +678,10 @@ export default function AdminSemanticModal({
                         },
                       })
                     }
-                    className="mt-1 w-full dark:text-gray-800 rounded-md bg-gray-100 p-2"
+                    className="mt-1 w-full rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 p-2"
                     placeholder="depend-gel-iq"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     URL gde vodi CTA dugme: booking.marysoll.com/blog/
                     {form.landingPage.slug || "depend-gel-iq"}
                   </p>
@@ -724,7 +724,7 @@ export default function AdminSemanticModal({
                         meta: preview.layout?.meta,
                       });
                     }}
-                    className="mt-1 w-full rounded-md p-2 text-sm bg-white"
+                    className="mt-1 w-full rounded-md p-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700"
                   >
                     <option value="">Izaberi sliku...</option>
                     {images.urls.map((url, idx) => (
@@ -758,11 +758,11 @@ export default function AdminSemanticModal({
             {form.campaignType === "email-landing" && (
               <Disclosure
                 as="div"
-                className="border-t border-gray-200 px-0 py-6"
+                className="border-t border-gray-200 dark:border-gray-700 px-0 py-6"
               >
                 <h3 className="flow-root">
-                  <DisclosureButton className="group flex w-full items-center justify-between rounded-md bg-gray-100 p-2 hover:text-gray-500">
-                    <span className="text-sm font-semibold text-gray-900">
+                  <DisclosureButton className="group flex w-full items-center justify-between rounded-md bg-gray-100 dark:bg-gray-800 p-2 hover:text-gray-500">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                       Generiši slike
                     </span>
                     <span className="flex items-center">
@@ -802,7 +802,7 @@ export default function AdminSemanticModal({
                     })
                   }
                   rows={3}
-                  className="mt-1 w-full rounded-md bg-gray-100 p-2"
+                  className="mt-1 w-full rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 p-2"
                   required
                 />
               </div>
@@ -823,7 +823,7 @@ export default function AdminSemanticModal({
                       },
                     })
                   }
-                  className="mt-1 w-full rounded-md bg-gray-100 p-2"
+                  className="mt-1 w-full rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 p-2"
                 >
                   <option value="friendly">Prijateljski</option>
                   <option value="informative">Informativan</option>
@@ -930,7 +930,7 @@ export default function AdminSemanticModal({
                   isSeoReady={isSeoReady}
                 />
               ) : (
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   Nema dostupnog preview-a.
                 </div>
               )}

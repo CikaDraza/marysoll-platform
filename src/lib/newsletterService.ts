@@ -158,6 +158,62 @@ export async function subscribeToNewsletter(data: NewsletterSubscriptionData) {
   return { success: true, message: "Verification email sent" };
 }
 
+/**
+ * Platform newsletter opt-in for a salon OWNER, performed during salon
+ * registration. Creates/upgrades a PLATFORM-level (tenantId: null) AudienceContact
+ * tagged SALON_OWNER. New contacts start with a verificationToken (pending) so
+ * they don't receive newsletters until the owner verifies — that verification is
+ * piggy-backed on the existing registration email link (no second email sent).
+ * See verifyOwnerNewsletterContact().
+ */
+export async function upsertOwnerNewsletterContact(params: {
+  email: string;
+  name?: string;
+  profileId?: Types.ObjectId | string;
+}) {
+  await connectToDB();
+  const email = params.email.trim().toLowerCase();
+  const nameParts = params.name?.trim().split(/\s+/).filter(Boolean) ?? [];
+
+  await AudienceContact.findOneAndUpdate(
+    { email, tenantId: null },
+    {
+      $set: {
+        contactType: "SALON_OWNER",
+        subscribed: true,
+        status: "ACTIVE",
+        ...(params.profileId ? { profileId: params.profileId } : {}),
+      },
+      $setOnInsert: {
+        email,
+        firstName: nameParts[0],
+        lastName: nameParts.slice(1).join(" ") || undefined,
+        source: "user",
+        verificationToken: crypto.randomBytes(32).toString("hex"),
+        unsubscribeToken: crypto.randomBytes(32).toString("hex"),
+      },
+    },
+    { upsert: true },
+  );
+}
+
+/**
+ * Marks the owner's platform newsletter contact as verified by clearing its
+ * pending verificationToken — called from the registration email-verification
+ * route. No-op if the owner didn't opt in (no matching contact).
+ */
+export async function verifyOwnerNewsletterContact(email: string) {
+  await connectToDB();
+  await AudienceContact.updateOne(
+    {
+      email: email.trim().toLowerCase(),
+      tenantId: null,
+      contactType: "SALON_OWNER",
+    },
+    { $unset: { verificationToken: "" } },
+  );
+}
+
 export async function verifyNewsletterSubscription(token: string) {
   await connectToDB();
 

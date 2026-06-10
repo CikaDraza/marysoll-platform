@@ -9,6 +9,7 @@ import {
   sendClientWelcomeEmail,
   TRIAL_DAYS,
 } from "@/lib/email/onboarding";
+import { verifyOwnerNewsletterContact } from "@/lib/newsletterService";
 
 function getTenantPublicUrl(tenant: {
   slug: string;
@@ -91,6 +92,13 @@ export async function GET(request: NextRequest) {
             verificationTokenExpiry: null,
           },
         });
+      }
+
+      // Newsletter opt-in confirmed via the same link (no second email).
+      try {
+        await verifyOwnerNewsletterContact(tenantUser.email);
+      } catch (e) {
+        console.error("⚠️ Owner newsletter verify failed:", e);
       }
 
       // Activate tenant + trial
@@ -217,6 +225,13 @@ export async function POST(request: NextRequest) {
             verificationTokenExpiry: null,
           },
         });
+      }
+
+      // Newsletter opt-in confirmed via the same link (no second email).
+      try {
+        await verifyOwnerNewsletterContact(tenantUser.email);
+      } catch (e) {
+        console.error("⚠️ Owner newsletter verify failed:", e);
       }
 
       const tenant = await Tenant.findById(tenantUser.tenantId);
