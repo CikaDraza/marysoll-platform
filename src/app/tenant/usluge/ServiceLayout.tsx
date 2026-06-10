@@ -1,7 +1,18 @@
 import { groupAndSortServices } from "@/helpers/groupeAndSortServices";
 import { formatServicePrice } from "@/helpers/formatPrice";
+import { getServiceDuration } from "@/helpers/serviceDuration";
 import { CheckIcon } from "@heroicons/react/24/outline";
 import { IService } from "@/types";
+
+function ServiceDurationTime({ service }: { service: IService }) {
+  const duration = getServiceDuration(service);
+  if (!duration.text) return null;
+  return (
+    <time dateTime={duration.minutes?.toString()} className="text-gray-500">
+      Trajanje: {duration.text}
+    </time>
+  );
+}
 
 export default function ServicesLayout({
   services,
@@ -63,12 +74,7 @@ export default function ServicesLayout({
                   className="flex max-w-3xl flex-col items-start justify-between"
                 >
                   <div className="w-full flex justify-between items-center gap-x-4 text-xs">
-                    <time
-                      dateTime={service?.duration?.toString()}
-                      className="text-gray-500"
-                    >
-                      Trajanje: {service?.duration} minuta
-                    </time>
+                    <ServiceDurationTime service={service} />
 
                     {(service.basePrice ||
                       service.priceMode === "on_request") && (
