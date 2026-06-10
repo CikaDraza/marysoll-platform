@@ -45,11 +45,11 @@ export default function HeroBlock({ block }: HeroBlockProps) {
   return (
     <section
       id={id}
-      className="relative overflow-visible px-6 py-16 text-left text-gray-950 dark:bg-gray-950 dark:text-white sm:py-24 lg:px-8"
+      className="relative overflow-visible py-16 text-left text-gray-950 dark:bg-gray-950 dark:text-white sm:py-24"
     >
       {galleryImages.length > 0 && (
         <div
-          className={`mx-auto mt-6 max-w-2xl sm:px-6 lg:max-w-7xl lg:px-8 ${galleryLayout.wrapper}`}
+          className={`mx-auto mt-6 max-w-2xl lg:max-w-7xl ${galleryLayout.wrapper}`}
         >
           {galleryImages.map((image, index) => (
             <figure key={image.src} className={galleryLayout.images[index]}>
@@ -58,7 +58,7 @@ export default function HeroBlock({ block }: HeroBlockProps) {
                 height={1200}
                 alt={image.alt}
                 src={image.src}
-                className="size-full max-h-150 min-h-120 object-cover sm:rounded-lg"
+                className="size-full object-cover sm:rounded-lg"
               />
             </figure>
           ))}
