@@ -32,9 +32,13 @@ export default function LoggedButton({
   backgroundColor,
 }: LoggedButtonProps) {
   const { logout } = useAuth();
-  // useClientRouting gives us the correct base ("" or "/slug") for this domain mode.
-  // Only used when tenantSlug is set (i.e. we're on a client salon page).
-  const { base } = useClientRouting();
+  // useClientRouting gives the correct base ("" or "/slug") AND the real tenant
+  // slug from context (set on every tenant page). We fall back to that slug when
+  // the `tenantSlug` prop isn't threaded through — e.g. Usluge/Termini/Blog whose
+  // header comes via TenantPageShell — so the panel links render there too, not
+  // only on the home page.
+  const { base, tenantSlug: ctxSlug } = useClientRouting();
+  const slug = tenantSlug || ctxSlug;
 
   const handleMenuItemClick = () => {
     if (onCloseMobileMenu) onCloseMobileMenu();
@@ -43,7 +47,7 @@ export default function LoggedButton({
   if (!user) {
     // On custom domain base is "", so loginHref becomes "/login" — correct.
     // On path-based base is "/kiki-makeup", so loginHref is "/kiki-makeup/login".
-    const loginHref = tenantSlug ? `${base}/login` : "/login";
+    const loginHref = slug ? `${base}/login` : "/login";
     return (
       <Link
         href={loginHref}
@@ -69,7 +73,7 @@ export default function LoggedButton({
   // On path-based (marysoll.com/kiki-makeup): base="/kiki-makeup" → links are /kiki-makeup/panel etc.
   // Next.js Link does client-side navigation — middleware rewrites only run server-side,
   // so we must emit the correct URL that the browser should show, not the internal rewrite target.
-  const clientPanelLinks = tenantSlug
+  const clientPanelLinks = slug
     ? [
         { label: "Moji termini", href: `${base}/panel?tab=Moji+Termini` },
         { label: "Zakazivanja", href: `${base}/panel?tab=Zakazivanja` },
@@ -81,7 +85,7 @@ export default function LoggedButton({
 
   // Admin dashboard linkovi — samo na admin.marysoll.com (bez tenantSlug)
   const adminLinks =
-    !tenantSlug && user.isAdmin
+    !slug && user.isAdmin
       ? [
           { label: "Svi Termini", href: "/dashboard?tab=Svi Termini" },
           { label: "Klijenti", href: "/dashboard?tab=Klijenti" },
@@ -104,7 +108,7 @@ export default function LoggedButton({
   // - Na salon stranici (tenantSlug postoji) → uvijek klijentski panel linkovi
   // - Na admin domenu (bez tenantSlug, isAdmin) → admin linkovi
   // - Klijent bez tenantSlug → ne prikazujemo ništa (edge case, ne bi trebalo)
-  const menuLinks = tenantSlug
+  const menuLinks = slug
     ? clientPanelLinks
     : user.isAdmin
       ? adminLinks
@@ -157,7 +161,7 @@ export default function LoggedButton({
           <MenuItem>
             <button
               onClick={() => {
-                logout({ tenantSlug });
+                logout({ tenantSlug: slug || undefined });
                 if (onCloseMobileMenu) onCloseMobileMenu();
               }}
               className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
