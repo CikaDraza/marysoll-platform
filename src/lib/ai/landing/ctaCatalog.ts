@@ -132,6 +132,14 @@ export function getCtaKeyOptions(
   return [...base, ...custom];
 }
 
+/** Platform destinations as {label, value=href} — for the manual editor's slug picker. */
+export function getCatalogSlugOptions(): { label: string; value: string }[] {
+  return (Object.keys(CTA_CATALOG) as CtaKey[]).map((key) => ({
+    label: CTA_CATALOG[key].label,
+    value: CTA_CATALOG[key].href,
+  }));
+}
+
 /** Bullet list of allowed keys + descriptions, injected into the agent prompt. */
 export function ctaCatalogPromptList(customCtas?: CustomCta[]): string {
   const base = (Object.keys(CTA_CATALOG) as CtaKey[]).map(

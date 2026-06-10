@@ -36,6 +36,7 @@ import {
   normalizeEditorialAudience,
   normalizeEditorialCategory,
 } from "@/lib/newsletter/editorialClassification";
+import { getCatalogSlugOptions } from "@/lib/ai/landing/ctaCatalog";
 
 import {
   useLandingPreview,
@@ -68,6 +69,14 @@ const EMAIL_ONLY_CTA_OPTIONS = [
 
 const PLATFORM_EMAIL_ONLY_CTA_OPTIONS = [
   { label: "Marysoll platforma", value: "https://marysoll.com/" },
+];
+
+// Standard tenant pages offered in the block editor's "Vodi na" picker.
+const TENANT_SLUG_OPTIONS = [
+  { label: "Početna stranica", value: "/" },
+  { label: "Usluge i cene", value: "/usluge" },
+  { label: "Termini", value: "/termini" },
+  { label: "Blog", value: "/blogs" },
 ];
 
 const DEFAULT_CAMPAIGN_INTENT = CampaignIntent.Promotion;
@@ -253,6 +262,16 @@ export default function AdminSemanticModal({
       customCtas.map((c, i) => (i === index ? { ...c, ...patch } : c)),
     );
 
+  // "Vodi na" destinations for the manual block editor: tenant pages for a
+  // tenant newsletter, platform destinations for a platform one — plus this
+  // campaign's own custom CTAs. (No marketing/platform slugs for tenants.)
+  const editorSlugOptions = [
+    ...(isPlatformMode ? getCatalogSlugOptions() : TENANT_SLUG_OPTIONS),
+    ...customCtas
+      .filter((c) => c.label?.trim() && c.href?.trim())
+      .map((c) => ({ label: `${c.label} (custom)`, value: c.href })),
+  ];
+
   // Initialize images from existing landing — collect from all block types
   const existingImages = (() => {
     const layout = campaign?.landingPage?.layout;
@@ -260,11 +279,15 @@ export default function AdminSemanticModal({
     const urls: string[] = [];
     for (const block of layout) {
       if (block.type === "HeroBlock") {
-        block.images?.forEach((img: { src?: string }) => { if (img?.src) urls.push(img.src); });
+        block.images?.forEach((img: { src?: string }) => {
+          if (img?.src) urls.push(img.src);
+        });
       } else if ("image" in block && block.image?.src) {
         urls.push(block.image.src);
       } else if (block.type === "FeatureBlock") {
-        block.sections?.forEach((s: { image?: { src?: string } }) => { if (s?.image?.src) urls.push(s.image.src); });
+        block.sections?.forEach((s: { image?: { src?: string } }) => {
+          if (s?.image?.src) urls.push(s.image.src);
+        });
       }
     }
     return [...new Set(urls)];
@@ -401,8 +424,7 @@ export default function AdminSemanticModal({
             ),
             seo: preview.aiLanding?.seo,
             score: preview.layout?.score?.total,
-            semanticType:
-              preview.layout?.meta?.semanticType || intent,
+            semanticType: preview.layout?.meta?.semanticType || intent,
             audience: landingAudience,
             editorialCategory: landingEditorialCategory,
             generatedAt: new Date(),
@@ -476,9 +498,7 @@ export default function AdminSemanticModal({
         <DialogPanel className="w-full max-w-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-lg shadow-xl p-6 max-h-[90vh] overflow-auto">
           {/* HEADER */}
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold">
-              Semantika kampanje
-            </h3>
+            <h3 className="text-lg font-semibold">Semantika kampanje</h3>
             <button onClick={handleClose}>
               <XMarkIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </button>
@@ -489,13 +509,14 @@ export default function AdminSemanticModal({
             <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
               Kampanja: {campaign.name}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Subject: {campaign.subject}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Subject: {campaign.subject}
+            </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Sumirano: {campaign.semanticContent?.summary || "—"}
             </p>
             <div>
-              <strong>CTA:</strong>{" "}
-              {campaign.ctaSlug || "—"}
+              <strong>CTA:</strong> {campaign.ctaSlug || "—"}
             </div>
             <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
               <div>
@@ -866,8 +887,7 @@ export default function AdminSemanticModal({
                         value={cta.placement ?? "auto"}
                         onChange={(e) =>
                           patchCustomCta(i, {
-                            placement: e.target
-                              .value as CustomCta["placement"],
+                            placement: e.target.value as CustomCta["placement"],
                           })
                         }
                         className="rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 p-2 text-sm"
@@ -1012,7 +1032,10 @@ export default function AdminSemanticModal({
           {/* MANUAL EDITOR — deterministic edits, no AI regeneration */}
           {form.campaignType === "email-landing" &&
             !!preview.layout?.layout?.length && (
-              <Disclosure as="div" className="border-t border-gray-200 dark:border-gray-700 px-0 py-6">
+              <Disclosure
+                as="div"
+                className="border-t mt-8 border-gray-200 dark:border-gray-700 px-0 py-6"
+              >
                 <h3 className="flow-root">
                   <DisclosureButton className="group flex w-full items-center justify-between rounded-md bg-gray-100 dark:bg-gray-800 p-2 hover:text-gray-500">
                     <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
@@ -1027,7 +1050,7 @@ export default function AdminSemanticModal({
                 <DisclosurePanel className="pt-4">
                   <LandingBlocksEditor
                     blocks={preview.layout.layout}
-                    customCtas={customCtas}
+                    slugOptions={editorSlugOptions}
                     onChange={(blocks) =>
                       preview.setPreviewFromExisting({
                         layout: blocks,
@@ -1038,8 +1061,8 @@ export default function AdminSemanticModal({
                     }
                   />
                   <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    Izmene se čuvaju tačno ovakve („Sačuvaj” / „Objavi landing”),
-                    bez ponovnog AI generisanja.
+                    Izmene se čuvaju tačno ovakve („Sačuvaj” / „Objavi
+                    landing”), bez ponovnog AI generisanja.
                   </p>
                 </DisclosurePanel>
               </Disclosure>

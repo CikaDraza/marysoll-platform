@@ -12,11 +12,8 @@ import {
   EyeSlashIcon,
 } from "@heroicons/react/24/outline";
 import { LandingBlock } from "@/types/landing-blocks";
-import {
-  resolveCta,
-  getCtaKeyOptions,
-  type CustomCta,
-} from "@/lib/ai/landing/ctaCatalog";
+
+export type SlugOption = { label: string; value: string };
 
 const BLOCK_LABEL: Record<LandingBlock["type"], string> = {
   HeroBlock: "Hero",
@@ -69,20 +66,20 @@ function Field({
 
 function CtaField({
   ctaLabel,
-  ctaKey,
-  options,
+  href,
+  slugOptions,
   onLabel,
-  onKey,
+  onHref,
 }: {
   ctaLabel: string;
-  ctaKey?: string;
-  options: { key: string; label: string }[];
+  href: string;
+  slugOptions: SlugOption[];
   onLabel: (v: string) => void;
-  onKey: (k: string) => void;
+  onHref: (v: string) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-end gap-2">
-      <div className="min-w-[120px] flex-1">
+    <div className="space-y-2">
+      <div>
         <label className={labelCls}>CTA — tekst</label>
         <input
           type="text"
@@ -91,22 +88,31 @@ function CtaField({
           onChange={(e) => onLabel(e.target.value)}
         />
       </div>
-      <div className="min-w-[140px] flex-1">
-        <label className={labelCls}>Vodi na</label>
-        <select
-          className={inputCls}
-          value={ctaKey ?? ""}
-          onChange={(e) => onKey(e.target.value)}
-        >
-          <option value="" disabled>
-            Izaberi destinaciju…
-          </option>
-          {options.map((o) => (
-            <option key={o.key} value={o.key}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+      <div>
+        <label className={labelCls}>Vodi na (slug ili URL)</label>
+        <div className="flex flex-wrap gap-2">
+          <input
+            type="text"
+            className={`${inputCls} min-w-[140px] flex-1`}
+            value={href}
+            onChange={(e) => onHref(e.target.value)}
+            placeholder="/usluge, https://… ili #sekcija"
+          />
+          <select
+            className={`${inputCls} min-w-[140px] flex-1`}
+            value=""
+            onChange={(e) => {
+              if (e.target.value) onHref(e.target.value);
+            }}
+          >
+            <option value="">Izaberi iz liste…</option>
+            {slugOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
     </div>
   );
@@ -114,16 +120,12 @@ function CtaField({
 
 interface Props {
   blocks: LandingBlock[];
-  customCtas: CustomCta[];
+  /** Destinations offered in the "Vodi na" picker (tenant pages or platform). */
+  slugOptions: SlugOption[];
   onChange: (blocks: LandingBlock[]) => void;
 }
 
-export function LandingBlocksEditor({ blocks, customCtas, onChange }: Props) {
-  const validCustomCtas = customCtas.filter(
-    (c) => c.label?.trim() && c.href?.trim(),
-  );
-  const ctaOptions = getCtaKeyOptions(validCustomCtas);
-
+export function LandingBlocksEditor({ blocks, slugOptions, onChange }: Props) {
   const replaceAt = (index: number, block: LandingBlock) =>
     onChange(blocks.map((b, i) => (i === index ? block : b)));
 
@@ -214,18 +216,10 @@ export function LandingBlocksEditor({ blocks, customCtas, onChange }: Props) {
                   />
                   <CtaField
                     ctaLabel={block.ctaLabel ?? ""}
-                    ctaKey={block.ctaKey}
-                    options={ctaOptions}
+                    href={block.href ?? ""}
+                    slugOptions={slugOptions}
                     onLabel={(v) => replaceAt(i, { ...block, ctaLabel: v })}
-                    onKey={(k) => {
-                      const r = resolveCta(k, validCustomCtas);
-                      replaceAt(i, {
-                        ...block,
-                        ctaKey: r.key,
-                        href: r.href,
-                        ctaLabel: block.ctaLabel || r.label,
-                      });
-                    }}
+                    onHref={(v) => replaceAt(i, { ...block, href: v })}
                   />
                 </>
               )}
@@ -369,8 +363,8 @@ export function LandingBlocksEditor({ blocks, customCtas, onChange }: Props) {
                       />
                       <CtaField
                         ctaLabel={item.ctaLabel ?? ""}
-                        ctaKey={item.ctaKey}
-                        options={ctaOptions}
+                        href={item.href ?? ""}
+                        slugOptions={slugOptions}
                         onLabel={(v) =>
                           replaceAt(i, {
                             ...block,
@@ -379,22 +373,14 @@ export function LandingBlocksEditor({ blocks, customCtas, onChange }: Props) {
                             ),
                           })
                         }
-                        onKey={(k) => {
-                          const r = resolveCta(k, validCustomCtas);
+                        onHref={(v) =>
                           replaceAt(i, {
                             ...block,
                             items: block.items.map((it, idx) =>
-                              idx === ii
-                                ? {
-                                    ...it,
-                                    ctaKey: r.key,
-                                    href: r.href,
-                                    ctaLabel: it.ctaLabel || r.label,
-                                  }
-                                : it,
+                              idx === ii ? { ...it, href: v } : it,
                             ),
-                          });
-                        }}
+                          })
+                        }
                       />
                     </div>
                   ))}
@@ -422,18 +408,10 @@ export function LandingBlocksEditor({ blocks, customCtas, onChange }: Props) {
                   />
                   <CtaField
                     ctaLabel={block.ctaLabel}
-                    ctaKey={block.ctaKey}
-                    options={ctaOptions}
+                    href={block.href ?? ""}
+                    slugOptions={slugOptions}
                     onLabel={(v) => replaceAt(i, { ...block, ctaLabel: v })}
-                    onKey={(k) => {
-                      const r = resolveCta(k, validCustomCtas);
-                      replaceAt(i, {
-                        ...block,
-                        ctaKey: r.key,
-                        href: r.href,
-                        ctaLabel: block.ctaLabel || r.label,
-                      });
-                    }}
+                    onHref={(v) => replaceAt(i, { ...block, href: v })}
                   />
                 </>
               )}

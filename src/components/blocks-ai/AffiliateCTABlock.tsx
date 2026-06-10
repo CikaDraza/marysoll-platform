@@ -11,7 +11,7 @@ export default function AffiliateCTABlock({ block }: AffiliateCTABlockProps) {
   return (
     <aside
       id={id}
-      className="relative isolate overflow-hidden bg-gray-950 text-left px-6 py-16 text-white lg:px-8"
+      className="relative isolate overflow-hidden bg-gray-950 text-left px-6 py-16 text-white lg:px-8 my-16 rounded-lg"
     >
       {image && (
         <Image
@@ -50,7 +50,7 @@ export default function AffiliateCTABlock({ block }: AffiliateCTABlockProps) {
           className="aspect-1097/845 w-274.25 bg-linear-to-tr from-[#ff4694] to-[#776fff] opacity-20"
         />
       </div>
-      <div className="mx-auto grid max-w-full gap-10 lg:grid-cols-[1fr_420px] lg:items-center">
+      <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1fr_420px] lg:items-center">
         <div className="max-w-2xl">
           {eyebrow && (
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-pink-300">
