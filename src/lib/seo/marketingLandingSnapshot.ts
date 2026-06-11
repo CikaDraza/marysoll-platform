@@ -169,11 +169,120 @@ export function buildMarketingLandingSnapshot(
       images: [],
       internalLinks: [{ text: text(ls.pricing.headline, "Cene"), href: "#pricing" }],
     },
+    // ── DEO 2 (Secondary Content) — SEO funnel ──
     {
-      id: "salon-showcase",
-      enabled: ls.salonShowcase.enabled,
-      heading: { level: "h2", text: text(ls.salonShowcase.headline) },
-      visibleCopy: [text(ls.salonShowcase.headline)],
+      id: "secondary-hero",
+      enabled: ls.secondary.enabled,
+      heading: { level: "h2", text: text(ls.secondary.hero.headline) },
+      visibleCopy: [
+        text(ls.secondary.hero.eyebrow),
+        text(ls.secondary.hero.headline),
+        text(ls.secondary.hero.paragraph),
+      ],
+      ctas: [
+        {
+          text: text(ls.secondary.hero.ctaPrimaryText),
+          href: text(ls.secondary.hero.ctaPrimaryHref, "/register"),
+        },
+        {
+          text: text(ls.secondary.hero.ctaSecondaryText),
+          href: text(ls.secondary.hero.ctaSecondaryHref, "/pricing"),
+        },
+      ],
+      images: [],
+      internalLinks: internal([
+        {
+          text: ls.secondary.hero.ctaPrimaryText,
+          href: ls.secondary.hero.ctaPrimaryHref,
+        },
+        {
+          text: ls.secondary.hero.ctaSecondaryText,
+          href: ls.secondary.hero.ctaSecondaryHref,
+        },
+      ]),
+    },
+    {
+      id: "secondary-objections",
+      enabled: ls.secondary.enabled,
+      heading: { level: "h2", text: text(ls.secondary.objections.headline) },
+      visibleCopy: [
+        text(ls.secondary.objections.headline),
+        text(ls.secondary.objections.lead),
+        ...ls.secondary.objections.bubbles.map((b) => text(b)),
+        ...ls.secondary.objections.paragraphs.map((p) => text(p)),
+      ],
+      ctas: [],
+      images: [],
+      internalLinks: [],
+    },
+    {
+      id: "secondary-notebook",
+      enabled: ls.secondary.enabled,
+      heading: { level: "h2", text: text(ls.secondary.notebook.headline) },
+      visibleCopy: [
+        text(ls.secondary.notebook.headline),
+        ...ls.secondary.notebook.items.map((i) => text(i)),
+      ],
+      ctas: [],
+      images: [],
+      internalLinks: [],
+    },
+    {
+      id: "secondary-app",
+      enabled: ls.secondary.enabled,
+      heading: { level: "h2", text: text(ls.secondary.app.headline) },
+      visibleCopy: [
+        text(ls.secondary.app.headline),
+        ...ls.secondary.app.topics.flatMap((t) => [
+          text(t.title),
+          text(t.description),
+        ]),
+      ],
+      ctas: [],
+      images: [],
+      internalLinks: [],
+    },
+    {
+      id: "secondary-cancellations",
+      enabled: ls.secondary.enabled,
+      heading: { level: "h2", text: text(ls.secondary.cancellations.headline) },
+      visibleCopy: [
+        text(ls.secondary.cancellations.headline),
+        ...ls.secondary.cancellations.paragraphs.map((p) => text(p)),
+      ],
+      ctas: [],
+      images: [],
+      internalLinks: [],
+    },
+    {
+      id: "secondary-automation",
+      enabled: ls.secondary.enabled,
+      heading: { level: "h2", text: text(ls.secondary.automation.headline) },
+      visibleCopy: [
+        text(ls.secondary.automation.headline),
+        ...ls.secondary.automation.items.flatMap((it) => [
+          text(it.title),
+          text(it.description),
+        ]),
+        text(ls.secondary.automation.assistantExample.question),
+        ...ls.secondary.automation.assistantExample.lines.map((l) => text(l)),
+      ],
+      ctas: [],
+      images: [],
+      internalLinks: [],
+    },
+    {
+      id: "secondary-faq",
+      enabled: ls.secondary.enabled,
+      heading: { level: "h2", text: text(ls.secondary.faq.headline) },
+      visibleCopy: [
+        text(ls.secondary.faq.headline),
+        text(ls.secondary.faq.paragraph),
+        ...ls.secondary.faq.items.flatMap((q) => [
+          text(q.question),
+          text(q.answer),
+        ]),
+      ],
       ctas: [],
       images: [],
       internalLinks: [],

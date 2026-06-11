@@ -40,7 +40,7 @@ export async function PlatformFooter() {
               />
               <div className="flex flex-col">
                 <span className="text-md/9 text-white heading-font">
-                  MarySoll
+                  Marysoll
                 </span>
                 <small className="text-[0.5rem] text-white -mt-1">
                   je napravila nešto sasvim drugačije

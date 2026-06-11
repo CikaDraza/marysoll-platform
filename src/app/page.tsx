@@ -12,9 +12,9 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { MarketingHomePage } from "@/components/marketing/MarketingHomePage";
-import { ClientHomePage } from "@/components/client/ClientHomePage";
 import { MarketingHomePageSecond } from "@/components/marketing/MarketingHomePageSecond";
+import { ClientHomePage } from "@/components/client/ClientHomePage";
+import { MarketingHomePageFirst } from "@/components/marketing/MarketingHomePageFirst";
 import type { Metadata } from "next";
 import { connectToDB } from "@/lib/db/mongodb";
 import { ProfilPlatforme } from "@/models/ProfilPlatforme";
@@ -24,7 +24,8 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://marysoll.com";
 
 const DEFAULT_METADATA = {
   title: "Marysoll — Platforma za beauty salone",
-  description: "Zakazivanje, klijenti, newsletter i AI asistent za tvoj beauty salon na jednom mestu.",
+  description:
+    "Zakazivanje, klijenti, newsletter i AI asistent za tvoj beauty salon na jednom mestu.",
 };
 
 async function getPlatformSeo() {
@@ -32,31 +33,28 @@ async function getPlatformSeo() {
     await connectToDB();
     const profile = (await ProfilPlatforme.findOne({})
       .select("seo marketingLanding logoUrl")
-      .lean()) as
-      | {
-          seo?: { homeTitle?: string; homeDescription?: string };
-          marketingLanding?: {
-            seo?: {
-              homeTitle?: string;
-              homeDescription?: string;
-              ogImage?: string;
-            };
-          };
-          logoUrl?: string;
-        }
-      | null;
+      .lean()) as {
+      seo?: { homeTitle?: string; homeDescription?: string };
+      marketingLanding?: {
+        seo?: {
+          homeTitle?: string;
+          homeDescription?: string;
+          ogImage?: string;
+        };
+      };
+      logoUrl?: string;
+    } | null;
     const cmsSeo = profile?.marketingLanding?.seo;
     const fallbackSeo = profile?.seo;
     return {
       title:
-        cmsSeo?.homeTitle ||
-        fallbackSeo?.homeTitle ||
-        DEFAULT_METADATA.title,
+        cmsSeo?.homeTitle || fallbackSeo?.homeTitle || DEFAULT_METADATA.title,
       description:
         cmsSeo?.homeDescription ||
         fallbackSeo?.homeDescription ||
         DEFAULT_METADATA.description,
-      ogImage: cmsSeo?.ogImage || profile?.logoUrl || `${BASE_URL}/og-image.png`,
+      ogImage:
+        cmsSeo?.ogImage || profile?.logoUrl || `${BASE_URL}/og-image.png`,
     };
   } catch {
     return { ...DEFAULT_METADATA, ogImage: `${BASE_URL}/og-image.png` };
@@ -116,8 +114,8 @@ export default async function RootPage() {
       const marketingLanding = await getMarketingLanding();
       return (
         <>
+          <MarketingHomePageFirst initialLanding={marketingLanding} />
           <MarketingHomePageSecond initialLanding={marketingLanding} />
-          <MarketingHomePage />
         </>
       );
     }

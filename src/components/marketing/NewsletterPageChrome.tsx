@@ -20,7 +20,7 @@ export function NewsletterMiniHeader() {
             className="h-9 w-9 object-contain"
             priority
           />
-          <span className="heading-font text-lg text-gray-900">MarySoll</span>
+          <span className="heading-font text-lg text-gray-900">Marysoll</span>
         </Link>
         <Link
           href="/register"
@@ -45,7 +45,7 @@ export function NewsletterMiniFooter() {
             height={192}
             className="h-8 w-8 object-contain"
           />
-          <span className="heading-font text-white">MarySoll</span>
+          <span className="heading-font text-white">Marysoll</span>
         </Link>
 
         <nav className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-400">

@@ -1,7 +1,7 @@
 const TESTIMONIALS = [
   {
     comment:
-      "MarySoll mi je pomogao da pronađem savršeni tretman za moju kožu. Rezultati su nevjerojatni!",
+      "Marysoll mi je pomogao da pronađem savršeni tretman za moju kožu. Rezultati su nevjerojatni!",
     clientName: "Ana K.",
   },
   {
@@ -11,12 +11,12 @@ const TESTIMONIALS = [
   },
   {
     comment:
-      "Volim kako MarySoll personalizira savjete prema mojim potrebama. Osjećam se kao da imam vlastitog stručnjaka za njegu kože!",
+      "Volim kako Marysoll personalizira savjete prema mojim potrebama. Osjećam se kao da imam vlastitog stručnjaka za njegu kože!",
     clientName: "Ivana S.",
   },
   {
     comment:
-      "MarySoll mi je uštedio puno vremena i novca. Više ne moram eksperimentirati s proizvodima koji mi ne odgovaraju.",
+      "Marysoll mi je uštedio puno vremena i novca. Više ne moram eksperimentirati s proizvodima koji mi ne odgovaraju.",
     clientName: "Luka M.",
   },
 ];

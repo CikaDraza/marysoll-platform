@@ -30,6 +30,83 @@ export interface MarketingPricingPlan {
   popular: boolean;
 }
 
+// ── DEO 2 (Secondary Content) ────────────────────────────────────────────────
+export interface MarketingSecondaryChip {
+  text: string;
+  href: string; // "#anchor"
+}
+
+export interface MarketingSecondaryTopic {
+  title: string; // H3
+  description: string; // paragraf
+}
+
+export interface MarketingSecondaryHighlight {
+  icon: string; // emoji
+  title: string;
+  description: string;
+}
+
+export interface MarketingFaqItem {
+  question: string;
+  answer: string; // prazno => renderuje se fallback
+}
+
+export interface MarketingSecondaryContent {
+  enabled: boolean;
+  hero: {
+    eyebrow: string;
+    headline: string;
+    paragraph: string;
+    ctaPrimaryText: string;
+    ctaPrimaryHref: string;
+    ctaSecondaryText: string;
+    ctaSecondaryHref: string;
+  };
+  chips: MarketingSecondaryChip[];
+  // Sekcija 1 — "Da li online zakazivanje ima smisla za mali salon?"
+  objections: {
+    headline: string;
+    lead: string;
+    bubbles: string[];
+    paragraphs: string[];
+  };
+  // Sekcija 2 — "Papirna sveska ili online kalendar?"
+  notebook: {
+    headline: string;
+    items: string[];
+  };
+  // Sekcija 3 — "Da li moram stalno da gledam aplikaciju?"
+  app: {
+    headline: string;
+    topics: MarketingSecondaryTopic[];
+  };
+  // Sekcija 4 — "Kako smanjiti otkazivanja termina?"
+  cancellations: {
+    headline: string;
+    paragraphs: string[];
+  };
+  // Sekcija 5 — automatizacija + Google primer
+  automation: {
+    headline: string;
+    items: MarketingSecondaryHighlight[];
+    assistantExample: {
+      question: string;
+      replyTitle: string;
+      lines: string[];
+    };
+  };
+  faq: {
+    headline: string;
+    paragraph: string;
+    items: MarketingFaqItem[];
+  };
+  gallery: {
+    headline: string;
+    image: string;
+  };
+}
+
 export interface MarketingLandingStructure {
   header: {
     enabled: boolean;
@@ -73,10 +150,7 @@ export interface MarketingLandingStructure {
     plansDescription: string;
     plans: MarketingPricingPlan[];
   };
-  salonShowcase: {
-    enabled: boolean;
-    headline: string;
-  };
+  secondary: MarketingSecondaryContent;
   footer: {
     tagline: string;
     links: MarketingNavLink[];

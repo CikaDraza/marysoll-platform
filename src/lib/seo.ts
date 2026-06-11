@@ -16,7 +16,7 @@ export async function getSeoMeta(route: string): Promise<SeoData> {
   const doc = await SeoMeta.findOne({ route }).exec();
 
   return {
-    title: doc?.title ?? "MarySoll Makeup & Nails Salon",
+    title: doc?.title ?? "Marysoll Makeup & Nails Salon",
     description:
       doc?.description ?? "Profesionalne usluge šminkanja i manikira u Boru.",
     noIndex: doc?.noIndex ?? false,

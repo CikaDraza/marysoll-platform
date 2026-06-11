@@ -1115,6 +1115,805 @@ export function MarketingTab() {
             )}
           </div>
 
+          {/* ════════ DEO 2 (Secondary Content) ════════ */}
+
+          {/* DEO 2 — Hero */}
+          <div className={card}>
+            <SectionHeader
+              title="DEO 2 — Hero"
+              open={openSection === "sec-hero"}
+              onToggle={() => toggle("sec-hero")}
+            />
+            {openSection === "sec-hero" && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className={lbl}>Eyebrow (mali tekst iznad naslova)</label>
+                  <input
+                    className={inp}
+                    value={ls.secondary.hero.eyebrow}
+                    onChange={(e) =>
+                      update("secondary", {
+                        ...ls.secondary,
+                        hero: { ...ls.secondary.hero, eyebrow: e.target.value },
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>H2 naslov</label>
+                  <input
+                    className={inp}
+                    value={ls.secondary.hero.headline}
+                    onChange={(e) =>
+                      update("secondary", {
+                        ...ls.secondary,
+                        hero: { ...ls.secondary.hero, headline: e.target.value },
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Paragraf</label>
+                  <textarea
+                    className={inp}
+                    rows={3}
+                    value={ls.secondary.hero.paragraph}
+                    onChange={(e) =>
+                      update("secondary", {
+                        ...ls.secondary,
+                        hero: { ...ls.secondary.hero, paragraph: e.target.value },
+                      })
+                    }
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className={lbl}>CTA primarni tekst</label>
+                    <input
+                      className={inp}
+                      value={ls.secondary.hero.ctaPrimaryText}
+                      onChange={(e) =>
+                        update("secondary", {
+                          ...ls.secondary,
+                          hero: {
+                            ...ls.secondary.hero,
+                            ctaPrimaryText: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className={lbl}>CTA primarni link</label>
+                    <input
+                      className={inp}
+                      value={ls.secondary.hero.ctaPrimaryHref}
+                      onChange={(e) =>
+                        update("secondary", {
+                          ...ls.secondary,
+                          hero: {
+                            ...ls.secondary.hero,
+                            ctaPrimaryHref: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className={lbl}>CTA sekundarni tekst</label>
+                    <input
+                      className={inp}
+                      value={ls.secondary.hero.ctaSecondaryText}
+                      onChange={(e) =>
+                        update("secondary", {
+                          ...ls.secondary,
+                          hero: {
+                            ...ls.secondary.hero,
+                            ctaSecondaryText: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className={lbl}>CTA sekundarni link</label>
+                    <input
+                      className={inp}
+                      value={ls.secondary.hero.ctaSecondaryHref}
+                      onChange={(e) =>
+                        update("secondary", {
+                          ...ls.secondary,
+                          hero: {
+                            ...ls.secondary.hero,
+                            ctaSecondaryHref: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* DEO 2 — Chips navigacija */}
+          <div className={card}>
+            <SectionHeader
+              title="DEO 2 — Chips navigacija"
+              open={openSection === "sec-chips"}
+              onToggle={() => toggle("sec-chips")}
+            />
+            {openSection === "sec-chips" && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className={lbl}>
+                    Chips (jedan po redu: Tekst|#anchor)
+                  </label>
+                  <textarea
+                    className={`${inp} font-mono text-xs`}
+                    rows={9}
+                    value={ls.secondary.chips
+                      .map((c) => `${c.text}|${c.href}`)
+                      .join("\n")}
+                    onChange={(e) => {
+                      const chips = e.target.value
+                        .split("\n")
+                        .filter(Boolean)
+                        .map((line) => {
+                          const [text, href = "#"] = line.split("|");
+                          return { text: text.trim(), href: href.trim() };
+                        });
+                      update("secondary", { ...ls.secondary, chips });
+                    }}
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Anchori: #online-zakazivanje, #sveska-ili-kalendar,
+                    #gledam-aplikaciju, #otkazivanja, #automatizacija, #faq
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* DEO 2 — Sekcija 1: Online zakazivanje */}
+          <div className={card}>
+            <SectionHeader
+              title="DEO 2 — Online zakazivanje (Sekcija 1)"
+              open={openSection === "sec-objections"}
+              onToggle={() => toggle("sec-objections")}
+            />
+            {openSection === "sec-objections" && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className={lbl}>Naslov</label>
+                  <input
+                    className={inp}
+                    value={ls.secondary.objections.headline}
+                    onChange={(e) =>
+                      update("secondary", {
+                        ...ls.secondary,
+                        objections: {
+                          ...ls.secondary.objections,
+                          headline: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Uvodni tekst (lead)</label>
+                  <input
+                    className={inp}
+                    value={ls.secondary.objections.lead}
+                    onChange={(e) =>
+                      update("secondary", {
+                        ...ls.secondary,
+                        objections: {
+                          ...ls.secondary.objections,
+                          lead: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>
+                    Baloni / citati (jedan po redu, animirani)
+                  </label>
+                  <textarea
+                    className={`${inp} font-mono text-xs`}
+                    rows={3}
+                    value={ls.secondary.objections.bubbles.join("\n")}
+                    onChange={(e) =>
+                      update("secondary", {
+                        ...ls.secondary,
+                        objections: {
+                          ...ls.secondary.objections,
+                          bubbles: e.target.value
+                            .split("\n")
+                            .map((l) => l.trim())
+                            .filter(Boolean),
+                        },
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Paragrafi (jedan po redu)</label>
+                  <textarea
+                    className={`${inp} font-mono text-xs`}
+                    rows={4}
+                    value={ls.secondary.objections.paragraphs.join("\n")}
+                    onChange={(e) =>
+                      update("secondary", {
+                        ...ls.secondary,
+                        objections: {
+                          ...ls.secondary.objections,
+                          paragraphs: e.target.value
+                            .split("\n")
+                            .map((l) => l.trim())
+                            .filter(Boolean),
+                        },
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* DEO 2 — Sekcija 2: Sveska vs kalendar */}
+          <div className={card}>
+            <SectionHeader
+              title="DEO 2 — Sveska vs kalendar (Sekcija 2)"
+              open={openSection === "sec-notebook"}
+              onToggle={() => toggle("sec-notebook")}
+            />
+            {openSection === "sec-notebook" && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className={lbl}>Naslov</label>
+                  <input
+                    className={inp}
+                    value={ls.secondary.notebook.headline}
+                    onChange={(e) =>
+                      update("secondary", {
+                        ...ls.secondary,
+                        notebook: {
+                          ...ls.secondary.notebook,
+                          headline: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Lista (jedan po redu)</label>
+                  <textarea
+                    className={`${inp} font-mono text-xs`}
+                    rows={4}
+                    value={ls.secondary.notebook.items.join("\n")}
+                    onChange={(e) =>
+                      update("secondary", {
+                        ...ls.secondary,
+                        notebook: {
+                          ...ls.secondary.notebook,
+                          items: e.target.value
+                            .split("\n")
+                            .map((l) => l.trim())
+                            .filter(Boolean),
+                        },
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* DEO 2 — Sekcija 3: Teme aplikacije */}
+          <div className={card}>
+            <SectionHeader
+              title="DEO 2 — Teme aplikacije (Sekcija 3)"
+              open={openSection === "sec-app"}
+              onToggle={() => toggle("sec-app")}
+            />
+            {openSection === "sec-app" && (
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label className={lbl}>Naslov</label>
+                  <input
+                    className={inp}
+                    value={ls.secondary.app.headline}
+                    onChange={(e) =>
+                      update("secondary", {
+                        ...ls.secondary,
+                        app: { ...ls.secondary.app, headline: e.target.value },
+                      })
+                    }
+                  />
+                </div>
+                {ls.secondary.app.topics.map((topic, i) => (
+                  <div
+                    key={i}
+                    className="bg-slate-700/40 rounded-lg p-3 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-slate-400 font-bold uppercase">
+                        Tema {i + 1}
+                      </p>
+                      {ls.secondary.app.topics.length > 1 && (
+                        <button
+                          className="text-xs text-red-400 hover:text-red-300 transition"
+                          onClick={() => {
+                            const topics = ls.secondary.app.topics.filter(
+                              (_, idx) => idx !== i,
+                            );
+                            update("secondary", {
+                              ...ls.secondary,
+                              app: { ...ls.secondary.app, topics },
+                            });
+                          }}
+                        >
+                          Obriši
+                        </button>
+                      )}
+                    </div>
+                    <div>
+                      <label className={lbl}>H3 naslov</label>
+                      <input
+                        className={inp}
+                        value={topic.title}
+                        onChange={(e) => {
+                          const topics = [...ls.secondary.app.topics];
+                          topics[i] = { ...topics[i], title: e.target.value };
+                          update("secondary", {
+                            ...ls.secondary,
+                            app: { ...ls.secondary.app, topics },
+                          });
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className={lbl}>Objašnjenje</label>
+                      <textarea
+                        className={inp}
+                        rows={2}
+                        value={topic.description}
+                        onChange={(e) => {
+                          const topics = [...ls.secondary.app.topics];
+                          topics[i] = {
+                            ...topics[i],
+                            description: e.target.value,
+                          };
+                          update("secondary", {
+                            ...ls.secondary,
+                            app: { ...ls.secondary.app, topics },
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+                <button
+                  className="w-full py-2 border border-dashed border-slate-600 text-slate-400 text-xs font-bold rounded-lg hover:border-violet-500 hover:text-violet-400 transition"
+                  onClick={() => {
+                    const topics = [
+                      ...ls.secondary.app.topics,
+                      { title: "", description: "" },
+                    ];
+                    update("secondary", {
+                      ...ls.secondary,
+                      app: { ...ls.secondary.app, topics },
+                    });
+                  }}
+                >
+                  + Dodaj temu
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* DEO 2 — Sekcija 4: Otkazivanja */}
+          <div className={card}>
+            <SectionHeader
+              title="DEO 2 — Otkazivanja (Sekcija 4)"
+              open={openSection === "sec-cancellations"}
+              onToggle={() => toggle("sec-cancellations")}
+            />
+            {openSection === "sec-cancellations" && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className={lbl}>Naslov</label>
+                  <input
+                    className={inp}
+                    value={ls.secondary.cancellations.headline}
+                    onChange={(e) =>
+                      update("secondary", {
+                        ...ls.secondary,
+                        cancellations: {
+                          ...ls.secondary.cancellations,
+                          headline: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>
+                    Paragrafi (jedan po redu, naizmenično ljubičasto/sivo)
+                  </label>
+                  <textarea
+                    className={`${inp} font-mono text-xs`}
+                    rows={5}
+                    value={ls.secondary.cancellations.paragraphs.join("\n")}
+                    onChange={(e) =>
+                      update("secondary", {
+                        ...ls.secondary,
+                        cancellations: {
+                          ...ls.secondary.cancellations,
+                          paragraphs: e.target.value
+                            .split("\n")
+                            .map((l) => l.trim())
+                            .filter(Boolean),
+                        },
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* DEO 2 — Sekcija 5: Automatizacija */}
+          <div className={card}>
+            <SectionHeader
+              title="DEO 2 — Automatizacija (Sekcija 5)"
+              open={openSection === "sec-automation"}
+              onToggle={() => toggle("sec-automation")}
+            />
+            {openSection === "sec-automation" && (
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label className={lbl}>Naslov</label>
+                  <input
+                    className={inp}
+                    value={ls.secondary.automation.headline}
+                    onChange={(e) =>
+                      update("secondary", {
+                        ...ls.secondary,
+                        automation: {
+                          ...ls.secondary.automation,
+                          headline: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </div>
+                {ls.secondary.automation.items.map((item, i) => (
+                  <div
+                    key={i}
+                    className="bg-slate-700/40 rounded-lg p-3 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-slate-400 font-bold uppercase">
+                        Stavka {i + 1}
+                      </p>
+                      {ls.secondary.automation.items.length > 1 && (
+                        <button
+                          className="text-xs text-red-400 hover:text-red-300 transition"
+                          onClick={() => {
+                            const items = ls.secondary.automation.items.filter(
+                              (_, idx) => idx !== i,
+                            );
+                            update("secondary", {
+                              ...ls.secondary,
+                              automation: { ...ls.secondary.automation, items },
+                            });
+                          }}
+                        >
+                          Obriši
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                      <div>
+                        <label className={lbl}>Ikona</label>
+                        <input
+                          className={inp}
+                          value={item.icon}
+                          onChange={(e) => {
+                            const items = [...ls.secondary.automation.items];
+                            items[i] = { ...items[i], icon: e.target.value };
+                            update("secondary", {
+                              ...ls.secondary,
+                              automation: { ...ls.secondary.automation, items },
+                            });
+                          }}
+                        />
+                      </div>
+                      <div className="col-span-3">
+                        <label className={lbl}>Naslov</label>
+                        <input
+                          className={inp}
+                          value={item.title}
+                          onChange={(e) => {
+                            const items = [...ls.secondary.automation.items];
+                            items[i] = { ...items[i], title: e.target.value };
+                            update("secondary", {
+                              ...ls.secondary,
+                              automation: { ...ls.secondary.automation, items },
+                            });
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className={lbl}>Opis</label>
+                      <textarea
+                        className={inp}
+                        rows={2}
+                        value={item.description}
+                        onChange={(e) => {
+                          const items = [...ls.secondary.automation.items];
+                          items[i] = {
+                            ...items[i],
+                            description: e.target.value,
+                          };
+                          update("secondary", {
+                            ...ls.secondary,
+                            automation: { ...ls.secondary.automation, items },
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+                <button
+                  className="w-full py-2 border border-dashed border-slate-600 text-slate-400 text-xs font-bold rounded-lg hover:border-violet-500 hover:text-violet-400 transition"
+                  onClick={() => {
+                    const items = [
+                      ...ls.secondary.automation.items,
+                      { icon: "", title: "", description: "" },
+                    ];
+                    update("secondary", {
+                      ...ls.secondary,
+                      automation: { ...ls.secondary.automation, items },
+                    });
+                  }}
+                >
+                  + Dodaj stavku
+                </button>
+
+                <div className="bg-slate-700/40 rounded-lg p-3 space-y-2">
+                  <p className="text-xs text-slate-400 font-bold uppercase">
+                    Google primer
+                  </p>
+                  <div>
+                    <label className={lbl}>Pitanje</label>
+                    <input
+                      className={inp}
+                      value={ls.secondary.automation.assistantExample.question}
+                      onChange={(e) =>
+                        update("secondary", {
+                          ...ls.secondary,
+                          automation: {
+                            ...ls.secondary.automation,
+                            assistantExample: {
+                              ...ls.secondary.automation.assistantExample,
+                              question: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className={lbl}>Naslov odgovora</label>
+                    <input
+                      className={inp}
+                      value={ls.secondary.automation.assistantExample.replyTitle}
+                      onChange={(e) =>
+                        update("secondary", {
+                          ...ls.secondary,
+                          automation: {
+                            ...ls.secondary.automation,
+                            assistantExample: {
+                              ...ls.secondary.automation.assistantExample,
+                              replyTitle: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className={lbl}>Stavke rasporeda (jedna po redu)</label>
+                    <textarea
+                      className={`${inp} font-mono text-xs`}
+                      rows={3}
+                      value={ls.secondary.automation.assistantExample.lines.join(
+                        "\n",
+                      )}
+                      onChange={(e) =>
+                        update("secondary", {
+                          ...ls.secondary,
+                          automation: {
+                            ...ls.secondary.automation,
+                            assistantExample: {
+                              ...ls.secondary.automation.assistantExample,
+                              lines: e.target.value
+                                .split("\n")
+                                .map((l) => l.trim())
+                                .filter(Boolean),
+                            },
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* DEO 2 — FAQ */}
+          <div className={card}>
+            <SectionHeader
+              title="DEO 2 — FAQ (do 8 pitanja)"
+              open={openSection === "sec-faq"}
+              onToggle={() => toggle("sec-faq")}
+            />
+            {openSection === "sec-faq" && (
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label className={lbl}>H2 naslov</label>
+                  <input
+                    className={inp}
+                    value={ls.secondary.faq.headline}
+                    onChange={(e) =>
+                      update("secondary", {
+                        ...ls.secondary,
+                        faq: { ...ls.secondary.faq, headline: e.target.value },
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Paragraf ispod naslova</label>
+                  <textarea
+                    className={inp}
+                    rows={2}
+                    value={ls.secondary.faq.paragraph}
+                    onChange={(e) =>
+                      update("secondary", {
+                        ...ls.secondary,
+                        faq: { ...ls.secondary.faq, paragraph: e.target.value },
+                      })
+                    }
+                  />
+                </div>
+                {ls.secondary.faq.items.map((item, i) => (
+                  <div
+                    key={i}
+                    className="bg-slate-700/40 rounded-lg p-3 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-slate-400 font-bold uppercase">
+                        Pitanje {i + 1}
+                      </p>
+                      <button
+                        className="text-xs text-red-400 hover:text-red-300 transition"
+                        onClick={() => {
+                          const items = ls.secondary.faq.items.filter(
+                            (_, idx) => idx !== i,
+                          );
+                          update("secondary", {
+                            ...ls.secondary,
+                            faq: { ...ls.secondary.faq, items },
+                          });
+                        }}
+                      >
+                        Obriši
+                      </button>
+                    </div>
+                    <div>
+                      <label className={lbl}>Pitanje (H3)</label>
+                      <input
+                        className={inp}
+                        value={item.question}
+                        onChange={(e) => {
+                          const items = [...ls.secondary.faq.items];
+                          items[i] = { ...items[i], question: e.target.value };
+                          update("secondary", {
+                            ...ls.secondary,
+                            faq: { ...ls.secondary.faq, items },
+                          });
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className={lbl}>
+                        Odgovor (prazno = kratak fallback)
+                      </label>
+                      <textarea
+                        className={inp}
+                        rows={3}
+                        value={item.answer}
+                        onChange={(e) => {
+                          const items = [...ls.secondary.faq.items];
+                          items[i] = { ...items[i], answer: e.target.value };
+                          update("secondary", {
+                            ...ls.secondary,
+                            faq: { ...ls.secondary.faq, items },
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+                {ls.secondary.faq.items.length < 8 && (
+                  <button
+                    className="w-full py-2 border border-dashed border-slate-600 text-slate-400 text-xs font-bold rounded-lg hover:border-violet-500 hover:text-violet-400 transition"
+                    onClick={() => {
+                      const items = [
+                        ...ls.secondary.faq.items,
+                        { question: "", answer: "" },
+                      ];
+                      update("secondary", {
+                        ...ls.secondary,
+                        faq: { ...ls.secondary.faq, items },
+                      });
+                    }}
+                  >
+                    + Dodaj pitanje ({ls.secondary.faq.items.length}/8)
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* DEO 2 — Galerija */}
+          <div className={card}>
+            <SectionHeader
+              title="DEO 2 — Galerija"
+              open={openSection === "sec-gallery"}
+              onToggle={() => toggle("sec-gallery")}
+            />
+            {openSection === "sec-gallery" && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className={lbl}>Naslov</label>
+                  <input
+                    className={inp}
+                    value={ls.secondary.gallery.headline}
+                    onChange={(e) =>
+                      update("secondary", {
+                        ...ls.secondary,
+                        gallery: {
+                          ...ls.secondary.gallery,
+                          headline: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Slika</label>
+                  <SingleImageField
+                    value={ls.secondary.gallery.image}
+                    onChange={(url) =>
+                      update("secondary", {
+                        ...ls.secondary,
+                        gallery: { ...ls.secondary.gallery, image: url },
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Save */}
           <button
             className={`${btnPrimary} w-full py-3`}
