@@ -5,13 +5,6 @@ import type { SeoData } from "@/types";
 import type { SeoCmsContext } from "./seoAgentLandingTheme";
 import type { TenantSeoPageSnapshot } from "@/lib/seo/tenantSeoCrawl";
 
-export interface MetadataSeoAnalysisInput {
-  seo: SeoData;
-  seoContext?: SeoCmsContext;
-  renderedPages?: TenantSeoPageSnapshot[];
-  crawlUrl?: string;
-}
-
 export interface MetadataSeoAnalysisOutput {
   score: number;
   issues: string[];
@@ -32,38 +25,6 @@ export interface MetadataSeoFixInput {
 export interface MetadataSeoFixOutput {
   seo: SeoData;
 }
-
-const ANALYSIS_SYSTEM_PROMPT = `
-You are an expert SEO metadata strategist for local beauty service businesses.
-
-Analyze only SEO metadata for three pages:
-- Home page
-- Services page
-- Appointments page
-
-Focus on:
-- Title length and clarity (ideal 45-60 characters)
-- Description length and clarity (ideal 120-160 characters)
-- Local intent (city, street/area when available)
-- Service intent based on the provided service catalog
-- Uniqueness between pages
-- Conversion intent without spam
-
-Important:
-- When rendered page snapshots are provided, analyze the final metadata from the rendered HTML for each page as the source of truth.
-- Do not penalize missing full service catalog, prices, durations or booking widgets. Those are rendered by the platform.
-- For variant services, use "price from" and "duration from" context as proof that pricing/duration exists.
-- Metadata should summarize the page, not duplicate full landing content.
-- If a title is short but clear, service/location keywords can be in description.
-
-Output JSON only:
-{
-  "score": number,
-  "issues": string[],
-  "suggestions": string[],
-  "keywords": string[]
-}
-`;
 
 const FIX_SYSTEM_PROMPT = `
 You are an expert SEO metadata copywriter for local beauty service businesses.
@@ -187,55 +148,6 @@ function normalizeMetadataSeo(seo: SeoData): SeoData {
     terminiTitle: (seo.terminiTitle ?? "").slice(0, 60),
     terminiDescription: (seo.terminiDescription ?? "").slice(0, 160),
   };
-}
-
-export async function analyzeMetadataSeo(
-  input: MetadataSeoAnalysisInput,
-): Promise<MetadataSeoAnalysisOutput> {
-  const { seo, seoContext } = input;
-  const { renderedPages, crawlUrl } = input;
-  const content = buildMetadataSummary(seo, seoContext, renderedPages);
-
-  const messages: DeepSeekMessage[] = [
-    {
-      role: "user",
-      content: `Analyze this SEO metadata:\n\n${content}`,
-    },
-  ];
-
-  const response = await callDeepSeek({
-    agent: "metadataSeo",
-    messages,
-    systemPrompt: ANALYSIS_SYSTEM_PROMPT,
-    jsonMode: true,
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Metadata SEO agent error: ${response.status} — ${error}`);
-  }
-
-  const data = await response.json();
-  const aiContent = data.choices?.[0]?.message?.content;
-  if (!aiContent) throw new Error("No content in metadata SEO agent response");
-
-  try {
-    const parsed = JSON.parse(aiContent) as MetadataSeoAnalysisOutput;
-    const crawlErrors = (renderedPages ?? [])
-      .map((page) => page.error)
-      .filter(Boolean)
-      .join(" | ");
-    return {
-      ...parsed,
-      snapshotSource: renderedPages?.some((page) => page.snapshot)
-        ? "rendered-dom"
-        : "cms",
-      crawlUrl,
-      crawlError: crawlErrors || undefined,
-    };
-  } catch (e) {
-    throw new Error(`Metadata SEO agent returned invalid JSON: ${e}`);
-  }
 }
 
 export async function autoFixMetadataSeo(

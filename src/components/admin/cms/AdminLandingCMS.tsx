@@ -6,6 +6,8 @@ import { useSalonProfileAdmin } from "@/hooks/useSalonProfileAdmin";
 import { useAdminServices } from "@/hooks/useAdminServices";
 import { useQueryClient } from "@tanstack/react-query";
 import type { LandingStructure, LandingTheme } from "@/types";
+import type { SeoFinding, TechnicalAuditReport } from "@/types/seo-report";
+import { SeoFindings } from "@/components/seo/SeoFindings";
 import { ImageSelect } from "@/components/elements/ImageSelect";
 import { ArrowUpIcon } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
@@ -145,6 +147,8 @@ export interface SeoAnalysisResult {
   issues: string[];
   suggestions: string[];
   keywords: string[];
+  findings?: SeoFinding[];
+  technical?: TechnicalAuditReport;
   snapshotSource?: "cms" | "rendered-dom";
   crawlUrl?: string;
   crawlError?: string;
@@ -462,6 +466,7 @@ export function AdminLandingCMS({ sp }: Props) {
   const [showSeoPanel, setShowSeoPanel] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isAutoFixing, setIsAutoFixing] = useState(false);
+  const [isTypoFixing, setIsTypoFixing] = useState(false);
   const [iconPickerServiceId, setIconPickerServiceId] = useState<string | null>(
     null,
   );
@@ -692,6 +697,32 @@ export function AdminLandingCMS({ sp }: Props) {
     }
   };
 
+  const handleTypoFix = async () => {
+    if (!token) {
+      toast.error("Niste prijavljeni.");
+      return;
+    }
+    setIsTypoFixing(true);
+    try {
+      const res = await fetch("/api/landing-cms/typo-fix", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ landingStructure: ls }),
+      });
+      if (!res.ok) throw new Error("Ispravka typo grešaka neuspešna");
+      const { landingStructure: fixed } = await res.json();
+      updateLS(fixed);
+      toast.success("Typo greške ispravljene! Proverite i sačuvajte.");
+    } catch {
+      toast.error("Ispravka typo grešaka nije uspela");
+    } finally {
+      setIsTypoFixing(false);
+    }
+  };
+
   // ── Shortcuts ────────────────────────────────────────────────────────────
 
   const hero = ls.landing.hero;
@@ -733,6 +764,22 @@ export function AdminLandingCMS({ sp }: Props) {
           >
             <ArrowUpIcon className="size-5" aria-hidden="true" />
             <span className="sr-only">Na vrh stranice</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleTypoFix}
+            disabled={isTypoFixing}
+            title="Ispravlja samo pravopisne/typo greške, bez SEO prepravke"
+            className="flex items-center gap-2 px-4 py-2.5 bg-sky-600 text-white text-sm font-bold rounded-xl hover:bg-sky-700 transition disabled:opacity-50"
+          >
+            {isTypoFixing ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin inline-block" />
+                Ispravljanje...
+              </>
+            ) : (
+              "✓ Ispravi typo greške"
+            )}
           </button>
           <button
             onClick={handleSave}
@@ -809,38 +856,48 @@ export function AdminLandingCMS({ sp }: Props) {
             </p>
           )}
 
-          {seoResult && seoResult.issues.length > 0 && (
-            <div>
-              <p className={lbl}>Problemi</p>
-              <ul className="space-y-1.5">
-                {seoResult.issues.map((issue, i) => (
-                  <li
-                    key={i}
-                    className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400"
-                  >
-                    <span className="mt-0.5 shrink-0">✕</span>
-                    {issue}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {seoResult?.findings?.length ? (
+            <SeoFindings
+              findings={seoResult.findings}
+              technical={seoResult.technical}
+              variant="tenant"
+            />
+          ) : (
+            <>
+              {seoResult && seoResult.issues.length > 0 && (
+                <div>
+                  <p className={lbl}>Problemi</p>
+                  <ul className="space-y-1.5">
+                    {seoResult.issues.map((issue, i) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400"
+                      >
+                        <span className="mt-0.5 shrink-0">✕</span>
+                        {issue}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-          {seoResult && seoResult.suggestions.length > 0 && (
-            <div>
-              <p className={lbl}>Preporuke</p>
-              <ul className="space-y-1.5">
-                {seoResult.suggestions.map((s, i) => (
-                  <li
-                    key={i}
-                    className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300"
-                  >
-                    <span className="mt-0.5 shrink-0 text-violet-500">→</span>
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            </div>
+              {seoResult && seoResult.suggestions.length > 0 && (
+                <div>
+                  <p className={lbl}>Preporuke</p>
+                  <ul className="space-y-1.5">
+                    {seoResult.suggestions.map((s, i) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300"
+                      >
+                        <span className="mt-0.5 shrink-0 text-violet-500">→</span>
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
           )}
 
           {seoResult && seoResult.keywords.length > 0 && (

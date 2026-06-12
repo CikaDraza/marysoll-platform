@@ -7,6 +7,13 @@ import {
   normalizeMarketingLanding,
 } from "@/lib/marketing-landing-defaults";
 
+export interface SnapshotImage {
+  src?: string;
+  alt?: string;
+  /** Source kind: img | next-image | picture | video-poster | iframe | background-image */
+  type?: string;
+}
+
 export interface LandingRenderSnapshot {
   page: string;
   source?: "cms" | "rendered-dom";
@@ -17,14 +24,16 @@ export interface LandingRenderSnapshot {
     heading?: { level: "h1" | "h2" | "h3"; text: string };
     visibleCopy: string[];
     ctas: { text: string; href: string }[];
-    images: { src?: string; alt?: string }[];
+    images: SnapshotImage[];
     internalLinks: { text: string; href: string }[];
   }[];
   headingStructure: { level: "h1" | "h2" | "h3"; text: string }[];
   visibleCopy: string[];
   ctas: { text: string; href: string }[];
   internalLinks: { text: string; href: string }[];
-  images: { src?: string; alt?: string }[];
+  images: SnapshotImage[];
+  /** All element ids on the page — used to validate "#anchor" links. */
+  anchors?: string[];
   decorativeElements?: {
     selector: string;
     reason: string;

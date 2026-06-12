@@ -1,106 +1,15 @@
 import "server-only";
 
-import { callDeepSeek, type DeepSeekMessage } from "../agents";
+import { callDeepSeek } from "../agents";
 import type {
   MarketingLandingStructure,
   MarketingSeoAnalysisResult,
 } from "@/types/marketing-landing";
 import type { LandingRenderSnapshot } from "@/lib/seo/marketingLandingSnapshot";
-import { SEO_KNOWLEDGE_BASE } from "@/lib/seo/seoKnowledgeBase";
 
-type PartialAnalysis = {
-  score: number;
-  issues: string[];
-  suggestions: string[];
-  keywords: string[];
-};
-
-const OUTPUT_CONTRACT = `
-Return ONLY valid JSON:
-{
-  "score": number,
-  "issues": string[],
-  "suggestions": string[],
-  "keywords": string[]
-}
-`;
-
-async function runJsonAgent(
-  agent: "seoLandingTheme" | "metadataSeo" | "ctaStrategy",
-  systemPrompt: string,
-  userContent: string,
-): Promise<PartialAnalysis> {
-  const messages: DeepSeekMessage[] = [{ role: "user", content: userContent }];
-  const response = await callDeepSeek({
-    agent,
-    messages,
-    systemPrompt,
-    jsonMode: true,
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`${agent} error: ${response.status} - ${error}`);
-  }
-
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
-  if (!content) throw new Error(`${agent} returned no content`);
-  return JSON.parse(content) as PartialAnalysis;
-}
-
-export async function analyzeMarketingLandingSeo(
-  snapshot: LandingRenderSnapshot,
-): Promise<MarketingSeoAnalysisResult> {
-  const baseContext = JSON.stringify(
-    { snapshot, knowledgeBase: SEO_KNOWLEDGE_BASE },
-    null,
-    2,
-  );
-
-  const [landing, metadata, cta] = await Promise.all([
-    runJsonAgent(
-      "seoLandingTheme",
-      `You are a Landing SEO Agent for SaaS marketing pages.
-Analyze the rendered snapshot, not raw CMS forms. Focus on heading hierarchy, visible copy, section order, keyword coverage, internal links, pricing content, image alt text and missing content blocks.
-If snapshot.source is "rendered-dom", trust headingStructure extracted from real DOM, including Framer Motion tags such as motion.h1/motion.h2. Decorative HTML/CSS/motion elements listed in decorativeElements are not missing images and should not be penalized as image assets.
-Use the scoring rubric from the knowledge base. ${OUTPUT_CONTRACT}`,
-      `Analyze the landing page snapshot:\n\n${baseContext}`,
-    ),
-    runJsonAgent(
-      "metadataSeo",
-      `You are a Metadata SEO Agent for SaaS marketing pages.
-Analyze only final metadata: title, description, OG equivalents, canonical and robots. Consider search intent, length, clarity and keyword fit.
-Use the scoring rubric from the knowledge base. ${OUTPUT_CONTRACT}`,
-      `Analyze metadata from this rendered snapshot:\n\n${baseContext}`,
-    ),
-    runJsonAgent(
-      "ctaStrategy",
-      `You are a CTA Strategy Agent for SaaS marketing pages.
-Analyze CTA text, CTA hierarchy, internal links, pricing CTAs and conversion path clarity. Do not duplicate generic landing or metadata advice unless it affects CTA strategy.
-Use the scoring rubric from the knowledge base. ${OUTPUT_CONTRACT}`,
-      `Analyze CTA strategy from this rendered snapshot:\n\n${baseContext}`,
-    ),
-  ]);
-
-  const score = Math.round(
-    landing.score * 0.5 + metadata.score * 0.3 + cta.score * 0.2,
-  );
-
-  return {
-    score,
-    issues: [...landing.issues, ...metadata.issues, ...cta.issues],
-    suggestions: [
-      ...landing.suggestions,
-      ...metadata.suggestions,
-      ...cta.suggestions,
-    ],
-    keywords: Array.from(
-      new Set([...landing.keywords, ...metadata.keywords, ...cta.keywords]),
-    ),
-    sections: { landing, metadata, cta },
-  };
-}
+// NOTE: marketing SEO analysis now runs through the shared core
+// (src/lib/ai/agents/seo/analyzeSeo.ts). This file keeps only the
+// auto-fix and typo-fix flows.
 
 export async function autoFixMarketingLandingSeo(input: {
   marketingLanding: MarketingLandingStructure;
@@ -147,5 +56,53 @@ Rewrite the CMS copy and metadata to address the issues and suggestions.
   const data = await response.json();
   const content = data.choices?.[0]?.message?.content;
   if (!content) throw new Error("Marketing landing auto-fix returned no content");
+  return JSON.parse(content) as MarketingLandingStructure;
+}
+
+/**
+ * Typo-only fix — ispravlja ISKLJUČIVO pravopisne/slovne greške u CMS tekstu,
+ * bez SEO prepravke, bez menjanja smisla, redosleda ili ključnih reči.
+ * Ne zahteva prethodnu SEO analizu.
+ */
+export async function typoFixMarketingLanding(
+  marketingLanding: MarketingLandingStructure,
+): Promise<MarketingLandingStructure> {
+  const response = await callDeepSeek({
+    agent: "landingContent",
+    jsonMode: true,
+    systemPrompt: `You are a Serbian (Latin script) proofreader for Marysoll marketing pages.
+Return ONLY the complete updated MarketingLandingStructure JSON, with the exact same shape as the input.
+This is SPELLING/TYPO correction ONLY — it is NOT an SEO or content rewrite.
+Rules:
+- Fix ONLY spelling mistakes, typos, wrong/missing diacritics, doubled or missing letters, and obvious orthographic errors.
+- Do NOT rephrase, rewrite, shorten, expand, reorder, translate, or "improve" any text.
+- Do NOT change meaning, tone, wording, keywords, SEO, metadata intent or punctuation beyond fixing the typo itself.
+- If a word is already correct, leave it byte-for-byte unchanged.
+- Preserve ALL non-text values exactly: enabled, href, popular, price, period, icon, image, seo.ogImage and anchors (e.g. "#faq").
+- Preserve the exact JSON structure, all keys, and array lengths and order.
+- The brand name is always "Marysoll" — correct any variant (e.g. "Maryosoll", "Marysol", "Mary soll", "MarySoll" inside running copy) to "Marysoll".
+- Keep proper Serbian Latin orthography (e.g. "korišćenje", "ogroman", "č/ć/š/ž/đ").`,
+    messages: [
+      {
+        role: "user",
+        content: `Correct only spelling/typo mistakes in this marketingLanding JSON and return the full corrected JSON:\n\n${JSON.stringify(
+          marketingLanding,
+          null,
+          2,
+        )}`,
+      },
+    ],
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(
+      `marketing landing typo-fix error: ${response.status} - ${error}`,
+    );
+  }
+
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) throw new Error("Marketing landing typo-fix returned no content");
   return JSON.parse(content) as MarketingLandingStructure;
 }

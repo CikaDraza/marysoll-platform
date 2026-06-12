@@ -7,6 +7,7 @@ import type {
   PerformanceSeoSnapshot,
 } from "@/types/marketing-landing";
 import { SingleImageField } from "@/components/admin/campaign/SingleImageField";
+import { SeoFindings } from "@/components/seo/SeoFindings";
 import {
   superAdminCardClass as card,
   superAdminInputClass as inp,
@@ -114,31 +115,41 @@ function SeoResultPanel({
 
   return (
     <div className="mt-4 space-y-3">
-      {seoResult.issues.length > 0 && (
-        <div>
-          <p className="text-xs font-bold text-red-400 mb-1">Problemi</p>
-          <ul className="space-y-1">
-            {seoResult.issues.map((issue, i) => (
-              <li key={i} className="text-xs text-slate-300 flex gap-2">
-                <span className="text-red-400 mt-0.5">•</span>
-                {issue}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {seoResult.suggestions.length > 0 && (
-        <div>
-          <p className="text-xs font-bold text-amber-400 mb-1">Preporuke</p>
-          <ul className="space-y-1">
-            {seoResult.suggestions.map((s, i) => (
-              <li key={i} className="text-xs text-slate-300 flex gap-2">
-                <span className="text-amber-400 mt-0.5">→</span>
-                {s}
-              </li>
-            ))}
-          </ul>
-        </div>
+      {seoResult.findings?.length ? (
+        <SeoFindings
+          findings={seoResult.findings}
+          technical={seoResult.technical}
+          variant="superadmin"
+        />
+      ) : (
+        <>
+          {seoResult.issues.length > 0 && (
+            <div>
+              <p className="text-xs font-bold text-red-400 mb-1">Problemi</p>
+              <ul className="space-y-1">
+                {seoResult.issues.map((issue, i) => (
+                  <li key={i} className="text-xs text-slate-300 flex gap-2">
+                    <span className="text-red-400 mt-0.5">•</span>
+                    {issue}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {seoResult.suggestions.length > 0 && (
+            <div>
+              <p className="text-xs font-bold text-amber-400 mb-1">Preporuke</p>
+              <ul className="space-y-1">
+                {seoResult.suggestions.map((s, i) => (
+                  <li key={i} className="text-xs text-slate-300 flex gap-2">
+                    <span className="text-amber-400 mt-0.5">→</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
       )}
       {seoResult.keywords.length > 0 && (
         <div>
@@ -251,8 +262,10 @@ export function MarketingTab() {
     seoResult,
     seoLoading,
     autoFixLoading,
+    typoFixLoading,
     runSeoAnalysis,
     runAutoFix,
+    runTypoFix,
   } = useMarketingCms();
 
   const {
@@ -433,6 +446,14 @@ export function MarketingTab() {
                   {autoFixLoading ? "Popravljanje..." : "✦ Auto-fix sadržaj"}
                 </button>
               )}
+              <button
+                className="px-4 py-2 bg-sky-700 text-white text-xs font-bold rounded-lg hover:bg-sky-600 transition disabled:opacity-40"
+                disabled={typoFixLoading}
+                onClick={() => runTypoFix()}
+                title="Ispravlja samo pravopisne/typo greške, bez SEO prepravke"
+              >
+                {typoFixLoading ? "Ispravljanje..." : "✓ Ispravi typo greške"}
+              </button>
               <button
                 className="px-4 py-2 bg-slate-700 text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-600 transition disabled:opacity-40"
                 disabled={isSaving}

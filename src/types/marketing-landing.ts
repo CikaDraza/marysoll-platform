@@ -177,6 +177,8 @@ export interface MarketingSeoAnalysisResult {
   issues: string[];
   suggestions: string[];
   keywords: string[];
+  findings?: import("./seo-report").SeoFinding[];
+  technical?: import("./seo-report").TechnicalAuditReport;
   snapshotSource?: "cms" | "rendered-dom";
   crawlUrl?: string;
   crawlError?: string;

@@ -78,16 +78,14 @@ export function MarketingHomePageSecond({
           </svg>
         </div>
         <h2 className="text-4xl! font-bold text-gray-800 mb-4">
-          Počni besplatno
+          Još uvek vodiš termine preko poruka?
         </h2>
-        <p className="text-gray-500 mb-8">
-          Besplatan plan za uvek. Plaća se samo kada rasteš.
-        </p>
+        <p className="text-gray-500 mb-8">Počni besplatno i vidi kako radi.</p>
         <Link
           href="/register"
           className="bg-purple-600 text-white px-10 py-4 rounded-xl font-semibold text-lg hover:bg-purple-700 transition"
         >
-          Kreiraj salon →
+          Registruj salon →
         </Link>
       </section>
 

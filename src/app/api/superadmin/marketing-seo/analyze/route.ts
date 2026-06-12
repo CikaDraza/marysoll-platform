@@ -3,9 +3,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
 import { connectToDB } from "@/lib/db/mongodb";
-import { analyzeMarketingLandingSeo } from "@/lib/ai/agents/marketingLandingSeoAgents";
+import { analyzeSeo } from "@/lib/ai/agents/seo/analyzeSeo";
 import { buildMarketingLandingSnapshot } from "@/lib/seo/marketingLandingSnapshot";
 import { crawlRenderedMarketingPage } from "@/lib/seo/crawlRenderedMarketingPage";
+import { buildTechnicalAudit } from "@/lib/seo/technicalAudit";
+import { fetchSiteSignals } from "@/lib/seo/fetchSiteSignals";
 import { SeoAnalysisRun } from "@/models/SeoAnalysisRun";
 import type { LandingRenderSnapshot } from "@/lib/seo/marketingLandingSnapshot";
 import type {
@@ -41,12 +43,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = {
-      ...(await analyzeMarketingLandingSeo(snapshot)),
-      snapshotSource: snapshot.source ?? "cms",
+    const siteSignals = await fetchSiteSignals(crawlUrl);
+    const technical = buildTechnicalAudit({ snapshot, siteSignals });
+
+    const result = await analyzeSeo({
+      scope: "platform",
+      pages: [{ key: "home", snapshot }],
+      technical: [technical],
+      businessContext: {
+        brand: snapshot.businessContext.brand,
+        productCategory: snapshot.businessContext.productCategory,
+        audience: snapshot.businessContext.audience,
+        scopeLabel: "Marysoll marketing platforma",
+      },
+      agents: ["content", "cta", "metadata"],
       crawlUrl,
       crawlError,
-    };
+    });
 
     await connectToDB();
     const run = await SeoAnalysisRun.create({

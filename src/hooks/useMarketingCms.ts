@@ -50,6 +50,7 @@ export function useMarketingCms() {
   );
   const [seoLoading, setSeoLoading] = useState(false);
   const [autoFixLoading, setAutoFixLoading] = useState(false);
+  const [typoFixLoading, setTypoFixLoading] = useState(false);
 
   const { data: remoteLanding, isLoading } = useQuery({
     queryKey: ["marketing-landing"],
@@ -124,6 +125,35 @@ export function useMarketingCms() {
     }
   }, [landing, seoResult]);
 
+  const runTypoFix = useCallback(async () => {
+    setTypoFixLoading(true);
+    try {
+      const res = await fetch("/api/superadmin/marketing-seo/typo-fix", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ marketingLanding: landing }),
+      });
+      if (!res.ok) throw new Error("Ispravka typo grešaka neuspešna");
+      const data = (await res.json()) as {
+        marketingLanding: MarketingLandingStructure;
+      };
+      setLocalLanding(normalizeMarketingLanding(data.marketingLanding));
+      toast.success(
+        "Typo greške ispravljene. Proveri i sačuvaj.",
+        CENTER_TOAST_OPTIONS,
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Greška pri ispravci typo grešaka.",
+        CENTER_TOAST_OPTIONS,
+      );
+    } finally {
+      setTypoFixLoading(false);
+    }
+  }, [landing]);
+
   return {
     landing,
     isLoading,
@@ -133,8 +163,10 @@ export function useMarketingCms() {
     seoResult,
     seoLoading,
     autoFixLoading,
+    typoFixLoading,
     runSeoAnalysis,
     runAutoFix,
+    runTypoFix,
     setSeoResult,
   };
 }

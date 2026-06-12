@@ -73,6 +73,63 @@ export default async ({ page, context }) => {
     const meta = (selector, attr = "content") =>
       document.querySelector(selector)?.getAttribute(attr) || "";
 
+    // Collect images from ALL real sources, not just <img>.
+    const collectImages = (root) => {
+      const out = [];
+      Array.from(root.querySelectorAll("img"))
+        .filter(isVisible)
+        .forEach((el) => {
+          out.push({
+            type: "img",
+            src: abs(el.getAttribute("src") || el.getAttribute("data-src") || ""),
+            alt: clean(el.getAttribute("alt") || ""),
+          });
+        });
+      Array.from(root.querySelectorAll("picture source")).forEach((el) => {
+        const srcset = el.getAttribute("srcset") || "";
+        const first = (srcset.split(",")[0] || "").trim().split(" ")[0] || "";
+        if (first) out.push({ type: "picture", src: abs(first), alt: "" });
+      });
+      Array.from(root.querySelectorAll("video[poster]"))
+        .filter(isVisible)
+        .forEach((el) => {
+          out.push({
+            type: "video-poster",
+            src: abs(el.getAttribute("poster") || ""),
+            alt: "",
+          });
+        });
+      Array.from(root.querySelectorAll("iframe[src]"))
+        .filter(isVisible)
+        .forEach((el) => {
+          out.push({
+            type: "iframe",
+            src: abs(el.getAttribute("src") || ""),
+            alt: clean(el.getAttribute("title") || ""),
+          });
+        });
+      Array.from(root.querySelectorAll("*"))
+        .slice(0, 4000)
+        .filter(isVisible)
+        .forEach((el) => {
+          const bg = window.getComputedStyle(el).backgroundImage;
+          if (bg && bg !== "none" && bg.indexOf("url(") !== -1) {
+            const match = bg.match(/url\\((['"]?)(.*?)\\1\\)/);
+            if (match && match[2] && match[2].indexOf("data:") !== 0) {
+              out.push({ type: "background-image", src: abs(match[2]), alt: "" });
+            }
+          }
+        });
+      const seen = {};
+      return out.filter((img) => {
+        if (!img.src) return false;
+        const key = img.type + "|" + img.src;
+        if (seen[key]) return false;
+        seen[key] = true;
+        return true;
+      });
+    };
+
     const headings = Array.from(document.querySelectorAll("h1,h2,h3"))
       .filter(isVisible)
       .map((element) => ({
@@ -99,13 +156,10 @@ export default async ({ page, context }) => {
       return /počni|pocni|start|trial|besplat|demo|saznaj|kontakt|register|odaberi|plan|zakaz/i.test(text);
     });
 
-    const images = Array.from(document.querySelectorAll("img"))
-      .filter(isVisible)
-      .map((element) => ({
-        src: abs(element.getAttribute("src") || element.getAttribute("data-src") || ""),
-        alt: clean(element.getAttribute("alt") || ""),
-      }))
-      .filter((image) => image.src);
+    const images = collectImages(document);
+    const anchors = Array.from(document.querySelectorAll("[id]"))
+      .map((element) => element.id)
+      .filter(Boolean);
 
     const decorativeElements = Array.from(
       document.querySelectorAll("[aria-hidden='true'], .blur-3xl, [class*='blur-3xl'], [class*='gradient']")
@@ -147,13 +201,7 @@ export default async ({ page, context }) => {
           href: abs(element.getAttribute("href") || ""),
         }))
         .filter((link) => link.text || link.href);
-      const sectionImages = Array.from(section.querySelectorAll("img"))
-        .filter(isVisible)
-        .map((element) => ({
-          src: abs(element.getAttribute("src") || element.getAttribute("data-src") || ""),
-          alt: clean(element.getAttribute("alt") || ""),
-        }))
-        .filter((image) => image.src);
+      const sectionImages = collectImages(section);
 
       return {
         id: section.id || section.getAttribute("data-section") || section.tagName.toLowerCase() + "-" + (index + 1),
@@ -182,6 +230,7 @@ export default async ({ page, context }) => {
       ctas,
       internalLinks: links.filter((link) => isInternal(link.href)),
       images,
+      anchors,
       decorativeElements,
       schemas,
       businessContext: {

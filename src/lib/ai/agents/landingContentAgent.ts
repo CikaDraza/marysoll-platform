@@ -126,3 +126,71 @@ Return the complete updated landingStructure JSON object.
     throw new Error(`Landing content agent returned invalid JSON: ${e}`);
   }
 }
+
+const TYPO_SYSTEM_PROMPT = `
+You are a Serbian (Latin script) proofreader for local beauty business landing pages (salons, makeup artists, nail studios).
+Return ONLY the complete updated landingStructure JSON, with the exact same shape as the input.
+This is SPELLING/TYPO correction ONLY — it is NOT an SEO or content rewrite.
+
+Rules:
+- Fix ONLY spelling mistakes, typos, wrong/missing diacritics, doubled or missing letters, and obvious orthographic errors.
+- Do NOT rephrase, rewrite, shorten, expand, reorder, translate, or "improve" any text.
+- Do NOT change meaning, tone, wording, keywords, SEO, metadata intent or punctuation beyond fixing the typo itself.
+- If a word is already correct, leave it byte-for-byte unchanged.
+- Preserve ALL non-text values exactly: enabled flags, icons, hrefs, instagram links, image/src URLs and anchors.
+- Preserve the exact JSON structure, all keys, and array lengths and order.
+- Do NOT rename the salon's own brand/business name; only correct obvious misspellings of common words and of the platform name "Marysoll".
+- Keep proper Serbian Latin orthography (e.g. "korišćenje", "ogroman", "č/ć/š/ž/đ").
+
+Output JSON only — the complete updated landingStructure object.
+`;
+
+/**
+ * Typo-only fix — ispravlja ISKLJUČIVO pravopisne/slovne greške u tenant
+ * landing sadržaju, bez SEO prepravke. Ne zahteva prethodnu SEO analizu.
+ */
+export async function typoFixLandingContent(
+  landingStructure: LandingStructure,
+): Promise<LandingContentFixOutput> {
+  const userPrompt = `
+Correct only spelling/typo mistakes in this landing page CMS content and return the complete corrected landingStructure JSON:
+${JSON.stringify(landingStructure, null, 2)}
+`.trim();
+
+  const response = await callDeepSeek({
+    agent: "landingContent",
+    messages: [{ role: "user", content: userPrompt }],
+    systemPrompt: TYPO_SYSTEM_PROMPT,
+    jsonMode: true,
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Landing typo-fix agent error: ${response.status} — ${error}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) throw new Error("No content in landing typo-fix agent response");
+
+  try {
+    const parsed = JSON.parse(content);
+    const ls: LandingStructure = parsed.landingStructure ?? parsed;
+
+    // Ne diraj isključene sekcije — vrati originalne.
+    Object.entries(landingStructure.landing).forEach(([key, section]) => {
+      if (
+        section &&
+        typeof section === "object" &&
+        "enabled" in section &&
+        !(section as { enabled: boolean }).enabled
+      ) {
+        (ls.landing as unknown as Record<string, unknown>)[key] = section;
+      }
+    });
+
+    return { landingStructure: ls };
+  } catch (e) {
+    throw new Error(`Landing typo-fix agent returned invalid JSON: ${e}`);
+  }
+}
