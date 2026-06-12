@@ -109,7 +109,7 @@ export const AGENTS: Record<AgentType, AgentConfig> = {
     apiKey: process.env.API_KEY_SEO_LADNING_THEME ?? "",
     model: "deepseek-chat",
     temperature: 0.2,
-    maxTokens: 2000,
+    maxTokens: 3000,
     rpmLimit: 5,
   },
   metadataSeo: {
@@ -120,7 +120,7 @@ export const AGENTS: Record<AgentType, AgentConfig> = {
       "",
     model: "deepseek-chat",
     temperature: 0.2,
-    maxTokens: 2000,
+    maxTokens: 3000,
     rpmLimit: 5,
   },
   ctaStrategy: {
@@ -131,7 +131,7 @@ export const AGENTS: Record<AgentType, AgentConfig> = {
       "",
     model: "deepseek-chat",
     temperature: 0.25,
-    maxTokens: 2000,
+    maxTokens: 3000,
     rpmLimit: 5,
   },
   landingContent: {
@@ -139,7 +139,10 @@ export const AGENTS: Record<AgentType, AgentConfig> = {
     apiKey: process.env.API_KEY_LANDING_CONTENT ?? "",
     model: "deepseek-chat",
     temperature: 0.6,
-    maxTokens: 4000,
+    // Fix agents (typo-fix / auto-fix) echo the FULL landing structure back as
+    // JSON (~13KB+). 8192 is the deepseek-chat max — lower values truncate the
+    // output mid-string and cause "Unterminated string in JSON".
+    maxTokens: 8192,
     rpmLimit: 3,
   },
 };

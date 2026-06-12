@@ -92,9 +92,13 @@ Return the complete updated landingStructure JSON object.
   }
 
   const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
+  const choice = data.choices?.[0];
+  const content = choice?.message?.content;
   if (!content)
     throw new Error("No content in landing content agent response");
+  if (choice.finish_reason === "length") {
+    throw new Error("Landing content auto-fix output was truncated (hit max_tokens).");
+  }
 
   try {
     const parsed = JSON.parse(content);
@@ -170,8 +174,12 @@ ${JSON.stringify(landingStructure, null, 2)}
   }
 
   const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
+  const choice = data.choices?.[0];
+  const content = choice?.message?.content;
   if (!content) throw new Error("No content in landing typo-fix agent response");
+  if (choice.finish_reason === "length") {
+    throw new Error("Landing typo-fix output was truncated (hit max_tokens).");
+  }
 
   try {
     const parsed = JSON.parse(content);

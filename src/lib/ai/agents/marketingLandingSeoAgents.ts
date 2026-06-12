@@ -54,8 +54,14 @@ Rewrite the CMS copy and metadata to address the issues and suggestions.
   }
 
   const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
+  const choice = data.choices?.[0];
+  const content = choice?.message?.content;
   if (!content) throw new Error("Marketing landing auto-fix returned no content");
+  if (choice.finish_reason === "length") {
+    throw new Error(
+      "Marketing landing auto-fix output was truncated (hit max_tokens).",
+    );
+  }
   return JSON.parse(content) as MarketingLandingStructure;
 }
 
@@ -102,7 +108,13 @@ Rules:
   }
 
   const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
+  const choice = data.choices?.[0];
+  const content = choice?.message?.content;
   if (!content) throw new Error("Marketing landing typo-fix returned no content");
+  if (choice.finish_reason === "length") {
+    throw new Error(
+      "Marketing landing typo-fix output was truncated (hit max_tokens).",
+    );
+  }
   return JSON.parse(content) as MarketingLandingStructure;
 }

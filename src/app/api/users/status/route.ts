@@ -2,18 +2,20 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { TenantUser } from "@/models/TenantUser";
-import { verifyToken } from "@/lib/auth/auth-server";
+import { verifyToken, getTokenFromRequest } from "@/lib/auth/auth-server";
 
 export async function POST(req: Request) {
   try {
     await connectToDB();
 
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
+    // Accept the token from Authorization header OR auth cookie. The cookie
+    // path matters for navigator.sendBeacon on beforeunload, which cannot set
+    // custom headers — without it, authenticated unload calls 401 spuriously.
+    const token = getTokenFromRequest(req);
+    if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const token = authHeader.split(" ")[1];
     const decoded = verifyToken(token);
 
     if (!decoded) {

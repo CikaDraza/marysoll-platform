@@ -142,7 +142,7 @@ export function PricingCards({ plans }: PricingCardsProps = {}) {
             href="/register"
             className="inline-flex items-center gap-2 bg-violet-600 text-white px-10 py-4 rounded-2xl font-semibold text-lg hover:bg-violet-700 transition shadow-xl shadow-violet-200"
           >
-            Počni sa Mary već danas
+            Počni sa Maria već danas
             <span>→</span>
           </Link>
         </motion.div>

@@ -192,24 +192,41 @@ export function useAuth() {
     refetchOnWindowFocus: false,
   });
 
-  // ── Online status ─────────────────────────────────────────────────────────
-  const updateOnlineStatus = useCallback(async (isOnline: boolean) => {
-    const token = getRawToken();
-    if (!token) return;
-    try {
+  // ── Online status (derived 3-state) ───────────────────────────────────────
+  //   "pending" = auth still resolving, or status POST not yet confirmed (yellow)
+  //   "online"  = authenticated and status update confirmed (green)
+  //   "offline" = auth resolved with no valid token (red)
+  const statusMutation = useMutation<boolean, unknown, boolean>({
+    mutationFn: async (isOnline: boolean) => {
+      const token = getRawToken();
+      if (!token) throw new Error("Missing token");
       await publicApi.post(
         "/users/status",
         { isOnline },
         { headers: { Authorization: `Bearer ${token}` } },
       );
-    } catch {
-      /* silent */
-    }
-  }, []);
+      return isOnline;
+    },
+  });
+  const { mutateAsync: postStatus } = statusMutation;
 
+  const updateOnlineStatus = useCallback(
+    (isOnline: boolean) => postStatus(isOnline).catch(() => {}),
+    [postStatus],
+  );
+
+  // Wait for auth data to resolve before sending status.
   useEffect(() => {
-    if (user?.token) updateOnlineStatus(true);
-  }, [user?.token, updateOnlineStatus]);
+    if (!isLoading && user?.token) updateOnlineStatus(true);
+  }, [isLoading, user?.token, updateOnlineStatus]);
+
+  const onlineStatus: "pending" | "online" | "offline" = isLoading
+    ? "pending"
+    : !user?.token
+      ? "offline"
+      : statusMutation.isSuccess && statusMutation.data === true
+        ? "online"
+        : "pending";
 
   useEffect(() => {
     const handleUnload = () => {
@@ -380,6 +397,7 @@ export function useAuth() {
     tenantId: user?.tenantId ?? null,
     isLoading,
     isError,
+    onlineStatus,
 
     login: (email: string, password: string) =>
       loginMutation.mutateAsync({ email, password }),

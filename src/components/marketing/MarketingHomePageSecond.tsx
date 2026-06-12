@@ -35,7 +35,7 @@ export function MarketingHomePageSecond({
               height={600}
               src={gallery.image || "/marysoll-banner.png"}
               alt={gallery.headline || "Marysoll beauty business growth system"}
-              className="rounded-xl shadow-lg"
+              className="w-full h-auto rounded-xl shadow-lg"
             />
           </div>
         </div>

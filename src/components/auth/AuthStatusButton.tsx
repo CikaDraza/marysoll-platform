@@ -30,7 +30,7 @@ export function AuthStatusButton({
   theme = "light",
   tenantSlug,
 }: AuthStatusButtonProps) {
-  const { logout } = useAuth();
+  const { logout, onlineStatus } = useAuth();
   const [user, setUser] = useState<DecodedUser | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   // Read user from token on mount (client-only)
@@ -101,8 +101,23 @@ export function AuthStatusButton({
           }
         `}
       >
-        {/* Online indicator */}
-        <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 animate-pulse" />
+        {/* Online status indicator: zelena=online, žuta=pending (čeka proveru), crvena=offline */}
+        <span
+          title={
+            onlineStatus === "online"
+              ? "Online"
+              : onlineStatus === "offline"
+                ? "Offline"
+                : "Proverava se..."
+          }
+          className={`w-2 h-2 rounded-full flex-shrink-0 ${
+            onlineStatus === "online"
+              ? "bg-emerald-500 animate-pulse"
+              : onlineStatus === "offline"
+                ? "bg-red-500"
+                : "bg-amber-400 animate-pulse"
+          }`}
+        />
 
         {/* Name */}
         <span className="max-w-[120px] truncate">{user.name}</span>
