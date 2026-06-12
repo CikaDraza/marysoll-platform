@@ -114,10 +114,7 @@ export const AGENTS: Record<AgentType, AgentConfig> = {
   },
   metadataSeo: {
     type: "metadataSeo",
-    apiKey:
-      process.env.API_KEY_SEO_METADATA ??
-      process.env.API_KEY_SEO_LADNING_THEME ??
-      "",
+    apiKey: process.env.API_KEY_SEO_METADATA ?? "",
     model: "deepseek-chat",
     temperature: 0.2,
     maxTokens: 3000,
@@ -125,10 +122,7 @@ export const AGENTS: Record<AgentType, AgentConfig> = {
   },
   ctaStrategy: {
     type: "ctaStrategy",
-    apiKey:
-      process.env.API_KEY_CTA_STRATEGY ??
-      process.env.API_KEY_SEO_LADNING_THEME ??
-      "",
+    apiKey: process.env.API_KEY_CTA_STRATEGY ?? "",
     model: "deepseek-chat",
     temperature: 0.25,
     maxTokens: 3000,

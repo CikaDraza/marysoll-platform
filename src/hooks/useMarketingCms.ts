@@ -13,6 +13,15 @@ import {
   DEFAULT_MARKETING_LANDING,
   normalizeMarketingLanding,
 } from "@/lib/marketing-landing-defaults";
+import {
+  computeTypoCorrections,
+  type TypoCorrection,
+} from "@/lib/marketing-typo-diff";
+
+export type TypoFixState =
+  | { status: "clean" }
+  | { status: "fixed"; corrections: TypoCorrection[] }
+  | { status: "error" };
 
 const CENTER_TOAST_OPTIONS = {
   position: "top-center" as const,
@@ -51,6 +60,7 @@ export function useMarketingCms() {
   const [seoLoading, setSeoLoading] = useState(false);
   const [autoFixLoading, setAutoFixLoading] = useState(false);
   const [typoFixLoading, setTypoFixLoading] = useState(false);
+  const [typoResult, setTypoResult] = useState<TypoFixState | null>(null);
 
   const { data: remoteLanding, isLoading } = useQuery({
     queryKey: ["marketing-landing"],
@@ -80,6 +90,7 @@ export function useMarketingCms() {
       qc.invalidateQueries({ queryKey: ["marketing-landing"] });
       setLocalLanding(null);
       setSeoResult(null);
+      setTypoResult(null);
       toast.success("Marketing CMS je sačuvan.", CENTER_TOAST_OPTIONS);
     },
     onError: (error) => {
@@ -127,22 +138,34 @@ export function useMarketingCms() {
 
   const runTypoFix = useCallback(async () => {
     setTypoFixLoading(true);
+    setTypoResult(null);
+    const before = landing;
     try {
       const res = await fetch("/api/superadmin/marketing-seo/typo-fix", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ marketingLanding: landing }),
+        body: JSON.stringify({ marketingLanding: before }),
       });
       if (!res.ok) throw new Error("Ispravka typo grešaka neuspešna");
       const data = (await res.json()) as {
         marketingLanding: MarketingLandingStructure;
       };
       setLocalLanding(normalizeMarketingLanding(data.marketingLanding));
+
+      const corrections = computeTypoCorrections(before, data.marketingLanding);
+      setTypoResult(
+        corrections.length
+          ? { status: "fixed", corrections }
+          : { status: "clean" },
+      );
       toast.success(
-        "Typo greške ispravljene. Proveri i sačuvaj.",
+        corrections.length
+          ? "Typo greške ispravljene. Proveri i sačuvaj."
+          : "Nema typo grešaka — sve je čisto.",
         CENTER_TOAST_OPTIONS,
       );
     } catch (error) {
+      setTypoResult({ status: "error" });
       toast.error(
         error instanceof Error
           ? error.message
@@ -164,6 +187,7 @@ export function useMarketingCms() {
     seoLoading,
     autoFixLoading,
     typoFixLoading,
+    typoResult,
     runSeoAnalysis,
     runAutoFix,
     runTypoFix,
