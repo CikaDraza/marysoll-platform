@@ -8,6 +8,11 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  // Absolute base for resolving relative OG/Twitter image URLs. Without it,
+  // Next falls back to http://localhost:3006 and social previews break in prod.
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://marysoll.com",
+  ),
   title: "Marysoll",
   description: "Beauty Salon Platform",
   openGraph: {

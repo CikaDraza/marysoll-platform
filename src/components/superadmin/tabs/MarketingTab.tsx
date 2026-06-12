@@ -206,7 +206,7 @@ function TypoFixPanel({ result }: { result: TypoFixState | null }) {
   }
 
   return (
-    <div className={card}>
+    <div className={card + " my-4"}>
       <div className="flex items-center justify-between mb-3">
         <p className="text-[11px] font-bold text-slate-300 uppercase tracking-wide">
           Ispravljene typo greške
@@ -391,9 +391,6 @@ export function MarketingTab() {
       {/* ── Landing sekcije ── */}
       {activePanel === "landing" && (
         <div className="space-y-3">
-          {/* Typo-fix rezultat — iznad SEO analize */}
-          <TypoFixPanel result={typoResult} />
-
           <div className={card}>
             <div className="grid lg:grid-cols-2 gap-4">
               <div className="space-y-3">
@@ -532,6 +529,8 @@ export function MarketingTab() {
                 {isSaving ? "Čuvanje..." : "Sačuvaj SEO"}
               </button>
             </div>
+            {/* Typo-fix rezultat — iznad SEO analize */}
+            <TypoFixPanel result={typoResult} />
 
             <SeoResultPanel seoResult={seoResult} />
           </div>
@@ -621,7 +620,8 @@ export function MarketingTab() {
               <div className="mt-4 space-y-3">
                 <div>
                   <label className={lbl}>
-                    Headline (svaki novi red = novi red u H1, 2+ red je ljubičast)
+                    Headline (svaki novi red = novi red u H1, 2+ red je
+                    ljubičast)
                   </label>
                   <textarea
                     className={`${inp} font-mono text-xs`}
@@ -829,7 +829,9 @@ export function MarketingTab() {
                         <button
                           className="text-xs text-red-400 hover:text-red-300 transition"
                           onClick={() => {
-                            const items = ls.howItWorks.items.filter((_, idx) => idx !== i);
+                            const items = ls.howItWorks.items.filter(
+                              (_, idx) => idx !== i,
+                            );
                             update("howItWorks", { ...ls.howItWorks, items });
                           }}
                         >
@@ -1218,7 +1220,9 @@ export function MarketingTab() {
             {openSection === "sec-hero" && (
               <div className="mt-4 space-y-3">
                 <div>
-                  <label className={lbl}>Eyebrow (mali tekst iznad naslova)</label>
+                  <label className={lbl}>
+                    Eyebrow (mali tekst iznad naslova)
+                  </label>
                   <input
                     className={inp}
                     value={ls.secondary.hero.eyebrow}
@@ -1238,7 +1242,10 @@ export function MarketingTab() {
                     onChange={(e) =>
                       update("secondary", {
                         ...ls.secondary,
-                        hero: { ...ls.secondary.hero, headline: e.target.value },
+                        hero: {
+                          ...ls.secondary.hero,
+                          headline: e.target.value,
+                        },
                       })
                     }
                   />
@@ -1252,7 +1259,10 @@ export function MarketingTab() {
                     onChange={(e) =>
                       update("secondary", {
                         ...ls.secondary,
-                        hero: { ...ls.secondary.hero, paragraph: e.target.value },
+                        hero: {
+                          ...ls.secondary.hero,
+                          paragraph: e.target.value,
+                        },
                       })
                     }
                   />
@@ -1803,7 +1813,9 @@ export function MarketingTab() {
                     <label className={lbl}>Naslov odgovora</label>
                     <input
                       className={inp}
-                      value={ls.secondary.automation.assistantExample.replyTitle}
+                      value={
+                        ls.secondary.automation.assistantExample.replyTitle
+                      }
                       onChange={(e) =>
                         update("secondary", {
                           ...ls.secondary,
@@ -1819,7 +1831,9 @@ export function MarketingTab() {
                     />
                   </div>
                   <div>
-                    <label className={lbl}>Stavke rasporeda (jedna po redu)</label>
+                    <label className={lbl}>
+                      Stavke rasporeda (jedna po redu)
+                    </label>
                     <textarea
                       className={`${inp} font-mono text-xs`}
                       rows={3}
