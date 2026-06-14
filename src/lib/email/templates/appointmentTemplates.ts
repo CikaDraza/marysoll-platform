@@ -14,26 +14,53 @@ import { Types } from "mongoose";
 
 // ── Tenant client panel URL resolution ────────────────────────────────────────
 /**
- * Resolves the URL where a registered client can view their appointments on
- * the tenant's own platform. Falls back to the platform URL when unavailable.
+ * Resolves the URL where a registered client can view their appointments — the
+ * tenant's client *panel* (not the public booking page).
+ *
+ * Resolution priority mirrors proxy.ts tenant detection:
+ *   1. Verified custom domain  → https://salon.com/panel?tab=...
+ *   2. Subdomain               → https://slug.marysoll.com/panel?tab=...
+ *   3. Path slug (last resort) → https://marysoll.com/slug/panel?tab=...
+ * Falls back to the platform panel when the tenant can't be resolved.
  */
 async function resolveClientPanelUrl(
   tenantId: string | null | undefined,
-  tab = "Moji+Termini",
+  tab = "Moji Termini",
 ): Promise<string> {
   const base = appUrl();
-  const fallback = `${base}/dashboard?tab=${tab}`;
+  const query = `?tab=${encodeURIComponent(tab)}`;
+  const fallback = `${base}/panel${query}`;
   if (!tenantId) return fallback;
   try {
     await connectToDB();
     const tenant = (await Tenant.findById(new Types.ObjectId(tenantId))
-      .select("subdomain slug")
-      .lean()) as { subdomain?: string; slug?: string } | null;
-    const subdomain = tenant?.subdomain || tenant?.slug;
-    if (!subdomain) return fallback;
-    // Tenant-specific client panel, e.g. https://beauty-salon.marysoll.com/termini
+      .select("subdomain slug customDomain customDomainVerified")
+      .lean()) as {
+      subdomain?: string;
+      slug?: string;
+      customDomain?: string | null;
+      customDomainVerified?: boolean;
+    } | null;
+    if (!tenant) return fallback;
+
+    // 1. Verified custom domain (e.g. https://marysoll.makeup/panel)
+    if (tenant.customDomain && tenant.customDomainVerified) {
+      return `https://${tenant.customDomain}/panel${query}`;
+    }
+
     const platformHost = new URL(base).host.replace(/^www\./, "");
-    return `https://${subdomain}.${platformHost}/termini`;
+
+    // 2. Subdomain (e.g. https://marysoll-makeup-nails.marysoll.com/panel)
+    if (tenant.subdomain) {
+      return `https://${tenant.subdomain}.${platformHost}/panel${query}`;
+    }
+
+    // 3. Path slug — only when neither custom domain nor subdomain is set
+    if (tenant.slug) {
+      return `https://${platformHost}/${tenant.slug}/panel${query}`;
+    }
+
+    return fallback;
   } catch {
     return fallback;
   }
@@ -398,7 +425,7 @@ export async function appointmentRescheduledTemplate(data: {
 
     ${data.note ? `<p style="margin:0 0 16px 0;font-size:14px;color:#6b5b7e;font-style:italic;">Napomena: ${data.note}</p>` : ""}
     <p style="margin:0 0 20px 0;">Molimo vas da potvrdite da li vam odgovara novi termin.</p>
-    ${ctaButton("Potvrdite termin", `${appUrl()}/dashboard?tab=Moji+Termini`)}
+    ${ctaButton("Potvrdite termin", await resolveClientPanelUrl(data.tenantId))}
     <p style="margin:8px 0 0 0;">Vidimo se uskoro! ✦</p>
   `;
   return wrapEmailLayout({
