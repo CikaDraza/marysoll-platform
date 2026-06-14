@@ -10,7 +10,7 @@ import Image from "next/image";
 export function NewsletterMiniHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2">
           <Image
             src="/marysoll_elegant_logo.png"
@@ -36,7 +36,7 @@ export function NewsletterMiniHeader() {
 export function NewsletterMiniFooter() {
   return (
     <footer className="bg-gray-900 py-10 text-white">
-      <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-6 sm:flex-row">
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row">
         <Link href="/" className="flex items-center gap-2">
           <Image
             src="/marysoll_elegant_logo.png"
