@@ -9,6 +9,7 @@ import { TenantUser } from "@/models/TenantUser";
 import { AuthUser } from "@/models/AuthUser";
 import { SalonProfile } from "@/models/SalonProfile";
 import { Tenant } from "@/models/Tenant";
+import { Appointment } from "@/models/Appointment";
 import {
   sendAppointmentClientChangeAdminNotification,
   sendAppointmentCreatedAdminNotification,
@@ -584,6 +585,29 @@ export async function createAppointmentNotification(
   }
 }
 
+/**
+ * Sums the price of every booked service (price × quantity) for an appointment.
+ * Returns undefined when the appointment has no priced services so the email
+ * simply omits the price line.
+ */
+async function resolveAppointmentPrice(
+  appointmentId: string,
+): Promise<number | undefined> {
+  try {
+    const doc = await Appointment.findById(appointmentId)
+      .select("services")
+      .lean<{ services?: { price?: number; quantity?: number }[] }>();
+    if (!doc?.services?.length) return undefined;
+    const total = doc.services.reduce(
+      (sum, s) => sum + (Number(s.price) || 0) * (Number(s.quantity) || 1),
+      0,
+    );
+    return total > 0 ? total : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 async function sendAppointmentEmailNotifications(
   appointment: AppointmentForNotification,
   type: AppointmentType,
@@ -593,6 +617,7 @@ async function sendAppointmentEmailNotifications(
     const appointmentData = {
       clientName: appointment.clientName,
       serviceName: appointment.serviceName,
+      price: await resolveAppointmentPrice(appointment._id),
       date: appointment.date || "Nije naveden",
       time: appointment.time || "Nije navedeno",
       appointmentId: appointment._id,

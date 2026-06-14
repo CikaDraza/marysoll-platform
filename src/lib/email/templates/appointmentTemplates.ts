@@ -8,6 +8,7 @@ import "server-only";
 
 import { wrapEmailLayout } from "@/lib/email/wrapEmailLayout";
 import { translateAdminNote } from "@/lib/email/helpers";
+import { formatServicePrice } from "@/helpers/formatPrice";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { Types } from "mongoose";
@@ -69,6 +70,7 @@ async function resolveClientPanelUrl(
 // ── Shared: appointment detail table ──────────────────────────────────────────
 function appointmentDetailTable(data: {
   serviceName: string;
+  price?: number | null;
   date: string;
   time: string;
   note?: string;
@@ -115,6 +117,11 @@ function appointmentDetailTable(data: {
             <td style="padding-bottom:10px;border-bottom:1px solid #f0e0f0;">
               <p style="margin:0;font-family:'Georgia',serif;font-size:11px;color:#b08db5;letter-spacing:1.5px;text-transform:uppercase;">Usluga</p>
               <p style="margin:4px 0 0 0;font-family:'Georgia',serif;font-size:16px;font-weight:700;color:#2d1b40;">${data.serviceName}</p>
+              ${
+                data.price != null && data.price > 0
+                  ? `<p style="margin:6px 0 0 0;font-family:'Georgia',serif;font-size:15px;font-weight:700;color:#9089fc;">${formatServicePrice(data.price)}</p>`
+                  : ""
+              }
             </td>
           </tr>
           <tr>
@@ -184,6 +191,7 @@ const appUrl = () =>
 export async function appointmentCreatedTemplate(data: {
   clientName: string;
   serviceName: string;
+  price?: number | null;
   date: string;
   time: string;
   note?: string;
@@ -220,6 +228,7 @@ export async function appointmentCreatedTemplate(data: {
 export async function appointmentCreatedAdminTemplate(data: {
   clientName: string;
   serviceName: string;
+  price?: number | null;
   date: string;
   time: string;
   note?: string;
@@ -265,6 +274,7 @@ export async function appointmentClientChangedAdminTemplate(
   data: {
     clientName: string;
     serviceName: string;
+    price?: number | null;
     date: string;
     time: string;
     note?: string;
@@ -321,6 +331,7 @@ export async function appointmentClientChangedAdminTemplate(
 export async function appointmentApprovedTemplate(data: {
   clientName: string;
   serviceName: string;
+  price?: number | null;
   date: string;
   time: string;
   note?: string;

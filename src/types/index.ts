@@ -654,6 +654,8 @@ export interface EmailOptions {
 export interface AppointmentNotificationData {
   clientName: string;
   serviceName: string;
+  /** Total price of the booked service(s), in RSD. */
+  price?: number | null;
   tenantId?: string | Types.ObjectId;
   date: string;
   time: string;
