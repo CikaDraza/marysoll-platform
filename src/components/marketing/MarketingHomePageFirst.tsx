@@ -1076,10 +1076,9 @@ export function MarketingHomePageFirst({
               onClick={(e) => e.stopPropagation()}
             >
               <video
-                src="/assets/video/gif_design.mp4"
+                src="/assets/video/marysoll-salon-platform.mp4"
                 autoPlay
                 loop
-                muted
                 playsInline
                 className="w-full h-auto rounded-2xl shadow-2xl"
               />
