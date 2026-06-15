@@ -108,6 +108,7 @@ const RESERVED_TOP_SEGMENTS = new Set([
   "favicon.ico",
   "newsletter",
   "privacy",
+  "Pronađi termin",
   "terms-and-conditions",
   "refund",
   "pricing",
@@ -124,7 +125,12 @@ const RESERVED_TOP_SEGMENTS = new Set([
 /** Caches custom-domain → { slug, id } resolutions (5-min TTL). */
 const domainCache = new Map<
   string,
-  { slug: string | null; id: string | null; customDomain: string | null; ts: number }
+  {
+    slug: string | null;
+    id: string | null;
+    customDomain: string | null;
+    ts: number;
+  }
 >();
 
 /** Caches subdomain slug → tenantId resolutions (5-min TTL). */
@@ -153,7 +159,12 @@ async function resolveCustomDomain(
       headers: { "x-internal-secret": process.env.INTERNAL_API_SECRET ?? "" },
     });
     if (!res.ok) {
-      domainCache.set(host, { slug: null, id: null, customDomain: null, ts: Date.now() });
+      domainCache.set(host, {
+        slug: null,
+        id: null,
+        customDomain: null,
+        ts: Date.now(),
+      });
       return null;
     }
 
@@ -217,16 +228,31 @@ async function detectDomainType(
 
   // 1. Base domain (marketing)
   if (host === BASE_DOMAIN || host === `www.${BASE_DOMAIN}`) {
-    return { type: "marketing", tenantSlug: null, tenantId: null, customDomain: null };
+    return {
+      type: "marketing",
+      tenantSlug: null,
+      tenantId: null,
+      customDomain: null,
+    };
   }
 
   // 2. Admin subdomains
   if (host === `admin.${BASE_DOMAIN}`) {
-    return { type: "admin", tenantSlug: null, tenantId: null, customDomain: null };
+    return {
+      type: "admin",
+      tenantSlug: null,
+      tenantId: null,
+      customDomain: null,
+    };
   }
 
   if (host === `superadmin.${BASE_DOMAIN}`) {
-    return { type: "superadmin", tenantSlug: null, tenantId: null, customDomain: null };
+    return {
+      type: "superadmin",
+      tenantSlug: null,
+      tenantId: null,
+      customDomain: null,
+    };
   }
 
   // 3. Wildcard subdomains (tenant subdomain)
@@ -255,7 +281,12 @@ async function detectDomainType(
           customDomain: resolved.customDomain,
         };
       }
-      return { type: "client", tenantSlug: null, tenantId: null, customDomain: null };
+      return {
+        type: "client",
+        tenantSlug: null,
+        tenantId: null,
+        customDomain: null,
+      };
     }
 
     const resolved = await resolveCustomDomain(request, host);
@@ -268,17 +299,35 @@ async function detectDomainType(
       };
     }
 
-    return { type: "client", tenantSlug: null, tenantId: null, customDomain: null };
+    return {
+      type: "client",
+      tenantSlug: null,
+      tenantId: null,
+      customDomain: null,
+    };
   }
 
   // 5. LOCALHOST
   if (!IS_PROD && host.startsWith("localhost")) {
     const devType = process.env.DEV_DOMAIN_TYPE as DomainType | undefined;
-    if (devType === "admin") return { type: "admin", tenantSlug: null, tenantId: null, customDomain: null };
-    if (devType === "superadmin") return { type: "superadmin", tenantSlug: null, tenantId: null, customDomain: null };
+    if (devType === "admin")
+      return {
+        type: "admin",
+        tenantSlug: null,
+        tenantId: null,
+        customDomain: null,
+      };
+    if (devType === "superadmin")
+      return {
+        type: "superadmin",
+        tenantSlug: null,
+        tenantId: null,
+        customDomain: null,
+      };
     if (devType === "client") {
       const slug = process.env.DEV_TENANT_SLUG ?? "default";
-      const tenantId = slug !== "default" ? await resolveSlugToTenantId(request, slug) : null;
+      const tenantId =
+        slug !== "default" ? await resolveSlugToTenantId(request, slug) : null;
       return {
         type: "client",
         tenantSlug: tenantId?.slug ?? slug,
@@ -286,7 +335,12 @@ async function detectDomainType(
         customDomain: tenantId?.customDomain ?? null,
       };
     }
-    return { type: "marketing", tenantSlug: null, tenantId: null, customDomain: null };
+    return {
+      type: "marketing",
+      tenantSlug: null,
+      tenantId: null,
+      customDomain: null,
+    };
   }
 
   // Unrecognized host — log so we can diagnose unexpected cold-start 404s
@@ -298,7 +352,12 @@ async function detectDomainType(
       timestamp: new Date().toISOString(),
     }),
   );
-  return { type: "client", tenantSlug: null, tenantId: null, customDomain: null };
+  return {
+    type: "client",
+    tenantSlug: null,
+    tenantId: null,
+    customDomain: null,
+  };
 }
 
 // ─── Token helpers ────────────────────────────────────────────────────────────
@@ -341,10 +400,20 @@ async function tryRefreshToken(request: NextRequest): Promise<string | null> {
   const platformRefresh = request.cookies.get("platform-refresh-token")?.value;
 
   if (tenantRefresh) {
-    return attemptRefresh(request, "tenant-refresh-token", tenantRefresh, "/api/tenant-auth/refresh");
+    return attemptRefresh(
+      request,
+      "tenant-refresh-token",
+      tenantRefresh,
+      "/api/tenant-auth/refresh",
+    );
   }
   if (platformRefresh) {
-    return attemptRefresh(request, "platform-refresh-token", platformRefresh, "/api/auth/refresh");
+    return attemptRefresh(
+      request,
+      "platform-refresh-token",
+      platformRefresh,
+      "/api/auth/refresh",
+    );
   }
   return null;
 }
@@ -418,7 +487,10 @@ async function guardApi(
     if (!decoded)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     // Token was refreshed — store cookie info so caller can set it on the response
-    const cookieName = decoded.type === "tenant" ? "tenant-access-token" : "platform-access-token";
+    const cookieName =
+      decoded.type === "tenant"
+        ? "tenant-access-token"
+        : "platform-access-token";
     out.refreshedCookie = { name: cookieName, value: token! };
   }
 
@@ -450,7 +522,10 @@ async function guardPage(
     decoded = token ? await verifyToken(token) : null;
     if (!decoded) return NextResponse.redirect(loginUrl);
     // Token was refreshed — store cookie info so caller can set it on the response
-    const cookieName = decoded.type === "tenant" ? "tenant-access-token" : "platform-access-token";
+    const cookieName =
+      decoded.type === "tenant"
+        ? "tenant-access-token"
+        : "platform-access-token";
     out.refreshedCookie = { name: cookieName, value: token! };
   }
 
@@ -514,7 +589,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       const resolvedTenant = await resolveSlugToTenantId(request, firstSegment);
       tenantId = resolvedTenant?.id ?? null;
       customDomain = resolvedTenant?.customDomain ?? null;
-      wasPathBasedDev = !IS_PROD && hostname.split(":")[0].startsWith("localhost");
+      wasPathBasedDev =
+        !IS_PROD && hostname.split(":")[0].startsWith("localhost");
     }
   }
 
@@ -524,7 +600,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   requestHeaders.set("x-tenant-id", tenantId ?? "");
   // x-tenant-base-path: used by the tenant layout to set the client-side navigation base.
   // Empty on prod/subdomain (URLs are root-relative); "/{slug}" on localhost path-based dev.
-  requestHeaders.set("x-tenant-base-path", wasPathBasedDev ? `/${tenantSlug}` : "");
+  requestHeaders.set(
+    "x-tenant-base-path",
+    wasPathBasedDev ? `/${tenantSlug}` : "",
+  );
 
   const pass = () =>
     NextResponse.next({ request: { headers: requestHeaders } });
@@ -595,7 +674,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const isTenantSubdomain =
       host.endsWith(`.${BASE_DOMAIN}`) &&
       !PLATFORM_SUBDOMAINS.has(host.slice(0, -(BASE_DOMAIN.length + 1)));
-    const isHostBased = isCustomDomain(hostname, BASE_DOMAIN) || isTenantSubdomain;
+    const isHostBased =
+      isCustomDomain(hostname, BASE_DOMAIN) || isTenantSubdomain;
 
     // SEO canonicalization: once a tenant has a verified custom domain,
     // permanently redirect the old subdomain to preserve ranking signals.
@@ -650,7 +730,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
         [...CLIENT_TENANT_PATHS].some((p) => pathname.startsWith(p + "/"));
 
       if (matchesClientPath || pathname === "/") {
-        const internalPath = pathname === "/" ? "/tenant" : `/tenant${pathname}`;
+        const internalPath =
+          pathname === "/" ? "/tenant" : `/tenant${pathname}`;
         const rewriteUrl = new URL(internalPath, request.nextUrl.origin);
         rewriteUrl.search = request.nextUrl.search;
         return NextResponse.rewrite(rewriteUrl, {

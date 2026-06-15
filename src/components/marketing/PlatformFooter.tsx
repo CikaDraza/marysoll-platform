@@ -68,6 +68,12 @@ export async function PlatformFooter() {
             <Link href="/kontakt" className="hover:text-white transition">
               Contact
             </Link>
+            <Link
+              href="https://booking.marysoll.com"
+              className="hover:text-white transition"
+            >
+              Pronađi termin
+            </Link>
           </div>
 
           <div className="flex gap-3">
