@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PlatformFooter } from "./PlatformFooter";
 import { SecondaryContent } from "./SecondaryContent";
+import { BookingDiscoverySection } from "./BookingDiscoverySection";
 import Image from "next/image";
 import { MarketingLandingStructure } from "@/types/marketing-landing";
 import { normalizeMarketingLanding } from "@/lib/marketing-landing-defaults";
@@ -40,6 +41,9 @@ export function MarketingHomePageSecond({
           </div>
         </div>
       </section>
+
+      {/* Marysoll Booking — promo + discovery */}
+      <BookingDiscoverySection booking={landing.secondary.booking} />
 
       {/* CTA finnal */}
       <section

@@ -145,6 +145,33 @@ Detaljni pregled planova i cena dostupan je ispod.
     title: "Kontaktirajte nas",
     content: "Imate pitanje? Pišite nam — odgovaramo u roku od jednog radnog dana.",
   },
+  {
+    slug: "booking",
+    title: "Marysoll Booking — pronađi slobodan termin bez poziva",
+    content: `Marysoll Booking je mesto gde klijenti pronalaze salone i rezervišu slobodne termine — bez poziva, bez poruka, bez čekanja.
+
+## Kako radi
+
+- Klijent pretražuje uslugu i grad (npr. "manikir u Boru" ili "šišanje u Novom Sadu)
+- Marysoll Booking prikazuje salone sa slobodnim terminima u realnom vremenu
+- Klijent otvara profil salona — usluge, cene i recenzije na jednom mestu
+- Rezervacija se završava u par klikova, bez pravljenja naloga
+
+## Zašto Marysoll Booking postoji
+
+Klijenti danas ne traže salone listajući Instagram. Traže konkretno: slobodni termini danas, masaža večeras, šminkanje za svadbu. Marysoll Booking ih povezuje sa salonima koji baš tada imaju mesta.
+
+## Kako salon dobija nove klijente
+
+- Vaš salon postaje vidljiv u pretrazi novih klijenata
+- Slobodni termini se popunjavaju i van vašeg kruga stalnih mušterija
+- Manje praznih termina znači veći prihod, bez dodatnog marketinga
+- Svaka rezervacija ulazi direktno u vaš Marysoll kalendar
+
+## Počni odmah
+
+Pronađi slobodan termin ili učini svoj salon vidljivim na booking.marysoll.com`,
+  },
 ];
 
 export async function POST(req: NextRequest) {

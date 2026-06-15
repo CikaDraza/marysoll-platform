@@ -52,6 +52,30 @@ export interface MarketingFaqItem {
   answer: string; // prazno => renderuje se fallback
 }
 
+// Sekcija — Marysoll Booking (promo za booking.marysoll.com)
+export interface MarketingBookingCard {
+  icon: string; // emoji: 📍 📅 🏪 ✅
+  title: string;
+  description: string;
+}
+
+export interface MarketingBookingSection {
+  enabled: boolean;
+  // Sekcija 1 — promo + video
+  headline: string;
+  intro: string;
+  searchExamples: string[];
+  closing: string;
+  ctaText: string;
+  ctaHref: string;
+  videoUrl: string;
+  // Sekcija 2 — discovery flow
+  discoveryHeadline: string;
+  discoveryCards: MarketingBookingCard[];
+  discoveryCtaText: string;
+  discoveryCtaHref: string;
+}
+
 export interface MarketingSecondaryContent {
   enabled: boolean;
   hero: {
@@ -105,6 +129,7 @@ export interface MarketingSecondaryContent {
     headline: string;
     image: string;
   };
+  booking: MarketingBookingSection;
 }
 
 export interface MarketingLandingStructure {

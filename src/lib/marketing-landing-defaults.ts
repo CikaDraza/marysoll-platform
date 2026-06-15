@@ -319,6 +319,48 @@ export const DEFAULT_MARKETING_LANDING: MarketingLandingStructure = {
       headline: "Sve što tvom salonu treba u jednoj slici",
       image: "",
     },
+    booking: {
+      enabled: true,
+      headline: "Novi klijenti vas mogu pronaći kroz Marysoll Booking",
+      intro: "Klijenti danas ne traže salone po Instagramu. Traže:",
+      searchExamples: [
+        "slobodni termini danas",
+        "manikir u Boru",
+        "šišanje u Novom Sadu",
+        "masaža večeras",
+        "šminkanje za svadbu",
+      ],
+      closing:
+        "Marysoll Booking prikazuje slobodne termine u realnom vremenu i vodi klijente direktno do vašeg salona.",
+      ctaText: "Pogledaj Marysoll Booking",
+      ctaHref: "https://booking.marysoll.com",
+      videoUrl: "/assets/video/booking-marysoll-usecase.webm",
+      discoveryHeadline: "Kako vas novi klijenti pronalaze",
+      discoveryCards: [
+        {
+          icon: "📍",
+          title: "Google pretraga",
+          description: "manikir u Boru",
+        },
+        {
+          icon: "📅",
+          title: "Marysoll Booking",
+          description: "slobodni termini danas",
+        },
+        {
+          icon: "🏪",
+          title: "Profil salona",
+          description: "usluge, cene, recenzije",
+        },
+        {
+          icon: "✅",
+          title: "Rezervacija",
+          description: "bez poziva i poruka",
+        },
+      ],
+      discoveryCtaText: "Pogledaj Marysoll Booking",
+      discoveryCtaHref: "https://booking.marysoll.com",
+    },
   },
   footer: {
     tagline: "Beauty business growth system",
@@ -452,6 +494,16 @@ export function normalizeMarketingLanding(
       gallery: {
         ...DEFAULT_MARKETING_LANDING.secondary.gallery,
         ...input.secondary?.gallery,
+      },
+      booking: {
+        ...DEFAULT_MARKETING_LANDING.secondary.booking,
+        ...input.secondary?.booking,
+        searchExamples:
+          input.secondary?.booking?.searchExamples ??
+          DEFAULT_MARKETING_LANDING.secondary.booking.searchExamples,
+        discoveryCards:
+          input.secondary?.booking?.discoveryCards ??
+          DEFAULT_MARKETING_LANDING.secondary.booking.discoveryCards,
       },
     },
     footer: {

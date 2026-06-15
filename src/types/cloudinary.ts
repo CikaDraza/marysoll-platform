@@ -12,3 +12,10 @@ export interface CloudinaryImage {
 export interface CloudinaryListResponse {
   images: CloudinaryImage[];
 }
+
+// Video resursi dele isti oblik metapodataka kao slike.
+export type CloudinaryVideo = CloudinaryImage;
+
+export interface CloudinaryVideoListResponse {
+  videos: CloudinaryVideo[];
+}

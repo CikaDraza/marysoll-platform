@@ -53,10 +53,11 @@ export function extractPublicId(fileUrl: string): string | null {
 export async function uploadToCloudinary(
   file: File,
   folder: string,
+  resourceType: "image" | "video" = "image",
 ): Promise<string> {
   return new Promise(async (resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
-      { folder, resource_type: "image" },
+      { folder, resource_type: resourceType },
       (error, result: UploadResult | undefined) => {
         if (error) reject(error);
         else resolve(result!.secure_url);
@@ -82,7 +83,10 @@ export async function uploadBase64ToCloudinary(
   return { secure_url: result.secure_url };
 }
 
-export async function deleteFromCloudinary(fileUrl: string) {
+export async function deleteFromCloudinary(
+  fileUrl: string,
+  resourceType: "image" | "video" = "image",
+) {
   if (!fileUrl) return;
   const publicId = extractPublicId(fileUrl);
   if (!publicId) {
@@ -92,5 +96,5 @@ export async function deleteFromCloudinary(fileUrl: string) {
     );
     return;
   }
-  return cloudinary.uploader.destroy(publicId, { resource_type: "image" });
+  return cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
 }
