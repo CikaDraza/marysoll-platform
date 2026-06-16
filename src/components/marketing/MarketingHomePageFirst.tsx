@@ -2,7 +2,7 @@
 "use client";
 
 import { motion, AnimatePresence, Variants } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { AuthStatusButton } from "../auth/AuthStatusButton";
 import Image from "next/image";
@@ -51,6 +51,35 @@ const typingIndicator = {
   animate: {
     opacity: [0.4, 1, 0.4],
     transition: { duration: 1.5, repeat: Infinity },
+  },
+};
+
+// ── Video preload overlay (brand intro pre autoplay) ─────────────────────────
+// Ukupno trajanje sekvence pre nego što video sme da krene.
+const VIDEO_INTRO_MS = 2400;
+// Safety: ako `canplaythrough` nikad ne stigne, otkrij video posle ovoga.
+const VIDEO_BUFFER_MAX_MS = 7000;
+
+const overlayStagger: Variants = {
+  hidden: {},
+  visible: { transition: { delayChildren: 0.25, staggerChildren: 0.28 } },
+};
+
+const overlayItem: Variants = {
+  hidden: { opacity: 0, y: 14 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: "easeOut" },
+  },
+};
+
+const overlayLogo: Variants = {
+  hidden: { opacity: 0, scale: 0.6 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.7, ease: "easeOut" },
   },
 };
 
@@ -387,6 +416,11 @@ export function MarketingHomePageFirst({
   const [scrollY, setScrollY] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
+  const [videoReady, setVideoReady] = useState(false); // canplaythrough (dovoljno bafera)
+  const [introDone, setIntroDone] = useState(false); // brand sekvenca odsvirana
+  const [replayCycle, setReplayCycle] = useState(0); // okida ponovni intro posle svakog playthrough-a
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hasPlayedRef = useRef(false); // garantuje da play() ide samo jednom po ciklusu
   const landing = normalizeMarketingLanding(initialLanding);
   const def = DEFAULT_MARKETING_LANDING;
   const navLinks = landing.header.navLinks.length
@@ -402,6 +436,37 @@ export function MarketingHomePageFirst({
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Brand sekvenca: traje VIDEO_INTRO_MS na svakom ciklusu (prvo otvaranje + svaki loop).
+  // Video se u međuvremenu bafera preko preload="auto".
+  useEffect(() => {
+    if (!videoOpen) return;
+    const introTimer = setTimeout(() => setIntroDone(true), VIDEO_INTRO_MS);
+    return () => clearTimeout(introTimer);
+  }, [videoOpen, replayCycle]);
+
+  // Safety za buffering — samo na prvom otvaranju (kasnije je video već učitan).
+  useEffect(() => {
+    if (!videoOpen) return;
+    const bufferTimer = setTimeout(() => setVideoReady(true), VIDEO_BUFFER_MAX_MS);
+    return () => clearTimeout(bufferTimer);
+  }, [videoOpen]);
+
+  // Kad je i sekvenca gotova i video baferovan — skloni overlay i pusti video.
+  useEffect(() => {
+    if (!(videoOpen && introDone && videoReady)) return;
+    if (hasPlayedRef.current) return;
+    hasPlayedRef.current = true;
+    const v = videoRef.current;
+    if (v) {
+      v.currentTime = 0;
+      v.play().catch(() => {
+        // Ako autoplay sa zvukom nije dozvoljen, pusti mutirano kao fallback.
+        v.muted = true;
+        v.play().catch(() => {});
+      });
+    }
+  }, [videoOpen, introDone, videoReady]);
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
@@ -677,7 +742,12 @@ export function MarketingHomePageFirst({
                 </motion.a>
 
                 <motion.button
-                  onClick={() => setVideoOpen(true)}
+                  onClick={() => {
+                    setVideoReady(false);
+                    setIntroDone(false);
+                    hasPlayedRef.current = false;
+                    setVideoOpen(true);
+                  }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-6 py-4 rounded-xl shadow-xl shadow-violet-200 font-semibold text-sm hover:text-violet-600 transition"
@@ -1076,12 +1146,100 @@ export function MarketingHomePageFirst({
               onClick={(e) => e.stopPropagation()}
             >
               <video
+                ref={videoRef}
                 src="/assets/video/marysoll-salon-platform.mp4"
-                autoPlay
-                loop
                 playsInline
+                preload="auto"
+                onCanPlayThrough={() => setVideoReady(true)}
+                onEnded={() => {
+                  // Kraj videa → ponovo prikaži overlay i restartuj ceo ciklus.
+                  hasPlayedRef.current = false;
+                  setIntroDone(false);
+                  setReplayCycle((c) => c + 1);
+                }}
                 className="w-full h-auto rounded-2xl shadow-2xl"
               />
+
+              {/* Preload overlay — brand intro (krugovi + sekvencijalni logo/tekst) */}
+              <AnimatePresence>
+                {!(introDone && videoReady) && (
+                  <motion.div
+                    key="video-overlay"
+                    aria-hidden="true"
+                    initial={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.6, ease: "easeInOut" }}
+                    className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-2xl bg-(--color-brand-900)"
+                    style={{ pointerEvents: "none" }}
+                  >
+                    {/* Koncentrični krugovi */}
+                    {[180, 280, 380].map((size, i) => (
+                      <motion.div
+                        key={size}
+                        className="absolute rounded-full border border-violet-400/25"
+                        style={{ width: size, height: size }}
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: [0.5, 0.18, 0.5] }}
+                        transition={{
+                          scale: {
+                            duration: 1,
+                            delay: 0.2 + i * 0.15,
+                            ease: "easeOut",
+                          },
+                          opacity: {
+                            duration: 2.4,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          },
+                        }}
+                      />
+                    ))}
+
+                    {/* Brand sadržaj — sekvencijalno */}
+                    <motion.div
+                      className="relative z-10 flex flex-col items-center gap-4"
+                      variants={overlayStagger}
+                      initial="hidden"
+                      animate="visible"
+                    >
+                      <motion.div variants={overlayLogo}>
+                        <Image
+                          src="/marysoll_elegant_logo.png"
+                          alt="Marysoll logo"
+                          width={80}
+                          height={80}
+                          className="rounded-2xl"
+                        />
+                      </motion.div>
+                      <motion.div
+                        variants={overlayItem}
+                        className="text-white text-3xl font-extrabold tracking-tight"
+                      >
+                        Marysoll
+                      </motion.div>
+                      <motion.div
+                        variants={overlayItem}
+                        className="text-center text-[12px] leading-relaxed max-w-[220px]"
+                        style={{ color: "#c4b5fd" }}
+                      >
+                        Beauty business operating system
+                        <br />
+                        za moderne salone
+                      </motion.div>
+                      <motion.div
+                        variants={overlayItem}
+                        className="px-7 py-2.5 rounded-full text-[12px] font-bold text-white"
+                        style={{
+                          background: "linear-gradient(90deg,#7c3aed,#a855f7)",
+                        }}
+                      >
+                        marysoll.com
+                      </motion.div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <button
                 onClick={() => setVideoOpen(false)}
                 className="absolute -top-3 -right-3 w-8 h-8 bg-white/90 hover:bg-white text-gray-800 rounded-full text-sm font-bold flex items-center justify-center shadow-lg transition"

@@ -167,6 +167,7 @@ export default function PromoAnimation() {
   const dmTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const rafRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const stopAll = useCallback(() => {
     animTimersRef.current.forEach(clearTimeout);
@@ -206,11 +207,26 @@ export default function PromoAnimation() {
     rafRef.current = requestAnimationFrame(tick);
   }, [stopAll]);
 
-  // Auto-start on mount
+  // Start tek kada sekcija uđe u viewport (a ne na učitavanju stranice).
   useEffect(() => {
-    const t = setTimeout(startAnimation, 300);
+    const el = containerRef.current;
+    if (!el) return;
+
+    let started = false;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !started) {
+          started = true;
+          startAnimation();
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.4 },
+    );
+    observer.observe(el);
+
     return () => {
-      clearTimeout(t);
+      observer.disconnect();
       stopAll();
     };
   }, [startAnimation, stopAll]);
@@ -235,7 +251,10 @@ export default function PromoAnimation() {
   const scene3Active = currentScene === 2;
 
   return (
-    <div className="bg-white rounded-3xl shadow-2xl border border-violet-100 p-3 w-full max-w-[480px] mx-auto">
+    <div
+      ref={containerRef}
+      className="bg-white rounded-3xl shadow-2xl border border-violet-100 p-3 w-full max-w-[480px] mx-auto"
+    >
       {/* Stage */}
       <div
         className="aspect-[9/16] w-full rounded-2xl overflow-hidden relative"
