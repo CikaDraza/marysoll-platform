@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { SuperAdminChat } from "@/models/SuperAdminChat";
+import { SalonProfile } from "@/models/SalonProfile";
 import { requireAuth } from "@/lib/auth/auth-server";
-import { sendWebPushToUser } from "@/lib/webPush";
+import { sendWebPushToUser, sendWebPushToSuperAdmins } from "@/lib/webPush";
 
 export async function GET(
   request: NextRequest,
@@ -87,6 +88,23 @@ export async function POST(
         icon: "/logo-marysoll.png",
         tag: `superadmin-chat-${tenantId}`,
         url: "/admin/chat/superadmin",
+      });
+    } catch { /* push is non-critical */ }
+  }
+
+  // Push to all superadmins when the salon owner sends a message
+  if (senderRole === "owner") {
+    try {
+      const profile = (await SalonProfile.findOne({ tenantId })
+        .select("logo name")
+        .lean()) as { logo?: string; name?: string } | null;
+      const salonName = profile?.name || "Salon";
+      await sendWebPushToSuperAdmins({
+        title: salonName,
+        body: `💬 ${salonName}: ${content.slice(0, 80) || "📎 Prilog"}`,
+        icon: profile?.logo || "/logo-marysoll.png",
+        tag: `superadmin-chat-${tenantId}`,
+        url: "/superadmin",
       });
     } catch { /* push is non-critical */ }
   }

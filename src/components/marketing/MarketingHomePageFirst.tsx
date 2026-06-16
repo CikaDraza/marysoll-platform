@@ -1172,12 +1172,15 @@ export function MarketingHomePageFirst({
                     className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-2xl bg-(--color-brand-900)"
                     style={{ pointerEvents: "none" }}
                   >
-                    {/* Koncentrični krugovi */}
-                    {[180, 280, 380].map((size, i) => (
+                    {/* Koncentrični krugovi (manji na mobilnom) */}
+                    {[
+                      "h-[110px] w-[110px] sm:h-[180px] sm:w-[180px]",
+                      "h-[170px] w-[170px] sm:h-[280px] sm:w-[280px]",
+                      "h-[230px] w-[230px] sm:h-[380px] sm:w-[380px]",
+                    ].map((sizeCls, i) => (
                       <motion.div
-                        key={size}
-                        className="absolute rounded-full border border-violet-400/25"
-                        style={{ width: size, height: size }}
+                        key={i}
+                        className={`absolute rounded-full border border-violet-400/25 ${sizeCls}`}
                         initial={{ scale: 0, opacity: 0 }}
                         animate={{ scale: 1, opacity: [0.5, 0.18, 0.5] }}
                         transition={{
@@ -1195,9 +1198,9 @@ export function MarketingHomePageFirst({
                       />
                     ))}
 
-                    {/* Brand sadržaj — sekvencijalno */}
+                    {/* Brand sadržaj — sekvencijalno (kompaktnije na mobilnom) */}
                     <motion.div
-                      className="relative z-10 flex flex-col items-center gap-4"
+                      className="relative z-10 flex flex-col items-center gap-2 px-4 sm:gap-4"
                       variants={overlayStagger}
                       initial="hidden"
                       animate="visible"
@@ -1208,18 +1211,18 @@ export function MarketingHomePageFirst({
                           alt="Marysoll logo"
                           width={80}
                           height={80}
-                          className="rounded-2xl"
+                          className="rounded-xl h-10 w-10 sm:rounded-2xl sm:h-20 sm:w-20"
                         />
                       </motion.div>
                       <motion.div
                         variants={overlayItem}
-                        className="text-white text-3xl font-extrabold tracking-tight"
+                        className="text-white text-lg sm:text-3xl font-extrabold tracking-tight"
                       >
                         Marysoll
                       </motion.div>
                       <motion.div
                         variants={overlayItem}
-                        className="text-center text-[12px] leading-relaxed max-w-[220px]"
+                        className="text-center text-[10px] sm:text-[12px] leading-relaxed max-w-[180px] sm:max-w-[220px]"
                         style={{ color: "#c4b5fd" }}
                       >
                         Beauty business operating system
@@ -1228,7 +1231,7 @@ export function MarketingHomePageFirst({
                       </motion.div>
                       <motion.div
                         variants={overlayItem}
-                        className="px-7 py-2.5 rounded-full text-[12px] font-bold text-white"
+                        className="px-4 py-1.5 sm:px-7 sm:py-2.5 rounded-full text-[10px] sm:text-[12px] font-bold text-white"
                         style={{
                           background: "linear-gradient(90deg,#7c3aed,#a855f7)",
                         }}

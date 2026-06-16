@@ -2,17 +2,12 @@
 "use client";
 
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
+import toast from "react-hot-toast";
 import Loader from "../elements/Loader";
-
-const inp = [
-  "border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
-  "text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800",
-  "focus:outline-none focus:ring-2 focus:ring-violet-400 transition",
-  "placeholder:text-gray-400 dark:placeholder:text-gray-500",
-].join(" ");
 
 const lbl =
   "block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5";
@@ -30,7 +25,37 @@ export default function NotificationSettings() {
     updateSetting,
     sendTestEmail,
   } = useNotificationSettings();
+  const { isSupported, permission, subscribeToPush, unsubscribeFromPush } =
+    usePushNotifications();
   const [testType, setTestType] = useState("appointment-created");
+  const [pushBusy, setPushBusy] = useState(false);
+
+  // Push toggle: registruje service worker + traži dozvolu + (od)pretplata,
+  // pa tek onda upisuje podešavanje.
+  const handlePushToggle = async () => {
+    if (isLoading || pushBusy) return;
+    setPushBusy(true);
+    try {
+      if (!settings.pushNotifications) {
+        if (!isSupported) {
+          toast.error("Vaš browser ne podržava push notifikacije.");
+          return;
+        }
+        const ok = await subscribeToPush();
+        if (ok) {
+          updateSetting("pushNotifications", true);
+          toast.success("Push notifikacije uključene");
+        } else {
+          toast.error("Dozvola za notifikacije nije odobrena.");
+        }
+      } else {
+        await unsubscribeFromPush();
+        updateSetting("pushNotifications", false);
+      }
+    } finally {
+      setPushBusy(false);
+    }
+  };
 
   if (isLoading) {
     return <Loader />;
@@ -59,9 +84,13 @@ export default function NotificationSettings() {
             />
             <NotificationToggle
               label="Push notifikacije"
-              description="Obaveštenja na browser-u"
+              description={
+                permission === "denied"
+                  ? "Blokirano u browseru — omogućite u podešavanjima sajta"
+                  : "Obaveštenja na browser-u (i kada niste na sajtu)"
+              }
               checked={settings.pushNotifications}
-              onChange={() => toggleSetting("pushNotifications")}
+              onChange={handlePushToggle}
             />
             <NotificationToggle
               label="Browser notifikacije"
@@ -156,28 +185,12 @@ export default function NotificationSettings() {
           </div>
 
           {settings.appointmentReminder && (
-            <div className="mt-8">
-              <label className={lbl + " mb-3"}>
-                Koliko sati pre termina da se pošalje podsetnik?
-              </label>
-              <div className="flex items-center space-x-4">
-                <select
-                  value={settings.reminderHours}
-                  onChange={(e) =>
-                    updateSetting("reminderHours", parseInt(e.target.value))
-                  }
-                  className={inp}
-                  disabled={saveMutation.isPending}
-                >
-                  <option value="1">1 sat</option>
-                  <option value="3">3 sata</option>
-                  <option value="6">6 sati</option>
-                  <option value="12">12 sati</option>
-                  <option value="24">24 sata</option>
-                  <option value="48">48 sati</option>
-                </select>
-                <span className={lbl}>pre početka termina</span>
-              </div>
+            <div className="mt-6 p-4 bg-violet-50 border border-violet-200 rounded-lg">
+              <p className="text-sm text-violet-800">
+                Podsetnici se automatski šalju <strong>1 sat</strong> i{" "}
+                <strong>30 minuta</strong> pre početka termina — kao push
+                notifikacija i u zvonu obaveštenja.
+              </p>
             </div>
           )}
         </div>

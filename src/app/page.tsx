@@ -15,6 +15,7 @@ import { redirect } from "next/navigation";
 import { MarketingHomePageSecond } from "@/components/marketing/MarketingHomePageSecond";
 import { ClientHomePage } from "@/components/client/ClientHomePage";
 import { MarketingHomePageFirst } from "@/components/marketing/MarketingHomePageFirst";
+import { ExitIntentNewsletterModal } from "@/components/marketing/ExitIntentNewsletterModal";
 import type { Metadata } from "next";
 import { connectToDB } from "@/lib/db/mongodb";
 import { ProfilPlatforme } from "@/models/ProfilPlatforme";
@@ -116,6 +117,7 @@ export default async function RootPage() {
         <>
           <MarketingHomePageFirst initialLanding={marketingLanding} />
           <MarketingHomePageSecond initialLanding={marketingLanding} />
+          <ExitIntentNewsletterModal />
         </>
       );
     }

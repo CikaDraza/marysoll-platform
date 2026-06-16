@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
-import { TenantUser } from "@/models/TenantUser";
 import { verifyToken } from "@/lib/auth/auth-server";
+import { removePushSubscription, resolvePushTarget } from "@/lib/pushSubscriptionStore";
 
 export async function POST(req: Request) {
   try {
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     const token = authHeader.split(" ")[1];
     const decoded = verifyToken(token);
 
-    if (!decoded || !decoded.tenantUserId) {
+    if (!decoded || !resolvePushTarget(decoded)) {
       return NextResponse.json({ error: "Invalid token" }, { status: 403 });
     }
 
@@ -24,9 +24,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing endpoint" }, { status: 400 });
     }
 
-    await TenantUser.findByIdAndUpdate(decoded.tenantUserId, {
-      $pull: { pushSubscriptions: { endpoint } },
-    });
+    await removePushSubscription(decoded, endpoint);
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -590,6 +590,7 @@ export interface INotification {
     | "appointment_rescheduled"
     | "appointment_cancelled"
     | "appointment_message"
+    | "appointment_reminder"
     | "testimonial_created"
     | "testimonial_replied"
     | "testimonial_updated"

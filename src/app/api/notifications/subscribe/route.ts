@@ -7,6 +7,10 @@ import { verifyToken } from "@/lib/auth/auth-server";
 import webpush from "web-push";
 import { getVapidKeys } from "@/lib/vapid";
 import { Types } from "mongoose";
+import {
+  addPushSubscription,
+  resolvePushTarget,
+} from "@/lib/pushSubscriptionStore";
 
 export async function POST(req: Request) {
   try {
@@ -24,55 +28,52 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid token" }, { status: 403 });
     }
 
-    if (!decoded.tenantUserId) {
-      return NextResponse.json({ error: "No tenant context" }, { status: 403 });
+    // Tenant korisnik ILI superadmin (platforma)
+    const target = resolvePushTarget(decoded);
+    if (!target) {
+      return NextResponse.json({ error: "No push target" }, { status: 403 });
     }
 
     const { subscription } = await req.json();
-
-    // Resolve salon logo for the notification icon
-    let notificationIcon = "/marysoll_elegant_logo.png";
-    try {
-      const tenantUser = (await TenantUser.findById(decoded.tenantUserId)
-        .select("tenantId")
-        .lean()) as { tenantId?: Types.ObjectId } | null;
-      if (tenantUser?.tenantId) {
-        const profile = (await SalonProfile.findOne({
-          tenantId: tenantUser.tenantId,
-        })
-          .select("logo")
-          .lean()) as { logo?: string } | null;
-        if (profile?.logo) notificationIcon = profile.logo;
-      }
-    } catch {
-      /* fall through */
+    if (!subscription?.endpoint || !subscription?.keys) {
+      return NextResponse.json({ error: "Missing subscription" }, { status: 400 });
     }
 
-    // Konfiguriši web-push sa VAPID ključevima
-    const vapidKeys = getVapidKeys();
-    webpush.setVapidDetails(
-      `mailto:${vapidKeys.email}`,
-      vapidKeys.publicKey,
-      vapidKeys.privateKey,
-    );
+    // Ikona za notifikaciju: salon logo (tenant) ili platformski logo (superadmin)
+    let notificationIcon = "/logo-marysoll.png";
+    if (decoded.tenantUserId) {
+      try {
+        const tenantUser = (await TenantUser.findById(decoded.tenantUserId)
+          .select("tenantId")
+          .lean()) as { tenantId?: Types.ObjectId } | null;
+        if (tenantUser?.tenantId) {
+          const profile = (await SalonProfile.findOne({
+            tenantId: tenantUser.tenantId,
+          })
+            .select("logo")
+            .lean()) as { logo?: string } | null;
+          if (profile?.logo) notificationIcon = profile.logo;
+          else notificationIcon = "/marysoll_elegant_logo.png";
+        }
+      } catch {
+        /* fall through */
+      }
+    }
 
-    // Sačuvaj ili ažuriraj subscription
-    await TenantUser.findByIdAndUpdate(
-      decoded.tenantUserId,
-      {
-        $addToSet: {
-          pushSubscriptions: {
-            endpoint: subscription.endpoint,
-            keys: subscription.keys,
-            createdAt: new Date(),
-          },
-        },
-      },
-      { new: true },
-    );
+    // Sačuvaj subscription (TenantUser ili AuthUser, preko helpera)
+    await addPushSubscription(decoded, {
+      endpoint: subscription.endpoint,
+      keys: subscription.keys,
+    });
 
     // Test push notifikacija za potvrdu
     try {
+      const vapidKeys = getVapidKeys();
+      webpush.setVapidDetails(
+        `mailto:${vapidKeys.email}`,
+        vapidKeys.publicKey,
+        vapidKeys.privateKey,
+      );
       await webpush.sendNotification(
         subscription,
         JSON.stringify({
@@ -80,10 +81,7 @@ export async function POST(req: Request) {
           body: "Sada ćete primati obaveštenja čak i kada niste na sajtu.",
           icon: notificationIcon,
           tag: "subscription-success",
-          data: {
-            url: "/",
-            timestamp: Date.now(),
-          },
+          data: { url: "/", timestamp: Date.now() },
         }),
       );
     } catch (pushError) {

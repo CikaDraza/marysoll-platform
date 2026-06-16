@@ -7,6 +7,7 @@ import {
 } from "react";
 import { useAuth } from "./useAuth";
 import { api } from "@/lib/api";
+import { urlBase64ToUint8Array } from "@/lib/vapid";
 
 export function usePushNotifications() {
   const { user } = useAuth();
@@ -152,9 +153,16 @@ export function usePushNotifications() {
       }
 
       // 4. Kreiraj novu pretplatu
+      const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!vapidPublicKey) {
+        console.error("NEXT_PUBLIC_VAPID_PUBLIC_KEY nije podešen");
+        return false;
+      }
       const newSubscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        applicationServerKey: urlBase64ToUint8Array(
+          vapidPublicKey,
+        ) as BufferSource,
       });
 
       startTransition(() => {

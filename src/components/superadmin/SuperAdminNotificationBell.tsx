@@ -8,6 +8,7 @@ import { sr } from "date-fns/locale";
 import toast from "react-hot-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import type { INotification } from "@/types";
 
 // ─── Data hooks ───────────────────────────────────────────────────────────────
@@ -152,6 +153,26 @@ export function SuperAdminNotificationBell({ onChatClick }: Props) {
   const { data: notifications = [] } = useSuperAdminNotifications();
   const { markAsRead, markAllAsRead, deleteNotifications } =
     useSuperAdminNotificationMutations();
+  const { isSupported, permission, subscription, subscribeToPush } =
+    usePushNotifications();
+  const [pushBusy, setPushBusy] = useState(false);
+  const pushEnabled = permission === "granted" && !!subscription;
+
+  async function handleEnablePush() {
+    if (pushBusy) return;
+    setPushBusy(true);
+    try {
+      if (!isSupported) {
+        toast.error("Browser ne podržava push notifikacije.");
+        return;
+      }
+      const ok = await subscribeToPush();
+      if (ok) toast.success("Push notifikacije uključene");
+      else toast.error("Dozvola za notifikacije nije odobrena.");
+    } finally {
+      setPushBusy(false);
+    }
+  }
 
   const unreadCount = notifications.length;
 
@@ -210,6 +231,22 @@ export function SuperAdminNotificationBell({ onChatClick }: Props) {
             </button>
           )}
         </div>
+
+        {/* Enable push (po uređaju) */}
+        {isSupported && !pushEnabled && (
+          <button
+            onClick={handleEnablePush}
+            disabled={pushBusy}
+            className="w-full text-left px-4 py-2.5 text-xs font-medium text-violet-300 hover:bg-slate-700 border-b border-slate-700 transition disabled:opacity-50"
+          >
+            🔔{" "}
+            {pushBusy
+              ? "Uključivanje..."
+              : permission === "denied"
+                ? "Push je blokiran u browseru — omogućite u podešavanjima sajta"
+                : "Uključi push notifikacije na ovom uređaju"}
+          </button>
+        )}
 
         {/* List */}
         <div className="max-h-[420px] overflow-y-auto">

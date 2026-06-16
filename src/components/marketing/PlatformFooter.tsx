@@ -49,7 +49,7 @@ export async function PlatformFooter() {
             </Link>
           </div>
 
-          <div className="flex gap-8 text-sm text-gray-400">
+          <div className="flex flex-col lg:flex-row gap-8 text-sm text-gray-400">
             <Link href="/privacy" className="hover:text-white transition">
               Privacy
             </Link>

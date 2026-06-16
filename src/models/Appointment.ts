@@ -77,6 +77,11 @@ const appointmentSchema = new Schema(
     },
     adminNotified: { type: Boolean, default: false },
     clientNotified: { type: Boolean, default: false },
+    // Podsetnici (1 sat / 30 min pre termina) — dedupe da se ne šalju duplo
+    reminderSent: {
+      h1: { type: Boolean, default: false },
+      m30: { type: Boolean, default: false },
+    },
     proposedDate: String,
     proposedTime: String,
     lastUpdatedBy: { type: String, enum: ["client", "admin"] },

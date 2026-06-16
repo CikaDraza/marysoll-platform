@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
-import { TenantUser } from "@/models/TenantUser";
 import { verifyToken } from "@/lib/auth/auth-server";
+import {
+  addPushSubscription,
+  hasPushSubscription,
+  resolvePushTarget,
+} from "@/lib/pushSubscriptionStore";
 
 export async function POST(req: Request) {
   try {
@@ -15,7 +19,7 @@ export async function POST(req: Request) {
     const token = authHeader.split(" ")[1];
     const decoded = verifyToken(token);
 
-    if (!decoded || !decoded.tenantUserId) {
+    if (!decoded || !resolvePushTarget(decoded)) {
       return NextResponse.json({ error: "Invalid token" }, { status: 403 });
     }
 
@@ -24,28 +28,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing subscription" }, { status: 400 });
     }
 
-    const user = (await TenantUser.findById(decoded.tenantUserId)
-      .select("pushSubscriptions")
-      .lean()) as { pushSubscriptions?: { endpoint: string }[] } | null;
+    const isActive = await hasPushSubscription(decoded, subscription.endpoint);
 
-    const isActive = user?.pushSubscriptions?.some(
-      (s) => s.endpoint === subscription.endpoint,
-    ) ?? false;
-
-    // If not stored yet (e.g. user re-subscribed on new device), save it
+    // Ako nije sačuvana (npr. re-subscribe na novom uređaju), sačuvaj je
     if (!isActive && subscription.keys) {
-      await TenantUser.findByIdAndUpdate(decoded.tenantUserId, {
-        $addToSet: {
-          pushSubscriptions: {
-            endpoint: subscription.endpoint,
-            keys: subscription.keys,
-            createdAt: new Date(),
-          },
-        },
+      await addPushSubscription(decoded, {
+        endpoint: subscription.endpoint,
+        keys: subscription.keys,
       });
     }
 
-    return NextResponse.json({ success: true, isActive: isActive || !!subscription.keys });
+    return NextResponse.json({
+      success: true,
+      isActive: isActive || !!subscription.keys,
+    });
   } catch (error) {
     console.error("POST /api/notifications/check-subscription:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

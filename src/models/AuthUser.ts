@@ -14,6 +14,12 @@
 
 import { Schema, Document, Types, model, models } from "mongoose";
 
+export interface IAuthUserPushSubscription {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+  createdAt: Date;
+}
+
 export interface IAuthUser extends Document {
   _id: Types.ObjectId;
   email: string;
@@ -24,6 +30,7 @@ export interface IAuthUser extends Document {
   resetPasswordToken: string | null;
   resetPasswordExpires: Date | null;
   platformRole: "SUPER_ADMIN" | "OWNER" | null;
+  pushSubscriptions: IAuthUserPushSubscription[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -65,6 +72,17 @@ const authUserSchema = new Schema<IAuthUser>(
       enum: ["SUPER_ADMIN", "OWNER"],
       default: null,
     },
+    // ── Push subscriptions (web push za platformske korisnike / superadmin) ──
+    pushSubscriptions: [
+      {
+        endpoint: { type: String, required: true },
+        keys: {
+          p256dh: { type: String, required: true },
+          auth: { type: String, required: true },
+        },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true },
 );
