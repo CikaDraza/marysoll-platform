@@ -74,7 +74,7 @@ export function Theme7Hero({
     : `${Math.max(1, new Date().getFullYear() - STUDIO_OPENED_YEAR)} yrs`;
 
   return (
-    <section id="top" className="relative bg-ink max-h-screen text-cream">
+    <section id="top" className="relative bg-ink lg:max-h-screen text-cream">
       {/* Neon glow layers */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(55%_55%_at_74%_18%,#ff2e8866_0%,#ff2e8800_68%)]" />

@@ -33,14 +33,14 @@ import {
   subWeeks,
 } from "date-fns";
 import { sr } from "date-fns/locale";
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from "@heroicons/react/24/outline";
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { detectCustomDomain } from "@/hooks/useClientRouting";
-import { BookingModal, PENDING_STORAGE_KEY } from "@/components/shared/BookingModal";
+import {
+  BookingModal,
+  PENDING_STORAGE_KEY,
+} from "@/components/shared/BookingModal";
 import type { PendingAppointment } from "@/components/shared/BookingModal";
 import type {
   WorkingHoursMap,
