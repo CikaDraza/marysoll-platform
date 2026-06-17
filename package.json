@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
+    "migrate:subscription-index": "node --env-file=.env.local scripts/fix-subscription-index.mjs",
     "backfill:identity": "echo 'Deprecated — backfill-user-identity script removed'"
   },
   "dependencies": {

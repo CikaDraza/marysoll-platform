@@ -24,6 +24,21 @@
 
   --color-gray-dark: #1a2231;
   --color-gray-950: #0d1117;
+
+  /* Theme-7 "The Lash Room" palette — neon pink is the only saturated accent */
+  --color-ink: #0b0a0c; /* near-black — dark sections, primary text */
+  --color-coal: #15111a; /* warm black (used sparingly) */
+  --color-cream: #f6f1ec; /* off-white text on dark sections */
+  --color-paper: #faf7f3; /* off-white page background (lightest) */
+  --color-blush: #f4cdd9; /* soft pink — calendar/pill hover fills */
+  --color-rose: #f7d9e3; /* soft pink — card/panel backgrounds, avatars */
+  --color-neon: #ff2e88; /* PINK NEON — CTAs, accents, glow */
+  --color-neonsoft: #ff79b0; /* lighter neon — eyebrow labels on dark bg */
+  --color-plum: #1a0a12; /* deep plum (available) */
+
+  /* Theme-7 fonts (loaded via <link> in the theme-7 ThemeLayout block) */
+  --font-cormorant: "Cormorant Garamond", serif;
+  --font-jost: Jost, sans-serif;
 }
 
 /* Salon brand CSS variables (used by public themes) */

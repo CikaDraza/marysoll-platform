@@ -1,0 +1,12 @@
+export { FadeUp } from "./FadeUp";
+export { Theme7Header } from "./Header";
+export { Theme7Hero } from "./Hero";
+export { Theme7BookingCard } from "./BookingCard";
+export { Theme7AboutUs } from "./AboutUs";
+export { Theme7SocialProof } from "./SocialProof";
+export { Theme7Services } from "./Services";
+export { Theme7GallerySection } from "./GallerySection";
+export { Theme7TestimonialsSection } from "./TestimonialsSection";
+export { Theme7FAQSection } from "./FAQSection";
+export { Theme7WorkingHours } from "./WorkingHours";
+export { Theme7Footer } from "./Footer";

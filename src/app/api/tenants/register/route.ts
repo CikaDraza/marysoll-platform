@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Types } from "mongoose";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { AuthUser } from "@/models/AuthUser";
@@ -23,6 +24,12 @@ import bcrypt from "bcryptjs";
  * Trial activates only after email verification.
  */
 export async function POST(request: NextRequest) {
+  // Registration is not a single transaction. Track what we create so a later
+  // failure (e.g. a DB error mid-flow) can be rolled back — otherwise an
+  // orphaned AuthUser/Tenant lingers and the owner can never retry (409).
+  let createdAuthUserId: Types.ObjectId | null = null;
+  let createdTenantId: Types.ObjectId | null = null;
+
   try {
     await connectToDB();
 
@@ -103,6 +110,7 @@ export async function POST(request: NextRequest) {
       platformRole: "OWNER",
     });
     await authUser.save();
+    createdAuthUserId = authUser._id as Types.ObjectId;
 
     // 2. Tenant (pending — trial starts after email verification)
     const tenant = new Tenant({
@@ -135,6 +143,7 @@ export async function POST(request: NextRequest) {
       },
     });
     await tenant.save();
+    createdTenantId = tenant._id as Types.ObjectId;
 
     // 3. TenantUser — OWNER profile WITH per-tenant credentials.
     //    email + password here are for tenant login (salon URL).
@@ -223,6 +232,28 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("❌ Tenant registration error:", error);
+
+    // Roll back anything created before the failure so the owner can retry
+    // without hitting "Nalog već postoji" (409) on a half-finished account.
+    try {
+      if (createdTenantId) {
+        await Promise.all([
+          Subscription.deleteMany({ tenantId: createdTenantId }),
+          SalonProfile.deleteMany({ tenantId: createdTenantId }),
+          TenantUser.deleteMany({ tenantId: createdTenantId }),
+          Tenant.deleteOne({ _id: createdTenantId }),
+        ]);
+      }
+      if (createdAuthUserId) {
+        await AuthUser.deleteOne({ _id: createdAuthUserId });
+      }
+    } catch (rollbackErr) {
+      console.error(
+        "⚠️ Rollback after failed registration incomplete:",
+        rollbackErr,
+      );
+    }
+
     return NextResponse.json(
       { error: "Greška pri registraciji. Pokušajte ponovo." },
       { status: 500 },

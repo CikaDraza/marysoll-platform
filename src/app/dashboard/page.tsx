@@ -110,6 +110,12 @@ const THEMES: {
     description: "Svetli, editorijalni dizajn za nail studio",
     previewColors: ["#FFFFFF", "#FAF8F5", "#C4A595"],
   },
+  {
+    id: "theme-7",
+    label: "Lash Studio",
+    description: "Neon editorijalni dizajn za lash & brow studio",
+    previewColors: ["#0b0a0c", "#ff2e88", "#f6f1ec"],
+  },
 ];
 
 // ─── Style tokens ─────────────────────────────────────────────────────────────

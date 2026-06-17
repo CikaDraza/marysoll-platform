@@ -106,11 +106,20 @@ const SubscriptionSchema = new Schema<ISubscription>(
   { timestamps: true },
 );
 
-SubscriptionSchema.index({ tenantId: 1 }, { unique: true });
+// NOTE: tenantId uniqueness is declared via `unique: true` on the field above.
+// Do NOT also add SubscriptionSchema.index({ tenantId: 1 }) — that produces a
+// "Duplicate schema index" warning.
 
+// paddleSubscriptionId is null for every internal/trial subscription. A plain
+// (or even `sparse`) unique index still collides on explicit nulls — `sparse`
+// only skips documents where the field is ABSENT, not where it is present and
+// null. Use a partial index so uniqueness is enforced only on real Paddle ids.
 SubscriptionSchema.index(
   { paddleSubscriptionId: 1 },
-  { unique: true, sparse: true },
+  {
+    unique: true,
+    partialFilterExpression: { paddleSubscriptionId: { $type: "string" } },
+  },
 );
 
 SubscriptionSchema.index({ status: 1, plan: 1 });

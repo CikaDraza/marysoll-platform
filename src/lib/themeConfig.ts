@@ -56,4 +56,9 @@ export const THEME_CONFIG: Record<LandingTheme, ThemeSectionConfig> = {
     hero: { hasImage: true, maxImages: 1 },
     gallery: { variant: "images-only" },
   },
+  /** Theme-7 "Lash Studio" — pure-text neon hero, gallery is zigzag category rows. */
+  "theme-7": {
+    hero: { hasImage: false, maxImages: 0 },
+    gallery: { variant: "images-with-category" },
+  },
 };

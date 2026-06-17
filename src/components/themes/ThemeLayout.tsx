@@ -107,6 +107,18 @@ import {
   Theme6Newsletter,
   Theme6Footer,
 } from "./theme-6";
+import {
+  Theme7Header,
+  Theme7Hero,
+  Theme7BookingCard,
+  Theme7AboutUs,
+  Theme7SocialProof,
+  Theme7Services,
+  Theme7GallerySection,
+  Theme7TestimonialsSection,
+  Theme7FAQSection,
+  Theme7Footer,
+} from "./theme-7";
 
 interface Testimonial {
   _id: string;
@@ -190,6 +202,7 @@ export function ThemeLayout({
     "theme-4": "images-only",
     "theme-5": "images-only",
     "theme-6": "images-only",
+    "theme-7": "images-with-category",
   };
   const effectiveGalleryVariant: "images-only" | "images-with-category" =
     ls?.landing?.gallery?.galleryVariant ??
@@ -955,6 +968,108 @@ export function ThemeLayout({
           instagram={salon.social?.instagram}
           facebook={salon.social?.facebook}
           tenantSlug={tenantSlug}
+        />
+      </div>
+    );
+  }
+
+  // ── Theme 7: The Lash Room (neon editorial lash studio) ────────────────────
+  if (theme === "theme-7") {
+    // Fixed Lash Room palette — ignores tenant branding. --primary-color is forced
+    // to neon so the reused HomepageAppointmentWidget recolors to match the theme.
+    const lashVars = {
+      "--primary-color": "#ff2e88",
+      "--secondary-color": "#ff79b0",
+      fontFamily: "Jost, sans-serif",
+    } as React.CSSProperties;
+    const igLink = ls?.landing?.gallery?.instagram?.link || instagram;
+    const igHandle = ls?.landing?.gallery?.instagram?.username;
+    // Lash Room display + UI fonts (variable href matches the per-theme font-load pattern)
+    const lashFontHref =
+      "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Jost:wght@300;400;500;600&display=swap";
+    const aboutImage = ls?.landing?.about?.image?.src
+      ? {
+          src: ls.landing.about.image.src,
+          alt: ls.landing.about.image.alt ?? "",
+        }
+      : undefined;
+
+    return (
+      <div
+        className="min-h-screen flex flex-col bg-paper text-ink font-jost"
+        style={lashVars}
+      >
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="stylesheet" href={lashFontHref} />
+        <Theme7Header {...headerProps} />
+        <main className="flex-1 overflow-x-hidden flex flex-col">
+          {heroEnabled && (
+            <Theme7Hero
+              heroData={{
+                headline: ls?.landing?.hero?.headline,
+                subheadline: ls?.landing?.hero?.subheadline,
+              }}
+              cta={resolvedCta}
+              tenantStats={tenantStats}
+              yearsOfExperience={ls?.landing?.about?.yearsOfExperience}
+              bookingSlot={
+                <Theme7BookingCard
+                  tenantSlug={tenantSlug}
+                  clientSlug={clientSlug ?? tenantSlug}
+                  salon={salon}
+                  services={services}
+                />
+              }
+            />
+          )}
+          {aboutEnabled && (
+            <Theme7AboutUs
+              about={{
+                headline: ls?.landing?.about?.headline,
+                paragraphs: ls?.landing?.about?.paragraphs ?? [],
+                links: ls?.landing?.about?.links ?? [],
+                image: aboutImage,
+              }}
+              founderName={salon.name}
+            />
+          )}
+          <Theme7SocialProof instagramUrl={igLink} instagramHandle={igHandle} />
+          {servicesPreviewEnabled && services.length > 0 && (
+            <Theme7Services
+              services={services}
+              tenantSlug={tenantSlug}
+              headline={ls?.landing?.servicesPreview?.headline}
+              subheadline={ls?.landing?.servicesPreview?.subheadline}
+            />
+          )}
+          {galleryEnabled && (
+            <Theme7GallerySection
+              treatments={ls?.landing?.gallery?.treatments}
+              headline={ls?.landing?.gallery?.headline}
+              tenantSlug={tenantSlug}
+            />
+          )}
+          {testimonialsEnabled && (
+            <Theme7TestimonialsSection
+              testimonials={testimonials.length > 0 ? testimonials : undefined}
+              headline={ls?.landing?.testimonials?.headline}
+            />
+          )}
+          {faqEnabled && (
+            <Theme7FAQSection
+              items={ls?.landing?.faq?.items}
+              headline={ls?.landing?.faq?.headline}
+              supportText={ls?.landing?.faq?.support?.text}
+            />
+          )}
+        </main>
+        <Theme7Footer
+          salonName={salon.name}
+          logo={salon.logo ?? undefined}
+          instagramUrl={igLink}
+          instagramHandle={igHandle}
+          email={salon.contactEmail || salon.email}
+          workingHours={salon.workingHours}
         />
       </div>
     );
