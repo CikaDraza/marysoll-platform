@@ -15,6 +15,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { getRawToken, getUserFromToken } from "@/lib/auth/auth-client";
+import { detectCustomDomain } from "@/hooks/useClientRouting";
 import { publicApi, api } from "@/lib/api";
 import { useCallback, useEffect } from "react";
 import type { DecodedUser } from "@/types/auth/types";
@@ -365,15 +366,13 @@ export function useAuth() {
       const tenantSlug = variables?.tenantSlug;
 
       if (tenantSlug) {
-        const host = window.location.hostname;
         const base = getBaseDomain();
-        const onCustomDomain =
-          host !== "localhost" &&
-          !host.startsWith("127.") &&
-          !host.endsWith(base) &&
-          host !== base;
-
-        window.location.href = onCustomDomain
+        // Tenant subdomains ({slug}.marysoll.com) and custom domains both serve
+        // tenant routes at the root, so logout must return to "/login" on the
+        // same host. detectCustomDomain() covers both (a subdomain is NOT an
+        // apex host). Only the apex path-based host (marysoll.com/{slug}) and
+        // local/LAN dev use the "/{slug}/login" prefix.
+        window.location.href = detectCustomDomain()
           ? "/login"
           : isProductionDomain()
             ? `https://${base}/${tenantSlug}/login`
