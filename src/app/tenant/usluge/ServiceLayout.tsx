@@ -29,7 +29,7 @@ export default function ServicesLayout({
 
   return (
     <div className="py-12 lg:py-32">
-      <div className="flex justify-center flex-wrap px-1 lg:px-8">
+      <div className="flex justify-center flex-wrap px-2">
         <span className="text-sm font-bold pb-0 w-full text-center text-(--primary-color)">
           usluge
         </span>
@@ -45,9 +45,9 @@ export default function ServicesLayout({
           </p>
         )}
       </div>
-      <div className="pt-16 lg:pt-24 flex flex-col gap-y-8">
+      <div className="pt-16 px-3 lg:px-0 lg:pt-24 flex flex-col gap-y-8">
         {groupedServices?.map((group) => (
-          <div key={group.category} className="max-w-full px-2 lg:px-8">
+          <div key={group.category} className="max-w-full">
             <div className="relative isolate px-1 pt-14 lg:px-8 z-0">
               <div
                 aria-hidden="true"

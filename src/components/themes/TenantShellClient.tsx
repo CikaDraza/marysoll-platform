@@ -12,6 +12,8 @@ import { Theme5Header } from "./theme-5/Header";
 import { Theme5Footer } from "./theme-5/Footer";
 import { Theme6Header } from "./theme-6/Header";
 import { Theme6Footer } from "./theme-6/Footer";
+import { Theme7Header } from "./theme-7/Header";
+import { Theme7Footer } from "./theme-7/Footer";
 import type { SalonProfileData } from "@/types";
 
 interface Props {
@@ -165,6 +167,42 @@ export function TenantShellClient({ salon, tenantSlug, children }: Props) {
           instagram={salon.social?.instagram}
           facebook={salon.social?.facebook}
           tenantSlug={tenantSlug}
+        />
+      </div>
+    );
+  }
+
+  if (theme === "theme-7") {
+    // Fixed Lash Room palette + fonts, identical to the theme-7 home page
+    // (ThemeLayout), so Header/Footer match across every tenant page.
+    const lashVars = {
+      "--primary-color": "#ff2e88",
+      "--secondary-color": "#ff79b0",
+      fontFamily: "Jost, sans-serif",
+    } as React.CSSProperties;
+    const lashFontHref =
+      "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Jost:wght@300;400;500;600&display=swap";
+    return (
+      <div
+        className="bg-paper text-ink font-jost min-h-screen flex flex-col"
+        style={lashVars}
+      >
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="stylesheet" href={lashFontHref} />
+        <Theme7Header {...headerProps} overHero={false} />
+        <div className="pt-20 flex-1">{children}</div>
+        <Theme7Footer
+          salonName={salon.name}
+          logo={salon.logo ?? undefined}
+          instagramUrl={
+            salon.landingStructure?.landing?.gallery?.instagram?.link ||
+            salon.social?.instagram
+          }
+          instagramHandle={
+            salon.landingStructure?.landing?.gallery?.instagram?.username
+          }
+          email={salon.contactEmail || salon.email}
+          workingHours={salon.workingHours}
         />
       </div>
     );

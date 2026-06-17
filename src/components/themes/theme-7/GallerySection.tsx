@@ -50,7 +50,10 @@ const DEFAULT_TREATMENTS: Treatment[] = [
       "Warm brown lashes for a softer, sun-kissed take on volume — bold without the contrast of black.",
     images: [
       { src: "/images/theme-7/lash-deepbrown.png", alt: "Deep brown lash set" },
-      { src: "/images/theme-7/lash-deepbrown.png", alt: "Deep brown lash detail" },
+      {
+        src: "/images/theme-7/lash-deepbrown.png",
+        alt: "Deep brown lash detail",
+      },
     ],
     href: "/termini",
   },
@@ -98,7 +101,7 @@ export function Theme7GallerySection({
 
   return (
     <section id="gallery" className="bg-cream/60">
-      <div className="max-w-[1320px] mx-auto px-6 lg:px-10 py-28 lg:py-36">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-28 lg:py-36">
         <FadeUp className="text-center mb-16 lg:mb-20">
           <p className="text-[12px] uppercase tracking-[0.3em] text-neon mb-5">
             {headline || "The gallery"}
@@ -149,7 +152,11 @@ export function Theme7GallerySection({
 
             const images = [
               <GalleryImage key="img0" img={t.images[0]} />,
-              <GalleryImage key="img1" img={t.images[1] ?? t.images[0]} detail />,
+              <GalleryImage
+                key="img1"
+                img={t.images[1] ?? t.images[0]}
+                detail
+              />,
             ];
 
             return (

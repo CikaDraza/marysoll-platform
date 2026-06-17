@@ -2,6 +2,7 @@
 // TABLE-based layout, inline styles — Gmail/Outlook/Apple Mail compatible
 
 import type { ImageBlockData } from "@/types/email/block-email-campaign";
+import Link from "next/link";
 
 interface Props {
   data: ImageBlockData;
@@ -43,9 +44,9 @@ export function ImageBlock({ data }: Props) {
             }}
           >
             {data.link ? (
-              <a href={data.link} style={{ display: "inline-block" }}>
+              <Link href={data.link} style={{ display: "inline-block" }}>
                 {img}
-              </a>
+              </Link>
             ) : (
               img
             )}

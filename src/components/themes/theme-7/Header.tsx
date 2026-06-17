@@ -20,6 +20,12 @@ interface Theme7HeaderProps {
   clientSlug?: string;
   salonName?: string;
   salonLogo?: string | null;
+  /**
+   * True on the home page, where the transparent header sits over the dark hero
+   * (cream text at top). False on inner pages with a light background, where the
+   * top-of-page text must be ink — same as the scrolled state.
+   */
+  overHero?: boolean;
 }
 
 const underline =
@@ -31,6 +37,7 @@ export function Theme7Header({
   clientSlug,
   salonName,
   salonLogo,
+  overHero = true,
 }: Theme7HeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -66,12 +73,14 @@ export function Theme7Header({
       <nav
         className={`fixed top-0 inset-x-0 z-50 transition-colors duration-500 ${
           scrolled
-            ? "bg-paper/85 backdrop-blur-md text-ink shadow-[0_1px_0_rgba(0,0,0,0.06)]"
-            : "bg-transparent text-cream"
+            ? "bg-paper/75 backdrop-blur-md text-ink shadow-[0_1px_0_rgba(0,0,0,0.06)]"
+            : overHero
+              ? "bg-transparent text-cream"
+              : "bg-transparent text-ink"
         }`}
       >
-        <div className="max-w-[1320px] mx-auto px-6 lg:px-10 h-20 flex items-center justify-between">
-          <a href="#top" className="flex items-center gap-3 group">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-20 flex items-center justify-between">
+          <Link href="#top" className="flex items-center gap-3 group">
             <Image
               src={logoSrc}
               alt={displayName}
@@ -82,7 +91,7 @@ export function Theme7Header({
             <span className="font-cormorant text-xl tracking-tight leading-none">
               {displayName}
             </span>
-          </a>
+          </Link>
 
           <div className="hidden lg:flex items-center gap-9 text-[13px] uppercase tracking-[0.18em] font-medium">
             {navItems.map((item) => (

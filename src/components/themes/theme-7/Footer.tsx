@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { SalonProfileData } from "@/types";
 import { FadeUp } from "./FadeUp";
 import { Theme7WorkingHours } from "./WorkingHours";
+import Link from "next/link";
 
 interface Props {
   salonName?: string;
@@ -32,14 +33,11 @@ export function Theme7Footer({
   const handle = instagramHandle || "@lashroom_byanja";
 
   return (
-    <footer
-      id="book"
-      className="relative bg-ink text-cream overflow-hidden"
-    >
+    <footer id="book" className="relative bg-ink text-cream overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_60%_at_80%_0%,#ff2e8840_0%,#ff2e8800_60%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-neon shadow-[0_0_40px_8px_#ff2e88]" />
 
-      <div className="relative max-w-[1320px] mx-auto px-6 lg:px-10 pt-24 lg:pt-28 pb-12">
+      <div className="relative max-w-7xl mx-auto px-6 lg:px-10 pt-24 lg:pt-28 pb-12">
         <div className="grid lg:grid-cols-12 gap-14 lg:gap-10">
           <FadeUp className="lg:col-span-5">
             <h2 className="font-cormorant text-5xl sm:text-6xl lg:text-7xl leading-[0.95] tracking-[-0.01em]">
@@ -65,7 +63,10 @@ export function Theme7Footer({
               <ul className="space-y-2.5 text-[15px] text-cream/75">
                 {EXPLORE.map((l) => (
                   <li key={l.href}>
-                    <a href={l.href} className="hover:text-neon transition-colors">
+                    <a
+                      href={l.href}
+                      className="hover:text-neon transition-colors"
+                    >
                       {l.label}
                     </a>
                   </li>
@@ -102,9 +103,12 @@ export function Theme7Footer({
                   </a>
                 </li>
                 <li>
-                  <a href="#book" className="hover:text-neon transition-colors">
+                  <Link
+                    href="#book"
+                    className="hover:text-neon transition-colors"
+                  >
                     Book now
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>

@@ -13,7 +13,13 @@ interface Props {
   headline?: string;
 }
 
-type Card = { quote: string; name: string; meta: string; initial: string; rating: number };
+type Card = {
+  quote: string;
+  name: string;
+  meta: string;
+  initial: string;
+  rating: number;
+};
 
 const DEFAULT_CARDS: Card[] = [
   {
@@ -56,7 +62,7 @@ export function Theme7TestimonialsSection({ testimonials, headline }: Props) {
 
   return (
     <section id="reviews" className="bg-paper">
-      <div className="max-w-[1320px] mx-auto px-6 lg:px-10 py-28 lg:py-36">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-28 lg:py-36">
         <FadeUp className="max-w-3xl mb-16">
           <p className="flex items-center gap-3 text-[12px] uppercase tracking-[0.3em] text-neon mb-5">
             <span className="h-px w-10 bg-neon" /> {headline || "Kind words"}
@@ -84,7 +90,9 @@ export function Theme7TestimonialsSection({ testimonials, headline }: Props) {
                     {c.initial}
                   </span>
                   <span>
-                    <span className="block text-[15px] font-medium">{c.name}</span>
+                    <span className="block text-[15px] font-medium">
+                      {c.name}
+                    </span>
                     <span className="block text-[11px] uppercase tracking-[0.18em] text-ink/40">
                       {c.meta}
                     </span>

@@ -46,7 +46,7 @@ export function Theme7AboutUs({ about, founderName }: Props) {
 
   return (
     <section id="about" className="relative bg-paper">
-      <div className="max-w-[1320px] mx-auto px-6 lg:px-10 pt-28 lg:pt-44 pb-24 lg:pb-32">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-28 lg:pt-44 pb-24 lg:pb-32">
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           <FadeUp className="lg:col-span-5 relative">
             <div className="relative rounded-[24px] overflow-hidden aspect-[4/5] ring-1 ring-black/5 shadow-[0_40px_80px_-40px_rgba(0,0,0,0.4)]">

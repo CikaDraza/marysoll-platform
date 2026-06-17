@@ -17,6 +17,7 @@ import type {
   MarketingLandingStructure,
   MarketingPricingPlan,
 } from "@/types/marketing-landing";
+import Link from "next/link";
 
 interface CmsPageDoc {
   title: string;
@@ -163,14 +164,14 @@ export default async function CmsPage({
       {slug === "booking" && (
         <section className="pb-16">
           <div className="max-w-7xl mx-auto px-6">
-            <a
+            <Link
               href="https://booking.marysoll.com"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center bg-purple-600 text-white px-10 py-4 rounded-xl font-semibold text-lg hover:bg-purple-700 transition shadow-xl shadow-purple-200"
             >
               Otvori Marysoll Booking →
-            </a>
+            </Link>
           </div>
         </section>
       )}

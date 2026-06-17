@@ -63,7 +63,7 @@ export function Theme6BlogPreview({
 
         <div className="grid md:grid-cols-2 gap-10 lg:gap-12">
           {posts.map((post, idx) => (
-            <a key={idx} href={post.slug || "#"} className="group">
+            <Link key={idx} href={post.slug || "#"} className="group">
               <article className="space-y-6">
                 <div className="aspect-[16/10] bg-white overflow-hidden">
                   {post.image ? (
@@ -114,7 +114,7 @@ export function Theme6BlogPreview({
                   </div>
                 </div>
               </article>
-            </a>
+            </Link>
           ))}
         </div>
       </div>

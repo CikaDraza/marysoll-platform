@@ -55,11 +55,12 @@ export function Theme7Services({
 
   return (
     <section id="services" className="bg-paper">
-      <div className="max-w-[1320px] mx-auto px-6 lg:px-10 py-28 lg:py-36">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-28 lg:py-36">
         <FadeUp className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-16">
           <div>
             <p className="flex items-center gap-3 text-[12px] uppercase tracking-[0.3em] text-neon mb-5">
-              <span className="h-px w-10 bg-neon" /> {headline || "Services & prices"}
+              <span className="h-px w-10 bg-neon" />{" "}
+              {headline || "Services & prices"}
             </p>
             <h2 className="font-cormorant text-5xl sm:text-6xl lg:text-7xl leading-[0.98] tracking-[-0.01em]">
               The menu

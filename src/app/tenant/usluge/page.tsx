@@ -66,7 +66,7 @@ export default async function UslugePage() {
   return (
     <TenantPageShell tenantSlug={tenantSlug}>
       <div className="min-h-screen bg-gray-100">
-        <section className="max-w-7xl mx-auto px-6 py-16">
+        <section className="max-w-7xl mx-auto py-16">
           <ServicesLayout
             services={services}
             headline={
