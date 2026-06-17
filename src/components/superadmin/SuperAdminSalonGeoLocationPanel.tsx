@@ -146,7 +146,7 @@ function MarketplaceControls({ tenantId }: { tenantId: string }) {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
         <div>
           <label className={labelClass}>Popularnost grada (0–10)</label>
           <input
@@ -160,14 +160,16 @@ function MarketplaceControls({ tenantId }: { tenantId: string }) {
             Veća vrednost gura grad više u listama i pretrazi.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={mk.saveScore}
-          disabled={mk.isSaving || mk.isLoading}
-          className="rounded-lg bg-violet-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-violet-500 disabled:opacity-40"
-        >
-          {mk.isSaving ? "Čuvam..." : "Sačuvaj popularnost"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={mk.saveScore}
+            disabled={mk.isSaving || mk.isLoading}
+            className="rounded-lg bg-violet-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-violet-500 disabled:opacity-40"
+          >
+            {mk.isSaving ? "Čuvam..." : "Sačuvaj popularnost"}
+          </button>
+        </div>
       </div>
     </div>
   );
