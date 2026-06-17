@@ -5,11 +5,13 @@ import { motion } from "framer-motion";
 import { formatStatValue } from "@/lib/tenant/tenantStatsUtils";
 import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import { FadeUp } from "./FadeUp";
+import Image from "next/image";
 
 interface Props {
   heroData: {
     headline?: string;
     subheadline?: string;
+    image?: { src?: string; alt?: string };
   };
   cta: {
     primary: { text: string; href: string };
@@ -19,6 +21,9 @@ interface Props {
   yearsOfExperience?: number;
   bookingSlot?: ReactNode;
 }
+
+/** Salon opened in 2023; "years of artistry" auto-increments one per year. */
+const STUDIO_OPENED_YEAR = 2023;
 
 const DEFAULT_DESCRIPTION =
   "Hand-crafted lash and brow artistry in a calm, neon-lit studio — designed around your eyes, your features, and the way you want to feel.";
@@ -55,13 +60,21 @@ export function Theme7Hero({
   yearsOfExperience,
   bookingSlot,
 }: Props) {
-  const setsCrafted = tenantStats
-    ? formatStatValue(tenantStats.appointmentCount)
-    : "1.2k+";
-  const years = yearsOfExperience ? `${yearsOfExperience} yrs` : "6 yrs";
+  // Stats stay on flattering fallbacks until the salon has real traction:
+  // more than 3 appointments AND more than 3 testimonials — both from tenantStats.
+  const appointmentCount = tenantStats?.appointmentCount ?? 0;
+  const hasRealTraction =
+    appointmentCount > 3 && (tenantStats?.reviewCount ?? 0) > 3;
+  const setsCrafted = hasRealTraction
+    ? formatStatValue(appointmentCount)
+    : "250+";
+  // Years of artistry: CMS override, else auto-counts up from the opening year.
+  const years = yearsOfExperience
+    ? `${yearsOfExperience} yrs`
+    : `${Math.max(1, new Date().getFullYear() - STUDIO_OPENED_YEAR)} yrs`;
 
   return (
-    <header id="top" className="relative bg-ink text-cream">
+    <section id="top" className="relative bg-ink max-h-screen text-cream">
       {/* Neon glow layers */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(55%_55%_at_74%_18%,#ff2e8866_0%,#ff2e8800_68%)]" />
@@ -73,7 +86,7 @@ export function Theme7Hero({
         />
       </div>
 
-      <div className="relative max-w-[1320px] mx-auto px-6 lg:px-10 pt-36 lg:pt-44 pb-28 lg:pb-56">
+      <div className="relative max-w-7xl mx-auto px-6 lg:px-10 pt-36 lg:pt-44 pb-28 lg:pb-56">
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-10 items-start">
           {/* LEFT */}
           <FadeUp className="lg:col-span-7 max-w-2xl">
@@ -134,10 +147,17 @@ export function Theme7Hero({
 
           {/* RIGHT: booking card — full column width on desktop, centered & contained on mobile */}
           <div className="lg:col-span-5 w-full max-w-md mx-auto lg:max-w-none min-w-0 relative z-30 lg:-mb-40">
+            <Image
+              src={heroData.image?.src || "/images/theme-7/hero-image-lash.png"}
+              alt={heroData.image?.alt || "Hero image"}
+              width={300}
+              height={500}
+              className="w-96 h-auto -mb-50 object-cover"
+            />
             {bookingSlot}
           </div>
         </div>
       </div>
-    </header>
+    </section>
   );
 }
