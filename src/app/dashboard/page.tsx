@@ -116,6 +116,12 @@ const THEMES: {
     description: "Neon editorijalni dizajn za lash & brow studio",
     previewColors: ["#0b0a0c", "#ff2e88", "#f6f1ec"],
   },
+  {
+    id: "theme-8",
+    label: "Y2K Lash",
+    description: "Razigrani Y2K dizajn sa grafitima za lash & brow studio",
+    previewColors: ["#2a0d22", "#ff2e97", "#8B16C9"],
+  },
 ];
 
 // ─── Style tokens ─────────────────────────────────────────────────────────────

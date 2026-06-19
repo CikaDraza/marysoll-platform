@@ -39,6 +39,18 @@
   /* Theme-7 fonts (loaded via <link> in the theme-7 ThemeLayout block) */
   --font-cormorant: "Cormorant Garamond", serif;
   --font-jost: Jost, sans-serif;
+
+  /* Theme-8 "Y2K Lash" palette — graffiti-wall Bratz-doll aesthetic */
+  --color-y2k-pink: #ff2e97; /* hot neon pink — CTAs, accents */
+  --color-y2k-hot: #ff5fd2; /* lighter pink — accents on dark bg */
+  --color-y2k-purple: #8b16c9; /* electric purple — secondary accent */
+  --color-y2k-ink: #0b0b0f; /* near-black — borders, text, dark panels */
+  --color-y2k-plum: #2a0d22; /* deep plum — page backdrop behind wall */
+  --color-y2k-paper: #fbf7f4; /* warm off-white — torn-paper panels */
+
+  /* Theme-8 fonts (loaded via <link> in the theme-8 ThemeLayout block) */
+  --font-bagel: "Bagel Fat One", cursive;
+  --font-caveat: Caveat, cursive;
 }
 
 /* Salon brand CSS variables (used by public themes) */

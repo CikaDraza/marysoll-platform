@@ -4,9 +4,17 @@ import { useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useClientRouting } from "@/hooks/useClientRouting";
+import { useTenant } from "@/contexts/TenantContext";
+import { Y2KRegisterForm } from "@/components/themes/shared/Y2KRegisterForm";
 type Step = "form" | "check_email";
 
 export default function ClientRegisterPage() {
+  const { landingTheme } = useTenant();
+  if (landingTheme === "theme-8") return <Y2KRegisterForm />;
+  return <DefaultClientRegisterPage />;
+}
+
+function DefaultClientRegisterPage() {
   const { base, tenantSlug } = useClientRouting();
 
   const [step, setStep] = useState<Step>("form");

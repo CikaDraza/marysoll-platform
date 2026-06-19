@@ -5,7 +5,16 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useClientRouting } from "@/hooks/useClientRouting";
+import { useTenant } from "@/contexts/TenantContext";
+import { Y2KLoginForm } from "@/components/themes/shared/Y2KLoginForm";
+
 export default function ClientLoginPage() {
+  const { landingTheme } = useTenant();
+  if (landingTheme === "theme-8") return <Y2KLoginForm />;
+  return <DefaultClientLoginPage />;
+}
+
+function DefaultClientLoginPage() {
   const searchParams = useSearchParams();
   const { base, tenantSlug } = useClientRouting();
 

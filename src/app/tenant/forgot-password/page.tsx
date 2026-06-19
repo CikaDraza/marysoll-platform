@@ -3,9 +3,17 @@ import { useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useClientRouting } from "@/hooks/useClientRouting";
+import { useTenant } from "@/contexts/TenantContext";
+import { Y2KForgotPasswordForm } from "@/components/themes/shared/Y2KForgotPasswordForm";
 type Step = "form" | "sent";
 
 export default function ClientForgotPasswordPage() {
+  const { landingTheme } = useTenant();
+  if (landingTheme === "theme-8") return <Y2KForgotPasswordForm />;
+  return <DefaultClientForgotPasswordPage />;
+}
+
+function DefaultClientForgotPasswordPage() {
   const { base } = useClientRouting();
   const [step, setStep] = useState<Step>("form");
   const [email, setEmail] = useState("");

@@ -15,6 +15,7 @@ import { notFound } from "next/navigation";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { CookiesModal } from "@/components/client/CookiesModal";
 import { TenantThemeController } from "@/components/themes/TenantThemeController";
+import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
 
 export default async function TenantLayout({
   children,
@@ -30,8 +31,18 @@ export default async function TenantLayout({
     notFound();
   }
 
+  // Resolve the salon's landing theme so tenant auth pages can render the
+  // matching themed form (e.g. the Y2K forms for "theme-8"). 5-min cached.
+  const profile = await fetchPublicSalonProfile(tenantSlug);
+  const landingTheme = profile?.landingTheme;
+
   return (
-    <TenantProvider tenantSlug={tenantSlug} tenantId={tenantId} base={base}>
+    <TenantProvider
+      tenantSlug={tenantSlug}
+      tenantId={tenantId}
+      base={base}
+      landingTheme={landingTheme}
+    >
       <TenantThemeController />
       {children}
       <CookiesModal tenantSlug={tenantSlug} />

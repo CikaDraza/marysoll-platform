@@ -61,4 +61,9 @@ export const THEME_CONFIG: Record<LandingTheme, ThemeSectionConfig> = {
     hero: { hasImage: true, maxImages: 1 },
     gallery: { variant: "images-with-category" },
   },
+  /** Theme-8 "Y2K Lash" — graffiti-wall hero with one optional image, gallery is zigzag category rows. */
+  "theme-8": {
+    hero: { hasImage: true, maxImages: 1 },
+    gallery: { variant: "images-with-category" },
+  },
 };

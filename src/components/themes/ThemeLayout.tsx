@@ -119,6 +119,19 @@ import {
   Theme7FAQSection,
   Theme7Footer,
 } from "./theme-7";
+import {
+  Theme8Header,
+  Theme8Hero,
+  Theme8AboutUs,
+  Theme8SocialProof,
+  Theme8Services,
+  Theme8GallerySection,
+  Theme8TestimonialsSection,
+  Theme8FAQSection,
+  Theme8Footer,
+  Y2KFilters,
+} from "./theme-8";
+import { Theme8ModalProvider } from "./theme-8/Theme8ModalProvider";
 
 interface Testimonial {
   _id: string;
@@ -203,6 +216,7 @@ export function ThemeLayout({
     "theme-5": "images-only",
     "theme-6": "images-only",
     "theme-7": "images-with-category",
+    "theme-8": "images-with-category",
   };
   const effectiveGalleryVariant: "images-only" | "images-with-category" =
     ls?.landing?.gallery?.galleryVariant ??
@@ -1072,6 +1086,114 @@ export function ThemeLayout({
           email={salon.contactEmail || salon.email}
           workingHours={salon.workingHours}
         />
+      </div>
+    );
+  }
+
+  // ── Theme 8: Y2K Lash (graffiti-wall Bratz-doll studio) ────────────────────
+  if (theme === "theme-8") {
+    const igLink = ls?.landing?.gallery?.instagram?.link || instagram;
+    const igHandle = ls?.landing?.gallery?.instagram?.username;
+    // Y2K display + UI fonts (variable href matches the per-theme font-load pattern)
+    const y2kFontHref =
+      "https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Caveat:wght@600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap";
+    const aboutImage = ls?.landing?.about?.image?.src
+      ? {
+          src: ls.landing.about.image.src,
+          alt: ls.landing.about.image.alt ?? "",
+        }
+      : undefined;
+
+    return (
+      <div className="relative min-h-screen flex flex-col font-outfit text-y2k-ink bg-y2k-plum">
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="stylesheet" href={y2kFontHref} />
+        <Y2KFilters />
+        {/* fixed graffiti-wall backdrop */}
+        <div className="fixed inset-0 z-0 bg-[url('/images/theme-8/wall.png')] bg-cover bg-center" />
+        <div className="fixed inset-0 z-0 pointer-events-none bg-[radial-gradient(120%_80%_at_50%_0%,rgba(20,2,16,0)_40%,rgba(20,2,16,0.45)_100%)]" />
+        <div className="fixed inset-0 z-0 pointer-events-none bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(40,5,30,0.12))]" />
+
+        <Theme8ModalProvider
+          booking={{
+            tenantSlug,
+            clientSlug: clientSlug ?? tenantSlug,
+            salon,
+            services,
+          }}
+        >
+          <div className="relative z-10 flex flex-col min-h-screen">
+            <Theme8Header {...headerProps} />
+            <main className="flex-1 overflow-x-clip flex flex-col">
+              {heroEnabled && (
+                <Theme8Hero
+                  heroData={{
+                    headline: ls?.landing?.hero?.headline,
+                    subheadline: ls?.landing?.hero?.subheadline,
+                    image: ls?.landing?.hero?.image,
+                  }}
+                  cta={resolvedCta}
+                  salonName={salon.name}
+                  tenantStats={tenantStats}
+                  yearsOfExperience={ls?.landing?.about?.yearsOfExperience}
+                />
+              )}
+              {aboutEnabled && (
+              <Theme8AboutUs
+                about={{
+                  headline: ls?.landing?.about?.headline,
+                  paragraphs: ls?.landing?.about?.paragraphs ?? [],
+                  links: ls?.landing?.about?.links ?? [],
+                  image: aboutImage,
+                }}
+                founderName={salon.name}
+              />
+            )}
+            <Theme8SocialProof
+              instagramUrl={igLink}
+              instagramHandle={igHandle}
+            />
+            {servicesPreviewEnabled && services.length > 0 && (
+              <Theme8Services
+                services={services}
+                tenantSlug={tenantSlug}
+                headline={ls?.landing?.servicesPreview?.headline}
+                subheadline={ls?.landing?.servicesPreview?.subheadline}
+              />
+            )}
+            {galleryEnabled && (
+              <Theme8GallerySection
+                treatments={ls?.landing?.gallery?.treatments}
+                headline={ls?.landing?.gallery?.headline}
+                tenantSlug={tenantSlug}
+              />
+            )}
+            {testimonialsEnabled && (
+              <Theme8TestimonialsSection
+                testimonials={
+                  testimonials.length > 0 ? testimonials : undefined
+                }
+                headline={ls?.landing?.testimonials?.headline}
+              />
+            )}
+            {faqEnabled && (
+              <Theme8FAQSection
+                items={ls?.landing?.faq?.items}
+                headline={ls?.landing?.faq?.headline}
+                supportText={ls?.landing?.faq?.support?.text}
+              />
+            )}
+          </main>
+            <Theme8Footer
+              salonName={salon.name}
+              logo={salon.logo ?? undefined}
+              instagramUrl={igLink}
+              instagramHandle={igHandle}
+              email={salon.contactEmail || salon.email}
+              workingHours={salon.workingHours}
+            />
+          </div>
+        </Theme8ModalProvider>
       </div>
     );
   }

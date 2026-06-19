@@ -7,7 +7,8 @@ export type LandingTheme =
   | "theme-4"
   | "theme-5"
   | "theme-6"
-  | "theme-7";
+  | "theme-7"
+  | "theme-8";
 
 const ctaSchema = new mongoose.Schema({
   text: { type: String },
@@ -266,6 +267,7 @@ const SalonProfileSchema = new mongoose.Schema(
         "theme-5",
         "theme-6",
         "theme-7",
+        "theme-8",
       ],
       default: "theme-1",
     },

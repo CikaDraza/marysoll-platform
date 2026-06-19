@@ -1,0 +1,12 @@
+export { FadeUp } from "./FadeUp";
+export { Deco, Y2KFilters } from "./Decorations";
+export { Theme8Header } from "./Header";
+export { Theme8Hero } from "./Hero";
+export { Theme8AboutUs } from "./AboutUs";
+export { Theme8SocialProof } from "./SocialProof";
+export { Theme8Services } from "./Services";
+export { Theme8GallerySection } from "./GallerySection";
+export { Theme8TestimonialsSection } from "./TestimonialsSection";
+export { Theme8FAQSection } from "./FAQSection";
+export { Theme8WorkingHours } from "./WorkingHours";
+export { Theme8Footer } from "./Footer";

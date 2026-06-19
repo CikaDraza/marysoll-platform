@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import type { LandingTheme } from "@/types";
 
 interface TenantCtx {
   tenantSlug: string;
@@ -11,6 +12,12 @@ interface TenantCtx {
    * - "/{slug}" on localhost path-based dev — links include the slug (/kiki-kiss/panel)
    */
   base: string;
+  /**
+   * The salon's selected landing theme. Used by tenant auth pages to render the
+   * matching themed form (e.g. the Y2K forms for "theme-8"). Optional — defaults
+   * to undefined when not resolved.
+   */
+  landingTheme?: LandingTheme;
 }
 
 export const TenantContext = createContext<TenantCtx>({
@@ -23,10 +30,11 @@ export function TenantProvider({
   tenantSlug,
   tenantId,
   base,
+  landingTheme,
   children,
 }: TenantCtx & { children: React.ReactNode }) {
   return (
-    <TenantContext.Provider value={{ tenantSlug, tenantId, base }}>
+    <TenantContext.Provider value={{ tenantSlug, tenantId, base, landingTheme }}>
       {children}
     </TenantContext.Provider>
   );

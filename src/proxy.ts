@@ -789,6 +789,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|assets/|.*\\.png|.*\\.svg|.*\\.ico|.*\\.mp4|.*\\.webm|.*\\.ogg|.*\\.mp3|service-worker\\.js).*)",
+    "/((?!_next/static|_next/image|favicon.ico|assets/|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.webp|.*\\.gif|.*\\.svg|.*\\.ico|.*\\.mp4|.*\\.webm|.*\\.ogg|.*\\.mp3|service-worker\\.js).*)",
   ],
 };
