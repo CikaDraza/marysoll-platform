@@ -29,7 +29,7 @@ export function Y2KAuthShell({
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="stylesheet" href={Y2K_FONT_HREF} />
       {/* graffiti wall background */}
-      <div className="absolute inset-0 bg-[url('/images/theme-8/wall.png')] bg-cover bg-center" />
+      <div className="absolute inset-0 bg-[url('/images/theme-8/bg-wallpaper_1_.webp')] bg-cover bg-center" />
       <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,rgba(20,2,16,0)_40%,rgba(20,2,16,0.55)_100%)]" />
 
       <div

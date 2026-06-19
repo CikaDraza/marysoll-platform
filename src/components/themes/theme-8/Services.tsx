@@ -97,42 +97,52 @@ export function Theme8Services({
                   key={s._id}
                   type="button"
                   onClick={() => setOpen(isOpen ? null : i)}
-                  className="w-full flex items-center gap-4 py-5 text-left border-b-2 border-dashed border-y2k-ink/20 last:border-b-0 group"
+                  className="w-full flex items-start gap-3 sm:gap-4 py-5 text-left border-b-2 border-dashed border-y2k-ink/20 last:border-b-0 group"
                 >
-                  <span className="font-bagel text-[26px] text-y2k-pink w-10 shrink-0">
+                  <span className="font-bagel text-[22px] sm:text-[26px] text-y2k-pink w-8 sm:w-10 shrink-0">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <div className="font-extrabold text-[21px] text-y2k-ink flex items-center gap-2 flex-wrap">
-                      {s.name}
-                      {featured && (
-                        <span className="bg-y2k-pink text-white text-[11px] font-extrabold tracking-[0.1em] px-2 py-0.5 rounded-full rotate-[-3deg] inline-block">
-                          POPULAR
+                    {/* name + (desktop price) + toggle */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="font-extrabold text-[18px] sm:text-[21px] text-y2k-ink flex items-center gap-2 flex-wrap">
+                        {s.name}
+                        {featured && (
+                          <span className="bg-y2k-pink text-white text-[11px] font-extrabold tracking-[0.1em] px-2 py-0.5 rounded-full rotate-[-3deg] inline-block">
+                            POPULAR
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="hidden sm:block font-bagel text-[24px] text-y2k-ink whitespace-nowrap">
+                          {priceLabel(s)}
                         </span>
-                      )}
+                        <span
+                          className={`grid place-items-center w-[30px] h-[30px] border-[3px] border-y2k-ink rounded-full text-[16px] font-extrabold leading-none transition-all duration-300 ${
+                            isOpen
+                              ? "rotate-[135deg] bg-y2k-pink text-white"
+                              : "text-y2k-ink"
+                          }`}
+                        >
+                          +
+                        </span>
+                      </div>
                     </div>
+                    {/* price below the name on mobile */}
+                    <div className="sm:hidden font-bagel text-[20px] text-y2k-ink mt-1">
+                      {priceLabel(s)}
+                    </div>
+                    {/* expandable description — animates height only, width stays fixed */}
                     <div
-                      className={`font-medium text-[#4a3340] text-[15px] mt-1 transition-all duration-500 ${
-                        isOpen
-                          ? "whitespace-normal"
-                          : "whitespace-nowrap overflow-hidden text-ellipsis max-w-[52ch]"
+                      className={`overflow-hidden transition-[max-height] duration-500 ease-in-out mt-1.5 ${
+                        isOpen ? "max-h-[600px]" : "max-h-[1.5rem]"
                       }`}
                     >
-                      {s.description}
+                      <p className="font-medium text-[#4a3340] text-[15px] leading-[1.5]">
+                        {s.description}
+                      </p>
                     </div>
                   </div>
-                  <span className="font-bagel text-[24px] text-y2k-ink shrink-0 whitespace-nowrap">
-                    {priceLabel(s)}
-                  </span>
-                  <span
-                    className={`shrink-0 grid place-items-center w-[30px] h-[30px] border-[3px] border-y2k-ink rounded-full text-[16px] font-extrabold leading-none transition-all duration-300 ${
-                      isOpen
-                        ? "rotate-[135deg] bg-y2k-pink text-white"
-                        : "text-y2k-ink"
-                    }`}
-                  >
-                    +
-                  </span>
                 </button>
               );
             })}

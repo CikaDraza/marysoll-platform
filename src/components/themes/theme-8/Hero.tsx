@@ -32,6 +32,17 @@ const DEFAULT_DESCRIPTION =
 const CHROME =
   "bg-[linear-gradient(180deg,#ffffff_0%,#e9ebee_26%,#a9adb5_50%,#f6f8fa_64%,#bfc3ca_82%,#8f939b_100%)] bg-clip-text text-transparent";
 
+/** Marquee items — alternating hot-pink / white. Shared by desktop + mobile strips. */
+const MARQUEE_ITEMS: { t: string; hot?: boolean }[] = [
+  { t: "★ CLASSIC", hot: true },
+  { t: "HYBRID" },
+  { t: "VOLUMEN", hot: true },
+  { t: "LASH LIFT" },
+  { t: "REFILL", hot: true },
+  { t: "L VOLUMEN" },
+  { t: "★ IT-GIRL APPROVED", hot: true },
+];
+
 /**
  * Render a salon/CMS name as the stacked Y2K wordmark:
  *   line 1  → chrome-gradient   (e.g. "LASH")
@@ -39,7 +50,10 @@ const CHROME =
  *   tail    → Caveat purple     (e.g. "by Anja")
  */
 function Wordmark({ text }: { text: string }) {
-  const words = text.replace(/^the\s+/i, "").trim().split(/\s+/);
+  const words = text
+    .replace(/^the\s+/i, "")
+    .trim()
+    .split(/\s+/);
   const byIdx = words.findIndex((w) => w.toLowerCase() === "by");
   const main = byIdx >= 0 ? words.slice(0, byIdx) : words;
   const tail = byIdx >= 0 ? words.slice(byIdx).join(" ") : "";
@@ -79,12 +93,15 @@ export function Theme8Hero({
   const appointmentCount = tenantStats?.appointmentCount ?? 0;
   const hasRealTraction =
     appointmentCount > 3 && (tenantStats?.reviewCount ?? 0) > 3;
-  const setsCrafted = hasRealTraction ? formatStatValue(appointmentCount) : "1.2k+";
+  const setsCrafted = hasRealTraction
+    ? formatStatValue(appointmentCount)
+    : "1.2k+";
   const years = yearsOfExperience
     ? `${yearsOfExperience} yrs`
     : `${Math.max(1, new Date().getFullYear() - STUDIO_OPENED_YEAR)} yrs`;
 
-  const wordmark = heroData.headline?.trim() || salonName || "Lash Room by Anja";
+  const wordmark =
+    heroData.headline?.trim() || salonName || "Lash Room by Anja";
 
   return (
     <section className="relative max-w-[1280px] mx-auto px-5 pt-10 pb-24">
@@ -174,7 +191,7 @@ export function Theme8Hero({
                 className="block w-full h-[200px] object-cover object-[50%_22%]"
               />
               <span className="absolute left-0 right-0 bottom-2.5 text-center font-caveat font-bold text-[22px] text-y2k-ink">
-                {(salonName?.split(/\s+/).pop() ?? "Anja")}, your artist ♡
+                {salonName?.split(/\s+/).pop() ?? "Anja"}, your artist ♡
               </span>
             </div>
             <div className="absolute -top-3 right-7 w-20 h-6 bg-[linear-gradient(135deg,rgba(255,255,255,0.55),rgba(200,170,255,0.6))] shadow-[0_3px_7px_rgba(0,0,0,0.18)] rotate-[9deg]" />
@@ -182,16 +199,30 @@ export function Theme8Hero({
         </FadeUp>
       </div>
 
-      {/* marquee strip */}
-      <FadeUp className="mt-14 bg-y2k-ink border-[3px] border-y2k-ink rounded-full overflow-hidden rotate-[-1deg] shadow-[6px_8px_0_rgba(255,46,151,0.55)]">
+      {/* marquee strip — desktop: single wrapping row */}
+      <FadeUp className="mt-14 hidden sm:block bg-y2k-ink border-[3px] border-y2k-ink rounded-full overflow-hidden rotate-[-1deg] shadow-[6px_8px_0_rgba(255,46,151,0.55)]">
         <div className="flex flex-wrap items-center justify-center gap-6 px-6 py-3.5 text-white font-bagel text-[20px] tracking-[0.02em] whitespace-nowrap">
-          <span className="text-y2k-hot">★ CLASSIC</span>
-          <span>HYBRID</span>
-          <span className="text-y2k-hot">VOLUMEN</span>
-          <span>LASH LIFT</span>
-          <span className="text-y2k-hot">REFILL</span>
-          <span>L VOLUMEN</span>
-          <span className="text-y2k-hot">★ IT-GIRL APPROVED</span>
+          {MARQUEE_ITEMS.map((m) => (
+            <span key={m.t} className={m.hot ? "text-y2k-hot" : undefined}>
+              {m.t}
+            </span>
+          ))}
+        </div>
+      </FadeUp>
+
+      {/* marquee strip — mobile: two-by-two grid */}
+      <FadeUp className="mt-12 sm:hidden bg-y2k-ink border-[3px] border-y2k-ink rounded-[34px] overflow-hidden rotate-[-1deg] shadow-[6px_8px_0_rgba(255,46,151,0.55)]">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-2 px-6 py-4 text-white font-bagel text-[18px] tracking-[0.02em] text-center">
+          {MARQUEE_ITEMS.map((m, idx) => (
+            <span
+              key={m.t}
+              className={`${m.hot ? "text-y2k-hot" : ""} ${
+                idx === MARQUEE_ITEMS.length - 1 ? "col-span-2" : ""
+              }`}
+            >
+              {m.t}
+            </span>
+          ))}
         </div>
       </FadeUp>
 
@@ -223,7 +254,9 @@ function Stat({
   const valueColor =
     tone === "ink" ? "text-y2k-hot" : tone === "white" ? "text-y2k-purple" : "";
   return (
-    <div className={`rounded-3xl px-7 py-6 min-w-[180px] text-center ${styles}`}>
+    <div
+      className={`rounded-3xl px-7 py-6 min-w-[180px] text-center ${styles}`}
+    >
       <div className={`font-bagel text-5xl leading-none ${valueColor}`}>
         {value}
       </div>

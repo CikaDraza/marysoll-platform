@@ -1110,7 +1110,7 @@ export function ThemeLayout({
         <link rel="stylesheet" href={y2kFontHref} />
         <Y2KFilters />
         {/* fixed graffiti-wall backdrop */}
-        <div className="fixed inset-0 z-0 bg-[url('/images/theme-8/wall.png')] bg-cover bg-center" />
+        <div className="fixed inset-0 z-0 bg-[url('/images/theme-8/bg-wallpaper_1_.webp')] bg-cover bg-center" />
         <div className="fixed inset-0 z-0 pointer-events-none bg-[radial-gradient(120%_80%_at_50%_0%,rgba(20,2,16,0)_40%,rgba(20,2,16,0.45)_100%)]" />
         <div className="fixed inset-0 z-0 pointer-events-none bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(40,5,30,0.12))]" />
 
@@ -1139,51 +1139,51 @@ export function ThemeLayout({
                 />
               )}
               {aboutEnabled && (
-              <Theme8AboutUs
-                about={{
-                  headline: ls?.landing?.about?.headline,
-                  paragraphs: ls?.landing?.about?.paragraphs ?? [],
-                  links: ls?.landing?.about?.links ?? [],
-                  image: aboutImage,
-                }}
-                founderName={salon.name}
+                <Theme8AboutUs
+                  about={{
+                    headline: ls?.landing?.about?.headline,
+                    paragraphs: ls?.landing?.about?.paragraphs ?? [],
+                    links: ls?.landing?.about?.links ?? [],
+                    image: aboutImage,
+                  }}
+                  founderName={salon.name}
+                />
+              )}
+              <Theme8SocialProof
+                instagramUrl={igLink}
+                instagramHandle={igHandle}
               />
-            )}
-            <Theme8SocialProof
-              instagramUrl={igLink}
-              instagramHandle={igHandle}
-            />
-            {servicesPreviewEnabled && services.length > 0 && (
-              <Theme8Services
-                services={services}
-                tenantSlug={tenantSlug}
-                headline={ls?.landing?.servicesPreview?.headline}
-                subheadline={ls?.landing?.servicesPreview?.subheadline}
-              />
-            )}
-            {galleryEnabled && (
-              <Theme8GallerySection
-                treatments={ls?.landing?.gallery?.treatments}
-                headline={ls?.landing?.gallery?.headline}
-                tenantSlug={tenantSlug}
-              />
-            )}
-            {testimonialsEnabled && (
-              <Theme8TestimonialsSection
-                testimonials={
-                  testimonials.length > 0 ? testimonials : undefined
-                }
-                headline={ls?.landing?.testimonials?.headline}
-              />
-            )}
-            {faqEnabled && (
-              <Theme8FAQSection
-                items={ls?.landing?.faq?.items}
-                headline={ls?.landing?.faq?.headline}
-                supportText={ls?.landing?.faq?.support?.text}
-              />
-            )}
-          </main>
+              {servicesPreviewEnabled && services.length > 0 && (
+                <Theme8Services
+                  services={services}
+                  tenantSlug={tenantSlug}
+                  headline={ls?.landing?.servicesPreview?.headline}
+                  subheadline={ls?.landing?.servicesPreview?.subheadline}
+                />
+              )}
+              {galleryEnabled && (
+                <Theme8GallerySection
+                  treatments={ls?.landing?.gallery?.treatments}
+                  headline={ls?.landing?.gallery?.headline}
+                  tenantSlug={tenantSlug}
+                />
+              )}
+              {testimonialsEnabled && (
+                <Theme8TestimonialsSection
+                  testimonials={
+                    testimonials.length > 0 ? testimonials : undefined
+                  }
+                  headline={ls?.landing?.testimonials?.headline}
+                />
+              )}
+              {faqEnabled && (
+                <Theme8FAQSection
+                  items={ls?.landing?.faq?.items}
+                  headline={ls?.landing?.faq?.headline}
+                  supportText={ls?.landing?.faq?.support?.text}
+                />
+              )}
+            </main>
             <Theme8Footer
               salonName={salon.name}
               logo={salon.logo ?? undefined}
