@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { FadeUp } from "./FadeUp";
 
 interface FaqItem {
@@ -45,9 +44,9 @@ export function Theme8FAQSection({ items, headline, supportText }: Props) {
   return (
     <section id="faq" className="relative max-w-[980px] mx-auto my-28 px-5">
       <FadeUp>
-        <div className="relative rotate-[-1deg]">
+        <div className="relative w-full rotate-[-1deg]">
           <div className="absolute -inset-2.5 bg-y2k-paper [filter:url(#y2k-torn2)] shadow-[0_24px_56px_rgba(20,0,30,0.4)]" />
-          <div className="relative px-6 sm:px-10 py-9">
+          <div className="relative w-full px-6 sm:px-10 py-9">
             <div className="text-center mb-6">
               <span className="inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink">
                 Q&amp;A
@@ -65,10 +64,14 @@ export function Theme8FAQSection({ items, headline, supportText }: Props) {
             {faqs.map((f, i) => {
               const isOpen = open === i;
               return (
-                <div key={i} className="border-t-2 border-y2k-ink/15 last:border-b-2">
+                <div
+                  key={i}
+                  className="w-full border-t-2 border-y2k-ink/15 last:border-b-2"
+                >
                   <button
                     type="button"
                     onClick={() => setOpen(isOpen ? -1 : i)}
+                    aria-expanded={isOpen}
                     className="w-full flex items-center justify-between gap-3.5 py-[18px] text-left group"
                   >
                     <span className="font-extrabold text-[19px] text-y2k-ink group-hover:text-y2k-pink transition-colors">
@@ -76,28 +79,27 @@ export function Theme8FAQSection({ items, headline, supportText }: Props) {
                     </span>
                     <span
                       className={`shrink-0 grid place-items-center w-8 h-8 border-[3px] border-y2k-ink rounded-full text-[18px] transition-all duration-300 ${
-                        isOpen ? "rotate-[135deg] bg-y2k-pink text-white" : "text-y2k-ink"
+                        isOpen
+                          ? "rotate-[135deg] bg-y2k-pink text-white"
+                          : "text-y2k-ink"
                       }`}
                     >
                       +
                     </span>
                   </button>
-                  <AnimatePresence initial={false}>
-                    {isOpen && (
-                      <motion.div
-                        key="panel"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.4, ease: [0.2, 0.7, 0.2, 1] }}
-                        className="overflow-hidden"
-                      >
-                        <p className="text-[16px] leading-[1.6] text-[#42303a] font-medium pb-[18px]">
-                          {f.answer}
-                        </p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  {/* Real accordion: full-width grid row animates 0fr → 1fr.
+                      Width never changes; the panel stays mounted (no display:none). */}
+                  <div
+                    className={`grid w-full transition-all duration-[450ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] ${
+                      isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                    }`}
+                  >
+                    <div className="min-h-0 overflow-hidden">
+                      <p className="text-[16px] leading-[1.6] text-[#42303a] font-medium pb-[18px]">
+                        {f.answer}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               );
             })}
