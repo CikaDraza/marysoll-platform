@@ -125,45 +125,49 @@ export function CrownDoodle({
 }
 
 /**
- * Stylized handwritten "Queen Anja" signature with a crown.
- * Draws in sequence: Queen → Anja → crown (per the brief).
- * The lettering is an evocative graffiti script, not a typeface.
+ * Handwritten "Queen Anja" signature — drawn like a marker, WORD BY WORD:
+ * "Queen" writes left→right, then "Anja", then the crown last (sequenced via
+ * the parent's staggerChildren). Centerline single strokes (not a filled
+ * outline), so each letter is traced start→end like real writing.
+ *
+ * Stylized graffiti script — tweak the path data to taste, or drop in a
+ * centerline/single-line SVG export of your own lettering for an exact match.
  */
 export function QueenAnjaDoodle({
-  size = 320,
+  size = 460,
   className,
   glow = "pink",
   stroke = "#ff2e97",
 }: DoodleProps) {
   return (
     <DrawDoodle
-      viewBox="0 0 380 150"
+      viewBox="0 0 600 220"
       width={size}
       className={className}
       glow={glow}
-      stagger={1.1}
-      delay={0.1}
+      stagger={1.8}
+      delay={0.15}
     >
-      {/* "Queen" */}
+      {/* word 1 — "Queen" (one continuous cursive stroke) */}
       <DrawStroke
-        d="M22 96 C30 66 58 64 62 94 C64 108 50 114 46 100 C44 116 66 120 82 106 C94 96 88 74 80 76 C94 74 102 92 98 108 C114 99 112 76 104 76 C120 78 124 98 140 94 C152 91 152 74 144 72 C158 76 164 96 182 90"
+        d="M60 110 C34 108 36 162 74 160 C104 158 110 116 88 104 C78 99 70 104 74 118 C80 152 92 182 126 164 C138 158 142 126 138 116 C136 150 146 178 162 168 C172 162 174 138 168 126 C168 152 178 176 196 168 C206 163 206 140 198 130 C190 122 180 128 184 140 C194 156 214 158 226 146 C232 140 232 132 230 126 C229 152 230 176 240 178"
         stroke={stroke}
-        strokeWidth={7}
-        duration={1.9}
+        strokeWidth={8}
+        duration={1.7}
       />
-      {/* "Anja" */}
+      {/* word 2 — "Anja" (drawn after Queen finishes) */}
       <DrawStroke
-        d="M206 108 C214 72 234 72 242 108 M214 94 L236 94 M254 76 C252 98 256 110 266 100 C278 90 270 74 264 78 C280 76 288 96 284 112 M300 76 C298 100 300 110 292 118 C286 124 278 118 282 110 M316 76 C316 96 316 108 326 102 C338 94 332 74 324 78 C338 76 346 96 340 114"
+        d="M352 176 L380 96 L408 176 M362 150 L398 150 M430 176 L430 128 C430 116 456 116 458 134 L458 176 M480 128 L480 182 C480 202 466 204 458 192 M480 104 L480 106 M540 140 C522 132 514 160 530 172 C542 180 554 170 554 154 L554 128 L554 176"
         stroke={stroke}
-        strokeWidth={7}
-        duration={1.9}
+        strokeWidth={8}
+        duration={1.7}
       />
-      {/* crown above, drawn last */}
+      {/* crown last, above the words */}
       <DrawStroke
-        d="M150 44 L160 16 L178 34 L196 10 L214 34 L232 16 L242 44"
+        d="M237 84 L251 38 L281 68 L307 26 L333 68 L363 38 L377 84 M241 96 L373 96"
         stroke="#8B16C9"
-        strokeWidth={7}
-        duration={1.1}
+        strokeWidth={8}
+        duration={1.0}
       />
     </DrawDoodle>
   );

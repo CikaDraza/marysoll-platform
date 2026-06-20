@@ -134,10 +134,10 @@ import {
 import { Theme8ModalProvider } from "./theme-8/Theme8ModalProvider";
 import {
   BackgroundWall,
-  SprayLayer,
-  StickerLayer,
+  FixedDecorLayer,
   DoodleLayer,
   SparkleLayer,
+  IntroFade,
 } from "./theme-8/motion";
 
 interface Testimonial {
@@ -1118,8 +1118,7 @@ export function ThemeLayout({
         <Y2KFilters />
         {/* Multi-layer graffiti decoration system (all pointer-events-none) */}
         <BackgroundWall />
-        <SprayLayer />
-        <StickerLayer />
+        <FixedDecorLayer />
         <DoodleLayer />
 
         <Theme8ModalProvider
@@ -1130,7 +1129,11 @@ export function ThemeLayout({
             services,
           }}
         >
-          <div className="relative z-10 flex flex-col min-h-screen">
+          <IntroFade
+            className="relative z-10 flex flex-col min-h-screen"
+            delay={0.95}
+            duration={0.7}
+          >
             <Theme8Header {...headerProps} />
             <main className="flex-1 overflow-x-clip flex flex-col">
               {heroEnabled && (
@@ -1200,7 +1203,7 @@ export function ThemeLayout({
               email={salon.contactEmail || salon.email}
               workingHours={salon.workingHours}
             />
-          </div>
+          </IntroFade>
         </Theme8ModalProvider>
 
         {/* sparkle layer sits above content (decorative only) */}

@@ -6,6 +6,7 @@ import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import { FadeUp } from "./FadeUp";
 import { Deco } from "./Decorations";
 import { useTheme8Modal } from "./Theme8ModalProvider";
+import Link from "next/link";
 
 interface Props {
   heroData: {
@@ -61,7 +62,7 @@ function Wordmark({ text }: { text: string }) {
   const line2 = main.slice(1).join(" ");
 
   return (
-    <h1 className="font-bagel leading-[0.82] tracking-[-0.01em] m-0">
+    <h1 className="relative z-2 font-bagel leading-[0.82] tracking-[-0.01em] m-0">
       <span
         className={`block text-[clamp(64px,11vw,168px)] rotate-[-2deg] drop-shadow-[3px_3px_0_#0b0b0f] ${CHROME}`}
       >
@@ -109,13 +110,13 @@ export function Theme8Hero({
       <Deco
         shape="star"
         size={78}
-        className="absolute left-[2%] top-[120px] rotate-[-12deg] z-[5] drop-shadow-[3px_4px_0_rgba(11,11,15,0.5)]"
+        className="absolute z-10 left-[2%] top-[120px] rotate-[-12deg] drop-shadow-[3px_4px_0_rgba(11,11,15,0.5)]"
       />
       <Deco
         shape="sparkle"
         size={46}
         motionType="twinkle"
-        className="absolute left-[46%] top-[38px] z-[5]"
+        className="absolute left-[46%] top-[38px] z-5"
       />
       <Deco
         shape="heart"
@@ -133,9 +134,19 @@ export function Theme8Hero({
             Lash artistry &amp; it-girl energy
           </div>
           <Wordmark text={wordmark} />
-          <p className="max-w-[430px] mt-5 text-[18px] leading-[1.55] font-medium text-y2k-plum bg-white/75 backdrop-blur-[2px] px-[18px] py-3.5 rounded-[14px] border-2 border-y2k-ink/10">
-            {heroData.subheadline || DEFAULT_DESCRIPTION}
-          </p>
+          <div className="relative mt-3 text-[15px] text-[#42303a] font-medium max-w-lg">
+            <Image
+              src="/images/theme-8/paint-streak.png"
+              alt=""
+              aria-hidden="true"
+              width={500}
+              height={500}
+              className="absolute left-1/2 top-[48%] w-[560px] max-w-[104%] h-auto -translate-x-1/2 -translate-y-1/2 scale-150 opacity-90 z-0 pointer-events-none"
+            />
+            <p className="max-w-[430px] relative z-1 mt-5 text-[18px] leading-[1.55] font-medium text-y2k-plum px-[18px] py-3.5 rounded-[14px]">
+              {heroData.subheadline || DEFAULT_DESCRIPTION}
+            </p>
+          </div>
           <div className="flex flex-wrap gap-4 mt-6 items-center">
             <button
               type="button"
@@ -145,12 +156,12 @@ export function Theme8Hero({
               {cta.primary.text || "Book your slot"}
               <Deco shape="sparkle" size={20} strokeWidth={0} />
             </button>
-            <a
+            <Link
               href={cta.secondary?.href || "#gallery"}
               className="inline-flex items-center gap-2 bg-white text-y2k-purple font-extrabold text-[16px] tracking-[0.03em] uppercase px-6 py-4 border-[4px] border-y2k-ink rounded-[36px_44px_32px_42px/44px_32px_44px_34px] shadow-[6px_6px_0_#8B16C9] rotate-[1.5deg] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[9px_9px_0_#8B16C9] transition-all duration-200"
             >
               {cta.secondary?.text || "See the lashes →"}
-            </a>
+            </Link>
           </div>
         </FadeUp>
 

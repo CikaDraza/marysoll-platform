@@ -104,7 +104,11 @@ function Polaroid({
   );
 }
 
-export function Theme8GallerySection({ treatments, headline, tenantSlug }: Props) {
+export function Theme8GallerySection({
+  treatments,
+  headline,
+  tenantSlug,
+}: Props) {
   const base = tenantSlug ? `/${tenantSlug}` : "";
   const resolveHref = (href: string) => {
     if (!href) return `${base}/termini`;
@@ -116,9 +120,20 @@ export function Theme8GallerySection({ treatments, headline, tenantSlug }: Props
     treatments && treatments.length > 0 ? treatments : DEFAULT_TREATMENTS;
 
   return (
-    <section id="gallery" className="relative max-w-[1180px] mx-auto my-28 px-5">
-      <FadeUp className="text-center mb-12">
-        <span className="inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink">
+    <section
+      id="gallery"
+      className="relative max-w-[1180px] mx-auto my-28 px-5"
+    >
+      <FadeUp className="relative text-center mb-12">
+        <Image
+          src="/images/theme-8/paint-streak.png"
+          alt=""
+          aria-hidden="true"
+          width={560}
+          height={200}
+          className="absolute left-1/2 top-[48%] w-[560px] max-w-[104%] -translate-x-1/2 -translate-y-1/2 scale-110 opacity-90 z-0 pointer-events-none"
+        />
+        <span className="relative z-[1] inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink">
           {headline || "The gallery"}
         </span>
         <h2 className="mt-1.5 font-bagel text-[clamp(44px,7vw,92px)] leading-[0.9] text-white [-webkit-text-stroke:3px_#0b0b0f] [text-shadow:5px_6px_0_rgba(255,46,151,0.7)] rotate-[-1deg]">
@@ -144,7 +159,9 @@ export function Theme8GallerySection({ treatments, headline, tenantSlug }: Props
               <h3 className="mt-1 mb-2.5 font-bagel text-[34px] leading-[0.95]">
                 {t.title}
               </h3>
-              <p className={`m-0 text-[15px] leading-[1.55] font-medium ${ps.body}`}>
+              <p
+                className={`m-0 text-[15px] leading-[1.55] font-medium ${ps.body}`}
+              >
                 {t.description}
               </p>
               <Link

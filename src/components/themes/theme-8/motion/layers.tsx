@@ -4,19 +4,19 @@
  * Theme-8 decoration layer system (Bratz / Y2K graffiti wall).
  *
  *   BackgroundWall  — fixed wallpaper + depth gradients (z-0)
- *   SprayLayer      — neon graffiti sprays that spray-on once (z-1, behind content)
- *   StickerLayer    — floating WebP/PNG stickers (z-2, behind content)
+ *   FixedDecorLayer — ALL spray + sticker assets, FIXED on the background,
+ *                     hugging the content container, large & visible (z-0).
+ *                     sticker-sprite-1/2 get a one-time "slap onto the screen →
+ *                     recede along Z into the background" intro, then stop.
  *   DoodleLayer     — hand-drawn doodles that draw themselves (z-3, behind content)
  *   SparkleLayer    — hearts / stars / sparkles, bounce & pulse (z-20, OVER content)
  *
- * Every layer is `pointer-events-none` so nothing blocks text or buttons; the
- * over-content sparkle layer only overlaps visually. All loops honor
- * prefers-reduced-motion (via <Deco> / <FloatImg>). Counts are trimmed on mobile.
+ * Every layer is `pointer-events-none` so nothing blocks text or buttons.
+ * Honors prefers-reduced-motion. Counts are trimmed on small screens.
  */
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import { Deco } from "../Decorations";
-import { SprayReveal } from "./SprayReveal";
 import {
   HeartDoodle,
   StarDoodle,
@@ -27,138 +27,207 @@ import {
 const SPRAY = "/images/theme-8/spray";
 const STICK = "/images/theme-8/stickers";
 
+const SPRAY_COLORS = {
+  pink: "#ff2e97",
+  hot: "#ff5fd2",
+  purple: "#8B16C9",
+  red: "#ff2d55",
+  white: "#ffffff",
+} as const;
+type SprayColorKey = keyof typeof SPRAY_COLORS;
+
 /* ── Background wall ─────────────────────────────────────────────────────── */
 
 export function BackgroundWall() {
+  const reduce = useReducedMotion();
   return (
     <>
-      <div className="fixed inset-0 z-0 bg-[url('/images/theme-8/bg-wallpaper_1_.webp')] bg-cover bg-center" />
+      {/* layer 1 — wallpaper fades in first */}
+      <motion.div
+        className="fixed inset-0 z-0 bg-[url('/images/theme-8/bg-wallpaper_1_.webp')] bg-cover bg-center"
+        initial={reduce ? false : { opacity: 0 }}
+        animate={reduce ? undefined : { opacity: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      />
       <div className="fixed inset-0 z-0 pointer-events-none bg-[radial-gradient(120%_80%_at_50%_0%,rgba(20,2,16,0)_40%,rgba(20,2,16,0.45)_100%)]" />
       <div className="fixed inset-0 z-0 pointer-events-none bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(40,5,30,0.12))]" />
     </>
   );
 }
 
-/* ── Spray layer ─────────────────────────────────────────────────────────── */
+/* ── Fixed decoration layer ──────────────────────────────────────────────── */
 
-export function SprayLayer() {
+/** Neon-tinted spray (filled SVG used as a CSS mask). Static, fixed on bg. */
+function SprayStatic({
+  src,
+  color,
+  size,
+  className,
+  opacity = 0.85,
+}: {
+  src: string;
+  color: SprayColorKey;
+  size: number;
+  className?: string;
+  opacity?: number;
+}) {
+  const c = SPRAY_COLORS[color];
   return (
-    <div className="absolute inset-0 z-[1] overflow-hidden pointer-events-none">
-      <SprayReveal
-        src={`${SPRAY}/star-spray.svg`}
-        color="hot"
-        size={210}
-        opacity={0.5}
-        className="absolute left-[-4%] top-[9%] rotate-[-8deg]"
-      />
-      <SprayReveal
-        src={`${SPRAY}/heart-spray-1.svg`}
-        color="pink"
-        size={240}
-        opacity={0.45}
-        className="absolute right-[-5%] top-[30%] rotate-[10deg]"
-      />
-      <SprayReveal
-        src={`${SPRAY}/queen-anja-spray.svg`}
-        color="purple"
-        size={300}
-        opacity={0.4}
-        className="absolute left-[-7%] top-[58%] rotate-[-4deg] hidden sm:block"
-      />
-      <SprayReveal
-        src={`${SPRAY}/flower-spray.svg`}
-        color="hot"
-        size={230}
-        opacity={0.5}
-        className="absolute right-[-4%] bottom-[7%] rotate-[6deg]"
-      />
-    </div>
+    <div
+      aria-hidden="true"
+      className={className}
+      style={{
+        width: size,
+        height: size,
+        opacity,
+        backgroundColor: c,
+        WebkitMaskImage: `url(${src})`,
+        maskImage: `url(${src})`,
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskPosition: "center",
+        maskPosition: "center",
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+        filter: `drop-shadow(0 0 12px ${c}aa)`,
+      }}
+    />
   );
 }
 
-/* ── Sticker layer ───────────────────────────────────────────────────────── */
-
-const FLOAT_LOOPS = {
-  bob: {
-    animate: { y: [0, -12, 0] },
-    transition: { duration: 5, repeat: Infinity, ease: "easeInOut" as const },
-  },
-  wiggle: {
-    animate: { rotate: [-5, 5, -5] },
-    transition: { duration: 4, repeat: Infinity, ease: "easeInOut" as const },
-  },
-};
-
-function FloatImg({
+/**
+ * Sticker that "slaps" onto the screen and recedes along Z to the background.
+ * Plays once on mount (page load), then stops at its resting (background) state.
+ */
+function StickerStick({
   src,
   w,
   h,
   wrapClass,
-  motionType = "bob",
+  delay = 0,
+  rotate = 0,
 }: {
   src: string;
   w: number;
   h: number;
   wrapClass: string;
-  motionType?: "bob" | "wiggle";
+  delay?: number;
+  rotate?: number;
 }) {
   const reduce = useReducedMotion();
-  const loop = reduce ? undefined : FLOAT_LOOPS[motionType];
   return (
-    <div className={wrapClass}>
-      <motion.div animate={loop?.animate} transition={loop?.transition}>
-        <Image
-          src={src}
-          width={w}
-          height={h}
-          alt=""
-          className="w-full h-auto select-none"
-        />
-      </motion.div>
-    </div>
+    <motion.div
+      aria-hidden="true"
+      className={wrapClass}
+      style={{ transformPerspective: 900 }}
+      initial={
+        reduce ? false : { scale: 2, z: 220, opacity: 0, rotate: rotate - 8 }
+      }
+      animate={reduce ? undefined : { scale: 1, z: 0, opacity: 1, rotate }}
+      transition={{ duration: 0.9, ease: [0.34, 1.32, 0.5, 1], delay }}
+    >
+      <Image
+        src={src}
+        width={w}
+        height={h}
+        alt=""
+        className="w-full h-auto select-none drop-shadow-[4px_10px_14px_rgba(11,11,15,0.45)]"
+      />
+    </motion.div>
   );
 }
 
-export function StickerLayer() {
+export function FixedDecorLayer() {
+  const reduce = useReducedMotion();
   return (
-    <div className="absolute inset-0 z-[2] overflow-hidden pointer-events-none">
-      <FloatImg
-        src={`${STICK}/heart-sticker.webp`}
-        w={480}
-        h={550}
-        motionType="bob"
-        wrapClass="absolute right-[4%] top-[13%] w-[60px] sm:w-[92px] rotate-[8deg]"
-      />
-      <FloatImg
-        src={`${STICK}/shine-sticker.webp`}
-        w={600}
-        h={297}
-        motionType="wiggle"
-        wrapClass="absolute left-[5%] top-[27%] w-[88px] sm:w-[128px] rotate-[-6deg]"
-      />
-      <FloatImg
-        src={`${STICK}/sticker-sprite-1.png`}
-        w={806}
-        h={1172}
-        motionType="bob"
-        wrapClass="absolute left-[3%] top-[63%] w-[70px] sm:w-[104px] rotate-[-5deg] hidden sm:block"
-      />
-      <FloatImg
-        src={`${STICK}/sticker-sprite-2.png`}
-        w={449}
-        h={734}
-        motionType="bob"
-        wrapClass="absolute right-[6%] bottom-[15%] w-[58px] sm:w-[82px] rotate-[7deg]"
-      />
-    </div>
+    <motion.div
+      className="fixed inset-0 z-0 overflow-hidden pointer-events-none"
+      initial={reduce ? false : { opacity: 0 }}
+      animate={reduce ? undefined : { opacity: 1 }}
+      transition={{ duration: 0.6, delay: 0.5, ease: "easeOut" }}
+    >
+      <div className="relative mx-auto h-full w-full max-w-[1320px] px-2 sm:px-4">
+        {/* SPRAYS — hug the content edges, large & noticeable */}
+        <SprayStatic
+          src={`${SPRAY}/star-spray.svg`}
+          color="hot"
+          size={300}
+          opacity={0.8}
+          className="absolute left-[-70px] top-[5%] rotate-[-8deg] hidden md:block"
+        />
+        <SprayStatic
+          src={`${SPRAY}/heart-spray-1.svg`}
+          color="pink"
+          size={300}
+          opacity={0.8}
+          className="absolute right-[-60px] top-[32%] rotate-[10deg]"
+        />
+        <SprayStatic
+          src={`${SPRAY}/queen-anja-spray.svg`}
+          color="pink"
+          size={360}
+          opacity={0.7}
+          className="absolute left-[-90px] bottom-[6%] rotate-[-4deg] hidden md:block"
+        />
+        <SprayStatic
+          src={`${SPRAY}/flower-spray.svg`}
+          color="hot"
+          size={300}
+          opacity={0.8}
+          className="absolute right-[-75px] bottom-[8%] rotate-[6deg]"
+        />
+
+        {/* STICKERS — static, large */}
+        <Image
+          src={`${STICK}/heart-sticker.webp`}
+          width={480}
+          height={550}
+          alt=""
+          aria-hidden="true"
+          className="absolute right-[6px] top-[10%] w-[100px] sm:w-[150px] h-auto rotate-[8deg] select-none drop-shadow-[4px_8px_12px_rgba(11,11,15,0.4)]"
+        />
+        <Image
+          src={`${STICK}/shine-sticker.webp`}
+          width={600}
+          height={297}
+          alt=""
+          aria-hidden="true"
+          className="absolute left-[-50px] top-[24%] w-[150px] sm:w-[210px] h-auto rotate-[-6deg] select-none hidden sm:block"
+        />
+
+        {/* STICKER SPRITES — one-time slap → recede-to-background intro */}
+        <StickerStick
+          src={`${STICK}/sticker-sprite-1.png`}
+          w={806}
+          h={1172}
+          delay={0.7}
+          rotate={-5}
+          wrapClass="absolute -left-[150px] top-[48%] w-[130px] sm:w-[180px]"
+        />
+        <StickerStick
+          src={`${STICK}/sticker-sprite-2.png`}
+          w={449}
+          h={734}
+          delay={0.95}
+          rotate={7}
+          wrapClass="absolute -right-[100px] top-[72%] w-[120px] sm:w-[160px]"
+        />
+      </div>
+    </motion.div>
   );
 }
 
 /* ── Doodle layer (drawn-by-hand) ────────────────────────────────────────── */
 
 export function DoodleLayer() {
+  const reduce = useReducedMotion();
   return (
-    <div className="absolute inset-0 z-[3] overflow-hidden pointer-events-none">
+    <motion.div
+      className="absolute inset-0 z-[3] overflow-hidden pointer-events-none"
+      initial={reduce ? false : { opacity: 0 }}
+      animate={reduce ? undefined : { opacity: 1 }}
+      transition={{ duration: 0.6, delay: 0.65, ease: "easeOut" }}
+    >
       <HeartDoodle
         glow="pink"
         className="absolute left-[5%] top-[7%] rotate-[-8deg] w-[58px] sm:w-[84px]"
@@ -180,15 +249,21 @@ export function DoodleLayer() {
         stroke="#ff2d55"
         className="absolute right-[12%] bottom-[9%] rotate-[6deg] w-[50px] sm:w-[68px]"
       />
-    </div>
+    </motion.div>
   );
 }
 
 /* ── Sparkle layer (over content, non-interactive) ───────────────────────── */
 
 export function SparkleLayer() {
+  const reduce = useReducedMotion();
   return (
-    <div className="absolute inset-0 z-20 overflow-hidden pointer-events-none">
+    <motion.div
+      className="absolute inset-0 z-20 overflow-hidden pointer-events-none"
+      initial={reduce ? false : { opacity: 0 }}
+      animate={reduce ? undefined : { opacity: 1 }}
+      transition={{ duration: 0.6, delay: 1.1, ease: "easeOut" }}
+    >
       {/* 3 hearts — different sizes, bounce / pulse */}
       <div className="absolute left-[7%] top-[16%] rotate-[-14deg]">
         <Deco shape="heart" size={30} fill="#ff2e97" motionType="pulse" />
@@ -201,21 +276,54 @@ export function SparkleLayer() {
       </div>
       {/* 3 stars — like the footer star */}
       <div className="absolute right-[6%] top-[11%] rotate-[10deg]">
-        <Deco shape="star" size={34} fill="#ff2e97" stroke="#fff" strokeWidth={4} motionType="bounce" />
+        <Deco
+          shape="star"
+          size={34}
+          fill="#ff2e97"
+          stroke="#fff"
+          strokeWidth={4}
+          motionType="bounce"
+        />
       </div>
       <div className="absolute left-[9%] top-[51%] rotate-[-10deg] hidden sm:block">
-        <Deco shape="star" size={28} fill="#8B16C9" stroke="#fff" strokeWidth={4} motionType="pulse" />
+        <Deco
+          shape="star"
+          size={28}
+          fill="#8B16C9"
+          stroke="#fff"
+          strokeWidth={4}
+          motionType="pulse"
+        />
       </div>
       <div className="absolute right-[14%] bottom-[11%] rotate-[-6deg]">
-        <Deco shape="star" size={40} fill="#fff" stroke="#0b0b0f" strokeWidth={5} motionType="bounce" />
+        <Deco
+          shape="star"
+          size={40}
+          fill="#fff"
+          stroke="#0b0b0f"
+          strokeWidth={5}
+          motionType="bounce"
+        />
       </div>
       {/* twinkling sparkles */}
       <div className="absolute left-[40%] top-[8%]">
-        <Deco shape="sparkle" size={26} fill="#fff" strokeWidth={0} motionType="twinkle" />
+        <Deco
+          shape="sparkle"
+          size={26}
+          fill="#fff"
+          strokeWidth={0}
+          motionType="twinkle"
+        />
       </div>
       <div className="absolute right-[36%] top-[58%] hidden sm:block">
-        <Deco shape="sparkle" size={22} fill="#ff5fd2" strokeWidth={0} motionType="twinkle" />
+        <Deco
+          shape="sparkle"
+          size={22}
+          fill="#ff5fd2"
+          strokeWidth={0}
+          motionType="twinkle"
+        />
       </div>
-    </div>
+    </motion.div>
   );
 }

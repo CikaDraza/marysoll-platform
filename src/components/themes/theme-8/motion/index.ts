@@ -6,10 +6,12 @@ export {
   QueenAnjaDoodle,
 } from "./Doodles";
 export { SprayReveal, type SprayColor } from "./SprayReveal";
+export { QueenAnjaSpray } from "./QueenAnjaSpray";
+export { WriteSVG } from "./WriteSVG";
+export { IntroFade } from "./IntroFade";
 export {
   BackgroundWall,
-  SprayLayer,
-  StickerLayer,
+  FixedDecorLayer,
   DoodleLayer,
   SparkleLayer,
 } from "./layers";
