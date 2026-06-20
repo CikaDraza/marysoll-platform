@@ -10,3 +10,4 @@ export { Theme8TestimonialsSection } from "./TestimonialsSection";
 export { Theme8FAQSection } from "./FAQSection";
 export { Theme8WorkingHours } from "./WorkingHours";
 export { Theme8Footer } from "./Footer";
+export * from "./motion";

@@ -8,7 +8,7 @@
  * Framer Motion loops; respects prefers-reduced-motion automatically via Framer Motion
  * (looping `animate` is paused when the user opts out).
  */
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 const STAR =
   "M50 4 L61 38 L97 38 L68 60 L79 95 L50 73 L21 95 L32 60 L3 38 L39 38 Z";
@@ -26,8 +26,8 @@ interface DecoProps {
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
-  /** "bob" | "wiggle" | "twinkle" | "none" */
-  motionType?: "bob" | "wiggle" | "twinkle" | "none";
+  /** "bob" | "wiggle" | "twinkle" | "bounce" | "pulse" | "none" */
+  motionType?: "bob" | "wiggle" | "twinkle" | "bounce" | "pulse" | "none";
   className?: string;
   style?: React.CSSProperties;
 }
@@ -36,6 +36,10 @@ const LOOPS = {
   bob: { animate: { y: [0, -16, 0] }, transition: { duration: 5, repeat: Infinity, ease: "easeInOut" as const } },
   wiggle: { animate: { rotate: [-6, 6, -6] }, transition: { duration: 3.4, repeat: Infinity, ease: "easeInOut" as const } },
   twinkle: { animate: { opacity: [0.35, 1, 0.35], scale: [0.8, 1.15, 0.8] }, transition: { duration: 2.6, repeat: Infinity, ease: "easeInOut" as const } },
+  // springy hop — a little more energetic than `bob`
+  bounce: { animate: { y: [0, -24, 0] }, transition: { duration: 1.8, repeat: Infinity, times: [0, 0.4, 1], ease: "easeInOut" as const } },
+  // heartbeat-style scale pulse
+  pulse: { animate: { scale: [1, 1.18, 1] }, transition: { duration: 1.7, repeat: Infinity, ease: "easeInOut" as const } },
 };
 
 /** A single floating Y2K sticker (decorative — aria-hidden). */
@@ -49,7 +53,8 @@ export function Deco({
   className,
   style,
 }: DecoProps) {
-  const loop = motionType !== "none" ? LOOPS[motionType] : undefined;
+  const reduce = useReducedMotion();
+  const loop = motionType !== "none" && !reduce ? LOOPS[motionType] : undefined;
   return (
     <motion.svg
       viewBox="0 0 100 100"

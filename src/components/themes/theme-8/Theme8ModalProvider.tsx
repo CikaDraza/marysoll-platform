@@ -27,6 +27,7 @@ import type { IService, SalonProfileData } from "@/types";
 import { PENDING_STORAGE_KEY } from "@/components/shared/BookingModal";
 import { Y2KBookingCard } from "../shared/Y2KBookingCard";
 import { Y2KNewsletterWidget } from "../shared/Y2KNewsletterWidget";
+import { SprayReveal } from "./motion/SprayReveal";
 
 type ModalName = "book" | "bilten";
 
@@ -131,24 +132,40 @@ export function Theme8ModalProvider({ children, booking }: Props) {
                   exit={{ opacity: 0, y: 24, scale: 0.96 }}
                   transition={{ duration: 0.42, ease: [0.2, 0.85, 0.25, 1] }}
                 >
+                  {/* graffiti spray that sprays in behind the card on open:
+                      heart for booking, flower for the newsletter */}
+                  <div className="pointer-events-none absolute -top-16 left-1/2 -translate-x-1/2 z-0">
+                    <SprayReveal
+                      src={
+                        active === "book"
+                          ? "/images/theme-8/spray/heart-spray-1.svg"
+                          : "/images/theme-8/spray/flower-spray.svg"
+                      }
+                      color={active === "book" ? "pink" : "hot"}
+                      size={190}
+                      opacity={0.85}
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={close}
                     aria-label="Zatvori"
-                    className="absolute -top-3 -right-3 z-10 grid place-items-center w-10 h-10 rounded-full border-[3px] border-y2k-ink bg-white text-y2k-ink text-xl font-extrabold leading-none shadow-[3px_3px_0_#0b0b0f] hover:rotate-90 transition-transform duration-300"
+                    className="absolute -top-3 -right-3 z-20 grid place-items-center w-10 h-10 rounded-full border-[3px] border-y2k-ink bg-white text-y2k-ink text-xl font-extrabold leading-none shadow-[3px_3px_0_#0b0b0f] hover:rotate-90 transition-transform duration-300"
                   >
                     ×
                   </button>
-                  {active === "book" ? (
-                    <Y2KBookingCard
-                      tenantSlug={booking.tenantSlug}
-                      clientSlug={booking.clientSlug}
-                      salon={booking.salon}
-                      services={booking.services}
-                    />
-                  ) : (
-                    <Y2KNewsletterWidget />
-                  )}
+                  <div className="relative z-10">
+                    {active === "book" ? (
+                      <Y2KBookingCard
+                        tenantSlug={booking.tenantSlug}
+                        clientSlug={booking.clientSlug}
+                        salon={booking.salon}
+                        services={booking.services}
+                      />
+                    ) : (
+                      <Y2KNewsletterWidget />
+                    )}
+                  </div>
                 </motion.div>
               </motion.div>
             )}

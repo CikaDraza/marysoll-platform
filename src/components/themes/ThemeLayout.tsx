@@ -132,6 +132,13 @@ import {
   Y2KFilters,
 } from "./theme-8";
 import { Theme8ModalProvider } from "./theme-8/Theme8ModalProvider";
+import {
+  BackgroundWall,
+  SprayLayer,
+  StickerLayer,
+  DoodleLayer,
+  SparkleLayer,
+} from "./theme-8/motion";
 
 interface Testimonial {
   _id: string;
@@ -1105,14 +1112,15 @@ export function ThemeLayout({
       : undefined;
 
     return (
-      <div className="relative min-h-screen flex flex-col font-outfit text-y2k-ink bg-y2k-plum">
+      <div className="relative min-h-screen flex flex-col font-outfit text-y2k-ink bg-y2k-plum overflow-x-clip">
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="stylesheet" href={y2kFontHref} />
         <Y2KFilters />
-        {/* fixed graffiti-wall backdrop */}
-        <div className="fixed inset-0 z-0 bg-[url('/images/theme-8/bg-wallpaper_1_.webp')] bg-cover bg-center" />
-        <div className="fixed inset-0 z-0 pointer-events-none bg-[radial-gradient(120%_80%_at_50%_0%,rgba(20,2,16,0)_40%,rgba(20,2,16,0.45)_100%)]" />
-        <div className="fixed inset-0 z-0 pointer-events-none bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(40,5,30,0.12))]" />
+        {/* Multi-layer graffiti decoration system (all pointer-events-none) */}
+        <BackgroundWall />
+        <SprayLayer />
+        <StickerLayer />
+        <DoodleLayer />
 
         <Theme8ModalProvider
           booking={{
@@ -1194,6 +1202,9 @@ export function ThemeLayout({
             />
           </div>
         </Theme8ModalProvider>
+
+        {/* sparkle layer sits above content (decorative only) */}
+        <SparkleLayer />
       </div>
     );
   }
