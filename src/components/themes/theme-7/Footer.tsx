@@ -41,10 +41,10 @@ export function Theme7Footer({
         <div className="grid lg:grid-cols-12 gap-14 lg:gap-10">
           <FadeUp className="lg:col-span-5">
             <h2 className="font-cormorant text-5xl sm:text-6xl lg:text-7xl leading-[0.95] tracking-[-0.01em]">
-              Ready for your
+              Are you ready for your
               <br />
               <span className="italic text-neon drop-shadow-[0_0_24px_#ff2e88aa]">
-                best lashes yet?
+                best version of yourself?
               </span>
             </h2>
             <a

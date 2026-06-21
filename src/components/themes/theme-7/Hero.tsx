@@ -6,6 +6,7 @@ import { formatStatValue } from "@/lib/tenant/tenantStatsUtils";
 import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import { FadeUp } from "./FadeUp";
 import Image from "next/image";
+import Link from "next/link";
 
 interface Props {
   heroData: {
@@ -92,7 +93,7 @@ export function Theme7Hero({
           <FadeUp className="lg:col-span-7 max-w-2xl">
             <p className="flex items-center gap-3 text-[12px] uppercase tracking-[0.32em] text-neonsoft mb-7">
               <span className="h-px w-10 bg-neon shadow-[0_0_12px_#ff2e88]" />
-              Lash &amp; brow artistry studio
+              Beauty &amp; artistry studio
             </p>
             <h1 className="font-cormorant font-semibold leading-[0.92] tracking-[-0.01em] text-6xl sm:text-7xl lg:text-[6.7rem]">
               <AccentHeadline headline={heroData.headline} />
@@ -102,7 +103,7 @@ export function Theme7Hero({
             </p>
 
             <div className="mt-10 flex flex-wrap items-center gap-4">
-              <a
+              <Link
                 href={cta.primary.href}
                 className="group inline-flex items-center gap-2 rounded-full bg-neon px-7 py-3.5 text-[13px] uppercase tracking-[0.18em] font-medium text-white shadow-[0_12px_40px_-10px_#ff2e88] hover:-translate-y-0.5 hover:shadow-[0_18px_55px_-10px_#ff2e88] transition-all duration-300"
               >
@@ -110,13 +111,13 @@ export function Theme7Hero({
                 <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">
                   &rarr;
                 </span>
-              </a>
-              <a
+              </Link>
+              <Link
                 href="#gallery"
                 className="inline-flex items-center gap-2 text-[13px] uppercase tracking-[0.18em] text-cream/80 hover:text-white border-b border-cream/25 hover:border-white pb-1 transition-colors"
               >
                 View the work
-              </a>
+              </Link>
             </div>
 
             <div className="mt-14 flex items-center gap-10">

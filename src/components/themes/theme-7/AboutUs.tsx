@@ -19,8 +19,8 @@ const DEFAULT_PARAGRAPHS = [
   "Anja trained for years to perfect retention, comfort, and that effortless wake-up-ready look — so your lashes stay flawless long after you leave the chair.",
 ];
 const CHECKLIST = [
-  "Certified lash artist",
-  "Premium, lash-safe products",
+  "Certified beauty artist",
+  "Premium, beauty products",
   "By appointment only",
 ];
 
