@@ -14,15 +14,27 @@ import { Theme6Header } from "./theme-6/Header";
 import { Theme6Footer } from "./theme-6/Footer";
 import { Theme7Header } from "./theme-7/Header";
 import { Theme7Footer } from "./theme-7/Footer";
-import type { SalonProfileData } from "@/types";
+import { Theme8Header } from "./theme-8/Header";
+import { Theme8Footer } from "./theme-8/Footer";
+import { Y2KFilters } from "./theme-8/Decorations";
+import { BackgroundWall, SparkleLayer } from "./theme-8/motion";
+import { Theme8ModalProvider } from "./theme-8/Theme8ModalProvider";
+import type { SalonProfileData, IService } from "@/types";
 
 interface Props {
   salon: SalonProfileData;
   tenantSlug?: string;
+  /** Only needed by the theme-8 branch (booking modal); empty for other themes. */
+  services?: IService[];
   children: React.ReactNode;
 }
 
-export function TenantShellClient({ salon, tenantSlug, children }: Props) {
+export function TenantShellClient({
+  salon,
+  tenantSlug,
+  services = [],
+  children,
+}: Props) {
   const theme = salon.landingTheme || "theme-1";
   const primaryColor = salon.branding?.primaryColor || "#a855f7";
   const secondaryColor = salon.branding?.secondaryColor || "#ec4899";
@@ -204,6 +216,56 @@ export function TenantShellClient({ salon, tenantSlug, children }: Props) {
           email={salon.contactEmail || salon.email}
           workingHours={salon.workingHours}
         />
+      </div>
+    );
+  }
+
+  if (theme === "theme-8") {
+    // Fixed Y2K palette + fonts, identical to the theme-8 home page (ThemeLayout),
+    // so Header/Footer/wall match across every tenant page.
+    const y2kVars = {
+      "--primary-color": "#ff2e97",
+      "--secondary-color": "#8B16C9",
+      fontFamily: "Outfit, sans-serif",
+    } as React.CSSProperties;
+    const y2kFontHref =
+      "https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Caveat:wght@600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap";
+    const igLink =
+      salon.landingStructure?.landing?.gallery?.instagram?.link ||
+      salon.social?.instagram;
+    const igHandle =
+      salon.landingStructure?.landing?.gallery?.instagram?.username;
+    return (
+      <div
+        className="relative min-h-screen flex flex-col font-outfit text-y2k-ink bg-y2k-ink overflow-x-clip"
+        style={y2kVars}
+      >
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="stylesheet" href={y2kFontHref} />
+        <Y2KFilters />
+        <BackgroundWall />
+        <Theme8ModalProvider
+          booking={{
+            tenantSlug,
+            clientSlug: tenantSlug,
+            salon,
+            services,
+          }}
+        >
+          <div className="relative z-10 flex flex-col min-h-screen">
+            <Theme8Header {...headerProps} />
+            <main className="flex-1">{children}</main>
+            <Theme8Footer
+              salonName={salon.name}
+              logo={salon.logo ?? undefined}
+              instagramUrl={igLink}
+              instagramHandle={igHandle}
+              email={salon.contactEmail || salon.email}
+              workingHours={salon.workingHours}
+            />
+          </div>
+        </Theme8ModalProvider>
+        <SparkleLayer />
       </div>
     );
   }

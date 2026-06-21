@@ -1,5 +1,8 @@
 import { headers } from "next/headers";
-import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
+import {
+  fetchPublicSalonProfile,
+  fetchPublicServices,
+} from "@/lib/tenant/fetchTenantData";
 import { TenantShellClient } from "./TenantShellClient";
 
 interface Props {
@@ -23,8 +26,14 @@ export async function TenantPageShell({ tenantSlug, children }: Props) {
   const basePath = headersList.get("x-tenant-base-path") ?? "";
   const themeSlug = basePath ? tenantSlug : undefined;
 
+  // Services are only needed by the theme-8 shell (its footer booking modal).
+  const services =
+    salon.landingTheme === "theme-8"
+      ? await fetchPublicServices(slugFromHeader)
+      : [];
+
   return (
-    <TenantShellClient salon={salon} tenantSlug={themeSlug}>
+    <TenantShellClient salon={salon} tenantSlug={themeSlug} services={services}>
       {children}
     </TenantShellClient>
   );

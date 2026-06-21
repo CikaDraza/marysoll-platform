@@ -14,6 +14,7 @@ import AppointmentCalendarPage from "@/components/public/AppointmentCalendarPage
 import type { IAppointment, LandingStructure, SalonProfileData } from "@/types";
 import { formatWorkingHoursForDisplay } from "@/helpers/parseWorkingHours";
 import { TenantPageShell } from "@/components/themes/TenantPageShell";
+import { Theme8AppointmentsPage } from "@/components/themes/theme-8/pages/Theme8AppointmentsPage";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,23 @@ export default async function TerminiPage() {
       paragraph?: string;
     };
   };
+  const appointmentsPage = landingStructure?.pages?.appointmentsPage;
+
+  if (profile?.landingTheme === "theme-8") {
+    return (
+      <TenantPageShell tenantSlug={tenantSlug}>
+        <Theme8AppointmentsPage
+          salon={safeProfile}
+          services={services}
+          tenantSlug={base ? tenantSlug : undefined}
+          clientSlug={tenantSlug}
+          headline={appointmentsPage?.headline}
+          subheadline={appointmentsPage?.subheadline}
+          paragraph={appointmentsPage?.paragraph}
+        />
+      </TenantPageShell>
+    );
+  }
 
   return (
     <TenantPageShell tenantSlug={tenantSlug}>

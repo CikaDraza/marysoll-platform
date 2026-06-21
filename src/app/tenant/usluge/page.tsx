@@ -11,8 +11,8 @@ import {
 } from "@/lib/tenant/fetchTenantData";
 import ServicesLayout from "./ServiceLayout";
 import { TenantPageShell } from "@/components/themes/TenantPageShell";
+import { Theme8ServicesPage } from "@/components/themes/theme-8/pages/Theme8ServicesPage";
 import { LandingStructure, SalonProfileData } from "@/types";
-import Image from "next/image";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +62,22 @@ export default async function UslugePage() {
   const landingStructure = safeProfile.landingStructure as LandingStructure;
   const servicesPage = landingStructure?.pages?.servicesPage;
   const appointmentsPage = landingStructure?.pages?.appointmentsPage;
+
+  if (profile?.landingTheme === "theme-8") {
+    return (
+      <TenantPageShell tenantSlug={tenantSlug}>
+        <Theme8ServicesPage
+          services={services}
+          tenantSlug={base || undefined}
+          headline={servicesPage?.headline}
+          subheadline={servicesPage?.subheadline}
+          paragraph={servicesPage?.paragraph}
+          ctaHeadline={appointmentsPage?.headline}
+          ctaSubheadline={appointmentsPage?.subheadline}
+        />
+      </TenantPageShell>
+    );
+  }
 
   return (
     <TenantPageShell tenantSlug={tenantSlug}>
