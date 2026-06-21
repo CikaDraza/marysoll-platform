@@ -162,7 +162,7 @@ export function FixedDecorLayer() {
           color="pink"
           size={360}
           opacity={0.7}
-          className="absolute left-[-90px] bottom-[6%] rotate-[-4deg] hidden md:block"
+          className="absolute left-[-150px] bottom-[3%] rotate-[-4deg] hidden md:block"
         />
         <SprayStatic
           src={`${SPRAY}/flower-spray.svg`}

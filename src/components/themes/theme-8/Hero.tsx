@@ -64,17 +64,17 @@ function Wordmark({ text }: { text: string }) {
   return (
     <h1 className="relative z-2 font-bagel leading-[0.82] tracking-[-0.01em] m-0">
       <span
-        className={`block text-[clamp(64px,11vw,168px)] rotate-[-2deg] drop-shadow-[3px_3px_0_#0b0b0f] ${CHROME}`}
+        className={`block text-[clamp(116px,11vw,168px)] rotate-[-2deg] drop-shadow-[3px_3px_0_#0b0b0f] ${CHROME}`}
       >
         {line1.toUpperCase()}
       </span>
       {line2 && (
-        <span className="block text-[clamp(64px,11vw,168px)] text-y2k-pink [-webkit-text-stroke:4px_#0b0b0f] [text-shadow:5px_6px_0_rgba(11,11,15,0.25)] rotate-[1deg] ml-[0.12em]">
+        <span className="block text-[clamp(112px,11vw,168px)] text-y2k-pink [-webkit-text-stroke:4px_#0b0b0f] [text-shadow:5px_6px_0_rgba(11,11,15,0.25)] rotate-[1deg] ml-[0.12em]">
           {line2.toUpperCase()}
         </span>
       )}
       {tail && (
-        <span className="block font-caveat font-bold text-[clamp(40px,7vw,92px)] text-y2k-purple rotate-[-3deg] -mt-1 ml-[0.3em] drop-shadow-[2px_3px_0_rgba(255,255,255,0.7)]">
+        <span className="block font-caveat font-bold text-[clamp(64px,7vw,92px)] text-y2k-purple rotate-[-3deg] -mt-1 ml-[0.3em] drop-shadow-[2px_3px_0_rgba(255,255,255,0.7)]">
           {tail}
         </span>
       )}
@@ -116,7 +116,7 @@ export function Theme8Hero({
         shape="sparkle"
         size={46}
         motionType="twinkle"
-        className="absolute left-[46%] top-[38px] z-5"
+        className="absolute left-[46%] top-[38px] z-16"
       />
       <Deco
         shape="heart"
@@ -141,7 +141,7 @@ export function Theme8Hero({
               aria-hidden="true"
               width={500}
               height={500}
-              className="absolute left-1/2 top-[48%] w-[560px] max-w-[104%] h-auto -translate-x-1/2 -translate-y-1/2 scale-150 opacity-90 z-0 pointer-events-none"
+              className="absolute left-1/2 top-[48%] w-[560px] max-w-[99%] lg:max-w-[104%] h-[380px] lg:h-auto -translate-x-1/2 -translate-y-1/2 scale-150 opacity-90 z-0 pointer-events-none"
             />
             <p className="max-w-[430px] relative z-1 mt-5 text-[18px] leading-[1.55] font-medium text-y2k-plum px-[18px] py-3.5 rounded-[14px]">
               {heroData.subheadline || DEFAULT_DESCRIPTION}
