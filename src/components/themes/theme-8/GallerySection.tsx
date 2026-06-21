@@ -89,13 +89,13 @@ function Polaroid({
     <div
       className={`bg-white p-[9px] border-2 border-y2k-ink shadow-[5px_8px_18px_rgba(11,11,15,0.3)] ${rotate}`}
     >
-      <div className="overflow-hidden h-[280px]">
+      <div className="relative overflow-hidden h-[280px]">
         <Image
           src={img.src}
           alt={img.alt}
-          width={520}
-          height={280}
-          className={`block w-full h-full object-cover ${
+          fill
+          sizes="(min-width: 1024px) 360px, (min-width: 640px) 45vw, 90vw"
+          className={`object-cover ${
             detail ? "object-[60%_22%] scale-150" : ""
           }`}
         />
@@ -125,14 +125,18 @@ export function Theme8GallerySection({
       className="relative max-w-[1180px] mx-auto my-28 px-5"
     >
       <FadeUp className="relative text-center mb-12">
-        <Image
-          src="/images/theme-8/paint-streak.png"
-          alt=""
+        <div
           aria-hidden="true"
-          width={560}
-          height={200}
-          className="absolute left-1/2 top-[48%] w-[560px] max-w-[104%] -translate-x-1/2 -translate-y-1/2 scale-110 opacity-90 z-0 pointer-events-none"
-        />
+          className="absolute left-1/2 top-[48%] w-[560px] max-w-[104%] h-[200px] -translate-x-1/2 -translate-y-1/2 scale-110 opacity-90 z-0 pointer-events-none"
+        >
+          <Image
+            src="/images/theme-8/paint-streak.png"
+            alt=""
+            fill
+            sizes="560px"
+            className="object-cover"
+          />
+        </div>
         <span className="relative z-[1] inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink">
           {headline || "The gallery"}
         </span>

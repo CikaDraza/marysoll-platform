@@ -60,16 +60,38 @@ export function Theme8AboutUs({ about, founderName }: Props) {
             {/* portrait */}
             <div className="relative rotate-[2deg]">
               <div className="bg-white p-2.5 pb-3.5 border-2 border-y2k-ink shadow-[5px_9px_18px_rgba(11,11,15,0.28)]">
-                <Image
-                  src={imgSrc}
-                  alt={imgAlt}
-                  width={520}
-                  height={300}
-                  className="block w-full h-[300px] object-cover"
-                />
+                <div className="relative w-full h-[300px]">
+                  <Image
+                    src={imgSrc}
+                    alt={imgAlt}
+                    fill
+                    sizes="(min-width: 768px) 35vw, 90vw"
+                    className="object-cover"
+                  />
+                </div>
               </div>
-              <div className="absolute -bottom-4 -right-3.5 bg-y2k-pink text-white font-bagel text-[18px] px-4 py-2.5 border-[3px] border-y2k-ink rounded-[18px] shadow-[4px_4px_0_#0b0b0f] rotate-[-5deg]">
+              <div className="absolute z-10 -bottom-4 -right-3.5 bg-y2k-pink text-white font-bagel text-[18px] px-4 py-2.5 border-[3px] border-y2k-ink rounded-[18px] shadow-[4px_4px_0_#0b0b0f] rotate-[-5deg]">
                 the pink room ♡
+              </div>
+              {/* taped "Anja" polaroid — bottom-left, tilted the opposite way
+                  from the hero one, kept inside the About container width */}
+              <div className="absolute -bottom-7 left-[-3%] w-[44%] min-w-[140px] rotate-[-5deg] z-[3]">
+                <div className="relative bg-white p-2 pb-9 border-2 border-y2k-ink shadow-[6px_10px_22px_rgba(11,11,15,0.3)]">
+                  <div className="relative w-full h-[170px]">
+                    <Image
+                      src="/images/theme-8/byAnja.jpg"
+                      alt={`${founderName?.split(/\s+/).pop() ?? "Anja"}, your artist`}
+                      fill
+                      sizes="(min-width: 768px) 18vw, 45vw"
+                      className="object-cover object-[50%_22%]"
+                    />
+                  </div>
+                  <span className="absolute left-0 right-0 bottom-2 text-center font-caveat font-bold text-[19px] text-y2k-ink">
+                    {founderName?.split(/\s+/).pop() ?? "Anja"}, your artist ♡
+                  </span>
+                </div>
+                {/* sellotape */}
+                <div className="absolute -top-2.5 right-7 w-[70px] h-6 bg-[linear-gradient(135deg,rgba(255,255,255,0.55),rgba(255,170,225,0.6))] shadow-[0_3px_7px_rgba(0,0,0,0.18)] rotate-[8deg] pointer-events-none" />
               </div>
             </div>
             {/* copy */}

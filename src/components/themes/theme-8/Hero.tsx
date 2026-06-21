@@ -135,14 +135,18 @@ export function Theme8Hero({
           </div>
           <Wordmark text={wordmark} />
           <div className="relative mt-3 text-[15px] text-[#42303a] font-medium max-w-lg">
-            <Image
-              src="/images/theme-8/paint-streak.png"
-              alt=""
+            <div
               aria-hidden="true"
-              width={500}
-              height={500}
-              className="absolute left-1/2 top-[48%] w-[560px] max-w-[99%] lg:max-w-[104%] h-[380px] lg:h-auto -translate-x-1/2 -translate-y-1/2 scale-150 opacity-90 z-0 pointer-events-none"
-            />
+              className="absolute left-1/2 top-[48%] w-[560px] max-w-[99%] lg:max-w-[104%] h-[380px] -translate-x-1/2 -translate-y-1/2 scale-150 opacity-90 z-0 pointer-events-none"
+            >
+              <Image
+                src="/images/theme-8/paint-streak.png"
+                alt=""
+                fill
+                sizes="560px"
+                className="object-cover"
+              />
+            </div>
             <p className="max-w-[430px] relative z-1 mt-5 text-[18px] leading-[1.55] font-medium text-y2k-plum px-[18px] py-3.5 rounded-[14px]">
               {heroData.subheadline || DEFAULT_DESCRIPTION}
             </p>
@@ -178,13 +182,15 @@ export function Theme8Hero({
           <div className="absolute left-0 top-[60px] w-[74%] rotate-[-4deg] z-[5]">
             <div className="absolute -inset-2 bg-white [filter:url(#y2k-torn)] shadow-[0_22px_44px_rgba(20,0,30,0.4)]" />
             <div className="relative p-[9px] pb-[30px]">
-              <Image
-                src={heroData.image?.src || "/images/theme-8/bratz-eye.jpg"}
-                alt={heroData.image?.alt || "Bratz-inspired lash close up"}
-                width={520}
-                height={300}
-                className="block w-full h-[300px] object-cover object-[50%_36%]"
-              />
+              <div className="relative w-full h-[300px]">
+                <Image
+                  src={heroData.image?.src || "/images/theme-8/bratz-eye.jpg"}
+                  alt={heroData.image?.alt || "Bratz-inspired lash close up"}
+                  fill
+                  sizes="(min-width: 1024px) 30vw, 70vw"
+                  className="object-cover object-[50%_36%]"
+                />
+              </div>
               <span className="absolute left-3.5 bottom-1.5 font-caveat font-bold text-[24px] text-y2k-ink rotate-[-3deg]">
                 that doll-eye effect ✶
               </span>
@@ -194,13 +200,15 @@ export function Theme8Hero({
           {/* founder polaroid */}
           <div className="absolute right-[-1%] -bottom-1.5 w-[48%] min-w-[160px] rotate-[7deg] z-[6]">
             <div className="bg-white p-2.5 pb-10 border-2 border-y2k-ink shadow-[6px_10px_22px_rgba(11,11,15,0.3)]">
-              <Image
-                src="/images/theme-8/anja-owner.png"
-                alt={`${salonName ?? "Anja"}, founder`}
-                width={320}
-                height={200}
-                className="block w-full h-[200px] object-cover object-[50%_22%]"
-              />
+              <div className="relative w-full h-[200px]">
+                <Image
+                  src="/images/theme-8/anja-owner.png"
+                  alt={`${salonName ?? "Anja"}, founder`}
+                  fill
+                  sizes="(min-width: 1024px) 22vw, 50vw"
+                  className="object-cover object-[50%_22%]"
+                />
+              </div>
               <span className="absolute left-0 right-0 bottom-2.5 text-center font-caveat font-bold text-[22px] text-y2k-ink">
                 {salonName?.split(/\s+/).pop() ?? "Anja"}, your artist ♡
               </span>
