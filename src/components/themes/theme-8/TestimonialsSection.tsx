@@ -24,21 +24,22 @@ type Card = {
 
 const DEFAULT_CARDS: Card[] = [
   {
-    quote: "I get stopped on the street. Anja is a literal artist.",
+    quote: "Zaustavljaju me na ulici. Anja je bukvalno umetnica.",
     name: "Mila K.",
     meta: "Volume Set",
     initial: "M",
     rating: 5,
   },
   {
-    quote: "A little pink sanctuary. I leave looking incredible every time.",
+    quote:
+      "Malo ružičasto utočište. Svaki put odlazim izgledajući neverovatno.",
     name: "Sara D.",
     meta: "Hybrid Set",
     initial: "S",
     rating: 5,
   },
   {
-    quote: "Six months a client & never going anywhere else. Flawless.",
+    quote: "Šest meseci sam klijent & nikada više nigde. Savršeno.",
     name: "Lena P.",
     meta: "Lash Lift",
     initial: "L",
@@ -66,7 +67,10 @@ export function Theme8TestimonialsSection({ testimonials, headline }: Props) {
       : DEFAULT_CARDS;
 
   return (
-    <section id="reviews" className="relative max-w-[1140px] mx-auto my-28 px-5">
+    <section
+      id="reviews"
+      className="relative max-w-[1140px] mx-auto my-28 px-5"
+    >
       <FadeUp className="text-center mb-10 relative">
         <Image
           src="/images/theme-8/paint-streak.png"

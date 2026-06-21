@@ -130,6 +130,7 @@ import {
   Theme8FAQSection,
   Theme8Footer,
   Y2KFilters,
+  Theme8Preloader,
 } from "./theme-8";
 import { Theme8ModalProvider } from "./theme-8/Theme8ModalProvider";
 import {
@@ -1112,9 +1113,16 @@ export function ThemeLayout({
       : undefined;
 
     return (
-      <div className="relative min-h-screen flex flex-col font-outfit text-y2k-ink bg-y2k-plum overflow-x-clip">
+      <div className="relative min-h-screen flex flex-col font-outfit text-y2k-ink bg-y2k-ink overflow-x-clip">
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="stylesheet" href={y2kFontHref} />
+        <link
+          rel="preload"
+          as="image"
+          href="/images/theme-8/bg-wallpaper_1_.webp"
+        />
+        {/* first-paint cover: wall + big white logo, fades itself out */}
+        <Theme8Preloader logo={salon.logo ?? undefined} salonName={salon.name} />
         <Y2KFilters />
         {/* Multi-layer graffiti decoration system (all pointer-events-none) */}
         <BackgroundWall />

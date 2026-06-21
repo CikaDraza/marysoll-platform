@@ -58,9 +58,11 @@ export function Theme8Footer({
           <div className="relative grid lg:grid-cols-[1.2fr_0.8fr] gap-10 items-center">
             <div>
               <h2 className="m-0 mb-5 font-bagel text-[clamp(40px,6.5vw,82px)] leading-[0.86] text-white">
-                Ready for your
+                Spremni za vaše
                 <br />
-                <span className="text-y2k-hot">best lashes yet?</span>
+                <span className="text-y2k-hot">
+                  najbolje trepavice do sada?
+                </span>
               </h2>
               <div className="flex flex-wrap gap-3.5">
                 <button
@@ -131,7 +133,15 @@ export function Theme8Footer({
               className="h-10 w-auto object-contain [filter:invert(1)_brightness(2)]"
             />
             <span className="text-white/55 text-[13px] font-medium">
-              © {new Date().getFullYear()} {displayName} · Powered by Marysoll
+              © {new Date().getFullYear()} {displayName} ·{" "}
+              <Link
+                href="https://marysoll.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-y2k-hot hover:underline"
+              >
+                Powered by Marysoll
+              </Link>
             </span>
           </div>
         </div>

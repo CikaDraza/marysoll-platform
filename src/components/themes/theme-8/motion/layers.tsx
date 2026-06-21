@@ -39,16 +39,11 @@ type SprayColorKey = keyof typeof SPRAY_COLORS;
 /* ── Background wall ─────────────────────────────────────────────────────── */
 
 export function BackgroundWall() {
-  const reduce = useReducedMotion();
   return (
     <>
-      {/* layer 1 — wallpaper fades in first */}
-      <motion.div
-        className="fixed inset-0 z-0 bg-[url('/images/theme-8/bg-wallpaper_1_.webp')] bg-cover bg-center"
-        initial={reduce ? false : { opacity: 0 }}
-        animate={reduce ? undefined : { opacity: 1 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-      />
+      {/* layer 1 — wallpaper paints immediately (no fade) so the first frame is
+          the wall, not a flat colour. The preloader covers the cold-load window. */}
+      <div className="fixed inset-0 z-0 bg-[url('/images/theme-8/bg-wallpaper_1_.webp')] bg-cover bg-center" />
       <div className="fixed inset-0 z-0 pointer-events-none bg-[radial-gradient(120%_80%_at_50%_0%,rgba(20,2,16,0)_40%,rgba(20,2,16,0.45)_100%)]" />
       <div className="fixed inset-0 z-0 pointer-events-none bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(40,5,30,0.12))]" />
     </>

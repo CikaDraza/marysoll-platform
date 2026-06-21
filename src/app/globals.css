@@ -194,3 +194,15 @@ body {
   0%, 100% { opacity: 0.15; transform: translateY(0px); }
   50% { opacity: 0.45; transform: translateY(-12px); }
 }
+
+/* Theme-8 first-load preloader — pure-CSS fade-out so it works before hydration */
+@keyframes y2kPreloaderOut {
+  0%, 62% { opacity: 1; visibility: visible; }
+  100% { opacity: 0; visibility: hidden; }
+}
+.y2k-preloader {
+  animation: y2kPreloaderOut 1.6s ease forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .y2k-preloader { display: none; }
+}

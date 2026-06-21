@@ -1,5 +1,6 @@
 export { FadeUp } from "./FadeUp";
 export { Deco, Y2KFilters } from "./Decorations";
+export { Theme8Preloader } from "./Preloader";
 export { Theme8Header } from "./Header";
 export { Theme8Hero } from "./Hero";
 export { Theme8AboutUs } from "./AboutUs";
