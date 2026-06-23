@@ -511,7 +511,7 @@ function AdminDashboard() {
                     alt="Logo"
                     width={112}
                     height={112}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 ) : (
                   <span className="text-4xl">🏪</span>
@@ -784,6 +784,26 @@ function AdminDashboard() {
                         }
                         placeholder="kontakt@salon.com"
                       />
+                      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
+                        Adresa koju klijenti vide i na koju odgovaraju (kontakt,
+                        podrška, Q&amp;A).
+                      </p>
+                    </div>
+                    <div>
+                      <label className={lbl}>Email za zakazivanja</label>
+                      <input
+                        type="email"
+                        className={inp}
+                        value={sp.form.bookingEmail}
+                        onChange={(e) =>
+                          sp.setField("bookingEmail", e.target.value)
+                        }
+                        placeholder="booking@salon.com"
+                      />
+                      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
+                        Obaveštenja o novim terminima stižu ovde. Ako je prazno,
+                        koristi se kontakt email.
+                      </p>
                     </div>
                     <div>
                       <label className={lbl}>Marketing telefon</label>

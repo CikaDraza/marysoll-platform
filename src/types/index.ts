@@ -752,6 +752,7 @@ export interface SalonProfile {
   social: SocialLinks;
   newsletterEmail: string;
   contactEmail?: string;
+  bookingEmail?: string;
   marketingPhone?: string;
   resendApiKey?: string;
   createdAt?: string;
@@ -791,6 +792,7 @@ export interface ISalonProfileForm {
   city: string;
   newsletterEmail: string;
   contactEmail: string;
+  bookingEmail: string;
   marketingPhone: string;
   resendApiKey: string;
   logo: string | null;

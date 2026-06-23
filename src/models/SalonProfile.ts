@@ -237,6 +237,9 @@ const SalonProfileSchema = new mongoose.Schema(
     },
     newsletterEmail: { type: String, required: false, default: "" },
     contactEmail: { type: String, required: false, default: "" },
+    // Where new-appointment notifications are delivered to the salon.
+    // Falls back to contactEmail when empty (see notificationService).
+    bookingEmail: { type: String, required: false, default: "" },
     resendApiKey: { type: String, required: false, default: "" },
     marketingPhone: { type: String, required: false, default: "" },
     workingHours: { type: Object, default: {} },

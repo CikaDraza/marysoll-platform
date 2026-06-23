@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
       city: form.get("city") ?? "",
       newsletterEmail: form.get("newsletterEmail") ?? "",
       contactEmail: form.get("contactEmail") ?? "",
+      bookingEmail: form.get("bookingEmail") ?? "",
       marketingPhone: form.get("marketingPhone") ?? "",
       resendApiKey: form.get("resendApiKey") ?? "",
       logo: logoUrl,

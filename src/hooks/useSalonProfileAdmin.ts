@@ -90,6 +90,7 @@ const emptyForm = (): ISalonProfileForm => ({
   description: "",
   phone: "",
   contactEmail: "",
+  bookingEmail: "",
   marketingPhone: "",
   street: "",
   city: "",
@@ -270,6 +271,7 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
     description: p.description ?? "",
     phone: p.phone ?? "",
     contactEmail: p.contactEmail ?? "",
+    bookingEmail: p.bookingEmail ?? "",
     marketingPhone: p.marketingPhone ?? "",
     street: p.street ?? "",
     city: p.city ?? "",
@@ -492,6 +494,7 @@ export function useSalonProfileAdmin() {
       fd.append("city", form.city);
       fd.append("newsletterEmail", form.newsletterEmail);
       fd.append("contactEmail", form.contactEmail);
+      fd.append("bookingEmail", form.bookingEmail);
       fd.append("marketingPhone", form.marketingPhone);
       fd.append("resendApiKey", form.resendApiKey);
       fd.append("social", JSON.stringify(form.social));

@@ -42,6 +42,7 @@ export async function PUT(req: NextRequest) {
       "city",
       "newsletterEmail",
       "contactEmail",
+      "bookingEmail",
       "marketingPhone",
       "resendApiKey",
     ]) {

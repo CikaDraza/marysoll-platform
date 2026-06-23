@@ -287,9 +287,12 @@ async function getTenantUserEmail(
   }
 }
 
-// Get all OWNER/ADMIN TenantUsers with their emails for a tenant
+// Get all OWNER/ADMIN TenantUsers with their emails for a tenant.
+// `preferBookingEmail` routes appointment-related notifications to the salon's
+// dedicated booking inbox when set (falls back to contactEmail / admin logins).
 async function getAdminTenantUsersWithEmails(
   tenantId: Types.ObjectId | string,
+  opts?: { preferBookingEmail?: boolean },
 ): Promise<
   Array<{
     id: string;
@@ -311,9 +314,24 @@ async function getAdminTenantUsersWithEmails(
           emailHostingStatus?: string;
         } | null>(),
       SalonProfile.findOne({ tenantId: resolvedTenantId })
-        .select("contactEmail")
-        .lean<{ contactEmail?: string } | null>(),
+        .select("contactEmail bookingEmail")
+        .lean<{ contactEmail?: string; bookingEmail?: string } | null>(),
     ]);
+
+    // Dedicated booking inbox takes priority for appointment notifications,
+    // regardless of inbox verification level.
+    if (
+      opts?.preferBookingEmail &&
+      isDeliverableEmail(salonProfile?.bookingEmail)
+    ) {
+      return [
+        {
+          id: "salon-booking-email",
+          email: salonProfile.bookingEmail,
+          notificationSettings: null,
+        },
+      ];
+    }
 
     if (
       tenant?.emailHostingStatus !== "verified" &&
@@ -673,6 +691,7 @@ async function sendAppointmentEmailNotifications(
     if (type === "message" && additionalData?.sender === "client") {
       const adminUsers = await getAdminTenantUsersWithEmails(
         appointment.tenantId,
+        { preferBookingEmail: true },
       );
 
       for (const admin of adminUsers) {
@@ -706,6 +725,7 @@ async function sendAppointmentEmailNotifications(
     if (type === "created") {
       const adminUsers = await getAdminTenantUsersWithEmails(
         appointment.tenantId,
+        { preferBookingEmail: true },
       );
 
       for (const admin of adminUsers) {
@@ -752,6 +772,7 @@ async function sendAppointmentEmailNotifications(
     ) {
       const adminUsers = await getAdminTenantUsersWithEmails(
         appointment.tenantId,
+        { preferBookingEmail: true },
       );
 
       for (const admin of adminUsers) {

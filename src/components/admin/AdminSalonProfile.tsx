@@ -383,6 +383,24 @@ export default function AdminSalonProfile() {
                 </div>
                 <div className="sm:col-span-3">
                   <label className="block text-sm/6 font-medium text-gray-900">
+                    Email za zakazivanja
+                  </label>
+                  <p className="text-xs text-gray-500 mb-1">
+                    Obaveštenja o novim terminima. Prazno = kontakt email.
+                  </p>
+                  <input
+                    type="email"
+                    name="bookingEmail"
+                    value={
+                      (form as { bookingEmail?: string }).bookingEmail || ""
+                    }
+                    onChange={handleChange}
+                    placeholder="booking@vašsalon.com"
+                    className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-(--secondary-color)"
+                  />
+                </div>
+                <div className="sm:col-span-3">
+                  <label className="block text-sm/6 font-medium text-gray-900">
                     Marketing telefon
                   </label>
                   <p className="text-xs text-gray-500 mb-1">
