@@ -493,7 +493,7 @@ export function MarketingHomePageFirst({
                 width={192}
                 height={192}
                 className="h-12 w-12 object-contain"
-                preload={true}
+                priority
               />
               <div className="flex flex-col">
                 <span className="text-md/9 text-(--tetra-color) heading-font">
@@ -1212,6 +1212,7 @@ export function MarketingHomePageFirst({
                           width={80}
                           height={80}
                           className="rounded-xl h-10 w-10 sm:rounded-2xl sm:h-20 sm:w-20"
+                          priority
                         />
                       </motion.div>
                       <motion.div

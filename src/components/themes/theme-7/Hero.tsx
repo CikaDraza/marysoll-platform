@@ -6,7 +6,7 @@ import { formatStatValue } from "@/lib/tenant/tenantStatsUtils";
 import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import { FadeUp } from "./FadeUp";
 import Image from "next/image";
-import Link from "next/link";
+import { AnchorLink } from "../shared/AnchorLink";
 
 interface Props {
   heroData: {
@@ -103,21 +103,23 @@ export function Theme7Hero({
             </p>
 
             <div className="mt-10 flex flex-wrap items-center gap-4">
-              <Link
+              <AnchorLink
                 href={cta.primary.href}
+                offset={90}
                 className="group inline-flex items-center gap-2 rounded-full bg-neon px-7 py-3.5 text-[13px] uppercase tracking-[0.18em] font-medium text-white shadow-[0_12px_40px_-10px_#ff2e88] hover:-translate-y-0.5 hover:shadow-[0_18px_55px_-10px_#ff2e88] transition-all duration-300"
               >
                 {cta.primary.text || "Book your appointment"}
                 <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">
                   &rarr;
                 </span>
-              </Link>
-              <Link
+              </AnchorLink>
+              <AnchorLink
                 href="#gallery"
+                offset={90}
                 className="inline-flex items-center gap-2 text-[13px] uppercase tracking-[0.18em] text-cream/80 hover:text-white border-b border-cream/25 hover:border-white pb-1 transition-colors"
               >
                 View the work
-              </Link>
+              </AnchorLink>
             </div>
 
             <div className="mt-14 flex items-center gap-10">

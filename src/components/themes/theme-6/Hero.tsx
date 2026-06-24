@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import { AnchorLink } from "../shared/AnchorLink";
 
 interface Props {
   headline?: string;
@@ -37,18 +37,20 @@ export function Theme6Hero({
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <Link
+              <AnchorLink
                 href={cta.href}
+                offset={90}
                 className="px-8 py-4 bg-[#2A2825] text-white text-sm tracking-wide font-light hover:opacity-90 transition-all hover:scale-105"
               >
                 {cta.label}
-              </Link>
-              <Link
+              </AnchorLink>
+              <AnchorLink
                 href="#services"
+                offset={90}
                 className="text-sm tracking-wide font-light text-[#2A2825] hover:text-[#C4A595] transition-colors underline underline-offset-4"
               >
                 View Services
-              </Link>
+              </AnchorLink>
             </div>
           </div>
 

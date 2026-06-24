@@ -3,6 +3,7 @@
 import { PhoneArrowUpRightIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { AnchorLink } from "../shared/AnchorLink";
 
 interface Theme2Hero {
   imageUrl?: string;
@@ -71,18 +72,18 @@ export function Theme2Hero({
           {/* CTA */}
           <div className="flex flex-col gap-4">
             <div className="flex flex-wrap gap-4 justify-start">
-              <Link
+              <AnchorLink
                 href={cta?.primary?.href || "/termini"}
                 className="px-10 py-4 bg-yellow-500 text-gray-950 font-black text-sm tracking-wider rounded hover:bg-yellow-400 transition shadow-2xl shadow-yellow-500/20"
               >
                 {cta?.primary?.text || "ZAKAŽI TERMIN"}
-              </Link>
-              <Link
+              </AnchorLink>
+              <AnchorLink
                 href={cta?.secondary?.href || "/usluge"}
                 className="px-10 py-4 border border-yellow-500/40 text-yellow-400 font-semibold text-sm tracking-wider rounded hover:border-yellow-400 hover:text-white transition"
               >
                 {cta?.secondary?.text || "CENOVNIK"}
-              </Link>
+              </AnchorLink>
             </div>
             {(salonPhone || salonCity) && (
               <div className="mt-16 flex flex-wrap items-center justify-start gap-8 text-gray-600 text-sm border-t border-gray-800 pt-8">

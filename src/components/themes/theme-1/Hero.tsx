@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
+import { AnchorLink } from "../shared/AnchorLink";
 import { MapPinIcon, PhoneArrowUpRightIcon } from "@heroicons/react/24/outline";
 import type { SalonProfileData } from "@/types";
 import WhatsappIcon from "@/components/assets/icons/WhatsappIcon";
@@ -105,18 +106,18 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                       )}
                     </div>
                     <div className="mt-10 flex gap-4 justify-between w-full lg:mx-0">
-                      <Link
+                      <AnchorLink
                         href={cta?.primary?.href || defaultHeroData.CTA.href}
                         className="cursor-pointer flex-1 px-7 py-3 bg-(--primary-color) text-white font-semibold rounded-full hover:bg-(--primary-color)/90 transition text-sm"
                       >
                         {cta?.primary?.text || defaultHeroData.CTA.text}
-                      </Link>
-                      <Link
+                      </AnchorLink>
+                      <AnchorLink
                         href={cta?.secondary?.href || "/usluge"}
                         className="px-7 py-3 border border-black hover:border-(--secondary-color) text-black font-semibold rounded-full hover:bg-(--secondary-color) hover:text-white transition text-sm"
                       >
                         {cta?.secondary?.text || "Naše usluge"}
-                      </Link>
+                      </AnchorLink>
                     </div>
                   </dl>
                   {/* second column on desktop, on mobile first column */}

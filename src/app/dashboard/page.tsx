@@ -450,6 +450,7 @@ function AdminDashboard() {
             width={40}
             height={40}
             className="rounded-2xl"
+            priority
           />
           <div className="flex items-center gap-2 text-gray-400 text-sm">
             <div className="w-4 h-4 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin" />

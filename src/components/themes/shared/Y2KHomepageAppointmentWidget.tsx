@@ -22,6 +22,7 @@ import {
   subDays,
   addWeeks,
   subWeeks,
+  differenceInCalendarDays,
 } from "date-fns";
 import { sr } from "date-fns/locale";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
@@ -363,6 +364,10 @@ export default function Y2KHomepageAppointmentWidget({
 
   const [stripOffset, setStripOffset] = useState(-3);
   const stripScrollRef = useRef<HTMLDivElement>(null);
+  const selectedDayRef = useRef<HTMLButtonElement>(null);
+  // Set when a date change should recenter the strip — distinguishes a real
+  // selection move from the strip's own browse arrows (which must NOT recenter).
+  const pendingCenterRef = useRef(false);
 
   // ── Fetch public appointments ──────────────────────────────────────────────
   const { data: appointments = [], isLoading } = useQuery<PublicAppt[]>({
@@ -433,7 +438,7 @@ export default function Y2KHomepageAppointmentWidget({
 
   // ── Day click (week → day view) ────────────────────────────────────────────
   function handleDayClick(day: Date) {
-    setSelectedDate(day);
+    selectDate(day);
     setViewMode("day");
   }
 
@@ -468,6 +473,40 @@ export default function Y2KHomepageAppointmentWidget({
     [stripOffset],
   );
 
+  // Move the selection to a date: keep it inside the 14-day strip window and
+  // flag the strip to recenter on it. Used by the day arrows, day buttons and
+  // week→day drill-in — NOT the strip's own browse arrows.
+  const selectDate = useCallback((date: Date) => {
+    pendingCenterRef.current = true;
+    setSelectedDate(date);
+    setStripOffset((prev) => {
+      const idx = differenceInCalendarDays(date, addDays(new Date(), prev));
+      // Already in the window — keep the user's browse offset untouched.
+      if (idx >= 0 && idx <= 13) return prev;
+      // Re-anchor so the selected day sits ~3 from the left (matches "Danas").
+      return differenceInCalendarDays(date, new Date()) - 3;
+    });
+  }, []);
+
+  // Recenter the strip on the selected day once the window/layout settles. The
+  // pending flag keeps the strip's own browse arrows (which only move the
+  // window, not the selection) from snapping back to the selected day.
+  useEffect(() => {
+    if (!pendingCenterRef.current) return;
+    pendingCenterRef.current = false;
+    const container = stripScrollRef.current;
+    const btn = selectedDayRef.current;
+    if (!container || !btn) return;
+    const cRect = container.getBoundingClientRect();
+    const bRect = btn.getBoundingClientRect();
+    const delta =
+      bRect.left - cRect.left - container.clientWidth / 2 + bRect.width / 2;
+    container.scrollTo({
+      left: container.scrollLeft + delta,
+      behavior: "smooth",
+    });
+  }, [stripOffset, selectedDate, viewMode]);
+
   return (
     <>
       <div className="space-y-4">
@@ -479,7 +518,10 @@ export default function Y2KHomepageAppointmentWidget({
                 {(["week", "day"] as ViewMode[]).map((v) => (
                   <button
                     key={v}
-                    onClick={() => setViewMode(v)}
+                    onClick={() => {
+                      if (v === "day") selectDate(selectedDate);
+                      setViewMode(v);
+                    }}
                     className={`px-3 py-1.5 text-xs font-extrabold rounded-lg transition cursor-pointer ${
                       viewMode === v
                         ? "bg-y2k-pink text-white shadow-[2px_2px_0_#0b0b0f]"
@@ -493,6 +535,7 @@ export default function Y2KHomepageAppointmentWidget({
               <button
                 onClick={() => {
                   const today = new Date();
+                  pendingCenterRef.current = true;
                   setSelectedDate(today);
                   setWeekStart(startOfWeek(today, { weekStartsOn: 1 }));
                   setStripOffset(-3);
@@ -508,7 +551,7 @@ export default function Y2KHomepageAppointmentWidget({
                 onClick={() =>
                   viewMode === "week"
                     ? setWeekStart((w) => subWeeks(w, 1))
-                    : setSelectedDate((d) => subDays(d, 1))
+                    : selectDate(subDays(selectedDate, 1))
                 }
                 className="p-1.5 rounded-lg hover:bg-y2k-pink/10 transition text-y2k-ink/50 hover:text-y2k-ink cursor-pointer"
               >
@@ -521,7 +564,7 @@ export default function Y2KHomepageAppointmentWidget({
                 onClick={() =>
                   viewMode === "week"
                     ? setWeekStart((w) => addWeeks(w, 1))
-                    : setSelectedDate((d) => addDays(d, 1))
+                    : selectDate(addDays(selectedDate, 1))
                 }
                 className="p-1.5 rounded-lg hover:bg-y2k-pink/10 transition text-y2k-ink/50 hover:text-y2k-ink cursor-pointer"
               >
@@ -580,7 +623,8 @@ export default function Y2KHomepageAppointmentWidget({
                       return (
                         <button
                           key={i}
-                          onClick={() => setSelectedDate(day)}
+                          ref={isSelected ? selectedDayRef : null}
+                          onClick={() => selectDate(day)}
                           className={`flex flex-col items-center flex-shrink-0 w-11 h-14 rounded-xl border-[3px] transition cursor-pointer ${
                             isSelected
                               ? "bg-y2k-pink border-y2k-ink text-white shadow-[2px_2px_0_#0b0b0f]"

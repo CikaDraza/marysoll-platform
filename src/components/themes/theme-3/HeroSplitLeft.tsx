@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { AnchorLink } from "../shared/AnchorLink";
 import { motion } from "framer-motion";
 import type { HeroSharedProps } from "./Theme3Hero";
 
@@ -76,20 +77,20 @@ export function HeroSplitLeft({ data, cta }: HeroSharedProps) {
               className="flex flex-wrap gap-4"
             >
               {hasPrimary && (
-                <Link
+                <AnchorLink
                   href={cta.primary.href}
                   className="px-8 py-3.5 bg-[#C9A990] text-white rounded-full text-sm font-semibold hover:bg-[#b8947a] transition-all duration-300 shadow-lg shadow-[#C9A990]/25 hover:-translate-y-0.5"
                 >
                   {cta.primary.text}
-                </Link>
+                </AnchorLink>
               )}
               {hasSecondary && (
-                <Link
+                <AnchorLink
                   href={cta.secondary!.href}
                   className="px-8 py-3.5 border border-[#C9A990] text-[#2B2B2B] rounded-full text-sm hover:bg-[#C9A990]/5 transition-all duration-300"
                 >
                   {cta.secondary!.text}
-                </Link>
+                </AnchorLink>
               )}
             </motion.div>
           )}

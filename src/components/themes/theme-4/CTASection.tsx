@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import { AnchorLink } from "../shared/AnchorLink";
 
 interface Props {
   headline?: string;
@@ -21,12 +21,12 @@ export function Theme4CTA({ headline, cta }: Props) {
         <span className="italic mb-2 text-xs text-[#E8D4AD]">Vreme je</span>
         <h2 className="text-3xl mb-8">{headline}</h2>
 
-        <Link
+        <AnchorLink
           href={cta?.href || "/usluge"}
           className="border px-6 py-3 hover:bg-white hover:text-black transition"
         >
           {cta?.text}
-        </Link>
+        </AnchorLink>
       </div>
     </section>
   );

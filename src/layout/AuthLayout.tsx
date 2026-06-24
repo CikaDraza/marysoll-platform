@@ -69,6 +69,7 @@ function LeftPanel() {
             width={40}
             height={40}
             className="rounded-2xl"
+            priority
           />
           <span className="text-xl font-bold text-white">Marysoll</span>
         </Link>

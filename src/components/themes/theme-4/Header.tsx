@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { AnchorLink } from "../shared/AnchorLink";
 import { usePathname } from "next/navigation";
 import {
   Bars3Icon,
@@ -91,12 +92,12 @@ export function Theme4Header({
             {salonName}
           </p>
 
-          <Link
+          <AnchorLink
             href={cta?.href || `${base}/termini`}
             className="border px-6 py-3 text-sm border border-[#E8D4AD] hover:bg-[#E8D4AD] hover:text-black transition"
           >
             {cta?.text || "BOOK"}
-          </Link>
+          </AnchorLink>
         </div>
       </div>
 

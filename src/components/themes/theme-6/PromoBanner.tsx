@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { AnchorLink } from "../shared/AnchorLink";
 
 interface Props {
   headline?: string;
@@ -52,8 +53,9 @@ export function Theme6PromoBanner({
                 {subheadline}
               </p>
             </div>
-            <a
+            <AnchorLink
               href={cta.href}
+              offset={90}
               className="inline-flex items-center gap-3 px-8 py-4 bg-[var(--foreground)] text-white text-sm tracking-wide font-light hover:opacity-90 transition-all hover:scale-105"
             >
               {cta.label}
@@ -70,7 +72,7 @@ export function Theme6PromoBanner({
                   d="M9 5l7 7-7 7"
                 />
               </svg>
-            </a>
+            </AnchorLink>
           </div>
         </div>
       </div>

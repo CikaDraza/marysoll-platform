@@ -12,6 +12,7 @@ import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/hooks/useAuth";
 import LoggedButton from "@/components/auth/LoggedButton";
 import Link from "next/link";
+import { AnchorLink } from "../shared/AnchorLink";
 
 interface Theme7HeaderProps {
   instagramUrl?: string;
@@ -80,7 +81,11 @@ export function Theme7Header({
         }`}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-10 h-20 flex items-center justify-between">
-          <Link href="#top" className="flex items-center gap-3 group">
+          <AnchorLink
+            href="#top"
+            offset={90}
+            className="flex items-center gap-3 group"
+          >
             <Image
               src={logoSrc}
               alt={displayName}
@@ -91,7 +96,7 @@ export function Theme7Header({
             <span className="font-cormorant text-xl tracking-tight leading-none">
               {displayName}
             </span>
-          </Link>
+          </AnchorLink>
 
           <div className="hidden lg:flex items-center gap-9 text-[13px] uppercase tracking-[0.18em] font-medium">
             {navItems.map((item) => (

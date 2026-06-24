@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { AnchorLink } from "../shared/AnchorLink";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import {
   Dialog,
@@ -77,12 +78,12 @@ export function Theme5Header({
             </Link>
           ))}
           {!isLoggedIn ? (
-            <Link
+            <AnchorLink
               href={data.cta.href}
               className="bg-yellow-500 text-black px-5 py-2 text-sm font-black hover:bg-white transition"
             >
               {data.cta.label}
-            </Link>
+            </AnchorLink>
           ) : (
             <LoggedButton user={user!} tenantSlug={clientSlug ?? tenantSlug} />
           )}
@@ -169,13 +170,13 @@ export function Theme5Header({
               ))}
               {!isLoggedIn ? (
                 data?.cta && (
-                  <Link
+                  <AnchorLink
                     href={data.cta.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className="block text-center py-3 bg-(--primary-color) text-white font-semibold rounded-xl text-sm"
                   >
                     {data.cta.label}
-                  </Link>
+                  </AnchorLink>
                 )
               ) : (
                 <LoggedButton

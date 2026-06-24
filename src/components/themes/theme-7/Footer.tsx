@@ -2,7 +2,7 @@ import Image from "next/image";
 import type { SalonProfileData } from "@/types";
 import { FadeUp } from "./FadeUp";
 import { Theme7WorkingHours } from "./WorkingHours";
-import Link from "next/link";
+import { AnchorLink } from "../shared/AnchorLink";
 
 interface Props {
   salonName?: string;
@@ -47,12 +47,13 @@ export function Theme7Footer({
                 best version of yourself?
               </span>
             </h2>
-            <a
+            <AnchorLink
               href="#top"
+              offset={90}
               className="mt-8 inline-flex items-center gap-2 rounded-full bg-neon px-7 py-3.5 text-[13px] uppercase tracking-[0.18em] font-medium text-white shadow-[0_12px_40px_-10px_#ff2e88] hover:-translate-y-0.5 transition-all duration-300"
             >
               Choose your date &uarr;
-            </a>
+            </AnchorLink>
           </FadeUp>
 
           <div className="lg:col-span-7 grid sm:grid-cols-3 gap-10 lg:pl-10 lg:border-l lg:border-cream/10">
@@ -103,12 +104,13 @@ export function Theme7Footer({
                   </a>
                 </li>
                 <li>
-                  <Link
+                  <AnchorLink
                     href="#book"
+                    offset={90}
                     className="hover:text-neon transition-colors"
                   >
                     Book now
-                  </Link>
+                  </AnchorLink>
                 </li>
               </ul>
             </div>

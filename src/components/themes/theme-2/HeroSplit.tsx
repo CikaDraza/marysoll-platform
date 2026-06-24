@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
+import { AnchorLink } from "../shared/AnchorLink";
 
 interface Theme2HeroSplitProps {
   imageUrl?: string;
@@ -58,21 +58,21 @@ export function Theme2HeroSplit({
           {/* CTA */}
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Primary CTA */}
-            <Link
+            <AnchorLink
               href={cta?.primary?.href || "/termini"}
               className="px-6 py-3 text-center font-medium rounded-md bg-[var(--secondary-color)] text-black hover:opacity-90 transition"
             >
               {cta?.primary?.text || "Zakaži termin"}
-            </Link>
+            </AnchorLink>
 
             {/* Secondary CTA */}
             {cta?.secondary && (
-              <a
+              <AnchorLink
                 href={cta.secondary.href}
                 className="px-6 py-3 text-center font-medium rounded-md border border-gray-600 hover:border-white transition"
               >
                 {cta.secondary.text}
-              </a>
+              </AnchorLink>
             )}
           </div>
 

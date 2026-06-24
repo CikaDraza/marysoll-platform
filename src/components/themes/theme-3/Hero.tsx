@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { AnchorLink } from "../shared/AnchorLink";
 
 interface Props {
   headline?: string;
@@ -55,19 +55,19 @@ export function Theme3HeroSoft({
           </p>
 
           <div className="flex gap-4">
-            <Link
+            <AnchorLink
               href={cta?.primary?.href || "/termini"}
               className="px-8 py-3 bg-(--primary-color) text-white rounded-full text-sm font-semibold hover:opacity-90"
             >
               {cta?.primary?.text || "Zakaži termin"}
-            </Link>
+            </AnchorLink>
 
-            <Link
+            <AnchorLink
               href={cta?.secondary?.href || "/usluge"}
               className="px-8 py-3 border border-(--primary-color) text-[#2B2B2B] rounded-full text-sm"
             >
               {cta?.secondary?.text || "Pogledaj usluge"}
-            </Link>
+            </AnchorLink>
           </div>
         </div>
 

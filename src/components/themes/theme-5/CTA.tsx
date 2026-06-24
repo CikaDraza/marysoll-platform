@@ -1,6 +1,7 @@
 import type { mapCMS } from "@/lib/CMSMapper/mapCMS";
 import Image from "next/image";
-import Link from "next/link";
+import { AnchorLink } from "../shared/AnchorLink";
+import { resolveThemeHref } from "../shared/themeHref";
 
 type CTAData = ReturnType<typeof mapCMS>["cta"];
 
@@ -24,12 +25,12 @@ export function Theme5CTA({ data }: { data: CTAData }) {
       <div className="relative min-h-96 flex flex-col items-center justify-center">
         <h2 className="text-3xl">{data?.headline}</h2>
 
-        <Link
-          href={`${base}/${(data?.cta?.href ?? "termini").replace(/^\//, "")}`}
+        <AnchorLink
+          href={resolveThemeHref(data?.cta?.href ?? "termini", base)}
           className="mt-6 inline-block border px-6 py-3"
         >
           {data?.cta?.label}
-        </Link>
+        </AnchorLink>
       </div>
     </section>
   );

@@ -149,7 +149,7 @@ export function Theme8ServicesPage({
         <span className="inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink">
           {headline || "Services & prices"}
         </span>
-        <h1 className="mt-1.5 font-bagel text-[clamp(46px,9vw,104px)] leading-[0.9] text-y2k-ink rotate-[-1.5deg]">
+        <h1 className="mt-1.5 font-bagel [-webkit-text-stroke:1px_#ff2e97] text-[clamp(46px,9vw,104px)] leading-[0.9] text-y2k-ink rotate-[-1.5deg]">
           THE MENU
         </h1>
         {subheadline && (

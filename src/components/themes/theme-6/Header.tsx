@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { AnchorLink } from "../shared/AnchorLink";
 import Image from "next/image";
 
 interface NavItem {
@@ -69,12 +70,13 @@ export function Theme6Header({
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
-            <Link
+            <AnchorLink
               href={cta.href}
+              offset={90}
               className="px-6 py-2.5 bg-[#C4A595] text-white text-sm font-light tracking-wide hover:opacity-90 transition-opacity"
             >
               {cta.label}
-            </Link>
+            </AnchorLink>
           </div>
 
           <button
@@ -121,13 +123,14 @@ export function Theme6Header({
                 {item.label}
               </Link>
             ))}
-            <Link
+            <AnchorLink
               href={cta.href}
+              offset={90}
               className="mt-4 px-6 py-2.5 bg-[#C4A595] text-white text-sm font-light tracking-wide text-center hover:opacity-90 transition-opacity"
               onClick={() => setMobileMenuOpen(false)}
             >
               {cta.label}
-            </Link>
+            </AnchorLink>
           </nav>
         </div>
       )}
