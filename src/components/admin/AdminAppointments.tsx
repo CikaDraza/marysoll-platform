@@ -413,7 +413,9 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
                   >
                     <p className="text-sm">{msg.message}</p>
                     <p className="text-xs opacity-70 mt-1">
-                      {new Date(msg.timestamp).toLocaleString()}
+                      {new Date(msg.timestamp).toLocaleString("sr-RS", {
+                        hour12: false,
+                      })}
                       {msg._id.startsWith("temp-") && " (šalje se...)"}
                     </p>
                   </div>

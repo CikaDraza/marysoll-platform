@@ -21,6 +21,7 @@ import { AdminChat } from "@/components/admin/chat/AdminChat";
 import ClientsList from "@/components/admin/ClientsList";
 import { ServiceModal } from "@/components/admin/ServiceModal";
 import { FeatureGate } from "@/components/shared/FeatureGate";
+import { Time24Input } from "@/components/shared/Time24Input";
 import DashboardLayout from "@/layout/DashboardLayout";
 import Loader from "@/components/elements/Loader";
 import { api } from "@/lib/api";
@@ -1265,18 +1266,13 @@ function AdminDashboard() {
                             <span className="text-xs text-gray-400 font-medium">
                               od
                             </span>
-                            <input
-                              type="time"
+                            <Time24Input
                               value={slot.from}
-                              onChange={(e) =>
-                                sp.updateTimeSlot(
-                                  day,
-                                  idx,
-                                  "from",
-                                  e.target.value,
-                                )
+                              onChange={(v) =>
+                                sp.updateTimeSlot(day, idx, "from", v)
                               }
-                              className="text-sm font-semibold text-gray-800 dark:text-gray-200 bg-transparent focus:outline-none"
+                              aria-label="Početak smene"
+                              className="w-16 text-sm font-semibold text-gray-800 dark:text-gray-200 bg-transparent focus:outline-none"
                             />
                             <span className="text-gray-300 dark:text-gray-600">
                               |
@@ -1284,18 +1280,13 @@ function AdminDashboard() {
                             <span className="text-xs text-gray-400 font-medium">
                               do
                             </span>
-                            <input
-                              type="time"
+                            <Time24Input
                               value={slot.to}
-                              onChange={(e) =>
-                                sp.updateTimeSlot(
-                                  day,
-                                  idx,
-                                  "to",
-                                  e.target.value,
-                                )
+                              onChange={(v) =>
+                                sp.updateTimeSlot(day, idx, "to", v)
                               }
-                              className="text-sm font-semibold text-gray-800 dark:text-gray-200 bg-transparent focus:outline-none"
+                              aria-label="Kraj smene"
+                              className="w-16 text-sm font-semibold text-gray-800 dark:text-gray-200 bg-transparent focus:outline-none"
                             />
                           </div>
                           <button

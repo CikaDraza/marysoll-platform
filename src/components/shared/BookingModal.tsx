@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useAppointmentMutations } from "@/hooks/useAppointmentMutations";
 import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
+import { Time24Input } from "@/components/shared/Time24Input";
 import type { IService, IAppointment } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -528,13 +529,12 @@ export function BookingModal({
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
                   Vreme *
                 </label>
-                <input
-                  type="time"
+                <Time24Input
                   value={selectedTime}
-                  onChange={(e) => setSelectedTime(e.target.value)}
-                  step={1800}
-                  className="block w-full rounded-xl border border-gray-200 bg-gray-50 text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--primary-color)/80"
+                  onChange={setSelectedTime}
                   required
+                  aria-label="Vreme termina"
+                  className="block w-full rounded-xl border border-gray-200 bg-gray-50 text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--primary-color)/80"
                 />
               </div>
             </div>
