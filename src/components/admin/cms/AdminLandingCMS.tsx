@@ -740,8 +740,8 @@ export function AdminLandingCMS({ sp }: Props) {
   return (
     <div className="relative mt-6 min-h-screen space-y-6">
       {/* ── Save bar ─────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col lg:flex-row items-center justify-between">
+        <div className="mb-4 lg:mb-0">
           <h2 className="font-bold text-gray-900 dark:text-white">
             Landing CMS
           </h2>
@@ -890,7 +890,9 @@ export function AdminLandingCMS({ sp }: Props) {
                         key={i}
                         className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300"
                       >
-                        <span className="mt-0.5 shrink-0 text-violet-500">→</span>
+                        <span className="mt-0.5 shrink-0 text-violet-500">
+                          →
+                        </span>
                         {s}
                       </li>
                     ))}
@@ -1496,13 +1498,16 @@ export function AdminLandingCMS({ sp }: Props) {
             onChange={(e) =>
               updateLandingSection("about", {
                 ...about,
-                yearsOfExperience: e.target.value ? Number(e.target.value) : undefined,
+                yearsOfExperience: e.target.value
+                  ? Number(e.target.value)
+                  : undefined,
               })
             }
             placeholder="npr. 5"
           />
           <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-            Prikazuje se kao statistika (npr. 5+). Ostavi prazno da se ne prikazuje.
+            Prikazuje se kao statistika (npr. 5+). Ostavi prazno da se ne
+            prikazuje.
           </p>
         </div>
       </SectionCard>

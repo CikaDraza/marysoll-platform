@@ -83,7 +83,7 @@ export function Theme8TestimonialsSection({ testimonials, headline }: Props) {
         <span className="relative z-[1] inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink">
           {headline || "Kind words"}
         </span>
-        <h2 className="relative z-[1] mt-1.5 font-bagel text-[clamp(40px,6vw,80px)] leading-[0.9] text-y2k-ink rotate-[-1deg]">
+        <h2 className="relative z-[1] -mt-1.5 font-bagel text-[clamp(40px,6vw,80px)] leading-[0.9] text-y2k-ink rotate-[-1deg]">
           LOVED BY THE CHAIR
         </h2>
       </FadeUp>

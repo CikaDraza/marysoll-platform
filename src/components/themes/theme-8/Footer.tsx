@@ -6,6 +6,7 @@ import { FadeUp } from "./FadeUp";
 import { Deco } from "./Decorations";
 import { Theme8WorkingHours } from "./WorkingHours";
 import { useTheme8Modal } from "./Theme8ModalProvider";
+import { Theme8AnchorLink } from "./AnchorLink";
 import Link from "next/link";
 
 interface Props {
@@ -88,13 +89,13 @@ export function Theme8Footer({
                   Explore
                 </div>
                 {EXPLORE.map((l) => (
-                  <Link
+                  <Theme8AnchorLink
                     key={l.href}
                     href={l.href}
                     className="block font-semibold text-[15px] py-1.5 text-white/85 hover:text-y2k-hot transition-colors"
                   >
                     {l.label}
-                  </Link>
+                  </Theme8AnchorLink>
                 ))}
               </div>
               <div>

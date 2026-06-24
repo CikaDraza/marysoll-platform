@@ -6,7 +6,7 @@ import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import { FadeUp } from "./FadeUp";
 import { Deco } from "./Decorations";
 import { useTheme8Modal } from "./Theme8ModalProvider";
-import Link from "next/link";
+import { Theme8AnchorLink } from "./AnchorLink";
 
 interface Props {
   heroData: {
@@ -169,12 +169,12 @@ export function Theme8Hero({
               {cta.primary.text || "Book your slot"}
               <Deco shape="sparkle" size={20} strokeWidth={0} />
             </button>
-            <Link
+            <Theme8AnchorLink
               href={cta.secondary?.href || "#gallery"}
               className="inline-flex items-center gap-2 bg-white text-y2k-purple font-extrabold text-[16px] tracking-[0.03em] uppercase px-6 py-4 border-[4px] border-y2k-ink rounded-[36px_44px_32px_42px/44px_32px_44px_34px] shadow-[6px_6px_0_#8B16C9] rotate-[1.5deg] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[9px_9px_0_#8B16C9] transition-all duration-200"
             >
               {cta.secondary?.text || "Pogledaj ponudu →"}
-            </Link>
+            </Theme8AnchorLink>
           </div>
         </FadeUp>
 

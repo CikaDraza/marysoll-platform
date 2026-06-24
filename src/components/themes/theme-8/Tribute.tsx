@@ -220,7 +220,7 @@ export function Theme8Tribute() {
             {/* dedication copy */}
             <div>
               <span className="inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink mb-2.5">
-                Posveta ♡
+                Posveta <span className="text-xl">♡</span>
               </span>
               <h2 className="m-0 mb-4 font-bagel text-[clamp(44px,4.8vw,72px)] leading-[0.96] text-y2k-ink">
                 Za one koji nas zauvek prate kroz zivot.

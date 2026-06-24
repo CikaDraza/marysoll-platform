@@ -79,17 +79,24 @@ function Polaroid({
   img,
   rotate,
   detail = false,
+  tall = false,
 }: {
   img: { src: string; alt: string };
   rotate: string;
   detail?: boolean;
+  /** Single-image rows go wider on desktop — bump height 1/4 so it isn't cropped. */
+  tall?: boolean;
 }) {
   if (!img?.src) return null;
   return (
     <div
       className={`bg-white p-[9px] border-2 border-y2k-ink shadow-[5px_8px_18px_rgba(11,11,15,0.3)] ${rotate}`}
     >
-      <div className="relative overflow-hidden h-[280px]">
+      <div
+        className={`relative overflow-hidden h-[280px] ${
+          tall ? "lg:h-[350px]" : ""
+        }`}
+      >
         <Image
           src={img.src}
           alt={img.alt}
@@ -140,7 +147,7 @@ export function Theme8GallerySection({
         <span className="relative z-[1] inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink">
           {"The gallery"}
         </span>
-        <h2 className="mt-1.5 font-bagel text-[clamp(44px,7vw,92px)] leading-[0.9] text-white [-webkit-text-stroke:3px_#0b0b0f] [text-shadow:5px_6px_0_rgba(255,46,151,0.7)] rotate-[-1deg]">
+        <h2 className="-mt-1.5 font-bagel text-[clamp(46px,7vw,92px)] leading-[0.9] text-white [-webkit-text-stroke:1px_#0b0b0f] [text-shadow:5px_6px_0_rgba(255,46,151,0.7)] rotate-[-1deg]">
           {headline || "EVERY SET"}
         </h2>
       </FadeUp>
@@ -158,6 +165,8 @@ export function Theme8GallerySection({
               key="panel"
               className={`rounded-[22px] p-7 ${ps.wrap} order-1 ${
                 textLeft ? "lg:order-1" : "lg:order-3"
+              } ${
+                hasSecondImage ? "" : "lg:flex lg:flex-col lg:justify-center"
               }`}
             >
               <span className={`font-caveat font-bold text-[24px] ${ps.cat}`}>
@@ -185,7 +194,9 @@ export function Theme8GallerySection({
               key="img0"
               img={t.images[0]}
               rotate={`order-2 ${
-                textLeft ? "lg:order-2 rotate-[2deg]" : "lg:order-1 rotate-[-2deg]"
+                textLeft
+                  ? "lg:order-2 rotate-[2deg]"
+                  : "lg:order-1 rotate-[-2deg]"
               }`}
             />,
           ];
@@ -200,7 +211,7 @@ export function Theme8GallerySection({
                     : "lg:order-2 rotate-[2deg]"
                 }`}
                 detail
-              />
+              />,
             );
           }
 

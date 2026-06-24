@@ -1,4 +1,5 @@
 export { FadeUp } from "./FadeUp";
+export { Theme8AnchorLink } from "./AnchorLink";
 export { Deco, Y2KFilters } from "./Decorations";
 export { Theme8Preloader } from "./Preloader";
 export { Theme8Header } from "./Header";
