@@ -176,7 +176,9 @@ export function Theme8ServicesPage({
               <h2 className="font-bagel text-[clamp(30px,5vw,56px)] leading-[0.95] text-white [-webkit-text-stroke:3px_#0b0b0f] [text-shadow:4px_5px_0_rgba(255,46,151,0.7)] rotate-[-1deg] mb-4 ml-1">
                 {group.category || "Usluge"}
               </h2>
-              <div className={`relative ${gi % 2 === 0 ? "rotate-[0.6deg]" : "rotate-[-0.6deg]"}`}>
+              <div
+                className={`relative ${gi % 2 === 0 ? "rotate-[0.6deg]" : "rotate-[-0.6deg]"}`}
+              >
                 <div className="absolute -inset-2.5 bg-white [filter:url(#y2k-torn)] shadow-[0_24px_56px_rgba(20,0,30,0.4)]" />
                 <div className="relative px-6 sm:px-9 py-1.5">
                   {group.services.map((s, i) => (
@@ -194,7 +196,7 @@ export function Theme8ServicesPage({
         <div className="relative bg-y2k-ink rounded-[34px] p-10 sm:p-12 overflow-hidden rotate-[-1deg] shadow-[0_30px_70px_rgba(20,0,30,0.5)] text-center">
           <div className="absolute inset-0 bg-[radial-gradient(70%_90%_at_50%_0%,rgba(255,46,151,0.4),transparent_60%)] pointer-events-none" />
           <h2 className="relative m-0 font-bagel text-[clamp(34px,6vw,68px)] leading-[0.9] text-white">
-            {ctaHeadline || "Spremni za vaše"}
+            {ctaHeadline || "Spremni za vase"}
             <br />
             <span className="text-y2k-hot">
               {ctaSubheadline || "najbolje trepavice?"}

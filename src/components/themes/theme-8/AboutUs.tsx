@@ -75,15 +75,15 @@ export function Theme8AboutUs({ about, founderName }: Props) {
               </div>
               {/* taped "Anja" polaroid — bottom-left, tilted the opposite way
                   from the hero one, kept inside the About container width */}
-              <div className="absolute -bottom-7 left-[-3%] w-[44%] min-w-[140px] rotate-[-5deg] z-[3]">
+              <div className="absolute -bottom-11 left-[-12%] w-[44%] min-w-[140px] rotate-[-5deg] z-[3]">
                 <div className="relative bg-white p-2 pb-9 border-2 border-y2k-ink shadow-[6px_10px_22px_rgba(11,11,15,0.3)]">
-                  <div className="relative w-full h-[170px]">
+                  <div className="relative w-full h-[125px]">
                     <Image
-                      src="/images/theme-8/byAnja.jpg"
+                      src="/images/theme-8/anja-kiss.jpg"
                       alt={`${founderName?.split(/\s+/).pop() ?? "Anja"}, your artist`}
                       fill
                       sizes="(min-width: 768px) 18vw, 45vw"
-                      className="object-cover object-[50%_22%]"
+                      className="object-cover object-[50%_33%]"
                     />
                   </div>
                   <span className="absolute left-0 right-0 bottom-2 text-center font-caveat font-bold text-[19px] text-y2k-ink">

@@ -138,10 +138,10 @@ export function Theme8GallerySection({
           />
         </div>
         <span className="relative z-[1] inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink">
-          {headline || "The gallery"}
+          {"The gallery"}
         </span>
         <h2 className="mt-1.5 font-bagel text-[clamp(44px,7vw,92px)] leading-[0.9] text-white [-webkit-text-stroke:3px_#0b0b0f] [text-shadow:5px_6px_0_rgba(255,46,151,0.7)] rotate-[-1deg]">
-          EVERY SET
+          {headline || "EVERY SET"}
         </h2>
       </FadeUp>
 
@@ -150,11 +150,14 @@ export function Theme8GallerySection({
           const textLeft = i % 2 !== 0;
           const num = String(i + 1).padStart(2, "0");
           const ps = PANEL_STYLES[i % PANEL_STYLES.length];
+          const hasSecondImage = Boolean(t.images[1]);
+          // Mobile: text always first (order-1), images after.
+          // Desktop (lg): zig-zag — text alternates left/right.
           const panel = (
             <div
               key="panel"
-              className={`rounded-[22px] p-7 ${ps.wrap} ${
-                textLeft ? "order-1" : ""
+              className={`rounded-[22px] p-7 ${ps.wrap} order-1 ${
+                textLeft ? "lg:order-1" : "lg:order-3"
               }`}
             >
               <span className={`font-caveat font-bold text-[24px] ${ps.cat}`}>
@@ -181,24 +184,37 @@ export function Theme8GallerySection({
             <Polaroid
               key="img0"
               img={t.images[0]}
-              rotate={textLeft ? "rotate-[2deg] order-2" : "rotate-[-2deg]"}
-            />,
-            <Polaroid
-              key="img1"
-              img={t.images[1] ?? t.images[0]}
-              rotate={textLeft ? "rotate-[-2deg] order-3" : "rotate-[2deg]"}
-              detail
+              rotate={`order-2 ${
+                textLeft ? "lg:order-2 rotate-[2deg]" : "lg:order-1 rotate-[-2deg]"
+              }`}
             />,
           ];
+          if (hasSecondImage) {
+            images.push(
+              <Polaroid
+                key="img1"
+                img={t.images[1]}
+                rotate={`order-3 ${
+                  textLeft
+                    ? "lg:order-3 rotate-[-2deg]"
+                    : "lg:order-2 rotate-[2deg]"
+                }`}
+                detail
+              />
+            );
+          }
 
           return (
             <FadeUp
               key={t.id ?? i}
-              className={`grid lg:grid-cols-3 gap-[18px] items-center ${
+              className={`grid ${
+                hasSecondImage ? "lg:grid-cols-3" : "lg:grid-cols-2"
+              } gap-[18px] items-center ${
                 i % 2 === 0 ? "rotate-[-1.5deg]" : "rotate-[1.5deg]"
               }`}
             >
-              {textLeft ? [panel, ...images] : [...images, panel]}
+              {panel}
+              {images}
             </FadeUp>
           );
         })}

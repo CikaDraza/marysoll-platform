@@ -155,7 +155,7 @@ export function FixedDecorLayer() {
           color="pink"
           size={300}
           opacity={0.8}
-          className="absolute right-[-60px] top-[32%] rotate-[10deg]"
+          className="absolute right-[-20px] sm:right-[-60px] top-[32%] rotate-[10deg]"
         />
         <SprayStatic
           src={`${SPRAY}/queen-anja-spray.svg`}
@@ -169,7 +169,7 @@ export function FixedDecorLayer() {
           color="hot"
           size={300}
           opacity={0.8}
-          className="absolute right-[-75px] bottom-[8%] rotate-[6deg]"
+          className="absolute right-[-25px] sm:right-[-75px] bottom-[8%] rotate-[6deg]"
         />
 
         {/* STICKERS — static, large */}
@@ -197,7 +197,7 @@ export function FixedDecorLayer() {
           h={1172}
           delay={0.7}
           rotate={-5}
-          wrapClass="absolute -left-[150px] top-[48%] w-[130px] sm:w-[180px]"
+          wrapClass="absolute left-[-40px] sm:-left-[150px] top-[48%] w-[130px] sm:w-[180px]"
         />
         <StickerStick
           src={`${STICK}/sticker-sprite-2.png`}
@@ -205,7 +205,7 @@ export function FixedDecorLayer() {
           h={734}
           delay={0.95}
           rotate={7}
-          wrapClass="absolute -right-[100px] top-[72%] w-[120px] sm:w-[160px]"
+          wrapClass="absolute right-[-30px] sm:-right-[100px] top-[72%] w-[120px] sm:w-[160px]"
         />
       </div>
     </motion.div>

@@ -444,9 +444,13 @@ function AdminDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white font-black text-lg shadow-lg">
-            M
-          </div>
+          <Image
+            src="/marysoll_elegant_logo.png"
+            alt="Marysoll logo"
+            width={40}
+            height={40}
+            className="rounded-2xl"
+          />
           <div className="flex items-center gap-2 text-gray-400 text-sm">
             <div className="w-4 h-4 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin" />
             Provera pristupa...

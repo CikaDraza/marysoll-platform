@@ -209,3 +209,53 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .y2k-preloader { transition: none; }
 }
+
+/* Admin calendar — FullCalendar header toolbar on MOBILE only, stacked into 3 rows:
+   row 1: prev/next + today (grouped, centered), row 2: title, row 3: view buttons.
+   Scoped to .admin-fc (admin dashboard calendar) so the client-panel calendar
+   and all desktop views are completely unaffected. */
+@media (max-width: 640px) {
+  .admin-fc .fc-header-toolbar.fc-toolbar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .admin-fc .fc-header-toolbar .fc-toolbar-chunk {
+    flex: 1 1 100%;
+    display: flex;
+    justify-content: center;
+  }
+  /* first chunk holds prev,next + today → keep them grouped & centered so the
+     "Danas" button isn't flung to the screen edge now that the toolbar spans the
+     full viewport width */
+  .admin-fc .fc-header-toolbar .fc-toolbar-chunk:first-child {
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .admin-fc .fc-toolbar-title {
+    font-size: 1rem;
+  }
+
+  /* ── Mobile horizontal scroll (no premium ScrollGrid plugin) ──────────────
+     The wrapper scrolls horizontally and the calendar is forced wider than the
+     viewport, so each of the 7 day columns is ≥150px. The day-header row and the
+     time slots live inside the same `.fc` block, so they scroll together
+     (Mon→Sun). The toolbar is pinned so navigation stays in view while scrolling. */
+  .admin-fc {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  .admin-fc > .fc {
+    /* 7 columns × ≥150px + time axis ≈ 1140px */
+    min-width: 1140px;
+  }
+  .admin-fc .fc-header-toolbar.fc-toolbar {
+    position: sticky;
+    left: 0;
+    width: 100vw;
+    max-width: 100vw;
+    box-sizing: border-box;
+    padding-inline: 0.75rem;
+  }
+}

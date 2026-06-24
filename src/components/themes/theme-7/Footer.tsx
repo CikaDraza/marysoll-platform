@@ -73,7 +73,7 @@ export function Theme7Footer({
                 ))}
               </ul>
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <h4 className="text-[11px] uppercase tracking-[0.22em] text-cream/40 mb-4">
                 Visit
               </h4>

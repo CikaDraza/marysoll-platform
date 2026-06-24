@@ -149,7 +149,7 @@ function DayView({
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 max-sm:p-2">
       {slots.map((slot) => {
         const appt = dayAppts.find((a) => a.time === slot);
         if (appt) {
@@ -216,7 +216,7 @@ function WeekView({
   });
 
   return (
-    <div className="grid grid-cols-7 gap-1.5">
+    <div className="grid grid-cols-7 gap-1.5 max-sm:p-2">
       {days.map((day) => {
         const dateStr = format(day, "yyyy-MM-dd");
         const dayAppts = appointments.filter((a) => a.date === dateStr);
@@ -326,6 +326,12 @@ export default function AppointmentAdminCalendar() {
     setViewMode("day");
   }
 
+  function goToToday() {
+    const today = new Date();
+    setSelectedDate(today);
+    setWeekStart(startOfWeek(today, { weekStartsOn: 1 }));
+  }
+
   const wh = salonForm.workingHours as WorkingHoursMap;
   const card =
     "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
@@ -389,11 +395,11 @@ export default function AppointmentAdminCalendar() {
       </div>
 
       {/* ── Calendar ────────────────────────────────────────────────────── */}
-      <div className={`${card}`}>
+      <div className={`${card} max-sm:p-0`}>
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-zinc-100 dark:border-zinc-700">
-          {/* View toggle */}
-          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-gray-800 rounded-xl p-1">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 px-5 py-3 max-sm:px-3 max-sm:py-2.5 border-b border-zinc-100 dark:border-zinc-700">
+          {/* View toggle — flex-1 */}
+          <div className="w-full sm:w-auto sm:flex-1 flex items-center gap-1 bg-zinc-100 dark:bg-gray-800 rounded-xl p-1">
             {[
               { v: "week" as ViewMode, label: "Sedmica" },
               { v: "day" as ViewMode, label: "Dan" },
@@ -402,7 +408,7 @@ export default function AppointmentAdminCalendar() {
               <button
                 key={v}
                 onClick={() => setViewMode(v)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
+                className={`flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap ${
                   viewMode === v
                     ? "bg-white dark:bg-gray-700 text-violet-700 dark:text-violet-400 shadow-sm"
                     : "text-zinc-400 dark:text-gray-400 hover:text-zinc-700 dark:hover:text-gray-200"
@@ -413,9 +419,9 @@ export default function AppointmentAdminCalendar() {
             ))}
           </div>
 
-          {/* Navigation */}
+          {/* Navigation — flex-none (only as wide as needed) */}
           {viewMode !== "fullcalendar" && (
-            <div className="flex items-center gap-2">
+            <div className="w-full sm:w-auto sm:flex-none flex items-center justify-center gap-2">
               <button
                 onClick={() =>
                   viewMode === "week"
@@ -426,7 +432,7 @@ export default function AppointmentAdminCalendar() {
               >
                 <ChevronLeftIcon className="w-4 h-4" />
               </button>
-              <span className="text-sm font-semibold text-zinc-800 dark:text-gray-300 min-w-[180px] text-center">
+              <span className="text-sm font-semibold text-zinc-800 dark:text-gray-300 min-w-[160px] sm:min-w-[180px] text-center">
                 {viewMode === "week"
                   ? `${format(weekStart, "d MMM", { locale: sr })} – ${format(endOfWeek(weekStart, { weekStartsOn: 1 }), "d MMM yyyy", { locale: sr })}`
                   : format(selectedDate, "EEEE, d MMMM yyyy", { locale: sr })}
@@ -441,36 +447,47 @@ export default function AppointmentAdminCalendar() {
               >
                 <ChevronRightIcon className="w-4 h-4" />
               </button>
+              {/* Danas — desktop stays here (next to arrows) */}
               <button
-                onClick={() => {
-                  const today = new Date();
-                  setSelectedDate(today);
-                  setWeekStart(startOfWeek(today, { weekStartsOn: 1 }));
-                }}
-                className="ml-1 px-3 py-1.5 text-xs font-semibold bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 transition"
+                onClick={goToToday}
+                className="hidden sm:inline-flex ml-1 px-3 py-1.5 text-xs font-semibold bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 transition"
               >
                 Danas
               </button>
             </div>
           )}
 
-          {/* Add */}
-          <button
-            onClick={() => {
-              setCreateDefaults({
-                date: format(selectedDate, "yyyy-MM-dd"),
-                time: "",
-              });
-              setCreateOpen(true);
-            }}
-            className="px-4 py-2 bg-violet-600 text-white text-xs font-bold rounded-xl hover:bg-violet-700 transition"
+          {/* Right — flex-1: Danas (mobile only) + Novi termin, space-between */}
+          <div
+            className={`w-full sm:w-auto sm:flex-1 flex items-center gap-2 justify-end ${
+              viewMode !== "fullcalendar" ? "max-sm:justify-between" : ""
+            }`}
           >
-            + Novi termin
-          </button>
+            {viewMode !== "fullcalendar" && (
+              <button
+                onClick={goToToday}
+                className="sm:hidden inline-flex px-3 py-1.5 text-xs font-semibold bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 transition"
+              >
+                Danas
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setCreateDefaults({
+                  date: format(selectedDate, "yyyy-MM-dd"),
+                  time: "",
+                });
+                setCreateOpen(true);
+              }}
+              className="px-4 py-2 bg-violet-600 text-white text-xs font-bold rounded-xl hover:bg-violet-700 transition whitespace-nowrap"
+            >
+              + Novi termin
+            </button>
+          </div>
         </div>
 
         {/* Body */}
-        <div className="p-4">
+        <div className="p-4 max-sm:p-0">
           {isLoading ? (
             <div className="flex items-center justify-center h-48 text-zinc-400 dark:text-gray-300 text-sm gap-2">
               <div className="w-4 h-4 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin" />
@@ -529,14 +546,21 @@ export default function AppointmentAdminCalendar() {
             </>
           ) : (
             /* ── FullCalendar view ──────────────────────────────────────── */
-            <div className="overflow-hidden">
+            /* Mobile: `.admin-fc` scrolls horizontally; CSS forces a min width so
+               each day column is ≥150px and the header + slots scroll Mon→Sun
+               together (see globals.css). `dayMinWidth` is intentionally NOT used —
+               it requires the premium ScrollGrid plugin ("No ScrollGrid implementation"). */
+            <div className="admin-fc">
               <FullCalendar
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                 initialView="timeGridWeek"
-                selectable
-                select={(info) => {
-                  const date = info.start.toLocaleDateString("en-CA");
-                  const time = info.start.toLocaleTimeString("en-GB", {
+                /* `dateClick` (single tap/click) instead of `select` (drag): on
+                   touch devices `select` needs a long-press, so a normal tap never
+                   opened the create modal on mobile. `dateClick` fires on a plain
+                   tap on every device, and still lets a drag scroll horizontally. */
+                dateClick={(info) => {
+                  const date = info.date.toLocaleDateString("en-CA");
+                  const time = info.date.toLocaleTimeString("en-GB", {
                     hour: "2-digit",
                     minute: "2-digit",
                   });

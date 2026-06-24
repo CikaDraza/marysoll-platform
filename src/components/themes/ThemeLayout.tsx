@@ -128,6 +128,7 @@ import {
   Theme8GallerySection,
   Theme8TestimonialsSection,
   Theme8FAQSection,
+  Theme8Tribute,
   Theme8Footer,
   Y2KFilters,
   Theme8Preloader,
@@ -1202,6 +1203,8 @@ export function ThemeLayout({
                   supportText={ls?.landing?.faq?.support?.text}
                 />
               )}
+              {/* Tribute — non-CMS, always last before the footer */}
+              <Theme8Tribute />
             </main>
             <Theme8Footer
               salonName={salon.name}

@@ -44,6 +44,15 @@ const MARQUEE_ITEMS: { t: string; hot?: boolean }[] = [
   { t: "★ IT-GIRL APPROVED", hot: true },
 ];
 
+/** Mobile marquee groups the items two-by-two — each pair gets its own pill. */
+const MARQUEE_PAIRS: { t: string; hot?: boolean }[][] = MARQUEE_ITEMS.reduce<
+  { t: string; hot?: boolean }[][]
+>((acc, item, idx) => {
+  if (idx % 2 === 0) acc.push([item]);
+  else acc[acc.length - 1].push(item);
+  return acc;
+}, []);
+
 /**
  * Render a salon/CMS name as the stacked Y2K wordmark:
  *   line 1  → chrome-gradient   (e.g. "LASH")
@@ -129,15 +138,11 @@ export function Theme8Hero({
       <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-6 items-center">
         {/* LEFT : giant headline */}
         <FadeUp className="relative z-[6]">
-          <div className="inline-flex items-center gap-2 bg-y2k-ink text-white font-extrabold text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-full rotate-[-2deg] mb-4">
-            <span className="h-2 w-2 rounded-full bg-y2k-pink" />
-            Lash artistry &amp; it-girl energy
-          </div>
           <Wordmark text={wordmark} />
           <div className="relative mt-3 text-[15px] text-[#42303a] font-medium max-w-lg">
             <div
               aria-hidden="true"
-              className="absolute left-1/2 top-[48%] w-[560px] max-w-[99%] lg:max-w-[104%] h-[380px] -translate-x-1/2 -translate-y-1/2 scale-150 opacity-90 z-0 pointer-events-none"
+              className="absolute left-1/2 top-[52%] w-[360px] lg:w-[560px] max-w-[90%] lg:max-w-[104%] h-[480px] lg:h-[380px] -translate-x-1/2 -translate-y-1/2 scale-150 opacity-90 z-0 pointer-events-none"
             >
               <Image
                 src="/images/theme-8/paint-streak.png"
@@ -147,7 +152,11 @@ export function Theme8Hero({
                 className="object-cover"
               />
             </div>
-            <p className="max-w-[430px] relative z-1 mt-5 text-[18px] leading-[1.55] font-medium text-y2k-plum px-[18px] py-3.5 rounded-[14px]">
+            <div className="inline-flex items-center gap-2 bg-y2k-ink text-white font-extrabold text-[13px] tracking-[0.22em] uppercase px-4 py-2 rounded-full rotate-[-2deg] mt-4">
+              <span className="h-2 w-2 rounded-full bg-y2k-pink" />
+              Cute? Always. Basic? Never.
+            </div>
+            <p className="max-w-[430px] relative z-1 text-[18px] leading-[1.55] font-medium text-y2k-plum px-[18px] py-3.5 rounded-[14px]">
               {heroData.subheadline || DEFAULT_DESCRIPTION}
             </p>
           </div>
@@ -164,7 +173,7 @@ export function Theme8Hero({
               href={cta.secondary?.href || "#gallery"}
               className="inline-flex items-center gap-2 bg-white text-y2k-purple font-extrabold text-[16px] tracking-[0.03em] uppercase px-6 py-4 border-[4px] border-y2k-ink rounded-[36px_44px_32px_42px/44px_32px_44px_34px] shadow-[6px_6px_0_#8B16C9] rotate-[1.5deg] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[9px_9px_0_#8B16C9] transition-all duration-200"
             >
-              {cta.secondary?.text || "See the lashes →"}
+              {cta.secondary?.text || "Pogledaj ponudu →"}
             </Link>
           </div>
         </FadeUp>
@@ -192,7 +201,7 @@ export function Theme8Hero({
                 />
               </div>
               <span className="absolute left-3.5 bottom-1.5 font-caveat font-bold text-[24px] text-y2k-ink rotate-[-3deg]">
-                that doll-eye effect ✶
+                that cat&apos;s eye effect ✶
               </span>
             </div>
             <div className="absolute -top-3.5 left-10 w-24 h-7 bg-[linear-gradient(135deg,rgba(255,255,255,0.55),rgba(255,170,225,0.6))] shadow-[0_3px_7px_rgba(0,0,0,0.18)] rotate-[-7deg]" />
@@ -202,7 +211,7 @@ export function Theme8Hero({
             <div className="bg-white p-2.5 pb-10 border-2 border-y2k-ink shadow-[6px_10px_22px_rgba(11,11,15,0.3)]">
               <div className="relative w-full h-[200px]">
                 <Image
-                  src="/images/theme-8/anja-owner.png"
+                  src="/images/theme-8/anja-your-artist.jpg"
                   alt={`${salonName ?? "Anja"}, founder`}
                   fill
                   sizes="(min-width: 1024px) 22vw, 50vw"
@@ -229,20 +238,22 @@ export function Theme8Hero({
         </div>
       </FadeUp>
 
-      {/* marquee strip — mobile: two-by-two grid */}
-      <FadeUp className="mt-12 sm:hidden bg-y2k-ink border-[3px] border-y2k-ink rounded-[34px] overflow-hidden rotate-[-1deg] shadow-[6px_8px_0_rgba(255,46,151,0.55)]">
-        <div className="grid grid-cols-2 gap-x-6 gap-y-2 px-6 py-4 text-white font-bagel text-[18px] tracking-[0.02em] text-center">
-          {MARQUEE_ITEMS.map((m, idx) => (
-            <span
-              key={m.t}
-              className={`${m.hot ? "text-y2k-hot" : ""} ${
-                idx === MARQUEE_ITEMS.length - 1 ? "col-span-2" : ""
-              }`}
-            >
-              {m.t}
-            </span>
-          ))}
-        </div>
+      {/* marquee strip — mobile: stacked pills, two items each */}
+      <FadeUp className="mt-12 sm:hidden flex flex-col items-stretch gap-3">
+        {MARQUEE_PAIRS.map((pair, row) => (
+          <div
+            key={row}
+            className="bg-y2k-ink border-[3px] border-y2k-ink rounded-full overflow-hidden rotate-[-1deg] shadow-[6px_8px_0_rgba(255,46,151,0.55)]"
+          >
+            <div className="flex items-center justify-center gap-6 px-6 py-3.5 text-white font-bagel text-[18px] tracking-[0.02em] text-center whitespace-nowrap">
+              {pair.map((m) => (
+                <span key={m.t} className={m.hot ? "text-y2k-hot" : undefined}>
+                  {m.t}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
       </FadeUp>
 
       {/* stat trio */}

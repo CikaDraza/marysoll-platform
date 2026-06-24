@@ -58,7 +58,7 @@ export function Theme8Footer({
           <div className="relative grid lg:grid-cols-[1.2fr_0.8fr] gap-10 items-center">
             <div>
               <h2 className="m-0 mb-5 font-bagel text-[clamp(40px,6.5vw,82px)] leading-[0.86] text-white">
-                Spremni za vaše
+                Spremni za vase
                 <br />
                 <span className="text-y2k-hot">
                   najbolje trepavice do sada?
