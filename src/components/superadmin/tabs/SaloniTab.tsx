@@ -32,6 +32,10 @@ function SalonIdentityPanel({
     cloudinaryFolder: tenant.cloudinaryFolder,
   });
 
+  const ownerEmail = tenant.owner?.email ?? "";
+  const [emailInput, setEmailInput] = useState(ownerEmail);
+  const [confirmEmail, setConfirmEmail] = useState(false);
+
   useEffect(() => {
     async function handleFormUpdate() {
       setForm({
@@ -39,9 +43,16 @@ function SalonIdentityPanel({
         customDomain: tenant.customDomain ?? "",
         cloudinaryFolder: tenant.cloudinaryFolder,
       });
+      setEmailInput(tenant.owner?.email ?? "");
+      setConfirmEmail(false);
     }
     handleFormUpdate();
-  }, [tenant.slug, tenant.customDomain, tenant.cloudinaryFolder]);
+  }, [tenant.slug, tenant.customDomain, tenant.cloudinaryFolder, tenant.owner?.email]);
+
+  const trimmedEmail = emailInput.trim();
+  const emailChanged =
+    trimmedEmail.length > 0 &&
+    trimmedEmail.toLowerCase() !== ownerEmail.toLowerCase();
 
   const handleSave = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -98,6 +109,54 @@ function SalonIdentityPanel({
           }
           placeholder="salons/salon-ime"
         />
+      </div>
+
+      <div className="sm:col-span-2 border-t border-slate-700 pt-4">
+        <label className={lbl}>Email vlasnika (login)</label>
+        <div className="flex gap-2">
+          <input
+            type="email"
+            className={inp + " font-mono"}
+            value={emailInput}
+            onChange={(e) => {
+              setEmailInput(e.target.value);
+              setConfirmEmail(false);
+            }}
+            placeholder="vlasnik@salon.com"
+            autoComplete="off"
+          />
+          {!confirmEmail ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirmEmail(true);
+              }}
+              disabled={!emailChanged || superAdmin.isChangingOwnerEmail}
+              className={btnPrimary + " whitespace-nowrap"}
+            >
+              Promeni
+            </button>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                superAdmin.changeOwnerEmail(tenant._id, trimmedEmail);
+                setConfirmEmail(false);
+              }}
+              disabled={superAdmin.isChangingOwnerEmail}
+              className={btnDanger + " whitespace-nowrap"}
+            >
+              {superAdmin.isChangingOwnerEmail
+                ? "Menjam..."
+                : "Potvrdi — izloguj vlasnika"}
+            </button>
+          )}
+        </div>
+        <p className="mt-1 text-[10px] text-slate-500">
+          Menja login email na svim mestima (nalog, platforma, profil). Lozinka
+          ostaje ista. Vlasnik se automatski izloguje pri sledećem učitavanju
+          panela i prijavljuje se novim mejlom.
+        </p>
       </div>
 
       <div className="sm:col-span-2 flex items-center justify-between gap-3">

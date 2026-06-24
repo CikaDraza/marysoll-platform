@@ -47,6 +47,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 401 });
     }
 
+    // Force-logout gate: if the login email was changed (e.g. by superadmin),
+    // the refresh token still carries the old email. Reject so the session ends
+    // and the user must log in again with the new email.
+    if (
+      decoded.email &&
+      tenantUser.email &&
+      decoded.email.toLowerCase() !== tenantUser.email.toLowerCase()
+    ) {
+      return NextResponse.json(
+        { error: "Sesija je poništena. Prijavite se ponovo.", code: "SESSION_INVALIDATED" },
+        { status: 401 },
+      );
+    }
+
     if (tenantUser.status === "suspended") {
       return NextResponse.json({ error: "Account suspended" }, { status: 403 });
     }

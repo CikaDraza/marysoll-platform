@@ -271,6 +271,39 @@ export function useSuperAdminTenants() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // ── Owner email mutation (changes login email everywhere + force-logout) ───
+  const ownerEmailMutation = useMutation({
+    mutationFn: async ({
+      tenantId,
+      newEmail,
+    }: {
+      tenantId: string;
+      newEmail: string;
+    }) => {
+      const res = await fetch(
+        `/api/superadmin/tenants/${tenantId}/owner-email`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ newEmail }),
+        },
+      );
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e.error ?? "Greška pri promeni emaila");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast.success(data.message ?? "Email vlasnika promenjen");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   // ── Delete mutation ─────────────────────────────────────────────────────────
   const deleteMutation = useMutation({
     mutationFn: async (tenantId: string) => {
@@ -391,6 +424,11 @@ export function useSuperAdminTenants() {
       },
     ) => identityMutation.mutate({ tenantId, ...data }),
     isUpdatingIdentity: identityMutation.isPending,
+
+    // Owner email
+    changeOwnerEmail: (tenantId: string, newEmail: string) =>
+      ownerEmailMutation.mutate({ tenantId, newEmail }),
+    isChangingOwnerEmail: ownerEmailMutation.isPending,
 
     // Delete
     deleteTenant: (tenantId: string) => deleteMutation.mutate(tenantId),

@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { SalonProfile } from "@/models/SalonProfile";
+import { TenantUser } from "@/models/TenantUser";
 import { requireAdmin } from "@/lib/auth/auth-server";
 import { DecodedToken } from "@/types/auth/types";
 
@@ -23,6 +24,25 @@ export async function GET(req: NextRequest) {
         { error: "Tenant nije pronađen" },
         { status: 404 },
       );
+    }
+
+    // Force-logout gate: if the login email was changed (e.g. by superadmin),
+    // the access token carries a stale email. Reject so the axios interceptor
+    // attempts a refresh — which also fails — and logs the owner out.
+    if (decoded.tenantUserId) {
+      const tu = await TenantUser.findById(decoded.tenantUserId)
+        .select("email")
+        .lean<{ email?: string } | null>();
+      if (
+        tu?.email &&
+        decoded.email &&
+        tu.email.toLowerCase() !== decoded.email.toLowerCase()
+      ) {
+        return NextResponse.json(
+          { error: "Sesija je poništena. Prijavite se ponovo.", code: "SESSION_INVALIDATED" },
+          { status: 401 },
+        );
+      }
     }
 
     const tenant = await Tenant.findById(decoded.tenantId)
