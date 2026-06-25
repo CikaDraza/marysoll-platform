@@ -36,16 +36,13 @@ export async function crawlRenderedMarketingPage(
     throw new Error("Browserless is not configured");
   }
 
-  const response = await fetch(functionUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      context: { url, performance, pageName },
-      code: `
+  const requestBody = JSON.stringify({
+    context: { url, performance, pageName },
+    code: `
 export default async ({ page, context }) => {
   const targetUrl = context.url;
   await page.goto(targetUrl, { waitUntil: "networkidle2", timeout: 45000 });
-  await page.waitForTimeout(1200);
+  await new Promise((resolve) => setTimeout(resolve, 1200));
 
   const snapshot = await page.evaluate(({ targetUrl, performance, pageName }) => {
     const clean = (value) => String(value || "").replace(/\\s+/g, " ").trim();
@@ -255,12 +252,26 @@ export default async ({ page, context }) => {
   return { data: snapshot, type: "application/json" };
 };
       `.trim(),
-    }),
   });
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Browserless crawl failed: ${response.status} - ${error}`);
+  // Browserless rate-limits concurrent sessions at its gateway (429). Retry a
+  // couple of times with backoff so a transient cap doesn't fail the crawl.
+  let response: Response | undefined;
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    response = await fetch(functionUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: requestBody,
+    });
+    if (response.status !== 429 || attempt === maxAttempts) break;
+    await new Promise((resolve) => setTimeout(resolve, attempt * 1500));
+  }
+
+  if (!response || !response.ok) {
+    const error = response ? await response.text() : "no response";
+    const status = response?.status ?? 0;
+    throw new Error(`Browserless crawl failed: ${status} - ${error}`);
   }
 
   const payload = (await response.json()) as

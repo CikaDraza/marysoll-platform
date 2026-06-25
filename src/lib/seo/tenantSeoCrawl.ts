@@ -49,18 +49,20 @@ export async function crawlTenantSeoPages(homeUrl: string) {
   const urls = buildTenantSeoPageUrls(homeUrl);
   const entries = Object.entries(urls) as [TenantSeoPageKey, string][];
 
-  return Promise.all(
-    entries.map(async ([page, url]): Promise<TenantSeoPageSnapshot> => {
-      try {
-        const snapshot = await crawlRenderedMarketingPage(url, undefined, page);
-        return { page, url, snapshot };
-      } catch (err) {
-        return {
-          page,
-          url,
-          error: err instanceof Error ? err.message : "Rendered crawl failed",
-        };
-      }
-    }),
-  );
+  // Crawl sequentially: Browserless caps concurrent sessions and returns 429 at
+  // its gateway when these pages are requested in parallel.
+  const results: TenantSeoPageSnapshot[] = [];
+  for (const [page, url] of entries) {
+    try {
+      const snapshot = await crawlRenderedMarketingPage(url, undefined, page);
+      results.push({ page, url, snapshot });
+    } catch (err) {
+      results.push({
+        page,
+        url,
+        error: err instanceof Error ? err.message : "Rendered crawl failed",
+      });
+    }
+  }
+  return results;
 }
