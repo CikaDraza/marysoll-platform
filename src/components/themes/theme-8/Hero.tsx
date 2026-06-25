@@ -20,6 +20,8 @@ interface Props {
   };
   /** Salon name — used as the giant Y2K wordmark when no CMS headline is set. */
   salonName?: string;
+  /** Salon city — folded into the hero photo alt text for local SEO. */
+  salonCity?: string;
   tenantStats?: TenantStats;
   yearsOfExperience?: number;
 }
@@ -72,6 +74,9 @@ function Wordmark({ text }: { text: string }) {
 
   return (
     <h1 className="relative z-2 font-bagel leading-[0.82] tracking-[-0.01em] m-0">
+      <span className="[-webkit-text-stroke:1px_pink] block font-bold rotate-[3deg] text-[clamp(16px,11vw,26px)] mb-[-1.2em]">
+        The
+      </span>
       <span
         className={`block text-[clamp(116px,11vw,168px)] rotate-[-2deg] drop-shadow-[3px_3px_0_#0b0b0f] ${CHROME}`}
       >
@@ -95,10 +100,18 @@ export function Theme8Hero({
   heroData,
   cta,
   salonName,
+  salonCity,
   tenantStats,
   yearsOfExperience,
 }: Props) {
   const { open } = useTheme8Modal();
+  // Keyword-rich, localised fallback alt for the main hero photo (a real content
+  // image), so it carries SEO value when the CMS alt field is left empty.
+  const heroImageAlt =
+    heroData.image?.alt?.trim() ||
+    `${salonName ?? "Lash Room by Anja"} — trepavice${
+      salonCity ? ` u ${salonCity}` : ""
+    } i online zakazivanje`;
   // Stats stay on flattering fallbacks until the salon has real traction.
   const appointmentCount = tenantStats?.appointmentCount ?? 0;
   const hasRealTraction =
@@ -194,7 +207,7 @@ export function Theme8Hero({
               <div className="relative w-full h-[300px]">
                 <Image
                   src={heroData.image?.src || "/images/theme-8/bratz-eye.jpg"}
-                  alt={heroData.image?.alt || "Bratz-inspired lash close up"}
+                  alt={heroImageAlt}
                   fill
                   sizes="(min-width: 1024px) 30vw, 70vw"
                   className="object-cover object-[50%_36%]"

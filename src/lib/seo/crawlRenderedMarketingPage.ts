@@ -70,11 +70,22 @@ export default async ({ page, context }) => {
     const meta = (selector, attr = "content") =>
       document.querySelector(selector)?.getAttribute(attr) || "";
 
+    // Decorative images (aria-hidden / role=presentation, or nested inside such a
+    // container) are intentionally hidden from assistive tech and carry no
+    // content meaning, so they must NOT count toward the SEO/alt-text audit.
+    const isDecorative = (element) => {
+      if (!element || !element.closest) return false;
+      if (element.closest("[aria-hidden='true']")) return true;
+      const role = element.getAttribute && element.getAttribute("role");
+      return role === "presentation" || role === "none";
+    };
+
     // Collect images from ALL real sources, not just <img>.
     const collectImages = (root) => {
       const out = [];
       Array.from(root.querySelectorAll("img"))
         .filter(isVisible)
+        .filter((el) => !isDecorative(el))
         .forEach((el) => {
           out.push({
             type: "img",
@@ -82,13 +93,16 @@ export default async ({ page, context }) => {
             alt: clean(el.getAttribute("alt") || ""),
           });
         });
-      Array.from(root.querySelectorAll("picture source")).forEach((el) => {
-        const srcset = el.getAttribute("srcset") || "";
-        const first = (srcset.split(",")[0] || "").trim().split(" ")[0] || "";
-        if (first) out.push({ type: "picture", src: abs(first), alt: "" });
-      });
+      Array.from(root.querySelectorAll("picture source"))
+        .filter((el) => !isDecorative(el))
+        .forEach((el) => {
+          const srcset = el.getAttribute("srcset") || "";
+          const first = (srcset.split(",")[0] || "").trim().split(" ")[0] || "";
+          if (first) out.push({ type: "picture", src: abs(first), alt: "" });
+        });
       Array.from(root.querySelectorAll("video[poster]"))
         .filter(isVisible)
+        .filter((el) => !isDecorative(el))
         .forEach((el) => {
           out.push({
             type: "video-poster",
@@ -98,6 +112,7 @@ export default async ({ page, context }) => {
         });
       Array.from(root.querySelectorAll("iframe[src]"))
         .filter(isVisible)
+        .filter((el) => !isDecorative(el))
         .forEach((el) => {
           out.push({
             type: "iframe",
@@ -108,6 +123,7 @@ export default async ({ page, context }) => {
       Array.from(root.querySelectorAll("*"))
         .slice(0, 4000)
         .filter(isVisible)
+        .filter((el) => !isDecorative(el))
         .forEach((el) => {
           const bg = window.getComputedStyle(el).backgroundImage;
           if (bg && bg !== "none" && bg.indexOf("url(") !== -1) {

@@ -1123,7 +1123,10 @@ export function ThemeLayout({
           href="/images/theme-8/bg-wallpaper_1_.webp"
         />
         {/* first-paint cover: wall + big white logo, fades itself out */}
-        <Theme8Preloader logo={salon.logo ?? undefined} salonName={salon.name} />
+        <Theme8Preloader
+          logo={salon.logo ?? undefined}
+          salonName={salon.name}
+        />
         <Y2KFilters />
         {/* Multi-layer graffiti decoration system (all pointer-events-none) */}
         <BackgroundWall />
@@ -1144,7 +1147,7 @@ export function ThemeLayout({
             duration={0.7}
           >
             <Theme8Header {...headerProps} />
-            <main className="flex-1 overflow-x-clip flex flex-col">
+            <main className="flex-1 overflow-x-clip flex flex-col mt-6">
               {heroEnabled && (
                 <Theme8Hero
                   heroData={{
@@ -1154,6 +1157,7 @@ export function ThemeLayout({
                   }}
                   cta={resolvedCta}
                   salonName={salon.name}
+                  salonCity={salon.city}
                   tenantStats={tenantStats}
                   yearsOfExperience={ls?.landing?.about?.yearsOfExperience}
                 />
