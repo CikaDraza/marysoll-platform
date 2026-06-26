@@ -42,13 +42,16 @@ export function BackgroundWall() {
   return (
     <>
       {/* layer 1 — wallpaper paints immediately (no fade) so the first frame is
-          the wall, not a flat colour. The preloader covers the cold-load window. */}
+          the wall, not a flat colour. The preloader covers the cold-load window.
+          Sized to the *large* viewport height (100lvh, h-screen fallback) and
+          anchored top-only: this stays a constant size when the mobile URL bar
+          shows/hides, so the bg-cover image never rescales/jumps on scroll. */}
       <div
         aria-hidden="true"
-        className="fixed inset-0 z-0 bg-[url('/images/theme-8/bg-wallpaper_1_.webp')] bg-cover bg-center"
+        className="fixed top-0 left-0 w-full h-screen h-[100lvh] z-0 bg-[url('/images/theme-8/bg-wallpaper_1_.webp')] bg-cover bg-center"
       />
-      <div className="fixed inset-0 z-0 pointer-events-none bg-[radial-gradient(120%_80%_at_50%_0%,rgba(20,2,16,0)_40%,rgba(20,2,16,0.45)_100%)]" />
-      <div className="fixed inset-0 z-0 pointer-events-none bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(40,5,30,0.12))]" />
+      <div className="fixed top-0 left-0 w-full h-screen h-[100lvh] z-0 pointer-events-none bg-[radial-gradient(120%_80%_at_50%_0%,rgba(20,2,16,0)_40%,rgba(20,2,16,0.45)_100%)]" />
+      <div className="fixed top-0 left-0 w-full h-screen h-[100lvh] z-0 pointer-events-none bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(40,5,30,0.12))]" />
     </>
   );
 }
@@ -139,7 +142,7 @@ export function FixedDecorLayer() {
   const reduce = useReducedMotion();
   return (
     <motion.div
-      className="fixed inset-0 z-0 overflow-hidden pointer-events-none"
+      className="fixed top-0 left-0 w-full h-screen h-[100lvh] z-0 overflow-hidden pointer-events-none"
       initial={reduce ? false : { opacity: 0 }}
       animate={reduce ? undefined : { opacity: 1 }}
       transition={{ duration: 0.6, delay: 0.5, ease: "easeOut" }}
