@@ -20,6 +20,8 @@ interface Props {
   };
   tenantStats?: TenantStats;
   yearsOfExperience?: number;
+  /** Opening year — when set, years of artistry auto-increments each year. */
+  openingYear?: number;
   bookingSlot?: ReactNode;
 }
 
@@ -59,20 +61,29 @@ export function Theme7Hero({
   cta,
   tenantStats,
   yearsOfExperience,
+  openingYear,
   bookingSlot,
 }: Props) {
   // Stats stay on flattering fallbacks until the salon has real traction:
-  // more than 3 appointments AND more than 3 testimonials — both from tenantStats.
-  const appointmentCount = tenantStats?.appointmentCount ?? 0;
+  // more than 3 *completed* appointments AND more than 3 testimonials.
+  const completedCount = tenantStats?.completedAppointmentCount ?? 0;
   const hasRealTraction =
-    appointmentCount > 3 && (tenantStats?.reviewCount ?? 0) > 3;
+    completedCount > 3 && (tenantStats?.reviewCount ?? 0) > 3;
   const setsCrafted = hasRealTraction
-    ? formatStatValue(appointmentCount)
+    ? formatStatValue(completedCount)
     : "250+";
-  // Years of artistry: CMS override, else auto-counts up from the opening year.
-  const years = yearsOfExperience
-    ? `${yearsOfExperience} yrs`
-    : `${Math.max(1, new Date().getFullYear() - STUDIO_OPENED_YEAR)} yrs`;
+  // Rating: real testimonials average once there's traction, else a fallback.
+  const rating =
+    hasRealTraction && tenantStats?.averageRating != null
+      ? tenantStats.averageRating.toFixed(1)
+      : "4.9";
+  // Years of artistry: opening year (auto-increments) wins; else manual CMS
+  // value; else auto-counts up from the baked-in opening year.
+  const years = openingYear
+    ? `${Math.max(1, new Date().getFullYear() - openingYear)} yrs`
+    : yearsOfExperience
+      ? `${yearsOfExperience} yrs`
+      : `${Math.max(1, new Date().getFullYear() - STUDIO_OPENED_YEAR)} yrs`;
 
   return (
     <section id="top" className="relative bg-ink lg:max-h-screen text-cream">
@@ -125,7 +136,8 @@ export function Theme7Hero({
             <div className="mt-14 flex items-center gap-10">
               <div>
                 <div className="font-cormorant text-4xl">
-                  4.9<span className="text-neon">★</span>
+                  {rating}
+                  <span className="text-neon">★</span>
                 </div>
                 <div className="text-[11px] uppercase tracking-[0.2em] text-cream/50 mt-1">
                   Client rating

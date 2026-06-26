@@ -129,8 +129,12 @@ export function Theme8Footer({
             <Image
               src={logoSrc}
               alt={displayName}
-              width={140}
-              height={40}
+              // Intrinsic-ratio hint kept larger than the rendered size (h-10 =
+              // 40px). If the height prop equalled 40, only the auto width would
+              // differ from its attribute and Next would warn about a modified
+              // aspect ratio; keeping both larger means CSS scales both down.
+              width={280}
+              height={80}
               className="h-10 w-auto object-contain [filter:invert(1)_brightness(2)]"
             />
             <span className="text-white/55 text-[13px] font-medium">

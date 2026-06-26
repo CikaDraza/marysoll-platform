@@ -114,6 +114,8 @@ const SalonProfileSchema = new mongoose.Schema(
             default: undefined,
           },
           yearsOfExperience: { type: Number },
+          /** When set, years of experience auto-increments from this year. */
+          openingYear: { type: Number },
         },
         artists: {
           enabled: { type: Boolean, default: true },

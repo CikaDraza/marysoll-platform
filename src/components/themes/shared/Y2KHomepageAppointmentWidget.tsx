@@ -224,10 +224,38 @@ function WeekView({
     end: endOfWeek(weekStart, { weekStartsOn: 1 }),
   });
 
+  // Keep the highlighted day scrolled into view as the week changes, so the
+  // colored column follows the arrows on narrow screens (the grid is forced
+  // wider than the modal on mobile). Mirrors the day-strip recenter above.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef<HTMLButtonElement>(null);
+  const activeIdx = (() => {
+    const sel = days.findIndex((d) => isSameDay(d, selectedDate));
+    if (sel !== -1) return sel;
+    return days.findIndex((d) => isSameDay(d, new Date()));
+  })();
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const btn = activeRef.current;
+    if (!btn) {
+      container.scrollTo({ left: 0, behavior: "smooth" });
+      return;
+    }
+    const cRect = container.getBoundingClientRect();
+    const bRect = btn.getBoundingClientRect();
+    const delta =
+      bRect.left - cRect.left - container.clientWidth / 2 + bRect.width / 2;
+    container.scrollTo({
+      left: container.scrollLeft + delta,
+      behavior: "smooth",
+    });
+  }, [weekStart, selectedDate]);
+
   return (
-    <div className="overflow-x-auto -mx-1 px-1">
+    <div ref={scrollRef} className="overflow-x-auto -mx-1 px-1">
       <div className="grid grid-cols-7 gap-1 sm:gap-1.5 min-w-[336px]">
-        {days.map((day) => {
+        {days.map((day, i) => {
           const dateStr = format(day, "yyyy-MM-dd");
           const { isWorking, start, end } = getWorkingRange(workingHours, day);
           const slots = isWorking ? generateSlots(start, end) : [];
@@ -242,6 +270,7 @@ function WeekView({
           return (
             <button
               key={dateStr}
+              ref={i === activeIdx ? activeRef : null}
               onClick={() => isWorking && onDayClick(day)}
               className={`flex flex-col items-center gap-1 p-1 sm:p-2 rounded-xl border-[3px] transition min-h-[72px] sm:min-h-[90px] ${
                 !isWorking

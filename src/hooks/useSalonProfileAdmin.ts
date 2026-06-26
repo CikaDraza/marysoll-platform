@@ -187,6 +187,7 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
         image: rawLanding.about?.image,
         images: rawLanding.about?.images,
         yearsOfExperience: rawLanding.about?.yearsOfExperience,
+        openingYear: rawLanding.about?.openingYear,
       },
       artists: {
         enabled: rawLanding.artists?.enabled ?? false,

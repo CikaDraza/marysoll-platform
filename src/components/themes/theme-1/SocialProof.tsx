@@ -10,7 +10,7 @@ export function Theme1SocialProof({ tenantStats, yearsOfExperience }: Props) {
   const stats = tenantStats
     ? [
         { id: 1, name: "Zadovoljnih klijenata", value: formatStatValue(tenantStats.clientCount) },
-        { id: 2, name: "Urađenih tretmana", value: formatStatValue(tenantStats.appointmentCount) },
+        { id: 2, name: "Urađenih tretmana", value: formatStatValue(tenantStats.completedAppointmentCount) },
         ...(yearsOfExperience ? [{ id: 3, name: "Godina iskustva", value: `${yearsOfExperience}+` }] : []),
       ]
     : [

@@ -426,7 +426,7 @@ export function ThemeLayout({
                       label: "Zadovoljnih klijenata",
                     },
                     {
-                      value: formatStatValue(tenantStats.appointmentCount),
+                      value: formatStatValue(tenantStats.completedAppointmentCount),
                       label: "Urađenih tretmana",
                     },
                     ...(ls?.landing?.about?.yearsOfExperience
@@ -537,7 +537,7 @@ export function ThemeLayout({
                         label: "Zadovoljnih klijenata",
                       },
                       {
-                        value: formatStatValue(tenantStats.appointmentCount),
+                        value: formatStatValue(tenantStats.completedAppointmentCount),
                         label: "Urađenih tretmana",
                       },
                       ...(ls?.landing?.about?.yearsOfExperience
@@ -687,7 +687,7 @@ export function ThemeLayout({
                         label: "Zadovoljnih klijenata",
                       },
                       {
-                        value: formatStatValue(tenantStats.appointmentCount),
+                        value: formatStatValue(tenantStats.completedAppointmentCount),
                         label: "Urađenih tretmana",
                       },
                       ...(ls?.landing?.about?.yearsOfExperience
@@ -914,7 +914,7 @@ export function ThemeLayout({
                         label: "Zadovoljnih klijenata",
                       },
                       {
-                        value: formatStatValue(tenantStats.appointmentCount),
+                        value: formatStatValue(tenantStats.completedAppointmentCount),
                         label: "Urađenih tretmana",
                       },
                       ...(ls?.landing?.about?.yearsOfExperience
@@ -1036,6 +1036,7 @@ export function ThemeLayout({
               cta={resolvedCta}
               tenantStats={tenantStats}
               yearsOfExperience={ls?.landing?.about?.yearsOfExperience}
+              openingYear={ls?.landing?.about?.openingYear}
               bookingSlot={
                 <Theme7BookingCard
                   tenantSlug={tenantSlug}
@@ -1165,6 +1166,7 @@ export function ThemeLayout({
                   photoCaptions={ls?.landing?.hero?.theme8?.photoCaptions}
                   tenantStats={tenantStats}
                   yearsOfExperience={ls?.landing?.about?.yearsOfExperience}
+                  openingYear={ls?.landing?.about?.openingYear}
                 />
               )}
               {aboutEnabled && (
@@ -1182,6 +1184,7 @@ export function ThemeLayout({
               <Theme8SocialProof
                 instagramUrl={igLink}
                 instagramHandle={igHandle}
+                tenantStats={tenantStats}
               />
               {servicesPreviewEnabled && services.length > 0 && (
                 <Theme8Services
@@ -1201,7 +1204,10 @@ export function ThemeLayout({
               {testimonialsEnabled && (
                 <Theme8TestimonialsSection
                   testimonials={
-                    testimonials.length > 0 ? testimonials : undefined
+                    // Keep the flattering fallback cards until there are more
+                    // than 3 real testimonials (same traction threshold as the
+                    // hero stats), then switch to the real ones.
+                    testimonials.length > 3 ? testimonials : undefined
                   }
                   headline={ls?.landing?.testimonials?.headline}
                 />

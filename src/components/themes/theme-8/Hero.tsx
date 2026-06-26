@@ -34,6 +34,8 @@ interface Props {
   photoCaptions?: { primary?: string; founder?: string };
   tenantStats?: TenantStats;
   yearsOfExperience?: number;
+  /** Opening year — when set, years of artistry auto-increments each year. */
+  openingYear?: number;
 }
 
 /** Salon opened in 2023; "years of artistry" auto-increments one per year. */
@@ -125,6 +127,7 @@ export function Theme8Hero({
   photoCaptions,
   tenantStats,
   yearsOfExperience,
+  openingYear,
 }: Props) {
   const { open } = useTheme8Modal();
   // Two hero photos: [0] main lash close-up (falls back to legacy single image),
@@ -140,16 +143,25 @@ export function Theme8Hero({
     } i online zakazivanje`;
   const founderAlt =
     founderPhoto?.alt?.trim() || `${salonName ?? "Anja"}, founder`;
-  // Stats stay on flattering fallbacks until the salon has real traction.
-  const appointmentCount = tenantStats?.appointmentCount ?? 0;
+  // Stats stay on flattering fallbacks until the salon has real traction —
+  // more than 3 *completed* appointments AND more than 3 testimonials.
+  const completedCount = tenantStats?.completedAppointmentCount ?? 0;
   const hasRealTraction =
-    appointmentCount > 3 && (tenantStats?.reviewCount ?? 0) > 3;
+    completedCount > 3 && (tenantStats?.reviewCount ?? 0) > 3;
   const setsCrafted = hasRealTraction
-    ? formatStatValue(appointmentCount)
+    ? formatStatValue(completedCount)
     : "1.2k+";
-  const years = yearsOfExperience
-    ? `${yearsOfExperience} yrs`
-    : `${Math.max(1, new Date().getFullYear() - STUDIO_OPENED_YEAR)} yrs`;
+  // Rating: real testimonials average once there's traction, else a fallback.
+  const rating =
+    hasRealTraction && tenantStats?.averageRating != null
+      ? `${tenantStats.averageRating.toFixed(1)}★`
+      : "4.9★";
+  // Opening year (auto-increments) wins; else manual value; else baked-in start.
+  const years = openingYear
+    ? `${Math.max(1, new Date().getFullYear() - openingYear)} yrs`
+    : yearsOfExperience
+      ? `${yearsOfExperience} yrs`
+      : `${Math.max(1, new Date().getFullYear() - STUDIO_OPENED_YEAR)} yrs`;
 
   const wordmark =
     heroData.headline?.trim() || salonName || "Lash Room by Anja";
@@ -195,8 +207,10 @@ export function Theme8Hero({
             >
               <Image
                 src="/images/theme-8/title-background-paint.png"
-                alt="spary paint background"
+                alt=""
+                aria-hidden="true"
                 fill
+                sizes="(min-width: 1024px) 560px, 100vw"
                 className="object-cover overflow-visible lg:object-contain object-[50%_50%]"
               />
             </div>
@@ -295,7 +309,7 @@ export function Theme8Hero({
 
       {/* stat trio */}
       <FadeUp className="mt-12 flex flex-wrap justify-center gap-5">
-        <Stat value="4.9★" label="Client rating" tone="ink" />
+        <Stat value={rating} label="Client rating" tone="ink" />
         <Stat value={setsCrafted} label="Sets crafted" tone="pink" />
         <Stat value={years} label="Of artistry" tone="white" />
       </FadeUp>

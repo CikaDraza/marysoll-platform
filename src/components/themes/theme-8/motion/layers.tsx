@@ -203,7 +203,7 @@ export function FixedDecorLayer() {
           h={1172}
           delay={0.7}
           rotate={-5}
-          wrapClass="absolute left-[-40px] sm:-left-[150px] top-[48%] w-[130px] sm:w-[180px]"
+          wrapClass="absolute left-[-40px] sm:-left-[50px] top-[40%] w-[130px] sm:w-[180px]"
         />
         <StickerStick
           src={`${STICK}/sticker-sprite-2.png`}

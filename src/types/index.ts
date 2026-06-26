@@ -916,6 +916,13 @@ export interface LandingStructure {
 
       /** Manually entered years of experience shown in stats. */
       yearsOfExperience?: number;
+
+      /**
+       * Salon opening year. When set, "years of experience" auto-increments each
+       * year (currentYear − openingYear) and takes precedence over the manual
+       * yearsOfExperience value.
+       */
+      openingYear?: number;
     };
     artists: {
       enabled: boolean;

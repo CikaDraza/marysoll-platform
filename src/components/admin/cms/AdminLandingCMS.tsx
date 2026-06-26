@@ -1768,27 +1768,51 @@ export function AdminLandingCMS({ sp }: Props) {
           </div>
         )}
 
-        <div>
-          <label className={lbl}>Godina iskustva</label>
-          <input
-            className={inp}
-            type="number"
-            min={0}
-            value={about.yearsOfExperience ?? ""}
-            onChange={(e) =>
-              updateLandingSection("about", {
-                ...about,
-                yearsOfExperience: e.target.value
-                  ? Number(e.target.value)
-                  : undefined,
-              })
-            }
-            placeholder="npr. 5"
-          />
-          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-            Prikazuje se kao statistika (npr. 5+). Ostavi prazno da se ne
-            prikazuje.
-          </p>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={lbl}>Godina otvaranja</label>
+            <input
+              className={inp}
+              type="number"
+              min={1900}
+              max={new Date().getFullYear()}
+              value={about.openingYear ?? ""}
+              onChange={(e) =>
+                updateLandingSection("about", {
+                  ...about,
+                  openingYear: e.target.value
+                    ? Number(e.target.value)
+                    : undefined,
+                })
+              }
+              placeholder="npr. 2023"
+            />
+            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+              Godine iskustva se računaju automatski i rastu svake godine. Ima
+              prednost nad ručnom vrednošću ispod.
+            </p>
+          </div>
+          <div>
+            <label className={lbl}>Godina iskustva (ručno)</label>
+            <input
+              className={inp}
+              type="number"
+              min={0}
+              value={about.yearsOfExperience ?? ""}
+              onChange={(e) =>
+                updateLandingSection("about", {
+                  ...about,
+                  yearsOfExperience: e.target.value
+                    ? Number(e.target.value)
+                    : undefined,
+                })
+              }
+              placeholder="npr. 5"
+            />
+            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+              Koristi se samo ako „Godina otvaranja&quot; nije uneta.
+            </p>
+          </div>
         </div>
       </SectionCard>
 
