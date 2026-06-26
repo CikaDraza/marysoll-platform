@@ -176,6 +176,8 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
             ? { text: rawLanding.hero.ctas.secondary.text ?? "", href: rawLanding.hero.ctas.secondary.href ?? "" }
             : undefined,
         },
+        // Theme-8 (Y2K) hero text overrides — passed through untouched.
+        theme8: rawLanding.hero?.theme8,
       },
       about: {
         enabled: rawLanding.about?.enabled ?? true,
@@ -183,6 +185,7 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
         paragraphs: rawLanding.about?.paragraphs ?? [],
         links: rawLanding.about?.links ?? [],
         image: rawLanding.about?.image,
+        images: rawLanding.about?.images,
         yearsOfExperience: rawLanding.about?.yearsOfExperience,
       },
       artists: {

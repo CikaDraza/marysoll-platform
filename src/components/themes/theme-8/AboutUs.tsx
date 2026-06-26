@@ -10,6 +10,8 @@ interface Props {
     paragraphs?: string[];
     links?: AboutTextLink[];
     image?: { src: string; alt: string };
+    /** Theme-8: [0] main portrait (falls back to `image`), [1] secondary polaroid. */
+    images?: { src?: string; alt?: string }[];
   };
   founderName?: string;
 }
@@ -41,8 +43,15 @@ export function Theme8AboutUs({ about, founderName }: Props) {
     about.paragraphs && about.paragraphs.filter(Boolean).length > 0
       ? about.paragraphs
       : DEFAULT_PARAGRAPHS;
-  const imgSrc = about.image?.src || "/images/theme-8/studio.png";
-  const imgAlt = about.image?.alt || `${founderName ?? "The Lash Room"} studio`;
+  // Two photos: [0] main portrait (falls back to legacy single image), [1] the
+  // secondary taped polaroid. Each falls back to a baked-in default.
+  const mainPhoto = about.images?.[0] ?? about.image;
+  const sidePhoto = about.images?.[1];
+  const imgSrc = mainPhoto?.src || "/images/theme-8/studio.png";
+  const imgAlt = mainPhoto?.alt || `${founderName ?? "The Lash Room"} studio`;
+  const sideName = founderName?.split(/\s+/).pop() ?? "Anja";
+  const sideSrc = sidePhoto?.src || "/images/theme-8/anja-kiss.jpg";
+  const sideAlt = sidePhoto?.alt || `${sideName}, your artist`;
 
   return (
     <section id="about" className="relative max-w-[1120px] mx-auto my-24 px-5">
@@ -57,6 +66,15 @@ export function Theme8AboutUs({ about, founderName }: Props) {
         <div className="relative rotate-[-1.5deg]">
           <div className="absolute -inset-2.5 bg-y2k-paper [filter:url(#y2k-torn2)] shadow-[0_26px_60px_rgba(20,0,30,0.42)]" />
           <div className="relative grid md:grid-cols-[0.8fr_1.2fr] gap-9 items-center p-10">
+            <div className="absolute -top-10 left-3 lg:left-6 w-36 h-36 rotate-[-8deg] z-[5]">
+              <Image
+                src={`/images/theme-8/stickers/star-sticker.png`}
+                alt="star sticker"
+                fill
+                sizes="(min-width: 768px) 18vw, 45vw"
+                className="object-cover"
+              />
+            </div>
             {/* portrait */}
             <div className="relative rotate-[2deg]">
               <div className="bg-white p-2.5 pb-3.5 border-2 border-y2k-ink shadow-[5px_9px_18px_rgba(11,11,15,0.28)]">
@@ -75,19 +93,19 @@ export function Theme8AboutUs({ about, founderName }: Props) {
               </div>
               {/* taped "Anja" polaroid — bottom-left, tilted the opposite way
                   from the hero one, kept inside the About container width */}
-              <div className="absolute -bottom-11 left-[-12%] w-[44%] min-w-[140px] rotate-[-5deg] z-[3]">
+              <div className="absolute -bottom-10 lg:-bottom-24 left-[-14%] lg:left-[-16%] w-[44%] min-w-[140px] rotate-[-8deg] z-[3]">
                 <div className="relative bg-white p-2 pb-9 border-2 border-y2k-ink shadow-[6px_10px_22px_rgba(11,11,15,0.3)]">
-                  <div className="relative w-full h-[125px]">
+                  <div className="relative w-full h-[165px]">
                     <Image
-                      src="/images/theme-8/anja-kiss.jpg"
-                      alt={`${founderName?.split(/\s+/).pop() ?? "Anja"}, your artist`}
+                      src={sideSrc}
+                      alt={sideAlt}
                       fill
                       sizes="(min-width: 768px) 18vw, 45vw"
                       className="object-cover object-[50%_33%]"
                     />
                   </div>
                   <span className="absolute left-0 right-0 bottom-2 text-center font-caveat font-bold text-[19px] text-y2k-ink">
-                    {founderName?.split(/\s+/).pop() ?? "Anja"}, your artist ♡
+                    {sideName}, your artist ♡
                   </span>
                 </div>
                 {/* sellotape */}

@@ -869,6 +869,33 @@ export interface LandingStructure {
           href: string;
         };
       };
+
+      /**
+       * Theme-8 (Y2K Lash) specific hero text. Optional — only the theme-8 CMS
+       * editor surfaces these fields and only Theme8Hero reads them; other themes
+       * ignore the block entirely.
+       */
+      theme8?: {
+        /** Small badge above the wordmark (default: "Cute? Always. Basic? Never."). */
+        eyebrow?: string;
+        /**
+         * Per-span control of the stacked Y2K wordmark. Any empty field falls
+         * back to parsing `headline` (or the salon name).
+         */
+        wordmark?: {
+          prefix?: string; // small top line, default "The"
+          line1?: string; // chrome-gradient line
+          line2?: string; // pink ink-stroked line
+          tail?: string; // caveat script tail, e.g. "by Anja"
+        };
+        /** Marquee strip terms (e.g. CLASSIC, HYBRID, VOLUMEN). */
+        marquee?: string[];
+        /** Captions on the hero photo collage. */
+        photoCaptions?: {
+          primary?: string; // caption on the main lash photo
+          founder?: string; // caption on the founder polaroid
+        };
+      };
     };
     stats: { value: string; label: string }[]; // max 4 u UI
     about: {
@@ -880,6 +907,12 @@ export interface LandingStructure {
 
       /** Optional about-section image. Layout falls back gracefully when absent. */
       image?: HeroImage;
+
+      /**
+       * Additional about-section images. Theme-8 uses [0] as the main portrait
+       * (falls back to `image`) and [1] as the secondary polaroid.
+       */
+      images?: HeroImage[];
 
       /** Manually entered years of experience shown in stats. */
       yearsOfExperience?: number;

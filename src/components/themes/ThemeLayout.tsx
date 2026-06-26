@@ -1154,10 +1154,15 @@ export function ThemeLayout({
                     headline: ls?.landing?.hero?.headline,
                     subheadline: ls?.landing?.hero?.subheadline,
                     image: ls?.landing?.hero?.image,
+                    images: ls?.landing?.hero?.images,
                   }}
                   cta={resolvedCta}
                   salonName={salon.name}
                   salonCity={salon.city}
+                  eyebrow={ls?.landing?.hero?.theme8?.eyebrow}
+                  wordmark={ls?.landing?.hero?.theme8?.wordmark}
+                  marquee={ls?.landing?.hero?.theme8?.marquee}
+                  photoCaptions={ls?.landing?.hero?.theme8?.photoCaptions}
                   tenantStats={tenantStats}
                   yearsOfExperience={ls?.landing?.about?.yearsOfExperience}
                 />
@@ -1169,6 +1174,7 @@ export function ThemeLayout({
                     paragraphs: ls?.landing?.about?.paragraphs ?? [],
                     links: ls?.landing?.about?.links ?? [],
                     image: aboutImage,
+                    images: ls?.landing?.about?.images,
                   }}
                   founderName={salon.name}
                 />

@@ -146,14 +146,14 @@ export function Theme8ServicesPage({
           size={54}
           className="absolute left-[4%] top-6 rotate-[-12deg] hidden sm:block drop-shadow-[3px_4px_0_rgba(11,11,15,0.5)]"
         />
-        <span className="inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink">
-          {headline || "Services & prices"}
+        <span className="[-webkit-text-stroke:0.125px_#fff] inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink">
+          {"Ponuda The Lash Room Studio by Anja"}
         </span>
         <h1 className="mt-1.5 font-bagel [-webkit-text-stroke:1px_#ff2e97] text-[clamp(46px,9vw,104px)] leading-[0.9] text-y2k-ink rotate-[-1.5deg]">
-          THE MENU
+          {headline || "Services & prices"}
         </h1>
         {subheadline && (
-          <p className="mt-5 max-w-xl mx-auto text-[16px] leading-[1.55] font-medium text-y2k-plum bg-white/70 backdrop-blur-[2px] px-4 py-3 rounded-[14px] border-2 border-y2k-ink/10">
+          <p className="mt-5 max-w-xl mx-auto text-[16px] leading-[1.55] font-medium text-white/85 px-4 py-3 rounded-[14px]">
             {subheadline}
           </p>
         )}
@@ -173,7 +173,7 @@ export function Theme8ServicesPage({
         <div className="max-w-[1040px] mx-auto px-5 mt-10 space-y-16">
           {groups.map((group, gi) => (
             <FadeUp key={group.category || gi}>
-              <h2 className="font-bagel text-[clamp(30px,5vw,56px)] leading-[0.95] text-white [-webkit-text-stroke:3px_#0b0b0f] [text-shadow:4px_5px_0_rgba(255,46,151,0.7)] rotate-[-1deg] mb-4 ml-1">
+              <h2 className="relative font-bagel text-[clamp(30px,5vw,56px)] leading-[0.95] text-white [-webkit-text-stroke:3px_#0b0b0f] [text-shadow:4px_5px_0_rgba(255,46,151,0.7)] rotate-[-1deg] mb-4 z-3 ml-1">
                 {group.category || "Usluge"}
               </h2>
               <div

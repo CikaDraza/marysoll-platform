@@ -70,6 +70,21 @@ const SalonProfileSchema = new mongoose.Schema(
             type: [{ src: { type: String }, alt: { type: String } }],
             default: [],
           },
+          /** Theme-8 (Y2K) hero text overrides. Optional; ignored by other themes. */
+          theme8: {
+            eyebrow: { type: String },
+            wordmark: {
+              prefix: { type: String },
+              line1: { type: String },
+              line2: { type: String },
+              tail: { type: String },
+            },
+            marquee: { type: [String], default: undefined },
+            photoCaptions: {
+              primary: { type: String },
+              founder: { type: String },
+            },
+          },
         },
         about: {
           enabled: { type: Boolean, default: true },
@@ -92,6 +107,11 @@ const SalonProfileSchema = new mongoose.Schema(
           image: {
             src: { type: String },
             alt: { type: String },
+          },
+          /** Extra about images — theme-8: [0] portrait, [1] secondary polaroid. */
+          images: {
+            type: [{ src: { type: String }, alt: { type: String } }],
+            default: undefined,
           },
           yearsOfExperience: { type: Number },
         },

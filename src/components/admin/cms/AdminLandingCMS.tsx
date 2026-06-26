@@ -932,6 +932,8 @@ export function AdminLandingCMS({ sp }: Props) {
         enabled={hero.enabled}
         onToggle={(v) => updateLandingSection("hero", { ...hero, enabled: v })}
       >
+        {/* Basic hero text — hidden for theme-8 (Y2K uses its own block below) */}
+        {sp.form.landingTheme !== "theme-8" && (
         <div className="space-y-3">
           <div>
             <label className={lbl}>Naslov (Headline)</label>
@@ -980,6 +982,169 @@ export function AdminLandingCMS({ sp }: Props) {
             />
           </div>
         </div>
+        )}
+
+        {/* ── Theme-8 (Y2K) hero text — only shown for theme-8 ─────────────── */}
+        {sp.form.landingTheme === "theme-8" && (
+          <div className="rounded-2xl border border-pink-100 dark:border-pink-900/40 bg-pink-50/60 dark:bg-pink-950/20 p-4 space-y-4">
+            <div>
+              <p className="text-xs font-bold text-pink-600 dark:text-pink-400 bg-pink-100 dark:bg-pink-900/30 inline-block px-2.5 py-1 rounded-lg">
+                Y2K Hero tekst (theme-8)
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+                Prazna polja koriste podrazumevane vrednosti teme.
+              </p>
+            </div>
+
+            {/* Subheadline — theme-8 still uses the hero paragraph */}
+            <div>
+              <label className={lbl}>Podtekst (Subheadline)</label>
+              <textarea
+                className={inp + " resize-none"}
+                rows={2}
+                value={hero.subheadline ?? ""}
+                onChange={(e) =>
+                  updateLandingSection("hero", {
+                    ...hero,
+                    subheadline: e.target.value,
+                  })
+                }
+                placeholder="Kratki opis ispod naslova..."
+              />
+            </div>
+
+            {/* Eyebrow */}
+            <div>
+              <label className={lbl}>Eyebrow (bedž iznad naslova)</label>
+              <input
+                className={inp}
+                value={hero.theme8?.eyebrow ?? ""}
+                onChange={(e) =>
+                  updateLandingSection("hero", {
+                    ...hero,
+                    theme8: { ...hero.theme8, eyebrow: e.target.value },
+                  })
+                }
+                placeholder="Cute? Always. Basic? Never."
+              />
+            </div>
+
+            {/* Wordmark — one field per styled span */}
+            <div className="space-y-2">
+              <label className={lbl}>Naslov (Wordmark) — po redovima</label>
+              <div className="grid grid-cols-2 gap-3">
+                {(
+                  [
+                    { key: "prefix", label: "Gornji red", placeholder: "The" },
+                    {
+                      key: "tail",
+                      label: "Potpis (script)",
+                      placeholder: "by Anja",
+                    },
+                    {
+                      key: "line1",
+                      label: "Red 1 (hrom)",
+                      placeholder: "LASH",
+                    },
+                    {
+                      key: "line2",
+                      label: "Red 2 (pink)",
+                      placeholder: "ROOM",
+                    },
+                  ] as const
+                ).map(({ key, label, placeholder }) => (
+                  <div key={key}>
+                    <label className={lbl}>{label}</label>
+                    <input
+                      className={inp}
+                      value={hero.theme8?.wordmark?.[key] ?? ""}
+                      onChange={(e) =>
+                        updateLandingSection("hero", {
+                          ...hero,
+                          theme8: {
+                            ...hero.theme8,
+                            wordmark: {
+                              ...hero.theme8?.wordmark,
+                              [key]: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                      placeholder={placeholder}
+                    />
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                Ostavi prazno da se naslov automatski izvuče iz imena salona.
+              </p>
+            </div>
+
+            {/* Marquee */}
+            <div>
+              <label className={lbl}>Marquee traka (po jedan pojam u redu)</label>
+              <textarea
+                className={inp + " resize-none"}
+                rows={4}
+                value={(hero.theme8?.marquee ?? []).join("\n")}
+                onChange={(e) =>
+                  updateLandingSection("hero", {
+                    ...hero,
+                    theme8: {
+                      ...hero.theme8,
+                      marquee: e.target.value.split("\n"),
+                    },
+                  })
+                }
+                placeholder={"CLASSIC\nHYBRID\nVOLUMEN\nLASH LIFT"}
+              />
+            </div>
+
+            {/* Photo captions */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={lbl}>Natpis na glavnoj slici</label>
+                <input
+                  className={inp}
+                  value={hero.theme8?.photoCaptions?.primary ?? ""}
+                  onChange={(e) =>
+                    updateLandingSection("hero", {
+                      ...hero,
+                      theme8: {
+                        ...hero.theme8,
+                        photoCaptions: {
+                          ...hero.theme8?.photoCaptions,
+                          primary: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  placeholder="that cat's eye effect ✶"
+                />
+              </div>
+              <div>
+                <label className={lbl}>Natpis na slici osnivača</label>
+                <input
+                  className={inp}
+                  value={hero.theme8?.photoCaptions?.founder ?? ""}
+                  onChange={(e) =>
+                    updateLandingSection("hero", {
+                      ...hero,
+                      theme8: {
+                        ...hero.theme8,
+                        photoCaptions: {
+                          ...hero.theme8?.photoCaptions,
+                          founder: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  placeholder="Anja, your artist ♡"
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Contact */}
         <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-3">
@@ -1059,6 +1224,63 @@ export function AdminLandingCMS({ sp }: Props) {
         {/* ── Hero Images — driven by THEME_CONFIG ──────────────────────────── */}
         {(() => {
           const heroConf = themeConf.hero;
+
+          // Theme-8 collage uses two role-specific photos (hero.images[0..1]).
+          if (sp.form.landingTheme === "theme-8") {
+            const setHeroImg = (idx: number, src: string, alt: string) => {
+              const imgs = Array.from(
+                { length: Math.max(hero.images?.length ?? 0, idx + 1) },
+                (_, i) => hero.images?.[i] ?? { src: "", alt: "" },
+              );
+              imgs[idx] = { src, alt };
+              updateLandingSection("hero", { ...hero, images: imgs });
+            };
+            const heroSlots = [
+              { idx: 0, label: "Glavna slika (krupni plan)" },
+              { idx: 1, label: "Slika osnivača (polaroid)" },
+            ];
+            return (
+              <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-4">
+                <div>
+                  <p className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 inline-block px-2.5 py-1 rounded-lg">
+                    Hero Slike
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+                    Dve slike za kolaž. Prazna polja koriste podrazumevane slike.
+                  </p>
+                </div>
+                {heroSlots.map(({ idx, label }) => {
+                  const img = hero.images?.[idx];
+                  return (
+                    <div
+                      key={idx}
+                      className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 space-y-2"
+                    >
+                      <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                        {label}
+                      </span>
+                      <ImageInputField
+                        label="URL slike"
+                        value={img?.src ?? ""}
+                        onChange={(url) => setHeroImg(idx, url, img?.alt ?? "")}
+                      />
+                      <div>
+                        <label className={lbl}>Alt tekst</label>
+                        <input
+                          className={inp}
+                          value={img?.alt ?? ""}
+                          onChange={(e) =>
+                            setHeroImg(idx, img?.src ?? "", e.target.value)
+                          }
+                          placeholder="Opis slike za pristupačnost..."
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          }
 
           if (!heroConf.hasImage) {
             return (
@@ -1455,38 +1677,96 @@ export function AdminLandingCMS({ sp }: Props) {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-3">
-          <p className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 inline-block px-2.5 py-1 rounded-lg">
-            Slika (O nama)
-          </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            Ako ne dodate sliku, prikazaće se podrazumevana slika.
-          </p>
-          <ImageInputField
-            label="URL slike"
-            value={about.image?.src ?? ""}
-            onChange={(url) =>
-              updateLandingSection("about", {
-                ...about,
-                image: { src: url, alt: about.image?.alt ?? "" },
-              })
-            }
-          />
-          <div>
-            <label className={lbl}>Alt tekst</label>
-            <input
-              className={inp}
-              value={about.image?.alt ?? ""}
-              onChange={(e) =>
+        {sp.form.landingTheme === "theme-8" ? (
+          (() => {
+            const setAboutImg = (idx: number, src: string, alt: string) => {
+              const imgs = Array.from(
+                { length: Math.max(about.images?.length ?? 0, idx + 1) },
+                (_, i) => about.images?.[i] ?? { src: "", alt: "" },
+              );
+              imgs[idx] = { src, alt };
+              updateLandingSection("about", { ...about, images: imgs });
+            };
+            const aboutSlots = [
+              { idx: 0, label: "Glavna slika (portret)" },
+              { idx: 1, label: "Druga slika (polaroid)" },
+            ];
+            return (
+              <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-4">
+                <div>
+                  <p className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 inline-block px-2.5 py-1 rounded-lg">
+                    Slike (O nama)
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+                    Dve slike za kolaž. Prazna polja koriste podrazumevane slike.
+                  </p>
+                </div>
+                {aboutSlots.map(({ idx, label }) => {
+                  const img = about.images?.[idx];
+                  return (
+                    <div
+                      key={idx}
+                      className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 space-y-2"
+                    >
+                      <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                        {label}
+                      </span>
+                      <ImageInputField
+                        label="URL slike"
+                        value={img?.src ?? ""}
+                        onChange={(url) => setAboutImg(idx, url, img?.alt ?? "")}
+                      />
+                      <div>
+                        <label className={lbl}>Alt tekst</label>
+                        <input
+                          className={inp}
+                          value={img?.alt ?? ""}
+                          onChange={(e) =>
+                            setAboutImg(idx, img?.src ?? "", e.target.value)
+                          }
+                          placeholder="Opis slike za pristupačnost..."
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()
+        ) : (
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-3">
+            <p className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 inline-block px-2.5 py-1 rounded-lg">
+              Slika (O nama)
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Ako ne dodate sliku, prikazaće se podrazumevana slika.
+            </p>
+            <ImageInputField
+              label="URL slike"
+              value={about.image?.src ?? ""}
+              onChange={(url) =>
                 updateLandingSection("about", {
                   ...about,
-                  image: { src: about.image?.src ?? "", alt: e.target.value },
+                  image: { src: url, alt: about.image?.alt ?? "" },
                 })
               }
-              placeholder="Opis slike za pristupačnost..."
             />
+            <div>
+              <label className={lbl}>Alt tekst</label>
+              <input
+                className={inp}
+                value={about.image?.alt ?? ""}
+                onChange={(e) =>
+                  updateLandingSection("about", {
+                    ...about,
+                    image: { src: about.image?.src ?? "", alt: e.target.value },
+                  })
+                }
+                placeholder="Opis slike za pristupačnost..."
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         <div>
           <label className={lbl}>Godina iskustva</label>
