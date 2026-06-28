@@ -265,6 +265,17 @@ const SalonProfileSchema = new mongoose.Schema(
     resendApiKey: { type: String, required: false, default: "" },
     marketingPhone: { type: String, required: false, default: "" },
     workingHours: { type: Object, default: {} },
+    // Godišnji odmori salona. Svaki unos je opseg datuma ("YYYY-MM-DD").
+    // Vraća se uz workingHours u istom API pozivu (radno vreme + odmor).
+    vacations: {
+      type: [
+        {
+          from: { type: String }, // "YYYY-MM-DD"
+          to: { type: String }, // "YYYY-MM-DD"
+        },
+      ],
+      default: [],
+    },
     // Način definisanja dostupnosti: opseg radnog vremena ili ručni termini.
     availabilityMode: {
       type: String,

@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { SalonProfile } from "@/models/SalonProfile";
+import { normalizeVacations } from "@/helpers/vacations";
 
 // Profil (radno vreme / dostupnost / ručni termini) mora odražavati trenutno
 // stanje baze — nikad keširan odgovor, da promene budu vidljive odmah.
@@ -82,6 +83,7 @@ function serializeProfile(doc: Record<string, unknown>) {
       tiktok: String((doc.social as Record<string, string>)?.tiktok ?? ""),
     },
     workingHours: serializeWorkingHours(doc.workingHours),
+    vacations: normalizeVacations(doc.vacations),
     availabilityMode:
       doc.availabilityMode === "manualSlots" ? "manualSlots" : "workingHours",
     manualSlots: serializeManualSlots(doc.manualSlots),

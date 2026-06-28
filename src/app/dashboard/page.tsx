@@ -1280,26 +1280,99 @@ function AdminDashboard() {
             </div>
           </div>
 
-          {/* Prekidač režima dostupnosti: radno vreme ILI pojedinačni termini */}
-          <div className="mb-6 inline-flex rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-1">
-            {(
-              [
-                ["workingHours", "Radno vreme"],
-                ["manualSlots", "Pojedinačni termini"],
-              ] as const
-            ).map(([mode, label]) => (
-              <button
-                key={mode}
-                onClick={() => sp.setAvailabilityMode(mode)}
-                className={`px-4 py-2 text-sm font-bold rounded-lg transition ${
-                  sp.form.availabilityMode === mode
-                    ? "bg-violet-600 text-white shadow"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+          {/* Red: levo prekidač režima dostupnosti, desno godišnji odmor */}
+          <div className="mb-6 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+            {/* Prekidač režima dostupnosti: radno vreme ILI pojedinačni termini */}
+            <div className="inline-flex self-start rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-1">
+              {(
+                [
+                  ["workingHours", "Radno vreme"],
+                  ["manualSlots", "Pojedinačni termini"],
+                ] as const
+              ).map(([mode, label]) => (
+                <button
+                  key={mode}
+                  onClick={() => sp.setAvailabilityMode(mode)}
+                  className={`px-4 py-2 text-sm font-bold rounded-lg transition ${
+                    sp.form.availabilityMode === mode
+                      ? "bg-violet-600 text-white shadow"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Podesi godišnji odmor — opsezi datuma, prikazuju se kao badge na sajtu */}
+            <div className="w-full lg:max-w-md rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/40 p-4">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                    Podesi godišnji odmor
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                    Tokom odmora se na sajtu prikazuje napomena sa datumima.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => sp.addVacation()}
+                  className="flex-shrink-0 text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 px-3 py-1.5 rounded-lg transition"
+                >
+                  + dodaj
+                </button>
+              </div>
+
+              {sp.form.vacations.length === 0 ? (
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  Nema unetih odmora.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {sp.form.vacations.map((v, idx) => (
+                    <div
+                      key={idx}
+                      className="flex flex-wrap items-center gap-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 py-2"
+                    >
+                      <span className="text-xs text-gray-400 font-medium">
+                        od
+                      </span>
+                      <input
+                        type="date"
+                        value={v.from}
+                        max={v.to || undefined}
+                        onChange={(e) =>
+                          sp.updateVacation(idx, "from", e.target.value)
+                        }
+                        aria-label="Početak odmora"
+                        className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1 text-sm font-semibold text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                      />
+                      <span className="text-xs text-gray-400 font-medium">
+                        do
+                      </span>
+                      <input
+                        type="date"
+                        value={v.to}
+                        min={v.from || undefined}
+                        onChange={(e) =>
+                          sp.updateVacation(idx, "to", e.target.value)
+                        }
+                        aria-label="Kraj odmora"
+                        className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1 text-sm font-semibold text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => sp.removeVacation(idx)}
+                        className="ml-auto text-xs text-red-400 hover:text-red-600 font-semibold px-2 py-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                      >
+                        − Ukloni
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Prikaz radnog vremena na sajtu (landing, termini, footer, panel, kalendar) */}

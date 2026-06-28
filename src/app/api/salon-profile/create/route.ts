@@ -5,6 +5,7 @@ import { uploadToCloudinary, getTenantFolder } from "@/lib/cloudinary";
 import { requireAdmin } from "@/lib/auth/auth-server";
 import { DecodedToken } from "@/types/auth/types";
 import { pruneAndValidateManualSlots } from "@/helpers/manualSlots";
+import { normalizeVacations } from "@/helpers/vacations";
 
 export async function POST(req: NextRequest) {
   try {
@@ -84,6 +85,7 @@ export async function POST(req: NextRequest) {
         : "theme-1",
       social: parseJSON("social"),
       workingHours: parseJSON("workingHours"),
+      vacations: normalizeVacations(parseJSON("vacations")),
       availabilityMode,
       manualSlots,
       showWorkingHours,

@@ -726,6 +726,12 @@ export type DayOfWeek =
 /** WorkingHoursMap: svaki dan = niz slotova. Prazan niz = neradan dan. */
 export type WorkingHoursMap = Record<DayOfWeek, ITimeSlot[]>;
 
+/** Jedan godišnji odmor: opseg datuma "YYYY-MM-DD". */
+export interface IVacation {
+  from: string; // "YYYY-MM-DD"
+  to: string; // "YYYY-MM-DD"
+}
+
 /**
  * Način na koji salon definiše dostupnost:
  *   "workingHours" — opseg po danu, termini auto-generisani na interval (default)
@@ -775,6 +781,7 @@ export interface SalonProfile {
   createdAt?: string;
   updatedAt?: string;
   workingHours?: WorkingHoursMap | Record<string, unknown>;
+  vacations?: IVacation[];
   availabilityMode?: AvailabilityMode;
   manualSlots?: ManualSlotsMap;
   showWorkingHours?: boolean;
@@ -818,6 +825,7 @@ export interface ISalonProfileForm {
   logo: string | null;
   social: SocialLinks;
   workingHours: WorkingHoursMap;
+  vacations: IVacation[];
   availabilityMode: AvailabilityMode;
   manualSlots: ManualSlotsMap;
   showWorkingHours: boolean;
@@ -1103,6 +1111,7 @@ export interface SalonProfileData {
   newsletterEmail?: string;
   contactEmail?: string;
   workingHours?: WorkingHoursMap | Record<string, unknown>;
+  vacations?: IVacation[];
   availabilityMode?: AvailabilityMode;
   manualSlots?: ManualSlotsMap;
   showWorkingHours?: boolean;

@@ -26,12 +26,14 @@ import type {
   AvailabilityMode,
   ManualSlotsMap,
   IManualSlot,
+  IVacation,
 } from "@/types";
 import { DAYS_OF_WEEK } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import { normalizePhone } from "@/helpers/normalizePhone";
 import { EMPTY_WORKING_HOURS } from "@/types/constants";
 import { pruneAndValidateManualSlots } from "@/helpers/manualSlots";
+import { normalizeVacations } from "@/helpers/vacations";
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
@@ -103,6 +105,7 @@ const emptyForm = (): ISalonProfileForm => ({
   logo: null,
   social: { instagram: "", facebook: "", tiktok: "", whatsapp: "", telegram: "" },
   workingHours: emptyWorkingHours(),
+  vacations: [],
   availabilityMode: "workingHours",
   manualSlots: {},
   showWorkingHours: true,
@@ -297,6 +300,7 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
       telegram: p.social?.telegram ?? "",
     },
     workingHours: wh,
+    vacations: normalizeVacations(p.vacations),
     availabilityMode:
       p.availabilityMode === "manualSlots" ? "manualSlots" : "workingHours",
     // Pri učitavanju odseci prošle datume i sanitizuj — editor ne prikazuje stare termine.
@@ -469,6 +473,34 @@ export function useSalonProfileAdmin() {
     setForm((p) => ({ ...p, workingHours: { ...p.workingHours, [day]: [] } }));
   }, []);
 
+  // ── Vacations (godišnji odmor) ──────────────────────────────────────────────
+
+  const addVacation = useCallback(() => {
+    setForm((p) => ({
+      ...p,
+      vacations: [...p.vacations, { from: "", to: "" }],
+    }));
+  }, []);
+
+  const updateVacation = useCallback(
+    (idx: number, field: keyof IVacation, val: string) => {
+      setForm((p) => {
+        const next = [...p.vacations];
+        if (!next[idx]) return p;
+        next[idx] = { ...next[idx], [field]: val };
+        return { ...p, vacations: next };
+      });
+    },
+    [],
+  );
+
+  const removeVacation = useCallback((idx: number) => {
+    setForm((p) => ({
+      ...p,
+      vacations: p.vacations.filter((_, i) => i !== idx),
+    }));
+  }, []);
+
   // ── Manual slots (availabilityMode === "manualSlots") ───────────────────────
 
   const setAvailabilityMode = useCallback((mode: AvailabilityMode) => {
@@ -573,6 +605,7 @@ export function useSalonProfileAdmin() {
       fd.append("resendApiKey", form.resendApiKey);
       fd.append("social", JSON.stringify(form.social));
       fd.append("workingHours", JSON.stringify(form.workingHours));
+      fd.append("vacations", JSON.stringify(normalizeVacations(form.vacations)));
       fd.append("availabilityMode", form.availabilityMode);
       fd.append("showWorkingHours", String(form.showWorkingHours));
       fd.append(
@@ -649,6 +682,9 @@ export function useSalonProfileAdmin() {
     removeTimeSlot,
     updateTimeSlot,
     clearDay,
+    addVacation,
+    updateVacation,
+    removeVacation,
     setAvailabilityMode,
     setShowWorkingHours,
     addManualSlot,

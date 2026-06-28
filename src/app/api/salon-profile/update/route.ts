@@ -11,6 +11,7 @@ import { requireAdmin } from "@/lib/auth/auth-server";
 import { DecodedToken } from "@/types/auth/types";
 import { revalidateMarketplaceCaches } from "@/lib/marketplace/revalidateMarketplace";
 import { pruneAndValidateManualSlots } from "@/helpers/manualSlots";
+import { normalizeVacations } from "@/helpers/vacations";
 
 export async function PUT(req: NextRequest) {
   try {
@@ -56,6 +57,11 @@ export async function PUT(req: NextRequest) {
     if (social) profile.social = social;
     const wh = parseJSON("workingHours");
     if (wh) profile.workingHours = wh;
+    const vacationsRaw = form.get("vacations");
+    if (typeof vacationsRaw === "string") {
+      profile.vacations = normalizeVacations(JSON.parse(vacationsRaw));
+      profile.markModified("vacations");
+    }
     const availabilityMode = form.get("availabilityMode");
     if (availabilityMode === "workingHours" || availabilityMode === "manualSlots") {
       profile.availabilityMode = availabilityMode;
