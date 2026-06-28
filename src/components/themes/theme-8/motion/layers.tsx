@@ -205,14 +205,14 @@ export function FixedDecorLayer() {
           rotate={-5}
           wrapClass="absolute left-1/4 top-1/3 sm:top-2/5 w-[280px] sm:w-[480px]"
         />
-        <StickerStick
+        {/* <StickerStick
           src={`${STICK}/sticker-sprite-2.png`}
           w={449}
           h={734}
           delay={0.95}
           rotate={7}
           wrapClass="absolute right-[-30px] sm:-right-[100px] top-[72%] w-[120px] sm:w-[160px]"
-        />
+        /> */}
       </div>
     </motion.div>
   );
