@@ -1,13 +1,32 @@
 import { formatWorkingHoursForDisplay } from "@/helpers/parseWorkingHours";
+import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
+import { WorkingHoursNote } from "@/components/shared/WorkingHoursNote";
 import { SalonProfileData } from "@/types";
 
 const card =
   "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
 
-export function WorkingHoursWidget({ profile }: { profile: SalonProfileData }) {
+export function WorkingHoursWidget({
+  profile,
+  rulesHref,
+}: {
+  profile: SalonProfileData;
+  rulesHref?: string;
+}) {
   const hours = formatWorkingHoursForDisplay(
     profile.workingHours as Record<string, unknown> | null,
   );
+
+  if (!shouldShowWorkingHours(profile)) {
+    return (
+      <div className={card}>
+        <h3 className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-3">
+          🕐 Zakazivanje
+        </h3>
+        <WorkingHoursNote rulesHref={rulesHref} />
+      </div>
+    );
+  }
 
   return (
     <div className={card}>

@@ -726,6 +726,23 @@ export type DayOfWeek =
 /** WorkingHoursMap: svaki dan = niz slotova. Prazan niz = neradan dan. */
 export type WorkingHoursMap = Record<DayOfWeek, ITimeSlot[]>;
 
+/**
+ * Način na koji salon definiše dostupnost:
+ *   "workingHours" — opseg po danu, termini auto-generisani na interval (default)
+ *   "manualSlots"  — eksplicitni termini po konkretnom datumu (vidi ManualSlotsMap)
+ */
+export type AvailabilityMode = "workingHours" | "manualSlots";
+
+/** Jedan ručno definisan termin za konkretan datum. */
+export interface IManualSlot {
+  time: string; // "HH:mm"
+  duration: number; // minuti
+  serviceId?: string; // opciono unapred izabrana usluga
+}
+
+/** Ručni termini po datumu, ključ je "YYYY-MM-DD". Prazan niz = neradan dan. */
+export type ManualSlotsMap = Record<string, IManualSlot[]>;
+
 /** @deprecated Koristiti WorkingHoursMap */
 export interface WorkingHours {
   Ponedeljak?: string;
@@ -758,6 +775,9 @@ export interface SalonProfile {
   createdAt?: string;
   updatedAt?: string;
   workingHours?: WorkingHoursMap | Record<string, unknown>;
+  availabilityMode?: AvailabilityMode;
+  manualSlots?: ManualSlotsMap;
+  showWorkingHours?: boolean;
   cancellationWindowHours?: number;
   seo?: SeoData;
   branding?: IBranding;
@@ -798,6 +818,9 @@ export interface ISalonProfileForm {
   logo: string | null;
   social: SocialLinks;
   workingHours: WorkingHoursMap;
+  availabilityMode: AvailabilityMode;
+  manualSlots: ManualSlotsMap;
+  showWorkingHours: boolean;
   cancellationWindowHours: number;
   seo: SeoData;
   branding: IBranding;
@@ -1080,6 +1103,9 @@ export interface SalonProfileData {
   newsletterEmail?: string;
   contactEmail?: string;
   workingHours?: WorkingHoursMap | Record<string, unknown>;
+  availabilityMode?: AvailabilityMode;
+  manualSlots?: ManualSlotsMap;
+  showWorkingHours?: boolean;
   seo?: SeoData;
   branding?: IBranding;
   tenantSlug?: string;

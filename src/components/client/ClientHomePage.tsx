@@ -16,7 +16,12 @@ import { Testimonial } from "@/models/Testimonial";
 import { headers } from "next/headers";
 import { ThemeLayout } from "@/components/themes/ThemeLayout";
 import type { LandingTheme } from "@/models/SalonProfile";
-import type { IService, LandingStructure, SalonProfileData } from "@/types";
+import type {
+  IService,
+  LandingStructure,
+  SalonProfileData,
+  ManualSlotsMap,
+} from "@/types";
 import { getTenantStats } from "@/lib/tenant/getTenantStats";
 import type { TenantStats } from "@/lib/tenant/getTenantStats";
 
@@ -147,6 +152,15 @@ export async function ClientHomePage({ tenantSlug }: Props) {
       !Array.isArray(s.workingHours)
         ? (s.workingHours as Record<string, unknown>)
         : undefined,
+    availabilityMode:
+      s?.availabilityMode === "manualSlots" ? "manualSlots" : "workingHours",
+    manualSlots:
+      s?.manualSlots &&
+      typeof s.manualSlots === "object" &&
+      !Array.isArray(s.manualSlots)
+        ? (JSON.parse(JSON.stringify(s.manualSlots)) as ManualSlotsMap)
+        : undefined,
+    showWorkingHours: s?.showWorkingHours !== false,
   };
 
   const serviceList = (services as Record<string, unknown>[]).map((sv) => ({

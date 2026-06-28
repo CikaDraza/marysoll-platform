@@ -40,6 +40,7 @@ import type {
   WorkingHoursMap,
   DayOfWeek,
   ITimeSlot,
+  ManualSlotsMap,
 } from "@/types";
 import { usePublicSalonProfile } from "@/hooks/useSalonProfile";
 import { useTenant } from "@/contexts/TenantContext";
@@ -123,6 +124,20 @@ function generateSlots(start: string, end: string): string[] {
   return slots;
 }
 
+// availabilityMode === "manualSlots": eksplicitni termini za jedan datum, sortirani.
+function getManualTimesForDate(
+  manualSlots: ManualSlotsMap | undefined,
+  date: Date,
+): { time: string; duration: number }[] {
+  if (!manualSlots) return [];
+  const dateStr = format(date, "yyyy-MM-dd");
+  const list = manualSlots[dateStr];
+  if (!Array.isArray(list)) return [];
+  return [...list]
+    .filter((s) => s && typeof s.time === "string")
+    .sort((a, b) => toMins(a.time) - toMins(b.time));
+}
+
 // Returns the appointment that covers this slot (start or continuation)
 function getSlotAppointment(
   appointments: IAppointment[],
@@ -146,6 +161,8 @@ function DayView({
   selectedDate,
   appointments,
   workingHours,
+  isManual,
+  manualSlots,
   userEmail,
   onSlotClick,
   onAppointmentClick,
@@ -153,15 +170,22 @@ function DayView({
   selectedDate: Date;
   appointments: IAppointment[];
   workingHours: WorkingHoursMap | undefined;
+  isManual: boolean;
+  manualSlots?: ManualSlotsMap;
   userEmail?: string;
   onSlotClick: (date: string, time: string) => void;
   onAppointmentClick: (appt: IAppointment) => void;
 }) {
-  const { isWorking, start, end } = getWorkingRange(workingHours, selectedDate);
-  const slots = useMemo(
-    () => (isWorking ? generateSlots(start, end) : []),
-    [isWorking, start, end],
-  );
+  const range = getWorkingRange(workingHours, selectedDate);
+  const manualForDay = isManual
+    ? getManualTimesForDate(manualSlots, selectedDate)
+    : [];
+  const isWorking = isManual ? manualForDay.length > 0 : range.isWorking;
+  const slots = isManual
+    ? manualForDay.map((s) => s.time)
+    : range.isWorking
+      ? generateSlots(range.start, range.end)
+      : [];
   const dateStr = format(selectedDate, "yyyy-MM-dd");
   const dayAppts = appointments.filter((a) => a.date === dateStr);
   const now = new Date();
@@ -262,6 +286,8 @@ function WeekView({
   weekStart,
   appointments,
   workingHours,
+  isManual,
+  manualSlots,
   selectedDate,
   userEmail,
   onDayClick,
@@ -270,6 +296,8 @@ function WeekView({
   weekStart: Date;
   appointments: IAppointment[];
   workingHours: WorkingHoursMap | undefined;
+  isManual: boolean;
+  manualSlots?: ManualSlotsMap;
   selectedDate: Date;
   userEmail?: string;
   onDayClick: (day: Date) => void;
@@ -285,7 +313,9 @@ function WeekView({
       {days.map((day) => {
         const dateStr = format(day, "yyyy-MM-dd");
         const dayAppts = appointments.filter((a) => a.date === dateStr);
-        const { isWorking } = getWorkingRange(workingHours, day);
+        const isWorking = isManual
+          ? getManualTimesForDate(manualSlots, day).length > 0
+          : getWorkingRange(workingHours, day).isWorking;
         const isSelected = isSameDay(day, selectedDate);
         const isToday = isSameDay(day, new Date());
 
@@ -432,6 +462,9 @@ export default function AppointmentCalendar() {
     (workingHours ?? {}) as Record<string, unknown>,
   );
 
+  const isManual = salonProfile?.availabilityMode === "manualSlots";
+  const manualSlots = salonProfile?.manualSlots as ManualSlotsMap | undefined;
+
   const appointments = useMemo(
     () => response?.appointments || [],
     [response?.appointments],
@@ -472,6 +505,21 @@ export default function AppointmentCalendar() {
     if (info.start < new Date())
       return toast.error("Ne možete zakazati za ovaj termin.");
 
+    if (isManual) {
+      const time = info.start.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const times = getManualTimesForDate(manualSlots, info.start).map(
+        (s) => s.time,
+      );
+      if (!times.includes(time))
+        return toast.error("Termin nije dostupan.");
+      setCreateDefaults({ date: info.start.toLocaleDateString("en-CA"), time });
+      setCreateOpen(true);
+      return;
+    }
+
     const dayNumber = info.start.getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6;
     const timeValue = info.start.getHours() * 60 + info.start.getMinutes();
     const workingEntry = businessHours.find((b) =>
@@ -496,6 +544,21 @@ export default function AppointmentCalendar() {
     if (!user) return toast.error("Morate biti prijavljeni.");
     if (info.date < new Date())
       return toast.error("Ne možete zakazati za ovaj termin.");
+
+    if (isManual) {
+      const time = info.date.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const times = getManualTimesForDate(manualSlots, info.date).map(
+        (s) => s.time,
+      );
+      if (!times.includes(time))
+        return toast.error("Termin nije dostupan.");
+      setCreateDefaults({ date: info.date.toLocaleDateString("en-CA"), time });
+      setCreateOpen(true);
+      return;
+    }
 
     const dayNumber = info.date.getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6;
     const timeValue = info.date.getHours() * 60 + info.date.getMinutes();
@@ -540,6 +603,31 @@ export default function AppointmentCalendar() {
       }),
     [appointments, user?.email],
   );
+
+  // Manual mode: render explicit slots as available background events
+  const manualEvents = useMemo(() => {
+    if (!isManual || !manualSlots) return [];
+    const evts: {
+      start: Date;
+      end: Date;
+      display: "background";
+      backgroundColor: string;
+    }[] = [];
+    for (const [dateStr, list] of Object.entries(manualSlots)) {
+      if (!Array.isArray(list)) continue;
+      for (const s of list) {
+        const start = new Date(`${dateStr}T${s.time}`);
+        const end = new Date(start.getTime() + (s.duration || 60) * 60000);
+        evts.push({
+          start,
+          end,
+          display: "background",
+          backgroundColor: "#ddd6fe",
+        });
+      }
+    }
+    return evts;
+  }, [isManual, manualSlots]);
 
   // ── Navigation label ──────────────────────────────────────────────────────
 
@@ -699,6 +787,8 @@ export default function AppointmentCalendar() {
                 weekStart={weekStart}
                 appointments={appointments}
                 workingHours={workingHours}
+                isManual={isManual}
+                manualSlots={manualSlots}
                 selectedDate={selectedDate}
                 userEmail={user?.email}
                 onDayClick={handleDayClick}
@@ -712,7 +802,9 @@ export default function AppointmentCalendar() {
                     const day = addDays(new Date(), i - 3);
                     const isSelected = isSameDay(day, selectedDate);
                     const isToday = isSameDay(day, new Date());
-                    const { isWorking } = getWorkingRange(workingHours, day);
+                    const isWorking = isManual
+                      ? getManualTimesForDate(manualSlots, day).length > 0
+                      : getWorkingRange(workingHours, day).isWorking;
                     return (
                       <button
                         key={i}
@@ -742,6 +834,8 @@ export default function AppointmentCalendar() {
                   selectedDate={selectedDate}
                   appointments={appointments}
                   workingHours={workingHours}
+                  isManual={isManual}
+                  manualSlots={manualSlots}
                   userEmail={user?.email}
                   onSlotClick={handleSlotClick}
                   onAppointmentClick={handleAppointmentClick}
@@ -779,8 +873,8 @@ export default function AppointmentCalendar() {
                   allDaySlot={false}
                   slotMinTime="06:00:00"
                   slotMaxTime="23:00:00"
-                  events={fcEvents}
-                  businessHours={businessHours}
+                  events={isManual ? [...fcEvents, ...manualEvents] : fcEvents}
+                  businessHours={isManual ? undefined : businessHours}
                   locale={srLocale}
                   firstDay={1}
                   dayHeaderContent={(args) => {

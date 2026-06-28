@@ -64,14 +64,14 @@ export async function GET(req: NextRequest) {
   try {
     await connectToDB();
 
-    const salon = await SalonProfile.findById(salonId).select("tenantId workingHours").lean();
+    const salon = await SalonProfile.findById(salonId)
+      .select("tenantId workingHours availabilityMode manualSlots")
+      .lean();
     if (!salon) {
       return NextResponse.json({ error: "Salon nije pronađen" }, { status: 404 });
     }
 
     const s = salon as Record<string, unknown>;
-    const hours = parseWorkingHours(s.workingHours, dateToDayKey(date));
-    if (!hours) return NextResponse.json([]);
 
     let slotDuration = SLOT_INTERVAL;
     if (serviceId) {
@@ -96,6 +96,40 @@ export async function GET(req: NextRequest) {
       const dur = typeof appt.duration === "number" ? appt.duration : 60;
       return { start, end: start + dur };
     });
+
+    // Ručni termini: salon eksplicitno definiše termine po datumu, svaki sa svojim
+    // trajanjem. Lista se i ovde filtrira preko zauzetih Appointment-a (isti overlap).
+    if (s.availabilityMode === "manualSlots") {
+      const manual = (s.manualSlots ?? {}) as Record<
+        string,
+        { time?: string; duration?: number }[]
+      >;
+      const daySlots = Array.isArray(manual[date]) ? manual[date] : [];
+
+      const slots = daySlots
+        .map((e) => ({
+          t: timeToMin(String(e?.time ?? "00:00")),
+          dur: typeof e?.duration === "number" ? e.duration : SLOT_INTERVAL,
+        }))
+        .sort((a, b) => a.t - b.t)
+        .filter(
+          ({ t, dur }) =>
+            !bookedRanges.some((b) => t < b.end && t + dur > b.start),
+        )
+        .map(({ t, dur }) => ({
+          _id: `${salonId}_${date}_${minToTime(t)}`,
+          salonId,
+          startTime: `${date}T${minToTime(t)}:00`,
+          endTime: `${date}T${minToTime(t + dur)}:00`,
+          isAvailable: true,
+        }));
+
+      return NextResponse.json(slots);
+    }
+
+    // ── Radno vreme: termini auto-generisani iz opsega na interval ──
+    const hours = parseWorkingHours(s.workingHours, dateToDayKey(date));
+    if (!hours) return NextResponse.json([]);
 
     const startMin = timeToMin(hours.from);
     const endMin = timeToMin(hours.to);

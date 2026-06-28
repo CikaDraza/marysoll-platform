@@ -20,6 +20,7 @@ import { Y2KFilters } from "./theme-8/Decorations";
 import { BackgroundWall, SparkleLayer } from "./theme-8/motion";
 import { Theme8ModalProvider } from "./theme-8/Theme8ModalProvider";
 import type { SalonProfileData, IService } from "@/types";
+import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
 
 interface Props {
   salon: SalonProfileData;
@@ -215,6 +216,7 @@ export function TenantShellClient({
           }
           email={salon.contactEmail || salon.email}
           workingHours={salon.workingHours}
+          showWorkingHours={shouldShowWorkingHours(salon)}
         />
       </div>
     );
@@ -262,6 +264,7 @@ export function TenantShellClient({
               instagramHandle={igHandle}
               email={salon.contactEmail || salon.email}
               workingHours={salon.workingHours}
+              showWorkingHours={shouldShowWorkingHours(salon)}
             />
           </div>
         </Theme8ModalProvider>

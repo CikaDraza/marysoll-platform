@@ -40,7 +40,9 @@ import type {
   ITimeSlot,
   IService,
   SalonProfileData,
+  ManualSlotsMap,
 } from "@/types";
+import { manualTimesForDate, isManualSlotTaken } from "@/helpers/manualSlots";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -129,19 +131,26 @@ function DayView({
   selectedDate,
   appointments,
   workingHours,
+  isManual,
+  manualSlots,
   onSlotClick,
 }: {
   selectedDate: Date;
   appointments: PublicAppt[];
   workingHours: WorkingHoursMap | undefined;
+  isManual: boolean;
+  manualSlots?: ManualSlotsMap;
   onSlotClick: (date: string, time: string) => void;
 }) {
-  const { isWorking, start, end } = getWorkingRange(workingHours, selectedDate);
-  const slots = useMemo(
-    () => (isWorking ? generateSlots(start, end) : []),
-    [isWorking, start, end],
-  );
   const dateStr = format(selectedDate, "yyyy-MM-dd");
+  const range = getWorkingRange(workingHours, selectedDate);
+  const manualForDay = isManual ? manualTimesForDate(manualSlots, dateStr) : [];
+  const isWorking = isManual ? manualForDay.length > 0 : range.isWorking;
+  const slots: { time: string; duration?: number }[] = isManual
+    ? manualForDay
+    : (range.isWorking ? generateSlots(range.start, range.end) : []).map(
+        (t) => ({ time: t }),
+      );
   const now = new Date();
 
   if (!isWorking) {
@@ -156,17 +165,24 @@ function DayView({
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
       {slots.map((slot) => {
-        const booked = isSlotBooked(appointments, dateStr, slot);
-        const isPast = new Date(`${dateStr}T${slot}`) < now;
+        const booked = isManual
+          ? isManualSlotTaken(
+              appointments,
+              dateStr,
+              toMins(slot.time),
+              slot.duration ?? 60,
+            )
+          : isSlotBooked(appointments, dateStr, slot.time);
+        const isPast = new Date(`${dateStr}T${slot.time}`) < now;
 
         if (booked) {
           return (
             <div
-              key={slot}
+              key={slot.time}
               className="flex flex-col items-center justify-center gap-0.5 px-3 py-3 rounded-xl bg-y2k-ink border-[3px] border-y2k-ink text-white select-none"
               title="Termin zauzet"
             >
-              <span className="text-xs font-extrabold">{slot}</span>
+              <span className="text-xs font-extrabold">{slot.time}</span>
               <span className="text-[10px] opacity-60 font-bold">Zauzeto</span>
             </div>
           );
@@ -175,11 +191,11 @@ function DayView({
         if (isPast) {
           return (
             <div
-              key={slot}
+              key={slot.time}
               className="flex flex-col items-center justify-center px-3 py-3 rounded-xl border-2 border-dashed border-y2k-ink/20 opacity-30 select-none"
             >
               <span className="text-xs font-extrabold text-y2k-ink/40">
-                {slot}
+                {slot.time}
               </span>
             </div>
           );
@@ -187,15 +203,15 @@ function DayView({
 
         return (
           <button
-            key={slot}
-            onClick={() => onSlotClick(dateStr, slot)}
+            key={slot.time}
+            onClick={() => onSlotClick(dateStr, slot.time)}
             className="flex flex-col items-center justify-center gap-0.5 px-3 py-3 rounded-xl border-[3px] border-y2k-ink bg-white hover:bg-y2k-pink hover:text-white transition-all group cursor-pointer shadow-[2px_2px_0_#0b0b0f] hover:shadow-[3px_3px_0_#0b0b0f]"
           >
             <span className="text-xs font-extrabold text-y2k-ink group-hover:text-white">
-              {slot}
+              {slot.time}
             </span>
             <span className="text-[10px] text-y2k-ink/40 group-hover:text-white/90 font-bold">
-              + Zakaži
+              {isManual && slot.duration ? `${slot.duration} min` : "+ Zakaži"}
             </span>
           </button>
         );
@@ -210,12 +226,16 @@ function WeekView({
   weekStart,
   appointments,
   workingHours,
+  isManual,
+  manualSlots,
   selectedDate,
   onDayClick,
 }: {
   weekStart: Date;
   appointments: PublicAppt[];
   workingHours: WorkingHoursMap | undefined;
+  isManual: boolean;
+  manualSlots?: ManualSlotsMap;
   selectedDate: Date;
   onDayClick: (day: Date) => void;
 }) {
@@ -257,8 +277,18 @@ function WeekView({
       <div className="grid grid-cols-7 gap-1 sm:gap-1.5 min-w-[336px]">
         {days.map((day, i) => {
           const dateStr = format(day, "yyyy-MM-dd");
-          const { isWorking, start, end } = getWorkingRange(workingHours, day);
-          const slots = isWorking ? generateSlots(start, end) : [];
+          const range = getWorkingRange(workingHours, day);
+          const manualForDay = isManual
+            ? manualTimesForDate(manualSlots, dateStr)
+            : [];
+          const isWorking = isManual
+            ? manualForDay.length > 0
+            : range.isWorking;
+          const slots = isManual
+            ? manualForDay.map((s) => s.time)
+            : range.isWorking
+              ? generateSlots(range.start, range.end)
+              : [];
           const fullyBooked =
             isWorking && isDayFullyBooked(appointments, slots, dateStr);
           const bookedCount = slots.filter((s) =>
@@ -414,6 +444,8 @@ export default function Y2KHomepageAppointmentWidget({
   });
 
   const workingHours = salon.workingHours as WorkingHoursMap | undefined;
+  const isManual = salon.availabilityMode === "manualSlots";
+  const manualSlots = salon.manualSlots as ManualSlotsMap | undefined;
 
   // ── Pending appointment restore on mount ───────────────────────────────────
   useEffect(() => {
@@ -626,6 +658,8 @@ export default function Y2KHomepageAppointmentWidget({
                 weekStart={weekStart}
                 appointments={appointments}
                 workingHours={workingHours}
+                isManual={isManual}
+                manualSlots={manualSlots}
                 selectedDate={selectedDate}
                 onDayClick={handleDayClick}
               />
@@ -648,7 +682,12 @@ export default function Y2KHomepageAppointmentWidget({
                     {stripDays.map((day, i) => {
                       const isSelected = isSameDay(day, selectedDate);
                       const isToday = isSameDay(day, new Date());
-                      const { isWorking } = getWorkingRange(workingHours, day);
+                      const isWorking = isManual
+                        ? manualTimesForDate(
+                            manualSlots,
+                            format(day, "yyyy-MM-dd"),
+                          ).length > 0
+                        : getWorkingRange(workingHours, day).isWorking;
                       return (
                         <button
                           key={i}
@@ -688,6 +727,8 @@ export default function Y2KHomepageAppointmentWidget({
                   selectedDate={selectedDate}
                   appointments={appointments}
                   workingHours={workingHours}
+                  isManual={isManual}
+                  manualSlots={manualSlots}
                   onSlotClick={handleSlotClick}
                 />
               </>

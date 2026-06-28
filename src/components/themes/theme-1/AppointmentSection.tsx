@@ -8,6 +8,8 @@ import {
   DevicePhoneMobileIcon,
 } from "@heroicons/react/20/solid";
 import { formatWorkingHoursForDisplay } from "@/helpers/parseWorkingHours";
+import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
+import { WorkingHoursNote } from "@/components/shared/WorkingHoursNote";
 import type { IService, SalonProfileData } from "@/types";
 
 const DEFAULT_INSTRUCTIONS = [
@@ -87,24 +89,28 @@ export function Theme1AppointmentSection({
             {/* Working hours — always light, not affected by admin dark mode */}
             <div className="my-3 rounded-2xl border border-gray-200 bg-white p-5">
               <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-3">
-                Radno vreme
+                {shouldShowWorkingHours(salon) ? "Radno vreme" : "Zakazivanje"}
               </p>
-              <ul className="space-y-1.5">
-                {workingHours.map(({ day, hours: h, isOpen }) => (
-                  <li key={day} className="flex items-center justify-between">
-                    <span
-                      className={`text-xs font-medium w-28 ${isOpen ? "text-zinc-600" : "text-gray-400"}`}
-                    >
-                      {day}
-                    </span>
-                    <span
-                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isOpen ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}
-                    >
-                      {h}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              {shouldShowWorkingHours(salon) ? (
+                <ul className="space-y-1.5">
+                  {workingHours.map(({ day, hours: h, isOpen }) => (
+                    <li key={day} className="flex items-center justify-between">
+                      <span
+                        className={`text-xs font-medium w-28 ${isOpen ? "text-zinc-600" : "text-gray-400"}`}
+                      >
+                        {day}
+                      </span>
+                      <span
+                        className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isOpen ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}
+                      >
+                        {h}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <WorkingHoursNote />
+              )}
             </div>
             {/* Appointment Calendar Widget */}
             <HomepageAppointmentWidget

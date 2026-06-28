@@ -4,6 +4,7 @@ import { SalonProfile } from "@/models/SalonProfile";
 import { uploadToCloudinary, getTenantFolder } from "@/lib/cloudinary";
 import { requireAdmin } from "@/lib/auth/auth-server";
 import { DecodedToken } from "@/types/auth/types";
+import { pruneAndValidateManualSlots } from "@/helpers/manualSlots";
 
 export async function POST(req: NextRequest) {
   try {
@@ -51,6 +52,12 @@ export async function POST(req: NextRequest) {
         ? JSON.parse(landingStructureRaw)
         : undefined;
 
+    const availabilityModeRaw = form.get("availabilityMode");
+    const availabilityMode =
+      availabilityModeRaw === "manualSlots" ? "manualSlots" : "workingHours";
+    const manualSlots = pruneAndValidateManualSlots(parseJSON("manualSlots"));
+    const showWorkingHours = form.get("showWorkingHours") !== "false";
+
     const created = await SalonProfile.create({
       tenantId: tenantId ?? undefined,
       name: form.get("name"),
@@ -77,6 +84,9 @@ export async function POST(req: NextRequest) {
         : "theme-1",
       social: parseJSON("social"),
       workingHours: parseJSON("workingHours"),
+      availabilityMode,
+      manualSlots,
+      showWorkingHours,
       cancellationWindowHours,
       seo: parseJSON("seo"),
       branding: parseJSON("branding"),

@@ -10,6 +10,7 @@ import {
 import { requireAdmin } from "@/lib/auth/auth-server";
 import { DecodedToken } from "@/types/auth/types";
 import { revalidateMarketplaceCaches } from "@/lib/marketplace/revalidateMarketplace";
+import { pruneAndValidateManualSlots } from "@/helpers/manualSlots";
 
 export async function PUT(req: NextRequest) {
   try {
@@ -55,6 +56,19 @@ export async function PUT(req: NextRequest) {
     if (social) profile.social = social;
     const wh = parseJSON("workingHours");
     if (wh) profile.workingHours = wh;
+    const availabilityMode = form.get("availabilityMode");
+    if (availabilityMode === "workingHours" || availabilityMode === "manualSlots") {
+      profile.availabilityMode = availabilityMode;
+    }
+    const manualSlots = parseJSON("manualSlots");
+    if (manualSlots && typeof manualSlots === "object") {
+      profile.manualSlots = pruneAndValidateManualSlots(manualSlots);
+      profile.markModified("manualSlots"); // Object polje zahteva eksplicitan markModified
+    }
+    const showWorkingHours = form.get("showWorkingHours");
+    if (showWorkingHours === "true" || showWorkingHours === "false") {
+      profile.showWorkingHours = showWorkingHours === "true";
+    }
     const cancellationWindowHours = form.get("cancellationWindowHours");
     if (
       typeof cancellationWindowHours === "string" &&

@@ -15,22 +15,31 @@ import type { SalonProfileData, IService, IAppointment } from "@/types";
  * In production uses NEXT_PUBLIC_APP_URL, in dev falls back to localhost.
  */
 function getBaseUrl(): string {
+  // U dev modu interni pozivi MORAJU ići na lokalni server. NEXT_PUBLIC_APP_URL
+  // pokazuje na produkciju (npr. https://marysoll.com), pa bi inače dev čitao
+  // produkcijske podatke (staro radno vreme umesto lokalnih ručnih termina).
+  if (process.env.NODE_ENV !== "production") {
+    return `http://localhost:${process.env.PORT ?? "3006"}`;
+  }
   if (process.env.NEXT_PUBLIC_APP_URL) {
     return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
   }
-  const port = process.env.PORT ?? "3006";
-  return `http://localhost:${port}`;
+  return `http://localhost:${process.env.PORT ?? "3006"}`;
 }
 
 export async function fetchPublicSalonProfile(
   tenantSlug: string,
+  opts?: { noStore?: boolean },
 ): Promise<SalonProfileData | null> {
   try {
     const base = getBaseUrl();
-    const res = await fetch(
-      `${base}/api/public/${tenantSlug}/salon-profile`,
-      { next: { revalidate: 300 } }, // 5 min cache
-    );
+    // Stranice koje zavise od dostupnosti (npr. /termini) traže svež profil da
+    // se promena radnog vremena / ručnih termina vidi odmah, bez 5-min keša.
+    const res = await fetch(`${base}/api/public/${tenantSlug}/salon-profile`, {
+      ...(opts?.noStore
+        ? { cache: "no-store" }
+        : { next: { revalidate: 300 } }), // 5 min cache (default)
+    });
     if (!res.ok) return null;
     const json = await res.json();
     return json.data ?? null;

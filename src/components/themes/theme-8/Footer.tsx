@@ -16,6 +16,7 @@ interface Props {
   instagramHandle?: string;
   email?: string;
   workingHours?: SalonProfileData["workingHours"] | null;
+  showWorkingHours?: boolean;
 }
 
 const EXPLORE = [
@@ -32,6 +33,7 @@ export function Theme8Footer({
   instagramHandle,
   email,
   workingHours,
+  showWorkingHours = true,
 }: Props) {
   const { open } = useTheme8Modal();
   const displayName = salonName ?? "The Lash Room by Anja";
@@ -53,7 +55,7 @@ export function Theme8Footer({
             stroke="#fff"
             strokeWidth={4}
             motionType="bob"
-            className="absolute left-[0%] sm:left-[6%] bottom-[10%] sm:bottom-[18%] rotate-[-10deg]"
+            className="absolute left-[0%] sm:left-[6%] bottom-[10%] sm:bottom-[14%] rotate-[-10deg]"
           />
 
           <div className="relative grid lg:grid-cols-[1.2fr_0.8fr] gap-10 items-center">
@@ -102,7 +104,13 @@ export function Theme8Footer({
                 <div className="font-extrabold text-[12px] tracking-[0.2em] uppercase text-y2k-hot mb-3">
                   Visit
                 </div>
-                <Theme8WorkingHours workingHours={workingHours} />
+                {showWorkingHours ? (
+                  <Theme8WorkingHours workingHours={workingHours} />
+                ) : (
+                  <p className="text-[15px] font-semibold text-white/70 leading-snug">
+                    Termini se zakazuju putem aplikacije.
+                  </p>
+                )}
                 <div className="mt-3 flex flex-col gap-1.5">
                   <Link
                     href={instagramUrl || "#"}

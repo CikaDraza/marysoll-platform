@@ -23,11 +23,15 @@ import type {
   SeoData,
   IBranding,
   SocialLinks,
+  AvailabilityMode,
+  ManualSlotsMap,
+  IManualSlot,
 } from "@/types";
 import { DAYS_OF_WEEK } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import { normalizePhone } from "@/helpers/normalizePhone";
 import { EMPTY_WORKING_HOURS } from "@/types/constants";
+import { pruneAndValidateManualSlots } from "@/helpers/manualSlots";
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
@@ -99,6 +103,9 @@ const emptyForm = (): ISalonProfileForm => ({
   logo: null,
   social: { instagram: "", facebook: "", tiktok: "", whatsapp: "", telegram: "" },
   workingHours: emptyWorkingHours(),
+  availabilityMode: "workingHours",
+  manualSlots: {},
+  showWorkingHours: true,
   cancellationWindowHours: 1,
   seo: {
     homeTitle: "",
@@ -290,6 +297,11 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
       telegram: p.social?.telegram ?? "",
     },
     workingHours: wh,
+    availabilityMode:
+      p.availabilityMode === "manualSlots" ? "manualSlots" : "workingHours",
+    // Pri učitavanju odseci prošle datume i sanitizuj — editor ne prikazuje stare termine.
+    manualSlots: pruneAndValidateManualSlots(p.manualSlots),
+    showWorkingHours: p.showWorkingHours !== false,
     cancellationWindowHours:
       typeof p.cancellationWindowHours === "number"
         ? p.cancellationWindowHours
@@ -457,6 +469,64 @@ export function useSalonProfileAdmin() {
     setForm((p) => ({ ...p, workingHours: { ...p.workingHours, [day]: [] } }));
   }, []);
 
+  // ── Manual slots (availabilityMode === "manualSlots") ───────────────────────
+
+  const setAvailabilityMode = useCallback((mode: AvailabilityMode) => {
+    setForm((p) => ({ ...p, availabilityMode: mode }));
+  }, []);
+
+  const setShowWorkingHours = useCallback((show: boolean) => {
+    setForm((p) => ({ ...p, showWorkingHours: show }));
+  }, []);
+
+  const addManualSlot = useCallback((date: string) => {
+    setForm((p) => {
+      const day = p.manualSlots[date] ?? [];
+      return {
+        ...p,
+        manualSlots: {
+          ...p.manualSlots,
+          [date]: [...day, { time: "09:00", duration: 60 }],
+        },
+      };
+    });
+  }, []);
+
+  const updateManualSlot = useCallback(
+    (
+      date: string,
+      idx: number,
+      field: keyof IManualSlot,
+      val: string | number,
+    ) => {
+      setForm((p) => {
+        const day = [...(p.manualSlots[date] ?? [])];
+        if (!day[idx]) return p;
+        day[idx] = { ...day[idx], [field]: val };
+        return { ...p, manualSlots: { ...p.manualSlots, [date]: day } };
+      });
+    },
+    [],
+  );
+
+  const removeManualSlot = useCallback((date: string, idx: number) => {
+    setForm((p) => {
+      const day = (p.manualSlots[date] ?? []).filter((_, i) => i !== idx);
+      const next: ManualSlotsMap = { ...p.manualSlots };
+      if (day.length > 0) next[date] = day;
+      else delete next[date];
+      return { ...p, manualSlots: next };
+    });
+  }, []);
+
+  const clearManualDay = useCallback((date: string) => {
+    setForm((p) => {
+      const next: ManualSlotsMap = { ...p.manualSlots };
+      delete next[date];
+      return { ...p, manualSlots: next };
+    });
+  }, []);
+
   // ── Logo ──────────────────────────────────────────────────────────────────
 
   const handleLogoChange = useCallback(
@@ -503,6 +573,12 @@ export function useSalonProfileAdmin() {
       fd.append("resendApiKey", form.resendApiKey);
       fd.append("social", JSON.stringify(form.social));
       fd.append("workingHours", JSON.stringify(form.workingHours));
+      fd.append("availabilityMode", form.availabilityMode);
+      fd.append("showWorkingHours", String(form.showWorkingHours));
+      fd.append(
+        "manualSlots",
+        JSON.stringify(pruneAndValidateManualSlots(form.manualSlots)),
+      );
       fd.append(
         "cancellationWindowHours",
         String(
@@ -573,6 +649,12 @@ export function useSalonProfileAdmin() {
     removeTimeSlot,
     updateTimeSlot,
     clearDay,
+    setAvailabilityMode,
+    setShowWorkingHours,
+    addManualSlot,
+    updateManualSlot,
+    removeManualSlot,
+    clearManualDay,
     logoFile,
     logoPreview,
     handleLogoChange,

@@ -13,6 +13,8 @@ import {
 import AppointmentCalendarPage from "@/components/public/AppointmentCalendarPage";
 import type { IAppointment, LandingStructure, SalonProfileData } from "@/types";
 import { formatWorkingHoursForDisplay } from "@/helpers/parseWorkingHours";
+import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
+import { WorkingHoursNote } from "@/components/shared/WorkingHoursNote";
 import { TenantPageShell } from "@/components/themes/TenantPageShell";
 import { Theme8AppointmentsPage } from "@/components/themes/theme-8/pages/Theme8AppointmentsPage";
 
@@ -43,7 +45,8 @@ export default async function TerminiPage() {
   const base = h.get("x-tenant-base-path") ?? "";
 
   const [profile, appointments, services] = await Promise.all([
-    fetchPublicSalonProfile(tenantSlug),
+    // Svež profil — dostupnost (radno vreme / ručni termini) mora biti aktuelna.
+    fetchPublicSalonProfile(tenantSlug, { noStore: true }),
     fetchPublicAppointments(tenantSlug),
     fetchPublicServices(tenantSlug),
   ]);
@@ -129,33 +132,39 @@ export default async function TerminiPage() {
             <div className="h-full bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col lg:[grid-area:working]">
               <div>
                 <p className="font-bold text-gray-800 mb-3 text-sm">
-                  Radno vreme salona
+                  {shouldShowWorkingHours(safeProfile)
+                    ? "Radno vreme salona"
+                    : "Zakazivanje"}
                 </p>
-                <div className="space-y-1.5">
-                  <ul className="space-y-1.5">
-                    {hours.map(({ day, hours: h, isOpen }) => (
-                      <li
-                        key={day}
-                        className="flex items-center justify-between"
-                      >
-                        <span
-                          className={`text-xs font-medium w-28 ${isOpen ? "text-zinc-500" : "text-gray-400"}`}
+                {shouldShowWorkingHours(safeProfile) ? (
+                  <div className="space-y-1.5">
+                    <ul className="space-y-1.5">
+                      {hours.map(({ day, hours: h, isOpen }) => (
+                        <li
+                          key={day}
+                          className="flex items-center justify-between"
                         >
-                          {day}
-                        </span>
-                        <span
-                          className={`text-xs font-semibold px-1.5 py-0.5 rounded-full text-zinc-800 ${
-                            isOpen
-                              ? "bg-green-100 text-green-700 font-medium"
-                              : "bg-gray-100 text-gray-400"
-                          }`}
-                        >
-                          {h}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                          <span
+                            className={`text-xs font-medium w-28 ${isOpen ? "text-zinc-500" : "text-gray-400"}`}
+                          >
+                            {day}
+                          </span>
+                          <span
+                            className={`text-xs font-semibold px-1.5 py-0.5 rounded-full text-zinc-800 ${
+                              isOpen
+                                ? "bg-green-100 text-green-700 font-medium"
+                                : "bg-gray-100 text-gray-400"
+                            }`}
+                          >
+                            {h}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <WorkingHoursNote rulesHref={`${base}/pravila-zakazivanja`} />
+                )}
               </div>
             </div>
 

@@ -83,7 +83,10 @@ export default function AppointmentCalendarPage({
   const { user, token } = useAuth();
   const isLoggedIn = !!user;
 
-  const [view, setView] = useState<"week" | "day">("week");
+  // U "manualSlots" režimu termini su raštrkani po danu — dnevni prikaz čita prirodnije.
+  const [view, setView] = useState<"week" | "day">(
+    salonProfile.availabilityMode === "manualSlots" ? "day" : "week",
+  );
   const [weekStart, setWeekStart] = useState<Date>(() => getMonday(new Date()));
   const [selectedDay, setSelectedDay] = useState<Date>(() => {
     const d = new Date();
@@ -116,6 +119,12 @@ export default function AppointmentCalendarPage({
   const workingHours = salonProfile.workingHours as
     | Record<string, unknown>
     | undefined;
+
+  const isManual = salonProfile.availabilityMode === "manualSlots";
+  const manualSlotsMap = (salonProfile.manualSlots ?? {}) as Record<
+    string,
+    { time: string; duration: number; serviceId?: string }[]
+  >;
 
   // ── Pending appointment restore on mount ───────────────────────────────────
   useEffect(() => {
@@ -220,6 +229,31 @@ export default function AppointmentCalendarPage({
       !isBooked(dateStr, prev) ||
       !isInWorkingHours(srName, prev)
     );
+  }
+
+  // ── Manual slots helpers (availabilityMode === "manualSlots") ──────────────
+  function manualSlotsFor(
+    dateStr: string,
+  ): { time: string; duration: number }[] {
+    const list = manualSlotsMap[dateStr];
+    if (!Array.isArray(list)) return [];
+    return [...list]
+      .filter((s) => s && typeof s.time === "string")
+      .sort((a, b) => timeToMin(a.time) - timeToMin(b.time));
+  }
+
+  function isManualSlotTaken(
+    dateStr: string,
+    startMin: number,
+    dur: number,
+  ): boolean {
+    const end = startMin + dur;
+    return appointments.some((appt) => {
+      if (appt.date !== dateStr) return false;
+      const s = timeToMin(appt.time);
+      const e = s + (appt.duration || 60);
+      return startMin < e && end > s;
+    });
   }
 
   // ── Slot click ─────────────────────────────────────────────────────────────
@@ -339,7 +373,96 @@ export default function AppointmentCalendarPage({
           </div>
         </div>
 
-        {/* Calendar grid */}
+        {/* Calendar grid — manual mode renders discrete slot chips per day */}
+        {isManual ? (
+          <div className="overflow-x-auto">
+            <div style={{ minWidth: view === "week" ? "640px" : "300px" }}>
+              <div
+                className="grid"
+                style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}
+              >
+                {days.map((day, di) => {
+                  const dateStr = toDateStr(day);
+                  const isToday = dateStr === todayStr;
+                  const slots = manualSlotsFor(dateStr);
+                  return (
+                    <div
+                      key={di}
+                      className="border-l border-gray-200 min-h-[220px]"
+                    >
+                      <div
+                        className={`py-2 px-1 text-center border-b border-gray-100 ${isToday ? "bg-[#fffbf0]" : "bg-white"}`}
+                      >
+                        <div
+                          className={`text-[10px] font-bold uppercase tracking-widest ${isToday ? "text-purple-600" : "text-gray-400"}`}
+                        >
+                          {DAY_SHORT[day.getDay()]}
+                        </div>
+                        <div
+                          className={`text-lg font-bold leading-none mt-0.5 ${isToday ? "text-purple-700" : "text-gray-800"}`}
+                        >
+                          {day.getDate()}
+                        </div>
+                        <div
+                          className={`text-[9px] font-semibold mt-0.5 ${slots.length > 0 ? "text-green-600" : "text-red-400"}`}
+                        >
+                          {slots.length > 0 ? "Radi" : "Neradan"}
+                        </div>
+                      </div>
+                      <div className="p-2 space-y-2">
+                        {slots.length === 0 && (
+                          <div className="text-center text-[11px] text-gray-300 py-6 select-none">
+                            —
+                          </div>
+                        )}
+                        {slots.map((slot, si) => {
+                          const startMin = timeToMin(slot.time);
+                          const taken = isManualSlotTaken(
+                            dateStr,
+                            startMin,
+                            slot.duration,
+                          );
+                          const isPast =
+                            new Date(`${dateStr}T${slot.time}`) < now;
+                          if (taken || isPast) {
+                            return (
+                              <div
+                                key={si}
+                                className="rounded-xl border px-2 py-2 text-center bg-gray-100 border-gray-200 text-gray-400 select-none"
+                              >
+                                <span className="text-xs font-bold">
+                                  {slot.time}
+                                </span>
+                                <span className="block text-[9px] font-semibold">
+                                  {taken ? "Zauzeto" : "Prošlo"}
+                                </span>
+                              </div>
+                            );
+                          }
+                          return (
+                            <button
+                              key={si}
+                              onClick={() => handleSlotClick(dateStr, startMin)}
+                              className="w-full rounded-xl border px-2 py-2 text-center bg-white border-gray-200 hover:bg-(--primary-color)/10 hover:border-(--primary-color)/40 transition cursor-pointer group"
+                              title={`Zakaži ${slot.time}`}
+                            >
+                              <span className="text-xs font-bold text-gray-800 group-hover:text-(--primary-color)">
+                                {slot.time}
+                              </span>
+                              <span className="block text-[9px] font-semibold text-gray-400">
+                                {slot.duration} min
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        ) : (
         <div className="overflow-x-auto">
           <div style={{ minWidth: view === "week" ? "640px" : "300px" }}>
             {/* Day header row */}
@@ -485,6 +608,7 @@ export default function AppointmentCalendarPage({
             </div>
           </div>
         </div>
+        )}
 
         {/* Legend */}
         <div className="flex flex-wrap gap-4 px-4 py-2.5 border-t border-gray-200 bg-gray-50">

@@ -9,6 +9,11 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { SalonProfile } from "@/models/SalonProfile";
 
+// Profil (radno vreme / dostupnost / ručni termini) mora odražavati trenutno
+// stanje baze — nikad keširan odgovor, da promene budu vidljive odmah.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 function serializeWorkingHours(wh: unknown): Record<string, unknown> {
   if (!wh || typeof wh !== "object") return {};
   const result: Record<string, unknown> = {};
@@ -33,6 +38,32 @@ function serializeWorkingHours(wh: unknown): Record<string, unknown> {
   return result;
 }
 
+function serializeManualSlots(ms: unknown): Record<string, unknown> {
+  if (!ms || typeof ms !== "object") return {};
+  const result: Record<string, unknown> = {};
+  for (const [date, slots] of Object.entries(ms as Record<string, unknown>)) {
+    if (!Array.isArray(slots)) continue;
+    result[date] = slots
+      .map((slot: unknown) => {
+        if (typeof slot === "object" && slot !== null) {
+          const s = slot as Record<string, unknown>;
+          const out: Record<string, unknown> = {
+            time: String(s.time ?? ""),
+            duration:
+              typeof s.duration === "number"
+                ? s.duration
+                : Number(s.duration) || 0,
+          };
+          if (s.serviceId) out.serviceId = String(s.serviceId);
+          return out;
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }
+  return result;
+}
+
 function serializeProfile(doc: Record<string, unknown>) {
   return {
     _id: String(doc._id ?? ""),
@@ -51,6 +82,10 @@ function serializeProfile(doc: Record<string, unknown>) {
       tiktok: String((doc.social as Record<string, string>)?.tiktok ?? ""),
     },
     workingHours: serializeWorkingHours(doc.workingHours),
+    availabilityMode:
+      doc.availabilityMode === "manualSlots" ? "manualSlots" : "workingHours",
+    manualSlots: serializeManualSlots(doc.manualSlots),
+    showWorkingHours: doc.showWorkingHours !== false,
     seo: doc.seo ?? {},
     branding: {
       primaryColor: String(

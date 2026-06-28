@@ -265,6 +265,17 @@ const SalonProfileSchema = new mongoose.Schema(
     resendApiKey: { type: String, required: false, default: "" },
     marketingPhone: { type: String, required: false, default: "" },
     workingHours: { type: Object, default: {} },
+    // Način definisanja dostupnosti: opseg radnog vremena ili ručni termini.
+    availabilityMode: {
+      type: String,
+      enum: ["workingHours", "manualSlots"],
+      default: "workingHours",
+    },
+    // Ručni termini po datumu: { "YYYY-MM-DD": [{ time, duration, serviceId? }] }
+    manualSlots: { type: Object, default: {} },
+    // Prikaz radnog vremena na sajtu (landing, termini, footer, panel, kalendar).
+    // U režimu "manualSlots" se ionako ne prikazuje (nema radnog vremena).
+    showWorkingHours: { type: Boolean, default: true },
     cancellationWindowHours: { type: Number, default: 1, min: 0 },
 
     seo: {

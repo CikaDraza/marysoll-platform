@@ -32,11 +32,13 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import srLocale from "@fullcalendar/core/locales/sr";
 import { toFullCalendarBusinessHours } from "@/helpers/parseWorkingHours";
+import { manualTimesForDate } from "@/helpers/manualSlots";
 import type {
   IAppointment,
   WorkingHoursMap,
   DayOfWeek,
   ITimeSlot,
+  ManualSlotsMap,
 } from "@/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -123,21 +125,30 @@ function DayView({
   selectedDate,
   appointments,
   workingHours,
+  isManual,
+  manualSlots,
   onSlotClick,
   onAppointmentClick,
 }: {
   selectedDate: Date;
   appointments: IAppointment[];
   workingHours: WorkingHoursMap | undefined;
+  isManual: boolean;
+  manualSlots?: ManualSlotsMap;
   onSlotClick: (date: string, time: string) => void;
   onAppointmentClick: (appt: IAppointment) => void;
 }) {
-  const { isWorking, start, end } = getWorkingRange(workingHours, selectedDate);
-  const slots = useMemo(
-    () => (isWorking ? generateSlots(start, end) : []),
-    [isWorking, start, end],
-  );
   const dateStr = format(selectedDate, "yyyy-MM-dd");
+  const range = getWorkingRange(workingHours, selectedDate);
+  const manualTimes = isManual
+    ? manualTimesForDate(manualSlots, dateStr).map((s) => s.time)
+    : [];
+  const isWorking = isManual ? manualTimes.length > 0 : range.isWorking;
+  const slots = isManual
+    ? manualTimes
+    : range.isWorking
+      ? generateSlots(range.start, range.end)
+      : [];
   const dayAppts = appointments.filter((a) => a.date === dateStr);
 
   if (!isWorking) {
@@ -199,6 +210,8 @@ function WeekView({
   weekStart,
   appointments,
   workingHours,
+  isManual,
+  manualSlots,
   selectedDate,
   onDayClick,
   onAppointmentClick,
@@ -206,6 +219,8 @@ function WeekView({
   weekStart: Date;
   appointments: IAppointment[];
   workingHours: WorkingHoursMap | undefined;
+  isManual: boolean;
+  manualSlots?: ManualSlotsMap;
   selectedDate: Date;
   onDayClick: (day: Date) => void;
   onAppointmentClick: (appt: IAppointment) => void;
@@ -220,7 +235,9 @@ function WeekView({
       {days.map((day) => {
         const dateStr = format(day, "yyyy-MM-dd");
         const dayAppts = appointments.filter((a) => a.date === dateStr);
-        const { isWorking } = getWorkingRange(workingHours, day);
+        const isWorking = isManual
+          ? manualTimesForDate(manualSlots, dateStr).length > 0
+          : getWorkingRange(workingHours, day).isWorking;
         const isSelected = isSameDay(day, selectedDate);
         const isToday = isSameDay(day, new Date());
 
@@ -291,6 +308,8 @@ export default function AppointmentAdminCalendar() {
   const businessHours = toFullCalendarBusinessHours(
     (workingHours ?? {}) as Record<string, unknown>,
   );
+  const isManual = salonForm.availabilityMode === "manualSlots";
+  const manualSlots = salonForm.manualSlots as ManualSlotsMap | undefined;
 
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -310,6 +329,31 @@ export default function AppointmentAdminCalendar() {
     () => response?.appointments ?? [],
     [response?.appointments],
   );
+
+  // Manual mode: render explicit slots as available background events in FullCalendar
+  const manualBgEvents = useMemo(() => {
+    if (!isManual || !manualSlots) return [];
+    const evts: {
+      start: Date;
+      end: Date;
+      display: "background";
+      backgroundColor: string;
+    }[] = [];
+    for (const [dateStr, list] of Object.entries(manualSlots)) {
+      if (!Array.isArray(list)) continue;
+      for (const s of list) {
+        const start = new Date(`${dateStr}T${s.time}`);
+        const end = new Date(start.getTime() + (s.duration || 60) * 60000);
+        evts.push({
+          start,
+          end,
+          display: "background",
+          backgroundColor: "#ddd6fe",
+        });
+      }
+    }
+    return evts;
+  }, [isManual, manualSlots]);
 
   function handleSlotClick(date: string, time: string) {
     setCreateDefaults({ date, time });
@@ -498,6 +542,8 @@ export default function AppointmentAdminCalendar() {
               weekStart={weekStart}
               appointments={appointments}
               workingHours={workingHours}
+              isManual={isManual}
+              manualSlots={manualSlots}
               selectedDate={selectedDate}
               onDayClick={handleDayClick}
               onAppointmentClick={handleAppointmentClick}
@@ -510,7 +556,10 @@ export default function AppointmentAdminCalendar() {
                   const day = addDays(new Date(), i - 3);
                   const isSelected = isSameDay(day, selectedDate);
                   const isToday = isSameDay(day, new Date());
-                  const { isWorking } = getWorkingRange(workingHours, day);
+                  const isWorking = isManual
+                    ? manualTimesForDate(manualSlots, format(day, "yyyy-MM-dd"))
+                        .length > 0
+                    : getWorkingRange(workingHours, day).isWorking;
                   return (
                     <button
                       key={i}
@@ -540,6 +589,8 @@ export default function AppointmentAdminCalendar() {
                 selectedDate={selectedDate}
                 appointments={appointments}
                 workingHours={workingHours}
+                isManual={isManual}
+                manualSlots={manualSlots}
                 onSlotClick={handleSlotClick}
                 onAppointmentClick={handleAppointmentClick}
               />
@@ -588,7 +639,7 @@ export default function AppointmentAdminCalendar() {
                 allDaySlot={false}
                 slotMinTime="06:00:00"
                 slotMaxTime="23:00:00"
-                events={appointments.map((a) => {
+                events={[...appointments.map((a) => {
                   const duration = a.duration || 60;
                   const start = new Date(`${a.date}T${a.time}`);
                   const end = new Date(start.getTime() + duration * 60000);
@@ -603,8 +654,8 @@ export default function AppointmentAdminCalendar() {
                     borderColor: color,
                     textColor: "#ffffff",
                   };
-                })}
-                businessHours={businessHours}
+                }), ...manualBgEvents]}
+                businessHours={isManual ? undefined : businessHours}
                 locale={srLocale}
                 firstDay={1}
                 dayHeaderContent={(args) => {

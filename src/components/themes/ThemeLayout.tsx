@@ -13,6 +13,7 @@ import type { ComponentProps } from "react";
 import type { LandingTheme } from "@/models/SalonProfile";
 import type { IService, SalonProfileData } from "@/types";
 import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
+import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
 import { formatStatValue } from "@/lib/tenant/tenantStatsUtils";
 
 // Theme 1
@@ -720,7 +721,7 @@ export function ThemeLayout({
           )}
 
           {/* 4. WORKING HOURS */}
-          {salon?.workingHours && (
+          {salon?.workingHours && shouldShowWorkingHours(salon) && (
             <Theme4WorkingHours workingHours={salon.workingHours} />
           )}
 
@@ -813,10 +814,12 @@ export function ThemeLayout({
             tenantSlug={tenantSlug}
           />
           {/* 3. WORKING HOURS */}
-          <Theme5WorkingHours
-            workingHours={ui.workingHours.workingHours}
-            tenantSlug={tenantSlug}
-          />
+          {shouldShowWorkingHours(salon) && (
+            <Theme5WorkingHours
+              workingHours={ui.workingHours.workingHours}
+              tenantSlug={tenantSlug}
+            />
+          )}
           {/* 4. HOW IT WORKS */}
           <Theme5HowItWorks
             data={
@@ -1095,6 +1098,7 @@ export function ThemeLayout({
           instagramHandle={igHandle}
           email={salon.contactEmail || salon.email}
           workingHours={salon.workingHours}
+          showWorkingHours={shouldShowWorkingHours(salon)}
         />
       </div>
     );
@@ -1229,6 +1233,7 @@ export function ThemeLayout({
               instagramHandle={igHandle}
               email={salon.contactEmail || salon.email}
               workingHours={salon.workingHours}
+              showWorkingHours={shouldShowWorkingHours(salon)}
             />
           </IntroFade>
         </Theme8ModalProvider>

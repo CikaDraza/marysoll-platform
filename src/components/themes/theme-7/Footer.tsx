@@ -11,6 +11,7 @@ interface Props {
   instagramHandle?: string;
   email?: string;
   workingHours?: SalonProfileData["workingHours"] | null;
+  showWorkingHours?: boolean;
 }
 
 const EXPLORE = [
@@ -27,6 +28,7 @@ export function Theme7Footer({
   instagramHandle,
   email,
   workingHours,
+  showWorkingHours = true,
 }: Props) {
   const displayName = salonName ?? "The Lash Room";
   const logoSrc = logo || "/images/theme-7/logo.jpg";
@@ -78,7 +80,13 @@ export function Theme7Footer({
               <h4 className="text-[11px] uppercase tracking-[0.22em] text-cream/40 mb-4">
                 Visit
               </h4>
-              <Theme7WorkingHours workingHours={workingHours} />
+              {showWorkingHours ? (
+                <Theme7WorkingHours workingHours={workingHours} />
+              ) : (
+                <p className="text-[15px] text-cream/70 leading-snug">
+                  Termini se zakazuju putem aplikacije.
+                </p>
+              )}
             </div>
             <div>
               <h4 className="text-[11px] uppercase tracking-[0.22em] text-cream/40 mb-4">

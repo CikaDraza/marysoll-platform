@@ -10,6 +10,8 @@ import { FadeUp } from "../FadeUp";
 import { Deco } from "../Decorations";
 import Y2KHomepageAppointmentWidget from "../../shared/Y2KHomepageAppointmentWidget";
 import { formatWorkingHoursForDisplay } from "@/helpers/parseWorkingHours";
+import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
+import { WorkingHoursNote } from "@/components/shared/WorkingHoursNote";
 import type { IService, SalonProfileData } from "@/types";
 
 interface Props {
@@ -88,25 +90,39 @@ export function Theme8AppointmentsPage({
 
       {/* info cards */}
       <section className="max-w-[1100px] mx-auto px-5 mt-10 grid gap-5 md:grid-cols-3">
-        {/* working hours */}
+        {/* working hours (sakriveno u manual režimu / kad vlasnik isključi) */}
         <FadeUp className="bg-white border-[3px] border-y2k-ink rounded-[20px] p-6 shadow-[5px_6px_0_#0b0b0f] rotate-[-0.6deg]">
           <h3 className="font-bagel text-[22px] text-y2k-ink mb-3">
-            Radno vreme
+            {shouldShowWorkingHours(salon) ? "Radno vreme" : "Zakazivanje"}
           </h3>
-          <ul className="space-y-1.5">
-            {hours.map(({ day, hours: h, isOpen }) => (
-              <li key={day} className="flex items-center justify-between gap-3">
-                <span className="text-[13px] font-bold text-y2k-ink">{day}</span>
-                <span
-                  className={`text-[12px] font-extrabold px-2.5 py-1 rounded-full border-2 border-y2k-ink ${
-                    isOpen ? "bg-y2k-pink text-white" : "bg-white text-[#9a7d8b]"
-                  }`}
+          {shouldShowWorkingHours(salon) ? (
+            <ul className="space-y-1.5">
+              {hours.map(({ day, hours: h, isOpen }) => (
+                <li
+                  key={day}
+                  className="flex items-center justify-between gap-3"
                 >
-                  {h}
-                </span>
-              </li>
-            ))}
-          </ul>
+                  <span className="text-[13px] font-bold text-y2k-ink">
+                    {day}
+                  </span>
+                  <span
+                    className={`text-[12px] font-extrabold px-2.5 py-1 rounded-full border-2 border-y2k-ink ${
+                      isOpen
+                        ? "bg-y2k-pink text-white"
+                        : "bg-white text-[#9a7d8b]"
+                    }`}
+                  >
+                    {h}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <WorkingHoursNote
+              rulesHref={`${base}/pravila-zakazivanja`}
+              className="text-[13px] text-y2k-ink/70"
+            />
+          )}
         </FadeUp>
 
         {/* legend */}
