@@ -33,6 +33,8 @@ import interactionPlugin from "@fullcalendar/interaction";
 import srLocale from "@fullcalendar/core/locales/sr";
 import { toFullCalendarBusinessHours } from "@/helpers/parseWorkingHours";
 import { manualTimesForDate } from "@/helpers/manualSlots";
+import { statusMeta, SLOT_STATE } from "@/lib/appointmentColors";
+import { AppointmentLegend } from "@/components/shared/AppointmentLegend";
 import type {
   IAppointment,
   WorkingHoursMap,
@@ -86,39 +88,6 @@ function generateSlots(start: string, end: string): string[] {
   return slots;
 }
 
-// ─── Status config ────────────────────────────────────────────────────────────
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-amber-100 border-amber-300 text-amber-800",
-  appointment_approved: "bg-emerald-100 border-emerald-300 text-emerald-800",
-  appointment_rejected: "bg-red-100 border-red-200 text-red-700",
-  appointment_rescheduled: "bg-blue-100 border-blue-300 text-blue-800",
-  appointment_cancelled: "bg-zinc-100 border-zinc-200 text-zinc-500",
-  completed: "bg-teal-100 border-teal-300 text-teal-800",
-  no_show: "bg-purple-100 border-purple-300 text-purple-700",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Čeka",
-  appointment_approved: "Odobreno",
-  appointment_rejected: "Odbijeno",
-  appointment_rescheduled: "Pomerano",
-  appointment_cancelled: "Otkazano",
-  completed: "Završeno",
-  no_show: "Nije došao",
-};
-
-// Hex colors for FullCalendar events (Tailwind classes don't work in FC)
-const STATUS_HEX: Record<string, string> = {
-  pending: "#fbbf24", // amber-400
-  appointment_approved: "#10b981", // emerald-500
-  appointment_rejected: "#ef4444", // red-500
-  appointment_rescheduled: "#3b82f6", // blue-500
-  appointment_cancelled: "#9ca3af", // gray-400
-  completed: "#14b8a6", // teal-500
-  no_show: "#8b5cf6", // purple-500
-};
-
 // ─── DayView ──────────────────────────────────────────────────────────────────
 
 function DayView({
@@ -164,13 +133,12 @@ function DayView({
       {slots.map((slot) => {
         const appt = dayAppts.find((a) => a.time === slot);
         if (appt) {
-          const color =
-            STATUS_COLORS[appt.status] ?? "border-zinc-200 text-zinc-700";
+          const meta = statusMeta(appt.status);
           return (
             <button
               key={slot}
               onClick={() => onAppointmentClick(appt)}
-              className={`flex flex-col items-start gap-0.5 px-3 py-3 rounded-xl border-2 text-left transition hover:opacity-80 ${color}`}
+              className={`flex flex-col items-start gap-0.5 px-3 py-3 rounded-xl border-2 text-left transition hover:opacity-80 ${meta.chip}`}
             >
               <span className="text-xs font-bold">{slot}</span>
               <span className="text-xs font-semibold leading-tight line-clamp-1">
@@ -180,7 +148,7 @@ function DayView({
                 {appt.serviceName}
               </span>
               <span className="text-[9px] uppercase tracking-wide font-bold opacity-70 mt-0.5">
-                {STATUS_LABELS[appt.status] ?? appt.status}
+                {meta.label}
               </span>
             </button>
           );
@@ -189,12 +157,12 @@ function DayView({
           <button
             key={slot}
             onClick={() => onSlotClick(dateStr, slot)}
-            className="flex flex-col items-start gap-0.5 px-3 py-3 rounded-xl border border-zinc-100 dark:border-zinc-700 text-left hover:border-violet-300 hover:bg-violet-50 transition group"
+            className="flex flex-col items-start gap-0.5 px-3 py-3 rounded-xl border-2 border-violet-300 dark:border-violet-700 bg-white dark:bg-gray-900 text-left hover:border-violet-500 dark:hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition group"
           >
-            <span className="text-xs font-bold text-zinc-400 group-hover:text-violet-600">
+            <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 group-hover:text-violet-600 dark:group-hover:text-violet-400">
               {slot}
             </span>
-            <span className="text-[10px] text-zinc-300 group-hover:text-violet-400">
+            <span className="text-[10px] text-violet-400 dark:text-violet-500 group-hover:text-violet-600 dark:group-hover:text-violet-400 font-semibold">
               + Dodaj termin
             </span>
           </button>
@@ -249,9 +217,9 @@ function WeekView({
               isSelected
                 ? "border-violet-400 bg-violet-900 dark:bg-violet-950"
                 : isToday
-                  ? "border-amber-200"
+                  ? `border-zinc-100 dark:border-zinc-700 ${SLOT_STATE.today.fill}`
                   : !isWorking
-                    ? "border-red-500 dark:border-red-700 bg-red-500/10 text-white opacity-90"
+                    ? SLOT_STATE.nonWorking.fill
                     : "border-zinc-100 dark:border-zinc-700 shadow hover:border-violet-200"
             }`}
           >
@@ -267,7 +235,7 @@ function WeekView({
             </div>
 
             {!isWorking && (
-              <span className="text-[9px] isSelected text-red-400 text-center">
+              <span className="text-[9px] text-gray-400 text-center">
                 Neradan
               </span>
             )}
@@ -279,7 +247,7 @@ function WeekView({
                   e.stopPropagation();
                   onAppointmentClick(a);
                 }}
-                className={`px-1.5 py-1 rounded-lg text-[9px] font-semibold border leading-tight truncate ${STATUS_COLORS[a.status] ?? "bg-zinc-100 border-zinc-200 text-zinc-600"}`}
+                className={`px-1.5 py-1 rounded-lg text-[9px] font-semibold border leading-tight truncate ${statusMeta(a.status).chip}`}
               >
                 <span className="font-bold">{a.time}</span> {a.clientName}
               </div>
@@ -338,6 +306,7 @@ export default function AppointmentAdminCalendar() {
       end: Date;
       display: "background";
       backgroundColor: string;
+      classNames: string[];
     }[] = [];
     for (const [dateStr, list] of Object.entries(manualSlots)) {
       if (!Array.isArray(list)) continue;
@@ -348,7 +317,8 @@ export default function AppointmentAdminCalendar() {
           start,
           end,
           display: "background",
-          backgroundColor: "#ddd6fe",
+          backgroundColor: "rgba(124, 58, 237, 0.07)",
+          classNames: ["fc-free-slot"],
         });
       }
     }
@@ -411,31 +381,7 @@ export default function AppointmentAdminCalendar() {
         </div>
 
         {/* Legenda */}
-        <div className={`${card}`}>
-          <p className="text-[11px] font-bold text-zinc-400 dark:text-gray-300 uppercase tracking-widest mb-3">
-            Legenda
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {Object.entries(STATUS_LABELS).map(([status, label]) => (
-              <div key={status} className="flex items-center gap-2">
-                <span
-                  className={`w-3 h-3 rounded border flex-shrink-0 ${STATUS_COLORS[status] ?? "bg-zinc-100 border-zinc-200"}`}
-                />
-                <span className="text-xs text-zinc-600 dark:text-gray-300">
-                  {label}
-                </span>
-              </div>
-            ))}
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded border border-zinc-100 bg-white flex-shrink-0" />
-              <span className="text-xs text-zinc-400">Slobodan slot</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded border border-zinc-100 bg-zinc-50 flex-shrink-0 opacity-50" />
-              <span className="text-xs text-zinc-300">Neradan dan</span>
-            </div>
-          </div>
-        </div>
+        <AppointmentLegend className={`${card}`} />
       </div>
 
       {/* ── Calendar ────────────────────────────────────────────────────── */}
@@ -551,7 +497,7 @@ export default function AppointmentAdminCalendar() {
           ) : viewMode === "day" ? (
             <>
               {/* Day strip */}
-              <div className="flex gap-1.5 overflow-x-auto pb-3 mb-4 scrollbar-none">
+              <div className="flex gap-1.5 overflow-x-auto px-0.5 pt-1.5 pb-3 mb-4 scrollbar-none">
                 {Array.from({ length: 14 }).map((_, i) => {
                   const day = addDays(new Date(), i - 3);
                   const isSelected = isSameDay(day, selectedDate);
@@ -568,9 +514,9 @@ export default function AppointmentAdminCalendar() {
                         isSelected
                           ? "bg-violet-600 border-violet-600 text-white"
                           : isToday
-                            ? "border-amber-200 bg-amber-50 text-amber-700"
+                            ? `border-zinc-100 dark:border-gray-700 bg-white dark:bg-gray-900 text-zinc-600 dark:text-gray-400 ${SLOT_STATE.today.fill}`
                             : !isWorking
-                              ? "border-red-500 dark:border-red-700 bg-red-500/10 text-red-400 opacity-90"
+                              ? SLOT_STATE.nonWorking.fill
                               : "border-zinc-100 dark:border-gray-700 bg-white dark:bg-gray-900 text-zinc-600 dark:text-gray-400 hover:border-violet-200"
                       }`}
                     >
@@ -643,8 +589,9 @@ export default function AppointmentAdminCalendar() {
                   const duration = a.duration || 60;
                   const start = new Date(`${a.date}T${a.time}`);
                   const end = new Date(start.getTime() + duration * 60000);
-                  const color = STATUS_HEX[a.status] ?? STATUS_HEX.pending;
-                  const label = STATUS_LABELS[a.status] ?? a.status;
+                  const meta = statusMeta(a.status);
+                  const color = meta.hex;
+                  const label = meta.label;
                   return {
                     id: a._id,
                     title: `${a.serviceName} — ${a.clientName} (${label})`,

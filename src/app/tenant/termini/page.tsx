@@ -174,20 +174,20 @@ export default async function TerminiPage() {
               </h3>
               <ul className="space-y-2 text-xs text-gray-600">
                 <li className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded border border-gray-200 bg-white" />{" "}
+                  <span className="w-3 h-3 rounded border border-gray-300 bg-white" />{" "}
                   Radno vreme
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded border border-gray-200 bg-red-100" />{" "}
+                  <span className="w-3 h-3 rounded border border-amber-300 bg-amber-50" />{" "}
                   Današnji dan
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded border border-gray-300 bg-gray-200" />{" "}
+                  <span className="w-3 h-3 rounded border border-gray-300 bg-gray-100" />{" "}
                   Salon ne radi
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded bg-purple-500" /> Zauzet
-                  termin
+                  <span className="w-3 h-3 rounded border border-zinc-800 bg-zinc-800" />{" "}
+                  Zauzet termin
                 </li>
               </ul>
             </div>

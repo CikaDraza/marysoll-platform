@@ -12,6 +12,7 @@ import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import { motion } from "framer-motion";
 import AlertModal from "../modals/AlertModal";
 import { canClientCancelAppointment } from "@/lib/appointments/cancellation";
+import { statusMeta } from "@/lib/appointmentColors";
 
 interface Props {
   isOpen: boolean;
@@ -33,26 +34,6 @@ const lbl =
 function isWithinEditWindow(appt: IAppointment): boolean {
   return canClientCancelAppointment(appt);
 }
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Na čekanju",
-  appointment_approved: "Odobreno",
-  appointment_rejected: "Odbijeno",
-  appointment_rescheduled: "Pomerano",
-  appointment_cancelled: "Otkazano",
-  completed: "Završeno",
-  no_show: "Nije došao",
-};
-
-const STATUS_BADGE: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-800 border-amber-300",
-  appointment_approved: "bg-emerald-100 text-emerald-800 border-emerald-300",
-  appointment_rejected: "bg-red-100 text-red-700 border-red-200",
-  appointment_rescheduled: "bg-blue-100 text-blue-800 border-blue-300",
-  appointment_cancelled: "bg-zinc-100 text-zinc-500 border-zinc-200",
-  completed: "bg-teal-100 text-teal-800 border-teal-300",
-  no_show: "bg-purple-100 text-purple-700 border-purple-300",
-};
 
 export default function ClientEditModal({
   isOpen,
@@ -214,9 +195,9 @@ export default function ClientEditModal({
                   Moj termin
                 </h3>
                 <span
-                  className={`inline-block mt-1 text-[11px] font-semibold px-2 py-0.5 rounded border ${STATUS_BADGE[appointment.status] ?? "bg-gray-100 border-gray-200 text-gray-600"}`}
+                  className={`inline-block mt-1 text-[11px] font-semibold px-2 py-0.5 rounded border ${statusMeta(appointment.status).chip}`}
                 >
-                  {STATUS_LABELS[appointment.status] ?? appointment.status}
+                  {statusMeta(appointment.status).label}
                 </span>
               </div>
               <button

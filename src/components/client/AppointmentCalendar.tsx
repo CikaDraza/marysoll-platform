@@ -46,6 +46,8 @@ import { usePublicSalonProfile } from "@/hooks/useSalonProfile";
 import { useTenant } from "@/contexts/TenantContext";
 import { toFullCalendarBusinessHours } from "@/helpers/parseWorkingHours";
 import { WorkingHoursWidget } from "../widgets/WorkingHoursWidget";
+import { statusMeta, SLOT_STATE } from "@/lib/appointmentColors";
+import { AppointmentLegend } from "@/components/shared/AppointmentLegend";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -58,36 +60,6 @@ const DAY_NAMES_SR: DayOfWeek[] = [
   "Petak",
   "Subota",
 ];
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-amber-100 border-amber-300 text-amber-800",
-  appointment_approved: "bg-emerald-100 border-emerald-300 text-emerald-800",
-  appointment_rejected: "bg-red-100 border-red-200 text-red-700",
-  appointment_rescheduled: "bg-blue-100 border-blue-300 text-blue-800",
-  appointment_cancelled: "bg-zinc-100 border-zinc-200 text-zinc-500",
-  completed: "bg-teal-100 border-teal-300 text-teal-800",
-  no_show: "bg-purple-100 border-purple-300 text-purple-700",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Čeka",
-  appointment_approved: "Odobreno",
-  appointment_rejected: "Odbijeno",
-  appointment_rescheduled: "Pomerano",
-  appointment_cancelled: "Otkazano",
-  completed: "Završeno",
-  no_show: "Nije došao",
-};
-
-const STATUS_HEX: Record<string, string> = {
-  pending: "#fbbf24",
-  appointment_approved: "#10b981",
-  appointment_rejected: "#ef4444",
-  appointment_rescheduled: "#3b82f6",
-  appointment_cancelled: "#9ca3af",
-  completed: "#14b8a6",
-  no_show: "#8b5cf6",
-};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -208,37 +180,34 @@ function DayView({
 
         if (appt && isStart && isOwn) {
           // Own appointment start — clickable
-          const color =
-            STATUS_COLORS[appt.status] ?? "border-zinc-200 text-zinc-700";
+          const meta = statusMeta(appt.status);
           return (
             <button
               key={slot}
               onClick={() => onAppointmentClick(appt)}
-              className={`flex flex-col items-start gap-0.5 px-3 py-3 rounded-xl border-2 text-left transition hover:opacity-80 cursor-pointer ${color}`}
+              className={`flex flex-col items-start gap-0.5 px-3 py-3 rounded-xl border-2 text-left transition hover:opacity-80 cursor-pointer ${meta.chip}`}
             >
               <span className="text-xs font-bold">{slot}</span>
               <span className="text-xs font-semibold leading-tight line-clamp-1">
                 {appt.serviceName}
               </span>
               <span className="text-[9px] uppercase tracking-wide font-bold opacity-70 mt-0.5">
-                {STATUS_LABELS[appt.status] ?? appt.status}
+                {meta.label}
               </span>
             </button>
           );
         }
 
         if (appt) {
-          // Others' appointment or continuation — non-clickable
+          // Others' appointment or continuation — non-clickable (Zauzeto, tamno)
           return (
             <div
               key={slot}
-              className={`flex flex-col items-start gap-0.5 px-3 py-3 rounded-xl border bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 ${!isStart ? "opacity-30" : ""}`}
+              className={`flex flex-col items-start gap-0.5 px-3 py-3 rounded-xl border ${SLOT_STATE.busy.fill} ${!isStart ? "opacity-30" : ""}`}
             >
-              <span className="text-xs font-bold text-gray-400 dark:text-gray-500">
-                {slot}
-              </span>
+              <span className="text-xs font-bold text-white/70">{slot}</span>
               {isStart && (
-                <span className="text-xs text-gray-500 dark:text-gray-400 font-semibold">
+                <span className="text-xs text-white font-semibold">
                   Zauzeto
                 </span>
               )}
@@ -251,9 +220,9 @@ function DayView({
           return (
             <div
               key={slot}
-              className="flex flex-col items-start px-3 py-3 rounded-xl border border-dashed border-zinc-100 dark:border-zinc-800 opacity-40"
+              className={`flex flex-col items-start px-3 py-3 rounded-xl ${SLOT_STATE.past.fill}`}
             >
-              <span className="text-xs font-bold text-zinc-300 dark:text-zinc-600">
+              <span className="text-xs font-bold text-gray-400 dark:text-gray-500">
                 {slot}
               </span>
             </div>
@@ -265,12 +234,12 @@ function DayView({
           <button
             key={slot}
             onClick={() => onSlotClick(dateStr, slot)}
-            className="flex flex-col items-start gap-0.5 px-3 py-3 rounded-xl border border-zinc-100 dark:border-zinc-700 text-left hover:border-violet-300 dark:hover:border-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition group cursor-pointer"
+            className="flex flex-col items-start gap-0.5 px-3 py-3 rounded-xl border-2 border-violet-300 dark:border-violet-700 bg-white dark:bg-gray-900 text-left hover:border-violet-500 dark:hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition group cursor-pointer"
           >
-            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 group-hover:text-violet-600 dark:group-hover:text-violet-400">
+            <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 group-hover:text-violet-600 dark:group-hover:text-violet-400">
               {slot}
             </span>
-            <span className="text-[10px] text-zinc-300 dark:text-zinc-600 group-hover:text-violet-400">
+            <span className="text-[10px] text-violet-400 dark:text-violet-500 group-hover:text-violet-600 dark:group-hover:text-violet-400 font-semibold">
               + Zakaži
             </span>
           </button>
@@ -327,9 +296,9 @@ function WeekView({
               isSelected
                 ? "border-violet-400 bg-violet-900 dark:bg-violet-950"
                 : isToday
-                  ? "border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/10"
+                  ? `border-zinc-100 dark:border-zinc-700 bg-white dark:bg-gray-900/50 ${SLOT_STATE.today.fill}`
                   : !isWorking
-                    ? "border-red-500 dark:border-red-700 bg-red-500/10 opacity-90"
+                    ? SLOT_STATE.nonWorking.fill
                     : "border-zinc-100 dark:border-zinc-700 bg-white dark:bg-gray-900/50 shadow hover:border-violet-200 dark:hover:border-violet-700"
             }`}
           >
@@ -351,7 +320,7 @@ function WeekView({
             </div>
 
             {!isWorking && (
-              <span className="text-[9px] text-red-400 text-center">
+              <span className="text-[9px] text-gray-400 text-center">
                 Neradan
               </span>
             )}
@@ -367,10 +336,9 @@ function WeekView({
                   }}
                   className={`px-1.5 py-1 rounded-lg text-[9px] font-semibold border leading-tight truncate ${
                     isOwn
-                      ? (STATUS_COLORS[a.status] ??
-                          "bg-zinc-100 border-zinc-200 text-zinc-600") +
+                      ? statusMeta(a.status).chip +
                         " cursor-pointer hover:opacity-80"
-                      : "bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 cursor-default"
+                      : SLOT_STATE.busy.fill + " cursor-default"
                   }`}
                 >
                   <span className="font-bold">{a.time}</span>{" "}
@@ -397,7 +365,7 @@ type ViewMode = "day" | "week" | "fullcalendar";
 
 export default function AppointmentCalendar() {
   const { user } = useAuth();
-  const { tenantSlug } = useTenant();
+  const { tenantSlug, base } = useTenant();
 
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -513,8 +481,7 @@ export default function AppointmentCalendar() {
       const times = getManualTimesForDate(manualSlots, info.start).map(
         (s) => s.time,
       );
-      if (!times.includes(time))
-        return toast.error("Termin nije dostupan.");
+      if (!times.includes(time)) return toast.error("Termin nije dostupan.");
       setCreateDefaults({ date: info.start.toLocaleDateString("en-CA"), time });
       setCreateOpen(true);
       return;
@@ -553,8 +520,7 @@ export default function AppointmentCalendar() {
       const times = getManualTimesForDate(manualSlots, info.date).map(
         (s) => s.time,
       );
-      if (!times.includes(time))
-        return toast.error("Termin nije dostupan.");
+      if (!times.includes(time)) return toast.error("Termin nije dostupan.");
       setCreateDefaults({ date: info.date.toLocaleDateString("en-CA"), time });
       setCreateOpen(true);
       return;
@@ -588,17 +554,17 @@ export default function AppointmentCalendar() {
         const start = new Date(`${a.date}T${a.time}`);
         const end = new Date(start.getTime() + duration * 60000);
         const isOwn = a.clientEmail === user?.email;
-        const color = isOwn ? (STATUS_HEX[a.status] ?? "#8b5cf6") : "#d1d5db";
+        const color = isOwn ? statusMeta(a.status).hex : SLOT_STATE.busy.hex;
         return {
           id: a._id,
           title: isOwn
-            ? `${a.serviceName} (${STATUS_LABELS[a.status] ?? a.status})`
+            ? `${a.serviceName} (${statusMeta(a.status).label})`
             : "Zauzeto",
           start,
           end,
           backgroundColor: color,
           borderColor: color,
-          textColor: isOwn ? "#ffffff" : "#6b7280",
+          textColor: "#ffffff",
         };
       }),
     [appointments, user?.email],
@@ -612,6 +578,7 @@ export default function AppointmentCalendar() {
       end: Date;
       display: "background";
       backgroundColor: string;
+      classNames: string[];
     }[] = [];
     for (const [dateStr, list] of Object.entries(manualSlots)) {
       if (!Array.isArray(list)) continue;
@@ -622,7 +589,8 @@ export default function AppointmentCalendar() {
           start,
           end,
           display: "background",
-          backgroundColor: "#ddd6fe",
+          backgroundColor: "rgba(124, 58, 237, 0.07)",
+          classNames: ["fc-free-slot"],
         });
       }
     }
@@ -643,50 +611,19 @@ export default function AppointmentCalendar() {
 
   return (
     <>
-
       <div className="space-y-5">
         {/* Info row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div>
-            <WorkingHoursWidget profile={safeProfile} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <div className="flex">
+            <WorkingHoursWidget
+              profile={safeProfile}
+              rulesHref={`${base}/pravila-zakazivanja`}
+              className="flex-1"
+            />
           </div>
 
           {/* Legend */}
-          <div className={card}>
-            <p className="text-[11px] font-bold text-zinc-400 dark:text-gray-300 uppercase tracking-widest mb-3">
-              Legenda
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(STATUS_LABELS).map(([status, label]) => (
-                <div key={status} className="flex items-center gap-2">
-                  <span
-                    className={`w-3 h-3 rounded border flex-shrink-0 ${STATUS_COLORS[status] ?? "bg-zinc-100 border-zinc-200"}`}
-                  />
-                  <span className="text-xs text-zinc-600 dark:text-gray-300">
-                    {label}
-                  </span>
-                </div>
-              ))}
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded border bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 flex-shrink-0" />
-                <span className="text-xs text-zinc-600 dark:text-gray-300">
-                  Zauzeto (tuđi)
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded border border-zinc-100 dark:border-zinc-700 flex-shrink-0" />
-                <span className="text-xs text-zinc-400 dark:text-zinc-500">
-                  Slobodan slot
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded border border-red-500 bg-red-950 flex-shrink-0" />
-                <span className="text-xs text-zinc-400 dark:text-zinc-500">
-                  Neradan dan
-                </span>
-              </div>
-            </div>
-          </div>
+          <AppointmentLegend className={`${card} h-full`} />
         </div>
 
         {/* Calendar */}
@@ -797,7 +734,7 @@ export default function AppointmentCalendar() {
             ) : viewMode === "day" ? (
               <>
                 {/* Day strip */}
-                <div className="flex gap-1.5 overflow-x-auto pb-3 mb-4 scrollbar-none">
+                <div className="flex gap-1.5 overflow-x-auto px-0.5 pt-1.5 pb-3 mb-4 scrollbar-none">
                   {Array.from({ length: 14 }).map((_, i) => {
                     const day = addDays(new Date(), i - 3);
                     const isSelected = isSameDay(day, selectedDate);
@@ -813,9 +750,9 @@ export default function AppointmentCalendar() {
                           isSelected
                             ? "bg-violet-600 border-violet-600 text-white"
                             : isToday
-                              ? "border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400"
+                              ? `border-zinc-100 dark:border-gray-700 bg-white dark:bg-gray-900 text-zinc-600 dark:text-gray-400 ${SLOT_STATE.today.fill}`
                               : !isWorking
-                                ? "border-red-500 dark:border-red-700 bg-red-500/10 text-red-400 opacity-90"
+                                ? SLOT_STATE.nonWorking.fill
                                 : "border-zinc-100 dark:border-gray-700 bg-white dark:bg-gray-900 text-zinc-600 dark:text-gray-400 hover:border-violet-200 dark:hover:border-violet-700"
                         }`}
                       >

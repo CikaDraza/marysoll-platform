@@ -22,6 +22,7 @@ import type {
   SalonProfileData,
   ManualSlotsMap,
 } from "@/types";
+import { normalizeVacations } from "@/helpers/vacations";
 import { getTenantStats } from "@/lib/tenant/getTenantStats";
 import type { TenantStats } from "@/lib/tenant/getTenantStats";
 
@@ -152,6 +153,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
       !Array.isArray(s.workingHours)
         ? (s.workingHours as Record<string, unknown>)
         : undefined,
+    vacations: normalizeVacations(s?.vacations),
     availabilityMode:
       s?.availabilityMode === "manualSlots" ? "manualSlots" : "workingHours",
     manualSlots:

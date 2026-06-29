@@ -274,7 +274,7 @@ function WeekView({
 
   return (
     <div ref={scrollRef} className="overflow-x-auto -mx-1 px-1">
-      <div className="grid grid-cols-7 gap-1 sm:gap-1.5 min-w-[336px]">
+      <div className="grid grid-cols-7 gap-1 pb-3 sm:gap-1.5 min-w-[336px]">
         {days.map((day, i) => {
           const dateStr = format(day, "yyyy-MM-dd");
           const range = getWorkingRange(workingHours, day);
@@ -530,7 +530,9 @@ export default function Y2KHomepageAppointmentWidget({
   // ── Day strip days ─────────────────────────────────────────────────────────
   const stripDays = useMemo(
     () =>
-      Array.from({ length: 14 }, (_, i) => addDays(new Date(), stripOffset + i)),
+      Array.from({ length: 14 }, (_, i) =>
+        addDays(new Date(), stripOffset + i),
+      ),
     [stripOffset],
   );
 

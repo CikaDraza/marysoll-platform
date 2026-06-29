@@ -164,7 +164,7 @@ function DayView({
 
   if (!isWorking) {
     return (
-      <div className="flex flex-col items-center justify-center h-32 gap-2 rounded-2xl border-2 border-red-200 bg-red-50 text-red-400">
+      <div className="flex flex-col items-center justify-center h-32 gap-2 rounded-2xl border-2 border-gray-300 bg-gray-100 text-gray-400">
         <span className="text-2xl">🔒</span>
         <span className="text-sm font-semibold">Salon ne radi ovim danom</span>
       </div>
@@ -188,7 +188,7 @@ function DayView({
           return (
             <div
               key={slot.time}
-              className="flex flex-col items-center justify-center gap-0.5 px-3 py-3 rounded-xl bg-black border-2 border-black text-white select-none"
+              className="flex flex-col items-center justify-center gap-0.5 px-3 py-3 rounded-xl bg-zinc-800 border-2 border-zinc-800 text-white select-none"
               title="Termin zauzet"
             >
               <span className="text-xs font-bold">{slot.time}</span>
@@ -203,7 +203,7 @@ function DayView({
           return (
             <div
               key={slot.time}
-              className="flex flex-col items-center justify-center px-3 py-3 rounded-xl border border-dashed border-gray-200 opacity-30 select-none"
+              className="flex flex-col items-center justify-center px-3 py-3 rounded-xl border border-dashed border-gray-300 opacity-50 select-none"
             >
               <span className="text-xs font-bold text-gray-400">
                 {slot.time}
@@ -284,8 +284,8 @@ function WeekView({
   }, [weekStart, selectedDate]);
 
   return (
-    <div ref={scrollRef} className="overflow-x-auto -mx-1 px-1">
-      <div className="grid grid-cols-7 gap-1 sm:gap-1.5 min-w-[336px]">
+    <div ref={scrollRef} className="overflow-x-auto -mx-1 px-1 pt-1.5 pb-2.5">
+      <div className="grid grid-cols-7 gap-1 pb-3 sm:gap-1.5 min-w-[336px]">
         {days.map((day, i) => {
           const dateStr = format(day, "yyyy-MM-dd");
           const range = getWorkingRange(workingHours, day);
@@ -315,7 +315,7 @@ function WeekView({
               onClick={() => isWorking && onDayClick(day)}
               className={`flex flex-col items-center gap-1 p-1 sm:p-2 rounded-xl border-2 transition min-h-[72px] sm:min-h-[90px] ${
                 !isWorking
-                  ? "border-red-200 bg-red-50 cursor-default"
+                  ? "border-gray-300 bg-gray-100 cursor-default"
                   : isSelected
                     ? "border-(--primary-color) bg-(--primary-color)/10 cursor-pointer"
                     : isToday
@@ -328,7 +328,7 @@ function WeekView({
                 <span
                   className={`text-[9px] font-bold uppercase tracking-wide ${
                     !isWorking
-                      ? "text-red-300"
+                      ? "text-gray-400"
                       : isToday
                         ? "text-amber-500"
                         : "text-gray-400"
@@ -339,7 +339,7 @@ function WeekView({
                 <p
                   className={`text-sm font-bold leading-none mt-0.5 ${
                     !isWorking
-                      ? "text-red-300"
+                      ? "text-gray-400"
                       : isToday
                         ? "text-amber-600"
                         : isSelected
@@ -354,15 +354,15 @@ function WeekView({
               {/* Status — circle on mobile, text on sm+ */}
               {!isWorking ? (
                 <>
-                  <span className="sm:hidden w-2.5 h-2.5 rounded-full bg-red-400 mt-auto mb-0.5" />
-                  <span className="hidden sm:block text-[8px] text-red-400 font-semibold text-center leading-tight">
+                  <span className="sm:hidden w-2.5 h-2.5 rounded-full bg-gray-400 mt-auto mb-0.5" />
+                  <span className="hidden sm:block text-[8px] text-gray-400 font-semibold text-center leading-tight">
                     Neradan
                   </span>
                 </>
               ) : fullyBooked ? (
                 <>
-                  <span className="sm:hidden w-2.5 h-2.5 rounded-full bg-gray-800 mt-auto mb-0.5" />
-                  <span className="hidden sm:block text-[8px] bg-black text-white font-semibold text-center px-1 py-0.5 rounded-md leading-tight">
+                  <span className="sm:hidden w-2.5 h-2.5 rounded-full bg-zinc-800 mt-auto mb-0.5" />
+                  <span className="hidden sm:block text-[8px] bg-zinc-800 text-white font-semibold text-center px-1 py-0.5 rounded-md leading-tight">
                     Popunjeno
                   </span>
                 </>
@@ -691,7 +691,7 @@ export default function HomepageAppointmentWidget({
 
                   <div
                     ref={stripScrollRef}
-                    className="flex gap-1.5 overflow-x-auto pb-1 flex-1 scrollbar-none"
+                    className="flex gap-1.5 overflow-x-auto px-0.5 pt-1.5 pb-2.5 flex-1 scrollbar-none"
                   >
                     {stripDays.map((day, i) => {
                       const isSelected = isSameDay(day, selectedDate);
@@ -713,7 +713,7 @@ export default function HomepageAppointmentWidget({
                               : isToday
                                 ? "border-amber-300 bg-amber-50 text-amber-700"
                                 : !isWorking
-                                  ? "border-red-200 bg-red-50 text-red-300"
+                                  ? "border-gray-300 bg-gray-100 text-gray-400"
                                   : "border-gray-200 bg-white text-gray-600 hover:border-(--primary-color)/30"
                           }`}
                         >

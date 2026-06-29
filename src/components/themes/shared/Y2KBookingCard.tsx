@@ -29,10 +29,10 @@ export function Y2KBookingCard({
   return (
     <div
       id="booking"
-      className="relative w-full max-w-full overflow-hidden rounded-[28px] bg-white text-y2k-ink p-4 sm:p-6 border-[4px] border-y2k-ink shadow-[10px_12px_0_#ff2e97]"
+      className="relative w-full max-w-full overflow-visible rounded-[28px] bg-white text-y2k-ink p-4 sm:p-6 border-[4px] border-y2k-ink shadow-[10px_12px_0_#ff2e97]"
     >
       {vacation && (
-        <div className="pointer-events-none absolute top-3 left-3 z-20 rotate-[-3deg] rounded-2xl border-[3px] border-y2k-ink bg-y2k-ink px-4 py-2.5 text-center text-white shadow-[6px_7px_0_rgba(255,46,151,0.6)]">
+        <div className="pointer-events-none absolute -top-16 left-3 z-20 rotate-[-3deg] rounded-2xl border-[3px] border-y2k-ink bg-y2k-ink px-4 py-2.5 text-center text-white shadow-[6px_7px_0_rgba(255,46,151,0.6)]">
           <div className="font-bagel text-2xl leading-none text-y2k-hot">
             ODMOR.
           </div>
