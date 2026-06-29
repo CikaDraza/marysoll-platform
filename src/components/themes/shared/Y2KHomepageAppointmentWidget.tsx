@@ -43,6 +43,7 @@ import type {
   ManualSlotsMap,
 } from "@/types";
 import { manualTimesForDate, isManualSlotTaken } from "@/helpers/manualSlots";
+import { useTheme8Modal } from "@/components/themes/theme-8/Theme8ModalProvider";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -405,6 +406,7 @@ export default function Y2KHomepageAppointmentWidget({
 }: Props) {
   const { user, token } = useAuth();
   const isLoggedIn = !!user;
+  const { celebrate } = useTheme8Modal();
 
   const effectiveSlug = clientSlug ?? tenantSlug;
 
@@ -429,7 +431,7 @@ export default function Y2KHomepageAppointmentWidget({
   const pendingCenterRef = useRef(false);
 
   // ── Fetch public appointments ──────────────────────────────────────────────
-  const { data: appointments = [], isLoading } = useQuery<PublicAppt[]>({
+  const { data: appointments = [], isLoading, refetch } = useQuery<PublicAppt[]>({
     queryKey: ["pub-appts-widget", effectiveSlug],
     queryFn: async () => {
       if (!effectiveSlug) return [];
@@ -755,6 +757,12 @@ export default function Y2KHomepageAppointmentWidget({
         token={token ?? undefined}
         tenantSlug={effectiveSlug}
         onConfirmedByGuest={handleGuestConfirm}
+        onBooked={() => {
+          // BookingModal se sam zatvara (handleClose). Osveži dostupnost i
+          // pusti "Moment" zahvalnicu preko cele strane (Y2K).
+          refetch();
+          celebrate();
+        }}
         pendingDefaults={pendingDefaults}
       />
     </>

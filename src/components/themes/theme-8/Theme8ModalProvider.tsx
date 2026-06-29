@@ -28,17 +28,41 @@ import { PENDING_STORAGE_KEY } from "@/components/shared/BookingModal";
 import { Y2KBookingCard } from "../shared/Y2KBookingCard";
 import { Y2KNewsletterWidget } from "../shared/Y2KNewsletterWidget";
 import { SprayReveal } from "./motion/SprayReveal";
+import Theme8CelebrationOverlay from "./Theme8CelebrationOverlay";
+
+// Sprite sheet "Hvala" lika (Y2K/Powerpuff fan-art) — grid 6×2 (12 frejmova).
+// PNG: public/images/theme-8/celebration-sheet.png (1080×700, frame 180×350).
+// 1-3 ~240ms, NAMIG (4. frejm, indeks 3) = 650ms, pa 5→12 brže (90ms) — srce
+// se ne menja mnogo, brz prelaz usana/tilt glave = manje seckanja.
+// Test prekidač: kad je true, zahvalnica se prikaže odmah na load (bez bukiranja).
+// U produkciji ostaje false — triggeruje se samo na uspešno zakazivanje.
+const TEST_ALWAYS_SHOW_CELEBRATION = false;
+
+const CELEBRATION_SPRITE = {
+  src: "/images/theme-8/celebration-sheet.png",
+  frameWidth: 180,
+  frameHeight: 350,
+  columns: 6,
+  rows: 2,
+  frames: 12,
+  loop: false, // jedna izvedba, drži poslednji „burst" frejm
+  // ms po frejmu (indeks 0-11):
+  frameDurations: [240, 240, 240, 650, 90, 90, 90, 90, 90, 90, 90, 90],
+};
 
 type ModalName = "book" | "bilten";
 
 interface Theme8ModalCtx {
   open: (name: ModalName) => void;
   close: () => void;
+  /** Zatvori modal i prikaži "Moment" zahvalnicu (npr. nakon zakazivanja). */
+  celebrate: () => void;
 }
 
 const Theme8ModalContext = createContext<Theme8ModalCtx>({
   open: () => {},
   close: () => {},
+  celebrate: () => {},
 });
 
 export function useTheme8Modal() {
@@ -59,9 +83,15 @@ interface Props {
 
 export function Theme8ModalProvider({ children, booking }: Props) {
   const [active, setActive] = useState<ModalName | null>(null);
+  const [celebrating, setCelebrating] = useState(TEST_ALWAYS_SHOW_CELEBRATION);
 
   const open = useCallback((name: ModalName) => setActive(name), []);
   const close = useCallback(() => setActive(null), []);
+  // Zatvori booking modal, pa pusti zahvalnicu preko cele strane.
+  const celebrate = useCallback(() => {
+    setActive(null);
+    setCelebrating(true);
+  }, []);
 
   // After a guest logs in and returns home, auto-open the booking modal so the
   // widget mounts and its own pending-restore effect re-opens the confirm dialog.
@@ -103,8 +133,13 @@ export function Theme8ModalProvider({ children, booking }: Props) {
   const maxWidth = active === "book" ? "max-w-[640px]" : "max-w-[460px]";
 
   return (
-    <Theme8ModalContext.Provider value={{ open, close }}>
+    <Theme8ModalContext.Provider value={{ open, close, celebrate }}>
       {children}
+      <Theme8CelebrationOverlay
+        open={celebrating}
+        onClose={() => setCelebrating(false)}
+        sprite={CELEBRATION_SPRITE}
+      />
       {typeof document !== "undefined" &&
         createPortal(
           <AnimatePresence>

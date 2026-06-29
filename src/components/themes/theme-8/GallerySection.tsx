@@ -93,7 +93,7 @@ function Polaroid({
       className={`bg-white p-[9px] border-2 border-y2k-ink shadow-[5px_8px_18px_rgba(11,11,15,0.3)] ${rotate}`}
     >
       <div
-        className={`relative overflow-hidden h-[280px] ${
+        className={`relative overflow-hidden h-[480px] ${
           tall ? "lg:h-[350px]" : ""
         }`}
       >
