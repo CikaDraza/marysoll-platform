@@ -1284,7 +1284,15 @@ function AdminDashboard() {
       {/* ═══ TAB: Radno vreme ═══════════════════════════════════════ */}
       {tab === "radno-vreme" && (
         <div className={card}>
-          <div className="flex items-center justify-between mb-6">
+          {/* Mobilni: Sačuvaj na samom vrhu (desktop ima dugme desno u headeru) */}
+          <button
+            onClick={() => sp.save()}
+            disabled={sp.isSaving}
+            className="sm:hidden w-full mb-4 px-5 py-3 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition disabled:opacity-50"
+          >
+            {sp.isSaving ? "Snimanje..." : "Sačuvaj"}
+          </button>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
               <h2 className="font-bold text-gray-900 dark:text-white">
                 {sp.form.availabilityMode === "manualSlots"
@@ -1318,7 +1326,7 @@ function AdminDashboard() {
               <button
                 onClick={() => sp.save()}
                 disabled={sp.isSaving}
-                className="px-5 py-2.5 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition disabled:opacity-50"
+                className="hidden sm:inline-flex justify-center px-5 py-2.5 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition disabled:opacity-50"
               >
                 {sp.isSaving ? "Snimanje..." : "Sačuvaj"}
               </button>
@@ -1552,13 +1560,13 @@ function AdminDashboard() {
                     key={dateKey}
                     className={`rounded-2xl border p-4 transition-colors ${isRest ? "bg-gray-50 dark:bg-gray-800/50 border-gray-100 dark:border-gray-800" : "bg-violet-50/40 dark:bg-gray-900 border-violet-100 dark:border-violet-900/40"}`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="w-[108px] flex-shrink-0 text-sm font-bold text-gray-700 dark:text-gray-300">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-20 sm:w-[108px] flex-shrink sm:flex-shrink-0 truncate text-[12px] sm:text-sm font-bold text-gray-700 dark:text-gray-300">
                           {formatManualDayLabel(dateKey)}
                         </span>
                         <span
-                          className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${isRest ? "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400" : "bg-violet-200 dark:bg-violet-900/50 text-violet-700 dark:text-violet-400"}`}
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap ${isRest ? "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400" : "bg-violet-200 dark:bg-violet-900/50 text-violet-700 dark:text-violet-400"}`}
                         >
                           {isRest
                             ? "Neradan"
@@ -1567,7 +1575,7 @@ function AdminDashboard() {
                       </div>
                       <button
                         onClick={() => sp.addManualSlot(dateKey)}
-                        className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 px-3 py-1.5 rounded-lg transition"
+                        className="flex-shrink-0 whitespace-nowrap text-[11px] font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 px-2.5 py-1.5 rounded-lg transition"
                       >
                         + Termin
                       </button>
@@ -1692,6 +1700,15 @@ function AdminDashboard() {
               </div>
             </div>
           )}
+
+          {/* Mobilni: Sačuvaj i na dnu (desktop ima dugme u headeru) */}
+          <button
+            onClick={() => sp.save()}
+            disabled={sp.isSaving}
+            className="sm:hidden w-full mt-6 px-5 py-3 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition disabled:opacity-50"
+          >
+            {sp.isSaving ? "Snimanje..." : "Sačuvaj"}
+          </button>
         </div>
       )}
 

@@ -208,7 +208,8 @@ const PLAN_COLORS: Record<string, string> = {
 // ─── AppSidebar ───────────────────────────────────────────────────────────────
 
 const AppSidebar: React.FC = () => {
-  const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const { isExpanded, isMobileOpen, isHovered, setIsHovered, closeMobileSidebar } =
+    useSidebar();
   const { user } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
@@ -265,7 +266,10 @@ const AppSidebar: React.FC = () => {
   }, [openSubmenu]);
 
   const handleNav = (path?: string) => {
-    if (path) router.push(path);
+    if (path) {
+      router.push(path);
+      closeMobileSidebar(); // zatvori mobilni drawer nakon izbora taba
+    }
   };
 
   const salonUrl = tenant.getTenantUrl?.();
@@ -395,6 +399,7 @@ const AppSidebar: React.FC = () => {
                         <li key={sub.name}>
                           <Link
                             href={subPath}
+                            onClick={closeMobileSidebar}
                             className="block px-3 py-2 text-sm rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200 transition-colors"
                           >
                             {sub.name && sub.badge ? (
