@@ -231,18 +231,11 @@ const TYPE_BADGE: Record<string, string> = {
 function AdminDashboard() {
   const searchParams = useSearchParams();
 
+  // Tab je izveden DIREKTNO iz URL-a (jedini izvor istine) — bez lokalnog
+  // state-a i efekta koji su kasnili/racirali pri brzoj promeni tabova.
   const tabParam = searchParams.get("tab") as Tab | null;
-  const [tab, setTab] = useState<Tab>(
-    tabParam && ALL_TABS.includes(tabParam) ? tabParam : "profil",
-  );
-
-  useEffect(() => {
-    async function handleSetTab() {
-      const t = searchParams.get("tab") as Tab | null;
-      if (t && ALL_TABS.includes(t)) setTab(t);
-    }
-    handleSetTab();
-  }, [searchParams]);
+  const tab: Tab =
+    tabParam && ALL_TABS.includes(tabParam) ? tabParam : "profil";
 
   const [confirmDeleteSalon, setConfirmDeleteSalon] = useState(false);
   const [deleteSalonInput, setDeleteSalonInput] = useState("");

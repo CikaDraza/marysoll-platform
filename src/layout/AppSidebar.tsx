@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
@@ -212,7 +212,6 @@ const AppSidebar: React.FC = () => {
     useSidebar();
   const { user } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
   const tenant = useTenantAdmin();
 
   const chatUnread = useChatUnread();
@@ -264,13 +263,6 @@ const AppSidebar: React.FC = () => {
         setSubMenuHeight((p) => ({ ...p, [openSubmenu]: el.scrollHeight }));
     }
   }, [openSubmenu]);
-
-  const handleNav = (path?: string) => {
-    if (path) {
-      router.push(path);
-      closeMobileSidebar(); // zatvori mobilni drawer nakon izbora taba
-    }
-  };
 
   const salonUrl = tenant.getTenantUrl?.();
 
@@ -325,57 +317,75 @@ const AppSidebar: React.FC = () => {
 
           return (
             <div key={item.name}>
-              <button
-                onClick={() => {
-                  if (item.subItems) {
-                    setOpenSubmenu(submenuOpen ? null : idx);
-                  } else {
-                    handleNav(item.path);
-                  }
-                }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
+              {(() => {
+                const itemClass = `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
                   ${
                     active
                       ? "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400"
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200"
                   }
                   ${!isVisible ? "justify-center" : ""}
-                `}
-              >
-                <span
-                  className={`flex-shrink-0 ${active ? "text-violet-600 dark:text-violet-400" : "text-gray-500 dark:text-gray-400"}`}
-                >
-                  {item.icon}
-                </span>
-
-                {isVisible && (
+                `;
+                const itemInner = (
                   <>
-                    <span className="flex-1 text-left truncate">
-                      {item.name}
+                    <span
+                      className={`flex-shrink-0 ${active ? "text-violet-600 dark:text-violet-400" : "text-gray-500 dark:text-gray-400"}`}
+                    >
+                      {item.icon}
                     </span>
-                    {item.name === "Chat" && chatUnread > 0 && (
-                      <span className="flex-shrink-0 min-w-[18px] h-[18px] rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center px-1 animate-pulse">
-                        {chatUnread > 9 ? "9+" : chatUnread}
-                      </span>
-                    )}
-                    {item.subItems && (
-                      <svg
-                        className={`w-4 h-4 transition-transform duration-200 text-gray-400 ${isMounted && submenuOpen ? "rotate-180 text-violet-500" : "rotate-0 text-gray-400"}`}
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <path
-                          d={icons.chevron}
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
+
+                    {isVisible && (
+                      <>
+                        <span className="flex-1 text-left truncate">
+                          {item.name}
+                        </span>
+                        {item.name === "Chat" && chatUnread > 0 && (
+                          <span className="flex-shrink-0 min-w-[18px] h-[18px] rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center px-1 animate-pulse">
+                            {chatUnread > 9 ? "9+" : chatUnread}
+                          </span>
+                        )}
+                        {item.subItems && (
+                          <svg
+                            className={`w-4 h-4 transition-transform duration-200 text-gray-400 ${isMounted && submenuOpen ? "rotate-180 text-violet-500" : "rotate-0 text-gray-400"}`}
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <path
+                              d={icons.chevron}
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        )}
+                      </>
                     )}
                   </>
-                )}
-              </button>
+                );
+
+                // Stavke sa podmenijem = dugme (širi/skuplja podmeni).
+                // Navigacione stavke = pravi <Link> (isti pouzdan obrazac kao
+                // pod-stavke). Ručni router.push + odmah setState je prekidao
+                // Next navigacionu tranziciju → intermitentno vraćanje na tab.
+                return item.subItems ? (
+                  <button
+                    type="button"
+                    onClick={() => setOpenSubmenu(submenuOpen ? null : idx)}
+                    className={itemClass}
+                  >
+                    {itemInner}
+                  </button>
+                ) : (
+                  <Link
+                    href={item.path ?? "#"}
+                    onClick={closeMobileSidebar}
+                    className={itemClass}
+                  >
+                    {itemInner}
+                  </Link>
+                );
+              })()}
 
               {/* Submenu */}
               {item.subItems && isVisible && (
