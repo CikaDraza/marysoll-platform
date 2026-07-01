@@ -50,9 +50,12 @@ export async function POST(req: Request) {
           const profile = (await SalonProfile.findOne({
             tenantId: tenantUser.tenantId,
           })
-            .select("logo")
-            .lean()) as { logo?: string } | null;
-          if (profile?.logo) notificationIcon = profile.logo;
+            .select("logo notificationLogo")
+            .lean()) as { logo?: string; notificationLogo?: string } | null;
+          // notificationLogo → logo sajta → platformski default.
+          if (profile?.notificationLogo)
+            notificationIcon = profile.notificationLogo;
+          else if (profile?.logo) notificationIcon = profile.logo;
           else notificationIcon = "/marysoll_elegant_logo.png";
         }
       } catch {

@@ -26,10 +26,17 @@ async function getSalonBranding(
 ): Promise<{ icon: string; name: string }> {
   try {
     const profile = (await SalonProfile.findOne({ tenantId })
-      .select("logo name")
-      .lean()) as { logo?: string; name?: string } | null;
+      .select("logo notificationLogo name")
+      .lean()) as {
+      logo?: string;
+      notificationLogo?: string;
+      name?: string;
+    } | null;
     return {
-      icon: profile?.logo || "/notification-icon.png",
+      icon:
+        profile?.notificationLogo ||
+        profile?.logo ||
+        "/notification-icon.png",
       name: profile?.name || "Salon",
     };
   } catch {

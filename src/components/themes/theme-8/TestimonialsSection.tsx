@@ -78,7 +78,7 @@ export function Theme8TestimonialsSection({ testimonials, headline }: Props) {
           aria-hidden="true"
           width={760}
           height={240}
-          className="absolute left-1/2 top-[54%] w-[760px] max-w-[112%] -translate-x-1/2 -translate-y-1/2 scale-105 opacity-90 z-0 pointer-events-none"
+          className="absolute left-1/2 top-[54%] w-[760px] h-auto max-w-[112%] -translate-x-1/2 -translate-y-1/2 scale-105 opacity-90 z-0 pointer-events-none"
         />
         <span className="relative z-[1] inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink">
           {headline || "Kind words"}

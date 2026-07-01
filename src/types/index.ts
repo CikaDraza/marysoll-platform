@@ -767,6 +767,7 @@ export interface SalonProfile {
   email: string;
   description: string;
   logo?: string | null;
+  notificationLogo?: string | null;
   phone: string;
   street: string;
   city: string;
@@ -823,6 +824,7 @@ export interface ISalonProfileForm {
   marketingPhone: string;
   resendApiKey: string;
   logo: string | null;
+  notificationLogo: string | null;
   social: SocialLinks;
   workingHours: WorkingHoursMap;
   vacations: IVacation[];

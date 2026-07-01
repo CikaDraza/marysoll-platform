@@ -35,7 +35,7 @@ import Theme8CelebrationOverlay from "./Theme8CelebrationOverlay";
 // 1-3 @240ms, NAMIG (4. frejm) @650ms, 5-12 @90ms; jednom pa drži poslednji.
 // Test prekidač: kad je true, zahvalnica se prikaže odmah na load (bez bukiranja).
 // U produkciji vrati na false — triggeruje se samo na uspešno zakazivanje.
-const TEST_ALWAYS_SHOW_CELEBRATION = true;
+const TEST_ALWAYS_SHOW_CELEBRATION = false;
 
 const CELEBRATION_SPRITE = {
   src: "/images/theme-8/celebration-sheet.png",

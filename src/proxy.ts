@@ -608,6 +608,19 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const pass = () =>
     NextResponse.next({ request: { headers: requestHeaders } });
 
+  // Tenant-aware favicon: browser gađa /favicon.ico direktno (bez tenant metadata),
+  // pa bi inače dobio statički platform favicon. Za client domene prosledi tenant
+  // resolveru; sve ostalo (marketing/admin/superadmin) pada na statički favicon.
+  if (pathname === "/favicon.ico") {
+    if (domainType === "client" && tenantId) {
+      return NextResponse.rewrite(
+        new URL("/tenant/favicon", request.nextUrl.origin),
+        { request: { headers: requestHeaders } },
+      );
+    }
+    return pass();
+  }
+
   // Block direct browser access to the internal /tenant/* route on non-client domains.
   if (
     (pathname === "/tenant" || pathname.startsWith("/tenant/")) &&
@@ -789,6 +802,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|assets/|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.webp|.*\\.gif|.*\\.svg|.*\\.ico|.*\\.mp4|.*\\.webm|.*\\.ogg|.*\\.mp3|service-worker\\.js).*)",
+    // NOTE: favicon.ico i .ico NISU isključeni — proxy ih presreće da bi servirao
+    // tenant-specifičan favicon (vidi rewrite iznad). Ostali statički fajlovi ostaju out.
+    "/((?!_next/static|_next/image|assets/|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.webp|.*\\.gif|.*\\.svg|.*\\.mp4|.*\\.webm|.*\\.ogg|.*\\.mp3|service-worker\\.js).*)",
   ],
 };

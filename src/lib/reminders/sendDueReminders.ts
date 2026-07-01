@@ -120,10 +120,15 @@ export async function sendDueReminders(): Promise<{
     if (!claimed) continue;
 
     const profile = (await SalonProfile.findOne({ tenantId: appt.tenantId })
-      .select("logo name")
-      .lean()) as { logo?: string; name?: string } | null;
+      .select("logo notificationLogo name")
+      .lean()) as {
+      logo?: string;
+      notificationLogo?: string;
+      name?: string;
+    } | null;
     const salonName = profile?.name || "Salon";
-    const icon = profile?.logo || "/notification-icon.png";
+    const icon =
+      profile?.notificationLogo || profile?.logo || "/notification-icon.png";
     const mins = Math.round(remainingMin);
 
     // ── Klijent ──

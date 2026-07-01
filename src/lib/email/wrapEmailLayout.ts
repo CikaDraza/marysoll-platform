@@ -71,7 +71,12 @@ async function resolveSalon(tenantId?: string | null): Promise<SalonData> {
     return {
       name: String(raw.name ?? "Marysoll"),
       description: raw.description ? String(raw.description) : undefined,
-      logo: raw.logo ? String(raw.logo) : null,
+      // Mejlovi koriste notificationLogo, uz fallback na logo sajta.
+      logo: raw.notificationLogo
+        ? String(raw.notificationLogo)
+        : raw.logo
+          ? String(raw.logo)
+          : null,
       street: raw.street ? String(raw.street) : undefined,
       city: raw.city ? String(raw.city) : undefined,
       phone: raw.phone ? String(raw.phone) : undefined,

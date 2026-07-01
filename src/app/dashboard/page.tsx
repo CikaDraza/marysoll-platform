@@ -250,6 +250,7 @@ function AdminDashboard() {
   const [deleteAccountInput, setDeleteAccountInput] = useState("");
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const notifLogoRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   // All hooks before early return
   const { user, token, logout, isLoading: authLoading } = useAuth();
@@ -562,6 +563,7 @@ function AdminDashboard() {
                 card + " lg:col-span-1 flex flex-col items-center gap-4"
               }
             >
+              <p className={lbl + " w-full"}>Logo sajta (i favicon)</p>
               <div className="w-28 h-28 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
                 {sp.logoPreview ? (
                   <Image
@@ -599,6 +601,49 @@ function AdminDashboard() {
               <p className="text-[11px] text-gray-400 text-center">
                 PNG · JPG · WebP · Maks. 5 MB
               </p>
+
+              {/* Logo za notifikacije i mejlove */}
+              <div className="w-full border-t border-gray-100 dark:border-gray-800 pt-4 flex flex-col items-center gap-3">
+                <p className={lbl + " w-full"}>Logo za notifikacije i mejlove</p>
+                <div className="w-28 h-28 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
+                  {sp.notificationLogoPreview ? (
+                    <Image
+                      src={sp.notificationLogoPreview}
+                      alt="Logo za notifikacije"
+                      width={112}
+                      height={112}
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <span className="text-4xl">🔔</span>
+                  )}
+                </div>
+                <input
+                  ref={notifLogoRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={sp.handleNotificationLogoChange}
+                />
+                <button
+                  onClick={() => notifLogoRef.current?.click()}
+                  className="w-full py-2 bg-violet-600 text-white text-sm font-semibold rounded-xl hover:bg-violet-700 transition"
+                >
+                  {sp.notificationLogoPreview ? "Promeni logo" : "Dodaj logo"}
+                </button>
+                {sp.notificationLogoPreview && (
+                  <button
+                    onClick={sp.removeNotificationLogo}
+                    className="w-full py-2 border border-red-200 dark:border-red-800 text-red-500 text-sm rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+                  >
+                    Ukloni logo
+                  </button>
+                )}
+                <p className="text-[11px] text-gray-400 text-center">
+                  Prikazuje se u mejlovima i push notifikacijama. Ako se ne
+                  postavi, koristi se logo sajta.
+                </p>
+              </div>
 
               {/* Branding colors */}
               <div className="w-full border-t border-gray-100 dark:border-gray-800 pt-4 space-y-3">

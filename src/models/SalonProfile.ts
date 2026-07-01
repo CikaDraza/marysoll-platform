@@ -236,6 +236,8 @@ const SalonProfileSchema = new mongoose.Schema(
     },
 
     logo: { type: String, required: false, default: null },
+    // Zaseban logo za notifikacije (web push) i mejlove. Fallback na `logo` (logo sajta).
+    notificationLogo: { type: String, required: false, default: null },
     phone: { type: String, required: false, default: "" },
     city: { type: String, required: false, default: "" },
     street: { type: String, required: false, default: "" },

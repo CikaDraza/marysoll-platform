@@ -113,6 +113,23 @@ export async function PUT(req: NextRequest) {
       profile.logo = await uploadToCloudinary(logoFile, `${base}/logo`);
     }
 
+    // Logo za notifikacije i mejlove (zaseban od loga sajta). Ako se ukloni,
+    // fallback na logo sajta se dešava u trenutku slanja (email/push).
+    const notifLogoFile = form.get("notificationLogo");
+    if (notifLogoFile instanceof File && notifLogoFile.size > 0) {
+      if (profile.notificationLogo)
+        await deleteFromCloudinary(profile.notificationLogo).catch(console.error);
+      const base = await getTenantFolder(tenantId);
+      profile.notificationLogo = await uploadToCloudinary(
+        notifLogoFile,
+        `${base}/notification-logo`,
+      );
+    } else if (form.get("removeNotificationLogo") === "true") {
+      if (profile.notificationLogo)
+        await deleteFromCloudinary(profile.notificationLogo).catch(console.error);
+      profile.notificationLogo = null;
+    }
+
     await profile.save();
 
     // Sinhronizuj Tenant.name sa nazivom salona — superadmin dashboard i

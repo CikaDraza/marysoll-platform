@@ -69,12 +69,12 @@ export function Theme8Services({
           aria-hidden="true"
           width={560}
           height={200}
-          className="absolute left-1/2 top-[48%] w-[560px] max-w-[104%] -translate-x-1/2 -translate-y-1/2 scale-110 opacity-90 z-0 pointer-events-none"
+          className="absolute left-1/2 top-[48%] w-[560px] h-auto max-w-[104%] -translate-x-1/2 -translate-y-1/2 scale-110 opacity-90 z-0 pointer-events-none"
         />
         <span className="relative z-[1] inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink">
           {"Ponuda & Cenovnik"}
         </span>
-        <h2 className="relative z-[1] mt-1.5 font-bagel text-[clamp(46px,8vw,100px)] leading-[0.9] text-y2k-ink rotate-[-1.5deg]">
+        <h2 className="relative z-[1] -mt-1.5 font-bagel text-[clamp(46px,8vw,100px)] leading-[0.9] text-y2k-ink rotate-[-1.5deg]">
           {headline || "THE MENU"}
         </h2>
       </FadeUp>

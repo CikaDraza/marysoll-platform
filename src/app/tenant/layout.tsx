@@ -10,12 +10,27 @@
  * Reads x-tenant-slug, x-tenant-id, x-tenant-base-path from proxy-injected
  * headers and provides them to all child pages via TenantProvider.
  */
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { CookiesModal } from "@/components/client/CookiesModal";
 import { TenantThemeController } from "@/components/themes/TenantThemeController";
 import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
+
+/**
+ * Set the tenant's site logo as favicon for ALL tenant pages. The proxy also
+ * intercepts the raw `GET /favicon.ico` (see proxy.ts), but this covers the
+ * `<link rel="icon">`/apple-icon path for modern browsers and per-page metadata.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const h = await headers();
+  const tenantSlug = h.get("x-tenant-slug") ?? "";
+  if (!tenantSlug) return {};
+  const profile = await fetchPublicSalonProfile(tenantSlug);
+  const logo = profile?.logo ?? undefined;
+  return logo ? { icons: { icon: logo, apple: logo } } : {};
+}
 
 export default async function TenantLayout({
   children,

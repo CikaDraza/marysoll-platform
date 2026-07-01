@@ -103,6 +103,7 @@ const emptyForm = (): ISalonProfileForm => ({
   newsletterEmail: "",
   resendApiKey: "",
   logo: null,
+  notificationLogo: null,
   social: { instagram: "", facebook: "", tiktok: "", whatsapp: "", telegram: "" },
   workingHours: emptyWorkingHours(),
   vacations: [],
@@ -292,6 +293,7 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
     newsletterEmail: p.newsletterEmail ?? "",
     resendApiKey: p.resendApiKey ?? "",
     logo: p.logo ?? null,
+    notificationLogo: p.notificationLogo ?? null,
     social: {
       instagram: p.social?.instagram ?? "",
       facebook: p.social?.facebook ?? "",
@@ -398,6 +400,11 @@ export function useSalonProfileAdmin() {
   const [form, setForm] = useState<ISalonProfileForm>(emptyForm());
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [notificationLogoFile, setNotificationLogoFile] =
+    useState<File | null>(null);
+  const [notificationLogoPreview, setNotificationLogoPreview] = useState<
+    string | null
+  >(null);
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
@@ -405,6 +412,7 @@ export function useSalonProfileAdmin() {
       if (profile) {
         setForm(mapProfileToForm(profile));
         setLogoPreview(profile.logo ?? null);
+        setNotificationLogoPreview(profile.notificationLogo ?? null);
         setIsEditing(false);
       }
     }
@@ -583,6 +591,30 @@ export function useSalonProfileAdmin() {
     setForm((p) => ({ ...p, logo: null }));
   }, []);
 
+  // ── Logo za notifikacije i mejlove ──────────────────────────────────────────
+
+  const handleNotificationLogoChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Logo ne sme biti veći od 5MB");
+        return;
+      }
+      setNotificationLogoFile(file);
+      const r = new FileReader();
+      r.onloadend = () => setNotificationLogoPreview(r.result as string);
+      r.readAsDataURL(file);
+    },
+    [],
+  );
+
+  const removeNotificationLogo = useCallback(() => {
+    setNotificationLogoFile(null);
+    setNotificationLogoPreview(null);
+    setForm((p) => ({ ...p, notificationLogo: null }));
+  }, []);
+
   // ── Save ──────────────────────────────────────────────────────────────────
 
   const saveMutation = useMutation({
@@ -625,6 +657,12 @@ export function useSalonProfileAdmin() {
       fd.append("landingTheme", form.landingTheme);
       fd.append("landingStructure", JSON.stringify(form.landingStructure));
       if (logoFile) fd.append("logo", logoFile);
+      if (notificationLogoFile) {
+        fd.append("notificationLogo", notificationLogoFile);
+      } else if (!form.notificationLogo) {
+        // Uklonjen (ili nikad postavljen) → mejl/push padaju na logo sajta.
+        fd.append("removeNotificationLogo", "true");
+      }
 
       return apiSave(fd, token, !profile);
     },
@@ -633,6 +671,8 @@ export function useSalonProfileAdmin() {
       setForm(mapProfileToForm(saved));
       setLogoPreview(saved.logo ?? null);
       setLogoFile(null);
+      setNotificationLogoPreview(saved.notificationLogo ?? null);
+      setNotificationLogoFile(null);
       setIsEditing(false);
       toast.success(profile ? "Profil ažuriran!" : "Salon kreiran!");
     },
@@ -645,6 +685,8 @@ export function useSalonProfileAdmin() {
       qc.invalidateQueries({ queryKey: ["salonProfile"] });
       setForm(emptyForm());
       setLogoPreview(null);
+      setNotificationLogoPreview(null);
+      setNotificationLogoFile(null);
       setIsEditing(false);
       toast.success("Salon obrisan.");
     },
@@ -660,8 +702,10 @@ export function useSalonProfileAdmin() {
     if (profile) {
       setForm(mapProfileToForm(profile));
       setLogoPreview(profile.logo ?? null);
+      setNotificationLogoPreview(profile.notificationLogo ?? null);
     }
     setLogoFile(null);
+    setNotificationLogoFile(null);
     setIsEditing(false);
   }, [profile]);
 
@@ -695,6 +739,10 @@ export function useSalonProfileAdmin() {
     logoPreview,
     handleLogoChange,
     removeLogo,
+    notificationLogoFile,
+    notificationLogoPreview,
+    handleNotificationLogoChange,
+    removeNotificationLogo,
     save: saveMutation.mutate,
     isSaving: saveMutation.isPending,
     deleteProfile: deleteMutation.mutate,
