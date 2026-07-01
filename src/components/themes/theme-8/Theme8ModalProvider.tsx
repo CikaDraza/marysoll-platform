@@ -30,13 +30,12 @@ import { Y2KNewsletterWidget } from "../shared/Y2KNewsletterWidget";
 import { SprayReveal } from "./motion/SprayReveal";
 import Theme8CelebrationOverlay from "./Theme8CelebrationOverlay";
 
-// Sprite sheet "Hvala" lika (Y2K/Powerpuff fan-art) — grid 6×2 (12 frejmova).
+// Sprite sheet "Hvala" lika — grid 6×2 (12 frejmova), red-major.
 // PNG: public/images/theme-8/celebration-sheet.png (1080×700, frame 180×350).
-// 1-3 ~240ms, NAMIG (4. frejm, indeks 3) = 650ms, pa 5→12 brže (90ms) — srce
-// se ne menja mnogo, brz prelaz usana/tilt glave = manje seckanja.
+// 1-3 @240ms, NAMIG (4. frejm) @650ms, 5-12 @90ms; jednom pa drži poslednji.
 // Test prekidač: kad je true, zahvalnica se prikaže odmah na load (bez bukiranja).
-// U produkciji ostaje false — triggeruje se samo na uspešno zakazivanje.
-const TEST_ALWAYS_SHOW_CELEBRATION = false;
+// U produkciji vrati na false — triggeruje se samo na uspešno zakazivanje.
+const TEST_ALWAYS_SHOW_CELEBRATION = true;
 
 const CELEBRATION_SPRITE = {
   src: "/images/theme-8/celebration-sheet.png",
@@ -45,9 +44,8 @@ const CELEBRATION_SPRITE = {
   columns: 6,
   rows: 2,
   frames: 12,
-  loop: false, // jedna izvedba, drži poslednji „burst" frejm
-  // ms po frejmu (indeks 0-11):
-  frameDurations: [240, 240, 240, 650, 90, 90, 90, 90, 90, 90, 90, 90],
+  loop: false,
+  frameDurations: [150, 150, 150, 800, 150, 150, 150, 150, 150, 150, 150, 150],
 };
 
 type ModalName = "book" | "bilten";
@@ -139,6 +137,7 @@ export function Theme8ModalProvider({ children, booking }: Props) {
         open={celebrating}
         onClose={() => setCelebrating(false)}
         sprite={CELEBRATION_SPRITE}
+        autoDismissMs={TEST_ALWAYS_SHOW_CELEBRATION ? 0 : undefined}
       />
       {typeof document !== "undefined" &&
         createPortal(
