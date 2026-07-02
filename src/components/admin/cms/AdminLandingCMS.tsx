@@ -734,6 +734,15 @@ export function AdminLandingCMS({ sp }: Props) {
   const gallery = ls.landing.gallery;
   const faq = ls.landing.faq;
   const blog = ls.landing.blog ?? { enabled: false };
+  const perks = ls.landing.perks ?? {
+    enabled: false,
+    pill: "",
+    eyebrow: "",
+    headline: "",
+    paragraphs: [],
+    images: [],
+    ctas: { primary: { text: "", href: "" }, secondary: { text: "", href: "" } },
+  };
   const servicesPage = ls.pages.servicesPage;
   const appointmentsPage = ls.pages.appointmentsPage;
 
@@ -1815,6 +1824,292 @@ export function AdminLandingCMS({ sp }: Props) {
           </div>
         </div>
       </SectionCard>
+
+      {/* ── PERKS (theme-8) ──────────────────────────────────────────────── */}
+      {sp.form.landingTheme === "theme-8" && (
+        <SectionCard
+          title="Landing / Benefiti"
+          badge="Perks"
+          tone="odd"
+          enabled={perks.enabled}
+          onToggle={(v) =>
+            updateLandingSection("perks", { ...perks, enabled: v })
+          }
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className={lbl}>Pill (mali badge na slici)</label>
+              <input
+                className={inp}
+                value={perks.pill ?? ""}
+                onChange={(e) =>
+                  updateLandingSection("perks", {
+                    ...perks,
+                    pill: e.target.value,
+                  })
+                }
+                placeholder="tvoj mali benefit ♡"
+              />
+            </div>
+            <div>
+              <label className={lbl}>Eyebrow (nadnaslov)</label>
+              <input
+                className={inp}
+                value={perks.eyebrow ?? ""}
+                onChange={(e) =>
+                  updateLandingSection("perks", {
+                    ...perks,
+                    eyebrow: e.target.value,
+                  })
+                }
+                placeholder="extra ljubav za tebe"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className={lbl}>Naslov</label>
+            <input
+              className={inp}
+              value={perks.headline ?? ""}
+              onChange={(e) =>
+                updateLandingSection("perks", {
+                  ...perks,
+                  headline: e.target.value,
+                })
+              }
+              placeholder="Sitnice koje čine razliku"
+            />
+          </div>
+
+          {/* Paragrafi — do 4 */}
+          <div className="space-y-2">
+            <label className={lbl}>
+              Paragrafi{" "}
+              <span className="font-normal normal-case text-gray-400 dark:text-gray-600">
+                · max 4
+              </span>
+            </label>
+            {(perks.paragraphs ?? []).map((p, i) => (
+              <div key={i} className="flex gap-2">
+                <textarea
+                  className={inp + " resize-none flex-1"}
+                  rows={2}
+                  value={p}
+                  onChange={(e) => {
+                    const updated = [...(perks.paragraphs ?? [])];
+                    updated[i] = e.target.value;
+                    updateLandingSection("perks", {
+                      ...perks,
+                      paragraphs: updated,
+                    });
+                  }}
+                  placeholder={`Paragraf ${i + 1}...`}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = (perks.paragraphs ?? []).filter(
+                      (_, idx) => idx !== i,
+                    );
+                    updateLandingSection("perks", {
+                      ...perks,
+                      paragraphs: updated,
+                    });
+                  }}
+                  className="shrink-0 w-8 h-8 mt-1 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                >
+                  −
+                </button>
+              </div>
+            ))}
+            {(perks.paragraphs ?? []).length < 4 && (
+              <button
+                type="button"
+                onClick={() =>
+                  updateLandingSection("perks", {
+                    ...perks,
+                    paragraphs: [...(perks.paragraphs ?? []), ""],
+                  })
+                }
+                className="text-sm text-violet-600 dark:text-violet-400 hover:underline"
+              >
+                + Dodaj paragraf
+              </button>
+            )}
+          </div>
+
+          {/* Slike — više slika (cloudinary galerija / upload / AI) */}
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 inline-block px-2.5 py-1 rounded-lg">
+                  Slike
+                </p>
+                <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
+                  Prva slika je glavna (centar). Prazno = podrazumevana slika.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  updateLandingSection("perks", {
+                    ...perks,
+                    images: [...(perks.images ?? []), { src: "", alt: "" }],
+                  })
+                }
+                className="shrink-0 text-sm text-violet-600 dark:text-violet-400 hover:underline"
+              >
+                + Dodaj sliku
+              </button>
+            </div>
+            {(perks.images ?? []).map((img, idx) => (
+              <div
+                key={idx}
+                className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                    {idx === 0 ? "Glavna slika" : `Slika ${idx + 1}`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateLandingSection("perks", {
+                        ...perks,
+                        images: (perks.images ?? []).filter(
+                          (_, i) => i !== idx,
+                        ),
+                      })
+                    }
+                    className="w-7 h-7 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                  >
+                    −
+                  </button>
+                </div>
+                <ImageInputField
+                  label="URL slike"
+                  value={img?.src ?? ""}
+                  onChange={(url) => {
+                    const updated = [...(perks.images ?? [])];
+                    updated[idx] = { src: url, alt: updated[idx]?.alt ?? "" };
+                    updateLandingSection("perks", { ...perks, images: updated });
+                  }}
+                />
+                <div>
+                  <label className={lbl}>Alt tekst</label>
+                  <input
+                    className={inp}
+                    value={img?.alt ?? ""}
+                    onChange={(e) => {
+                      const updated = [...(perks.images ?? [])];
+                      updated[idx] = {
+                        src: updated[idx]?.src ?? "",
+                        alt: e.target.value,
+                      };
+                      updateLandingSection("perks", {
+                        ...perks,
+                        images: updated,
+                      });
+                    }}
+                    placeholder="Opis slike za pristupačnost..."
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA dugmad — prikazuju se samo ako imaju i tekst i URL */}
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-4">
+            <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/30 inline-block px-2.5 py-1 rounded-lg">
+              Dugmad (opciono)
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Dugme se prikazuje samo ako su popunjeni i tekst i URL.
+            </p>
+
+            <div className="space-y-2">
+              <label className={lbl}>Dugme 1 — Registracija</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  className={inp}
+                  value={perks.ctas?.primary?.text ?? ""}
+                  onChange={(e) =>
+                    updateLandingSection("perks", {
+                      ...perks,
+                      ctas: {
+                        ...perks.ctas,
+                        primary: {
+                          text: e.target.value,
+                          href: perks.ctas?.primary?.href ?? "",
+                        },
+                      },
+                    })
+                  }
+                  placeholder="Registruj se"
+                />
+                <input
+                  className={inp}
+                  value={perks.ctas?.primary?.href ?? ""}
+                  onChange={(e) =>
+                    updateLandingSection("perks", {
+                      ...perks,
+                      ctas: {
+                        ...perks.ctas,
+                        primary: {
+                          text: perks.ctas?.primary?.text ?? "",
+                          href: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  placeholder="/register"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className={lbl}>Dugme 2 — Pravila</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  className={inp}
+                  value={perks.ctas?.secondary?.text ?? ""}
+                  onChange={(e) =>
+                    updateLandingSection("perks", {
+                      ...perks,
+                      ctas: {
+                        ...perks.ctas,
+                        secondary: {
+                          text: e.target.value,
+                          href: perks.ctas?.secondary?.href ?? "",
+                        },
+                      },
+                    })
+                  }
+                  placeholder="Više o pravilima"
+                />
+                <input
+                  className={inp}
+                  value={perks.ctas?.secondary?.href ?? ""}
+                  onChange={(e) =>
+                    updateLandingSection("perks", {
+                      ...perks,
+                      ctas: {
+                        ...perks.ctas,
+                        secondary: {
+                          text: perks.ctas?.secondary?.text ?? "",
+                          href: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  placeholder="/pravila-zakazivanja"
+                />
+              </div>
+            </div>
+          </div>
+        </SectionCard>
+      )}
 
       {/* ── ARTISTS ──────────────────────────────────────────────────────── */}
       <SectionCard

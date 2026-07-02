@@ -1088,6 +1088,24 @@ export interface LandingStructure {
       headline?: string;
       paragraph?: string;
     };
+
+    /**
+     * Theme-8 (Y2K) "beauty perks" sekcija — isti paper-panel stil kao About,
+     * centrirana slika (ili kolaž), pill/eyebrow/title, do 4 paragrafa i dva
+     * opciona CTA-a (registracija + pravila). Renderuje je samo theme-8.
+     */
+    perks?: {
+      enabled: boolean;
+      pill?: string;
+      eyebrow?: string;
+      headline?: string;
+      paragraphs?: string[];
+      images?: HeroImage[];
+      ctas?: {
+        primary?: { text: string; href: string };
+        secondary?: { text: string; href: string };
+      };
+    };
   };
 
   pages: {

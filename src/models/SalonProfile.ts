@@ -216,6 +216,22 @@ const SalonProfileSchema = new mongoose.Schema(
           headline: { type: String },
           paragraph: { type: String },
         },
+        /** Theme-8 "beauty perks" sekcija (loyalty/aftercare/pokloni). */
+        perks: {
+          enabled: { type: Boolean, default: false },
+          pill: { type: String },
+          eyebrow: { type: String },
+          headline: { type: String },
+          paragraphs: { type: [String], default: [] },
+          images: {
+            type: [{ src: { type: String }, alt: { type: String } }],
+            default: [],
+          },
+          ctas: {
+            primary: ctaSchema,
+            secondary: ctaSchema,
+          },
+        },
       },
       pages: {
         servicesPage: {

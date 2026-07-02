@@ -124,6 +124,7 @@ import {
   Theme8Header,
   Theme8Hero,
   Theme8AboutUs,
+  Theme8Perks,
   Theme8SocialProof,
   Theme8Services,
   Theme8GallerySection,
@@ -213,6 +214,7 @@ export function ThemeLayout({
   const galleryEnabled = ls?.landing?.gallery?.enabled ?? true;
   const faqEnabled = ls?.landing?.faq?.enabled ?? true;
   const blogEnabled = ls?.landing?.blog?.enabled ?? false;
+  const perksEnabled = ls?.landing?.perks?.enabled ?? false;
 
   // ── Effective gallery variant (CMS override > theme default) ────────────
   const THEME_GALLERY_DEFAULTS: Record<
@@ -1183,6 +1185,33 @@ export function ThemeLayout({
                     images: ls?.landing?.about?.images,
                   }}
                   founderName={salon.name}
+                />
+              )}
+              {perksEnabled && (
+                <Theme8Perks
+                  perks={{
+                    pill: ls?.landing?.perks?.pill,
+                    eyebrow: ls?.landing?.perks?.eyebrow,
+                    headline: ls?.landing?.perks?.headline,
+                    paragraphs: ls?.landing?.perks?.paragraphs ?? [],
+                    images: ls?.landing?.perks?.images,
+                    ctas: {
+                      // Prazan href se NE resolve-uje (resolveHref bi vratio "#"
+                      // i lažno prikazao dugme) — komponenta krije dugme bez URL-a.
+                      primary: {
+                        text: ls?.landing?.perks?.ctas?.primary?.text ?? "",
+                        href: ls?.landing?.perks?.ctas?.primary?.href
+                          ? resolveHref(ls.landing.perks.ctas.primary.href)
+                          : "",
+                      },
+                      secondary: {
+                        text: ls?.landing?.perks?.ctas?.secondary?.text ?? "",
+                        href: ls?.landing?.perks?.ctas?.secondary?.href
+                          ? resolveHref(ls.landing.perks.ctas.secondary.href)
+                          : "",
+                      },
+                    },
+                  }}
                 />
               )}
               <Theme8SocialProof

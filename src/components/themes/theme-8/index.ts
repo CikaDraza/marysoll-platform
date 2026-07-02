@@ -5,6 +5,7 @@ export { Theme8Preloader } from "./Preloader";
 export { Theme8Header } from "./Header";
 export { Theme8Hero } from "./Hero";
 export { Theme8AboutUs } from "./AboutUs";
+export { Theme8Perks } from "./Perks";
 export { Theme8SocialProof } from "./SocialProof";
 export { Theme8Services } from "./Services";
 export { Theme8GallerySection } from "./GallerySection";

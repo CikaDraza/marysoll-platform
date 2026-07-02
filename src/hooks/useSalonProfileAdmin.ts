@@ -75,6 +75,18 @@ export const emptyLandingStructure = (): LandingStructure => ({
       support: { text: "", email: "" },
       items: [],
     },
+    perks: {
+      enabled: false,
+      pill: "",
+      eyebrow: "",
+      headline: "",
+      paragraphs: [],
+      images: [],
+      ctas: {
+        primary: { text: "", href: "" },
+        secondary: { text: "", href: "" },
+      },
+    },
   },
   pages: {
     servicesPage: { headline: "", subheadline: "", paragraph: "" },
@@ -251,6 +263,24 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
         enabled: rawLanding.blog?.enabled ?? false,
         headline: rawLanding.blog?.headline ?? "",
         paragraph: rawLanding.blog?.paragraph ?? "",
+      },
+      perks: {
+        enabled: rawLanding.perks?.enabled ?? false,
+        pill: rawLanding.perks?.pill ?? "",
+        eyebrow: rawLanding.perks?.eyebrow ?? "",
+        headline: rawLanding.perks?.headline ?? "",
+        paragraphs: rawLanding.perks?.paragraphs ?? [],
+        images: rawLanding.perks?.images ?? [],
+        ctas: {
+          primary: {
+            text: rawLanding.perks?.ctas?.primary?.text ?? "",
+            href: rawLanding.perks?.ctas?.primary?.href ?? "",
+          },
+          secondary: {
+            text: rawLanding.perks?.ctas?.secondary?.text ?? "",
+            href: rawLanding.perks?.ctas?.secondary?.href ?? "",
+          },
+        },
       },
     },
     pages: {
