@@ -163,10 +163,17 @@ function DayView({
   const now = new Date();
 
   if (!isWorking) {
+    // Radnim danima (pon–pet) bez termina piše "popunjeno" — "ne radi" zbunjuje
+    // klijente kad salon inače radi tim danom; vikendom ostaje "ne radi".
+    const isWeekend = getDay(selectedDate) === 0 || getDay(selectedDate) === 6;
     return (
       <div className="flex flex-col items-center justify-center h-32 gap-2 rounded-2xl border-2 border-gray-300 bg-gray-100 text-gray-400">
         <span className="text-2xl">🔒</span>
-        <span className="text-sm font-semibold">Salon ne radi ovim danom</span>
+        <span className="text-sm font-semibold">
+          {isWeekend
+            ? "Salon ne radi ovim danom"
+            : "Termini za ovaj dan su popunjeni"}
+        </span>
       </div>
     );
   }
@@ -646,18 +653,6 @@ export default function HomepageAppointmentWidget({
               </button>
             </div>
 
-            {/* Book CTA */}
-            <button
-              onClick={() => {
-                setModalDate(format(selectedDate, "yyyy-MM-dd"));
-                setModalTime("");
-                setPendingDefaults(null);
-                setModalOpen(true);
-              }}
-              className="px-4 py-2 bg-(--primary-color)/90 text-white text-xs font-bold rounded-xl hover:bg-(--primary-color) transition cursor-pointer"
-            >
-              + Zakaži termin
-            </button>
           </div>
 
           {/* Body */}

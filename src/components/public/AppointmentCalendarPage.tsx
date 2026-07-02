@@ -342,19 +342,6 @@ export default function AppointmentCalendarPage({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Book CTA */}
-            <button
-              onClick={() => {
-                setModalDate(toDateStr(selectedDay));
-                setModalTime("");
-                setPendingDefaults(null);
-                setModalOpen(true);
-              }}
-              className="px-4 py-2 bg-(--primary-color)/90 text-white text-xs font-bold rounded-xl hover:bg-(--primary-color) transition cursor-pointer"
-            >
-              + Zakaži termin
-            </button>
-
             {/* View toggle */}
             <div className="flex bg-gray-100 rounded-lg p-0.5">
               {(["week", "day"] as const).map((v) => (
