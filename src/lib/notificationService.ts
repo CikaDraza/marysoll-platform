@@ -27,17 +27,22 @@ export async function getSalonBranding(
 ): Promise<{ icon: string; name: string }> {
   try {
     const profile = (await SalonProfile.findOne({ tenantId })
-      .select("logo notificationLogo name")
+      .select("notificationLogo name")
       .lean()) as {
-      logo?: string;
       notificationLogo?: string;
       name?: string;
     } | null;
+    // Ikona notifikacije = SAMO notificationLogo (upload je ograničen na raster
+    // PNG/JPG/WebP), inače Marysoll default. Tenant `logo` se NE koristi jer može
+    // biti SVG, koji web push ne renderuje (browser prikaže uzvičnik). SVG guard
+    // ostaje kao zaštita za eventualne stare SVG vrednosti u bazi.
+    const usable = (url?: string): url is string =>
+      typeof url === "string" && url.trim() !== "" && !/\.svg(\?|#|$)/i.test(url);
+    const icon = usable(profile?.notificationLogo)
+      ? profile!.notificationLogo!
+      : "/notification-icon.png";
     return {
-      icon:
-        profile?.notificationLogo ||
-        profile?.logo ||
-        "/notification-icon.png",
+      icon,
       name: profile?.name || "Salon",
     };
   } catch {

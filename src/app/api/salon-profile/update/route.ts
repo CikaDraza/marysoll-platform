@@ -114,9 +114,22 @@ export async function PUT(req: NextRequest) {
     }
 
     // Logo za notifikacije i mejlove (zaseban od loga sajta). Ako se ukloni,
-    // fallback na logo sajta se dešava u trenutku slanja (email/push).
+    // fallback je Marysoll default (SVG se ne renderuje u push notifikacijama).
     const notifLogoFile = form.get("notificationLogo");
     if (notifLogoFile instanceof File && notifLogoFile.size > 0) {
+      // Server-side zaštita: SVG nije dozvoljen (browser ne renderuje SVG ikonu).
+      const isSvg =
+        notifLogoFile.type === "image/svg+xml" ||
+        /\.svg$/i.test(notifLogoFile.name);
+      if (isSvg) {
+        return NextResponse.json(
+          {
+            error:
+              "SVG nije podržan za logo notifikacija. Koristite PNG, JPG ili WebP.",
+          },
+          { status: 400 },
+        );
+      }
       if (profile.notificationLogo)
         await deleteFromCloudinary(profile.notificationLogo).catch(console.error);
       const base = await getTenantFolder(tenantId);

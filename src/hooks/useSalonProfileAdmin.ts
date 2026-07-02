@@ -627,8 +627,20 @@ export function useSalonProfileAdmin() {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
+      // SVG se NE renderuje u push notifikacijama (browser prikaže uzvičnik) —
+      // dozvoljen je samo raster: PNG / JPG / WebP.
+      const isSvg =
+        file.type === "image/svg+xml" || /\.svg$/i.test(file.name);
+      if (isSvg) {
+        toast.error(
+          "SVG nije podržan za logo notifikacija. Koristite PNG, JPG ili WebP.",
+        );
+        e.target.value = "";
+        return;
+      }
       if (file.size > 5 * 1024 * 1024) {
         toast.error("Logo ne sme biti veći od 5MB");
+        e.target.value = "";
         return;
       }
       setNotificationLogoFile(file);

@@ -620,7 +620,7 @@ function AdminDashboard() {
                 <input
                   ref={notifLogoRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/webp"
                   className="hidden"
                   onChange={sp.handleNotificationLogoChange}
                 />
@@ -639,8 +639,8 @@ function AdminDashboard() {
                   </button>
                 )}
                 <p className="text-[11px] text-gray-400 text-center">
-                  Prikazuje se u mejlovima i push notifikacijama. Ako se ne
-                  postavi, koristi se logo sajta.
+                  Prikazuje se u mejlovima i push notifikacijama. PNG · JPG ·
+                  WebP (bez SVG). Ako se ne postavi, koristi se Marysoll logo.
                 </p>
               </div>
 
