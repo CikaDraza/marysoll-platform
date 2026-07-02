@@ -48,8 +48,8 @@ export default function Theme8CelebrationOverlay({
   open,
   onClose,
   autoDismissMs = 6000,
-  title = "Hvala vam sto ste zakazali",
-  subtitle = "Vidimo se uskoro 🫶",
+  title = "Hvala ti na zakazanom terminu🥰",
+  subtitle = "Vidimo se uskoro🌸",
   sprite,
 }: Theme8CelebrationOverlayProps) {
   // Auto-dismiss
