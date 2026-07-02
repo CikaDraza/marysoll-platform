@@ -33,6 +33,31 @@ export function hasGuestBookingContact(input: {
   );
 }
 
+/** Placeholder email generisan za goste bez pravog emaila (…@noemail.guest). */
+export function isPlaceholderGuestEmail(email: unknown): boolean {
+  const e = normalizeEmail(email);
+  return !e || e.endsWith("@noemail.guest");
+}
+
+/**
+ * Kontakt za PRIKAZ u listama termina/klijenata: pravi email ima prednost;
+ * generički gost-email se nikad ne prikazuje — umesto njega Instagram
+ * (@tag) pa telefon. Gost uvek ima bar jedno od ta tri.
+ */
+export function displayClientContact(input: {
+  email?: unknown;
+  instagram?: unknown;
+  phone?: unknown;
+}): string {
+  const email = normalizeEmail(input.email);
+  if (email && !isPlaceholderGuestEmail(email)) return email;
+  const instagram = normalizeInstagram(input.instagram);
+  if (instagram) return `@${instagram}`;
+  const phone = normalizeContactValue(input.phone);
+  if (phone) return phone;
+  return email;
+}
+
 export function inferPreferredContact(input: {
   phone?: unknown;
   email?: unknown;

@@ -1,6 +1,7 @@
 // components/ClientAppointments.tsx
 import { formatISODate } from "@/helpers/formatISODate";
 import { statusMeta } from "@/lib/appointmentColors";
+import { displayClientContact } from "@/lib/contactRules";
 import Loader from "../elements/Loader";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useAppointmentMutations } from "@/hooks/useAppointmentMutations";
@@ -82,7 +83,11 @@ function ClientAppointmentListItem({
             )}
           </div>
           <p className="mt-1 text-xs/5 text-gray-500">
-            {currentAppointment.clientEmail}
+            {displayClientContact({
+              email: currentAppointment.clientEmail,
+              instagram: currentAppointment.clientInstagram,
+              phone: currentAppointment.clientPhone,
+            })}
           </p>
           {currentAppointment.note && (
             <p className="mt-2 text-xs text-gray-600">

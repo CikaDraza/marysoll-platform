@@ -1,6 +1,11 @@
 import { useUsers } from "@/hooks/useUsers";
 import Loader from "../elements/Loader";
 import { formatISODate } from "@/helpers/formatISODate";
+import {
+  displayClientContact,
+  isPlaceholderGuestEmail,
+  normalizeInstagram,
+} from "@/lib/contactRules";
 import { useEffect, useState } from "react";
 import { useSearchUsers } from "@/hooks/useSearchUsers";
 import { IUser } from "@/types";
@@ -84,9 +89,21 @@ export default function ClientsList() {
                   <p className="text-sm/6 font-semibold text-gray-900 dark:text-gray-300">
                     {user.name}
                   </p>
+                  {/* Gostima bez pravog emaila se ne prikazuje generički
+                      guest_...@noemail.guest — nego Instagram pa telefon */}
                   <p className="mt-1 truncate text-xs/5 text-gray-500">
-                    {user.email}
+                    {displayClientContact({
+                      email: user.email,
+                      instagram: user.instagram,
+                      phone: user.phone,
+                    })}
                   </p>
+                  {normalizeInstagram(user.instagram) &&
+                    !isPlaceholderGuestEmail(user.email) && (
+                      <p className="mt-0.5 truncate text-xs/5 text-gray-500">
+                        @{normalizeInstagram(user.instagram)}
+                      </p>
+                    )}
                 </div>
                 <ClientModalActionButtons userIsSet={user} />
               </div>

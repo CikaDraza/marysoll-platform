@@ -106,6 +106,9 @@ export interface ITenantUser extends Document {
   permissions?: Record<string, unknown>;
   instagram?: string;
   tiktok?: string;
+  /** Pun datum rođenja (profil klijenta). Loyalty birthday reward čita
+   *  dan/mesec sa LoyaltyAccount.birthday — ovo je izvor za profil. */
+  birthday?: Date | null;
 
   // ── Activity ─────────────────────────────────────────────────────────────
   isOnline: boolean;
@@ -198,6 +201,10 @@ const tenantUserSchema = new Schema<ITenantUser>(
     },
     tiktok: {
       type: String,
+      default: null,
+    },
+    birthday: {
+      type: Date,
       default: null,
     },
 

@@ -88,6 +88,76 @@ export async function POST(req: NextRequest) {
     });
 
     if (existing) {
+      // ── GUEST → USER promocija ────────────────────────────────────────────
+      // Gost koji je zakazivao ovim emailom već ima red u bazi (isti
+      // clientProfileId na terminima) — registracija ga nadograđuje u nalog:
+      // istorija termina i loyalty poeni ostaju automatski. Email je dokaz
+      // vlasništva (verifikacioni link), ime se ne poredi.
+      if (existing.role === "GUEST") {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const verificationToken = crypto.randomBytes(32).toString("hex");
+        const verificationTokenExpiry = new Date(
+          Date.now() + 24 * 60 * 60 * 1000,
+        );
+
+        existing.name = name.trim();
+        existing.password = hashedPassword;
+        if (normalizedPhone) existing.phone = normalizedPhone;
+        if (normalizedInstagram) existing.instagram = normalizedInstagram;
+        existing.role = "USER";
+        existing.status = "active";
+        existing.isEmailVerified = false;
+        existing.verificationToken = verificationToken;
+        existing.verificationTokenExpiry = verificationTokenExpiry;
+        await existing.save();
+
+        // AudienceContact (newsletter lista) — gost do sada nije bio na njoj
+        try {
+          await AudienceContact.findOneAndUpdate(
+            { email: normalizedEmail, tenantId: tenant._id },
+            {
+              $setOnInsert: {
+                email: normalizedEmail,
+                profileId: existing._id,
+                tenantId: tenant._id,
+                contactType: "CLIENT",
+                source: "user",
+                subscribed: true,
+                status: "ACTIVE",
+              },
+            },
+            { upsert: true },
+          );
+        } catch (e) {
+          console.error("⚠️ AudienceContact upsert failed:", e);
+        }
+
+        // Growth Studio: welcome bonus se dodeljuje TEK sada — gost ga pri
+        // zakazivanju nikad nije dobio (nikad ne baca)
+        await loyaltyOnClientRegistered(tenant._id, existing._id);
+
+        try {
+          await sendClientVerificationEmail({
+            email: normalizedEmail,
+            clientName: name.trim(),
+            salonName: tenant.name,
+            verificationToken,
+            salonBaseUrl: `https://${tenant.slug}.marysoll.com`,
+            tenantId: tenant._id.toString(),
+          });
+        } catch (e) {
+          console.error("⚠️ Client verification email failed:", e);
+        }
+
+        return NextResponse.json(
+          {
+            message:
+              "Registracija uspešna — vaši raniji termini su sačuvani na nalogu. Proverite email za verifikaciju.",
+          },
+          { status: 201 },
+        );
+      }
+
       if (existing.isEmailVerified) {
         // Already registered and verified on this tenant
         return NextResponse.json(

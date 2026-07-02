@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useAppointments } from "@/hooks/useAppointments";
 import { formatISODate } from "@/helpers/formatISODate";
 import { statusMeta } from "@/lib/appointmentColors";
+import { displayClientContact } from "@/lib/contactRules";
 import Paginator from "../elements/Paginator";
 import { useAuth } from "@/hooks/context/AuthContext";
 import { IAppointment } from "@/types";
@@ -45,7 +46,11 @@ function ClientAppointmentListItem({
             </span>
           </div>
           <p className="mt-1 text-xs/5 text-gray-500">
-            {currentAppointment.clientEmail}
+            {displayClientContact({
+              email: currentAppointment.clientEmail,
+              instagram: currentAppointment.clientInstagram,
+              phone: currentAppointment.clientPhone,
+            })}
           </p>
           {currentAppointment.note && (
             <p className="mt-2 text-xs text-gray-600">

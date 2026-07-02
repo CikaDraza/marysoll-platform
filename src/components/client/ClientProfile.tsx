@@ -29,6 +29,7 @@ export default function ClientProfile() {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
+    instagram: "",
     birthday: "",
     password: "",
     confirmPassword: "",
@@ -47,6 +48,7 @@ export default function ClientProfile() {
     setFormData({
       name: user.name || "",
       phone: user.phone || "",
+      instagram: user.instagram || "",
       birthday: user.birthday
         ? new Date(user.birthday).toISOString().split("T")[0]
         : "",
@@ -78,6 +80,7 @@ export default function ClientProfile() {
       const updateData = {
         name: formData.name,
         phone: formData.phone,
+        instagram: formData.instagram.trim().replace(/^@+/, ""),
         birthday: formData.birthday ? new Date(formData.birthday) : null,
         ...(showPasswordFields &&
           formData.password && { password: formData.password }),
@@ -178,6 +181,23 @@ export default function ClientProfile() {
                 onChange={handleChange}
                 className="w-full rounded-md border-gray-200 p-3 bg-gray-50 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Instagram
+              </label>
+              <div className="flex items-center w-full rounded-md border border-gray-200 bg-gray-50 overflow-hidden focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-(--secondary-color)">
+                <span className="pl-3 text-gray-400 select-none">@</span>
+                <input
+                  type="text"
+                  name="instagram"
+                  value={formData.instagram}
+                  onChange={handleChange}
+                  placeholder="username"
+                  className="flex-1 bg-transparent p-3 pl-1 focus:outline-none"
+                />
+              </div>
             </div>
           </div>
 
@@ -298,6 +318,13 @@ export default function ClientProfile() {
                 {user.birthday
                   ? new Date(user.birthday).toLocaleDateString("sr-RS")
                   : "Nije postavljeno"}
+              </p>
+            </div>
+
+            <div>
+              <label className={lbl}>Instagram</label>
+              <p className={inp}>
+                {user.instagram ? `@${user.instagram}` : "Nije postavljeno"}
               </p>
             </div>
           </div>

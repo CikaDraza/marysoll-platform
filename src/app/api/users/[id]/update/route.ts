@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { TenantUser } from "@/models/TenantUser";
 import { verifyToken } from "@/lib/auth/auth-server";
+import { normalizeInstagram } from "@/lib/contactRules";
 import bcrypt from "bcryptjs";
 
 const SALT_ROUNDS = 12;
@@ -27,7 +28,9 @@ export async function PUT(
       return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
     }
 
-    if (!decoded.isAdmin && !decoded.isSuperAdmin) {
+    // Klijent sme da ažurira SOPSTVENI profil; ostale profile samo admin.
+    const isSelf = decoded.tenantUserId === id;
+    if (!isSelf && !decoded.isAdmin && !decoded.isSuperAdmin) {
       return NextResponse.json({ error: "Not authorized" }, { status: 403 });
     }
 
@@ -50,11 +53,18 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { name, password, phone } = body;
+    const { name, password, phone, birthday, instagram } = body;
 
     const profileUpdate: Record<string, unknown> = {};
     if (name !== undefined) profileUpdate.name = name;
     if (phone !== undefined) profileUpdate.phone = phone;
+    if (birthday !== undefined) {
+      const parsed = birthday ? new Date(birthday) : null;
+      profileUpdate.birthday = parsed && !isNaN(parsed.getTime()) ? parsed : null;
+    }
+    if (instagram !== undefined) {
+      profileUpdate.instagram = normalizeInstagram(instagram) || null;
+    }
 
     // Password is now on TenantUser directly
     if (password && password.trim() !== "") {
