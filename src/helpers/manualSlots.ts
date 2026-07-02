@@ -62,6 +62,19 @@ export function isManualSlotTaken(
   });
 }
 
+/**
+ * Da li se novi termin [time, time+duration) preklapa sa nekim aktivnim
+ * terminom istog dana — važi za OBA režima (radno vreme i ručni termini).
+ */
+export function overlapsAppointments(
+  appointments: { date: string; time: string; duration?: number }[],
+  dateStr: string,
+  time: string,
+  duration: number,
+): boolean {
+  return isManualSlotTaken(appointments, dateStr, timeToMin(time), duration);
+}
+
 export type ManualSlotCheck =
   | { ok: true; slot: IManualSlot }
   | { ok: false; reason: "not_defined" | "taken" };

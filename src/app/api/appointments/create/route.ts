@@ -19,7 +19,10 @@ import {
   normalizeContactValue,
   normalizeInstagram,
 } from "@/lib/contactRules";
-import { checkManualSlotAvailability } from "@/helpers/manualSlots";
+import {
+  checkManualSlotAvailability,
+  overlapsAppointments,
+} from "@/helpers/manualSlots";
 import type { IAppointmentService, ManualSlotsMap } from "@/types";
 import type { ITenant } from "@/models/Tenant"; // Uveri se da imaš ovaj import
 
@@ -151,27 +154,25 @@ export async function POST(request: NextRequest) {
         ? salonProfile.cancellationWindowHours
         : 1;
 
-    const existing = await Appointment.findOne({
+    // Preklapanje po TRAJANJU (oba režima): novi termin [time, time+duration)
+    // ne sme da se seče ni sa jednim aktivnim terminom tog dana. Radno vreme se
+    // namerno NE proverava — vlasnik pri odobravanju odlučuje o prekovremenom.
+    const dayAppointments = await Appointment.find({
       tenantId,
       date,
-      time,
       status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
-    });
+    })
+      .select("date time duration")
+      .lean<{ date: string; time: string; duration?: number }[]>();
 
-    if (existing) {
+    const requestedDuration = Number(data.duration) || service.duration || 60;
+    if (overlapsAppointments(dayAppointments, date, time, requestedDuration)) {
       return NextResponse.json({ error: "Termin je zauzet" }, { status: 400 });
     }
 
     // manualSlots režim: dozvoljen je samo tačan slobodan termin koji je
     // vlasnik definisao — server je poslednja odbrana ako UI propusti.
     if (salonProfile?.availabilityMode === "manualSlots") {
-      const dayAppointments = await Appointment.find({
-        tenantId,
-        date,
-        status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
-      })
-        .select("date time duration")
-        .lean<{ date: string; time: string; duration?: number }[]>();
       const check = checkManualSlotAvailability(
         salonProfile.manualSlots,
         dayAppointments,

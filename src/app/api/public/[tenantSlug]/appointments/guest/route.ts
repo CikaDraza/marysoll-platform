@@ -23,7 +23,10 @@ import {
   normalizeEmail,
   normalizeInstagram,
 } from "@/lib/contactRules";
-import { checkManualSlotAvailability } from "@/helpers/manualSlots";
+import {
+  checkManualSlotAvailability,
+  overlapsAppointments,
+} from "@/helpers/manualSlots";
 import type { IAppointmentService, ManualSlotsMap } from "@/types";
 import type { ITenant } from "@/models/Tenant";
 
@@ -137,27 +140,26 @@ export async function POST(request: NextRequest, { params }: Params) {
         : 1;
 
     // ── Check slot availability ───────────────────────────────────────────────
-    const existing = await Appointment.findOne({
+    // Preklapanje po TRAJANJU (oba režima): novi termin [time, time+duration)
+    // ne sme da se seče ni sa jednim aktivnim terminom tog dana. Radno vreme se
+    // namerno NE proverava — vlasnik pri odobravanju odlučuje da li prima
+    // termin koji izlazi van radnog vremena.
+    const dayAppointments = await Appointment.find({
       tenantId,
       date,
-      time,
       status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
-    });
+    })
+      .select("date time duration")
+      .lean<{ date: string; time: string; duration?: number }[]>();
 
-    if (existing) {
+    const requestedDuration = Number(duration) || service.duration || 60;
+    if (overlapsAppointments(dayAppointments, date, time, requestedDuration)) {
       return NextResponse.json({ error: "Termin je zauzet." }, { status: 400 });
     }
 
     // manualSlots režim: sme se zakazati SAMO tačan termin koji je vlasnik
     // definisao, i to slobodan (bez preklapanja) — bez obzira šta pošalje UI.
     if (salonProfile?.availabilityMode === "manualSlots") {
-      const dayAppointments = await Appointment.find({
-        tenantId,
-        date,
-        status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
-      })
-        .select("date time duration")
-        .lean<{ date: string; time: string; duration?: number }[]>();
       const check = checkManualSlotAvailability(
         salonProfile.manualSlots,
         dayAppointments,

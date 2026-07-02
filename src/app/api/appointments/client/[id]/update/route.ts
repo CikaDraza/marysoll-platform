@@ -6,7 +6,10 @@ import { SalonProfile } from "@/models/SalonProfile";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
 import { canClientCancelAppointment } from "@/lib/appointments/cancellation";
 import { createAppointmentNotification } from "@/lib/notificationService";
-import { checkManualSlotAvailability } from "@/helpers/manualSlots";
+import {
+  checkManualSlotAvailability,
+  overlapsAppointments,
+} from "@/helpers/manualSlots";
 import type { IAppointmentService, ManualSlotsMap } from "@/types";
 
 export async function PUT(
@@ -83,18 +86,17 @@ export async function PUT(
     return NextResponse.json({ error: "Termin je zauzet." }, { status: 400 });
   }
 
-  // manualSlots režim: i pomeranje termina sme samo na tačan slobodan termin
-  // koji je vlasnik definisao (sopstveni termin se izuzima iz preklapanja).
-  // Nepromenjeno vreme se ne proverava — izmena usluge/napomene mora proći
-  // i kada je vlasnik u međuvremenu uklonio definiciju tog slota.
+  // Provere se rade samo kad se menja datum/vreme/trajanje — izmena
+  // usluge/napomene mora proći i kada zatečeno stanje (npr. admin upis)
+  // ne bi prošlo validaciju.
+  const newDuration =
+    data.duration || service.duration || appointment.duration;
   const dateOrTimeChanged =
     data.date !== appointment.date || data.time !== appointment.time;
-  const salonProfile = dateOrTimeChanged
-    ? await SalonProfile.findOne({ tenantId: decoded.tenantId })
-        .select("availabilityMode manualSlots")
-        .lean<{ availabilityMode?: string; manualSlots?: ManualSlotsMap }>()
-    : null;
-  if (salonProfile?.availabilityMode === "manualSlots") {
+  const timingChanged =
+    dateOrTimeChanged || newDuration !== appointment.duration;
+
+  if (timingChanged) {
     const dayAppointments = await Appointment.find({
       _id: { $ne: appointment._id },
       tenantId: decoded.tenantId,
@@ -103,22 +105,41 @@ export async function PUT(
     })
       .select("date time duration")
       .lean<{ date: string; time: string; duration?: number }[]>();
-    const check = checkManualSlotAvailability(
-      salonProfile.manualSlots,
-      dayAppointments,
-      data.date,
-      data.time,
-    );
-    if (!check.ok) {
-      return NextResponse.json(
-        {
-          error:
-            check.reason === "taken"
-              ? "Termin je zauzet."
-              : "Izabrani termin nije dostupan. Izaberite jedan od ponuđenih termina.",
-        },
-        { status: 400 },
-      );
+
+    // Preklapanje po TRAJANJU (oba režima): [time, time+duration) ne sme da se
+    // seče ni sa jednim tuđim aktivnim terminom tog dana.
+    if (overlapsAppointments(dayAppointments, data.date, data.time, newDuration)) {
+      return NextResponse.json({ error: "Termin je zauzet." }, { status: 400 });
+    }
+
+    // manualSlots režim: i pomeranje termina sme samo na tačan termin koji je
+    // vlasnik definisao. Nepromenjeno vreme se ne proverava — da izmena prođe
+    // i kada je vlasnik u međuvremenu uklonio definiciju tog slota.
+    if (dateOrTimeChanged) {
+      const salonProfile = await SalonProfile.findOne({
+        tenantId: decoded.tenantId,
+      })
+        .select("availabilityMode manualSlots")
+        .lean<{ availabilityMode?: string; manualSlots?: ManualSlotsMap }>();
+      if (salonProfile?.availabilityMode === "manualSlots") {
+        const check = checkManualSlotAvailability(
+          salonProfile.manualSlots,
+          dayAppointments,
+          data.date,
+          data.time,
+        );
+        if (!check.ok) {
+          return NextResponse.json(
+            {
+              error:
+                check.reason === "taken"
+                  ? "Termin je zauzet."
+                  : "Izabrani termin nije dostupan. Izaberite jedan od ponuđenih termina.",
+            },
+            { status: 400 },
+          );
+        }
+      }
     }
   }
 
