@@ -108,7 +108,7 @@ export function ServiceModal({ s }: Props) {
                 </select>
               </div>
             )}
-            <div>
+            <div className="col-span-2 sm:col-span-1">
               <label className={l2}>Tip *</label>
               <select
                 className={i2}
@@ -125,7 +125,7 @@ export function ServiceModal({ s }: Props) {
                 <option value="group">Group — paket usluga</option>
               </select>
             </div>
-            <div>
+            <div className="col-span-2 sm:col-span-1">
               <label className={l2}>Istaknuta pozicija</label>
               <select
                 className={i2}
@@ -206,7 +206,7 @@ export function ServiceModal({ s }: Props) {
           )}
 
           {form.type === "variant" && (
-            <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-3">
+            <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-2 space-y-3">
               <div className="flex items-center justify-between">
                 <span className={l2 + " mb-0"}>Varijante</span>
                 <button
@@ -217,55 +217,74 @@ export function ServiceModal({ s }: Props) {
                 </button>
               </div>
               {(form.variants ?? []).map((v, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <input
-                    className={i2 + " flex-1"}
-                    value={v.name}
-                    onChange={(e) => s.updateVariant(i, "name", e.target.value)}
-                    placeholder="Naziv"
-                  />
-                  <input
-                    type="number"
-                    className={i2 + " flex-1"}
-                    value={v.price || ""}
-                    disabled={v.priceMode === "on_request"}
-                    onChange={(e) =>
-                      s.updateVariant(i, "price", Number(e.target.value))
-                    }
-                    placeholder="RSD"
-                    min={0}
-                  />
-                  <select
-                    className={i2 + " flex-1"}
-                    value={v.priceMode ?? "fixed"}
-                    onChange={(e) => {
-                      const priceMode = e.target.value as
-                        | "fixed"
-                        | "on_request";
-                      s.updateVariant(i, "priceMode", priceMode);
-                      if (priceMode === "on_request") {
-                        s.updateVariant(i, "price", 0);
+                <div
+                  key={i}
+                  className="grid grid-cols-[1fr_auto] gap-2 items-start rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/40 p-1"
+                >
+                  {/* Inputi: 2 kolone — naziv/cena, select/trajanje, opis (span 2) */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      className={i2}
+                      value={v.name}
+                      onChange={(e) =>
+                        s.updateVariant(i, "name", e.target.value)
                       }
-                    }}
-                  >
-                    {priceModeOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    className={i2 + " flex-0 min-w-26"}
-                    value={v.duration || ""}
-                    onChange={(e) =>
-                      s.updateVariant(i, "duration", Number(e.target.value))
-                    }
-                    placeholder="Min"
-                    min={1}
-                  />
+                      placeholder="Naziv termina"
+                    />
+                    <input
+                      type="number"
+                      className={i2}
+                      value={v.price || ""}
+                      disabled={v.priceMode === "on_request"}
+                      onChange={(e) =>
+                        s.updateVariant(i, "price", Number(e.target.value))
+                      }
+                      placeholder="Cena (RSD)"
+                      min={0}
+                    />
+                    <select
+                      className={i2}
+                      value={v.priceMode ?? "fixed"}
+                      onChange={(e) => {
+                        const priceMode = e.target.value as
+                          | "fixed"
+                          | "on_request";
+                        s.updateVariant(i, "priceMode", priceMode);
+                        if (priceMode === "on_request") {
+                          s.updateVariant(i, "price", 0);
+                        }
+                      }}
+                    >
+                      {priceModeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      className={i2}
+                      value={v.duration || ""}
+                      onChange={(e) =>
+                        s.updateVariant(i, "duration", Number(e.target.value))
+                      }
+                      placeholder="Trajanje (min)"
+                      min={1}
+                    />
+                    <textarea
+                      className={i2 + " col-span-2 resize-none"}
+                      rows={2}
+                      value={v.description ?? ""}
+                      onChange={(e) =>
+                        s.updateVariant(i, "description", e.target.value)
+                      }
+                      placeholder="Opis varijante (opciono)"
+                    />
+                  </div>
+                  {/* Druga kolona — samo dugme za brisanje, širine sadržaja */}
                   <button
                     onClick={() => s.removeVariant(i)}
+                    aria-label="Obriši varijantu"
                     className="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition text-xl"
                   >
                     ×
@@ -352,7 +371,7 @@ export function ServiceModal({ s }: Props) {
           )}
 
           {(form.type === "variant" || form.type === "group") && (
-            <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-3">
+            <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-2 space-y-3">
               <div className="flex items-center justify-between">
                 <span className={l2 + " mb-0"}>Dodaci (opcioni)</span>
                 <button
@@ -363,55 +382,63 @@ export function ServiceModal({ s }: Props) {
                 </button>
               </div>
               {(form.extras ?? []).map((ex, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <input
-                    className={i2 + " flex-1"}
-                    value={ex.name}
-                    onChange={(e) => s.updateExtra(i, "name", e.target.value)}
-                    placeholder="Naziv dodatka"
-                  />
-                  <input
-                    type="number"
-                    className={i2 + " flex-1"}
-                    value={ex.price || ""}
-                    disabled={ex.priceMode === "on_request"}
-                    onChange={(e) =>
-                      s.updateExtra(i, "price", Number(e.target.value))
-                    }
-                    placeholder="RSD"
-                    min={0}
-                  />
-                  <select
-                    className={i2 + " flex-1"}
-                    value={ex.priceMode ?? "fixed"}
-                    onChange={(e) => {
-                      const priceMode = e.target.value as
-                        | "fixed"
-                        | "on_request";
-                      s.updateExtra(i, "priceMode", priceMode);
-                      if (priceMode === "on_request") {
-                        s.updateExtra(i, "price", 0);
+                <div
+                  key={i}
+                  className="grid grid-cols-[1fr_auto] gap-2 items-start rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/40 p-1"
+                >
+                  {/* Inputi: 2 kolone — naziv/cena, select/trajanje */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      className={i2}
+                      value={ex.name}
+                      onChange={(e) => s.updateExtra(i, "name", e.target.value)}
+                      placeholder="Naziv dodatka"
+                    />
+                    <input
+                      type="number"
+                      className={i2}
+                      value={ex.price || ""}
+                      disabled={ex.priceMode === "on_request"}
+                      onChange={(e) =>
+                        s.updateExtra(i, "price", Number(e.target.value))
                       }
-                    }}
-                  >
-                    {priceModeOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    className={i2 + " flex-0 min-w-26"}
-                    value={ex.duration || ""}
-                    onChange={(e) =>
-                      s.updateExtra(i, "duration", Number(e.target.value))
-                    }
-                    placeholder="Min"
-                    min={0}
-                  />
+                      placeholder="Cena (RSD)"
+                      min={0}
+                    />
+                    <select
+                      className={i2}
+                      value={ex.priceMode ?? "fixed"}
+                      onChange={(e) => {
+                        const priceMode = e.target.value as
+                          | "fixed"
+                          | "on_request";
+                        s.updateExtra(i, "priceMode", priceMode);
+                        if (priceMode === "on_request") {
+                          s.updateExtra(i, "price", 0);
+                        }
+                      }}
+                    >
+                      {priceModeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      className={i2}
+                      value={ex.duration || ""}
+                      onChange={(e) =>
+                        s.updateExtra(i, "duration", Number(e.target.value))
+                      }
+                      placeholder="Trajanje (min)"
+                      min={0}
+                    />
+                  </div>
+                  {/* Druga kolona — samo dugme za brisanje, širine sadržaja */}
                   <button
                     onClick={() => s.removeExtra(i)}
+                    aria-label="Obriši dodatak"
                     className="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition text-xl"
                   >
                     ×

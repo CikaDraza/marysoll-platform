@@ -25,6 +25,7 @@ export interface IServiceDoc extends Document {
     priceMode?: "fixed" | "on_request";
     duration: number;
     perItem: boolean;
+    description?: string;
   }[];
   extras?: {
     name: string;
@@ -95,6 +96,7 @@ const ServiceSchema = new Schema<IServiceDoc>(
         },
         duration: Number,
         perItem: { type: Boolean, default: false },
+        description: String,
       },
     ],
     extras: [

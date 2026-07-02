@@ -35,13 +35,44 @@ function minPrice(s: IService): number | null {
   return null;
 }
 
-/** Display price string for a "menu" row. */
+/** Display price string for a "menu" row. Varijante se prikazuju kao razbijena
+ *  lista (svaka cena posebno), pa za njih ovde ne vraćamo "od X". */
 function priceLabel(s: IService): string {
   if (s.priceMode === "on_request") return PRICE_ON_REQUEST_LABEL;
   if (s.type === "single")
     return formatServicePrice(s.basePrice, s.priceMode, "") || "—";
+  if (s.type === "variant") return "";
   const mp = minPrice(s);
   return mp != null ? `od ${formatPriceToString(mp)}` : "—";
+}
+
+/** Lista svih varijanti sa cenom (i opcionim opisom) — standardni termin i
+ *  korekcije se vide svaki sa svojom cenom, umesto "od najniže". */
+function VariantPriceList({ s }: { s: IService }) {
+  const variants = s.type === "variant" ? (s.variants ?? []) : [];
+  if (variants.length === 0) return null;
+  return (
+    <ul className="mt-2.5 space-y-2">
+      {variants.map((v, i) => (
+        <li key={i}>
+          <div className="flex items-baseline gap-2">
+            <span className="font-extrabold text-[15px] sm:text-[16px] text-y2k-ink">
+              {v.name}
+            </span>
+            <span className="flex-1 border-b-2 border-dashed border-y2k-ink/20 -translate-y-[3px]" />
+            <span className="font-bagel text-[18px] sm:text-[20px] text-y2k-ink whitespace-nowrap">
+              {formatServicePrice(v.price, v.priceMode, "")}
+            </span>
+          </div>
+          {v.description && (
+            <p className="mt-0.5 font-medium text-[13px] text-[#9a7d8b] leading-[1.4]">
+              {v.description}
+            </p>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 export function Theme8Services({
@@ -117,9 +148,11 @@ export function Theme8Services({
                         )}
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
-                        <span className="hidden sm:block font-bagel text-[24px] text-y2k-ink whitespace-nowrap">
-                          {priceLabel(s)}
-                        </span>
+                        {s.type !== "variant" && (
+                          <span className="hidden sm:block font-bagel text-[24px] text-y2k-ink whitespace-nowrap">
+                            {priceLabel(s)}
+                          </span>
+                        )}
                         <span
                           className={`grid place-items-center w-[30px] h-[30px] border-[3px] border-y2k-ink rounded-full text-[16px] font-extrabold leading-none transition-all duration-300 ${
                             isOpen
@@ -132,9 +165,13 @@ export function Theme8Services({
                       </div>
                     </div>
                     {/* price below the name on mobile */}
-                    <div className="sm:hidden font-bagel text-[20px] text-y2k-ink mt-1">
-                      {priceLabel(s)}
-                    </div>
+                    {s.type !== "variant" && (
+                      <div className="sm:hidden font-bagel text-[20px] text-y2k-ink mt-1">
+                        {priceLabel(s)}
+                      </div>
+                    )}
+                    {/* varijante: sve cene uvek vidljive (standard + korekcije) */}
+                    <VariantPriceList s={s} />
                     {/* expandable description — animates height only, width stays fixed */}
                     <div
                       className={`overflow-hidden transition-[max-height] duration-500 ease-in-out mt-1.5 ${

@@ -48,6 +48,8 @@ function priceLabel(s: IService): string {
   if (s.priceMode === "on_request") return PRICE_ON_REQUEST_LABEL;
   if (s.type === "single")
     return formatServicePrice(s.basePrice, s.priceMode, "") || "—";
+  // Varijante se prikazuju kao razbijena lista (svaka cena posebno).
+  if (s.type === "variant") return "";
   const mp = minPrice(s);
   return mp != null ? `od ${formatPriceToString(mp)}` : "—";
 }
@@ -81,9 +83,11 @@ function MenuRow({ s, index }: { s: IService; index: number }) {
             )}
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            <span className="hidden sm:block font-bagel text-[24px] text-y2k-ink whitespace-nowrap">
-              {priceLabel(s)}
-            </span>
+            {s.type !== "variant" && (
+              <span className="hidden sm:block font-bagel text-[24px] text-y2k-ink whitespace-nowrap">
+                {priceLabel(s)}
+              </span>
+            )}
             <span
               className={`grid place-items-center w-[30px] h-[30px] border-[3px] border-y2k-ink rounded-full text-[16px] font-extrabold leading-none transition-all duration-300 ${
                 open ? "rotate-[135deg] bg-y2k-pink text-white" : "text-y2k-ink"
@@ -93,9 +97,33 @@ function MenuRow({ s, index }: { s: IService; index: number }) {
             </span>
           </div>
         </div>
-        <div className="sm:hidden font-bagel text-[20px] text-y2k-ink mt-1">
-          {priceLabel(s)}
-        </div>
+        {s.type !== "variant" && (
+          <div className="sm:hidden font-bagel text-[20px] text-y2k-ink mt-1">
+            {priceLabel(s)}
+          </div>
+        )}
+        {/* varijante: sve cene uvek vidljive (standard + korekcije) */}
+        {variants.length > 0 && (
+          <ul className="mt-3 space-y-2">
+            {variants.map((v, i) => (
+              <li key={i}>
+                <div className="flex items-baseline gap-3 text-[15px] font-semibold text-y2k-ink">
+                  <span>{v.name}</span>
+                  <span className="flex-1 border-b-2 border-dashed border-y2k-ink/20 -translate-y-[3px]" />
+                  <span className="whitespace-nowrap text-y2k-purple font-extrabold">
+                    {formatServicePrice(v.price, v.priceMode)}
+                  </span>
+                </div>
+                {v.description && (
+                  <p className="mt-0.5 font-medium text-[13px] text-[#9a7d8b] leading-[1.4]">
+                    {v.description}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+        {/* opis usluge — otvara se na tap */}
         <div
           className={`overflow-hidden transition-[max-height] duration-500 ease-in-out mt-1.5 ${
             open ? "max-h-[800px]" : "max-h-[1.5rem]"
@@ -104,22 +132,6 @@ function MenuRow({ s, index }: { s: IService; index: number }) {
           <p className="font-medium text-[#4a3340] text-[15px] leading-[1.5]">
             {s.description}
           </p>
-          {variants.length > 0 && (
-            <ul className="mt-3 space-y-1.5">
-              {variants.map((v, i) => (
-                <li
-                  key={i}
-                  className="flex items-center gap-3 text-[14px] font-semibold text-y2k-ink"
-                >
-                  <span className="flex-1">{v.name}</span>
-                  <span className="border-b-2 border-dashed border-y2k-ink/20 flex-1" />
-                  <span className="whitespace-nowrap text-y2k-purple font-extrabold">
-                    {formatServicePrice(v.price, v.priceMode)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
       </div>
     </button>

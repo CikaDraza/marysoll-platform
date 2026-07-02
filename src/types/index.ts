@@ -85,6 +85,8 @@ export interface IServiceVariant {
   priceMode?: PriceMode;
   duration: number;
   perItem: boolean;
+  /** Opcioni dodatni opis varijante (npr. korekcija — uslovi, rok). */
+  description?: string;
 }
 
 export interface IServiceExtra {
