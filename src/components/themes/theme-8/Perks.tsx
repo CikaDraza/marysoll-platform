@@ -85,59 +85,71 @@ export function Theme8Perks({ perks }: Props) {
       <FadeUp>
         <div className="relative rotate-[1.2deg]">
           <div className="absolute -inset-2.5 bg-y2k-paper [filter:url(#y2k-torn)] shadow-[0_26px_60px_rgba(20,0,30,0.42)]" />
-          <div className="relative flex flex-col items-center text-center gap-7 p-8 sm:p-12">
-            {/* slika na sredini — kolaž nagnutih polaroida, pill na prvoj */}
-            <div className="relative flex flex-wrap justify-center items-start gap-4 sm:gap-6 pt-3">
-              {images.map((img, i) => (
-                <div
-                  key={i}
-                  className={`relative bg-white p-2.5 pb-4 border-2 border-y2k-ink shadow-[5px_9px_18px_rgba(11,11,15,0.28)] ${
-                    i % 2 === 0 ? "rotate-[-3deg]" : "rotate-[3deg]"
-                  } ${i === 0 ? "w-[240px] sm:w-[280px]" : "w-[150px] sm:w-[180px] mt-6"}`}
-                >
-                  <div
-                    className={`relative w-full ${i === 0 ? "h-[260px] sm:h-[300px]" : "h-[150px] sm:h-[180px]"}`}
-                  >
-                    <Image
-                      src={img.src}
-                      alt={img.alt || headline}
-                      fill
-                      sizes="(min-width: 640px) 30vw, 80vw"
-                      className="object-cover"
-                    />
-                  </div>
-                  {i === 0 && (
-                    <div className="absolute z-10 -bottom-4 -right-3 bg-y2k-pink text-white font-bagel text-[16px] px-4 py-2 border-[3px] border-y2k-ink rounded-[18px] shadow-[4px_4px_0_#0b0b0f] rotate-[-5deg] whitespace-nowrap">
-                      {pill}
-                    </div>
-                  )}
+          {/* Desktop: slika levo (1/3), tekst desno (2/3). Mobilni: stack. */}
+          <div className="relative grid md:grid-cols-[1fr_2fr] gap-8 md:gap-10 items-center p-8 sm:p-10">
+            {/* slika (kolona 1/3) — glavna + eventualne dodatne kao polaroidi */}
+            <div className="relative flex flex-col items-center gap-4">
+              <div className="relative bg-white p-2.5 pb-4 border-2 border-y2k-ink shadow-[5px_9px_18px_rgba(11,11,15,0.28)] rotate-[-2deg] w-full max-w-[300px]">
+                <div className="relative w-full h-[280px] sm:h-[320px]">
+                  <Image
+                    src={images[0].src}
+                    alt={images[0].alt || headline}
+                    fill
+                    sizes="(min-width: 768px) 28vw, 80vw"
+                    className="object-cover"
+                  />
                 </div>
-              ))}
+                <div className="absolute z-10 -bottom-4 -right-3 bg-y2k-pink text-white font-bagel text-[16px] px-4 py-2 border-[3px] border-y2k-ink rounded-[18px] shadow-[4px_4px_0_#0b0b0f] rotate-[-5deg] whitespace-nowrap">
+                  {pill}
+                </div>
+              </div>
+              {images.length > 1 && (
+                <div className="flex flex-wrap justify-center gap-3 pt-1">
+                  {images.slice(1).map((img, i) => (
+                    <div
+                      key={i}
+                      className={`relative bg-white p-2 pb-3 border-2 border-y2k-ink shadow-[4px_7px_14px_rgba(11,11,15,0.26)] w-[120px] sm:w-[140px] ${
+                        i % 2 === 0 ? "rotate-[3deg]" : "rotate-[-3deg]"
+                      }`}
+                    >
+                      <div className="relative w-full h-[120px] sm:h-[140px]">
+                        <Image
+                          src={img.src}
+                          alt={img.alt || headline}
+                          fill
+                          sizes="(min-width: 768px) 12vw, 40vw"
+                          className="object-cover"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* eyebrow + naslov */}
+            {/* tekst (kolona 2/3) */}
             <div>
+              {/* eyebrow + naslov */}
               <span className="inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink mb-2.5">
                 {eyebrow}
               </span>
-              <h2 className="m-0 font-bagel text-[clamp(34px,5.2vw,60px)] leading-[0.92] text-y2k-ink">
+              <h2 className="m-0 mb-4 font-bagel text-[clamp(32px,5vw,58px)] leading-[0.92] text-y2k-ink">
                 <AccentHeadline headline={headline} />
               </h2>
-            </div>
 
-            {/* 4 paragrafa — mali razmak */}
-            <div className="space-y-2.5 max-w-[620px] text-[16px] leading-[1.5] font-medium text-[#241019]">
-              {paragraphs.map((p, i) => (
-                <p key={i} className="m-0">
-                  {p}
-                </p>
-              ))}
-            </div>
+              {/* 4 paragrafa — mali razmak */}
+              <div className="space-y-2.5 max-w-[560px] text-[16px] leading-[1.5] font-medium text-[#241019]">
+                {paragraphs.map((p, i) => (
+                  <p key={i} className="m-0">
+                    {p}
+                  </p>
+                ))}
+              </div>
 
-            {/* CTA — prikazuju se samo ako imaju i tekst i URL */}
-            {(hasCta(primary) || hasCta(secondary)) && (
-              <div className="flex flex-wrap justify-center gap-4 mt-1">
-                {hasCta(primary) && (
+              {/* CTA — prikazuju se samo ako imaju i tekst i URL */}
+              {(hasCta(primary) || hasCta(secondary)) && (
+                <div className="flex flex-wrap gap-4 mt-6">
+                  {hasCta(primary) && (
                   <Theme8AnchorLink
                     href={primary.href}
                     className="inline-flex items-center gap-2.5 bg-y2k-pink text-white font-black text-[16px] tracking-[0.04em] uppercase px-7 py-3.5 border-[4px] border-y2k-ink rounded-[42px_34px_44px_32px/34px_44px_32px_44px] shadow-[6px_6px_0_#0b0b0f] rotate-[-2deg] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[9px_9px_0_#0b0b0f] transition-all duration-200"
@@ -156,6 +168,7 @@ export function Theme8Perks({ perks }: Props) {
                 )}
               </div>
             )}
+            </div>
           </div>
         </div>
       </FadeUp>

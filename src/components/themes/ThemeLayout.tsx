@@ -429,7 +429,9 @@ export function ThemeLayout({
                       label: "Zadovoljnih klijenata",
                     },
                     {
-                      value: formatStatValue(tenantStats.completedAppointmentCount),
+                      value: formatStatValue(
+                        tenantStats.completedAppointmentCount,
+                      ),
                       label: "Urađenih tretmana",
                     },
                     ...(ls?.landing?.about?.yearsOfExperience
@@ -540,7 +542,9 @@ export function ThemeLayout({
                         label: "Zadovoljnih klijenata",
                       },
                       {
-                        value: formatStatValue(tenantStats.completedAppointmentCount),
+                        value: formatStatValue(
+                          tenantStats.completedAppointmentCount,
+                        ),
                         label: "Urađenih tretmana",
                       },
                       ...(ls?.landing?.about?.yearsOfExperience
@@ -690,7 +694,9 @@ export function ThemeLayout({
                         label: "Zadovoljnih klijenata",
                       },
                       {
-                        value: formatStatValue(tenantStats.completedAppointmentCount),
+                        value: formatStatValue(
+                          tenantStats.completedAppointmentCount,
+                        ),
                         label: "Urađenih tretmana",
                       },
                       ...(ls?.landing?.about?.yearsOfExperience
@@ -919,7 +925,9 @@ export function ThemeLayout({
                         label: "Zadovoljnih klijenata",
                       },
                       {
-                        value: formatStatValue(tenantStats.completedAppointmentCount),
+                        value: formatStatValue(
+                          tenantStats.completedAppointmentCount,
+                        ),
                         label: "Urađenih tretmana",
                       },
                       ...(ls?.landing?.about?.yearsOfExperience
@@ -1187,6 +1195,27 @@ export function ThemeLayout({
                   founderName={salon.name}
                 />
               )}
+
+              <Theme8SocialProof
+                instagramUrl={igLink}
+                instagramHandle={igHandle}
+                tenantStats={tenantStats}
+              />
+              {servicesPreviewEnabled && services.length > 0 && (
+                <Theme8Services
+                  services={services}
+                  tenantSlug={tenantSlug}
+                  headline={ls?.landing?.servicesPreview?.headline}
+                  subheadline={ls?.landing?.servicesPreview?.subheadline}
+                />
+              )}
+              {galleryEnabled && (
+                <Theme8GallerySection
+                  treatments={ls?.landing?.gallery?.treatments}
+                  headline={ls?.landing?.gallery?.headline}
+                  tenantSlug={tenantSlug}
+                />
+              )}
               {perksEnabled && (
                 <Theme8Perks
                   perks={{
@@ -1212,26 +1241,6 @@ export function ThemeLayout({
                       },
                     },
                   }}
-                />
-              )}
-              <Theme8SocialProof
-                instagramUrl={igLink}
-                instagramHandle={igHandle}
-                tenantStats={tenantStats}
-              />
-              {servicesPreviewEnabled && services.length > 0 && (
-                <Theme8Services
-                  services={services}
-                  tenantSlug={tenantSlug}
-                  headline={ls?.landing?.servicesPreview?.headline}
-                  subheadline={ls?.landing?.servicesPreview?.subheadline}
-                />
-              )}
-              {galleryEnabled && (
-                <Theme8GallerySection
-                  treatments={ls?.landing?.gallery?.treatments}
-                  headline={ls?.landing?.gallery?.headline}
-                  tenantSlug={tenantSlug}
                 />
               )}
               {testimonialsEnabled && (
