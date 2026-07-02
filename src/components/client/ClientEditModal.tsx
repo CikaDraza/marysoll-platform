@@ -5,7 +5,12 @@ import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
 import { XMarkIcon, TrashIcon, ClockIcon } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
 import { generateTimes } from "@/helpers/generateTimes";
-import { IAppointment } from "@/types";
+import {
+  manualTimesForDate,
+  isManualSlotTaken,
+  timeToMin,
+} from "@/helpers/manualSlots";
+import { IAppointment, ManualSlotsMap } from "@/types";
 import { useAppointmentMutations } from "@/hooks/useAppointmentMutations";
 import { useServices } from "@/hooks/useServices";
 import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
@@ -19,6 +24,15 @@ interface Props {
   onClose: () => void;
   appointment: IAppointment | null;
   token?: string;
+  /** "manualSlots" ograničava pomeranje na termine koje je vlasnik definisao. */
+  availabilityMode?: string;
+  manualSlots?: ManualSlotsMap;
+  bookedAppointments?: {
+    _id?: string;
+    date: string;
+    time: string;
+    duration?: number;
+  }[];
 }
 
 const inp = [
@@ -40,6 +54,9 @@ export default function ClientEditModal({
   onClose,
   appointment,
   token,
+  availabilityMode,
+  manualSlots,
+  bookedAppointments,
 }: Props) {
   const { updateClientAppointment, cancelClientAppointment } =
     useAppointmentMutations(token);
@@ -63,6 +80,41 @@ export default function ClientEditModal({
     appointment?.services?.[0]?.extras?.map((e) => e.name) ?? [],
   );
   const [note, setNote] = useState<string>(appointment?.note ?? "");
+
+  // manualSlots režim: pomeranje je moguće samo na slobodan termin koji je
+  // vlasnik definisao; sopstveni termin se izuzima iz provere zauzeća, a
+  // originalno vreme ostaje u ponudi da izmena usluge/napomene ne bude blokirana.
+  const isManualMode = availabilityMode === "manualSlots";
+  const manualTimeOptions = useMemo(() => {
+    if (!isManualMode || !selectedDate || !appointment) return [];
+    const now = new Date();
+    const others = (bookedAppointments ?? []).filter(
+      (a) => a._id !== appointment._id,
+    );
+    const opts = manualTimesForDate(manualSlots, selectedDate)
+      .filter(
+        (s) =>
+          new Date(`${selectedDate}T${s.time}`) >= now &&
+          !isManualSlotTaken(others, selectedDate, timeToMin(s.time), s.duration),
+      )
+      .map((s) => ({ time: s.time, duration: s.duration }));
+    if (
+      selectedDate === appointment.date &&
+      !opts.some((o) => o.time === appointment.time)
+    ) {
+      opts.push({
+        time: appointment.time,
+        duration: appointment.duration ?? 60,
+      });
+      opts.sort((a, b) => timeToMin(a.time) - timeToMin(b.time));
+    }
+    return opts;
+  }, [isManualMode, manualSlots, bookedAppointments, selectedDate, appointment]);
+
+  const manualSlotInvalid =
+    isManualMode &&
+    !!appointment &&
+    !manualTimeOptions.some((o) => o.time === selectedTime);
 
   if (!appointment) return null;
 
@@ -110,6 +162,10 @@ export default function ClientEditModal({
 
   const handleUpdate = async () => {
     if (!selectedService) return toast.error("Molimo izaberite uslugu.");
+    if (manualSlotInvalid)
+      return toast.error(
+        "Izabrani termin nije dostupan. Izaberite jedan od ponuđenih termina.",
+      );
     if (selectedService.type === "variant" && !selectedVariant)
       return toast.error("Molimo izaberite varijantu.");
 
@@ -158,8 +214,10 @@ export default function ClientEditModal({
         updatedData: updateData,
       });
       onClose();
-    } catch {
-      toast.error("Greška pri ažuriranju termina.");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Greška pri ažuriranju termina.",
+      );
     }
   };
 
@@ -224,7 +282,10 @@ export default function ClientEditModal({
                   <input
                     type="date"
                     value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedDate(e.target.value);
+                      if (isManualMode) setSelectedTime("");
+                    }}
                     className={inp}
                     min={new Date().toISOString().split("T")[0]}
                     required
@@ -235,18 +296,35 @@ export default function ClientEditModal({
                 <div>
                   <label className={lbl}>Vreme</label>
                   <select
-                    value={selectedTime}
+                    value={isManualMode && manualSlotInvalid ? "" : selectedTime}
                     onChange={(e) => setSelectedTime(e.target.value)}
                     className={inp}
                     required
                   >
-                    <option value="">— izaberite vreme —</option>
-                    {timeOptions.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
+                    <option value="">
+                      {isManualMode
+                        ? "— izaberite termin —"
+                        : "— izaberite vreme —"}
+                    </option>
+                    {isManualMode
+                      ? manualTimeOptions.map((o) => (
+                          <option key={o.time} value={o.time}>
+                            {o.time} ({o.duration} min)
+                          </option>
+                        ))
+                      : timeOptions.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
                   </select>
+                  {isManualMode &&
+                    selectedDate &&
+                    manualTimeOptions.length === 0 && (
+                      <p className="mt-1 text-xs font-semibold text-red-500">
+                        Nema slobodnih termina za izabrani datum.
+                      </p>
+                    )}
                 </div>
 
                 {/* Service */}
@@ -438,6 +516,7 @@ export default function ClientEditModal({
                       onClick={handleUpdate}
                       disabled={
                         updateClientAppointment.isPending ||
+                        manualSlotInvalid ||
                         (selectedService?.type === "variant" && !selectedVariant)
                       }
                       className="cursor-pointer px-4 py-2 bg-(--secondary-color) hover:bg-(--secondary-color)/90 text-white rounded disabled:opacity-50 text-sm"

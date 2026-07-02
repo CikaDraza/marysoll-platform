@@ -25,7 +25,7 @@ export function localTodayStr(d: Date = new Date()): string {
   return `${y}-${mo}-${day}`;
 }
 
-function timeToMin(t: string): number {
+export function timeToMin(t: string): number {
   const [h, m] = t.split(":").map(Number);
   return h * 60 + (m ?? 0);
 }
@@ -60,6 +60,32 @@ export function isManualSlotTaken(
     const e = s + (a.duration || 60);
     return startMin < e && end > s;
   });
+}
+
+export type ManualSlotCheck =
+  | { ok: true; slot: IManualSlot }
+  | { ok: false; reason: "not_defined" | "taken" };
+
+/**
+ * Server-side provera za availabilityMode === "manualSlots": traženi (date, time)
+ * mora biti tačno jedan od definisanih ručnih termina i ne sme se preklapati
+ * sa postojećim aktivnim Appointment-om. Frontend isto ograničava izbor, ali
+ * je ovo poslednja linija odbrane ako zahtev stigne mimo UI-ja.
+ */
+export function checkManualSlotAvailability(
+  manualSlots: ManualSlotsMap | undefined,
+  appointments: { date: string; time: string; duration?: number }[],
+  dateStr: string,
+  time: string,
+): ManualSlotCheck {
+  const slot = manualTimesForDate(manualSlots, dateStr).find(
+    (s) => s.time === time,
+  );
+  if (!slot) return { ok: false, reason: "not_defined" };
+  if (isManualSlotTaken(appointments, dateStr, timeToMin(time), slot.duration)) {
+    return { ok: false, reason: "taken" };
+  }
+  return { ok: true, slot };
 }
 
 /**

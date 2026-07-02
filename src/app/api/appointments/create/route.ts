@@ -19,7 +19,8 @@ import {
   normalizeContactValue,
   normalizeInstagram,
 } from "@/lib/contactRules";
-import type { IAppointmentService } from "@/types";
+import { checkManualSlotAvailability } from "@/helpers/manualSlots";
+import type { IAppointmentService, ManualSlotsMap } from "@/types";
 import type { ITenant } from "@/models/Tenant"; // Uveri se da imaš ovaj import
 
 export async function POST(request: NextRequest) {
@@ -139,8 +140,12 @@ export async function POST(request: NextRequest) {
 
     const { date, time } = data;
     const salonProfile = await SalonProfile.findOne({ tenantId })
-      .select("cancellationWindowHours")
-      .lean<{ cancellationWindowHours?: number }>();
+      .select("cancellationWindowHours availabilityMode manualSlots")
+      .lean<{
+        cancellationWindowHours?: number;
+        availabilityMode?: string;
+        manualSlots?: ManualSlotsMap;
+      }>();
     const cancellationWindowHours =
       typeof salonProfile?.cancellationWindowHours === "number"
         ? salonProfile.cancellationWindowHours
@@ -155,6 +160,35 @@ export async function POST(request: NextRequest) {
 
     if (existing) {
       return NextResponse.json({ error: "Termin je zauzet" }, { status: 400 });
+    }
+
+    // manualSlots režim: dozvoljen je samo tačan slobodan termin koji je
+    // vlasnik definisao — server je poslednja odbrana ako UI propusti.
+    if (salonProfile?.availabilityMode === "manualSlots") {
+      const dayAppointments = await Appointment.find({
+        tenantId,
+        date,
+        status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
+      })
+        .select("date time duration")
+        .lean<{ date: string; time: string; duration?: number }[]>();
+      const check = checkManualSlotAvailability(
+        salonProfile.manualSlots,
+        dayAppointments,
+        date,
+        time,
+      );
+      if (!check.ok) {
+        return NextResponse.json(
+          {
+            error:
+              check.reason === "taken"
+                ? "Termin je zauzet"
+                : "Izabrani termin nije dostupan. Izaberite jedan od ponuđenih termina.",
+          },
+          { status: 400 },
+        );
+      }
     }
 
     // ── Growth Studio: vaučer pri bookingu ──

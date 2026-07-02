@@ -26,8 +26,11 @@ export function useAppointmentMutations(token?: string) {
           "Server je vratio neispravan odgovor (HTML). Proverite login status.",
         );
       }
-      if (!res.ok) throw new Error("Greška pri kreiranju termina");
-      return res.json();
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || "Greška pri kreiranju termina");
+      }
+      return json;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });

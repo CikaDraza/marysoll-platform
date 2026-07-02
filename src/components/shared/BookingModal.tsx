@@ -8,7 +8,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAppointmentMutations } from "@/hooks/useAppointmentMutations";
 import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import { Time24Input } from "@/components/shared/Time24Input";
-import type { IService, IAppointment } from "@/types";
+import {
+  manualTimesForDate,
+  isManualSlotTaken,
+  timeToMin,
+} from "@/helpers/manualSlots";
+import type { IService, IAppointment, ManualSlotsMap } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,6 +47,9 @@ export function BookingModal({
   onConfirmedByGuest,
   onBooked,
   pendingDefaults,
+  availabilityMode,
+  manualSlots,
+  bookedAppointments,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -58,6 +66,11 @@ export function BookingModal({
    *  caller can refresh its calendar and mark the new slot as taken. */
   onBooked?: () => void;
   pendingDefaults?: Omit<PendingAppointment, "tenantSlug"> | null;
+  /** "manualSlots" ograničava izbor na termine koje je vlasnik definisao. */
+  availabilityMode?: string;
+  manualSlots?: ManualSlotsMap;
+  /** Zauzeti termini (javni podaci) — filtriraju ponudu u manual režimu. */
+  bookedAppointments?: { date: string; time: string; duration?: number }[];
 }) {
   const { user } = useAuth();
   const { createAppointment } = useAppointmentMutations(token);
@@ -99,6 +112,37 @@ export function BookingModal({
   }, [defaultDate, defaultTime, pendingDefaults, services]);
 
   const selectedService = services.find((s) => s._id === selectedServiceId);
+
+  // manualSlots režim: nudi se SAMO slobodan budući termin koji je vlasnik
+  // definisao — datum/vreme van te liste ne sme proći.
+  const isManualMode = availabilityMode === "manualSlots";
+  const availableManualTimes = useMemo(() => {
+    if (!isManualMode || !selectedDate) return [];
+    const now = new Date();
+    return manualTimesForDate(manualSlots, selectedDate).filter(
+      (s) =>
+        new Date(`${selectedDate}T${s.time}`) >= now &&
+        !isManualSlotTaken(
+          bookedAppointments ?? [],
+          selectedDate,
+          timeToMin(s.time),
+          s.duration,
+        ),
+    );
+  }, [isManualMode, manualSlots, bookedAppointments, selectedDate]);
+
+  const manualSlotInvalid =
+    isManualMode && !availableManualTimes.some((s) => s.time === selectedTime);
+
+  function validateManualSlot(): boolean {
+    if (manualSlotInvalid) {
+      toast.error(
+        "Izabrani termin nije dostupan. Izaberite jedan od ponuđenih termina.",
+      );
+      return false;
+    }
+    return true;
+  }
 
   const { price: totalPrice, duration: totalDuration } = useMemo(() => {
     if (!selectedService) return { price: 0, duration: 0 };
@@ -153,6 +197,7 @@ export function BookingModal({
     if (!user) return toast.error("Morate biti prijavljeni.");
     if (!selectedDate || !selectedTime)
       return toast.error("Molimo izaberite datum i vreme.");
+    if (!validateManualSlot()) return;
     if (!selectedService) return toast.error("Izabrana usluga nije pronađena.");
     if (selectedService.type === "variant" && !selectedVariant)
       return toast.error("Molimo izaberite varijantu usluge.");
@@ -200,14 +245,15 @@ export function BookingModal({
       await createAppointment.mutateAsync(payload);
       onBooked?.();
       handleClose();
-    } catch {
-      toast.error("Greška pri kreiranju termina.");
+    } catch (err: unknown) {
+      toast.error((err as Error).message || "Greška pri kreiranju termina.");
     }
   }
 
   function doGuestReserve() {
     if (!selectedDate || !selectedTime)
       return toast.error("Molimo izaberite datum i vreme.");
+    if (!validateManualSlot()) return;
     if (!selectedService) return toast.error("Izabrana usluga nije pronađena.");
     if (selectedService.type === "variant" && !selectedVariant)
       return toast.error("Molimo izaberite varijantu usluge.");
@@ -233,6 +279,7 @@ export function BookingModal({
     e.preventDefault();
     if (!selectedDate || !selectedTime)
       return toast.error("Molimo izaberite datum i vreme.");
+    if (!validateManualSlot()) return;
     if (!selectedService) return toast.error("Izabrana usluga nije pronađena.");
     if (selectedService.type === "variant" && !selectedVariant)
       return toast.error("Molimo izaberite varijantu usluge.");
@@ -519,7 +566,10 @@ export function BookingModal({
                 <input
                   type="date"
                   value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedDate(e.target.value);
+                    if (isManualMode) setSelectedTime("");
+                  }}
                   className="block w-full rounded-xl border border-gray-200 bg-gray-50 text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--primary-color)/80"
                   required
                   min={new Date().toISOString().split("T")[0]}
@@ -529,14 +579,38 @@ export function BookingModal({
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
                   Vreme *
                 </label>
-                <Time24Input
-                  value={selectedTime}
-                  onChange={setSelectedTime}
-                  required
-                  aria-label="Vreme termina"
-                  className="block w-full rounded-xl border border-gray-200 bg-gray-50 text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--primary-color)/80"
-                />
+                {isManualMode ? (
+                  <select
+                    value={manualSlotInvalid ? "" : selectedTime}
+                    onChange={(e) => setSelectedTime(e.target.value)}
+                    required
+                    aria-label="Vreme termina"
+                    className="block w-full rounded-xl border border-gray-200 bg-gray-50 text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--primary-color)/80"
+                  >
+                    <option value="">— izaberite termin —</option>
+                    {availableManualTimes.map((s) => (
+                      <option key={s.time} value={s.time}>
+                        {s.time} ({s.duration} min)
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <Time24Input
+                    value={selectedTime}
+                    onChange={setSelectedTime}
+                    required
+                    aria-label="Vreme termina"
+                    className="block w-full rounded-xl border border-gray-200 bg-gray-50 text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--primary-color)/80"
+                  />
+                )}
               </div>
+              {isManualMode &&
+                selectedDate &&
+                availableManualTimes.length === 0 && (
+                  <p className="col-span-2 text-xs font-semibold text-red-500">
+                    Nema slobodnih termina za izabrani datum.
+                  </p>
+                )}
             </div>
 
             {/* Service */}
@@ -704,6 +778,7 @@ export function BookingModal({
                   type="submit"
                   disabled={
                     createAppointment.isPending ||
+                    manualSlotInvalid ||
                     (selectedService?.type === "variant" && !selectedVariant)
                   }
                   className="px-5 py-2 text-sm font-semibold text-white bg-(--primary-color)/90 hover:bg-(--primary-color) rounded-xl transition disabled:opacity-50 cursor-pointer"
@@ -717,6 +792,7 @@ export function BookingModal({
                   type="submit"
                   disabled={
                     guestLoading ||
+                    manualSlotInvalid ||
                     (selectedService?.type === "variant" && !selectedVariant)
                   }
                   className="px-5 py-2 text-sm font-semibold text-white bg-(--primary-color)/90 hover:bg-(--primary-color) rounded-xl transition disabled:opacity-50 cursor-pointer"
@@ -727,7 +803,8 @@ export function BookingModal({
                 <button
                   type="submit"
                   disabled={
-                    selectedService?.type === "variant" && !selectedVariant
+                    manualSlotInvalid ||
+                    (selectedService?.type === "variant" && !selectedVariant)
                   }
                   className="px-5 py-2 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-xl transition disabled:opacity-50 cursor-pointer"
                 >

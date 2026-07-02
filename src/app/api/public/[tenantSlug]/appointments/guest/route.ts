@@ -23,7 +23,8 @@ import {
   normalizeEmail,
   normalizeInstagram,
 } from "@/lib/contactRules";
-import type { IAppointmentService } from "@/types";
+import { checkManualSlotAvailability } from "@/helpers/manualSlots";
+import type { IAppointmentService, ManualSlotsMap } from "@/types";
 import type { ITenant } from "@/models/Tenant";
 
 type Params = { params: Promise<{ tenantSlug: string }> };
@@ -124,8 +125,12 @@ export async function POST(request: NextRequest, { params }: Params) {
       );
     }
     const salonProfile = await SalonProfile.findOne({ tenantId })
-      .select("cancellationWindowHours")
-      .lean<{ cancellationWindowHours?: number }>();
+      .select("cancellationWindowHours availabilityMode manualSlots")
+      .lean<{
+        cancellationWindowHours?: number;
+        availabilityMode?: string;
+        manualSlots?: ManualSlotsMap;
+      }>();
     const cancellationWindowHours =
       typeof salonProfile?.cancellationWindowHours === "number"
         ? salonProfile.cancellationWindowHours
@@ -141,6 +146,35 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     if (existing) {
       return NextResponse.json({ error: "Termin je zauzet." }, { status: 400 });
+    }
+
+    // manualSlots režim: sme se zakazati SAMO tačan termin koji je vlasnik
+    // definisao, i to slobodan (bez preklapanja) — bez obzira šta pošalje UI.
+    if (salonProfile?.availabilityMode === "manualSlots") {
+      const dayAppointments = await Appointment.find({
+        tenantId,
+        date,
+        status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
+      })
+        .select("date time duration")
+        .lean<{ date: string; time: string; duration?: number }[]>();
+      const check = checkManualSlotAvailability(
+        salonProfile.manualSlots,
+        dayAppointments,
+        date,
+        time,
+      );
+      if (!check.ok) {
+        return NextResponse.json(
+          {
+            error:
+              check.reason === "taken"
+                ? "Termin je zauzet."
+                : "Izabrani termin nije dostupan. Izaberite jedan od ponuđenih termina.",
+          },
+          { status: 400 },
+        );
+      }
     }
 
     // ── Find or create GUEST TenantUser ───────────────────────────────────────

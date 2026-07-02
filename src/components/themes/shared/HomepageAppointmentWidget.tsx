@@ -768,6 +768,9 @@ export default function HomepageAppointmentWidget({
         tenantSlug={effectiveSlug}
         onConfirmedByGuest={handleGuestConfirm}
         pendingDefaults={pendingDefaults}
+        availabilityMode={salon.availabilityMode}
+        manualSlots={manualSlots}
+        bookedAppointments={appointments}
       />
     </>
   );

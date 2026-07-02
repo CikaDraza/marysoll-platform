@@ -764,6 +764,9 @@ export default function Y2KHomepageAppointmentWidget({
           celebrate();
         }}
         pendingDefaults={pendingDefaults}
+        availabilityMode={salon.availabilityMode}
+        manualSlots={manualSlots}
+        bookedAppointments={appointments}
       />
     </>
   );

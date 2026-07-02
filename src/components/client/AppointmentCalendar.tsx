@@ -843,6 +843,9 @@ export default function AppointmentCalendar() {
         defaultDate={createDefaults.date}
         defaultTime={createDefaults.time}
         token={user?.token}
+        availabilityMode={salonProfile?.availabilityMode}
+        manualSlots={manualSlots}
+        bookedAppointments={appointments}
       />
 
       <ClientEditModal
@@ -854,6 +857,9 @@ export default function AppointmentCalendar() {
         }}
         appointment={selectedAppt}
         token={user?.token}
+        availabilityMode={salonProfile?.availabilityMode}
+        manualSlots={manualSlots}
+        bookedAppointments={appointments}
       />
     </>
   );

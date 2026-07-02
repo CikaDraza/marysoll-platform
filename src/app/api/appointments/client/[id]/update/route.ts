@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { Service } from "@/models/Service";
+import { SalonProfile } from "@/models/SalonProfile";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
 import { canClientCancelAppointment } from "@/lib/appointments/cancellation";
 import { createAppointmentNotification } from "@/lib/notificationService";
-import type { IAppointmentService } from "@/types";
+import { checkManualSlotAvailability } from "@/helpers/manualSlots";
+import type { IAppointmentService, ManualSlotsMap } from "@/types";
 
 export async function PUT(
   req: NextRequest,
@@ -79,6 +81,45 @@ export async function PUT(
   });
   if (conflict) {
     return NextResponse.json({ error: "Termin je zauzet." }, { status: 400 });
+  }
+
+  // manualSlots režim: i pomeranje termina sme samo na tačan slobodan termin
+  // koji je vlasnik definisao (sopstveni termin se izuzima iz preklapanja).
+  // Nepromenjeno vreme se ne proverava — izmena usluge/napomene mora proći
+  // i kada je vlasnik u međuvremenu uklonio definiciju tog slota.
+  const dateOrTimeChanged =
+    data.date !== appointment.date || data.time !== appointment.time;
+  const salonProfile = dateOrTimeChanged
+    ? await SalonProfile.findOne({ tenantId: decoded.tenantId })
+        .select("availabilityMode manualSlots")
+        .lean<{ availabilityMode?: string; manualSlots?: ManualSlotsMap }>()
+    : null;
+  if (salonProfile?.availabilityMode === "manualSlots") {
+    const dayAppointments = await Appointment.find({
+      _id: { $ne: appointment._id },
+      tenantId: decoded.tenantId,
+      date: data.date,
+      status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
+    })
+      .select("date time duration")
+      .lean<{ date: string; time: string; duration?: number }[]>();
+    const check = checkManualSlotAvailability(
+      salonProfile.manualSlots,
+      dayAppointments,
+      data.date,
+      data.time,
+    );
+    if (!check.ok) {
+      return NextResponse.json(
+        {
+          error:
+            check.reason === "taken"
+              ? "Termin je zauzet."
+              : "Izabrani termin nije dostupan. Izaberite jedan od ponuđenih termina.",
+        },
+        { status: 400 },
+      );
+    }
   }
 
   const dateChanged = data.date !== appointment.date;

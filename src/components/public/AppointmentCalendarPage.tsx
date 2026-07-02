@@ -656,6 +656,9 @@ export default function AppointmentCalendarPage({
         onConfirmedByGuest={handleGuestConfirm}
         onBooked={() => refetch()}
         pendingDefaults={pendingDefaults}
+        availabilityMode={salonProfile.availabilityMode}
+        manualSlots={manualSlotsMap}
+        bookedAppointments={appointments}
       />
     </>
   );

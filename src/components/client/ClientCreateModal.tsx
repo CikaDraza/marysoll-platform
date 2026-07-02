@@ -1,9 +1,14 @@
 import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import { generateTimes } from "@/helpers/generateTimes";
+import {
+  manualTimesForDate,
+  isManualSlotTaken,
+  timeToMin,
+} from "@/helpers/manualSlots";
 import { useAppointmentMutations } from "@/hooks/useAppointmentMutations";
 import { useAuth } from "@/hooks/useAuth";
 import { useServices } from "@/hooks/useServices";
-import { IAppointment } from "@/types";
+import { IAppointment, ManualSlotsMap } from "@/types";
 import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useMemo, useState } from "react";
@@ -15,6 +20,10 @@ interface Props {
   defaultDate?: string;
   defaultTime?: string;
   token?: string;
+  /** "manualSlots" ograničava izbor na termine koje je vlasnik definisao. */
+  availabilityMode?: string;
+  manualSlots?: ManualSlotsMap;
+  bookedAppointments?: { date: string; time: string; duration?: number }[];
 }
 
 export default function ClientCreateModal({
@@ -23,6 +32,9 @@ export default function ClientCreateModal({
   defaultDate,
   defaultTime,
   token,
+  availabilityMode,
+  manualSlots,
+  bookedAppointments,
 }: Props) {
   const { user, isLoading } = useAuth();
   const { data: services = [], isLoading: servicesLoading } = useServices();
@@ -40,6 +52,26 @@ export default function ClientCreateModal({
   const [note, setNote] = useState("");
 
   const selectedService = services.find((s) => s._id === selectedServiceId);
+
+  // manualSlots režim: nudi se samo slobodan budući termin koji je vlasnik definisao.
+  const isManualMode = availabilityMode === "manualSlots";
+  const availableManualTimes = useMemo(() => {
+    if (!isManualMode || !selectedDate) return [];
+    const now = new Date();
+    return manualTimesForDate(manualSlots, selectedDate).filter(
+      (s) =>
+        new Date(`${selectedDate}T${s.time}`) >= now &&
+        !isManualSlotTaken(
+          bookedAppointments ?? [],
+          selectedDate,
+          timeToMin(s.time),
+          s.duration,
+        ),
+    );
+  }, [isManualMode, manualSlots, bookedAppointments, selectedDate]);
+
+  const manualSlotInvalid =
+    isManualMode && !availableManualTimes.some((s) => s.time === selectedTime);
 
   // Izračunavanje ukupne cene i trajanja
   const calculateTotal = () => {
@@ -96,6 +128,10 @@ export default function ClientCreateModal({
     if (!user) return toast.error("Morate biti prijavljeni.");
     if (!selectedDate || !selectedTime)
       return toast.error("Molimo izaberite datum i vreme.");
+    if (manualSlotInvalid)
+      return toast.error(
+        "Izabrani termin nije dostupan. Izaberite jedan od ponuđenih termina.",
+      );
     if (!selectedService) return toast.error("Izabrana usluga nije pronađena.");
 
     if (selectedService.type === "variant" && !selectedVariant) {
@@ -150,7 +186,7 @@ export default function ClientCreateModal({
       handleClose();
     } catch (error) {
       console.error("Error creating appointment:", error);
-      toast.error("Greška pri kreiranju termina.");
+      toast.error((error as Error).message || "Greška pri kreiranju termina.");
     }
   };
 
@@ -232,7 +268,10 @@ export default function ClientCreateModal({
                 <input
                   type="date"
                   value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedDate(e.target.value);
+                    if (isManualMode) setSelectedTime("");
+                  }}
                   className="mt-1 block w-full rounded-md border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-2 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
                   required
                   min={new Date().toISOString().split("T")[0]}
@@ -244,18 +283,33 @@ export default function ClientCreateModal({
                   Vreme *
                 </label>
                 <select
-                  value={selectedTime}
+                  value={isManualMode && manualSlotInvalid ? "" : selectedTime}
                   onChange={(e) => setSelectedTime(e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-2"
                   required
                 >
-                  <option value="">— izaberite vreme —</option>
-                  {timeOptions.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
+                  <option value="">
+                    {isManualMode ? "— izaberite termin —" : "— izaberite vreme —"}
+                  </option>
+                  {isManualMode
+                    ? availableManualTimes.map((s) => (
+                        <option key={s.time} value={s.time}>
+                          {s.time} ({s.duration} min)
+                        </option>
+                      ))
+                    : timeOptions.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
                 </select>
+                {isManualMode &&
+                  selectedDate &&
+                  availableManualTimes.length === 0 && (
+                    <p className="mt-1 text-xs font-semibold text-red-500">
+                      Nema slobodnih termina za izabrani datum.
+                    </p>
+                  )}
               </div>
 
               <div className="mt-4">
@@ -446,6 +500,7 @@ export default function ClientCreateModal({
                   disabled={
                     createAppointment.isPending ||
                     !user ||
+                    manualSlotInvalid ||
                     (selectedService?.type === "variant" && !selectedVariant)
                   }
                 >
