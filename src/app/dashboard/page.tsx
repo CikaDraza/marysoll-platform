@@ -29,6 +29,7 @@ import { api } from "@/lib/api";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 import { AdminPlanStatus } from "@/components/admin/plan/AdminPlanStatus";
+import NotificationSettings from "@/components/settings/NotificationSettings";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -48,7 +49,8 @@ type Tab =
   | "klijenti"
   | "growth"
   | "chat"
-  | "pretplata";
+  | "pretplata"
+  | "notifikacije";
 
 const ALL_TABS: Tab[] = [
   "profil",
@@ -67,6 +69,7 @@ const ALL_TABS: Tab[] = [
   "growth",
   "chat",
   "pretplata",
+  "notifikacije",
 ];
 
 // ─── Manual slots (availabilityMode === "manualSlots") helpers ─────────────────
@@ -2122,6 +2125,7 @@ function AdminDashboard() {
       )}
       {tab === "chat" && <AdminChat />}
       {tab === "pretplata" && <AdminPlanStatus />}
+      {tab === "notifikacije" && <NotificationSettings />}
 
       {/* Service modal */}
       {svc.modalMode !== "closed" && <ServiceModal s={svc} />}
