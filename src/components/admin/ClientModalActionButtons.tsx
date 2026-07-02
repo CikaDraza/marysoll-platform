@@ -25,6 +25,7 @@ export function ClientUpdateModal({
   const initialFormData = {
     name: user?.name || "",
     phone: user?.phone || "",
+    instagram: user?.instagram || "",
     birthday: user?.birthday
       ? new Date(user.birthday).toISOString().split("T")[0]
       : "",
@@ -84,6 +85,7 @@ export function ClientUpdateModal({
       const updateData: Partial<IUser> = {
         name: formData.name,
         phone: formData.phone,
+        instagram: formData.instagram.trim().replace(/^@+/, ""),
         birthday: formData.birthday ? new Date(formData.birthday) : null,
       };
 
@@ -178,6 +180,23 @@ export function ClientUpdateModal({
                 onChange={handleChange}
                 className="mt-1 text-gray-900 block w-full rounded-md border-gray-200 p-2 bg-gray-100 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Instagram
+              </label>
+              <div className="mt-1 flex items-center w-full rounded-md border-gray-200 bg-gray-100 overflow-hidden focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-(--secondary-color)">
+                <span className="pl-2 text-gray-400 select-none">@</span>
+                <input
+                  type="text"
+                  name="instagram"
+                  value={formData.instagram}
+                  onChange={handleChange}
+                  placeholder="username"
+                  className="flex-1 text-gray-900 bg-transparent p-2 pl-1 focus:outline-none"
+                />
+              </div>
             </div>
 
             <div className="pt-4 border-t border-gray-200">

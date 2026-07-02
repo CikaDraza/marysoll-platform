@@ -31,10 +31,17 @@ export async function GET(req: Request) {
     };
 
     if (query) {
-      const regex = new RegExp(query, "i");
+      // Instagram se pretražuje bez vodećeg @ (u bazi je bez prefiksa);
+      // escape specijalnih karaktera da unos poput "(" ne obori pretragu.
+      const escaped = query
+        .replace(/^@+/, "")
+        .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(escaped, "i");
       filter.$or = [
         { name: { $regex: regex } },
         { email: { $regex: regex } },
+        { instagram: { $regex: regex } },
+        { phone: { $regex: regex } },
       ];
     }
 
@@ -49,6 +56,8 @@ export async function GET(req: Request) {
       name: 1,
       email: 1,
       phone: 1,
+      instagram: 1,
+      birthday: 1,
       role: 1,
       isOnline: 1,
       isEmailVerified: 1,

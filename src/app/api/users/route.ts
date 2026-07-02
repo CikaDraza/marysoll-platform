@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
         email: 1,
         phone: 1,
         instagram: 1,
+        birthday: 1,
         role: 1,
         isOnline: 1,
         isEmailVerified: 1,
