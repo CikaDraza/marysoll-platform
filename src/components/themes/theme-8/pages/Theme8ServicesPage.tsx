@@ -54,10 +54,31 @@ function priceLabel(s: IService): string {
   return mp != null ? `od ${formatPriceToString(mp)}` : "—";
 }
 
+/** Malo Y2K srce kao bullet za "šta usluga sadrži" (umesto check ikone). */
+function HeartBullet() {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      width={15}
+      height={15}
+      aria-hidden="true"
+      className="mt-[3px] shrink-0 rotate-[-8deg]"
+    >
+      <path
+        d="M50 88 C18 64 6 44 6 28 C6 14 17 6 29 6 C38 6 46 11 50 20 C54 11 62 6 71 6 C83 6 94 14 94 28 C94 44 82 64 50 88 Z"
+        fill="#ff2e97"
+        stroke="#0b0b0f"
+        strokeWidth={6}
+      />
+    </svg>
+  );
+}
+
 function MenuRow({ s, index }: { s: IService; index: number }) {
   const [open, setOpen] = useState(false);
   const featured = s.featured && s.featured !== "none";
   const variants = s.type === "variant" ? (s.variants ?? []) : [];
+  const items = (s.items ?? []).map((x) => x.trim()).filter(Boolean);
   return (
     <button
       type="button"
@@ -102,16 +123,19 @@ function MenuRow({ s, index }: { s: IService; index: number }) {
             {priceLabel(s)}
           </div>
         )}
-        {/* varijante: sve cene uvek vidljive (standard + korekcije) */}
+        {/* varijante: sve cene uvek vidljive (standard + korekcije),
+            isti izgled kao na početnoj — font-bagel cena bez "RSD" */}
         {variants.length > 0 && (
-          <ul className="mt-3 space-y-2">
+          <ul className="mt-2.5 space-y-2">
             {variants.map((v, i) => (
               <li key={i}>
-                <div className="flex items-baseline gap-3 text-[15px] font-semibold text-y2k-ink">
-                  <span>{v.name}</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="font-extrabold text-[15px] sm:text-[16px] text-y2k-ink">
+                    {v.name}
+                  </span>
                   <span className="flex-1 border-b-2 border-dashed border-y2k-ink/20 -translate-y-[3px]" />
-                  <span className="whitespace-nowrap text-y2k-purple font-extrabold">
-                    {formatServicePrice(v.price, v.priceMode)}
+                  <span className="font-bagel text-[18px] sm:text-[20px] text-y2k-ink whitespace-nowrap">
+                    {formatServicePrice(v.price, v.priceMode, "")}
                   </span>
                 </div>
                 {v.description && (
@@ -123,15 +147,28 @@ function MenuRow({ s, index }: { s: IService; index: number }) {
             ))}
           </ul>
         )}
-        {/* opis usluge — otvara se na tap */}
+        {/* opis + šta usluga sadrži — otvara se na tap */}
         <div
           className={`overflow-hidden transition-[max-height] duration-500 ease-in-out mt-1.5 ${
-            open ? "max-h-[800px]" : "max-h-[1.5rem]"
+            open ? "max-h-[1200px]" : "max-h-[1.5rem]"
           }`}
         >
           <p className="font-medium text-[#4a3340] text-[15px] leading-[1.5]">
             {s.description}
           </p>
+          {/* šta usluga sadrži — srca umesto check ikone, uz mali nagib */}
+          {items.length > 0 && (
+            <ul className="mt-3 space-y-1.5 rotate-[-0.8deg]">
+              {items.map((it, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <HeartBullet />
+                  <span className="font-medium text-[14px] text-[#4a3340] leading-[1.45]">
+                    {it}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </button>
