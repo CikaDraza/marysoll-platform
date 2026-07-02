@@ -9,6 +9,12 @@ import { SalonProfile } from "@/models/SalonProfile";
 import { requireAuth } from "@/lib/auth/auth-server";
 import { createAppointmentNotification } from "@/lib/notificationService";
 import {
+  reserveVoucherForBooking,
+  attachReservationToAppointment,
+  computeVoucherDiscount,
+} from "@/lib/loyalty/vouchers/service";
+import { Voucher } from "@/models/Voucher";
+import {
   inferPreferredContact,
   normalizeContactValue,
   normalizeInstagram,
@@ -90,6 +96,19 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json();
+
+    // Growth Studio polja NIKAD ne dolaze od klijenta — spread ...data ispod
+    // bi ih inače persistovao (finalPrice/discountAmount računamo server-side).
+    delete data.appliedVoucherId;
+    delete data.appliedPromotionId;
+    delete data.originalPrice;
+    delete data.discountAmount;
+    delete data.finalPrice;
+    delete data.completedAt;
+    delete data.completionSource;
+    delete data.completionPromptSentAt;
+    delete data.loyaltyProcessed;
+
     const clientPhone = normalizeContactValue(data.clientPhone);
     const clientInstagram = normalizeInstagram(data.clientInstagram);
     const preferredContact =
@@ -138,6 +157,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Termin je zauzet" }, { status: 400 });
     }
 
+    // ── Growth Studio: vaučer pri bookingu ──
+    // CAS rezervacija (active → reserved): od dva konkurentna bookinga istim
+    // kodom tačno jedan prolazi. Popust se računa server-side.
+    const originalPrice = (data.services as IAppointmentService[]).reduce(
+      (sum, s) => sum + (Number(s.price) || 0) * (Number(s.quantity) || 1),
+      0,
+    );
+    let reservedVoucher = null;
+    if (typeof data.voucherCode === "string" && data.voucherCode.trim()) {
+      reservedVoucher = await reserveVoucherForBooking({
+        tenantId,
+        code: data.voucherCode,
+        clientTenantUserId: decoded.tenantUserId!,
+      });
+      if (!reservedVoucher) {
+        return NextResponse.json(
+          { error: "Vaučer nije važeći ili je već iskorišćen." },
+          { status: 400 },
+        );
+      }
+    }
+    const discountAmount = reservedVoucher
+      ? computeVoucherDiscount(reservedVoucher, data.services)
+      : 0;
+
     const appointment = new Appointment({
       ...data,
       tenantId, // Sada je ovo string
@@ -155,9 +199,41 @@ export async function POST(request: NextRequest) {
         duration: s.duration,
       })),
       unreadCount: { client: 0, admin: 0 },
+      ...(reservedVoucher
+        ? {
+            appliedVoucherId: reservedVoucher._id,
+            originalPrice,
+            discountAmount,
+            finalPrice: Math.max(0, originalPrice - discountAmount),
+          }
+        : {}),
     });
 
-    await appointment.save();
+    try {
+      await appointment.save();
+    } catch (saveError) {
+      // Booking nije uspeo — vrati vaučer klijentu.
+      if (reservedVoucher) {
+        await Voucher.findOneAndUpdate(
+          { _id: reservedVoucher._id, status: "reserved" },
+          { $set: { status: "active", reservedAppointmentId: null } },
+        ).catch(() => null);
+      }
+      throw saveError;
+    }
+
+    if (reservedVoucher) {
+      const voucherId = reservedVoucher._id;
+      await attachReservationToAppointment(voucherId, appointment._id).catch(
+        async (e) => {
+          console.error("[loyalty] attach reservation failed:", e);
+          await Voucher.findOneAndUpdate(
+            { _id: voucherId, status: "reserved" },
+            { $set: { status: "active", reservedAppointmentId: null } },
+          ).catch(() => null);
+        },
+      );
+    }
 
     await createAppointmentNotification(
       {

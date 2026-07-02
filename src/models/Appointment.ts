@@ -85,6 +85,26 @@ const appointmentSchema = new Schema(
     proposedDate: String,
     proposedTime: String,
     lastUpdatedBy: { type: String, enum: ["client", "admin"] },
+
+    // ── Growth Studio (loyalty) — sva polja opciona, backward-kompatibilna ──
+    /** Primenjen vaučer (rezervisan pri bookingu, redeemed pri completion-u) */
+    appliedVoucherId: { type: Schema.Types.ObjectId, ref: "Voucher" },
+    appliedPromotionId: { type: Schema.Types.ObjectId, ref: "Promotion" },
+    originalPrice: { type: Number },
+    discountAmount: { type: Number },
+    finalPrice: { type: Number },
+    completedAt: { type: Date },
+    completionSource: { type: String, enum: ["admin", "auto"] },
+    /** Dvostepeni auto-complete: kada je adminu poslat prompt */
+    completionPromptSentAt: { type: Date },
+    // Dedup flagovi za loyalty obradu (pattern kao reminderSent).
+    // revertCount raste pri svakom revertu completion-a — ulazi u event
+    // sourceId da ponovni completion posle reverta može ponovo da nagradi.
+    loyaltyProcessed: {
+      completed: { type: Boolean, default: false },
+      noShow: { type: Boolean, default: false },
+      revertCount: { type: Number, default: 0 },
+    },
   },
   { timestamps: true },
 );
@@ -92,6 +112,7 @@ const appointmentSchema = new Schema(
 appointmentSchema.index({ tenantId: 1, clientProfileId: 1 });
 appointmentSchema.index({ tenantId: 1, date: 1 });
 appointmentSchema.index({ tenantId: 1, cancellationStatus: 1 });
+appointmentSchema.index({ tenantId: 1, status: 1, date: 1 });
 
 export const Appointment =
   models.Appointment || model("Appointment", appointmentSchema);

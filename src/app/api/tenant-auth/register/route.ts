@@ -18,6 +18,7 @@ import { TenantUser } from "@/models/TenantUser";
 import { Tenant } from "@/models/Tenant";
 import { AudienceContact } from "@/models/AudienceContact";
 import { sendClientVerificationEmail } from "@/lib/email/onboarding";
+import { loyaltyOnClientRegistered } from "@/lib/loyalty/hooks";
 import {
   hasRegistrationContact,
   normalizeContactValue,
@@ -161,6 +162,9 @@ export async function POST(req: NextRequest) {
     } catch (e) {
       console.error("⚠️ AudienceContact upsert failed:", e);
     }
+
+    // Growth Studio: welcome bonus (nikad ne baca)
+    await loyaltyOnClientRegistered(tenant._id, tenantUser._id);
 
     // Send verification email
     try {

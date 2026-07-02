@@ -128,4 +128,7 @@ const UPGRADE_MESSAGES: Partial<Record<keyof PlanFeatures, string>> = {
   aiSeoGeneration: "Nadogradite na Kiki plan za AI SEO generisanje",
   aiLandingPages: "Nadogradite na Kiki plan za AI landing stranice",
   aiMarketingAnalysis: "Nadogradite na Kiki plan za AI marketinšku analizu",
+  loyaltyCore: "Nadogradite na Claudia plan za program nagrađivanja",
+  loyaltySystem: "Nadogradite na Kiki plan za napredni loyalty sistem",
+  loyaltyRevenue: "Nadogradite na Enterprise plan za dynamic pricing",
 };

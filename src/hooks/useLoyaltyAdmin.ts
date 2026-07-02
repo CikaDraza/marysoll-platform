@@ -1,0 +1,182 @@
+"use client";
+
+/**
+ * Growth Studio — admin React Query hookovi (dashboard ?tab=growth).
+ */
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import type { LoyaltyRewardInfo } from "@/hooks/useLoyalty";
+
+// ─── Tipovi ───────────────────────────────────────────────────────────────────
+
+export interface LoyaltyAdminConfig {
+  enabled: boolean;
+  currencies: {
+    hearts: {
+      enabled: boolean;
+      nameOne: string;
+      nameFew: string;
+      nameMany: string;
+      emoji: string;
+    };
+    points: {
+      enabled: boolean;
+      nameOne: string;
+      nameFew: string;
+      nameMany: string;
+      emoji: string;
+      per100Rsd: number;
+    };
+  };
+  earning: { heartsPerCompletedVisit: number; welcomeBonusPoints: number };
+  milestones: Array<{ heartsRequired: number; reward: LoyaltyRewardInfo }>;
+  pointsShop: Array<{ costPoints: number; reward: LoyaltyRewardInfo }>;
+  noShowPolicy: {
+    mode: "none" | "streak_reset" | "hearts_penalty";
+    heartsPenalty: number;
+  };
+  autoComplete: {
+    enabled: boolean;
+    promptAfterHours: number;
+    autoAfterHours: number;
+  };
+  celebration: { intensity: "off" | "subtle" | "normal" | "max" };
+  antiAbuse: { maxHeartsPerDay: number; maxPointsPerDay: number };
+}
+
+export interface LoyaltyAdminAccount {
+  _id: string;
+  tenantUserId: string;
+  heartsBalance: number;
+  pointsBalance: number;
+  lifetimeHearts: number;
+  lifetimePoints: number;
+  completedVisits: number;
+  noShows: number;
+  totalSpend: number;
+  lastVisitAt?: string;
+  client: { _id: string; name?: string; email?: string; role?: string } | null;
+}
+
+export interface LoyaltyAdminLedgerEntry {
+  _id: string;
+  entryType: string;
+  currency: "hearts" | "points";
+  amount: number;
+  description: string;
+  createdAt: string;
+  source?: { reason?: string; ruleId?: string };
+}
+
+export interface LoyaltyAdminVoucher {
+  _id: string;
+  code: string;
+  type: "percent" | "fixed" | "free_service";
+  value: number;
+  serviceName?: string;
+  origin: string;
+  status: string;
+  expiresAt?: string;
+  createdAt: string;
+  owner: { name?: string; email?: string } | null;
+}
+
+// ─── Hookovi ──────────────────────────────────────────────────────────────────
+
+export function useLoyaltyAdminConfig() {
+  return useQuery<{ config: LoyaltyAdminConfig; isDefault: boolean }>({
+    queryKey: ["loyaltyAdmin", "config"],
+    queryFn: async () => (await api.get("/loyalty/admin/config")).data,
+    staleTime: 30_000,
+  });
+}
+
+export function useSaveLoyaltyConfig() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (config: LoyaltyAdminConfig) =>
+      (await api.put("/loyalty/admin/config", config)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["loyaltyAdmin"] });
+    },
+  });
+}
+
+export function useLoyaltyAdminAccounts(q: string) {
+  return useQuery<{ accounts: LoyaltyAdminAccount[] }>({
+    queryKey: ["loyaltyAdmin", "accounts", q],
+    queryFn: async () =>
+      (
+        await api.get("/loyalty/admin/accounts", {
+          params: q ? { q } : undefined,
+        })
+      ).data,
+    staleTime: 15_000,
+  });
+}
+
+export function useLoyaltyAdminLedger(accountId: string | null) {
+  return useQuery<{ entries: LoyaltyAdminLedgerEntry[] }>({
+    queryKey: ["loyaltyAdmin", "ledger", accountId],
+    queryFn: async () =>
+      (await api.get(`/loyalty/admin/accounts/${accountId}/ledger`)).data,
+    enabled: Boolean(accountId),
+  });
+}
+
+export function useAdjustLoyaltyAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: {
+      accountId: string;
+      currency: "hearts" | "points";
+      amount: number;
+      reason: string;
+    }) =>
+      (
+        await api.post(`/loyalty/admin/accounts/${params.accountId}/adjust`, {
+          currency: params.currency,
+          amount: params.amount,
+          reason: params.reason,
+        })
+      ).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["loyaltyAdmin"] });
+    },
+  });
+}
+
+export function useLoyaltyAdminVouchers() {
+  return useQuery<{ vouchers: LoyaltyAdminVoucher[] }>({
+    queryKey: ["loyaltyAdmin", "vouchers"],
+    queryFn: async () => (await api.get("/loyalty/admin/vouchers")).data,
+    staleTime: 15_000,
+  });
+}
+
+export function useIssueLoyaltyVoucher() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: {
+      tenantUserId: string;
+      type: "percent" | "fixed" | "free_service";
+      value: number;
+      serviceName?: string;
+      expiresDays: number;
+    }) => (await api.post("/loyalty/admin/vouchers", params)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["loyaltyAdmin", "vouchers"] });
+    },
+  });
+}
+
+export function useRevokeLoyaltyVoucher() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (voucherId: string) =>
+      (await api.post(`/loyalty/admin/vouchers/${voucherId}/revoke`)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["loyaltyAdmin", "vouchers"] });
+    },
+  });
+}

@@ -68,8 +68,12 @@ export interface PlanFeatures {
   // ── Plaćanje i loyalty ────────────────────────────────────────────────────
   /** PayPal + LemonSqueezy integracija */
   paymentIntegration: boolean;
-  /** Loyalty bodovi za klijente */
+  /** Growth Studio — osnovni loyalty loop (srca/poeni, vaučeri, celebration) */
+  loyaltyCore: boolean;
+  /** Growth Studio — behavioral sloj (tieri, referral, gift, birthday, više programa) */
   loyaltySystem: boolean;
+  /** Growth Studio — revenue sloj (dynamic pricing, happy hour, advanced rules) */
+  loyaltyRevenue: boolean;
   /** Mesečna pretplata za klijente salona */
   clientSubscriptions: boolean;
 
@@ -144,7 +148,9 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
 
     // Plaćanje
     paymentIntegration: false,
+    loyaltyCore: false,
     loyaltySystem: false,
+    loyaltyRevenue: false,
     clientSubscriptions: false,
 
     // Enterprise
@@ -198,7 +204,9 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     aiMarketingAnalysis: false,
 
     paymentIntegration: false,
+    loyaltyCore: true,
     loyaltySystem: false,
+    loyaltyRevenue: false,
     clientSubscriptions: false,
 
     emailCampaignAi: false,
@@ -251,7 +259,9 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     aiMarketingAnalysis: true,
 
     paymentIntegration: true,
+    loyaltyCore: true,
     loyaltySystem: true,
+    loyaltyRevenue: false,
     clientSubscriptions: true,
 
     emailCampaignAi: false,
@@ -304,7 +314,9 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     aiMarketingAnalysis: true,
 
     paymentIntegration: true,
+    loyaltyCore: true,
     loyaltySystem: true,
+    loyaltyRevenue: true,
     clientSubscriptions: true,
 
     emailCampaignAi: true,

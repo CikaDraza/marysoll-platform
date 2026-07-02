@@ -4,6 +4,7 @@ import { Appointment } from "@/models/Appointment";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
 import { canClientCancelAppointment } from "@/lib/appointments/cancellation";
 import { createAppointmentNotification } from "@/lib/notificationService";
+import { loyaltyOnAppointmentStatusChange } from "@/lib/loyalty/hooks";
 
 export async function POST(
   req: NextRequest,
@@ -41,6 +42,7 @@ export async function POST(
 
   const now = new Date();
   const canCancel = canClientCancelAppointment(appointment, now);
+  const previousStatus = appointment.status;
 
   appointment.lastUpdatedBy = "client";
   appointment.cancelledAt = now;
@@ -59,6 +61,13 @@ export async function POST(
   }
 
   await appointment.save();
+
+  // Growth Studio: oslobađanje vaučera / no-show politika (nikad ne baca)
+  await loyaltyOnAppointmentStatusChange(
+    appointment._id.toString(),
+    previousStatus,
+    appointment.status,
+  );
 
   if (canCancel) {
     await createAppointmentNotification(

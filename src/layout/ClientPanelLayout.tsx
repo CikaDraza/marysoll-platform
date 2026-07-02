@@ -6,6 +6,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useClientRouting } from "@/hooks/useClientRouting";
 import { usePublicSalonProfile } from "@/hooks/useSalonProfile";
+import { useLoyaltyMe } from "@/hooks/useLoyalty";
 import { NotificationBell } from "@/components/shared/NotificationBell";
 import { ThemeToggleButton } from "@/components/common/ThemeToggleButton";
 import Backdrop from "@/layout/Backdrop";
@@ -16,6 +17,7 @@ import Image from "next/image";
 export type PanelTab =
   | "Moji Termini"
   | "Zakazivanja"
+  | "Nagrade"
   | "Moje Preporuke"
   | "Notifikacije"
   | "Moj Profil";
@@ -47,6 +49,21 @@ export const PANEL_TABS: {
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <path
           d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  },
+  {
+    id: "Nagrade",
+    label: "Nagrade",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M20 12v9H4v-9M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"
           stroke="currentColor"
           strokeWidth="1.8"
           strokeLinecap="round"
@@ -121,7 +138,20 @@ function ClientSidebar({
   const { user, logout } = useAuth();
   const { base, tenantSlug } = useClientRouting();
   const { data: tenantSalon } = usePublicSalonProfile(tenantSlug);
+  const { data: loyaltyMe } = useLoyaltyMe();
   const isVisible = isExpanded || isHovered || isMobileOpen;
+
+  // "Nagrade" tab: vidljiv kada program teče ILI kada klijent ima istoriju
+  // (balans se pokazuje i posle pauziranja programa — poverenje).
+  const showLoyaltyTab = Boolean(
+    loyaltyMe?.enabled ||
+      (loyaltyMe?.account &&
+        (loyaltyMe.account.lifetimeHearts > 0 ||
+          loyaltyMe.account.lifetimePoints > 0)),
+  );
+  const visibleTabs = PANEL_TABS.filter(
+    (t) => t.id !== "Nagrade" || showLoyaltyTab,
+  );
   const effectiveSalonName = salonName || tenantSalon?.name || "Salon";
   const effectiveSalonLogo = salonLogo ?? tenantSalon?.logo ?? null;
 
@@ -179,7 +209,7 @@ function ClientSidebar({
           </p>
         )}
 
-        {PANEL_TABS.map((t) => {
+        {visibleTabs.map((t) => {
           const isActive = activeTab === t.id;
           return (
             <button

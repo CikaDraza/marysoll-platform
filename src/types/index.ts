@@ -597,7 +597,14 @@ export interface INotification {
     | "testimonial_deleted"
     | "testimonial_message"
     | "chat_message"
-    | "generic";
+    | "generic"
+    | "loyalty_hearts_earned"
+    | "loyalty_points_earned"
+    | "loyalty_voucher_received"
+    | "loyalty_voucher_redeemed"
+    | "loyalty_tier_upgraded"
+    | "loyalty_adjustment"
+    | "loyalty_completion_prompt";
   title: string;
   message: string;
   isRead: boolean;
@@ -613,6 +620,18 @@ export interface INotification {
     serviceName?: string;
     clientName?: string;
     rating?: number;
+    hearts?: number;
+    points?: number;
+    heartsBalance?: number;
+    heartsRequired?: number;
+    currencyName?: string;
+    voucherCode?: string;
+    voucherType?: string;
+    voucherValue?: number;
+    voucherExpiresAt?: string;
+    tierName?: string;
+    celebration?: boolean;
+    celebrationSeen?: boolean;
   };
   createdAt: Date;
   updatedAt: Date;

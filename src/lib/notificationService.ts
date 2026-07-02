@@ -20,8 +20,9 @@ import {
 import { sendWebPushToUser, sendWebPushToMany } from "@/lib/webPush";
 
 // ── Salon branding for push payloads ─────────────────────────────────────────
+// Exportovano i za loyalty notifikacije (lib/loyalty/notifications.ts).
 
-async function getSalonBranding(
+export async function getSalonBranding(
   tenantId: Types.ObjectId | string,
 ): Promise<{ icon: string; name: string }> {
   try {
@@ -71,6 +72,14 @@ export async function createNotification(params: CreateNotificationParams) {
     "testimonial_updated",
     "testimonial_deleted",
     "testimonial_message",
+    "generic",
+    "loyalty_hearts_earned",
+    "loyalty_points_earned",
+    "loyalty_voucher_received",
+    "loyalty_voucher_redeemed",
+    "loyalty_tier_upgraded",
+    "loyalty_adjustment",
+    "loyalty_completion_prompt",
   ];
 
   if (!validTypes.includes(params.type)) {

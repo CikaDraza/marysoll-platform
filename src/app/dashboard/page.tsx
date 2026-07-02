@@ -19,6 +19,7 @@ import { EmailCampaignAIGenerator } from "@/components/email-campaign/EmailCampa
 import { AdminLandingCMS } from "@/components/admin/cms/AdminLandingCMS";
 import { AdminChat } from "@/components/admin/chat/AdminChat";
 import ClientsList from "@/components/admin/ClientsList";
+import AdminGrowthStudio from "@/components/admin/loyalty/AdminGrowthStudio";
 import { ServiceModal } from "@/components/admin/ServiceModal";
 import { FeatureGate } from "@/components/shared/FeatureGate";
 import { Time24Input } from "@/components/shared/Time24Input";
@@ -45,6 +46,7 @@ type Tab =
   | "preporuke"
   | "domen"
   | "klijenti"
+  | "growth"
   | "chat"
   | "pretplata";
 
@@ -62,6 +64,7 @@ const ALL_TABS: Tab[] = [
   "preporuke",
   "domen",
   "klijenti",
+  "growth",
   "chat",
   "pretplata",
 ];
@@ -2112,6 +2115,11 @@ function AdminDashboard() {
       {tab === "preporuke" && <AdminTestimonials />}
       {tab === "domen" && <AdminCustomDomain />}
       {tab === "klijenti" && <ClientsList />}
+      {tab === "growth" && (
+        <FeatureGate feature="loyaltyCore">
+          <AdminGrowthStudio />
+        </FeatureGate>
+      )}
       {tab === "chat" && <AdminChat />}
       {tab === "pretplata" && <AdminPlanStatus />}
 

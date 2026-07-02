@@ -10,6 +10,8 @@ import AppointmentCalendar from "@/components/client/AppointmentCalendar";
 import ClientTestimonials from "@/components/client/ClientTestimonials";
 import NotificationSettings from "@/components/settings/NotificationSettings";
 import ClientProfile from "@/components/client/ClientProfile";
+import ClientLoyalty from "@/components/client/ClientLoyalty";
+import { LoyaltyMoments } from "@/components/loyalty/LoyaltyMoments";
 import {
   ClientPanelLayout,
   PANEL_TABS,
@@ -76,9 +78,13 @@ export default function ClientPanelPage() {
     >
       {activeTab === "Moji Termini" && <ClientAppointments />}
       {activeTab === "Zakazivanja" && <AppointmentCalendar />}
+      {activeTab === "Nagrade" && <ClientLoyalty />}
       {activeTab === "Moje Preporuke" && <ClientTestimonials />}
       {activeTab === "Notifikacije" && <NotificationSettings />}
       {activeTab === "Moj Profil" && <ClientProfile />}
+
+      {/* Growth Studio: celebration momenti (self-gated) */}
+      <LoyaltyMoments />
     </ClientPanelLayout>
   );
 }

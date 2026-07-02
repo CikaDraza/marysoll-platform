@@ -4,6 +4,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { resolveTenant, verifyToken } from "@/lib/auth/auth-server";
 import { createAppointmentNotification } from "@/lib/notificationService";
+import { loyaltyOnAppointmentStatusChange } from "@/lib/loyalty/hooks";
 import { IAppointment } from "@/types";
 import { Notification } from "@/models/Notification";
 import { Types } from "mongoose";
@@ -71,6 +72,20 @@ export async function PUT(
     }
 
     const updatedData: UpdateAppointmentData = await req.json();
+
+    // Growth Studio polja se menjaju isključivo kroz loyalty servis —
+    // nikad direktno kroz ovaj update (payload ide u findByIdAndUpdate).
+    const raw = updatedData as Record<string, unknown>;
+    delete raw.appliedVoucherId;
+    delete raw.appliedPromotionId;
+    delete raw.originalPrice;
+    delete raw.discountAmount;
+    delete raw.finalPrice;
+    delete raw.completedAt;
+    delete raw.completionSource;
+    delete raw.completionPromptSentAt;
+    delete raw.loyaltyProcessed;
+
     const appointment = await Appointment.findById(id);
 
     if (!appointment) {
@@ -82,6 +97,18 @@ export async function PUT(
 
     // Use isAdmin from JWT — no extra DB call needed
     const isAdmin = decoded.isAdmin ?? false;
+
+    // Completion i no-show su isključivo admin akcije (od njih zavisi
+    // dodela loyalty nagrada — klijent ne sme sam da "završi" termin).
+    if (
+      !isAdmin &&
+      (updatedData.status === "completed" || updatedData.status === "no_show")
+    ) {
+      return NextResponse.json(
+        { error: "Samo salon može označiti termin kao završen ili propušten" },
+        { status: 403 },
+      );
+    }
 
     // Postavi ko je poslednji ažurirao
     updatedData.lastUpdatedBy = isAdmin ? "admin" : "client";
@@ -177,6 +204,15 @@ export async function PUT(
         appointment,
         updatedData.status,
         tenantId!,
+      );
+
+      // Growth Studio: dodela/povlačenje nagrada + voucher lifecycle
+      // (nikad ne baca — loyalty ne sme da sruši ažuriranje termina)
+      await loyaltyOnAppointmentStatusChange(
+        id,
+        appointment.status,
+        updatedData.status,
+        { source: "admin" },
       );
     }
 
