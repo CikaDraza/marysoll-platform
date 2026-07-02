@@ -158,7 +158,7 @@ function MenuRow({ s, index }: { s: IService; index: number }) {
           </p>
           {/* šta usluga sadrži — srca umesto check ikone, uz mali nagib */}
           {items.length > 0 && (
-            <ul className="mt-3 space-y-1.5 rotate-[-0.8deg]">
+            <ul className="mt-3 p-1.5 space-y-1.5 rotate-[-0.8deg]">
               {items.map((it, i) => (
                 <li key={i} className="flex items-start gap-2">
                   <HeartBullet />

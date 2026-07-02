@@ -32,6 +32,7 @@ function serializeService(s: Record<string, unknown>) {
             priceMode: vv.priceMode === "on_request" ? "on_request" : "fixed",
             duration: Number(vv.duration ?? 0),
             perItem: Boolean(vv.perItem),
+            description: vv.description ? String(vv.description) : undefined,
           };
         })
       : [],
