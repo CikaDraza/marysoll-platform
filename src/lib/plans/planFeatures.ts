@@ -348,6 +348,73 @@ export function getPlanFeatures(
   return { ...base, ...overrides };
 }
 
+// ─── Efektivni plan (single source of truth) ─────────────────────────────────
+
+/** Subscription statusi koji daju pristup planu (past_due = grace period). */
+export const PLAN_GRANTING_STATUSES = ["active", "trialing", "past_due"] as const;
+
+/**
+ * Rešava efektivni plan tenanta — koriste ga i requireFeature (server gate)
+ * i /api/subscriptions/features (dashboard UI), da ne mogu da se raziđu.
+ *
+ * Pravila:
+ * 1. Subscription daje plaćeni plan samo dok je status active/trialing/past_due.
+ *    Interne (superadmin) dodele dodatno poštuju currentPeriodEnd; Paddle
+ *    pretplatama rok vodi Paddle kroz webhook-ove (status se sam menja).
+ * 2. Fallback: Tenant.paid + Tenant.plan (superadmin ručna dodela bez
+ *    sinhronizovane Subscription), uz opcioni rok Tenant.planExpiresAt.
+ * 3. Sve ostalo (istekao/otkazan/pauziran, neplaćen trial) → "maria".
+ *
+ * Registracioni trial namerno NE otključava plaćene planove — plaćene
+ * funkcionalnosti bez Paddle naplate ima samo tenant kojem ih je superadmin
+ * eksplicitno dodelio (plan ili featureOverrides).
+ */
+export function resolveEffectivePlan(
+  subscription:
+    | {
+        plan?: PlanName | null;
+        status?: string | null;
+        billingProvider?: string | null;
+        currentPeriodEnd?: Date | string | null;
+      }
+    | null
+    | undefined,
+  tenant:
+    | {
+        plan?: PlanName | null;
+        paid?: boolean | null;
+        planExpiresAt?: Date | string | null;
+      }
+    | null
+    | undefined,
+  now: Date = new Date(),
+): PlanName {
+  const subPlan = subscription?.plan ?? null;
+  const subStatus = subscription?.status ?? "";
+  if (
+    subPlan &&
+    subPlan !== "maria" &&
+    (PLAN_GRANTING_STATUSES as readonly string[]).includes(subStatus)
+  ) {
+    const isInternal =
+      (subscription?.billingProvider ?? "internal") === "internal";
+    const periodEnd = subscription?.currentPeriodEnd
+      ? new Date(subscription.currentPeriodEnd)
+      : null;
+    if (!isInternal || !periodEnd || periodEnd > now) return subPlan;
+  }
+
+  const tenantPlan = tenant?.plan ?? "maria";
+  const tenantExpiry = tenant?.planExpiresAt
+    ? new Date(tenant.planExpiresAt)
+    : null;
+  if (tenant?.paid && tenantPlan !== "maria" && (!tenantExpiry || tenantExpiry > now)) {
+    return tenantPlan;
+  }
+
+  return "maria";
+}
+
 /**
  * Provjeri da li plan ima konkretan feature.
  * Koristi se za jednostavne boolean provjere.

@@ -16,9 +16,28 @@ import type { ISubscription } from "@/models/Subscription";
 import {
   PLAN_FEATURES,
   getPlanFeatures,
+  resolveEffectivePlan,
   type PlanName,
   type PlanFeatures,
 } from "./planFeatures";
+
+/**
+ * Efektivni plan tenanta — ista resolucija kao requireFeature i
+ * /api/subscriptions/features (status-aware + Tenant fallback).
+ */
+async function getEffectivePlan(
+  sub: ISubscription,
+  tenantId: string,
+): Promise<PlanName> {
+  const tenant = await Tenant.findById(tenantId)
+    .select("plan paid planExpiresAt")
+    .lean<{
+      plan?: PlanName;
+      paid?: boolean;
+      planExpiresAt?: Date | null;
+    }>();
+  return resolveEffectivePlan(sub, tenant);
+}
 
 // ─── Dohvati Subscription za tenant ──────────────────────────────────────────
 
@@ -82,7 +101,7 @@ export async function getTenantFeatures(
       ? sub.featureOverrides
       : null;
 
-  return getPlanFeatures(sub.plan, overrides);
+  return getPlanFeatures(await getEffectivePlan(sub, tenantId), overrides);
 }
 
 /**
@@ -106,7 +125,10 @@ export async function tenantHasFeature<K extends keyof PlanFeatures>(
  */
 export async function consumeAiRequest(tenantId: string): Promise<boolean> {
   const sub = await getOrCreateSubscription(tenantId);
-  const features = getPlanFeatures(sub.plan, sub.featureOverrides);
+  const features = getPlanFeatures(
+    await getEffectivePlan(sub, tenantId),
+    sub.featureOverrides,
+  );
 
   if (features.unlimitedAiTokens) return true;
   if (features.aiRequestsPerMonth === 0) return false;
@@ -225,6 +247,8 @@ export async function syncSubscriptionFromPaddle(params: {
 
 /**
  * Označi Subscription kao otkazanu (Paddle subscription.canceled).
+ * Plan se vraća na "maria" — otkazana pretplata ne sme da nastavi da
+ * otključava plaćene funkcionalnosti.
  */
 export async function cancelSubscriptionFromPaddle(params: {
   tenantId: string;
@@ -236,6 +260,7 @@ export async function cancelSubscriptionFromPaddle(params: {
     { tenantId: params.tenantId },
     {
       $set: {
+        plan: "maria",
         status: "cancelled",
         cancelAtPeriodEnd: false,
         currentPeriodEnd: params.periodEnd,

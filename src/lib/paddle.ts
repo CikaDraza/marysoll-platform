@@ -20,6 +20,7 @@ import {
   syncSubscriptionFromPaddle,
   cancelSubscriptionFromPaddle,
 } from "@/lib/plans/subscriptionService";
+import { notifySubscriptionCancelled } from "@/lib/plans/subscriptionNotifications";
 import type { PlanName } from "@/lib/plans/planFeatures";
 import type { ISubscription } from "@/models/Subscription";
 
@@ -369,9 +370,13 @@ export async function handlePaddleWebhook(
       const effectiveEnd = data.canceled_at
         ? new Date(data.canceled_at)
         : periodEnd;
+      const previousPlan = (tenant.plan ?? "maria") as PlanName;
 
+      // Otkazana pretplata vraća tenant na besplatni Maria plan — bez ovoga
+      // bi zaostali plan i dalje otključavao plaćene funkcionalnosti.
       await Tenant.findByIdAndUpdate(tenantId, {
         paid: false,
+        plan: "maria",
         status: "cancelled",
         planExpiresAt: effectiveEnd,
         isTrialActive: false,
@@ -381,6 +386,19 @@ export async function handlePaddleWebhook(
         tenantId,
         periodEnd: effectiveEnd,
       });
+
+      // Obavesti vlasnika (in-app + email) — best effort, ne ruši webhook.
+      if (previousPlan !== "maria") {
+        await notifySubscriptionCancelled({
+          tenantId,
+          tenantName: tenant.name ?? "Vaš salon",
+          ownerId: tenant.ownerId,
+          previousPlan,
+          effectiveEnd,
+        }).catch((e) =>
+          console.error("[PADDLE] notifikacija o otkazivanju nije poslata:", e),
+        );
+      }
       break;
     }
 

@@ -8,14 +8,9 @@
  *   const denied = await requireFeature(decoded.tenantId, "newsletterCampaigns");
  *   if (denied) return denied;
  *
- * Plan resolution order:
- *   1. Subscription.plan  — authoritative when record exists and is synced
- *   2. Tenant.plan        — fallback when no Subscription record found
- *   3. "maria"             — last resort if neither record found
- *
- * The Subscription/Tenant mismatch happens when a superadmin edits Tenant.plan
- * directly without triggering the LemonSqueezy webhook that syncs Subscription.
- * In that case we use Tenant.plan so manual upgrades are respected immediately.
+ * Plan se rešava kroz resolveEffectivePlan (planFeatures.ts) — ista logika
+ * kao u /api/subscriptions/features, status-aware (otkazana/istekla pretplata
+ * pada na "maria"), uz Tenant fallback za superadmin ručne dodele.
  */
 import "server-only";
 
@@ -23,7 +18,10 @@ import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Subscription } from "@/models/Subscription";
 import { Tenant } from "@/models/Tenant";
-import { planHasFeature } from "@/lib/plans/planFeatures";
+import {
+  planHasFeature,
+  resolveEffectivePlan,
+} from "@/lib/plans/planFeatures";
 import type { PlanFeatures, PlanName } from "@/lib/plans/planFeatures";
 
 /**
@@ -49,16 +47,23 @@ export async function requireFeature(
 
     const [subscriptionRaw, tenantRaw] = await Promise.all([
       Subscription.findOne({ tenantId }).lean(),
-      Tenant.findById(tenantId).select("plan paid").lean(),
+      Tenant.findById(tenantId).select("plan paid planExpiresAt").lean(),
     ]);
     const subscription = subscriptionRaw as {
       plan?: PlanName;
+      status?: string;
+      billingProvider?: string;
+      currentPeriodEnd?: Date | string;
       featureOverrides?: Partial<PlanFeatures>;
       overrideExpiresAt?: Date | string;
     } | null;
-    const tenant = tenantRaw as { plan?: PlanName; paid?: boolean } | null;
+    const tenant = tenantRaw as {
+      plan?: PlanName;
+      paid?: boolean;
+      planExpiresAt?: Date | string | null;
+    } | null;
 
-    const plan: PlanName = resolvePlan(subscription, tenant);
+    const plan: PlanName = resolveEffectivePlan(subscription, tenant);
 
     const overrides =
       subscription?.featureOverrides &&
@@ -91,33 +96,6 @@ export async function requireFeature(
       { status: 500 },
     );
   }
-}
-
-/**
- * Resolves the effective plan for a tenant.
- *
- * Uses Subscription.plan when it is a paid/active plan.
- * Falls back to Tenant.plan when Subscription is absent or shows "maria"
- * while the Tenant record indicates a paid upgrade — this handles the case
- * where Subscription was never synced after a manual Tenant plan edit.
- */
-function resolvePlan(
-  subscription: { plan?: PlanName } | null,
-  tenant: { plan?: PlanName; paid?: boolean } | null,
-): PlanName {
-  const subPlan = subscription?.plan ?? null;
-  const tenantPlan = tenant?.plan ?? "maria";
-  const tenantPaid = tenant?.paid ?? false;
-
-  // Subscription is the authoritative source when it has a paid plan.
-  if (subPlan && subPlan !== "maria") return subPlan;
-
-  // Subscription says "maria" but Tenant shows a paid plan → Tenant was updated
-  // directly (e.g. by superadmin) without syncing the Subscription record.
-  // Use Tenant.plan to avoid blocking a legitimately upgraded tenant.
-  if (tenantPaid && tenantPlan !== "maria") return tenantPlan;
-
-  return subPlan ?? "maria";
 }
 
 const UPGRADE_MESSAGES: Partial<Record<keyof PlanFeatures, string>> = {
