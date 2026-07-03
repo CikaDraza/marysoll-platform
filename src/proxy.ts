@@ -119,6 +119,7 @@ const RESERVED_TOP_SEGMENTS = new Set([
   "tenant", // internal route prefix — must never be treated as a tenant slug
   "marketing",
   "assets", // static public assets folder
+  "dijagnostika", // samouslužna mrežna dijagnostika (/dijagnostika)
 ]);
 
 // ─── Custom domain DB lookup ──────────────────────────────────────────────────
