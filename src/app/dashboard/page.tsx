@@ -2,6 +2,7 @@
 "use client";
 
 import { useRef, useState, useEffect, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
@@ -9,18 +10,6 @@ import { useSalonProfileAdmin } from "@/hooks/useSalonProfileAdmin";
 import { useAdminServices } from "@/hooks/useAdminServices";
 import { DAYS_OF_WEEK } from "@/types";
 import type { DayOfWeek, IService, LandingTheme } from "@/types";
-import { AdminCustomDomain } from "@/components/admin/AdminCustomDomain";
-import AdminAppointments from "@/components/admin/AdminAppointments";
-import AdminTestimonials from "@/components/admin/AdminTestimonials";
-import AppointmentAdminCalendar from "@/components/admin/AppointmentAdminCalendar";
-import { StatisticsPage } from "@/components/admin/statistics/StatisticPage";
-import AdminNewsletterDashboard from "@/components/admin/AdminNewsletterDashboard";
-import { EmailCampaignAIGenerator } from "@/components/email-campaign/EmailCampaignAIGenerator";
-import { AdminLandingCMS } from "@/components/admin/cms/AdminLandingCMS";
-import { AdminChat } from "@/components/admin/chat/AdminChat";
-import ClientsList from "@/components/admin/ClientsList";
-import AdminGrowthStudio from "@/components/admin/loyalty/AdminGrowthStudio";
-import { ServiceModal } from "@/components/admin/ServiceModal";
 import { FeatureGate } from "@/components/shared/FeatureGate";
 import { Time24Input } from "@/components/shared/Time24Input";
 import DashboardLayout from "@/layout/DashboardLayout";
@@ -28,8 +17,82 @@ import Loader from "@/components/elements/Loader";
 import { api } from "@/lib/api";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
-import { AdminPlanStatus } from "@/components/admin/plan/AdminPlanStatus";
-import NotificationSettings from "@/components/settings/NotificationSettings";
+
+// ─── Tab komponente: lenjo učitavanje (code-splitting) ────────────────────────
+// Statički import svih tabova pravio je ogroman inicijalni bundle koji se
+// parsira/izvršava odmah — dovoljno da WebKit na iOS-u ubije stranicu
+// ("This page couldn't load"). Svaki tab se sada učitava tek kad se otvori.
+const TabLoader = () => <Loader />;
+
+const AdminAppointments = dynamic(
+  () => import("@/components/admin/AdminAppointments"),
+  { ssr: false, loading: TabLoader },
+);
+const AdminTestimonials = dynamic(
+  () => import("@/components/admin/AdminTestimonials"),
+  { ssr: false, loading: TabLoader },
+);
+const AppointmentAdminCalendar = dynamic(
+  () => import("@/components/admin/AppointmentAdminCalendar"),
+  { ssr: false, loading: TabLoader },
+);
+const StatisticsPage = dynamic(
+  () => import("@/components/admin/statistics/StatisticPage"),
+  { ssr: false, loading: TabLoader },
+);
+const AdminNewsletterDashboard = dynamic(
+  () => import("@/components/admin/AdminNewsletterDashboard"),
+  { ssr: false, loading: TabLoader },
+);
+const EmailCampaignAIGenerator = dynamic(
+  () =>
+    import("@/components/email-campaign/EmailCampaignAIGenerator").then(
+      (m) => m.EmailCampaignAIGenerator,
+    ),
+  { ssr: false, loading: TabLoader },
+);
+const AdminLandingCMS = dynamic(
+  () =>
+    import("@/components/admin/cms/AdminLandingCMS").then(
+      (m) => m.AdminLandingCMS,
+    ),
+  { ssr: false, loading: TabLoader },
+);
+const AdminChat = dynamic(
+  () => import("@/components/admin/chat/AdminChat").then((m) => m.AdminChat),
+  { ssr: false, loading: TabLoader },
+);
+const ClientsList = dynamic(() => import("@/components/admin/ClientsList"), {
+  ssr: false,
+  loading: TabLoader,
+});
+const AdminGrowthStudio = dynamic(
+  () => import("@/components/admin/loyalty/AdminGrowthStudio"),
+  { ssr: false, loading: TabLoader },
+);
+const ServiceModal = dynamic(
+  () =>
+    import("@/components/admin/ServiceModal").then((m) => m.ServiceModal),
+  { ssr: false, loading: TabLoader },
+);
+const AdminCustomDomain = dynamic(
+  () =>
+    import("@/components/admin/AdminCustomDomain").then(
+      (m) => m.AdminCustomDomain,
+    ),
+  { ssr: false, loading: TabLoader },
+);
+const AdminPlanStatus = dynamic(
+  () =>
+    import("@/components/admin/plan/AdminPlanStatus").then(
+      (m) => m.AdminPlanStatus,
+    ),
+  { ssr: false, loading: TabLoader },
+);
+const NotificationSettings = dynamic(
+  () => import("@/components/settings/NotificationSettings"),
+  { ssr: false, loading: TabLoader },
+);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -348,9 +411,15 @@ function AdminDashboard() {
   // Ručni termini: koliko dana unapred prikazati u editoru (proširivo "+ Dodaj dan").
   const [manualDaysCount, setManualDaysCount] = useState(MANUAL_DAYS_AHEAD);
   // Uvek pokrij i najdalji datum koji već ima termine (npr. učitan iz baze).
-  const manualFurthestOffset = Object.keys(sp.form.manualSlots ?? {}).reduce(
-    (max, k) => Math.max(max, dayOffsetFromToday(k)),
-    -1,
+  // Clamp na 2 godine: korumpiran/dalek datum-ključ u manualSlots bi inače
+  // naterao upcomingDateKeys da alocira milione stavki → OOM/crash stranice.
+  const MANUAL_OFFSET_CAP = 730;
+  const manualFurthestOffset = Math.min(
+    MANUAL_OFFSET_CAP,
+    Object.keys(sp.form.manualSlots ?? {}).reduce(
+      (max, k) => Math.max(max, dayOffsetFromToday(k)),
+      -1,
+    ),
   );
   const manualDateKeys = upcomingDateKeys(
     Math.max(manualDaysCount, manualFurthestOffset + 1),

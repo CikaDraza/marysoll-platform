@@ -100,11 +100,17 @@ export function AddToHomeScreenBanner() {
               </p>
             ) : (
               <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                Dodirnite <strong>Share dugme</strong>{" "}
-                <span className="inline-block align-middle">⎋</span> (kvadrat sa
-                strelicom nagore) pa izaberite{" "}
+                Dodirnite <strong>Share dugme</strong> — kvadrat sa strelicom
+                nagore{" "}
+                {/CriOS/i.test(
+                  typeof navigator === "undefined" ? "" : navigator.userAgent,
+                )
+                  ? "(u Chrome-u je GORE DESNO, pored adrese)"
+                  : "(u Safariju je u DNU ekrana, na sredini)"}{" "}
+                — zatim skrolujte dole i izaberite{" "}
                 <strong>„Dodaj na početni ekran&rdquo;</strong> / „Add to Home
-                Screen&rdquo;. Dobijate Marysoll ikonicu kao aplikaciju.
+                Screen&rdquo;. Nije u ⋯ meniju! Dobijate Marysoll ikonicu kao
+                aplikaciju.
               </p>
             )}
           </div>
