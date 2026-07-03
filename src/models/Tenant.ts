@@ -139,4 +139,17 @@ const TenantSchema = new Schema<ITenant>(
 
 TenantSchema.index({ status: 1, ownerId: 1 });
 
+// Self-heal legacy `trialMode`: stariji tenanti imaju vrednost "free" (van
+// trenutnog enuma ["maria","card_required"]). Bez ovoga svaki `tenant.save()`
+// (superadmin trial/plan/status akcije) pukne na validaciji → 500 "Server error".
+// pre("validate") mora — validacija se izvršava pre save-a; coercija ovde čini
+// dokument validnim i usput trajno očisti staru vrednost pri prvom snimanju.
+TenantSchema.pre("validate", function (next) {
+  const mode = this.trialMode as unknown as string;
+  if (mode !== "maria" && mode !== "card_required") {
+    this.trialMode = "maria";
+  }
+  next();
+});
+
 export const Tenant = models.Tenant || model<ITenant>("Tenant", TenantSchema);
