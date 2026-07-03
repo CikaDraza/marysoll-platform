@@ -7,8 +7,7 @@ import "server-only";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { TenantUser } from "@/models/TenantUser";
-import { SalonProfile } from "@/models/SalonProfile";
-import { createNotification } from "@/lib/notificationService";
+import { createNotification, getSalonBranding } from "@/lib/notificationService";
 import { sendWebPushToUser } from "@/lib/webPush";
 import { Types } from "mongoose";
 import { belgradeDateStr, belgradeToUTC } from "@/lib/utils/belgradeTime";
@@ -91,16 +90,9 @@ export async function sendDueReminders(): Promise<{
     ).lean();
     if (!claimed) continue;
 
-    const profile = (await SalonProfile.findOne({ tenantId: appt.tenantId })
-      .select("logo notificationLogo name")
-      .lean()) as {
-      logo?: string;
-      notificationLogo?: string;
-      name?: string;
-    } | null;
-    const salonName = profile?.name || "Salon";
-    const icon =
-      profile?.notificationLogo || profile?.logo || "/notification-icon.png";
+    // Ikona = SAMO notificationLogo (raster) → Marysoll default; tenant `logo`
+    // se NE koristi jer može biti SVG koji web push renderuje kao uzvičnik.
+    const { icon, name: salonName } = await getSalonBranding(appt.tenantId);
     const mins = Math.round(remainingMin);
 
     // ── Klijent ──

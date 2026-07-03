@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { SuperAdminChat } from "@/models/SuperAdminChat";
-import { SalonProfile } from "@/models/SalonProfile";
+import { getSalonBranding } from "@/lib/notificationService";
 import { requireAuth } from "@/lib/auth/auth-server";
 import { sendWebPushToUser, sendWebPushToSuperAdmins } from "@/lib/webPush";
 
@@ -85,7 +85,7 @@ export async function POST(
       await sendWebPushToUser(chat.ownerId.toString(), {
         title: "Marysoll",
         body: `💬 Marysoll Support: ${content.slice(0, 80)}`,
-        icon: "/logo-marysoll.png",
+        icon: "/marysoll_elegant_logo.png",
         tag: `superadmin-chat-${tenantId}`,
         url: "/admin/chat/superadmin",
       });
@@ -95,14 +95,11 @@ export async function POST(
   // Push to all superadmins when the salon owner sends a message
   if (senderRole === "owner") {
     try {
-      const profile = (await SalonProfile.findOne({ tenantId })
-        .select("logo name")
-        .lean()) as { logo?: string; name?: string } | null;
-      const salonName = profile?.name || "Salon";
+      const { icon, name: salonName } = await getSalonBranding(tenantId);
       await sendWebPushToSuperAdmins({
         title: salonName,
         body: `💬 ${salonName}: ${content.slice(0, 80) || "📎 Prilog"}`,
-        icon: profile?.logo || "/logo-marysoll.png",
+        icon,
         tag: `superadmin-chat-${tenantId}`,
         url: "/superadmin",
       });

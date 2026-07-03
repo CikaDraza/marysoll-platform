@@ -40,13 +40,13 @@ export async function getSalonBranding(
       typeof url === "string" && url.trim() !== "" && !/\.svg(\?|#|$)/i.test(url);
     const icon = usable(profile?.notificationLogo)
       ? profile!.notificationLogo!
-      : "/notification-icon.png";
+      : "/marysoll_elegant_logo.png";
     return {
       icon,
       name: profile?.name || "Salon",
     };
   } catch {
-    return { icon: "/notification-icon.png", name: "Salon" };
+    return { icon: "/marysoll_elegant_logo.png", name: "Salon" };
   }
 }
 

@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { SalonInternalChat } from "@/models/SalonInternalChat";
-import { SalonProfile } from "@/models/SalonProfile";
 import { TenantUser } from "@/models/TenantUser";
 import { Notification } from "@/models/Notification";
+import { getSalonBranding } from "@/lib/notificationService";
 import { sendWebPushToUser } from "@/lib/webPush";
 import mongoose from "mongoose";
 
@@ -165,13 +165,13 @@ export async function POST(
 
   // Web push to recipient
   try {
-    const profile = (await SalonProfile.findOne({ tenantId: decoded.tenantId })
-      .select("logo name")
-      .lean()) as { logo?: string; name?: string } | null;
+    const { icon, name } = decoded.tenantId
+      ? await getSalonBranding(decoded.tenantId)
+      : { icon: "/marysoll_elegant_logo.png", name: "Salon" };
     await sendWebPushToUser(contactId, {
-      title: profile?.name || "Salon",
+      title: name,
       body: `💬 ${me.name}: ${content?.trim() ? content.trim().slice(0, 80) : "📎 Prilog"}`,
-      icon: profile?.logo || "/marysoll_elegant_logo.png",
+      icon,
       tag: `chat-internal-${decoded.tenantUserId}`,
       url: "/admin/chat",
     });

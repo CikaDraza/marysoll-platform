@@ -99,7 +99,11 @@ export function useNotificationMutations() {
 // Hook za browser notifikacije
 export function useBrowserNotifications(salonLogo?: string | null) {
   const { data: profile } = useSalonProfile();
-  const resolvedLogo = salonLogo ?? profile?.logo ?? null;
+  // SVG se ne renderuje kao notification ikonica (browser prikaže uzvičnik),
+  // pa takav logo odbaci i padni na Marysoll default.
+  const rawLogo = salonLogo ?? profile?.logo ?? null;
+  const resolvedLogo =
+    rawLogo && !/\.svg(\?|#|$)/i.test(rawLogo) ? rawLogo : null;
   const { data: notifications = [], error } = useNotifications(true);
 
   // ✅ Dodaj error handling
@@ -146,7 +150,7 @@ export function useBrowserNotifications(salonLogo?: string | null) {
             showNotification(notification.title, {
               body: notification.message,
               tag: notification._id,
-              icon: resolvedLogo || "/logo-marysoll.png",
+              icon: resolvedLogo || "/marysoll_elegant_logo.png",
             });
           });
         }

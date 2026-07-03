@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { TenantUser } from "@/models/TenantUser";
-import { SalonProfile } from "@/models/SalonProfile";
+import { getSalonBranding } from "@/lib/notificationService";
 import { verifyToken } from "@/lib/auth/auth-server";
 import webpush from "web-push";
 import { getVapidKeys } from "@/lib/vapid";
@@ -39,24 +39,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing subscription" }, { status: 400 });
     }
 
-    // Ikona za notifikaciju: salon logo (tenant) ili platformski logo (superadmin)
-    let notificationIcon = "/logo-marysoll.png";
+    // Ikona = notificationLogo salona (raster) → Marysoll default. Tenant `logo`
+    // se NE koristi jer može biti SVG koji web push renderuje kao uzvičnik.
+    let notificationIcon = "/marysoll_elegant_logo.png";
     if (decoded.tenantUserId) {
       try {
         const tenantUser = (await TenantUser.findById(decoded.tenantUserId)
           .select("tenantId")
           .lean()) as { tenantId?: Types.ObjectId } | null;
         if (tenantUser?.tenantId) {
-          const profile = (await SalonProfile.findOne({
-            tenantId: tenantUser.tenantId,
-          })
-            .select("logo notificationLogo")
-            .lean()) as { logo?: string; notificationLogo?: string } | null;
-          // notificationLogo → logo sajta → platformski default.
-          if (profile?.notificationLogo)
-            notificationIcon = profile.notificationLogo;
-          else if (profile?.logo) notificationIcon = profile.logo;
-          else notificationIcon = "/marysoll_elegant_logo.png";
+          notificationIcon = (await getSalonBranding(tenantUser.tenantId)).icon;
         }
       } catch {
         /* fall through */

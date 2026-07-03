@@ -23,6 +23,7 @@ import {
   useNotificationMutations,
 } from "@/hooks/useNotifications";
 import { useAuth } from "@/hooks/useAuth";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import type { INotification } from "@/types";
 import Link from "next/link";
 
@@ -154,6 +155,27 @@ export function NotificationBell({ base }: NotificationBellProps) {
   const { markAsRead, markAllAsRead, deleteNotifications } =
     useNotificationMutations();
 
+  const { isSupported, permission, subscription, subscribeToPush } =
+    usePushNotifications();
+  const [pushBusy, setPushBusy] = useState(false);
+  const pushEnabled = permission === "granted" && !!subscription;
+
+  async function handleEnablePush() {
+    if (pushBusy) return;
+    setPushBusy(true);
+    try {
+      if (!isSupported) {
+        toast.error("Browser ne podržava push notifikacije.");
+        return;
+      }
+      const ok = await subscribeToPush();
+      if (ok) toast.success("Push notifikacije uključene");
+      else toast.error("Dozvola za notifikacije nije odobrena.");
+    } finally {
+      setPushBusy(false);
+    }
+  }
+
   // Group by type
   const appointmentNotifs = notifications.filter((n) =>
     n.type.includes("appointment"),
@@ -231,6 +253,22 @@ export function NotificationBell({ base }: NotificationBellProps) {
             </button>
           )}
         </div>
+
+        {/* Enable push (po uređaju) */}
+        {isSupported && !pushEnabled && (
+          <button
+            onClick={handleEnablePush}
+            disabled={pushBusy}
+            className="w-full text-left px-4 py-2.5 text-xs font-medium text-violet-600 hover:bg-zinc-50 border-b border-zinc-100 transition disabled:opacity-50"
+          >
+            🔔{" "}
+            {pushBusy
+              ? "Uključivanje..."
+              : permission === "denied"
+                ? "Push je blokiran u browseru — omogućite u podešavanjima sajta"
+                : "Uključi push notifikacije na ovom uređaju"}
+          </button>
+        )}
 
         {/* Notification list */}
         <div className="max-h-[420px] overflow-y-auto">
