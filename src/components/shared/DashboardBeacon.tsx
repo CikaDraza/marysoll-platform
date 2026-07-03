@@ -19,27 +19,7 @@
 
 import { useEffect } from "react";
 import { isPlatformHost } from "@/lib/browser-detect";
-
-function send(label: string, extra?: Record<string, unknown>) {
-  try {
-    const payload = JSON.stringify({
-      label,
-      pageHost: window.location.host,
-      results: [
-        {
-          key: label,
-          name: label,
-          state: "info",
-          ms: Math.round(performance.now()),
-          detail: JSON.stringify(extra ?? {}).slice(0, 2000),
-        },
-      ],
-    });
-    navigator.sendBeacon("/api/public/diag-report", payload);
-  } catch {
-    /* dijagnostika nikad ne sme da sruši stranicu */
-  }
-}
+import { sendDiagBeacon as send } from "@/lib/diag-beacon";
 
 export function DashboardBeacon() {
   useEffect(() => {
