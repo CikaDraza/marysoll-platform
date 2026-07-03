@@ -34,7 +34,10 @@ export async function GET(req: NextRequest) {
       Tenant.countDocuments({ status: "active" }),
       Tenant.countDocuments({ isTrialActive: true, trialEndsAt: { $gt: now } }),
       Tenant.countDocuments({ status: "suspended" }),
-      Tenant.countDocuments({ paid: true }),
+      // "Plaćeni" = paid flag AND plan != maria (isti uslov kao feature-gating u
+      // planFeatures.ts). Bez `plan != maria` bi se brojali zastareli zapisi gde
+      // je paid=true zaostao posle vraćanja na Maria (pre `else{paid=false}` fixa).
+      Tenant.countDocuments({ paid: true, plan: { $ne: "maria" } }),
       Tenant.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
       Tenant.countDocuments({ createdAt: { $gte: sevenDaysAgo } }),
       AuthUser.countDocuments({ platformRole: { $ne: "SUPER_ADMIN" } }),
