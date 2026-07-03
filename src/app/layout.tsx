@@ -5,6 +5,7 @@ import { QueryProvider } from "@/providers/QueryProvider";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { SidebarProvider } from "@/context/SidebarContext";
 import { InAppBrowserBanner } from "@/components/shared/InAppBrowserBanner";
+import { AddToHomeScreenBanner } from "@/components/shared/AddToHomeScreenBanner";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
@@ -16,6 +17,9 @@ export const metadata: Metadata = {
   ),
   title: "Marysoll",
   description: "Beauty Salon Platform",
+  // Bez ovoga browser ne vidi manifest → "Add to Home Screen" pravi običnu
+  // prečicu umesto prave PWA instalacije (i beforeinstallprompt se ne okida)
+  manifest: "/manifest.json",
   openGraph: {
     images: [
       {
@@ -44,6 +48,7 @@ export default function RootLayout({
           <SidebarProvider>
             <QueryProvider>
               <InAppBrowserBanner />
+              <AddToHomeScreenBanner />
               {children}
               <Toaster position="top-center" />
             </QueryProvider>

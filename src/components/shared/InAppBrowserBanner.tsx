@@ -19,25 +19,7 @@
  */
 
 import { useEffect, useState } from "react";
-
-const BASE = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
-
-function detectInApp(ua: string): string | null {
-  if (/instagram/i.test(ua)) return "Instagram";
-  if (/FBAN|FBAV|FB_IAB|FBIOS/i.test(ua)) return "Facebook";
-  if (/messenger/i.test(ua)) return "Messenger";
-  if (/tiktok|musical_ly|bytedance/i.test(ua)) return "TikTok";
-  return null;
-}
-
-function isPlatformHost(hostname: string): boolean {
-  return (
-    hostname === BASE ||
-    hostname === `admin.${BASE}` ||
-    hostname === `superadmin.${BASE}` ||
-    hostname === `www.${BASE}`
-  );
-}
+import { detectInApp, isPlatformHost } from "@/lib/browser-detect";
 
 export function InAppBrowserBanner() {
   const [appName, setAppName] = useState<string | null>(null);
@@ -48,6 +30,13 @@ export function InAppBrowserBanner() {
     const t = setTimeout(() => {
       const ua = navigator.userAgent;
       const testMode = window.location.search.includes("inapp=test");
+      try {
+        if (!testMode && sessionStorage.getItem("inapp_banner_dismissed")) {
+          return;
+        }
+      } catch {
+        /* ignore */
+      }
       const detected = testMode ? "Instagram" : detectInApp(ua);
       if (detected && (testMode || isPlatformHost(window.location.hostname))) {
         setAppName(detected);
@@ -71,9 +60,25 @@ export function InAppBrowserBanner() {
     }
   };
 
+  const dismiss = () => {
+    try {
+      sessionStorage.setItem("inapp_banner_dismissed", "1");
+    } catch {
+      /* ignore */
+    }
+    setAppName(null);
+  };
+
   return (
     <div className="sticky top-0 z-[100] bg-violet-700 text-white px-4 py-3 shadow-lg">
-      <div className="max-w-3xl mx-auto flex flex-col gap-2">
+      <div className="max-w-3xl mx-auto flex flex-col gap-2 relative pr-8">
+        <button
+          onClick={dismiss}
+          aria-label="Zatvori"
+          className="absolute -top-1 right-0 p-1 text-violet-200 hover:text-white text-lg leading-none"
+        >
+          ✕
+        </button>
         <p className="text-sm font-semibold leading-snug">
           Otvorili ste sajt u {appName} pregledaču — prijava u njemu ne radi
           ispravno.
