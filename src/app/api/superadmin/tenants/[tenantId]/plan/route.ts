@@ -13,6 +13,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { Subscription } from "@/models/Subscription";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
+import { cancelPaddleSubscription } from "@/lib/paddle";
 
 type PlanSlug = "maria" | "claudia" | "kiki" | "enterprise";
 type Params = { params: Promise<{ tenantId: string }> };
@@ -55,6 +56,36 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       );
     }
 
+    // Postojeća pretplata — ako je Paddle-backed i vraćamo na Maria, moramo je
+    // otkazati u Paddle-u; inače Paddle nastavlja naplatu i sledeći renewal
+    // webhook (subscription.updated) vraća plaćeni plan (DB promena bi bila privremena).
+    const existingSub = await Subscription.findOne({ tenantId })
+      .select("billingProvider paddleSubscriptionId status")
+      .lean<{
+        billingProvider?: string;
+        paddleSubscriptionId?: string | null;
+        status?: string;
+      }>();
+    const hasActivePaddleSub =
+      existingSub?.billingProvider === "paddle" &&
+      !!existingSub?.paddleSubscriptionId &&
+      existingSub?.status !== "cancelled";
+
+    let paddleCancelWarning: string | null = null;
+    const cancelPaddle = plan === "maria" && hasActivePaddleSub;
+    if (cancelPaddle) {
+      try {
+        await cancelPaddleSubscription(
+          existingSub!.paddleSubscriptionId!,
+          "immediately",
+        );
+      } catch (e) {
+        console.error("[superadmin/plan] Paddle cancel nije uspeo:", e);
+        paddleCancelWarning =
+          "Plan je promenjen u bazi, ali otkazivanje Paddle pretplate nije uspelo — otkažite je ručno u Paddle dashboard-u da se ne bi ponovo naplatila.";
+      }
+    }
+
     tenant.plan = plan;
     tenant.planExpiresAt = expiry;
     if (plan !== "maria") {
@@ -70,31 +101,42 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     await tenant.save();
 
     // Sinhronizuj Subscription — /api/subscriptions/features i requireFeature
-    // rešavaju plan prvenstveno iz Subscription zapisa. billingProvider
-    // "internal" označava superadmin dodelu (rok se poštuje kroz periodEnd);
-    // eventualna kasnija Paddle naplata pregaziće ovo kroz webhook sync.
+    // rešavaju plan prvenstveno iz Subscription zapisa.
     const now = new Date();
-    await Subscription.findOneAndUpdate(
-      { tenantId },
-      {
-        $set: {
-          plan,
-          status: "active",
-          billingProvider: "internal",
-          currentPeriodStart: now,
-          // Bez zadatog roka dodela ne ističe sama (10 godina).
-          currentPeriodEnd:
-            expiry ?? new Date(now.getTime() + 10 * 365 * 24 * 60 * 60 * 1000),
-          cancelAtPeriodEnd: false,
+    if (cancelPaddle) {
+      // Paddle pretplata je (pokušano) otkazana → zapis odražava otkazivanje;
+      // subscription.canceled webhook će dodatno potvrditi/mejlovati vlasnika.
+      // Ne diramo billingProvider/paddle ID-jeve (ostaju kao trag).
+      await Subscription.updateOne(
+        { tenantId },
+        { $set: { plan: "maria", status: "cancelled", cancelAtPeriodEnd: false } },
+      );
+    } else {
+      // Superadmin dodela/izmena. billingProvider "internal" = ručna dodela
+      // (rok kroz periodEnd); kasnija Paddle naplata pregaziće ovo webhook sync-om.
+      await Subscription.findOneAndUpdate(
+        { tenantId },
+        {
+          $set: {
+            plan,
+            status: "active",
+            billingProvider: "internal",
+            currentPeriodStart: now,
+            // Bez zadatog roka dodela ne ističe sama (10 godina).
+            currentPeriodEnd:
+              expiry ?? new Date(now.getTime() + 10 * 365 * 24 * 60 * 60 * 1000),
+            cancelAtPeriodEnd: false,
+          },
+          $setOnInsert: { tenantId },
         },
-        $setOnInsert: { tenantId },
-      },
-      { upsert: true },
-    );
+        { upsert: true },
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      message: `Plan promenjen na: ${plan}.`,
+      message: paddleCancelWarning ?? `Plan promenjen na: ${plan}.`,
+      warning: paddleCancelWarning ?? undefined,
       plan: tenant.plan,
       planExpiresAt: tenant.planExpiresAt?.toISOString() ?? null,
     });

@@ -180,6 +180,24 @@ export async function createPaddleTransaction(params: {
   };
 }
 
+/**
+ * Otkazuje Paddle pretplatu preko API-ja. `effectiveFrom`:
+ *  - "immediately"           — odmah (tenant gubi plaćeni plan sada)
+ *  - "next_billing_period"   — na kraju tekućeg perioda
+ * Nakon uspešnog otkazivanja Paddle šalje `subscription.canceled` webhook,
+ * koji dodatno reconcile-uje bazu (plan → maria, status → cancelled) i mejluje
+ * vlasnika. Baca na Paddle grešku (npr. već otkazana / nepostojeća).
+ */
+export async function cancelPaddleSubscription(
+  subscriptionId: string,
+  effectiveFrom: "immediately" | "next_billing_period" = "immediately",
+): Promise<void> {
+  await paddleApi(`/subscriptions/${subscriptionId}/cancel`, {
+    method: "POST",
+    body: { effective_from: effectiveFrom },
+  });
+}
+
 // ─── Signature verification ──────────────────────────────────────────────────
 
 /**
@@ -372,12 +390,14 @@ export async function handlePaddleWebhook(
         : periodEnd;
       const previousPlan = (tenant.plan ?? "maria") as PlanName;
 
-      // Otkazana pretplata vraća tenant na besplatni Maria plan — bez ovoga
-      // bi zaostali plan i dalje otključavao plaćene funkcionalnosti.
+      // Otkazana pretplata = pad na besplatni Maria plan; sajt OSTAJE živ
+      // (status "active"). Maria je pun besplatni tier — javne rute traže
+      // status "active", pa ga NE obaramo na "cancelled". Gube se samo plaćene
+      // funkcionalnosti (plan → maria, paid → false).
       await Tenant.findByIdAndUpdate(tenantId, {
         paid: false,
         plan: "maria",
-        status: "cancelled",
+        status: "active",
         planExpiresAt: effectiveEnd,
         isTrialActive: false,
       });
