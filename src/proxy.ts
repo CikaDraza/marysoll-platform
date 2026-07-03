@@ -639,6 +639,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // (Paddle servers, tunnel za lokalni test, itd.)
   if (pathname.startsWith("/api/paddle/webhook")) return pass();
 
+  // Browser-reset — javan sa svakog hosta: samo čisti kolačiće/keš pozivaoca
+  // (Clear-Site-Data) i mora da radi i kad je auth stanje pokvareno/obrisano,
+  // što mu je i svrha — klijentski helper prvo obriše tokene pa tek onda dođe ovde
+  if (pathname.startsWith("/api/browser-reset")) return pass();
+
   // SuperAdmin
   if (
     domainType === "superadmin" ||
