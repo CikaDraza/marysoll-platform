@@ -4,6 +4,7 @@ import { Toaster } from "react-hot-toast";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { SidebarProvider } from "@/context/SidebarContext";
+import { InAppBrowserBanner } from "@/components/shared/InAppBrowserBanner";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
@@ -42,6 +43,7 @@ export default function RootLayout({
         <ThemeProvider>
           <SidebarProvider>
             <QueryProvider>
+              <InAppBrowserBanner />
               {children}
               <Toaster position="top-center" />
             </QueryProvider>
