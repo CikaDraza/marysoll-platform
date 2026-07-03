@@ -393,7 +393,7 @@ export function MarketingTab() {
       {activePanel === "landing" && (
         <div className="space-y-3">
           <div className={card}>
-            <div className="grid lg:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-4">
               <div className="space-y-3">
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -458,13 +458,13 @@ export function MarketingTab() {
                 </div>
               </div>
 
-              <div>
+              <div className="order-first">
                 <h2 className="text-xs text-slate-400 font-bold uppercase mb-3">
                   {"Performanse opcionalno (Speed Insights)"}
                 </h2>
                 <div className="grid sm:grid-cols-2 gap-2">
                   {PERFORMANCE_FIELDS.map((field) => (
-                    <div key={field.key}>
+                    <div key={field.key} className="min-w-0">
                       <label className={lbl}>
                         {field.label}{" "}
                         {field.suffix && (
@@ -497,7 +497,7 @@ export function MarketingTab() {
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-col gap-2">
               <button
                 className={btnPrimary}
                 disabled={seoLoading}

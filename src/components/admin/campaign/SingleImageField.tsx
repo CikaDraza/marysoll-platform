@@ -90,19 +90,19 @@ export function SingleImageField({ value, onChange }: SingleImageFieldProps) {
         <label className="block text-xs font-medium text-gray-600">
           Generiši sliku sa AI
         </label>
-        <div className="flex gap-2">
+        <div className="space-y-2">
           <input
             type="text"
             value={singleImage.prompt}
             onChange={(e) => singleImage.setPrompt(e.target.value)}
             placeholder="Unesite prompt za generisanje slike..."
-            className="flex-1 px-3 py-2 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+            className="w-full px-3 py-2 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
           />
           <button
             type="button"
             onClick={handleGenerate}
             disabled={singleImage.isGenerating || !singleImage.prompt.trim()}
-            className="px-4 py-2 bg-(--primary-color) hover:bg-(--primary-color)/90 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center px-4 py-2 bg-(--primary-color) hover:bg-(--primary-color)/90 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {singleImage.isGenerating ? <LoaderButton /> : "Generiši"}
           </button>
@@ -118,7 +118,7 @@ export function SingleImageField({ value, onChange }: SingleImageFieldProps) {
           type="button"
           disabled={isUploading}
           onClick={() => fileInputRef.current?.click()}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isUploading ? (
             <LoaderButton />

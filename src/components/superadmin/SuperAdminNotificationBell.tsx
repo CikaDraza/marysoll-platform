@@ -210,8 +210,8 @@ export function SuperAdminNotificationBell({ onChatClick }: Props) {
         )}
       </MenuButton>
 
-      {/* Dropdown */}
-      <MenuItems className="absolute right-0 z-50 mt-2 w-80 lg:w-96 origin-top-right rounded-2xl bg-slate-800 shadow-2xl ring-1 ring-slate-600 focus:outline-none overflow-hidden">
+      {/* Dropdown — mobilni: fiksiran uz levu ivicu ekrana; desktop: kao pre (usidren desno uz zvonce) */}
+      <MenuItems className="fixed inset-x-3 top-[72px] z-50 origin-top rounded-2xl bg-slate-800 shadow-2xl ring-1 ring-slate-600 focus:outline-none overflow-hidden lg:absolute lg:inset-x-auto lg:right-0 lg:top-auto lg:mt-2 lg:w-96 lg:origin-top-right">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
           <div className="flex items-center gap-2">

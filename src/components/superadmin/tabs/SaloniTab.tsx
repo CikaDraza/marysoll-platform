@@ -231,17 +231,17 @@ export function SaloniTab({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="space-y-3">
         <h2 className="text-lg font-bold">Svi saloni ({filtered.length})</h2>
-        <div className="flex gap-2">
+        <div className="space-y-2">
           <input
-            className={inp + " w-48"}
+            className={inp}
             placeholder="Pretraga..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
           <select
-            className={inp + " w-36"}
+            className={inp}
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
           >
@@ -307,13 +307,13 @@ export function SaloniTab({
               }`}
             >
               <div
-                className="flex items-center gap-4 cursor-pointer"
+                className="flex flex-col gap-3 cursor-pointer"
                 onClick={() => {
                   onSelect(tenant);
                   toggleExpand(tenant._id);
                 }}
               >
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-white">
                       {tenant.name}
@@ -336,7 +336,7 @@ export function SaloniTab({
                       </span>
                     )}
                   </div>
-                  <div className="flex gap-4 mt-1 text-xs text-slate-400">
+                  <div className="flex gap-4 mt-1 text-xs text-slate-400 flex-wrap">
                     <span className="font-mono">{tenant.slug}</span>
                     <span>{tenant.owner?.email ?? "—"}</span>
                     <span>{tenant.owner?.name ?? "—"}</span>
@@ -347,7 +347,7 @@ export function SaloniTab({
                 </div>
 
                 <div
-                  className="flex gap-2 flex-shrink-0"
+                  className="flex gap-2 flex-wrap items-center"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-center gap-1.5">

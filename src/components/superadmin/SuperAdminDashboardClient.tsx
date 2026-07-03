@@ -41,6 +41,7 @@ const today = Date.now();
 export default function SuperAdminDashboard() {
   const [activeTab, setActiveTab] = useState<SuperAdminTab>("saloni");
   const [selectedTenant, setSelectedTenant] = useState<TenantRow | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const sa = useSuperAdminTenants();
   const { user, isLoading: authLoading } = useAuth();
 
@@ -63,6 +64,7 @@ export default function SuperAdminDashboard() {
 
   const selectTab = useCallback((tab: SuperAdminTab) => {
     setActiveTab(tab);
+    setSidebarOpen(false);
     try {
       localStorage.setItem("superadmin-active-tab", tab);
     } catch {
@@ -73,47 +75,121 @@ export default function SuperAdminDashboard() {
   return (
     <div className="h-screen bg-slate-900 text-white flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="bg-slate-800 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
-        <div>
-          <Link href="/" className="flex gap-2">
+      <header className="bg-slate-800 border-b border-slate-700 px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          {/* Hamburger — samo mobilni */}
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Otvori meni"
+            className="lg:hidden flex items-center justify-center w-10 h-10 -ml-1 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-colors flex-shrink-0"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M4 6h16M4 12h16M4 18h16"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+          <Link href="/" className="hidden lg:flex items-center gap-2 min-w-0">
             <Image
               src={"/marysoll_elegant_logo.png"}
               alt={"Marysoll logo"}
               width={192}
               height={192}
-              className="h-12 w-12 object-contain"
+              className="block h-12 w-12 object-contain flex-shrink-0"
               preload={true}
             />
-            <div>
-              <h1 className="text-2xl font-black text-white tracking-tight">
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-2xl font-black text-white tracking-tight truncate">
                 Marysoll SuperAdmin
               </h1>
-              <p className="text-xs text-violet-400 -mt-1">
+              <p className="hidden sm:block text-xs text-violet-400 -mt-1">
                 Platform for small businesses
               </p>
             </div>
           </Link>
         </div>
-        <div className="flex items-center gap-3 text-xs text-slate-400">
-          <span className="bg-slate-700 px-2 py-1 rounded">
-            {sa.stats?.totalTenants ?? "—"} salona
-          </span>
-          <span className="bg-emerald-900/40 text-emerald-400 px-2 py-1 rounded">
-            {sa.stats?.trialTenants ?? "—"} u trialu
-          </span>
-          <span className="bg-violet-900/40 text-violet-400 px-2 py-1 rounded">
-            {sa.stats?.paidTenants ?? "—"} plaćenih
-          </span>
-          <SuperAdminNotificationBell
-            onChatClick={() => selectTab("chat")}
-          />
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          {/* Statistika — samo desktop (mobilni je ima u draweru) */}
+          <div className="hidden lg:flex items-center gap-3 text-xs text-slate-400">
+            <span className="bg-slate-700 px-2 py-1 rounded">
+              {sa.stats?.totalTenants ?? "—"} salona
+            </span>
+            <span className="bg-emerald-900/40 text-emerald-400 px-2 py-1 rounded">
+              {sa.stats?.trialTenants ?? "—"} u trialu
+            </span>
+            <span className="bg-violet-900/40 text-violet-400 px-2 py-1 rounded">
+              {sa.stats?.paidTenants ?? "—"} plaćenih
+            </span>
+          </div>
+          <SuperAdminNotificationBell onChatClick={() => selectTab("chat")} />
           <AuthStatusButton theme="dark" logoutRedirect="/login" />
         </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <nav className="w-56 bg-slate-800 border-r border-slate-700 flex-shrink-0 py-4">
+        {/* Mobilni backdrop */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar / drawer */}
+        <nav
+          className={`fixed inset-y-0 left-0 z-50 w-64 flex flex-col overflow-y-auto bg-slate-800 border-r border-slate-700 py-4 transform transition-transform duration-300 ease-in-out lg:static lg:z-auto lg:w-56 lg:flex-shrink-0 lg:translate-x-0 ${
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          {/* Brand — samo u draweru (desktop ima logo u headeru) */}
+          <div className="lg:hidden flex items-center justify-between px-4 pb-3 mb-3 border-b border-slate-700">
+            <div className="flex items-center gap-2 min-w-0">
+              <Image
+                src="/marysoll_elegant_logo.png"
+                alt="Marysoll logo"
+                width={80}
+                height={80}
+                className="h-9 w-9 object-contain flex-shrink-0"
+              />
+              <span className="text-sm font-black text-white tracking-tight truncate">
+                Marysoll SuperAdmin
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(false)}
+              aria-label="Zatvori meni"
+              className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white transition-colors flex-shrink-0"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M6 6l12 12M18 6L6 18"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          </div>
+
+          {/* Statistika — samo mobilni (desktop je ima u headeru), ispod logo-a, iznad tabova */}
+          <div className="lg:hidden px-3 pb-3 mb-2 border-b border-slate-700 flex flex-wrap gap-2 text-xs">
+            <span className="bg-slate-700 px-2 py-1 rounded">
+              {sa.stats?.totalTenants ?? "—"} salona
+            </span>
+            <span className="bg-emerald-900/40 text-emerald-400 px-2 py-1 rounded">
+              {sa.stats?.trialTenants ?? "—"} u trialu
+            </span>
+            <span className="bg-violet-900/40 text-violet-400 px-2 py-1 rounded">
+              {sa.stats?.paidTenants ?? "—"} plaćenih
+            </span>
+          </div>
+
+          {/* Tabovi */}
           <ul className="space-y-0.5 px-2">
             {SUPERADMIN_TABS.map((t) => (
               <li key={t.id}>
@@ -134,7 +210,7 @@ export default function SuperAdminDashboard() {
         </nav>
 
         {/* Content */}
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-4 sm:p-6">
           {activeTab === "saloni" && (
             <SaloniTabComponent
               superAdmin={sa}
@@ -1115,69 +1191,70 @@ function KategorijeTab() {
         <div className="space-y-3">
           {categories.map((cat) => (
             <div key={cat._id} className={card + " space-y-3"}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-white">{cat.label}</span>
-                    <span className="text-[10px] font-mono text-slate-400 bg-slate-700 px-1.5 py-0.5 rounded">
-                      {cat.key}
-                    </span>
+              {/* Gornji red: naziv, key, sub toggle, badge aktivan, popularnost */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-white">{cat.label}</span>
+                <span className="text-[10px] font-mono text-slate-400 bg-slate-700 px-1.5 py-0.5 rounded">
+                  {cat.key}
+                </span>
+                {cat.subcategories.length > 0 && (
+                  <button
+                    onClick={() =>
+                      setExpandedId(expandedId === cat._id ? null : cat._id)
+                    }
+                    className="text-xs text-slate-400 hover:text-white transition"
+                  >
+                    {expandedId === cat._id ? "▲" : "▼"}{" "}
+                    {cat.subcategories.length} sub
+                  </button>
+                )}
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    cat.isActive
+                      ? "bg-emerald-900/60 text-emerald-400 border-emerald-700"
+                      : "bg-slate-700 text-slate-400 border-slate-600"
+                  }`}
+                >
+                  {cat.isActive ? "Aktivna" : "Neaktivna"}
+                </span>
+                {cat.popularityScore > 0 && (
+                  <span className="text-[10px] text-amber-400">
+                    ★ {cat.popularityScore}
+                  </span>
+                )}
+              </div>
+
+              {/* Uneseni sinonimi — cela širina, prelamaju se u više redova */}
+              {cat.synonyms.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {cat.synonyms.map((s) => (
                     <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                        cat.isActive
-                          ? "bg-emerald-900/60 text-emerald-400 border-emerald-700"
-                          : "bg-slate-700 text-slate-400 border-slate-600"
-                      }`}
+                      key={s}
+                      className="text-[10px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded"
                     >
-                      {cat.isActive ? "Aktivna" : "Neaktivna"}
+                      {s}
                     </span>
-                    {cat.popularityScore > 0 && (
-                      <span className="text-[10px] text-amber-400">
-                        ★ {cat.popularityScore}
-                      </span>
-                    )}
-                  </div>
-                  {cat.synonyms.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1.5">
-                      {cat.synonyms.map((s) => (
-                        <span
-                          key={s}
-                          className="text-[10px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded"
-                        >
-                          {s}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  ))}
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {cat.subcategories.length > 0 && (
-                    <button
-                      onClick={() =>
-                        setExpandedId(expandedId === cat._id ? null : cat._id)
-                      }
-                      className="text-xs text-slate-400 hover:text-white transition"
-                    >
-                      {expandedId === cat._id ? "▲" : "▼"}{" "}
-                      {cat.subcategories.length} sub
-                    </button>
-                  )}
-                  <button
-                    onClick={() => toggleActive(cat)}
-                    className="text-xs text-slate-400 hover:text-white border border-slate-600 rounded px-2 py-1 transition"
-                  >
-                    {cat.isActive ? "Deaktiviraj" : "Aktiviraj"}
-                  </button>
-                  <button onClick={() => openEdit(cat)} className={btnPrimary}>
-                    Uredi
-                  </button>
-                  <button
-                    onClick={() => setDeleteId(cat._id)}
-                    className={btnDanger}
-                  >
-                    Briši
-                  </button>
-                </div>
+              )}
+
+              {/* Dugmad u jedan red */}
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={() => toggleActive(cat)}
+                  className="text-xs text-slate-400 hover:text-white border border-slate-600 rounded px-2 py-1 transition"
+                >
+                  {cat.isActive ? "Deaktiviraj" : "Aktiviraj"}
+                </button>
+                <button onClick={() => openEdit(cat)} className={btnPrimary}>
+                  Uredi
+                </button>
+                <button
+                  onClick={() => setDeleteId(cat._id)}
+                  className={btnDanger}
+                >
+                  Briši
+                </button>
               </div>
 
               {expandedId === cat._id && cat.subcategories.length > 0 && (
