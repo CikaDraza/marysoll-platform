@@ -11,6 +11,7 @@
 import { useState, useEffect } from "react";
 import { getRawToken, getUserFromToken } from "@/lib/auth/auth-client";
 import { useAuth } from "@/hooks/useAuth";
+import { confirmAndResetBrowserData } from "@/lib/browser-reset";
 import type { DecodedUser } from "@/types/auth/types";
 import Link from "next/link";
 
@@ -183,6 +184,30 @@ export function AuthStatusButton({
                 {roleLabel}
               </span>
             </div>
+
+            {/* Obriši keš — self-service reset kada zaglave keš/kolačići */}
+            {(user.isAdmin || user.isSuperAdmin) && (
+              <div
+                className={`py-1 border-b ${isDark ? "border-slate-700" : "border-gray-100"}`}
+              >
+                <button
+                  onClick={() => {
+                    if (confirmAndResetBrowserData()) setIsOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-2 px-4 py-2 text-xs text-left transition ${isDark ? "text-slate-300 hover:bg-slate-700 hover:text-white" : "text-gray-700 hover:bg-gray-50"}`}
+                >
+                  🧹
+                  <span>
+                    Obriši keš sajta
+                    <span
+                      className={`block text-[10px] ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                    >
+                      Ako se stranice ne učitavaju
+                    </span>
+                  </span>
+                </button>
+              </div>
+            )}
 
             {/* Navigation shortcuts */}
             <div
