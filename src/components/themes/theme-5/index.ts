@@ -3,7 +3,6 @@ export { Theme5Hero } from "./Hero";
 export { Theme5Services } from "./Services";
 export { Theme5WorkingHours } from "./WorkingHours";
 export { Theme5CTA } from "./CTA";
-// export { Theme5Blog } from "./Blog";
 export { Theme5HowItWorks } from "./HowItWorks";
 export { Theme5AppointmentSection } from "./AppointmentSection";
 export { Theme5About } from "./About";

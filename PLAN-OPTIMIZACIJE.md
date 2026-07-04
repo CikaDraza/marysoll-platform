@@ -76,6 +76,42 @@ Skeniranje kaže: **124 fajla · 164 exporta · 95 tipova · 5 enum članova**. 
 
 ---
 
+## Faza 2b — IZVEŠTAJ (2026-07-04): 167 unused exporta + 102 tipa u 111 živih fajlova
+
+**Napomena o booking.marysoll.com:** ostaci ideje „booking app unutar marysoll app" su praktično već očišćeni u Fazi 2 — obrisani fajlovi `useSalons`, `useSlots`, `slot-logic`, `salonMapper`, `salon-dto`, `getSalonProfile`, `platformClient`, `useAppointmnetsPageData`, `useServicePageData`, `useSalonMutations`, `useServiceMutations` su bili taj sloj. Marketplace API rute (`api/marketplace/*`) su ŽIVE — njih boost app konzumira — kod njih je višak samo poneki `export` keyword na lokalnom tipu.
+
+**Dodatno urađeno:** `theme-5/Blog.tsx` obrisan na Milanov zahtev (blog za temu ide kao shared widget); `service-worker.js` potvrđeno JESTE push worker (`push` + `notificationclick`, registruje ga usePushNotifications) — ostaje.
+
+### Kategorije nalaza, po riziku:
+
+**A. Lažni pozitivi — suppress, ne dirati (1):** `app/sitemap.ts` `export const dynamic` — Next.js segment config, čita ga framework.
+
+**B. Mongoose doc tipovi — samo skinuti `export` keyword (~10 fajlova, nula rizika):** `IAuthUser`, `IPlan`, `ITenantUser`, `ISlotDoc`, `IServiceDoc`, `ISalonInternalChat`, `ISuperAdminChat`, `IPlatformUsageSnapshot`, `IProfilPlatforme` + lokalni tipovi API ruta (`MarketplaceCity`, `IAppointment` u statistics, `PlanStatusResponse`).
+
+**C. Theme barreli i named exporti komponenti (~60 stavki, nizak rizik):** theme-1/2/3/6/7/8 `index.ts` re-exporti + named exporti komponenti gde se koristi default import. Nema dinamičkih importa sa template stringom (provereno) → bezbedno trimovati. Najveći: theme-2 (12), theme-1 (9), theme-3 (9+4), theme-8/motion (9+2).
+
+**D. Util helperi — trim posle `--trace` po stavci (~35):** `parseWorkingHours` (DAY_MAP…), `vacations` (todayISO…), `formatPrice`, `testimonialHelpers`, `Time24Input.normalizeTime24`, `cancellation.ts` (4), `auth-client`/`auth-server` višak, `browser-reset.resetBrowserData` (koristi se samo `confirmAndResetBrowserData`), `cloudinary.extractPublicId`, `email` helperi, `zoho-mail-admin` getteri, `paddle` (isPaddleSandbox…), `lib/api.ts` default export, `useAdminServices`/`useSalonProfileAdmin` interni helperi, `types/constants` runtime konstante (SERVICE_TYPES, PLAN_TYPES…).
+
+**E. PITANJA ZA MILANA — možda planirano, ne dirati bez potvrde:**
+| Šta | Zašto sumnjivo |
+|-----|----------------|
+| `lib/ai/providers/deepseek.ts` — svih 5 client gettera | agenti danas prave klijente drugačije? ili planirano wiring |
+| `lib/ai/agents.ts` — `AGENTS`, `AGENT_PERSONAS` | persona registry bez potrošača |
+| `lib/ai/landing/ctaCatalog.ts` — ceo katalog (5 exporta) | `CustomCta` tip iz njega JESTE živ; katalog možda ide u prompt |
+| `lib/plans/subscriptionService.ts` — 6 exporta (setFeatureOverride, consumeAiRequest…) | plan gating ide kroz `resolveEffectivePlan`; superadmin override možda ide drugim putem |
+| `lib/loyalty/accounts.recomputeAccount` + `events.processLoyaltyEvent` | loyalty Faza 2 planirana? |
+| `lib/webPush.sendWebPushToAuthUser` | push ka AuthUser — zamenjen TenantUser putanjom? |
+| `lib/ai/orchestrator.ts` — 3 re-exporta + 4 tipa | orkestrator sloj — potrošači importuju direktno iz izvora |
+| `types/landing-blocks.ts` — pojedinačne block šeme (hero/article/…) | koristi se samo kombinovana šema? |
+| `hooks/context/AuthContext.useAuth` | DRUGI useAuth (pored hooks/useAuth) — CampaignClientShell koristi samo Provider deo |
+| `lib/superadmin/platformUsage` — 3 gettera | snapshot ide kroz cron/rutu? |
+
+**F. NE DIRA SE (potvrđeno 2026-07-04):** `CampaignIntent` enum članovi — newsletter + email campaign su poseban marketing sloj; AdminSemanticModal upisuje vrednosti u Mongo; kampanje konzumira i booking.marysoll.com (boost/discovery, last-minute termini).
+
+**Predlog redosleda za izvršenje 2b:** A (suppress) → B → C → D (uz trace) → E tek posle Milanovih odgovora.
+
+---
+
 ## Faza 3 — Duplikacija (srednji/visok rizik — najveća dobit)
 
 Ukupno **18.244 linija (14%) u 391 clone grupi**. Cilj: ispod 8%. Redosled po riziku razilaženja logike:
