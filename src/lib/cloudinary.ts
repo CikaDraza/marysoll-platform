@@ -3,6 +3,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { Readable } from "stream";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
+import type { DecodedToken } from "@/types/auth/types";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -33,6 +34,35 @@ export async function getTenantFolder(
     .select("cloudinaryFolder")
     .lean()) as { cloudinaryFolder?: string } | null;
   return tenant?.cloudinaryFolder ?? `salons/tenant-${tenantId}`;
+}
+
+const SUPERADMIN_IMAGE_FOLDER = "superadmin/images";
+
+/** Bacano kad admin token nema tenantId (a nije superadmin). Rute ga mapiraju na 403. */
+export class TenantRequiredError extends Error {
+  constructor() {
+    super("Tenant nije identifikovan");
+    this.name = "TenantRequiredError";
+  }
+}
+
+/** Folder za listanje Cloudinary resursa (deljen: cloudinary/images i /videos). */
+export async function resolveCloudinaryListFolder(
+  decoded: DecodedToken,
+): Promise<string> {
+  if (decoded.isSuperAdmin) return SUPERADMIN_IMAGE_FOLDER;
+  if (!decoded.tenantId) throw new TenantRequiredError();
+  return getTenantFolder(decoded.tenantId);
+}
+
+/** Folder za upload (tenant landing pod-folder); deljen između slika i videa. */
+export async function resolveCloudinaryUploadFolder(
+  decoded: DecodedToken,
+): Promise<string> {
+  if (decoded.isSuperAdmin) return SUPERADMIN_IMAGE_FOLDER;
+  if (!decoded.tenantId) throw new TenantRequiredError();
+  const base = await getTenantFolder(decoded.tenantId);
+  return `${base}/landing`;
 }
 
 /**

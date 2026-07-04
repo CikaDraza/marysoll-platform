@@ -1,41 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryVideo } from "@/types/cloudinary";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
-import { getTenantFolder, uploadToCloudinary } from "@/lib/cloudinary";
-import type { DecodedToken } from "@/types/auth/types";
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
-const SUPERADMIN_IMAGE_FOLDER = "superadmin/images";
-
-class TenantRequiredError extends Error {
-  constructor() {
-    super("Tenant nije identifikovan");
-    this.name = "TenantRequiredError";
-  }
-}
-
-async function resolveCloudinaryListFolder(decoded: DecodedToken) {
-  if (decoded.isSuperAdmin) return SUPERADMIN_IMAGE_FOLDER;
-  if (!decoded.tenantId) {
-    throw new TenantRequiredError();
-  }
-  return getTenantFolder(decoded.tenantId);
-}
-
-async function resolveCloudinaryUploadFolder(decoded: DecodedToken) {
-  if (decoded.isSuperAdmin) return SUPERADMIN_IMAGE_FOLDER;
-  if (!decoded.tenantId) {
-    throw new TenantRequiredError();
-  }
-  const base = await getTenantFolder(decoded.tenantId);
-  return `${base}/landing`;
-}
+import {
+  cloudinary,
+  resolveCloudinaryListFolder,
+  resolveCloudinaryUploadFolder,
+  TenantRequiredError,
+  uploadToCloudinary,
+} from "@/lib/cloudinary";
 
 export async function GET(req: NextRequest) {
   try {
