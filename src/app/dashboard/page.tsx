@@ -855,7 +855,7 @@ function AdminDashboard() {
                 )}
               </div>
               {hasProfile && !sp.isEditing ? (
-                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
                   {[
                     ["Naziv salona", sp.profile!.name],
                     ["Email", sp.profile!.email],
@@ -870,13 +870,13 @@ function AdminDashboard() {
                       <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
                         {l}
                       </p>
-                      <p className="text-sm text-gray-800 dark:text-gray-200 mt-1">
+                      <p className="text-sm text-gray-800 dark:text-gray-200 mt-1 break-words">
                         {v}
                       </p>
                     </div>
                   ))}
                   {sp.profile!.description && (
-                    <div className="col-span-2">
+                    <div className="sm:col-span-2">
                       <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
                         Opis
                       </p>
@@ -888,8 +888,8 @@ function AdminDashboard() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="col-span-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
                       <label className={lbl}>Naziv salona *</label>
                       <input
                         className={inp}
@@ -933,7 +933,7 @@ function AdminDashboard() {
                         placeholder="Knez Mihailova 1"
                       />
                     </div>
-                    <div className="col-span-2">
+                    <div className="sm:col-span-2">
                       <label className={lbl}>Newsletter email</label>
                       <input
                         className={inp}
@@ -988,7 +988,7 @@ function AdminDashboard() {
                         placeholder="+381 60 000 0001"
                       />
                     </div>
-                    <div className="col-span-2">
+                    <div className="sm:col-span-2">
                       <label className={lbl}>Opis salona</label>
                       <textarea
                         className={inp + " resize-none"}
@@ -1001,7 +1001,7 @@ function AdminDashboard() {
                       />
                     </div>
                     {user?.globalRole === "OWNER" && (
-                      <div className="col-span-2">
+                      <div className="sm:col-span-2">
                         <label className={lbl}>Resend API ključ</label>
                         <p className="text-[11px] text-gray-400 dark:text-gray-500 mb-1">
                           Vaš sopstveni Resend API ključ (Full Access) za slanje
@@ -1541,27 +1541,27 @@ function AdminDashboard() {
                   className={`rounded-2xl border p-4 transition-colors ${isRest ? "bg-gray-50 dark:bg-gray-800/50 border-gray-100 dark:border-gray-800" : "bg-violet-50/40 dark:bg-gray-900 border-violet-100 dark:border-violet-900/40"}`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="w-[108px] flex-shrink-0 text-sm font-bold text-gray-700 dark:text-gray-300">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                      <span className="w-[82px] sm:w-[108px] flex-shrink-0 text-[13px] sm:text-sm font-bold text-gray-700 dark:text-gray-300">
                         {day}
                       </span>
                       <span
-                        className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${isRest ? "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400" : "bg-violet-200 dark:bg-violet-900/50 text-violet-700 dark:text-violet-400"}`}
+                        className={`whitespace-nowrap text-[10px] sm:text-[11px] font-bold px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full ${isRest ? "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400" : "bg-violet-200 dark:bg-violet-900/50 text-violet-700 dark:text-violet-400"}`}
                       >
                         {isRest ? "Neradan" : `${slots.length} smena`}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                       <button
                         onClick={() => sp.addTimeSlot(day)}
-                        className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 px-3 py-1.5 rounded-lg transition"
+                        className="whitespace-nowrap text-[11px] sm:text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg transition"
                       >
                         + Smena
                       </button>
                       {!isRest && (
                         <button
                           onClick={() => sp.clearDay(day)}
-                          className="text-xs text-red-400 hover:text-red-600 font-semibold px-2 py-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                          className="text-[11px] sm:text-xs text-red-400 hover:text-red-600 font-semibold px-1.5 py-1 sm:px-2 sm:py-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
                         >
                           Obriši
                         </button>

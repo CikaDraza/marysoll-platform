@@ -232,8 +232,11 @@ export function NotificationBell({ base }: NotificationBellProps) {
         )}
       </MenuButton>
 
-      {/* Dropdown */}
-      <MenuItems className="absolute right-0 z-50 mt-2 w-[calc(100vw-1.5rem)] max-w-xs lg:max-w-sm origin-top-right rounded-2xl bg-white shadow-xl ring-1 ring-zinc-200 focus:outline-none overflow-hidden">
+      {/* Dropdown — na mobilnom fixed preko cele širine ispod headera (h-16 +
+          8px razmaka = top-[72px]): u admin headeru zvono nije uz desnu ivicu
+          pa bi dropdown sidren uz dugme izlazio van ekrana (isti šablon kao
+          SuperAdminNotificationBell); na lg+ ostaje uz desnu ivicu dugmeta. */}
+      <MenuItems className="fixed inset-x-3 top-[72px] z-50 origin-top rounded-2xl bg-white shadow-xl ring-1 ring-zinc-200 focus:outline-none overflow-hidden lg:absolute lg:inset-x-auto lg:right-0 lg:top-auto lg:mt-2 lg:w-96 lg:origin-top-right">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100">
           <div className="flex items-center gap-2">
