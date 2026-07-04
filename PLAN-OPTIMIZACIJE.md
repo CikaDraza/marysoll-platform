@@ -116,7 +116,23 @@ Skeniranje kaže: **124 fajla · 164 exporta · 95 tipova · 5 enum članova**. 
 
 ---
 
-## Faza 3 — Duplikacija (srednji/visok rizik — najveća dobit)
+## Faza 3 — Duplikacija ⏳ U TOKU (2026-07-04): API rute + hookovi urađeni
+
+**Urađeno (6 commita, svaki verifikovan tsc+build):**
+- `9952c13` **booking**: `src/lib/appointments/booking.ts` (`canAcceptBookings`, `loadBookingProfile`, `checkSlotAvailability`, `findOrCreateGuestUser`) — create/create-guest/guest rute. ⚠️ **create-guest namerno zadržava staru exact-match proveru preklapanja** (date+time findOne) umesto duration-overlap+manualSlots koje imaju create/guest — ODLUKA ZA MILANA da li da i admin-guest ruta pređe na strožu proveru.
+- `2fb8535` **login**: `src/lib/auth/tokenResponse.ts` (buildTenant/PlatformTokenResponse) — auth/login + tenant-auth/login; jedan izvor cookie atributa.
+- `c6bf519` **chat merge**: `src/lib/chat/mergeMessages.ts` generički (content vs message). Hookovi NISU spojeni (različiti UI tokovi).
+- `a5ceada` **cloudinary**: `uploadChatAttachment` (@/lib/chat) + folder resolveri u @/lib/cloudinary — chat upload ×2 i cloudinary images/videos.
+- `b80c540` **sitni**: test-email translateAdminNote re-export (fix stari ključ `appointment_completed`→`completed`); usePlanFeatures koristi čisti isWithinLimit.
+
+**ODLOŽENO (zaslužuje zaseban pažljiv prolaz, osetljivo):**
+- **marketplace cities/salons/public** (167 l. clone = salon→card mapiranje) — hrani booking.marysoll.com boost app; izvući `formatSalonCard` helper uz pažljivu proveru da je mapiranje identično u sve 3 rute.
+- **cancel/update rute** (client ↔ marketplace appointments, 75+64 l.) — otkazivanje/izmena termina, booking-kritično.
+- **Theme UI klonovi** (PricingSection/WhatOffer/Services po temama, ~2000 l.) — teme su NAMERNO vizuelno odvojene; dirati samo mirrored identične fajlove (theme-7↔8) i to uz dogovor.
+
+Napomena: fallow line-based clone brojač (375→372) ne pada dramatično jer preostale klonove dominiraju theme UI komponente — poslovni/auth kod je konsolidovan, što je bila poenta.
+
+## Faza 3 — Duplikacija — originalni plan
 
 Ukupno **18.244 linija (14%) u 391 clone grupi**. Cilj: ispod 8%. Redosled po riziku razilaženja logike:
 
