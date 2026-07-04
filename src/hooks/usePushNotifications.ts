@@ -22,9 +22,17 @@ export function usePushNotifications() {
       };
     }
 
+    // iOS Safari/Chrome u običnom tabu NEMA Notification global (postoji samo
+    // u instaliranoj home-screen aplikaciji) — goli pristup baca ReferenceError
+    // i ruši ceo dashboard, zato i "Notification" ulazi u isSupported.
+    const hasNotification = "Notification" in window;
+
     return {
-      isSupported: "serviceWorker" in navigator && "PushManager" in window,
-      permission: Notification.permission,
+      isSupported:
+        "serviceWorker" in navigator &&
+        "PushManager" in window &&
+        hasNotification,
+      permission: hasNotification ? Notification.permission : "default",
       subscription: null as PushSubscription | null,
     };
   });
