@@ -74,7 +74,11 @@ api.interceptors.response.use(
         const baseDomain =
           process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
         const host = window.location.hostname;
-        const isProd = host !== "localhost" && !host.startsWith("127.");
+        const isProd =
+          host !== "localhost" &&
+          !host.startsWith("127.") &&
+          // Vercel preview: ostani na preview hostu (relativni /login)
+          !host.endsWith(".vercel.app");
         window.location.href = isProd
           ? `https://${baseDomain}/login`
           : "/login";

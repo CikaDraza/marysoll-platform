@@ -34,6 +34,8 @@ export function detectCustomDomain(): boolean {
     host !== "localhost" &&
     !host.startsWith("127.") &&
     !host.startsWith("192.168.") &&
+    // Vercel preview buildovi nisu tenant custom domeni
+    !host.endsWith(".vercel.app") &&
     !host.endsWith(baseDomain) &&
     host !== baseDomain
   ) {
