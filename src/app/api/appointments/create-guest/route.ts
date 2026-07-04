@@ -85,6 +85,10 @@ export async function POST(request: NextRequest) {
       ? salonProfile.cancellationWindowHours
       : 1;
 
+  // NAMERNO samo exact-match provera (ne duration-overlap/manualSlots kao u
+  // klijentskim rutama): admin/owner ovde svesno sme da preklopi termine ili
+  // zakaže van radnog vremena — npr. zna da je prethodni termin gotov ranije.
+  // (Odluka 2026-07-04 — ne "popravljati" na strožu proveru.)
   const existing = await Appointment.findOne({
     tenantId,
     date,

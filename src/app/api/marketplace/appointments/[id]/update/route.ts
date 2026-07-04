@@ -2,19 +2,17 @@
  * PUT /api/marketplace/appointments/[id]/update
  * Body: { clientEmail: string, date: string, time: string, services?: [...], note?: string, duration?: number, serviceName?: string }
  *
- * Cross-tenant rescheduling endpoint.
+ * Cross-tenant rescheduling endpoint (booking.marysoll.com boost app).
  * Protected by HMAC — the calling server passes the clientEmail it extracted
  * from the user's verified Bearer token, so no tenant-scoped JWT is needed.
- * Conflict check is scoped to the appointment's own tenant.
- * Applies the same cancellation-window guard as the tenant endpoint.
+ * Deli tok sa tenant rutom (clientFlows) — uklj. proveru preklapanja po
+ * trajanju i manualSlots proveru koje su ranije ovde nedostajale.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
-import { Service } from "@/models/Service";
 import { verifySignature } from "@/lib/middleware/verifySignature";
-import { canClientCancelAppointment } from "@/lib/appointments/cancellation";
-import { createAppointmentNotification } from "@/lib/notificationService";
+import { rescheduleAppointmentAsClient } from "@/lib/appointments/clientFlows";
 import type { IAppointmentService } from "@/types";
 
 export async function PUT(
@@ -46,9 +44,8 @@ export async function PUT(
   const services = Array.isArray(data.services)
     ? (data.services as IAppointmentService[])
     : [];
-  const serviceId = services[0]?.serviceId;
 
-  if (!serviceId || !data.date || !data.time) {
+  if (!services[0]?.serviceId || !data.date || !data.time) {
     return NextResponse.json(
       { error: "Datum, vreme i usluga su obavezni." },
       { status: 400 },
@@ -67,88 +64,24 @@ export async function PUT(
       return NextResponse.json({ error: "Termin nije pronađen." }, { status: 404 });
     }
 
-    if (!canClientCancelAppointment(appointment)) {
-      appointment.cancellationStatus = "late_cancel";
-      await appointment.save();
-      return NextResponse.json(
-        { error: "Vreme za izmenu termina je isteklo." },
-        { status: 400 },
-      );
-    }
-
-    if (
-      appointment.status === "appointment_cancelled" ||
-      appointment.status === "completed" ||
-      appointment.status === "no_show"
-    ) {
-      return NextResponse.json(
-        { error: "Termin se više ne može izmeniti." },
-        { status: 400 },
-      );
-    }
-
-    const service = await Service.findById(serviceId);
-    if (!service) {
-      return NextResponse.json({ error: "Usluga nije pronađena." }, { status: 404 });
-    }
-
-    // Conflict check scoped to the same tenant as the appointment being updated.
-    const conflict = await Appointment.findOne({
-      _id: { $ne: appointment._id },
-      tenantId: appointment.tenantId,
-      date: data.date,
-      time: data.time,
-      status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
+    const result = await rescheduleAppointmentAsClient(appointment, {
+      date: data.date as string,
+      time: data.time as string,
+      services,
+      serviceName: typeof data.serviceName === "string" ? data.serviceName : undefined,
+      note: typeof data.note === "string" ? data.note : undefined,
+      duration: typeof data.duration === "number" ? data.duration : undefined,
     });
-    if (conflict) {
-      return NextResponse.json({ error: "Termin je zauzet." }, { status: 409 });
-    }
 
-    const dateChanged = data.date !== appointment.date;
-    const timeChanged = data.time !== appointment.time;
-
-    appointment.date = data.date as string;
-    appointment.time = data.time as string;
-    appointment.serviceName =
-      typeof data.serviceName === "string" ? data.serviceName : (service.name as string);
-    appointment.note = typeof data.note === "string" ? data.note : undefined;
-    appointment.duration =
-      typeof data.duration === "number" ? data.duration : (service.duration ?? appointment.duration);
-    appointment.services = services.map((s) => ({
-      ...s,
-      serviceName: s.serviceName,
-      duration: s.duration,
-    }));
-    appointment.lastUpdatedBy = "client";
-    if (dateChanged || timeChanged) {
-      appointment.status = "appointment_rescheduled";
-    }
-
-    await appointment.save();
-
-    if (dateChanged || timeChanged) {
-      await createAppointmentNotification(
-        {
-          _id: appointment._id.toString(),
-          tenantId: appointment.tenantId,
-          clientProfileId: appointment.clientProfileId?.toString() ?? "",
-          clientName: appointment.clientName,
-          clientEmail: appointment.clientEmail,
-          serviceName: appointment.serviceName,
-          date: appointment.date,
-          time: appointment.time,
-          note: appointment.note,
-          clientPhone: appointment.clientPhone,
-          clientInstagram: appointment.clientInstagram,
-          preferredContact: appointment.preferredContact,
-          contactNote: appointment.contactNote,
-        },
-        "rescheduled",
-        {
-          sender: "client",
-          message: "Klijent je izmenio termin u dozvoljenom roku.",
-        },
-      );
+    if (!result.ok) {
+      // Boost app očekuje 409 za zauzet/nedostupan slot (istorijski ugovor)
+      const status =
+        result.kind === "service_not_found"
+          ? 404
+          : result.kind === "conflict" || result.kind === "unavailable"
+            ? 409
+            : 400;
+      return NextResponse.json({ error: result.error }, { status });
     }
 
     return NextResponse.json({ message: "Termin je ažuriran.", appointment });
