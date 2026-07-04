@@ -116,7 +116,11 @@ Skeniranje kaže: **124 fajla · 164 exporta · 95 tipova · 5 enum članova**. 
 
 ---
 
-## Faza 3 — Duplikacija ⏳ U TOKU (2026-07-04): API rute + hookovi urađeni
+## Faza 3 — Duplikacija ✅ ZAVRŠENA 2026-07-04 (7 commita)
+
+**Dovršeno u drugom prolazu (`5883416`):** `src/lib/appointments/clientFlows.ts` — deljeni tokovi klijentskog otkazivanja i pomeranja termina za tenant JWT rute i HMAC marketplace rute (boost app). Konsolidacija otkrila i ispravila **dva prava drift buga**: (1) marketplace cancel nije zvao loyalty hook → vaučer se nije oslobađao ni no-show politika primenjivala pri otkazivanju kroz boost app; (2) marketplace update nije imao proveru preklapanja po trajanju ni manualSlots → reschedule kroz boost app je mogao da preklopi termine. Status kodovi i poruke očuvani po ruti (marketplace 409 za konflikt).
+
+**Odluke (Milan, 2026-07-04):** create-guest exact-match je NAMERNA admin sloboda (preklapanje/van radnog vremena po proceni admina) — dokumentovano komentarom u ruti; marketplace cities/salons/public se radi uz optimizaciju booking.marysoll.com; theme UI klonovi se NE diraju — teme će dobiti svoj layer/mikroservis, identičnost sa malim izmenama stilova je trenutno namerna.
 
 **Urađeno (6 commita, svaki verifikovan tsc+build):**
 - `9952c13` **booking**: `src/lib/appointments/booking.ts` (`canAcceptBookings`, `loadBookingProfile`, `checkSlotAvailability`, `findOrCreateGuestUser`) — create/create-guest/guest rute. ⚠️ **create-guest namerno zadržava staru exact-match proveru preklapanja** (date+time findOne) umesto duration-overlap+manualSlots koje imaju create/guest — ODLUKA ZA MILANA da li da i admin-guest ruta pređe na strožu proveru.
