@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { mergeChatMessages } from "@/lib/chat/mergeMessages";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -22,44 +23,10 @@ export interface SAMessage {
   timestamp: string;
 }
 
-// ─── Stable merge — preserves object references so React.memo skips unchanged bubbles ──
-
-function mergeMessages(prev: SAMessage[], incoming: SAMessage[]): SAMessage[] {
-  const realPrev = prev.filter((m) => !m._id.startsWith("temp-"));
-
-  // Fast path: last stable ID and total count unchanged → nothing new
-  if (
-    realPrev.length === incoming.length &&
-    (incoming.length === 0 ||
-      realPrev[realPrev.length - 1]._id === incoming[incoming.length - 1]._id)
-  ) {
-    return prev; // same reference → React skips re-render entirely
-  }
-
-  // Map existing objects by ID to preserve references for unchanged messages
-  const prevById = new Map(prev.map((m) => [m._id, m]));
-
-  const merged = incoming.map((m) => {
-    const existing = prevById.get(m._id);
-    // Return same object if content unchanged — React.memo will bail out
-    if (
-      existing &&
-      existing.isDeleted === m.isDeleted &&
-      existing.message === m.message
-    ) {
-      return existing;
-    }
-    return m;
-  });
-
-  // Preserve any temp messages not yet confirmed by server
-  const incomingIds = new Set(incoming.map((m) => m._id));
-  const temps = prev.filter(
-    (m) => m._id.startsWith("temp-") && !incomingIds.has(m._id),
-  );
-
-  return temps.length > 0 ? [...merged, ...temps] : merged;
-}
+// Stabilan merge (očuvanje referenci za React.memo) je u @/lib/chat/mergeMessages;
+// superadmin poruke se porede po `message` polju.
+const mergeMessages = (prev: SAMessage[], incoming: SAMessage[]) =>
+  mergeChatMessages(prev, incoming, (a, b) => a.message === b.message);
 
 // ─── useSuperAdminChat ────────────────────────────────────────────────────────
 
