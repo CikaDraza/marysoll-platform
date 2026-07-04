@@ -163,7 +163,9 @@ Ukupno **18.244 linija (14%) u 391 clone grupi**. Cilj: ispod 8%. Redosled po ri
 
 **4b urađeno (`60c87ae`):** TenantShellClient 276→~110 linija — 8 Header/Footer omotača u `themes/shells/ThemeNShell.tsx` kroz `next/dynamic`; podstranice više ne šalju tuđe header/footere ni Y2K booking modal (Y2K chunk izolovan, 90 kB, 0 theme-1 koda); tenant font kao `<link>` u renderu umesto useEffect (SSR-safe, React 19). **Odluka: SSR parent + client islands se NE radi** — velika kompleksnost (headeri su interaktivni, moraju ostati client), a Theme Engine izmešta teme iz Marysoll-a pa bi rework zastareo. **AdminLandingCMS provera:** 0 useEffect, useCallback prisutan, eslint čist — već poštuje ARCHITECTURAL_RULES; pravi posao je section-split koji ide uz Theme Engine. Vizija: `ARHITEKTURA-ENGINES.md` (T0–T9).
 
-**Preostalo u Fazi 4 (postepeno, uz features):** dashboard/page.tsx `AdminDashboard` (1.904 l. — izvući tabove), `AdminLandingCMS` (3.123 l.), `MarketingTab` (2.131 l.), `BookingModal` (796 l.), `mapProfileToForm` (cikl. 198), `proxy.ts` (samo uz testove). TenantShellClient i dalje statički vuče Header/Footer svih tema (manji trošak — kandidat za isti dynamic šablon).
+**4c urađeno (`62396f9`):** dashboard/page.tsx **2.211 → 546 linija** — 4 inline taba (Profil 772 l., RadnoVreme 451, SocialSeo 258, Usluge 161) izdvojena u `components/admin/dashboard/` sa tipovanim `DashboardTabProps` (state/handleri ostaju u AdminDashboard — jedan izvor istine); deljeni helperi u `shared.tsx`. `mapProfileToForm` (cikl. 198) razbijen u `mapWorkingHours`/`mapLandingSections`/`mapPages` (čisto premeštanje, identično ponašanje).
+
+**Preostalo u Fazi 4 (postepeno, uz features):** `MarketingTab` (2.131 l.), `BookingModal` (796 l., 16 props), `proxy.ts` (samo uz testove); `AdminLandingCMS` section-split ide uz Theme Engine.
 
 ## Faza 4 — originalni plan (dugoročno — raditi uz nove features, ne odjednom)
 
