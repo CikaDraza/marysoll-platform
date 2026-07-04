@@ -16,7 +16,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "./useAuth";
 import { api } from "@/lib/api";
 import type { PlanFeatures, PlanName } from "@/lib/plans/planFeatures";
-import { PLAN_FEATURES } from "@/lib/plans/planFeatures";
+import {
+  PLAN_FEATURES,
+  isWithinLimit as isWithinPlanLimit,
+} from "@/lib/plans/planFeatures";
 
 interface SubscriptionFeaturesResponse {
   plan: PlanName;
@@ -81,9 +84,7 @@ export function usePlanFeatures() {
       newsletterSubscribers: features.newsletterSubscribers,
       staffMembers: features.staffMembers,
     };
-    const limit = limitMap[type];
-    if (limit === -1) return true;
-    return current < limit;
+    return isWithinPlanLimit(current, limitMap[type]);
   }
 
   const hasOverride = !!data?.featureOverrides;
