@@ -5,7 +5,7 @@ import type { SalonProfileData } from "@/types";
 import { FadeUp } from "./FadeUp";
 import { Deco } from "./Decorations";
 import { Theme8WorkingHours } from "./WorkingHours";
-import { useTheme8Modal } from "./Theme8ModalProvider";
+import { useTheme8Modal } from "./theme8ModalContext";
 import { Theme8AnchorLink } from "./AnchorLink";
 import Link from "next/link";
 

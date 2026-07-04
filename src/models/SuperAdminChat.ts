@@ -1,4 +1,5 @@
 import { Schema, Document, Types, model, models } from "mongoose";
+import type { IChatAttachment } from "@/types";
 
 const attachmentSchema = new Schema(
   {
@@ -22,13 +23,6 @@ const messageSchema = new Schema(
   },
   { _id: true },
 );
-
-export interface IChatAttachment {
-  url: string;
-  type: "image" | "pdf";
-  name: string;
-  size: number;
-}
 
 export interface ISuperAdminChat extends Document {
   tenantId: Types.ObjectId;

@@ -47,7 +47,7 @@ export interface IAppointment {
   updatedAt?: string;
 }
 
-export interface IUser {
+interface IUser {
   _id: string;
   name: string;
   email: string;

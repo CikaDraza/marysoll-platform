@@ -10,7 +10,7 @@
  */
 
 import type { ComponentProps } from "react";
-import type { LandingTheme } from "@/models/SalonProfile";
+import type { LandingTheme } from "@/types";
 import type { IService, SalonProfileData } from "@/types";
 import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";

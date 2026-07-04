@@ -9,7 +9,7 @@
 import { useState } from "react";
 import { FadeUp } from "../FadeUp";
 import { Deco } from "../Decorations";
-import { useTheme8Modal } from "../Theme8ModalProvider";
+import { useTheme8Modal } from "../theme8ModalContext";
 import { groupAndSortServices } from "@/helpers/groupeAndSortServices";
 import {
   formatPriceToString,

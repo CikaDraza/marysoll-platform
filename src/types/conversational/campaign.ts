@@ -49,14 +49,9 @@ export const TemplateToCampaignType: Record<string, CampaignSemanticType> = {
 };
 // Template Map
 
-export enum CampaignIntent {
-  Promotion = "promotion",
-  Education = "education",
-  Tips = "tips",
-  Announcement = "announcement",
-  Event = "event",
-  Conversion = "conversion",
-}
+// Enum živi u ./intent.ts (leaf) — re-export čuva postojeće importere,
+// a semantic.ts importuje direktno iz ./intent pa nema kruga.
+export { CampaignIntent } from "./intent";
 
 export type BuildCampaignLayoutResult = {
   layout: LandingBlock[];

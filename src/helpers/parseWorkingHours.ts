@@ -14,7 +14,7 @@
 
 import { TimeSlot } from "@/types";
 
-export type WorkingHoursRaw = Record<string, string | TimeSlot[] | unknown>;
+export type WorkingHoursInput = Record<string, string | TimeSlot[] | unknown>;
 
 export const DAY_MAP: Record<string, number> = {
   Ponedeljak: 1,
@@ -58,11 +58,11 @@ export function parseDaySlots(value: unknown): TimeSlot[] {
 }
 
 /**
- * Convert WorkingHoursRaw to FullCalendar businessHours format.
+ * Convert WorkingHoursInput to FullCalendar businessHours format.
  * Multi-slot days produce multiple businessHours entries.
  */
 export function toFullCalendarBusinessHours(
-  workingHours: WorkingHoursRaw | null | undefined,
+  workingHours: WorkingHoursInput | null | undefined,
 ): { daysOfWeek: number[]; startTime: string; endTime: string }[] {
   if (!workingHours || typeof workingHours !== "object") return [];
 
@@ -100,7 +100,7 @@ export function formatDayWorkingHours(value: unknown): string {
  * Get all days with their formatted hours for display.
  */
 export function formatWorkingHoursForDisplay(
-  workingHours: WorkingHoursRaw | null | undefined,
+  workingHours: WorkingHoursInput | null | undefined,
 ): { day: string; hours: string; isOpen: boolean }[] {
   const days = Object.keys(DAY_MAP);
   if (!workingHours) {

@@ -27,7 +27,9 @@
 
 ---
 
-## Faza 1 — Strukturni problemi (nizak/srednji rizik)
+## Faza 1 — Strukturni problemi ✅ URAĐENO 2026-07-04
+
+**Ishod:** Oba ciklusa razbijena: (1) `useTheme8Modal` + context izdvojeni u `theme-8/theme8ModalContext.ts` (Provider namerno više NE re-exportuje hook da se ciklus ne vrati); (2) `CampaignIntent` enum izdvojen u `types/conversational/intent.ts` (leaf), `campaign.ts` ga re-exportuje za postojeće importere, `semantic.ts` i `types/index.ts` importuju direktno. Svih 7 duplih exporta rešeno: `GalleryVariant`/`LandingTheme`/`PaginationInfo` — jedan izvor u `types/index.ts`; `IChatAttachment` izdvojen u types (oba chat modela importuju); `WorkingHoursRaw` u helpers preimenovan u `WorkingHoursInput` (različit oblik od types verzije); `IUser` — dve deklaracije u samom types/index.ts koje je TS tiho SPAJAO sada su jedna eksplicitna (split klijent/model = kandidat za Fazu 4), lokalni `IUser` u statistics ruti un-exportovan; `ISubscription` u types preimenovan u `IServiceSubscription` (service paket ≠ tenant plan) — usput ispravljen i pogrešan import u `api/subscriptions/features` (tipovao mongoose lean() klijentskim DTO umesto modelskim tipom). Verifikovano: tsc čist, eslint čist, fallow bez duplicate/circular nalaza.
 
 ### 1a. Kružne zavisnosti (2)
 1. `themes/shared/Y2KBookingCard.tsx → Y2KHomepageAppointmentWidget.tsx → theme-8/Theme8ModalProvider.tsx → Y2KBookingCard.tsx` — rizik init greške, blokira tree-shaking. Rešenje: izvući ono što Provider vuče iz BookingCard-a u poseban modul (ili context tip u poseban fajl).

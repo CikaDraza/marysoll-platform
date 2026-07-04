@@ -9,7 +9,7 @@
  * (import { DAYS_OF_WEEK } from "@/types" radi kao i import iz "@/types/constants")
  */
 
-import type { CampaignIntent } from "./conversational/campaign";
+import type { CampaignIntent } from "./conversational/intent";
 import type { PlatformAudienceFilter } from "@/lib/newsletter/audienceFilter";
 import type { CustomCta } from "@/lib/ai/landing/ctaCatalog";
 import type { Types } from "mongoose";
@@ -45,6 +45,16 @@ export interface PaginationInfo {
   hasPrevPage: boolean;
 }
 
+// ─── Chat ─────────────────────────────────────────────────────────────────────
+
+/** Prilog u chat poruci — dele ga SalonInternalChat i SuperAdminChat modeli. */
+export interface IChatAttachment {
+  url: string;
+  type: "image" | "pdf";
+  name: string;
+  size: number;
+}
+
 export type AboutTextLinkType = "link" | "mention" | "tag";
 
 export interface AboutTextLink {
@@ -55,7 +65,9 @@ export interface AboutTextLink {
 
 // ─── Service ──────────────────────────────────────────────────────────────────
 
-export interface ISubscription {
+/** Pretplata na USLUGU salona (mesečni paket tretmana) — ne mešati sa
+ *  plan pretplatom tenanta (ISubscription u models/Subscription.ts). */
+export interface IServiceSubscription {
   enabled: boolean;
   subscriptionType?: "monthly" | "package";
   treatmentCount?: number | null;
@@ -122,7 +134,7 @@ export interface IServiceInput {
   items: string[];
   featured?: HomePagePosition;
   icon?: string;
-  subscription: ISubscription;
+  subscription: IServiceSubscription;
 }
 
 export interface IService {
@@ -143,7 +155,7 @@ export interface IService {
   items: string[];
   featured?: HomePagePosition;
   icon?: string;
-  subscription: ISubscription;
+  subscription: IServiceSubscription;
   createdAt: string;
   updatedAt: string;
 }
@@ -294,10 +306,15 @@ export type UserNotificationSettings = BasicNotificationSettings &
     newsletterTips: boolean;
   };
 
-export interface IUser {
+// NAPOMENA: ranije su ovde postojale DVE `IUser` deklaracije koje je TS tiho
+// spajao (declaration merging) — klijentski oblik i mongoose Document oblik.
+// Ovo je taj spojeni oblik zapisan eksplicitno; razdvajanje na IUser (klijent)
+// i IUserDoc (model) je kandidat za Fazu 4 plana optimizacije.
+export interface IUser extends Document {
   _id: string;
   name: string;
   email: string;
+  password: string;
   phone: string;
   instagram?: string;
   marketingPhone?: string;
@@ -306,6 +323,7 @@ export interface IUser {
   birthday?: Date | null;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  globalRole: "SUPER_ADMIN" | "OWNER" | "ADMIN" | "STAFF" | "USER";
   tenantId: string | null;
   isOnline: boolean;
   lastActive: Date | string;
@@ -317,27 +335,6 @@ export interface IUser {
   isEmailVerified: boolean;
   verificationToken: string | null;
   verificationTokenExpiry: Date | null;
-  notificationSettings: UserNotificationSettings;
-  pushSubscriptions: Array<{
-    endpoint: string;
-    keys: { p256dh: string; auth: string };
-    createdAt: Date;
-  }>;
-}
-
-export interface IUser extends Document {
-  email: string;
-  password: string;
-  name: string;
-  phone: string;
-  instagram?: string;
-  birthday?: Date | null;
-  isAdmin: boolean;
-  isSuperAdmin: boolean;
-  globalRole: "SUPER_ADMIN" | "OWNER" | "ADMIN" | "STAFF" | "USER";
-  agreedToPrivacy: boolean;
-  isOnline: boolean;
-  lastActive: Date | string;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   notificationSettings: UserNotificationSettings;
@@ -346,9 +343,6 @@ export interface IUser extends Document {
     keys: { p256dh: string; auth: string };
     createdAt: Date;
   }>;
-  newsletterPreferences?: INewsletterPreferences;
-  createdAt: string;
-  updatedAt: string;
 }
 
 // ─── Newsletter ───────────────────────────────────────────────────────────────

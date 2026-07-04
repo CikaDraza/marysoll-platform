@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { publicApi } from "@/lib/api";
 import { INewsletterCampaign } from "@/types";
 import { useTenant } from "@/contexts/TenantContext";
-import type { PaginationInfo } from "@/components/elements/Paginator";
+import type { PaginationInfo } from "@/types";
 
 export interface MappedBlogPost {
   _id: string;

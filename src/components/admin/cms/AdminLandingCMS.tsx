@@ -2660,7 +2660,7 @@ export function AdminLandingCMS({ sp }: Props) {
 
         {/* Gallery type picker */}
         {(() => {
-          const effectiveVariant: import("@/lib/themeConfig").GalleryVariant =
+          const effectiveVariant: import("@/types").GalleryVariant =
             gallery.galleryVariant ?? themeConf.gallery.variant;
           return (
             <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-2">

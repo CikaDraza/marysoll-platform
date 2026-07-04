@@ -1,11 +1,5 @@
 import { Schema, Document, Types, model, models } from "mongoose";
-
-export interface IChatAttachment {
-  url: string;
-  type: "image" | "pdf";
-  name: string;
-  size: number;
-}
+import type { IChatAttachment } from "@/types";
 
 export interface IChatMessage {
   _id: Types.ObjectId;
