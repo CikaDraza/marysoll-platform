@@ -50,7 +50,9 @@
 
 ---
 
-## Faza 2 — Mrtav kod (srednji rizik — OBAVEZNA provera po stavci)
+## Faza 2 — Mrtav kod ✅ URAĐENO 2026-07-04 (fajlovi; exporti = Faza 2b)
+
+**Ishod:** Obrisano **122 od 124** mrtvih fajlova. Živa putanja blokova potvrđena i netaknuta: `blockRegistry.ts` + `CampaignLayoutEngine.tsx` → Hero/Article/Feature/ContentSplit/Pricing/AffiliateCTA blokovi (newsletter landing, blog, preview). Obrisani klasteri: stari AI chat/agent panel (`components/ai/*`), 12 "app-as-blocks" blokova (auth/kalendar view-ovi), stari `LayoutEngine`/`blockFactory`/`TextEngine`, 35 mrtvih hookova (uklj. starije kopije newsletter hookova — potvrđeni zastareli duplikati), `emailCampaignQueue` (ništa ga ne importuje; slanje ide kroz `executeSend`) → s njim iz package.json otišli `bullmq` + `ioredis` (supersedes 0.1) i osiroteli `@google/generative-ai`, `next-auth`, `partial-json-parser`, legacy `LoyaltyRule` model (engine koristi registry). **Zadržano:** `public/service-worker.js` (+`fallow-ignore-file` komentar), `theme-5/Blog.tsx` (tema komponenta, živ barrel). Verifikacija: tsc 0 grešaka, pun `next build` prošao, fallow: 124→1 unused fajl. **Faza 2b (ostalo):** 167 unused exporta / 102 tipa u živim fajlovima (uglavnom theme barreli — oprez) + `CampaignIntent` enum članovi se NE brišu (vrednosti žive u Mongo dokumentima preko AdminSemanticModal selecta).
 
 Skeniranje kaže: **124 fajla · 164 exporta · 95 tipova · 5 enum članova**. Postupak: `npx fallow fix --dry-run` pa za svaku stavku pre brisanja `npx fallow dead-code --trace <fajl>:<export>`.
 

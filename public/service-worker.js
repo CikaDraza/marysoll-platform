@@ -1,4 +1,7 @@
 // public/service-worker.js
+// fallow-ignore-file unused-file
+// (registruje se runtime kao string putanja u usePushNotifications:
+//  navigator.serviceWorker.register("/service-worker.js"))
 self.addEventListener("push", function (event) {
   if (event.data) {
     const data = event.data.json();
