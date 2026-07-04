@@ -64,7 +64,10 @@ function isProductionDomain(): boolean {
   return (
     host !== "localhost" &&
     !host.startsWith("127.") &&
-    !host.startsWith("192.168.")
+    !host.startsWith("192.168.") &&
+    // Vercel preview buildovi: ostani na preview hostu (relativni /dashboard),
+    // inače bi login sa preview-a redirektovao na produkcijski admin domen
+    !host.endsWith(".vercel.app")
   );
 }
 

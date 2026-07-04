@@ -237,7 +237,20 @@ async function detectDomainType(
     };
   }
 
-  // 2. Admin subdomains
+  // 2. Vercel preview buildovi (grana → xxx.vercel.app): tretiraj kao marketing
+  // da preview uopšte radi — inače bi pao u custom-domain granu, tenant lookup
+  // bi omašio i SVE bi vraćalo 404. Marketing tip propušta i /dashboard i API
+  // rute, pa se admin flow može testirati path-based (kao na localhost-u).
+  if (host.endsWith(".vercel.app")) {
+    return {
+      type: "marketing",
+      tenantSlug: null,
+      tenantId: null,
+      customDomain: null,
+    };
+  }
+
+  // 3. Admin subdomains
   if (host === `admin.${BASE_DOMAIN}`) {
     return {
       type: "admin",
@@ -256,7 +269,7 @@ async function detectDomainType(
     };
   }
 
-  // 3. Wildcard subdomains (tenant subdomain)
+  // 4. Wildcard subdomains (tenant subdomain)
   if (host.endsWith(`.${BASE_DOMAIN}`)) {
     const subdomain = host.slice(0, -(BASE_DOMAIN.length + 1));
     if (!["admin", "superadmin", "app", "www"].includes(subdomain)) {
@@ -270,7 +283,7 @@ async function detectDomainType(
     }
   }
 
-  // 4. Custom domain — check env var first, then DB
+  // 5. Custom domain — check env var first, then DB
   if (isCustomDomain(host, BASE_DOMAIN)) {
     if (CUSTOM_CLIENT_DOMAIN && host === CUSTOM_CLIENT_DOMAIN) {
       const resolved = await resolveCustomDomain(request, host);
