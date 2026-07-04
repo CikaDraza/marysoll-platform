@@ -155,7 +155,15 @@ Ukupno **18.244 linija (14%) u 391 clone grupi**. Cilj: ispod 8%. Redosled po ri
 
 ---
 
-## Faza 4 — Kompleksnost (dugoročno — raditi uz nove features, ne odjednom)
+## Faza 4 — Kompleksnost ⏳ ZAPOČETA 2026-07-04 (4a: ThemeLayout)
+
+**4a urađeno (`69abcae`):** ThemeLayout **1.284 → 201 linija** — svih 8 landing blokova izdvojeno u `themes/layouts/ThemeNLanding.tsx`, ThemeLayout je dispečer koji izvedene vrednosti računa jednom (`ThemeLandingProps` u `layouts/types.ts`) i učitava temu kroz `next/dynamic` (SSR uključen). **Efekat na učitavanje: monolitni chunk od 344 kB sa svih 8 tema razbijen na per-theme chunkove** — tenant landing sada šalje samo svoju temu (Y2K, najteža: 105 kB). Ovim je pao i najkritičniji hotspot (ciklomatika 382).
+
+**Presek zdravlja (fallow, posle faza 0–4a):** LOC 132.596 → **123.571** (−9.025), maintainability 89.2 → **91.4**, mrtvi fajlovi 12.2% → **0.0%**, mrtvi exporti 16.4% → 8.9%, duplikacija 14.0% → 13.5% (ostatak = namerni theme klonovi), kružne zavisnosti 2 → 0, branch: −13.624 / +2.908 linija, −13 npm paketa.
+
+**Preostalo u Fazi 4 (postepeno, uz features):** dashboard/page.tsx `AdminDashboard` (1.904 l. — izvući tabove), `AdminLandingCMS` (3.123 l.), `MarketingTab` (2.131 l.), `BookingModal` (796 l.), `mapProfileToForm` (cikl. 198), `proxy.ts` (samo uz testove). TenantShellClient i dalje statički vuče Header/Footer svih tema (manji trošak — kandidat za isti dynamic šablon).
+
+## Faza 4 — originalni plan (dugoročno — raditi uz nove features, ne odjednom)
 
 513 funkcija > 60 linija; vrh liste po CRAP skoru:
 
