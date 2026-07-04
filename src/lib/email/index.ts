@@ -6,4 +6,3 @@
  */
 export * from "./email";
 export { wrapEmailLayout } from "./wrapEmailLayout";
-export type { EmailLayoutData } from "./wrapEmailLayout";

@@ -351,7 +351,7 @@ export function getPlanFeatures(
 // ─── Efektivni plan (single source of truth) ─────────────────────────────────
 
 /** Subscription statusi koji daju pristup planu (past_due = grace period). */
-export const PLAN_GRANTING_STATUSES = ["active", "trialing", "past_due"] as const;
+const PLAN_GRANTING_STATUSES = ["active", "trialing", "past_due"] as const;
 
 /**
  * Rešava efektivni plan tenanta — koriste ga i requireFeature (server gate)

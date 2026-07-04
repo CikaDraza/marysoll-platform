@@ -30,7 +30,7 @@ const TIME_OPTIONS: string[] = (() => {
 })();
 
 /** digits-only → clamped "HH:MM"; empty stays empty. */
-export function normalizeTime24(raw: string): string {
+function normalizeTime24(raw: string): string {
   const digits = raw.replace(/\D/g, "").slice(0, 4);
   if (digits.length === 0) return "";
   const h =

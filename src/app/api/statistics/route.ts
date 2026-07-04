@@ -33,7 +33,7 @@ export interface IAppointmentServiceItem {
   price: number;
 }
 
-export interface IAppointment {
+interface IAppointment {
   _id?: string;
   clientProfileId?: string;
   clientName: string;

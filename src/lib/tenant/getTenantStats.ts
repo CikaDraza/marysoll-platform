@@ -5,7 +5,6 @@ import { Testimonial } from "@/models/Testimonial";
 import type { TenantStats } from "./tenantStatsUtils";
 
 export type { TenantStats } from "./tenantStatsUtils";
-export { formatStatValue } from "./tenantStatsUtils";
 
 export async function getTenantStats(tenantId: string): Promise<TenantStats> {
   const [clientCount, appointmentCount, completedAppointmentCount, ratingAgg] =

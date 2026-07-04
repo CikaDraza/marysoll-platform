@@ -1,8 +1,8 @@
 import type { IAppointment } from "@/types";
 
-export const DEFAULT_CANCELLATION_WINDOW_HOURS = 1;
+const DEFAULT_CANCELLATION_WINDOW_HOURS = 1;
 
-export function normalizeCancellationWindowHours(value: unknown): number {
+function normalizeCancellationWindowHours(value: unknown): number {
   const numeric = Number(value);
   if (!Number.isInteger(numeric) || numeric < 0) {
     return DEFAULT_CANCELLATION_WINDOW_HOURS;
@@ -10,7 +10,7 @@ export function normalizeCancellationWindowHours(value: unknown): number {
   return numeric;
 }
 
-export function getCancellationDeadline(
+function getCancellationDeadline(
   appointment: Pick<IAppointment, "createdAt" | "cancellationWindowHours">,
 ): Date {
   const createdAt = appointment.createdAt
@@ -29,7 +29,7 @@ export function canClientCancelAppointment(
   return now.getTime() <= getCancellationDeadline(appointment).getTime();
 }
 
-export function getAppointmentStart(appointment: Pick<IAppointment, "date" | "time">): Date {
+function getAppointmentStart(appointment: Pick<IAppointment, "date" | "time">): Date {
   return new Date(`${appointment.date}T${appointment.time}`);
 }
 

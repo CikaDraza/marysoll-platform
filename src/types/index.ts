@@ -16,21 +16,7 @@ import type { Types } from "mongoose";
 import { LandingBlock } from "./landing-blocks";
 
 // Re-export runtime konstanti iz constants.ts za backward compat
-export {
-  DAYS_OF_WEEK,
-  SERVICE_TYPES,
-  HOME_PAGE_POSITIONS,
-  PLAN_TYPES,
-  TENANT_STATUSES,
-  APPOINTMENT_STATUSES,
-} from "./constants";
-export type {
-  ServiceType,
-  HomePagePositionValue,
-  PlanType,
-  TenantStatusValue,
-  AppointmentStatusValue,
-} from "./constants";
+export { DAYS_OF_WEEK } from "./constants";
 
 // ─── Common ───────────────────────────────────────────────────────────────────
 

@@ -1,4 +1,4 @@
-export function translateAppointmentStatus(status: string): string {
+function translateAppointmentStatus(status: string): string {
   const statusMap: Record<string, string> = {
     pending: "Na čekanju",
     appointment_approved: "Odobren",

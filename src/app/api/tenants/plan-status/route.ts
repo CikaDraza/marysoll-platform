@@ -24,7 +24,7 @@ type TenantPlanFields = Pick<
   | "storageMetrics"
 >;
 
-export interface PlanStatusResponse {
+interface PlanStatusResponse {
   name: string;
   plan: PlanName;
   status: "active" | "suspended" | "pending" | "cancelled";

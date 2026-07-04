@@ -96,7 +96,7 @@ export function getTokenFromRequest(
   return null;
 }
 
-export function getDecodedFromRequest(
+function getDecodedFromRequest(
   request: NextRequest,
 ): DecodedToken | null {
   const token = getTokenFromRequest(request);
@@ -228,7 +228,3 @@ export function requireSuperAdmin(
   return { decoded };
 }
 
-export function isTenantActive(tenant: ITenant | null): boolean {
-  if (!tenant) return true;
-  return tenant.paid && tenant.verified && tenant.status === "active";
-}

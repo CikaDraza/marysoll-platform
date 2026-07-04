@@ -3,6 +3,8 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { SalonProfile } from "@/models/SalonProfile";
 import { Tenant } from "@/models/Tenant";
 
+// (Next.js segment config — čita ga framework, sitemap za Google crawlere)
+// fallow-ignore-next-line unused-exports
 export const dynamic = "force-dynamic";
 
 const PLATFORM_BASE_URL = "https://marysoll.com";

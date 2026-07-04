@@ -43,7 +43,7 @@ export async function getTenantFolder(
  *   https://res.cloudinary.com/cloud/image/upload/v1234/salons/salon-neonix/logo.jpg
  *   → salons/salon-neonix/logo
  */
-export function extractPublicId(fileUrl: string): string | null {
+function extractPublicId(fileUrl: string): string | null {
   if (!fileUrl) return null;
   // Match everything after /upload/ (skip optional version v123456/)
   const match = fileUrl.match(/\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/);

@@ -59,12 +59,12 @@ interface PaddleSubscriptionEvent {
  * Jedan izvor istine za server i klijent: NEXT_PUBLIC_PADDLE_ENV
  * (vrednost "sandbox"|"production" nije tajna; server je čita runtime-om).
  */
-export function isPaddleSandbox(): boolean {
+function isPaddleSandbox(): boolean {
   return process.env.NEXT_PUBLIC_PADDLE_ENV === "sandbox";
 }
 
 /** Base URL Paddle API-ja na osnovu PADDLE_ENV (sandbox | production). */
-export function getPaddleApiBase(): string {
+function getPaddleApiBase(): string {
   return isPaddleSandbox()
     ? "https://sandbox-api.paddle.com"
     : "https://api.paddle.com";

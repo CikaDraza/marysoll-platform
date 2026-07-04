@@ -31,7 +31,7 @@ export interface IPlatformSocial {
   telegram?: string;
 }
 
-export interface IProfilPlatforme extends Document {
+interface IProfilPlatforme extends Document {
   _id: Types.ObjectId;
   authUserId: Types.ObjectId;
   displayName: string;

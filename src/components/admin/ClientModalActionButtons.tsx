@@ -15,7 +15,7 @@ interface Props {
   updateUser: ReturnType<typeof useUserMutations>["updateUser"];
 }
 
-export function ClientUpdateModal({
+function ClientUpdateModal({
   isOpen,
   onClose,
   user,

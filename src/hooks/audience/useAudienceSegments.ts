@@ -63,22 +63,3 @@ export function useDeleteAudienceSegment() {
   });
 }
 
-export function useUpdateAudienceSegment() {
-  const qc = useQueryClient();
-  return useMutation<
-    AudienceSegment,
-    Error,
-    { id: string; name?: string; filters?: AudienceSegmentFilters }
-  >({
-    mutationFn: async ({ id, ...data }) => {
-      const res = await api.patch<{ segment: AudienceSegment }>(
-        `/audience-segments/${id}`,
-        data,
-      );
-      return res.data.segment;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["audience-segments"] });
-    },
-  });
-}

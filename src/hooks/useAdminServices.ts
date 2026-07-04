@@ -23,7 +23,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
-export const emptyServiceForm = (): IServiceInput => ({
+const emptyServiceForm = (): IServiceInput => ({
   name: "",
   category: "",
   categorySlug: "",
@@ -55,7 +55,7 @@ export const emptyServiceForm = (): IServiceInput => ({
   },
 });
 
-export function mapServiceToForm(s: IService): IServiceInput {
+function mapServiceToForm(s: IService): IServiceInput {
   return {
     name: s.name ?? "",
     category: s.category ?? "",

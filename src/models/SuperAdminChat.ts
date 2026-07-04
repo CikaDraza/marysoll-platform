@@ -24,7 +24,7 @@ const messageSchema = new Schema(
   { _id: true },
 );
 
-export interface ISuperAdminChat extends Document {
+interface ISuperAdminChat extends Document {
   tenantId: Types.ObjectId;
   ownerId: Types.ObjectId;
   messages: {

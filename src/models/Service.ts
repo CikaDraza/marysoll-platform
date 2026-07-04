@@ -1,6 +1,6 @@
 import { model, Schema, Document, models, Types } from "mongoose";
 
-export interface IServiceDoc extends Document {
+interface IServiceDoc extends Document {
   tenantId: Types.ObjectId;
   name: string;
   category: string;

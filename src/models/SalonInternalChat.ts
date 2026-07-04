@@ -12,7 +12,7 @@ export interface IChatMessage {
   timestamp: Date;
 }
 
-export interface ISalonInternalChat extends Document {
+interface ISalonInternalChat extends Document {
   tenantId: Types.ObjectId;
   // Sorted [smaller, larger] for uniqueness — compound unique index
   participants: [Types.ObjectId, Types.ObjectId];

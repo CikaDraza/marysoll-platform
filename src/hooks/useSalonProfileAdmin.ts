@@ -39,7 +39,7 @@ import { normalizeVacations } from "@/helpers/vacations";
 
 const emptyWorkingHours = (): WorkingHoursMap => ({ ...EMPTY_WORKING_HOURS });
 
-export const emptyLandingStructure = (): LandingStructure => ({
+const emptyLandingStructure = (): LandingStructure => ({
   landing: {
     hero: {
       enabled: true,
@@ -141,7 +141,7 @@ const emptyForm = (): ISalonProfileForm => ({
 });
 
 // Mapira SalonProfile iz DB u formu — normalizuje legacy workingHours string format
-export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
+function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
   const wh = emptyWorkingHours();
 
   if (p.workingHours) {

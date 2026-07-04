@@ -27,7 +27,7 @@ export interface StatusMeta {
   hex: string;
 }
 
-export const APPOINTMENT_STATUS_META: Record<AppointmentStatusValue, StatusMeta> =
+const APPOINTMENT_STATUS_META: Record<AppointmentStatusValue, StatusMeta> =
   {
     pending: {
       label: "Čeka",
