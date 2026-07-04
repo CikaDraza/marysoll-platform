@@ -29,6 +29,10 @@ import {
   generateAccessToken,
   generateRefreshToken,
 } from "@/lib/auth/auth-server";
+import {
+  buildPlatformTokenResponse,
+  buildTenantTokenResponse,
+} from "@/lib/auth/tokenResponse";
 
 const MANAGEMENT_ROLES = ["OWNER", "ADMIN", "STAFF"] as const;
 
@@ -182,111 +186,4 @@ export async function POST(request: NextRequest) {
     console.error("❌ Platform login error:", error);
     return NextResponse.json({ error: "Greška na serveru" }, { status: 500 });
   }
-}
-
-function buildPlatformTokenResponse(
-  accessToken: string,
-  refreshToken: string,
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    globalRole: string;
-    isAdmin: boolean;
-    isSuperAdmin: boolean;
-  },
-) {
-  const isProd = process.env.NODE_ENV === "production";
-  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
-
-  const response = NextResponse.json({
-    message: "Prijava uspešna",
-    token: accessToken,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      globalRole: user.globalRole,
-      isAdmin: user.isAdmin,
-      isSuperAdmin: user.isSuperAdmin,
-      tenantId: null,
-      tenantUserId: null,
-      isOnline: true,
-      lastActive: new Date(),
-    },
-  });
-
-  response.cookies.set("platform-refresh-token", refreshToken, {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: "lax",
-    maxAge: 30 * 24 * 60 * 60,
-    path: "/",
-    domain: isProd ? `.${baseDomain}` : undefined,
-  });
-
-  response.cookies.set("platform-access-token", accessToken, {
-    httpOnly: false,
-    secure: isProd,
-    sameSite: "lax",
-    maxAge: 30 * 24 * 60 * 60,
-    path: "/",
-    domain: isProd ? `.${baseDomain}` : undefined,
-  });
-
-  return response;
-}
-
-function buildTenantTokenResponse(
-  accessToken: string,
-  refreshToken: string,
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    globalRole: string;
-    isAdmin: boolean;
-    isSuperAdmin: boolean;
-    tenantId: string;
-    tenantUserId: string;
-  },
-) {
-  const isProd = process.env.NODE_ENV === "production";
-
-  const response = NextResponse.json({
-    message: "Prijava uspešna",
-    token: accessToken,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      globalRole: user.globalRole,
-      isAdmin: user.isAdmin,
-      isSuperAdmin: user.isSuperAdmin,
-      tenantId: user.tenantId,
-      tenantUserId: user.tenantUserId,
-      isOnline: true,
-      lastActive: new Date(),
-    },
-  });
-
-  response.cookies.set("tenant-refresh-token", refreshToken, {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: "lax",
-    maxAge: 30 * 24 * 60 * 60,
-    path: "/",
-    domain: undefined,
-  });
-
-  response.cookies.set("tenant-access-token", accessToken, {
-    httpOnly: false,
-    secure: isProd,
-    sameSite: "lax",
-    maxAge: 30 * 24 * 60 * 60,
-    path: "/",
-    domain: undefined,
-  });
-
-  return response;
 }

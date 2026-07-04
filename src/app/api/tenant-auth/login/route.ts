@@ -21,6 +21,7 @@ import {
   generateAccessToken,
   generateRefreshToken,
 } from "@/lib/auth/auth-server";
+import { buildTenantTokenResponse } from "@/lib/auth/tokenResponse";
 
 const SUPPORT_LINK = "https://marysoll.com/kontakt";
 
@@ -157,60 +158,4 @@ export async function POST(request: NextRequest) {
     console.error("❌ Tenant login error:", error);
     return NextResponse.json({ error: "Greška na serveru" }, { status: 500 });
   }
-}
-
-function buildTenantTokenResponse(
-  accessToken: string,
-  refreshToken: string,
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    globalRole: string;
-    isAdmin: boolean;
-    isSuperAdmin: boolean;
-    tenantId: string;
-    tenantUserId: string;
-  },
-) {
-  const isProd = process.env.NODE_ENV === "production";
-
-  const response = NextResponse.json({
-    message: "Prijava uspešna",
-    token: accessToken,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      globalRole: user.globalRole,
-      isAdmin: user.isAdmin,
-      isSuperAdmin: user.isSuperAdmin,
-      tenantId: user.tenantId,
-      tenantUserId: user.tenantUserId,
-      isOnline: true,
-      lastActive: new Date(),
-    },
-  });
-
-  // domain: undefined → cookie is isolated to the current subdomain/domain
-  // This prevents cross-tenant token leakage.
-  response.cookies.set("tenant-refresh-token", refreshToken, {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: "lax",
-    maxAge: 30 * 24 * 60 * 60,
-    path: "/",
-    domain: undefined,
-  });
-
-  response.cookies.set("tenant-access-token", accessToken, {
-    httpOnly: false,
-    secure: isProd,
-    sameSite: "lax",
-    maxAge: 30 * 24 * 60 * 60,
-    path: "/",
-    domain: undefined,
-  });
-
-  return response;
 }
