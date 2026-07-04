@@ -11,7 +11,9 @@
 
 ---
 
-## Faza 0 — Higijena zavisnosti (nizak rizik, ~pola sata)
+## Faza 0 — Higijena zavisnosti ✅ URAĐENO 2026-07-04
+
+**Ishod:** `ioredis@5.10.1` dodat kao direktna zavisnost (pinovan na bullmq verziju → jedna kopija u tree-u; queue prosleđuje IORedis instancu bullmq-u pa je ista klasa bitna). Uklonjeno 8 paketa: `@upstash/redis`, `autoprefixer`, `@typescript-eslint/eslint-plugin`, `@typescript-eslint/parser`, `babel-plugin-react-compiler`, `@google/genai`, `react-markdown`, `@tanstack/react-query-devtools` (0.6 potvrdio Milan). Verifikovano: `tsc` čist, `eslint` radi (eslint-config-next nosi svoj typescript-eslint), `fallow dead-code` Dependencies sekcija čista. Stavka 0.7 (next/font) odložena kao posebna.
 
 | # | Nalaz | Status | Akcija |
 |---|-------|--------|--------|
