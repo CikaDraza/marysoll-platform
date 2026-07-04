@@ -76,7 +76,11 @@ Skeniranje kaže: **124 fajla · 164 exporta · 95 tipova · 5 enum članova**. 
 
 ---
 
-## Faza 2b — IZVEŠTAJ (2026-07-04): 167 unused exporta + 102 tipa u 111 živih fajlova
+## Faza 2b — ✅ IZVRŠENO 2026-07-04 (po Milanovim odlukama)
+
+**Ishod:** nalazi pali sa 275 na 161 (67 exporta · 89 tipova · 5 enum · 1 font FP). Urađeno: **A** sitemap suppress (`fallow-ignore-next-line unused-export` — token u jednini!); **B** un-export 12 internih Mongo/route tipova; **C** theme konzistencija — ThemeLayout, TenantShellClient i 4 tenant stranice sada SVE importuju kroz theme barrele (theme-8 barrel dobio ModalProvider + pages), jedini default export u temama (Theme8CelebrationOverlay) konvertovan u named; **D** mrtvi helperi obrisani/un-exportovani (uklj. `isPaddleSandbox`; `api.ts` netaknut po odluci; otkriveni dupli helperi: `translateAppointmentStatus` u email/helpers i test-email/helpers, `isWithinLimit` klon u usePlanFeatures — za kasniju konsolidaciju); **E** deepseek 5 gettera obrisano (mikroservis preuzima), `AGENT_PERSONAS` obrisan a `AGENTS` un-export (interno ga koristi živi `callDeepSeek` — agenti za content/SEO/campaign SU živi), **ctaCatalog ŽIV** (landingPageAgent ga ubacuje u prompt, resolveCta mapira ključeve — samo trimovani interni exporti), orchestrator višak re-exporta uklonjen; **E4 POTVRĐENO**: superadmin Gate mehanizam postoji — dashboard → `api/subscriptions/override/[tenantId]` → piše featureOverrides direktno u Subscription model → `usePlanFeatures`/`FeatureGate` primenjuju; `setFeatureOverride`/`clearFeatureOverride`/`consumeAiRequest`/`getAllPlanFeatures` iz subscriptionService bili klonovi/bez potrošača → obrisani. Preostali nalazi = namerno ostavljeno (loyalty u razvoju, block šeme, AuthContext.useAuth, platformUsage, webPush, CampaignIntent, theme varijante tipa HeroSplit). Verifikacija: tsc 0, eslint čist, pun build prošao.
+
+### Originalni izveštaj (pre izvršenja):
 
 **Napomena o booking.marysoll.com:** ostaci ideje „booking app unutar marysoll app" su praktično već očišćeni u Fazi 2 — obrisani fajlovi `useSalons`, `useSlots`, `slot-logic`, `salonMapper`, `salon-dto`, `getSalonProfile`, `platformClient`, `useAppointmnetsPageData`, `useServicePageData`, `useSalonMutations`, `useServiceMutations` su bili taj sloj. Marketplace API rute (`api/marketplace/*`) su ŽIVE — njih boost app konzumira — kod njih je višak samo poneki `export` keyword na lokalnom tipu.
 

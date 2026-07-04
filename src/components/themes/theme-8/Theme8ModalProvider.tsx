@@ -22,7 +22,7 @@ import { Theme8ModalContext, type ModalName } from "./theme8ModalContext";
 import { Y2KBookingCard } from "../shared/Y2KBookingCard";
 import { Y2KNewsletterWidget } from "../shared/Y2KNewsletterWidget";
 import { SprayReveal } from "./motion/SprayReveal";
-import Theme8CelebrationOverlay from "./Theme8CelebrationOverlay";
+import { Theme8CelebrationOverlay } from "./Theme8CelebrationOverlay";
 
 // Sprite sheet "Hvala" lika — grid 6×2 (12 frejmova), red-major.
 // PNG: public/images/theme-8/celebration-sheet.png (1080×700, frame 180×350).

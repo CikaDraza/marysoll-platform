@@ -16,7 +16,7 @@ import { formatWorkingHoursForDisplay } from "@/helpers/parseWorkingHours";
 import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
 import { WorkingHoursNote } from "@/components/shared/WorkingHoursNote";
 import { TenantPageShell } from "@/components/themes/TenantPageShell";
-import { Theme8AppointmentsPage } from "@/components/themes/theme-8/pages/Theme8AppointmentsPage";
+import { Theme8AppointmentsPage } from "@/components/themes/theme-8";
 
 export const dynamic = "force-dynamic";
 

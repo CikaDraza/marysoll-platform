@@ -17,15 +17,16 @@ import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
 import { formatStatValue } from "@/lib/tenant/tenantStatsUtils";
 
 // Theme 1
-import { Theme1Header } from "./theme-1/Header";
-import { Theme1Footer } from "./theme-1/Footer";
-import { Theme1Hero } from "./theme-1/Hero";
-import { Theme1WhatOffer } from "./theme-1/WhatOffer";
-import { Theme1GallerySection } from "./theme-1/GallerySection";
-import { Theme1PricingSection } from "./theme-1/PricingSection";
-import { Theme1AppointmentSection } from "./theme-1/AppointmentSection";
-import { Theme1TestimonialsSection } from "./theme-1/TestimonialsSection";
 import {
+  Theme1Header,
+  Theme1Footer,
+  Theme1Hero,
+  Theme1WhatOffer,
+  Theme1GallerySection,
+  Theme1PricingSection,
+  Theme1AppointmentSection,
+  Theme1TestimonialsSection,
+  Theme1ImageGenerationSection,
   Theme1AboutUs,
   Theme1CTABookingSection,
   Theme1FAQSection,
@@ -33,14 +34,14 @@ import {
 } from "./theme-1";
 
 // Theme 2
-import { Theme2Header } from "./theme-2/Header";
-import { Theme2Footer } from "./theme-2/Footer";
-import { Theme2Hero } from "./theme-2/Hero";
-import { Theme2WhyChooseUs } from "./theme-2/WhyChooseUs";
-import { Theme2PricingSection } from "./theme-2/PricingSection";
-import { Theme2CTAAppointmentSection } from "./theme-2/CTAAppointmentSection";
-import { Theme2TestimonialsSection } from "./theme-2/TestimonialsSection";
 import {
+  Theme2Header,
+  Theme2Footer,
+  Theme2Hero,
+  Theme2WhyChooseUs,
+  Theme2PricingSection,
+  Theme2CTAAppointmentSection,
+  Theme2TestimonialsSection,
   Theme2AboutSplit,
   Theme2GalleryGrid,
   Theme2ServicesPreview,
@@ -48,10 +49,9 @@ import {
 } from "./theme-2";
 
 // Theme 3
-import { Theme3Header } from "./theme-3/Header";
-import { Theme3Footer } from "./theme-3/Footer";
-import { Theme1ImageGenerationSection } from "./theme-1/ImageGenerationSection";
 import {
+  Theme3Header,
+  Theme3Footer,
   BlogSection,
   NewsletterSection,
   Theme3AboutSoft,
@@ -75,8 +75,8 @@ import {
   Theme4HeroSoft,
   Theme4ServicesSoft,
   Theme4WorkingHours,
+  Theme4AboutSoft,
 } from "./theme-4";
-import { Theme4AboutSoft } from "./theme-4";
 import { mapCMS } from "@/lib/CMSMapper/mapCMS";
 import {
   Theme5About,
@@ -134,8 +134,8 @@ import {
   Theme8Footer,
   Y2KFilters,
   Theme8Preloader,
+  Theme8ModalProvider,
 } from "./theme-8";
-import { Theme8ModalProvider } from "./theme-8/Theme8ModalProvider";
 import {
   BackgroundWall,
   FixedDecorLayer,
