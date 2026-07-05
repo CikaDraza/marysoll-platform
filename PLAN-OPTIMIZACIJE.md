@@ -167,7 +167,9 @@ Ukupno **18.244 linija (14%) u 391 clone grupi**. Cilj: ispod 8%. Redosled po ri
 
 **4d urađeno (`175186d`, branch `optimizacija/faza-4-nastavak`):** MarketingTab **2.452 → 88 linija** — `MarketingProvider` kao JEDAN izvor istine (useMarketingCms + useCmsPages pozvani jednom; UI state u kontekstu; `useMarketingContext()` baca van providera; bez prop drilling-a); 25 komponenti u `superadmin/marketing/` (17 sekcija + SeoToolbar u `sections/`, LandingPanel, PagesPanel + 5 pomoćnih). Stroga tipizacija, 0 `any`; server logika ostaje u API rutama iza hookova.
 
-**Preostalo u Fazi 4 (postepeno, uz features):** `BookingModal` (796 l., 16 props), `proxy.ts` (samo uz testove); `AdminLandingCMS` section-split ide uz Theme Engine.
+**4e urađeno (`ef8a618`, branch `optimizacija/booking-modal-proxy`):** BookingModal **843 → 96 linija** — `BookingProvider` (jedan izvor istine: state izbora + gost tok + sva tri submit toka; `useBookingContext()` baca van providera; bez prop drilling-a); 7 komponenti u `shared/booking/`. **Spoljni API nepromenjen** (props + `PendingAppointment` + `PENDING_STORAGE_KEY` re-export) — 3 pozivaoca (widgeti, AppointmentCalendarPage) netaknuta. 0 `any`.
+
+**Preostalo u Fazi 4 (postepeno, uz features):** `proxy.ts` (samo uz testove); `AdminLandingCMS` section-split ide uz Theme Engine.
 
 ## Faza 4 — originalni plan (dugoročno — raditi uz nove features, ne odjednom)
 
