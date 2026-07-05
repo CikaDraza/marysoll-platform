@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Auto-generisani TypeScript/Next artefakti — regenerišu se pri svakom dev/build
+tsconfig.tsbuildinfo
+next-env.d.ts

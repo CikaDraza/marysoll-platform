@@ -406,7 +406,7 @@ export default function AppointmentAdminCalendar() {
               🕐 Zakazivanje
             </p>
             {vacation && (
-              <div className="mb-3 flex items-center justify-between">
+              <div className="my-6 flex items-center justify-between">
                 <span className="text-xs font-medium w-28 text-amber-600 dark:text-amber-500">
                   Odmor
                 </span>
@@ -416,7 +416,9 @@ export default function AppointmentAdminCalendar() {
               </div>
             )}
             <WorkingHoursNote
-              rulesHref={salonUrl ? `${salonUrl}/pravila-zakazivanja` : undefined}
+              rulesHref={
+                salonUrl ? `${salonUrl}/pravila-zakazivanja` : undefined
+              }
             />
           </div>
         ) : (
@@ -655,23 +657,26 @@ export default function AppointmentAdminCalendar() {
                 allDaySlot={false}
                 slotMinTime="06:00:00"
                 slotMaxTime="23:00:00"
-                events={[...appointments.map((a) => {
-                  const duration = a.duration || 60;
-                  const start = new Date(`${a.date}T${a.time}`);
-                  const end = new Date(start.getTime() + duration * 60000);
-                  const meta = statusMeta(a.status);
-                  const color = meta.hex;
-                  const label = meta.label;
-                  return {
-                    id: a._id,
-                    title: `${a.serviceName} — ${a.clientName} (${label})`,
-                    start,
-                    end,
-                    backgroundColor: color,
-                    borderColor: color,
-                    textColor: "#ffffff",
-                  };
-                }), ...manualBgEvents]}
+                events={[
+                  ...appointments.map((a) => {
+                    const duration = a.duration || 60;
+                    const start = new Date(`${a.date}T${a.time}`);
+                    const end = new Date(start.getTime() + duration * 60000);
+                    const meta = statusMeta(a.status);
+                    const color = meta.hex;
+                    const label = meta.label;
+                    return {
+                      id: a._id,
+                      title: `${a.serviceName} — ${a.clientName} (${label})`,
+                      start,
+                      end,
+                      backgroundColor: color,
+                      borderColor: color,
+                      textColor: "#ffffff",
+                    };
+                  }),
+                  ...manualBgEvents,
+                ]}
                 businessHours={isManual ? undefined : businessHours}
                 locale={srLocale}
                 firstDay={1}

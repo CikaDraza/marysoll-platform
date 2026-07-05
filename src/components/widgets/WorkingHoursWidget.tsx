@@ -48,7 +48,7 @@ export function WorkingHoursWidget({
           🕐 Zakazivanje
         </h3>
         {vacation && (
-          <ul className="mb-3">
+          <ul className="my-6">
             <VacationRow range={formatVacationRange(vacation)} />
           </ul>
         )}
