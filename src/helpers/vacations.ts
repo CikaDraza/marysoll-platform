@@ -57,6 +57,14 @@ function formatVacationDay(iso: string): string {
   return `${day}.${month}`;
 }
 
+/** Odmor je istekao kada prođe poslednji dan (to < danas). */
+export function isVacationExpired(
+  v: IVacation,
+  today: string = todayISO(),
+): boolean {
+  return Boolean(v.to) && v.to < today;
+}
+
 /** Opseg za badge, npr. "25.07 - 03.08". */
 export function formatVacationRange(v: IVacation): string {
   return `${formatVacationDay(v.from)} - ${formatVacationDay(v.to)}`;

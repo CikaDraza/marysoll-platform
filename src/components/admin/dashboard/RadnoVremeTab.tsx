@@ -7,6 +7,7 @@ import { Time24Input } from "@/components/shared/Time24Input";
 import { DAYS_OF_WEEK } from "@/types";
 import type { DayOfWeek } from "@/types";
 import { card, formatManualDayLabel } from "./shared";
+import { isVacationExpired } from "@/helpers/vacations";
 import type { DashboardTabProps } from "./types";
 
 
@@ -95,7 +96,7 @@ export function RadnoVremeTab(props: DashboardTabProps) {
       </div>
 
       {/* Podesi godišnji odmor — opsezi datuma, prikazuju se kao badge na sajtu */}
-      <div className="w-full lg:max-w-md rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/40 p-4">
+      <div className="w-full lg:max-w-md rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/40 p-2 sm:p-4">
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="min-w-0">
             <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
@@ -108,7 +109,7 @@ export function RadnoVremeTab(props: DashboardTabProps) {
           <button
             type="button"
             onClick={() => sp.addVacation()}
-            className="flex-shrink-0 text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 px-3 py-1.5 rounded-lg transition"
+            className="flex-shrink-0 text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 px-2 sm:px-3 py-1.5 rounded-lg transition"
           >
             + dodaj
           </button>
@@ -123,11 +124,8 @@ export function RadnoVremeTab(props: DashboardTabProps) {
             {sp.form.vacations.map((v, idx) => (
               <div
                 key={idx}
-                className="flex flex-wrap items-center gap-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 py-2"
+                className="flex flex-wrap items-center gap-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-2 sm:px-3 py-2"
               >
-                <span className="text-xs text-gray-400 font-medium">
-                  od
-                </span>
                 <input
                   type="date"
                   value={v.from}
@@ -151,13 +149,20 @@ export function RadnoVremeTab(props: DashboardTabProps) {
                   aria-label="Kraj odmora"
                   className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1 text-sm font-semibold text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400"
                 />
-                <button
-                  type="button"
-                  onClick={() => sp.removeVacation(idx)}
-                  className="ml-auto text-xs text-red-400 hover:text-red-600 font-semibold px-2 py-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
-                >
-                  − Ukloni
-                </button>
+                <div className="ml-auto flex items-center gap-2">
+                  {isVacationExpired(v) && (
+                    <span className="animate-pulse flex-shrink-0 text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 px-2 sm:px-3 py-1.5 rounded-lg">
+                      istekao
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => sp.removeVacation(idx)}
+                    className="text-xs text-red-400 hover:text-red-600 font-semibold px-2 py-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                  >
+                    − Ukloni
+                  </button>
+                </div>
               </div>
             ))}
           </div>
