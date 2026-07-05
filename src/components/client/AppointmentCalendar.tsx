@@ -8,7 +8,7 @@
  */
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import toast from "react-hot-toast";
 import {
   format,
@@ -163,9 +163,17 @@ function DayView({
   const now = new Date();
 
   if (!isWorking) {
+    // Radnim danima bez termina piše "popunjeno" — "ne radi" zbunjuje klijente
+    // kad salon inače radi tim danom; vikendom ostaje "ne radi" (kao theme-8).
+    const isWeekend = getDay(selectedDate) === 0 || getDay(selectedDate) === 6;
     return (
-      <div className="flex items-center justify-center h-48 text-sm text-zinc-500 dark:text-zinc-400 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700">
-        Salon ne radi ovim danom
+      <div className="flex flex-col items-center justify-center h-48 gap-2 text-sm text-zinc-500 dark:text-zinc-400 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700">
+        <span className="text-2xl">🔒</span>
+        <span className="font-semibold">
+          {isWeekend
+            ? "Salon ne radi ovim danom"
+            : "Termini za ovaj dan su popunjeni"}
+        </span>
       </div>
     );
   }
@@ -410,6 +418,25 @@ export default function AppointmentCalendar() {
   };
 
   const handleTouchEnd = () => setTimeout(() => setIsSwiping(false), 300);
+
+  // Dan-strip: skroluj strip do izabranog dana — klik na "Danas" (ili bilo koji
+  // izbor datuma) centrira odgovarajuće dugme, isti šablon kao Y2K widget.
+  const dayStripRef = useRef<HTMLDivElement>(null);
+  const activeDayRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (viewMode !== "day") return;
+    const container = dayStripRef.current;
+    const btn = activeDayRef.current;
+    if (!container || !btn) return;
+    const cRect = container.getBoundingClientRect();
+    const bRect = btn.getBoundingClientRect();
+    const delta =
+      bRect.left - cRect.left - container.clientWidth / 2 + bRect.width / 2;
+    container.scrollTo({
+      left: container.scrollLeft + delta,
+      behavior: "smooth",
+    });
+  }, [viewMode, selectedDate]);
 
   const {
     data: response,
@@ -746,7 +773,10 @@ export default function AppointmentCalendar() {
             ) : viewMode === "day" ? (
               <>
                 {/* Day strip */}
-                <div className="flex gap-1.5 overflow-x-auto px-0.5 pt-1.5 pb-3 mb-4 scrollbar-none">
+                <div
+                  ref={dayStripRef}
+                  className="flex gap-1.5 overflow-x-auto px-0.5 pt-1.5 pb-3 mb-4 scrollbar-none"
+                >
                   {Array.from({ length: 14 }).map((_, i) => {
                     const day = addDays(new Date(), i - 3);
                     const isSelected = isSameDay(day, selectedDate);
@@ -757,6 +787,7 @@ export default function AppointmentCalendar() {
                     return (
                       <button
                         key={i}
+                        ref={isSelected ? activeDayRef : null}
                         onClick={() => setSelectedDate(day)}
                         className={`flex flex-col items-center flex-shrink-0 w-12 h-14 rounded-xl border transition cursor-pointer ${
                           isSelected
