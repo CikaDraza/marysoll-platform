@@ -37,7 +37,7 @@ export function WorkingHoursNote({
 }) {
   return (
     <p className={`text-[11px] leading-snug text-gray-400 ${className}`}>
-      Termini se zakazuju putem aplikacije.
+      Kako se zakazuje?
       {rulesHref ? (
         <>
           {" "}

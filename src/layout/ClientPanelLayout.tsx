@@ -134,7 +134,13 @@ function ClientSidebar({
   salonName,
   salonLogo,
 }: ClientSidebarProps) {
-  const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const {
+    isExpanded,
+    isMobileOpen,
+    isHovered,
+    setIsHovered,
+    closeMobileSidebar,
+  } = useSidebar();
   const { user, logout } = useAuth();
   const { base, tenantSlug } = useClientRouting();
   const { data: tenantSalon } = usePublicSalonProfile(tenantSlug);
@@ -214,7 +220,12 @@ function ClientSidebar({
           return (
             <button
               key={t.id}
-              onClick={() => onTabChange(t.id)}
+              onClick={() => {
+                onTabChange(t.id);
+                // Na mobilnom zatvori drawer čim se izabere tab — isto
+                // ponašanje kao admin dashboard sidebar (closeMobileSidebar).
+                closeMobileSidebar();
+              }}
               className={[
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                 isActive
@@ -310,7 +321,7 @@ function ClientSidebar({
 // ─── Header ───────────────────────────────────────────────────────────────────
 
 function ClientHeader({ activeTab }: { activeTab: PanelTab }) {
-  const { isMobileOpen, isExpanded, toggleSidebar, toggleMobileSidebar } =
+  const { isMobileOpen, toggleSidebar, toggleMobileSidebar } =
     useSidebar();
   const { user } = useAuth();
   const { base } = useClientRouting();

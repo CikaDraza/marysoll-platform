@@ -7,7 +7,7 @@
  */
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import {
   format,
   addDays,
@@ -127,9 +127,17 @@ function DayView({
   const dayAppts = appointments.filter((a) => a.date === dateStr);
 
   if (!isWorking) {
+    // Radnim danima bez termina piše "popunjeno" — "ne radi" zbunjuje klijente
+    // kad salon inače radi tim danom; vikendom ostaje "ne radi" (kao theme-8).
+    const isWeekend = getDay(selectedDate) === 0 || getDay(selectedDate) === 6;
     return (
-      <div className="flex items-center justify-center h-48 text-sm text-zinc-500 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-200 ">
-        Salon ne radi ovim danom
+      <div className="flex flex-col items-center justify-center h-48 gap-2 text-sm text-zinc-500 dark:text-zinc-400 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700">
+        <span className="text-2xl">🔒</span>
+        <span className="font-semibold">
+          {isWeekend
+            ? "Salon ne radi ovim danom"
+            : "Termini za ovaj dan su popunjeni"}
+        </span>
       </div>
     );
   }
@@ -219,7 +227,7 @@ function WeekView({
           <button
             key={dateStr}
             onClick={() => onDayClick(day)}
-            className={`flex flex-col items-stretch gap-1 p-2 rounded-xl border transition min-h-[100px] text-left ${
+            className={`flex flex-col items-stretch gap-1 p-1 sm:p-2 rounded-xl border transition min-h-[84px] sm:min-h-[100px] text-left ${
               isSelected
                 ? "border-violet-400 bg-violet-900 dark:bg-violet-950"
                 : isToday
@@ -240,8 +248,15 @@ function WeekView({
               </p>
             </div>
 
+            {/* Mobilni: okrugli indikator (zeleno = ima termina, tamno sivo = nema);
+                desktop zadržava "Neradan" tekst */}
+            <span
+              className={`sm:hidden mx-auto w-2 h-2 rounded-full ${
+                isWorking ? "bg-green-500" : "bg-gray-500 dark:bg-gray-600"
+              }`}
+            />
             {!isWorking && (
-              <span className="text-[9px] text-gray-400 text-center">
+              <span className="hidden sm:block text-[9px] text-gray-400 text-center">
                 Neradan
               </span>
             )}
@@ -355,6 +370,25 @@ export default function AppointmentAdminCalendar() {
     setWeekStart(startOfWeek(today, { weekStartsOn: 1 }));
   }
 
+  // Dan-strip: skroluj strip do izabranog dana — klik na "Danas" (ili bilo koji
+  // izbor datuma) centrira odgovarajuće dugme, isti šablon kao Y2K widget.
+  const dayStripRef = useRef<HTMLDivElement>(null);
+  const activeDayRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (viewMode !== "day") return;
+    const container = dayStripRef.current;
+    const btn = activeDayRef.current;
+    if (!container || !btn) return;
+    const cRect = container.getBoundingClientRect();
+    const bRect = btn.getBoundingClientRect();
+    const delta =
+      bRect.left - cRect.left - container.clientWidth / 2 + bRect.width / 2;
+    container.scrollTo({
+      left: container.scrollLeft + delta,
+      behavior: "smooth",
+    });
+  }, [viewMode, selectedDate]);
+
   const wh = salonForm.workingHours as WorkingHoursMap;
   const card =
     "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
@@ -372,7 +406,7 @@ export default function AppointmentAdminCalendar() {
               🕐 Zakazivanje
             </p>
             {vacation && (
-              <div className="mb-3 flex items-center justify-between">
+              <div className="my-6 flex items-center justify-between">
                 <span className="text-xs font-medium w-28 text-amber-600 dark:text-amber-500">
                   Odmor
                 </span>
@@ -382,7 +416,9 @@ export default function AppointmentAdminCalendar() {
               </div>
             )}
             <WorkingHoursNote
-              rulesHref={salonUrl ? `${salonUrl}/pravila-zakazivanja` : undefined}
+              rulesHref={
+                salonUrl ? `${salonUrl}/pravila-zakazivanja` : undefined
+              }
             />
           </div>
         ) : (
@@ -529,7 +565,10 @@ export default function AppointmentAdminCalendar() {
           ) : viewMode === "day" ? (
             <>
               {/* Day strip */}
-              <div className="flex gap-1.5 overflow-x-auto px-0.5 pt-1.5 pb-3 mb-4 scrollbar-none">
+              <div
+                ref={dayStripRef}
+                className="flex gap-1.5 overflow-x-auto px-0.5 pt-1.5 pb-3 mb-4 scrollbar-none"
+              >
                 {Array.from({ length: 14 }).map((_, i) => {
                   const day = addDays(new Date(), i - 3);
                   const isSelected = isSameDay(day, selectedDate);
@@ -541,6 +580,7 @@ export default function AppointmentAdminCalendar() {
                   return (
                     <button
                       key={i}
+                      ref={isSelected ? activeDayRef : null}
                       onClick={() => setSelectedDate(day)}
                       className={`flex flex-col items-center flex-shrink-0 w-12 h-14 rounded-xl border transition ${
                         isSelected
@@ -617,23 +657,26 @@ export default function AppointmentAdminCalendar() {
                 allDaySlot={false}
                 slotMinTime="06:00:00"
                 slotMaxTime="23:00:00"
-                events={[...appointments.map((a) => {
-                  const duration = a.duration || 60;
-                  const start = new Date(`${a.date}T${a.time}`);
-                  const end = new Date(start.getTime() + duration * 60000);
-                  const meta = statusMeta(a.status);
-                  const color = meta.hex;
-                  const label = meta.label;
-                  return {
-                    id: a._id,
-                    title: `${a.serviceName} — ${a.clientName} (${label})`,
-                    start,
-                    end,
-                    backgroundColor: color,
-                    borderColor: color,
-                    textColor: "#ffffff",
-                  };
-                }), ...manualBgEvents]}
+                events={[
+                  ...appointments.map((a) => {
+                    const duration = a.duration || 60;
+                    const start = new Date(`${a.date}T${a.time}`);
+                    const end = new Date(start.getTime() + duration * 60000);
+                    const meta = statusMeta(a.status);
+                    const color = meta.hex;
+                    const label = meta.label;
+                    return {
+                      id: a._id,
+                      title: `${a.serviceName} — ${a.clientName} (${label})`,
+                      start,
+                      end,
+                      backgroundColor: color,
+                      borderColor: color,
+                      textColor: "#ffffff",
+                    };
+                  }),
+                  ...manualBgEvents,
+                ]}
                 businessHours={isManual ? undefined : businessHours}
                 locale={srLocale}
                 firstDay={1}
