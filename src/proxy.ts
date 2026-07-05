@@ -724,7 +724,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     }
 
     // In production, path-based tenant routing (marysoll.com/slug/...) is NOT supported.
-    if (IS_PROD && !isHostBased) {
+    // Izuzetak: Vercel preview buildovi (*.vercel.app) nemaju tenant subdomene,
+    // pa se tenant sajtovi testiraju path-based kao na localhost-u.
+    const isVercelPreview = host.endsWith(".vercel.app");
+    if (IS_PROD && !isHostBased && !isVercelPreview) {
       return NextResponse.rewrite(new URL("/not-found", request.url));
     }
 
