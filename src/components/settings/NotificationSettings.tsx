@@ -65,7 +65,6 @@ export default function NotificationSettings() {
 
   return (
     <div className="py-6">
-
       {/* Naslov zavisno od uloge */}
       <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8">
         {isAdmin ? "Postavke notifikacija" : "Moje postavke notifikacija"}
@@ -87,7 +86,7 @@ export default function NotificationSettings() {
               description={
                 permission === "denied"
                   ? "Blokirano u browseru — omogućite u podešavanjima sajta"
-                  : "Obaveštenja na browser-u (i kada niste na sajtu)"
+                  : "Kada niste na sajtu"
               }
               checked={settings.pushNotifications}
               onChange={handlePushToggle}
