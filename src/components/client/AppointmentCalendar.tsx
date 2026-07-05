@@ -292,7 +292,7 @@ function WeekView({
           <button
             key={dateStr}
             onClick={() => onDayClick(day)}
-            className={`flex flex-col items-stretch gap-1 p-2 rounded-xl border transition min-h-[100px] text-left cursor-pointer ${
+            className={`flex flex-col items-stretch gap-1 p-1 sm:p-2 rounded-xl border transition min-h-[84px] sm:min-h-[100px] text-left cursor-pointer ${
               isSelected
                 ? "border-violet-400 bg-violet-900 dark:bg-violet-950"
                 : isToday
@@ -319,8 +319,15 @@ function WeekView({
               </p>
             </div>
 
+            {/* Mobilni: okrugli indikator (zeleno = ima termina, tamno sivo = nema);
+                desktop zadržava "Neradan" tekst */}
+            <span
+              className={`sm:hidden mx-auto w-2 h-2 rounded-full ${
+                isWorking ? "bg-green-500" : "bg-gray-500 dark:bg-gray-600"
+              }`}
+            />
             {!isWorking && (
-              <span className="text-[9px] text-gray-400 text-center">
+              <span className="hidden sm:block text-[9px] text-gray-400 text-center">
                 Neradan
               </span>
             )}
@@ -628,10 +635,13 @@ export default function AppointmentCalendar() {
 
         {/* Calendar */}
         <div className={card + " !p-0 overflow-hidden"}>
-          {/* Toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-zinc-100 dark:border-zinc-700">
-            {/* View toggle */}
-            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-gray-800 rounded-xl p-1">
+          {/* Toolbar — isti responsive raspored kao AppointmentAdminCalendar:
+              view toggle preko cele širine na mobilnom, navigacija ispod,
+              "Danas" u svom redu levo. Bez "+ Zakaži termin" — klijent bira
+              termin klikom na slobodan slot. */}
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 px-5 py-3 max-sm:px-3 max-sm:py-2.5 border-b border-zinc-100 dark:border-zinc-700">
+            {/* View toggle — full width na mobilnom */}
+            <div className="w-full sm:w-auto sm:flex-1 flex items-center gap-1 bg-zinc-100 dark:bg-gray-800 rounded-xl p-1">
               {(
                 [
                   ["week", "Sedmica"],
@@ -642,7 +652,7 @@ export default function AppointmentCalendar() {
                 <button
                   key={v}
                   onClick={() => setViewMode(v)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer ${
+                  className={`flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap cursor-pointer ${
                     viewMode === v
                       ? "bg-white dark:bg-gray-700 text-violet-700 dark:text-violet-400 shadow-sm"
                       : "text-zinc-400 dark:text-gray-400 hover:text-zinc-700 dark:hover:text-gray-200"
@@ -655,7 +665,7 @@ export default function AppointmentCalendar() {
 
             {/* Navigation — hidden in fullcalendar mode */}
             {viewMode !== "fullcalendar" && (
-              <div className="flex items-center gap-2">
+              <div className="w-full sm:w-auto sm:flex-none flex items-center justify-center gap-2">
                 <button
                   onClick={() =>
                     viewMode === "week"
@@ -666,7 +676,7 @@ export default function AppointmentCalendar() {
                 >
                   <ChevronLeftIcon className="w-4 h-4" />
                 </button>
-                <span className="text-sm font-semibold text-zinc-800 dark:text-gray-300 min-w-[200px] text-center capitalize">
+                <span className="text-sm font-semibold text-zinc-800 dark:text-gray-300 min-w-[160px] sm:min-w-[180px] text-center capitalize">
                   {navLabel}
                 </span>
                 <button
@@ -679,33 +689,35 @@ export default function AppointmentCalendar() {
                 >
                   <ChevronRightIcon className="w-4 h-4" />
                 </button>
+                {/* Danas — desktop, pored strelica */}
                 <button
                   onClick={() => {
                     const today = new Date();
                     setSelectedDate(today);
                     setWeekStart(startOfWeek(today, { weekStartsOn: 1 }));
                   }}
-                  className="ml-1 px-3 py-1.5 text-xs font-semibold bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 rounded-lg hover:bg-violet-200 dark:hover:bg-violet-800/30 transition cursor-pointer"
+                  className="hidden sm:inline-flex ml-1 px-3 py-1.5 text-xs font-semibold bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 rounded-lg hover:bg-violet-200 dark:hover:bg-violet-800/30 transition cursor-pointer"
                 >
                   Danas
                 </button>
               </div>
             )}
 
-            {/* Quick create */}
-            <button
-              onClick={() => {
-                if (!user) return toast.error("Morate biti prijavljeni.");
-                setCreateDefaults({
-                  date: format(selectedDate, "yyyy-MM-dd"),
-                  time: "",
-                });
-                setCreateOpen(true);
-              }}
-              className="px-4 py-2 bg-violet-600 text-white text-xs font-bold rounded-xl hover:bg-violet-700 transition cursor-pointer"
-            >
-              + Zakaži termin
-            </button>
+            {/* Danas — mobilni: svoj red ispod izbora datuma, levo */}
+            {viewMode !== "fullcalendar" && (
+              <div className="w-full sm:hidden flex items-center justify-start">
+                <button
+                  onClick={() => {
+                    const today = new Date();
+                    setSelectedDate(today);
+                    setWeekStart(startOfWeek(today, { weekStartsOn: 1 }));
+                  }}
+                  className="px-3 py-1.5 text-xs font-semibold bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 rounded-lg hover:bg-violet-200 dark:hover:bg-violet-800/30 transition cursor-pointer"
+                >
+                  Danas
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Body */}
@@ -781,7 +793,7 @@ export default function AppointmentCalendar() {
             ) : (
               /* FullCalendar view */
               <div
-                className="overflow-hidden"
+                className="admin-fc"
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}

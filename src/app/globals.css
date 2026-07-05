@@ -240,8 +240,8 @@ body {
 
 /* Admin calendar — FullCalendar header toolbar on MOBILE only, stacked into 3 rows:
    row 1: prev/next + today (grouped, centered), row 2: title, row 3: view buttons.
-   Scoped to .admin-fc (admin dashboard calendar) so the client-panel calendar
-   and all desktop views are completely unaffected. */
+   Scoped to .admin-fc — koriste ga i admin dashboard kalendar i client panel
+   kalendar (isti responsive/scroll šablon); desktop prikazi netaknuti. */
 @media (max-width: 640px) {
   .admin-fc .fc-header-toolbar.fc-toolbar {
     flex-wrap: wrap;

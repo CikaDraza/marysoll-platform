@@ -219,7 +219,7 @@ function WeekView({
           <button
             key={dateStr}
             onClick={() => onDayClick(day)}
-            className={`flex flex-col items-stretch gap-1 p-2 rounded-xl border transition min-h-[100px] text-left ${
+            className={`flex flex-col items-stretch gap-1 p-1 sm:p-2 rounded-xl border transition min-h-[84px] sm:min-h-[100px] text-left ${
               isSelected
                 ? "border-violet-400 bg-violet-900 dark:bg-violet-950"
                 : isToday
@@ -240,8 +240,15 @@ function WeekView({
               </p>
             </div>
 
+            {/* Mobilni: okrugli indikator (zeleno = ima termina, tamno sivo = nema);
+                desktop zadržava "Neradan" tekst */}
+            <span
+              className={`sm:hidden mx-auto w-2 h-2 rounded-full ${
+                isWorking ? "bg-green-500" : "bg-gray-500 dark:bg-gray-600"
+              }`}
+            />
             {!isWorking && (
-              <span className="text-[9px] text-gray-400 text-center">
+              <span className="hidden sm:block text-[9px] text-gray-400 text-center">
                 Neradan
               </span>
             )}
