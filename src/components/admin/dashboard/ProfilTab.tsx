@@ -101,6 +101,7 @@ export function ProfilTab(props: DashboardTabProps) {
                 alt="Logo za notifikacije"
                 width={112}
                 height={112}
+                priority
                 className="w-full h-full object-contain"
               />
             ) : (

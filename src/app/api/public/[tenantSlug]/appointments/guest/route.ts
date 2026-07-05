@@ -127,6 +127,8 @@ export async function POST(request: NextRequest, { params }: Params) {
       time,
       requestedDuration,
       profile: salonProfile,
+      // Klijentski tok: mora u radno vreme (admin create-guest ostaje slobodan)
+      enforceWorkingHours: true,
     });
     if (slotError) {
       return NextResponse.json({ error: slotError }, { status: 400 });

@@ -151,7 +151,10 @@ function AppointmentListItem({
 
         {/* Akcije */}
         <div className="flex gap-2 mt-2">
-          {currentAppointment.status === "pending" && (
+          {/* Odobri/Otkaži i kad klijent POMERI termin (rescheduled) — ne samo
+              za prvo zakazivanje (pending). */}
+          {(currentAppointment.status === "pending" ||
+            currentAppointment.status === "appointment_rescheduled") && (
             <>
               <button
                 onClick={() => handleStatusUpdate("appointment_approved")}

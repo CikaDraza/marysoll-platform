@@ -20,6 +20,10 @@ import {
   checkManualSlotAvailability,
   overlapsAppointments,
 } from "@/helpers/manualSlots";
+import {
+  isWithinWorkingHours,
+  workingSlotsForDate,
+} from "@/helpers/parseWorkingHours";
 import type { ManualSlotsMap } from "@/types";
 
 /** Trial/paid gate — sme li salon trenutno da prima zakazivanja. */
@@ -41,6 +45,7 @@ type BookingSalonProfile = {
   cancellationWindowHours?: number;
   availabilityMode?: string;
   manualSlots?: ManualSlotsMap;
+  workingHours?: Record<string, unknown>;
 };
 
 /**
@@ -52,7 +57,7 @@ export async function loadBookingProfile(tenantId: string): Promise<{
   cancellationWindowHours: number;
 }> {
   const profile = await SalonProfile.findOne({ tenantId })
-    .select("cancellationWindowHours availabilityMode manualSlots")
+    .select("cancellationWindowHours availabilityMode manualSlots workingHours")
     .lean<BookingSalonProfile>();
   const cancellationWindowHours =
     typeof profile?.cancellationWindowHours === "number"
@@ -64,8 +69,10 @@ export async function loadBookingProfile(tenantId: string): Promise<{
 /**
  * Provera slobodnog termina — jedina istina za oba režima.
  * Preklapanje po TRAJANJU (novi termin [time, time+duration) ne sme da se
- * seče ni sa jednim aktivnim terminom tog dana). Radno vreme se namerno NE
- * proverava — vlasnik pri odobravanju odlučuje o prekovremenom.
+ * seče ni sa jednim aktivnim terminom tog dana).
+ * `enforceWorkingHours` (KLIJENTSKI tokovi, odluka 2026-07-05): termin mora
+ * ceo da stane u radno vreme i dan mora biti radan — ADMIN (create-guest)
+ * namerno NIJE ograničen (sme prekovremeno/neradan dan/preklapanje).
  * U manualSlots režimu dodatno: sme samo tačan termin koji je vlasnik definisao.
  * Vraća poruku o grešci (string) ili null ako je slobodno.
  */
@@ -75,8 +82,28 @@ export async function checkSlotAvailability(args: {
   time: string;
   requestedDuration: number;
   profile: BookingSalonProfile | null;
+  enforceWorkingHours?: boolean;
 }): Promise<string | null> {
-  const { tenantId, date, time, requestedDuration, profile } = args;
+  const {
+    tenantId,
+    date,
+    time,
+    requestedDuration,
+    profile,
+    enforceWorkingHours,
+  } = args;
+
+  if (enforceWorkingHours && profile?.availabilityMode !== "manualSlots") {
+    const daySlots = workingSlotsForDate(profile?.workingHours, date);
+    if (daySlots.length === 0) {
+      return "Salon ne radi izabranog dana.";
+    }
+    if (
+      !isWithinWorkingHours(profile?.workingHours, date, time, requestedDuration)
+    ) {
+      return "Izabrano vreme je van radnog vremena salona.";
+    }
+  }
 
   const dayAppointments = await Appointment.find({
     tenantId,
