@@ -157,7 +157,19 @@ async function resolveCustomDomain(
     const url = new URL("/api/internal/resolve-domain", request.nextUrl.origin);
     url.searchParams.set("domain", host);
     const res = await fetch(url.toString(), {
-      headers: { "x-internal-secret": process.env.INTERNAL_API_SECRET ?? "" },
+      headers: {
+        "x-internal-secret": process.env.INTERNAL_API_SECRET ?? "",
+        // Vercel preview sa Deployment Protection: interni fetch nema browser
+        // kolačić pa ga auth zid blokira (browser prolazi, middleware ne) →
+        // resolve vrati null → tenant 404. Bypass secret postoji kad se u
+        // Vercel Settings uključi "Protection Bypass for Automation".
+        ...(process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+          ? {
+              "x-vercel-protection-bypass":
+                process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
+            }
+          : {}),
+      },
     });
     if (!res.ok) {
       domainCache.set(host, {
@@ -199,7 +211,19 @@ async function resolveSlugToTenantId(
     const url = new URL("/api/internal/resolve-tenant", request.nextUrl.origin);
     url.searchParams.set("slug", slug);
     const res = await fetch(url.toString(), {
-      headers: { "x-internal-secret": process.env.INTERNAL_API_SECRET ?? "" },
+      headers: {
+        "x-internal-secret": process.env.INTERNAL_API_SECRET ?? "",
+        // Vercel preview sa Deployment Protection: interni fetch nema browser
+        // kolačić pa ga auth zid blokira (browser prolazi, middleware ne) →
+        // resolve vrati null → tenant 404. Bypass secret postoji kad se u
+        // Vercel Settings uključi "Protection Bypass for Automation".
+        ...(process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+          ? {
+              "x-vercel-protection-bypass":
+                process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
+            }
+          : {}),
+      },
     });
     if (!res.ok) return null;
 
