@@ -4,7 +4,10 @@ import React, { useMemo, useState } from "react";
 import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
 import { XMarkIcon, TrashIcon, ClockIcon } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
-import { generateTimes } from "@/helpers/generateTimes";
+import {
+  availableTimesForDate,
+  type WorkingHoursInput,
+} from "@/helpers/parseWorkingHours";
 import {
   manualTimesForDate,
   isManualSlotTaken,
@@ -26,6 +29,8 @@ interface Props {
   token?: string;
   /** "manualSlots" ograničava pomeranje na termine koje je vlasnik definisao. */
   availabilityMode?: string;
+  /** Radno vreme salona — klasičan režim gradi dropdown dostupnih vremena. */
+  workingHours?: WorkingHoursInput;
   manualSlots?: ManualSlotsMap;
   bookedAppointments?: {
     _id?: string;
@@ -55,13 +60,13 @@ export default function ClientEditModal({
   appointment,
   token,
   availabilityMode,
+  workingHours,
   manualSlots,
   bookedAppointments,
 }: Props) {
   const { updateClientAppointment, cancelClientAppointment } =
     useAppointmentMutations(token);
   const { data: services = [] } = useServices();
-  const timeOptions = useMemo(() => generateTimes(0, 24, 15), []);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState<string>(
@@ -159,6 +164,29 @@ export default function ClientEditModal({
   };
 
   const { price: totalPrice, duration: totalDuration } = calculateTotal();
+
+  // Klasičan režim: ponuda vremena = radno vreme − zauzeto − prošlost;
+  // sopstveni postojeći termin se NE računa kao zauzet (izmena bez pomeranja).
+  // Bez useMemo: računica je jeftina, a komponenta ima raniji return null
+  // pa bi uslovni hook prekršio rules-of-hooks.
+  const bookedWithoutOwn = (bookedAppointments ?? []).filter(
+    (b) =>
+      !(
+        appointment &&
+        b.date === appointment.date &&
+        b.time === appointment.time
+      ),
+  );
+  const timeOptions = availableTimesForDate({
+    workingHours,
+    dateStr: selectedDate,
+    durationMin: totalDuration || 60,
+    booked: bookedWithoutOwn,
+  });
+  const classicTimeOptions =
+    selectedTime && !timeOptions.includes(selectedTime)
+      ? [selectedTime, ...timeOptions]
+      : timeOptions;
 
   const handleUpdate = async () => {
     if (!selectedService) return toast.error("Molimo izaberite uslugu.");
@@ -312,7 +340,7 @@ export default function ClientEditModal({
                             {o.time} ({o.duration} min)
                           </option>
                         ))
-                      : timeOptions.map((t) => (
+                      : classicTimeOptions.map((t) => (
                           <option key={t} value={t}>
                             {t}
                           </option>
@@ -323,6 +351,13 @@ export default function ClientEditModal({
                     manualTimeOptions.length === 0 && (
                       <p className="mt-1 text-xs font-semibold text-red-500">
                         Nema slobodnih termina za izabrani datum.
+                      </p>
+                    )}
+                  {!isManualMode &&
+                    selectedDate &&
+                    classicTimeOptions.length === 0 && (
+                      <p className="mt-1 text-xs font-semibold text-red-500">
+                        Nema slobodnih vremena za izabrani datum.
                       </p>
                     )}
                 </div>

@@ -887,6 +887,7 @@ export default function AppointmentCalendar() {
         defaultTime={createDefaults.time}
         token={user?.token}
         availabilityMode={salonProfile?.availabilityMode}
+        workingHours={workingHours}
         manualSlots={manualSlots}
         bookedAppointments={appointments}
       />
@@ -901,6 +902,7 @@ export default function AppointmentCalendar() {
         appointment={selectedAppt}
         token={user?.token}
         availabilityMode={salonProfile?.availabilityMode}
+        workingHours={workingHours}
         manualSlots={manualSlots}
         bookedAppointments={appointments}
       />

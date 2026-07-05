@@ -24,6 +24,7 @@ import {
   isManualSlotTaken,
   timeToMin,
 } from "@/helpers/manualSlots";
+import { availableTimesForDate } from "@/helpers/parseWorkingHours";
 import type { IService, IAppointment } from "@/types";
 import type { BookingModalProps, GuestData, PendingAppointment } from "./types";
 
@@ -60,6 +61,9 @@ export interface BookingContextValue {
   isManualMode: boolean;
   availableManualTimes: ReturnType<typeof manualTimesForDate>;
   manualSlotInvalid: boolean;
+  /** Klasičan režim: ponuda vremena iz radnog vremena (bez zauzetih/prošlih);
+   *  null kada pozivalac nije prosledio workingHours (fallback slobodan unos). */
+  availableClassicTimes: string[] | null;
   totalPrice: number;
   totalDuration: number;
   // ── akcije ──
@@ -97,6 +101,7 @@ export function BookingProvider({
   onBooked,
   pendingDefaults,
   availabilityMode,
+  workingHours,
   manualSlots,
   bookedAppointments,
 }: BookingModalProps & { children: ReactNode }) {
@@ -209,6 +214,18 @@ export function BookingProvider({
 
     return { price, duration };
   }, [selectedService, selectedVariant, selectedExtras]);
+
+  // Klasičan režim: dropdown nudi SAMO dostupna vremena za izabrani datum
+  // (radno vreme − zauzeto − prošlost), uračunato trajanje izabrane usluge.
+  const availableClassicTimes = useMemo(() => {
+    if (isManualMode || workingHours == null) return workingHours == null ? null : [];
+    return availableTimesForDate({
+      workingHours,
+      dateStr: selectedDate,
+      durationMin: totalDuration || 60,
+      booked: bookedAppointments ?? [],
+    });
+  }, [isManualMode, workingHours, selectedDate, totalDuration, bookedAppointments]);
 
   function handleClose() {
     setSelectedServiceId(services[0]?._id || "");
@@ -422,6 +439,7 @@ export function BookingProvider({
     isManualMode,
     availableManualTimes,
     manualSlotInvalid,
+    availableClassicTimes,
     totalPrice,
     totalDuration,
     handleClose,
