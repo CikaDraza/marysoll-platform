@@ -731,8 +731,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const isTenantSubdomain =
       host.endsWith(`.${BASE_DOMAIN}`) &&
       !PLATFORM_SUBDOMAINS.has(host.slice(0, -(BASE_DOMAIN.length + 1)));
+    // Vercel preview NIJE host-based tenant domen — bez ovoga isCustomDomain()
+    // broji *.vercel.app kao custom domen pa SEO kanonski redirect šalje
+    // preview posetioce na pravi domen salona umesto da servira path-based.
+    const isVercelPreview = host.endsWith(".vercel.app");
     const isHostBased =
-      isCustomDomain(hostname, BASE_DOMAIN) || isTenantSubdomain;
+      !isVercelPreview &&
+      (isCustomDomain(hostname, BASE_DOMAIN) || isTenantSubdomain);
 
     // SEO canonicalization: once a tenant has a verified custom domain,
     // permanently redirect the old subdomain to preserve ranking signals.
@@ -751,7 +756,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     // In production, path-based tenant routing (marysoll.com/slug/...) is NOT supported.
     // Izuzetak: Vercel preview buildovi (*.vercel.app) nemaju tenant subdomene,
     // pa se tenant sajtovi testiraju path-based kao na localhost-u.
-    const isVercelPreview = host.endsWith(".vercel.app");
     if (IS_PROD && !isHostBased && !isVercelPreview) {
       return NextResponse.rewrite(new URL("/not-found", request.url));
     }
