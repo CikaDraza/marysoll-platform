@@ -171,6 +171,8 @@ Ukupno **18.244 linija (14%) u 391 clone grupi**. Cilj: ispod 8%. Redosled po ri
 
 **4f urađeno (`2a89ad2`, branch `optimizacija/proxy-testovi`) — FAZA 4 KOMPLETNA:** proxy.ts **879 → 210 linija** (orkestrator) + 6 modula u `src/lib/proxy/` (types, constants, resolvers, domainType, auth, clientRouting). Preduslov ispunjen: **vitest harness + 21 routing test** (matrica host×putanja: marketing/preview/localhost/subdomen/custom domen/kanonski 301/bypass header) — verbatim premeštanje, svih 72 testa prolazi bez izmene očekivanja. Usput oživljen **51 postojeći test** (jest skripta bez jest-a). `npm test` = vitest.
 
+**4g urađeno (branch `optimizacija/proxy-testovi`) — Platform Gateway + pipeline:** proxy.ts **210 → ~30 linija** (`createContext` → `executePipeline`, ništa više). Koraci u `src/lib/proxy/pipeline/` (system → detect-domain → public → auth → routing; svaki dobija isti `ProxyContext`, ne parametre), guardovi u `src/lib/proxy/guards.ts`, a "engine" logika iza **platformskih klijenata u `src/lib/platform/`** (`tenant-client`, `identity-client`, `internal-fetch`) — proxy ne poznaje implementaciju; sutra klijent interno zove Tenant/Identity Engine, pipeline se ne dira. Dodato: **debug trace** (`x-proxy-debug: 1` ili `?proxy-debug=1` → `x-proxy-trace` header sa koracima odluke; bez flaga no-op). Testovi 21 → **23** (2 trace testa); svih 74 prolazi. Odluke: auth ostaje lazy; resolveTenant je servis, ne korak; route=rewrite jedan korak; refreshed cookie centralno u `finalize`. Dokumentacija: `docs/PROXY-PIPELINE.md`.
+
 **Preostalo u Fazi 4 (postepeno, uz features):** `AdminLandingCMS` section-split ide uz Theme Engine (T2) — jedino preostalo, namerno.
 
 ## Faza 4 — originalni plan (dugoročno — raditi uz nove features, ne odjednom)

@@ -1,13 +1,20 @@
 /**
- * Tenant/domen resolveri — jedini deo proxy-ja koji priča sa backendom
- * (interne /api/internal/* rute), sa 5-min in-memory kešom po edge instanci.
+ * Tenant Client — platformski adapter za razrešavanje tenanta.
+ *
+ * DANAS: interne /api/internal/* rute + 5-min in-memory keš po edge instanci.
+ * SUTRA: Tenant Engine (HTTP/gRPC servis) — potrošači (proxy pipeline) ne
+ * poznaju implementaciju, pričaju samo sa ovim klijentom.
  */
 import type { NextRequest } from "next/server";
-import type { TenantResolution } from "./types";
-import { INTERNAL_FETCH_HEADERS } from "./constants";
+import { INTERNAL_FETCH_HEADERS } from "./internal-fetch";
 
-// ─── Custom domain DB lookup ──────────────────────────────────────────────────
-/** Caches custom-domain → { slug, id } resolutions (5-min TTL). */
+export type TenantResolution = {
+  slug: string;
+  id: string;
+  customDomain: string | null;
+};
+
+/** Keš custom-domen → { slug, id } rezolucija (5-min TTL). */
 const domainCache = new Map<
   string,
   {
@@ -18,7 +25,7 @@ const domainCache = new Map<
   }
 >();
 
-/** Caches subdomain slug → tenantId resolutions (5-min TTL). */
+/** Keš subdomen slug → tenantId rezolucija (5-min TTL). */
 const tenantCache = new Map<
   string,
   { id: string; customDomain: string | null; ts: number }
@@ -26,7 +33,7 @@ const tenantCache = new Map<
 
 const CACHE_TTL = 5 * 60 * 1000;
 
-export async function resolveCustomDomain(
+async function resolveDomain(
   request: NextRequest,
   host: string,
 ): Promise<TenantResolution | null> {
@@ -66,11 +73,10 @@ export async function resolveCustomDomain(
 }
 
 /**
- * Resolves the DB tenantId (_id) for a given tenant slug.
- * Used for subdomain routing where the slug comes from the hostname,
- * not a DB lookup.
+ * Razrešava DB tenantId (_id) za dati slug. Koristi se za subdomen rutiranje
+ * (slug iz hostname-a) i path-based rutiranje (slug iz URL putanje).
  */
-export async function resolveSlugToTenantId(
+async function resolveSlug(
   request: NextRequest,
   slug: string,
 ): Promise<TenantResolution | null> {
@@ -99,3 +105,4 @@ export async function resolveSlugToTenantId(
   }
 }
 
+export const tenantClient = { resolveSlug, resolveDomain };

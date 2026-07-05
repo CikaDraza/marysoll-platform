@@ -1,9 +1,10 @@
 /**
- * proxy.test.ts — sigurnosna mreža za rutiranje PRE refaktora proxy-ja.
+ * proxy.test.ts — sigurnosna mreža za rutiranje proxy pipeline-a.
  *
  * Matrica host × putanja → očekivana akcija (pass / rewrite / redirect),
  * uključujući sve preview slučajeve otkrivene 2026-07-05 (IS_PROD gate,
- * path-based rewrite, kanonski redirect, Deployment Protection bypass).
+ * path-based rewrite, kanonski redirect, Deployment Protection bypass)
+ * + debug trace (x-proxy-trace).
  *
  * IS_PROD, BASE_DOMAIN i VERCEL_BYPASS_HEADERS se čitaju pri IMPORTU modula,
  * pa svaki slučaj radi vi.resetModules() + stub env + svež dynamic import.
@@ -285,5 +286,24 @@ describe("platformski hostovi", () => {
     const { res } = await runProxy("admin.marysoll.com", "/dashboard");
     expect(isPass(res)).toBe(true);
     expect(forwardedHeader(res, "x-domain-type")).toBe("admin");
+  });
+});
+
+// ─── Debug trace (x-proxy-debug / ?proxy-debug=1) ─────────────────────────────
+
+describe("debug trace", () => {
+  it("?proxy-debug=1 → x-proxy-trace header sa koracima odluke", async () => {
+    const { res } = await runProxy(
+      "no-domain-salon.marysoll.com",
+      "/termini?proxy-debug=1",
+    );
+    const traceHeader = res.headers.get("x-proxy-trace");
+    expect(traceHeader).toContain("domain=client");
+    expect(traceHeader).toContain("rewrite -> /tenant/termini");
+  });
+
+  it("bez debug flaga NEMA x-proxy-trace headera (produkcija ne plaća trace)", async () => {
+    const { res } = await runProxy("no-domain-salon.marysoll.com", "/termini");
+    expect(res.headers.get("x-proxy-trace")).toBeNull();
   });
 });

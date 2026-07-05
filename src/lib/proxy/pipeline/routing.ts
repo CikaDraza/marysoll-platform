@@ -1,51 +1,65 @@
 /**
- * handleClientDomain — kompletno tenant (client) rutiranje:
+ * Korak 5 — routing: završno rutiranje po tipu domena.
+ *
+ * Marketing → pass (bez auth-a). Client → kompletno tenant rutiranje:
  * bezbednosni not-found za nerazrešen tenant, SEO kanonski 301 na custom
  * domen (samo host-based, NIKAD vercel preview), rewrite klijentskih ruta
  * na /tenant/* (host-based i path-based), guard zaštićenih klijentskih API-ja.
+ *
+ * Route i rewrite su namerno JEDAN korak — rutiranje tenant sajtova JESTE
+ * rewrite na interni /tenant/* prefiks.
  */
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 import {
   BASE_DOMAIN,
   CLIENT_PROTECTED_API_ROUTES,
   IS_PROD,
   isCustomDomain,
-} from "./constants";
-import type { AuthOut } from "./types";
-import { applyRefreshedCookie, guardApi } from "./auth";
+} from "../constants";
+import { guardApi } from "../guards";
+import type { ProxyContext } from "./context";
+import { pass, trace } from "./context";
 
-export async function handleClientDomain(args: {
-  request: NextRequest;
-  requestHeaders: Headers;
-  hostname: string;
-  pathname: string;
-  tenantSlug: string | null;
-  tenantId: string | null;
-  customDomain: string | null;
-  isPathBasedHost: boolean;
-}): Promise<NextResponse> {
-  const {
-    request,
-    requestHeaders,
-    hostname,
-    pathname,
-    tenantSlug,
-    tenantId,
-    customDomain,
-    isPathBasedHost,
-  } = args;
+export async function route(ctx: ProxyContext): Promise<NextResponse | null> {
+  if (ctx.domainType === "marketing") {
+    trace(ctx, "routing: marketing -> pass (auth skipped)");
+    return pass(ctx);
+  }
+  if (ctx.domainType === "client") {
+    return handleClientDomain(ctx);
+  }
+  return null;
+}
 
-  const pass = () =>
-    NextResponse.next({ request: { headers: requestHeaders } });
+const CLIENT_TENANT_PATHS = new Set([
+  "/login",
+  "/register",
+  "/panel",
+  "/termini",
+  "/usluge",
+  "/forgot-password",
+  "/resend-verification",
+  "/cookie-policy",
+  "/pravila-privatnosti",
+  "/politika-privatnosti",
+  "/pravila-zakazivanja",
+  "/newsletter",
+  "/blogs",
+]);
+
+const PLATFORM_SUBDOMAINS = new Set(["admin", "superadmin", "app", "www"]);
+
+async function handleClientDomain(ctx: ProxyContext): Promise<NextResponse> {
+  const { request, requestHeaders, hostname, pathname } = ctx;
+  const { slug: tenantSlug, id: tenantId, customDomain } = ctx.tenant;
 
   // Block immediately if tenant couldn't be resolved — slug without a valid DB id is a security gap
   if (tenantId === null) {
+    trace(ctx, "routing: tenant unresolved -> /not-found");
     return NextResponse.rewrite(new URL("/not-found", request.url));
   }
 
   const host = hostname.split(":")[0].toLowerCase();
-  const PLATFORM_SUBDOMAINS = new Set(["admin", "superadmin", "app", "www"]);
   const isTenantSubdomain =
     host.endsWith(`.${BASE_DOMAIN}`) &&
     !PLATFORM_SUBDOMAINS.has(host.slice(0, -(BASE_DOMAIN.length + 1)));
@@ -68,6 +82,7 @@ export async function handleClientDomain(args: {
     const canonicalUrl = request.nextUrl.clone();
     canonicalUrl.protocol = "https:";
     canonicalUrl.host = customDomain;
+    trace(ctx, `routing: canonical 301 -> https://${customDomain}${pathname}`);
     return NextResponse.redirect(canonicalUrl, 301);
   }
 
@@ -75,36 +90,23 @@ export async function handleClientDomain(args: {
   // Izuzetak: Vercel preview buildovi (*.vercel.app) nemaju tenant subdomene,
   // pa se tenant sajtovi testiraju path-based kao na localhost-u.
   if (IS_PROD && !isHostBased && !isVercelPreview) {
+    trace(ctx, "routing: prod path-based blocked -> /not-found");
     return NextResponse.rewrite(new URL("/not-found", request.url));
   }
 
-  const CLIENT_TENANT_PATHS = new Set([
-    "/login",
-    "/register",
-    "/panel",
-    "/termini",
-    "/usluge",
-    "/forgot-password",
-    "/resend-verification",
-    "/cookie-policy",
-    "/pravila-privatnosti",
-    "/politika-privatnosti",
-    "/pravila-zakazivanja",
-    "/newsletter",
-    "/blogs",
-  ]);
+  const rewriteTo = (internalPath: string): NextResponse => {
+    const rewriteUrl = new URL(internalPath, request.nextUrl.origin);
+    rewriteUrl.search = request.nextUrl.search;
+    trace(ctx, `rewrite -> ${internalPath}`);
+    return NextResponse.rewrite(rewriteUrl, {
+      request: { headers: requestHeaders },
+    });
+  };
 
   // PRODUCTION: subdomain or custom domain — rewrite /path → /tenant/path
   if (tenantSlug && isHostBased) {
     if (pathname === "/blog" || pathname.startsWith("/blog/")) {
-      const rewriteUrl = new URL(
-        `/tenant/blogs${pathname}`,
-        request.nextUrl.origin,
-      );
-      rewriteUrl.search = request.nextUrl.search;
-      return NextResponse.rewrite(rewriteUrl, {
-        request: { headers: requestHeaders },
-      });
+      return rewriteTo(`/tenant/blogs${pathname}`);
     }
 
     const matchesClientPath =
@@ -112,32 +114,19 @@ export async function handleClientDomain(args: {
       [...CLIENT_TENANT_PATHS].some((p) => pathname.startsWith(p + "/"));
 
     if (matchesClientPath || pathname === "/") {
-      const internalPath =
-        pathname === "/" ? "/tenant" : `/tenant${pathname}`;
-      const rewriteUrl = new URL(internalPath, request.nextUrl.origin);
-      rewriteUrl.search = request.nextUrl.search;
-      return NextResponse.rewrite(rewriteUrl, {
-        request: { headers: requestHeaders },
-      });
+      return rewriteTo(pathname === "/" ? "/tenant" : `/tenant${pathname}`);
     }
   }
 
   // PATH-BASED (localhost dev + Vercel preview): strip slug,
   // rewrite /{slug}/path → /tenant/path
-  if (tenantSlug && isPathBasedHost) {
+  if (tenantSlug && ctx.isPathBasedHost) {
     const segments = pathname.split("/").filter(Boolean);
     const pathAfterSlug = segments.slice(1).join("/");
     const restPath = pathAfterSlug ? `/${pathAfterSlug}` : "";
 
     if (restPath === "/blog" || restPath.startsWith("/blog/")) {
-      const rewriteUrl = new URL(
-        `/tenant/blogs${restPath}`,
-        request.nextUrl.origin,
-      );
-      rewriteUrl.search = request.nextUrl.search;
-      return NextResponse.rewrite(rewriteUrl, {
-        request: { headers: requestHeaders },
-      });
+      return rewriteTo(`/tenant/blogs${restPath}`);
     }
 
     const matchesAfterSlug =
@@ -145,24 +134,23 @@ export async function handleClientDomain(args: {
       [...CLIENT_TENANT_PATHS].some((p) => restPath.startsWith(p + "/"));
 
     if (matchesAfterSlug || restPath === "") {
-      const internalPath = restPath ? `/tenant${restPath}` : "/tenant";
-      const rewriteUrl = new URL(internalPath, request.nextUrl.origin);
-      rewriteUrl.search = request.nextUrl.search;
-      return NextResponse.rewrite(rewriteUrl, {
-        request: { headers: requestHeaders },
-      });
+      return rewriteTo(restPath ? `/tenant${restPath}` : "/tenant");
     }
   }
 
-  const authCtx: AuthOut = {};
+  // Zaštićene klijentske API rute — lazy auth, isti guard kao platformski
   if (
     pathname.startsWith("/api/") &&
     CLIENT_PROTECTED_API_ROUTES.some((r) => pathname.startsWith(r))
   ) {
-    const fail = await guardApi(request, tenantId, false, false, authCtx);
-    if (fail) return fail;
+    const fail = await guardApi(request, tenantId, false, false, ctx.auth);
+    if (fail) {
+      trace(ctx, "auth: client api guard FAILED");
+      return fail;
+    }
+    trace(ctx, "auth: client api ok");
   }
-  const res = pass();
-  applyRefreshedCookie(res, authCtx);
-  return res;
+
+  trace(ctx, "routing: client pass");
+  return pass(ctx);
 }

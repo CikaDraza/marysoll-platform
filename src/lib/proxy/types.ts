@@ -1,28 +1,14 @@
 /**
- * Deljeni tipovi proxy (middleware) modula.
+ * Deljeni tipovi proxy (middleware) sloja.
  * Security boundary: tenantId (DB _id) — nikad slug sam (vidi proxy.ts).
+ *
+ * Tipovi koji pripadaju platformskim klijentima žive uz njih:
+ * DecodedToken → lib/platform/identity-client, TenantResolution → tenant-client.
  */
 
-export interface DecodedToken {
-  id: string;
-  email: string;
-  isAdmin: boolean;
-  isSuperAdmin?: boolean;
-  tenantId?: string;
-  /** "platform" = SUPER_ADMIN (AuthUser). "tenant" = any TenantUser role. */
-  type?: "platform" | "tenant";
-  exp: number;
-}
-
-/** Populated by guards when a token refresh occurs; caller sets the cookie on the response. */
+/** Populated by guards when a token refresh occurs; pipeline finalize sets the cookie. */
 export interface AuthOut {
   refreshedCookie?: { name: string; value: string };
 }
 
 export type DomainType = "marketing" | "admin" | "superadmin" | "client";
-export type TenantResolution = {
-  slug: string;
-  id: string;
-  customDomain: string | null;
-};
-
