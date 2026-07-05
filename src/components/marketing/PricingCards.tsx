@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useMarketingCms } from "@/hooks/useMarketingCms";
 import type { MarketingPricingPlan } from "@/types/marketing-landing";
 
 interface PricingCardsProps {
@@ -102,23 +101,11 @@ function PricingCard({
 
 // ─── Cards grid (shared across home + /pricing) ───────────────────────────────
 
+// Planovi OBAVEZNO stižu kroz props (server ih čita iz marketing landinga).
+// Raniji useMarketingCms fallback je svakom javnom posetiocu okidao
+// /api/superadmin/marketing-cms → 403 šum u konzoli/logovima.
 export function PricingCards({ plans }: PricingCardsProps = {}) {
-  const cms = useMarketingCms();
-  const hasPlansProp = plans !== undefined;
-  const effectivePlans = hasPlansProp ? plans : cms.landing.pricing.plans;
-
-  if (!hasPlansProp && cms.isLoading) {
-    return (
-      <div className="grid md:grid-cols-3 gap-8 items-center">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="rounded-3xl p-8 bg-gray-100 animate-pulse h-80"
-          />
-        ))}
-      </div>
-    );
-  }
+  const effectivePlans = plans ?? [];
 
   return (
     <div className="space-y-8">
