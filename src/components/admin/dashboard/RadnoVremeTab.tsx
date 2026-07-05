@@ -8,6 +8,11 @@ import { DAYS_OF_WEEK } from "@/types";
 import type { DayOfWeek } from "@/types";
 import { card, formatManualDayLabel } from "./shared";
 import { isVacationExpired } from "@/helpers/vacations";
+
+// Test prekidač: kad je true, "istekao" badge se prikazuje na SVIM odmorima
+// (pregled pulsiranja). U produkciji vratiti na false — prikazuje se samo
+// kada je odmor stvarno istekao.
+const TEST_ALWAYS_SHOW_EXPIRED_BADGE = true;
 import type { DashboardTabProps } from "./types";
 
 
@@ -134,7 +139,7 @@ export function RadnoVremeTab(props: DashboardTabProps) {
                     sp.updateVacation(idx, "from", e.target.value)
                   }
                   aria-label="Početak odmora"
-                  className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1 text-sm font-semibold text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                  className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1 text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400"
                 />
                 <span className="text-xs text-gray-400 font-medium">
                   do
@@ -147,10 +152,10 @@ export function RadnoVremeTab(props: DashboardTabProps) {
                     sp.updateVacation(idx, "to", e.target.value)
                   }
                   aria-label="Kraj odmora"
-                  className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1 text-sm font-semibold text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                  className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1 text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400"
                 />
                 <div className="ml-auto flex items-center gap-2">
-                  {isVacationExpired(v) && (
+                  {(TEST_ALWAYS_SHOW_EXPIRED_BADGE || isVacationExpired(v)) && (
                     <span className="animate-pulse flex-shrink-0 text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 px-2 sm:px-3 py-1.5 rounded-lg">
                       istekao
                     </span>
