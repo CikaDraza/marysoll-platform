@@ -1,12 +1,4 @@
-import type { LandingTheme } from "@/types";
-
-/**
- * "images-only"           — gallery stores a flat array of images (no category/title/desc).
- *                           Used by masonry-style galleries (Theme 3/4/5).
- * "images-with-category"  — gallery stores treatments: each item has category, title, description, images.
- *                           Used by zigzag-style galleries (Theme 1/2).
- */
-export type GalleryVariant = "images-only" | "images-with-category";
+import type { GalleryVariant, LandingTheme } from "@/types";
 
 export interface ThemeSectionConfig {
   hero: {

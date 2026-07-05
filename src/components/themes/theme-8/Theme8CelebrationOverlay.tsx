@@ -44,7 +44,7 @@ export interface Theme8CelebrationOverlayProps {
   };
 }
 
-export default function Theme8CelebrationOverlay({
+export function Theme8CelebrationOverlay({
   open,
   onClose,
   autoDismissMs = 6000,

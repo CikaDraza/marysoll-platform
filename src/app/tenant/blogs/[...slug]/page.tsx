@@ -1,6 +1,6 @@
 import CampaignClientShell from "@/components/CampaignClientShell";
 import { TenantPageShell } from "@/components/themes/TenantPageShell";
-import { Theme8BlogPost } from "@/components/themes/theme-8/pages/Theme8BlogPost";
+import { Theme8BlogPost } from "@/components/themes/theme-8";
 import { normalizeCampaignSlug } from "@/helpers/slugNormalizer";
 import { getCampaign } from "@/lib/server/getCampaign";
 import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";

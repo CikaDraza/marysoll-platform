@@ -85,7 +85,7 @@ function normalizeDomain(domain: string): string {
   return domain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
 }
 
-export async function getZohoAccessToken(refreshToken = process.env.ZOHO_REFRESH_TOKEN) {
+async function getZohoAccessToken(refreshToken = process.env.ZOHO_REFRESH_TOKEN) {
   const token = refreshToken ?? getRequiredEnv("ZOHO_REFRESH_TOKEN");
   const res = await fetch(`${getRequiredEnv("ZOHO_ACCOUNTS_BASE_URL")}/oauth/v2/token`, {
     method: "POST",
@@ -157,7 +157,7 @@ async function zohoMailRequest<T>(
   return data.data as T;
 }
 
-export async function getZohoOrganizationDetails(options?: {
+async function getZohoOrganizationDetails(options?: {
   organizationId?: string | number;
   refreshToken?: string;
 }): Promise<ZohoOrganizationDetails> {
@@ -170,7 +170,7 @@ export async function getZohoOrganizationDetails(options?: {
   });
 }
 
-export async function getZohoDomainDetails(params: {
+async function getZohoDomainDetails(params: {
   organizationId: string | number;
   domain: string;
   refreshToken?: string;

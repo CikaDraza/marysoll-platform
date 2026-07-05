@@ -62,16 +62,3 @@ async function saveService(data: IService): Promise<IService> {
   }
 }
 
-export function useSaveService() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: saveService,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["services"] });
-    },
-    onError: (err) => {
-      console.error("Greška u čuvanju usluge:", err);
-    },
-  });
-}

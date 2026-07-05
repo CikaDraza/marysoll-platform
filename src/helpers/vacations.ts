@@ -29,7 +29,7 @@ export function normalizeVacations(raw: unknown): IVacation[] {
 }
 
 /** Današnji datum kao "YYYY-MM-DD" (lokalna vremenska zona). */
-export function todayISO(d: Date = new Date()): string {
+function todayISO(d: Date = new Date()): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
@@ -51,10 +51,18 @@ export function getActiveOrUpcomingVacation(
 }
 
 /** "2026-07-25" -> "25.07". */
-export function formatVacationDay(iso: string): string {
+function formatVacationDay(iso: string): string {
   if (!ISO_DATE.test(iso)) return iso;
   const [, month, day] = iso.split("-");
   return `${day}.${month}`;
+}
+
+/** Odmor je istekao kada prođe poslednji dan (to < danas). */
+export function isVacationExpired(
+  v: IVacation,
+  today: string = todayISO(),
+): boolean {
+  return Boolean(v.to) && v.to < today;
 }
 
 /** Opseg za badge, npr. "25.07 - 03.08". */

@@ -8,7 +8,7 @@ import { SalonProfile } from "@/models/SalonProfile";
 import { verifySignature } from "@/lib/middleware/verifySignature";
 import { checkRateLimit } from "@/lib/middleware/rateLimiter";
 
-export interface MarketplaceCity {
+interface MarketplaceCity {
   name: string;
   lat: number | null;
   lng: number | null;

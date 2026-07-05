@@ -5,7 +5,7 @@ import { formatStatValue } from "@/lib/tenant/tenantStatsUtils";
 import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import { FadeUp } from "./FadeUp";
 import { Deco } from "./Decorations";
-import { useTheme8Modal } from "./Theme8ModalProvider";
+import { useTheme8Modal } from "./theme8ModalContext";
 import { Theme8AnchorLink } from "./AnchorLink";
 
 interface Props {

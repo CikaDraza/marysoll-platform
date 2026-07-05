@@ -9,7 +9,7 @@ import { Schema, Document, model, models } from "mongoose";
 
 export type UsageProvider = "mongodb" | "cloudinary" | "tenant_usage";
 
-export interface IPlatformUsageSnapshot extends Document {
+interface IPlatformUsageSnapshot extends Document {
   provider: UsageProvider;
   // Provider-specific payload — shape is owned by src/lib/superadmin/platformUsage.ts
   data: Record<string, unknown>;

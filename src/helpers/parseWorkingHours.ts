@@ -14,9 +14,9 @@
 
 import { TimeSlot } from "@/types";
 
-export type WorkingHoursRaw = Record<string, string | TimeSlot[] | unknown>;
+export type WorkingHoursInput = Record<string, string | TimeSlot[] | unknown>;
 
-export const DAY_MAP: Record<string, number> = {
+const DAY_MAP: Record<string, number> = {
   Ponedeljak: 1,
   Utorak: 2,
   Sreda: 3,
@@ -58,11 +58,11 @@ export function parseDaySlots(value: unknown): TimeSlot[] {
 }
 
 /**
- * Convert WorkingHoursRaw to FullCalendar businessHours format.
+ * Convert WorkingHoursInput to FullCalendar businessHours format.
  * Multi-slot days produce multiple businessHours entries.
  */
 export function toFullCalendarBusinessHours(
-  workingHours: WorkingHoursRaw | null | undefined,
+  workingHours: WorkingHoursInput | null | undefined,
 ): { daysOfWeek: number[]; startTime: string; endTime: string }[] {
   if (!workingHours || typeof workingHours !== "object") return [];
 
@@ -86,21 +86,12 @@ export function toFullCalendarBusinessHours(
   return result;
 }
 
-/**
- * Format working hours for display in UI (e.g., "08:00 – 17:00, 19:00 – 22:00").
- * Returns "Neradan" if no slots for that day.
- */
-export function formatDayWorkingHours(value: unknown): string {
-  const slots = parseDaySlots(value);
-  if (slots.length === 0) return "Neradan";
-  return slots.map((s) => `${s.from} – ${s.to}`).join(", ");
-}
 
 /**
  * Get all days with their formatted hours for display.
  */
 export function formatWorkingHoursForDisplay(
-  workingHours: WorkingHoursRaw | null | undefined,
+  workingHours: WorkingHoursInput | null | undefined,
 ): { day: string; hours: string; isOpen: boolean }[] {
   const days = Object.keys(DAY_MAP);
   if (!workingHours) {
@@ -121,19 +112,3 @@ export function formatWorkingHoursForDisplay(
   });
 }
 
-export function isTimeInAnySlot(time: string, slots: TimeSlot[]): boolean {
-  if (!slots || slots.length === 0) return false;
-
-  const timeInMinutes = (t: string) => {
-    const [h, m] = t.split(":").map(Number);
-    return h * 60 + m;
-  };
-
-  const tMin = timeInMinutes(time);
-
-  return slots.some((slot) => {
-    const startMin = timeInMinutes(slot.from);
-    const endMin = timeInMinutes(slot.to);
-    return tMin >= startMin && tMin < endMin;
-  });
-}

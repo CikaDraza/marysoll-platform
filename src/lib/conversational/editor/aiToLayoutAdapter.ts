@@ -16,8 +16,7 @@ export function parseLandingPageOutput(input: unknown): LandingPageOutput {
   return result.data;
 }
 
-export function parseLandingBlocks(input: unknown): LandingBlock[] {
+function parseLandingBlocks(input: unknown): LandingBlock[] {
   return parseLandingPageOutput(input).blocks;
 }
 
-export const transformAiToLayout = parseLandingBlocks;

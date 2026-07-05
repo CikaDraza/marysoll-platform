@@ -20,7 +20,7 @@ export interface IAuthUserPushSubscription {
   createdAt: Date;
 }
 
-export interface IAuthUser extends Document {
+interface IAuthUser extends Document {
   _id: Types.ObjectId;
   email: string;
   passwordHash: string;

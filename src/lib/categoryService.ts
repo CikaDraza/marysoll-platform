@@ -185,10 +185,6 @@ export async function getCategories(): Promise<CategoryData[]> {
   }
 }
 
-export async function getCategoryMap(): Promise<Record<string, CategoryData>> {
-  const categories = await getCategories();
-  return Object.fromEntries(categories.map((c) => [c.key, c]));
-}
 
 export function invalidateCategoryCache() {
   cache = null;

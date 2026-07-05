@@ -7,14 +7,10 @@
  * for deduplication (re-uses existing profile if email already exists).
  */
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
-import bcrypt from "bcryptjs";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { Service } from "@/models/Service";
 import { Tenant } from "@/models/Tenant";
-import { TenantUser } from "@/models/TenantUser";
-import { SalonProfile } from "@/models/SalonProfile";
 import { createAppointmentNotification } from "@/lib/notificationService";
 import {
   hasGuestBookingContact,
@@ -24,10 +20,12 @@ import {
   normalizeInstagram,
 } from "@/lib/contactRules";
 import {
-  checkManualSlotAvailability,
-  overlapsAppointments,
-} from "@/helpers/manualSlots";
-import type { IAppointmentService, ManualSlotsMap } from "@/types";
+  canAcceptBookings,
+  checkSlotAvailability,
+  findOrCreateGuestUser,
+  loadBookingProfile,
+} from "@/lib/appointments/booking";
+import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant";
 
 type Params = { params: Promise<{ tenantSlug: string }> };
@@ -55,16 +53,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     const tenantId = tenant._id?.toString();
 
     // ── Check salon can accept bookings ───────────────────────────────────────
-    const now = new Date();
-    const trialEndsAt = tenant.trialEndsAt
-      ? new Date(tenant.trialEndsAt)
-      : null;
-    const isTrialActive =
-      tenant.isTrialActive && trialEndsAt && trialEndsAt > now;
-    const canAcceptBookings =
-      tenant.paid === true || isTrialActive === true || tenant.plan === "maria";
-
-    if (!canAcceptBookings) {
+    if (!canAcceptBookings(tenant)) {
       return NextResponse.json(
         { error: "Salon nije aktivan. Zakazivanje nije moguće." },
         { status: 403 },
@@ -127,93 +116,31 @@ export async function POST(request: NextRequest, { params }: Params) {
         { status: 404 },
       );
     }
-    const salonProfile = await SalonProfile.findOne({ tenantId })
-      .select("cancellationWindowHours availabilityMode manualSlots")
-      .lean<{
-        cancellationWindowHours?: number;
-        availabilityMode?: string;
-        manualSlots?: ManualSlotsMap;
-      }>();
-    const cancellationWindowHours =
-      typeof salonProfile?.cancellationWindowHours === "number"
-        ? salonProfile.cancellationWindowHours
-        : 1;
+    const { profile: salonProfile, cancellationWindowHours } =
+      await loadBookingProfile(tenantId!);
 
     // ── Check slot availability ───────────────────────────────────────────────
-    // Preklapanje po TRAJANJU (oba režima): novi termin [time, time+duration)
-    // ne sme da se seče ni sa jednim aktivnim terminom tog dana. Radno vreme se
-    // namerno NE proverava — vlasnik pri odobravanju odlučuje da li prima
-    // termin koji izlazi van radnog vremena.
-    const dayAppointments = await Appointment.find({
-      tenantId,
-      date,
-      status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
-    })
-      .select("date time duration")
-      .lean<{ date: string; time: string; duration?: number }[]>();
-
     const requestedDuration = Number(duration) || service.duration || 60;
-    if (overlapsAppointments(dayAppointments, date, time, requestedDuration)) {
-      return NextResponse.json({ error: "Termin je zauzet." }, { status: 400 });
-    }
-
-    // manualSlots režim: sme se zakazati SAMO tačan termin koji je vlasnik
-    // definisao, i to slobodan (bez preklapanja) — bez obzira šta pošalje UI.
-    if (salonProfile?.availabilityMode === "manualSlots") {
-      const check = checkManualSlotAvailability(
-        salonProfile.manualSlots,
-        dayAppointments,
-        date,
-        time,
-      );
-      if (!check.ok) {
-        return NextResponse.json(
-          {
-            error:
-              check.reason === "taken"
-                ? "Termin je zauzet."
-                : "Izabrani termin nije dostupan. Izaberite jedan od ponuđenih termina.",
-          },
-          { status: 400 },
-        );
-      }
+    const slotError = await checkSlotAvailability({
+      tenantId: tenantId!,
+      date,
+      time,
+      requestedDuration,
+      profile: salonProfile,
+    });
+    if (slotError) {
+      return NextResponse.json({ error: slotError }, { status: 400 });
     }
 
     // ── Find or create GUEST TenantUser ───────────────────────────────────────
-    let guestUser = null;
-    if (normalizedEmail) {
-      // Reuse existing profile (any role) if email matches this tenant
-      guestUser = await TenantUser.findOne({
-        tenantId: tenant._id,
-        email: normalizedEmail,
-      });
-    }
-
-    if (!guestUser) {
-      // Generate a placeholder email for guests who didn't provide one
-      const guestEmail =
-        normalizedEmail ||
-        `guest_${Date.now()}_${crypto.randomBytes(4).toString("hex")}@noemail.guest`;
-
-      // Random placeholder password — guests cannot log in
-      const placeholderPassword = await bcrypt.hash(
-        crypto.randomBytes(16).toString("hex"),
-        10,
-      );
-
-      guestUser = await TenantUser.create({
-        tenantId: tenant._id,
-        email: guestEmail,
-        password: placeholderPassword,
-        name: name.trim(),
-        phone: normalizedPhone,
-        role: "GUEST",
-        status: "invited",
-        isEmailVerified: false,
-        ...(normalizedInstagram && { instagram: normalizedInstagram }),
-        ...(tiktok?.trim() && { tiktok: tiktok.trim() }),
-      });
-    }
+    const guestUser = await findOrCreateGuestUser({
+      tenantObjectId: tenant._id,
+      name,
+      normalizedPhone,
+      normalizedEmail,
+      normalizedInstagram,
+      tiktok,
+    });
 
     // ── Create appointment ────────────────────────────────────────────────────
     const resolvedServiceName = serviceName || service.name;

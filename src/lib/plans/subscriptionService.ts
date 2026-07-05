@@ -14,7 +14,6 @@ import { Subscription } from "@/models/Subscription";
 import { Tenant } from "@/models/Tenant";
 import type { ISubscription } from "@/models/Subscription";
 import {
-  PLAN_FEATURES,
   getPlanFeatures,
   resolveEffectivePlan,
   type PlanName,
@@ -45,7 +44,7 @@ async function getEffectivePlan(
  * Dohvati ili kreira Subscription za tenant.
  * Ako ne postoji (stari tenanti), kreira ga na osnovu Tenant.plan.
  */
-export async function getOrCreateSubscription(
+async function getOrCreateSubscription(
   tenantId: string,
 ): Promise<ISubscription> {
   await connectToDB();
@@ -88,7 +87,7 @@ export async function getOrCreateSubscription(
 /**
  * Dohvati efektivne feature-e za tenant (uključujući superadmin override).
  */
-export async function getTenantFeatures(
+async function getTenantFeatures(
   tenantId: string,
 ): Promise<PlanFeatures> {
   const sub = await getOrCreateSubscription(tenantId);
@@ -115,94 +114,6 @@ export async function tenantHasFeature<K extends keyof PlanFeatures>(
   const features = await getTenantFeatures(tenantId);
   const value = features[feature];
   return Boolean(value);
-}
-
-// ─── Usage tracking ───────────────────────────────────────────────────────────
-
-/**
- * Povećaj broj AI zahteva za ovaj mjesec.
- * Vraća true ako je zahtjev dozvoljen, false ako je limit prekoračen.
- */
-export async function consumeAiRequest(tenantId: string): Promise<boolean> {
-  const sub = await getOrCreateSubscription(tenantId);
-  const features = getPlanFeatures(
-    await getEffectivePlan(sub, tenantId),
-    sub.featureOverrides,
-  );
-
-  if (features.unlimitedAiTokens) return true;
-  if (features.aiRequestsPerMonth === 0) return false;
-  if (features.aiRequestsPerMonth === -1) return true;
-
-  // Resetuj brojač ako je novi mjesec
-  const now = new Date();
-  const resetAt = new Date(sub.usage.aiRequestsResetAt);
-  const isNewMonth =
-    now.getMonth() !== resetAt.getMonth() ||
-    now.getFullYear() !== resetAt.getFullYear();
-
-  if (isNewMonth) {
-    await Subscription.findOneAndUpdate(
-      { tenantId },
-      {
-        $set: {
-          "usage.aiRequestsThisMonth": 1,
-          "usage.aiRequestsResetAt": now,
-        },
-      },
-    );
-    return true;
-  }
-
-  if (sub.usage.aiRequestsThisMonth >= features.aiRequestsPerMonth) {
-    return false;
-  }
-
-  await Subscription.findOneAndUpdate(
-    { tenantId },
-    { $inc: { "usage.aiRequestsThisMonth": 1 } },
-  );
-  return true;
-}
-
-// ─── Superadmin override ──────────────────────────────────────────────────────
-
-export interface OverrideParams {
-  overrides: Partial<PlanFeatures>;
-  expiresAt: Date;
-  note: string;
-}
-
-export async function setFeatureOverride(
-  tenantId: string,
-  params: OverrideParams,
-): Promise<void> {
-  await connectToDB();
-  await Subscription.findOneAndUpdate(
-    { tenantId },
-    {
-      $set: {
-        featureOverrides: params.overrides,
-        overrideExpiresAt: params.expiresAt,
-        overrideNote: params.note,
-      },
-    },
-    { upsert: false },
-  );
-}
-
-export async function clearFeatureOverride(tenantId: string): Promise<void> {
-  await connectToDB();
-  await Subscription.findOneAndUpdate(
-    { tenantId },
-    {
-      $set: {
-        featureOverrides: null,
-        overrideExpiresAt: null,
-        overrideNote: null,
-      },
-    },
-  );
 }
 
 // ─── Paddle sync ──────────────────────────────────────────────────────────────
@@ -269,8 +180,3 @@ export async function cancelSubscriptionFromPaddle(params: {
   );
 }
 
-// ─── Pricing info (za pricing page) ──────────────────────────────────────────
-
-export function getAllPlanFeatures(): Record<PlanName, PlanFeatures> {
-  return PLAN_FEATURES;
-}

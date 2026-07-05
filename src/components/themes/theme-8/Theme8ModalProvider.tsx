@@ -12,23 +12,17 @@
  * Enter/exit animation mirrors the design prototype's `lrpop`
  * (opacity 0 + translateY(24px) scale(.96) → settle, .42s) plus a backdrop fade.
  */
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 // createPortal is guarded by a typeof-document check below (no SSR call).
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import type { IService, SalonProfileData } from "@/types";
 import { PENDING_STORAGE_KEY } from "@/components/shared/BookingModal";
+import { Theme8ModalContext, type ModalName } from "./theme8ModalContext";
 import { Y2KBookingCard } from "../shared/Y2KBookingCard";
 import { Y2KNewsletterWidget } from "../shared/Y2KNewsletterWidget";
 import { SprayReveal } from "./motion/SprayReveal";
-import Theme8CelebrationOverlay from "./Theme8CelebrationOverlay";
+import { Theme8CelebrationOverlay } from "./Theme8CelebrationOverlay";
 
 // Sprite sheet "Hvala" lika — grid 6×2 (12 frejmova), red-major.
 // PNG: public/images/theme-8/celebration-sheet.png (1080×700, frame 180×350).
@@ -47,25 +41,6 @@ const CELEBRATION_SPRITE = {
   loop: false,
   frameDurations: [150, 150, 150, 800, 150, 150, 150, 150, 150, 150, 150, 150],
 };
-
-type ModalName = "book" | "bilten";
-
-interface Theme8ModalCtx {
-  open: (name: ModalName) => void;
-  close: () => void;
-  /** Zatvori modal i prikaži "Moment" zahvalnicu (npr. nakon zakazivanja). */
-  celebrate: () => void;
-}
-
-const Theme8ModalContext = createContext<Theme8ModalCtx>({
-  open: () => {},
-  close: () => {},
-  celebrate: () => {},
-});
-
-export function useTheme8Modal() {
-  return useContext(Theme8ModalContext);
-}
 
 interface BookingData {
   tenantSlug?: string;

@@ -3,7 +3,7 @@
 import { ITestimonial } from "@/types";
 
 // Type guard za proveru da li je testimonial sa populiranim appointmentId
-export function isTestimonialWithPopulatedAppointment(
+function isTestimonialWithPopulatedAppointment(
   testimonial: ITestimonial<
     string | { _id: string; serviceName?: string; date?: string }
   >
@@ -16,15 +16,6 @@ export function isTestimonialWithPopulatedAppointment(
     typeof testimonial.appointmentId !== "string" &&
     testimonial.appointmentId !== null
   );
-}
-
-// Type guard za proveru da li je testimonial sa string appointmentId
-export function isTestimonialWithStringId(
-  testimonial: ITestimonial<
-    string | { _id: string; serviceName?: string; date?: string }
-  >
-): testimonial is ITestimonial<string> {
-  return typeof testimonial.appointmentId === "string";
 }
 
 // Helper funkcija za dobijanje appointment info

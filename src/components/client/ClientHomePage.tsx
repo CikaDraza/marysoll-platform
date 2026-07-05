@@ -15,7 +15,7 @@ import { Service } from "@/models/Service";
 import { Testimonial } from "@/models/Testimonial";
 import { headers } from "next/headers";
 import { ThemeLayout } from "@/components/themes/ThemeLayout";
-import type { LandingTheme } from "@/models/SalonProfile";
+import type { LandingTheme } from "@/types";
 import type {
   IService,
   LandingStructure,

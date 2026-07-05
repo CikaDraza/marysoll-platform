@@ -107,24 +107,3 @@ export function getRawToken(): string | null {
   return readRawToken();
 }
 
-/**
- * Returns true if a valid, non-expired token exists.
- */
-export function isTokenValid(): boolean {
-  return getUserFromToken() !== null;
-}
-
-/**
- * Returns true if the current token expires within `thresholdMinutes`.
- */
-export function isTokenExpiringSoon(thresholdMinutes = 5): boolean {
-  const token = getRawToken();
-  if (!token) return true;
-  try {
-    const decoded = jwtDecode<DecodedUser>(token);
-    if (!decoded?.exp) return true;
-    return decoded.exp - Date.now() / 1000 < thresholdMinutes * 60;
-  } catch {
-    return true;
-  }
-}

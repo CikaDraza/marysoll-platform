@@ -1,6 +1,6 @@
 /** Zajednička detekcija browsera/hosta za bannere (client-only helperi). */
 
-export const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
 
 /** Vraća ime aplikacije ako je sajt otvoren u in-app pregledaču, inače null. */
 export function detectInApp(ua: string): string | null {

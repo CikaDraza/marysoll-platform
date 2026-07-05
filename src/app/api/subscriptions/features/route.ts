@@ -16,7 +16,7 @@ import {
 import type { PlanName } from "@/lib/plans/planFeatures";
 import { Tenant } from "@/models/Tenant";
 import { Subscription } from "@/models/Subscription";
-import { ISubscription } from "@/types";
+import type { ISubscription } from "@/models/Subscription";
 
 export async function GET(req: NextRequest) {
   const auth = requireAdmin(req);

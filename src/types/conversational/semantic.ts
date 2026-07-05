@@ -1,4 +1,4 @@
-import { CampaignIntent } from "@/types/conversational/campaign";
+import { CampaignIntent } from "./intent";
 import { INewsletterCampaign } from "@/types";
 
 export type CampaignType = "email-only" | "email-landing";

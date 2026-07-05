@@ -6,8 +6,8 @@
 // key falls back to DEFAULT_CTA_KEY, which prevents the AI from inventing URLs
 // (the "everything links to the canonical marysoll.com homepage" problem).
 //
-// NOTE: intentionally NOT `server-only` — `ctaKeys` is imported by the shared
-// zod schemas in `@/types/landing-blocks`, which are also used client-side.
+// NOTE: intentionally NOT `server-only` — `CtaKey`/`CustomCta` tipove koriste
+// i klijentske komponente preko `@/types/landing-blocks` i `@/types`.
 
 export interface CtaEntry {
   /** Default visible button copy (AI may override with its own ctaLabel). */
@@ -18,7 +18,7 @@ export interface CtaEntry {
   description: string;
 }
 
-export const CTA_CATALOG = {
+const CTA_CATALOG = {
   "start-free": {
     label: "Počni besplatno",
     href: "/register",
@@ -60,9 +60,7 @@ export const CTA_CATALOG = {
 export type CtaKey = keyof typeof CTA_CATALOG;
 
 /** Non-empty readonly tuple of keys, for `z.enum(...)`. */
-export const ctaKeys = Object.keys(CTA_CATALOG) as [CtaKey, ...CtaKey[]];
-
-export const DEFAULT_CTA_KEY: CtaKey = "start-free";
+const DEFAULT_CTA_KEY: CtaKey = "start-free";
 
 export type CtaPlacement = "auto" | "hero" | "final" | "pricing";
 
@@ -78,7 +76,7 @@ export interface CustomCta {
 }
 
 /** Stable key for the Nth campaign-defined custom CTA (0-based). */
-export function customCtaKey(index: number): string {
+function customCtaKey(index: number): string {
   return `custom-${index + 1}`;
 }
 
@@ -112,24 +110,6 @@ export function resolveCta(
 
   const fallback = CTA_CATALOG[DEFAULT_CTA_KEY];
   return { key: DEFAULT_CTA_KEY, label: fallback.label, href: fallback.href };
-}
-
-/**
- * Selectable CTA options (catalog + valid custom CTAs) for the manual block
- * editor. Custom keys use the same index scheme as the agent/resolver, so a
- * key chosen here resolves to the same destination.
- */
-export function getCtaKeyOptions(
-  customCtas?: CustomCta[],
-): { key: string; label: string }[] {
-  const base = (Object.keys(CTA_CATALOG) as CtaKey[]).map((key) => ({
-    key,
-    label: CTA_CATALOG[key].label,
-  }));
-  const custom = (customCtas ?? [])
-    .filter((c) => c.label?.trim() && c.href?.trim())
-    .map((c, i) => ({ key: customCtaKey(i), label: `${c.label} (custom)` }));
-  return [...base, ...custom];
 }
 
 /** Platform destinations as {label, value=href} — for the manual editor's slug picker. */

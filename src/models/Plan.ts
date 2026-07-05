@@ -2,7 +2,7 @@ import { Schema, Document, model, models } from "mongoose";
 
 export type PlanSlug = "maria" | "claudia" | "kiki" | "enterprise";
 
-export interface IPlan extends Document {
+interface IPlan extends Document {
   name: string;
   slug: PlanSlug;
   description: string;

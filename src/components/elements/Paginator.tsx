@@ -2,15 +2,7 @@
 "use client";
 
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/20/solid";
-
-export interface PaginationInfo {
-  page: number;
-  limit: number;
-  totalCount: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-}
+import type { PaginationInfo } from "@/types";
 
 interface PaginatorProps {
   pagination: PaginationInfo;

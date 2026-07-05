@@ -31,26 +31,3 @@ export function isPriceOnRequest(priceMode?: PriceMode | null): boolean {
   return priceMode === "on_request";
 }
 
-/**
- * Parse input like "5.000,00" or "5000" or "5,000.00" to number
- */
-export function parsePriceInputToNumber(str: string): number {
-  if (!str) return 0;
-  // remove spaces
-  let s = String(str).trim();
-  // if user used comma as decimal: "5.000,50"
-  // We want to remove dots (thousand separator) and convert comma to dot for parseFloat
-  s = s.replace(/\s/g, "");
-  if (s.includes(",") && s.includes(".")) {
-    // assume "." are thousands and "," decimal -> remove dots, replace comma with dot
-    s = s.replace(/\./g, "").replace(",", ".");
-  } else if (s.includes(",")) {
-    // if only comma present -> treat as decimal separator
-    s = s.replace(",", ".");
-  } else {
-    // no comma, may have dots as thousands -> remove them
-    s = s.replace(/\./g, "");
-  }
-  const n = parseFloat(s);
-  return Number.isFinite(n) ? n : 0;
-}

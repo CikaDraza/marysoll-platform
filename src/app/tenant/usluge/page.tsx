@@ -11,7 +11,7 @@ import {
 } from "@/lib/tenant/fetchTenantData";
 import ServicesLayout from "./ServiceLayout";
 import { TenantPageShell } from "@/components/themes/TenantPageShell";
-import { Theme8ServicesPage } from "@/components/themes/theme-8/pages/Theme8ServicesPage";
+import { Theme8ServicesPage } from "@/components/themes/theme-8";
 import { LandingStructure, SalonProfileData } from "@/types";
 
 export const dynamic = "force-dynamic";

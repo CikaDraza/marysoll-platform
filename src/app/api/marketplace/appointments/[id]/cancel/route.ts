@@ -2,17 +2,17 @@
  * POST /api/marketplace/appointments/[id]/cancel
  * Body: { clientEmail: string }
  *
- * Cross-tenant cancellation endpoint.
+ * Cross-tenant cancellation endpoint (booking.marysoll.com boost app).
  * Protected by HMAC — the calling server passes the clientEmail it extracted
  * from the user's verified Bearer token, so no tenant-scoped JWT is needed.
- * Applies the same cancellation-window logic as the tenant endpoint.
+ * Deli tok sa tenant rutom (clientFlows) — uklj. loyalty hook koji je ranije
+ * ovde nedostajao (vaučer se nije oslobađao pri otkazivanju kroz boost app).
  */
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { verifySignature } from "@/lib/middleware/verifySignature";
-import { canClientCancelAppointment } from "@/lib/appointments/cancellation";
-import { createAppointmentNotification } from "@/lib/notificationService";
+import { cancelAppointmentAsClient } from "@/lib/appointments/clientFlows";
 
 export async function POST(
   req: NextRequest,
@@ -50,64 +50,12 @@ export async function POST(
       return NextResponse.json({ error: "Termin nije pronađen." }, { status: 404 });
     }
 
-    if (
-      appointment.status === "appointment_cancelled" ||
-      appointment.status === "completed" ||
-      appointment.status === "no_show"
-    ) {
-      return NextResponse.json({ error: "Termin se više ne može otkazati." }, { status: 400 });
+    const result = await cancelAppointmentAsClient(appointment);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
-    const now = new Date();
-    const canCancel = canClientCancelAppointment(appointment, now);
-
-    appointment.lastUpdatedBy = "client";
-    appointment.cancelledAt = now;
-    appointment.cancelledBy = "client";
-
-    if (canCancel) {
-      appointment.status = "appointment_cancelled";
-      appointment.cancellationType = "legitimate";
-      appointment.cancellationStatus = "can_cancel";
-    } else {
-      appointment.status = "no_show";
-      appointment.cancellationType = "late";
-      appointment.cancellationStatus = "late_cancel";
-      appointment.noShowMarkedAt = now;
-      appointment.noShowReason = "late_cancel";
-    }
-
-    await appointment.save();
-
-    if (canCancel) {
-      await createAppointmentNotification(
-        {
-          _id: appointment._id.toString(),
-          tenantId: appointment.tenantId,
-          clientProfileId: appointment.clientProfileId?.toString() ?? "",
-          clientName: appointment.clientName,
-          clientEmail: appointment.clientEmail,
-          serviceName: appointment.serviceName,
-          date: appointment.date,
-          time: appointment.time,
-          note: appointment.note,
-          clientPhone: appointment.clientPhone,
-          clientInstagram: appointment.clientInstagram,
-          preferredContact: appointment.preferredContact,
-          contactNote: appointment.contactNote,
-        },
-        "cancelled",
-        {
-          sender: "client",
-          message: "Klijent je otkazao termin u dozvoljenom roku.",
-        },
-      );
-    }
-
-    return NextResponse.json({
-      message: canCancel ? "Termin je otkazan." : "Vreme za otkazivanje termina je isteklo.",
-      appointment,
-    });
+    return NextResponse.json({ message: result.message, appointment });
   } catch (error) {
     console.error("POST /api/marketplace/appointments/[id]/cancel error:", error);
     return NextResponse.json({ error: "Greška na serveru." }, { status: 500 });

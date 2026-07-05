@@ -39,7 +39,7 @@ import { normalizeVacations } from "@/helpers/vacations";
 
 const emptyWorkingHours = (): WorkingHoursMap => ({ ...EMPTY_WORKING_HOURS });
 
-export const emptyLandingStructure = (): LandingStructure => ({
+const emptyLandingStructure = (): LandingStructure => ({
   landing: {
     hero: {
       enabled: true,
@@ -141,9 +141,9 @@ const emptyForm = (): ISalonProfileForm => ({
 });
 
 // Mapira SalonProfile iz DB u formu — normalizuje legacy workingHours string format
-export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
+// Normalizuje workingHours iz DB (novi slot format ili legacy "08:00-16:00" string).
+function mapWorkingHours(p: SalonProfile): WorkingHoursMap {
   const wh = emptyWorkingHours();
-
   if (p.workingHours) {
     const raw = p.workingHours as Record<string, unknown>;
     DAYS_OF_WEEK.forEach((day) => {
@@ -161,17 +161,14 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
       }
     });
   }
+  return wh;
+}
 
-  const rawProfile = p as unknown as Record<string, unknown>;
-  const landingTheme = (rawProfile.landingTheme as LandingTheme) || "theme-1";
-
-  const empty = emptyLandingStructure();
-  const rawLS = (rawProfile.landingStructure as LandingStructure | undefined) ?? {};
-  const rawLanding = (rawLS as LandingStructure).landing ?? {};
-  const rawPages = (rawLS as LandingStructure).pages ?? {};
-
-  const landingStructure: LandingStructure = {
-    landing: {
+// Landing deo CMS strukture sa default-ima po sekcijama.
+function mapLandingSections(
+  rawLanding: NonNullable<LandingStructure["landing"]>,
+): NonNullable<LandingStructure["landing"]> {
+  return {
       hero: {
         enabled: rawLanding.hero?.enabled ?? true,
         headline: rawLanding.hero?.headline ?? "",
@@ -282,9 +279,15 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
           },
         },
       },
-    },
-    pages: {
-      servicesPage: {
+  };
+}
+
+// Pages deo CMS strukture (usluge/termini stranice).
+function mapPages(
+  rawPages: NonNullable<LandingStructure["pages"]>,
+): NonNullable<LandingStructure["pages"]> {
+  return {
+    servicesPage: {
         headline: rawPages.servicesPage?.headline ?? "",
         subheadline: rawPages.servicesPage?.subheadline ?? "",
         paragraph: rawPages.servicesPage?.paragraph ?? "",
@@ -302,13 +305,23 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
             text: rawPages.appointmentsPage?.ctas?.secondary?.text ?? "",
             href: rawPages.appointmentsPage?.ctas?.secondary?.href ?? "",
           },
-        },
       },
     },
   };
+}
 
-  // suppress unused empty var warning
-  void empty;
+// Mapira SalonProfile iz DB u formu — normalizacija je razbijena po sekcijama
+// (radno vreme / landing / pages) da nijedna funkcija ne bude grana-monolit.
+function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
+  const rawProfile = p as unknown as Record<string, unknown>;
+  const landingTheme = (rawProfile.landingTheme as LandingTheme) || "theme-1";
+
+  const rawLS =
+    (rawProfile.landingStructure as LandingStructure | undefined) ?? {};
+  const landingStructure: LandingStructure = {
+    landing: mapLandingSections((rawLS as LandingStructure).landing ?? {}),
+    pages: mapPages((rawLS as LandingStructure).pages ?? {}),
+  };
 
   return {
     name: p.name ?? "",
@@ -331,7 +344,7 @@ export function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
       whatsapp: p.social?.whatsapp ?? "",
       telegram: p.social?.telegram ?? "",
     },
-    workingHours: wh,
+    workingHours: mapWorkingHours(p),
     vacations: normalizeVacations(p.vacations),
     availabilityMode:
       p.availabilityMode === "manualSlots" ? "manualSlots" : "workingHours",

@@ -5,7 +5,6 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { Service } from "@/models/Service";
 import { Tenant } from "@/models/Tenant";
-import { SalonProfile } from "@/models/SalonProfile";
 import { requireAuth } from "@/lib/auth/auth-server";
 import { createAppointmentNotification } from "@/lib/notificationService";
 import {
@@ -20,10 +19,11 @@ import {
   normalizeInstagram,
 } from "@/lib/contactRules";
 import {
-  checkManualSlotAvailability,
-  overlapsAppointments,
-} from "@/helpers/manualSlots";
-import type { IAppointmentService, ManualSlotsMap } from "@/types";
+  canAcceptBookings,
+  checkSlotAvailability,
+  loadBookingProfile,
+} from "@/lib/appointments/booking";
+import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant"; // Uveri se da imaš ovaj import
 
 export async function POST(request: NextRequest) {
@@ -82,17 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Provera da li salon može primati zakazivanja
-    const now = new Date();
-    const trialEndsAt = tenant.trialEndsAt
-      ? new Date(tenant.trialEndsAt)
-      : null;
-    const isTrialActive =
-      tenant.isTrialActive && trialEndsAt && trialEndsAt > now;
-
-    const canAcceptBookings =
-      tenant.paid === true || isTrialActive === true || tenant.plan === "maria";
-
-    if (!canAcceptBookings) {
+    if (!canAcceptBookings(tenant)) {
       return NextResponse.json(
         { error: "Salon nije aktivan. Zakazivanje nije moguće." },
         { status: 403 },
@@ -142,54 +132,19 @@ export async function POST(request: NextRequest) {
     }
 
     const { date, time } = data;
-    const salonProfile = await SalonProfile.findOne({ tenantId })
-      .select("cancellationWindowHours availabilityMode manualSlots")
-      .lean<{
-        cancellationWindowHours?: number;
-        availabilityMode?: string;
-        manualSlots?: ManualSlotsMap;
-      }>();
-    const cancellationWindowHours =
-      typeof salonProfile?.cancellationWindowHours === "number"
-        ? salonProfile.cancellationWindowHours
-        : 1;
-
-    // Preklapanje po TRAJANJU (oba režima): novi termin [time, time+duration)
-    // ne sme da se seče ni sa jednim aktivnim terminom tog dana. Radno vreme se
-    // namerno NE proverava — vlasnik pri odobravanju odlučuje o prekovremenom.
-    const dayAppointments = await Appointment.find({
-      tenantId,
-      date,
-      status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
-    })
-      .select("date time duration")
-      .lean<{ date: string; time: string; duration?: number }[]>();
+    const { profile: salonProfile, cancellationWindowHours } =
+      await loadBookingProfile(tenantId);
 
     const requestedDuration = Number(data.duration) || service.duration || 60;
-    if (overlapsAppointments(dayAppointments, date, time, requestedDuration)) {
-      return NextResponse.json({ error: "Termin je zauzet" }, { status: 400 });
-    }
-
-    // manualSlots režim: dozvoljen je samo tačan slobodan termin koji je
-    // vlasnik definisao — server je poslednja odbrana ako UI propusti.
-    if (salonProfile?.availabilityMode === "manualSlots") {
-      const check = checkManualSlotAvailability(
-        salonProfile.manualSlots,
-        dayAppointments,
-        date,
-        time,
-      );
-      if (!check.ok) {
-        return NextResponse.json(
-          {
-            error:
-              check.reason === "taken"
-                ? "Termin je zauzet"
-                : "Izabrani termin nije dostupan. Izaberite jedan od ponuđenih termina.",
-          },
-          { status: 400 },
-        );
-      }
+    const slotError = await checkSlotAvailability({
+      tenantId,
+      date,
+      time,
+      requestedDuration,
+      profile: salonProfile,
+    });
+    if (slotError) {
+      return NextResponse.json({ error: slotError }, { status: 400 });
     }
 
     // ── Growth Studio: vaučer pri bookingu ──

@@ -107,14 +107,17 @@ function getLoginEndpoint(): "/tenant-auth/login" | "/auth/login" {
   // Superadmin domain → platform auth
   if (hostname === `superadmin.${base}`) return "/auth/login";
 
-  // Dev / LAN environments: use path-based routing identical to base domain
-  const isLocal =
+  // Dev / LAN / Vercel preview: use path-based routing identical to base domain
+  // (preview hostovi *.vercel.app nemaju tenant kontekst — bez ovoga bi login
+  // pao u tenant-auth granu i vratio "Prijava zahteva kontekst salona").
+  const isPathBasedHost =
     hostname === "localhost" ||
     hostname.startsWith("127.") ||
-    hostname.startsWith("192.168.");
+    hostname.startsWith("192.168.") ||
+    hostname.endsWith(".vercel.app");
 
   // Base domain, www, or local dev: decide by path prefix
-  if (isLocal || hostname === base || hostname === `www.${base}`) {
+  if (isPathBasedHost || hostname === base || hostname === `www.${base}`) {
     const firstSegment = pathname.split("/").filter(Boolean)[0] ?? "";
     // Non-reserved first segment = tenant slug → tenant auth
     if (firstSegment && !PLATFORM_PATHS.has(firstSegment)) {
@@ -135,12 +138,13 @@ function getRegisterEndpoint(): "/tenant-auth/register" | "/auth/register" {
 
   if (hostname === `superadmin.${base}`) return "/auth/register";
 
-  const isLocal =
+  const isPathBasedHost =
     hostname === "localhost" ||
     hostname.startsWith("127.") ||
-    hostname.startsWith("192.168.");
+    hostname.startsWith("192.168.") ||
+    hostname.endsWith(".vercel.app");
 
-  if (isLocal || hostname === base || hostname === `www.${base}`) {
+  if (isPathBasedHost || hostname === base || hostname === `www.${base}`) {
     const firstSegment = pathname.split("/").filter(Boolean)[0] ?? "";
     if (firstSegment && !PLATFORM_PATHS.has(firstSegment)) {
       return "/tenant-auth/register";

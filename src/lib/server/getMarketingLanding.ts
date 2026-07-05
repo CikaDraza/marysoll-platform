@@ -6,10 +6,6 @@ import {
   DEFAULT_MARKETING_LANDING,
   normalizeMarketingLanding,
 } from "@/lib/marketing-landing-defaults";
-export {
-  DEFAULT_MARKETING_LANDING,
-  normalizeMarketingLanding,
-} from "@/lib/marketing-landing-defaults";
 
 export async function getMarketingLanding(): Promise<MarketingLandingStructure> {
   try {

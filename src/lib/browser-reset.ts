@@ -9,7 +9,7 @@
  * Client-only: koristi window/document, zvati isključivo iz klijentskih
  * komponenti (event handler).
  */
-export async function resetBrowserData() {
+async function resetBrowserData() {
   try {
     localStorage.clear();
     sessionStorage.clear();

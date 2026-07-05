@@ -43,7 +43,7 @@ import type {
   ManualSlotsMap,
 } from "@/types";
 import { manualTimesForDate, isManualSlotTaken } from "@/helpers/manualSlots";
-import { useTheme8Modal } from "@/components/themes/theme-8/Theme8ModalProvider";
+import { useTheme8Modal } from "@/components/themes/theme-8/theme8ModalContext";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

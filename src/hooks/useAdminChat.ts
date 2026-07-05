@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { mergeChatMessages } from "@/lib/chat/mergeMessages";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -34,40 +35,10 @@ export interface ChatContact {
   isSuperAdmin?: boolean;
 }
 
-// ─── Stable merge — preserves object references so React.memo skips unchanged bubbles ──
-
-function mergeMessages(prev: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] {
-  const realPrev = prev.filter((m) => !m._id.startsWith("temp-"));
-
-  if (
-    realPrev.length === incoming.length &&
-    (incoming.length === 0 ||
-      realPrev[realPrev.length - 1]._id === incoming[incoming.length - 1]._id)
-  ) {
-    return prev;
-  }
-
-  const prevById = new Map(prev.map((m) => [m._id, m]));
-
-  const merged = incoming.map((m) => {
-    const existing = prevById.get(m._id);
-    if (
-      existing &&
-      existing.isDeleted === m.isDeleted &&
-      existing.content === m.content
-    ) {
-      return existing;
-    }
-    return m;
-  });
-
-  const incomingIds = new Set(incoming.map((m) => m._id));
-  const temps = prev.filter(
-    (m) => m._id.startsWith("temp-") && !incomingIds.has(m._id),
-  );
-
-  return temps.length > 0 ? [...merged, ...temps] : merged;
-}
+// Stabilan merge (očuvanje referenci za React.memo) je u @/lib/chat/mergeMessages;
+// admin poruke se porede po `content` polju.
+const mergeMessages = (prev: ChatMessage[], incoming: ChatMessage[]) =>
+  mergeChatMessages(prev, incoming, (a, b) => a.content === b.content);
 
 // ─── useAdminChat ──────────────────────────────────────────────────────────────
 

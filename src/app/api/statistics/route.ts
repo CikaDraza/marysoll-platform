@@ -33,7 +33,7 @@ export interface IAppointmentServiceItem {
   price: number;
 }
 
-export interface IAppointment {
+interface IAppointment {
   _id?: string;
   clientProfileId?: string;
   clientName: string;
@@ -47,7 +47,7 @@ export interface IAppointment {
   updatedAt?: string;
 }
 
-export interface IUser {
+interface IUser {
   _id: string;
   name: string;
   email: string;

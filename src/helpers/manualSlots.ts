@@ -18,7 +18,7 @@ const MIN_DURATION = 5;
 const MAX_DURATION = 600;
 
 /** Lokalni datum (ne UTC) u formatu "YYYY-MM-DD" — koristi se za odsecanje prošlih datuma. */
-export function localTodayStr(d: Date = new Date()): string {
+function localTodayStr(d: Date = new Date()): string {
   const y = d.getFullYear();
   const mo = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");

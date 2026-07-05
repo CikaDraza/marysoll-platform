@@ -1,11 +1,5 @@
 import { Schema, Document, Types, model, models } from "mongoose";
-
-export interface IChatAttachment {
-  url: string;
-  type: "image" | "pdf";
-  name: string;
-  size: number;
-}
+import type { IChatAttachment } from "@/types";
 
 export interface IChatMessage {
   _id: Types.ObjectId;
@@ -18,7 +12,7 @@ export interface IChatMessage {
   timestamp: Date;
 }
 
-export interface ISalonInternalChat extends Document {
+interface ISalonInternalChat extends Document {
   tenantId: Types.ObjectId;
   // Sorted [smaller, larger] for uniqueness — compound unique index
   participants: [Types.ObjectId, Types.ObjectId];

@@ -39,7 +39,7 @@ export interface AgentConfig {
   rpmLimit: number;
 }
 
-export const AGENTS: Record<AgentType, AgentConfig> = {
+const AGENTS: Record<AgentType, AgentConfig> = {
   chat: {
     type: "chat",
     apiKey: process.env.DEEPSEEK_API_KEY_CHAT ?? "",
@@ -141,68 +141,6 @@ export const AGENTS: Record<AgentType, AgentConfig> = {
   },
 };
 
-export const AGENT_PERSONAS = {
-  chat: {
-    name: "Marysoll",
-    role: "Asistent za klijente",
-    color: "text-purple-500",
-  },
-  landing: {
-    name: "Maria",
-    role: "Specijalista za marketing",
-    color: "text-pink-500",
-  },
-  image: {
-    name: "Aria",
-    role: "Kreativni asistent",
-    color: "text-rose-500",
-  },
-  seo: {
-    name: "SEO",
-    role: "Optimizator sadržaja",
-    color: "text-blue-500",
-  },
-  campaignStrategy: {
-    name: "Sophia",
-    role: "Campaign Strategist",
-    color: "text-indigo-500",
-  },
-  campaignContent: {
-    name: "Elena",
-    role: "Content Generator",
-    color: "text-pink-500",
-  },
-  campaignTemplate: {
-    name: "Nova",
-    role: "Email Template Architect",
-    color: "text-purple-500",
-  },
-  campaignOptimization: {
-    name: "Atlas",
-    role: "Campaign Optimization AI",
-    color: "text-blue-500",
-  },
-  seoLandingTheme: {
-    name: "Scout",
-    role: "Landing SEO Analyst",
-    color: "text-emerald-500",
-  },
-  metadataSeo: {
-    name: "Meta",
-    role: "Metadata SEO Analyst",
-    color: "text-sky-500",
-  },
-  ctaStrategy: {
-    name: "Nora",
-    role: "CTA Strategy Analyst",
-    color: "text-amber-500",
-  },
-  landingContent: {
-    name: "Mira",
-    role: "Landing Content Writer",
-    color: "text-rose-500",
-  },
-};
 
 // ─── DeepSeek API call helper ─────────────────────────────────────────────────
 

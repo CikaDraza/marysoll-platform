@@ -79,7 +79,7 @@ export interface ITenantUserPushSubscription {
   createdAt: Date;
 }
 
-export interface ITenantUser extends Document {
+interface ITenantUser extends Document {
   _id: Types.ObjectId;
   tenantId: Types.ObjectId;
   /**

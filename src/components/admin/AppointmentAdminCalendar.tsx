@@ -24,6 +24,12 @@ import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useAuth } from "@/hooks/useAuth";
 import { useSalonProfileAdmin } from "@/hooks/useSalonProfileAdmin";
+import { useTenantAdmin } from "@/hooks/useTenantAdmin";
+import { WorkingHoursNote } from "@/components/shared/WorkingHoursNote";
+import {
+  getActiveOrUpcomingVacation,
+  formatVacationRange,
+} from "@/helpers/vacations";
 import AdminEditModal from "./AdminEditModal";
 import AdminCreateModal from "./AdminCreateModal";
 import FullCalendar from "@fullcalendar/react";
@@ -278,6 +284,9 @@ export default function AppointmentAdminCalendar() {
   );
   const isManual = salonForm.availabilityMode === "manualSlots";
   const manualSlots = salonForm.manualSlots as ManualSlotsMap | undefined;
+  const tenantAdmin = useTenantAdmin();
+  const salonUrl = tenantAdmin.getTenantUrl?.();
+  const vacation = getActiveOrUpcomingVacation(salonForm.vacations);
 
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -354,31 +363,54 @@ export default function AppointmentAdminCalendar() {
     <div className="space-y-5">
       {/* ── Info row ────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Radno vreme */}
-        <div className={`${card}`}>
-          <p className="text-[11px] font-bold text-zinc-400 dark:text-gray-300 uppercase tracking-widest mb-3">
-            Radno vreme salona
-          </p>
-          <div className="space-y-1.5">
-            {Object.entries(wh ?? {}).map(([day, slots]) => {
-              const s = slots as ITimeSlot[];
-              return (
-                <div key={day} className="flex items-center justify-between">
-                  <span className="text-xs text-zinc-500 dark:text-gray-300 font-medium w-28">
-                    {day}
-                  </span>
-                  {s.length > 0 ? (
-                    <span className="text-xs font-semibold text-zinc-800 dark:text-gray-300">
-                      {s.map((sl) => `${sl.from}–${sl.to}`).join(", ")}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-zinc-300">Neradan</span>
-                  )}
-                </div>
-              );
-            })}
+        {/* Radno vreme / režim zakazivanja — u manualSlots režimu klasična
+            tabela nema smisla (Sub/Ned su default "neradni"), pa se prikazuje
+            isti "Zakazivanje" blok kao na client panelu (WorkingHoursWidget). */}
+        {isManual ? (
+          <div className={`${card}`}>
+            <p className="text-[11px] font-bold text-zinc-400 dark:text-gray-300 uppercase tracking-widest mb-3">
+              🕐 Zakazivanje
+            </p>
+            {vacation && (
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-xs font-medium w-28 text-amber-600 dark:text-amber-500">
+                  Odmor
+                </span>
+                <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                  {formatVacationRange(vacation)}
+                </span>
+              </div>
+            )}
+            <WorkingHoursNote
+              rulesHref={salonUrl ? `${salonUrl}/pravila-zakazivanja` : undefined}
+            />
           </div>
-        </div>
+        ) : (
+          <div className={`${card}`}>
+            <p className="text-[11px] font-bold text-zinc-400 dark:text-gray-300 uppercase tracking-widest mb-3">
+              Radno vreme salona
+            </p>
+            <div className="space-y-1.5">
+              {Object.entries(wh ?? {}).map(([day, slots]) => {
+                const s = slots as ITimeSlot[];
+                return (
+                  <div key={day} className="flex items-center justify-between">
+                    <span className="text-xs text-zinc-500 dark:text-gray-300 font-medium w-28">
+                      {day}
+                    </span>
+                    {s.length > 0 ? (
+                      <span className="text-xs font-semibold text-zinc-800 dark:text-gray-300">
+                        {s.map((sl) => `${sl.from}–${sl.to}`).join(", ")}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-zinc-300">Neradan</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Legenda */}
         <AppointmentLegend className={`${card}`} />

@@ -128,15 +128,8 @@ export async function checkEmailMx(
   }
 }
 
-export async function checkZohoMx(domain: string) {
-  const mx = await checkEmailMx(domain);
-  return {
-    ok: mx.provider === "zoho",
-    records: mx.records,
-  };
-}
 
-export function canUseTenantNewsletterSender(
+function canUseTenantNewsletterSender(
   tenant: TenantEmailDoc | null | undefined,
   profile: SalonEmailDoc | null | undefined,
 ) {
@@ -200,16 +193,3 @@ export async function resolveTenantNewsletterSender(
   };
 }
 
-export async function getSalonContactEmail(
-  tenantId: string | Types.ObjectId | null | undefined,
-) {
-  if (!tenantId) return null;
-  await connectToDB();
-  const tenantObjectId =
-    typeof tenantId === "string" ? new Types.ObjectId(tenantId) : tenantId;
-  const profile = await SalonProfile.findOne({ tenantId: tenantObjectId })
-    .select("contactEmail email")
-    .lean<{ contactEmail?: string; email?: string } | null>();
-
-  return profile?.contactEmail || profile?.email || null;
-}

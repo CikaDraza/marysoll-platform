@@ -36,7 +36,7 @@ export async function resolveTenantLandingCrawlUrl(tenantId: string) {
   return `https://${tenant.slug}.${baseDomain}`;
 }
 
-export function buildTenantSeoPageUrls(homeUrl: string) {
+function buildTenantSeoPageUrls(homeUrl: string) {
   const base = trimSlash(homeUrl);
   return {
     home: base,

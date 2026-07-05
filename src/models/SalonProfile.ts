@@ -1,15 +1,5 @@
 import mongoose, { model, models, Types } from "mongoose";
 
-export type LandingTheme =
-  | "theme-1"
-  | "theme-2"
-  | "theme-3"
-  | "theme-4"
-  | "theme-5"
-  | "theme-6"
-  | "theme-7"
-  | "theme-8";
-
 const ctaSchema = new mongoose.Schema({
   text: { type: String },
   href: { type: String },

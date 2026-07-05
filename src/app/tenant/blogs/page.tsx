@@ -1,7 +1,7 @@
 // src/app/tenant/blogs/page.tsx
 import BlogsPageClient from "@/components/tenant/BlogsPageClient";
 import { TenantPageShell } from "@/components/themes/TenantPageShell";
-import { Theme8BlogList } from "@/components/themes/theme-8/pages/Theme8BlogList";
+import { Theme8BlogList } from "@/components/themes/theme-8";
 import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
 import type { Metadata } from "next";
 import { headers } from "next/headers";

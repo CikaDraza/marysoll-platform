@@ -6,13 +6,10 @@
  * the tenantId is read from the JWT instead of the URL slug.
  */
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
-import bcrypt from "bcryptjs";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { Service } from "@/models/Service";
 import { Tenant } from "@/models/Tenant";
-import { TenantUser } from "@/models/TenantUser";
 import { SalonProfile } from "@/models/SalonProfile";
 import { requireAdmin } from "@/lib/auth/auth-server";
 import { createAppointmentNotification } from "@/lib/notificationService";
@@ -23,6 +20,7 @@ import {
   normalizeEmail,
   normalizeInstagram,
 } from "@/lib/contactRules";
+import { findOrCreateGuestUser } from "@/lib/appointments/booking";
 import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant";
 
@@ -87,6 +85,10 @@ export async function POST(request: NextRequest) {
       ? salonProfile.cancellationWindowHours
       : 1;
 
+  // NAMERNO samo exact-match provera (ne duration-overlap/manualSlots kao u
+  // klijentskim rutama): admin/owner ovde svesno sme da preklopi termine ili
+  // zakaže van radnog vremena — npr. zna da je prethodni termin gotov ranije.
+  // (Odluka 2026-07-04 — ne "popravljati" na strožu proveru.)
   const existing = await Appointment.findOne({
     tenantId,
     date,
@@ -96,35 +98,14 @@ export async function POST(request: NextRequest) {
   if (existing) return NextResponse.json({ error: "Termin je zauzet." }, { status: 400 });
 
   // Find or create GUEST TenantUser
-  let guestUser = null;
-
-  if (normalizedEmail) {
-    guestUser = await TenantUser.findOne({ tenantId: tenant._id, email: normalizedEmail });
-  }
-
-  if (!guestUser) {
-    const guestEmail =
-      normalizedEmail ||
-      `guest_${Date.now()}_${crypto.randomBytes(4).toString("hex")}@noemail.guest`;
-
-    const placeholderPassword = await bcrypt.hash(
-      crypto.randomBytes(16).toString("hex"),
-      10,
-    );
-
-    guestUser = await TenantUser.create({
-      tenantId: tenant._id,
-      email: guestEmail,
-      password: placeholderPassword,
-      name: name.trim(),
-      phone: normalizedPhone,
-      role: "GUEST",
-      status: "invited",
-      isEmailVerified: false,
-      ...(normalizedInstagram && { instagram: normalizedInstagram }),
-      ...(tiktok?.trim() && { tiktok: tiktok.trim() }),
-    });
-  }
+  const guestUser = await findOrCreateGuestUser({
+    tenantObjectId: tenant._id,
+    name,
+    normalizedPhone,
+    normalizedEmail,
+    normalizedInstagram,
+    tiktok,
+  });
 
   const resolvedServiceName = serviceName || service.name;
 
