@@ -169,7 +169,9 @@ Ukupno **18.244 linija (14%) u 391 clone grupi**. Cilj: ispod 8%. Redosled po ri
 
 **4e urađeno (`ef8a618`, branch `optimizacija/booking-modal-proxy`):** BookingModal **843 → 96 linija** — `BookingProvider` (jedan izvor istine: state izbora + gost tok + sva tri submit toka; `useBookingContext()` baca van providera; bez prop drilling-a); 7 komponenti u `shared/booking/`. **Spoljni API nepromenjen** (props + `PendingAppointment` + `PENDING_STORAGE_KEY` re-export) — 3 pozivaoca (widgeti, AppointmentCalendarPage) netaknuta. 0 `any`.
 
-**Preostalo u Fazi 4 (postepeno, uz features):** `proxy.ts` (samo uz testove); `AdminLandingCMS` section-split ide uz Theme Engine.
+**4f urađeno (`2a89ad2`, branch `optimizacija/proxy-testovi`) — FAZA 4 KOMPLETNA:** proxy.ts **879 → 210 linija** (orkestrator) + 6 modula u `src/lib/proxy/` (types, constants, resolvers, domainType, auth, clientRouting). Preduslov ispunjen: **vitest harness + 21 routing test** (matrica host×putanja: marketing/preview/localhost/subdomen/custom domen/kanonski 301/bypass header) — verbatim premeštanje, svih 72 testa prolazi bez izmene očekivanja. Usput oživljen **51 postojeći test** (jest skripta bez jest-a). `npm test` = vitest.
+
+**Preostalo u Fazi 4 (postepeno, uz features):** `AdminLandingCMS` section-split ide uz Theme Engine (T2) — jedino preostalo, namerno.
 
 ## Faza 4 — originalni plan (dugoročno — raditi uz nove features, ne odjednom)
 
