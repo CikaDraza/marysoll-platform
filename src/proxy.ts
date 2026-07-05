@@ -42,6 +42,17 @@ type TenantResolution = {
 };
 
 const IS_PROD = process.env.NODE_ENV === "production";
+
+// Vercel preview + Deployment Protection: interni middleware fetch-evi (resolve
+// tenant/domena, token refresh) nemaju browser kolačić pa ih auth zid na
+// preview-u blokira iako browser prolazi. Secret postoji kad se u Vercel
+// Settings → Deployment Protection uključi "Protection Bypass for Automation".
+const VERCEL_BYPASS_HEADERS: Record<string, string> = process.env
+  .VERCEL_AUTOMATION_BYPASS_SECRET
+  ? {
+      "x-vercel-protection-bypass": process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
+    }
+  : {};
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
 const CUSTOM_CLIENT_DOMAIN = process.env.CUSTOM_CLIENT_DOMAIN ?? null;
 
@@ -159,16 +170,7 @@ async function resolveCustomDomain(
     const res = await fetch(url.toString(), {
       headers: {
         "x-internal-secret": process.env.INTERNAL_API_SECRET ?? "",
-        // Vercel preview sa Deployment Protection: interni fetch nema browser
-        // kolačić pa ga auth zid blokira (browser prolazi, middleware ne) →
-        // resolve vrati null → tenant 404. Bypass secret postoji kad se u
-        // Vercel Settings uključi "Protection Bypass for Automation".
-        ...(process.env.VERCEL_AUTOMATION_BYPASS_SECRET
-          ? {
-              "x-vercel-protection-bypass":
-                process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
-            }
-          : {}),
+        ...VERCEL_BYPASS_HEADERS,
       },
     });
     if (!res.ok) {
@@ -213,16 +215,7 @@ async function resolveSlugToTenantId(
     const res = await fetch(url.toString(), {
       headers: {
         "x-internal-secret": process.env.INTERNAL_API_SECRET ?? "",
-        // Vercel preview sa Deployment Protection: interni fetch nema browser
-        // kolačić pa ga auth zid blokira (browser prolazi, middleware ne) →
-        // resolve vrati null → tenant 404. Bypass secret postoji kad se u
-        // Vercel Settings uključi "Protection Bypass for Automation".
-        ...(process.env.VERCEL_AUTOMATION_BYPASS_SECRET
-          ? {
-              "x-vercel-protection-bypass":
-                process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
-            }
-          : {}),
+        ...VERCEL_BYPASS_HEADERS,
       },
     });
     if (!res.ok) return null;
@@ -465,7 +458,10 @@ async function attemptRefresh(
   try {
     const res = await fetch(`${request.nextUrl.origin}${endpoint}`, {
       method: "POST",
-      headers: { Cookie: `${cookieName}=${cookieValue}` },
+      headers: {
+        Cookie: `${cookieName}=${cookieValue}`,
+        ...VERCEL_BYPASS_HEADERS,
+      },
     });
     if (!res.ok) return null;
     const data = await res.json();
