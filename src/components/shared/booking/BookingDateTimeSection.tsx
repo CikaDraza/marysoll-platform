@@ -25,7 +25,17 @@ export function BookingDateTimeSection() {
     isManualMode,
     availableManualTimes,
     manualSlotInvalid,
+    availableClassicTimes,
   } = useBookingContext();
+
+  // Zadrži izabrano vreme u ponudi i kad ispadne iz liste (npr. promena
+  // usluge produži trajanje) — server svakako validira.
+  const classicOptions =
+    availableClassicTimes &&
+    selectedTime &&
+    !availableClassicTimes.includes(selectedTime)
+      ? [selectedTime, ...availableClassicTimes]
+      : availableClassicTimes;
 
   return (
     <>
@@ -85,13 +95,37 @@ export function BookingDateTimeSection() {
         <label className="block text-xs font-semibold text-gray-700 mb-1">
           Vreme *
         </label>
-        <Time24Input
-          value={selectedTime}
-          onChange={setSelectedTime}
-          required
-          aria-label="Vreme termina"
-          className="block w-full rounded-xl border border-gray-200 bg-gray-50 text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--primary-color)/80"
-        />
+        {classicOptions ? (
+          <>
+            <select
+              value={selectedTime}
+              onChange={(e) => setSelectedTime(e.target.value)}
+              required
+              aria-label="Vreme termina"
+              className="block w-full rounded-xl border border-gray-200 bg-gray-50 text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--primary-color)/80"
+            >
+              <option value="">— izaberite vreme —</option>
+              {classicOptions.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+            {selectedDate && classicOptions.length === 0 && (
+              <p className="mt-1 text-xs font-semibold text-red-500">
+                Nema slobodnih vremena za izabrani datum.
+              </p>
+            )}
+          </>
+        ) : (
+          <Time24Input
+            value={selectedTime}
+            onChange={setSelectedTime}
+            required
+            aria-label="Vreme termina"
+            className="block w-full rounded-xl border border-gray-200 bg-gray-50 text-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--primary-color)/80"
+          />
+        )}
       </div>
     </div>
   )}

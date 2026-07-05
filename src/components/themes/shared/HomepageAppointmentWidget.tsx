@@ -748,6 +748,7 @@ export default function HomepageAppointmentWidget({
 
       {/* Booking Modal */}
       <BookingModal
+        workingHours={workingHours}
         isOpen={modalOpen}
         onClose={() => {
           setModalOpen(false);

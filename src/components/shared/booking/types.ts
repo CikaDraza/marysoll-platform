@@ -4,6 +4,7 @@
  * starog puta "@/components/shared/BookingModal" radi kompatibilnosti.
  */
 import type { IService, ManualSlotsMap } from "@/types";
+import type { WorkingHoursInput } from "@/helpers/parseWorkingHours";
 
 export type PendingAppointment = {
   tenantSlug: string;
@@ -45,6 +46,8 @@ export interface BookingModalProps {
   pendingDefaults?: Omit<PendingAppointment, "tenantSlug"> | null;
   /** "manualSlots" ograničava izbor na termine koje je vlasnik definisao. */
   availabilityMode?: string;
+  /** Radno vreme salona — klasičan režim gradi dropdown dostupnih vremena. */
+  workingHours?: WorkingHoursInput;
   manualSlots?: ManualSlotsMap;
   /** Zauzeti termini (javni podaci) — filtriraju ponudu u manual režimu. */
   bookedAppointments?: { date: string; time: string; duration?: number }[];

@@ -1,5 +1,8 @@
 import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
-import { generateTimes } from "@/helpers/generateTimes";
+import {
+  availableTimesForDate,
+  type WorkingHoursInput,
+} from "@/helpers/parseWorkingHours";
 import {
   manualTimesForDate,
   isManualSlotTaken,
@@ -22,6 +25,8 @@ interface Props {
   token?: string;
   /** "manualSlots" ograničava izbor na termine koje je vlasnik definisao. */
   availabilityMode?: string;
+  /** Radno vreme salona — klasičan režim gradi dropdown dostupnih vremena. */
+  workingHours?: WorkingHoursInput;
   manualSlots?: ManualSlotsMap;
   bookedAppointments?: { date: string; time: string; duration?: number }[];
 }
@@ -33,6 +38,7 @@ export default function ClientCreateModal({
   defaultTime,
   token,
   availabilityMode,
+  workingHours,
   manualSlots,
   bookedAppointments,
 }: Props) {
@@ -40,7 +46,6 @@ export default function ClientCreateModal({
   const { data: services = [], isLoading: servicesLoading } = useServices();
   const { createAppointment } = useAppointmentMutations(token);
 
-  const timeOptions = useMemo(() => generateTimes(0, 24, 15), []);
 
   const [selectedDate, setSelectedDate] = useState<string>(defaultDate ?? "");
   const [selectedTime, setSelectedTime] = useState<string>(defaultTime ?? "");
@@ -121,6 +126,19 @@ export default function ClientCreateModal({
   };
 
   const { price: totalPrice, duration: totalDuration } = calculateTotal();
+
+  // Klasičan režim: ponuda vremena = radno vreme − zauzeto − prošlost,
+  // uračunato trajanje izabrane usluge (UX odluka 2026-07-05).
+  const timeOptions = availableTimesForDate({
+    workingHours,
+    dateStr: selectedDate,
+    durationMin: totalDuration || 60,
+    booked: bookedAppointments ?? [],
+  });
+  const classicTimeOptions =
+    selectedTime && !timeOptions.includes(selectedTime)
+      ? [selectedTime, ...timeOptions]
+      : timeOptions;
 
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
@@ -261,56 +279,72 @@ export default function ClientCreateModal({
             className="flex-1 flex flex-col justify-between my-6"
           >
             <div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Datum *
-                </label>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => {
-                    setSelectedDate(e.target.value);
-                    if (isManualMode) setSelectedTime("");
-                  }}
-                  className="mt-1 block w-full rounded-md border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-2 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
-                  required
-                  min={new Date().toISOString().split("T")[0]}
-                />
-              </div>
+              {/* Pojedinačni termini: termin dolazi ISKLJUČIVO klikom na
+                  slobodan slot u kalendaru — bez inputa za datum/vreme. */}
+              {isManualMode ? (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Termin *
+                  </label>
+                  {selectedDate && selectedTime && !manualSlotInvalid ? (
+                    <div className="mt-1 flex items-center justify-between gap-3 rounded-md border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/20 px-3 py-2.5">
+                      <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                        {selectedDate}
+                      </span>
+                      <span className="shrink-0 text-sm font-bold text-violet-600 dark:text-violet-400">
+                        {selectedTime}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="mt-1 rounded-md border border-dashed border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-3 py-2.5">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Zatvorite prozor i izaberite slobodan termin u
+                        kalendaru.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Datum *
+                    </label>
+                    <input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-2 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+                      required
+                      min={new Date().toISOString().split("T")[0]}
+                    />
+                  </div>
 
-              <div className="mt-4">
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Vreme *
-                </label>
-                <select
-                  value={isManualMode && manualSlotInvalid ? "" : selectedTime}
-                  onChange={(e) => setSelectedTime(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-2"
-                  required
-                >
-                  <option value="">
-                    {isManualMode ? "— izaberite termin —" : "— izaberite vreme —"}
-                  </option>
-                  {isManualMode
-                    ? availableManualTimes.map((s) => (
-                        <option key={s.time} value={s.time}>
-                          {s.time} ({s.duration} min)
-                        </option>
-                      ))
-                    : timeOptions.map((t) => (
+                  <div className="mt-4">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Vreme *
+                    </label>
+                    <select
+                      value={selectedTime}
+                      onChange={(e) => setSelectedTime(e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-2"
+                      required
+                    >
+                      <option value="">— izaberite vreme —</option>
+                      {classicTimeOptions.map((t) => (
                         <option key={t} value={t}>
                           {t}
                         </option>
                       ))}
-                </select>
-                {isManualMode &&
-                  selectedDate &&
-                  availableManualTimes.length === 0 && (
-                    <p className="mt-1 text-xs font-semibold text-red-500">
-                      Nema slobodnih termina za izabrani datum.
-                    </p>
-                  )}
-              </div>
+                    </select>
+                    {selectedDate && classicTimeOptions.length === 0 && (
+                      <p className="mt-1 text-xs font-semibold text-red-500">
+                        Nema slobodnih vremena za izabrani datum.
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
 
               <div className="mt-4">
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">

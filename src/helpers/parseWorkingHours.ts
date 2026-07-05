@@ -13,8 +13,49 @@
  */
 
 import { TimeSlot } from "@/types";
+import { overlapsAppointments } from "@/helpers/manualSlots";
 
 export type WorkingHoursInput = Record<string, string | TimeSlot[] | unknown>;
+
+/**
+ * Dostupna vremena za datum u klasičnom (radno vreme) režimu:
+ * korak kroz radne opsege tako da termin [t, t+duration) ceo stane,
+ * bez prošlih vremena (za današnji datum) i bez preklapanja sa zauzetim.
+ * Koriste ga dropdown-i u BookingModal-u i panel modalima — UX odluka
+ * 2026-07-05: klijent bira IZ PONUDE umesto slobodnog unosa 00–24.
+ */
+export function availableTimesForDate(args: {
+  workingHours: WorkingHoursInput | null | undefined;
+  dateStr: string;
+  durationMin: number;
+  booked: { date: string; time: string; duration?: number }[];
+  stepMin?: number;
+  now?: Date;
+}): string[] {
+  const { workingHours, dateStr, durationMin, booked, stepMin = 30 } = args;
+  const now = args.now ?? new Date();
+  if (!dateStr) return [];
+  const duration = Math.max(durationMin, 1);
+  const toMin = (t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + (m || 0);
+  };
+  const fromMin = (min: number) =>
+    `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+
+  const times: string[] = [];
+  for (const range of workingSlotsForDate(workingHours, dateStr)) {
+    const start = toMin(range.from);
+    const end = toMin(range.to);
+    for (let t = start; t + duration <= end; t += stepMin) {
+      const time = fromMin(t);
+      if (new Date(`${dateStr}T${time}`) < now) continue;
+      if (overlapsAppointments(booked, dateStr, time, duration)) continue;
+      times.push(time);
+    }
+  }
+  return times;
+}
 
 /** JS getDay() indeks → srpski naziv dana (ključ u workingHours mapi). */
 const DAY_NAME_BY_JS_DAY = [

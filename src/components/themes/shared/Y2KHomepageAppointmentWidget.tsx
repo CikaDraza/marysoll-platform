@@ -739,6 +739,7 @@ export default function Y2KHomepageAppointmentWidget({
 
       {/* Booking Modal */}
       <BookingModal
+        workingHours={workingHours}
         isOpen={modalOpen}
         onClose={() => {
           setModalOpen(false);

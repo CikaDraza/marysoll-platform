@@ -627,6 +627,7 @@ export default function AppointmentCalendarPage({
 
       {/* Booking Modal */}
       <BookingModal
+        workingHours={workingHours}
         isOpen={modalOpen}
         onClose={() => {
           setModalOpen(false);
