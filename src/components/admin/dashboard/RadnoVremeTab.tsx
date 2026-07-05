@@ -12,7 +12,7 @@ import { isVacationExpired } from "@/helpers/vacations";
 // Test prekidač: kad je true, "istekao" badge se prikazuje na SVIM odmorima
 // (pregled pulsiranja). U produkciji vratiti na false — prikazuje se samo
 // kada je odmor stvarno istekao.
-const TEST_ALWAYS_SHOW_EXPIRED_BADGE = true;
+const TEST_ALWAYS_SHOW_EXPIRED_BADGE = false;
 import type { DashboardTabProps } from "./types";
 
 

@@ -174,20 +174,21 @@ export function CampaignStrategistPanel({
 
         <div>
           <label className={lbl}>Ton komunikacije *</label>
-          <div className="grid grid-cols-5 gap-2">
+          {/* Mobilni: 3 po redu (šira dugmad, ostala 2 idu u novi red); sm+: svih 5 u redu */}
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
             {TONES.map((t) => (
               <button
                 key={t.value}
                 onClick={() => setTone(t.value)}
                 className={[
-                  "flex flex-col items-center gap-1 p-2 rounded-xl border text-xs font-medium transition cursor-pointer",
+                  "flex flex-col items-center gap-1 p-2 min-w-0 rounded-xl border text-xs font-medium transition cursor-pointer",
                   tone === t.value
                     ? "border-violet-400 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300"
                     : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-violet-300",
                 ].join(" ")}
               >
                 <span className="text-xl">{t.icon}</span>
-                <span>{t.label}</span>
+                <span className="w-full text-center break-words">{t.label}</span>
               </button>
             ))}
           </div>
