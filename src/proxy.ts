@@ -42,6 +42,17 @@ type TenantResolution = {
 };
 
 const IS_PROD = process.env.NODE_ENV === "production";
+
+// Vercel preview + Deployment Protection: interni middleware fetch-evi (resolve
+// tenant/domena, token refresh) nemaju browser kolačić pa ih auth zid na
+// preview-u blokira iako browser prolazi. Secret postoji kad se u Vercel
+// Settings → Deployment Protection uključi "Protection Bypass for Automation".
+const VERCEL_BYPASS_HEADERS: Record<string, string> = process.env
+  .VERCEL_AUTOMATION_BYPASS_SECRET
+  ? {
+      "x-vercel-protection-bypass": process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
+    }
+  : {};
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
 const CUSTOM_CLIENT_DOMAIN = process.env.CUSTOM_CLIENT_DOMAIN ?? null;
 
@@ -157,7 +168,10 @@ async function resolveCustomDomain(
     const url = new URL("/api/internal/resolve-domain", request.nextUrl.origin);
     url.searchParams.set("domain", host);
     const res = await fetch(url.toString(), {
-      headers: { "x-internal-secret": process.env.INTERNAL_API_SECRET ?? "" },
+      headers: {
+        "x-internal-secret": process.env.INTERNAL_API_SECRET ?? "",
+        ...VERCEL_BYPASS_HEADERS,
+      },
     });
     if (!res.ok) {
       domainCache.set(host, {
@@ -199,7 +213,10 @@ async function resolveSlugToTenantId(
     const url = new URL("/api/internal/resolve-tenant", request.nextUrl.origin);
     url.searchParams.set("slug", slug);
     const res = await fetch(url.toString(), {
-      headers: { "x-internal-secret": process.env.INTERNAL_API_SECRET ?? "" },
+      headers: {
+        "x-internal-secret": process.env.INTERNAL_API_SECRET ?? "",
+        ...VERCEL_BYPASS_HEADERS,
+      },
     });
     if (!res.ok) return null;
 
@@ -441,7 +458,10 @@ async function attemptRefresh(
   try {
     const res = await fetch(`${request.nextUrl.origin}${endpoint}`, {
       method: "POST",
-      headers: { Cookie: `${cookieName}=${cookieValue}` },
+      headers: {
+        Cookie: `${cookieName}=${cookieValue}`,
+        ...VERCEL_BYPASS_HEADERS,
+      },
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -587,8 +607,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     domainType === "marketing" ||
     (!IS_PROD && hostname.split(":")[0].startsWith("localhost"));
 
-  // wasPathBasedDev: true when the slug came from the URL path on localhost (not from env/subdomain)
-  let wasPathBasedDev = false;
+  // isPathBasedHost: slug je došao iz URL putanje (ne iz subdomena/custom
+  // domena) — localhost dev ILI Vercel preview build (*.vercel.app nema
+  // tenant subdomene, pa se tenant sajtovi testiraju kao /{slug}/...).
+  let isPathBasedHost = false;
 
   if (isMarketingOrLocalhost) {
     const segments = pathname.split("/").filter(Boolean);
@@ -603,8 +625,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       const resolvedTenant = await resolveSlugToTenantId(request, firstSegment);
       tenantId = resolvedTenant?.id ?? null;
       customDomain = resolvedTenant?.customDomain ?? null;
-      wasPathBasedDev =
-        !IS_PROD && hostname.split(":")[0].startsWith("localhost");
+      const bareHost = hostname.split(":")[0].toLowerCase();
+      isPathBasedHost =
+        (!IS_PROD && bareHost.startsWith("localhost")) ||
+        bareHost.endsWith(".vercel.app");
     }
   }
 
@@ -613,10 +637,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   requestHeaders.set("x-tenant-slug", tenantSlug ?? "");
   requestHeaders.set("x-tenant-id", tenantId ?? "");
   // x-tenant-base-path: used by the tenant layout to set the client-side navigation base.
-  // Empty on prod/subdomain (URLs are root-relative); "/{slug}" on localhost path-based dev.
+  // Empty on prod/subdomain (URLs are root-relative); "/{slug}" on path-based
+  // hosts (localhost dev i Vercel preview).
   requestHeaders.set(
     "x-tenant-base-path",
-    wasPathBasedDev ? `/${tenantSlug}` : "",
+    isPathBasedHost ? `/${tenantSlug}` : "",
   );
 
   const pass = () =>
@@ -706,8 +731,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const isTenantSubdomain =
       host.endsWith(`.${BASE_DOMAIN}`) &&
       !PLATFORM_SUBDOMAINS.has(host.slice(0, -(BASE_DOMAIN.length + 1)));
+    // Vercel preview NIJE host-based tenant domen — bez ovoga isCustomDomain()
+    // broji *.vercel.app kao custom domen pa SEO kanonski redirect šalje
+    // preview posetioce na pravi domen salona umesto da servira path-based.
+    const isVercelPreview = host.endsWith(".vercel.app");
     const isHostBased =
-      isCustomDomain(hostname, BASE_DOMAIN) || isTenantSubdomain;
+      !isVercelPreview &&
+      (isCustomDomain(hostname, BASE_DOMAIN) || isTenantSubdomain);
 
     // SEO canonicalization: once a tenant has a verified custom domain,
     // permanently redirect the old subdomain to preserve ranking signals.
@@ -724,7 +754,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     }
 
     // In production, path-based tenant routing (marysoll.com/slug/...) is NOT supported.
-    if (IS_PROD && !isHostBased) {
+    // Izuzetak: Vercel preview buildovi (*.vercel.app) nemaju tenant subdomene,
+    // pa se tenant sajtovi testiraju path-based kao na localhost-u.
+    if (IS_PROD && !isHostBased && !isVercelPreview) {
       return NextResponse.rewrite(new URL("/not-found", request.url));
     }
 
@@ -772,8 +804,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // DEV (localhost path-based): strip slug, rewrite /{slug}/path → /tenant/path
-    if (tenantSlug && wasPathBasedDev) {
+    // PATH-BASED (localhost dev + Vercel preview): strip slug,
+    // rewrite /{slug}/path → /tenant/path
+    if (tenantSlug && isPathBasedHost) {
       const segments = pathname.split("/").filter(Boolean);
       const pathAfterSlug = segments.slice(1).join("/");
       const restPath = pathAfterSlug ? `/${pathAfterSlug}` : "";

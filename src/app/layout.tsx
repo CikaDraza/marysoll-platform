@@ -44,6 +44,24 @@ export default function RootLayout({
   return (
     <html lang="sr" suppressHydrationWarning data-scroll-behavior="smooth">
       <body className="font-outfit antialiased">
+        {/* Marketing fontovi — ranije pokvaren @import u globals.css ("https: //"
+            sa razmakom → browser ga rešava relativno na CSS fajl → 404 posle
+            ~3s koji koči primenu stilova = FOUC). Linkovi u body-ju: React 19
+            ih hoistuje u <head>; stylesheet mora precedence da bi se hoistovao. */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font -- App Router
+            root layout važi za SVE strane (pravilo cilja Pages Router);
+            dugoročni fix je next/font migracija (PLAN-OPTIMIZACIJE 0.7). */}
+        <link
+          rel="stylesheet"
+          precedence="default"
+          href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Meddon&family=Oswald:wght@200..700&family=Outfit:wght@100..900&display=swap"
+        />
         <ThemeProvider>
           <SidebarProvider>
             <QueryProvider>

@@ -23,6 +23,10 @@ import {
   checkManualSlotAvailability,
   overlapsAppointments,
 } from "@/helpers/manualSlots";
+import {
+  isWithinWorkingHours,
+  workingSlotsForDate,
+} from "@/helpers/parseWorkingHours";
 import type { IAppointmentService } from "@/types";
 import type { PreferredContact } from "@/lib/contactRules";
 
@@ -215,6 +219,8 @@ export async function rescheduleAppointmentAsClient(
   const timingChanged = dateOrTimeChanged || newDuration !== appointment.duration;
 
   if (timingChanged) {
+    const { profile } = await loadBookingProfile(tenantId);
+
     const dayAppointments = await Appointment.find({
       _id: { $ne: appointment._id },
       tenantId,
@@ -233,25 +239,50 @@ export async function rescheduleAppointmentAsClient(
     // manualSlots režim: i pomeranje termina sme samo na tačan termin koji je
     // vlasnik definisao. Nepromenjeno vreme se ne proverava — da izmena prođe
     // i kada je vlasnik u međuvremenu uklonio definiciju tog slota.
-    if (dateOrTimeChanged) {
-      const { profile } = await loadBookingProfile(tenantId);
-      if (profile?.availabilityMode === "manualSlots") {
-        const check = checkManualSlotAvailability(
-          profile.manualSlots,
-          dayAppointments,
+    if (dateOrTimeChanged && profile?.availabilityMode === "manualSlots") {
+      const check = checkManualSlotAvailability(
+        profile.manualSlots,
+        dayAppointments,
+        input.date,
+        input.time,
+      );
+      if (!check.ok) {
+        return check.reason === "taken"
+          ? { ok: false, kind: "conflict", error: "Termin je zauzet." }
+          : {
+              ok: false,
+              kind: "unavailable",
+              error:
+                "Izabrani termin nije dostupan. Izaberite jedan od ponuđenih termina.",
+            };
+      }
+    }
+
+    // Radno vreme (klasičan režim) — KLIJENT ne sme van radnog vremena ni na
+    // neradan dan (odluka 2026-07-05; slučaj: izmena termina u 01:30).
+    // Admin izmene idu kroz admin rutu i namerno nisu ograničene.
+    if (profile?.availabilityMode !== "manualSlots") {
+      const daySlots = workingSlotsForDate(profile?.workingHours, input.date);
+      if (daySlots.length === 0) {
+        return {
+          ok: false,
+          kind: "unavailable",
+          error: "Salon ne radi izabranog dana.",
+        };
+      }
+      if (
+        !isWithinWorkingHours(
+          profile?.workingHours,
           input.date,
           input.time,
-        );
-        if (!check.ok) {
-          return check.reason === "taken"
-            ? { ok: false, kind: "conflict", error: "Termin je zauzet." }
-            : {
-                ok: false,
-                kind: "unavailable",
-                error:
-                  "Izabrani termin nije dostupan. Izaberite jedan od ponuđenih termina.",
-              };
-        }
+          newDuration,
+        )
+      ) {
+        return {
+          ok: false,
+          kind: "unavailable",
+          error: "Izabrano vreme je van radnog vremena salona.",
+        };
       }
     }
   }

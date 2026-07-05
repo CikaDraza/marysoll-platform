@@ -16,6 +16,49 @@ import { TimeSlot } from "@/types";
 
 export type WorkingHoursInput = Record<string, string | TimeSlot[] | unknown>;
 
+/** JS getDay() indeks → srpski naziv dana (ključ u workingHours mapi). */
+const DAY_NAME_BY_JS_DAY = [
+  "Nedelja",
+  "Ponedeljak",
+  "Utorak",
+  "Sreda",
+  "Četvrtak",
+  "Petak",
+  "Subota",
+];
+
+/** Radni slotovi za konkretan datum (prazan niz = neradan dan). */
+export function workingSlotsForDate(
+  workingHours: WorkingHoursInput | null | undefined,
+  dateStr: string,
+): TimeSlot[] {
+  const d = new Date(`${dateStr}T00:00:00`);
+  if (isNaN(d.getTime())) return [];
+  const dayName = DAY_NAME_BY_JS_DAY[d.getDay()];
+  return parseDaySlots(workingHours?.[dayName]);
+}
+
+/**
+ * Da li termin [time, time+duration) ceo staje u radno vreme tog dana.
+ * Koristi se za KLIJENTSKE tokove — admin namerno sme van radnog vremena.
+ */
+export function isWithinWorkingHours(
+  workingHours: WorkingHoursInput | null | undefined,
+  dateStr: string,
+  time: string,
+  durationMin: number,
+): boolean {
+  const toMin = (t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + (m || 0);
+  };
+  const start = toMin(time);
+  const end = start + Math.max(durationMin, 0);
+  return workingSlotsForDate(workingHours, dateStr).some(
+    (slot) => start >= toMin(slot.from) && end <= toMin(slot.to),
+  );
+}
+
 const DAY_MAP: Record<string, number> = {
   Ponedeljak: 1,
   Utorak: 2,
