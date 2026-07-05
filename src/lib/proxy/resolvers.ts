@@ -3,6 +3,7 @@
  * (interne /api/internal/* rute), sa 5-min in-memory kešom po edge instanci.
  */
 import type { NextRequest } from "next/server";
+import type { TenantResolution } from "./types";
 import { INTERNAL_FETCH_HEADERS } from "./constants";
 
 // ─── Custom domain DB lookup ──────────────────────────────────────────────────
