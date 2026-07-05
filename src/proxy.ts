@@ -587,8 +587,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     domainType === "marketing" ||
     (!IS_PROD && hostname.split(":")[0].startsWith("localhost"));
 
-  // wasPathBasedDev: true when the slug came from the URL path on localhost (not from env/subdomain)
-  let wasPathBasedDev = false;
+  // isPathBasedHost: slug je došao iz URL putanje (ne iz subdomena/custom
+  // domena) — localhost dev ILI Vercel preview build (*.vercel.app nema
+  // tenant subdomene, pa se tenant sajtovi testiraju kao /{slug}/...).
+  let isPathBasedHost = false;
 
   if (isMarketingOrLocalhost) {
     const segments = pathname.split("/").filter(Boolean);
@@ -603,8 +605,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       const resolvedTenant = await resolveSlugToTenantId(request, firstSegment);
       tenantId = resolvedTenant?.id ?? null;
       customDomain = resolvedTenant?.customDomain ?? null;
-      wasPathBasedDev =
-        !IS_PROD && hostname.split(":")[0].startsWith("localhost");
+      const bareHost = hostname.split(":")[0].toLowerCase();
+      isPathBasedHost =
+        (!IS_PROD && bareHost.startsWith("localhost")) ||
+        bareHost.endsWith(".vercel.app");
     }
   }
 
@@ -613,10 +617,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   requestHeaders.set("x-tenant-slug", tenantSlug ?? "");
   requestHeaders.set("x-tenant-id", tenantId ?? "");
   // x-tenant-base-path: used by the tenant layout to set the client-side navigation base.
-  // Empty on prod/subdomain (URLs are root-relative); "/{slug}" on localhost path-based dev.
+  // Empty on prod/subdomain (URLs are root-relative); "/{slug}" on path-based
+  // hosts (localhost dev i Vercel preview).
   requestHeaders.set(
     "x-tenant-base-path",
-    wasPathBasedDev ? `/${tenantSlug}` : "",
+    isPathBasedHost ? `/${tenantSlug}` : "",
   );
 
   const pass = () =>
@@ -775,8 +780,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // DEV (localhost path-based): strip slug, rewrite /{slug}/path → /tenant/path
-    if (tenantSlug && wasPathBasedDev) {
+    // PATH-BASED (localhost dev + Vercel preview): strip slug,
+    // rewrite /{slug}/path → /tenant/path
+    if (tenantSlug && isPathBasedHost) {
       const segments = pathname.split("/").filter(Boolean);
       const pathAfterSlug = segments.slice(1).join("/");
       const restPath = pathAfterSlug ? `/${pathAfterSlug}` : "";
