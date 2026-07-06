@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import type { MarketingPricingPlan } from "@/types/marketing-landing";
@@ -20,14 +21,14 @@ function PricingCard({
   plan,
   index,
   overrideHref,
-  onSelect,
+  onCtaClick,
 }: {
   plan: MarketingPricingPlan;
   index: number;
   /** Kad je prijavljeni vlasnik na homepage-u, CTA vodi u dashboard umesto na /register. */
   overrideHref?: string;
-  /** Klik pre navigacije (npr. upisi checkout intent za anonimnog posetioca). */
-  onSelect?: () => void;
+  /** Klik na CTA (npr. upisi checkout intent, ili sačekaj da se sesija razreši). */
+  onCtaClick?: (e: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const popular = plan.popular;
   return (
@@ -97,7 +98,7 @@ function PricingCard({
       >
         <Link
           href={overrideHref ?? plan.ctaHref ?? "/register"}
-          onClick={onSelect}
+          onClick={onCtaClick}
           className={`block w-full py-3 rounded-xl font-semibold text-center transition ${
             popular
               ? "bg-white text-violet-600 hover:bg-gray-100"
@@ -127,6 +128,26 @@ function resolvePlanSlug(plan: MarketingPricingPlan): string | null {
   return fromName || null;
 }
 
+/**
+ * Odredište za plaćeni plan:
+ *  - prijavljeni vlasnik → admin dashboard sa `startCheckout` (odmah pokreće Paddle;
+ *    POST ide sa admin origin-a gde JWT živi), skrol na #planovi
+ *  - anoniman → /register?plan=… (izbor se pamti u `ms_checkout_intent` cookie-ju,
+ *    pa dashboard po prijavi otvori checkout)
+ */
+function paidDestination(
+  slug: string,
+  ownerAuthed: boolean,
+): { href: string; setIntent: boolean } {
+  if (ownerAuthed) {
+    return {
+      href: `${adminBaseUrl()}/dashboard?tab=pretplata&startCheckout=${slug}#planovi`,
+      setIntent: false,
+    };
+  }
+  return { href: `/register?plan=${slug}`, setIntent: true };
+}
+
 // Planovi OBAVEZNO stižu kroz props (server ih čita iz marketing landinga).
 // Raniji useMarketingCms fallback je svakom javnom posetiocu okidao
 // /api/superadmin/marketing-cms → 403 šum u konzoli/logovima.
@@ -137,32 +158,59 @@ export function PricingCards({ plans }: PricingCardsProps = {}) {
   // Prijavljeni tenant vlasnik (ima tenantSlug) — ne šalji ga na registraciju.
   const ownerAuthed = session.status === "authed" && !!session.user?.tenantSlug;
 
-  // CTA href po planu:
-  //  - prijavljeni vlasnik + plaćeni plan → dashboard sa `startCheckout` (odmah
-  //    pokreće Paddle; POST ide sa admin origin-a gde JWT živi), skrol na #planovi
-  //  - prijavljeni vlasnik + besplatni    → dashboard Pretplata (#planovi)
-  //  - anoniman + plaćeni plan            → /register?plan=… (intent se pamti u cookie-ju)
-  //  - anoniman + ostalo                  → CMS ctaHref / /register
+  // Klik na plaćeni plan PRE nego što se whoami sesija razreši: pokaži kratak
+  // backdrop i sačekaj, pa odvedi na pravo mesto (vlasnik→checkout, anon→register).
+  const [pendingSlug, setPendingSlug] = useState<string | null>(null);
+  const navigatedRef = useRef(false);
+
+  useEffect(() => {
+    if (!pendingSlug || navigatedRef.current) return;
+
+    const go = () => {
+      if (navigatedRef.current) return;
+      navigatedRef.current = true;
+      const owner = session.status === "authed" && !!session.user?.tenantSlug;
+      const dest = paidDestination(pendingSlug, owner);
+      if (dest.setIntent) setCheckoutIntent(pendingSlug);
+      window.location.assign(dest.href);
+    };
+
+    if (session.status !== "loading") {
+      go();
+      return;
+    }
+    // Safety: ako sesija ne stigne (spor/pao whoami), nastavi kao anoniman.
+    const t = setTimeout(go, 4000);
+    return () => clearTimeout(t);
+  }, [pendingSlug, session]);
+
+  // CTA href po planu (fallback vrednost; klik hendler ispod presreće dok se učitava).
   const ctaHrefFor = (plan: MarketingPricingPlan): string | undefined => {
     const slug = resolvePlanSlug(plan);
-    const isPaid = !!slug && PAID_PLAN_SLUGS.has(slug);
-    if (ownerAuthed) {
-      const dashboard = `${adminBaseUrl()}/dashboard?tab=pretplata`;
-      return isPaid
-        ? `${dashboard}&startCheckout=${slug}#planovi`
-        : `${dashboard}#planovi`;
+    if (slug && PAID_PLAN_SLUGS.has(slug)) {
+      return paidDestination(slug, ownerAuthed).href;
     }
-    // Anoniman + plaćeni: garantovano na registraciju sa plan param-om.
-    return isPaid ? `/register?plan=${slug}` : undefined;
+    return ownerAuthed
+      ? `${adminBaseUrl()}/dashboard?tab=pretplata#planovi`
+      : undefined;
   };
 
-  // Anoniman posetilac koji bira plaćeni plan → zapamti izbor pre nego što ode
-  // na registraciju (posle prijave dashboard otvori checkout za taj plan).
-  const onSelectFor = (plan: MarketingPricingPlan): (() => void) | undefined => {
-    if (ownerAuthed) return undefined;
+  const onCtaClickFor = (
+    plan: MarketingPricingPlan,
+  ): ((e: MouseEvent<HTMLAnchorElement>) => void) | undefined => {
     const slug = resolvePlanSlug(plan);
     if (!slug || !PAID_PLAN_SLUGS.has(slug)) return undefined;
-    return () => setCheckoutIntent(slug);
+    return (e) => {
+      // Sesija se još učitava → sačekaj (backdrop) umesto da pogrešno tretiramo
+      // prijavljenog vlasnika kao anonimnog.
+      if (session.status === "loading") {
+        e.preventDefault();
+        setPendingSlug(slug);
+        return;
+      }
+      // Razrešeno: href je već tačan; za anonimnog samo zapamti izbor pre /register.
+      if (!ownerAuthed) setCheckoutIntent(slug);
+    };
   };
 
   return (
@@ -174,7 +222,7 @@ export function PricingCards({ plans }: PricingCardsProps = {}) {
             plan={plan}
             index={i}
             overrideHref={ctaHrefFor(plan)}
-            onSelect={onSelectFor(plan)}
+            onCtaClick={onCtaClickFor(plan)}
           />
         ))}
       </div>
@@ -202,6 +250,18 @@ export function PricingCards({ plans }: PricingCardsProps = {}) {
           </Link>
         </motion.div>
       </motion.div>
+
+      {/* Backdrop dok se sesija razrešava posle klika na plaćeni plan (samo tada). */}
+      {pendingSlug && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-8 py-6 shadow-2xl">
+            <div className="w-8 h-8 border-2 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
+            <p className="text-sm font-medium text-gray-700">
+              Samo trenutak, pripremamo…
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
