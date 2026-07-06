@@ -7,11 +7,16 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 interface Props {
-  /** tenantSlug is used to build the cookie-policy link */
-  tenantSlug?: string;
+  /**
+   * x-tenant-base-path iz proxy-ja — JEDAN izvor istine za prefiks linkova:
+   * "" na host-based domenima (subdomen/custom), "/{slug}" na path-based
+   * (localhost dev / vercel preview). Slug ovde NE sme da se koristi —
+   * /{slug}/cookie-policy na subdomenu je 404.
+   */
+  basePath?: string;
 }
 
-export function CookiesModal({ tenantSlug }: Props) {
+export function CookiesModal({ basePath = "" }: Props) {
   const { consent, ready, acceptAll, acceptSelected, declineAll } =
     useCookieConsent();
   const [open, setOpen] = useState(false);
@@ -57,9 +62,7 @@ export function CookiesModal({ tenantSlug }: Props) {
   // Don't render until localStorage is read
   if (!ready) return null;
 
-  const cookiePolicyHref = tenantSlug
-    ? `/${tenantSlug}/cookie-policy`
-    : "/cookie-policy";
+  const cookiePolicyHref = `${basePath}/cookie-policy`;
 
   return (
     <>
