@@ -14,6 +14,10 @@ import {
 } from "@/lib/marketing-landing-defaults";
 import type { MarketingLandingStructure } from "@/types/marketing-landing";
 import {
+  usePlatformOwnerSession,
+  adminBaseUrl,
+} from "@/hooks/usePlatformOwnerSession";
+import {
   Dialog,
   DialogPanel,
   Transition,
@@ -423,6 +427,16 @@ export function MarketingHomePageFirst({
   const hasPlayedRef = useRef(false); // garantuje da play() ide samo jednom po ciklusu
   const landing = normalizeMarketingLanding(initialLanding);
   const def = DEFAULT_MARKETING_LANDING;
+  const ownerSession = usePlatformOwnerSession();
+  // Prijavljeni tenant vlasnik — header CTA vodi u dashboard, ne na registraciju.
+  const ownerAuthed =
+    ownerSession.status === "authed" && !!ownerSession.user?.tenantSlug;
+  const headerCtaHref = ownerAuthed
+    ? `${adminBaseUrl()}/dashboard`
+    : landing.header.ctaHref || def.header.ctaHref;
+  const headerCtaText = ownerAuthed
+    ? "Kontrolna tabla"
+    : landing.header.ctaText || def.header.ctaText;
   const navLinks = landing.header.navLinks.length
     ? landing.header.navLinks
     : def.header.navLinks;
@@ -523,12 +537,12 @@ export function MarketingHomePageFirst({
               <AuthStatusButton theme="light" logoutRedirect="/" />
             </div>
             <motion.a
-              href={landing.header.ctaHref || def.header.ctaHref}
+              href={headerCtaHref}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="hidden lg:block bg-violet-600 text-white px-5 py-2 rounded-full text-sm font-bold transition shadow-lg shadow-violet-200"
             >
-              {landing.header.ctaText || def.header.ctaText}
+              {headerCtaText}
             </motion.a>
             <button
               type="button"
@@ -609,11 +623,11 @@ export function MarketingHomePageFirst({
                 <AuthStatusButton theme="light" logoutRedirect="/" />
               </div>
               <Link
-                href={landing.header.ctaHref || def.header.ctaHref}
+                href={headerCtaHref}
                 onClick={() => setMobileMenuOpen(false)}
                 className="block text-center py-3 bg-violet-600 text-white font-semibold rounded-xl shadow-lg shadow-violet-200"
               >
-                {landing.header.ctaText || def.header.ctaText}
+                {headerCtaText}
               </Link>
             </div>
           </DialogPanel>

@@ -8,11 +8,13 @@
  * Rešava problem: ne moraš ručno brisati token da se odjaviš.
  */
 
-import { useState, useEffect } from "react";
-import { getRawToken, getUserFromToken } from "@/lib/auth/auth-client";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  usePlatformOwnerSession,
+  adminBaseUrl,
+} from "@/hooks/usePlatformOwnerSession";
 import { confirmAndResetBrowserData } from "@/lib/browser-reset";
-import type { DecodedUser } from "@/types/auth/types";
 import Link from "next/link";
 
 interface AuthStatusButtonProps {
@@ -32,17 +34,8 @@ export function AuthStatusButton({
   tenantSlug,
 }: AuthStatusButtonProps) {
   const { logout, onlineStatus } = useAuth();
-  const [user, setUser] = useState<DecodedUser | null>(null);
+  const session = usePlatformOwnerSession();
   const [isOpen, setIsOpen] = useState(false);
-  // Read user from token on mount (client-only)
-  useEffect(() => {
-    async function handleUserFromToken() {
-      const token = getRawToken();
-      const user = getUserFromToken(token || "");
-      return setUser(user || null);
-    }
-    handleUserFromToken();
-  }, []);
 
   function handleLogout() {
     setIsOpen(false);
@@ -51,6 +44,10 @@ export function AuthStatusButton({
   }
 
   const isDark = theme === "dark";
+  const user = session.user;
+
+  // Dok se sesija razrešava — ne renderuj ništa (izbegava treptaj "Prijavi se" → korisnik).
+  if (session.status === "loading") return null;
 
   if (!user) {
     return (
@@ -68,6 +65,36 @@ export function AuthStatusButton({
         <span className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0" />
         Prijavi se
       </Link>
+    );
+  }
+
+  // Vlasnik prepoznat cross-origin (na marketing sajtu, token živi na admin origin-u).
+  // Nema čistog lokalnog logout-a odavde → prikaži kompaktan link u dashboard.
+  if (session.source === "remote") {
+    const roleLabel = user.isSuperAdmin
+      ? "SuperAdmin"
+      : user.isAdmin
+        ? "Admin"
+        : "Klijent";
+    return (
+      <a
+        href={`${adminBaseUrl()}/dashboard`}
+        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+          isDark
+            ? "bg-slate-700 text-white hover:bg-slate-600 border border-slate-600"
+            : "bg-white text-gray-800 hover:bg-gray-50 border border-gray-200 shadow-sm"
+        }`}
+      >
+        <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+        <span className="max-w-[120px] truncate">{user.name}</span>
+        <span
+          className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+            isDark ? "bg-blue-900/60 text-blue-300" : "bg-blue-100 text-blue-700"
+          }`}
+        >
+          {roleLabel}
+        </span>
+      </a>
     );
   }
 
