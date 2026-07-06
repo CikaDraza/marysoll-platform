@@ -11,13 +11,21 @@
  * Ovo je ujedno "Default Payment Link" koji se podešava u Paddle dashboardu.
  */
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { CheckoutEventNames } from "@paddle/paddle-js";
 import { getPaddle } from "@/lib/paddleClient";
+
+/** Dodaje query param na URL bez obzira ima li već `?`. */
+function withParam(url: string, key: string, value: string): string {
+  return `${url}${url.includes("?") ? "&" : "?"}${key}=${value}`;
+}
 
 function CheckoutInner() {
   const searchParams = useSearchParams();
   const [openError, setOpenError] = useState<string | null>(null);
+  // Sprečava dupli redirect kad completed→successUrl i closed stignu jedan za drugim.
+  const settledRef = useRef(false);
 
   const transactionId =
     searchParams.get("_ptxn") ?? searchParams.get("transactionId");
@@ -28,18 +36,31 @@ function CheckoutInner() {
 
     let cancelled = false;
 
+    // Baza povratka = dashboard Pretplata (bez ikakvog flag-a). successUrl dodaje
+    // `checkout=success` (to AdminPlanStatus čita), a cancel vraća BEZ tog flag-a.
+    const base =
+      returnTo ?? `${window.location.origin}/dashboard?tab=pretplata`;
+    const successUrl = withParam(base, "checkout", "success");
+    const cancelUrl = withParam(base, "checkout", "cancelled");
+
     (async () => {
       try {
-        const paddle = await getPaddle();
+        // eventCallback: korisnik zatvori overlay (X) bez plaćanja → vrati ga na
+        // dashboard umesto da ostane zaglavljen na spineru.
+        const paddle = await getPaddle((event) => {
+          if (event.name === CheckoutEventNames.CHECKOUT_COMPLETED) {
+            settledRef.current = true; // successUrl preuzima navigaciju
+          } else if (event.name === CheckoutEventNames.CHECKOUT_CLOSED) {
+            if (settledRef.current) return;
+            settledRef.current = true;
+            window.location.assign(cancelUrl);
+          }
+        });
         if (cancelled) return;
         if (!paddle) {
           setOpenError("Paddle nije mogao da se inicijalizuje.");
           return;
         }
-
-        const successUrl =
-          returnTo ??
-          `${window.location.origin}/dashboard?tab=pretplata&checkout=success`;
 
         paddle.Checkout.open({
           transactionId,

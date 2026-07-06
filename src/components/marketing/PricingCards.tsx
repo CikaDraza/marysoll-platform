@@ -7,6 +7,7 @@ import {
   usePlatformOwnerSession,
   adminBaseUrl,
 } from "@/hooks/usePlatformOwnerSession";
+import { setCheckoutIntent } from "@/lib/checkoutIntent";
 
 interface PricingCardsProps {
   /** When provided, skip the client fetch and render directly (used on SSR'd pages). */
@@ -19,11 +20,14 @@ function PricingCard({
   plan,
   index,
   overrideHref,
+  onSelect,
 }: {
   plan: MarketingPricingPlan;
   index: number;
   /** Kad je prijavljeni vlasnik na homepage-u, CTA vodi u dashboard umesto na /register. */
   overrideHref?: string;
+  /** Klik pre navigacije (npr. upisi checkout intent za anonimnog posetioca). */
+  onSelect?: () => void;
 }) {
   const popular = plan.popular;
   return (
@@ -93,6 +97,7 @@ function PricingCard({
       >
         <Link
           href={overrideHref ?? plan.ctaHref ?? "/register"}
+          onClick={onSelect}
           className={`block w-full py-3 rounded-xl font-semibold text-center transition ${
             popular
               ? "bg-white text-violet-600 hover:bg-gray-100"
@@ -108,6 +113,20 @@ function PricingCard({
 
 // ─── Cards grid (shared across home + /pricing) ───────────────────────────────
 
+// Plaćeni planovi idu kroz Paddle checkout.
+const PAID_PLAN_SLUGS = new Set(["claudia", "kiki"]);
+
+/**
+ * Slug plana: prvo iz ctaHref-a (`?plan=claudia`), pa fallback na ime kartice
+ * ("Claudia" → "claudia"). Robustno i kad CMS ctaHref ne nosi plan param.
+ */
+function resolvePlanSlug(plan: MarketingPricingPlan): string | null {
+  const fromHref = plan.ctaHref?.match(/[?&]plan=([a-z0-9-]+)/i)?.[1];
+  if (fromHref) return fromHref.toLowerCase();
+  const fromName = plan.name?.trim().toLowerCase();
+  return fromName || null;
+}
+
 // Planovi OBAVEZNO stižu kroz props (server ih čita iz marketing landinga).
 // Raniji useMarketingCms fallback je svakom javnom posetiocu okidao
 // /api/superadmin/marketing-cms → 403 šum u konzoli/logovima.
@@ -115,12 +134,36 @@ export function PricingCards({ plans }: PricingCardsProps = {}) {
   const effectivePlans = plans ?? [];
   const session = usePlatformOwnerSession();
 
-  // Prijavljeni tenant vlasnik (ima tenantSlug) — ne šalji ga na registraciju novog
-  // salona; CTA vodi u njegov dashboard (tab "pretplata"), gde može da nadogradi plan.
+  // Prijavljeni tenant vlasnik (ima tenantSlug) — ne šalji ga na registraciju.
   const ownerAuthed = session.status === "authed" && !!session.user?.tenantSlug;
-  const ownerCtaHref = ownerAuthed
-    ? `${adminBaseUrl()}/dashboard?tab=pretplata`
-    : undefined;
+
+  // CTA href po planu:
+  //  - prijavljeni vlasnik + plaćeni plan → dashboard sa `startCheckout` (odmah
+  //    pokreće Paddle; POST ide sa admin origin-a gde JWT živi), skrol na #planovi
+  //  - prijavljeni vlasnik + besplatni    → dashboard Pretplata (#planovi)
+  //  - anoniman + plaćeni plan            → /register?plan=… (intent se pamti u cookie-ju)
+  //  - anoniman + ostalo                  → CMS ctaHref / /register
+  const ctaHrefFor = (plan: MarketingPricingPlan): string | undefined => {
+    const slug = resolvePlanSlug(plan);
+    const isPaid = !!slug && PAID_PLAN_SLUGS.has(slug);
+    if (ownerAuthed) {
+      const dashboard = `${adminBaseUrl()}/dashboard?tab=pretplata`;
+      return isPaid
+        ? `${dashboard}&startCheckout=${slug}#planovi`
+        : `${dashboard}#planovi`;
+    }
+    // Anoniman + plaćeni: garantovano na registraciju sa plan param-om.
+    return isPaid ? `/register?plan=${slug}` : undefined;
+  };
+
+  // Anoniman posetilac koji bira plaćeni plan → zapamti izbor pre nego što ode
+  // na registraciju (posle prijave dashboard otvori checkout za taj plan).
+  const onSelectFor = (plan: MarketingPricingPlan): (() => void) | undefined => {
+    if (ownerAuthed) return undefined;
+    const slug = resolvePlanSlug(plan);
+    if (!slug || !PAID_PLAN_SLUGS.has(slug)) return undefined;
+    return () => setCheckoutIntent(slug);
+  };
 
   return (
     <div className="space-y-8">
@@ -130,7 +173,8 @@ export function PricingCards({ plans }: PricingCardsProps = {}) {
             key={plan.name}
             plan={plan}
             index={i}
-            overrideHref={ownerCtaHref}
+            overrideHref={ctaHrefFor(plan)}
+            onSelect={onSelectFor(plan)}
           />
         ))}
       </div>
@@ -146,7 +190,11 @@ export function PricingCards({ plans }: PricingCardsProps = {}) {
         </p>
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Link
-            href={ownerAuthed ? `${adminBaseUrl()}/dashboard` : "/register"}
+            href={
+              ownerAuthed
+                ? `${adminBaseUrl()}/dashboard?tab=pretplata#planovi`
+                : "/register"
+            }
             className="inline-flex items-center gap-2 bg-violet-600 text-white px-10 py-4 rounded-2xl font-semibold text-lg hover:bg-violet-700 transition shadow-xl shadow-violet-200"
           >
             {ownerAuthed ? "Idi na kontrolnu tablu" : "Počni sa Maria već danas"}

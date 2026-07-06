@@ -7,7 +7,8 @@
  * tenant_id se NE šalje sa frontenda — backend ga uzima iz JWT-a.
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { api, publicApi } from "@/lib/api";
 import { usePlanStatus } from "@/hooks/usePlanStatus";
@@ -63,6 +64,31 @@ export function UpgradePlans() {
   const [loadingPlan, setLoadingPlan] = useState<PlanName | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Auto-start checkout kad marketing CTA dovede vlasnika sa `?startCheckout=<plan>`
+  // (klik na plaćeni plan na marysoll.com/pricing → ovde se odmah pokreće Paddle).
+  const searchParams = useSearchParams();
+  const autoStartedRef = useRef(false);
+  useEffect(() => {
+    if (autoStartedRef.current) return;
+    const startPlan = searchParams.get("startCheckout");
+    if (startPlan && PAID_PLANS.includes(startPlan as PlanName)) {
+      autoStartedRef.current = true;
+      void handleSelect(startPlan as PlanName);
+    }
+    // ref garantuje jednokratno okidanje; namerno zavisimo samo od searchParams.
+  }, [searchParams]);
+
+  // Skrol do kartica sa planovima kad se dođe sa `#planovi` (npr. CTA sa marketinga).
+  // Tab-promena je client-side pa browser ne skroluje na hash sam — radimo ručno.
+  useEffect(() => {
+    if (typeof window === "undefined" || window.location.hash !== "#planovi") {
+      return;
+    }
+    document
+      .getElementById("planovi")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
   async function handleSelect(slug: PlanName) {
     setError(null);
     setLoadingPlan(slug);
@@ -81,7 +107,9 @@ export function UpgradePlans() {
       const isLocal = host === "localhost" || host.startsWith("127.");
       const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
       const checkoutBase = isLocal ? window.location.origin : `https://${baseDomain}`;
-      const returnTo = `${window.location.origin}/dashboard?tab=pretplata&checkout=success`;
+      // Baza povratka — /checkout stranica sama dodaje checkout=success (uspeh) ili
+      // checkout=cancelled (zatvaranje bez plaćanja).
+      const returnTo = `${window.location.origin}/dashboard?tab=pretplata`;
       window.location.assign(
         `${checkoutBase}/checkout?_ptxn=${encodeURIComponent(res.data.transactionId)}&returnTo=${encodeURIComponent(returnTo)}`,
       );

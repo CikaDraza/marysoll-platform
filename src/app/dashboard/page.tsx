@@ -4,6 +4,7 @@
 import { useRef, useState, useEffect, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams, useRouter } from "next/navigation";
+import { readCheckoutIntent, clearCheckoutIntent } from "@/lib/checkoutIntent";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 import { useSalonProfileAdmin } from "@/hooks/useSalonProfileAdmin";
@@ -168,6 +169,18 @@ function AdminDashboard() {
   const router = useRouter();
   // All hooks before early return
   const { user, token, logout, isLoading: authLoading } = useAuth();
+
+  // Checkout intent iz marketing/pricing-a: anoniman posetilac je izabrao plaćeni
+  // plan pa se u međuvremenu ulogovao/registrovao. Odvedi ga na Pretplatu i
+  // automatski otvori checkout za taj plan (intent živi u .marysoll.com cookie-ju).
+  useEffect(() => {
+    const intent = readCheckoutIntent();
+    if (!intent) return;
+    // Guard protiv petlje: ako smo već na pretplati sa startCheckout-om, ne diraj.
+    if (tab === "pretplata" && searchParams.get("startCheckout")) return;
+    clearCheckoutIntent();
+    router.replace(`/dashboard?tab=pretplata&startCheckout=${intent}#planovi`);
+  }, [tab, searchParams, router]);
 
   // Change password state
   const [pwForm, setPwForm] = useState({
