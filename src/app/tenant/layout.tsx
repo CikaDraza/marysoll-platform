@@ -60,7 +60,7 @@ export default async function TenantLayout({
     >
       <TenantThemeController />
       {children}
-      <CookiesModal tenantSlug={tenantSlug} />
+      <CookiesModal basePath={base} />
     </TenantProvider>
   );
 }

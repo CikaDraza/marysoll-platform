@@ -12,6 +12,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { SalonProfile } from "@/models/SalonProfile";
 import { ProfilPlatforme } from "@/models/ProfilPlatforme";
 import { Types } from "mongoose";
+import { usableRasterLogo } from "@/lib/branding/rasterLogo";
 
 export interface EmailLayoutData {
   title: string;
@@ -71,11 +72,13 @@ async function resolveSalon(tenantId?: string | null): Promise<SalonData> {
     return {
       name: String(raw.name ?? "Marysoll"),
       description: raw.description ? String(raw.description) : undefined,
-      // Mejlovi koriste notificationLogo, uz fallback na logo sajta.
-      logo: raw.notificationLogo
-        ? String(raw.notificationLogo)
-        : raw.logo
-          ? String(raw.logo)
+      // Mejlovi koriste notificationLogo, uz fallback na logo sajta — ali samo
+      // raster: SVG bi u Gmail/Outlook bio slomljena slika (null → template
+      // pada na platformski PNG).
+      logo: usableRasterLogo(raw.notificationLogo)
+        ? raw.notificationLogo
+        : usableRasterLogo(raw.logo)
+          ? raw.logo
           : null,
       street: raw.street ? String(raw.street) : undefined,
       city: raw.city ? String(raw.city) : undefined,

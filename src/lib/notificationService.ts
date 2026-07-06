@@ -18,6 +18,7 @@ import {
   sendTestimonialNotification,
 } from "./email/email";
 import { sendWebPushToUser, sendWebPushToMany } from "@/lib/webPush";
+import { usableRasterLogo } from "@/lib/branding/rasterLogo";
 
 // ── Salon branding for push payloads ─────────────────────────────────────────
 // Exportovano i za loyalty notifikacije (lib/loyalty/notifications.ts).
@@ -34,11 +35,8 @@ export async function getSalonBranding(
     } | null;
     // Ikona notifikacije = SAMO notificationLogo (upload je ograničen na raster
     // PNG/JPG/WebP), inače Marysoll default. Tenant `logo` se NE koristi jer može
-    // biti SVG, koji web push ne renderuje (browser prikaže uzvičnik). SVG guard
-    // ostaje kao zaštita za eventualne stare SVG vrednosti u bazi.
-    const usable = (url?: string): url is string =>
-      typeof url === "string" && url.trim() !== "" && !/\.svg(\?|#|$)/i.test(url);
-    const icon = usable(profile?.notificationLogo)
+    // biti SVG, koji web push ne renderuje (browser prikaže uzvičnik).
+    const icon = usableRasterLogo(profile?.notificationLogo)
       ? profile!.notificationLogo!
       : "/marysoll_elegant_logo.png";
     return {

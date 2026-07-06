@@ -209,7 +209,7 @@ export function Y2KRegisterForm() {
           <span className="text-sm text-[#42303a] font-medium">
             Prihvatam{" "}
             <Link
-              href="/politika-privatnosti"
+              href={`${base}/politika-privatnosti`}
               className="text-y2k-pink font-bold hover:underline"
             >
               politiku privatnosti
