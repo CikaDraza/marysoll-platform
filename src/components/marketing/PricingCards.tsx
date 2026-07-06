@@ -3,6 +3,10 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import type { MarketingPricingPlan } from "@/types/marketing-landing";
+import {
+  usePlatformOwnerSession,
+  adminBaseUrl,
+} from "@/hooks/usePlatformOwnerSession";
 
 interface PricingCardsProps {
   /** When provided, skip the client fetch and render directly (used on SSR'd pages). */
@@ -14,9 +18,12 @@ interface PricingCardsProps {
 function PricingCard({
   plan,
   index,
+  overrideHref,
 }: {
   plan: MarketingPricingPlan;
   index: number;
+  /** Kad je prijavljeni vlasnik na homepage-u, CTA vodi u dashboard umesto na /register. */
+  overrideHref?: string;
 }) {
   const popular = plan.popular;
   return (
@@ -85,7 +92,7 @@ function PricingCard({
         whileTap={{ scale: 0.98 }}
       >
         <Link
-          href={plan.ctaHref || "/register"}
+          href={overrideHref ?? plan.ctaHref ?? "/register"}
           className={`block w-full py-3 rounded-xl font-semibold text-center transition ${
             popular
               ? "bg-white text-violet-600 hover:bg-gray-100"
@@ -106,12 +113,25 @@ function PricingCard({
 // /api/superadmin/marketing-cms → 403 šum u konzoli/logovima.
 export function PricingCards({ plans }: PricingCardsProps = {}) {
   const effectivePlans = plans ?? [];
+  const session = usePlatformOwnerSession();
+
+  // Prijavljeni tenant vlasnik (ima tenantSlug) — ne šalji ga na registraciju novog
+  // salona; CTA vodi u njegov dashboard (tab "pretplata"), gde može da nadogradi plan.
+  const ownerAuthed = session.status === "authed" && !!session.user?.tenantSlug;
+  const ownerCtaHref = ownerAuthed
+    ? `${adminBaseUrl()}/dashboard?tab=pretplata`
+    : undefined;
 
   return (
     <div className="space-y-8">
       <div className="grid md:grid-cols-3 gap-8 items-stretch md:gap-x-12">
         {effectivePlans.map((plan, i) => (
-          <PricingCard key={plan.name} plan={plan} index={i} />
+          <PricingCard
+            key={plan.name}
+            plan={plan}
+            index={i}
+            overrideHref={ownerCtaHref}
+          />
         ))}
       </div>
 
@@ -126,10 +146,10 @@ export function PricingCards({ plans }: PricingCardsProps = {}) {
         </p>
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Link
-            href="/register"
+            href={ownerAuthed ? `${adminBaseUrl()}/dashboard` : "/register"}
             className="inline-flex items-center gap-2 bg-violet-600 text-white px-10 py-4 rounded-2xl font-semibold text-lg hover:bg-violet-700 transition shadow-xl shadow-violet-200"
           >
-            Počni sa Maria već danas
+            {ownerAuthed ? "Idi na kontrolnu tablu" : "Počni sa Maria već danas"}
             <span>→</span>
           </Link>
         </motion.div>

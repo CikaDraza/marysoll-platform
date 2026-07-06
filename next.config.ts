@@ -33,7 +33,12 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/api/:path*",
+        // Global CORS za sve API rute OSIM /api/auth/whoami — ta ruta sama echo-uje
+        // tačan (same-site marketing) origin uz Allow-Credentials, jer se poziva
+        // cross-origin sa credentials:"include" (globalni "*" + credentials je
+        // nevalidna kombinacija koju browser odbija). Negativni lookahead izuzima
+        // whoami; sve ostale /api rute zadržavaju postojeće ponašanje.
+        source: "/api/:path((?!auth/whoami).*)",
         headers: [
           { key: "Access-Control-Allow-Credentials", value: "true" },
           {

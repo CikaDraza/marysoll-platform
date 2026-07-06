@@ -72,11 +72,18 @@ export function UpgradePlans() {
         { plan: slug },
       );
 
-      // Uvek koristi našu /checkout stranicu na istom origin-u — Paddle.js tamo
-      // otvara overlay za transakciju. Ne zavisi od Paddle Default Payment Link-a
-      // i izbegava cross-origin (JWT token je per-origin).
+      // Redirect na /checkout na apex domenu (marysoll.com) — Paddle live checkout
+      // je odobren samo za taj domen, ne i za admin.marysoll.com. Auth je već
+      // odrađen (POST iznad), a /checkout stranica ne zahteva JWT — čita samo
+      // _ptxn i returnTo iz URL-a i otvara Paddle.js overlay.
+      // Na localhost-u (dev) ostani na istom origin-u — nema domain approval-a.
+      const host = window.location.hostname;
+      const isLocal = host === "localhost" || host.startsWith("127.");
+      const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+      const checkoutBase = isLocal ? window.location.origin : `https://${baseDomain}`;
+      const returnTo = `${window.location.origin}/dashboard?tab=pretplata&checkout=success`;
       window.location.assign(
-        `/checkout?_ptxn=${encodeURIComponent(res.data.transactionId)}`,
+        `${checkoutBase}/checkout?_ptxn=${encodeURIComponent(res.data.transactionId)}&returnTo=${encodeURIComponent(returnTo)}`,
       );
     } catch (err: unknown) {
       const msg =

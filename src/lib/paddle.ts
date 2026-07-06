@@ -1,3 +1,4 @@
+// src/lib/paddle.ts
 import "server-only";
 
 /**
@@ -291,7 +292,10 @@ async function resolvePlan(
 
   const or: Record<string, string>[] = [];
   if (priceId) {
-    or.push({ paddleMonthlyPriceId: priceId }, { paddleYearlyPriceId: priceId });
+    or.push(
+      { paddleMonthlyPriceId: priceId },
+      { paddleYearlyPriceId: priceId },
+    );
   }
   if (productId) {
     or.push({ paddleProductId: productId });
