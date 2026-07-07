@@ -28,7 +28,17 @@ export interface LoyaltyAdminConfig {
       per100Rsd: number;
     };
   };
-  earning: { heartsPerCompletedVisit: number; welcomeBonusPoints: number };
+  earning: {
+    heartsPerCompletedVisit: number;
+    welcomeBonusPoints: number;
+    checkinPoints: number;
+  };
+  streak: { windowDays: number };
+  sharing: {
+    enabled: boolean;
+    friendReward: LoyaltyRewardInfo;
+    maxActivePerClient: number;
+  };
   milestones: Array<{ heartsRequired: number; reward: LoyaltyRewardInfo }>;
   pointsShop: Array<{ costPoints: number; reward: LoyaltyRewardInfo }>;
   noShowPolicy: {
