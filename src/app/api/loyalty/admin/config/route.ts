@@ -42,7 +42,27 @@ const configSchema = z.object({
   earning: z.object({
     heartsPerCompletedVisit: z.number().min(0).max(10),
     welcomeBonusPoints: z.number().min(0).max(100000),
+    checkinPoints: z.number().min(0).max(100000).default(10),
   }),
+  streak: z
+    .object({ windowDays: z.number().min(1).max(365) })
+    .default({ windowDays: 45 }),
+  sharing: z
+    .object({
+      enabled: z.boolean(),
+      friendReward: rewardSchema,
+      maxActivePerClient: z.number().min(1).max(50),
+    })
+    .default({
+      enabled: false,
+      friendReward: {
+        type: "percent",
+        value: 15,
+        serviceName: "",
+        expiresDays: 30,
+      },
+      maxActivePerClient: 3,
+    }),
   milestones: z
     .array(
       z.object({

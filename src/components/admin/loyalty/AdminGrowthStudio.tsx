@@ -6,6 +6,7 @@
  * Buduci moduli (tieri, referral, promocije) dobijaju svoje sekcije ovde.
  */
 import { useState } from "react";
+import { CheckinQrCard } from "./CheckinQrCard";
 import toast from "react-hot-toast";
 import {
   useLoyaltyAdminConfig,
@@ -68,9 +69,24 @@ function ConfigForm() {
 
 function ConfigFormInner({ initial }: { initial: LoyaltyAdminConfig }) {
   const save = useSaveLoyaltyConfig();
-  const [form, setForm] = useState<LoyaltyAdminConfig>(
-    () => structuredClone(initial) as LoyaltyAdminConfig,
-  );
+  const [form, setForm] = useState<LoyaltyAdminConfig>(() => {
+    // Normalizuj: stari config-i nemaju checkin/streak/sharing (Phase 1/2 polja).
+    const c = structuredClone(initial) as LoyaltyAdminConfig;
+    if (c.earning.checkinPoints == null) c.earning.checkinPoints = 10;
+    if (!c.streak) c.streak = { windowDays: 45 };
+    if (!c.sharing)
+      c.sharing = {
+        enabled: false,
+        friendReward: {
+          type: "percent",
+          value: 15,
+          serviceName: "",
+          expiresDays: 30,
+        },
+        maxActivePerClient: 3,
+      };
+    return c;
+  });
 
   const set = (updater: (draft: LoyaltyAdminConfig) => void) => {
     setForm((prev) => {
@@ -515,6 +531,159 @@ function ConfigFormInner({ initial }: { initial: LoyaltyAdminConfig }) {
             </div>
           )}
         </div>
+      </div>
+
+      {/* ── QR check-in + Streak (Phase 1) ── */}
+      <div className={card}>
+        <h3 className="text-sm font-black text-gray-900 dark:text-white mb-1">
+          🕐 QR check-in i niz poseta
+        </h3>
+        <p className="text-xs text-gray-400 mb-4">
+          Klijent skenira QR u salonu (/checkin) i dobija poene; niz poseta
+          (navika) raste dok dolazi u razmaku ispod praga.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className={lbl}>Poena po check-inu</label>
+            <input
+              type="number"
+              min={0}
+              className={inp}
+              value={form.earning.checkinPoints}
+              onChange={(e) =>
+                set(
+                  (d) =>
+                    void (d.earning.checkinPoints =
+                      parseInt(e.target.value, 10) || 0),
+                )
+              }
+            />
+            <p className="text-[11px] text-gray-400 mt-1">
+              Traži uključene poene. 0 = bez poena (samo niz poseta).
+            </p>
+          </div>
+          <div>
+            <label className={lbl}>Prag niza poseta (dana)</label>
+            <input
+              type="number"
+              min={1}
+              max={365}
+              className={inp}
+              value={form.streak.windowDays}
+              onChange={(e) =>
+                set(
+                  (d) =>
+                    void (d.streak.windowDays =
+                      parseInt(e.target.value, 10) || 45),
+                )
+              }
+            />
+            <p className="text-[11px] text-gray-400 mt-1">
+              Veći razmak od ovoga resetuje niz na 1.
+            </p>
+          </div>
+        </div>
+        <CheckinQrCard />
+      </div>
+
+      {/* ── Deljenje / Pozovi prijateljicu (Phase 2 share voucher) ── */}
+      <div className={card}>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-black text-gray-900 dark:text-white">
+              🎁 Pozovi prijateljicu (deljenje vaučera)
+            </h3>
+            <p className="text-xs text-gray-400 mt-1">
+              Klijent iz svog panela nagrada poklanja popust prijateljici; ona
+              ga iskoristi pri zakazivanju.
+            </p>
+          </div>
+          <Toggle
+            checked={form.sharing.enabled}
+            onChange={(v) => set((d) => void (d.sharing.enabled = v))}
+            label=""
+          />
+        </div>
+        {form.sharing.enabled && (
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label className={lbl}>Popust za prijateljicu</label>
+              <select
+                className={inp}
+                value={form.sharing.friendReward.type}
+                onChange={(e) =>
+                  set(
+                    (d) =>
+                      void (d.sharing.friendReward.type = e.target.value as
+                        | "percent"
+                        | "fixed"
+                        | "free_service"),
+                  )
+                }
+              >
+                <option value="percent">Procenat (%)</option>
+                <option value="fixed">Iznos (RSD)</option>
+                <option value="free_service">Gratis usluga</option>
+              </select>
+            </div>
+            {form.sharing.friendReward.type !== "free_service" && (
+              <div>
+                <label className={lbl}>
+                  {form.sharing.friendReward.type === "percent"
+                    ? "Procenat"
+                    : "Iznos (RSD)"}
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  className={inp}
+                  value={form.sharing.friendReward.value}
+                  onChange={(e) =>
+                    set(
+                      (d) =>
+                        void (d.sharing.friendReward.value =
+                          parseInt(e.target.value, 10) || 0),
+                    )
+                  }
+                />
+              </div>
+            )}
+            <div>
+              <label className={lbl}>Vaučer važi (dana)</label>
+              <input
+                type="number"
+                min={1}
+                max={365}
+                className={inp}
+                value={form.sharing.friendReward.expiresDays}
+                onChange={(e) =>
+                  set(
+                    (d) =>
+                      void (d.sharing.friendReward.expiresDays =
+                        parseInt(e.target.value, 10) || 30),
+                  )
+                }
+              />
+            </div>
+            <div>
+              <label className={lbl}>Maks. poklona po klijentu</label>
+              <input
+                type="number"
+                min={1}
+                max={50}
+                className={inp}
+                value={form.sharing.maxActivePerClient}
+                onChange={(e) =>
+                  set(
+                    (d) =>
+                      void (d.sharing.maxActivePerClient =
+                        parseInt(e.target.value, 10) || 3),
+                  )
+                }
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end">
