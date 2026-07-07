@@ -16,6 +16,7 @@ import { StatistikaTab as StatistikaTabComponent } from "@/components/superadmin
 import { PodesavanjaTab as PodesavanjaTabComponent } from "@/components/superadmin/tabs/PodesavanjaTab";
 import { SaloniTab as SaloniTabComponent } from "@/components/superadmin/tabs/SaloniTab";
 import { MarketingTab as MarketingTabComponent } from "@/components/superadmin/tabs/MarketingTab";
+import { DijagnostikaTab as DijagnostikaTabComponent } from "@/components/superadmin/tabs/DijagnostikaTab";
 import { useSuperAdminTrialTab } from "@/hooks/useSuperAdminTrialTab";
 import { useSuperAdminPlansTab } from "@/hooks/useSuperAdminPlansTab";
 import { useSuperAdminCategories } from "@/hooks/useSuperAdminCategories";
@@ -239,6 +240,7 @@ export default function SuperAdminDashboard() {
             />
           )}
           {activeTab === "marketing" && <MarketingTabComponent />}
+          {activeTab === "dijagnostika" && <DijagnostikaTabComponent />}
           {activeTab === "chat" && (
             <ChatTabComponent
               tenants={sa.tenants}
