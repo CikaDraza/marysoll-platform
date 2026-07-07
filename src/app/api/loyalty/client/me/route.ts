@@ -49,6 +49,12 @@ export async function GET(req: NextRequest) {
           milestone,
           pointsShop: config.pointsShop ?? [],
           celebration: config.celebration,
+          sharing: config.sharing?.enabled
+            ? {
+                enabled: true,
+                friendReward: config.sharing.friendReward ?? null,
+              }
+            : null,
         }
       : null,
   });

@@ -48,6 +48,12 @@ export interface LoyaltyConfigLean {
   streak?: {
     windowDays: number;
   };
+  /** Share voucher (poklon prijateljici). Phase 2. */
+  sharing?: {
+    enabled: boolean;
+    friendReward?: RewardSpec;
+    maxActivePerClient?: number;
+  };
   milestones: Array<{ heartsRequired: number; reward: RewardSpec }>;
   pointsShop: Array<{ costPoints: number; reward: RewardSpec }>;
   noShowPolicy: {

@@ -39,7 +39,17 @@ export interface LoyaltyMeResponse {
     milestone: { heartsRequired: number; reward: LoyaltyRewardInfo } | null;
     pointsShop: Array<{ costPoints: number; reward: LoyaltyRewardInfo }>;
     celebration: { intensity: "off" | "subtle" | "normal" | "max" };
+    sharing: { enabled: boolean; friendReward: LoyaltyRewardInfo | null } | null;
   } | null;
+}
+
+export interface SharedVoucherResult {
+  ok: boolean;
+  code: string;
+  type: "percent" | "fixed" | "free_service";
+  value: number;
+  serviceName?: string;
+  expiresAt?: string | null;
 }
 
 export interface LoyaltyLedgerEntry {
@@ -127,6 +137,18 @@ export function useMarkMomentsSeen() {
       (await api.post("/loyalty/client/moments", { ids })).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["loyalty"] });
+    },
+  });
+}
+
+/** Share voucher — klijent generiše poklon-vaučer za prijateljicu (Phase 2). */
+export function useShareVoucher() {
+  const queryClient = useQueryClient();
+  return useMutation<SharedVoucherResult, Error, void>({
+    mutationFn: async () =>
+      (await api.post("/loyalty/client/share-voucher")).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["loyalty", "vouchers"] });
     },
   });
 }
