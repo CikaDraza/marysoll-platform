@@ -11,7 +11,8 @@ export type SuperAdminTab =
   | "chat"
   | "profil"
   | "newsletter"
-  | "marketing";
+  | "marketing"
+  | "dijagnostika";
 
 export interface SuperAdminTabConfig {
   id: SuperAdminTab;

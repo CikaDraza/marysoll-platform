@@ -14,7 +14,7 @@
  */
 
 import { useEffect } from "react";
-import { sendDiagBeacon } from "@/lib/diag-beacon";
+import { sendDiagBeacon } from "@/lib/platform/diagnostic-client";
 
 const CHUNK_ERROR_RE =
   /ChunkLoadError|Loading chunk .* failed|dynamically imported module|Importing a module script failed|Failed to fetch dynamically imported/i;

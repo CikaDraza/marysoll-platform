@@ -10,6 +10,7 @@ import {
   TagIcon,
   GlobeAltIcon,
   EnvelopeIcon,
+  WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
 import type { SuperAdminTab, SuperAdminTabConfig } from "@/types/superadmin";
 
@@ -38,6 +39,7 @@ export const SUPERADMIN_TABS: SuperAdminTabConfig[] = [
   { id: "profil", label: "Profil", icon: UserCircleIcon as ComponentType<{ className?: string }> },
   { id: "newsletter", label: "Newsletter", icon: EnvelopeIcon as ComponentType<{ className?: string }> },
   { id: "marketing", label: "Marketing", icon: GlobeAltIcon as ComponentType<{ className?: string }> },
+  { id: "dijagnostika", label: "Dijagnostika", icon: WrenchScrewdriverIcon as ComponentType<{ className?: string }> },
 ];
 
 export function StatusBadge({ status }: { status: string }) {

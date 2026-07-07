@@ -1,13 +1,13 @@
 "use client";
 
 /**
- * /dijagnostika — samouslužna mrežna dijagnostika za netehničke korisnike.
+ * /dijagnostika — samouslužna dijagnostika za netehničke korisnike.
  *
  * Korisnica samo otvori link (sa marysoll.com koji joj radi); stranica sama
- * proba da dohvati /api/public/ping na svim našim hostovima (admin, superadmin,
- * wildcard) + eksterni baseline, izmeri vremena i POST-uje rezultat u bazu
- * (/api/public/diag-report) zajedno sa IP/UA. Pregled: superadmin
- * /api/superadmin/diag-reports.
+ * izvrši per-host network probes + collectore uređaja (device/push/storage/
+ * permissions — sve iz @panta/diagnostic-engine kroz diagnostic-client
+ * adapter), izmeri vremena i POST-uje rezultat u bazu (/api/public/diag-report)
+ * zajedno sa IP/UA. Pregled: superadmin /api/superadmin/diag-reports.
  *
  * Web ne može DNS lookup/ping/traceroute (iOS to daje samo native app-ovima) —
  * ali per-host reachability sa uređaja je dovoljna da se vidi KOJI host je
@@ -15,124 +15,17 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  buildNetworkProbes,
+  runNetworkProbe,
+  runCollectors,
+  type ModuleResult,
+} from "@/lib/platform/diagnostic-client";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
 
-type ProbeState = "pending" | "ok" | "fail";
-
-interface Probe {
-  key: string;
-  name: string;
-  url: string;
-  /** no-cors za eksterne hostove bez CORS headera (opaque = konekcija radi) */
-  noCors?: boolean;
-  state: ProbeState;
-  ms: number | null;
-  detail: string | null;
-}
-
-function buildProbes(): Probe[] {
-  const isLocal =
-    typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1");
-
-  if (isLocal) {
-    return [
-      {
-        key: "local",
-        name: "Lokalni server",
-        url: `/api/public/ping`,
-        state: "pending",
-        ms: null,
-        detail: null,
-      },
-    ];
-  }
-
-  const rand = Math.random().toString(36).slice(2, 8);
-  return [
-    {
-      key: "base",
-      name: "Marysoll sajt",
-      url: `https://${BASE}/api/public/ping`,
-      state: "pending",
-      ms: null,
-      detail: null,
-    },
-    {
-      key: "admin",
-      name: "Admin panel",
-      url: `https://admin.${BASE}/api/public/ping`,
-      state: "pending",
-      ms: null,
-      detail: null,
-    },
-    {
-      key: "superadmin",
-      name: "Superadmin",
-      url: `https://superadmin.${BASE}/api/public/ping`,
-      state: "pending",
-      ms: null,
-      detail: null,
-    },
-    {
-      key: "wildcard",
-      name: "Test subdomen",
-      url: `https://probe-${rand}.${BASE}/api/public/ping`,
-      state: "pending",
-      ms: null,
-      detail: null,
-    },
-    {
-      key: "internet",
-      name: "Internet (Google)",
-      url: "https://www.gstatic.com/generate_204",
-      noCors: true,
-      state: "pending",
-      ms: null,
-      detail: null,
-    },
-  ];
-}
-
-async function runProbe(p: Probe): Promise<Probe> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
-  const t0 = performance.now();
-  try {
-    const res = await fetch(`${p.url}?cb=${Date.now()}`, {
-      cache: "no-store",
-      mode: p.noCors ? "no-cors" : "cors",
-      signal: controller.signal,
-    });
-    const ms = Math.round(performance.now() - t0);
-    // no-cors vraća opaque response (status 0) — sam uspeh fetch-a znači da je konekcija prošla
-    const ok = p.noCors ? true : res.ok;
-    return {
-      ...p,
-      state: ok ? "ok" : "fail",
-      ms,
-      detail: p.noCors ? "konekcija uspešna" : `HTTP ${res.status}`,
-    };
-  } catch (err) {
-    const ms = Math.round(performance.now() - t0);
-    const aborted = controller.signal.aborted;
-    return {
-      ...p,
-      state: "fail",
-      ms,
-      detail: aborted
-        ? "isteklo vreme (8s) — konekcija se ne uspostavlja"
-        : `konekcija odbijena/blokirana (${err instanceof Error ? err.name : "greška"})`,
-    };
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 export default function DijagnostikaPage() {
-  const [probes, setProbes] = useState<Probe[]>([]);
+  const [results, setResults] = useState<ModuleResult[]>([]);
   const [phase, setPhase] = useState<"running" | "done">("running");
   const [sent, setSent] = useState<"sending" | "sent" | "failed" | null>(null);
   const startedRef = useRef(false);
@@ -140,17 +33,22 @@ export default function DijagnostikaPage() {
   const runAll = useCallback(async () => {
     setPhase("running");
     setSent(null);
-    const initial = buildProbes();
-    setProbes(initial);
+    const probes = buildNetworkProbes(BASE);
+    setResults(probes);
 
-    const done: Probe[] = [];
-    for (const p of initial) {
-      const result = await runProbe(p);
+    const done: ModuleResult[] = [];
+    for (const p of probes) {
+      const result = await runNetworkProbe(p);
       done.push(result);
-      setProbes((prev) =>
+      setResults((prev) =>
         prev.map((x) => (x.key === result.key ? result : x)),
       );
     }
+
+    // Collectori uređaja (device/push/storage/permissions) — brzi, bez mreže
+    const collected = await runCollectors();
+    done.push(...collected);
+    setResults((prev) => [...prev, ...collected]);
     setPhase("done");
 
     // Automatski pošalji rezultate — korisnik ne mora ništa da radi
@@ -164,14 +62,7 @@ export default function DijagnostikaPage() {
         body: JSON.stringify({
           label,
           pageHost: window.location.host,
-          results: done.map((p) => ({
-            key: p.key,
-            name: p.name,
-            url: p.url,
-            state: p.state,
-            ms: p.ms,
-            detail: p.detail,
-          })),
+          results: done,
         }),
       });
       setSent(res.ok ? "sent" : "failed");
@@ -186,8 +77,8 @@ export default function DijagnostikaPage() {
     void runAll();
   }, [runAll]);
 
-  const adminProbe = probes.find((p) => p.key === "admin");
-  const baseProbe = probes.find((p) => p.key === "base");
+  const adminProbe = results.find((p) => p.key === "admin");
+  const baseProbe = results.find((p) => p.key === "base");
   const showAdminBlocked =
     phase === "done" &&
     adminProbe?.state === "fail" &&
@@ -201,12 +92,12 @@ export default function DijagnostikaPage() {
         </h1>
         <p className="text-sm text-gray-500 mb-5">
           {phase === "running"
-            ? "Proveravamo vezu sa vašeg uređaja… sačekajte par sekundi."
+            ? "Proveravamo vezu i uređaj… sačekajte par sekundi."
             : "Provera je završena."}
         </p>
 
         <ul className="space-y-2 mb-5">
-          {probes.map((p) => (
+          {results.map((p) => (
             <li
               key={p.key}
               className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2.5"
@@ -221,6 +112,22 @@ export default function DijagnostikaPage() {
                 )}
                 {p.state === "ok" && (
                   <span className="text-emerald-600 font-bold">✓</span>
+                )}
+                {p.state === "info" && (
+                  <span
+                    className="text-sky-500 font-bold"
+                    title={p.detail ?? undefined}
+                  >
+                    ℹ
+                  </span>
+                )}
+                {p.state === "warn" && (
+                  <span
+                    className="text-amber-500 font-bold"
+                    title={p.detail ?? undefined}
+                  >
+                    ⚠
+                  </span>
                 )}
                 {p.state === "fail" && (
                   <span
