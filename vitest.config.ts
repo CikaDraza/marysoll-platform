@@ -2,20 +2,16 @@ import { defineConfig } from "vitest/config";
 import path from "path";
 
 /**
- * TEST RUNNERI (privremeno dva; cilj: vitest-only).
+ * VITEST = JEDINI root test runner (`npm test`).
  *
- * Vitest = PRIMARNI (`npm test`): sve u src/ — 51 legacy util test (contactRules,
- *   loyalty, cityMatch…) preko `globals`, i proxy compatibility suite
- *   (src/proxy.test.ts: Next middleware — rewrite/redirect/headers/cookies preko
- *   NextRequest/NextResponse). Workspace paketi imaju svaki svoj vitest
- *   (`npm run test:engines`).
- * Jest = zadržan PRIVREMENO (`npm run test:jest`, ts-jest) za legacy kompatibilnost;
- *   NE pokreće proxy.test.ts (vitest-only fajl) — vidi jest.config.js.
+ * Pokriva sve u src/: 51 legacy util test (contactRules, loyalty, cityMatch…)
+ * preko `globals`, i proxy safety-net (src/proxy.test.ts — Next middleware:
+ * domain detection, tenant routing, rewrite, auth granice, canonical 301,
+ * client routing, debug trace preko NextRequest/NextResponse). Workspace paketi
+ * imaju svaki svoj vitest (`npm run test:engines`).
  *
- * Napomena: proxy.test.ts je VEĆ vitest i zeleno pod vitest-om, pa je „migracija
- *   proxy testova na vitest" zapravo već ispunjena. Kad proxy.ts oslabi na tanak
- *   orkestrator (logika u lib/proxy/pipeline · guards · platform), još više će
- *   biti čist unit test kroz vitest, a jest se može ukloniti bez gubitka.
+ * Jest je uklonjen (2026-07-07): nijedan test ne zahteva jest — vitest sa
+ * `globals` pokriva i legacy jest-stil (describe/it), pa je jest bio suvišan.
  */
 export default defineConfig({
   test: {
