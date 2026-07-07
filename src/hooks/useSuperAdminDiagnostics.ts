@@ -1,20 +1,22 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { DIAG_NULL_LABEL } from "@/types/diagnostics";
-import type {
-  DiagLabelSummary,
-  DiagLabelsResponse,
-  DiagReportDTO,
-  DiagReportsResponse,
+import toast from "react-hot-toast";
+import {
+  DIAG_NULL_LABEL,
+  diagLabelsResponseSchema,
+  diagReportsResponseSchema,
 } from "@/types/diagnostics";
+import type { DiagLabelSummary, DiagReportDTO } from "@/types/diagnostics";
 
 /**
  * Podaci za superadmin Dijagnostika tab: sažetak oznaka (za select) + reportovi
  * izabrane oznake. Server logika je u /api/superadmin/diag-reports; dohvat ide
  * kroz react-query (konvencija ostalih superadmin hookova — jedan izvor istine,
- * bez ručnih efekata). Reportovi se učitavaju tek kad je oznaka izabrana.
+ * bez ručnih efekata za stanje). Odgovori se validiraju Zod šemama (pravilo 2.2),
+ * greške se javljaju preko react-hot-toast (pravilo 5.2). Reportovi se učitavaju
+ * tek kad je oznaka izabrana.
  */
 export function useSuperAdminDiagnostics() {
   const [selectedValue, setSelectedValue] = useState(""); // "" = ništa, DIAG_NULL_LABEL = bez oznake
@@ -24,8 +26,8 @@ export function useSuperAdminDiagnostics() {
     queryFn: async (): Promise<DiagLabelSummary[]> => {
       const res = await fetch("/api/superadmin/diag-reports");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as DiagLabelsResponse;
-      return data.labels ?? [];
+      const data = diagLabelsResponseSchema.parse(await res.json());
+      return data.labels;
     },
   });
 
@@ -37,10 +39,22 @@ export function useSuperAdminDiagnostics() {
         `/api/superadmin/diag-reports?label=${encodeURIComponent(selectedValue)}`,
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as DiagReportsResponse;
-      return data.reports ?? [];
+      const data = diagReportsResponseSchema.parse(await res.json());
+      return data.reports;
     },
   });
+
+  // Greške → toast (external system sync; ref sprečava dupli toast na refetch).
+  const toastedRef = useRef(false);
+  const hasError = labelsQuery.isError || reportsQuery.isError;
+  useEffect(() => {
+    if (hasError && !toastedRef.current) {
+      toastedRef.current = true;
+      toast.error("Učitavanje dijagnostike nije uspelo.");
+    } else if (!hasError) {
+      toastedRef.current = false;
+    }
+  }, [hasError]);
 
   const selectLabel = useCallback((value: string) => {
     setSelectedValue(value);
@@ -53,9 +67,7 @@ export function useSuperAdminDiagnostics() {
 
   /** Ljudski čitljiva oznaka za prikaz/izvoz (null → "(bez oznake)"). */
   const selectedLabelText =
-    selectedValue === DIAG_NULL_LABEL
-      ? "(bez oznake)"
-      : selectedValue || null;
+    selectedValue === DIAG_NULL_LABEL ? "(bez oznake)" : selectedValue || null;
 
   return {
     labels: labelsQuery.data ?? [],
@@ -65,10 +77,7 @@ export function useSuperAdminDiagnostics() {
     reports: reportsQuery.data ?? [],
     loadingLabels: labelsQuery.isLoading,
     loadingReports: reportsQuery.isFetching && selectedValue !== "",
-    error:
-      labelsQuery.isError || reportsQuery.isError
-        ? "Učitavanje dijagnostike nije uspelo."
-        : null,
+    error: hasError ? "Učitavanje dijagnostike nije uspelo." : null,
     refresh,
   };
 }

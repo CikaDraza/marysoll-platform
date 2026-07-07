@@ -2,8 +2,7 @@
  * Klijentski export dijagnostičkih izveštaja: .txt, .md i PDF (preko štampe).
  * Bez spoljnih zavisnosti (CSP-friendly) — Blob download + print-to-PDF prozor.
  */
-import type { DiagReportDTO } from "@/types/diagnostics";
-import type { ModuleResult } from "@panta/diagnostic-engine";
+import type { DiagModuleResult, DiagReportDTO } from "@/types/diagnostics";
 
 function fmtDate(iso: string): string {
   try {
@@ -13,7 +12,7 @@ function fmtDate(iso: string): string {
   }
 }
 
-function stateMark(state: ModuleResult["state"]): string {
+function stateMark(state: DiagModuleResult["state"]): string {
   switch (state) {
     case "ok":
       return "OK";

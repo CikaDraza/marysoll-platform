@@ -5,9 +5,11 @@ import {
   superAdminCardClass as card,
   superAdminInputClass as inp,
 } from "@/components/superadmin/shared";
+import toast from "react-hot-toast";
 import {
   DIAG_NULL_LABEL,
   type DiagLabelSummary,
+  type DiagModuleResult,
   type DiagReportDTO,
 } from "@/types/diagnostics";
 import {
@@ -15,7 +17,6 @@ import {
   exportPdf,
   exportText,
 } from "@/lib/diagnostics/exportReport";
-import type { ModuleResult } from "@panta/diagnostic-engine";
 import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
@@ -30,7 +31,7 @@ function fmtDate(iso: string): string {
   }
 }
 
-const STATE_STYLE: Record<ModuleResult["state"], { cls: string; label: string }> =
+const STATE_STYLE: Record<DiagModuleResult["state"], { cls: string; label: string }> =
   {
     ok: { cls: "bg-emerald-900/60 text-emerald-300 border-emerald-700", label: "OK" },
     fail: { cls: "bg-red-900/60 text-red-300 border-red-700", label: "GREŠKA" },
@@ -39,7 +40,7 @@ const STATE_STYLE: Record<ModuleResult["state"], { cls: string; label: string }>
     pending: { cls: "bg-slate-700 text-slate-300 border-slate-600", label: "…" },
   };
 
-function StateBadge({ state }: { state: ModuleResult["state"] }) {
+function StateBadge({ state }: { state: DiagModuleResult["state"] }) {
   const s = STATE_STYLE[state] ?? STATE_STYLE.info;
   return (
     <span
@@ -60,7 +61,7 @@ function optionValue(l: DiagLabelSummary): string {
 }
 
 // ─── Jedan modul unutar izveštaja ─────────────────────────────────────────────
-function ModuleRow({ m }: { m: ModuleResult }) {
+function ModuleRow({ m }: { m: DiagModuleResult }) {
   const hasData = m.data && Object.keys(m.data).length > 0;
   return (
     <div className="flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-3 py-2 border-b border-slate-700/60 last:border-0">
@@ -151,6 +152,18 @@ export function DijagnostikaTab() {
   const canExport = reports.length > 0 && selectedLabelText !== null;
   const exportLabel = selectedLabelText ?? "izvestaj";
 
+  const runExport = (
+    fn: (label: string, reports: DiagReportDTO[]) => void,
+    format: string,
+  ) => {
+    try {
+      fn(exportLabel, reports);
+      toast.success(`Izveštaj preuzet (${format}).`);
+    } catch {
+      toast.error(`Izvoz (${format}) nije uspeo.`);
+    }
+  };
+
   const exportBtn =
     "flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed";
 
@@ -168,7 +181,7 @@ export function DijagnostikaTab() {
         </div>
         <div className="flex flex-wrap gap-2 sm:flex-shrink-0">
           <button
-            onClick={() => exportText(exportLabel, reports)}
+            onClick={() => runExport(exportText, "TXT")}
             disabled={!canExport}
             className={`${exportBtn} bg-slate-700 text-white hover:bg-slate-600`}
             title="Preuzmi kao .txt"
@@ -176,7 +189,7 @@ export function DijagnostikaTab() {
             <DocumentTextIcon className="size-4" /> Text
           </button>
           <button
-            onClick={() => exportMarkdown(exportLabel, reports)}
+            onClick={() => runExport(exportMarkdown, "MD")}
             disabled={!canExport}
             className={`${exportBtn} bg-slate-700 text-white hover:bg-slate-600`}
             title="Preuzmi kao .md"
@@ -184,7 +197,7 @@ export function DijagnostikaTab() {
             <ArrowDownTrayIcon className="size-4" /> MD
           </button>
           <button
-            onClick={() => exportPdf(exportLabel, reports)}
+            onClick={() => runExport(exportPdf, "PDF")}
             disabled={!canExport}
             className={`${exportBtn} bg-violet-600 text-white hover:bg-violet-500`}
             title="Preuzmi kao PDF (štampa)"

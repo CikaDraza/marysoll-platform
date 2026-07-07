@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { DiagReport } from "@/models/DiagReport";
-import { DIAG_NULL_LABEL } from "@/types/diagnostics";
+import {
+  DIAG_NULL_LABEL,
+  diagModuleResultSchema,
+  diagQuerySchema,
+} from "@/types/diagnostics";
 import type {
   DiagLabelSummary,
+  DiagModuleResult,
   DiagReportDTO,
 } from "@/types/diagnostics";
 
@@ -15,16 +20,36 @@ import type {
  *   za select "Izaberi salon" u Dijagnostika tabu (pošto reporti još nemaju
  *   tenantId, grupišemo po ?u= oznaci; label=null = "(bez oznake)").
  * ?label=<oznaka> (ili __NULL__ za bez-oznake) → { reports: [...] } poslednjih 50.
+ *
+ * Filtriranje, agregacija i formatiranje su na serveru (pravilo 4.2);
+ * query param i izlazni moduli se validiraju Zod-om (pravilo 2.2).
  */
+
+/** Nevaljan modul (stari/pokvaren Mixed zapis) se preskače, ne obara ceo report. */
+function parseModules(raw: unknown): DiagModuleResult[] | null {
+  if (!Array.isArray(raw)) return null;
+  const out: DiagModuleResult[] = [];
+  for (const item of raw) {
+    const parsed = diagModuleResultSchema.safeParse(item);
+    if (parsed.success) out.push(parsed.data);
+  }
+  return out;
+}
+
 export async function GET(req: NextRequest) {
   try {
     await connectToDB();
-    const labelParam = req.nextUrl.searchParams.get("label");
+
+    const query = diagQuerySchema.parse({
+      label: req.nextUrl.searchParams.get("label"),
+    });
 
     // Reportovi za izabranu oznaku
-    if (labelParam !== null) {
+    if (query.label !== null) {
       const filter =
-        labelParam === DIAG_NULL_LABEL ? { label: null } : { label: labelParam };
+        query.label === DIAG_NULL_LABEL
+          ? { label: null }
+          : { label: query.label };
       const docs = await DiagReport.find(filter)
         .sort({ createdAt: -1 })
         .limit(50)
@@ -39,7 +64,7 @@ export async function GET(req: NextRequest) {
           ip: (doc.ip as string | null) ?? null,
           country: (doc.country as string | null) ?? null,
           pageHost: (doc.pageHost as string | null) ?? null,
-          results: (doc.results as DiagReportDTO["results"]) ?? null,
+          results: parseModules(doc.results),
           createdAt: new Date(doc.createdAt as string).toISOString(),
         };
       });
