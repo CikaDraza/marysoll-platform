@@ -118,10 +118,11 @@ async function handleCompleted(
 
   // Brojači su informativni (balansi su ledger-zaštićeni) — retki retry posle
   // parcijalnog pada može da ih duplira; rekonsilijacija ih ne ispravlja.
-  // NAPOMENA (Phase 1): streak/lastVisitAt vodi check-in (handleCheckin), ne
-  // completion — inače bi se streak duplirao (check-in + completion).
+  // currentStreak/lastVisitAt = POSTOJEĆE ponašanje (completion-driven),
+  // netaknuto — check-in vodi ODVOJEN streak (checkinStreak), pa se ne diraju.
   await LoyaltyAccount.findByIdAndUpdate(account._id, {
-    $inc: { completedVisits: 1, totalSpend: spend },
+    $inc: { completedVisits: 1, totalSpend: spend, currentStreak: 1 },
+    $set: { lastVisitAt: new Date() },
   });
 
   // ── Milestone (punch-card): dovoljno srca → troše se na vaučer ──
@@ -258,12 +259,14 @@ async function handleCheckin(
     : new Date();
 
   // ── Streak (navika) preko čiste logike iz @panta/loyalty-engine ──
+  // ODVOJENA polja (checkinStreak/lastCheckinAt) da NE diramo completion-driven
+  // currentStreak — postojeći saloni rade identično, check-in je aditivan.
   const next = computeStreakUpdate(
     {
-      currentStreak: account.currentStreak ?? 0,
-      longestStreak: account.longestStreak ?? 0,
-      lastVisitAt: account.lastVisitAt
-        ? new Date(account.lastVisitAt).toISOString()
+      currentStreak: account.checkinStreak ?? 0,
+      longestStreak: account.longestCheckinStreak ?? 0,
+      lastVisitAt: account.lastCheckinAt
+        ? new Date(account.lastCheckinAt).toISOString()
         : null,
     },
     visitAt,
@@ -271,9 +274,9 @@ async function handleCheckin(
   );
   await LoyaltyAccount.findByIdAndUpdate(account._id, {
     $set: {
-      currentStreak: next.currentStreak,
-      longestStreak: next.longestStreak,
-      lastVisitAt: next.lastVisitAt ? new Date(next.lastVisitAt) : visitAt,
+      checkinStreak: next.currentStreak,
+      longestCheckinStreak: next.longestStreak,
+      lastCheckinAt: next.lastVisitAt ? new Date(next.lastVisitAt) : visitAt,
     },
   });
 
