@@ -37,7 +37,12 @@ export const DEFAULT_LOYALTY_CONFIG = {
       per100Rsd: 1,
     },
   },
-  earning: { heartsPerCompletedVisit: 1, welcomeBonusPoints: 0 },
+  earning: {
+    heartsPerCompletedVisit: 1,
+    welcomeBonusPoints: 0,
+    checkinPoints: 10,
+  },
+  streak: { windowDays: 45 },
   milestones: [
     {
       heartsRequired: 5,

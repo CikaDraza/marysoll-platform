@@ -45,6 +45,7 @@ const CLIENT_TENANT_PATHS = new Set([
   "/pravila-zakazivanja",
   "/newsletter",
   "/blogs",
+  "/checkin",
 ]);
 
 const PLATFORM_SUBDOMAINS = new Set(["admin", "superadmin", "app", "www"]);
