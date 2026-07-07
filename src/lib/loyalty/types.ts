@@ -15,6 +15,7 @@ export type LoyaltyEventType =
   | "appointment_completion_reverted"
   | "appointment_cancelled"
   | "client_registered"
+  | "client_checkin"
   | "manual_adjustment";
 
 export type LoyaltyEntryType = "earn" | "redeem" | "adjust" | "revoke" | "expire";
@@ -40,6 +41,12 @@ export interface LoyaltyConfigLean {
   earning: {
     heartsPerCompletedVisit: number;
     welcomeBonusPoints: number;
+    /** Poeni po QR check-inu (0 = isključeno). Phase 1. */
+    checkinPoints?: number;
+  };
+  /** Streak (navika): razmak preko kog se streak resetuje. Phase 1. */
+  streak?: {
+    windowDays: number;
   };
   milestones: Array<{ heartsRequired: number; reward: RewardSpec }>;
   pointsShop: Array<{ costPoints: number; reward: RewardSpec }>;
@@ -75,6 +82,7 @@ export interface LoyaltyAccountLean {
   totalSpend: number;
   lastVisitAt?: Date;
   currentStreak: number;
+  longestStreak?: number;
 }
 
 export interface LoyaltyEventLean {

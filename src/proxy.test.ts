@@ -238,6 +238,11 @@ describe("tenant subdomen (host-based)", () => {
     expect(rewritePath(res)).toBe("/tenant/blogs/blog");
   });
 
+  it("/checkin (QR) → rewrite /tenant/checkin", async () => {
+    const { res } = await runProxy("no-domain-salon.marysoll.com", "/checkin");
+    expect(rewritePath(res)).toBe("/tenant/checkin");
+  });
+
   it("SA custom domenom: kanonski 301 na custom domen (SEO)", async () => {
     const { res } = await runProxy("kiki-kiss-beauty.marysoll.com", "/termini");
     expect(res.status).toBe(301);

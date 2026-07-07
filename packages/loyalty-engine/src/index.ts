@@ -17,3 +17,10 @@ export type { IdLike, VoucherDiscountInput, DiscountService } from "./pricing";
 export { computeVoucherDiscount } from "./pricing";
 
 export { generateVoucherCode, VOUCHER_PREFIX_BY_ORIGIN } from "./codes";
+
+export type {
+  StreakState,
+  StreakUpdateOptions,
+  StreakUpdateResult,
+} from "./streak";
+export { computeStreakUpdate } from "./streak";

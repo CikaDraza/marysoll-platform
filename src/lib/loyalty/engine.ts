@@ -15,6 +15,7 @@ import { getOrCreateAccount } from "./accounts";
 import { postLedgerEntry } from "./ledger";
 import { issueVoucher, revokeVouchersIssuedForAppointment } from "./vouchers/service";
 import { createLoyaltyNotification } from "./notifications";
+import { computeStreakUpdate } from "@/lib/platform/loyalty-client";
 import {
   formatCurrencyAmount,
   type LoyaltyConfigLean,
@@ -37,6 +38,7 @@ const EVENT_HANDLERS: Record<
   appointment_no_show: handleNoShow,
   appointment_completion_reverted: handleReverted,
   client_registered: handleRegistered,
+  client_checkin: handleCheckin,
   // manual_adjustment se knjiži direktno u admin ruti (event je samo audit trag)
 };
 
@@ -116,9 +118,10 @@ async function handleCompleted(
 
   // Brojači su informativni (balansi su ledger-zaštićeni) — retki retry posle
   // parcijalnog pada može da ih duplira; rekonsilijacija ih ne ispravlja.
+  // NAPOMENA (Phase 1): streak/lastVisitAt vodi check-in (handleCheckin), ne
+  // completion — inače bi se streak duplirao (check-in + completion).
   await LoyaltyAccount.findByIdAndUpdate(account._id, {
-    $inc: { completedVisits: 1, totalSpend: spend, currentStreak: 1 },
-    $set: { lastVisitAt: new Date() },
+    $inc: { completedVisits: 1, totalSpend: spend },
   });
 
   // ── Milestone (punch-card): dovoljno srca → troše se na vaučer ──
@@ -233,6 +236,62 @@ async function handleCompleted(
         heartsRequired: milestone?.heartsRequired,
         serviceName,
       },
+    });
+  }
+}
+
+// ─── client_checkin (Phase 1: QR check-in → streak + poeni) ───────────────────
+
+async function handleCheckin(
+  event: LoyaltyEventLean,
+  config: LoyaltyConfigLean,
+): Promise<void> {
+  const account = await getOrCreateAccount(
+    event.tenantId,
+    event.subjectTenantUserId,
+  );
+
+  // Fiksni timestamp iz eventa (retry-safe: streak je deterministički, a
+  // ponovni pokušaj vidi lastVisitAt === visitAt → gapDays 0 → no-op).
+  const visitAt = event.payload.timestamp
+    ? new Date(String(event.payload.timestamp))
+    : new Date();
+
+  // ── Streak (navika) preko čiste logike iz @panta/loyalty-engine ──
+  const next = computeStreakUpdate(
+    {
+      currentStreak: account.currentStreak ?? 0,
+      longestStreak: account.longestStreak ?? 0,
+      lastVisitAt: account.lastVisitAt
+        ? new Date(account.lastVisitAt).toISOString()
+        : null,
+    },
+    visitAt,
+    { windowDays: config.streak?.windowDays ?? 45 },
+  );
+  await LoyaltyAccount.findByIdAndUpdate(account._id, {
+    $set: {
+      currentStreak: next.currentStreak,
+      longestStreak: next.longestStreak,
+      lastVisitAt: next.lastVisitAt ? new Date(next.lastVisitAt) : visitAt,
+    },
+  });
+
+  // ── Check-in poeni (idempotentno preko ledger ključa; traži points.enabled) ──
+  const points = config.currencies.points;
+  const checkinPoints = config.earning.checkinPoints ?? 0;
+  if (points.enabled && checkinPoints > 0) {
+    await postLedgerEntry({
+      tenantId: event.tenantId,
+      accountId: account._id,
+      tenantUserId: event.subjectTenantUserId,
+      entryType: "earn",
+      currency: "points",
+      amount: checkinPoints,
+      source: { eventId: event._id, ruleId: "builtin:checkin_points" },
+      idempotencyKey: `evt:${event._id}:builtin:checkin_points`,
+      description: "Check-in u salonu",
+      maxPerDay: config.antiAbuse.maxPointsPerDay,
     });
   }
 }

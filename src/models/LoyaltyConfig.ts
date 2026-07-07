@@ -66,6 +66,13 @@ const loyaltyConfigSchema = new Schema(
       heartsPerCompletedVisit: { type: Number, default: 1, min: 0 },
       /** Welcome bonus u poenima pri registraciji (0 = isključeno) */
       welcomeBonusPoints: { type: Number, default: 0, min: 0 },
+      /** Poeni po QR check-inu (0 = isključeno; traži points.enabled). Phase 1 */
+      checkinPoints: { type: Number, default: 10, min: 0 },
+    },
+
+    // ── Streak (navika): koliko dana razmaka pre reseta streak-a
+    streak: {
+      windowDays: { type: Number, default: 45, min: 1 },
     },
 
     // ── Milestone (punch-card semantika: srca se TROŠE na nagradu,
