@@ -1,6 +1,5 @@
-// ─── Growth Studio: generisanje voucher kodova ────────────────────────────────
-// Bez "server-only" — čist util, pokriven unit testovima.
-
+// Generisanje voucher kodova. Čist util.
+// Preseljeno iz marysoll src/lib/loyalty/vouchers/codes.ts (Phase 0) — ponašanje isto.
 import crypto from "crypto";
 
 // Bez vizuelno dvosmislenih znakova (0/O, 1/I/L).

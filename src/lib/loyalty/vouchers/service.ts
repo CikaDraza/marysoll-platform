@@ -7,7 +7,10 @@ import "server-only";
 import { Types } from "mongoose";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Voucher } from "@/models/Voucher";
-import { generateVoucherCode, VOUCHER_PREFIX_BY_ORIGIN } from "./codes";
+import {
+  generateVoucherCode,
+  VOUCHER_PREFIX_BY_ORIGIN,
+} from "@/lib/platform/loyalty-client";
 import type { VoucherType } from "../types";
 
 export interface VoucherLean {
@@ -210,4 +213,4 @@ export async function expireDueVouchers(): Promise<number> {
   return res.modifiedCount ?? 0;
 }
 
-export { computeVoucherDiscount } from "../pricing";
+export { computeVoucherDiscount } from "@/lib/platform/loyalty-client";
