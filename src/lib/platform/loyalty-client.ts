@@ -13,6 +13,7 @@ export {
   computeVoucherDiscount,
   generateVoucherCode,
   VOUCHER_PREFIX_BY_ORIGIN,
+  computeStreakUpdate,
 } from "@panta/loyalty-engine";
 
 export type {
@@ -20,4 +21,7 @@ export type {
   IdLike,
   VoucherDiscountInput,
   DiscountService,
+  StreakState,
+  StreakUpdateOptions,
+  StreakUpdateResult,
 } from "@panta/loyalty-engine";
