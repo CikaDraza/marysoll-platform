@@ -43,6 +43,16 @@ export const DEFAULT_LOYALTY_CONFIG = {
     checkinPoints: 10,
   },
   streak: { windowDays: 45 },
+  sharing: {
+    enabled: false,
+    friendReward: {
+      type: "percent" as const,
+      value: 15,
+      serviceName: "",
+      expiresDays: 30,
+    },
+    maxActivePerClient: 3,
+  },
   milestones: [
     {
       heartsRequired: 5,

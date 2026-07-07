@@ -37,6 +37,8 @@ export interface IssueVoucherParams {
   serviceName?: string;
   origin: "auto_rule" | "manual" | "referral" | "gift" | "points_shop";
   expiresDays?: number;
+  /** Klijent koji poklanja (share voucher / gift). Phase 2. */
+  giftedByTenantUserId?: Types.ObjectId | string;
   issuedByRuleId?: string;
   issuedByAdminId?: Types.ObjectId | string;
   issuedForAppointmentId?: Types.ObjectId | string;
@@ -67,6 +69,7 @@ export async function issueVoucher(
         serviceName: params.serviceName ?? "",
         origin: params.origin,
         ownerTenantUserId: params.ownerTenantUserId,
+        giftedByTenantUserId: params.giftedByTenantUserId,
         status: "active",
         expiresAt,
         issuedByRuleId: params.issuedByRuleId,

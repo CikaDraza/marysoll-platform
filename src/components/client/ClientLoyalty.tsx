@@ -13,6 +13,7 @@ import {
   describeLoyaltyReward,
   type LoyaltyVoucherInfo,
 } from "@/hooks/useLoyalty";
+import { ShareVoucherCard } from "./ShareVoucherCard";
 
 const card =
   "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
@@ -210,6 +211,11 @@ export default function ClientLoyalty() {
           </div>
         )}
       </div>
+
+      {/* ── Pozovite prijateljicu (share voucher) ── */}
+      {me?.config?.sharing?.enabled && (
+        <ShareVoucherCard friendReward={me.config.sharing.friendReward} />
+      )}
 
       {/* ── Istorija ── */}
       <div className={card}>

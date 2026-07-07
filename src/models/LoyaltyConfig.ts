@@ -75,6 +75,15 @@ const loyaltyConfigSchema = new Schema(
       windowDays: { type: Number, default: 45, min: 1 },
     },
 
+    // ── Share voucher (klijent poklanja popust prijateljici). Phase 2.
+    sharing: {
+      enabled: { type: Boolean, default: false },
+      /** Popust koji dobija prijateljica (friend reward) */
+      friendReward: rewardSchema,
+      /** Maks. aktivnih (neiskorišćenih) poklon-vaučera po klijentu */
+      maxActivePerClient: { type: Number, default: 3, min: 1 },
+    },
+
     // ── Milestone (punch-card semantika: srca se TROŠE na nagradu,
     //    balans prikazuje napredak ka sledećoj — "3/5")
     milestones: [
