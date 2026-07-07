@@ -26,14 +26,15 @@ const loyaltyAccountSchema = new Schema(
     noShows: { type: Number, default: 0 },
     totalSpend: { type: Number, default: 0 },
     lastVisitAt: { type: Date },
-    /**
-     * Streak = NAVIKA: uzastopne posete (QR check-in) unutar prozora
-     * (config.streak.windowDays). No-show soft kazna = reset. Phase 1: streak
-     * vodi check-in, ne više completion (vidi engine.handleCheckin).
-     */
+    /** Uzastopni završeni termini bez no-show-a (no-show soft kazna = reset) */
     currentStreak: { type: Number, default: 0 },
-    /** Najduži ostvaren streak (rekord). Phase 1. */
-    longestStreak: { type: Number, default: 0 },
+
+    // ── Check-in streak (NAVIKA, QR check-in) — ODVOJEN od completion streak-a
+    //    (currentStreak) da check-in bude aditivan i ne dira postojeće. Phase 1.
+    /** Uzastopne posete (QR check-in) unutar prozora config.streak.windowDays */
+    checkinStreak: { type: Number, default: 0 },
+    longestCheckinStreak: { type: Number, default: 0 },
+    lastCheckinAt: { type: Date },
 
     /** Lazy-generisan pri prvom deljenju (Faza 2 — referral) */
     referralCode: { type: String },

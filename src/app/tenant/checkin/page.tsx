@@ -13,8 +13,8 @@ import { useClientRouting } from "@/hooks/useClientRouting";
 type Phase = "checking" | "done" | "unauth" | "inactive" | "error";
 
 interface CheckinResult {
-  currentStreak: number;
-  longestStreak: number;
+  checkinStreak: number;
+  longestCheckinStreak: number;
   pointsBalance: number;
   heartsBalance: number;
 }
@@ -74,7 +74,7 @@ export default function CheckinPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl bg-violet-50 py-3">
                 <p className="text-2xl font-black text-violet-700">
-                  {result.currentStreak}
+                  {result.checkinStreak}
                 </p>
                 <p className="text-xs text-gray-500">niz poseta 🔥</p>
               </div>
@@ -85,9 +85,9 @@ export default function CheckinPage() {
                 <p className="text-xs text-gray-500">poena ⭐</p>
               </div>
             </div>
-            {result.longestStreak > result.currentStreak && (
+            {result.longestCheckinStreak > result.checkinStreak && (
               <p className="mt-3 text-xs text-gray-400">
-                Vaš rekord: {result.longestStreak} poseta
+                Vaš rekord: {result.longestCheckinStreak} poseta
               </p>
             )}
           </>

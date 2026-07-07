@@ -82,7 +82,10 @@ export interface LoyaltyAccountLean {
   totalSpend: number;
   lastVisitAt?: Date;
   currentStreak: number;
-  longestStreak?: number;
+  /** Check-in streak (navika) — odvojen od completion-driven currentStreak. */
+  checkinStreak?: number;
+  longestCheckinStreak?: number;
+  lastCheckinAt?: Date;
 }
 
 export interface LoyaltyEventLean {

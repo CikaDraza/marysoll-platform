@@ -46,18 +46,18 @@ export async function POST(req: NextRequest) {
     tenantId: decoded.tenantId,
     tenantUserId: decoded.tenantUserId,
   })
-    .select("currentStreak longestStreak pointsBalance heartsBalance")
+    .select("checkinStreak longestCheckinStreak pointsBalance heartsBalance")
     .lean<{
-      currentStreak?: number;
-      longestStreak?: number;
+      checkinStreak?: number;
+      longestCheckinStreak?: number;
       pointsBalance?: number;
       heartsBalance?: number;
     }>();
 
   return NextResponse.json({
     ok: true,
-    currentStreak: account?.currentStreak ?? 0,
-    longestStreak: account?.longestStreak ?? 0,
+    checkinStreak: account?.checkinStreak ?? 0,
+    longestCheckinStreak: account?.longestCheckinStreak ?? 0,
     pointsBalance: account?.pointsBalance ?? 0,
     heartsBalance: account?.heartsBalance ?? 0,
   });
