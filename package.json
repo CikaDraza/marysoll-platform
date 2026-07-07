@@ -2,12 +2,16 @@
   "name": "marysoll-platform",
   "version": "16.1.16",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "next dev --webpack --port 3006",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
+    "test:engines": "npm test --workspaces --if-present",
     "migrate:subscription-index": "node --env-file=.env.local scripts/fix-subscription-index.mjs",
     "backfill:identity": "echo 'Deprecated — backfill-user-identity script removed'"
   },
