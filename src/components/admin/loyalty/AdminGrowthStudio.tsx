@@ -6,6 +6,7 @@
  * Buduci moduli (tieri, referral, promocije) dobijaju svoje sekcije ovde.
  */
 import { useState } from "react";
+import { CheckinQrCard } from "./CheckinQrCard";
 import toast from "react-hot-toast";
 import {
   useLoyaltyAdminConfig,
@@ -582,6 +583,7 @@ function ConfigFormInner({ initial }: { initial: LoyaltyAdminConfig }) {
             </p>
           </div>
         </div>
+        <CheckinQrCard />
       </div>
 
       {/* ── Deljenje / Pozovi prijateljicu (Phase 2 share voucher) ── */}
