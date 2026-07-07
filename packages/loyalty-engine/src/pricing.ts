@@ -1,18 +1,22 @@
-// ─── Growth Studio: čist obračun popusta (bez server-only — unit testabilno) ──
-// Popust se UVEK računa server-side iz podataka termina; klijentov prikaz cene
-// je samo informativan.
+// Čist obračun popusta vaučera. Popust se UVEK računa server-side iz podataka
+// termina; klijentov prikaz cene je samo informativan.
+// Preseljeno iz marysoll src/lib/loyalty/pricing.ts (Phase 0) — ponašanje isto.
+//
+// Bez mongoose zavisnosti: id-jevi su IdLike (string ili bilo šta sa
+// .toString()), pa ObjectId iz app-a i dalje prolazi, a paket ostaje čist.
 
-import type { Types } from "mongoose";
+/** String ID ili objekat koji se serijalizuje u ID (npr. mongoose ObjectId). */
+export type IdLike = string | { toString(): string };
 
 export interface VoucherDiscountInput {
   type: "percent" | "fixed" | "free_service";
   value: number;
-  serviceScope?: Array<Types.ObjectId | string> | null;
+  serviceScope?: Array<IdLike> | null;
   serviceName?: string;
 }
 
 export interface DiscountService {
-  serviceId?: Types.ObjectId | string;
+  serviceId?: IdLike;
   price?: number;
   quantity?: number;
 }

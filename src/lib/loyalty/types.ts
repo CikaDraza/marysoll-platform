@@ -1,6 +1,11 @@
 // ─── Growth Studio: deljeni domen tipovi ──────────────────────────────────────
 
 import type { Types } from "mongoose";
+// Čista domenska logika (format valute) živi u @panta/loyalty-engine (Phase 0);
+// re-export ovde da postojeći `./types` importeri rade nepromenjeno.
+import type { CurrencyNames } from "@/lib/platform/loyalty-client";
+export type { CurrencyNames };
+export { formatCurrencyAmount } from "@/lib/platform/loyalty-client";
 
 export type LoyaltyCurrency = "hearts" | "points";
 
@@ -22,14 +27,6 @@ export interface RewardSpec {
   serviceId?: Types.ObjectId | string | null;
   serviceName?: string;
   expiresDays: number;
-}
-
-export interface CurrencyNames {
-  enabled: boolean;
-  nameOne: string;
-  nameFew: string;
-  nameMany: string;
-  emoji: string;
 }
 
 export interface LoyaltyConfigLean {
@@ -96,19 +93,4 @@ export interface LoyaltyEventLean {
   };
   status: "pending" | "processed" | "failed" | "skipped";
   attempts: number;
-}
-
-/** Srpska deklinacija broja uz naziv valute: 1 srce / 2 srca / 5 srca. */
-export function formatCurrencyAmount(
-  n: number,
-  names: Pick<CurrencyNames, "nameOne" | "nameFew" | "nameMany">,
-): string {
-  const abs = Math.abs(n);
-  const mod10 = abs % 10;
-  const mod100 = abs % 100;
-  let word = names.nameMany;
-  if (mod10 === 1 && mod100 !== 11) word = names.nameOne;
-  else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14))
-    word = names.nameFew;
-  return `${n} ${word}`;
 }

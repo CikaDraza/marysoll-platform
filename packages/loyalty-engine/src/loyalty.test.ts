@@ -1,6 +1,7 @@
-import { formatCurrencyAmount } from "./types";
+import { describe, it, expect } from "vitest";
+import { formatCurrencyAmount } from "./currency";
 import { computeVoucherDiscount } from "./pricing";
-import { generateVoucherCode } from "./vouchers/codes";
+import { generateVoucherCode } from "./codes";
 
 describe("formatCurrencyAmount — srpska deklinacija", () => {
   const srca = { nameOne: "srce", nameFew: "srca", nameMany: "srca" };

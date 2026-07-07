@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Workspace paketi (engine-i) se isporučuju kao TS source — Next ih transpiluje
-  transpilePackages: ["@panta/diagnostic-engine"],
+  transpilePackages: ["@panta/diagnostic-engine", "@panta/loyalty-engine"],
 
   images: {
     remotePatterns: [
