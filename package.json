@@ -13,7 +13,8 @@
     "test": "jest",
     "test:engines": "npm test --workspaces --if-present",
     "migrate:subscription-index": "node --env-file=.env.local scripts/fix-subscription-index.mjs",
-    "backfill:identity": "echo 'Deprecated — backfill-user-identity script removed'"
+    "backfill:identity": "echo 'Deprecated — backfill-user-identity script removed'",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.19",
@@ -63,7 +64,8 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.16",
     "ts-jest": "^29.4.6",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.9"
   },
   "overrides": {
     "minimatch": "^10.2.1",
