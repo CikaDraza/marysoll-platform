@@ -43,7 +43,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="sr" suppressHydrationWarning data-scroll-behavior="smooth">
-      <body className="font-outfit antialiased">
+      {/* suppressHydrationWarning i na <body>: browser ekstenzije (ColorZilla
+          cz-shortcut-listen, Grammarly data-gr-*, LastPass…) ubace atribute u
+          <body> pre hidracije → lažni hydration mismatch. Suppress važi samo za
+          atribute ovog elementa, ne skriva stvarne mismatch-eve u stablu. */}
+      <body className="font-outfit antialiased" suppressHydrationWarning>
         {/* Marketing fontovi — ranije pokvaren @import u globals.css ("https: //"
             sa razmakom → browser ga rešava relativno na CSS fajl → 404 posle
             ~3s koji koči primenu stilova = FOUC). Linkovi u body-ju: React 19
