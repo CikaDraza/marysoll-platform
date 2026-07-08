@@ -22,7 +22,7 @@ const card =
   "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
 
 const chan =
-  "rounded-lg px-3 py-2 text-xs font-semibold border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition";
+  "rounded-lg px-3 py-2 text-xs font-semibold text-white cursor-pointer transition hover:brightness-110";
 
 export function ShareVoucherCard({
   friendReward,
@@ -142,13 +142,13 @@ export function ShareVoucherCard({
                   `https://wa.me/?text=${encodeURIComponent(buildMessage(result.code))}`,
                 )
               }
-              className={chan}
+              className={`${chan} bg-[#25D366]`}
             >
               WhatsApp
             </button>
             <button
               onClick={() => shareInstagram(result.code)}
-              className={chan}
+              className={`${chan} bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737]`}
             >
               Instagram
             </button>
@@ -158,7 +158,7 @@ export function ShareVoucherCard({
                   `sms:?&body=${encodeURIComponent(buildMessage(result.code))}`,
                 )
               }
-              className={chan}
+              className={`${chan} bg-blue-600`}
             >
               SMS
             </button>
@@ -168,7 +168,7 @@ export function ShareVoucherCard({
                   `mailto:?subject=${encodeURIComponent("Poklon za tebe 🎁")}&body=${encodeURIComponent(buildMessage(result.code))}`,
                 )
               }
-              className={chan}
+              className={`${chan} bg-gray-700`}
             >
               Email
             </button>
