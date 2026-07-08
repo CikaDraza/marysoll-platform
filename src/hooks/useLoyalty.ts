@@ -3,8 +3,12 @@
 /**
  * Growth Studio — klijentski React Query hookovi (panel "Nagrade").
  */
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+
+/** Stanje niza poseta (QR check-in): još nema / aktivan / prekinut (van prozora). */
+export type CheckinStreakStatus = "none" | "active" | "broken";
 
 // ─── Tipovi (mirror API response-a) ───────────────────────────────────────────
 
@@ -33,12 +37,16 @@ export interface LoyaltyMeResponse {
     lifetimePoints: number;
     completedVisits: number;
     currentStreak: number;
+    checkinStreak: number;
+    longestCheckinStreak: number;
+    lastCheckinAt: string | null;
   } | null;
   config: {
     currencies: { hearts: LoyaltyCurrencyInfo; points: LoyaltyCurrencyInfo };
     milestone: { heartsRequired: number; reward: LoyaltyRewardInfo } | null;
     pointsShop: Array<{ costPoints: number; reward: LoyaltyRewardInfo }>;
     celebration: { intensity: "off" | "subtle" | "normal" | "max" };
+    streak?: { windowDays: number };
     sharing: { enabled: boolean; friendReward: LoyaltyRewardInfo | null } | null;
   } | null;
 }
@@ -151,6 +159,37 @@ export function useShareVoucher() {
       queryClient.invalidateQueries({ queryKey: ["loyalty", "vouchers"] });
     },
   });
+}
+
+/**
+ * Stanje niza poseta izvedeno iz me odgovora — logika ovde (ne u JSX).
+ * none = još nema niza; active = poslednji check-in unutar prozora;
+ * broken = prošao prozor (resetuje se na sledećem check-inu). none/broken → UI grayscale.
+ */
+export function useCheckinStreak(me: LoyaltyMeResponse | undefined): {
+  streak: number;
+  longest: number;
+  status: CheckinStreakStatus;
+} {
+  // Snapshot vremena na mount (Date.now() nije dozvoljen u render-u/memo-u).
+  const [nowMs] = useState(() => Date.now());
+  return useMemo(() => {
+    const account = me?.account ?? null;
+    const streak = account?.checkinStreak ?? 0;
+    const longest = account?.longestCheckinStreak ?? 0;
+    const windowDays = me?.config?.streak?.windowDays ?? 45;
+    const lastMs = account?.lastCheckinAt
+      ? new Date(account.lastCheckinAt).getTime()
+      : NaN;
+
+    let status: CheckinStreakStatus = "none";
+    if (streak >= 1 && !Number.isNaN(lastMs)) {
+      const DAY = 86_400_000;
+      const gapDays = Math.floor(nowMs / DAY) - Math.floor(lastMs / DAY);
+      status = gapDays > windowDays ? "broken" : "active";
+    }
+    return { streak, longest, status };
+  }, [me, nowMs]);
 }
 
 // ─── Helperi za prikaz ────────────────────────────────────────────────────────

@@ -220,6 +220,27 @@ dovode nove — prvi engine koji Marysoll-u pravi network effect.
       marketplace rute optimizacija (odloženo iz Faze 3) — prvi potrošač
       Booking Engine API-ja.
 
+## Loyalty roadmap — V1 → V2 (potvrđeno 2026-07-08)
+
+**V1 (Loyalty · QR · Voucher · Points) — završava se prvo, radi bez referrala:**
+1. **QR check-in (A)** — salon prikaže QR → klijent skenira. JEDINI način u V1
+   (bez posla za osoblje, bez čekanja, radi u gužvi, jedan odštampan QR). ✅ napravljeno.
+2. **Streak** — odmah posle QR-a. Nije nagrada nego psihologija: klijent vidi
+   „🔥 5 uzastopnih dolazaka" i ne želi da izgubi niz → povećava povratak. Mala
+   implementacija, veliki efekat. ← SLEDEĆE
+3. **Share dugme** — Copy · Instagram · WhatsApp · SMS · Email (na telefonu jedan klik).
+4. **Guest → Registered merge** — PRE anon check-ina. Gosti već skupljaju ❤️/⭐/
+   vaučere/istoriju; sve to mora da preživi registraciju (važan UX).
+
+**V2 (Referral · Friend rewards · Sharing · Growth) — growth faza, na kraju:**
+5. **Anonymous check-in** — tek posle merge-a (anon korisnik, privremeni identitet,
+   spajanje naloga, sigurnost — ozbiljnija logika).
+6. **Referral Phase 2b** — poslednje. Loyalty već radi bez njega.
+
+**Future (NE sada) — Personal Client QR:** lični QR po klijentu, salon skenira
+kupca. Za PREMIUM/veće salone i više salona u sistemu jednog. Rešava manje
+problema nego što uvodi (QR po korisniku + kamera/skener + korak za osoblje).
+
 ## Redosled rada (potvrđeno 2026-07-07)
 
 ```

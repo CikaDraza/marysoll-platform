@@ -35,20 +35,35 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     enabled: active,
-    account: account ?? {
-      heartsBalance: 0,
-      pointsBalance: 0,
-      lifetimeHearts: 0,
-      lifetimePoints: 0,
-      completedVisits: 0,
-      currentStreak: 0,
-    },
+    account: account
+      ? {
+          ...account,
+          checkinStreak:
+            (account as { checkinStreak?: number }).checkinStreak ?? 0,
+          longestCheckinStreak:
+            (account as { longestCheckinStreak?: number })
+              .longestCheckinStreak ?? 0,
+          lastCheckinAt:
+            (account as { lastCheckinAt?: Date }).lastCheckinAt ?? null,
+        }
+      : {
+          heartsBalance: 0,
+          pointsBalance: 0,
+          lifetimeHearts: 0,
+          lifetimePoints: 0,
+          completedVisits: 0,
+          currentStreak: 0,
+          checkinStreak: 0,
+          longestCheckinStreak: 0,
+          lastCheckinAt: null,
+        },
     config: config
       ? {
           currencies: config.currencies,
           milestone,
           pointsShop: config.pointsShop ?? [],
           celebration: config.celebration,
+          streak: { windowDays: config.streak?.windowDays ?? 45 },
           sharing: config.sharing?.enabled
             ? {
                 enabled: true,
