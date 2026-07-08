@@ -22,7 +22,7 @@ const card =
   "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
 
 const chan =
-  "flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-white transition";
+  "rounded-lg px-3 py-2 text-xs font-semibold border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition";
 
 export function ShareVoucherCard({
   friendReward,
@@ -131,7 +131,7 @@ export function ShareVoucherCard({
             onClick={() => shareNative(result.code)}
             className="mt-3 w-full rounded-lg bg-violet-600 text-white text-sm font-semibold py-2.5 hover:bg-violet-700 transition"
           >
-            🔗 Podeli
+            Podeli
           </button>
 
           {/* Direktni kanali */}
@@ -142,15 +142,15 @@ export function ShareVoucherCard({
                   `https://wa.me/?text=${encodeURIComponent(buildMessage(result.code))}`,
                 )
               }
-              className={`${chan} bg-[#25D366] hover:opacity-90`}
+              className={chan}
             >
-              💬 WhatsApp
+              WhatsApp
             </button>
             <button
               onClick={() => shareInstagram(result.code)}
-              className={`${chan} bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737] hover:opacity-90`}
+              className={chan}
             >
-              📷 Instagram
+              Instagram
             </button>
             <button
               onClick={() =>
@@ -158,9 +158,9 @@ export function ShareVoucherCard({
                   `sms:?&body=${encodeURIComponent(buildMessage(result.code))}`,
                 )
               }
-              className={`${chan} bg-sky-600 hover:opacity-90`}
+              className={chan}
             >
-              📱 SMS
+              SMS
             </button>
             <button
               onClick={() =>
@@ -168,9 +168,9 @@ export function ShareVoucherCard({
                   `mailto:?subject=${encodeURIComponent("Poklon za tebe 🎁")}&body=${encodeURIComponent(buildMessage(result.code))}`,
                 )
               }
-              className={`${chan} bg-gray-600 hover:opacity-90`}
+              className={chan}
             >
-              📧 Email
+              Email
             </button>
           </div>
 
