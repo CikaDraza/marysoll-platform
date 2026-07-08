@@ -9,6 +9,7 @@ import {
   useLoyaltyMe,
   useLoyaltyLedger,
   useLoyaltyVouchers,
+  useCheckinStreak,
   formatLoyaltyAmount,
   describeLoyaltyReward,
   type LoyaltyVoucherInfo,
@@ -70,6 +71,7 @@ export default function ClientLoyalty() {
   const hasProgram = Boolean(me?.config);
   const { data: ledger } = useLoyaltyLedger(hasProgram);
   const { data: wallet } = useLoyaltyVouchers(hasProgram);
+  const streakState = useCheckinStreak(me);
 
   if (isLoading) {
     return (
@@ -117,18 +119,43 @@ export default function ClientLoyalty() {
       {/* ── Streak (niz poseta — navika, QR check-in) ── */}
 
       <div className="rounded-2xl bg-gradient-to-r from-gray-900 to-amber-500 text-white p-5 shadow-lg flex items-center gap-4">
-        <span className="text-4xl leading-none">🔥</span>
+        <span
+          className={`text-4xl leading-none ${
+            streakState.status === "active" ? "" : "grayscale"
+          }`}
+        >
+          🔥
+        </span>
         <div className="min-w-0 flex-1">
-          <p className="text-2xl font-black leading-none">
-            {account.checkinStreak}{" "}
-            <span className="text-sm font-bold">niz poseta</span>
-          </p>
-          <p className="text-xs text-amber-50 mt-1.5">
-            Ne prekidajte niz — skenirajte QR pri svakom dolasku!
-            {account.longestCheckinStreak > account.checkinStreak
-              ? ` Rekord: ${account.longestCheckinStreak}.`
-              : ""}
-          </p>
+          {streakState.status === "active" ? (
+            <>
+              <p className="text-2xl font-black leading-none">
+                {streakState.streak}{" "}
+                <span className="text-sm font-bold">niz poseta</span>
+              </p>
+              <p className="text-xs text-amber-50 mt-1.5">
+                Ne prekidajte niz — skenirajte QR pri svakom dolasku!
+                {streakState.longest > streakState.streak
+                  ? ` Rekord: ${streakState.longest}.`
+                  : ""}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-lg font-black leading-none">
+                {streakState.status === "broken"
+                  ? "Niz je prekinut — započnite ponovo"
+                  : "Započnite niz"}
+              </p>
+              <p className="text-[11px] text-amber-50/90 mt-1.5">
+                Kada dođete u salon, skenirajte QR kod — tek tada se dolazak
+                upisuje.
+              </p>
+              <p className="text-xs text-amber-50 mt-1">
+                Ne prekidajte niz — skenirajte QR pri svakom dolasku!
+              </p>
+            </>
+          )}
         </div>
       </div>
 
@@ -144,12 +171,10 @@ export default function ClientLoyalty() {
                 <>
                   <div className="flex items-center gap-1.5 text-3xl mt-2">
                     {Array.from({ length: required }, (_, i) => {
-                      const earned = i < Math.min(account.heartsBalance, required);
+                      const earned =
+                        i < Math.min(account.heartsBalance, required);
                       return (
-                        <span
-                          key={i}
-                          className={earned ? "" : "opacity-30 grayscale"}
-                        >
+                        <span key={i} className={earned ? "" : "opacity-90"}>
                           {earned ? hearts.emoji : "🩶"}
                         </span>
                       );

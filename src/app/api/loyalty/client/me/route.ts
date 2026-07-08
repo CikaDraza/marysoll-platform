@@ -43,6 +43,8 @@ export async function GET(req: NextRequest) {
           longestCheckinStreak:
             (account as { longestCheckinStreak?: number })
               .longestCheckinStreak ?? 0,
+          lastCheckinAt:
+            (account as { lastCheckinAt?: Date }).lastCheckinAt ?? null,
         }
       : {
           heartsBalance: 0,
@@ -53,6 +55,7 @@ export async function GET(req: NextRequest) {
           currentStreak: 0,
           checkinStreak: 0,
           longestCheckinStreak: 0,
+          lastCheckinAt: null,
         },
     config: config
       ? {
@@ -60,6 +63,7 @@ export async function GET(req: NextRequest) {
           milestone,
           pointsShop: config.pointsShop ?? [],
           celebration: config.celebration,
+          streak: { windowDays: config.streak?.windowDays ?? 45 },
           sharing: config.sharing?.enabled
             ? {
                 enabled: true,
