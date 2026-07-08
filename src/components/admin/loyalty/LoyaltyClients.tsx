@@ -221,6 +221,7 @@ export function LoyaltyClients() {
                 <th className="px-3 py-3">❤️</th>
                 <th className="px-3 py-3">⭐</th>
                 <th className="px-3 py-3">Posete</th>
+                <th className="px-3 py-3">🔥 Niz</th>
                 <th className="px-3 py-3">No-show</th>
                 <th className="px-3 py-3">Potrošnja</th>
                 <th className="px-3 py-3" />
@@ -240,6 +241,9 @@ export function LoyaltyClients() {
                   <td className="px-3 py-3 font-bold">{a.heartsBalance}</td>
                   <td className="px-3 py-3 font-bold">{a.pointsBalance}</td>
                   <td className="px-3 py-3">{a.completedVisits}</td>
+                  <td className="px-3 py-3 font-bold">
+                    {(a.checkinStreak ?? 0) > 0 ? `🔥 ${a.checkinStreak}` : "—"}
+                  </td>
                   <td className="px-3 py-3">{a.noShows}</td>
                   <td className="px-3 py-3">{a.totalSpend} RSD</td>
                   <td className="px-3 py-3 whitespace-nowrap text-right">

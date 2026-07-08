@@ -65,6 +65,8 @@ export interface LoyaltyAdminAccount {
   noShows: number;
   totalSpend: number;
   lastVisitAt?: string;
+  /** Niz poseta (QR check-in navika). Phase 1/2. */
+  checkinStreak?: number;
   client: { _id: string; name?: string; email?: string; role?: string } | null;
 }
 
