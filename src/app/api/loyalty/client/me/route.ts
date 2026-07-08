@@ -35,14 +35,25 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     enabled: active,
-    account: account ?? {
-      heartsBalance: 0,
-      pointsBalance: 0,
-      lifetimeHearts: 0,
-      lifetimePoints: 0,
-      completedVisits: 0,
-      currentStreak: 0,
-    },
+    account: account
+      ? {
+          ...account,
+          checkinStreak:
+            (account as { checkinStreak?: number }).checkinStreak ?? 0,
+          longestCheckinStreak:
+            (account as { longestCheckinStreak?: number })
+              .longestCheckinStreak ?? 0,
+        }
+      : {
+          heartsBalance: 0,
+          pointsBalance: 0,
+          lifetimeHearts: 0,
+          lifetimePoints: 0,
+          completedVisits: 0,
+          currentStreak: 0,
+          checkinStreak: 0,
+          longestCheckinStreak: 0,
+        },
     config: config
       ? {
           currencies: config.currencies,

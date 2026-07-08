@@ -114,6 +114,25 @@ export default function ClientLoyalty() {
         </div>
       )}
 
+      {/* ── Streak (niz poseta — navika, QR check-in) ── */}
+      {account.checkinStreak >= 1 && (
+        <div className="rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white p-5 shadow-lg flex items-center gap-4">
+          <span className="text-4xl leading-none">🔥</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-2xl font-black leading-none">
+              {account.checkinStreak}{" "}
+              <span className="text-sm font-bold">niz poseta</span>
+            </p>
+            <p className="text-xs text-amber-50 mt-1.5">
+              Ne prekidajte niz — skenirajte QR pri svakom dolasku!
+              {account.longestCheckinStreak > account.checkinStreak
+                ? ` Rekord: ${account.longestCheckinStreak}.`
+                : ""}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── Balans hero ── */}
       <div className="rounded-3xl bg-gradient-to-br from-violet-600 to-purple-700 text-white p-7 shadow-lg">
         <div className="flex flex-wrap items-start justify-between gap-6">

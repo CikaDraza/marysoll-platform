@@ -33,6 +33,8 @@ export interface LoyaltyMeResponse {
     lifetimePoints: number;
     completedVisits: number;
     currentStreak: number;
+    checkinStreak: number;
+    longestCheckinStreak: number;
   } | null;
   config: {
     currencies: { hearts: LoyaltyCurrencyInfo; points: LoyaltyCurrencyInfo };
