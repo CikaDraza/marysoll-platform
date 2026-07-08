@@ -222,7 +222,7 @@ export function LoyaltyClients() {
                 <th className="px-3 py-3">⭐</th>
                 <th className="px-3 py-3">Posete</th>
                 <th className="px-3 py-3">🔥 Niz</th>
-                <th className="px-3 py-3">No-show</th>
+                <th className="px-3 py-3">Nije došao</th>
                 <th className="px-3 py-3">Potrošnja</th>
                 <th className="px-3 py-3" />
               </tr>
