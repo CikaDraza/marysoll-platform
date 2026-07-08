@@ -241,6 +241,17 @@ dovode nove — prvi engine koji Marysoll-u pravi network effect.
 kupca. Za PREMIUM/veće salone i više salona u sistemu jednog. Rešava manje
 problema nego što uvodi (QR po korisniku + kamera/skener + korak za osoblje).
 
+**Future (NE sada) — Promenljiv kurs poena (per-category / per-service):** sada je
+jedan ravan kurs `points.per100Rsd`. Budući zahtev (kada se pojavi salon koji to
+traži): različit kurs po **kategoriji** i/ili **usluzi** (npr. termin 3200 RSD → 3
+poena, 2800 RSD → 2 poena; drugačiji odnos po kategoriji/usluzi). Config bi dobio
+mapu kurseva; engine bira kurs po usluzi termina. Ne trošiti vreme dok se ne pojavi
+konkretan salon-potreba.
+
+**Check-in dizajn — ZAKLJUČANO (2026-07-08):** QR check-in NIJE vezan za termin
+(namerno). Identitet = ulogovana sesija skenera; jedan check-in po klijentu/danu
+(streak+poeni). Srca ostaju po završenom terminu (admin). Ne dirati dalje.
+
 ## Redosled rada (potvrđeno 2026-07-07)
 
 ```
