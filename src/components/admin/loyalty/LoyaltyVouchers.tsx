@@ -131,7 +131,9 @@ function IssueForm({ onDone }: { onDone: () => void }) {
         </div>
         {type !== "free_service" ? (
           <div>
-            <label className={lbl}>{type === "percent" ? "Procenat" : "Iznos (RSD)"}</label>
+            <label className={lbl}>
+              {type === "percent" ? "Procenat" : "Iznos (RSD)"}
+            </label>
             <input
               type="number"
               min={0}
@@ -238,9 +240,7 @@ export function LoyaltyVouchers() {
                         : `Gratis: ${v.serviceName || "usluga"}`}
                   </td>
                   <td className="px-3 py-3">
-                    {v.owner?.name ?? (
-                      <span className="text-gray-400">—</span>
-                    )}
+                    {v.owner?.name ?? <span className="text-gray-400">—</span>}
                   </td>
                   <td className="px-3 py-3">
                     <span
@@ -260,7 +260,7 @@ export function LoyaltyVouchers() {
                         onClick={() => handleRevoke(v._id)}
                         className="text-xs font-bold text-rose-500 hover:text-rose-700"
                       >
-                        Povuci
+                        Poništi
                       </button>
                     )}
                   </td>
