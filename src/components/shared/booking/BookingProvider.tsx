@@ -8,6 +8,7 @@
  */
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -54,6 +55,10 @@ export interface BookingContextValue {
   guestData: GuestData;
   setGuestData: Dispatch<SetStateAction<GuestData>>;
   guestLoading: boolean;
+  /** Signal ako klijent već ima nalog (prevencija duplikata, Phase 4a). */
+  existingAccount: { exists: boolean; isRegistered: boolean } | null;
+  /** Proveri postoji li nalog (zvati na blur telefona/emaila u guest formi). */
+  checkExistingClient: () => void;
   /** true dok traje slanje termina za ulogovanog korisnika. */
   isSubmitting: boolean;
   // ── izvedeno ──
@@ -129,6 +134,37 @@ export function BookingProvider({
     tiktok: "",
   });
   const [guestLoading, setGuestLoading] = useState(false);
+
+  // ── Prevencija duplikata (Phase 4a): signal ako klijent već ima nalog ──
+  const [existingAccount, setExistingAccount] = useState<{
+    exists: boolean;
+    isRegistered: boolean;
+  } | null>(null);
+
+  const checkExistingClient = useCallback(async () => {
+    const email = guestData.email.trim();
+    const phone = guestData.phone.trim();
+    if (!email && !phone) {
+      setExistingAccount(null);
+      return;
+    }
+    try {
+      const qs = new URLSearchParams();
+      if (email) qs.set("email", email);
+      if (phone) qs.set("phone", phone);
+      const res = await fetch(
+        `/api/public/${tenantSlug}/appointments/check-client?${qs.toString()}`,
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      setExistingAccount({
+        exists: Boolean(data.exists),
+        isRegistered: Boolean(data.isRegistered),
+      });
+    } catch {
+      /* check nikad ne blokira booking */
+    }
+  }, [guestData.email, guestData.phone, tenantSlug]);
 
   useEffect(() => {
     async function init() {
@@ -434,6 +470,8 @@ export function BookingProvider({
     guestData,
     setGuestData,
     guestLoading,
+    existingAccount,
+    checkExistingClient,
     isSubmitting: createAppointment.isPending,
     selectedService,
     isManualMode,
