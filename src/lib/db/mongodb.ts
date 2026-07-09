@@ -8,25 +8,11 @@ import "server-only";
 
 import mongoose from "mongoose";
 
-// Staging izolacija (fail-closed): staging build ima NEXT_PUBLIC_BASE_DOMAIN=staging.*
-// i MORA da koristi zasebnu bazu (MONGODB_STAGING_URI) — nikad produkcijsku, jer se
-// na staging-u testira destruktivan flow (merge naloga). Prod build NIKAD ne čita
-// STAGING URI. Ako je staging a MONGODB_STAGING_URI nije postavljen → baci (ne pada
-// nazad na prod).
-const IS_STAGING = (process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "").startsWith(
-  "staging.",
-);
-const MONGODB_URI = IS_STAGING
-  ? process.env.MONGODB_STAGING_URI ?? ""
-  : process.env.MONGODB_URI ?? "";
+const MONGODB_URI = process.env.MONGODB_URI ?? "";
 const DB_NAME = process.env.DB_NAME || "marysoll_db";
 
 if (!MONGODB_URI) {
-  throw new Error(
-    IS_STAGING
-      ? "MONGODB_STAGING_URI nije definisan (staging deployment ne sme na prod bazu)"
-      : "MONGODB_URI nije definisan u environment variables",
-  );
+  throw new Error("MONGODB_URI nije definisan u environment variables");
 }
 
 interface MongooseCache {
