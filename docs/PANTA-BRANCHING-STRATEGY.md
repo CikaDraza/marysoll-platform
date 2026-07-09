@@ -125,30 +125,32 @@ potreban stabilan domen sa wildcard-om → `staging.marysoll.com`.
    - `NEXT_PUBLIC_BASE_DOMAIN=staging.marysoll.com` — **build-time inline** (NEXT_PUBLIC_);
      mora biti postavljen pre build-a staging deploya. ✅ dodato u Vercel.
    - `NEXT_PUBLIC_APP_URL=https://staging.marysoll.com` ✅ dodato.
-   - `MONGODB_STAGING_URI` = staging konekcija + `DB_NAME=marysoll_staging` (zasebna
-     baza). ✅ URI dodat. **Kritično**: kod čita `MONGODB_STAGING_URI` SAMO na
-     staging buildu (fail-closed, vidi ispod).
+   - `MONGODB_URI` — mora biti dostupan i staging (Preview) deploy-u. Pošto prod i
+     staging **dele istu bazu**, najlakše scope-ovati na **All Environments**.
    - `ALLOWED_ORIGINS` — za whoami cross-origin (staging apex ↔ admin.staging).
    - Paddle → test/sandbox ključevi. Ostalo (JWT, Cloudinary, AI, CRON_SECRET) deli se sa prod.
    - **Booking**: `booking.marysoll.com` se NE dira — nije potrebna posebna aplikacija za staging.
 
-### Bezbednost baze — fail-closed (URAĐENO)
+### Baza — JEDNA (`marysoll_db`), deljena prod+staging (odluka 2026-07-09)
 
-`src/lib/db/mongodb.ts`: kada je `NEXT_PUBLIC_BASE_DOMAIN=staging.*`, aplikacija
-koristi **isključivo** `MONGODB_STAGING_URI` (+ `DB_NAME=marysoll_staging`) i NIKAD
-produkcijsku bazu. Ako je staging a `MONGODB_STAGING_URI` nije postavljen → baca
-(ne pada nazad na prod). Prod build nikad ne čita STAGING URI. Time je destruktivan
-QA (merge naloga) izolovan od produkcijskih podataka.
+Odustali smo od odvojene staging baze. Staging je **samo domen + grana**, koristi
+**istu bazu `marysoll_db`** kao produkcija. Razlog: jednostavnije, i testira se na
+pravim demo tenantima (pravi mejlovi → provera dostave). `MONGODB_STAGING_URI` i
+`marysoll_staging` se ukidaju; ostaje samo `MONGODB_URI`. `mongodb.ts` vraćen na
+jedan URI (bez staging switch-a). Uklonjeni `/api/health/db` i `/api/seed/staging`
+(bili za odvojenu bazu).
 
-> **Staging baza je prazna (nova)** → treba naseliti demo tenante: **Kiki Kiss
-> Beauty** i **Shi Sham Frizerski Salon** (+ bar jedan superadmin/admin nalog) u
-> `marysoll_staging` da bi QA imao na čemu da radi.
+> **Posledica:** destruktivan QA (npr. merge) radi nad **pravom** bazom → raditi
+> samo na demo tenantima; merge par (gost+registrovan isti telefon) napraviti kroz
+> pravi booking/register tok (usput testira i Phase 4a prevenciju).
 
 ### Env-parametrizacije — status
 
 1. ✅ `next.config.ts` `redirects()` sada koristi `BASE_DOMAIN` env → admin/superadmin
    login redirect radi na staging-u.
-2. ⏳ `ALLOWED_ORIGINS` postaviti na staging origine (whoami sa credentials ne sme `*`).
+2. ✅ `getTenantUrl`/`getTenantPublicUrl` na staging-u koriste `{slug}.staging.marysoll.com`
+   (ne prod custom domen).
+3. ⏳ `ALLOWED_ORIGINS` postaviti na staging origine (whoami sa credentials ne sme `*`).
 
 ---
 
