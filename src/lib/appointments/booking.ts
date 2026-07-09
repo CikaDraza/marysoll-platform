@@ -156,17 +156,34 @@ export async function findOrCreateGuestUser(input: {
     tiktok,
   } = input;
 
+  // Reuse postojećeg GOSTA po email ILI telefonu (manje duplikata). Registrovani
+  // se NE prikačuje ovde — signal je prikazan u formi; nastaje nov gost (merge
+  // kandidat) da se tuđi nalog ne koristi bez prijave.
   let guestUser = null;
-  if (normalizedEmail) {
+  const guestOr: Record<string, unknown>[] = [];
+  if (normalizedEmail) guestOr.push({ email: normalizedEmail });
+  if (normalizedPhone) guestOr.push({ phone: normalizedPhone });
+  if (guestOr.length > 0) {
     guestUser = await TenantUser.findOne({
       tenantId: tenantObjectId,
-      email: normalizedEmail,
+      role: "GUEST",
+      $or: guestOr,
     });
   }
 
   if (!guestUser) {
+    // Ako email već pripada NEKOM nalogu (npr. registrovani) — ne možemo ga
+    // iskoristiti (unique {tenantId,email}) niti se prikačujemo → placeholder.
+    let emailForGuest = normalizedEmail;
+    if (normalizedEmail) {
+      const emailTaken = await TenantUser.exists({
+        tenantId: tenantObjectId,
+        email: normalizedEmail,
+      });
+      if (emailTaken) emailForGuest = "";
+    }
     const guestEmail =
-      normalizedEmail ||
+      emailForGuest ||
       `guest_${Date.now()}_${crypto.randomBytes(4).toString("hex")}@noemail.guest`;
     const placeholderPassword = await bcrypt.hash(
       crypto.randomBytes(16).toString("hex"),

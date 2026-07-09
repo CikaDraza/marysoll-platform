@@ -6,14 +6,44 @@ import {
   isPlaceholderGuestEmail,
   normalizeInstagram,
 } from "@/lib/contactRules";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchUsers } from "@/hooks/useSearchUsers";
 import { IUser } from "@/types";
 import ClientModalActionButtons from "./ClientModalActionButtons";
+import { useDuplicateGroups } from "@/hooks/useLoyaltyAdmin";
+import { MergePreviewModal } from "./loyalty/MergePreviewModal";
+
+interface DupInfo {
+  isKeeper: boolean;
+  targetId: string;
+  targetName: string;
+}
 
 export default function ClientsList() {
   const [query, setQuery] = useState("");
   const [date, setDate] = useState("");
+  const [mergePair, setMergePair] = useState<{
+    sourceId: string;
+    targetId: string;
+  } | null>(null);
+
+  // ⭐ Mogući duplikati (isti telefon, bar jedan gost) → badge + merge u listi
+  const { data: dupData } = useDuplicateGroups();
+  const dupMap = useMemo(() => {
+    const map = new Map<string, DupInfo>();
+    for (const g of dupData?.groups ?? []) {
+      const keeper =
+        g.accounts.find((a) => a.isRegistered) ?? g.accounts[0];
+      for (const a of g.accounts) {
+        map.set(a._id, {
+          isKeeper: a._id === keeper._id,
+          targetId: keeper._id,
+          targetName: keeper.name || keeper.email || "keeper",
+        });
+      }
+    }
+    return map;
+  }, [dupData]);
 
   const [debouncedText, setDebouncedText] = useState("");
   const [debouncedDate, setDebouncedDate] = useState("");
@@ -86,8 +116,13 @@ export default function ClientsList() {
             <li key={user.email} className="flex justify-between gap-x-6 py-5">
               <div className="flex flex-col min-w-0 gap-x-4">
                 <div className="min-w-0 flex-auto">
-                  <p className="text-sm/6 font-semibold text-gray-900 dark:text-gray-300">
+                  <p className="text-sm/6 font-semibold text-gray-900 dark:text-gray-300 flex items-center gap-2 flex-wrap">
                     {user.name}
+                    {dupMap.has(user._id) && (
+                      <span className="inline-block rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+                        Mogući duplikat
+                      </span>
+                    )}
                   </p>
                   {/* Gostima bez pravog emaila se ne prikazuje generički
                       guest_...@noemail.guest — nego Instagram pa telefon */}
@@ -105,7 +140,23 @@ export default function ClientsList() {
                       </p>
                     )}
                 </div>
-                <ClientModalActionButtons userIsSet={user} />
+                <div className="flex items-center gap-3 flex-wrap">
+                  <ClientModalActionButtons userIsSet={user} />
+                  {dupMap.get(user._id) &&
+                    !dupMap.get(user._id)!.isKeeper && (
+                      <button
+                        onClick={() =>
+                          setMergePair({
+                            sourceId: user._id,
+                            targetId: dupMap.get(user._id)!.targetId,
+                          })
+                        }
+                        className="text-xs font-bold text-violet-600 hover:text-violet-800"
+                      >
+                        Spoji sa {dupMap.get(user._id)!.targetName} →
+                      </button>
+                    )}
+                </div>
               </div>
               <div className="hidden shrink-0 sm:flex sm:flex-col sm:items-end">
                 <div className="mt-1 flex flex-col items-end gap-x-1.5">
@@ -147,6 +198,14 @@ export default function ClientsList() {
         (searching && (
           <p className="text-xs text-gray-500 mt-1">Učitavanje korisnika...</p>
         ))}
+
+      {mergePair && (
+        <MergePreviewModal
+          sourceId={mergePair.sourceId}
+          targetId={mergePair.targetId}
+          onClose={() => setMergePair(null)}
+        />
+      )}
     </div>
   );
 }

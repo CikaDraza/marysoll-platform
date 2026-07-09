@@ -109,6 +109,8 @@ interface ITenantUser extends Document {
   /** Pun datum rođenja (profil klijenta). Loyalty birthday reward čita
    *  dan/mesec sa LoyaltyAccount.birthday — ovo je izvor za profil. */
   birthday?: Date | null;
+  /** Guest→Registered merge: referenca na "keeper" nalog kada je ovaj spojen. */
+  mergedInto?: Types.ObjectId | null;
 
   // ── Activity ─────────────────────────────────────────────────────────────
   isOnline: boolean;
@@ -205,6 +207,16 @@ const tenantUserSchema = new Schema<ITenantUser>(
     },
     birthday: {
       type: Date,
+      default: null,
+    },
+    /**
+     * Guest→Registered merge: kada se ovaj (obično GUEST) nalog spoji u drugi,
+     * čuva referencu na "keeper" nalog. Soft-delete: status se postavi na
+     * suspended, podaci ostaju za audit/povratak. (Phase 4c)
+     */
+    mergedInto: {
+      type: Schema.Types.ObjectId,
+      ref: "TenantUser",
       default: null,
     },
 
