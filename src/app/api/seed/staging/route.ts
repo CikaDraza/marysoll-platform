@@ -321,7 +321,11 @@ async function seedTenant(spec: TenantSpec, hashed: string) {
   };
 }
 
-async function runSeed(secret: string | null, reset: boolean) {
+async function runSeed(
+  secret: string | null,
+  reset: boolean,
+  wipe: boolean,
+) {
   const seedSecret = process.env.SEED_SECRET;
   const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
   const isStaging = baseDomain.startsWith("staging.");
@@ -345,24 +349,40 @@ async function runSeed(secret: string | null, reset: boolean) {
     return NextResponse.json({ error: "Nevažeći seed secret." }, { status: 401 });
   }
 
-  await connectToDB();
+  const conn = await connectToDB();
+  const dbName = conn.connection?.db?.databaseName ?? null;
 
   const slugs = SPECS.map((s) => s.slug);
+  const ownerEmails = SPECS.map((s) => s.ownerEmail.toLowerCase());
   const existing = await Tenant.find({ slug: { $in: slugs } })
     .select("_id slug")
     .lean<{ _id: Types.ObjectId; slug: string }[]>();
 
+  // ── WIPE: samo obriši demo podatke (bez sejanja) — čišćenje pogrešne baze. ──
+  if (wipe) {
+    for (const t of existing) await deleteTenantData(t._id);
+    await Tenant.deleteMany({ slug: { $in: slugs } });
+    await AuthUser.deleteMany({ email: { $in: ownerEmails } });
+    return NextResponse.json({
+      wiped: true,
+      dbName, // gde je čišćeno — proveri da je očekivana baza!
+      removedTenants: existing.map((t) => t.slug),
+    });
+  }
+
   if (existing.length > 0) {
     if (!reset) {
       return NextResponse.json({
-        message: "Već posejano. Dodaj &reset=true da obrišeš i posejaš iznova.",
+        message:
+          "Već posejano. &reset=true = obriši+posej iznova. &wipe=true = samo obriši.",
+        dbName,
         existing: existing.map((t) => t.slug),
       });
     }
     // reset: obriši demo podatke + vlasnike (scope: samo demo tenanti).
     for (const t of existing) await deleteTenantData(t._id);
     await Tenant.deleteMany({ slug: { $in: slugs } });
-    await AuthUser.deleteMany({ email: { $in: SPECS.map((s) => s.ownerEmail.toLowerCase()) } });
+    await AuthUser.deleteMany({ email: { $in: ownerEmails } });
   }
 
   const hashed = await bcrypt.hash(PASSWORD, 12);
@@ -371,6 +391,7 @@ async function runSeed(secret: string | null, reset: boolean) {
 
   return NextResponse.json({
     success: true,
+    dbName, // potvrda u koju bazu je posejano
     password: PASSWORD,
     note: "Login (admin): /api/auth/login ili staging login sa ownerLogin+password. Merge QA: admin dashboard → Growth Studio → Mogući duplikati.",
     tenants: results,
@@ -379,15 +400,24 @@ async function runSeed(secret: string | null, reset: boolean) {
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  return runSeed(searchParams.get("secret"), searchParams.get("reset") === "true");
+  return runSeed(
+    searchParams.get("secret"),
+    searchParams.get("reset") === "true",
+    searchParams.get("wipe") === "true",
+  );
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
-  const { secret, reset } = (body ?? {}) as { secret?: string; reset?: boolean };
+  const { secret, reset, wipe } = (body ?? {}) as {
+    secret?: string;
+    reset?: boolean;
+    wipe?: boolean;
+  };
   const { searchParams } = new URL(req.url);
   return runSeed(
     secret ?? searchParams.get("secret"),
     reset === true || searchParams.get("reset") === "true",
+    wipe === true || searchParams.get("wipe") === "true",
   );
 }
