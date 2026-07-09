@@ -8,13 +8,12 @@
  * — sistem flaguje, vlasnik potvrdi.
  */
 import { useState } from "react";
-import toast from "react-hot-toast";
 import {
   useDuplicateGroups,
-  useMergeUsers,
   type DuplicateAccount,
   type DuplicateGroup,
 } from "@/hooks/useLoyaltyAdmin";
+import { MergePreviewModal } from "./MergePreviewModal";
 
 const card =
   "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm";
@@ -35,21 +34,21 @@ function RoleBadge({ isRegistered }: { isRegistered: boolean }) {
 
 function AccountCard({
   account,
-  selected,
-  onSelect,
+  isKeeper,
+  onSelectKeeper,
+  onMerge,
 }: {
   account: DuplicateAccount;
-  selected: boolean;
-  onSelect: () => void;
+  isKeeper: boolean;
+  onSelectKeeper: () => void;
+  onMerge: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`text-left rounded-xl border p-4 transition ${
-        selected
-          ? "border-violet-500 ring-2 ring-violet-500/30 bg-violet-50/50 dark:bg-violet-900/10"
-          : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+    <div
+      className={`rounded-xl border p-4 transition ${
+        isKeeper
+          ? "border-emerald-400 ring-2 ring-emerald-500/20 bg-emerald-50/40 dark:bg-emerald-900/10"
+          : "border-gray-200 dark:border-gray-700"
       }`}
     >
       <div className="flex items-center justify-between gap-2 mb-2">
@@ -68,42 +67,38 @@ function AccountCard({
         <span>Posete: {account.visits}</span>
         <span>Termini: {account.appointments}</span>
       </div>
-      <p className="mt-2 text-[11px] font-bold text-violet-600 dark:text-violet-400">
-        {selected ? "✓ Zadržava se (keeper)" : "Klikni da bude keeper"}
-      </p>
-    </button>
+      <div className="mt-3">
+        {isKeeper ? (
+          <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+            ✓ Zadržava se (keeper)
+          </p>
+        ) : (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onSelectKeeper}
+              className="text-[11px] font-bold text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
+            >
+              Postavi kao keeper
+            </button>
+            <button
+              onClick={onMerge}
+              className="text-[11px] font-bold text-violet-600 hover:text-violet-800"
+            >
+              Spoji u keeper →
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
 function GroupCard({ group }: { group: DuplicateGroup }) {
-  const merge = useMergeUsers();
   // Podrazumevani keeper: prvi registrovani, inače prvi u grupi.
   const defaultKeeper =
     group.accounts.find((a) => a.isRegistered)?._id ?? group.accounts[0]._id;
   const [keeperId, setKeeperId] = useState(defaultKeeper);
-  const [confirming, setConfirming] = useState(false);
-
-  const sources = group.accounts.filter((a) => a._id !== keeperId);
-  const keeper = group.accounts.find((a) => a._id === keeperId);
-
-  const handleMerge = async () => {
-    try {
-      for (const src of sources) {
-        await merge.mutateAsync({ sourceId: src._id, targetId: keeperId });
-      }
-      toast.success(
-        sources.length > 1
-          ? `${sources.length} naloga spojena u ${keeper?.name || "keeper"}`
-          : `Nalog spojen u ${keeper?.name || "keeper"}`,
-      );
-      setConfirming(false);
-    } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { error?: string } } })?.response?.data
-          ?.error ?? "Greška pri spajanju";
-      toast.error(msg);
-    }
-  };
+  const [mergeSourceId, setMergeSourceId] = useState<string | null>(null);
 
   return (
     <div className={`${card} p-5`}>
@@ -123,49 +118,19 @@ function GroupCard({ group }: { group: DuplicateGroup }) {
           <AccountCard
             key={a._id}
             account={a}
-            selected={a._id === keeperId}
-            onSelect={() => setKeeperId(a._id)}
+            isKeeper={a._id === keeperId}
+            onSelectKeeper={() => setKeeperId(a._id)}
+            onMerge={() => setMergeSourceId(a._id)}
           />
         ))}
       </div>
 
-      {!confirming ? (
-        <div className="mt-4 flex justify-end">
-          <button
-            onClick={() => setConfirming(true)}
-            className="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold transition"
-          >
-            Spoji naloge
-          </button>
-        </div>
-      ) : (
-        <div className="mt-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10 p-4">
-          <p className="text-sm text-amber-800 dark:text-amber-200">
-            Spajaš{" "}
-            <b>
-              {sources.map((s) => s.name || s.email || "gost").join(", ")}
-            </b>{" "}
-            u <b>{keeper?.name || "keeper"}</b>. Termini, poeni i vaučeri prelaze
-            na keeper; ostali nalozi se deaktiviraju. Ova akcija se ne poništava
-            automatski.
-          </p>
-          <div className="mt-3 flex justify-end gap-2">
-            <button
-              onClick={() => setConfirming(false)}
-              disabled={merge.isPending}
-              className="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 transition"
-            >
-              Otkaži
-            </button>
-            <button
-              onClick={handleMerge}
-              disabled={merge.isPending}
-              className="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm font-bold transition"
-            >
-              {merge.isPending ? "Spajanje..." : "Potvrdi spajanje"}
-            </button>
-          </div>
-        </div>
+      {mergeSourceId && (
+        <MergePreviewModal
+          sourceId={mergeSourceId}
+          targetId={keeperId}
+          onClose={() => setMergeSourceId(null)}
+        />
       )}
     </div>
   );

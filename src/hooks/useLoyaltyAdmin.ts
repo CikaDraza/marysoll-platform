@@ -224,6 +224,7 @@ export function useDuplicateGroups() {
 
 export interface MergeResult {
   ok: boolean;
+  alreadyMerged?: boolean;
   moved: {
     appointments: number;
     ledger: number;
@@ -242,6 +243,57 @@ export function useMergeUsers() {
       (await api.post("/users/merge", params)).data as MergeResult,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["loyaltyAdmin"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
+  });
+}
+
+// ─── Merge preview (backend-računat before/after + moves + rizici) ─────────────
+
+export interface MergeAccountSummary {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  isRegistered: boolean;
+  status: string;
+  hearts: number;
+  points: number;
+  visits: number;
+  vouchers: number;
+}
+
+export interface MergeMoves {
+  appointments: number;
+  ledgerEntries: number;
+  loyaltyEvents: number;
+  vouchersOwned: number;
+  vouchersGifted: number;
+  notifications: number;
+  testimonials: number;
+  audienceContacts: number;
+}
+
+export interface MergePreview {
+  allowed: boolean;
+  reason?: string;
+  source: MergeAccountSummary | null;
+  target: MergeAccountSummary | null;
+  after: { hearts: number; points: number; visits: number; vouchers: number } | null;
+  moves: MergeMoves | null;
+  risks: string[];
+}
+
+export function useMergePreview(
+  sourceId: string | null,
+  targetId: string | null,
+) {
+  return useQuery<MergePreview>({
+    queryKey: ["loyaltyAdmin", "mergePreview", sourceId, targetId],
+    queryFn: async () =>
+      (await api.post("/users/merge/preview", { sourceId, targetId })).data,
+    enabled: Boolean(sourceId && targetId),
+    staleTime: 5_000,
   });
 }

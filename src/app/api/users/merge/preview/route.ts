@@ -1,14 +1,14 @@
 /**
- * POST /api/users/merge — admin: spoji duplikat nalog u keeper (Phase 4c).
- * Body: { sourceId (duplikat), targetId (keeper) }. Poziva mergeTenantUsers.
+ * POST /api/users/merge/preview — admin: šta bi merge pomerio + before/after zbir.
+ * Read-only (ne mutira). Modal prikazuje ove brojeve; ne računa na frontu.
+ * Body: { sourceId, targetId }.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-server";
-import { mergeTenantUsers } from "@/lib/users/mergeTenantUsers";
 import { buildMergePreview } from "@/lib/users/mergePreview";
 
-const mergeSchema = z.object({
+const schema = z.object({
   sourceId: z.string().min(1),
   targetId: z.string().min(1),
 });
@@ -30,35 +30,20 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Nevalidan JSON" }, { status: 400 });
   }
-  const parsed = mergeSchema.safeParse(body);
+  const parsed = schema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Nevalidni podaci" }, { status: 400 });
   }
 
   try {
-    // Server-side enforce: ne spajaj ako preview kaže da nije dozvoljeno.
     const preview = await buildMergePreview({
       tenantId: decoded.tenantId,
       sourceId: parsed.data.sourceId,
       targetId: parsed.data.targetId,
     });
-    if (!preview.allowed) {
-      return NextResponse.json(
-        { error: preview.reason ?? "Spajanje nije dozvoljeno." },
-        { status: 400 },
-      );
-    }
-    const result = await mergeTenantUsers({
-      tenantId: decoded.tenantId,
-      sourceId: parsed.data.sourceId,
-      targetId: parsed.data.targetId,
-    });
-    return NextResponse.json(result);
+    return NextResponse.json(preview);
   } catch (err) {
-    console.error("[users/merge] failed:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Greška pri spajanju" },
-      { status: 400 },
-    );
+    console.error("[users/merge/preview] failed:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
