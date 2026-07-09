@@ -192,3 +192,56 @@ export function useRevokeLoyaltyVoucher() {
     },
   });
 }
+
+// ─── Duplikati / merge (Phase 4b/4c) ───────────────────────────────────────────
+
+export interface DuplicateAccount {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  isRegistered: boolean;
+  createdAt: string | null;
+  hearts: number;
+  points: number;
+  visits: number;
+  appointments: number;
+}
+
+export interface DuplicateGroup {
+  key: string;
+  accounts: DuplicateAccount[];
+}
+
+export function useDuplicateGroups() {
+  return useQuery<{ groups: DuplicateGroup[] }>({
+    queryKey: ["loyaltyAdmin", "duplicates"],
+    queryFn: async () => (await api.get("/users/duplicates")).data,
+    staleTime: 15_000,
+  });
+}
+
+export interface MergeResult {
+  ok: boolean;
+  moved: {
+    appointments: number;
+    ledger: number;
+    events: number;
+    vouchers: number;
+    notifications: number;
+    testimonials: number;
+    audience: number;
+  };
+}
+
+export function useMergeUsers() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { sourceId: string; targetId: string }) =>
+      (await api.post("/users/merge", params)).data as MergeResult,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["loyaltyAdmin"] });
+    },
+  });
+}

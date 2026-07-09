@@ -15,8 +15,9 @@ import {
 } from "@/hooks/useLoyaltyAdmin";
 import { LoyaltyClients } from "./LoyaltyClients";
 import { LoyaltyVouchers } from "./LoyaltyVouchers";
+import { LoyaltyDuplicates } from "./LoyaltyDuplicates";
 
-type Section = "podesavanja" | "klijenti" | "vauceri";
+type Section = "podesavanja" | "klijenti" | "duplikati" | "vauceri";
 
 const card =
   "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
@@ -705,6 +706,7 @@ export default function AdminGrowthStudio() {
   const sections: { id: Section; label: string }[] = [
     { id: "podesavanja", label: "Podešavanja" },
     { id: "klijenti", label: "Klijenti" },
+    { id: "duplikati", label: "Mogući duplikati" },
     { id: "vauceri", label: "Vaučeri" },
   ];
 
@@ -738,6 +740,7 @@ export default function AdminGrowthStudio() {
 
       {section === "podesavanja" && <ConfigForm />}
       {section === "klijenti" && <LoyaltyClients />}
+      {section === "duplikati" && <LoyaltyDuplicates />}
       {section === "vauceri" && <LoyaltyVouchers />}
     </div>
   );
