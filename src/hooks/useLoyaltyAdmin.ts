@@ -261,6 +261,7 @@ export interface MergeAccountSummary {
   hearts: number;
   points: number;
   visits: number;
+  appointments: number;
   vouchers: number;
 }
 
@@ -280,7 +281,13 @@ export interface MergePreview {
   reason?: string;
   source: MergeAccountSummary | null;
   target: MergeAccountSummary | null;
-  after: { hearts: number; points: number; visits: number; vouchers: number } | null;
+  after: {
+    hearts: number;
+    points: number;
+    visits: number;
+    appointments: number;
+    vouchers: number;
+  } | null;
   moves: MergeMoves | null;
   risks: string[];
 }

@@ -30,6 +30,7 @@ export interface MergeAccountSummary {
   hearts: number;
   points: number;
   visits: number;
+  appointments: number;
   vouchers: number;
 }
 
@@ -49,7 +50,13 @@ export interface MergePreview {
   reason?: string;
   source: MergeAccountSummary | null;
   target: MergeAccountSummary | null;
-  after: { hearts: number; points: number; visits: number; vouchers: number } | null;
+  after: {
+    hearts: number;
+    points: number;
+    visits: number;
+    appointments: number;
+    vouchers: number;
+  } | null;
   moves: MergeMoves | null;
   risks: string[];
 }
@@ -81,10 +88,10 @@ async function summarize(
   })
     .select("heartsBalance pointsBalance completedVisits referralCode")
     .lean<AccountLean | null>();
-  const vouchers = await Voucher.countDocuments({
-    tenantId,
-    ownerTenantUserId: user._id,
-  });
+  const [vouchers, appointments] = await Promise.all([
+    Voucher.countDocuments({ tenantId, ownerTenantUserId: user._id }),
+    Appointment.countDocuments({ tenantId, clientProfileId: user._id }),
+  ]);
   return {
     summary: {
       _id: String(user._id),
@@ -97,6 +104,7 @@ async function summarize(
       hearts: account?.heartsBalance ?? 0,
       points: account?.pointsBalance ?? 0,
       visits: account?.completedVisits ?? 0,
+      appointments,
       vouchers,
     },
     referralCode: account?.referralCode,
@@ -177,6 +185,7 @@ export async function buildMergePreview(input: {
     hearts: src.summary.hearts + tgt.summary.hearts,
     points: src.summary.points + tgt.summary.points,
     visits: src.summary.visits + tgt.summary.visits,
+    appointments: src.summary.appointments + tgt.summary.appointments,
     vouchers: src.summary.vouchers + tgt.summary.vouchers,
   };
 
