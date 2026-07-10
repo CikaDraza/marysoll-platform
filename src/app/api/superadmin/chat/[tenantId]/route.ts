@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { SuperAdminChat } from "@/models/SuperAdminChat";
-import { getSalonBranding } from "@/lib/notificationService";
 import { requireAuth } from "@/lib/auth/auth-server";
-import { sendWebPushToUser, sendWebPushToSuperAdmins } from "@/lib/webPush";
+import {
+  notifyOwnersOfChatMessage,
+  notifySuperAdminsOfChatMessage,
+} from "@/lib/superAdminChat/notify";
 
 export async function GET(
   request: NextRequest,
@@ -79,31 +81,17 @@ export async function POST(
   chat.lastMessageAt = new Date();
   await chat.save();
 
-  // Push to owner when superadmin sends — ownerId is a TenantUser._id
-  if (senderRole === "superadmin" && chat.ownerId) {
-    try {
-      await sendWebPushToUser(chat.ownerId.toString(), {
-        title: "Marysoll",
-        body: `💬 Marysoll Support: ${content.slice(0, 80)}`,
-        icon: "/marysoll_elegant_logo.png",
-        tag: `superadmin-chat-${tenantId}`,
-        url: "/admin/chat/superadmin",
-      });
-    } catch { /* push is non-critical */ }
-  }
-
-  // Push to all superadmins when the salon owner sends a message
-  if (senderRole === "owner") {
-    try {
-      const { icon, name: salonName } = await getSalonBranding(tenantId);
-      await sendWebPushToSuperAdmins({
-        title: salonName,
-        body: `💬 ${salonName}: ${content.slice(0, 80) || "📎 Prilog"}`,
-        icon,
-        tag: `superadmin-chat-${tenantId}`,
-        url: "/superadmin",
-      });
-    } catch { /* push is non-critical */ }
+  // Zvonce + push + throttle-ovan email (simetrično; nikad ne baca).
+  const hasAttachment = attachments.length > 0;
+  if (senderRole === "superadmin") {
+    await notifyOwnersOfChatMessage({ tenantId, content, hasAttachment });
+  } else {
+    await notifySuperAdminsOfChatMessage({
+      tenantId,
+      senderTenantUserId: decoded.id,
+      content,
+      hasAttachment,
+    });
   }
 
   return NextResponse.json({ success: true });
