@@ -792,6 +792,7 @@ export interface SalonProfile {
   branding?: IBranding;
   landingStructure?: LandingStructure;
   isDemo?: boolean;
+  clientGender?: ClientGender;
 }
 
 export type LandingTheme =
@@ -837,7 +838,15 @@ export interface ISalonProfileForm {
   branding: IBranding;
   landingTheme: LandingTheme;
   landingStructure: LandingStructure;
+  clientGender?: ClientGender;
 }
+
+/**
+ * Rod klijentele salona za obraćanje u tekstovima (dugmad, badge-evi,
+ * obaveštenja). "neutral" = trenutno ponašanje (dual/muški oblik);
+ * "female" = ženski rod (npr. salon za trepavice/nokte sa ženskom klijentelom).
+ */
+export type ClientGender = "neutral" | "female";
 
 export interface IServiceLanding {
   headline: string;
@@ -1121,6 +1130,7 @@ export interface SalonProfileData {
   description: string;
   landingTheme?: LandingTheme;
   landingStructure?: LandingStructure;
+  clientGender?: ClientGender;
   isDemo?: boolean;
   logo?: string | null;
   phone: string;

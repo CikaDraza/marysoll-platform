@@ -13,6 +13,8 @@ import { useMarkMessagesSeen } from "@/hooks/useMarkMessagesSeen";
 import Paginator from "../elements/Paginator";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuth } from "@/hooks/useAuth";
+import { useTenant } from "@/contexts/TenantContext";
+import { noShowLabel } from "@/lib/clientWording";
 
 interface ClientAppointmentListItemProps {
   appointment: IAppointment;
@@ -28,6 +30,7 @@ function ClientAppointmentListItem({
   ) || { isOnline: false };
 
   const unreadClient = appointment.unreadCount?.client ?? 0;
+  const { clientGender } = useTenant();
 
   // Uzmi ažurirani appointment sa najnovijim porukama
   const currentAppointment = appointment;
@@ -72,7 +75,8 @@ function ClientAppointmentListItem({
               {currentAppointment.status === "appointment_cancelled" &&
                 "Otkazano"}
               {currentAppointment.status === "completed" && "Završeno"}
-              {currentAppointment.status === "no_show" && "Nije došao"}
+              {currentAppointment.status === "no_show" &&
+                noShowLabel(clientGender)}
             </span>
             {unreadClient !== 0 && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-(--secondary-color) text-white animate-pulse">

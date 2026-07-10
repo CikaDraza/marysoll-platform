@@ -50,6 +50,7 @@ export default async function TenantLayout({
   // matching themed form (e.g. the Y2K forms for "theme-8"). 5-min cached.
   const profile = await fetchPublicSalonProfile(tenantSlug);
   const landingTheme = profile?.landingTheme;
+  const clientGender = profile?.clientGender;
 
   return (
     <TenantProvider
@@ -57,6 +58,7 @@ export default async function TenantLayout({
       tenantId={tenantId}
       base={base}
       landingTheme={landingTheme}
+      clientGender={clientGender}
     >
       <TenantThemeController />
       {children}

@@ -13,6 +13,8 @@ import Paginator from "../elements/Paginator";
 import { useDebounce } from "@/hooks/useDebounce";
 import LoaderButton from "../elements/LoaderButton";
 import { hasAppointmentStarted } from "@/lib/appointments/cancellation";
+import { useSalonProfile } from "@/hooks/useSalonProfile";
+import { arrivedLabel, noShowLabel } from "@/lib/clientWording";
 
 interface AppointmentListItemProps {
   appointment: IAppointment;
@@ -25,6 +27,8 @@ function AppointmentListItem({
   onOpenChat,
 }: AppointmentListItemProps) {
   const { updateAppointmentStatus } = useAppointmentMutations();
+  const { data: salon } = useSalonProfile();
+  const clientGender = salon?.clientGender;
   const { data: response, isLoading, isError, isFetching } = useAppointments();
   const { isOnline } = useUsers().data?.find(
     (u) => u._id === appointment.clientProfileId,
@@ -92,7 +96,8 @@ function AppointmentListItem({
               {currentAppointment.status === "appointment_cancelled" &&
                 "Otkazano"}
               {currentAppointment.status === "completed" && "Završeno"}
-              {currentAppointment.status === "no_show" && "Nije došao"}
+              {currentAppointment.status === "no_show" &&
+                noShowLabel(clientGender)}
             </span>
             {unreadAdmin !== 0 && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-(--secondary-color) text-white animate-pulse">
@@ -193,13 +198,13 @@ function AppointmentListItem({
                   onClick={() => handleStatusUpdate("completed")}
                   className="cursor-pointer px-3 py-1 bg-teal-600 text-white text-xs rounded hover:bg-teal-700 transition-colors"
                 >
-                  Došao
+                  {arrivedLabel(clientGender)}
                 </button>
                 <button
                   onClick={() => handleStatusUpdate("no_show")}
                   className="cursor-pointer px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
                 >
-                  Nije došao
+                  {noShowLabel(clientGender)}
                 </button>
               </>
             )}

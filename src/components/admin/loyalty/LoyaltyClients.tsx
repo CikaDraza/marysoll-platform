@@ -12,6 +12,8 @@ import {
   useAdjustLoyaltyAccount,
   type LoyaltyAdminAccount,
 } from "@/hooks/useLoyaltyAdmin";
+import { useSalonProfile } from "@/hooks/useSalonProfile";
+import { noShowLabel } from "@/lib/clientWording";
 
 const card =
   "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm";
@@ -192,6 +194,8 @@ function LedgerDrawer({
 export function LoyaltyClients() {
   const [q, setQ] = useState("");
   const { data, isLoading } = useLoyaltyAdminAccounts(q);
+  const { data: salon } = useSalonProfile();
+  const clientGender = salon?.clientGender;
   const [ledgerFor, setLedgerFor] = useState<LoyaltyAdminAccount | null>(null);
   const [adjustFor, setAdjustFor] = useState<LoyaltyAdminAccount | null>(null);
 
@@ -222,7 +226,7 @@ export function LoyaltyClients() {
                 <th className="px-3 py-3">⭐</th>
                 <th className="px-3 py-3">Posete</th>
                 <th className="px-3 py-3">🔥 Niz</th>
-                <th className="px-3 py-3">Nije došao</th>
+                <th className="px-3 py-3">{noShowLabel(clientGender)}</th>
                 <th className="px-3 py-3">Potrošnja</th>
                 <th className="px-3 py-3" />
               </tr>

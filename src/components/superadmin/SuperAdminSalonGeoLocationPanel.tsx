@@ -1,8 +1,13 @@
 "use client";
 
-import { MapPinIcon, GlobeAltIcon } from "@heroicons/react/24/outline";
+import {
+  MapPinIcon,
+  GlobeAltIcon,
+  UserIcon,
+} from "@heroicons/react/24/outline";
 import { useSuperAdminSalonGeoLocation } from "@/hooks/useSuperAdminSalonGeoLocation";
 import { useSuperAdminSalonMarketplace } from "@/hooks/useSuperAdminSalonMarketplace";
+import { useSuperAdminSalonClientGender } from "@/hooks/useSuperAdminSalonClientGender";
 
 type Props = {
   tenantId: string;
@@ -105,6 +110,48 @@ export function SuperAdminSalonGeoLocationPanel({ tenantId }: Props) {
       </div>
 
       <MarketplaceControls tenantId={tenantId} />
+
+      <ClientGenderControls tenantId={tenantId} />
+    </div>
+  );
+}
+
+function ClientGenderControls({ tenantId }: { tenantId: string }) {
+  const cg = useSuperAdminSalonClientGender(tenantId);
+
+  return (
+    <div className="border-t border-slate-700 pt-4">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-pink-950/60 text-pink-300">
+          <UserIcon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+            Ženski rod klijentele
+          </p>
+          <p className="mt-1 text-sm text-slate-300">
+            {cg.isFemale
+              ? "Obraćanje u ženskom rodu (npr. „Nije došla“)."
+              : "Neutralno/muški rod (podrazumevano)."}
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={cg.isFemale}
+          onClick={cg.toggleFemale}
+          disabled={cg.isSaving || cg.isLoading}
+          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:opacity-40 ${
+            cg.isFemale ? "bg-pink-600" : "bg-slate-600"
+          }`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+              cg.isFemale ? "translate-x-6" : "translate-x-1"
+            }`}
+          />
+        </button>
+      </div>
     </div>
   );
 }

@@ -21,6 +21,7 @@ import { motion } from "framer-motion";
 import AlertModal from "../modals/AlertModal";
 import { canClientCancelAppointment } from "@/lib/appointments/cancellation";
 import { statusMeta } from "@/lib/appointmentColors";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface Props {
   isOpen: boolean;
@@ -67,6 +68,7 @@ export default function ClientEditModal({
   const { updateClientAppointment, cancelClientAppointment } =
     useAppointmentMutations(token);
   const { data: services = [] } = useServices();
+  const { clientGender } = useTenant();
   const [isAlertOpen, setIsAlertOpen] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState<string>(
@@ -283,7 +285,7 @@ export default function ClientEditModal({
                 <span
                   className={`inline-block mt-1 text-[11px] font-semibold px-2 py-0.5 rounded border ${statusMeta(appointment.status).chip}`}
                 >
-                  {statusMeta(appointment.status).label}
+                  {statusMeta(appointment.status, clientGender).label}
                 </span>
               </div>
               <button

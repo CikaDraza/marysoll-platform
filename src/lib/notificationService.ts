@@ -3,7 +3,8 @@ import "server-only";
 // lib/notificationService.ts
 import { Notification } from "@/models/Notification";
 import { connectToDB } from "@/lib/db/mongodb";
-import { INotification, UserNotificationSettings } from "@/types";
+import { INotification, UserNotificationSettings, ClientGender } from "@/types";
+import { genderPast } from "@/lib/clientWording";
 import { Types } from "mongoose";
 import { TenantUser } from "@/models/TenantUser";
 import { AuthUser } from "@/models/AuthUser";
@@ -25,13 +26,14 @@ import { usableRasterLogo } from "@/lib/branding/rasterLogo";
 
 export async function getSalonBranding(
   tenantId: Types.ObjectId | string,
-): Promise<{ icon: string; name: string }> {
+): Promise<{ icon: string; name: string; clientGender: ClientGender }> {
   try {
     const profile = (await SalonProfile.findOne({ tenantId })
-      .select("notificationLogo name")
+      .select("notificationLogo name clientGender")
       .lean()) as {
       notificationLogo?: string;
       name?: string;
+      clientGender?: ClientGender;
     } | null;
     // Ikona notifikacije = SAMO notificationLogo (upload je ograničen na raster
     // PNG/JPG/WebP), inače Marysoll default. Tenant `logo` se NE koristi jer može
@@ -42,9 +44,14 @@ export async function getSalonBranding(
     return {
       icon,
       name: profile?.name || "Salon",
+      clientGender: profile?.clientGender === "female" ? "female" : "neutral",
     };
   } catch {
-    return { icon: "/marysoll_elegant_logo.png", name: "Salon" };
+    return {
+      icon: "/marysoll_elegant_logo.png",
+      name: "Salon",
+      clientGender: "neutral",
+    };
   }
 }
 
@@ -459,7 +466,7 @@ export async function createAppointmentNotification(
 
   const config = notificationConfig[type];
 
-  const { icon, name: salonName } = await getSalonBranding(
+  const { icon, name: salonName, clientGender } = await getSalonBranding(
     appointment.tenantId,
   );
   const panelUrl = "/panel?tab=Moji%20Termini";
@@ -544,7 +551,7 @@ export async function createAppointmentNotification(
     }
     await sendWebPushToMany(adminIds, {
       title: salonName,
-      body: `📅 ${appointment.clientName} je zakazao/la ${appointment.serviceName}${appointment.date ? " — " + appointment.date : ""}`,
+      body: `📅 ${appointment.clientName} je ${genderPast(clientGender, "zakazala", "zakazao/la")} ${appointment.serviceName}${appointment.date ? " — " + appointment.date : ""}`,
       icon,
       tag: `appt-created-${appointment._id}`,
       url: adminUrl,
@@ -580,8 +587,8 @@ export async function createAppointmentNotification(
       title: salonName,
       body:
         type === "cancelled"
-          ? `🚫 ${appointment.clientName} je otkazao/la ${appointment.serviceName}`
-          : `🔄 ${appointment.clientName} je izmenio/la termin za ${appointment.serviceName}${appointment.date ? " — " + appointment.date : ""}`,
+          ? `🚫 ${appointment.clientName} je ${genderPast(clientGender, "otkazala", "otkazao/la")} ${appointment.serviceName}`
+          : `🔄 ${appointment.clientName} je ${genderPast(clientGender, "izmenila", "izmenio/la")} termin za ${appointment.serviceName}${appointment.date ? " — " + appointment.date : ""}`,
       icon,
       tag: `appt-client-${type}-${appointment._id}`,
       url: adminUrl,
@@ -897,7 +904,7 @@ export async function createTestimonialNotification(
   } as const;
 
   const fullType = fullTypeMap[type];
-  const { icon, name: salonName } = await getSalonBranding(
+  const { icon, name: salonName, clientGender } = await getSalonBranding(
     testimonial.tenantId,
   );
   const adminUrl = "/admin/preporuke";
@@ -933,8 +940,8 @@ export async function createTestimonialNotification(
 
     const adminPushBodyMap: Partial<Record<TestimonialType, string>> = {
       created: `${stars} ${testimonial.clientName}: "${testimonial.comment?.substring(0, 60) || testimonial.appointmentId.serviceName}"`,
-      updated: `✏️ ${testimonial.clientName} je izmenio/la recenziju za ${testimonial.appointmentId.serviceName}`,
-      deleted: `🗑️ ${testimonial.clientName} je obrisao/la recenziju za ${testimonial.appointmentId.serviceName}`,
+      updated: `✏️ ${testimonial.clientName} je ${genderPast(clientGender, "izmenila", "izmenio/la")} recenziju za ${testimonial.appointmentId.serviceName}`,
+      deleted: `🗑️ ${testimonial.clientName} je ${genderPast(clientGender, "obrisala", "obrisao/la")} recenziju za ${testimonial.appointmentId.serviceName}`,
       message: `💬 ${testimonial.clientName}: nova poruka za ${testimonial.appointmentId.serviceName}`,
     };
 
