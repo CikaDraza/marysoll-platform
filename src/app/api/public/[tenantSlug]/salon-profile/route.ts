@@ -101,6 +101,7 @@ function serializeProfile(doc: Record<string, unknown>) {
       ),
     },
     landingTheme: String(doc.landingTheme ?? "theme-1"),
+    clientGender: doc.clientGender === "female" ? "female" : "neutral",
     landingStructure: doc.landingStructure ?? null,
     contactEmail: String((doc.contactEmail as string) ?? ""),
     newsletterEmail: String((doc.newsletterEmail as string) ?? ""),

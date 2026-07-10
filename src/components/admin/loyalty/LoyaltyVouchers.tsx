@@ -11,6 +11,8 @@ import {
   useRevokeLoyaltyVoucher,
   useLoyaltyAdminAccounts,
 } from "@/hooks/useLoyaltyAdmin";
+import { useSalonProfile } from "@/hooks/useSalonProfile";
+import { clientNoun, clientNounCap, genderPast } from "@/lib/clientWording";
 
 const card =
   "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm";
@@ -37,6 +39,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 function IssueForm({ onDone }: { onDone: () => void }) {
   const issue = useIssueLoyaltyVoucher();
+  const clientGender = useSalonProfile().data?.clientGender;
   const [clientQuery, setClientQuery] = useState("");
   const { data: accounts } = useLoyaltyAdminAccounts(clientQuery);
   const [tenantUserId, setTenantUserId] = useState("");
@@ -49,7 +52,7 @@ function IssueForm({ onDone }: { onDone: () => void }) {
 
   const handleSubmit = async () => {
     if (!tenantUserId) {
-      toast.error("Izaberite klijenta");
+      toast.error(`Izaberite ${clientNoun(clientGender, "acc")}`);
       return;
     }
     try {
@@ -60,7 +63,9 @@ function IssueForm({ onDone }: { onDone: () => void }) {
         serviceName,
         expiresDays,
       });
-      toast.success("Vaučer izdat i klijent obavešten 🎁");
+      toast.success(
+        `Vaučer izdat i ${clientNoun(clientGender)} ${genderPast(clientGender, "obaveštena", "obavešten")} 🎁`,
+      );
       onDone();
     } catch (err: unknown) {
       const msg =
@@ -77,7 +82,7 @@ function IssueForm({ onDone }: { onDone: () => void }) {
       </h3>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label className={lbl}>Klijent</label>
+          <label className={lbl}>{clientNounCap(clientGender)}</label>
           <input
             className={inp}
             placeholder="Pretraga klijenata..."

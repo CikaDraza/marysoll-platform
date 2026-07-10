@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import type { LandingTheme } from "@/types";
+import type { LandingTheme, ClientGender } from "@/types";
 
 interface TenantCtx {
   tenantSlug: string;
@@ -18,6 +18,11 @@ interface TenantCtx {
    * to undefined when not resolved.
    */
   landingTheme?: LandingTheme;
+  /**
+   * Rod klijentele salona (per-salon). Kada je "female", UI/obaveštenja koriste
+   * ženski rod (npr. "Nije došla"). Default undefined/"neutral" = trenutno.
+   */
+  clientGender?: ClientGender;
 }
 
 export const TenantContext = createContext<TenantCtx>({
@@ -31,10 +36,13 @@ export function TenantProvider({
   tenantId,
   base,
   landingTheme,
+  clientGender,
   children,
 }: TenantCtx & { children: React.ReactNode }) {
   return (
-    <TenantContext.Provider value={{ tenantSlug, tenantId, base, landingTheme }}>
+    <TenantContext.Provider
+      value={{ tenantSlug, tenantId, base, landingTheme, clientGender }}
+    >
       {children}
     </TenantContext.Provider>
   );

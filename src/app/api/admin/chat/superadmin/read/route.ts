@@ -14,7 +14,8 @@ export async function POST(req: NextRequest) {
 
   await SuperAdminChat.updateOne(
     { tenantId: decoded.tenantId },
-    { $set: { unreadByOwner: 0 } },
+    // Reset email throttle → sledeća poruka superadmina odmah šalje email.
+    { $set: { unreadByOwner: 0, ownerEmailThrottleAt: null } },
   );
 
   // Mark related chat notifications as read

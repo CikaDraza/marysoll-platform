@@ -326,6 +326,14 @@ const SalonProfileSchema = new mongoose.Schema(
       ],
       default: "theme-1",
     },
+
+    // Rod klijentele za obraćanje u UI/obaveštenjima (per-salon).
+    // "neutral" = trenutno (dual/muški), "female" = ženski rod.
+    clientGender: {
+      type: String,
+      enum: ["neutral", "female"],
+      default: "neutral",
+    },
   },
   { timestamps: true },
 );

@@ -11,6 +11,8 @@ import { useServices } from "@/hooks/useServices";
 import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import { motion } from "framer-motion";
 import AlertModal from "../modals/AlertModal";
+import { useSalonProfile } from "@/hooks/useSalonProfile";
+import { clientNounCap } from "@/lib/clientWording";
 
 interface Props {
   isOpen: boolean;
@@ -37,6 +39,7 @@ export default function AdminEditModal({
 }: Props) {
   const { updateAppointment, deleteAppointment } =
     useAppointmentMutations(token);
+  const clientGender = useSalonProfile().data?.clientGender;
   const { data: services = [], isLoading: servicesLoading } = useServices({ token: token ?? undefined });
   const timeOptions = useMemo(() => generateTimes(0, 24, 15), []);
 
@@ -228,7 +231,7 @@ export default function AdminEditModal({
 
               <div className="flex gap-x-3">
                 <div className="flex-1">
-                  <label className={lbl}>Klijent</label>
+                  <label className={lbl}>{clientNounCap(clientGender)}</label>
                   <input
                     type="text"
                     value={appointment.clientName}

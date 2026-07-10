@@ -13,6 +13,13 @@ import { useMarkMessagesSeen } from "@/hooks/useMarkMessagesSeen";
 import Paginator from "../elements/Paginator";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuth } from "@/hooks/useAuth";
+import { useTenant } from "@/contexts/TenantContext";
+import {
+  noShowLabel,
+  clientNoun,
+  clientNounCap,
+  genderPast,
+} from "@/lib/clientWording";
 
 interface ClientAppointmentListItemProps {
   appointment: IAppointment;
@@ -28,6 +35,7 @@ function ClientAppointmentListItem({
   ) || { isOnline: false };
 
   const unreadClient = appointment.unreadCount?.client ?? 0;
+  const { clientGender } = useTenant();
 
   // Uzmi ažurirani appointment sa najnovijim porukama
   const currentAppointment = appointment;
@@ -72,7 +80,8 @@ function ClientAppointmentListItem({
               {currentAppointment.status === "appointment_cancelled" &&
                 "Otkazano"}
               {currentAppointment.status === "completed" && "Završeno"}
-              {currentAppointment.status === "no_show" && "Nije došao"}
+              {currentAppointment.status === "no_show" &&
+                noShowLabel(clientGender)}
             </span>
             {unreadClient !== 0 && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-(--secondary-color) text-white animate-pulse">
@@ -91,7 +100,8 @@ function ClientAppointmentListItem({
           </p>
           {currentAppointment.note && (
             <p className="mt-2 text-xs text-gray-600">
-              <strong>Napomena klijenta:</strong> {currentAppointment.note}
+              <strong>Napomena {clientNoun(clientGender, "gen")}:</strong>{" "}
+              {currentAppointment.note}
             </p>
           )}
           {currentAppointment.proposedDate &&
@@ -117,9 +127,9 @@ function ClientAppointmentListItem({
             {currentAppointment.status === "appointment_rescheduled"
               ? `${
                   currentAppointment.lastUpdatedBy === "client"
-                    ? "Klijent"
-                    : "Salon"
-                } predložio termin: `
+                    ? `${clientNounCap(clientGender)} ${genderPast(clientGender, "predložila", "predložio")}`
+                    : "Salon predložio"
+                } termin: `
               : "Termin: "}
             <time dateTime={currentAppointment.date}>
               {formatISODate(
