@@ -315,6 +315,64 @@ export async function sendAppointmentMessageNotification(
   });
 }
 
+// ── SuperAdmin ↔ Owner chat notifications ─────────────────────────────────────
+function escapeEmailHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
+ * Email obaveštenje za poruku u chatu između Marysoll podrške (superadmin) i
+ * vlasnika salona. Uvek Marysoll platform branding (nije salonski email).
+ */
+export async function sendSuperAdminChatNotification(
+  to: string | string[],
+  data: {
+    /** Ime salona (za subjekt kad owner šalje superadminu). */
+    salonName: string;
+    /** Ko je poslao — npr. "Marysoll podrška" ili ime salona/vlasnika. */
+    senderLabel: string;
+    message: string;
+    hasAttachment: boolean;
+    /** true = poruku šalje superadmin owneru; false = owner šalje superadminu. */
+    fromSuperAdmin: boolean;
+    /** Apsolutni link ka chatu (opciono). */
+    url?: string | null;
+  },
+): Promise<{ success: boolean; messageId?: string }> {
+  const preview = data.message?.trim()
+    ? data.message.trim()
+    : data.hasAttachment
+      ? "📎 Poslat je prilog"
+      : "";
+
+  const subject = data.fromSuperAdmin
+    ? "💬 Nova poruka od Marysoll podrške"
+    : `💬 Nova poruka od salona ${data.salonName}`;
+
+  const button = data.url
+    ? `<p style="margin:24px 0 8px;">
+         <a href="${data.url}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;">Otvori chat</a>
+       </p>`
+    : "";
+
+  const content = `
+    <p style="font-size:16px;margin:0 0 12px;">Imate novu poruku u <strong>Marysoll</strong> chatu.</p>
+    <div style="margin:16px 0;padding:14px 18px;background:#f5f3ff;border-radius:10px;border:1px solid #ede9fe;">
+      <p style="margin:0 0 6px;font-weight:600;color:#5b21b6;">${escapeEmailHtml(data.senderLabel)}</p>
+      <p style="margin:0;color:#374151;white-space:pre-wrap;">${escapeEmailHtml(preview)}</p>
+    </div>
+    ${button}
+    <p style="font-size:12px;color:#9ca3af;margin-top:16px;">Odgovorite direktno u Marysoll chatu. Ovo je automatsko obaveštenje — ne odgovarajte na ovaj email.</p>
+  `;
+
+  const html = await wrapEmailLayout({ title: subject, content });
+  return sendEmail({ to, subject, html });
+}
+
 // ── Testimonial notifications ─────────────────────────────────────────────────
 export async function sendTestimonialNotification(
   to: string | string[],
