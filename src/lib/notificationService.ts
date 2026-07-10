@@ -4,7 +4,7 @@ import "server-only";
 import { Notification } from "@/models/Notification";
 import { connectToDB } from "@/lib/db/mongodb";
 import { INotification, UserNotificationSettings, ClientGender } from "@/types";
-import { genderPast } from "@/lib/clientWording";
+import { genderPast, clientNoun, clientNounCap } from "@/lib/clientWording";
 import { Types } from "mongoose";
 import { TenantUser } from "@/models/TenantUser";
 import { AuthUser } from "@/models/AuthUser";
@@ -425,40 +425,44 @@ export async function createAppointmentNotification(
 
   const fullType = fullTypeMap[type];
 
+  const { icon, name: salonName, clientGender } = await getSalonBranding(
+    appointment.tenantId,
+  );
+
   const notificationConfig = {
     created: {
       adminTitle: "Novi termin zakazan",
-      adminMessage: `Klijent ${appointment.clientName} je zakazao termin za ${appointment.serviceName}`,
+      adminMessage: `${clientNounCap(clientGender)} ${appointment.clientName} je ${genderPast(clientGender, "zakazala", "zakazao")} termin za ${appointment.serviceName}`,
       clientTitle: "Termin zakazan",
       clientMessage: `Vaš termin za ${appointment.serviceName} je uspešno zakazan i čeka odobrenje`,
     },
     approved: {
       adminTitle: "Termin odobren",
-      adminMessage: `Odobrili ste termin za ${appointment.serviceName} klijentu ${appointment.clientName}`,
+      adminMessage: `Odobrili ste termin za ${appointment.serviceName} ${clientNoun(clientGender, "dat")} ${appointment.clientName}`,
       clientTitle: "Termin odobren",
       clientMessage: `Vaš termin za ${appointment.serviceName} je odobren`,
     },
     rejected: {
       adminTitle: "Termin odbijen",
-      adminMessage: `Odbili ste termin za ${appointment.serviceName} klijentu ${appointment.clientName}`,
+      adminMessage: `Odbili ste termin za ${appointment.serviceName} ${clientNoun(clientGender, "dat")} ${appointment.clientName}`,
       clientTitle: "Termin odbijen",
       clientMessage: `Vaš termin za ${appointment.serviceName} je odbijen`,
     },
     rescheduled: {
       adminTitle: "Termin pomeren",
-      adminMessage: `Predložili ste novi termin za ${appointment.serviceName} klijentu ${appointment.clientName}`,
+      adminMessage: `Predložili ste novi termin za ${appointment.serviceName} ${clientNoun(clientGender, "dat")} ${appointment.clientName}`,
       clientTitle: "Termin pomeren",
       clientMessage: `Admin je predložio novi termin za ${appointment.serviceName}`,
     },
     cancelled: {
       adminTitle: "Termin otkazan",
-      adminMessage: `Otkazali ste termin za ${appointment.serviceName} klijentu ${appointment.clientName}`,
+      adminMessage: `Otkazali ste termin za ${appointment.serviceName} ${clientNoun(clientGender, "dat")} ${appointment.clientName}`,
       clientTitle: "Termin otkazan",
       clientMessage: `Vaš termin za ${appointment.serviceName} je otkazan`,
     },
     message: {
-      adminTitle: "Nova poruka od klijenta",
-      adminMessage: `Klijent ${appointment.clientName} Vam je poslao poruku za termin: ${appointment.serviceName}`,
+      adminTitle: `Nova poruka od ${clientNoun(clientGender, "gen")}`,
+      adminMessage: `${clientNounCap(clientGender)} ${appointment.clientName} Vam je ${genderPast(clientGender, "poslala", "poslao")} poruku za termin: ${appointment.serviceName}`,
       clientTitle: "Nova poruka od salona",
       clientMessage: `Salon Vam je poslao poruku za termin: ${appointment.serviceName}`,
     },
@@ -466,9 +470,6 @@ export async function createAppointmentNotification(
 
   const config = notificationConfig[type];
 
-  const { icon, name: salonName, clientGender } = await getSalonBranding(
-    appointment.tenantId,
-  );
   const panelUrl = "/panel?tab=Moji%20Termini";
   const adminUrl = "/admin/termini";
 
@@ -860,34 +861,38 @@ export async function createTestimonialNotification(
 ) {
   await sendTestimonialEmailNotifications(testimonial, type, additionalData);
 
+  const { icon, name: salonName, clientGender } = await getSalonBranding(
+    testimonial.tenantId,
+  );
+
   const notificationConfig = {
     created: {
       adminTitle: "Novi komentar",
-      adminMessage: `Klijent ${testimonial.clientName} je ostavio komentar za ${testimonial.appointmentId.serviceName}`,
+      adminMessage: `${clientNounCap(clientGender)} ${testimonial.clientName} je ${genderPast(clientGender, "ostavila", "ostavio")} komentar za ${testimonial.appointmentId.serviceName}`,
       clientTitle: "Komentar objavljen",
       clientMessage: `Vaš komentar za ${testimonial.appointmentId.serviceName} je uspešno objavljen`,
     },
     replied: {
       adminTitle: "Odgovor na komentar",
-      adminMessage: `Odgovorili ste na komentar klijenta ${testimonial.clientName} za ${testimonial.appointmentId.serviceName}`,
+      adminMessage: `Odgovorili ste na komentar ${clientNoun(clientGender, "gen")} ${testimonial.clientName} za ${testimonial.appointmentId.serviceName}`,
       clientTitle: "Odgovor na komentar",
       clientMessage: `Admin je odgovorio na vaš komentar za ${testimonial.appointmentId.serviceName}`,
     },
     updated: {
       adminTitle: "Komentar ažuriran",
-      adminMessage: `Klijent ${testimonial.clientName} je izmenio komentar za ${testimonial.appointmentId.serviceName}`,
+      adminMessage: `${clientNounCap(clientGender)} ${testimonial.clientName} je ${genderPast(clientGender, "izmenila", "izmenio")} komentar za ${testimonial.appointmentId.serviceName}`,
       clientTitle: "Komentar ažuriran",
       clientMessage: `Vaš komentar za ${testimonial.appointmentId.serviceName} je uspešno ažuriran`,
     },
     deleted: {
       adminTitle: "Komentar izbrisan",
-      adminMessage: `Klijent ${testimonial.clientName} je izbrisao komentar za ${testimonial.appointmentId.serviceName}`,
+      adminMessage: `${clientNounCap(clientGender)} ${testimonial.clientName} je ${genderPast(clientGender, "izbrisala", "izbrisao")} komentar za ${testimonial.appointmentId.serviceName}`,
       clientTitle: "Komentar ažuriran",
       clientMessage: `Vaš komentar za ${testimonial.appointmentId.serviceName} je uspešno izbrisan`,
     },
     message: {
-      adminTitle: "Nova poruka od klijenta",
-      adminMessage: `Klijent ${testimonial.clientName} Vam je poslao poruku za termin: ${testimonial.appointmentId.serviceName}`,
+      adminTitle: `Nova poruka od ${clientNoun(clientGender, "gen")}`,
+      adminMessage: `${clientNounCap(clientGender)} ${testimonial.clientName} Vam je ${genderPast(clientGender, "poslala", "poslao")} poruku za termin: ${testimonial.appointmentId.serviceName}`,
       clientTitle: "Nova poruka od salona",
       clientMessage: `Salon Vam je poslao poruku za termin: ${testimonial.appointmentId.serviceName}`,
     },
@@ -904,9 +909,6 @@ export async function createTestimonialNotification(
   } as const;
 
   const fullType = fullTypeMap[type];
-  const { icon, name: salonName, clientGender } = await getSalonBranding(
-    testimonial.tenantId,
-  );
   const adminUrl = "/admin/preporuke";
   const panelUrl = "/panel?tab=Moje%20Preporuke";
 

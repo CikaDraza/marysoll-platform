@@ -32,3 +32,33 @@ export function genderPast(
 ): string {
   return isFemaleClientele(g) ? femaleForm : defaultForm;
 }
+
+/** Padež imenice klijent/klijentkinja (nom/gen/dat/akuzativ). */
+export type NounCase = "nom" | "gen" | "dat" | "acc";
+
+const CLIENT_NOUN: Record<"female" | "neutral", Record<NounCase, string>> = {
+  female: {
+    nom: "klijentkinja",
+    gen: "klijentkinje",
+    dat: "klijentkinji",
+    acc: "klijentkinju",
+  },
+  neutral: { nom: "klijent", gen: "klijenta", dat: "klijentu", acc: "klijenta" },
+};
+
+/** Imenica za klijenta u zadatom padežu: "klijentkinja"/"klijent" itd. */
+export function clientNoun(
+  g: ClientGender | null | undefined,
+  c: NounCase = "nom",
+): string {
+  return CLIENT_NOUN[isFemaleClientele(g) ? "female" : "neutral"][c];
+}
+
+/** Isto kao clientNoun, ali sa velikim prvim slovom ("Klijentkinja"/"Klijent"). */
+export function clientNounCap(
+  g: ClientGender | null | undefined,
+  c: NounCase = "nom",
+): string {
+  const s = clientNoun(g, c);
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}

@@ -14,7 +14,13 @@ import { useDebounce } from "@/hooks/useDebounce";
 import LoaderButton from "../elements/LoaderButton";
 import { hasAppointmentStarted } from "@/lib/appointments/cancellation";
 import { useSalonProfile } from "@/hooks/useSalonProfile";
-import { arrivedLabel, noShowLabel } from "@/lib/clientWording";
+import {
+  arrivedLabel,
+  noShowLabel,
+  clientNoun,
+  clientNounCap,
+  genderPast,
+} from "@/lib/clientWording";
 
 interface AppointmentListItemProps {
   appointment: IAppointment;
@@ -116,7 +122,8 @@ function AppointmentListItem({
           </p>
           {currentAppointment.note && (
             <p className="mt-2 text-xs text-gray-600 dark:text-gray-300">
-              <strong>Napomena klijenta:</strong> {currentAppointment.note}
+              <strong>Napomena {clientNoun(clientGender, "gen")}:</strong>{" "}
+              {currentAppointment.note}
             </p>
           )}
           {currentAppointment.proposedDate &&
@@ -142,9 +149,9 @@ function AppointmentListItem({
             {currentAppointment.status === "appointment_rescheduled"
               ? `${
                   currentAppointment.lastUpdatedBy === "client"
-                    ? "Klijent"
-                    : "Salon"
-                } predložio termin: `
+                    ? `${clientNounCap(clientGender)} ${genderPast(clientGender, "predložila", "predložio")}`
+                    : "Salon predložio"
+                } termin: `
               : "Termin: "}
             <time dateTime={currentAppointment.date}>
               {formatISODate(
