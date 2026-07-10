@@ -17,6 +17,8 @@ import {
   APPOINTMENT_STATUSES,
   type AppointmentStatusValue,
 } from "@/types/constants";
+import type { ClientGender } from "@/types";
+import { noShowLabel } from "@/lib/clientWording";
 
 export interface StatusMeta {
   /** Srpska labela za legendu/badge. */
@@ -66,15 +68,25 @@ const APPOINTMENT_STATUS_META: Record<AppointmentStatusValue, StatusMeta> =
     },
   };
 
-/** Bezbedan pristup metapodacima statusa (fallback na neutralno za nepoznat status). */
-export function statusMeta(status: string): StatusMeta {
-  return (
+/**
+ * Bezbedan pristup metapodacima statusa (fallback na neutralno za nepoznat status).
+ * `clientGender` je opcion — kada je "female", labela za `no_show` postaje
+ * "Nije došla". Bez argumenta = trenutno ponašanje (svi postojeći pozivi rade).
+ */
+export function statusMeta(
+  status: string,
+  clientGender?: ClientGender | null,
+): StatusMeta {
+  const meta =
     APPOINTMENT_STATUS_META[status as AppointmentStatusValue] ?? {
       label: status,
       chip: "bg-zinc-100 border-zinc-400 text-zinc-700 dark:bg-zinc-800 dark:border-zinc-500 dark:text-zinc-200",
       hex: "#a1a1aa", // zinc-400
-    }
-  );
+    };
+  if (status === "no_show" && clientGender === "female") {
+    return { ...meta, label: noShowLabel(clientGender) };
+  }
+  return meta;
 }
 
 export interface SlotStateMeta {

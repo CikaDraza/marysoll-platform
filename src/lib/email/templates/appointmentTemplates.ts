@@ -12,6 +12,8 @@ import { formatServicePrice } from "@/helpers/formatPrice";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { Types } from "mongoose";
+import { getSalonClientGender } from "@/lib/salonClientGender";
+import { clientNoun, clientNounCap, genderPast } from "@/lib/clientWording";
 
 // ── Tenant client panel URL resolution ────────────────────────────────────────
 /**
@@ -239,6 +241,7 @@ export async function appointmentCreatedAdminTemplate(data: {
   contactNote?: string;
   tenantId?: string | null;
 }): Promise<string> {
+  const gender = await getSalonClientGender(data.tenantId);
   const content = `
     <p style="margin:0 0 16px 0;">Novi termin čeka odobrenje.</p>
     <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 16px 0;">
@@ -254,13 +257,13 @@ export async function appointmentCreatedAdminTemplate(data: {
       style="background:#ffffff;border-left:4px solid #ff80b5;border-radius:0 8px 8px 0;margin:0 0 20px 0;">
       <tr>
         <td style="padding:16px 20px;">
-          <p style="margin:0 0 4px;font-family:'Georgia',serif;font-size:11px;color:#b08db5;letter-spacing:1.5px;text-transform:uppercase;">Klijent</p>
+          <p style="margin:0 0 4px;font-family:'Georgia',serif;font-size:11px;color:#b08db5;letter-spacing:1.5px;text-transform:uppercase;">${clientNounCap(gender)}</p>
           <p style="margin:0;font-family:'Georgia',serif;font-size:16px;font-weight:700;color:#2d1b40;">${data.clientName}</p>
         </td>
       </tr>
     </table>
     ${appointmentDetailTable(data)}
-    ${data.note ? `<p style="margin:0 0 16px 0;font-size:14px;color:#6b5b7e;font-style:italic;">Napomena klijenta: ${data.note}</p>` : ""}
+    ${data.note ? `<p style="margin:0 0 16px 0;font-size:14px;color:#6b5b7e;font-style:italic;">Napomena ${clientNoun(gender, "gen")}: ${data.note}</p>` : ""}
     ${ctaButton("Otvori termine", `${appUrl()}/dashboard?tab=termini`)}
   `;
   return wrapEmailLayout({
@@ -288,19 +291,25 @@ export async function appointmentClientChangedAdminTemplate(
   type: "rescheduled" | "cancelled",
 ): Promise<string> {
   const isCancelled = type === "cancelled";
+  const gender = await getSalonClientGender(data.tenantId);
+  const nounGen = clientNoun(gender, "gen");
+  const nounCap = clientNounCap(gender);
+  const titleAction = isCancelled
+    ? `Termin otkazan od strane ${nounGen}`
+    : `Termin izmenjen od strane ${nounGen}`;
   const content = `
     <p style="margin:0 0 16px 0;">
       ${
         isCancelled
-          ? "Klijent je otkazao termin u dozvoljenom roku."
-          : "Klijent je izmenio termin u dozvoljenom roku."
+          ? `${nounCap} je ${genderPast(gender, "otkazala", "otkazao")} termin u dozvoljenom roku.`
+          : `${nounCap} je ${genderPast(gender, "izmenila", "izmenio")} termin u dozvoljenom roku.`
       }
     </p>
     <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 16px 0;">
       <tr>
         <td>
           <span style="display:inline-block;background-color:${isCancelled ? "#6b7280" : "#2563eb"};color:#ffffff;font-weight:bold;padding:5px 12px;border-radius:6px;font-family:'Georgia',serif;font-size:14px;">
-            ${isCancelled ? "Termin otkazan od strane klijenta" : "Termin izmenjen od strane klijenta"}
+            ${titleAction}
           </span>
         </td>
       </tr>
@@ -309,20 +318,18 @@ export async function appointmentClientChangedAdminTemplate(
       style="background:#ffffff;border-left:4px solid #ff80b5;border-radius:0 8px 8px 0;margin:0 0 20px 0;">
       <tr>
         <td style="padding:16px 20px;">
-          <p style="margin:0 0 4px;font-family:'Georgia',serif;font-size:11px;color:#b08db5;letter-spacing:1.5px;text-transform:uppercase;">Klijent</p>
+          <p style="margin:0 0 4px;font-family:'Georgia',serif;font-size:11px;color:#b08db5;letter-spacing:1.5px;text-transform:uppercase;">${nounCap}</p>
           <p style="margin:0;font-family:'Georgia',serif;font-size:16px;font-weight:700;color:#2d1b40;">${data.clientName}</p>
         </td>
       </tr>
     </table>
     ${appointmentDetailTable(data)}
-    ${data.note ? `<p style="margin:0 0 16px 0;font-size:14px;color:#6b5b7e;font-style:italic;">Napomena klijenta: ${data.note}</p>` : ""}
+    ${data.note ? `<p style="margin:0 0 16px 0;font-size:14px;color:#6b5b7e;font-style:italic;">Napomena ${nounGen}: ${data.note}</p>` : ""}
     ${ctaButton("Otvori termine", `${appUrl()}/dashboard?tab=termini`)}
   `;
 
   return wrapEmailLayout({
-    title: isCancelled
-      ? "Termin otkazan od strane klijenta"
-      : "Termin izmenjen od strane klijenta",
+    title: titleAction,
     content,
     tenantId: data.tenantId,
   });
@@ -457,8 +464,9 @@ export async function appointmentMessageTemplate(data: {
   isAdminSender: boolean;
   tenantId?: string | null;
 }): Promise<string> {
+  const gender = await getSalonClientGender(data.tenantId);
   const receiver = data.isAdminSender ? data.clientName : "Administrare";
-  const senderLabel = data.isAdminSender ? "Salon" : "Klijent";
+  const senderLabel = data.isAdminSender ? "Salon" : clientNounCap(gender);
   const dashboardTab = data.isAdminSender ? "Moji+Termini" : "Svi+Termini";
 
   const content = `

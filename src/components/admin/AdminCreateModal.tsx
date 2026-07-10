@@ -12,6 +12,8 @@ import { IAppointment, IUser } from "@/types";
 import { useServices } from "@/hooks/useServices";
 import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSalonProfile } from "@/hooks/useSalonProfile";
+import { clientNoun, clientNounCap, genderPast } from "@/lib/clientWording";
 
 interface Props {
   isOpen: boolean;
@@ -52,6 +54,7 @@ export default function AdminCreateModal({
   token,
 }: Props) {
   const { data: users = [], isLoading: usersLoading } = useUsers();
+  const clientGender = useSalonProfile().data?.clientGender;
   const { data: services = [], isLoading: servicesLoading } = useServices({
     token: token ?? undefined,
   });
@@ -136,12 +139,16 @@ export default function AdminCreateModal({
   const { price: totalPrice, duration: totalDuration } = calculateTotal();
 
   const handleSubmitExisting = async () => {
-    if (!clientId) return toast.error("Izaberite klijenta.");
+    if (!clientId)
+      return toast.error(`Izaberite ${clientNoun(clientGender, "acc")}.`);
     if (!selectedDate || !selectedTime) return toast.error("Datum i vreme su obavezni.");
     if (!selectedService) return toast.error("Izaberite uslugu.");
 
     const client = users.find((u) => u._id === clientId) as IUser | undefined;
-    if (!client) return toast.error("Izabrani klijent nije pronađen.");
+    if (!client)
+      return toast.error(
+        `${genderPast(clientGender, "Izabrana", "Izabrani")} ${clientNoun(clientGender)} nije ${genderPast(clientGender, "pronađena", "pronađen")}.`,
+      );
 
     if (selectedService.type === "variant" && !selectedVariant) {
       return toast.error("Molimo izaberite varijantu usluge.");
@@ -324,7 +331,7 @@ export default function AdminCreateModal({
 
             {/* ── Klijent / Gost toggle ─────────────────────────────── */}
             <div>
-              <label className={lbl}>Klijent *</label>
+              <label className={lbl}>{clientNounCap(clientGender)} *</label>
               <div className="flex gap-2 mb-3">
                 <button
                   type="button"
@@ -360,7 +367,9 @@ export default function AdminCreateModal({
                     onChange={(e) => setClientId(e.target.value || null)}
                     className={inp}
                   >
-                    <option value="">— izaberite klijenta —</option>
+                    <option value="">
+                      — izaberite {clientNoun(clientGender, "acc")} —
+                    </option>
                     {users.map((u) => (
                       <option key={u._id} value={u._id}>
                         {u.name} — {u.email}
@@ -629,7 +638,7 @@ export default function AdminCreateModal({
                 onChange={(e) => setNote(e.target.value)}
                 className={inp}
                 rows={3}
-                placeholder="Dodatne napomene ili instrukcije za klijenta..."
+                placeholder={`Dodatne napomene ili instrukcije za ${clientNoun(clientGender, "acc")}...`}
               />
             </div>
 

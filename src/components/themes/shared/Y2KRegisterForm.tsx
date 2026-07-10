@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useClientRouting } from "@/hooks/useClientRouting";
+import { useTenant } from "@/contexts/TenantContext";
+import { genderPast } from "@/lib/clientWording";
 import { Y2KAuthShell } from "./Y2KAuthShell";
 
 type Step = "form" | "check_email";
@@ -20,6 +22,7 @@ const labelCls =
  */
 export function Y2KRegisterForm() {
   const { base, tenantSlug } = useClientRouting();
+  const { clientGender } = useTenant();
 
   const [step, setStep] = useState<Step>("form");
   const [loading, setLoading] = useState(false);
@@ -107,7 +110,11 @@ export function Y2KRegisterForm() {
             }}
             className="text-y2k-pink text-sm font-bold hover:underline block mx-auto mb-3"
           >
-            Nisam dobio/la email — pošalji ponovo
+            {genderPast(
+              clientGender,
+              "Nisam dobila email — pošalji ponovo",
+              "Nisam dobio/la email — pošalji ponovo",
+            )}
           </button>
           <Link
             href={`${base}/login`}

@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useClientRouting } from "@/hooks/useClientRouting";
+import { useTenant } from "@/contexts/TenantContext";
+import { genderPast } from "@/lib/clientWording";
 import { Y2KAuthShell } from "./Y2KAuthShell";
 
 const inputCls =
@@ -20,6 +22,7 @@ const labelCls =
 export function Y2KLoginForm() {
   const searchParams = useSearchParams();
   const { base, tenantSlug } = useClientRouting();
+  const { clientGender } = useTenant();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -128,7 +131,7 @@ export function Y2KLoginForm() {
             href={`${base}/resend-verification`}
             className="text-[#9a7d8b] hover:text-y2k-pink font-semibold"
           >
-            Nisam dobio/la email
+            {genderPast(clientGender, "Nisam dobila email", "Nisam dobio/la email")}
           </Link>
           <Link
             href={`${base}/forgot-password`}

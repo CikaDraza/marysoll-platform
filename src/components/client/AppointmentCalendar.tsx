@@ -148,6 +148,7 @@ function DayView({
   onSlotClick: (date: string, time: string) => void;
   onAppointmentClick: (appt: IAppointment) => void;
 }) {
+  const { clientGender } = useTenant();
   const range = getWorkingRange(workingHours, selectedDate);
   const manualForDay = isManual
     ? getManualTimesForDate(manualSlots, selectedDate)
@@ -188,7 +189,7 @@ function DayView({
 
         if (appt && isStart && isOwn) {
           // Own appointment start — clickable
-          const meta = statusMeta(appt.status);
+          const meta = statusMeta(appt.status, clientGender);
           return (
             <button
               key={slot}
@@ -380,7 +381,7 @@ type ViewMode = "day" | "week" | "fullcalendar";
 
 export default function AppointmentCalendar() {
   const { user } = useAuth();
-  const { tenantSlug, base } = useTenant();
+  const { tenantSlug, base, clientGender } = useTenant();
 
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -592,7 +593,7 @@ export default function AppointmentCalendar() {
         return {
           id: a._id,
           title: isOwn
-            ? `${a.serviceName} (${statusMeta(a.status).label})`
+            ? `${a.serviceName} (${statusMeta(a.status, clientGender).label})`
             : "Zauzeto",
           start,
           end,
@@ -601,7 +602,7 @@ export default function AppointmentCalendar() {
           textColor: "#ffffff",
         };
       }),
-    [appointments, user?.email],
+    [appointments, user?.email, clientGender],
   );
 
   // Manual mode: render explicit slots as available background events

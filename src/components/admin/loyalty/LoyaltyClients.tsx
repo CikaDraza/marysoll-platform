@@ -12,6 +12,8 @@ import {
   useAdjustLoyaltyAccount,
   type LoyaltyAdminAccount,
 } from "@/hooks/useLoyaltyAdmin";
+import { useSalonProfile } from "@/hooks/useSalonProfile";
+import { noShowLabel, clientNounCap } from "@/lib/clientWording";
 
 const card =
   "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm";
@@ -28,6 +30,7 @@ function AdjustModal({
   onClose: () => void;
 }) {
   const adjust = useAdjustLoyaltyAccount();
+  const clientGender = useSalonProfile().data?.clientGender;
   const [currency, setCurrency] = useState<"hearts" | "points">("hearts");
   const [amount, setAmount] = useState(1);
   const [reason, setReason] = useState("");
@@ -72,7 +75,7 @@ function AdjustModal({
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-sm font-black text-gray-900 dark:text-white mb-1">
-          Korekcija — {account.client?.name ?? "Klijent"}
+          Korekcija — {account.client?.name ?? clientNounCap(clientGender)}
         </h3>
         <p className="text-xs text-gray-400 mb-5">
           Svaka korekcija se trajno beleži u istoriji klijenta.
@@ -140,6 +143,7 @@ function LedgerDrawer({
   onClose: () => void;
 }) {
   const { data, isLoading } = useLoyaltyAdminLedger(account._id);
+  const clientGender = useSalonProfile().data?.clientGender;
 
   return (
     <div
@@ -151,7 +155,7 @@ function LedgerDrawer({
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-sm font-black text-gray-900 dark:text-white mb-4">
-          Istorija — {account.client?.name ?? "Klijent"}
+          Istorija — {account.client?.name ?? clientNounCap(clientGender)}
         </h3>
         {isLoading ? (
           <div className="rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse h-32" />
@@ -192,6 +196,8 @@ function LedgerDrawer({
 export function LoyaltyClients() {
   const [q, setQ] = useState("");
   const { data, isLoading } = useLoyaltyAdminAccounts(q);
+  const { data: salon } = useSalonProfile();
+  const clientGender = salon?.clientGender;
   const [ledgerFor, setLedgerFor] = useState<LoyaltyAdminAccount | null>(null);
   const [adjustFor, setAdjustFor] = useState<LoyaltyAdminAccount | null>(null);
 
@@ -217,12 +223,12 @@ export function LoyaltyClients() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-[11px] font-bold uppercase tracking-widest text-gray-400 border-b border-gray-100 dark:border-gray-800">
-                <th className="px-5 py-3">Klijent</th>
+                <th className="px-5 py-3">{clientNounCap(clientGender)}</th>
                 <th className="px-3 py-3">❤️</th>
                 <th className="px-3 py-3">⭐</th>
                 <th className="px-3 py-3">Posete</th>
                 <th className="px-3 py-3">🔥 Niz</th>
-                <th className="px-3 py-3">Nije došao</th>
+                <th className="px-3 py-3">{noShowLabel(clientGender)}</th>
                 <th className="px-3 py-3">Potrošnja</th>
                 <th className="px-3 py-3" />
               </tr>
