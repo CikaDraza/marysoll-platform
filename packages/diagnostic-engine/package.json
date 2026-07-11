@@ -2,12 +2,13 @@
   "name": "@panta/diagnostic-engine",
   "version": "0.1.0",
   "private": true,
-  "description": "Panta Diagnostic Engine — klijentska dijagnostika (device/push/storage/permissions collectori, per-host network probes, crash beacon). Čist TypeScript, bez React/Next/DB zavisnosti.",
+  "description": "Panta Diagnostic Engine — dve porodice: klijentska dijagnostika (device/push/storage/permissions collectori, per-host network probes, crash beacon) i server-side data-integrity provere (./integrity — Identity & Loyalty Health kontrakt + čisti evaluatori). Čist TypeScript, bez React/Next/DB zavisnosti.",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./integrity": "./src/integrity/index.ts"
   },
   "scripts": {
     "test": "vitest run",
