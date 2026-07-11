@@ -22,6 +22,7 @@ import {
   ArrowPathIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
+import { IntegritySection } from "./IntegritySection";
 
 function fmtDate(iso: string): string {
   try {
@@ -266,6 +267,11 @@ export function DijagnostikaTab() {
           ))}
         </div>
       )}
+
+      {/* ── Druga porodica: server-side data-integrity (Identity & Loyalty Health) ── */}
+      <div className="border-t border-slate-700/60 pt-6">
+        <IntegritySection />
+      </div>
     </div>
   );
 }
