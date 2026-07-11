@@ -37,6 +37,12 @@ monolit to ne može da nosi.
    (Primer: Anja iPhone slučaj → beacon dijagnostika → Diagnostic Engine.)
 6. Posle Faze 4: **nova poslovna logika ne ide u Marysoll — ide u engine**,
    makar engine danas bio samo folder ili package.
+7. **Svaki rizičan admin workflow mora imati Diagnostic proveru.** (Usvojeno
+   2026-07-11 uz Identity & Loyalty Health.) Rizičan = dira više domenskih
+   modela odjednom (merge naloga, reassign, masovne izmene). Kad se takav
+   workflow uvede ili proširi, dodaje se odgovarajuća integrity provera u
+   `@panta/diagnostic-engine/integrity` registry + app kolektor — isti PR.
+   (Primer: merge premesta 8 referenci → `refModels.ts` skenira istih 8.)
 
 Svaki engine ima: svoj domen, svoje tipove, svoje API-je, svoju baznu logiku,
 svoje testove. Marysoll ih uvozi kao zavisnosti.
@@ -57,7 +63,7 @@ svoje testove. Marysoll ih uvozi kao zavisnosti.
 | **Marketing Engine** | Campaign, Email, SMS, Push, IG/FB/TikTok, Blog, Landing, CTA, Coupons, Automation + AI agenti (generate campaign/CTA/blog/caption/FAQ, SEO, keywords, content refresh) | delimično |
 | **AI Engine — Core AI** | samo LLM: Completion, Streaming, Embeddings, Memory, Agents, Prompt Library, Moderation | DA |
 | **AI Engine — AI Skills** | agenti: SEO Expert, Landing Expert, Theme Designer, Booking Assistant, Marketing Writer, Support Agent, Review Analyzer, Brand Consultant | DA |
-| **Diagnostic Engine** ✅ **(T1 GOTOV)** | Device, OS, Browser, Viewport, Push, Network, API, Storage, Cookies, IndexedDB, Permissions, Console, Errors, Performance, Crash Reports. Salon dobija Diagnostic Dashboard: "Run Diagnostics" → "Share report". | **DA — možda najzanimljiviji**; bilo koji SaaS |
+| **Diagnostic Engine** ✅ **(T1 GOTOV · Identity & Loyalty Health GOTOV 2026-07-11)** | DVE porodice iza iste granice: **browser** (Device, OS, Browser, Viewport, Push, Network, Storage, Permissions, Crash Reports — entry `.`) i **server-side data-integrity** (Identity & Loyalty Health: 9 read-only provera po tenantu — entry `./integrity`; superadmin Dijagnostika tab; spec `docs/PANTA-IDENTITY-LOYALTY-HEALTH.md`). Salon dobija Diagnostic Dashboard: "Run Diagnostics" → "Share report" (T5). | **DA — možda najzanimljiviji**; bilo koji SaaS |
 | **Analytics Engine** | Appointments, Revenue, Returning Clients, Cancellation Rate, Popular Services, Heatmaps, Funnels, SEO, Conversion, Performance (LCP/CLS/FID), Errors | DA |
 | **Content Engine** | Pages, Sections, Rich Text, Media, Localization, SEO, Versioning, Publishing, Drafts. (CMS ≠ Content Engine; Landing samo renderuje.) | DA |
 | **Media Engine** | Images, Videos, Compression, CDN, Optimization, Formats, Responsive, Gallery, Storage, Animations (Framer/Spline/Canva) | DA |
