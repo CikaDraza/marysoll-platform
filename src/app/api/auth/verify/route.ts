@@ -16,11 +16,14 @@ function getTenantPublicUrl(tenant: {
   customDomain?: string | null;
   customDomainVerified?: boolean;
 }): string {
-  if (tenant.customDomain && tenant.customDomainVerified) {
+  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+  // Na staging-u custom domen pokazuje na prod → koristi staging subdomen.
+  const isStaging = baseDomain.startsWith("staging.");
+
+  if (!isStaging && tenant.customDomain && tenant.customDomainVerified) {
     return `https://${tenant.customDomain}`;
   }
 
-  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
   return `https://${tenant.slug}.${baseDomain}`;
 }
 

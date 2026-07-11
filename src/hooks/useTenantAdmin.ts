@@ -249,13 +249,18 @@ export function useTenantAdmin() {
   function getTenantUrl(): string {
     if (!tenant) return "";
 
-    // 1. Fully custom domain (e.g. kikikiss.beauty)
-    if (tenant.customDomain && tenant.customDomainVerified) {
+    const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+    // Staging build (staging.*): custom domen (npr. kikikiss.beauty) uvek pokazuje
+    // na PRODUKCIJU, pa ga na staging-u ignorišemo i koristimo staging subdomen
+    // tenanta ({slug}.staging.marysoll.com). Bez ovoga "Sajt Salona →" vodi na prod.
+    const isStaging = baseDomain.startsWith("staging.");
+
+    // 1. Fully custom domain (e.g. kikikiss.beauty) — samo na produkciji
+    if (!isStaging && tenant.customDomain && tenant.customDomainVerified) {
       return `https://${tenant.customDomain}`;
     }
 
-    // 2. Tenant subdomain (e.g. kiki-kiss.marysoll.com)
-    const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+    // 2. Tenant subdomain (e.g. kiki-kiss.marysoll.com / kiki-kiss.staging.marysoll.com)
     const isProd =
       typeof window !== "undefined" &&
       window.location.hostname !== "localhost" &&

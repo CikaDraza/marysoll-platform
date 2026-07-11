@@ -9,40 +9,40 @@
 main
 = produkcija (production)
 
-staging/product-engines
+staging/production-engines
 = zajednička staging grana za SVE engine promene
 = Vercel staging deployment (staging.marysoll.com)
 
-staging/product-engines/loyalty/...
+staging/production-engines/loyalty/...
 = radne grane za Loyalty milestone-e
 
-staging/product-engines/diagnostic-engine/...
+staging/production-engines/diagnostic-engine/...
 = radne grane za Diagnostic milestone-e
 
-staging/product-engines/notification-engine/...
+staging/production-engines/notification-engine/...
 = radne grane za Notification milestone-e
 ```
 
-Radne (task) grane — jedna po tasku, commit/push na nju, pa PR u `staging/product-engines`:
+Radne (task) grane — jedna po tasku, commit/push na nju, pa PR u `staging/production-engines`:
 
 ```
-staging/product-engines/loyalty/guest-merge
-staging/product-engines/loyalty/share-button
-staging/product-engines/loyalty/referral-gate
+staging/production-engines/loyalty/guest-merge
+staging/production-engines/loyalty/share-button
+staging/production-engines/loyalty/referral-gate
 
-staging/product-engines/diagnostic-engine/identity-loyalty-health
-staging/product-engines/diagnostic-engine/server-collectors
+staging/production-engines/diagnostic-engine/identity-loyalty-health
+staging/production-engines/diagnostic-engine/server-collectors
 
-staging/product-engines/notification-engine/extraction
-staging/product-engines/notification-engine/loyalty-events
+staging/production-engines/notification-engine/extraction
+staging/production-engines/notification-engine/loyalty-events
 ```
 
 ## Git flow
 
 ```
-staging/product-engines/diagnostic-engine/identity-loyalty-health
+staging/production-engines/diagnostic-engine/identity-loyalty-health
         ↓  (PR + gate)
-staging/product-engines
+staging/production-engines
         ↓  (deploy)
 staging.marysoll.com   ← QA / preview live test
         ↓  (PR + svi gejtovi)
@@ -52,7 +52,7 @@ production
 ```
 
 **Zašto jedna zajednička staging grana** (a ne samo per-PR URL): engine-i NISU
-100% izolovani — dele proxy, modele, notifikacije. Jedna `staging/product-engines`
+100% izolovani — dele proxy, modele, notifikacije. Jedna `staging/production-engines`
 sa stabilnim `staging.marysoll.com` daje realan integrisan QA (i međusobne
 interakcije engine-a), umesto N nezavisnih preview URL-ova koji se ne vide.
 
@@ -65,8 +65,8 @@ interakcije engine-a), umesto N nezavisnih preview URL-ova koji se ne vide.
 - [ ] nema poznatih kritičnih bugova ✅
 - [ ] feature flag / toggle ako je rizično ✅
 
-Radne grane u `staging/product-engines` idu čim je milestone gotov (tsc/test/build
-zeleni lokalno); "live test" gate je na prelazu `staging/product-engines → main`.
+Radne grane u `staging/production-engines` idu čim je milestone gotov (tsc/test/build
+zeleni lokalno); "live test" gate je na prelazu `staging/production-engines → main`.
 
 ---
 
@@ -117,24 +117,40 @@ potreban stabilan domen sa wildcard-om → `staging.marysoll.com`.
 ### Vercel + DNS setup (koraci)
 
 1. **Domen na granu**: u Vercel-u dodeli `staging.marysoll.com` i `*.staging.marysoll.com`
-   grani `staging/product-engines` (Vercel "Git Branch" domain assignment → domen
+   grani `staging/production-engines` (Vercel "Git Branch" domain assignment → domen
    uvek servira tu granu; stabilan URL).
 2. **DNS**: `staging.marysoll.com` (CNAME→Vercel) + `*.staging.marysoll.com`
    (CNAME→Vercel, wildcard cert). Wildcard cert traži domen verifikovan na Vercel-u.
-3. **Env (Preview scope, po mogućstvu pinovan na `staging/product-engines`)**:
+3. **Env (Preview scope, pinovan na `staging/production-engines`)**:
    - `NEXT_PUBLIC_BASE_DOMAIN=staging.marysoll.com` — **build-time inline** (NEXT_PUBLIC_);
-     mora biti postavljen pre build-a staging deploya.
+     mora biti postavljen pre build-a staging deploya. ✅ dodato u Vercel.
+   - `NEXT_PUBLIC_APP_URL=https://staging.marysoll.com` ✅ dodato.
+   - `MONGODB_URI` — mora biti dostupan i staging (Preview) deploy-u. Pošto prod i
+     staging **dele istu bazu**, najlakše scope-ovati na **All Environments**.
    - `ALLOWED_ORIGINS` — za whoami cross-origin (staging apex ↔ admin.staging).
-   - DB/Paddle sandbox po potrebi (odvojeno od prod).
+   - Paddle → test/sandbox ključevi. Ostalo (JWT, Cloudinary, AI, CRON_SECRET) deli se sa prod.
+   - **Booking**: `booking.marysoll.com` se NE dira — nije potrebna posebna aplikacija za staging.
 
-### Dve male env-parametrizacije (TODO pre punog staging-a, NISU blokery)
+### Baza — JEDNA (`marysoll_db`), deljena prod+staging (odluka 2026-07-09)
 
-1. `next.config.ts` `redirects()` **hardkoduje** `admin.marysoll.com` i
-   `superadmin.marysoll.com` → `https://marysoll.com/login`. Na staging-u host je
-   `admin.staging.marysoll.com` → redirect se NE okine (login-na-apex neće raditi
-   auto; na staging-u se navigira direktno). Parametrizovati preko `BASE_DOMAIN`
-   env-a kad se sredi staging.
-2. `ALLOWED_ORIGINS` postaviti na staging origine (whoami sa credentials ne sme `*`).
+Odustali smo od odvojene staging baze. Staging je **samo domen + grana**, koristi
+**istu bazu `marysoll_db`** kao produkcija. Razlog: jednostavnije, i testira se na
+pravim demo tenantima (pravi mejlovi → provera dostave). `MONGODB_STAGING_URI` i
+`marysoll_staging` se ukidaju; ostaje samo `MONGODB_URI`. `mongodb.ts` vraćen na
+jedan URI (bez staging switch-a). Uklonjeni `/api/health/db` i `/api/seed/staging`
+(bili za odvojenu bazu).
+
+> **Posledica:** destruktivan QA (npr. merge) radi nad **pravom** bazom → raditi
+> samo na demo tenantima; merge par (gost+registrovan isti telefon) napraviti kroz
+> pravi booking/register tok (usput testira i Phase 4a prevenciju).
+
+### Env-parametrizacije — status
+
+1. ✅ `next.config.ts` `redirects()` sada koristi `BASE_DOMAIN` env → admin/superadmin
+   login redirect radi na staging-u.
+2. ✅ `getTenantUrl`/`getTenantPublicUrl` na staging-u koriste `{slug}.staging.marysoll.com`
+   (ne prod custom domen).
+3. ⏳ `ALLOWED_ORIGINS` postaviti na staging origine (whoami sa credentials ne sme `*`).
 
 ---
 
