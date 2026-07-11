@@ -1,8 +1,27 @@
-# PANTA — Diagnostic Engine: Identity & Loyalty Health (sledeći task)
+# PANTA — Diagnostic Engine: Identity & Loyalty Health
 
 > Zabeleženo 2026-07-09 (Milanova odluka), posle #4 Guest→Registered merge.
-> **Status: PLANIRANO — nije implementirano.** Ovo je specifikacija sledećeg
-> reza Diagnostic Engine-a: nova grupa provera integriteta identiteta/lojalnosti.
+> **Status: ✅ IMPLEMENTIRANO 2026-07-11** (M1–M4, grana
+> `product-engines/diagnostic-engine/identity-loyalty-health` → PR #29/#30 →
+> `staging/production-engines`). Validirano prvim run-om na staging tenantu
+> (2 stvarna ERROR nalaza: invalidReferences + account orphans; 0 neizvršenih).
+>
+> **Gde živi:**
+> - Kontrakt + registry (9 provera kao podaci) + čisti evaluatori:
+>   `packages/diagnostic-engine/src/integrity/` (entry
+>   `@panta/diagnostic-engine/integrity` — fizički odvojen od browser porodice)
+> - Mongo kolektori (read-only) + runner: `src/lib/diagnostics/integrity/`
+>   (adapter: `lib/platform/diagnostic-client.ts`)
+> - API: `GET /api/superadmin/diagnostics/integrity[?tenantId=]` (on-demand)
+> - UI: `IntegritySection` u superadmin Dijagnostika tabu
+>
+> **Ključno pravilo kontrakta (Milanova dopuna, zaključano):** greška kolektora
+> = `status:"failed"` ("Provera nije izvršena") — NIKAD ne sme da izgleda kao
+> "0 problema".
+>
+> **Ostaje za kasnije (van ovog reza):** repair AKCIJE (reassign/recompute
+> dugmad — sada su samo tekst preporuke); eventualna 10. provera
+> (placeholder-email iz marketplace analize) uz Identity Engine milestone.
 
 ## Zašto sada (a ne kad se pojave problemi)
 
@@ -12,7 +31,7 @@ termine, loyalty ledger, vaučere, notifikacije, audience. Kad admin prijavi
 nestala istorija" — Diagnostic treba da tačno pokaže **koji red podataka je
 prekinut i kako se popravlja**, umesto ručnog kopanja po bazi.
 
-**Governing rule (dodati u ARHITEKTURA-ENGINES.md / ARCHITECTURAL_RULES.md):**
+**Governing rule (✅ dodato: ARHITEKTURA-ENGINES.md princip 7 · ARCHITECTURAL_RULES.md §5.3):**
 > Svaki rizičan admin workflow mora imati Diagnostic proveru.
 
 Napomena o obimu: postojeći Diagnostic Engine (`@panta/diagnostic-engine`) je
