@@ -49,7 +49,17 @@ export async function GET(req: NextRequest) {
           duration: r.duration != null ? Number(r.duration) : null,
           basePrice: r.basePrice != null ? Number(r.basePrice) : null,
           priceMode: r.priceMode === "on_request" ? "on_request" : "fixed",
-          variants: Array.isArray(r.variants) ? r.variants : [],
+          // Varijante — sirovo, ali očišćeno (bez _id): booking app iz ovoga
+          // sam računa "od" cenu (min) i "do" trajanje (max) po svom pravilu.
+          variants: Array.isArray(r.variants)
+            ? (r.variants as Record<string, unknown>[]).map((v) => ({
+                name: String(v.name ?? ""),
+                price: v.price != null ? Number(v.price) : null,
+                priceMode: v.priceMode === "on_request" ? "on_request" : "fixed",
+                duration: v.duration != null ? Number(v.duration) : null,
+                perItem: v.perItem === true,
+              }))
+            : [],
         };
       }),
     );
