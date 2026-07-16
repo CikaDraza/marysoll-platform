@@ -223,10 +223,10 @@ export function Theme8Hero({
               {heroData.subheadline || DEFAULT_DESCRIPTION}
             </p>
           </div>
-          {/* relative z-30: CTA MORA biti iznad paragrafa (z-1), paint pozadine
+          {/* relative z-50: CTA MORA biti iznad paragrafa (z-1), paint pozadine
               teksta (z-0) i dekor stickera/sparkle-a (z-5) — inače na nekim
               rezolucijama pozicionirani paragraf pokrije dugme i "pojede" tap. */}
-          <div className="relative z-30 flex flex-wrap gap-4 mt-6 items-center">
+          <div className="relative z-50 flex flex-wrap gap-4 mt-8 items-center">
             {/* Progressive enhancement (isti princip kao panel <Link>):
                 HIDRIRANO → onClick otvori booking modal (preventDefault stopira
                 navigaciju). NIJE HIDRIRANO (Instagram WebView, hladan load, tap
