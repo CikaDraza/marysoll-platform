@@ -25,8 +25,13 @@ export default function NotificationSettings() {
     updateSetting,
     sendTestEmail,
   } = useNotificationSettings();
-  const { isSupported, permission, subscribeToPush, unsubscribeFromPush } =
-    usePushNotifications();
+  const {
+    isSupported,
+    permission,
+    iosNeedsInstall,
+    subscribeToPush,
+    unsubscribeFromPush,
+  } = usePushNotifications();
   const [testType, setTestType] = useState("appointment-created");
   const [pushBusy, setPushBusy] = useState(false);
 
@@ -37,6 +42,13 @@ export default function NotificationSettings() {
     setPushBusy(true);
     try {
       if (!settings.pushNotifications) {
+        if (iosNeedsInstall) {
+          toast(
+            "Na iPhone-u obaveštenja rade samo kao aplikacija: dodirnite Share → „Dodaj na početni ekran“, pa uključite notifikacije iz te aplikacije.",
+            { icon: "📲", duration: 9000 },
+          );
+          return;
+        }
         if (!isSupported) {
           toast.error("Vaš browser ne podržava push notifikacije.");
           return;
@@ -84,9 +96,11 @@ export default function NotificationSettings() {
             <NotificationToggle
               label="Push notifikacije"
               description={
-                permission === "denied"
-                  ? "Blokirano u browseru — omogućite u podešavanjima sajta"
-                  : "Kada niste na sajtu"
+                iosNeedsInstall
+                  ? "iPhone: dodajte na početni ekran da radi"
+                  : permission === "denied"
+                    ? "Blokirano u browseru — omogućite u podešavanjima sajta"
+                    : "Kada niste na sajtu"
               }
               checked={settings.pushNotifications}
               onChange={handlePushToggle}
@@ -98,6 +112,18 @@ export default function NotificationSettings() {
               onChange={() => toggleSetting("browserNotifications")}
             />
           </div>
+
+          {iosNeedsInstall && (
+            <div className="mt-4 p-4 bg-violet-50 border border-violet-200 rounded-lg">
+              <p className="text-sm text-violet-800 leading-relaxed">
+                <strong>📲 iPhone:</strong> na iOS-u obaveštenja rade samo kada
+                je Marysoll dodat na početni ekran. Dodirnite{" "}
+                <strong>Share</strong> (kvadrat sa strelicom nagore) →{" "}
+                <strong>„Dodaj na početni ekran“</strong>, otvorite tu aplikaciju
+                i uključite push notifikacije iz nje.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Postavke za termine - RAZLIČITO ZA ADMINA I KLIJENTA */}

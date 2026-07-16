@@ -25,8 +25,8 @@ const DEFAULT_TREATMENTS: Treatment[] = [
     description:
       "One extension per natural lash for soft, weightless definition — your eyes, only more awake.",
     images: [
-      { src: "/images/theme-7/lash-classic.png", alt: "Classic lash set" },
-      { src: "/images/theme-7/lash-classic.png", alt: "Classic lash detail" },
+      { src: "/images/theme-7/lash-classic.webp", alt: "Classic lash set" },
+      { src: "/images/theme-7/lash-classic.webp", alt: "Classic lash detail" },
     ],
     href: "/termini",
   },
@@ -37,8 +37,8 @@ const DEFAULT_TREATMENTS: Treatment[] = [
     description:
       "Classic and volume blended, elongated outward for a lifted, feline shape that flatters every eye.",
     images: [
-      { src: "/images/theme-7/lash-hybrid.png", alt: "Hybrid cat-eye lashes" },
-      { src: "/images/theme-7/lash-hybrid.png", alt: "Hybrid lash detail" },
+      { src: "/images/theme-7/lash-hybrid.webp", alt: "Hybrid cat-eye lashes" },
+      { src: "/images/theme-7/lash-hybrid.webp", alt: "Hybrid lash detail" },
     ],
     href: "/termini",
   },
@@ -49,9 +49,9 @@ const DEFAULT_TREATMENTS: Treatment[] = [
     description:
       "Warm brown lashes for a softer, sun-kissed take on volume — bold without the contrast of black.",
     images: [
-      { src: "/images/theme-7/lash-deepbrown.png", alt: "Deep brown lash set" },
+      { src: "/images/theme-7/lash-deepbrown.webp", alt: "Deep brown lash set" },
       {
-        src: "/images/theme-7/lash-deepbrown.png",
+        src: "/images/theme-7/lash-deepbrown.webp",
         alt: "Deep brown lash detail",
       },
     ],

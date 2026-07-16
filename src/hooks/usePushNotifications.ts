@@ -8,9 +8,19 @@ import {
 import { useAuth } from "./useAuth";
 import { api } from "@/lib/api";
 import { urlBase64ToUint8Array } from "@/lib/vapid";
+import { isIOSUserAgent, isStandalone } from "@/lib/browser-detect";
 
 export function usePushNotifications() {
   const { user } = useAuth();
+
+  // iOS: web push radi SAMO u instaliranoj PWA (home-screen) na iOS 16.4+ — u
+  // običnom Safari/Chrome tabu ga NEMA. Zato: u standalone PWA push radi
+  // normalno (NE gasimo ga), a u tabu ne registrujemo SW (ne može da radi) i
+  // UI predlaže "Dodaj na početni ekran" (vidi iosNeedsInstall u NotificationSettings).
+  const iosNeedsInstall =
+    typeof window !== "undefined" &&
+    isIOSUserAgent(navigator.userAgent) &&
+    !isStandalone();
 
   // State za inicijalizaciju
   const [state, setState] = useState(() => {
@@ -29,6 +39,7 @@ export function usePushNotifications() {
 
     return {
       isSupported:
+        !iosNeedsInstall &&
         "serviceWorker" in navigator &&
         "PushManager" in window &&
         hasNotification,
@@ -240,6 +251,8 @@ export function usePushNotifications() {
     isSupported: state.isSupported,
     permission: state.permission,
     subscription: state.subscription,
+    /** iOS u tabu (ne-PWA): push ne može, treba "Dodaj na početni ekran". */
+    iosNeedsInstall,
     subscribeToPush,
     unsubscribeFromPush,
     registerServiceWorker,

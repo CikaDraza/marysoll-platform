@@ -41,7 +41,7 @@ export function Theme7AboutUs({ about, founderName }: Props) {
     about.paragraphs && about.paragraphs.filter(Boolean).length > 0
       ? about.paragraphs
       : DEFAULT_PARAGRAPHS;
-  const imgSrc = about.image?.src || "/images/theme-7/anja-owner.png";
+  const imgSrc = about.image?.src || "/images/theme-7/anja-owner.webp";
   const imgAlt = about.image?.alt || `${founderName ?? "Anja"}, founder`;
 
   return (

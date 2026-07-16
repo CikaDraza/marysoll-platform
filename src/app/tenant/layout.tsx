@@ -16,6 +16,7 @@ import { notFound } from "next/navigation";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { CookiesModal } from "@/components/client/CookiesModal";
 import { TenantThemeController } from "@/components/themes/TenantThemeController";
+import { TenantSiteBeacon } from "@/components/shared/TenantSiteBeacon";
 import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
 
 /**
@@ -61,6 +62,7 @@ export default async function TenantLayout({
       clientGender={clientGender}
     >
       <TenantThemeController />
+      <TenantSiteBeacon />
       {children}
       <CookiesModal basePath={base} />
     </TenantProvider>

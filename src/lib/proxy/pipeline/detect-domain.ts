@@ -18,6 +18,7 @@ import {
   CUSTOM_CLIENT_DOMAIN,
   IS_PROD,
   RESERVED_TOP_SEGMENTS,
+  STAGING_PATH_HOSTS,
   isCustomDomain,
 } from "../constants";
 import type { ProxyContext } from "./context";
@@ -43,6 +44,13 @@ async function detectDomainType(
   // 1. Base domain (marketing)
   if (host === BASE_DOMAIN || host === `www.${BASE_DOMAIN}`) {
     return { type: "marketing", ...NONE, via: "base-domain" };
+  }
+
+  // 1b. Staging apex (qa/staging.marysoll.com): tretiraj kao marketing PRE
+  // wildcard grane — inače bi `qa.marysoll.com` bio pojede kao tenant subdomen
+  // "qa". Marketing tip uključuje path-based tenant rutiranje (dole) + /dashboard.
+  if (STAGING_PATH_HOSTS.has(host)) {
+    return { type: "marketing", ...NONE, via: "staging-path-apex" };
   }
 
   // 2. Vercel preview buildovi (grana → xxx.vercel.app): tretiraj kao marketing
@@ -174,10 +182,13 @@ export async function detectDomain(ctx: ProxyContext): Promise<null> {
       };
       const bareHost = ctx.hostname.split(":")[0].toLowerCase();
       // isPathBasedHost: slug je došao iz URL putanje (ne iz subdomena/custom
-      // domena) — localhost dev ILI Vercel preview build.
+      // domena) — localhost dev, Vercel preview build ILI staging apex
+      // (qa/staging.marysoll.com). Postavlja x-tenant-base-path na "/{slug}" pa
+      // in-tenant navigacija radi ispravno.
       ctx.isPathBasedHost =
         (!IS_PROD && bareHost.startsWith("localhost")) ||
-        bareHost.endsWith(".vercel.app");
+        bareHost.endsWith(".vercel.app") ||
+        STAGING_PATH_HOSTS.has(bareHost);
       trace(ctx, `path slug '${firstSegment}' -> domain=client`);
     }
   }

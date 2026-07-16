@@ -206,6 +206,34 @@ describe("vercel preview (path-based tenant)", () => {
 
 // ─── Localhost dev (path-based) ───────────────────────────────────────────────
 
+// ─── Staging apex (qa/staging.marysoll.com) — path-based tenant ───────────────
+
+describe("staging apex (qa/staging.marysoll.com, path-based tenant)", () => {
+  it("qa.marysoll.com/{slug} → rewrite /tenant + tenant headeri + base-path", async () => {
+    const { res } = await runProxy("qa.marysoll.com", "/kiki-kiss-beauty");
+    expect(rewritePath(res)).toBe("/tenant");
+    expect(forwardedHeader(res, "x-domain-type")).toBe("client");
+    expect(forwardedHeader(res, "x-tenant-slug")).toBe("kiki-kiss-beauty");
+    expect(forwardedHeader(res, "x-tenant-base-path")).toBe("/kiki-kiss-beauty");
+  });
+
+  it("qa.marysoll.com/ (apex) → marketing, NE tenant 'qa'", async () => {
+    const { res } = await runProxy("qa.marysoll.com", "/");
+    expect(forwardedHeader(res, "x-domain-type")).toBe("marketing");
+    expect(forwardedHeader(res, "x-tenant-slug")).toBe("");
+    expect(rewritePath(res)).toBeNull();
+  });
+
+  it("staging.marysoll.com/{slug}/termini → rewrite /tenant/termini", async () => {
+    const { res } = await runProxy(
+      "staging.marysoll.com",
+      "/kiki-kiss-beauty/termini",
+    );
+    expect(rewritePath(res)).toBe("/tenant/termini");
+    expect(forwardedHeader(res, "x-tenant-base-path")).toBe("/kiki-kiss-beauty");
+  });
+});
+
 describe("localhost dev (path-based tenant)", () => {
   it("/{slug}/usluge → rewrite /tenant/usluge + base-path", async () => {
     const { res } = await runProxy("localhost:3006", "/kiki-kiss-beauty/usluge", {

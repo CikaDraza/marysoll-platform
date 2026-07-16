@@ -237,6 +237,32 @@ body {
   .y2k-preloader { transition: none; }
 }
 
+/* Theme-8 sticker ulaz — ČIST CSS (compositor nit, VAN glavne niti): translateY
+   od dole (van ekrana) na krajnje mesto. transform+opacity su jedine "besplatne"
+   osobine (bez reflow-a; margin/top bi okidali layout svaki frame). Glatko i na
+   hladnom prvom load-u dok je JS zauzet, i lakše od Framer-a. Nagib (--sticker-rot)
+   je STATIČAN — ne animira se. Gasi se na reduced-motion i iOS static render. */
+.y2k-sticker-rise {
+  transform: rotate(var(--sticker-rot, 0deg));
+  animation: y2kStickerRise 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes y2kStickerRise {
+  from {
+    opacity: 0;
+    transform: translateY(520px) rotate(var(--sticker-rot, 0deg));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(var(--sticker-rot, 0deg));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .y2k-sticker-rise { animation: none; }
+}
+[data-reduce-motion="true"] .y2k-sticker-rise {
+  animation: none;
+}
+
 /* Admin calendar — FullCalendar header toolbar on MOBILE only, stacked into 3 rows:
    row 1: prev/next + today (grouped, centered), row 2: title, row 3: view buttons.
    Scoped to .admin-fc — koriste ga i admin dashboard kalendar i client panel

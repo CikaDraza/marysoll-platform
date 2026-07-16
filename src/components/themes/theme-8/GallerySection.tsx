@@ -25,8 +25,8 @@ const DEFAULT_TREATMENTS: Treatment[] = [
     description:
       "Your natural lashes lifted & tinted — wide-awake doll eyes, zero extensions.",
     images: [
-      { src: "/images/theme-8/lash-classic.png", alt: "Lash lift" },
-      { src: "/images/theme-8/lash-classic.png", alt: "Lash lift detail" },
+      { src: "/images/theme-8/lash-classic.webp", alt: "Lash lift" },
+      { src: "/images/theme-8/lash-classic.webp", alt: "Lash lift detail" },
     ],
     href: "/termini",
   },
@@ -37,8 +37,8 @@ const DEFAULT_TREATMENTS: Treatment[] = [
     description:
       "Handmade L-curl fans, elongated outward for that lifted feline shape.",
     images: [
-      { src: "/images/theme-8/lash-hybrid.png", alt: "L volume lashes" },
-      { src: "/images/theme-8/lash-hybrid.png", alt: "L volume detail" },
+      { src: "/images/theme-8/lash-hybrid.webp", alt: "L volume lashes" },
+      { src: "/images/theme-8/lash-hybrid.webp", alt: "L volume detail" },
     ],
     href: "/termini",
   },
@@ -49,8 +49,8 @@ const DEFAULT_TREATMENTS: Treatment[] = [
     description:
       "Warm brown sets for a softer, sun-kissed volume — bold without the harsh black.",
     images: [
-      { src: "/images/theme-8/lash-deepbrown.png", alt: "Deep brown set" },
-      { src: "/images/theme-8/lash-deepbrown.png", alt: "Deep brown detail" },
+      { src: "/images/theme-8/lash-deepbrown.webp", alt: "Deep brown set" },
+      { src: "/images/theme-8/lash-deepbrown.webp", alt: "Deep brown detail" },
     ],
     href: "/termini",
   },
@@ -137,7 +137,7 @@ export function Theme8GallerySection({
           className="absolute left-1/2 top-[48%] w-[560px] max-w-[104%] h-[200px] -translate-x-1/2 -translate-y-1/2 scale-110 opacity-90 z-0 pointer-events-none"
         >
           <Image
-            src="/images/theme-8/paint-streak.png"
+            src="/images/theme-8/paint-streak.webp"
             alt=""
             fill
             sizes="560px"

@@ -27,6 +27,7 @@ import {
   IntroFade,
   SparkleLayer,
 } from "../theme-8/motion";
+import { ForceReduceMotionProvider } from "../theme-8/motion/reduceMotion";
 import {
   shouldShowWorkingHours,
 } from "@/helpers/workingHoursDisplay";
@@ -43,6 +44,7 @@ export function Theme8Landing(props: ThemeLandingProps) {
     instagram,
     ls,
     perksEnabled,
+    reduceMotion,
     resolveHref,
     resolvedCta,
     salon,
@@ -66,20 +68,32 @@ export function Theme8Landing(props: ThemeLandingProps) {
       }
     : undefined;
 
-  return (
-    <div className="relative min-h-screen flex flex-col font-outfit text-y2k-ink bg-y2k-ink overflow-x-clip">
+  const content = (
+    <div
+      data-reduce-motion={reduceMotion ? "true" : undefined}
+      className="relative min-h-screen flex flex-col font-outfit text-y2k-ink bg-y2k-ink overflow-x-clip"
+    >
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="stylesheet" href={y2kFontHref} />
-      <link
-        rel="preload"
-        as="image"
-        href="/images/theme-8/bg-wallpaper_1_.webp"
-      />
-      {/* first-paint cover: wall + big white logo, fades itself out */}
-      <Theme8Preloader
-        logo={salon.logo ?? undefined}
-        salonName={salon.name}
-      />
+      {/* Raw wallpaper preload SAMO za ne-iOS (gde preloader koristi CSS bg).
+          Na iOS-u nema preloadera, a BackgroundWall (next/image priority) sam
+          preload-uje optimizovanu verziju — raw 1 MB bi bio čist gubitak. */}
+      {!reduceMotion && (
+        <link
+          rel="preload"
+          as="image"
+          href="/images/theme-8/bg-wallpaper_1_.webp"
+        />
+      )}
+      {/* first-paint cover: wall + big white logo, fades itself out.
+          Na iOS (reduceMotion) ga NE renderujemo — skida se samo iz JS-a, pa bi
+          na uređaju gde hydration padne visio zauvek ("logo stoji"). */}
+      {!reduceMotion && (
+        <Theme8Preloader
+          logo={salon.logo ?? undefined}
+          salonName={salon.name}
+        />
+      )}
       <Y2KFilters />
       {/* Multi-layer graffiti decoration system (all pointer-events-none) */}
       <BackgroundWall />
@@ -219,4 +233,13 @@ export function Theme8Landing(props: ThemeLandingProps) {
     </div>
   );
 
+  // iOS: forsiraj reduced-motion na ceo podstablo. IntroFade, FadeUp (22 sekcije)
+  // i dekor slojevi čitaju useThemeReduce() → initial={false}, pa se SSR HTML
+  // renderuje VIDLJIV, bez ijedne ulazne opacity animacije. Strana radi i ako se
+  // klijentski JS nikad ne izvrši. Ostali uređaji (value=false) dobijaju pun doživljaj.
+  return (
+    <ForceReduceMotionProvider value={Boolean(reduceMotion)}>
+      {content}
+    </ForceReduceMotionProvider>
+  );
 }

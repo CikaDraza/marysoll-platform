@@ -13,6 +13,9 @@ const nextConfig: NextConfig = {
   ],
 
   images: {
+    // Next 16: dozvoljeni quality nivoi moraju biti u ovoj listi (default [75]).
+    // 50/60 koristimo za teški theme-8 wallpaper (progresivni load, blur → pun).
+    qualities: [50, 60, 75],
     remotePatterns: [
       {
         protocol: "https",
