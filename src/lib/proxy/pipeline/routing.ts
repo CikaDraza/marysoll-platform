@@ -14,6 +14,7 @@ import {
   BASE_DOMAIN,
   CLIENT_PROTECTED_API_ROUTES,
   IS_PROD,
+  STAGING_PATH_HOSTS,
   isCustomDomain,
 } from "../constants";
 import { guardApi } from "../guards";
@@ -68,8 +69,13 @@ async function handleClientDomain(ctx: ProxyContext): Promise<NextResponse> {
   // broji *.vercel.app kao custom domen pa SEO kanonski redirect šalje
   // preview posetioce na pravi domen salona umesto da servira path-based.
   const isVercelPreview = host.endsWith(".vercel.app");
+  // Staging apex (qa/staging.marysoll.com) služi tenante PATH-BASED, kao vercel
+  // preview — iako se završava na `.marysoll.com` (pa bi ga isTenantSubdomain
+  // inače proglasio host-based i okinuo kanonski 301 na pravi custom domen).
+  const isStagingPathHost = STAGING_PATH_HOSTS.has(host);
   const isHostBased =
     !isVercelPreview &&
+    !isStagingPathHost &&
     (isCustomDomain(hostname, BASE_DOMAIN) || isTenantSubdomain);
 
   // SEO canonicalization: once a tenant has a verified custom domain,
@@ -88,9 +94,10 @@ async function handleClientDomain(ctx: ProxyContext): Promise<NextResponse> {
   }
 
   // In production, path-based tenant routing (marysoll.com/slug/...) is NOT supported.
-  // Izuzetak: Vercel preview buildovi (*.vercel.app) nemaju tenant subdomene,
-  // pa se tenant sajtovi testiraju path-based kao na localhost-u.
-  if (IS_PROD && !isHostBased && !isVercelPreview) {
+  // Izuzetak: Vercel preview buildovi (*.vercel.app) i staging apex hostovi
+  // (qa/staging.marysoll.com) nemaju tenant subdomene, pa se tenant sajtovi
+  // testiraju path-based kao na localhost-u.
+  if (IS_PROD && !isHostBased && !isVercelPreview && !isStagingPathHost) {
     trace(ctx, "routing: prod path-based blocked -> /not-found");
     return NextResponse.rewrite(new URL("/not-found", request.url));
   }

@@ -15,7 +15,8 @@
  * Honors prefers-reduced-motion. Counts are trimmed on small screens.
  */
 import Image from "next/image";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useThemeReduce } from "./reduceMotion";
 import { Deco } from "../Decorations";
 import {
   HeartDoodle,
@@ -38,6 +39,11 @@ type SprayColorKey = keyof typeof SPRAY_COLORS;
 
 /* ── Background wall ─────────────────────────────────────────────────────── */
 
+// Tiny (20px, blur) inline LQIP wallpaper-a (~330 B) — prvi frame je odmah tu u
+// niskom kvalitetu, pa next/image dovuče pun (device-sized, webp, quality 60).
+const WALL_BLUR =
+  "data:image/jpeg;base64,/9j/2wBDABcQERQRDhcUEhQaGBcbIjklIh8fIkYyNSk5UkhXVVFIUE5bZoNvW2F8Yk5QcptzfIeLkpSSWG2grJ+OqoOPko3/2wBDARgaGiIeIkMlJUONXlBejY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY3/wAARCAALABQDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAwAC/8QAGxAAAgMBAQEAAAAAAAAAAAAAAREAAgMEIUH/xAAXAQADAQAAAAAAAAAAAAAAAAAAAgME/8QAHBEAAgICAwAAAAAAAAAAAAAAAAECERITMVFh/9oADAMBAAIRAxEAPwAc9r7k1sEZknbO5CY+R8gE17A672rpminDlG2TqKsWuvQKoCUzUkhkyktq6Fz8P//Z";
+
 export function BackgroundWall() {
   return (
     <>
@@ -48,8 +54,20 @@ export function BackgroundWall() {
           shows/hides, so the bg-cover image never rescales/jumps on scroll. */}
       <div
         aria-hidden="true"
-        className="fixed top-0 left-0 w-full h-screen h-[100lvh] z-0 bg-[url('/images/theme-8/bg-wallpaper_1_.webp')] bg-cover bg-center"
-      />
+        className="fixed top-0 left-0 w-full h-screen h-[100lvh] z-0"
+      >
+        <Image
+          src="/images/theme-8/bg-wallpaper_1_.webp"
+          alt=""
+          fill
+          priority
+          quality={60}
+          placeholder="blur"
+          blurDataURL={WALL_BLUR}
+          sizes="100vw"
+          className="object-cover object-center"
+        />
+      </div>
       <div className="fixed top-0 left-0 w-full h-screen h-[100lvh] z-0 pointer-events-none bg-[radial-gradient(120%_80%_at_50%_0%,rgba(20,2,16,0)_40%,rgba(20,2,16,0.45)_100%)]" />
       <div className="fixed top-0 left-0 w-full h-screen h-[100lvh] z-0 pointer-events-none bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(40,5,30,0.12))]" />
     </>
@@ -115,7 +133,7 @@ function StickerStick({
   delay?: number;
   rotate?: number;
 }) {
-  const reduce = useReducedMotion();
+  const reduce = useThemeReduce();
   return (
     <motion.div
       aria-hidden="true"
@@ -139,7 +157,7 @@ function StickerStick({
 }
 
 export function FixedDecorLayer() {
-  const reduce = useReducedMotion();
+  const reduce = useThemeReduce();
   return (
     <motion.div
       className="fixed top-0 left-0 w-full h-screen h-[100lvh] z-0 overflow-hidden pointer-events-none"
@@ -221,7 +239,7 @@ export function FixedDecorLayer() {
 /* ── Doodle layer (drawn-by-hand) ────────────────────────────────────────── */
 
 export function DoodleLayer() {
-  const reduce = useReducedMotion();
+  const reduce = useThemeReduce();
   return (
     <motion.div
       className="absolute inset-0 z-[3] overflow-hidden pointer-events-none"
@@ -257,7 +275,7 @@ export function DoodleLayer() {
 /* ── Sparkle layer (over content, non-interactive) ───────────────────────── */
 
 export function SparkleLayer() {
-  const reduce = useReducedMotion();
+  const reduce = useThemeReduce();
   return (
     <motion.div
       className="absolute inset-0 z-20 overflow-hidden pointer-events-none"

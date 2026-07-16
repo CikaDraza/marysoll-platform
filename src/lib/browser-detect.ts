@@ -2,6 +2,16 @@
 
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
 
+/**
+ * iPhone / iPod / stariji iPad po User-Agent stringu — čist (bez window-a), pa
+ * radi i server-side (theme landing računa "reduced/static" render iz UA-ja).
+ * iPadOS 13+ se predstavlja kao Mac (traži touch detekciju koju server nema) —
+ * namerno ga NE pokrivamo; cilj su iPhone-i gde JS/hydration puca.
+ */
+export function isIOSUserAgent(ua: string): boolean {
+  return /iPad|iPhone|iPod/.test(ua);
+}
+
 /** Vraća ime aplikacije ako je sajt otvoren u in-app pregledaču, inače null. */
 export function detectInApp(ua: string): string | null {
   if (/instagram/i.test(ua)) return "Instagram";

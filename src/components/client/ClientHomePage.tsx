@@ -14,6 +14,7 @@ import { SalonProfile } from "@/models/SalonProfile";
 import { Service } from "@/models/Service";
 import { Testimonial } from "@/models/Testimonial";
 import { headers } from "next/headers";
+import { isIOSUserAgent } from "@/lib/browser-detect";
 import { ThemeLayout } from "@/components/themes/ThemeLayout";
 import type { LandingTheme } from "@/types";
 import type {
@@ -85,6 +86,11 @@ export async function ClientHomePage({ tenantSlug }: Props) {
   const headersList = await headers();
   const basePath = headersList.get("x-tenant-base-path") ?? "";
   const themeSlug = basePath ? tenantSlug || undefined : undefined;
+
+  // iOS "safe" render: na iPhone-u hydration ume da padne (in-app browser /
+  // stari Safari) i strana ostane na preloaderu / opacity:0 sadržaju. Detekciju
+  // radimo iz UA-ja SERVER-side da SSR HTML odmah bude vidljiv (bez animacija).
+  const reduceMotion = isIOSUserAgent(headersList.get("user-agent") ?? "");
 
   if (!data) {
     return (
@@ -262,6 +268,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
       tenantSlug={themeSlug}
       clientSlug={tenantSlug || undefined}
       tenantStats={tenantStats}
+      reduceMotion={reduceMotion}
     />
   );
 }

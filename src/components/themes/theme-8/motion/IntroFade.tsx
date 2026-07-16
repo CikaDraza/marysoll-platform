@@ -5,8 +5,9 @@
  * intro. Opacity (not transform) so it never breaks `fixed`/`sticky`/`absolute`
  * children. Plays once on mount; honors prefers-reduced-motion (shows instantly).
  */
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import type { ReactNode } from "react";
+import { useThemeReduce } from "./reduceMotion";
 
 interface Props {
   children: ReactNode;
@@ -16,7 +17,7 @@ interface Props {
 }
 
 export function IntroFade({ children, className, delay = 0, duration = 0.6 }: Props) {
-  const reduce = useReducedMotion();
+  const reduce = useThemeReduce();
   return (
     <motion.div
       className={className}
