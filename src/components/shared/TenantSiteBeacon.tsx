@@ -20,10 +20,22 @@
  */
 
 import { useEffect } from "react";
-import { attachCrashReporter } from "@/lib/platform/diagnostic-client";
+import {
+  attachCrashReporter,
+  sendPerfBeacon,
+} from "@/lib/platform/diagnostic-client";
 
 export function TenantSiteBeacon() {
-  useEffect(() => attachCrashReporter("site"), []);
+  useEffect(() => {
+    const cleanup = attachCrashReporter("site");
+    // Posle ~6s (da LCP i load event slegnu) pošalji perf SALONA (load/LCP/
+    // resursi + in-app kontekst) — PRAVE brojke baš ove strane, pasivno.
+    const t = window.setTimeout(() => void sendPerfBeacon("site"), 6000);
+    return () => {
+      cleanup();
+      window.clearTimeout(t);
+    };
+  }, []);
 
   return null;
 }

@@ -17,6 +17,7 @@ export { DETAIL_MAX, DATA_JSON_MAX, capDetail, capData } from "./types";
 export { sendDiagBeacon } from "./beacon";
 export { attachCrashReporter } from "./crash";
 export type { CrashReporterOptions } from "./crash";
+export { sendPerfBeacon } from "./perf-beacon";
 
 export type { NetworkProbe } from "./probes/network";
 export {
@@ -26,6 +27,7 @@ export {
 } from "./probes/network";
 
 export { collectDevice } from "./collectors/device";
+export { collectBrowserContext, detectInApp } from "./collectors/browser";
 export { collectPushSupport } from "./collectors/push";
 export { collectStorage } from "./collectors/storage";
 export { collectPermissions } from "./collectors/permissions";
@@ -37,6 +39,7 @@ export {
 
 import type { DiagnosticReport, ModuleResult } from "./types";
 import { collectDevice } from "./collectors/device";
+import { collectBrowserContext } from "./collectors/browser";
 import { collectPushSupport } from "./collectors/push";
 import { collectStorage } from "./collectors/storage";
 import { collectPermissions } from "./collectors/permissions";
@@ -51,6 +54,9 @@ import { runNetworkProbes } from "./probes/network";
 export async function runCollectors(): Promise<ModuleResult[]> {
   return [
     collectDevice(),
+    // In-app pregledač (Instagram/FB WebView) — klijentkinje otvaraju salon iz
+    // IG linka; WebView ograničenja su čest uzrok "ne učita se".
+    collectBrowserContext(),
     // Performanse prvog load-a (vreme, LCP, resursi/blokade) — najvažnije za
     // "sporo/ne učita se prvi put bez keša" scenario.
     collectLoadTiming(),

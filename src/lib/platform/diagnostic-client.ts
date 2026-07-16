@@ -11,6 +11,7 @@
 export {
   sendDiagBeacon,
   attachCrashReporter,
+  sendPerfBeacon,
   buildNetworkProbes,
   runNetworkProbe,
   runNetworkProbes,
