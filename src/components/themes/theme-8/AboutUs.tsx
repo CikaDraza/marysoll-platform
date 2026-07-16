@@ -47,7 +47,7 @@ export function Theme8AboutUs({ about, founderName }: Props) {
   // secondary taped polaroid. Each falls back to a baked-in default.
   const mainPhoto = about.images?.[0] ?? about.image;
   const sidePhoto = about.images?.[1];
-  const imgSrc = mainPhoto?.src || "/images/theme-8/studio.png";
+  const imgSrc = mainPhoto?.src || "/images/theme-8/studio.webp";
   const imgAlt = mainPhoto?.alt || `${founderName ?? "The Lash Room"} studio`;
   const sideName = founderName?.split(/\s+/).pop() ?? "Anja";
   const sideSrc = sidePhoto?.src || "/images/theme-8/anja-kiss.jpg";
@@ -68,7 +68,7 @@ export function Theme8AboutUs({ about, founderName }: Props) {
           <div className="relative grid md:grid-cols-[0.8fr_1.2fr] gap-9 items-center p-10">
             <div className="absolute -top-10 left-3 lg:left-6 w-36 h-36 rotate-[-8deg] z-[5]">
               <Image
-                src={`/images/theme-8/stickers/star-sticker.png`}
+                src={`/images/theme-8/stickers/star-sticker.webp`}
                 alt="star sticker"
                 fill
                 sizes="(min-width: 768px) 18vw, 45vw"

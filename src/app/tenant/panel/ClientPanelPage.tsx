@@ -1,57 +1,76 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useClientRouting } from "@/hooks/useClientRouting";
 import { usePublicSalonProfile } from "@/hooks/useSalonProfile";
-import ClientAppointments from "@/components/client/ClientAppointments";
-import AppointmentCalendar from "@/components/client/AppointmentCalendar";
-import ClientTestimonials from "@/components/client/ClientTestimonials";
-import NotificationSettings from "@/components/settings/NotificationSettings";
-import ClientProfile from "@/components/client/ClientProfile";
-import ClientLoyalty from "@/components/client/ClientLoyalty";
-import { LoyaltyMoments } from "@/components/loyalty/LoyaltyMoments";
+import Loader from "@/components/elements/Loader";
 import {
   ClientPanelLayout,
   PANEL_TABS,
   PanelTab,
 } from "@/layout/ClientPanelLayout";
 
+// ─── Tabovi: lenjo učitavanje (code-splitting) ────────────────────────────────
+// Statički import SVIH tabova pravio je ogroman inicijalni bundle koji se
+// parsira/izvršava odmah — dovoljno da WebKit na iOS-u sporo/nepotpuno hidrira
+// stranicu, pa tab dugmad ne reaguju. Svaki tab se sada učitava tek kad se
+// otvori (isti obrazac kao admin dashboard).
+const TabLoader = () => <Loader />;
+
+const ClientAppointments = dynamic(
+  () => import("@/components/client/ClientAppointments"),
+  { ssr: false, loading: TabLoader },
+);
+const AppointmentCalendar = dynamic(
+  () => import("@/components/client/AppointmentCalendar"),
+  { ssr: false, loading: TabLoader },
+);
+const ClientTestimonials = dynamic(
+  () => import("@/components/client/ClientTestimonials"),
+  { ssr: false, loading: TabLoader },
+);
+const NotificationSettings = dynamic(
+  () => import("@/components/settings/NotificationSettings"),
+  { ssr: false, loading: TabLoader },
+);
+const ClientProfile = dynamic(
+  () => import("@/components/client/ClientProfile"),
+  { ssr: false, loading: TabLoader },
+);
+const ClientLoyalty = dynamic(
+  () => import("@/components/client/ClientLoyalty"),
+  { ssr: false, loading: TabLoader },
+);
+const LoyaltyMoments = dynamic(
+  () =>
+    import("@/components/loyalty/LoyaltyMoments").then((m) => m.LoyaltyMoments),
+  { ssr: false },
+);
+
 const ALL_TAB_IDS = PANEL_TABS.map((t) => t.id);
 
 export default function ClientPanelPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { base, tenantSlug } = useClientRouting();
   const { isLoggedIn, isLoading } = useAuth();
   const { data: salon } = usePublicSalonProfile(tenantSlug);
 
+  // Tab je izveden DIREKTNO iz URL-a (jedini izvor istine) — bez lokalnog
+  // state-a, router.replace-a i sinhro efekta koji su racirali pri promeni taba
+  // (dupli izvor istine → tab se intermitentno ne prebaci / vrati nazad).
+  // Navigacija ide preko <Link> u ClientPanelLayout-u. Isti fix kao admin.
   const tabParam = searchParams.get("tab") as PanelTab | null;
-  const [activeTab, setActiveTab] = useState<PanelTab>(
-    tabParam && ALL_TAB_IDS.includes(tabParam) ? tabParam : "Moji Termini",
-  );
-
-  useEffect(() => {
-    async function handleActiveTab() {
-      const t = searchParams.get("tab") as PanelTab | null;
-      if (t && ALL_TAB_IDS.includes(t)) setActiveTab(t);
-    }
-    handleActiveTab();
-  }, [searchParams]);
+  const activeTab: PanelTab =
+    tabParam && ALL_TAB_IDS.includes(tabParam) ? tabParam : "Moji Termini";
 
   useEffect(() => {
     if (!isLoading && !isLoggedIn) {
       window.location.href = `${base}/login?from=panel`;
     }
   }, [isLoading, isLoggedIn, base]);
-
-  function handleTabChange(tab: PanelTab) {
-    setActiveTab(tab);
-    router.replace(`${base}/panel?tab=${encodeURIComponent(tab)}`, {
-      scroll: false,
-    });
-  }
 
   if (isLoading || !isLoggedIn) {
     return (
@@ -72,7 +91,6 @@ export default function ClientPanelPage() {
   return (
     <ClientPanelLayout
       activeTab={activeTab}
-      onTabChange={handleTabChange}
       salonName={salon?.name}
       salonLogo={salon?.logo ?? null}
     >

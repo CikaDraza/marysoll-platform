@@ -37,7 +37,7 @@ export function Theme8Footer({
 }: Props) {
   const { open } = useTheme8Modal();
   const displayName = salonName ?? "The Lash Room by Anja";
-  const logoSrc = logo || "/images/theme-8/logo-line.png";
+  const logoSrc = logo || "/images/theme-8/logo-line.webp";
   const handle = instagramHandle || "@lashroom_byanja";
 
   return (

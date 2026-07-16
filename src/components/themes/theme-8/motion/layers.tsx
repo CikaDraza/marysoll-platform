@@ -14,6 +14,7 @@
  * Every layer is `pointer-events-none` so nothing blocks text or buttons.
  * Honors prefers-reduced-motion. Counts are trimmed on small screens.
  */
+import type { CSSProperties } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useThemeReduce } from "./reduceMotion";
@@ -133,17 +134,20 @@ function StickerStick({
   delay?: number;
   rotate?: number;
 }) {
-  const reduce = useThemeReduce();
+  // Ulaz je ČIST CSS (klasa .y2k-sticker-rise): translateY od dole → na mesto,
+  // na compositor niti (VAN glavne niti) — glatko i na hladnom prvom load-u dok
+  // je JS zauzet, i lakše od Framer-a (nema JS interpolacije po frame-u). Nagib
+  // (--sticker-rot) je STATIČAN, ne animira se. Gašenje: reduced-motion + iOS.
   return (
-    <motion.div
+    <div
       aria-hidden="true"
-      className={wrapClass}
-      style={{ transformPerspective: 900 }}
-      initial={
-        reduce ? false : { scale: 2, z: 220, opacity: 0, rotate: rotate - 8 }
+      className={`${wrapClass} y2k-sticker-rise`}
+      style={
+        {
+          "--sticker-rot": `${rotate}deg`,
+          animationDelay: `${delay}s`,
+        } as CSSProperties
       }
-      animate={reduce ? undefined : { scale: 1, z: 0, opacity: 1, rotate }}
-      transition={{ duration: 0.9, ease: [0.34, 1.32, 0.5, 1], delay }}
     >
       <Image
         src={src}
@@ -152,7 +156,7 @@ function StickerStick({
         alt=""
         className="w-full h-auto select-none drop-shadow-[4px_10px_14px_rgba(11,11,15,0.45)]"
       />
-    </motion.div>
+    </div>
   );
 }
 
@@ -216,7 +220,7 @@ export function FixedDecorLayer() {
 
         {/* STICKER SPRITES — one-time slap → recede-to-background intro */}
         <StickerStick
-          src={`${STICK}/sticker-sprite-1.png`}
+          src={`${STICK}/sticker-sprite-1.webp`}
           w={806}
           h={1172}
           delay={0.7}

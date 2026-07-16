@@ -95,7 +95,7 @@ export function Theme8Services({
     >
       <FadeUp className="text-center mb-8 relative">
         <Image
-          src="/images/theme-8/paint-streak.png"
+          src="/images/theme-8/paint-streak.webp"
           alt=""
           aria-hidden="true"
           width={560}

@@ -69,7 +69,10 @@ export function Theme8Landing(props: ThemeLandingProps) {
     : undefined;
 
   const content = (
-    <div className="relative min-h-screen flex flex-col font-outfit text-y2k-ink bg-y2k-ink overflow-x-clip">
+    <div
+      data-reduce-motion={reduceMotion ? "true" : undefined}
+      className="relative min-h-screen flex flex-col font-outfit text-y2k-ink bg-y2k-ink overflow-x-clip"
+    >
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="stylesheet" href={y2kFontHref} />
       {/* Raw wallpaper preload SAMO za ne-iOS (gde preloader koristi CSS bg).
