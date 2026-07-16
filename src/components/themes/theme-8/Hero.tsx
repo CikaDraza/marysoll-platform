@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { formatStatValue } from "@/lib/tenant/tenantStatsUtils";
 import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import { FadeUp } from "./FadeUp";
@@ -222,15 +223,26 @@ export function Theme8Hero({
               {heroData.subheadline || DEFAULT_DESCRIPTION}
             </p>
           </div>
-          <div className="flex flex-wrap gap-4 mt-6 items-center">
-            <button
-              type="button"
-              onClick={() => open("book")}
+          {/* relative z-30: CTA MORA biti iznad paragrafa (z-1), paint pozadine
+              teksta (z-0) i dekor stickera/sparkle-a (z-5) — inače na nekim
+              rezolucijama pozicionirani paragraf pokrije dugme i "pojede" tap. */}
+          <div className="relative z-30 flex flex-wrap gap-4 mt-6 items-center">
+            {/* Progressive enhancement (isti princip kao panel <Link>):
+                HIDRIRANO → onClick otvori booking modal (preventDefault stopira
+                navigaciju). NIJE HIDRIRANO (Instagram WebView, hladan load, tap
+                prerano) → anchor navigira na /termini (puna stranica za
+                zakazivanje, radi BEZ JS-a). Dugme „Zakaži" radi u svakom slučaju. */}
+            <Link
+              href={cta.primary.href || "/termini"}
+              onClick={(e) => {
+                e.preventDefault();
+                open("book");
+              }}
               className="inline-flex items-center gap-2.5 bg-y2k-pink text-white font-black text-[17px] tracking-[0.04em] uppercase px-7 py-4 border-[4px] border-y2k-ink rounded-[42px_34px_44px_32px/34px_44px_32px_44px] shadow-[7px_7px_0_#0b0b0f] rotate-[-2deg] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[10px_10px_0_#0b0b0f] transition-all duration-200 cursor-pointer"
             >
               {cta.primary.text || "Book your slot"}
               <Deco shape="sparkle" size={20} strokeWidth={0} />
-            </button>
+            </Link>
             <Theme8AnchorLink
               href={cta.secondary?.href || "#gallery"}
               className="inline-flex items-center gap-2 bg-white text-y2k-purple font-extrabold text-[16px] tracking-[0.03em] uppercase px-6 py-4 border-[4px] border-y2k-ink rounded-[36px_44px_32px_42px/44px_32px_44px_34px] shadow-[6px_6px_0_#8B16C9] rotate-[1.5deg] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[9px_9px_0_#8B16C9] transition-all duration-200"
