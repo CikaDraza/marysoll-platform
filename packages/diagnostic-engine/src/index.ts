@@ -29,18 +29,33 @@ export { collectDevice } from "./collectors/device";
 export { collectPushSupport } from "./collectors/push";
 export { collectStorage } from "./collectors/storage";
 export { collectPermissions } from "./collectors/permissions";
+export {
+  collectLoadTiming,
+  collectLcp,
+  collectResources,
+} from "./collectors/performance";
 
 import type { DiagnosticReport, ModuleResult } from "./types";
 import { collectDevice } from "./collectors/device";
 import { collectPushSupport } from "./collectors/push";
 import { collectStorage } from "./collectors/storage";
 import { collectPermissions } from "./collectors/permissions";
+import {
+  collectLoadTiming,
+  collectLcp,
+  collectResources,
+} from "./collectors/performance";
 import { runNetworkProbes } from "./probes/network";
 
 /** Svi collectori redom; svaki interno hvata svoje greške (nikad ne baca). */
 export async function runCollectors(): Promise<ModuleResult[]> {
   return [
     collectDevice(),
+    // Performanse prvog load-a (vreme, LCP, resursi/blokade) — najvažnije za
+    // "sporo/ne učita se prvi put bez keša" scenario.
+    collectLoadTiming(),
+    await collectLcp(),
+    collectResources(),
     collectPushSupport(),
     await collectStorage(),
     await collectPermissions(),

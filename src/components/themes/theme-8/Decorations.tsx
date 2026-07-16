@@ -8,7 +8,8 @@
  * Framer Motion loops; respects prefers-reduced-motion automatically via Framer Motion
  * (looping `animate` is paused when the user opts out).
  */
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useThemeReduce } from "./motion/reduceMotion";
 
 const STAR =
   "M50 4 L61 38 L97 38 L68 60 L79 95 L50 73 L21 95 L32 60 L3 38 L39 38 Z";
@@ -53,7 +54,10 @@ export function Deco({
   className,
   style,
 }: DecoProps) {
-  const reduce = useReducedMotion();
+  // useThemeReduce (ne goli useReducedMotion): na iPhone-u tema forsira reduced
+  // → beskonačne bob/wiggle/twinkle/bounce/pulse petlje se GASE (manje CPU/GPU
+  // i memorije, protiv "izbaci je" reload-a taba na starijim iPhone-ima).
+  const reduce = useThemeReduce();
   const loop = motionType !== "none" && !reduce ? LOOPS[motionType] : undefined;
   return (
     <motion.svg

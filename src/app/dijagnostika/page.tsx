@@ -100,44 +100,38 @@ export default function DijagnostikaPage() {
           {results.map((p) => (
             <li
               key={p.key}
-              className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2.5"
+              className="rounded-lg border border-gray-100 px-3 py-2.5"
             >
-              <span className="text-sm text-gray-700">{p.name}</span>
-              <span className="flex items-center gap-2 text-sm">
-                {p.ms !== null && (
-                  <span className="text-[11px] text-gray-400">{p.ms} ms</span>
-                )}
-                {p.state === "pending" && (
-                  <span className="inline-block w-4 h-4 rounded-full border-2 border-violet-300 border-t-violet-600 animate-spin" />
-                )}
-                {p.state === "ok" && (
-                  <span className="text-emerald-600 font-bold">✓</span>
-                )}
-                {p.state === "info" && (
-                  <span
-                    className="text-sky-500 font-bold"
-                    title={p.detail ?? undefined}
-                  >
-                    ℹ
-                  </span>
-                )}
-                {p.state === "warn" && (
-                  <span
-                    className="text-amber-500 font-bold"
-                    title={p.detail ?? undefined}
-                  >
-                    ⚠
-                  </span>
-                )}
-                {p.state === "fail" && (
-                  <span
-                    className="text-red-500 font-bold"
-                    title={p.detail ?? undefined}
-                  >
-                    ✗
-                  </span>
-                )}
-              </span>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-700">{p.name}</span>
+                <span className="flex items-center gap-2 text-sm">
+                  {p.ms !== null && (
+                    <span className="text-[11px] text-gray-400">{p.ms} ms</span>
+                  )}
+                  {p.state === "pending" && (
+                    <span className="inline-block w-4 h-4 rounded-full border-2 border-violet-300 border-t-violet-600 animate-spin" />
+                  )}
+                  {p.state === "ok" && (
+                    <span className="text-emerald-600 font-bold">✓</span>
+                  )}
+                  {p.state === "info" && (
+                    <span className="text-sky-500 font-bold">ℹ</span>
+                  )}
+                  {p.state === "warn" && (
+                    <span className="text-amber-500 font-bold">⚠</span>
+                  )}
+                  {p.state === "fail" && (
+                    <span className="text-red-500 font-bold">✗</span>
+                  )}
+                </span>
+              </div>
+              {/* Detalj inline (vidljivo na touch/iPhone — nema hover tooltip):
+                  vreme, LCP element, CSS/JS/resursi, push status. */}
+              {p.detail && p.state !== "pending" && (
+                <p className="mt-1 text-[11px] leading-snug text-gray-400">
+                  {p.detail}
+                </p>
+              )}
             </li>
           ))}
         </ul>

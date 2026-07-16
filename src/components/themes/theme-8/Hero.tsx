@@ -206,7 +206,7 @@ export function Theme8Hero({
               className="absolute overflow-visible scale-120 lg:scale-100  left-1/2 top-3/5 lg:top-4/6 w-full h-[250px] -translate-x-1/2 -translate-y-1/2 opacity-90 z-0 pointer-events-none"
             >
               <Image
-                src="/images/theme-8/title-background-paint.png"
+                src="/images/theme-8/title-background-paint.webp"
                 alt=""
                 aria-hidden="true"
                 fill
@@ -243,7 +243,7 @@ export function Theme8Hero({
         {/* RIGHT : photo collage */}
         <FadeUp className="relative min-h-[520px] z-[4]">
           <Image
-            src="/images/theme-8/sticker-name.png"
+            src="/images/theme-8/sticker-name.webp"
             alt={salonName ?? "The Lash Room by Anja"}
             width={360}
             height={200}

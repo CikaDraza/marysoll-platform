@@ -14,8 +14,10 @@
  * Every layer is `pointer-events-none` so nothing blocks text or buttons.
  * Honors prefers-reduced-motion. Counts are trimmed on small screens.
  */
+import type { CSSProperties } from "react";
 import Image from "next/image";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useThemeReduce } from "./reduceMotion";
 import { Deco } from "../Decorations";
 import {
   HeartDoodle,
@@ -38,6 +40,11 @@ type SprayColorKey = keyof typeof SPRAY_COLORS;
 
 /* ── Background wall ─────────────────────────────────────────────────────── */
 
+// Tiny (20px, blur) inline LQIP wallpaper-a (~330 B) — prvi frame je odmah tu u
+// niskom kvalitetu, pa next/image dovuče pun (device-sized, webp, quality 60).
+const WALL_BLUR =
+  "data:image/jpeg;base64,/9j/2wBDABcQERQRDhcUEhQaGBcbIjklIh8fIkYyNSk5UkhXVVFIUE5bZoNvW2F8Yk5QcptzfIeLkpSSWG2grJ+OqoOPko3/2wBDARgaGiIeIkMlJUONXlBejY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY3/wAARCAALABQDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAwAC/8QAGxAAAgMBAQEAAAAAAAAAAAAAAREAAgMEIUH/xAAXAQADAQAAAAAAAAAAAAAAAAAAAgME/8QAHBEAAgICAwAAAAAAAAAAAAAAAAECERITMVFh/9oADAMBAAIRAxEAPwAc9r7k1sEZknbO5CY+R8gE17A672rpminDlG2TqKsWuvQKoCUzUkhkyktq6Fz8P//Z";
+
 export function BackgroundWall() {
   return (
     <>
@@ -48,8 +55,20 @@ export function BackgroundWall() {
           shows/hides, so the bg-cover image never rescales/jumps on scroll. */}
       <div
         aria-hidden="true"
-        className="fixed top-0 left-0 w-full h-screen h-[100lvh] z-0 bg-[url('/images/theme-8/bg-wallpaper_1_.webp')] bg-cover bg-center"
-      />
+        className="fixed top-0 left-0 w-full h-screen h-[100lvh] z-0"
+      >
+        <Image
+          src="/images/theme-8/bg-wallpaper_1_.webp"
+          alt=""
+          fill
+          priority
+          quality={60}
+          placeholder="blur"
+          blurDataURL={WALL_BLUR}
+          sizes="100vw"
+          className="object-cover object-center"
+        />
+      </div>
       <div className="fixed top-0 left-0 w-full h-screen h-[100lvh] z-0 pointer-events-none bg-[radial-gradient(120%_80%_at_50%_0%,rgba(20,2,16,0)_40%,rgba(20,2,16,0.45)_100%)]" />
       <div className="fixed top-0 left-0 w-full h-screen h-[100lvh] z-0 pointer-events-none bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(40,5,30,0.12))]" />
     </>
@@ -115,17 +134,20 @@ function StickerStick({
   delay?: number;
   rotate?: number;
 }) {
-  const reduce = useReducedMotion();
+  // Ulaz je ČIST CSS (klasa .y2k-sticker-rise): translateY od dole → na mesto,
+  // na compositor niti (VAN glavne niti) — glatko i na hladnom prvom load-u dok
+  // je JS zauzet, i lakše od Framer-a (nema JS interpolacije po frame-u). Nagib
+  // (--sticker-rot) je STATIČAN, ne animira se. Gašenje: reduced-motion + iOS.
   return (
-    <motion.div
+    <div
       aria-hidden="true"
-      className={wrapClass}
-      style={{ transformPerspective: 900 }}
-      initial={
-        reduce ? false : { scale: 2, z: 220, opacity: 0, rotate: rotate - 8 }
+      className={`${wrapClass} y2k-sticker-rise`}
+      style={
+        {
+          "--sticker-rot": `${rotate}deg`,
+          animationDelay: `${delay}s`,
+        } as CSSProperties
       }
-      animate={reduce ? undefined : { scale: 1, z: 0, opacity: 1, rotate }}
-      transition={{ duration: 0.9, ease: [0.34, 1.32, 0.5, 1], delay }}
     >
       <Image
         src={src}
@@ -134,12 +156,12 @@ function StickerStick({
         alt=""
         className="w-full h-auto select-none drop-shadow-[4px_10px_14px_rgba(11,11,15,0.45)]"
       />
-    </motion.div>
+    </div>
   );
 }
 
 export function FixedDecorLayer() {
-  const reduce = useReducedMotion();
+  const reduce = useThemeReduce();
   return (
     <motion.div
       className="fixed top-0 left-0 w-full h-screen h-[100lvh] z-0 overflow-hidden pointer-events-none"
@@ -198,7 +220,7 @@ export function FixedDecorLayer() {
 
         {/* STICKER SPRITES — one-time slap → recede-to-background intro */}
         <StickerStick
-          src={`${STICK}/sticker-sprite-1.png`}
+          src={`${STICK}/sticker-sprite-1.webp`}
           w={806}
           h={1172}
           delay={0.7}
@@ -221,7 +243,7 @@ export function FixedDecorLayer() {
 /* ── Doodle layer (drawn-by-hand) ────────────────────────────────────────── */
 
 export function DoodleLayer() {
-  const reduce = useReducedMotion();
+  const reduce = useThemeReduce();
   return (
     <motion.div
       className="absolute inset-0 z-[3] overflow-hidden pointer-events-none"
@@ -257,7 +279,7 @@ export function DoodleLayer() {
 /* ── Sparkle layer (over content, non-interactive) ───────────────────────── */
 
 export function SparkleLayer() {
-  const reduce = useReducedMotion();
+  const reduce = useThemeReduce();
   return (
     <motion.div
       className="absolute inset-0 z-20 overflow-hidden pointer-events-none"

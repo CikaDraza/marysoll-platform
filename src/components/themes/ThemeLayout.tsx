@@ -47,6 +47,8 @@ interface ThemeLayoutProps {
    */
   clientSlug?: string;
   tenantStats?: TenantStats;
+  /** iOS "safe" render (vidi ThemeLandingProps.reduceMotion) — iz ClientHomePage po UA. */
+  reduceMotion?: boolean;
 }
 
 export function ThemeLayout({
@@ -57,6 +59,7 @@ export function ThemeLayout({
   tenantSlug,
   clientSlug,
   tenantStats,
+  reduceMotion,
 }: ThemeLayoutProps) {
   const instagram = salon.social?.instagram || "";
   const ls = salon.landingStructure;
@@ -170,6 +173,7 @@ export function ThemeLayout({
     tenantSlug,
     clientSlug,
     tenantStats,
+    reduceMotion,
     instagram,
     ls,
     resolveHref,

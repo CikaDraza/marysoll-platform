@@ -123,14 +123,12 @@ export const PANEL_TABS: {
 
 interface ClientSidebarProps {
   activeTab: PanelTab;
-  onTabChange: (tab: PanelTab) => void;
   salonName?: string;
   salonLogo?: string | null;
 }
 
 function ClientSidebar({
   activeTab,
-  onTabChange,
   salonName,
   salonLogo,
 }: ClientSidebarProps) {
@@ -218,14 +216,16 @@ function ClientSidebar({
         {visibleTabs.map((t) => {
           const isActive = activeTab === t.id;
           return (
-            <button
+            <Link
               key={t.id}
-              onClick={() => {
-                onTabChange(t.id);
-                // Na mobilnom zatvori drawer čim se izabere tab — isto
-                // ponašanje kao admin dashboard sidebar (closeMobileSidebar).
-                closeMobileSidebar();
-              }}
+              href={`${base}/panel?tab=${encodeURIComponent(t.id)}`}
+              replace
+              scroll={false}
+              // Navigacija je pravi <Link> (URL = jedini izvor istine) — radi i
+              // PRE pune hidracije, za razliku od <button onClick> koji zavisi od
+              // JS-a (na sporom iPhone-u tap nije okidao handler). onClick samo
+              // zatvara mobilni drawer.
+              onClick={closeMobileSidebar}
               className={[
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                 isActive
@@ -242,7 +242,7 @@ function ClientSidebar({
               {isVisible && (
                 <span className="flex-1 text-left truncate">{t.label}</span>
               )}
-            </button>
+            </Link>
           );
         })}
 
@@ -396,7 +396,6 @@ function ClientHeader({ activeTab }: { activeTab: PanelTab }) {
 interface ClientPanelLayoutProps {
   children: React.ReactNode;
   activeTab: PanelTab;
-  onTabChange: (tab: PanelTab) => void;
   salonName?: string;
   salonLogo?: string | null;
 }
@@ -404,7 +403,6 @@ interface ClientPanelLayoutProps {
 export function ClientPanelLayout({
   children,
   activeTab,
-  onTabChange,
   salonName,
   salonLogo,
 }: ClientPanelLayoutProps) {
@@ -420,7 +418,6 @@ export function ClientPanelLayout({
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
       <ClientSidebar
         activeTab={activeTab}
-        onTabChange={onTabChange}
         salonName={salonName}
         salonLogo={salonLogo}
       />

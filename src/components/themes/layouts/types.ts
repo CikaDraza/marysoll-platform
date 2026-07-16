@@ -51,6 +51,12 @@ export interface ThemeLandingProps {
   tenantStats?: TenantStats;
 
   // Izvedeno u ThemeLayout-u
+  /**
+   * "Safe" render bez ulazne animacije/preloadera — postavlja se za iOS (UA)
+   * jer tamo hydration ume da padne, pa strana mora da bude vidljiva iz SSR-a.
+   * Tema ga koristi da forsira reduced-motion (MotionConfig) i preskoči preloader.
+   */
+  reduceMotion?: boolean;
   instagram: string;
   ls: SalonProfileData["landingStructure"];
   resolveHref: (href: string) => string;
