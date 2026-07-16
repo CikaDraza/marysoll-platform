@@ -40,6 +40,10 @@ interface ISuperAdminChat extends Document {
   unreadBySuperAdmin: number;
   unreadByOwner: number;
   lastMessageAt: Date;
+  /** Email throttle: kada je poslednji email poslat superadminu (reset kad pročita). */
+  superAdminEmailThrottleAt?: Date | null;
+  /** Email throttle: kada je poslednji email poslat owneru (reset kad pročita). */
+  ownerEmailThrottleAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,6 +61,8 @@ const SuperAdminChatSchema = new Schema<ISuperAdminChat>(
     unreadBySuperAdmin: { type: Number, default: 0 },
     unreadByOwner: { type: Number, default: 0 },
     lastMessageAt: { type: Date, default: Date.now },
+    superAdminEmailThrottleAt: { type: Date, default: null },
+    ownerEmailThrottleAt: { type: Date, default: null },
   },
   { timestamps: true },
 );

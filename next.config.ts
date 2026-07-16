@@ -1,5 +1,9 @@
 import type { NextConfig } from "next";
 
+// Bazni domen (env-driven, isto kao proxy/constants.ts). Na staging-u je
+// staging.marysoll.com → redirecti ispod prate deployment umesto hardkodovanog prod-a.
+const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+
 const nextConfig: NextConfig = {
   // Workspace paketi (engine-i) se isporučuju kao TS source — Next ih transpiluje
   transpilePackages: [
@@ -72,23 +76,23 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/login",
-        destination: `https://marysoll.com/login`,
+        destination: `https://${BASE_DOMAIN}/login`,
         permanent: false,
         has: [
           {
             type: "host",
-            value: `superadmin.marysoll.com`,
+            value: `superadmin.${BASE_DOMAIN}`,
           },
         ],
       },
       {
         source: "/login",
-        destination: `https://marysoll.com/login`,
+        destination: `https://${BASE_DOMAIN}/login`,
         permanent: false,
         has: [
           {
             type: "host",
-            value: `admin.marysoll.com`,
+            value: `admin.${BASE_DOMAIN}`,
           },
         ],
       },
