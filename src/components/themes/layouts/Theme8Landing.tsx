@@ -54,6 +54,7 @@ export function Theme8Landing(props: ThemeLandingProps) {
     tenantStats,
     testimonials,
     testimonialsEnabled,
+    showTheme8TestimonialFixtures,
   } = props;
 
   const igLink = ls?.landing?.gallery?.instagram?.link || instagram;
@@ -197,11 +198,14 @@ export function Theme8Landing(props: ThemeLandingProps) {
             )}
             {testimonialsEnabled && (
               <Theme8TestimonialsSection
-                testimonials={
-                  // Keep the flattering fallback cards until there are more
-                  // than 3 real testimonials (same traction threshold as the
-                  // hero stats), then switch to the real ones.
-                  testimonials.length > 3 ? testimonials : undefined
+                // Placeholder kartice ostaju samo dok salon nema nijedan
+                // odobren utisak. SSR šalje najnovija tri; carousel po potrebi
+                // učita sledeća najviše tri iz javne API rute.
+                testimonials={testimonials}
+                tenantSlug={clientSlug ?? tenantSlug}
+                initialHasMore={
+                  (tenantStats?.reviewCount ?? 0) > testimonials.length ||
+                  (showTheme8TestimonialFixtures && testimonials.length === 0)
                 }
                 headline={ls?.landing?.testimonials?.headline}
               />

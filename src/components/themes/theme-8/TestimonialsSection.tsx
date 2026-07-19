@@ -1,71 +1,21 @@
 import Image from "next/image";
 import { FadeUp } from "./FadeUp";
-
-interface Testimonial {
-  _id: string;
-  clientName: string;
-  rating: number;
-  comment: string;
-  adminReply?: string;
-}
+import { Theme8TestimonialCarousel } from "./TestimonialCarousel/Theme8TestimonialCarousel";
+import type { PublicTestimonial } from "@/types/public-testimonials";
 
 interface Props {
-  testimonials?: Testimonial[];
+  testimonials?: PublicTestimonial[];
   headline?: string;
+  tenantSlug?: string;
+  initialHasMore?: boolean;
 }
 
-type Card = {
-  quote: string;
-  name: string;
-  meta: string;
-  initial: string;
-  rating: number;
-};
-
-const DEFAULT_CARDS: Card[] = [
-  {
-    quote: "Zaustavljaju me na ulici. Anja je bukvalno umetnica.",
-    name: "Mila K.",
-    meta: "Volume Set",
-    initial: "M",
-    rating: 5,
-  },
-  {
-    quote:
-      "Malo ružičasto utočište. Svaki put odlazim izgledajući neverovatno.",
-    name: "Sara D.",
-    meta: "Hybrid Set",
-    initial: "S",
-    rating: 5,
-  },
-  {
-    quote: "Šest meseci sam klijent & nikada više nigde. Savršeno.",
-    name: "Lena P.",
-    meta: "Lash Lift",
-    initial: "L",
-    rating: 5,
-  },
-];
-
-const CARD_STYLES = [
-  "rounded-[8px_22px_8px_22px] shadow-[6px_8px_0_#ff2e97] rotate-[-2deg]",
-  "rounded-[22px_8px_22px_8px] shadow-[6px_8px_0_#8B16C9] rotate-[1.5deg]",
-  "rounded-[8px_22px_8px_22px] shadow-[6px_8px_0_#ff2e97] rotate-[-1.5deg]",
-];
-const AVATAR_BG = ["bg-y2k-hot", "bg-[#c9a8ff]", "bg-[#ffb3df]"];
-
-export function Theme8TestimonialsSection({ testimonials, headline }: Props) {
-  const cards: Card[] =
-    testimonials && testimonials.length > 0
-      ? testimonials.slice(0, 3).map((t) => ({
-          quote: t.comment,
-          name: t.clientName,
-          meta: "Klijent",
-          initial: (t.clientName || "?").trim().charAt(0).toUpperCase(),
-          rating: t.rating || 5,
-        }))
-      : DEFAULT_CARDS;
-
+export function Theme8TestimonialsSection({
+  testimonials = [],
+  headline,
+  tenantSlug,
+  initialHasMore = false,
+}: Props) {
   return (
     <section
       id="reviews"
@@ -88,42 +38,11 @@ export function Theme8TestimonialsSection({ testimonials, headline }: Props) {
         </h2>
       </FadeUp>
 
-      <div className="grid md:grid-cols-3 gap-[22px]">
-        {cards.map((c, i) => (
-          <FadeUp key={i} delay={i * 0.08}>
-            <figure
-              className={`h-full bg-white border-[3px] border-y2k-ink p-6 ${
-                CARD_STYLES[i % CARD_STYLES.length]
-              }`}
-            >
-              <div className="text-y2k-pink text-[18px] tracking-[2px]">
-                {"★".repeat(Math.max(0, Math.min(5, c.rating)))}
-                <span className="text-y2k-ink/15">
-                  {"★".repeat(5 - Math.max(0, Math.min(5, c.rating)))}
-                </span>
-              </div>
-              <blockquote className="font-caveat font-bold text-[26px] leading-[1.2] my-2.5 mb-4 text-y2k-ink">
-                &ldquo;{c.quote}&rdquo;
-              </blockquote>
-              <figcaption className="flex items-center gap-2.5">
-                <span
-                  className={`grid place-items-center w-10 h-10 rounded-full border-2 border-y2k-ink font-extrabold text-y2k-ink ${
-                    AVATAR_BG[i % AVATAR_BG.length]
-                  }`}
-                >
-                  {c.initial}
-                </span>
-                <span className="font-extrabold text-[14px] text-y2k-ink">
-                  {c.name}
-                  <span className="block font-medium text-[#7a5a6c]">
-                    {c.meta}
-                  </span>
-                </span>
-              </figcaption>
-            </figure>
-          </FadeUp>
-        ))}
-      </div>
+      <Theme8TestimonialCarousel
+        tenantSlug={tenantSlug}
+        initialTestimonials={testimonials.slice(0, 3)}
+        initialHasMore={initialHasMore}
+      />
     </section>
   );
 }
