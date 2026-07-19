@@ -25,6 +25,23 @@ export function publicRoutes(ctx: ProxyContext): NextResponse | null {
     return pass(ctx);
   }
 
+  // PWA manifest je tenant-specifičan: Android iz njega bira ikonu pri
+  // instalaciji. Na path-based dev/preview URL-u ostaje pod /{slug}.
+  const tenantManifestPath = ctx.isPathBasedHost
+    ? `/${ctx.tenant.slug}/manifest.json`
+    : "/manifest.json";
+  if (
+    pathname === tenantManifestPath &&
+    domainType === "client" &&
+    ctx.tenant.id
+  ) {
+    trace(ctx, "manifest -> /tenant/manifest");
+    return NextResponse.rewrite(
+      new URL("/tenant/manifest", request.nextUrl.origin),
+      { request: { headers: ctx.requestHeaders } },
+    );
+  }
+
   // Block direct browser access to the internal /tenant/* route on non-client domains.
   if (
     (pathname === "/tenant" || pathname.startsWith("/tenant/")) &&

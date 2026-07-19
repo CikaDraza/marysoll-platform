@@ -72,6 +72,11 @@ function serializeProfile(doc: Record<string, unknown>) {
     email: String(doc.email ?? ""),
     description: String(doc.description ?? ""),
     logo: doc.logo ? String(doc.logo) : null,
+    // Javan je samo URL slike (kao i `logo`), a potreban je za PWA/Apple
+    // ikonu tenant sajta. Upload je ograničen na PNG/JPG/WebP.
+    notificationLogo: doc.notificationLogo
+      ? String(doc.notificationLogo)
+      : null,
     phone: String(doc.phone ?? ""),
     street: String(doc.street ?? ""),
     city: String(doc.city ?? ""),
