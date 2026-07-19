@@ -25,6 +25,7 @@ import type {
   ManualSlotsMap,
 } from "@/types";
 import { normalizeVacations } from "@/helpers/vacations";
+import { shouldUseTheme8TestTestimonials } from "@/helpers/theme8DevelopmentTestimonials";
 import { getTenantStats } from "@/lib/tenant/getTenantStats";
 
 interface Props {
@@ -68,7 +69,16 @@ async function getTenantData(tenantSlug: string) {
     getTenantStats(String(tenantId)),
   ]);
 
-  return { tenant, salon, services, testimonials, tenantStats };
+  return {
+    tenant,
+    salon,
+    services,
+    testimonials,
+    tenantStats,
+    showTheme8TestimonialFixtures:
+      (salon as { landingTheme?: string } | null)?.landingTheme === "theme-8" &&
+      shouldUseTheme8TestTestimonials(hostname),
+  };
 }
 
 export async function ClientHomePage({ tenantSlug }: Props) {
@@ -116,7 +126,13 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     );
   }
 
-  const { salon, services, testimonials, tenantStats } = data;
+  const {
+    salon,
+    services,
+    testimonials,
+    tenantStats,
+    showTheme8TestimonialFixtures,
+  } = data;
 
   const s = salon as
     | (Record<string, unknown> & { branding?: Record<string, string> })
@@ -264,6 +280,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
       tenantSlug={themeSlug}
       clientSlug={tenantSlug || undefined}
       tenantStats={tenantStats}
+      showTheme8TestimonialFixtures={showTheme8TestimonialFixtures}
       reduceMotion={reduceMotion}
     />
   );

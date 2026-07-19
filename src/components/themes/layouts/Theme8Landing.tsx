@@ -54,6 +54,7 @@ export function Theme8Landing(props: ThemeLandingProps) {
     tenantStats,
     testimonials,
     testimonialsEnabled,
+    showTheme8TestimonialFixtures,
   } = props;
 
   const igLink = ls?.landing?.gallery?.instagram?.link || instagram;
@@ -204,8 +205,7 @@ export function Theme8Landing(props: ThemeLandingProps) {
                 tenantSlug={clientSlug ?? tenantSlug}
                 initialHasMore={
                   (tenantStats?.reviewCount ?? 0) > testimonials.length ||
-                  (process.env.NODE_ENV === "development" &&
-                    testimonials.length === 0)
+                  (showTheme8TestimonialFixtures && testimonials.length === 0)
                 }
                 headline={ls?.landing?.testimonials?.headline}
               />

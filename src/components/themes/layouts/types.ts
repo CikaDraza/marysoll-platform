@@ -44,6 +44,8 @@ export interface ThemeLandingProps {
   tenantSlug?: string;
   clientSlug?: string;
   tenantStats?: TenantStats;
+  /** Privremeni preview fixtures, dozvoljeni samo na staging/preview hostu. */
+  showTheme8TestimonialFixtures?: boolean;
 
   // Izvedeno u ThemeLayout-u
   /**

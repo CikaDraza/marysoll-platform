@@ -14,7 +14,10 @@ import {
   publicTestimonialsPageSchema,
   theme8TestimonialsQuerySchema,
 } from "@/types/public-testimonials";
-import { THEME8_DEVELOPMENT_TESTIMONIALS } from "@/helpers/theme8DevelopmentTestimonials";
+import {
+  shouldUseTheme8TestTestimonials,
+  THEME8_DEVELOPMENT_TESTIMONIALS,
+} from "@/helpers/theme8DevelopmentTestimonials";
 
 export const dynamic = "force-dynamic";
 
@@ -57,19 +60,21 @@ export async function GET(req: NextRequest, { params }: Params) {
       .lean();
 
     const developmentFixtures =
-      process.env.NODE_ENV === "development" && offset === 3 && rows.length === 0
+      shouldUseTheme8TestTestimonials(req.nextUrl.hostname) &&
+      offset === 3 &&
+      rows.length === 0
         ? THEME8_DEVELOPMENT_TESTIMONIALS
         : null;
     const testimonials = developmentFixtures
       ? developmentFixtures
       : rows.slice(0, limit).map((row) =>
-        publicTestimonialSchema.parse({
-          _id: String(row._id),
-          clientName: String(row.clientName ?? ""),
-          rating: Number(row.rating),
-          comment: String(row.comment ?? ""),
-          ...(row.adminReply ? { adminReply: String(row.adminReply) } : {}),
-        }),
+          publicTestimonialSchema.parse({
+            _id: String(row._id),
+            clientName: String(row.clientName ?? ""),
+            rating: Number(row.rating),
+            comment: String(row.comment ?? ""),
+            ...(row.adminReply ? { adminReply: String(row.adminReply) } : {}),
+          }),
         );
     const response = publicTestimonialsPageSchema.parse({
       testimonials,

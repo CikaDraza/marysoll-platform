@@ -1,6 +1,6 @@
 import type { PublicTestimonial } from "@/types/public-testimonials";
 
-/** Privremena druga strana za lokalnu proveru Theme-8 swipe animacije. */
+/** Privremena druga strana za proveru Theme-8 swipe animacije. */
 export const THEME8_DEVELOPMENT_TESTIMONIALS: PublicTestimonial[] = [
   {
     _id: "development-testimonial-4",
@@ -22,3 +22,18 @@ export const THEME8_DEVELOPMENT_TESTIMONIALS: PublicTestimonial[] = [
     comment: "Najlepši set do sada — dobila sam mnogo komplimenata!",
   },
 ];
+
+/** Nikada ne prikazuj test utiske na pravim produkcionim tenant domenima. */
+export function shouldUseTheme8TestTestimonials(hostname: string): boolean {
+  if (process.env.NODE_ENV !== "production") return true;
+
+  const host = hostname.split(":")[0].toLowerCase();
+  const stagingHosts = new Set(
+    (process.env.STAGING_PATH_HOSTS ?? "staging.marysoll.com,qa.marysoll.com")
+      .split(",")
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean),
+  );
+
+  return stagingHosts.has(host) || host.endsWith(".vercel.app");
+}
