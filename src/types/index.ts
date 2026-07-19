@@ -1133,6 +1133,8 @@ export interface SalonProfileData {
   clientGender?: ClientGender;
   isDemo?: boolean;
   logo?: string | null;
+  /** Raster logo za push/mejl i ikonu instalirane tenant PWA. */
+  notificationLogo?: string | null;
   phone: string;
   street: string;
   city: string;

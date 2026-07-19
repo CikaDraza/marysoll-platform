@@ -284,6 +284,11 @@ describe("tenant subdomen (host-based)", () => {
     expect(rewritePath(res)).toBe("/tenant/favicon");
   });
 
+  it("manifest.json → rewrite /tenant/manifest (tenant PWA ikona)", async () => {
+    const { res } = await runProxy("no-domain-salon.marysoll.com", "/manifest.json");
+    expect(rewritePath(res)).toBe("/tenant/manifest");
+  });
+
   it("/api/public/* prolazi bez guarda", async () => {
     const { res } = await runProxy(
       "no-domain-salon.marysoll.com",

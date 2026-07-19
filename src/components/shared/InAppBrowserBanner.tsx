@@ -11,15 +11,15 @@
  *   - Android: `intent://...` otvara default browser (Chrome)
  * Ako šema ne prođe (stariji OS, Meta je blokirala), ostaje uputstvo za ⋯ meni.
  *
- * Prikazuje se SAMO na platformskim hostovima (marysoll.com, admin., superadmin.)
- * — na tenant sajtovima zakazivanje kroz in-app browser radi i ne treba im
- * nikakva prepreka.
+ * Prikazuje se i na tenant sajtovima. Zakazivanje može da radi i u WebView-u,
+ * ali eksterni browser je pouzdaniji za prijavu, plaćanja, PWA instalaciju i
+ * povratak na link iz poruke.
  *
  * Za ručno testiranje bez Instagrama: dodati ?inapp=test u URL.
  */
 
 import { useEffect, useState } from "react";
-import { detectInApp, isPlatformHost } from "@/lib/browser-detect";
+import { detectInApp } from "@/lib/browser-detect";
 
 export function InAppBrowserBanner() {
   const [appName, setAppName] = useState<string | null>(null);
@@ -38,7 +38,7 @@ export function InAppBrowserBanner() {
         /* ignore */
       }
       const detected = testMode ? "Instagram" : detectInApp(ua);
-      if (detected && (testMode || isPlatformHost(window.location.hostname))) {
+      if (detected) {
         setAppName(detected);
       }
     }, 0);
@@ -80,8 +80,8 @@ export function InAppBrowserBanner() {
           ✕
         </button>
         <p className="text-sm font-semibold leading-snug">
-          Otvorili ste sajt u {appName} pregledaču — prijava u njemu ne radi
-          ispravno.
+          Otvorili ste sajt u {appName} pregledaču. Za najbolje iskustvo
+          otvorite ga u pregledaču telefona.
         </p>
         <button
           onClick={openInBrowser}
