@@ -18,19 +18,31 @@ import { CookiesModal } from "@/components/client/CookiesModal";
 import { TenantThemeController } from "@/components/themes/TenantThemeController";
 import { TenantSiteBeacon } from "@/components/shared/TenantSiteBeacon";
 import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
+import { usableRasterLogo } from "@/lib/branding/rasterLogo";
+
+const PLATFORM_PWA_ICON = "/marysoll_elegant_logo.png";
 
 /**
- * Set the tenant's site logo as favicon for ALL tenant pages. The proxy also
- * intercepts the raw `GET /favicon.ico` (see proxy.ts), but this covers the
- * `<link rel="icon">`/apple-icon path for modern browsers and per-page metadata.
+ * PWA/Apple ikona je zaseban raster `notificationLogo`: logo sajta može biti
+ * SVG, što Android/iOS instalacija i web-push ne podržavaju pouzdano. Fallback
+ * je uvek Marysoll, nikad tenantov site logo.
  */
 export async function generateMetadata(): Promise<Metadata> {
   const h = await headers();
   const tenantSlug = h.get("x-tenant-slug") ?? "";
+  const base = h.get("x-tenant-base-path") ?? "";
   if (!tenantSlug) return {};
   const profile = await fetchPublicSalonProfile(tenantSlug);
-  const logo = profile?.logo ?? undefined;
-  return logo ? { icons: { icon: logo, apple: logo } } : {};
+  const icon = usableRasterLogo(profile?.notificationLogo)
+    ? profile.notificationLogo
+    : PLATFORM_PWA_ICON;
+
+  return {
+    // Na host-based tenant domenu je /manifest.json; u localhost/preview
+    // path-based režimu mora ostati ispod /{slug} da proxy zna tenanta.
+    manifest: `${base}/manifest.json`,
+    icons: { icon, apple: icon },
+  };
 }
 
 export default async function TenantLayout({
