@@ -144,18 +144,21 @@ export function Theme8Hero({
     } i online zakazivanje`;
   const founderAlt =
     founderPhoto?.alt?.trim() || `${salonName ?? "Anja"}, founder`;
-  // Stats stay on flattering fallbacks until the salon has real traction —
-  // more than 3 *completed* appointments AND more than 3 testimonials.
+  // Broj urađenih setova ostaje marketinški fallback dok salon nema dovoljno
+  // stvarne aktivnosti. Ocena, međutim, prelazi na stvaran prosek čim postoji
+  // makar jedan odobren testimonial.
   const completedCount = tenantStats?.completedAppointmentCount ?? 0;
-  const hasRealTraction =
-    completedCount > 3 && (tenantStats?.reviewCount ?? 0) > 3;
+  const hasRealTraction = completedCount > 10;
+  const averageRating = tenantStats?.averageRating;
+  const hasRealRating =
+    (tenantStats?.reviewCount ?? 0) > 0 && averageRating != null;
   const setsCrafted = hasRealTraction
     ? formatStatValue(completedCount)
     : "1.2k+";
-  // Rating: real testimonials average once there's traction, else a fallback.
+  // Rating: stvarni prosek čim postoji odobren utisak, inače fallback.
   const rating =
-    hasRealTraction && tenantStats?.averageRating != null
-      ? `${tenantStats.averageRating.toFixed(1)}★`
+    hasRealRating && averageRating != null
+      ? `${averageRating.toFixed(1)}★`
       : "4.9★";
   // Opening year (auto-increments) wins; else manual value; else baked-in start.
   const years = openingYear

@@ -17,6 +17,7 @@ import { headers } from "next/headers";
 import { isIOSUserAgent } from "@/lib/browser-detect";
 import { ThemeLayout } from "@/components/themes/ThemeLayout";
 import type { LandingTheme } from "@/types";
+import type { PublicTestimonial } from "@/types/public-testimonials";
 import type {
   IService,
   LandingStructure,
@@ -25,18 +26,9 @@ import type {
 } from "@/types";
 import { normalizeVacations } from "@/helpers/vacations";
 import { getTenantStats } from "@/lib/tenant/getTenantStats";
-import type { TenantStats } from "@/lib/tenant/getTenantStats";
 
 interface Props {
   tenantSlug: string;
-}
-
-interface TestimonialData {
-  _id: string;
-  clientName: string;
-  rating: number;
-  comment: string;
-  adminReply?: string;
 }
 
 async function getTenantData(tenantSlug: string) {
@@ -62,12 +54,16 @@ async function getTenantData(tenantSlug: string) {
 
   const tenantId = (tenant as Record<string, unknown>)._id;
 
-  const [salon, services, testimonials, tenantStats] = await Promise.all([
-    SalonProfile.findOne({ tenantId }).lean(),
+  const salon = await SalonProfile.findOne({ tenantId }).lean();
+  const testimonialLimit =
+    (salon as { landingTheme?: string } | null)?.landingTheme === "theme-8"
+      ? 3
+      : 6;
+  const [services, testimonials, tenantStats] = await Promise.all([
     Service.find({ tenantId }).lean(),
     Testimonial.find({ tenantId, isApproved: true })
       .sort({ createdAt: -1 })
-      .limit(6)
+      .limit(testimonialLimit)
       .lean(),
     getTenantStats(String(tenantId)),
   ]);
@@ -249,7 +245,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     updatedAt: String(sv.updatedAt ?? ""),
   })) as IService[];
 
-  const testimonialList: TestimonialData[] = (
+  const testimonialList: PublicTestimonial[] = (
     testimonials as Record<string, unknown>[]
   ).map((t) => ({
     _id: String(t._id),
