@@ -92,6 +92,14 @@ Code must be strictly segregated into designated operational layers:
 - Graceful degradation via React **Error Boundaries** must catch unhandled component crashes.
 - User-facing notifications must be triggered using `react-hot-toast` (or `sonner`) using human-readable, polite, and contextual localization-friendly language.
 
+### 5.3 Diagnostic Coverage for Risky Admin Workflows
+
+- **Every risky admin workflow must have a Diagnostic integrity check.** A workflow is risky when it touches multiple domain models at once (account merge, ownership reassignment, bulk mutations).
+- When such a workflow is introduced or extended, the matching integrity check must land **in the same PR**: check definition in the `@panta/diagnostic-engine/integrity` registry + a read-only collector in `src/lib/diagnostics/integrity/collectors/`.
+- Integrity checks are strictly **read-only**: they detect and recommend a repair action as text — they never mutate data.
+- A collector failure must surface as `status: "failed"` ("check did not run") — it must never be reported as "0 findings".
+- Reference lists must stay in sync with the workflows they guard (example: `mergeTenantUsers` reassigns 8 references → `refModels.ts` scans the same 8).
+
 ---
 
 ## 6. Code Quality, Verification & CI/CD Guardrails

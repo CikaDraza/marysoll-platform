@@ -1,8 +1,34 @@
-# PANTA — Diagnostic Engine: Identity & Loyalty Health (sledeći task)
+# PANTA — Diagnostic Engine: Identity & Loyalty Health
 
 > Zabeleženo 2026-07-09 (Milanova odluka), posle #4 Guest→Registered merge.
-> **Status: PLANIRANO — nije implementirano.** Ovo je specifikacija sledećeg
-> reza Diagnostic Engine-a: nova grupa provera integriteta identiteta/lojalnosti.
+> **Status: ✅ IMPLEMENTIRANO 2026-07-11** (M1–M4, grana
+> `product-engines/diagnostic-engine/identity-loyalty-health` → PR #29/#30 →
+> `staging/production-engines`). Validirano prvim run-om na staging tenantu
+> (2 stvarna ERROR nalaza: invalidReferences + account orphans; 0 neizvršenih).
+>
+> **Gde živi:**
+> - Kontrakt + registry (10 provera kao podaci) + čisti evaluatori:
+>   `packages/diagnostic-engine/src/integrity/` (entry
+>   `@panta/diagnostic-engine/integrity` — fizički odvojen od browser porodice)
+> - Mongo kolektori (read-only) + runner: `src/lib/diagnostics/integrity/`
+>   (adapter: `lib/platform/diagnostic-client.ts`)
+> - API: `GET /api/superadmin/diagnostics/integrity[?tenantId=]` (on-demand)
+> - UI: `IntegritySection` u superadmin Dijagnostika tabu
+>
+> **Ključno pravilo kontrakta (Milanova dopuna, zaključano):** greška kolektora
+> = `status:"failed"` ("Provera nije izvršena") — NIKAD ne sme da izgleda kao
+> "0 problema".
+>
+> **Ostaje za kasnije (van ovog reza):** repair AKCIJE (reassign/recompute
+> dugmad — sada su samo tekst preporuke).
+>
+> **Dodato 2026-07-22 (Milanov nalog):** 10. provera
+> `notifications.push.subscriptions` — povod je bio push notifikacija na
+> preview-deploy domenu (relativan `url` u payload-u razrešen u odnosu na
+> stale service-worker origin; fix: `resolvePushUrl` u `lib/webPush.ts` +
+> openWindow fallback u `service-worker.js`). Ova provera je samo READ-ONLY
+> inventar (ko je pretplaćen, koliko uređaja) — nema veze sa placeholder-email
+> proverom iz marketplace analize, koja ostaje neodobrena.
 
 ## Zašto sada (a ne kad se pojave problemi)
 
@@ -12,7 +38,7 @@ termine, loyalty ledger, vaučere, notifikacije, audience. Kad admin prijavi
 nestala istorija" — Diagnostic treba da tačno pokaže **koji red podataka je
 prekinut i kako se popravlja**, umesto ručnog kopanja po bazi.
 
-**Governing rule (dodati u ARHITEKTURA-ENGINES.md / ARCHITECTURAL_RULES.md):**
+**Governing rule (✅ dodato: ARHITEKTURA-ENGINES.md princip 7 · ARCHITECTURAL_RULES.md §5.3):**
 > Svaki rizičan admin workflow mora imati Diagnostic proveru.
 
 Napomena o obimu: postojeći Diagnostic Engine (`@panta/diagnostic-engine`) je
@@ -35,6 +61,7 @@ Provere (predlog naziva ključeva):
 | `loyalty.balance.mismatch` | Stored `heartsBalance/pointsBalance` != recompute iz ledgera → `recomputeAccount(accountId)` | **WARNING** |
 | `voucher.owner.invalid` | Vaučer owner ne postoji / merged / suspended / pogrešan tenant | **WARNING** |
 | `appointment.client.invalid` | `Appointment.clientProfileId` → nepostojeći/merged/suspended/wrong-tenant user | **ERROR** |
+| `notifications.push.subscriptions` | Ko je pretplaćen na push (admin i klijenti): broj uređaja, poslednja registracija; admin/staff sa push uključenim u podešavanjima ali bez ijedne pretplate | **INFO / WARNING** |
 
 ### 1. Merged user references
 Ako je `TenantUser.status="suspended"` + `mergedInto=targetId`, nijedan **aktivan**
@@ -82,6 +109,19 @@ ne vidi termin, admin vidi pogrešnog, completion ne dodeljuje srca pravom nalog
 `ownerTenantUserId` (i `giftedByTenantUserId` ako postoji) postoji, nije merged/suspended,
 voucher tenant == user tenant. Ako owner merged → očekivani owner je `mergedInto`. **WARNING**.
 Direktno pokriva bug "klijent ima vaučer, ali ga ne vidi".
+
+### 8. Push subscription inventory
+Za svaki aktivan (nesuspendovan, nespojen) `TenantUser` pročitati
+`pushSubscriptions[]` i `notificationSettings.pushNotifications`:
+- **INFO** ako ima ≥1 pretplatu — broj uređaja + datum poslednje registracije
+  (evidence: ko je stvarno pretplaćen, admin ili klijent).
+- **WARNING** ako je uloga OWNER/ADMIN/STAFF, push je uključen u
+  podešavanjima, a nema nijednu pretplatu — nalog tiho ne prima notifikacije.
+
+Ne detektuje "stale origin" service worker bug (endpoint push servisa ne nosi
+origin sajta koji se pretplatio) — samo broj/datum pretplata. Za taj bug je
+fix strukturni (`resolvePushUrl` apsolutni URL + `openWindow` fallback), ne
+diagnostička provera.
 
 ## Severity mapa (sažeto)
 - **ERROR**: broken reference · ledger/account mismatch · account bez usera · appointment na nepostojećeg usera.
