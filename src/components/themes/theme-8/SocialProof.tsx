@@ -18,15 +18,14 @@ export function Theme8SocialProof({
 }: Props) {
   const handle = instagramHandle || "@lashroom_byanja";
 
-  // "Google reviews" shows the real testimonials average once there's traction
-  // (>3 appointments AND >3 reviews); otherwise a flattering fallback. The
-  // rebook-rate and wait-time numbers are marketing copy (not in the data).
-  const completedCount = tenantStats?.completedAppointmentCount ?? 0;
-  const hasRealTraction =
-    completedCount > 3 && (tenantStats?.reviewCount ?? 0) > 3;
+  // "Google reviews" prelazi na stvaran prosek čim postoji prvi odobren
+  // testimonial. Ostale vrednosti su marketinški copy (nisu u podacima).
+  const averageRating = tenantStats?.averageRating;
+  const hasRealRating =
+    (tenantStats?.reviewCount ?? 0) > 0 && averageRating != null;
   const reviewValue =
-    hasRealTraction && tenantStats?.averageRating != null
-      ? tenantStats.averageRating.toFixed(1)
+    hasRealRating && averageRating != null
+      ? averageRating.toFixed(1)
       : "5.0";
 
   const stats = [
