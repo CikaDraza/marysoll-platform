@@ -7,14 +7,9 @@
 import type { CSSProperties } from "react";
 import type { IService, SalonProfileData } from "@/types";
 import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
+import type { PublicTestimonial } from "@/types/public-testimonials";
 
-export interface Testimonial {
-  _id: string;
-  clientName: string;
-  rating: number;
-  comment: string;
-  adminReply?: string;
-}
+export type Testimonial = PublicTestimonial;
 
 export interface ThemeFooterShared {
   tenantSlug?: string;
@@ -49,6 +44,8 @@ export interface ThemeLandingProps {
   tenantSlug?: string;
   clientSlug?: string;
   tenantStats?: TenantStats;
+  /** Privremeni preview fixtures, dozvoljeni samo na staging/preview hostu. */
+  showTheme8TestimonialFixtures?: boolean;
 
   // Izvedeno u ThemeLayout-u
   /**
