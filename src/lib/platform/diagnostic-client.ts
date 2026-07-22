@@ -25,3 +25,35 @@ export type {
   DiagnosticReport,
   NetworkProbe,
 } from "@panta/diagnostic-engine";
+
+// ── Druga porodica: server-side data-integrity (Identity & Loyalty Health) ──
+// Poseban package entry (./integrity) — kontrakt + registry + čisti evaluatori.
+// Mongo kolektori žive u src/lib/diagnostics/integrity i uvoze paket ODAVDE.
+export {
+  INTEGRITY_CHECKS,
+  getCheckDefinition,
+  FINDINGS_MAX,
+  makeFinding,
+  completedResult,
+  failedResult,
+  buildReport,
+  summarizeResults,
+  findMissingReferences,
+  expectedBalancesFromLedger,
+  compareBalances,
+  maxSeverity,
+  toModuleResult,
+} from "@panta/diagnostic-engine/integrity";
+
+export type {
+  IntegritySeverity,
+  IntegrityFinding,
+  IntegrityCheckStatus,
+  IntegrityCheckResult,
+  IntegrityReport,
+  IntegrityCheckDefinition,
+  IntegrityCheckKey,
+  LedgerAmountRow,
+  BalancePair,
+  BalanceMismatch,
+} from "@panta/diagnostic-engine/integrity";
