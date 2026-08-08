@@ -1,7 +1,7 @@
 import "server-only";
 
 /**
- * Osam domenskih referenci na TenantUser koje merge premesta
+ * Domenske reference na TenantUser koje merge premesta
  * (lib/users/mergeTenantUsers.ts) — isti spisak skeniraju provere
  * mergedReferences i invalidReferences. Ako merge dobije novu referencu,
  * dodati je i ovde (governing rule: rizičan workflow ↔ Diagnostic provera).
@@ -15,6 +15,7 @@ import { Testimonial } from "@/models/Testimonial";
 import { AudienceContact } from "@/models/AudienceContact";
 import { LoyaltyEvent } from "@/models/LoyaltyEvent";
 import { LoyaltyLedger } from "@/models/LoyaltyLedger";
+import { Referral } from "@/models/Referral";
 
 export interface UserRefModel {
   /** Ljudska oznaka za evidence/poruke (naziv modela + polje kad nije očigledno). */
@@ -33,4 +34,6 @@ export const USER_REF_MODELS: readonly UserRefModel[] = [
   { label: "AudienceContact", model: AudienceContact, field: "profileId" },
   { label: "LoyaltyEvent", model: LoyaltyEvent, field: "subjectTenantUserId" },
   { label: "LoyaltyLedger", model: LoyaltyLedger, field: "tenantUserId" },
+  { label: "Referral(referrer)", model: Referral, field: "referrerTenantUserId" },
+  { label: "Referral(referred)", model: Referral, field: "referredTenantUserId" },
 ];

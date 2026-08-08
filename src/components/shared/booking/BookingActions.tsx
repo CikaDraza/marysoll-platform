@@ -14,6 +14,7 @@ export function BookingActions() {
     selectedService,
     manualSlotInvalid,
     handleClose,
+    referralVoucherCode,
   } = useBookingContext();
 
   return (
@@ -41,6 +42,17 @@ export function BookingActions() {
         {isSubmitting
           ? "Zakazivanje..."
           : "Zakaži termin"}
+      </button>
+    ) : referralVoucherCode ? (
+      <button
+        type="submit"
+        disabled={
+          manualSlotInvalid ||
+          (selectedService?.type === "variant" && !selectedVariant)
+        }
+        className="px-5 py-2 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-xl transition disabled:opacity-50 cursor-pointer"
+      >
+        Sačuvaj termin i prijavi se →
       </button>
     ) : showGuestForm ? (
       <button

@@ -13,6 +13,7 @@ import {
   computeVoucherDiscount,
 } from "@/lib/loyalty/vouchers/service";
 import { Voucher } from "@/models/Voucher";
+import { trackReferralBooking } from "@/lib/loyalty/referrals";
 import {
   inferPreferredContact,
   normalizeContactValue,
@@ -216,8 +217,10 @@ export async function POST(request: NextRequest) {
 
     if (reservedVoucher) {
       const voucherId = reservedVoucher._id;
+      let reservationAttached = true;
       await attachReservationToAppointment(voucherId, appointment._id).catch(
         async (e) => {
+          reservationAttached = false;
           console.error("[loyalty] attach reservation failed:", e);
           await Voucher.findOneAndUpdate(
             { _id: voucherId, status: "reserved" },
@@ -225,6 +228,16 @@ export async function POST(request: NextRequest) {
           ).catch(() => null);
         },
       );
+      if (reservationAttached) {
+        await trackReferralBooking({
+          tenantId,
+          referredTenantUserId: decoded.tenantUserId!,
+          appointmentId: appointment._id,
+          voucher: reservedVoucher,
+        }).catch((e) => {
+          console.error("[loyalty] referral booking tracking failed:", e);
+        });
+      }
     }
 
     await createAppointmentNotification(

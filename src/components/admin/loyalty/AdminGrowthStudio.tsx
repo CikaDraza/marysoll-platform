@@ -85,7 +85,10 @@ function ConfigFormInner({ initial }: { initial: LoyaltyAdminConfig }) {
           expiresDays: 30,
         },
         maxActivePerClient: 3,
+        referrerRewardPoints: 100,
       };
+    if (c.sharing.referrerRewardPoints == null)
+      c.sharing.referrerRewardPoints = 100;
     return c;
   });
 
@@ -606,7 +609,7 @@ function ConfigFormInner({ initial }: { initial: LoyaltyAdminConfig }) {
           />
         </div>
         {form.sharing.enabled && (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <div>
               <label className={lbl}>Popust za prijateljicu</label>
               <select
@@ -682,6 +685,26 @@ function ConfigFormInner({ initial }: { initial: LoyaltyAdminConfig }) {
                   )
                 }
               />
+            </div>
+            <div>
+              <label className={lbl}>Poena osobi koja poziva</label>
+              <input
+                type="number"
+                min={0}
+                max={100000}
+                className={inp}
+                value={form.sharing.referrerRewardPoints}
+                onChange={(e) =>
+                  set(
+                    (d) =>
+                      void (d.sharing.referrerRewardPoints =
+                        parseInt(e.target.value, 10) || 0),
+                  )
+                }
+              />
+              <p className="text-[11px] text-gray-400 mt-1">
+                Tek posle prve završene posete. Traži uključene poene.
+              </p>
             </div>
           </div>
         )}

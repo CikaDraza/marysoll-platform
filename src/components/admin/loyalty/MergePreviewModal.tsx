@@ -158,6 +158,12 @@ export function MergePreviewModal({
                       <span>Termini: {preview.moves.appointments}</span>
                       <span>Vaučeri: {preview.moves.vouchersOwned}</span>
                       <span>Referral veze: {preview.moves.vouchersGifted}</span>
+                      <span>
+                        Preporuke kao pošiljalac: {preview.moves.referralsAsReferrer}
+                      </span>
+                      <span>
+                        Preporuke kao primalac: {preview.moves.referralsAsReferred}
+                      </span>
                       <span>Notifikacije: {preview.moves.notifications}</span>
                       <span>Utisci: {preview.moves.testimonials}</span>
                       <span>Newsletter: {preview.moves.audienceContacts}</span>

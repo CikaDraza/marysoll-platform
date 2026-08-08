@@ -12,6 +12,7 @@ export function BookingAuthInfo() {
     showGuestForm,
     setShowGuestForm,
     doGuestReserve,
+    referralVoucherCode,
   } = useBookingContext();
 
   return (
@@ -25,7 +26,35 @@ export function BookingAuthInfo() {
   </div>
 ) : (
   <div className="mb-4 p-3 bg-amber-50 rounded-xl border border-amber-100 space-y-2">
-    {!showGuestForm ? (
+    {referralVoucherCode ? (
+      <div className="space-y-3">
+        <div>
+          <p className="text-sm text-amber-800 font-bold">
+            Dobijate vaučer od prijateljice 🎁
+          </p>
+          <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+            Napravite nalog da ga sačuvate i iskoristite pri zakazivanju. Gift
+            vaučer nije dostupan za guest booking.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => doGuestReserve("register")}
+            className="text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-lg transition"
+          >
+            Napravite nalog →
+          </button>
+          <button
+            type="button"
+            onClick={() => doGuestReserve("login")}
+            className="text-xs font-bold text-amber-700 border border-amber-300 bg-white hover:bg-amber-50 px-3 py-2 rounded-lg transition"
+          >
+            Već imam nalog
+          </button>
+        </div>
+      </div>
+    ) : !showGuestForm ? (
       <>
         <div className="flex items-start gap-2">
           <p className="flex-1 text-xs text-amber-700 font-semibold leading-relaxed">
@@ -35,7 +64,7 @@ export function BookingAuthInfo() {
           </p>
           <button
             type="button"
-            onClick={doGuestReserve}
+            onClick={() => doGuestReserve("login")}
             className="shrink-0 text-xs font-bold text-amber-700 border border-amber-300 bg-white hover:bg-amber-50 px-2.5 py-1 rounded-lg transition"
           >
             Prijavi se →

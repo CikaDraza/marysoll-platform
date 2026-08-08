@@ -52,6 +52,7 @@ export const DEFAULT_LOYALTY_CONFIG = {
       expiresDays: 30,
     },
     maxActivePerClient: 3,
+    referrerRewardPoints: 100,
   },
   milestones: [
     {

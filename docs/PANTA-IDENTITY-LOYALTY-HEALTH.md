@@ -68,7 +68,8 @@ Ako je `TenantUser.status="suspended"` + `mergedInto=targetId`, nijedan **aktiva
 domenski model ne bi trebalo da ga koristi kao primarnog ownera. Skenirati:
 `Appointment.clientProfileId`, `Voucher.ownerTenantUserId`, `Voucher.giftedByTenantUserId`,
 `Notification.recipientProfileId`, `Testimonial.clientProfileId`, `AudienceContact.profileId`,
-`LoyaltyEvent.subjectTenantUserId`, `LoyaltyLedger.tenantUserId`.
+`LoyaltyEvent.subjectTenantUserId`, `LoyaltyLedger.tenantUserId`,
+`Referral.referrerTenantUserId`, `Referral.referredTenantUserId`.
 Output primer:
 ```
 Merged user still referenced:
@@ -139,7 +140,14 @@ Za sada **read-only** (samo detekcija + preporuka akcije). Repair akcije (npr.
 
 ---
 
-## Vezano: Referral hard-gate (Phase 2b zahtev, NE #4)
+## Vezano: Referral hard-gate (Phase 2b)
+
+> **Status: ✅ IMPLEMENTIRANO U KODU 2026-08-09 · live QA čeka.**
+> Domenski evaluator: `packages/loyalty-engine/src/referral.ts`; evidencija i
+> event: `src/models/Referral.ts` + `src/lib/loyalty/referrals.ts`; Booking UX:
+> `src/components/shared/booking/`; javni preview:
+> `/api/public/[tenantSlug]/loyalty/referral`; nagrada/revert:
+> `src/lib/loyalty/engine.ts`.
 
 Milanova odluka (2026-07-09): za **referral / poziv prijateljici** (gift vaučer),
 kada neregistrovan korisnik dođe da iskoristi poklon — **NE otvarati guest flow**.
@@ -151,10 +159,9 @@ Napravite nalog da ga sačuvate i iskoristite pri zakazivanju.
 (Za običan guest booking i dalje važi blaga poruka iz 4a: "Prijavite se ili
 nastavite kao gost".)
 
-**Zašto nije urađeno u #4:** claim gift-koda pri zakazivanju NIJE izgrađen kao
-korisnički tok — u `src/components/shared/booking` nema polja za unos vaučer koda.
-API već štiti: `reserveVoucherForBooking` u `appointments/create` koristi
-`decoded.tenantUserId!` → redemption je već ograničen na **ulogovane**. Nedostaje
-UX: gift-kod (npr. `?voucher=CODE` u share linku) → booking prepozna referral
-kontekst → hard "napravi nalog" prompt → posle registracije primeni vaučer.
-Ovo ide sa **Referral Phase 2b**, ne kao dopuna #4.
+Implementirani hard-gate zahteva svih pet dokaza: registrovan `USER`, verifikovan
+email, gift vaučer stvarno primenjen na taj termin, nema self-referral-a i nema
+ranije završene posete. Share link nosi `?voucher=CODE`; pending booking čuva kod
+kroz register/verify/login round-trip. Običan guest booking ostaje dozvoljen, ali
+gift/referral kontekst ne prikazuje niti prihvata guest tok. Nagrada je
+idempotentna po completion ciklusu i povlači se ako se completion revertuje.

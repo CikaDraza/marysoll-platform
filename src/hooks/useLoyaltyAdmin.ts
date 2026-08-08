@@ -38,6 +38,7 @@ export interface LoyaltyAdminConfig {
     enabled: boolean;
     friendReward: LoyaltyRewardInfo;
     maxActivePerClient: number;
+    referrerRewardPoints: number;
   };
   milestones: Array<{ heartsRequired: number; reward: LoyaltyRewardInfo }>;
   pointsShop: Array<{ costPoints: number; reward: LoyaltyRewardInfo }>;
@@ -233,6 +234,7 @@ export interface MergeResult {
     notifications: number;
     testimonials: number;
     audience: number;
+    referrals: number;
   };
 }
 
@@ -271,6 +273,8 @@ export interface MergeMoves {
   loyaltyEvents: number;
   vouchersOwned: number;
   vouchersGifted: number;
+  referralsAsReferrer: number;
+  referralsAsReferred: number;
   notifications: number;
   testimonials: number;
   audienceContacts: number;

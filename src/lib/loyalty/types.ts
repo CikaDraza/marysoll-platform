@@ -16,6 +16,7 @@ export type LoyaltyEventType =
   | "appointment_cancelled"
   | "client_registered"
   | "client_checkin"
+  | "referral_completed"
   | "manual_adjustment";
 
 export type LoyaltyEntryType = "earn" | "redeem" | "adjust" | "revoke" | "expire";
@@ -53,6 +54,8 @@ export interface LoyaltyConfigLean {
     enabled: boolean;
     friendReward?: RewardSpec;
     maxActivePerClient?: number;
+    /** Nagrada osobi koja je pozvala prijateljicu, tek posle hard-gate-a. */
+    referrerRewardPoints?: number;
   };
   milestones: Array<{ heartsRequired: number; reward: RewardSpec }>;
   pointsShop: Array<{ costPoints: number; reward: RewardSpec }>;

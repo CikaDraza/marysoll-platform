@@ -46,6 +46,9 @@ export interface ReferralCompletedEvent extends EventEnvelope {
   referrerClientId: string;
   referredClientId: string;
   referralId?: string;
+  appointmentId?: string;
+  /** Completion ciklus (revert → ponovni completion može ponovo da nagradi). */
+  cycle?: number;
 }
 
 /** Vaučer iskorišćen na terminu (redemption). */
