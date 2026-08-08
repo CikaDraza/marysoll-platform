@@ -30,10 +30,10 @@ function finding(
 }
 
 describe("integrity registry", () => {
-  it("sadrži tačno 9 provera iz spec-a, jedinstvene ključeve", () => {
-    expect(INTEGRITY_CHECKS).toHaveLength(9);
+  it("sadrži tačno 10 provera iz spec-a, jedinstvene ključeve", () => {
+    expect(INTEGRITY_CHECKS).toHaveLength(10);
     const keys = INTEGRITY_CHECKS.map((c) => c.key);
-    expect(new Set(keys).size).toBe(9);
+    expect(new Set(keys).size).toBe(10);
     expect(keys).toEqual([
       "client.identity.duplicates",
       "client.identity.mergedReferences",
@@ -44,6 +44,7 @@ describe("integrity registry", () => {
       "loyalty.balance.mismatch",
       "voucher.owner.invalid",
       "appointment.client.invalid",
+      "notifications.push.subscriptions",
     ]);
   });
 
@@ -67,6 +68,7 @@ describe("integrity registry", () => {
     expect(sev("loyalty.balance.mismatch")).toBe("warning");
     expect(sev("voucher.owner.invalid")).toBe("warning");
     expect(sev("appointment.client.invalid")).toBe("error");
+    expect(sev("notifications.push.subscriptions")).toBe("info");
   });
 
   it("nepoznat ključ baca (registry je izvor istine)", () => {

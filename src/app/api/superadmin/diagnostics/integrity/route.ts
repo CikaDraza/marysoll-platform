@@ -3,7 +3,7 @@
  * Auth: proxy guarduje ceo /api/superadmin prefiks (samo superadmin).
  *
  * Bez parametra → lagana lista salona { tenants } za "Izaberi salon" select.
- * ?tenantId=<ObjectId> → pokreće svih 9 read-only provera integriteta
+ * ?tenantId=<ObjectId> → pokreće svih 10 read-only provera integriteta
  *   (src/lib/diagnostics/integrity) i vraća { report } — on-demand, bez crona,
  *   ništa se ne piše u bazu. Repair akcije su samo TEKST preporuke.
  */

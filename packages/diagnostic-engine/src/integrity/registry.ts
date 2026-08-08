@@ -101,6 +101,15 @@ export const INTEGRITY_CHECKS: readonly IntegrityCheckDefinition[] = [
     defaultSeverity: "error",
     repair: "Reassign termina na canonical (mergedInto), odnosno ispravan profil.",
   },
+  {
+    key: "notifications.push.subscriptions",
+    name: "Push pretplate po korisniku",
+    description:
+      "Pregled aktivnih push pretplata (admin i klijent naloga): ko je pretplaćen, koliko uređaja, kad poslednji put — plus WARNING kad admin/staff ima push uključen u podešavanjima, ali nema nijednu registrovanu pretplatu.",
+    defaultSeverity: "info",
+    repair:
+      "WARNING: korisnik treba ponovo da omogući push u browseru/telefonu (podešavanja su uključena, ali pretplata nedostaje ili je istekla).",
+  },
 ] as const;
 
 export type IntegrityCheckKey = (typeof INTEGRITY_CHECKS)[number]["key"];

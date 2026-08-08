@@ -26,6 +26,7 @@ import { collectLedgerMismatch } from "./collectors/ledgerMismatch";
 import { collectBalanceMismatch } from "./collectors/balanceMismatch";
 import { collectVoucherOwner } from "./collectors/voucherOwner";
 import { collectAppointmentClient } from "./collectors/appointmentClient";
+import { collectPushSubscriptions } from "./collectors/pushSubscriptions";
 
 const COLLECTORS: Record<string, IntegrityCollector> = {
   "client.identity.duplicates": collectDuplicates,
@@ -37,6 +38,7 @@ const COLLECTORS: Record<string, IntegrityCollector> = {
   "loyalty.balance.mismatch": collectBalanceMismatch,
   "voucher.owner.invalid": collectVoucherOwner,
   "appointment.client.invalid": collectAppointmentClient,
+  "notifications.push.subscriptions": collectPushSubscriptions,
 };
 
 export async function runIntegrityChecks(

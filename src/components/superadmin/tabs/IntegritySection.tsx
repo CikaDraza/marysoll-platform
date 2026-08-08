@@ -170,8 +170,9 @@ export function IntegritySection() {
         </h3>
         <p className="text-xs text-slate-400 mt-0.5">
           Server-side provere integriteta podataka po salonu (read-only):
-          merge reference, loyalty nalozi/ledger/balansi, vaučeri, termini.
-          Preporuke za popravku su samo tekst — ništa se ne menja automatski.
+          merge reference, loyalty nalozi/ledger/balansi, vaučeri, termini,
+          push pretplate. Preporuke za popravku su samo tekst — ništa se ne
+          menja automatski.
         </p>
       </div>
 
