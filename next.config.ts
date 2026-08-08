@@ -74,6 +74,19 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Jedan javni kanonski host: www.marysoll.com je samo legacy ulazna
+      // tačka i ne sme da servira istu marketing stranicu kao zaseban URL.
+      {
+        source: "/:path*",
+        destination: `https://${BASE_DOMAIN}/:path*`,
+        permanent: true,
+        has: [
+          {
+            type: "host",
+            value: `www.${BASE_DOMAIN}`,
+          },
+        ],
+      },
       {
         source: "/login",
         destination: `https://${BASE_DOMAIN}/login`,
