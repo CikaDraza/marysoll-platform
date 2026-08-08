@@ -47,6 +47,7 @@ interface ThemeLayoutProps {
    */
   clientSlug?: string;
   tenantStats?: TenantStats;
+  showTheme8TestimonialFixtures?: boolean;
   /** iOS "safe" render (vidi ThemeLandingProps.reduceMotion) — iz ClientHomePage po UA. */
   reduceMotion?: boolean;
 }
@@ -59,6 +60,7 @@ export function ThemeLayout({
   tenantSlug,
   clientSlug,
   tenantStats,
+  showTheme8TestimonialFixtures,
   reduceMotion,
 }: ThemeLayoutProps) {
   const instagram = salon.social?.instagram || "";
@@ -173,6 +175,7 @@ export function ThemeLayout({
     tenantSlug,
     clientSlug,
     tenantStats,
+    showTheme8TestimonialFixtures,
     reduceMotion,
     instagram,
     ls,
