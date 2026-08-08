@@ -3,6 +3,7 @@
 > Zapisano 2026-07-04 po Milanovoj viziji. Ovo je nacrt za zajedničku analizu —
 > detaljan plan pravimo posle završetka Faze 4 optimizacije.
 > Radni naziv inicijative: **Labs / "Panteleymon" (Panta)**.
+> Poslednja revizija stvarnog stanja koda: **2026-08-09**.
 
 ## Problem danas
 
@@ -42,7 +43,7 @@ monolit to ne može da nosi.
    modela odjednom (merge naloga, reassign, masovne izmene). Kad se takav
    workflow uvede ili proširi, dodaje se odgovarajuća integrity provera u
    `@panta/diagnostic-engine/integrity` registry + app kolektor — isti PR.
-   (Primer: merge premesta 8 referenci → `refModels.ts` skenira istih 8.)
+   (Primer: merge premesta 10 referenci → `refModels.ts` skenira istih 10.)
 
 Svaki engine ima: svoj domen, svoje tipove, svoje API-je, svoju baznu logiku,
 svoje testove. Marysoll ih uvozi kao zavisnosti.
@@ -69,9 +70,9 @@ svoje testove. Marysoll ih uvozi kao zavisnosti.
 | **Media Engine** | Images, Videos, Compression, CDN, Optimization, Formats, Responsive, Gallery, Storage, Animations (Framer/Spline/Canva) | DA |
 | **Notification Engine** | Email, SMS, Push, WhatsApp, Webhook, Slack, Discord. Booking samo kaže "Send reminder" — engine odlučuje kako. | DA |
 | **Identity Engine** | Users, Roles, Permissions, Tenants, Organizations, Sessions, OAuth, Audit. Koriste ga svi engine-i. | DA |
-| **Loyalty (Growth) Engine** 🔜 **SLEDEĆI** | Points/Currency, **Streaks** (navika ≠ valuta), Rewards, **Vouchers**, **Gifts**, **Bonusi**, **Popusti**, Referral/Affiliate, Share Voucher, Tiers (Bronze/Silver/Gold/VIP), **QR Check-in**, Redemption, Birthday/personalized/AI rewards, salon acquisition signals. Već postoji kao **Growth Studio** (loyalty Faza 1). | **DA** — retail/beauty/fitness/svaki repeat-business |
+| **Loyalty (Growth) Engine** ✅ **V1 + Referral 2b u kodu; live QA čeka** | Points/Currency, **Streaks** (navika ≠ valuta), Rewards, **Vouchers**, **Gifts**, **Bonusi**, **Popusti**, Referral/Affiliate, Share Voucher, Tiers (Bronze/Silver/Gold/VIP), **QR Check-in**, Redemption, Birthday/personalized/AI rewards, salon acquisition signals. Growth Studio, QR/streak, share, merge i referral hard-gate postoje; Phase 3 premium ostaje. | **DA** — retail/beauty/fitness/svaki repeat-business |
 
-## Loyalty (Growth) Engine — v2 vizija (sledeći engine)
+## Loyalty (Growth) Engine — v2 vizija i stvarno stanje
 
 **Nije "digitalizacija loyalty kartice" — mali beauty growth loop koji pravi retenciju i prihod:**
 
@@ -196,11 +197,11 @@ dovode nove — prvi engine koji Marysoll-u pravi network effect.
 - [x] **T1. Monorepo skeleton + prvi engine** ✅ **GOTOVO**: npm workspaces + `packages/diagnostic-engine`
       (`@panta/diagnostic-engine`) + adapter `lib/platform/diagnostic-client.ts` + Dijagnostika tab
       (superadmin) sa export/Zod. Vitest = root runner. Obrazac granice postavljen za sve dalje engine-e.
-- [ ] **T-LOYALTY. Loyalty (Growth) Engine** 🔜 **SLEDEĆI** (vidi sekciju "Loyalty (Growth) Engine — v2 vizija"):
-      **Phase 0** = extraction Growth Studio → `@panta/loyalty-engine` + adapter (bez promene ponašanja);
-      **Phase 1** = QR check-in + streak (`ClientCheckInEvent`); **Phase 2** = referral/share voucher;
-      **Phase 3** = tiers/birthday/AI. Loyalty Moments = multi-consumer eventi (fan-out → više engine-a).
-- [ ] **T2. Theme Engine granice**: šta iz `components/themes/`, `lib/themeConfig`,
+- [ ] **T-LOYALTY. Loyalty (Growth) Engine** — **Phase 0, Phase 1 i Phase 2b su u kodu**;
+      live QA Referral toka na `staging.marysoll.com` je release gate. **Phase 3**
+      (tiers/birthday/personalized/AI rewards) ostaje otvorena. Loyalty Moments =
+      multi-consumer eventi (fan-out → više engine-a).
+- [ ] **T2. Theme/Layout Engine granice** 🔜 **SLEDEĆI**: šta iz `components/themes/`, `lib/themeConfig`,
       CMS gallery varijanti i `layouts/types.ts` ulazi u paket; definisati Theme JSON
       kontrakt (preset/brand/assets/sections) + verzionisanje (draft/published/archived/preview).
 - [ ] **T3. Booking Engine domen**: popisati domenski model koji VEĆ postoji
@@ -216,7 +217,10 @@ dovode nove — prvi engine koji Marysoll-u pravi network effect.
       (notificationService, webPush, tenantEmailSettings) iza jednog API-ja.
 - [ ] **T7. Identity Engine**: auth-server, tokenResponse, role/permissions —
       granice i tipovi (koristi ga sve).
-- [ ] **T8. Kontrakti između engine-a + Event Bus**: eventi vs direktni pozivi; šta Marysoll
+- [ ] **T8. Kontrakti između engine-a + Event Bus**: prvih 5 tipizovanih kontrakata
+      postoji u `@panta/event-bus`; Loyalty trenutno sluša `client_checkin` i
+      `referral_completed`. Preostaje priključivanje ostalih emitera/consumer-a i
+      odgovornih engine-a. Šta Marysoll
       orkestrator sme da zna. Konkretan pokretač je Loyalty (T-LOYALTY). **NE praviti generički bus
       prerano** — prvih 5 kontrakata dovoljno: `appointment_completed · client_checkin · first_visit ·
       referral_completed · voucher_used`. Svaki engine postaje **subscriber** (Booking emituje;
@@ -233,15 +237,19 @@ dovode nove — prvi engine koji Marysoll-u pravi network effect.
    (bez posla za osoblje, bez čekanja, radi u gužvi, jedan odštampan QR). ✅ napravljeno.
 2. **Streak** — odmah posle QR-a. Nije nagrada nego psihologija: klijent vidi
    „🔥 5 uzastopnih dolazaka" i ne želi da izgubi niz → povećava povratak. Mala
-   implementacija, veliki efekat. ← SLEDEĆE
-3. **Share dugme** — Copy · Instagram · WhatsApp · SMS · Email (na telefonu jedan klik).
+   implementacija, veliki efekat. ✅ napravljeno.
+3. **Share dugme** — Copy · Instagram · WhatsApp · SMS · Email (na telefonu jedan klik). ✅ napravljeno.
 4. **Guest → Registered merge** — PRE anon check-ina. Gosti već skupljaju ❤️/⭐/
-   vaučere/istoriju; sve to mora da preživi registraciju (važan UX).
+   vaučere/istoriju; sve to mora da preživi registraciju (važan UX). ✅ napravljeno;
+   Referral reference su uključene u merge + integrity skenere.
 
 **V2 (Referral · Friend rewards · Sharing · Growth) — growth faza, na kraju:**
 5. **Anonymous check-in** — tek posle merge-a (anon korisnik, privremeni identitet,
    spajanje naloga, sigurnost — ozbiljnija logika).
-6. **Referral Phase 2b** — poslednje. Loyalty već radi bez njega.
+6. **Referral Phase 2b** — ✅ kod završen 2026-08-09; live QA čeka. Share URL
+   nosi `?voucher=CODE`, guest flow je hard-blokiran, kod preživljava
+   register/login, a referrer dobija idempotentnu nagradu tek posle prve
+   završene posete verifikovane prijateljice.
 
 **Future (NE sada) — Personal Client QR:** lični QR po klijentu, salon skenira
 kupca. Za PREMIUM/veće salone i više salona u sistemu jednog. Rešava manje
@@ -262,13 +270,15 @@ konkretan salon-potreba.
 
 ```
 ✅ T0/T1 foundation (Diagnostic Engine + monorepo obrazac)
-🔜 T-LOYALTY Phase 0 — extraction Growth Studio → @panta/loyalty-engine + adapter
-🔜 T8       Event Bus contracts (prvih 5 evenata, subscriber model)
-🔜 T-LOYALTY Phase 1 — QR check-in + streak
-🔜 T-LOYALTY Phase 2 — referral + share voucher
-🔜 consumers — Marketing / Notification / AI slušaju iste evente
+✅ T-LOYALTY Phase 0/1 + share/merge + Referral Phase 2b (kod)
+🧪 Referral live QA na staging-u → zatim release na main
+🔜 T2 Theme/Layout Engine granica i verzionisani Theme JSON kontrakt
+🔜 T8 consumers — Marketing / Notification / Analytics / AI slušaju iste evente
+🔜 T-LOYALTY Phase 3 tek posle Theme/Layout odluke
 ```
-Loyalty pravi retenciju i prihod (network effect), a logika već postoji → najbolji sledeći engine.
+Loyalty V1 više nije sledeći neizgrađen engine; sledeća arhitektonska odluka je
+Theme/Layout Engine granica. Referral ostaje iza staging live-test gate-a dok PR
+ne prođe integracioni tok.
 
 ## Napomene uz tekuću optimizaciju (Faza 4)
 

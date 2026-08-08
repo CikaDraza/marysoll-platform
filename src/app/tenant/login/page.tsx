@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { useClientRouting } from "@/hooks/useClientRouting";
 import { useTenant } from "@/contexts/TenantContext";
 import { Y2KLoginForm } from "@/components/themes/shared/Y2KLoginForm";
+import { PENDING_STORAGE_KEY } from "@/components/shared/booking/types";
 
 export default function ClientLoginPage() {
   const { landingTheme } = useTenant();
@@ -66,7 +67,9 @@ function DefaultClientLoginPage() {
       localStorage.setItem("token", data.token);
 
       const from = searchParams.get("from");
-      const hasPendingBooking = searchParams.get("pendingBooking") === "1";
+      const hasPendingBooking =
+        searchParams.get("pendingBooking") === "1" ||
+        Boolean(sessionStorage.getItem(PENDING_STORAGE_KEY));
       const destination = hasPendingBooking
         ? `${base}/`
         : from

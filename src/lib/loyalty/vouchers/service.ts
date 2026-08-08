@@ -23,6 +23,7 @@ export interface VoucherLean {
   serviceName?: string;
   origin: string;
   ownerTenantUserId: Types.ObjectId | null;
+  giftedByTenantUserId?: Types.ObjectId | null;
   status: "active" | "reserved" | "redeemed" | "expired" | "revoked";
   reservedAppointmentId?: Types.ObjectId;
   expiresAt?: Date;
@@ -108,7 +109,10 @@ export async function reserveVoucherForBooking(params: {
         {
           $or: [
             { ownerTenantUserId: params.clientTenantUserId },
-            { ownerTenantUserId: null },
+            {
+              ownerTenantUserId: null,
+              giftedByTenantUserId: { $ne: params.clientTenantUserId },
+            },
           ],
         },
         { $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }] },

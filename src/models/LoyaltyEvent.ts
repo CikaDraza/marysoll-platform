@@ -17,6 +17,7 @@ const loyaltyEventSchema = new Schema(
         "appointment_cancelled",
         "client_registered",
         "client_checkin",
+        "referral_completed",
         "manual_adjustment",
       ],
       required: true,

@@ -483,6 +483,7 @@ export default function Y2KHomepageAppointmentWidget({
           note: pending.note,
           totalPrice: pending.totalPrice,
           totalDuration: pending.totalDuration,
+          voucherCode: pending.voucherCode,
         });
         setModalDate(pending.date);
         setModalTime(pending.time);
@@ -513,7 +514,10 @@ export default function Y2KHomepageAppointmentWidget({
   }
 
   // ── Guest reserve: save to sessionStorage + redirect ──────────────────────
-  function handleGuestConfirm(data: Omit<PendingAppointment, "tenantSlug">) {
+  function handleGuestConfirm(
+    data: Omit<PendingAppointment, "tenantSlug">,
+    destination: "login" | "register" = "login",
+  ) {
     const pending: PendingAppointment = {
       ...data,
       tenantSlug: effectiveSlug ?? "",
@@ -526,8 +530,7 @@ export default function Y2KHomepageAppointmentWidget({
 
     const isCustomDomain = detectCustomDomain();
     const base = isCustomDomain ? "" : clientSlug ? `/${clientSlug}` : "";
-    const loginUrl = `${base}/login?pendingBooking=1`;
-    window.location.href = loginUrl;
+    window.location.href = `${base}/${destination}?pendingBooking=1`;
   }
 
   // ── Navigation label ───────────────────────────────────────────────────────

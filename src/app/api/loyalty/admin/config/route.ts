@@ -52,6 +52,7 @@ const configSchema = z.object({
       enabled: z.boolean(),
       friendReward: rewardSchema,
       maxActivePerClient: z.number().min(1).max(50),
+      referrerRewardPoints: z.number().min(0).max(100000).default(100),
     })
     .default({
       enabled: false,
@@ -62,6 +63,7 @@ const configSchema = z.object({
         expiresDays: 30,
       },
       maxActivePerClient: 3,
+      referrerRewardPoints: 100,
     }),
   milestones: z
     .array(

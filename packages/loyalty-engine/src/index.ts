@@ -6,8 +6,9 @@
  * cron) ostaje u Marysoll app-u i konzumira ovaj paket kroz adapter
  * lib/platform/loyalty-client.ts.
  *
- * Sledeće faze (vidi ARHITEKTURA-ENGINES.md): QR check-in + streak,
- * referral/share voucher, event bus (multi-consumer Loyalty Moments).
+ * QR/streak i Referral Phase 2b čista pravila su izdvojeni; DB/IO orkestracija
+ * ostaje u app adapterima. Sledeće: Phase 3 premium pravila i dodatni
+ * multi-consumer Loyalty Moments eventi (vidi ARHITEKTURA-ENGINES.md).
  */
 
 export type { CurrencyNames } from "./currency";
@@ -24,3 +25,10 @@ export type {
   StreakUpdateResult,
 } from "./streak";
 export { computeStreakUpdate } from "./streak";
+
+export type {
+  ReferralCompletionGateInput,
+  ReferralCompletionGateReason,
+  ReferralCompletionGateResult,
+} from "./referral";
+export { evaluateReferralCompletion } from "./referral";

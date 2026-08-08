@@ -16,7 +16,11 @@ export type PendingAppointment = {
   note: string;
   totalPrice: number;
   totalDuration: number;
+  /** Gift/referral kod koji mora da preživi login/register round-trip. */
+  voucherCode?: string;
 };
+
+export type BookingAuthDestination = "login" | "register";
 
 export const PENDING_STORAGE_KEY = "ms_pending_appointment";
 
@@ -39,7 +43,10 @@ export interface BookingModalProps {
   userEmail?: string;
   token?: string;
   tenantSlug?: string;
-  onConfirmedByGuest: (data: Omit<PendingAppointment, "tenantSlug">) => void;
+  onConfirmedByGuest: (
+    data: Omit<PendingAppointment, "tenantSlug">,
+    destination?: BookingAuthDestination,
+  ) => void;
   /** Fired after a successful booking (logged-in or direct guest) so the
    *  caller can refresh its calendar and mark the new slot as taken. */
   onBooked?: () => void;

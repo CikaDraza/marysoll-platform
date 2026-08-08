@@ -154,6 +154,7 @@ export default function AppointmentCalendarPage({
           note: pending.note,
           totalPrice: pending.totalPrice,
           totalDuration: pending.totalDuration,
+          voucherCode: pending.voucherCode,
         });
         setModalDate(pending.date);
         setModalTime(pending.time);
@@ -273,7 +274,10 @@ export default function AppointmentCalendarPage({
   );
 
   // ── Guest reserve: save to sessionStorage + redirect ──────────────────────
-  function handleGuestConfirm(data: Omit<PendingAppointment, "tenantSlug">) {
+  function handleGuestConfirm(
+    data: Omit<PendingAppointment, "tenantSlug">,
+    destination: "login" | "register" = "login",
+  ) {
     const pending: PendingAppointment = {
       ...data,
       tenantSlug: clientSlug ?? tenantSlug ?? "",
@@ -285,7 +289,7 @@ export default function AppointmentCalendarPage({
     }
     const isCustomDomain = detectCustomDomain();
     const base = isCustomDomain ? "" : clientSlug ? `/${clientSlug}` : "";
-    window.location.href = `${base}/login?pendingBooking=1`;
+    window.location.href = `${base}/${destination}?pendingBooking=1`;
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────

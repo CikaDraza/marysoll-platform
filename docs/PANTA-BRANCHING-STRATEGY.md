@@ -1,160 +1,112 @@
-# PANTA — Branching & Staging strategija (Product Engines)
+# PANTA — Branching, QA i staging strategija
 
-> Zabeleženo 2026-07-09 (Milanova odluka). Važi za ceo Product Engines program
-> (Loyalty → Diagnostic → Notification…), engine po engine.
+> Prvobitna odluka: 2026-07-09. Usklađeno sa stvarnim granama i proxy kodom:
+> **2026-08-09**. Ovo je jedini autoritativni branch→domen dokument.
 
-## Grane
+## Stalne grane i domeni
 
-```
-main
-= produkcija (production)
+| Git grana | Stabilni domen | Namena | Sme da bude ispred `main`? |
+|---|---|---|---|
+| `main` | `marysoll.com` | produkcija | — |
+| `staging/production-engines` | `staging.marysoll.com` | integracioni i live QA za Product Engines | samo dok konkretan engine PR čeka QA/release |
+| `staging/production-fixes` | `qa.marysoll.com` | cross-platform, proxy, hotfix i regression QA | samo dok konkretan fix PR čeka QA/release |
 
-staging/production-engines
-= zajednička staging grana za SVE engine promene
-= Vercel staging deployment (staging.marysoll.com)
+Stalne test grane nisu skladište nezavršenog rada. Kada je promena puštena na
+`main` ili napuštena, obe se vraćaju na isti commit kao `main` fast-forward
+push-em. Zato „grana je ispred main-a” znači da na njoj postoji kandidat koji se
+upravo testira — ne automatski da je to bezbedno izbaciti ili obrisati.
 
-staging/production-engines/loyalty/...
-= radne grane za Loyalty milestone-e
+Nezavršeni rad živi samo na task granama, na primer:
 
-staging/production-engines/diagnostic-engine/...
-= radne grane za Diagnostic milestone-e
-
-staging/production-engines/notification-engine/...
-= radne grane za Notification milestone-e
-```
-
-Radne (task) grane — jedna po tasku, commit/push na nju, pa PR u `staging/production-engines`:
-
-```
-staging/production-engines/loyalty/guest-merge
-staging/production-engines/loyalty/share-button
+```text
+agent/referral-phase-2b-and-engine-roadmap
 staging/production-engines/loyalty/referral-gate
-
-staging/production-engines/diagnostic-engine/identity-loyalty-health
-staging/production-engines/diagnostic-engine/server-collectors
-
-staging/production-engines/notification-engine/extraction
-staging/production-engines/notification-engine/loyalty-events
+staging/production-engines/theme/layout-contract
+staging/production-fixes/ios-pwa-install
 ```
+
+## URL matrica za test domene
+
+Proxy namerno tretira `staging.marysoll.com` i `qa.marysoll.com` kao
+**path-based** test hostove preko `STAGING_PATH_HOSTS`:
+
+| Površina | Staging | QA |
+|---|---|---|
+| Marketing | `https://staging.marysoll.com/` | `https://qa.marysoll.com/` |
+| Admin | `https://staging.marysoll.com/dashboard` | `https://qa.marysoll.com/dashboard` |
+| Superadmin | `https://staging.marysoll.com/superadmin` | `https://qa.marysoll.com/superadmin` |
+| Tenant sajt | `https://staging.marysoll.com/{slug}` | `https://qa.marysoll.com/{slug}` |
+| Dijagnostika | `https://staging.marysoll.com/dijagnostika` | `https://qa.marysoll.com/dijagnostika` |
+
+Ovo odgovara stvarnom kodu u `src/lib/proxy/constants.ts`,
+`pipeline/detect-domain.ts` i `pipeline/routing.ts`. `NEXT_PUBLIC_BASE_DOMAIN`
+ostaje `marysoll.com`; podrazumevani `STAGING_PATH_HOSTS` već sadrži oba test
+hosta. Wildcard `*.staging.marysoll.com` i nested admin domeni nisu potrebni za
+ovaj režim.
+
+Produkcija ostaje host-based: `admin.marysoll.com`,
+`superadmin.marysoll.com`, `{slug}.marysoll.com` ili verifikovani custom domen
+salona.
 
 ## Git flow
 
+Engine promena:
+
+```text
+task grana (uvek kreće sa svežeg main-a)
+  → draft/ready PR u staging/production-engines
+  → staging.marysoll.com live QA
+  → PR u main
+  → production
+  → fast-forward obe stalne test grane na main
 ```
-staging/production-engines/diagnostic-engine/identity-loyalty-health
-        ↓  (PR + gate)
-staging/production-engines
-        ↓  (deploy)
-staging.marysoll.com   ← QA / preview live test
-        ↓  (PR + svi gejtovi)
-main
-        ↓
-production
-```
 
-**Zašto jedna zajednička staging grana** (a ne samo per-PR URL): engine-i NISU
-100% izolovani — dele proxy, modele, notifikacije. Jedna `staging/production-engines`
-sa stabilnim `staging.marysoll.com` daje realan integrisan QA (i međusobne
-interakcije engine-a), umesto N nezavisnih preview URL-ova koji se ne vide.
+Cross-platform/proxy/hotfix promena koristi isti tok preko
+`staging/production-fixes` i `qa.marysoll.com`.
 
-## Gate — na `main` ne ide NIŠTA dok nije:
+Ne praviti merge commit samo da bi se „osvežila” stalna test grana. Ako grana
+nema sopstvene commit-e (`ahead=0`), dozvoljen je samo fast-forward. Ako je
+`ahead>0`, prvo identifikovati otvoreni PR/WIP; zatim ga završiti, prebaciti na
+task granu ili eksplicitno napustiti — bez force push-a.
 
-- [ ] `tsc` ✅
-- [ ] tests ✅ (app vitest + svi engine paketi)
-- [ ] `build` ✅
-- [ ] preview **live** test na staging.marysoll.com ✅
-- [ ] nema poznatih kritičnih bugova ✅
-- [ ] feature flag / toggle ako je rizično ✅
+## Release gate
 
-Radne grane u `staging/production-engines` idu čim je milestone gotov (tsc/test/build
-zeleni lokalno); "live test" gate je na prelazu `staging/production-engines → main`.
+Na `main` ne ide ništa dok nisu zeleni:
 
----
+- `npx tsc --noEmit`
+- app Vitest + svi engine package testovi
+- `npm run build`
+- live test na odgovarajućem stabilnom domenu i realnom uređaju gde je bitno
+- nema poznatih kritičnih bugova
+- feature toggle za rizične ili tenant-opcionalne funkcije
 
-## Staging domen — preporuka: JEDAN `staging.marysoll.com` + wildcard
+Lokalni test/build dozvoljavaju merge task PR-a u test granu. Live test je gate
+za prelaz test grana → `main`.
 
-### Zašto (tehnički nalaz iz koda)
+## Vercel i env ugovor
 
-Rutiranje je **env-driven**, jedan izvor istine:
-`src/lib/proxy/constants.ts` → `BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com"`.
-Detekcija u `src/lib/proxy/pipeline/detect-domain.ts` sve izvodi iz `BASE_DOMAIN`:
+- `staging.marysoll.com` mora biti pinovan na
+  `staging/production-engines`.
+- `qa.marysoll.com` mora biti pinovan na `staging/production-fixes`.
+- Za oba Preview deployment-a `NEXT_PUBLIC_BASE_DOMAIN=marysoll.com`.
+- `STAGING_PATH_HOSTS=staging.marysoll.com,qa.marysoll.com` je eksplicitan env
+  ekvivalent podrazumevanoj vrednosti iz koda.
+- `NEXT_PUBLIC_APP_URL` je branch-scoped na odgovarajući stabilni domen.
+- `ALLOWED_ORIGINS` uključuje oba HTTPS test origina za credentialed zahteve.
 
-| Host (prod) | Tip |
-|---|---|
-| `marysoll.com` | marketing |
-| `admin.${BASE_DOMAIN}` | admin |
-| `superadmin.${BASE_DOMAIN}` | superadmin |
-| `{slug}.${BASE_DOMAIN}` (wildcard) | client (tenant) |
-| `app.${BASE_DOMAIN}` | client default |
+Repo definiše ovaj ugovor, ali stvarni Vercel branch-domain assignment proverava
+se u Vercel projektu pre live QA.
 
-**Postavljanjem `NEXT_PUBLIC_BASE_DOMAIN=staging.marysoll.com`** cela matrica se
-preslika na staging BEZ IZMENE KODA:
+## Baza
 
-- `staging.marysoll.com` → marketing (superadmin login apex)
-- `admin.staging.marysoll.com` → **admin dashboard**
-- `superadmin.staging.marysoll.com` → **superadmin dashboard**
-- `{tenant}.staging.marysoll.com` → **tenant client panel** (salon strana)
-- `app.staging.marysoll.com` → client default
+Produkcija, staging i QA trenutno dele `marysoll_db`. Zato su test domeni
+bezbedni za prikaz i kontrolisani QA, ali nisu sandbox podataka. Destruktivne
+radnje (merge korisnika, masovne izmene, stvarna slanja) rade se samo na demo
+tenantima i unapred pripremljenim zapisima.
 
-Ovim se testiraju SVE površine (marketing, admin, superadmin, tenant client) —
-tačno ono što treba za QA.
+## Reference
 
-### Zašto NE split (`admin-staging.marysoll.com`, `booking-staging.marysoll.com`)
-
-Detekcija poredi tačno `admin.${BASE_DOMAIN}` i `endsWith(.${BASE_DOMAIN})`.
-`admin-staging.marysoll.com` NE poklapa taj obrazac → palo bi u custom-domain
-granu (tenant lookup omašuje) → **zahtevalo bi izmene proxy koda**. Nested
-subdomeni (`admin.staging.marysoll.com`) su ista struktura kao produkcija, samo
-sa umetnutim `staging.` → nula izmena, i staging verno preslikava prod.
-
-### Zašto per-PR `*.vercel.app` URL NIJE dovoljan
-
-`detect-domain.ts` tretira `*.vercel.app` kao **marketing** (da preview uopšte
-radi). Na tom URL-u radi samo marketing + **path-based** dashboard (`/dashboard`,
-`/superadmin`) — kao localhost. NE rade subdomen-rutirani admin/superadmin ni
-tenant saloni (nema wildcard-a pod `vercel.app`). Zato je za pun multi-surface QA
-potreban stabilan domen sa wildcard-om → `staging.marysoll.com`.
-
-### Vercel + DNS setup (koraci)
-
-1. **Domen na granu**: u Vercel-u dodeli `staging.marysoll.com` i `*.staging.marysoll.com`
-   grani `staging/production-engines` (Vercel "Git Branch" domain assignment → domen
-   uvek servira tu granu; stabilan URL).
-2. **DNS**: `staging.marysoll.com` (CNAME→Vercel) + `*.staging.marysoll.com`
-   (CNAME→Vercel, wildcard cert). Wildcard cert traži domen verifikovan na Vercel-u.
-3. **Env (Preview scope, pinovan na `staging/production-engines`)**:
-   - `NEXT_PUBLIC_BASE_DOMAIN=staging.marysoll.com` — **build-time inline** (NEXT_PUBLIC_);
-     mora biti postavljen pre build-a staging deploya. ✅ dodato u Vercel.
-   - `NEXT_PUBLIC_APP_URL=https://staging.marysoll.com` ✅ dodato.
-   - `MONGODB_URI` — mora biti dostupan i staging (Preview) deploy-u. Pošto prod i
-     staging **dele istu bazu**, najlakše scope-ovati na **All Environments**.
-   - `ALLOWED_ORIGINS` — za whoami cross-origin (staging apex ↔ admin.staging).
-   - Paddle → test/sandbox ključevi. Ostalo (JWT, Cloudinary, AI, CRON_SECRET) deli se sa prod.
-   - **Booking**: `booking.marysoll.com` se NE dira — nije potrebna posebna aplikacija za staging.
-
-### Baza — JEDNA (`marysoll_db`), deljena prod+staging (odluka 2026-07-09)
-
-Odustali smo od odvojene staging baze. Staging je **samo domen + grana**, koristi
-**istu bazu `marysoll_db`** kao produkcija. Razlog: jednostavnije, i testira se na
-pravim demo tenantima (pravi mejlovi → provera dostave). `MONGODB_STAGING_URI` i
-`marysoll_staging` se ukidaju; ostaje samo `MONGODB_URI`. `mongodb.ts` vraćen na
-jedan URI (bez staging switch-a). Uklonjeni `/api/health/db` i `/api/seed/staging`
-(bili za odvojenu bazu).
-
-> **Posledica:** destruktivan QA (npr. merge) radi nad **pravom** bazom → raditi
-> samo na demo tenantima; merge par (gost+registrovan isti telefon) napraviti kroz
-> pravi booking/register tok (usput testira i Phase 4a prevenciju).
-
-### Env-parametrizacije — status
-
-1. ✅ `next.config.ts` `redirects()` sada koristi `BASE_DOMAIN` env → admin/superadmin
-   login redirect radi na staging-u.
-2. ✅ `getTenantUrl`/`getTenantPublicUrl` na staging-u koriste `{slug}.staging.marysoll.com`
-   (ne prod custom domen).
-3. ⏳ `ALLOWED_ORIGINS` postaviti na staging origine (whoami sa credentials ne sme `*`).
-
----
-
-## Referenca — vezani dokumenti
-- [ARHITEKTURA-ENGINES.md](../ARHITEKTURA-ENGINES.md) — Product Engines vizija.
-- [docs/PANTA-IDENTITY-LOYALTY-HEALTH.md](PANTA-IDENTITY-LOYALTY-HEALTH.md) — sledeći task (Diagnostic).
-- [docs/PROXY-PIPELINE.md](PROXY-PIPELINE.md) — proxy pipeline detalji.
+- [Product Engines vizija](../ARHITEKTURA-ENGINES.md)
+- [Identity & Loyalty Health](PANTA-IDENTITY-LOYALTY-HEALTH.md)
+- [Proxy pipeline](PROXY-PIPELINE.md)
+- [Cross-platform optimizacija](CROSS-PLATFORM-OPTIMIZATION.md)

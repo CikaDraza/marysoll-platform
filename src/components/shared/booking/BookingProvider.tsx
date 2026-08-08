@@ -27,7 +27,12 @@ import {
 } from "@/helpers/manualSlots";
 import { availableTimesForDate } from "@/helpers/parseWorkingHours";
 import type { IService, IAppointment } from "@/types";
-import type { BookingModalProps, GuestData, PendingAppointment } from "./types";
+import type {
+  BookingAuthDestination,
+  BookingModalProps,
+  GuestData,
+  PendingAppointment,
+} from "./types";
 
 export interface BookingContextValue {
   // ── props koje podkomponente čitaju ──
@@ -36,6 +41,8 @@ export interface BookingContextValue {
   userName?: string;
   userEmail?: string;
   isPendingMode: boolean;
+  /** Validan format referral koda iz share URL-a/pending booking-a. */
+  referralVoucherCode: string;
   // ── stanje izbora ──
   selectedDate: string;
   setSelectedDate: Dispatch<SetStateAction<string>>;
@@ -76,7 +83,7 @@ export interface BookingContextValue {
   handleSubmitLoggedIn: (e: React.FormEvent) => Promise<void>;
   handleGuestReserve: (e: React.FormEvent) => void;
   handleGuestSubmit: (e: React.FormEvent) => Promise<void>;
-  doGuestReserve: () => void;
+  doGuestReserve: (destination?: BookingAuthDestination) => void;
 }
 
 const BookingContext = createContext<BookingContextValue | null>(null);
@@ -134,6 +141,9 @@ export function BookingProvider({
     tiktok: "",
   });
   const [guestLoading, setGuestLoading] = useState(false);
+  const [referralVoucherCode, setReferralVoucherCode] = useState(
+    pendingDefaults?.voucherCode?.trim().toUpperCase() ?? "",
+  );
 
   // ── Prevencija duplikata (Phase 4a): signal ako klijent već ima nalog ──
   const [existingAccount, setExistingAccount] = useState<{
@@ -170,6 +180,25 @@ export function BookingProvider({
     async function init() {
       setSelectedDate(defaultDate);
       setSelectedTime(defaultTime);
+      const queryVoucher =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("voucher")
+          : null;
+      const voucherCandidate = (pendingDefaults?.voucherCode ?? queryVoucher ?? "")
+        .trim()
+        .toUpperCase();
+      setReferralVoucherCode(voucherCandidate);
+      if (voucherCandidate && tenantSlug) {
+        try {
+          const res = await fetch(
+            `/api/public/${tenantSlug}/loyalty/referral?code=${encodeURIComponent(voucherCandidate)}`,
+          );
+          const preview = res.ok ? await res.json() : { valid: false };
+          if (!preview.valid) setReferralVoucherCode("");
+        } catch {
+          // Fail closed za guest booking: server booking svakako ponovo validira.
+        }
+      }
       if (pendingDefaults) {
         setSelectedServiceId(pendingDefaults.serviceId || services[0]?._id || "");
         setSelectedVariant(pendingDefaults.variantName || "");
@@ -178,7 +207,7 @@ export function BookingProvider({
       }
     }
     init();
-  }, [defaultDate, defaultTime, pendingDefaults, services]);
+  }, [defaultDate, defaultTime, pendingDefaults, services, tenantSlug]);
 
   const selectedService = services.find((s) => s._id === selectedServiceId);
 
@@ -316,6 +345,7 @@ export function BookingProvider({
       duration: totalDuration,
       note: note || undefined,
       status: "pending",
+      ...(referralVoucherCode ? { voucherCode: referralVoucherCode } : {}),
       messages: [],
       adminNotified: true,
       clientNotified: false,
@@ -331,7 +361,7 @@ export function BookingProvider({
     }
   }
 
-  function doGuestReserve() {
+  function doGuestReserve(destination: BookingAuthDestination = "login") {
     if (!selectedDate || !selectedTime)
       return toast.error("Molimo izaberite datum i vreme.");
     if (!validateManualSlot()) return;
@@ -348,7 +378,8 @@ export function BookingProvider({
       note,
       totalPrice,
       totalDuration,
-    });
+      ...(referralVoucherCode ? { voucherCode: referralVoucherCode } : {}),
+    }, destination);
   }
 
   function handleGuestReserve(e: React.FormEvent) {
@@ -358,6 +389,11 @@ export function BookingProvider({
 
   async function handleGuestSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (referralVoucherCode) {
+      return toast.error(
+        "Gift vaučer zahteva nalog. Prijavite se ili napravite nalog.",
+      );
+    }
     if (!selectedDate || !selectedTime)
       return toast.error("Molimo izaberite datum i vreme.");
     if (!validateManualSlot()) return;
@@ -453,6 +489,7 @@ export function BookingProvider({
     userName,
     userEmail,
     isPendingMode,
+    referralVoucherCode,
     selectedDate,
     setSelectedDate,
     selectedTime,

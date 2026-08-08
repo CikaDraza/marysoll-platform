@@ -17,6 +17,7 @@ import {
   type LoyaltyRewardInfo,
   type SharedVoucherResult,
 } from "@/hooks/useLoyalty";
+import { useClientRouting } from "@/hooks/useClientRouting";
 
 const card =
   "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
@@ -30,6 +31,7 @@ export function ShareVoucherCard({
   friendReward: LoyaltyRewardInfo | null;
 }) {
   const share = useShareVoucher();
+  const { base } = useClientRouting();
   const [result, setResult] = useState<SharedVoucherResult | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -43,8 +45,9 @@ export function ShareVoucherCard({
 
   // ── Poruka za deljenje (gradi se pri kliku — window je tu dostupan) ──
   const buildMessage = (code: string): string => {
-    const url = window.location.origin;
-    return `Poklanjam ti ${rewardText}! 🎁 Iskoristi kod ${code} pri zakazivanju u našem salonu: ${url}`;
+    const url = new URL(`${base || "/"}`, window.location.origin);
+    url.searchParams.set("voucher", code);
+    return `Poklanjam ti ${rewardText}! 🎁 Iskoristi kod ${code} pri zakazivanju u našem salonu: ${url.toString()}`;
   };
 
   const handleCopyCode = async (code: string) => {

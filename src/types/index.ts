@@ -216,6 +216,8 @@ export interface IAppointment {
   clientNotified: boolean;
   proposedDate?: string;
   proposedTime?: string;
+  /** Server-side validiran gift/referral vaučer iz booking URL-a. */
+  voucherCode?: string;
   lastUpdatedBy?: "client" | "admin";
   createdAt?: string | Date;
   updatedAt?: string | Date;

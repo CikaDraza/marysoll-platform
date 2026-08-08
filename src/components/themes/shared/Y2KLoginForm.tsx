@@ -8,6 +8,7 @@ import { useClientRouting } from "@/hooks/useClientRouting";
 import { useTenant } from "@/contexts/TenantContext";
 import { genderPast } from "@/lib/clientWording";
 import { Y2KAuthShell } from "./Y2KAuthShell";
+import { PENDING_STORAGE_KEY } from "@/components/shared/booking/types";
 
 const inputCls =
   "mt-1.5 block w-full px-3.5 py-3 border-[3px] border-y2k-ink rounded-[14px] text-[15px] text-y2k-ink bg-white outline-none placeholder:text-[#c9b3c0] focus:shadow-[3px_3px_0_#8B16C9] transition-shadow";
@@ -72,7 +73,9 @@ export function Y2KLoginForm() {
       localStorage.setItem("token", data.token);
 
       const from = searchParams.get("from");
-      const hasPendingBooking = searchParams.get("pendingBooking") === "1";
+      const hasPendingBooking =
+        searchParams.get("pendingBooking") === "1" ||
+        Boolean(sessionStorage.getItem(PENDING_STORAGE_KEY));
       const destination = hasPendingBooking
         ? `${base}/`
         : from
