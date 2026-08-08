@@ -11,6 +11,7 @@ import { Types } from "mongoose";
 import { connectToDB } from "@/lib/db/mongodb";
 import { SalonProfile } from "@/models/SalonProfile";
 import { usableRasterLogo } from "@/lib/branding/rasterLogo";
+import { tenantAppName } from "@/lib/pwa/tenantAppName";
 
 const PLATFORM_ICONS = [
   { src: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
@@ -47,25 +48,29 @@ function manifestIcons(notificationLogo: string | null) {
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const tenantId = req.headers.get("x-tenant-id") ?? "";
+  let salonName: string | null = null;
   let notificationLogo: string | null = null;
 
   if (Types.ObjectId.isValid(tenantId)) {
     try {
       await connectToDB();
       const profile = (await SalonProfile.findOne({ tenantId })
-        .select("notificationLogo")
-        .lean()) as { notificationLogo?: string } | null;
+        .select("name notificationLogo")
+        .lean()) as { name?: string; notificationLogo?: string } | null;
+      salonName = profile?.name ?? null;
       notificationLogo = profile?.notificationLogo ?? null;
     } catch {
       // Neuspešan lookup ne sme blokirati instalaciju; koristi Marysoll ikonu.
     }
   }
 
+  const appName = tenantAppName(salonName);
+
   return NextResponse.json(
     {
-      name: "Marysoll Bussines Growth System",
-      short_name: "Marysoll",
-      description: "Marysoll - Sa nama salon ti raste, fitnes centar, klinika, spa…",
+      name: appName,
+      short_name: appName,
+      description: `${appName} — online zakazivanje`,
       start_url: "/",
       display: "standalone",
       background_color: "#ffffff",

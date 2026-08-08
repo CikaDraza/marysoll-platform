@@ -17,8 +17,10 @@ import { TenantProvider } from "@/contexts/TenantContext";
 import { CookiesModal } from "@/components/client/CookiesModal";
 import { TenantThemeController } from "@/components/themes/TenantThemeController";
 import { TenantSiteBeacon } from "@/components/shared/TenantSiteBeacon";
+import { AddToHomeScreenBanner } from "@/components/shared/AddToHomeScreenBanner";
 import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
 import { usableRasterLogo } from "@/lib/branding/rasterLogo";
+import { tenantAppName } from "@/lib/pwa/tenantAppName";
 
 const PLATFORM_PWA_ICON = "/marysoll_elegant_logo.png";
 
@@ -33,11 +35,18 @@ export async function generateMetadata(): Promise<Metadata> {
   const base = h.get("x-tenant-base-path") ?? "";
   if (!tenantSlug) return {};
   const profile = await fetchPublicSalonProfile(tenantSlug);
+  const appName = tenantAppName(profile?.name);
   const icon = usableRasterLogo(profile?.notificationLogo)
     ? profile.notificationLogo
     : PLATFORM_PWA_ICON;
 
   return {
+    applicationName: appName,
+    appleWebApp: {
+      capable: true,
+      title: appName,
+      statusBarStyle: "default",
+    },
     // Na host-based tenant domenu je /manifest.json; u localhost/preview
     // path-based režimu mora ostati ispod /{slug} da proxy zna tenanta.
     manifest: `${base}/manifest.json`,
@@ -62,6 +71,7 @@ export default async function TenantLayout({
   // Resolve the salon's landing theme so tenant auth pages can render the
   // matching themed form (e.g. the Y2K forms for "theme-8"). 5-min cached.
   const profile = await fetchPublicSalonProfile(tenantSlug);
+  const appName = tenantAppName(profile?.name);
   const landingTheme = profile?.landingTheme;
   const clientGender = profile?.clientGender;
 
@@ -75,6 +85,7 @@ export default async function TenantLayout({
     >
       <TenantThemeController />
       <TenantSiteBeacon />
+      <AddToHomeScreenBanner audience="tenant" appName={appName} />
       {children}
       <CookiesModal basePath={base} />
     </TenantProvider>

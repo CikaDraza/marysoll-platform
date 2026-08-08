@@ -10,9 +10,10 @@
  *   uputstvo za Share → „Dodaj na početni ekran". Instalirana iOS web-app
  *   dobija SVOJ ČIST kontejner (kolačići odvojeni od Safari/Chrome).
  *
- * Prikaz: samo platformski hostovi, ne u in-app pregledačima (tamo radi
- * InAppBrowserBanner), ne kada već radi kao PWA. Odbacivanje se pamti u
- * localStorage. Ručni test bez telefona: ?a2hs=test u URL-u.
+ * Prikaz: platformski hostovi preko root layouta i tenant sajtovi preko tenant
+ * layouta; ne u in-app pregledačima (tamo radi InAppBrowserBanner), niti kada
+ * već radi kao PWA. Odbacivanje se pamti u localStorage. Ručni test bez
+ * telefona: ?a2hs=test u URL-u.
  */
 
 import { useEffect, useState } from "react";
@@ -29,15 +30,27 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-export function AddToHomeScreenBanner() {
+interface AddToHomeScreenBannerProps {
+  audience?: "platform" | "tenant";
+  appName?: string;
+}
+
+export function AddToHomeScreenBanner({
+  audience = "platform",
+  appName = "Marysoll",
+}: AddToHomeScreenBannerProps = {}) {
   const [mode, setMode] = useState<"android" | "ios" | null>(null);
   const [installEvt, setInstallEvt] = useState<BeforeInstallPromptEvent | null>(
     null,
   );
 
   useEffect(() => {
+    const isAllowedHost = () =>
+      audience === "tenant" || isPlatformHost(window.location.hostname);
+
     // Android/Chrome: event stiže samo ako je manifest validan i PWA nije instalirana
     const onPrompt = (e: Event) => {
+      if (!isAllowedHost()) return;
       e.preventDefault();
       setInstallEvt(e as BeforeInstallPromptEvent);
       setMode("android");
@@ -50,7 +63,7 @@ export function AddToHomeScreenBanner() {
         const testMode = window.location.search.includes("a2hs=test");
         if (!testMode) {
           if (localStorage.getItem(DISMISS_KEY)) return;
-          if (!isPlatformHost(window.location.hostname)) return;
+          if (!isAllowedHost()) return;
           if (detectInApp(navigator.userAgent)) return;
           if (isStandalone()) return;
         }
@@ -65,7 +78,7 @@ export function AddToHomeScreenBanner() {
       window.removeEventListener("beforeinstallprompt", onPrompt);
       clearTimeout(t);
     };
-  }, []);
+  }, [audience]);
 
   if (!mode) return null;
 
@@ -92,7 +105,7 @@ export function AddToHomeScreenBanner() {
           <span className="text-2xl leading-none">📲</span>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-gray-800">
-              Dodajte Marysoll na početni ekran
+              Dodajte {appName} na početni ekran
             </p>
             {mode === "android" ? (
               <p className="text-xs text-gray-500 mt-0.5">
@@ -109,7 +122,7 @@ export function AddToHomeScreenBanner() {
                   : "(u Safariju je u DNU ekrana, na sredini)"}{" "}
                 — zatim skrolujte dole i izaberite{" "}
                 <strong>„Dodaj na početni ekran&rdquo;</strong> / „Add to Home
-                Screen&rdquo;. Nije u ⋯ meniju! Dobijate Marysoll ikonicu kao
+                Screen&rdquo;. Nije u ⋯ meniju! Dobijate {appName} ikonicu kao
                 aplikaciju.
               </p>
             )}
