@@ -14,6 +14,7 @@ export {
   generateVoucherCode,
   VOUCHER_PREFIX_BY_ORIGIN,
   computeStreakUpdate,
+  evaluateReferralCompletion,
 } from "@panta/loyalty-engine";
 
 export type {
@@ -24,4 +25,7 @@ export type {
   StreakState,
   StreakUpdateOptions,
   StreakUpdateResult,
+  ReferralCompletionGateInput,
+  ReferralCompletionGateReason,
+  ReferralCompletionGateResult,
 } from "@panta/loyalty-engine";

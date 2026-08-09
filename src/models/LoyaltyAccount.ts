@@ -39,6 +39,8 @@ const loyaltyAccountSchema = new Schema(
     /** Lazy-generisan pri prvom deljenju (Faza 2 — referral) */
     referralCode: { type: String },
     referredByAccountId: { type: Schema.Types.ObjectId, ref: "LoyaltyAccount" },
+    /** Tačan referral koji je osvojio pravo na attribution (anti-double-reward). */
+    referredByReferralId: { type: Schema.Types.ObjectId, ref: "Referral" },
 
     /** Loyalty briga (birthday reward) — namerno NE na TenantUser modelu */
     birthday: {

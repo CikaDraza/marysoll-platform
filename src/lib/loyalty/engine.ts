@@ -11,6 +11,8 @@ import { Types } from "mongoose";
 import { LoyaltyAccount } from "@/models/LoyaltyAccount";
 import { LoyaltyLedger } from "@/models/LoyaltyLedger";
 import { Voucher } from "@/models/Voucher";
+import { Referral } from "@/models/Referral";
+import { Appointment } from "@/models/Appointment";
 import { getOrCreateAccount } from "./accounts";
 import { postLedgerEntry } from "./ledger";
 import { issueVoucher, revokeVouchersIssuedForAppointment } from "./vouchers/service";
@@ -39,6 +41,7 @@ const EVENT_HANDLERS: Record<
   appointment_completion_reverted: handleReverted,
   client_registered: handleRegistered,
   client_checkin: handleCheckin,
+  referral_completed: handleReferralCompleted,
   // manual_adjustment se knjiži direktno u admin ruti (event je samo audit trag)
 };
 
@@ -408,6 +411,12 @@ async function handleReverted(
   });
 
   await revokeVouchersIssuedForAppointment(appointmentId);
+  await revertReferralReward(
+    event.tenantId,
+    String(appointmentId),
+    revertCount,
+    event._id,
+  );
 
   if (reverted) {
     await createLoyaltyNotification({
@@ -461,4 +470,194 @@ async function handleRegistered(
       metadata: { points: res.applied },
     });
   }
+}
+
+// ─── referral_completed (Phase 2b hard-gate) ─────────────────────────────────
+
+async function handleReferralCompleted(
+  event: LoyaltyEventLean,
+  config: LoyaltyConfigLean,
+): Promise<void> {
+  const referralId = String(event.payload.referralId ?? "");
+  if (!referralId) return;
+
+  const referral = await Referral.findOne({
+    _id: referralId,
+    tenantId: event.tenantId,
+    status: { $in: ["booked", "completed"] },
+  }).lean<{
+    _id: Types.ObjectId;
+    referrerTenantUserId: Types.ObjectId;
+    referredTenantUserId: Types.ObjectId;
+    sourceVoucherId: Types.ObjectId;
+    firstAppointmentId: Types.ObjectId;
+  }>();
+  if (!referral) return;
+
+  // Event je durabilan i može biti retry-ovan kasnije. Ponovo proveri trenutno
+  // stanje termina da failed event ne bi nagradio posetu koja je u međuvremenu
+  // revertovana ili kojoj je uklonjen gift vaučer.
+  const stillCompleted = await Appointment.exists({
+    _id: referral.firstAppointmentId,
+    tenantId: event.tenantId,
+    clientProfileId: referral.referredTenantUserId,
+    appliedVoucherId: referral.sourceVoucherId,
+    status: "completed",
+  });
+  if (!stillCompleted) return;
+
+  const [referrerAccount, referredAccount] = await Promise.all([
+    getOrCreateAccount(event.tenantId, referral.referrerTenantUserId),
+    getOrCreateAccount(event.tenantId, referral.referredTenantUserId),
+  ]);
+
+  // Jedna nova osoba može pripasti tačno jednom referral-u. Retry ISTOG
+  // referral-a prolazi, drugi referral za istu osobu se invalidira.
+  const attributed = await LoyaltyAccount.findOneAndUpdate(
+    {
+      _id: referredAccount._id,
+      $or: [
+        { referredByReferralId: { $exists: false } },
+        { referredByReferralId: null },
+        { referredByReferralId: referral._id },
+      ],
+    },
+    {
+      $set: {
+        referredByAccountId: referrerAccount._id,
+        referredByReferralId: referral._id,
+      },
+    },
+    { new: true },
+  ).lean();
+
+  if (!attributed) {
+    await Referral.updateOne(
+      { _id: referral._id },
+      { $set: { status: "invalidated", failureReason: "already_attributed" } },
+    );
+    return;
+  }
+
+  const rewardPoints = Math.max(
+    0,
+    Math.trunc(config.sharing?.referrerRewardPoints ?? 100),
+  );
+  const cycle = Math.max(0, Math.trunc(Number(event.payload.cycle) || 0));
+  let applied = 0;
+  let duplicate = false;
+  if (config.currencies.points.enabled && rewardPoints > 0) {
+    const result = await postLedgerEntry({
+      tenantId: event.tenantId,
+      accountId: referrerAccount._id,
+      tenantUserId: referral.referrerTenantUserId,
+      entryType: "earn",
+      currency: "points",
+      amount: rewardPoints,
+      source: {
+        eventId: event._id,
+        ruleId: "builtin:referral_reward",
+        appointmentId: referral.firstAppointmentId,
+      },
+      // Novi completion ciklus posle revert-a sme ponovo da dodeli nagradu;
+      // retry istog ciklusa ostaje idempotentan.
+      idempotencyKey: `referral:${referral._id}:reward:c${cycle}`,
+      description: "Prijateljica je završila prvu posetu",
+    });
+    applied = result.applied;
+    duplicate = result.duplicate;
+  }
+
+  const rewardGiven = applied > 0 || duplicate;
+  await Referral.updateOne(
+    { _id: referral._id },
+    {
+      $set: {
+        status: rewardGiven ? "rewarded" : "completed",
+        completedAt: new Date(),
+        rewardGiven,
+        rewardPoints: rewardGiven ? rewardPoints : 0,
+        rewardGivenAt: rewardGiven ? new Date() : null,
+        failureReason: null,
+      },
+    },
+  );
+
+  if (applied > 0) {
+    await createLoyaltyNotification({
+      tenantId: event.tenantId,
+      recipientProfileId: referral.referrerTenantUserId,
+      type: "loyalty_points_earned",
+      title: "Prijateljica je stigla! 🎉",
+      message: `+${formatCurrencyAmount(applied, config.currencies.points)} ${config.currencies.points.emoji} jer je završila prvu posetu`,
+      appointmentId: referral.firstAppointmentId,
+      celebration: true,
+      metadata: { points: applied },
+    });
+  }
+}
+
+async function revertReferralReward(
+  tenantId: Types.ObjectId | string,
+  appointmentId: string,
+  revertCount: number,
+  eventId: Types.ObjectId,
+): Promise<void> {
+  const referral = await Referral.findOne({
+    tenantId,
+    firstAppointmentId: appointmentId,
+    status: { $in: ["completed", "rewarded"] },
+  }).lean<{
+    _id: Types.ObjectId;
+    referrerTenantUserId: Types.ObjectId;
+    referredTenantUserId: Types.ObjectId;
+    rewardGiven?: boolean;
+    rewardPoints?: number;
+  }>();
+  if (!referral) return;
+
+  if (referral.rewardGiven && (referral.rewardPoints ?? 0) > 0) {
+    const account = await getOrCreateAccount(
+      tenantId,
+      referral.referrerTenantUserId,
+    );
+    await postLedgerEntry({
+      tenantId,
+      accountId: account._id,
+      tenantUserId: referral.referrerTenantUserId,
+      entryType: "revoke",
+      currency: "points",
+      amount: -(referral.rewardPoints ?? 0),
+      source: {
+        eventId,
+        ruleId: "builtin:referral_revert",
+        appointmentId,
+      },
+      idempotencyKey: `referral:${referral._id}:revert:${revertCount}`,
+      description: "Referral nagrada povučena — poseta nije završena",
+    });
+  }
+
+  await Promise.all([
+    Referral.updateOne(
+      { _id: referral._id },
+      {
+        $set: {
+          status: "booked",
+          rewardGiven: false,
+          rewardPoints: 0,
+          rewardGivenAt: null,
+          completedAt: null,
+        },
+      },
+    ),
+    LoyaltyAccount.updateOne(
+      {
+        tenantId,
+        tenantUserId: referral.referredTenantUserId,
+        referredByReferralId: referral._id,
+      },
+      { $unset: { referredByReferralId: 1, referredByAccountId: 1 } },
+    ),
+  ]);
 }

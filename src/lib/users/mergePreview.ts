@@ -16,6 +16,7 @@ import { Voucher } from "@/models/Voucher";
 import { Notification } from "@/models/Notification";
 import { Testimonial } from "@/models/Testimonial";
 import { AudienceContact } from "@/models/AudienceContact";
+import { Referral } from "@/models/Referral";
 
 const CLIENT_ROLES = ["USER", "GUEST"];
 
@@ -40,6 +41,8 @@ export interface MergeMoves {
   loyaltyEvents: number;
   vouchersOwned: number;
   vouchersGifted: number; // referral veze (pozvao prijateljicu)
+  referralsAsReferrer: number;
+  referralsAsReferred: number;
   notifications: number;
   testimonials: number;
   audienceContacts: number;
@@ -156,6 +159,8 @@ export async function buildMergePreview(input: {
     loyaltyEvents,
     vouchersOwned,
     vouchersGifted,
+    referralsAsReferrer,
+    referralsAsReferred,
     notifications,
     testimonials,
     audienceContacts,
@@ -165,6 +170,8 @@ export async function buildMergePreview(input: {
     LoyaltyEvent.countDocuments({ tenantId, subjectTenantUserId: sourceId }),
     Voucher.countDocuments({ tenantId, ownerTenantUserId: sourceId }),
     Voucher.countDocuments({ tenantId, giftedByTenantUserId: sourceId }),
+    Referral.countDocuments({ tenantId, referrerTenantUserId: sourceId }),
+    Referral.countDocuments({ tenantId, referredTenantUserId: sourceId }),
     Notification.countDocuments({ tenantId, recipientProfileId: sourceId }),
     Testimonial.countDocuments({ tenantId, clientProfileId: sourceId }),
     AudienceContact.countDocuments({ tenantId, profileId: sourceId }),
@@ -176,6 +183,8 @@ export async function buildMergePreview(input: {
     loyaltyEvents,
     vouchersOwned,
     vouchersGifted,
+    referralsAsReferrer,
+    referralsAsReferred,
     notifications,
     testimonials,
     audienceContacts,
