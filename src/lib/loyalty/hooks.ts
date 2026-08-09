@@ -17,6 +17,7 @@ import {
   releaseForAppointment,
   unRedeemForAppointment,
 } from "./vouchers/service";
+import { publishReferralCompletionForAppointment } from "./referrals";
 
 interface AppointmentLean {
   _id: Types.ObjectId;
@@ -25,6 +26,7 @@ interface AppointmentLean {
   serviceName?: string;
   finalPrice?: number;
   services?: Array<{ price?: number; quantity?: number }>;
+  appliedVoucherId?: Types.ObjectId;
   loyaltyProcessed?: {
     completed?: boolean;
     noShow?: boolean;
@@ -51,7 +53,9 @@ export async function loyaltyOnAppointmentStatusChange(
     await connectToDB();
 
     const appt = (await Appointment.findById(appointmentId)
-      .select("tenantId clientProfileId serviceName finalPrice services loyaltyProcessed")
+      .select(
+        "tenantId clientProfileId serviceName finalPrice services appliedVoucherId loyaltyProcessed",
+      )
       .lean()) as AppointmentLean | null;
     if (!appt?.clientProfileId) return;
 
@@ -112,6 +116,13 @@ export async function loyaltyOnAppointmentStatusChange(
         sourceId: `${id}:c${cycle}`,
         subjectTenantUserId: appt.clientProfileId,
         payload: { appointmentId: id, spend, serviceName: appt.serviceName },
+      });
+      await publishReferralCompletionForAppointment({
+        tenantId: appt.tenantId,
+        appointmentId: id,
+        referredTenantUserId: appt.clientProfileId,
+        appliedVoucherId: appt.appliedVoucherId,
+        cycle,
       });
       return;
     }

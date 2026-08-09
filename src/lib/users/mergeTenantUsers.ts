@@ -21,6 +21,7 @@ import { Voucher } from "@/models/Voucher";
 import { Notification } from "@/models/Notification";
 import { Testimonial } from "@/models/Testimonial";
 import { AudienceContact } from "@/models/AudienceContact";
+import { Referral } from "@/models/Referral";
 import { getOrCreateAccount, recomputeAccount } from "@/lib/loyalty/accounts";
 import { createLoyaltyNotification } from "@/lib/loyalty/notifications";
 
@@ -37,6 +38,7 @@ export interface MergeResult {
     notifications: number;
     testimonials: number;
     audience: number;
+    referrals: number;
   };
 }
 
@@ -71,6 +73,7 @@ const ZERO_MOVED = {
   notifications: 0,
   testimonials: 0,
   audience: 0,
+  referrals: 0,
 };
 
 export async function mergeTenantUsers(input: {
@@ -110,7 +113,17 @@ export async function mergeTenantUsers(input: {
   }
 
   // ── 1. Reassign referenci source→target (idempotentno) ──
-  const [appts, events, vOwner, vGift, notifs, testis, audience] =
+  const [
+    appts,
+    events,
+    vOwner,
+    vGift,
+    notifs,
+    testis,
+    audience,
+    referralsAsReferrer,
+    referralsAsReferred,
+  ] =
     await Promise.all([
       Appointment.updateMany(
         { tenantId, clientProfileId: sourceId },
@@ -140,7 +153,26 @@ export async function mergeTenantUsers(input: {
         { tenantId, profileId: sourceId },
         { $set: { profileId: targetId } },
       ),
+      Referral.updateMany(
+        { tenantId, referrerTenantUserId: sourceId },
+        { $set: { referrerTenantUserId: targetId } },
+      ),
+      Referral.updateMany(
+        { tenantId, referredTenantUserId: sourceId },
+        { $set: { referredTenantUserId: targetId } },
+      ),
     ]);
+
+  // Ako su izvor i keeper bili na suprotnim stranama iste preporuke, merge
+  // otkriva da je to zapravo self-referral. Sačuvaj audit zapis, ali ga poništi.
+  await Referral.updateMany(
+    {
+      tenantId,
+      referrerTenantUserId: targetId,
+      referredTenantUserId: targetId,
+    },
+    { $set: { status: "invalidated", failureReason: "self_referral" } },
+  );
 
   // ── 2. Loyalty balans + agregatni brojači ──
   const targetAccount = await getOrCreateAccount(tenantId, targetId);
@@ -207,6 +239,9 @@ export async function mergeTenantUsers(input: {
     notifications: notifs.modifiedCount ?? 0,
     testimonials: testis.modifiedCount ?? 0,
     audience: audience.modifiedCount ?? 0,
+    referrals:
+      (referralsAsReferrer.modifiedCount ?? 0) +
+      (referralsAsReferred.modifiedCount ?? 0),
   };
 
   // ── 4. Obavesti klijenta (keeper) šta je dodato — tek posle admin merge-a,

@@ -31,4 +31,22 @@ export function registerPlatformSubscribers(): void {
       payload: { timestamp: e.occurredAt, source: e.source },
     });
   });
+
+  platformBus.subscribe("referral_completed", async (e) => {
+    const referralId = e.referralId ?? `${e.referrerClientId}:${e.referredClientId}`;
+    await emitLoyaltyEvent({
+      tenantId: e.tenantId,
+      type: "referral_completed",
+      sourceType: "tenant_user",
+      sourceId: `referral:${referralId}:c${e.cycle ?? 0}`,
+      subjectTenantUserId: e.referrerClientId,
+      payload: {
+        referralId: e.referralId,
+        referredClientId: e.referredClientId,
+        appointmentId: e.appointmentId,
+        cycle: e.cycle ?? 0,
+        occurredAt: e.occurredAt,
+      },
+    });
+  });
 }

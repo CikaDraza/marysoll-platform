@@ -82,6 +82,8 @@ const loyaltyConfigSchema = new Schema(
       friendReward: rewardSchema,
       /** Maks. aktivnih (neiskorišćenih) poklon-vaučera po klijentu */
       maxActivePerClient: { type: Number, default: 3, min: 1 },
+      /** Poeni referreru posle register + book + first-complete hard-gate-a. */
+      referrerRewardPoints: { type: Number, default: 100, min: 0 },
     },
 
     // ── Milestone (punch-card semantika: srca se TROŠE na nagradu,
