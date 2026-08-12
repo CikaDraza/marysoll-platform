@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { CloudinaryImage } from "@/types/cloudinary";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import {
-  cloudinary,
+  listCloudinaryResources,
   resolveCloudinaryListFolder,
   resolveCloudinaryUploadFolder,
   TenantRequiredError,
@@ -16,30 +16,10 @@ export async function GET(req: NextRequest) {
 
     const folder = await resolveCloudinaryListFolder(authResult.decoded);
 
-    // Cloudinary vraća resurse sortirane po public_id (rastuće) — nove slike bi
-    // upale na kraj i, uz mali max_results, ispale iz liste. Zato uzimamo veći
-    // batch i sortiramo najnovije prvo.
-    const res = await cloudinary.api.resources({
-      type: "upload",
-      prefix: `${folder}/`,
-      max_results: 500,
-    });
-
-    const images: CloudinaryImage[] = res.resources
-      .map((r: CloudinaryImage) => ({
-        public_id: r.public_id,
-        secure_url: r.secure_url,
-        width: r.width,
-        height: r.height,
-        format: r.format,
-        created_at: r.created_at,
-        bytes: r.bytes,
-        original_filename: r.original_filename,
-      }))
-      .sort(
-        (a: CloudinaryImage, b: CloudinaryImage) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      );
+    const images = (await listCloudinaryResources(
+      folder,
+      "image",
+    )) as CloudinaryImage[];
 
     return NextResponse.json({ images });
   } catch (err) {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { CloudinaryVideo } from "@/types/cloudinary";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import {
-  cloudinary,
+  listCloudinaryResources,
   resolveCloudinaryListFolder,
   resolveCloudinaryUploadFolder,
   TenantRequiredError,
@@ -16,29 +16,10 @@ export async function GET(req: NextRequest) {
 
     const folder = await resolveCloudinaryListFolder(authResult.decoded);
 
-    const res = await cloudinary.api.resources({
-      type: "upload",
-      resource_type: "video",
-      prefix: `${folder}/`,
-      max_results: 500,
-    });
-
-    // Isto kao kod slika: Cloudinary sortira po public_id, pa najnovije guramo na vrh.
-    const videos: CloudinaryVideo[] = res.resources
-      .map((r: CloudinaryVideo) => ({
-        public_id: r.public_id,
-        secure_url: r.secure_url,
-        width: r.width,
-        height: r.height,
-        format: r.format,
-        created_at: r.created_at,
-        bytes: r.bytes,
-        original_filename: r.original_filename,
-      }))
-      .sort(
-        (a: CloudinaryVideo, b: CloudinaryVideo) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      );
+    const videos = (await listCloudinaryResources(
+      folder,
+      "video",
+    )) as CloudinaryVideo[];
 
     return NextResponse.json({ videos });
   } catch (err) {
