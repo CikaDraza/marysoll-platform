@@ -62,6 +62,7 @@ export function SingleImageField({ value, onChange }: SingleImageFieldProps) {
 
       const res = await fetch("/api/cloudinary/images", {
         method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
 

@@ -20,11 +20,12 @@ export async function GET(req: NextRequest) {
       type: "upload",
       resource_type: "video",
       prefix: `${folder}/`,
-      max_results: 100,
+      max_results: 500,
     });
 
-    const videos: CloudinaryVideo[] = res.resources.map(
-      (r: CloudinaryVideo) => ({
+    // Isto kao kod slika: Cloudinary sortira po public_id, pa najnovije guramo na vrh.
+    const videos: CloudinaryVideo[] = res.resources
+      .map((r: CloudinaryVideo) => ({
         public_id: r.public_id,
         secure_url: r.secure_url,
         width: r.width,
@@ -33,8 +34,11 @@ export async function GET(req: NextRequest) {
         created_at: r.created_at,
         bytes: r.bytes,
         original_filename: r.original_filename,
-      }),
-    );
+      }))
+      .sort(
+        (a: CloudinaryVideo, b: CloudinaryVideo) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
 
     return NextResponse.json({ videos });
   } catch (err) {

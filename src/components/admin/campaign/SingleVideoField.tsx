@@ -40,6 +40,7 @@ export function SingleVideoField({ value, onChange }: SingleVideoFieldProps) {
 
       const res = await fetch("/api/cloudinary/videos", {
         method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
 
