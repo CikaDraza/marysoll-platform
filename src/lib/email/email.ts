@@ -30,7 +30,7 @@ import {
   newsletterVerificationTemplate,
   newsletterPromotionTemplate,
 } from "@/lib/email/templates/otherTemplates";
-import { wrapEmailLayout } from "@/lib/email/wrapEmailLayout";
+import { wrapEmailLayout, resolveSalon } from "@/lib/email/wrapEmailLayout";
 import { Resend } from "resend";
 import { resend } from "./resend";
 import { resolveTenantNewsletterSender } from "@/lib/email/tenantEmailSettings";
@@ -561,6 +561,79 @@ export async function sendNewsletterEmail(
   }
 
   return { success: true, messageId: data?.id };
+}
+
+/** Jedna poruka u newsletter batch-u — sadržaj je već personalizovan po primaocu. */
+export interface NewsletterBatchMessage {
+  to: string;
+  subject: string;
+  htmlContent: string;
+  unsubscribeUrl: string;
+  trackingData?: {
+    campaignId: string;
+    subscriberId: string;
+    trackingPixelId?: string;
+  };
+}
+
+/**
+ * Šalje jedan chunk newsletter poruka kroz Resend batch API (jedan HTTP poziv
+ * za sve primaoce u chunk-u), isti obrazac koji koristi `executeSend`.
+ *
+ * Slanje jedan-po-jedan je za kampanju od 50+ primalaca trajalo predugo da bi
+ * stalo u životni vek serverless funkcije, pa bi se slanje prekidalo u pola.
+ * Batch to svodi na jedan poziv po chunk-u.
+ *
+ * HTML se i dalje renderuje po primaocu (tracking pixel i unsubscribe link su
+ * jedinstveni), ali se brending saluna razrešava jednom za ceo chunk.
+ *
+ * Chunk mora biti <= NEWSLETTER_BATCH_SIZE; pozivalac deli listu i upisuje
+ * logove po chunk-u, da prekid usred slanja ne izgubi trag o već poslatom.
+ */
+export const NEWSLETTER_BATCH_SIZE = 50;
+
+export async function sendNewsletterBatch(
+  messages: NewsletterBatchMessage[],
+  tenantId?: string | null,
+): Promise<{ success: boolean; error?: unknown }> {
+  if (messages.length === 0) return { success: true };
+
+  const [sender, salon] = await Promise.all([
+    resolveTenantNewsletterSender(tenantId),
+    resolveSalon(tenantId),
+  ]);
+
+  const payload = await Promise.all(
+    messages.map(async (m) => {
+      const html = await newsletterPromotionTemplate({
+        clientName: "Pretplatniče/Pretplatnice",
+        subject: m.subject,
+        content: m.htmlContent,
+        unsubscribeUrl: m.unsubscribeUrl,
+        trackingData: m.trackingData,
+        tenantId,
+        salon,
+      });
+
+      return {
+        from: sender.from,
+        to: m.to,
+        subject: m.subject,
+        html,
+        text: htmlToText(html),
+        replyTo: sender.replyTo,
+      };
+    }),
+  );
+
+  const { error } = await sender.client.batch.send(payload);
+
+  if (error) {
+    console.error("❌ Resend newsletter batch error:", error);
+    return { success: false, error };
+  }
+
+  return { success: true };
 }
 
 /**

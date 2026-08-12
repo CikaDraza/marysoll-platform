@@ -6,7 +6,7 @@ import "server-only";
  * All use wrapEmailLayout for salon-branded HTML wrapper.
  */
 
-import { wrapEmailLayout } from "@/lib/email/wrapEmailLayout";
+import { wrapEmailLayout, type SalonData } from "@/lib/email/wrapEmailLayout";
 
 const appUrl = () => process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "";
 
@@ -343,6 +343,8 @@ export async function newsletterPromotionTemplate(data: {
   ctaLabel?: string;
   unsubscribeUrl: string;
   tenantId?: string | null;
+  /** Već razrešen brending saluna — batch slanje ga prosleđuje da izbegne upit po primaocu. */
+  salon?: SalonData;
   trackingData?: {
     campaignId: string;
     subscriberId: string;
@@ -371,5 +373,8 @@ export async function newsletterPromotionTemplate(data: {
     ${trackingPixel}
   `;
 
-  return wrapEmailLayout({ title: data.subject, content: innerContent, tenantId: data.tenantId });
+  return wrapEmailLayout(
+    { title: data.subject, content: innerContent, tenantId: data.tenantId },
+    data.salon,
+  );
 }
