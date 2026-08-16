@@ -11,7 +11,7 @@
  *   - version je monotono rastuć.
  */
 
-import type { ThemeDocument, ThemeLifecycle, ValidationResult } from "./types.js";
+import type { ThemeDocument, ThemeLifecycle, ValidationResult } from "./types";
 
 const ALLOWED_TRANSITIONS: Record<ThemeLifecycle, ThemeLifecycle[]> = {
   draft: ["preview", "published"],

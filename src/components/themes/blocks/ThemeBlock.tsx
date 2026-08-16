@@ -9,12 +9,11 @@
  * postoji li blok tog tipa u dokumentu.
  */
 
-import { createElement } from "react";
 import type { ThemeDocument } from "@panta/theme-engine";
 import type { FeatureBlockType } from "@/lib/platform/blocks/types";
+import { renderBlockLookup } from "./renderLookup";
 import { lookupThemeBlock } from "./selection";
-import { rendererFor } from "./renderers";
-import { reportSkip, useThemeBlockScope } from "./ThemeBlockScope";
+import { useThemeBlockScope } from "./ThemeBlockScope";
 
 export interface ThemeBlockProps<K extends FeatureBlockType = FeatureBlockType> {
   document: ThemeDocument;
@@ -28,38 +27,14 @@ export function ThemeBlock<K extends FeatureBlockType>({
   const scope = useThemeBlockScope();
   if (!scope) return null;
 
-  const lookup = lookupThemeBlock({
-    document,
-    type,
-    data: scope.data,
-    theme: scope.theme,
-  });
-
-  if (lookup.status === "absent") return null;
-  if (lookup.status === "skip") {
-    reportSkip(scope, lookup.event);
-    return null;
-  }
-
-  const Renderer = rendererFor(scope.renderers, type);
-  if (!Renderer) {
-    reportSkip(scope, {
-      reason: "missing_renderer",
+  return renderBlockLookup(
+    scope,
+    lookupThemeBlock({
+      document,
       type,
-      blockId: lookup.resolved.id,
+      data: scope.data,
       theme: scope.theme,
-    });
-    return null;
-  }
-
-  // `createElement`, ne JSX: renderer se traži iz mape teme, ne pravi se u
-  // renderu. Mapa mora biti definisana na nivou modula (vidi `renderers.ts`) —
-  // inače bi svaki render menjao identitet komponente i remount-ovao blok.
-  const { resolved } = lookup;
-  return createElement(Renderer, {
-    data: resolved.data as never,
-    config: resolved.config as never,
-    blockId: resolved.id,
-    theme: scope.theme,
-  });
+    }),
+    type,
+  );
 }

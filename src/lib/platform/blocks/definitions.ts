@@ -12,6 +12,7 @@
  */
 
 import { z } from "zod";
+import { mergeHeroSocial } from "@/helpers/heroSocial";
 import type {
   BlockConfigByType,
   ConfigParseResult,
@@ -52,19 +53,8 @@ const contentHero: FeatureBlockDefinition<"content.hero"> = {
   parseConfig: parseWith<"content.hero">(heroConfigSchema),
   async load({ deps }) {
     const [ls, salon] = await Promise.all([deps.landingStructure(), deps.salon()]);
-
-    // Doslovno preseljen merge iz ThemeLayout-a (l. 77–87): CMS pobeđuje kad
-    // je vrednost neprazna. Menjati ovo znači menjati proizvod, ne arhitekturu.
-    const heroSL = ls?.landing?.hero?.socialLinks;
-    const social = {
-      ...salon.social,
-      ...(heroSL?.instagram ? { instagram: heroSL.instagram } : {}),
-      ...(heroSL?.facebook ? { facebook: heroSL.facebook } : {}),
-      ...(heroSL?.tiktok ? { tiktok: heroSL.tiktok } : {}),
-      ...(heroSL?.whatsapp ? { whatsapp: heroSL.whatsapp } : {}),
-      ...(heroSL?.telegram ? { telegram: heroSL.telegram } : {}),
-    };
-
+    // Isti merge koristi i zatečeni put za nemigrirane teme (`helpers/heroSocial`).
+    const social = mergeHeroSocial(salon.social, ls?.landing?.hero?.socialLinks);
     return { content: ls?.landing?.hero, salon: { ...salon, social } };
   },
 };

@@ -23,10 +23,22 @@ import type {
 } from "@/lib/platform/blocks/render-types";
 import type { ThemeBlockRenderers } from "./renderers";
 
+/**
+ * Rutiranje NIJE podatak bloka — prefiks tenant slug-a je stvar aplikacije, ne
+ * domena. Zato ne ide kroz loader nego kroz scope, a renderer ga uzima
+ * `useThemeRouting()`-om samo ako mu treba.
+ */
+export interface ThemeRouting {
+  tenantSlug?: string;
+  clientSlug?: string;
+  resolveHref: (href: string) => string;
+}
+
 export interface ThemeBlockScopeValue {
   theme: string;
   data: ResolvedBlockMap;
   renderers: ThemeBlockRenderers;
+  routing: ThemeRouting;
   onSkip?: (event: BlockSkipEvent) => void;
 }
 
@@ -37,11 +49,12 @@ export function ThemeBlockScope({
   theme,
   data,
   renderers,
+  routing,
   onSkip,
 }: ThemeBlockScopeValue & { children: ReactNode }) {
   const value = useMemo(
-    () => ({ theme, data, renderers, onSkip }),
-    [theme, data, renderers, onSkip],
+    () => ({ theme, data, renderers, routing, onSkip }),
+    [theme, data, renderers, routing, onSkip],
   );
   return (
     <ThemeBlockContext.Provider value={value}>
@@ -53,6 +66,15 @@ export function ThemeBlockScope({
 /** `null` kad tema još nije migrirana — komponente tada ne renderuju ništa. */
 export function useThemeBlockScope(): ThemeBlockScopeValue | null {
   return useContext(ThemeBlockContext);
+}
+
+/** Za renderere kojima treba prefiks tenant slug-a (linkovi ka /termini, /usluge…). */
+export function useThemeRouting(): ThemeRouting {
+  const scope = useContext(ThemeBlockContext);
+  if (!scope) {
+    throw new Error("useThemeRouting je pozvan van <ThemeBlockScope>");
+  }
+  return scope.routing;
 }
 
 /** Prijava preskočenog bloka: nikad ne obara stranu (spec 5.1). */

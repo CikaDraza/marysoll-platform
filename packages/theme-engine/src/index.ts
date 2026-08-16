@@ -21,14 +21,14 @@ export type {
   ValidationCode,
   ValidationIssue,
   ValidationResult,
-} from "./types.js";
+} from "./types";
 
 export {
   DEFAULT_VARIANT,
   selectRenderableBlocks,
   validateThemeDocument,
-} from "./validate.js";
-export type { ValidateOptions, ValidationMode } from "./validate.js";
+} from "./validate";
+export type { ValidateOptions, ValidationMode } from "./validate";
 
 export {
   assertTransition,
@@ -36,5 +36,5 @@ export {
   deriveDraftFrom,
   isImmutable,
   publishRevision,
-} from "./lifecycle.js";
-export type { PublishResult } from "./lifecycle.js";
+} from "./lifecycle";
+export type { PublishResult } from "./lifecycle";

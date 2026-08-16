@@ -58,11 +58,30 @@ export type LegacyCompositionNode =
       id: string;
     };
 
+/**
+ * Odakle tema danas uzima odluku o vidljivosti sekcije:
+ *   "legacy-flags"   — čita `*Enabled` propove iz `ThemeLandingProps`;
+ *   "theme-document" — čita `ThemeDocument` kroz `<ThemeBlock>` (migrirano u T2A).
+ *
+ * Semantika je ista u oba slučaja — `honoredFlags` ostaje spisak flagova koji
+ * stvarno utiču na izgled te teme. Menja se samo put kojim odluka stiže, pa i
+ * način na koji se inventar proverava protiv koda.
+ */
+export type ThemeVisibilitySource = "legacy-flags" | "theme-document";
+
 export interface ThemeComposition {
   theme: string;
+  visibility: ThemeVisibilitySource;
   /** CMS flagovi koje tema stvarno čita (ostale ignoriše). */
   honoredFlags: LegacyCmsFlag[];
   nodes: LegacyCompositionNode[];
+}
+
+/** CMS blokovi teme, redom kojim se renderuju. */
+export function cmsBlockTypes(theme: string): string[] {
+  return (compositionFor(theme)?.nodes ?? [])
+    .filter((n) => n.kind === "cms-block")
+    .map((n) => (n as { blockType: string }).blockType);
 }
 
 const cms = (
@@ -82,6 +101,7 @@ const shell = (id: string): LegacyCompositionNode => ({ kind: "shell", id });
 export const THEME_COMPOSITIONS: ThemeComposition[] = [
   {
     theme: "theme-1",
+    visibility: "theme-document",
     honoredFlags: [
       "heroEnabled",
       "aboutEnabled",
@@ -109,6 +129,7 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
   },
   {
     theme: "theme-2",
+    visibility: "legacy-flags",
     // Tema ignoriše hero/about/services/testimonials/faq flagove — renderuje ih uvek.
     honoredFlags: ["appointmentEnabled", "galleryEnabled"],
     nodes: [
@@ -127,6 +148,7 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
   },
   {
     theme: "theme-3",
+    visibility: "legacy-flags",
     honoredFlags: [
       "heroEnabled",
       "aboutEnabled",
@@ -155,6 +177,7 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
   },
   {
     theme: "theme-4",
+    visibility: "legacy-flags",
     honoredFlags: [
       "heroEnabled",
       "aboutEnabled",
@@ -178,6 +201,7 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
   },
   {
     theme: "theme-5",
+    visibility: "legacy-flags",
     // Najmanje CMS-gated tema: sve osim artists/testimonials je bezuslovno.
     honoredFlags: ["artistsEnabled", "testimonialsEnabled"],
     nodes: [
@@ -198,6 +222,7 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
   },
   {
     theme: "theme-6",
+    visibility: "legacy-flags",
     honoredFlags: [
       "heroEnabled",
       "aboutEnabled",
@@ -224,6 +249,7 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
   },
   {
     theme: "theme-7",
+    visibility: "legacy-flags",
     // Booking je unutar hero sekcije (bookingSlot), pa appointmentEnabled nema efekta.
     honoredFlags: [
       "heroEnabled",
@@ -248,6 +274,7 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
   },
   {
     theme: "theme-8",
+    visibility: "legacy-flags",
     // Nema booking sekcije ni artists/blog — Y2K shell slojevi su bitan deo teme.
     honoredFlags: [
       "heroEnabled",

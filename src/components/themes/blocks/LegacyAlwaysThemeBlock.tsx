@@ -23,11 +23,10 @@
  * registry-ja ili loadera.
  */
 
-import { createElement } from "react";
 import type { FeatureBlockType } from "@/lib/platform/blocks/types";
+import { renderBlockLookup } from "./renderLookup";
 import { lookupLegacyAlwaysBlock } from "./selection";
-import { rendererFor } from "./renderers";
-import { reportSkip, useThemeBlockScope } from "./ThemeBlockScope";
+import { useThemeBlockScope } from "./ThemeBlockScope";
 
 export interface LegacyAlwaysThemeBlockProps<
   K extends FeatureBlockType = FeatureBlockType,
@@ -47,38 +46,17 @@ export function LegacyAlwaysThemeBlock<K extends FeatureBlockType>({
   const scope = useThemeBlockScope();
   if (!scope) return null;
 
-  const lookup = lookupLegacyAlwaysBlock({
-    theme,
-    scopeTheme: scope.theme,
-    source,
-    type,
-    data: scope.data,
-  });
-
-  if (lookup.status === "absent") return null;
-  if (lookup.status === "skip") {
-    reportSkip(scope, lookup.event);
-    return null;
-  }
-
-  const Renderer = rendererFor(scope.renderers, type);
-  if (!Renderer) {
-    reportSkip(scope, {
-      reason: "missing_renderer",
+  // Isti `renderBlockLookup` kao u `ThemeBlock` — compat putanja menja samo
+  // NAČIN pronalaženja bloka, nikad njegovo renderovanje.
+  return renderBlockLookup(
+    scope,
+    lookupLegacyAlwaysBlock({
+      theme,
+      scopeTheme: scope.theme,
+      source,
       type,
-      blockId: lookup.resolved.id,
-      theme: scope.theme,
-    });
-    return null;
-  }
-
-  // Isti poziv renderera kao u `ThemeBlock` — compat putanja ne sme da menja
-  // ni props ni identitet komponente, samo način na koji je blok pronađen.
-  const { resolved } = lookup;
-  return createElement(Renderer, {
-    data: resolved.data as never,
-    config: resolved.config as never,
-    blockId: resolved.id,
-    theme: scope.theme,
-  });
+      data: scope.data,
+    }),
+    type,
+  );
 }

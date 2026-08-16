@@ -14,7 +14,7 @@ import type {
   ThemeDocument,
   ValidationIssue,
   ValidationResult,
-} from "./types.js";
+} from "./types";
 
 export const DEFAULT_VARIANT = "default";
 

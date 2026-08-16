@@ -6,12 +6,12 @@ import {
   publishRevision,
   selectRenderableBlocks,
   validateThemeDocument,
-} from "./index.js";
+} from "./index";
 import type {
   BlockTypeResolver,
   LayoutDefinition,
   ThemeDocument,
-} from "./types.js";
+} from "./types";
 
 const layout: LayoutDefinition = {
   id: "landing-v1",

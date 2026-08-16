@@ -24,6 +24,11 @@ import type {
   SalonProfileData,
   ManualSlotsMap,
 } from "@/types";
+import { landingStructureToThemeDocument } from "@/lib/platform/theme-client";
+import {
+  preloadedBlockDataSource,
+  resolveThemeBlockData,
+} from "@/lib/platform/blocks";
 import { normalizeVacations } from "@/helpers/vacations";
 import { shouldUseTheme8TestTestimonials } from "@/helpers/theme8DevelopmentTestimonials";
 import { getTenantStats } from "@/lib/tenant/getTenantStats";
@@ -271,12 +276,32 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     adminReply: t.adminReply ? String(t.adminReply) : undefined,
   }));
 
+  // ── Feature blokovi: raspored + podaci, u ISTOM server prolazu ──────────
+  // `preloadedBlockDataSource` deli već povučene podatke (salon/usluge/utiske),
+  // pa loaderi ne pokreću nijedan nov upit — brzina strane ostaje ista (T2A).
+  const themeDocument = landingStructureToThemeDocument(
+    salonData.landingStructure,
+    { theme: landingTheme },
+  );
+  const blockData = await resolveThemeBlockData({
+    document: themeDocument,
+    theme: landingTheme,
+    tenantSlug: themeSlug,
+    deps: preloadedBlockDataSource({
+      salon: salonData,
+      services: serviceList,
+      testimonials: testimonialList,
+    }),
+  });
+
   return (
     <ThemeLayout
       theme={landingTheme}
       salon={salonData}
       services={serviceList}
       testimonials={testimonialList}
+      document={themeDocument}
+      blockData={blockData}
       tenantSlug={themeSlug}
       clientSlug={tenantSlug || undefined}
       tenantStats={tenantStats}

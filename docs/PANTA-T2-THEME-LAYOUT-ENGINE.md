@@ -366,6 +366,43 @@ generička migracija. Dva legitimna ishoda:
 Tek tada se brišu `legacy-always.ts`, `theme-render.ts` i
 `LegacyAlwaysThemeBlock`, a pozivi postaju obični `<ThemeBlock>`.
 
+## 6.5 Theme-native podaci: zabrana pozajmljivanja iz bloka
+
+Prva migracija (Theme1) je namerno **dva sveta**, i to se vidi u kodu:
+
+```
+CMS/business sekcije → <ThemeBlock …>   registry → server loader → renderer
+theme-native sekcije → zatečeni propovi (tenantStats, services, ls)
+```
+
+**Pravilo (zaključano pre migracije):** theme-native element nikada ne pozajmljuje
+podatke iz razrešenog Feature Block-a samo zato što oba trenutno koriste isti
+domen.
+
+Konkretno: `Theme1PricingSection` danas dobija `services` **bezuslovno**, dok
+`services.catalog` blok postoji samo kad je `servicesPreview` uključen. Vezivanje
+bi napravilo dve greške odjednom — pricing bi nestao kad se ugasi tuđa sekcija, i
+native prezentacija bi zavisila od prisustva druge UI sekcije umesto od podatka
+koji joj treba. Isto važi za `Theme1SocialProof` → `tenantStats`.
+
+Native domenski propovi se izdvajaju **tek posle zelene Theme1 regresije**, kao
+zaseban korak, i to ne kroz registry nego kroz presentation view-modele:
+
+```
+preloaded application data → theme native-data adapter → view model → komponenta
+```
+
+Cilj granice:
+
+| | Feature block data | Theme-native data |
+|---|---|---|
+| šta je | podatak konfigurabilnog business/content bloka | minimalni view-model konkretne teme |
+| izvor | može biti isti (request-scoped/preloaded) | isti |
+| vlasništvo | registry | tema |
+
+Time nijedna tema ne ostaje na `IService`/`TenantStats`, a registry ne postaje
+univerzalni data bus.
+
 ## 7. Redosled (T2A)
 
 1. ✅ `packages/theme-engine` — tipovi (`ThemeDocument`, `LayoutDefinition`) +
@@ -382,6 +419,10 @@ Tek tada se brišu `legacy-always.ts`, `theme-render.ts` i
 5. Migracija tema jedne po jedne kroz `<ThemeBlock>` (Theme1 prva jer najviše
    meša CMS i non-CMS sekcije; Theme8 poslednja zbog shell slojeva), uz vizuelnu
    i LCP regresiju po temi. Stari put ostaje živ dok prva tema ne prođe.
+   - ✅ **Theme1** (`visibility: "theme-document"`): 7 CMS sekcija ide kroz
+     blokove, theme-native ostaje na zatečenim propovima (6.5). Čeka vizuelnu +
+     LCP regresiju pre Theme2.
+   - ⏳ theme-2…theme-8 — i dalje `visibility: "legacy-flags"`.
 6. Tek kada prva tema prođe regresiju, `ThemeLandingProps` počinje da se svodi na:
    `document`, `brandingVars`, `resolveHref`, `reduceMotion`, `headerProps`,
    `footerProps`. **Nijedan stari flag se ne uklanja pre toga.**

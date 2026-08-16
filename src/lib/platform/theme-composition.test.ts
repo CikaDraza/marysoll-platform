@@ -10,6 +10,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   THEME_COMPOSITIONS,
+  cmsBlockTypes,
   compositionFor,
   unconditionalCmsBlocks,
   type LegacyCmsFlag,
@@ -17,11 +18,21 @@ import {
 
 const LAYOUT_DIR = path.join(process.cwd(), "src/components/themes/layouts");
 
+function layoutSourceOf(theme: string): string {
+  const n = theme.replace("theme-", "");
+  return readFileSync(path.join(LAYOUT_DIR, `Theme${n}Landing.tsx`), "utf8");
+}
+
 /** CMS flagovi koje fajl teme stvarno pominje. */
 function flagsUsedBy(theme: string): Set<string> {
-  const n = theme.replace("theme-", "");
-  const src = readFileSync(path.join(LAYOUT_DIR, `Theme${n}Landing.tsx`), "utf8");
-  return new Set(src.match(/[a-zA-Z]+Enabled/g) ?? []);
+  return new Set(layoutSourceOf(theme).match(/[a-zA-Z]+Enabled/g) ?? []);
+}
+
+/** Tipovi blokova iz `<ThemeBlock … type="…" />`, redom pojavljivanja. */
+function themeBlockTypesUsedBy(theme: string): string[] {
+  return [...layoutSourceOf(theme).matchAll(/<ThemeBlock[^>]*type="([^"]+)"/g)].map(
+    (m) => m[1],
+  );
 }
 
 const ALL_FLAGS: LegacyCmsFlag[] = [
@@ -56,17 +67,34 @@ describe("inventar pokriva svih 8 tema", () => {
 });
 
 describe.each(THEME_COMPOSITIONS)("$theme", (composition) => {
-  it("honoredFlags se poklapaju sa flagovima u stvarnom fajlu teme", () => {
+  const legacy = composition.visibility === "legacy-flags";
+
+  it.runIf(legacy)("honoredFlags se poklapaju sa flagovima u stvarnom fajlu teme", () => {
     const used = flagsUsedBy(composition.theme);
     expect([...composition.honoredFlags].sort()).toEqual([...used].sort());
   });
 
-  it("flagovi koje tema NE poštuje nisu u fajlu (nema mrtvog gate-a)", () => {
+  it.runIf(legacy)("flagovi koje tema NE poštuje nisu u fajlu (nema mrtvog gate-a)", () => {
     const used = flagsUsedBy(composition.theme);
     const ignored = ALL_FLAGS.filter((f) => !composition.honoredFlags.includes(f));
     for (const flag of ignored) {
       expect(used.has(flag), `${composition.theme} ipak koristi ${flag}`).toBe(false);
     }
+  });
+
+  // ── Migrirana tema (visibility: "theme-document") ────────────────────────
+  // Vidljivost više ne stiže kroz `*Enabled` propove nego kroz postojanje bloka
+  // u dokumentu, pa se inventar proverava protiv `<ThemeBlock type="…">` poziva.
+  // Ovo hvata baš ono što vizuelna regresija teško vidi: izostavljenu ili
+  // premeštenu sekciju.
+  it.runIf(!legacy)("ne koristi nijedan stari CMS flag", () => {
+    expect([...flagsUsedBy(composition.theme)]).toEqual([]);
+  });
+
+  it.runIf(!legacy)("renderuje tačno CMS blokove iz inventara, istim redom", () => {
+    expect(themeBlockTypesUsedBy(composition.theme)).toEqual(
+      cmsBlockTypes(composition.theme),
+    );
   });
 
   it("svaki cms-block ima poznat blockType i neprazan uslov", () => {

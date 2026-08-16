@@ -5,11 +5,17 @@
  * živi u svom chunku, a logika pripreme nije kopirana po temama.
  */
 import type { CSSProperties } from "react";
+import type { ThemeDocument } from "@panta/theme-engine";
 import type { IService, SalonProfileData } from "@/types";
 import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import type { PublicTestimonial } from "@/types/public-testimonials";
+import type { ResolvedBlockMap } from "@/lib/platform/blocks/render-types";
+import type { ResolvedHeroCta } from "@/helpers/heroCta";
 
 export type Testimonial = PublicTestimonial;
+
+/** Jedna definicija, deljena sa `helpers/heroCta` (vidi tamo zašto). */
+export type { ResolvedHeroCta };
 
 export interface ThemeFooterShared {
   tenantSlug?: string;
@@ -32,11 +38,6 @@ export interface ThemeHeaderShared {
   secondaryColor: string;
 }
 
-export interface ResolvedHeroCta {
-  primary: { text: string; href: string };
-  secondary?: { text: string; href: string };
-}
-
 export interface ThemeLandingProps {
   salon: SalonProfileData;
   services: IService[];
@@ -46,6 +47,15 @@ export interface ThemeLandingProps {
   tenantStats?: TenantStats;
   /** Privremeni preview fixtures, dozvoljeni samo na staging/preview hostu. */
   showTheme8TestimonialFixtures?: boolean;
+
+  /**
+   * Raspored CMS blokova (T2A). Migrirana tema čita SAMO ovo za vidljivost
+   * sekcija; nemigrirane i dalje koriste `*Enabled` flagove ispod. Nijedan stari
+   * flag se ne uklanja dok sve teme ne pređu (spec 7, korak 6).
+   */
+  document: ThemeDocument;
+  /** Podaci blokova iz jednog server prolaza (`resolveThemeBlockData`). */
+  blockData: ResolvedBlockMap;
 
   // Izvedeno u ThemeLayout-u
   /**

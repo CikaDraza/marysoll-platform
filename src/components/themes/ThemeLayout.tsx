@@ -12,7 +12,11 @@
  */
 
 import dynamic from "next/dynamic";
-import type { ComponentType } from "react";
+import { useCallback, type ComponentType } from "react";
+import type { ThemeDocument } from "@panta/theme-engine";
+import type { ResolvedBlockMap } from "@/lib/platform/blocks/render-types";
+import { resolveHeroCtas } from "@/helpers/heroCta";
+import { mergeHeroSocial } from "@/helpers/heroSocial";
 import type { LandingTheme } from "@/types";
 import type { IService, SalonProfileData } from "@/types";
 import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
@@ -34,6 +38,12 @@ interface ThemeLayoutProps {
   salon: SalonProfileData;
   services: IService[];
   testimonials: Testimonial[];
+  /**
+   * Raspored CMS blokova i njihovi podaci — oboje se računa na serveru
+   * (`ClientHomePage`), pa migrirana tema ne fetch-uje ništa sa klijenta.
+   */
+  document: ThemeDocument;
+  blockData: ResolvedBlockMap;
   /**
    * tenantSlug — controls URL prefix in nav links.
    * undefined on custom domain (so nav links are root-relative: /login, /usluge).
@@ -57,6 +67,8 @@ export function ThemeLayout({
   salon,
   services,
   testimonials,
+  document,
+  blockData,
   tenantSlug,
   clientSlug,
   tenantStats,
@@ -67,24 +79,23 @@ export function ThemeLayout({
   const ls = salon.landingStructure;
 
   // ── Resolve internal hrefs: prefix with tenantSlug, pass external URLs through ──
-  const resolveHref = (href: string) => {
-    if (!href) return "#";
-    if (/^https?:\/\//.test(href)) return href;
-    const prefix = tenantSlug ? `/${tenantSlug}` : "";
-    return href.startsWith("/") ? `${prefix}${href}` : `${prefix}/${href}`;
-  };
+  // useCallback: identitet ulazi u ThemeBlockScope routing kod migriranih tema.
+  const resolveHref = useCallback(
+    (href: string) => {
+      if (!href) return "#";
+      if (/^https?:\/\//.test(href)) return href;
+      const prefix = tenantSlug ? `/${tenantSlug}` : "";
+      return href.startsWith("/") ? `${prefix}${href}` : `${prefix}/${href}`;
+    },
+    [tenantSlug],
+  );
 
   // ── Merge CMS hero social links over salon.social (CMS wins if non-empty) ──
-  const heroSL = ls?.landing?.hero?.socialLinks;
-  const mergedSocial = {
-    ...salon.social,
-    ...(heroSL?.instagram ? { instagram: heroSL.instagram } : {}),
-    ...(heroSL?.facebook ? { facebook: heroSL.facebook } : {}),
-    ...(heroSL?.tiktok ? { tiktok: heroSL.tiktok } : {}),
-    ...(heroSL?.whatsapp ? { whatsapp: heroSL.whatsapp } : {}),
-    ...(heroSL?.telegram ? { telegram: heroSL.telegram } : {}),
+  // Isti helper koristi i hero blok migrirane teme — jedna definicija merge-a.
+  const salonWithMergedSocial = {
+    ...salon,
+    social: mergeHeroSocial(salon.social, ls?.landing?.hero?.socialLinks),
   };
-  const salonWithMergedSocial = { ...salon, social: mergedSocial };
 
   // ── CMS section enabled flags (default true if not set) ────────────────
   const heroEnabled = ls?.landing?.hero?.enabled ?? true;
@@ -154,24 +165,15 @@ export function ThemeLayout({
   const googleFontHref = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontFamily)}:wght@300;400;500;600;700;800&display=swap`;
 
   // ── Hero CTA with resolved hrefs ────────────────────────────────────────
-  const heroCtas = ls?.landing?.hero?.ctas;
-  const resolvedCta = {
-    primary: {
-      text: heroCtas?.primary?.text || "",
-      href: resolveHref(heroCtas?.primary?.href || "/termini"),
-    },
-    secondary: heroCtas?.secondary
-      ? {
-          text: heroCtas.secondary.text || "",
-          href: resolveHref(heroCtas.secondary.href || "/usluge"),
-        }
-      : undefined,
-  };
+  // Isti helper koristi i renderer migrirane teme — jedna definicija defaulta.
+  const resolvedCta = resolveHeroCtas(ls?.landing?.hero?.ctas, resolveHref);
 
   const landingProps: ThemeLandingProps = {
     salon,
     services,
     testimonials,
+    document,
+    blockData,
     tenantSlug,
     clientSlug,
     tenantStats,
