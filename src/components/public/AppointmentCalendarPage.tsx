@@ -16,6 +16,9 @@ import type { IAppointment, IService, SalonProfileData } from "@/types";
 
 const SLOT_MIN = 30;
 
+/** Koliko dana unapred se traži prvi slobodan dan za auto-fokus. */
+const AUTO_FOCUS_HORIZON_DAYS = 60;
+
 const DAY_NUM_TO_SR: Record<number, string> = {
   0: "Nedelja",
   1: "Ponedeljak",
@@ -88,12 +91,10 @@ export default function AppointmentCalendarPage({
   const [view, setView] = useState<"week" | "day">(
     salonProfile.availabilityMode === "manualSlots" ? "day" : "week",
   );
-  const [weekStart, setWeekStart] = useState<Date>(() => getMonday(new Date()));
-  const [selectedDay, setSelectedDay] = useState<Date>(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  });
+  // Fokus je "korisnikov izbor ILI auto-fokus": dok je korisnički izbor `null`,
+  // prikaz prati prvi dan koji ima slobodan termin (vidi `autoFocusDay` niže).
+  const [userWeekStart, setUserWeekStart] = useState<Date | null>(null);
+  const [userSelectedDay, setUserSelectedDay] = useState<Date | null>(null);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalDate, setModalDate] = useState("");
@@ -189,6 +190,53 @@ export default function AppointmentCalendarPage({
     for (let m = gridStart; m < gridEnd; m += SLOT_MIN) slots.push(m);
     return slots;
   }, [gridStart, gridEnd]);
+
+  // ── Auto-fokus na prvi slobodan dan ────────────────────────────────────────
+  // Ako danas nema nijedan slobodan termin (sve popunjeno / neradan dan),
+  // kalendar se otvara na prvom danu koji ima slobodan termin, umesto da klijent
+  // sam pretražuje sedmicu po sedmicu. Radi u oba režima dostupnosti; dugme
+  // "Danas" i dalje vraća na današnji dan.
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
+  const autoFocusDay = useMemo(() => {
+    const now = new Date();
+    const dayHasFreeSlot = (day: Date): boolean => {
+      const dateStr = toDateStr(day);
+      if (isManual) {
+        return manualSlotsFor(dateStr).some(
+          (slot) =>
+            new Date(`${dateStr}T${slot.time}`) >= now &&
+            !isManualSlotTaken(dateStr, timeToMin(slot.time), slot.duration),
+        );
+      }
+      const srName = DAY_NUM_TO_SR[day.getDay()];
+      return timeSlots.some(
+        (slotMin) =>
+          isInWorkingHours(srName, slotMin) &&
+          !isBooked(dateStr, slotMin) &&
+          new Date(`${dateStr}T${minToTime(slotMin)}`) >= now,
+      );
+    };
+
+    for (let i = 0; i <= AUTO_FOCUS_HORIZON_DAYS; i++) {
+      const day = addDays(today, i);
+      if (dayHasFreeSlot(day)) return i === 0 ? null : day;
+    }
+    return null;
+    // Namerno zavisi samo od podataka koji menjaju dostupnost — pomoćne
+    // funkcije su deklaracije u telu komponente i čitaju iste te vrednosti.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appointments, workingHours, manualSlotsMap, isManual, timeSlots, today]);
+
+  const weekStart = useMemo(
+    () => userWeekStart ?? getMonday(autoFocusDay ?? today),
+    [userWeekStart, autoFocusDay, today],
+  );
+  const selectedDay = userSelectedDay ?? autoFocusDay ?? today;
 
   const days = useMemo(() => {
     if (view === "day") return [selectedDay];
@@ -294,16 +342,17 @@ export default function AppointmentCalendarPage({
 
   // ── Navigation ────────────────────────────────────────────────────────────
   const navPrev = () => {
-    if (view === "week") setWeekStart((d) => addDays(d, -7));
-    else setSelectedDay((d) => addDays(d, -1));
+    if (view === "week") setUserWeekStart(addDays(weekStart, -7));
+    else setUserSelectedDay(addDays(selectedDay, -1));
   };
   const navNext = () => {
-    if (view === "week") setWeekStart((d) => addDays(d, 7));
-    else setSelectedDay((d) => addDays(d, 1));
+    if (view === "week") setUserWeekStart(addDays(weekStart, 7));
+    else setUserSelectedDay(addDays(selectedDay, 1));
   };
+  // "Danas" ostaje nepromenjen — vraća na današnji dan i gasi auto-fokus.
   const navToday = () => {
-    setWeekStart(getMonday(new Date()));
-    setSelectedDay(new Date());
+    setUserWeekStart(getMonday(new Date()));
+    setUserSelectedDay(new Date());
   };
 
   const weekEnd = addDays(weekStart, 6);
