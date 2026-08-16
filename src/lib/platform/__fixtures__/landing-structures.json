@@ -1,0 +1,2292 @@
+{
+  "kiki-kiss-beauty": {
+    "landing": {
+      "hero": {
+        "enabled": true,
+        "headline": "Kiki Kiss Beauty Salon",
+        "subheadline": "Šminkanje | Nokti | Izlivanje | Korekcija u Beogradu",
+        "whereWhatForWhom": "Kiki Kiss Beauty je salon lepote na Knez Mihajlovoj u Beogradu specijalizovan za profesionalno šminkanje, izlivanje noktiju i dugotrajan manikir za sve prilike.",
+        "contact": {
+          "location": "Knez Mihajlova 33ab, Beograd",
+          "phone": "+381000000000"
+        },
+        "socialLinks": {
+          "instagram": "",
+          "facebook": "",
+          "tiktok": "",
+          "whatsapp": "",
+          "telegram": ""
+        },
+        "ctas": {
+          "primary": {
+            "text": "Zakaži termin",
+            "href": "/termini",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 126,
+                "2": 202,
+                "3": 3,
+                "4": 205,
+                "5": 172,
+                "6": 27,
+                "7": 192,
+                "8": 142,
+                "9": 222,
+                "10": 54,
+                "11": 244
+              }
+            }
+          },
+          "secondary": {
+            "text": "Galerija",
+            "href": "#gallery",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 126,
+                "2": 202,
+                "3": 3,
+                "4": 205,
+                "5": 172,
+                "6": 27,
+                "7": 192,
+                "8": 142,
+                "9": 222,
+                "10": 54,
+                "11": 245
+              }
+            }
+          }
+        },
+        "image": {
+          "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1778346734/salons/salon-kiki-kiss-beauty/landing/apqpmsnmgue7xcg9nozq.png",
+          "alt": "French dizajn noktiju Kiki Kiss Beauty salon Beograd"
+        },
+        "images": []
+      },
+      "about": {
+        "enabled": true,
+        "headline": "Ja sam Kristina, dobrodošli u Kiki Kiss Beauty",
+        "paragraphs": [
+          "Kiki Kiss Beauty salon predstavlja krunu trogodišnjeg uspešnog rada i posvećenosti Kristine, čija je strast prema lepoti oblikovana kroz vrhunsku edukaciju i praksu. Osnovu našeg rada čine prestižni sertifikati sa zvaničnih kurseva za šminkanje i negu noktiju, koji garantuju stručnost u svakom pokretu.",
+          "Konstantno usavršavanje je srž našeg poslovanja, o čemu svedoči aktivno učešće na najvećim sajmovima kozmetike i prestižnim svetskim konferencijama. Kristina redovno uči od globalno poznatih šminkera, donoseći svetske trendove i inovativne metode direktno u naš salon.",
+          " Spoj bogatog iskustva, edukacije kod najboljih stručnjaka. Pogledajte našu ponudu usluga i zakažite termin."
+        ],
+        "links": [
+          {
+            "text": "Pogledajte usluge",
+            "type": "link",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 6,
+                "2": 237,
+                "3": 107,
+                "4": 165,
+                "5": 217,
+                "6": 22,
+                "7": 72,
+                "8": 72,
+                "9": 217,
+                "10": 0,
+                "11": 237
+              }
+            }
+          }
+        ],
+        "image": {
+          "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1778838397/salons/salon-kiki-kiss-beauty/landing/nnrwj8tfpsay06y4op9e.png",
+          "alt": "Ja sam Kristina, radim makeup"
+        }
+      },
+      "artists": {
+        "enabled": false,
+        "headline": "",
+        "members": []
+      },
+      "servicesPreview": {
+        "enabled": true,
+        "headline": "Naše usluge",
+        "subheadline": "Profesionalni tretmani za nokte i šminkanje u Beogradu",
+        "showIcons": false
+      },
+      "appointmentSection": {
+        "enabled": true,
+        "headline": "Zakažite svoj termin",
+        "subheadline": "Izaberite uslugu i vreme koje vam odgovara",
+        "instructions": []
+      },
+      "testimonials": {
+        "enabled": false,
+        "headline": ""
+      },
+      "gallery": {
+        "enabled": true,
+        "galleryVariant": "images-with-category",
+        "headline": "Naši radovi",
+        "subheadline": "Pogledajte primere našeg rada na Instagramu",
+        "instagram": {
+          "username": "kikikissbeauty",
+          "link": "https://www.instagram.com/kikikissbeauty/",
+          "ctaText": "Pratite nas"
+        },
+        "treatments": [
+          {
+            "id": "+381000000000",
+            "category": "izlivanje noktiju",
+            "title": "Izlivanje Noktiju",
+            "description": "Izlivanje noktiju Idealno rešenje za vas ako imate kratke, slabe nokte",
+            "images": [
+              {
+                "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1778838668/salons/salon-kiki-kiss-beauty/landing/imwsi3ft9ubwhxwh8ie5.jpg",
+                "alt": "",
+                "_id": {
+                  "buffer": {
+                    "0": 106,
+                    "1": 6,
+                    "2": 237,
+                    "3": 107,
+                    "4": 165,
+                    "5": 217,
+                    "6": 22,
+                    "7": 72,
+                    "8": 72,
+                    "9": 217,
+                    "10": 0,
+                    "11": 239
+                  }
+                }
+              },
+              {
+                "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1778838677/salons/salon-kiki-kiss-beauty/landing/r8ccxdmikdibcnanrddw.jpg",
+                "alt": "",
+                "_id": {
+                  "buffer": {
+                    "0": 106,
+                    "1": 6,
+                    "2": 237,
+                    "3": 107,
+                    "4": 165,
+                    "5": 217,
+                    "6": 22,
+                    "7": 72,
+                    "8": 72,
+                    "9": 217,
+                    "10": 0,
+                    "11": 240
+                  }
+                }
+              }
+            ],
+            "href": "/termini",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 6,
+                "2": 237,
+                "3": 107,
+                "4": 165,
+                "5": 217,
+                "6": 22,
+                "7": 72,
+                "8": 72,
+                "9": 217,
+                "10": 0,
+                "11": 238
+              }
+            }
+          },
+          {
+            "id": "+381000000000",
+            "category": "Korekcija nokta",
+            "title": "Korekcija noktiju",
+            "description": "Skidanje starog materijala na noktima (gela,gel laka) i dalja priprema za nanošenje novog sloja gela ili gel laka.",
+            "images": [
+              {
+                "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1778838742/salons/salon-kiki-kiss-beauty/landing/orhiugx8qew2jtgs0xhi.jpg",
+                "alt": "",
+                "_id": {
+                  "buffer": {
+                    "0": 106,
+                    "1": 6,
+                    "2": 237,
+                    "3": 107,
+                    "4": 165,
+                    "5": 217,
+                    "6": 22,
+                    "7": 72,
+                    "8": 72,
+                    "9": 217,
+                    "10": 0,
+                    "11": 242
+                  }
+                }
+              },
+              {
+                "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1778838755/salons/salon-kiki-kiss-beauty/landing/vmtqjzfdjhd5arxwuttg.jpg",
+                "alt": "",
+                "_id": {
+                  "buffer": {
+                    "0": 106,
+                    "1": 6,
+                    "2": 237,
+                    "3": 107,
+                    "4": 165,
+                    "5": 217,
+                    "6": 22,
+                    "7": 72,
+                    "8": 72,
+                    "9": 217,
+                    "10": 0,
+                    "11": 243
+                  }
+                }
+              }
+            ],
+            "href": "/termini",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 6,
+                "2": 237,
+                "3": 107,
+                "4": 165,
+                "5": 217,
+                "6": 22,
+                "7": 72,
+                "8": 72,
+                "9": 217,
+                "10": 0,
+                "11": 241
+              }
+            }
+          },
+          {
+            "id": "+381000000000",
+            "category": "Šminkanje",
+            "title": "Šminkanje",
+            "description": "Postojan izgled koji traje celu noć, uz naglašavanje tvojih najlepših crta lica.",
+            "images": [
+              {
+                "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1768705190/marysoll-ai-look-1768704967165_zwkwim.jpg",
+                "alt": "",
+                "_id": {
+                  "buffer": {
+                    "0": 106,
+                    "1": 6,
+                    "2": 237,
+                    "3": 107,
+                    "4": 165,
+                    "5": 217,
+                    "6": 22,
+                    "7": 72,
+                    "8": 72,
+                    "9": 217,
+                    "10": 0,
+                    "11": 245
+                  }
+                }
+              },
+              {
+                "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1768704860/marysoll-ai-look-1768704810654_ewpwoy.jpg",
+                "alt": "",
+                "_id": {
+                  "buffer": {
+                    "0": 106,
+                    "1": 6,
+                    "2": 237,
+                    "3": 107,
+                    "4": 165,
+                    "5": 217,
+                    "6": 22,
+                    "7": 72,
+                    "8": 72,
+                    "9": 217,
+                    "10": 0,
+                    "11": 246
+                  }
+                }
+              }
+            ],
+            "href": "/termini",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 6,
+                "2": 237,
+                "3": 107,
+                "4": 165,
+                "5": 217,
+                "6": 22,
+                "7": 72,
+                "8": 72,
+                "9": 217,
+                "10": 0,
+                "11": 244
+              }
+            }
+          }
+        ],
+        "images": []
+      },
+      "faq": {
+        "enabled": true,
+        "headline": "Često postavljana pitanja",
+        "subheadline": "Sve što vas zanima o našim uslugama",
+        "support": {
+          "text": "Imate dodatnih pitanja? Kontaktirajte nas:",
+          "email": "kontakt@example.com"
+        },
+        "items": [
+          {
+            "question": "Koje usluge nudite u salonu?",
+            "answer": "U Kiki Kiss Beauty salonu u Beogradu nudimo profesionalno šminkanje, izlivanje noktiju, korekciju noktiju i manikir. Sve usluge izvodimo sa vrhunskim materijalima i prilagođavamo vašim željama.",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 6,
+                "2": 237,
+                "3": 107,
+                "4": 165,
+                "5": 217,
+                "6": 22,
+                "7": 72,
+                "8": 72,
+                "9": 217,
+                "10": 0,
+                "11": 247
+              }
+            }
+          },
+          {
+            "question": "Kako da zakažem termin?",
+            "answer": "Termin možete zakazati online putem našeg sajta, klikom na dugme 'Zakaži termin'. Takođe, možete nas kontaktirati putem telefona ili Instagram poruke.",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 6,
+                "2": 237,
+                "3": 107,
+                "4": 165,
+                "5": 217,
+                "6": 22,
+                "7": 72,
+                "8": 72,
+                "9": 217,
+                "10": 0,
+                "11": 248
+              }
+            }
+          },
+          {
+            "question": "Da li radite i vikendom?",
+            "answer": "Da, radimo subotom od 08:00 do 17:00, dok je nedeljom salon zatvoren. Radnim danom smo otvoreni od 08:00 do 17:00.",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 6,
+                "2": 237,
+                "3": 107,
+                "4": 165,
+                "5": 217,
+                "6": 22,
+                "7": 72,
+                "8": 72,
+                "9": 217,
+                "10": 0,
+                "11": 249
+              }
+            }
+          },
+          {
+            "question": "Koje metode plaćanja prihvatate?",
+            "answer": "Plaćanje je moguće gotovinom ili karticama na licu mesta. Za sve dodatne informacije slobodno nas kontaktirajte.",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 6,
+                "2": 237,
+                "3": 107,
+                "4": 165,
+                "5": 217,
+                "6": 22,
+                "7": 72,
+                "8": 72,
+                "9": 217,
+                "10": 0,
+                "11": 250
+              }
+            }
+          },
+          {
+            "question": "Koliko traje manikir ili izlivanje noktiju?",
+            "answer": "Manikir traje oko 60 minuta, dok izlivanje noktiju takođe traje 60 minuta. Korekcija noktiju je nešto brža, a tačno vreme zavisi od složenosti tretmana.",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 6,
+                "2": 237,
+                "3": 107,
+                "4": 165,
+                "5": 217,
+                "6": 22,
+                "7": 72,
+                "8": 72,
+                "9": 217,
+                "10": 0,
+                "11": 251
+              }
+            }
+          }
+        ]
+      },
+      "blog": {
+        "enabled": false,
+        "headline": "",
+        "paragraph": ""
+      },
+      "perks": {
+        "enabled": false,
+        "pill": "",
+        "eyebrow": "",
+        "headline": "",
+        "paragraphs": [],
+        "images": [],
+        "ctas": {
+          "primary": {
+            "text": "",
+            "href": "",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 126,
+                "2": 202,
+                "3": 3,
+                "4": 205,
+                "5": 172,
+                "6": 27,
+                "7": 192,
+                "8": 142,
+                "9": 222,
+                "10": 55,
+                "11": 5
+              }
+            }
+          },
+          "secondary": {
+            "text": "",
+            "href": "",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 126,
+                "2": 202,
+                "3": 3,
+                "4": 205,
+                "5": 172,
+                "6": 27,
+                "7": 192,
+                "8": 142,
+                "9": 222,
+                "10": 55,
+                "11": 6
+              }
+            }
+          }
+        }
+      }
+    },
+    "pages": {
+      "servicesPage": {
+        "headline": "Kompletna ponuda usluga",
+        "subheadline": "Pregled svih tretmana sa cenama i trajanjem",
+        "paragraph": "Kiki Kiss Beauty u Beogradu nudi profesionalno šminkanje, izlivanje noktiju, korekciju i manikir. Pregledajte kompletnu ponudu, cene i trajanje tretmana, a zatim kliknite na željenu uslugu da biste zakazali termin."
+      },
+      "appointmentsPage": {
+        "headline": "Rezervišite termin online",
+        "subheadline": "Brzo i jednostavno",
+        "paragraph": "Izaberite uslugu, datum i vreme koje vam odgovara. Kliknite na dugme ispod da biste započeli rezervaciju. Radnim danom i subotom od 08:00 do 17:00.",
+        "ctas": {
+          "primary": {
+            "text": "Zakaži termin",
+            "href": "/termini",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 126,
+                "2": 202,
+                "3": 3,
+                "4": 205,
+                "5": 172,
+                "6": 27,
+                "7": 192,
+                "8": 142,
+                "9": 222,
+                "10": 55,
+                "11": 7
+              }
+            }
+          },
+          "secondary": {
+            "text": "Pogledajte usluge",
+            "href": "/usluge",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 126,
+                "2": 202,
+                "3": 3,
+                "4": 205,
+                "5": 172,
+                "6": 27,
+                "7": 192,
+                "8": 142,
+                "9": 222,
+                "10": 55,
+                "11": 8
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "shisham-frizerski-salon": {
+    "landing": {
+      "hero": {
+        "enabled": true,
+        "headline": "Najbolji frizerski salon u Novom Sadu – Šišanje, farbanje, svečane frizure",
+        "subheadline": "Profesionalne usluge za žene. Zakaži termin online!",
+        "whereWhatForWhom": "Mičurinova 103, kod sajma, Novi Sad – za sve generacije",
+        "contact": {
+          "location": "Mičurinova 103, kod sajma, Novi Sad",
+          "phone": "+381000000000"
+        },
+        "socialLinks": {
+          "instagram": "",
+          "facebook": "",
+          "tiktok": "",
+          "whatsapp": "",
+          "telegram": ""
+        },
+        "ctas": {
+          "primary": {
+            "text": "Zakaži odmah",
+            "href": "/termini",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 76,
+                "2": 230,
+                "3": 222,
+                "4": 100,
+                "5": 50,
+                "6": 206,
+                "7": 230,
+                "8": 30,
+                "9": 76,
+                "10": 133,
+                "11": 165
+              }
+            }
+          }
+        },
+        "images": []
+      },
+      "about": {
+        "enabled": true,
+        "headline": "O nama – Frizerski salon Shi Sham Novi Sad",
+        "paragraphs": [
+          "Dobrodošli u Shi Sham, vaš frizerski salon u Novom Sadu, smešten u Mičurinovoj 103, kod sajma. Sa višegodišnjim iskustvom, specijalizovani smo za šišanje, farbanje kose, svečane frizure i šminkanje. Naš tim posvećen je pružanju vrhunskih usluga u prijatnoj atmosferi.",
+          "Koristimo profesionalne proizvode i pratimo najnovije trendove kako bismo vam osigurali savršen izgled. Bilo da vam treba svakodnevna frizura ili posebna transformacija za svadbu, maturu ili proslavu, tu smo za vas. Zakažite termin i uverite se zašto smo jedan od najboljih frizerskih salona u Novom Sadu!"
+        ],
+        "links": []
+      },
+      "artists": {
+        "enabled": true,
+        "headline": "",
+        "members": []
+      },
+      "servicesPreview": {
+        "enabled": true,
+        "headline": "Naše usluge",
+        "subheadline": "Profesionalne frizerske i šminkerske usluge po povoljnim cenama",
+        "showIcons": false
+      },
+      "appointmentSection": {
+        "enabled": true,
+        "headline": "Zakažite termin u 3 jednostavna koraka",
+        "subheadline": "Brzo i lako do savršene frizure ili šminke",
+        "instructions": []
+      },
+      "testimonials": {
+        "enabled": false,
+        "headline": ""
+      },
+      "gallery": {
+        "enabled": true,
+        "galleryVariant": "images-with-category",
+        "headline": "Naši radovi",
+        "subheadline": "Pogledajte primere naših frizura i šminke",
+        "instagram": {
+          "username": "",
+          "link": "",
+          "ctaText": ""
+        },
+        "treatments": [],
+        "images": []
+      },
+      "faq": {
+        "enabled": true,
+        "headline": "Često postavljana pitanja",
+        "subheadline": "Sve što vas zanima o našem frizerskom salonu u Novom Sadu",
+        "support": {
+          "text": "Imate dodatna pitanja? Kontaktirajte nas putem emaila.",
+          "email": ""
+        },
+        "items": [
+          {
+            "question": "Koliko traje šišanje?",
+            "answer": "Šišanje u proseku traje 30 do 45 minuta, u zavisnosti od dužine i željene frizure. Za složenije stilove, poput svečanih frizura, potrebno je više vremena.",
+            "_id": {
+              "buffer": {
+                "0": 105,
+                "1": 247,
+                "2": 232,
+                "3": 88,
+                "4": 97,
+                "5": 175,
+                "6": 54,
+                "7": 16,
+                "8": 228,
+                "9": 119,
+                "10": 88,
+                "11": 72
+              }
+            }
+          },
+          {
+            "question": "Da li radite i vikendom?",
+            "answer": "Da, radimo subotom po dogovoru. Preporučujemo da zakažete termin unapred kako bismo vam osigurali termin koji vam odgovara.",
+            "_id": {
+              "buffer": {
+                "0": 105,
+                "1": 247,
+                "2": 232,
+                "3": 88,
+                "4": 97,
+                "5": 175,
+                "6": 54,
+                "7": 16,
+                "8": 228,
+                "9": 119,
+                "10": 88,
+                "11": 73
+              }
+            }
+          },
+          {
+            "question": "Koje usluge šminkanja nudite?",
+            "answer": "Nudimo dnevno, večernje i svečano šminkanje, uključujući šminkanje za svadbe, mature i proslave. Koristimo profesionalnu kozmetiku za dugotrajan efekat.",
+            "_id": {
+              "buffer": {
+                "0": 105,
+                "1": 247,
+                "2": 232,
+                "3": 88,
+                "4": 97,
+                "5": 175,
+                "6": 54,
+                "7": 16,
+                "8": 228,
+                "9": 119,
+                "10": 88,
+                "11": 74
+              }
+            }
+          },
+          {
+            "question": "Kako da zakažem termin?",
+            "answer": "Termin možete zakazati putem našeg online sistema na sajtu, ili pozivom na broj +381662001006. Preporučujemo online zakazivanje radi brže potvrde.",
+            "_id": {
+              "buffer": {
+                "0": 105,
+                "1": 247,
+                "2": 232,
+                "3": 88,
+                "4": 97,
+                "5": 175,
+                "6": 54,
+                "7": 16,
+                "8": 228,
+                "9": 119,
+                "10": 88,
+                "11": 75
+              }
+            }
+          },
+          {
+            "question": "Da li imate parking?",
+            "answer": "Salon se nalazi u Mičurinovoj 103, kod sajma, gde postoji mogućnost parkinga u okolnim ulicama. Preporučujemo dolazak biciklom ili peške ako ste iz centra.",
+            "_id": {
+              "buffer": {
+                "0": 105,
+                "1": 247,
+                "2": 232,
+                "3": 88,
+                "4": 97,
+                "5": 175,
+                "6": 54,
+                "7": 16,
+                "8": 228,
+                "9": 119,
+                "10": 88,
+                "11": 76
+              }
+            }
+          }
+        ]
+      },
+      "blog": {
+        "enabled": false,
+        "headline": "",
+        "paragraph": ""
+      },
+      "perks": {
+        "enabled": false,
+        "pill": "",
+        "eyebrow": "",
+        "headline": "",
+        "paragraphs": [],
+        "images": [],
+        "ctas": {
+          "primary": {
+            "text": "",
+            "href": "",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 76,
+                "2": 230,
+                "3": 222,
+                "4": 100,
+                "5": 50,
+                "6": 206,
+                "7": 230,
+                "8": 30,
+                "9": 76,
+                "10": 133,
+                "11": 171
+              }
+            }
+          },
+          "secondary": {
+            "text": "",
+            "href": "",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 76,
+                "2": 230,
+                "3": 222,
+                "4": 100,
+                "5": 50,
+                "6": 206,
+                "7": 230,
+                "8": 30,
+                "9": 76,
+                "10": 133,
+                "11": 172
+              }
+            }
+          }
+        }
+      }
+    },
+    "pages": {
+      "servicesPage": {
+        "headline": "Frizerske i šminkerske usluge u Novom Sadu",
+        "subheadline": "Pogledajte kompletnu ponudu – šišanje, farbanje, svečane frizure, šminkanje i više",
+        "paragraph": ""
+      },
+      "appointmentsPage": {
+        "headline": "Zakažite termin – Frizerski salon Shi Sham Novi Sad",
+        "subheadline": "Izaberite uslugu, datum i vreme – brzo i jednostavno",
+        "paragraph": "",
+        "ctas": {
+          "primary": {
+            "text": "Zakaži odmah",
+            "href": "/termini",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 76,
+                "2": 230,
+                "3": 222,
+                "4": 100,
+                "5": 50,
+                "6": 206,
+                "7": 230,
+                "8": 30,
+                "9": 76,
+                "10": 133,
+                "11": 173
+              }
+            }
+          },
+          "secondary": {
+            "text": "Pogledaj usluge",
+            "href": "/usluge",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 76,
+                "2": 230,
+                "3": 222,
+                "4": 100,
+                "5": 50,
+                "6": 206,
+                "7": 230,
+                "8": 30,
+                "9": 76,
+                "10": 133,
+                "11": 174
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "marysoll-makeup-nails": {
+    "landing": {
+      "hero": {
+        "enabled": true,
+        "headline": "Profesionalno šminkanje i nokti u Boru – Marysoll Makeup & Nails",
+        "subheadline": "Šminkanje, nokti, manikir u Boru – rezervišite svoj termin danas!",
+        "whereWhatForWhom": "Marysoll Makeup & Nails nudi vrhunsko šminkanje, manikir i izlivanje noktiju u Boru. Dolazimo i na vašu adresu!",
+        "contact": {
+          "location": "Kralja Petra I 55, Bor",
+          "phone": "+381000000000"
+        },
+        "socialLinks": {
+          "instagram": "@_marysoll_makeup_nails",
+          "facebook": "",
+          "tiktok": "",
+          "whatsapp": "",
+          "telegram": ""
+        },
+        "ctas": {
+          "primary": {
+            "text": "Zakaži odmah",
+            "href": "/termini",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 128,
+                "2": 232,
+                "3": 73,
+                "4": 138,
+                "5": 27,
+                "6": 6,
+                "7": 53,
+                "8": 60,
+                "9": 245,
+                "10": 84,
+                "11": 163
+              }
+            }
+          },
+          "secondary": {
+            "text": "Pogledaj usluge",
+            "href": "/usluge",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 128,
+                "2": 232,
+                "3": 73,
+                "4": 138,
+                "5": 27,
+                "6": 6,
+                "7": 53,
+                "8": 60,
+                "9": 245,
+                "10": 84,
+                "11": 164
+              }
+            }
+          }
+        },
+        "images": []
+      },
+      "about": {
+        "enabled": true,
+        "headline": "Marija Ivković – Makeup Artist u Boru 💋",
+        "paragraphs": [
+          "Ja sam Marija, makeup artist iz Bora, i ponosna sam na armiju zadovoljnih klijentkinja. Uložila sam mnogo rada i truda u usavršavanje, pratim trendove, nove tehnike i materijale.",
+          "Usavršila sam se kod najboljih: 💄Certified by @zaklina_randjelovic | @daki_xei_nora ✨ 🎓Masterclass @milena_delibasic. U Marysoll Makeup & Nails radimo kvalitetno i profesionalno – vaše lepote su naš prioritet.\nJoš jedna bitna stvar, razvijam jednu veliku pomoć za pretragu slobodnih termina, za pomoć malim salonima, koja je meni bila potrebna na početku. A to je Booking Marysoll aplikacija koja vam nađe slobodan termin u trenu. Prestanite da jurite poruke ceo dan na Instagramu napravite vaš online salon na Marysoll."
+        ],
+        "links": [
+          {
+            "text": "@zaklina_randjelovic",
+            "url": "@zaklina_randjelovic",
+            "type": "mention",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 26,
+                "2": 128,
+                "3": 212,
+                "4": 193,
+                "5": 148,
+                "6": 9,
+                "7": 240,
+                "8": 81,
+                "9": 70,
+                "10": 214,
+                "11": 178
+              }
+            }
+          },
+          {
+            "text": "@daki_xei_nora",
+            "url": "@daki_xei_nora",
+            "type": "mention",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 26,
+                "2": 128,
+                "3": 212,
+                "4": 193,
+                "5": 148,
+                "6": 9,
+                "7": 240,
+                "8": 81,
+                "9": 70,
+                "10": 214,
+                "11": 179
+              }
+            }
+          },
+          {
+            "text": "@milena_delibasic",
+            "url": "@milena_delibasic",
+            "type": "mention",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 26,
+                "2": 128,
+                "3": 212,
+                "4": 193,
+                "5": 148,
+                "6": 9,
+                "7": 240,
+                "8": 81,
+                "9": 70,
+                "10": 214,
+                "11": 180
+              }
+            }
+          },
+          {
+            "text": "Booking Marysoll",
+            "url": "https://booking.marysoll.com",
+            "type": "link",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 41,
+                "2": 194,
+                "3": 241,
+                "4": 41,
+                "5": 9,
+                "6": 202,
+                "7": 122,
+                "8": 251,
+                "9": 112,
+                "10": 222,
+                "11": 74
+              }
+            }
+          },
+          {
+            "text": "napravite vaš online salon na Marysoll",
+            "url": "https://marysoll.com",
+            "type": "link",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 41,
+                "2": 194,
+                "3": 241,
+                "4": 41,
+                "5": 9,
+                "6": 202,
+                "7": 122,
+                "8": 251,
+                "9": 112,
+                "10": 222,
+                "11": 75
+              }
+            }
+          }
+        ],
+        "image": {
+          "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1778769520/salons/salon-marysoll-makeup-nails/landing/hhonvcimxvuiazqpg9el.jpg",
+          "alt": "Marija Ivković – makeup artist Bor"
+        },
+        "yearsOfExperience": 4
+      },
+      "artists": {
+        "enabled": false,
+        "headline": "",
+        "members": []
+      },
+      "servicesPreview": {
+        "enabled": true,
+        "headline": "Naše usluge šminkanja i noktiju u Boru",
+        "subheadline": "Profesionalno šminkanje, manikir, gel lak – cene i detalji",
+        "showIcons": true
+      },
+      "appointmentSection": {
+        "enabled": true,
+        "headline": "Zakažite termin odmah",
+        "subheadline": "Samo slobodni termini su u kalendaru. Rezervišite brzo i lako!",
+        "instructions": []
+      },
+      "testimonials": {
+        "enabled": true,
+        "headline": "Šta kažu naše klijentkinje?"
+      },
+      "gallery": {
+        "enabled": true,
+        "galleryVariant": "images-with-category",
+        "headline": "Naši najbolji tretmani – šminkanje i nokti u Boru",
+        "subheadline": "Pogledajte kako mi to radimo.",
+        "instagram": {
+          "username": "@_marysoll_makeup_nails",
+          "link": "https://www.instagram.com/_marysoll_makeup_nails/",
+          "ctaText": "@_marysoll_makeup_nails"
+        },
+        "treatments": [
+          {
+            "id": "+381000000000",
+            "category": "Izlivanje noktiju",
+            "title": "Izlivanje noktiju gelom i gel lakom",
+            "description": "Izlivanje noktiju gelom i gel lakom po najnovijim standardima – savršeni nokti u Boru.",
+            "images": [
+              {
+                "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1778770018/salons/salon-marysoll-makeup-nails/landing/mpbirkses2ha5oldj15a.jpg",
+                "alt": "izlivanje noktiju gel Bor",
+                "_id": {
+                  "buffer": {
+                    "0": 106,
+                    "1": 5,
+                    "2": 226,
+                    "3": 38,
+                    "4": 125,
+                    "5": 40,
+                    "6": 130,
+                    "7": 173,
+                    "8": 242,
+                    "9": 33,
+                    "10": 87,
+                    "11": 66
+                  }
+                }
+              },
+              {
+                "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1778770118/salons/salon-marysoll-makeup-nails/landing/xaqbawyqf617pncvbrrv.jpg",
+                "alt": "izlivanje noktiju gel lak Bor",
+                "_id": {
+                  "buffer": {
+                    "0": 106,
+                    "1": 5,
+                    "2": 226,
+                    "3": 38,
+                    "4": 125,
+                    "5": 40,
+                    "6": 130,
+                    "7": 173,
+                    "8": 242,
+                    "9": 33,
+                    "10": 87,
+                    "11": 67
+                  }
+                }
+              }
+            ],
+            "href": "/termini",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 5,
+                "2": 226,
+                "3": 38,
+                "4": 125,
+                "5": 40,
+                "6": 130,
+                "7": 173,
+                "8": 242,
+                "9": 33,
+                "10": 87,
+                "11": 65
+              }
+            }
+          },
+          {
+            "id": "+381000000000",
+            "category": "Korekcija noktiju",
+            "title": "Korekcija noktiju – održavanje zdravlja noktiju",
+            "description": "Korekcija noktiju je ključna za zdravlje vaših noktiju. Redovna korekcija produžava trajanje manikira i sprečava oštećenja.",
+            "images": [
+              {
+                "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1778770261/salons/salon-marysoll-makeup-nails/landing/hsddskqpsims1yei8gki.jpg",
+                "alt": "korekcija noktiju Bor",
+                "_id": {
+                  "buffer": {
+                    "0": 106,
+                    "1": 5,
+                    "2": 226,
+                    "3": 38,
+                    "4": 125,
+                    "5": 40,
+                    "6": 130,
+                    "7": 173,
+                    "8": 242,
+                    "9": 33,
+                    "10": 87,
+                    "11": 69
+                  }
+                }
+              },
+              {
+                "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1778770312/salons/salon-marysoll-makeup-nails/landing/az31pefxwiwk90uoedmr.jpg",
+                "alt": "korekcija noktiju Bor",
+                "_id": {
+                  "buffer": {
+                    "0": 106,
+                    "1": 5,
+                    "2": 226,
+                    "3": 38,
+                    "4": 125,
+                    "5": 40,
+                    "6": 130,
+                    "7": 173,
+                    "8": 242,
+                    "9": 33,
+                    "10": 87,
+                    "11": 70
+                  }
+                }
+              }
+            ],
+            "href": "/termini",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 5,
+                "2": 226,
+                "3": 38,
+                "4": 125,
+                "5": 40,
+                "6": 130,
+                "7": 173,
+                "8": 242,
+                "9": 33,
+                "10": 87,
+                "11": 68
+              }
+            }
+          },
+          {
+            "id": "+381000000000",
+            "category": "Makeup",
+            "title": "Profesionalno šminkanje • Besprekoran ten & Trepavice | Marysoll",
+            "description": "Usluga šminkanja u salonu Marysoll Makeup & Nails u Boru kreirana je za dame koje ne pristaju na kompromise kada je u pitanju njihov izgled za važne prilike. Besprekorni, vazdušastog tena sa glatkom teksturom koja savršeno izgleda uživo. Svaki look krunišemo pažljivim stilizovanjem očiju i aplikacijom premium veštačkih trepavica",
+            "images": [
+              {
+                "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1780287689/salons/salon-marysoll-makeup-nails/landing/cfqaj1netqetusojbwkw.jpg",
+                "alt": "Svaki makeup počinje dubinskom negom. Kreiranje HD tena i \"soft\" kontura",
+                "_id": {
+                  "buffer": {
+                    "0": 106,
+                    "1": 29,
+                    "2": 9,
+                    "3": 15,
+                    "4": 156,
+                    "5": 175,
+                    "6": 89,
+                    "7": 165,
+                    "8": 137,
+                    "9": 149,
+                    "10": 25,
+                    "11": 134
+                  }
+                }
+              },
+              {
+                "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1780287720/salons/salon-marysoll-makeup-nails/landing/hg7j2hh7uirtffiok8yf.jpg",
+                "alt": "Glamurozne oči i aplikacija trepavica. od nežnog nude stila do dramatičnog smokey eyes-a",
+                "_id": {
+                  "buffer": {
+                    "0": 106,
+                    "1": 29,
+                    "2": 9,
+                    "3": 15,
+                    "4": 156,
+                    "5": 175,
+                    "6": 89,
+                    "7": 165,
+                    "8": 137,
+                    "9": 149,
+                    "10": 25,
+                    "11": 135
+                  }
+                }
+              }
+            ],
+            "href": "/termini",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 29,
+                "2": 9,
+                "3": 15,
+                "4": 156,
+                "5": 175,
+                "6": 89,
+                "7": 165,
+                "8": 137,
+                "9": 149,
+                "10": 25,
+                "11": 133
+              }
+            }
+          }
+        ],
+        "images": []
+      },
+      "faq": {
+        "enabled": true,
+        "headline": "Česta pitanja o šminkanju i noktima u Boru",
+        "subheadline": "Sve što vas zanima o našim uslugama.",
+        "support": {
+          "text": "",
+          "email": ""
+        },
+        "items": [
+          {
+            "question": "Koje vrste šminkanja radite?",
+            "answer": "Radimo dnevno, večernje i svadbeno šminkanje u Boru. Prilagođavamo se vašim željama i prilikama – bilo da je u pitanju izlazak, venčanje ili profesionalni događaj.",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 5,
+                "2": 226,
+                "3": 172,
+                "4": 125,
+                "5": 40,
+                "6": 130,
+                "7": 173,
+                "8": 242,
+                "9": 33,
+                "10": 87,
+                "11": 153
+              }
+            }
+          },
+          {
+            "question": "Da li radite nokte na kućnoj adresi?",
+            "answer": "Da, dolazimo na vašu adresu u Boru i okolini. Cena dolaska je od 2500 RSD, a usluga uključuje manikir, gel i gel lak.",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 5,
+                "2": 226,
+                "3": 172,
+                "4": 125,
+                "5": 40,
+                "6": 130,
+                "7": 173,
+                "8": 242,
+                "9": 33,
+                "10": 87,
+                "11": 154
+              }
+            }
+          },
+          {
+            "question": "Koliko traje termin za šminkanje?",
+            "answer": "Dnevno šminkanje traje oko 30-45 minuta, večernje 45-60 minuta, a svadbeno šminkanje do 2 sata. Precizno vreme dogovaramo prilikom rezervacije.",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 5,
+                "2": 226,
+                "3": 172,
+                "4": 125,
+                "5": 40,
+                "6": 130,
+                "7": 173,
+                "8": 242,
+                "9": 33,
+                "10": 87,
+                "11": 155
+              }
+            }
+          },
+          {
+            "question": "Kako da rezervišem termin?",
+            "answer": "Termin možete zakazati putem našeg online kalendara na sajtu ili putem Instagram profila @_marysoll_makeup_nails. Samo slobodni termini su prikazani.",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 5,
+                "2": 226,
+                "3": 172,
+                "4": 125,
+                "5": 40,
+                "6": 130,
+                "7": 173,
+                "8": 242,
+                "9": 33,
+                "10": 87,
+                "11": 156
+              }
+            }
+          },
+          {
+            "question": "Koji su načini plaćanja?",
+            "answer": "Plaćanje je moguće gotovinom ili putem bankovnog transfera. Detalje dogovaramo prilikom rezervacije.",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 5,
+                "2": 226,
+                "3": 172,
+                "4": 125,
+                "5": 40,
+                "6": 130,
+                "7": 173,
+                "8": 242,
+                "9": 33,
+                "10": 87,
+                "11": 157
+              }
+            }
+          }
+        ]
+      },
+      "blog": {
+        "enabled": false,
+        "headline": "",
+        "paragraph": ""
+      },
+      "perks": {
+        "enabled": false,
+        "pill": "",
+        "eyebrow": "",
+        "headline": "",
+        "paragraphs": [],
+        "images": [],
+        "ctas": {
+          "primary": {
+            "text": "",
+            "href": "",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 128,
+                "2": 232,
+                "3": 73,
+                "4": 138,
+                "5": 27,
+                "6": 6,
+                "7": 53,
+                "8": 60,
+                "9": 245,
+                "10": 84,
+                "11": 184
+              }
+            }
+          },
+          "secondary": {
+            "text": "",
+            "href": "",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 128,
+                "2": 232,
+                "3": 73,
+                "4": 138,
+                "5": 27,
+                "6": 6,
+                "7": 53,
+                "8": 60,
+                "9": 245,
+                "10": 84,
+                "11": 185
+              }
+            }
+          }
+        }
+      }
+    },
+    "pages": {
+      "servicesPage": {
+        "headline": "Naše usluge i cene – šminkanje i nokti u Boru",
+        "subheadline": "Pogledajte kompletnu ponudu profesionalnog šminkanja, manikira i gel laka.",
+        "paragraph": ""
+      },
+      "appointmentsPage": {
+        "headline": "Zakaži termin za šminkanje ili nokte u Boru",
+        "subheadline": "Termini u kalendaru samo dostupni su prikazani. Možemo da izađemo u susret – radimo i prekovremeno.",
+        "paragraph": "",
+        "ctas": {
+          "primary": {
+            "text": "Zakaži odmah",
+            "href": "/termini",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 128,
+                "2": 232,
+                "3": 73,
+                "4": 138,
+                "5": 27,
+                "6": 6,
+                "7": 53,
+                "8": 60,
+                "9": 245,
+                "10": 84,
+                "11": 186
+              }
+            }
+          },
+          "secondary": {
+            "text": "Pogledaj usluge",
+            "href": "/usluge",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 128,
+                "2": 232,
+                "3": 73,
+                "4": 138,
+                "5": 27,
+                "6": 6,
+                "7": 53,
+                "8": 60,
+                "9": 245,
+                "10": 84,
+                "11": 187
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "the-lash-room-by-anja": {
+    "landing": {
+      "hero": {
+        "enabled": true,
+        "headline": "",
+        "subheadline": "Za devojke koje ne vole prosečno. Dobre trepavice menjaju pogled. Savršene menjaju celu energiju. Precizna izrada, premium materijali i dizajn prilagođen baš tebi, tvom licu i obliku oka. Rezerviši svoj termin i dozvoli svom pogledu da govori umesto tebe.",
+        "whereWhatForWhom": "LASH ROOM by Anja - Specijalizovani smo za napredne tehnike nadogradnje i stilizovanja trepavica koje vizuelno podižu kapke, otvaraju pogled i pružaju savršen vizuelni efekat u svakom trenutku. Pronađi svoju idealnu tehniku i probudi se spremna.",
+        "contact": {
+          "location": "𝙼𝚊𝚔𝚜𝚒𝚖𝚊 𝙶𝚘𝚛𝚔𝚘𝚐 𝟷𝚊 / 𝙻𝚘𝚣𝚗𝚒𝚌𝚊",
+          "phone": ""
+        },
+        "socialLinks": {
+          "instagram": "https://www.instagram.com/lashroom_byanja/",
+          "facebook": "",
+          "tiktok": "",
+          "whatsapp": "",
+          "telegram": ""
+        },
+        "ctas": {
+          "primary": {
+            "text": "Zakaži termin",
+            "href": "/",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 129,
+                "2": 175,
+                "3": 103,
+                "4": 61,
+                "5": 51,
+                "6": 26,
+                "7": 41,
+                "8": 153,
+                "9": 69,
+                "10": 121,
+                "11": 108
+              }
+            }
+          },
+          "secondary": {
+            "text": "",
+            "href": "#services",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 129,
+                "2": 175,
+                "3": 103,
+                "4": 61,
+                "5": 51,
+                "6": 26,
+                "7": 41,
+                "8": 153,
+                "9": 69,
+                "10": 121,
+                "11": 109
+              }
+            }
+          }
+        },
+        "image": {
+          "src": "",
+          "alt": ""
+        },
+        "images": [
+          {
+            "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1782008195/salons/salon-the-lash-room-by-anja/landing/xx3o3gmq3zjwdjynyeb7.jpg",
+            "alt": "that cat's eye effect | The Lash Room Studio by Anja",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 61,
+                "2": 191,
+                "3": 190,
+                "4": 92,
+                "5": 189,
+                "6": 245,
+                "7": 56,
+                "8": 23,
+                "9": 7,
+                "10": 148,
+                "11": 16
+              }
+            }
+          },
+          {
+            "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1782430547/salons/salon-the-lash-room-by-anja/landing/ruqn8wp65fccynmp9bpm.jpg",
+            "alt": "Anja, your lash artist ♡",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 61,
+                "2": 191,
+                "3": 190,
+                "4": 92,
+                "5": 189,
+                "6": 245,
+                "7": 56,
+                "8": 23,
+                "9": 7,
+                "10": 148,
+                "11": 17
+              }
+            }
+          }
+        ],
+        "theme8": {
+          "eyebrow": "Cute? Always. Basic? Never.",
+          "wordmark": {
+            "prefix": "The",
+            "line1": "Lash",
+            "line2": "Room",
+            "tail": "byAnja"
+          },
+          "marquee": [
+            "CLASSIC",
+            "HYBRID",
+            "VOLUMEN",
+            "LASH LIFT",
+            "REFILL",
+            "L VOLUMEN",
+            "IT-GIRL APPROVED"
+          ],
+          "photoCaptions": {
+            "primary": "that cat's eye effect ✶",
+            "founder": "Anja, your artist ♡"
+          }
+        }
+      },
+      "about": {
+        "enabled": true,
+        "headline": "Girl-boss energy,  u svakom pogledu.",
+        "paragraphs": [
+          "Dobrodošla u The Lash Room — mesto gde se trepavice ne rade po šablonu. Svaki set je custom made za tvoje oči, tvoje crte lica i tvoj vibe. Ovde ne jurimo trendove, već kreiramo look koji izgleda kao najbolja verzija tebe.",
+          "U roze prostoru punom kreativnosti, dobre energije i malo girl-boss magije, cilj je jednostavan: da izađeš sa više samopouzdanja nego što si ušla. ✨\n 🎀 DM @lashroom_byanja"
+        ],
+        "links": [
+          {
+            "text": "@lashroom_byanja",
+            "url": "https://www.instagram.com/lashroom_byanja/",
+            "type": "mention",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 55,
+                "2": 74,
+                "3": 78,
+                "4": 135,
+                "5": 112,
+                "6": 10,
+                "7": 94,
+                "8": 88,
+                "9": 100,
+                "10": 84,
+                "11": 48
+              }
+            }
+          }
+        ],
+        "image": {
+          "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1782274553/salons/salon-the-lash-room-by-anja/landing/azyuhehyh1ite3uwkllz.jpg",
+          "alt": "the pink room ♡"
+        },
+        "images": [
+          {
+            "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1782585278/salons/salon-the-lash-room-by-anja/landing/i0thvyj7mhozh5cudtwi.jpg",
+            "alt": "The Lash Room Studio",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 64,
+                "2": 23,
+                "3": 221,
+                "4": 84,
+                "5": 255,
+                "6": 192,
+                "7": 140,
+                "8": 110,
+                "9": 142,
+                "10": 53,
+                "11": 147
+              }
+            }
+          },
+          {
+            "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1782585300/salons/salon-the-lash-room-by-anja/landing/ayrbi7bobupgsrqh3ck5.jpg",
+            "alt": "Anja Lash Room artist",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 64,
+                "2": 23,
+                "3": 221,
+                "4": 84,
+                "5": 255,
+                "6": 192,
+                "7": 140,
+                "8": 110,
+                "9": 142,
+                "10": 53,
+                "11": 148
+              }
+            }
+          }
+        ],
+        "yearsOfExperience": 3,
+        "openingYear": 2023
+      },
+      "artists": {
+        "enabled": false,
+        "headline": "",
+        "members": [
+          {
+            "name": "",
+            "role": "",
+            "bio": "",
+            "image": {
+              "src": "",
+              "alt": ""
+            },
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 59,
+                "2": 125,
+                "3": 211,
+                "4": 84,
+                "5": 99,
+                "6": 227,
+                "7": 50,
+                "8": 49,
+                "9": 62,
+                "10": 70,
+                "11": 43
+              }
+            }
+          }
+        ]
+      },
+      "servicesPreview": {
+        "enabled": true,
+        "headline": "Cenovnik",
+        "subheadline": "",
+        "showIcons": false
+      },
+      "appointmentSection": {
+        "enabled": false,
+        "headline": "",
+        "subheadline": "",
+        "instructions": []
+      },
+      "testimonials": {
+        "enabled": true,
+        "headline": "VOLJENI OD STRANE ANJE"
+      },
+      "gallery": {
+        "enabled": true,
+        "galleryVariant": "images-with-category",
+        "headline": "Ponuda nadogradnje",
+        "subheadline": "",
+        "instagram": {
+          "username": "@lashroom_byanja",
+          "link": "https://www.instagram.com/lashroom_byanja/",
+          "ctaText": "@lashroom_byanja"
+        },
+        "treatments": [
+          {
+            "id": "+381000000000",
+            "category": "kategorija",
+            "title": "Lash lift",
+            "description": "bezbolan kozmetički tretman kojim se prirodne trepavice uvijaju, podižu i vizuelno produžavaju iz samog korena. Idealan je za sve koji žele efekat maskare i otvoreniji pogled bez obaveza koje donose nadograđene trepavice.",
+            "images": [
+              {
+                "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1782278069/salons/salon-the-lash-room-by-anja/landing/edjwl49pu3u5dlqml7hw.jpg",
+                "alt": "Lash lift trepavica",
+                "_id": {
+                  "buffer": {
+                    "0": 106,
+                    "1": 55,
+                    "2": 71,
+                    "3": 174,
+                    "4": 135,
+                    "5": 112,
+                    "6": 10,
+                    "7": 94,
+                    "8": 88,
+                    "9": 100,
+                    "10": 83,
+                    "11": 111
+                  }
+                }
+              }
+            ],
+            "href": "https://www.instagram.com/lashroom_byanja/",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 55,
+                "2": 71,
+                "3": 174,
+                "4": 135,
+                "5": 112,
+                "6": 10,
+                "7": 94,
+                "8": 88,
+                "9": 100,
+                "10": 83,
+                "11": 110
+              }
+            }
+          },
+          {
+            "id": "+381000000000",
+            "category": "kategorija",
+            "title": "Tehnika 1 na 1",
+            "description": "Tehnika 1 na 1 (jedan na jedan) je klasična i najprirodnija metoda nadogradnje trepavica. Tretman podrazumeva precizno lepljenje jedne fine, veštačke trepavice na tačno jednu vašu prirodnu dlaku.",
+            "images": [
+              {
+                "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1782278341/salons/salon-the-lash-room-by-anja/landing/vgnuc2zfvi34sqdiskjd.jpg",
+                "alt": "Tehnika 1 na 1 klasična i najprirodnija metoda nadogradnje trepavica.",
+                "_id": {
+                  "buffer": {
+                    "0": 106,
+                    "1": 55,
+                    "2": 71,
+                    "3": 174,
+                    "4": 135,
+                    "5": 112,
+                    "6": 10,
+                    "7": 94,
+                    "8": 88,
+                    "9": 100,
+                    "10": 83,
+                    "11": 114
+                  }
+                }
+              }
+            ],
+            "href": "https://www.instagram.com/lashroom_byanja/",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 55,
+                "2": 71,
+                "3": 174,
+                "4": 135,
+                "5": 112,
+                "6": 10,
+                "7": 94,
+                "8": 88,
+                "9": 100,
+                "10": 83,
+                "11": 113
+              }
+            }
+          },
+          {
+            "id": "+381000000000",
+            "category": "kategorija",
+            "title": "Mix tehnika",
+            "description": "Predstavlja savršen spoj klasične \"1 na 1\" metode i volumenskih trepavica. Kombinovanjem pojedinačnih ekstenzija i laganih snopića (lepeza) dobija se teksturisan, prirodno-puni izgled.",
+            "images": [
+              {
+                "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1782278424/salons/salon-the-lash-room-by-anja/landing/althaoqgbfhsjvu5fpwd.jpg",
+                "alt": "Cat eye set (hibridne trepavice)",
+                "_id": {
+                  "buffer": {
+                    "0": 106,
+                    "1": 55,
+                    "2": 71,
+                    "3": 174,
+                    "4": 135,
+                    "5": 112,
+                    "6": 10,
+                    "7": 94,
+                    "8": 88,
+                    "9": 100,
+                    "10": 83,
+                    "11": 117
+                  }
+                }
+              }
+            ],
+            "href": "https://www.instagram.com/lashroom_byanja/",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 55,
+                "2": 71,
+                "3": 174,
+                "4": 135,
+                "5": 112,
+                "6": 10,
+                "7": 94,
+                "8": 88,
+                "9": 100,
+                "10": 83,
+                "11": 116
+              }
+            }
+          },
+          {
+            "id": "+381000000000",
+            "category": "kategorija",
+            "title": "Volumen tehnika",
+            "description": "Izuzetna gustina, dubina i raskošan izgled. Zbog specifične težine ovih ekstenzija, koje su znatno tanje od onih za \"1 na 1\", prirodna dlaka ostaje potpuno rasterećena, a rezultat je bogat, baršunast i taman niz trepavica.",
+            "images": [
+              {
+                "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1782276189/salons/salon-the-lash-room-by-anja/landing/mxcmr0v0ocazu5ryxlxs.jpg",
+                "alt": "Volumen tehnika trepavica.",
+                "_id": {
+                  "buffer": {
+                    "0": 106,
+                    "1": 59,
+                    "2": 107,
+                    "3": 157,
+                    "4": 74,
+                    "5": 149,
+                    "6": 28,
+                    "7": 245,
+                    "8": 249,
+                    "9": 219,
+                    "10": 118,
+                    "11": 175
+                  }
+                }
+              }
+            ],
+            "href": "/termini",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 59,
+                "2": 107,
+                "3": 157,
+                "4": 74,
+                "5": 149,
+                "6": 28,
+                "7": 245,
+                "8": 249,
+                "9": 219,
+                "10": 118,
+                "11": 174
+              }
+            }
+          },
+          {
+            "id": "+381000000000",
+            "category": "kategorija",
+            "title": "L volumen",
+            "description": "Sa oblikom slova \"L\" je specijalna, moderna tehnika volumena. Ravna osnova omogućava veću površinu za lepljenje, što pruža ekstremno jaku retenciju (dugotrajnost), dok oštar ugao stvara fantastičan, vizuelno podignut eyeliner efekat (efekat izvučenog ajlajnera) i maksimalno otvara pogled.",
+            "images": [
+              {
+                "src": "https://res.cloudinary.com/dufo1t5li/image/upload/v1782276604/salons/salon-the-lash-room-by-anja/landing/qln9rjmfc3vjzwnrlbb5.jpg",
+                "alt": "L volumen (nadogradnja trepavica sa L zakrivljenošću)",
+                "_id": {
+                  "buffer": {
+                    "0": 106,
+                    "1": 59,
+                    "2": 107,
+                    "3": 157,
+                    "4": 74,
+                    "5": 149,
+                    "6": 28,
+                    "7": 245,
+                    "8": 249,
+                    "9": 219,
+                    "10": 118,
+                    "11": 177
+                  }
+                }
+              }
+            ],
+            "href": "/termini",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 59,
+                "2": 107,
+                "3": 157,
+                "4": 74,
+                "5": 149,
+                "6": 28,
+                "7": 245,
+                "8": 249,
+                "9": 219,
+                "10": 118,
+                "11": 176
+              }
+            }
+          }
+        ],
+        "images": []
+      },
+      "faq": {
+        "enabled": true,
+        "headline": "GOOD TO KNOW",
+        "subheadline": "Q&A",
+        "support": {
+          "text": "Odgovori na česta pitanja koja me smaraju kiss 💋",
+          "email": "kontakt@example.com"
+        },
+        "items": [
+          {
+            "question": "Da li nadogradnja oštećuje moje prirodne trepavice?",
+            "answer": "Kratko ću odgovoriti: Nadogradnja ne oštećuje vaše trepavice, ako ste izabrali dobrog lash artista, tj. dobrog lash tehničara. Trepavice, ako su kvalitetno postavljene, neće oštetiti vaše prirodne trepavice. Naprotiv, pravilnom tehnikom one čak mogu da izgledaju zdravije i duže dok ih nosite.",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 55,
+                "2": 2,
+                "3": 211,
+                "4": 135,
+                "5": 112,
+                "6": 10,
+                "7": 94,
+                "8": 88,
+                "9": 100,
+                "10": 73,
+                "11": 40
+              }
+            }
+          },
+          {
+            "question": "Koliko traju trepavice i na koliko se radi korekcija?",
+            "answer": "To je vrlo individualno. Zavisi od toga kako se vaše trepavice prirodno regenerišu i koliko brzo opadaju. Neke klijentkinje imaju trepavice koje traju duže, neke kraće. Neke korekcije radimo posle 2-3 nedelje, neke posle 3-4 nedelje. Ako imate pun faktor, ako je gustina dobra, onda ceo proces traje duže. Neke klijentkinje imaju trepavice koje stoje duže, neke kraće – to je sve normalno.",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 55,
+                "2": 7,
+                "3": 164,
+                "4": 135,
+                "5": 112,
+                "6": 10,
+                "7": 94,
+                "8": 88,
+                "9": 100,
+                "10": 74,
+                "11": 101
+              }
+            }
+          },
+          {
+            "question": "Da li postupak boli ili pecka?",
+            "answer": "Ne boli. Može da se desi blago peckanje (posebno kod osoba sa svetlim očima), ali ništa neprijatno. Većina ljudi (oko 80%) zaspi tokom procedure.",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 55,
+                "2": 7,
+                "3": 164,
+                "4": 135,
+                "5": 112,
+                "6": 10,
+                "7": 94,
+                "8": 88,
+                "9": 100,
+                "10": 74,
+                "11": 102
+              }
+            }
+          },
+          {
+            "question": "Koliko traje sam tretman?",
+            "answer": "Tretman traje od 1 sat do 1 sat i po (individualno). Neko radi i 2–2,5 sata za vrlo visok kvalitet, ali kraće vreme ne znači nužno manji kvalitet – bitno je da se uradi dobro. Većina mojih tretmana je u tom standardnom roku.",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 55,
+                "2": 7,
+                "3": 164,
+                "4": 135,
+                "5": 112,
+                "6": 10,
+                "7": 94,
+                "8": 88,
+                "9": 100,
+                "10": 74,
+                "11": 103
+              }
+            }
+          },
+          {
+            "question": "Da li možemo da koristimo šminku sa nadogradnjom?",
+            "answer": "Da, možete koristiti šminku. Važno je da pre tretmana očistite lice i trepavice bez ulja (da budu potpuno čiste). Posle tretmana možete se šminkati normalno, ali izbegavajte vodootpornu maskaru, uljne proizvode, veštačke trepavice i maske za oči.",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 55,
+                "2": 7,
+                "3": 164,
+                "4": 135,
+                "5": 112,
+                "6": 10,
+                "7": 94,
+                "8": 88,
+                "9": 100,
+                "10": 74,
+                "11": 104
+              }
+            }
+          },
+          {
+            "question": "Kako se održavaju trepavice kod kuće?",
+            "answer": "Za najbolje održavanje nadogradnje trepavica kod kuće, pratite ova osnovna pravila:\n\n1. Prvih 24 sata — ne kvasite trepavice (izbegavajte umivanje lica, tuširanje, saunu itd.). 💧\n2. Češljajte ih redovno — nežno četkajte trepavice svaki dan čistom četkicom da ostanu razdvojene i lepe. ❤️\n3. Izbegavajte uljane proizvode — nikakva ulja, uljne kreme, micelarna voda ili makeup removeri na i oko očiju. 🧴\n4. Budite nežni prema njima — ne trljajte oči, ne spavajte licem u jastuk i izbegavajte mehaničko oštećivanje. 🌸\n\nAko se pridržavate ovih saveta, trepavice će trajati duže i izgledati lepše. Ukoliko imate još neko pitanje, slobodno pitajte! 😊",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 55,
+                "2": 7,
+                "3": 164,
+                "4": 135,
+                "5": 112,
+                "6": 10,
+                "7": 94,
+                "8": 88,
+                "9": 100,
+                "10": 74,
+                "11": 105
+              }
+            }
+          },
+          {
+            "question": "Kako da se pripremite pred dolazak i da li da dođete bez šminke?",
+            "answer": "Najbolje je da dođete čistog lica — bez šminke, posebno bez maskare, senki ili bilo čega na očima.\nSkinite šminku ispod očiju i sa kapaka da bi lepilica dobro prijanjala.\nNe morate biti potpuno bez šminke na ostatku lica, ali oči treba da budu čiste.\nAko želite, možete doći sa laganom šminkom (podloga, rumenilo...), ali očna zona mora biti čista.\n\nDodatni saveti za pripremu:\n\nOperite lice neposredno pre dolaska.\nIzbegavajte kreme sa uljima oko očiju.\nDođite odmorni i opušteni 😊\n\nTako će procedura proći najbolje i trepavice će duže trajati!\nAko imaš još pitanja — slobodno pitaj! 💖",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 55,
+                "2": 7,
+                "3": 164,
+                "4": 135,
+                "5": 112,
+                "6": 10,
+                "7": 94,
+                "8": 88,
+                "9": 100,
+                "10": 74,
+                "11": 106
+              }
+            }
+          },
+          {
+            "question": "Da li smem da koristim maskaru sa nadogradnjom trepavica?",
+            "answer": "Najbolje je da ne koristite običnu maskaru na nadograđenim trepavicama.\n\nObična maskara (posebno waterproof) može da ošteti lepak, zalepi trepavice i oteža kasnije skidanje i održavanje.\nAko baš želite da istaknete trepavice, koristite specijalnu maskaru za nadogradnju (lash extension safe / water-based).\nNajsigurnije je da uopšte ne nanosite maskaru – nadogradnja već daje pun i dramatičan efekat.\n\nZaključak: Bolje preskočite maskaru da trepavice duže traju i izgledaju prirodno i lepo. ❤️\nAko imaš još neko pitanje, samo reci! 💖",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 55,
+                "2": 7,
+                "3": 164,
+                "4": 135,
+                "5": 112,
+                "6": 10,
+                "7": 94,
+                "8": 88,
+                "9": 100,
+                "10": 74,
+                "11": 107
+              }
+            }
+          },
+          {
+            "question": "Koji set da izaberem za svoj oblik oka?",
+            "answer": "Ovo je odlično pitanje! 👀\nPrema Anji, izbor seta najviše zavisi od oblika vaših očiju, prirodne dužine i gustine trepavica, ali i od efekta koji želite da postignete.\nKako se bira set?\n\nOblik oka je ključan (okrugle, bademaste, spuštene, azijske, duboko usađene itd.).\nGleda se zdravlje prirodnih trepavica — ne preporučuje se predug i previše težak set ako su prirodne trepavice tanke ili slabije.\nUzima se u obzir vaš stil — da li volite prirodan izgled, dramatičan, mačkast, lutkasti...\nNajčešće se radi kombinacija dužina (npr. C ili D curl, mix 8-14mm) da izgleda prirodno i lepo otvara oko.\n\nNajbolji savet:\nNa konsultaciji lash artist će vam najbolje reći koji set vam najviše pristaje. Često klijentkinje žele nešto konkretno, ali stručnjak predlaže ono što će najbolje istaknuti vaše oči i biti najzdravije za trepavice.\nZaključak: Nema univerzalnog seta za sve — personalizacija je najvažnija. Zato je najbolje da dođete na termin pa da vam se uradi analiza uživo. ❤️\nAko mi kažeš kakav oblik oka imaš ili kakav efekat želiš (prirodan / dramatičan / cat-eye...), mogu ti dati još konkretniji predlog! ✨",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 55,
+                "2": 7,
+                "3": 164,
+                "4": 135,
+                "5": 112,
+                "6": 10,
+                "7": 94,
+                "8": 88,
+                "9": 100,
+                "10": 74,
+                "11": 108
+              }
+            }
+          }
+        ]
+      },
+      "blog": {
+        "enabled": false,
+        "headline": "",
+        "paragraph": ""
+      },
+      "perks": {
+        "enabled": false,
+        "pill": "",
+        "eyebrow": "",
+        "headline": "",
+        "paragraphs": [],
+        "images": [],
+        "ctas": {
+          "primary": {
+            "text": "",
+            "href": "",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 129,
+                "2": 175,
+                "3": 103,
+                "4": 61,
+                "5": 51,
+                "6": 26,
+                "7": 41,
+                "8": 153,
+                "9": 69,
+                "10": 121,
+                "11": 135
+              }
+            }
+          },
+          "secondary": {
+            "text": "",
+            "href": "",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 129,
+                "2": 175,
+                "3": 103,
+                "4": 61,
+                "5": 51,
+                "6": 26,
+                "7": 41,
+                "8": 153,
+                "9": 69,
+                "10": 121,
+                "11": 136
+              }
+            }
+          }
+        }
+      }
+    },
+    "pages": {
+      "servicesPage": {
+        "headline": "Usluge i Cene",
+        "subheadline": "Izaberi svoj Lash Look 💖 ",
+        "paragraph": "Pogledajte kompletnu ponudu Lash Room by Anja. Od prirodnog Classic izgleda do Mega Volume i L Look trepavica – pronađite stil koji najbolje odgovara vama i rezervišite termin online."
+      },
+      "appointmentsPage": {
+        "headline": "Zakazi termin za nadogradnju trepavica u Loznici",
+        "subheadline": "The Lash Room by Anja",
+        "paragraph": "U kalendaru su prikazani samo termini koje sam otvorila.\nZa moje verne devojke uvek gledam da pronađem dodatni termin kada god mogu. 💖",
+        "ctas": {
+          "primary": {
+            "text": "",
+            "href": "",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 129,
+                "2": 175,
+                "3": 103,
+                "4": 61,
+                "5": 51,
+                "6": 26,
+                "7": 41,
+                "8": 153,
+                "9": 69,
+                "10": 121,
+                "11": 137
+              }
+            }
+          },
+          "secondary": {
+            "text": "",
+            "href": "",
+            "_id": {
+              "buffer": {
+                "0": 106,
+                "1": 129,
+                "2": 175,
+                "3": 103,
+                "4": 61,
+                "5": 51,
+                "6": 26,
+                "7": 41,
+                "8": 153,
+                "9": 69,
+                "10": 121,
+                "11": 138
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
