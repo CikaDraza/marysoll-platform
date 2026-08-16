@@ -76,7 +76,7 @@ function AppointmentListItem({
       id={`appointment-${appointment._id}`}
       className={`flex flex-col lg:flex-row justify-between gap-x-6 py-5 border-b dark:last:border-gray-900 last:border-gray-50 border-gray-200 dark:border-slate-800 transition-colors duration-500 ${
         isHighlighted
-          ? "appointment-highlight -mx-3 px-3 rounded-xl ring-2 ring-(--primary-color) bg-(--primary-color)/5"
+          ? "-mx-3 px-3 rounded-xl ring-2 ring-(--primary-color) bg-(--primary-color)/5"
           : ""
       }`}
     >
@@ -628,11 +628,12 @@ export default function AdminAppointments() {
           <div className="flex-1">
             <p className="text-sm font-bold text-amber-900 dark:text-amber-200">
               {unmarkedCount === 1
-                ? "1 termin čeka da ga označite"
-                : `${unmarkedCount} termina čeka da ih označite`}
+                ? "1 termin čeka na potvrdu da je završen"
+                : `${unmarkedCount} termina čeka na potvrdu da su završeni`}
             </p>
             <p className="text-xs text-amber-800/80 dark:text-amber-200/70 mt-0.5">
-              Termin je prošao, a još stoji kao „Odobreno“. Označite{" "}
+              Termin je prošao — da li je {clientNoun(clientGender)}{" "}
+              {genderPast(clientGender, "došla", "došao")} na termin? Označite{" "}
               {arrivedLabel(clientGender)} ili {noShowLabel(clientGender)} da bi
               statistika i program nagrađivanja bili tačni.
             </p>
@@ -642,7 +643,7 @@ export default function AdminAppointments() {
               setStatusFilter("unmarked");
               setPage(1);
             }}
-            className="cursor-pointer shrink-0 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors"
+            className="pulse-cta [--pulse-color:#d97706] cursor-pointer shrink-0 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors"
           >
             Prikaži ih
           </button>

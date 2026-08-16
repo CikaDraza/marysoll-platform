@@ -214,28 +214,31 @@ body {
   color: #c4b5fd; /* violet-300 */
 }
 
-/* Deep-link iz notifikacije (/dashboard?tab=termini&appointmentId=...): red sa
-   ciljanim terminom pulsira senkom u boji svog ringa dok ga admin ne označi.
-   Animira se samo box-shadow (compositor), pa skrol i lista ostaju glatki. */
-.appointment-highlight {
-  animation: appointmentHighlightPulse 1.8s ease-out infinite;
+/* Podsetnik "termini čekaju potvrdu" — pulsira samo dugme, da privuče oko bez
+   treperenja cele sekcije. Animira se box-shadow (compositor nit). */
+.pulse-cta {
+  animation: pulseCta 1.6s ease-out infinite;
 }
-@keyframes appointmentHighlightPulse {
+/* Boja pulsa: --pulse-color na elementu, inače brend boja. */
+@keyframes pulseCta {
   0% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary-color) 55%, transparent);
+    box-shadow: 0 0 0 0
+      color-mix(in srgb, var(--pulse-color, var(--primary-color)) 65%, transparent);
   }
   70% {
-    box-shadow: 0 0 0 12px color-mix(in srgb, var(--primary-color) 0%, transparent);
+    box-shadow: 0 0 0 10px
+      color-mix(in srgb, var(--pulse-color, var(--primary-color)) 0%, transparent);
   }
   100% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary-color) 0%, transparent);
+    box-shadow: 0 0 0 0
+      color-mix(in srgb, var(--pulse-color, var(--primary-color)) 0%, transparent);
   }
 }
-/* Bez animacije: statična senka, i dalje uočljivo. */
 @media (prefers-reduced-motion: reduce) {
-  .appointment-highlight {
+  .pulse-cta {
     animation: none;
-    box-shadow: 0 0 0 5px color-mix(in srgb, var(--primary-color) 30%, transparent);
+    box-shadow: 0 0 0 4px
+      color-mix(in srgb, var(--pulse-color, var(--primary-color)) 25%, transparent);
   }
 }
 
