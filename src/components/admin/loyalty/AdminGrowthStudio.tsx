@@ -5,7 +5,8 @@
  * MVP: Podešavanja (jedna jednostavna forma) / Klijenti / Vaučeri.
  * Buduci moduli (tieri, referral, promocije) dobijaju svoje sekcije ovde.
  */
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { CheckinQrCard } from "./CheckinQrCard";
 import toast from "react-hot-toast";
 import {
@@ -723,6 +724,104 @@ function ConfigFormInner({ initial }: { initial: LoyaltyAdminConfig }) {
   );
 }
 
+/**
+ * Tabovi sekcija — na mobilnom ne prelaze širinu ekrana nego se skroluju
+ * horizontalno, sa strelicama na krajevima (strelice su skrivene od `sm` naviše
+ * i kad na toj strani nema više sadržaja za skrol).
+ */
+function SectionTabs({
+  sections,
+  section,
+  onSelect,
+}: {
+  sections: { id: Section; label: string }[];
+  section: Section;
+  onSelect: (id: Section) => void;
+}) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+
+  const syncArrows = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    // 1px tolerancija — subpixel širine bi inače trajno držale strelicu upaljenu.
+    setCanLeft(el.scrollLeft > 1);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    syncArrows();
+    const ro = new ResizeObserver(syncArrows);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [syncArrows]);
+
+  // Aktivan tab uvek u vidnom polju (npr. kad je zadnji izabran na uskom ekranu).
+  useEffect(() => {
+    const el = scrollerRef.current;
+    const active = el?.querySelector<HTMLElement>('[data-active="true"]');
+    active?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [section]);
+
+  const scrollBy = (dir: -1 | 1) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.7), behavior: "smooth" });
+  };
+
+  const arrow =
+    "sm:hidden absolute top-0 bottom-px z-10 flex items-center justify-center w-7 text-gray-500 dark:text-gray-400";
+
+  return (
+    <div className="relative border-b border-gray-200 dark:border-gray-800">
+      <div
+        ref={scrollerRef}
+        onScroll={syncArrows}
+        className="flex gap-2 overflow-x-auto scrollbar-none"
+      >
+        {sections.map((s) => (
+          <button
+            key={s.id}
+            data-active={section === s.id}
+            onClick={() => onSelect(s.id)}
+            className={`flex-shrink-0 whitespace-nowrap px-4 py-2.5 text-sm font-bold border-b-2 -mb-px transition ${
+              section === s.id
+                ? "border-violet-600 text-violet-700 dark:text-violet-400"
+                : "border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            }`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {canLeft && (
+        <button
+          type="button"
+          aria-label="Prethodni tabovi"
+          onClick={() => scrollBy(-1)}
+          className={`${arrow} left-0 bg-gradient-to-r from-gray-50 via-gray-50 dark:from-slate-900 dark:via-slate-900 to-transparent pr-2`}
+        >
+          <ChevronLeftIcon className="w-4 h-4" />
+        </button>
+      )}
+      {canRight && (
+        <button
+          type="button"
+          aria-label="Sledeći tabovi"
+          onClick={() => scrollBy(1)}
+          className={`${arrow} right-0 bg-gradient-to-l from-gray-50 via-gray-50 dark:from-slate-900 dark:via-slate-900 to-transparent pl-2`}
+        >
+          <ChevronRightIcon className="w-4 h-4" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function AdminGrowthStudio() {
   const [section, setSection] = useState<Section>("podesavanja");
 
@@ -745,21 +844,11 @@ export default function AdminGrowthStudio() {
         </p>
       </div>
 
-      <div className="flex gap-2 border-b border-gray-200 dark:border-gray-800">
-        {sections.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => setSection(s.id)}
-            className={`px-4 py-2.5 text-sm font-bold border-b-2 -mb-px transition ${
-              section === s.id
-                ? "border-violet-600 text-violet-700 dark:text-violet-400"
-                : "border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            }`}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
+      <SectionTabs
+        sections={sections}
+        section={section}
+        onSelect={setSection}
+      />
 
       {section === "podesavanja" && <ConfigForm />}
       {section === "klijenti" && <LoyaltyClients />}
