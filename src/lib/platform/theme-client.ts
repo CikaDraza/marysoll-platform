@@ -38,7 +38,7 @@ const SECTION_DEFAULT_ENABLED = {
   perks: false,
 } as const;
 
-type LandingSectionKey = keyof typeof SECTION_DEFAULT_ENABLED;
+export type LandingSectionKey = keyof typeof SECTION_DEFAULT_ENABLED;
 
 /**
  * Mapiranje CMS sekcije → (sectionType, block type) u novom kontraktu.
@@ -62,7 +62,7 @@ const SECTION_BLOCK_MAP: Record<
 };
 
 /** Redosled sekcija na landing strani — isti kao u današnjim ThemeNLanding. */
-const SECTION_ORDER: LandingSectionKey[] = [
+export const SECTION_ORDER: LandingSectionKey[] = [
   "hero",
   "about",
   "artists",
@@ -74,6 +74,19 @@ const SECTION_ORDER: LandingSectionKey[] = [
   "blog",
   "perks",
 ];
+
+export function blockTypeForSection(key: LandingSectionKey): string {
+  return SECTION_BLOCK_MAP[key].blockType;
+}
+
+/**
+ * Id bloka jedne CMS sekcije. Jedno mesto konvencije: dokument (adapter) i
+ * legacy-always compat putanja MORAJU da grade isti id, jer se po njemu traže
+ * učitani podaci pri renderu.
+ */
+export function sectionBlockId(key: LandingSectionKey): string {
+  return `${key}-block`;
+}
 
 export const LANDING_LAYOUT_DEFINITION_ID = "marysoll-landing-v1";
 
@@ -146,6 +159,36 @@ export interface ToThemeDocumentOptions {
 }
 
 /**
+ * Blok jedne CMS sekcije — JEDINI konstruktor.
+ *
+ * Koriste ga dva pozivaoca: adapter (za sekcije koje su u dokumentu) i
+ * legacy-always compat sloj (za sekcije koje tema danas renderuje uprkos
+ * `enabled: false`). Zato compat blok ima identičan `type`, `schemaVersion` i
+ * `config` kao normalan — razlikuje se samo po tome ko ga je naručio.
+ */
+export function buildSectionBlock(
+  ls: LandingStructure | undefined,
+  key: LandingSectionKey,
+  options: { theme?: string } = {},
+): LayoutBlock {
+  const raw = ls?.landing?.[key] as Record<string, unknown> | undefined;
+
+  const config: Record<string, unknown> = { source: key };
+  if (key === "gallery") {
+    config.galleryVariant = resolveGalleryVariant(ls, options.theme);
+  }
+  if (raw?.variant) config.variant = raw.variant;
+
+  return {
+    id: sectionBlockId(key),
+    type: blockTypeForSection(key),
+    schemaVersion: 1,
+    slot: "main",
+    config,
+  };
+}
+
+/**
  * `LandingStructure` → `ThemeDocument`.
  *
  * Isključene sekcije se NE upisuju u dokument — dokument opisuje ono što se
@@ -161,22 +204,8 @@ export function landingStructureToThemeDocument(
   for (const key of SECTION_ORDER) {
     if (!isSectionEnabled(ls, key)) continue;
 
-    const { sectionType, blockType } = SECTION_BLOCK_MAP[key];
-    const raw = ls?.landing?.[key] as Record<string, unknown> | undefined;
-
-    const config: Record<string, unknown> = { source: key };
-    if (key === "gallery") {
-      config.galleryVariant = resolveGalleryVariant(ls, options.theme);
-    }
-    if (raw?.variant) config.variant = raw.variant;
-
-    const block: LayoutBlock = {
-      id: `${key}-block`,
-      type: blockType,
-      schemaVersion: 1,
-      slot: "main",
-      config,
-    };
+    const { sectionType } = SECTION_BLOCK_MAP[key];
+    const block = buildSectionBlock(ls, key, { theme: options.theme });
 
     sections.push({ id: key, sectionType, blocks: [block] });
   }

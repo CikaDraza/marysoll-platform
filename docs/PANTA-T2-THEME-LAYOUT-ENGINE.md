@@ -7,6 +7,9 @@
 > dvostruka politika za nepoznat blok (render skip / publish error).
 > **v0.2.1:** dodat T2A.3 Composition Inventory (6.1) i odluka da se generički
 > `<ThemeSections />` ne uvodi prerano (6.2).
+> **v0.2.2:** FeatureBlockRegistry (6.3) + odluka o `always` slučajevima: T2A ih
+> zadržava kroz izbrisiv compat sloj, normalizacija je zaseban posao
+> (T2A-FOLLOWUP, 6.4).
 > T2 iz [ARHITEKTURA-ENGINES.md](../ARHITEKTURA-ENGINES.md), podeljen na
 > **T2A (Theme/Layout boundary)** i **T2B (Tenant verticals + capabilities,
 > vidi [PANTA-TENANT-VERTICALS-CAPABILITIES.md](PANTA-TENANT-VERTICALS-CAPABILITIES.md))**.
@@ -274,6 +277,95 @@ Tema više ne zna za `services`, `salon`, `IService` ni `appointmentEnabled` —
 kaže samo „ovde ide `services.catalog`". Registry razrešava podatke i renderer.
 `<ThemeSections />` se izvlači tek kada inventar pokaže da se rasporedi poklapaju.
 
+## 6.3 FeatureBlockRegistry (T2A.4)
+
+`src/lib/platform/blocks/` — registry je u aplikaciji, engine ostaje neutralan.
+
+| Fajl | Šta zna |
+|---|---|
+| `types.ts` | kontrakt registry-ja: config i podaci po tipu, `BlockDataSource`, `FeatureBlockDefinition` |
+| `render-types.ts` | kontrakt jednog prolaza: `ResolvedBlock`, `origin`, razlozi preskakanja |
+| `definitions.ts` | deset blokova iz tabele 6: shema config-a (zod), server loader, `capability: null` |
+| `registry.ts` | lookup + `BlockTypeResolver` za engine (publish validacija) |
+| `deps.ts` | request-scoped izvor podataka, memoizovan → dedupe |
+| `resolve.ts` | paralelni prolaz: parse → `Promise.all(loaderi)` → mapa po `blockId` |
+
+Dve odluke koje nisu bile u v0.2:
+
+**Renderer se ne drži u registry-ju.** Osam tema ima osam prikaza istog bloka
+(`content.hero` = Theme1Hero / Theme5Hero / Theme8Hero…). Registry drži ono što
+je zajedničko — shemu, loader, capability — a prikaz ostaje vlasništvo teme.
+Tema jednom prijavi mapu `tip → komponenta` kroz `<ThemeBlockScope>`, pa
+`<ThemeBlock document type>` niže u stablu ostaje kratak. Mapa se definiše na
+nivou modula; nova mapa po renderu bi remount-ovala blok.
+
+**Loaderi u T2A ne uvode nijedan nov upit.** `ClientHomePage` već povlači
+salon/services/testimonials u jednom server prolazu, pa se koristi
+`preloadedBlockDataSource(...)`: loader dobija iste podatke, samo kroz svoj
+kontrakt. Kada blok dobije stvarnu autonomiju, isti kontrakt puni
+`createBlockDataSource(...)` sa pravim upitima — bez izmene ijednog loadera.
+
+## 6.4 `always` sekcije: compat sada, normalizacija posebno
+
+Inventar (6.1) pokazuje da theme-2, theme-5 i theme-7 renderuju neke CMS sekcije
+uprkos `enabled: false`. Primarni invariant T2A je **isti proizvod pre i posle**,
+pa migracija to ponašanje čuva. Da registry počne da poštuje te flagove, T2A više
+ne bi bio extraction nego istovremeno i behavior change.
+
+Ali to nije sposobnost sistema, nego migration debt i tako izgleda u kodu —
+odvojen, izbrisiv sloj:
+
+```
+NORMALAN CMS BLOK                  LEGACY ALWAYS BLOK (samo tokom T2A)
+ThemeDocument presence             Composition Inventory allowlist
+        ↓                                   ↓
+    ThemeBlock                     LegacyAlwaysThemeBlock
+        ↓                                   ↓
+     Registry  ←──────── isti ─────────→ Registry
+        ↓                                   ↓
+  server loader  ←────── isti ───────→ server loader
+        ↓                                   ↓
+    renderer   ←──────── isti ─────────→ renderer
+```
+
+Compat postoji na obe putanje — renderovanja (`LegacyAlwaysThemeBlock`) i
+podataka (`theme-render.ts` dodaje blok koji dokument nema). Bez druge bi
+bezuslovna sekcija bila prisutna, ali prazna.
+
+Allowlist se **ne piše ručno**: izvodi se iz `unconditionalCmsBlocks(theme)`.
+Kada tema počne da poštuje flag, inventar se menja i compat nestaje sam.
+
+**Acceptance criterion (T2A.4):** legacy composition compatibility ne sme biti
+deo `@panta/theme-engine` niti FeatureBlockRegistry domena;
+`LegacyAlwaysThemeBlock` sme da renderuje samo par `theme` + `source` koji
+Composition Inventory eksplicitno označava kao `always`.
+
+Granicu čuva test (`registry.test.ts` → „granica: domen ne zna za legacy
+kompoziciju") koji skenira `types.ts`, `registry.ts`, `definitions.ts`,
+`resolve.ts` i ceo engine paket na pojmove kompozicije (`legacy`,
+`unconditional`, `theme-N`, stari CMS flagovi). Kompatibilnost sme da živi samo u
+`legacy-always.ts`, `theme-render.ts` i `LegacyAlwaysThemeBlock` — što znači da
+se briše bez diranja domena.
+
+### T2A-FOLLOWUP — CMS Visibility Semantics Normalization
+
+Zaseban posao **posle svih osam migracija**, ne u istom slice-u. Za svaki
+pogođeni tenant se popuni matrica:
+
+| tenant | tema | sekcija | sačuvan `enabled` | današnja vidljivost | željena | odluka |
+|---|---|---|---|---|---|---|
+
+Pošto je broj produkcionih tenanta mali, ovo je produkt odluka po tenantu, ne
+generička migracija. Dva legitimna ishoda:
+
+- `false` je **stale podatak** → pre normalizacije se postavi `enabled: true`,
+  tema pređe na normalni gating; vizuelno nema promene, ali toggle od tada radi;
+- `false` je **stvarna namera vlasnice** → uključi se gating i sekcija nestaje —
+  ali kao svesno odobrena promena, ne kao slučajna posledica refaktora.
+
+Tek tada se brišu `legacy-always.ts`, `theme-render.ts` i
+`LegacyAlwaysThemeBlock`, a pozivi postaju obični `<ThemeBlock>`.
+
 ## 7. Redosled (T2A)
 
 1. ✅ `packages/theme-engine` — tipovi (`ThemeDocument`, `LayoutDefinition`) +
@@ -283,8 +375,10 @@ kaže samo „ovde ide `services.catalog`". Registry razrešava podatke i render
    uz regresiju nad snimkom stvarnih tenanta.
 3. ✅ **T2A.3 Composition Inventory** (`lib/platform/theme-composition.ts`) —
    cms-block / theme-native / shell po temi, provereno protiv koda tema (6.1).
-4. `FeatureBlockRegistry` u aplikaciji: registracija, schema, **server loader**,
-   renderer binding, capability metadata placeholder (T2B), request dedupe.
+4. ✅ **T2A.4 `FeatureBlockRegistry`** (`lib/platform/blocks/`) — registracija,
+   schema, server loader, renderer binding kroz `<ThemeBlockScope>`, capability
+   placeholder (T2B), request dedupe, plus izbrisiv compat sloj za `always`
+   sekcije (6.3/6.4). Nijedna tema još nije dirana.
 5. Migracija tema jedne po jedne kroz `<ThemeBlock>` (Theme1 prva jer najviše
    meša CMS i non-CMS sekcije; Theme8 poslednja zbog shell slojeva), uz vizuelnu
    i LCP regresiju po temi. Stari put ostaje živ dok prva tema ne prođe.
@@ -310,6 +404,9 @@ kaže samo „ovde ide `services.catalog`". Registry razrešava podatke i render
       demo tenantima.
 - [ ] Svaki `always` cms-block iz inventara (6.1) je svesno rešen po temi —
       nijedna tema tiho ne počne/prestane da poštuje CMS flag.
+- [x] Legacy composition compatibility nije deo `@panta/theme-engine` ni
+      FeatureBlockRegistry domena; `LegacyAlwaysThemeBlock` renderuje samo par
+      `theme` + `source` koji Composition Inventory označava kao `always` (6.4).
 - [ ] Composition inventar se proverava protiv koda tema (test pada ako tema
       doda ili ukloni flag, a inventar ostane isti).
 - [ ] Nijedan theme-native element nije pretvoren u Feature Block bez odluke.
