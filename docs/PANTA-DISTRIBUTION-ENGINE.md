@@ -1,7 +1,12 @@
-# PANTA T-DISTRIBUTION — Distribution Engine (odluka 2026-08-16)
+# PANTA T-DISTRIBUTION — Distribution Engine (odluka 2026-08-16, rev. v0.2)
 
 > Zamenjuje preširoko zamišljen „Marketing Engine" iz
 > [ARHITEKTURA-ENGINES.md](../ARHITEKTURA-ENGINES.md) jasnijom podelom domena.
+> Katalog engine-a je usklađen 2026-08-16 — „Marketing Engine" više nije
+> autoritativan pojam ni na jednom mestu.
+> **v0.2 (Architecture Review):** `subject` je generički `ResourceRef` (engine ne
+> zna vertikale), dodat `DistributionPlacement` sa `targetScope` i platform
+> `approvalStatus` za cross-tenant distribuciju.
 
 ## 1. Podela odgovornosti
 
@@ -44,10 +49,21 @@ type DistributionChannel =
 
 type CampaignStatus = "draft" | "ready" | "active" | "paused" | "completed";
 
+/**
+ * Generički subject — engine NE zna šta je EducationOffering, isto kao što
+ * Theme Engine ne zna šta je Service. `type` je string koji razrešava aplikacija.
+ * Sutra isti engine distribuira service_offer, loyalty_offer, event,
+ * downloadable_resource, membership — bez izmene paketa.
+ */
+interface ResourceRef {
+  type: string;   // "education_offering" | "service_offer" | …
+  id: string;
+}
+
 interface Offer {
   id: string;
   tenantId: string;
-  subject: { type: "education_offering"; id: string };
+  subject: ResourceRef;
   headline: string;
   description?: string;
   cta: { label: string; landingPageId: string };
@@ -77,9 +93,61 @@ interface ChannelArtifact {
 ```
 validateOffer() · validateCampaign() · createDistributionPlan()
 materializeChannelArtifacts() · transitionCampaign() · buildAttribution()
+validatePlacement() · requiresApproval()
 ```
 
 Stvarne integracije rade adapteri u aplikaciji.
+
+### 3.1 Cross-tenant placement — sigurnosni model
+
+`marysoll_banner` **nije** isto što i Marinin sopstveni sajt ili njen Instagram:
+tu jedan tenant piše po površini drugog tenanta. Bez formalnog modela to je
+multi-tenant rupa upravo u feature-u koji treba da bude najveći network efekat
+Marysoll-a.
+
+```ts
+type TargetScope =
+  | "own_tenant"        // sopstvene površine
+  | "marysoll_network"  // svi (ili segment) tenanti u mreži
+  | "selected_tenants"  // imenovani tenanti
+  | "external";         // van platforme (IG, LinkedIn, outreach)
+
+type ApprovalStatus = "not_required" | "pending" | "approved" | "rejected";
+
+interface DistributionPlacement {
+  id: string;
+  sourceTenantId: string;
+  campaignId: string;
+  channel: DistributionChannel;
+
+  targetScope: TargetScope;
+  targetTenantIds?: string[];   // obavezno za "selected_tenants"
+
+  approvalStatus: ApprovalStatus;
+  approvedBy?: string;          // platform operater
+  approvedAt?: Date;
+  rejectionReason?: string;
+}
+```
+
+**Pravilo:**
+
+| targetScope | Odobrenje |
+|---|---|
+| `own_tenant` | `not_required` — tenant slobodno distribuira na svoje površine |
+| `external` | `not_required` — van platforme, tenant odgovara za svoj nalog |
+| `marysoll_network` | **obavezno platform-level odobrenje** |
+| `selected_tenants` | **obavezno platform-level odobrenje** |
+
+Dodatna pravila koja engine iskazuje kao invarijante:
+
+- Placement bez `approved` statusa **ne sme** da se materijalizuje u
+  `ChannelArtifact` sa `state: "published"`.
+- `targetTenantIds` mora biti prazan za `own_tenant`/`external`, a neprazan za
+  `selected_tenants`.
+- Ciljni tenant mora imati mogućnost da isključi prijem mrežnih ponuda
+  (opt-out je capability na strani primaoca, ne odluka pošiljaoca).
+- Svaka promena `approvalStatus`-a je audit zapis (ko, kada, zašto).
 
 ## 4. Postojeći `EmailCampaign` ostaje — postaje channel projection
 
@@ -156,6 +224,11 @@ interface Lead {
 
 Četiri statusa su dovoljna za MVP — ne pravimo Salesforce.
 
+`Lead` je **aplikacioni** model, ne deo paketa — zato sme da nosi vertikalno polje
+`educationOfferingId`. Pravilo „engine ne zna vertikale" važi za
+`packages/distribution-engine`; kada se pojavi druga vertikala leadova, polje
+prelazi u `subject: ResourceRef` istim obrascem kao `Offer.subject`.
+
 Napomena: postojeći `contactType: "LEAD"` ostaje **klasifikacija kontakta**, ne
 zapis interesovanja. Interesovanje je uvek `Lead`.
 
@@ -195,6 +268,12 @@ Studio activity).
 
 - [ ] `packages/distribution-engine` nema Resend / Instagram / LinkedIn /
       Mongoose / React kod.
+- [ ] Engine ne sadrži nijedan vertikalni literal (`"education_offering"` i sl.) —
+      `subject` je `ResourceRef`.
+- [ ] `marysoll_network` i `selected_tenants` placement bez `approved` statusa ne
+      može da se objavi (invarijanta u paketu + test).
+- [ ] Ciljni tenant može da isključi prijem mrežnih ponuda.
+- [ ] Svaka promena odobrenja ostavlja audit zapis.
 - [ ] Jedan `AudienceContact` može imati više leadova.
 - [ ] Svaki `Lead` nosi `campaignId`, `offerId` i channel attribution kada postoje.
 - [ ] Svi kanali jedne kampanje vode na isti `landingPageId`.

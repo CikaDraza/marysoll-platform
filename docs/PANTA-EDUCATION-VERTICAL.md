@@ -1,8 +1,13 @@
-# PANTA T-EDUCATION — Education vertikala (odluka 2026-08-16)
+# PANTA T-EDUCATION — Education vertikala (odluka 2026-08-16, rev. v0.2)
 
 > Prvi tenant: **Marina** — edukacija za salone i za sve kojima treba skin care.
 > Preduslovi: [T2A Theme/Layout granica](PANTA-T2-THEME-LAYOUT-ENGINE.md) i
 > [T2B verticals + capabilities](PANTA-TENANT-VERTICALS-CAPABILITIES.md).
+> **v0.2 (Architecture Review):** graf domena ispravljen (Inquiry visi o Offering-u,
+> ne o Session-u), terminologija zaključana na `EducationEnrollment`, i `inquiry` /
+> `session_booking` dobijaju **odvojene command kontrakte**.
+> Isporuka je podeljena: **Slice 3** = Offering + Inquiry, **Slice 6** = Session +
+> Enrollment (posle T3 Booking kontrakta).
 
 ## 1. Education NIJE proširenje `Service`
 
@@ -20,17 +25,29 @@ svaki loyalty hook od tada mora da pita „je li ovo zapravo edukacija" — dug 
 raste sa svakim novim mestom. Edukacija ima drugu semantiku: publiku, format
 isporuke, kapacitet, termin događaja.
 
-## 2. Domen
+## 2. Domen — graf NIJE linearan
+
+Marinino B2B interesovanje upravo dokazuje zašto: upit se odnosi na **ponudu**,
+najčešće bez ijedne zakazane sesije. Enrollment, nasuprot tome, uvek pripada
+konkretnoj sesiji.
 
 ```
-EducationOffering        katalog — šta Marina nudi
-    ↓
-EducationSession         konkretan događaj (datum, mesto, kapacitet)
-    ↓
-EducationInquiry         interesovanje            ← MVP / Faza 1
-    ↓
-EducationEnrollment      rezervisano mesto        ← kada uvedemo direktan booking
+EducationOffering                       katalog — šta Marina nudi
+   ├── EducationSession                 konkretan događaj (datum, mesto, kapacitet)
+   │      └── EducationEnrollment       rezervisano mesto  ← Slice 6
+   │
+   └── EducationInquiry                 interesovanje      ← Slice 3 (MVP)
+          (opciono sessionId)
 ```
+
+| Zapis | Obavezno vezan za | Opciono |
+|---|---|---|
+| `EducationInquiry` | `educationOfferingId` | `sessionId` (kada upit ide na konkretan termin) |
+| `EducationEnrollment` | `sessionId` | — (offering se izvodi iz sesije) |
+
+**Terminologija je zaključana: `EducationEnrollment`.** Naziv
+`EducationReservation` iz ranijeg nacrta se ne koristi nigde — ni u modelima, ni
+u API-ju, ni u dijagramima.
 
 ```ts
 interface EducationOffering {
@@ -70,7 +87,7 @@ trajanjem; sesija je 1:N događaj sa kapacitetom i lokacijom.
           ┌───────────┴───────────┐
 Service Booking Adapter     Education Booking Adapter
           │                       │
-    Appointment             EducationReservation
+    Appointment              EducationEnrollment
           │                       │
  Service Widget             Education Widget
 ```
@@ -98,6 +115,23 @@ type EducationWidgetMode = "inquiry" | "session_booking";
 
 Tako sada ne gradimo LMS ni course-commerce, ali kada dođe pravo rezervisanje
 mesta ne pišemo widget ispočetka.
+
+**Deli se shell, ne kontrakt.** Dva moda su dva use-case-a i imaju **odvojene Zod
+input/output sheme** i odvojene komande:
+
+```ts
+// Slice 3
+submitEducationInquiry(input: EducationInquiryInput): EducationInquiryResult
+//   offeringId · kontakt · poruka · (opciono) sessionId · attribution
+
+// Slice 6
+bookEducationSession(input: EducationSessionBookingInput): EducationEnrollmentResult
+//   sessionId · broj mesta · polaznici · politika otkazivanja
+```
+
+Zajedničko je samo vizuelno/UX kućište (`EducationBookingWidget`) i validacija
+kontakta. Nikakav „univerzalni payload sa opcionim poljima" — to bi bio isti dug
+kao `Service.isEducation`.
 
 ## 5. Marinina putanja (Faza 1)
 
@@ -132,7 +166,11 @@ Dodaju se u `@panta/event-bus` tek kada postoje emiteri (danas su registrovani
 - [ ] Service Booking Widget nikada ne prikazuje `EducationSession`.
 - [ ] Education-first tenant postoji bez ijedne `Service` i bez service booking-a.
 - [ ] Hybrid tenant ima oba widgeta na istoj landing strani.
-- [ ] `mode="inquiry"` i `mode="session_booking"` dele isti widget i isti kontrakt.
+- [ ] `mode="inquiry"` i `mode="session_booking"` dele shell, a imaju **odvojene**
+      Zod sheme i odvojene komande.
+- [ ] `EducationInquiry` postoji bez ijedne `EducationSession` (B2B slučaj).
+- [ ] `EducationEnrollment` ne može da postoji bez `sessionId`.
+- [ ] Naziv `EducationReservation` se ne pojavljuje u kodu ni u dokumentaciji.
 - [ ] Education blokovi se registruju u Feature Block Registry — bez izmene
       `packages/theme-engine`.
 

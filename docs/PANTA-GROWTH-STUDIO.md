@@ -29,7 +29,7 @@ Growth Studio          ← NOVO: distribucija i rast
   Pregled
   Ponude
   Kampanje
-  Distribucija
+  Distribucija        (uklj. status odobrenja mrežnih placement-a)
   Interesovanja
   Publika i kontakti
 
@@ -56,6 +56,8 @@ podatak koji prikazuje dolazi iz engine-a kroz adapter.
 ## 4. Acceptance criteria
 
 - [ ] Growth Studio nema loyalty business logiku.
+- [ ] Cross-tenant placement se iz Growth Studija može **zatražiti**, ali ne i
+      odobriti — odobrenje je platform (superadmin) radnja.
 - [ ] Nagrađivanje ostaje zaseban surface nad Loyalty Engine-om.
 - [ ] Svaka sekcija Growth Studija je gated istim capability resolverom kao API
       i public renderer (vidi [T2B](PANTA-TENANT-VERTICALS-CAPABILITIES.md)).

@@ -1,7 +1,11 @@
-# PANTA T2B — Tenant verticals i capability resolver (odluka 2026-08-16)
+# PANTA T2B — Tenant verticals i capability resolver (odluka 2026-08-16, rev. v0.2)
 
 > Deo T2 iz [ARHITEKTURA-ENGINES.md](../ARHITEKTURA-ENGINES.md).
 > Prati [T2A Theme/Layout granicu](PANTA-T2-THEME-LAYOUT-ENGINE.md).
+> **v0.2 (Architecture Review):** `enabled` i `configured` razdvojeni
+> (`ResolvedCapability` vs `CapabilityReadiness`), uveden jedinstven server entry
+> `requireCapability()` koji interno koristi `PLAN_FEATURES`, dodat odnos prema
+> RBAC-u i **odvojena staging baza kao hard prerequisite**.
 
 ## 1. Odluka: NE `tenantType`
 
@@ -47,34 +51,69 @@ type TenantCapability =
   | "loyalty.rewards";
 ```
 
-## 3. Resolver
+## 3. Resolver — access i readiness su DVE stvari
+
+Prva verzija je spajala „uključeno" i „podešeno" u jedan presek. To pravi
+bootstrap ćorsokak: ako `education.catalog` nije razrešen dok Marina nema nijedan
+`EducationOffering`, ona nikad ne može da otvori ekran na kome bi ga napravila.
 
 ```
-platform capability      (postoji li uopšte u proizvodu)
-        ∩
-plan entitlement         (pušta li plan tenanta)
-        ∩
-tenant enabled/configured (uključio i podesio vlasnik)
-        ↓
-ResolvedCapabilities
+ResolvedCapability =
+      platformAvailable      (postoji li uopšte u proizvodu)
+    ∩ planEntitled           (pušta li plan tenanta)
+    ∩ tenantEnabled          (vlasnik je uključio vertikalu/feature)
+
+CapabilityReadiness =
+      "unconfigured" | "ready" | "degraded"
 ```
 
-Sve tri moraju biti tačne. Nijedan sloj ne sme da se preskoči „jer je očigledno".
+| Pojam | Pitanje na koje odgovara | Ko ga koristi |
+|---|---|---|
+| **ResolvedCapability** | *Sme li tenant da koristi ovaj domen?* | autorizacija: admin nav, API, renderer |
+| **CapabilityReadiness** | *Da li ga je podesio?* | UX: empty state, onboarding, „podesi pre objave" |
 
-### Odnos prema postojećem plan sloju (provereno u kodu)
+Pravila:
 
-Plan entitlement **već postoji** i ne pravi se ispočetka:
+- Admin ekran domena se otvara na osnovu **capability**-ja, bez obzira na readiness
+  (`unconfigured` → onboarding empty state, ne 403).
+- Public blok se renderuje samo kada je capability razrešen **i** readiness
+  `ready`. `unconfigured` blok se preskače kao da ga nema; `degraded` se renderuje
+  uz telemetriju.
+- `degraded` = capability postoji i podešen je, ali zavisnost trenutno ne radi
+  (npr. education katalog objavljen, a media provider pada) — vidljivo u
+  Diagnostic Engine-u, ne u korisničkoj poruci.
 
-| Postojeće | Uloga posle T2B |
+### 3.1 Jedan server entry point
+
+```ts
+// jedini server gate za domenske rute
+await requireCapability(tenantId, "education.catalog");
+```
+
+`requireCapability()` **interno** koristi postojeći plan sloj — ne pored njega:
+
+| Postojeće (provereno u kodu) | Uloga posle T2B |
 |---|---|
-| [`lib/plans/planFeatures.ts`](../src/lib/plans/planFeatures.ts) (`statistics`, `loyaltyCore`, `statisticsLevel`, …) | ostaje izvor **plan entitlement**-a, drugi presek u resolveru |
-| [`lib/plans/planEnforcement.ts`](../src/lib/plans/planEnforcement.ts) `requireFeature()` | ostaje server-side plan gate; capability gate ide **pored** njega, ne umesto |
-| `components/shared/FeatureGate` | ostaje za plan poruke („Nadogradite na Claudia plan…") |
+| [`lib/plans/planFeatures.ts`](../src/lib/plans/planFeatures.ts) `PLAN_FEATURES` | ostaje **single source of truth** za plan entitlement; čita ga resolver |
+| [`lib/plans/planEnforcement.ts`](../src/lib/plans/planEnforcement.ts) `requireFeature()` | postaje **interni** korak `requireCapability()`-ja; direktan poziv ostaje samo za čiste plan-feature rute bez vertikale |
+| `components/shared/FeatureGate` | ostaje za plan poruke („Nadogradite na Claudia plan…"); capability empty state je zaseban |
 
-Capability je **druga osa** od plana: plan kaže *sme li*, capability kaže
-*ima li smisla za ovog tenanta*. Education-first tenant na Kiki planu sme
-`booking.services` po planu, ali ga nema u razrešenim capability-jima jer nema
-`beauty` vertikalu ni konfigurisane usluge.
+Cilj je da ne postoje dva paralelna authorization toka. Ako ruta pripada domenu
+koji ima capability — gate je `requireCapability()`, tačka.
+
+### 3.2 Capability NIJE autorizacija korisnika
+
+Capability je svojstvo **tenanta**, ne osobe. Po
+[ARCHITECTURAL_RULES.md](../ARCHITECTURAL_RULES.md) autorizacija ostaje
+centralizovana, pa je efektivni pristup:
+
+```
+effectiveAccess = permission (RBAC/ABAC) ∩ capability (tenant) ∩ resource ownership
+```
+
+Zaposleni bez prava na edukacije ne sme da ih menja ni kada tenant ima
+`education.catalog`; i obrnuto, vlasnik sa svim pravima ne može da otvori domen
+koji tenant nema. Nijedan od tri preseka ne pokriva drugi.
 
 ## 4. Primeri razrešenja
 
@@ -106,6 +145,20 @@ klijentski hook je samo projekcija servera.
 - Razrešeni capability-ji za njih moraju biti **identični zatečenom ponašanju** —
   T2B ne menja nijedan postojeći ekran.
 - `education.*` capability-ji su `false` dok vlasnik ne uključi vertikalu.
+- Backfill je idempotentan i ima suvi prolaz (`--dry-run`) sa izveštajem pre pisanja.
+
+### 6.1 ⚠️ Hard prerequisite: odvojena staging baza
+
+[Branching strategija](PANTA-BRANCHING-STRATEGY.md) konstatuje da produkcija,
+staging i QA **dele `marysoll_db`** — staging nije data sandbox.
+
+Za T2A to je prihvatljivo (render/refaktor bez promene podataka). **Za T2B nije**:
+prvi put pišemo migraciju/backfill preko svih tenanta, a odmah zatim dolaze
+`EducationOffering`, `Lead`, `Campaign` kolekcije.
+
+Zato je **release prerequisite za Slice 2**: odvojena staging Mongo baza (ili
+potpuno izolovan data environment) pre nego što ijedan backfill krene sa staging
+grane. Dok to ne postoji, T2B se ne merge-uje u `staging/production-engines`.
 
 ## 7. Acceptance criteria
 
@@ -116,6 +169,13 @@ klijentski hook je samo projekcija servera.
 - [ ] Capability gating je isti u admin navigaciji, API-ju i block rendereru
       (jedan resolver, tri pozivaoca).
 - [ ] Sakriven UI nikad nije jedina zaštita — API testovi to dokazuju.
+- [ ] Tenant sa razrešenim capability-jem, a `readiness: "unconfigured"`, **može**
+      da otvori admin ekran domena (empty state), a public blok se ne renderuje.
+- [ ] Postoji tačno jedan server gate za domenske rute (`requireCapability()`);
+      `requireFeature()` se poziva iz njega, ne paralelno sa njim.
+- [ ] Test dokazuje `permission ∩ capability ∩ ownership` — nijedan presek sam ne
+      otvara pristup.
+- [ ] Nijedan backfill nije pokrenut nad bazom koju deli produkcija (6.1).
 
 ## Reference
 
