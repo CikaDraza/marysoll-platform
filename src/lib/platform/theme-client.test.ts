@@ -49,10 +49,31 @@ describe("fixture zdravlje", () => {
     }
   });
 
-  it("nema ličnih kontakata u snimku", () => {
-    const raw = JSON.stringify(fixtures);
-    const emails = raw.match(/[\w.+-]+@[\w-]+\.[\w.]+/g) ?? [];
-    expect(emails.every((e) => e === "kontakt@example.com")).toBe(true);
+  it("nema stvarnih email adresa", () => {
+    const emails = JSON.stringify(fixtures).match(/[\w.+-]+@[\w-]+\.[\w.]+/g) ?? [];
+    expect([...new Set(emails)]).toEqual(["kontakt@example.com"]);
+  });
+
+  it("nema stvarnih telefona na poznatim kontakt putanjama", () => {
+    for (const [slug, ls] of tenants) {
+      const phone = ls.landing.hero.contact?.phone ?? "";
+      if (phone) expect(phone, slug).toBe("+381000000000");
+    }
+  });
+
+  it("strukturni ID-jevi su ostali jedinstveni (sanitizer ne dira ID-jeve)", () => {
+    // Regresija na prvu verziju sanitizera: hvatala je po OBLIKU vrednosti pa je
+    // timestamp `treatments[].id` (liči na telefon) postajao isti placeholder za
+    // sve stavke — React key i linkovanje bi se ponašali drugačije nego u produkciji.
+    for (const [slug, ls] of tenants) {
+      const ids = (ls.landing.gallery?.treatments ?? [])
+        .map((t) => (t as { id?: string }).id)
+        .filter(Boolean);
+      expect(new Set(ids).size, `${slug}: duplirani treatment id`).toBe(ids.length);
+      for (const id of ids) {
+        expect(id, `${slug}: id izgleda kao placeholder`).not.toBe("+381000000000");
+      }
+    }
   });
 });
 

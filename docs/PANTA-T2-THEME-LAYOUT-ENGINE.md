@@ -5,6 +5,8 @@
 > (bez njih slot contract ne postoji), `schemaVersion` po bloku, invarijante
 > immutable published revizija, server-side block loaderi (zabrana waterfall-a) i
 > dvostruka politika za nepoznat blok (render skip / publish error).
+> **v0.2.1:** dodat T2A.3 Composition Inventory (6.1) i odluka da se generički
+> `<ThemeSections />` ne uvodi prerano (6.2).
 > T2 iz [ARHITEKTURA-ENGINES.md](../ARHITEKTURA-ENGINES.md), podeljen na
 > **T2A (Theme/Layout boundary)** i **T2B (Tenant verticals + capabilities,
 > vidi [PANTA-TENANT-VERTICALS-CAPABILITIES.md](PANTA-TENANT-VERTICALS-CAPABILITIES.md))**.
@@ -218,19 +220,77 @@ jednako kao vizuelna regresija.
 `landingStructure → ThemeDocument` prevodi zatečeni CMS oblik u sekcije/blokove.
 Tek kada sve teme čitaju `ThemeDocument`, CMS piše direktno u novi oblik.
 
+## 6.1 CMS parity ≠ composition parity (T2A.3)
+
+Adapter dokazuje da `ThemeDocument` nosi iste `enabled` odluke kao zatečeni
+flagovi. To **nije** dokaz da tema danas renderuje baš te sekcije. Inventar svih
+8 tema (`lib/platform/theme-composition.ts`, provereno protiv koda) pokazuje dva
+odstupanja koja bi naivna migracija tiho promenila:
+
+| Tema | Poštuje flagova | Renderuje bez obzira na CMS |
+|---|---|---|
+| theme-1 | 7 | — |
+| **theme-2** | **2** | hero, about, servicesPreview, testimonials |
+| theme-3 | 8 | — |
+| theme-4 | 6 | — |
+| **theme-5** | **2** | hero, about, servicesPreview, appointmentSection, gallery |
+| theme-6 | 6 | — |
+| theme-7 | 6 | appointmentSection (booking je slot u hero sekciji) |
+| theme-8 | 7 | — (nema booking ni team sekciju) |
+
+Uz to, svih 8 tema ima **theme-native** sekcije kojih uopšte nema u CMS-u
+(pricing, social-proof, how-it-works, promo-banner, tribute…) i **shell** slojeve
+(header/footer, Y2K preloader, background/doodle/sparkle, modal provider).
+
+### Odluka
+
+```
+ThemeDocument         = konfigurabilni content/business blokovi
+Theme Composition     = kako ih tema slaže + njeni presentation-only delovi
+FeatureBlockRegistry  = kako se blok razrešava i puni podacima
+```
+
+**Theme-native elementi ostaju vlasništvo teme i ne postaju Feature Block-ovi.**
+Theme8Tribute, graffiti sloj ili dekorativni CTA nisu poslovni feature-i i ne
+treba ih na silu provlačiti kroz registry.
+
+Migracija teme mora **svesno** da reši svaki `always` slučaj iz tabele: ili počne
+da poštuje flag (promena ponašanja — traži odluku vlasnika), ili ga eksplicitno
+zadrži bezuslovnim. Tiha promena nije dozvoljena.
+
+## 6.2 Bez preranog `<ThemeSections />`
+
+Generički linearni renderer se **ne uvodi** u T2A. Dok se ne pokaže da više tema
+zaista deli isti raspored, per-theme kompozicija ostaje — menja se samo to
+odakle blok dobija podatke:
+
+```tsx
+<ThemeBlock document={document} type="content.hero" />
+<Theme1SocialProof />                                   {/* theme-native ostaje */}
+<ThemeBlock document={document} type="services.catalog" />
+```
+
+Tema više ne zna za `services`, `salon`, `IService` ni `appointmentEnabled` —
+kaže samo „ovde ide `services.catalog`". Registry razrešava podatke i renderer.
+`<ThemeSections />` se izvlači tek kada inventar pokaže da se rasporedi poklapaju.
+
 ## 7. Redosled (T2A)
 
-1. `packages/theme-engine` — tipovi (`ThemeDocument`, `LayoutDefinition`) +
+1. ✅ `packages/theme-engine` — tipovi (`ThemeDocument`, `LayoutDefinition`) +
    validatori (slot/lifecycle/version/schemaVersion) + publish invarijante,
    **nula React/Mongoose/Next zavisnosti** (isti obrazac kao `@panta/diagnostic-engine`).
-2. Adapter `lib/platform/theme-client.ts`: `LandingStructure → ThemeDocument`.
-3. `FeatureBlockRegistry` u aplikaciji (schema + renderer + **server loader** po
-   bloku) + renderer `<ThemeSections document={…} />` sa paralelnim izvršavanjem
-   loadera i request-scoped dedupe-om.
-4. Migracija tema jedne po jedne (Theme1 prva, Theme8 poslednja jer ima najviše
-   sopstvene režije), uz vizuelnu regresiju po temi.
-5. `ThemeLandingProps` se svodi na: `document`, `brandingVars`, `resolveHref`,
-   `reduceMotion`, `headerProps`, `footerProps`. Domenski tipovi izlaze.
+2. ✅ Adapter `lib/platform/theme-client.ts`: `LandingStructure → ThemeDocument`,
+   uz regresiju nad snimkom stvarnih tenanta.
+3. ✅ **T2A.3 Composition Inventory** (`lib/platform/theme-composition.ts`) —
+   cms-block / theme-native / shell po temi, provereno protiv koda tema (6.1).
+4. `FeatureBlockRegistry` u aplikaciji: registracija, schema, **server loader**,
+   renderer binding, capability metadata placeholder (T2B), request dedupe.
+5. Migracija tema jedne po jedne kroz `<ThemeBlock>` (Theme1 prva jer najviše
+   meša CMS i non-CMS sekcije; Theme8 poslednja zbog shell slojeva), uz vizuelnu
+   i LCP regresiju po temi. Stari put ostaje živ dok prva tema ne prođe.
+6. Tek kada prva tema prođe regresiju, `ThemeLandingProps` počinje da se svodi na:
+   `document`, `brandingVars`, `resolveHref`, `reduceMotion`, `headerProps`,
+   `footerProps`. **Nijedan stari flag se ne uklanja pre toga.**
 
 ## 8. Acceptance criteria
 
@@ -248,6 +308,11 @@ Tek kada sve teme čitaju `ThemeDocument`, CMS piše direktno u novi oblik.
       paralelno na serveru sa request dedupe-om.
 - [ ] Sve postojeće teme prolaze vizuelnu **i performansnu** regresiju (LCP) na
       demo tenantima.
+- [ ] Svaki `always` cms-block iz inventara (6.1) je svesno rešen po temi —
+      nijedna tema tiho ne počne/prestane da poštuje CMS flag.
+- [ ] Composition inventar se proverava protiv koda tema (test pada ako tema
+      doda ili ukloni flag, a inventar ostane isti).
+- [ ] Nijedan theme-native element nije pretvoren u Feature Block bez odluke.
 
 ## 9. Non-goals za T2A — disciplina slice-a
 
