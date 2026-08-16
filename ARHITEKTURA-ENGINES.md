@@ -201,9 +201,25 @@ dovode nove — prvi engine koji Marysoll-u pravi network effect.
       live QA Referral toka na `staging.marysoll.com` je release gate. **Phase 3**
       (tiers/birthday/personalized/AI rewards) ostaje otvorena. Loyalty Moments =
       multi-consumer eventi (fan-out → više engine-a).
-- [ ] **T2. Theme/Layout Engine granice** 🔜 **SLEDEĆI**: šta iz `components/themes/`, `lib/themeConfig`,
-      CMS gallery varijanti i `layouts/types.ts` ulazi u paket; definisati Theme JSON
-      kontrakt (preset/brand/assets/sections) + verzionisanje (draft/published/archived/preview).
+- [ ] **T2A. Theme/Layout Engine granica** 🔜 **SLEDEĆI**: šta iz `components/themes/`,
+      `lib/themeConfig`, CMS gallery varijanti i `layouts/types.ts` ulazi u paket;
+      Theme JSON kontrakt kao **generički sections/slots/blocks** + verzionisanje
+      (draft/published/archived/preview) + **Feature Block Registry** u aplikaciji.
+      Theme Engine ne sme da zna Service/EducationOffering/Campaign/Appointment/Lead.
+      Spec: `docs/PANTA-T2-THEME-LAYOUT-ENGINE.md`.
+- [ ] **T2B. Tenant verticals + capability resolver**: `verticals: ("beauty"|"education")[]`
+      umesto `tenantType`; runtime `ResolvedCapabilities = platform ∩ plan ∩ tenant`;
+      isti gate u admin navigaciji, API-ju i public block rendereru.
+      Spec: `docs/PANTA-TENANT-VERTICALS-CAPABILITIES.md`.
+- [ ] **T-EDUCATION. Education vertikala** (prvi tenant: Marina): `EducationOffering →
+      EducationSession → EducationInquiry → EducationEnrollment` kao **sopstveni domen**
+      — `Service` ne dobija `isEducation`, education booking ne kreira `Appointment`.
+      Spec: `docs/PANTA-EDUCATION-VERTICAL.md`.
+- [ ] **T-DISTRIBUTION. Distribution Engine**: `Offer → Campaign → ChannelArtifact`
+      + attribution; postojeći `EmailCampaign` ostaje kao channel projection;
+      `AudienceContact` (postoji) = ko je osoba, novi `Lead` = za šta je pokazala
+      interesovanje. Zamenjuje preširok „Marketing Engine" pojam.
+      Spec: `docs/PANTA-DISTRIBUTION-ENGINE.md`.
 - [ ] **T3. Booking Engine domen**: popisati domenski model koji VEĆ postoji
       (Service/Variation..., booking.ts, clientFlows.ts, cancellation.ts iz Faze 3 su
       začetak) i šta nedostaje (Employee, Resources, Deposit…).
@@ -270,15 +286,32 @@ konkretan salon-potreba.
 
 ```
 ✅ T0/T1 foundation (Diagnostic Engine + monorepo obrazac)
-✅ T-LOYALTY Phase 0/1 + share/merge + Referral Phase 2b (kod)
+✅ T-LOYALTY core (Phase 0/1 + share/merge + Referral Phase 2b — kod)
 🧪 Referral live QA na staging-u → zatim release na main
-🔜 T2 Theme/Layout Engine granica i verzionisani Theme JSON kontrakt
-🔜 T8 consumers — Marketing / Notification / Analytics / AI slušaju iste evente
+
+→ T2A  Theme/Layout boundary (generic sections/slots/blocks + Feature Block Registry)
+→ T2B  Tenant verticals + capability resolver
+→ T-EDUCATION     Education domen (Offering / Session / Inquiry)
+→ T3   Booking Engine
+         ├── Service Booking adapter
+         └── Education Booking adapter (inquiry | session_booking)
+→ T-DISTRIBUTION  Distribution Engine (Offer / Campaign / ChannelArtifact)
+→ Growth Studio composition surface (Nagrađivanje ostaje odvojeno)
+🔜 T8 consumers — Notification / Analytics / AI slušaju iste evente
 🔜 T-LOYALTY Phase 3 tek posle Theme/Layout odluke
 ```
-Loyalty V1 više nije sledeći neizgrađen engine; sledeća arhitektonska odluka je
-Theme/Layout Engine granica. Referral ostaje iza staging live-test gate-a dok PR
-ne prođe integracioni tok.
+
+**Vertikalni slice redosled (zaključan 2026-08-16):** Slice 1 T2A · Slice 2 T2B ·
+Slice 3 Education domen · Slice 4 Audience & Lead · Slice 5 T3 Booking granica ·
+Slice 6 Distribution Engine · Slice 7 Marina MVP end-to-end · Slice 8 novi Growth
+Studio. Svaki slice je zaseban PR; Slice 1 i 2 ne menjaju ponašanje postojećih
+tenanta.
+
+Loyalty V1 više nije sledeći neizgrađen engine. Okidač za T2 je **Education
+vertikala**: Marysoll prvi put nije „jedan salon = usluge + termini", pa
+Theme/Layout granica prestaje da bude čist refaktor i postaje preduslov nove
+vertikale. Dodavanje Education UI-ja čeka dok T2A/T2B ne zatvore granicu.
+Referral ostaje iza staging live-test gate-a dok PR ne prođe integracioni tok.
 
 ## Napomene uz tekuću optimizaciju (Faza 4)
 
