@@ -403,6 +403,50 @@ Cilj granice:
 Time nijedna tema ne ostaje na `IService`/`TenantStats`, a registry ne postaje
 univerzalni data bus.
 
+## 6.6 Theme1 regresija — rezultat (2026-08-17)
+
+Mereno nad stvarnim tenantom `marysoll-makeup-nails` (theme-1, custom domen
+`marysoll.makeup`), produkcioni build, `2950d72` (pre) vs `704d56f` (posle).
+Stanje „pre" je podignuto kao zaseban `git worktree` da tvrdnja ne bi zavisila
+od mešanog radnog stabla.
+
+**DOM: bajt-u-bajt identičan.** Posle uklanjanja skripti i normalizacije triju
+volatilnih vrednosti (hash chunk-ova, `$ACTION_KEY`, Server Action id) obe
+verzije daju istih 67 657 bajtova markupa.
+
+| | pre | posle | delta |
+|---|---|---|---|
+| DOM (bez skripti) | 67 657 B | 67 657 B | **0** |
+| cela strana | 100 265 B | 104 501 B | +4 236 B |
+| cela strana, gzip | 23 417 B | 23 904 B | **+487 B (+2,1 %)** |
+
+Rast je isključivo u RSC payload-u: `ThemeDocument` (8 sekcija) + omotači
+razrešenih blokova. Podaci se ne dupliraju — `preloadedBlockDataSource` prosleđuje
+iste reference (`services`, `testimonials`, `landingStructure`), pa ih flight
+serijalizuje jednom. Trošak će se smanjiti u koraku 6, kada `ThemeLandingProps`
+ispusti stare domenske propove.
+
+**TTFB: bez promene.** 40 naizmeničnih parova zahteva (oba servera paralelno, da
+se poništi drift):
+
+| | median | p90 |
+|---|---|---|
+| pre | 121,6 ms | 129,1 ms |
+| posle | 119,8 ms | 129,5 ms |
+
+Razlika po paru: median −0,6 ms, sredina +0,0 ms, sd 10,3 ms — čist šum. Očekivano,
+jer `resolveThemeBlockData` ne pokreće nijedan nov upit.
+
+Pošto je DOM identičan, sve klijentsko (slike, redosled, layout shift) je
+nepromenjeno po konstrukciji; LCP može da se razlikuje samo za onih +487 B
+transfera.
+
+> **Metodološka napomena:** prvi pokušaj poređenja bio je pogrešan dva puta —
+> `git checkout HEAD~1 -- src` ostavlja nove fajlove na disku (mešano stablo, build
+> pukne), a u produkcionom modu `localhost/<slug>` ne rutira na tenanta nego vraća
+> 404, pa se merilo vreme 404 strane. Ispravno: worktree + `Host:` header
+> tenantovog domena. Isto važi za svaku sledeću temu.
+
 ## 7. Redosled (T2A)
 
 1. ✅ `packages/theme-engine` — tipovi (`ThemeDocument`, `LayoutDefinition`) +
@@ -420,9 +464,10 @@ univerzalni data bus.
    meša CMS i non-CMS sekcije; Theme8 poslednja zbog shell slojeva), uz vizuelnu
    i LCP regresiju po temi. Stari put ostaje živ dok prva tema ne prođe.
    - ✅ **Theme1** (`visibility: "theme-document"`): 7 CMS sekcija ide kroz
-     blokove, theme-native ostaje na zatečenim propovima (6.5). Čeka vizuelnu +
-     LCP regresiju pre Theme2.
-   - ⏳ theme-2…theme-8 — i dalje `visibility: "legacy-flags"`.
+     blokove, theme-native ostaje na zatečenim propovima (6.5). Regresija
+     prošla — DOM identičan, TTFB nepromenjen (6.6).
+   - ⏳ theme-2…theme-8 — i dalje `visibility: "legacy-flags"`. Theme2 je prvi
+     stvarni test compat sloja (4 bezuslovne sekcije).
 6. Tek kada prva tema prođe regresiju, `ThemeLandingProps` počinje da se svodi na:
    `document`, `brandingVars`, `resolveHref`, `reduceMotion`, `headerProps`,
    `footerProps`. **Nijedan stari flag se ne uklanja pre toga.**
