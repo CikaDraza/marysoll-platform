@@ -214,6 +214,31 @@ body {
   color: #c4b5fd; /* violet-300 */
 }
 
+/* Deep-link iz notifikacije (/dashboard?tab=termini&appointmentId=...): red sa
+   ciljanim terminom pulsira senkom u boji svog ringa dok ga admin ne označi.
+   Animira se samo box-shadow (compositor), pa skrol i lista ostaju glatki. */
+.appointment-highlight {
+  animation: appointmentHighlightPulse 1.8s ease-out infinite;
+}
+@keyframes appointmentHighlightPulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary-color) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 12px color-mix(in srgb, var(--primary-color) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary-color) 0%, transparent);
+  }
+}
+/* Bez animacije: statična senka, i dalje uočljivo. */
+@media (prefers-reduced-motion: reduce) {
+  .appointment-highlight {
+    animation: none;
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--primary-color) 30%, transparent);
+  }
+}
+
 @keyframes fadeUp {
   to { opacity: 1; transform: translateY(0); }
 }
