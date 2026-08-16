@@ -249,11 +249,31 @@ Tek kada sve teme čitaju `ThemeDocument`, CMS piše direktno u novi oblik.
 - [ ] Sve postojeće teme prolaze vizuelnu **i performansnu** regresiju (LCP) na
       demo tenantima.
 
-## 9. Non-goals za T2A
+## 9. Non-goals za T2A — disciplina slice-a
 
-- Nema novih product funkcija (education blokovi dolaze u T-EDUCATION).
-- Nema CMS redizajna — samo adapter na novi kontrakt.
-- Nema CDN/edge distribucije theme JSON-a (Faza 4 sazrevanja engine-a).
+T2A je **čist architectural extraction**. U njemu nema:
+
+- Education domena ni ijednog education bloka,
+- Distribution/Offer/Campaign koda,
+- novog UI-ja, novog CMS ekrana ni redizajna,
+- capability resolvera (to je T2B; blokovi za sada dobijaju `capability: null`
+  ili postojeći plan gate),
+- CDN/edge distribucije theme JSON-a (Faza 4 sazrevanja engine-a).
+
+**Apsolutni zahtev:**
+
+> Pre T2A i posle T2A postojeći tenant mora korisniku izgledati kao **isti
+> proizvod** — isti raspored, isti tekst, iste slike, isto ponašanje, ista
+> brzina.
+
+To je jedini dokaz da je nastala granica, a ne novi rewrite.
+
+## 10. Izlazni gate: review koda protiv dokumenta
+
+Po završetku T2A radi se **kratak review stvarnog koda protiv ovog dokumenta**
+(granica, zavisnosti paketa, registry, loaderi, invarijante). T2B kreće tek ako
+granica u kodu izgleda onako kako je ovde definisana — plus odvojena staging baza
+kao zaseban prerequisite (vidi [T2B 6.1](PANTA-TENANT-VERTICALS-CAPABILITIES.md)).
 
 ## Reference
 

@@ -4,7 +4,9 @@
 > detaljan plan pravimo posle završetka Faze 4 optimizacije.
 > Radni naziv inicijative: **Labs / "Panteleymon" (Panta)**.
 > Poslednja revizija stvarnog stanja koda: **2026-08-09**.
-> **Architecture Review v0.2 (2026-08-16):** Education vertikala (Marina) je okidač da
+> **Architecture Review v0.2 (2026-08-16) — ZAMRZNUTO kao architecture baseline.**
+> Dalje korekcije idu kao v0.3, ne kao izmene u mestu.
+> Sažetak: Education vertikala (Marina) je okidač da
 > se granice dotegnu pre prvog refaktora — T2 podeljen na T2A/T2B, „Marketing Engine"
 > redefinisan u **Distribution Engine**, Education i Distribution dodati kao imenovani
 > track-ovi. Numeracija T3–T9 nepromenjena.
@@ -313,7 +315,10 @@ konkretan salon-potreba.
 🔜 T-LOYALTY Phase 3 tek posle Theme/Layout odluke
 ```
 
-**Redosled je zaključan Architecture Review-om v0.2 (2026-08-16).** Svaki slice je
+**Redosled je zaključan Architecture Review-om v0.2 (2026-08-16), koji je
+zamrznut kao architecture baseline.** T2A je čist extraction — bez Education,
+bez Distribution, bez novog UI-ja; izlazni gate je review koda protiv
+`docs/PANTA-T2-THEME-LAYOUT-ENGINE.md`, pa tek onda T2B. Svaki slice je
 zaseban PR; Slice 1 i 2 ne menjaju ponašanje postojećih tenanta. Education je
 namerno razdvojen na **Inquiry domen (Slice 3)** i **Session/Enrollment (Slice 6)** —
 Marinin MVP traži samo interesovanje, a rezervisanje mesta ima smisla tek kada

@@ -6,7 +6,9 @@
 > autoritativan pojam ni na jednom mestu.
 > **v0.2 (Architecture Review):** `subject` je generički `ResourceRef` (engine ne
 > zna vertikale), dodat `DistributionPlacement` sa `targetScope` i platform
-> `approvalStatus` za cross-tenant distribuciju.
+> `approvalStatus` za cross-tenant distribuciju, `marysoll_network` = svi eligible
+> + opted-in (segmentacija je budući `network_segment`), i uveden
+> `ExternalProspect` kao treći pojam pored `AudienceContact`/`Lead`.
 
 ## 1. Podela odgovornosti
 
@@ -108,8 +110,8 @@ Marysoll-a.
 ```ts
 type TargetScope =
   | "own_tenant"        // sopstvene površine
-  | "marysoll_network"  // svi (ili segment) tenanti u mreži
-  | "selected_tenants"  // imenovani tenanti
+  | "marysoll_network"  // SVI eligible + opted-in tenanti (bez segmentacije)
+  | "selected_tenants"  // eksplicitno izabrani tenanti (targetTenantIds)
   | "external";         // van platforme (IG, LinkedIn, outreach)
 
 type ApprovalStatus = "not_required" | "pending" | "approved" | "rejected";
@@ -149,6 +151,26 @@ Dodatna pravila koja engine iskazuje kao invarijante:
   (opt-out je capability na strani primaoca, ne odluka pošiljaoca).
 - Svaka promena `approvalStatus`-a je audit zapis (ko, kada, zašto).
 
+**Značenje scope-ova je usko definisano da kontrakt ne obećava ono što ne ume da
+predstavi:**
+
+| Scope | Značenje u MVP-u |
+|---|---|
+| `marysoll_network` | **svi** tenanti koji su eligible i opted-in — bez segmentacije |
+| `selected_tenants` | ručno/eksplicitno izabrani tenanti iz `targetTenantIds` |
+
+Segmentacija („samo lash saloni u Beogradu") **nije** podskup `marysoll_network`-a
+nego budući zaseban scope:
+
+```ts
+// FUTURE — ne implementira se sada
+| "network_segment"   // + segmentId + immutable target snapshot u trenutku odobrenja
+```
+
+Razlog za snapshot: segment se menja u vremenu, a odobrenje se daje nad konkretnom
+listom primalaca. Bez zamrznute liste ne može se ni revidirati ni opozvati ono što
+je odobreno.
+
 ## 4. Postojeći `EmailCampaign` ostaje — postaje channel projection
 
 [`models/EmailCampaign.ts`](../src/models/EmailCampaign.ts) ima svoj lifecycle
@@ -182,9 +204,51 @@ LEAD | STAFF`, `source: user | newsletter | import | linkedin | scraper |
 manual`, `status`, engagement metrike. **Nije greenfield.**
 
 ```
-AudienceContact = KO je osoba
-Lead            = ZA ŠTA je ta osoba pokazala interesovanje
+ExternalProspect = poslovni kontakt pronađen za mogući outreach — BEZ consent-a
+AudienceContact  = osoba u audience/contact odnosu — consent/status eksplicitno poznat
+Lead             = konkretno iskazano poslovno interesovanje
 ```
+
+### 5.1 ⚠️ `ExternalProspect` ≠ `AudienceContact` (pre Slice 4)
+
+Postojeći `AudienceContact` ima `source: linkedin | scraper | manual` i
+`subscribed: true` kao **default** (provereno u modelu). Ako outreach lista uđe
+direktno u tu kolekciju, rečenica
+
+> „Pronašao sam ovaj salon na Instagramu"
+
+tiho postaje
+
+> „Ovaj kontakt je subscriber u Marininoj publici."
+
+To je pogrešno i pravno i produktno. Zato se pre Slice 4 zaključava treći pojam:
+
+| Zapis | Šta znači | Marketing consent |
+|---|---|---|
+| `ExternalProspect` | poslovni kontakt pronađen za mogući outreach (salon, stranica, profil) | **nema ga** |
+| `AudienceContact` | osoba koja je ušla u audience odnos | eksplicitno poznat (`subscribed`, `status`) |
+| `Lead` | iskazano poslovno interesovanje | nezavisno od subscription-a |
+
+Tok:
+
+```
+ExternalProspect
+      ↓  personalizovan outreach (1:1, ne kampanja publike)
+odgovor / CTA / forma
+      ↓
+AudienceContact  +  Lead
+```
+
+B2B kontakt sme da postane `Lead` **bez** newsletter subscription-a — interesovanje
+nije pristanak na masovnu komunikaciju.
+
+Pravila:
+
+- `ExternalProspect` nikad ne ulazi u recipient listu `EmailCampaign`-a.
+- Prelaz `ExternalProspect → AudienceContact` traži **eksplicitan događaj**
+  (odgovor, popunjena forma, prijava) — nikad tihu konverziju uvozom.
+- Postojeći kontakti sa `source: scraper | linkedin` se pri migraciji revidiraju:
+  ako nemaju dokaz o pristanku, sele se u `ExternalProspect`.
 
 Ne spajati ih. Jedan kontakt vremenom ima više leadova:
 
@@ -275,6 +339,9 @@ Studio activity).
 - [ ] Ciljni tenant može da isključi prijem mrežnih ponuda.
 - [ ] Svaka promena odobrenja ostavlja audit zapis.
 - [ ] Jedan `AudienceContact` može imati više leadova.
+- [ ] `ExternalProspect` nikad nije primalac kampanje niti se tiho pretvara u
+      `AudienceContact` — prelaz traži eksplicitan događaj.
+- [ ] B2B `Lead` može da nastane bez newsletter subscription-a.
 - [ ] Svaki `Lead` nosi `campaignId`, `offerId` i channel attribution kada postoje.
 - [ ] Svi kanali jedne kampanje vode na isti `landingPageId`.
 - [ ] Postojeći `EmailCampaign` tok radi nepromenjeno.

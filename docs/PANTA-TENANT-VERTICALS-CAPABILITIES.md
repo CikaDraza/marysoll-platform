@@ -5,7 +5,8 @@
 > **v0.2 (Architecture Review):** `enabled` i `configured` razdvojeni
 > (`ResolvedCapability` vs `CapabilityReadiness`), uveden jedinstven server entry
 > `requireCapability()` koji interno koristi `PLAN_FEATURES`, dodat odnos prema
-> RBAC-u i **odvojena staging baza kao hard prerequisite**.
+> RBAC-u i **odvojena staging baza kao hard prerequisite**. Readiness→render
+> tabela zaključana (3.0): `degraded` prati politiku bloka, ne globalni hardkod.
 
 ## 1. Odluka: NE `tenantType`
 
@@ -76,12 +77,44 @@ Pravila:
 
 - Admin ekran domena se otvara na osnovu **capability**-ja, bez obzira na readiness
   (`unconfigured` → onboarding empty state, ne 403).
-- Public blok se renderuje samo kada je capability razrešen **i** readiness
-  `ready`. `unconfigured` blok se preskače kao da ga nema; `degraded` se renderuje
-  uz telemetriju.
-- `degraded` = capability postoji i podešen je, ali zavisnost trenutno ne radi
-  (npr. education katalog objavljen, a media provider pada) — vidljivo u
-  Diagnostic Engine-u, ne u korisničkoj poruci.
+- Public render se odlučuje **isključivo** po sledećoj tabeli.
+
+### 3.0 Readiness → public render (zaključano pravilo)
+
+| Readiness | Public blok |
+|---|---|
+| `unconfigured` | **skip** — kao da bloka nema |
+| `ready` | **render** |
+| `degraded` | **feature-defined degraded policy**: `fallback` \| `stale-safe render` \| `skip` |
+
+`degraded` nije jedno stanje sa jednim ishodom, pa se **ne hardkoduje** ni na
+render ni na skip. Politiku deklariše sam blok pri registraciji, jer samo on zna
+šta mu je zavisnost:
+
+```ts
+registerFeatureBlock({
+  type: "education.catalog",
+  degradedPolicy: "skip",          // izvor glavnog sadržaja pao → nema šta da se prikaže
+  …
+});
+
+registerFeatureBlock({
+  type: "services.catalog",
+  degradedPolicy: "stale-safe",    // keširan katalog je bolji od praznine
+  …
+});
+
+registerFeatureBlock({
+  type: "distribution.banner",
+  degradedPolicy: "fallback",      // statični baner umesto live ponude
+  …
+});
+```
+
+`degraded` = capability postoji i podešen je, ali zavisnost trenutno ne radi
+(npr. education katalog objavljen, a media provider pada). Uvek se prijavljuje
+Diagnostic Engine-u, bez obzira na izabranu politiku, i nikad se ne prikazuje kao
+korisnička poruka.
 
 ### 3.1 Jedan server entry point
 
@@ -171,6 +204,8 @@ grane. Dok to ne postoji, T2B se ne merge-uje u `staging/production-engines`.
 - [ ] Sakriven UI nikad nije jedina zaštita — API testovi to dokazuju.
 - [ ] Tenant sa razrešenim capability-jem, a `readiness: "unconfigured"`, **može**
       da otvori admin ekran domena (empty state), a public blok se ne renderuje.
+- [ ] `degraded` ishod određuje `degradedPolicy` bloka (fallback | stale-safe |
+      skip), nikad globalni hardkod; svaki `degraded` ide u Diagnostic telemetriju.
 - [ ] Postoji tačno jedan server gate za domenske rute (`requireCapability()`);
       `requireFeature()` se poziva iz njega, ne paralelno sa njim.
 - [ ] Test dokazuje `permission ∩ capability ∩ ownership` — nijedan presek sam ne
