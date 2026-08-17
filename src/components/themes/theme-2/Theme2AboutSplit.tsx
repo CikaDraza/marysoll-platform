@@ -61,7 +61,10 @@ export function Theme2AboutSplit({ title, text, links = [], imageUrl, stats }: P
             <div className="flex gap-10 mt-8">
               {stats.map((s, i) => (
                 <div key={i}>
-                  <div className="text-2xl font-bold text-(--primary-color)">{s.value}</div>
+                  {/* Ista boja kao H2 iznad (nasleđeni text-white sa sekcije):
+                      brend primary sme biti i crn (#000000), pa je broj na
+                      bg-black bio nevidljiv. */}
+                  <div className="text-2xl font-bold text-white">{s.value}</div>
                   <div className="text-sm text-gray-400 mt-1">{s.label}</div>
                 </div>
               ))}
