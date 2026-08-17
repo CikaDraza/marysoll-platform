@@ -16,6 +16,7 @@
 
 import type { IService, LandingStructure, SalonProfileData } from "@/types";
 import type { PublicTestimonial } from "@/types/public-testimonials";
+import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import type { LandingSectionKey } from "../theme-client";
 
 type Landing = LandingStructure["landing"];
@@ -38,6 +39,13 @@ export interface ContentHeroData {
 
 export interface ContentAboutData {
   content: Landing["about"] | undefined;
+  /**
+   * Tenant metrike (klijenti, urađeni tretmani). Neke teme ih prikazuju UNUTAR
+   * about sekcije, druge u zasebnoj native sekciji — zato blok koji ih prikazuje
+   * uzima svoj podatak iz deljenog, memoizovanog izvora umesto da ga pozajmljuje
+   * od druge sekcije.
+   */
+  stats: TenantStats | undefined;
 }
 
 export interface ContentTeamData {
@@ -110,6 +118,23 @@ export interface BaseBlockConfig {
   source: LandingSectionKey;
 }
 
+/**
+ * PRAVILO: jedan business/content koncept = JEDAN blok. Više mogućih izgleda =
+ * varijante tog bloka, nikad duplirani blokovi iste semantike.
+ *
+ * Zato je izbor prikaza enum, a ne skup boolean-a: `presentationVariant: "cards"`
+ * garantuje da je tačno jedna varijanta aktivna, dok `showCards`/`showEditorial`
+ * dopuštaju i „obe" i „nijedna" — stanja koja niko nije nameravao.
+ *
+ * Blok bira sadržaj i poslovnu sposobnost; tema + varijanta biraju kako izgleda.
+ * (`content.gallery` ima isti obrazac pod zatečenim imenom `galleryVariant`.)
+ */
+export type TestimonialsVariant = "cards" | "highlights";
+
+export interface TestimonialsBlockConfig extends BaseBlockConfig {
+  presentationVariant?: TestimonialsVariant;
+}
+
 export interface HeroBlockConfig extends BaseBlockConfig {
   variant?: "center-image" | "split-left-image" | "grid-right-images";
 }
@@ -125,7 +150,7 @@ export interface BlockConfigByType {
   "content.team": BaseBlockConfig;
   "services.catalog": BaseBlockConfig;
   "booking.services": BaseBlockConfig;
-  "content.testimonials": BaseBlockConfig;
+  "content.testimonials": TestimonialsBlockConfig;
   "content.gallery": GalleryBlockConfig;
   "content.faq": BaseBlockConfig;
   "content.blog": BaseBlockConfig;
@@ -144,6 +169,7 @@ export interface BlockDataSource {
   salon(): Promise<SalonProfileData>;
   services(): Promise<IService[]>;
   testimonials(): Promise<PublicTestimonial[]>;
+  tenantStats(): Promise<TenantStats | undefined>;
 }
 
 export interface BlockLoaderContext<TConfig> {

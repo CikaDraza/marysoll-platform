@@ -30,6 +30,14 @@ const heroConfigSchema = sourceSchema("hero").extend({
     .optional(),
 });
 
+/**
+ * Više prikaza istog bloka = varijante, ne dodatni blokovi. Enum, ne boolean-i:
+ * tačno jedna varijanta može biti aktivna.
+ */
+const testimonialsConfigSchema = sourceSchema("testimonials").extend({
+  presentationVariant: z.enum(["cards", "highlights"]).optional(),
+});
+
 const galleryConfigSchema = sourceSchema("gallery").extend({
   galleryVariant: z.enum(["images-only", "images-with-category"]),
   variant: z.enum(["zigzag", "masonry"]).optional(),
@@ -65,8 +73,11 @@ const contentAbout: FeatureBlockDefinition<"content.about"> = {
   capability: null,
   parseConfig: parseWith<"content.about">(sourceSchema("about")),
   async load({ deps }) {
-    const ls = await deps.landingStructure();
-    return { content: ls?.landing?.about };
+    const [ls, stats] = await Promise.all([
+      deps.landingStructure(),
+      deps.tenantStats(),
+    ]);
+    return { content: ls?.landing?.about, stats };
   },
 };
 
@@ -114,7 +125,7 @@ const contentTestimonials: FeatureBlockDefinition<"content.testimonials"> = {
   type: "content.testimonials",
   schemaVersions: [1],
   capability: null,
-  parseConfig: parseWith<"content.testimonials">(sourceSchema("testimonials")),
+  parseConfig: parseWith<"content.testimonials">(testimonialsConfigSchema),
   async load({ deps }) {
     const [ls, testimonials] = await Promise.all([
       deps.landingStructure(),

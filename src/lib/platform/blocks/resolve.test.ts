@@ -225,12 +225,19 @@ describe("bez waterfall-a (spec 5.2)", () => {
     const salon = vi.fn(async () => salonFor(ls));
     const services = vi.fn(async () => SERVICES);
     const testimonials = vi.fn(async () => TESTIMONIALS);
+    const tenantStats = vi.fn(async () => undefined);
 
     const document = landingStructureToThemeDocument(ls, { theme: "theme-2" });
     const data = await resolveThemeBlockData({
       document,
       theme: "theme-2",
-      deps: createBlockDataSource({ landingStructure, salon, services, testimonials }),
+      deps: createBlockDataSource({
+        landingStructure,
+        salon,
+        services,
+        testimonials,
+        tenantStats,
+      }),
     });
 
     // 8 blokova čita landingStructure, tri traže salon, dva services.
@@ -239,6 +246,7 @@ describe("bez waterfall-a (spec 5.2)", () => {
     expect(salon).toHaveBeenCalledTimes(1);
     expect(services).toHaveBeenCalledTimes(1);
     expect(testimonials).toHaveBeenCalledTimes(1);
+    expect(tenantStats).toHaveBeenCalledTimes(1);
   });
 
   it("loaderi teku paralelno, ne jedan za drugim", async () => {

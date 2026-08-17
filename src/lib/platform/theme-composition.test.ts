@@ -28,11 +28,20 @@ function flagsUsedBy(theme: string): Set<string> {
   return new Set(layoutSourceOf(theme).match(/[a-zA-Z]+Enabled/g) ?? []);
 }
 
-/** Tipovi blokova iz `<ThemeBlock … type="…" />`, redom pojavljivanja. */
+/**
+ * Tipovi blokova redom pojavljivanja — i normalni `<ThemeBlock>` i compat
+ * `<LegacyAlwaysThemeBlock>`, jer su za kompoziciju ravnopravni: oba su ista
+ * sekcija na istom mestu, razlikuje ih samo način pronalaženja bloka.
+ */
 function themeBlockTypesUsedBy(theme: string): string[] {
-  return [...layoutSourceOf(theme).matchAll(/<ThemeBlock[^>]*type="([^"]+)"/g)].map(
-    (m) => m[1],
-  );
+  const re = /<(?:ThemeBlock|LegacyAlwaysThemeBlock)\s[^>]*?type="([^"]+)"/g;
+  return [...layoutSourceOf(theme).matchAll(re)].map((m) => m[1]);
+}
+
+/** CMS sekcije koje migrirana tema renderuje kroz compat putanju. */
+function legacyAlwaysSourcesUsedBy(theme: string): string[] {
+  const re = /<LegacyAlwaysThemeBlock\s[^>]*?source="([^"]+)"/g;
+  return [...layoutSourceOf(theme).matchAll(re)].map((m) => m[1]);
 }
 
 const ALL_FLAGS: LegacyCmsFlag[] = [
@@ -94,6 +103,14 @@ describe.each(THEME_COMPOSITIONS)("$theme", (composition) => {
   it.runIf(!legacy)("renderuje tačno CMS blokove iz inventara, istim redom", () => {
     expect(themeBlockTypesUsedBy(composition.theme)).toEqual(
       cmsBlockTypes(composition.theme),
+    );
+  });
+
+  // Compat putanja je dozvoljena TAČNO za bezuslovne sekcije — ni manje (tiha
+  // promena ponašanja) ni više (compat koji tema ne sme da koristi).
+  it.runIf(!legacy)("compat blokove koristi tačno za bezuslovne sekcije", () => {
+    expect([...legacyAlwaysSourcesUsedBy(composition.theme)].sort()).toEqual(
+      [...unconditionalCmsBlocks(composition.theme)].sort(),
     );
   });
 

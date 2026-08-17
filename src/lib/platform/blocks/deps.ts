@@ -12,6 +12,7 @@
 
 import type { IService, LandingStructure, SalonProfileData } from "@/types";
 import type { PublicTestimonial } from "@/types/public-testimonials";
+import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import type { BlockDataSource } from "./types";
 
 /** Memoizacija promise-a: drugi pozivalac dobija prvi promise, ne novi posao. */
@@ -28,6 +29,7 @@ export interface BlockDataFetchers {
   salon: () => Promise<SalonProfileData>;
   services: () => Promise<IService[]>;
   testimonials: () => Promise<PublicTestimonial[]>;
+  tenantStats: () => Promise<TenantStats | undefined>;
 }
 
 /**
@@ -42,6 +44,7 @@ export function createBlockDataSource(
     salon: once(fetchers.salon),
     services: once(fetchers.services),
     testimonials: once(fetchers.testimonials),
+    tenantStats: once(fetchers.tenantStats),
   };
 }
 
@@ -49,6 +52,7 @@ export interface PreloadedTenantSnapshot {
   salon: SalonProfileData;
   services: IService[];
   testimonials: PublicTestimonial[];
+  tenantStats?: TenantStats;
   /** Podrazumevano `salon.landingStructure`. */
   landingStructure?: LandingStructure;
 }
@@ -67,5 +71,6 @@ export function preloadedBlockDataSource(
     salon: async () => snapshot.salon,
     services: async () => snapshot.services,
     testimonials: async () => snapshot.testimonials,
+    tenantStats: async () => snapshot.tenantStats,
   });
 }

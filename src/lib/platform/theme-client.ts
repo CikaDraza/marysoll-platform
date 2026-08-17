@@ -129,6 +129,25 @@ const THEME_GALLERY_DEFAULTS: Record<
   "theme-8": "images-with-category",
 };
 
+/**
+ * Kad JEDNA tema ima više prikaza istog bloka, izbor je varijanta tog bloka —
+ * nikad drugi blok iste semantike. Ovde stoji podrazumevana varijanta po temi
+ * (isti obrazac kao `THEME_GALLERY_DEFAULTS`; CMS je još ne nudi).
+ *
+ * theme-2 ima dva prikaza utisaka u kodu: `Theme2Testimonials` ("cards", ono
+ * što tenant danas vidi) i `Theme2TestimonialsSection` ("highlights", tiho jer
+ * ima guard za prazan spisak). Migracija zadržava produkcioni prikaz.
+ */
+const THEME_TESTIMONIALS_DEFAULTS: Record<string, "cards" | "highlights"> = {
+  "theme-2": "cards",
+};
+
+export function resolveTestimonialsVariant(
+  theme?: string,
+): "cards" | "highlights" | undefined {
+  return theme ? THEME_TESTIMONIALS_DEFAULTS[theme] : undefined;
+}
+
 export function resolveGalleryVariant(
   ls: LandingStructure | undefined,
   theme?: string,
@@ -176,6 +195,10 @@ export function buildSectionBlock(
   const config: Record<string, unknown> = { source: key };
   if (key === "gallery") {
     config.galleryVariant = resolveGalleryVariant(ls, options.theme);
+  }
+  if (key === "testimonials") {
+    const variant = resolveTestimonialsVariant(options.theme);
+    if (variant) config.presentationVariant = variant;
   }
   if (raw?.variant) config.variant = raw.variant;
 

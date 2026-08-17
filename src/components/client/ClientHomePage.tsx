@@ -291,6 +291,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
       salon: salonData,
       services: serviceList,
       testimonials: testimonialList,
+      tenantStats,
     }),
   });
 

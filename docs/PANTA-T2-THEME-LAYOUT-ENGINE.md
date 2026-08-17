@@ -447,6 +447,80 @@ transfera.
 > 404, pa se merilo vreme 404 strane. Ispravno: worktree + `Host:` header
 > tenantovog domena. Isto važi za svaku sledeću temu.
 
+## 6.7 Jedan koncept = jedan blok, više izgleda = varijante
+
+**Pravilo:** jedan business/content koncept je **jedan blok** u `ThemeDocument`-u.
+Više mogućih izgleda su **varijante tog bloka**, nikada duplirani blokovi iste
+semantike.
+
+Konfiguracija varijante je **enum, ne skup boolean-a**:
+
+```ts
+presentationVariant: "cards"        // tačno jedna varijanta je aktivna
+// a ne:
+showCards: true, showEditorial: false   // dopušta i "obe" i "nijednu"
+```
+
+Izraz *flag* se izbegava u persistence/domain kontraktu (u admin UI-ju sme, ako je
+korisniku jasnije). `content.gallery` je zatečeni primer istog obrasca pod starim
+imenom `galleryVariant`.
+
+Za buduću Education vertikalu to znači:
+
+```
+education.catalog
+    ├── cards
+    ├── editorial
+    ├── compact
+    └── custom-marina
+```
+
+a ne četiri različita education bloka samo zato što izgledaju drugačije.
+
+**Ako tema traži prikaz koji već postoji u drugoj temi:** ako je komponenta
+stvarno generička i nema zavisnost od shell-a te druge teme, izvlači se kao
+deljeni presentation renderer; ako je snažno vezana za dizajn druge teme, bolje je
+napraviti lokalnu varijantu nego uvući pola tuđeg styling sistema.
+
+Podela odgovornosti: **blok bira sadržaj i poslovnu sposobnost; tema + varijanta
+biraju kako to izgleda.**
+
+### Prvi slučaj: theme-2 utisci
+
+Zatečeno stanje: `Theme2Landing` je renderovao **dva** prikaza utisaka —
+`Theme2Testimonials` (l. 148, bez guarda za prazan spisak) i, posle CTA sekcije,
+`Theme2TestimonialsSection` (l. 153, sa `if (!testimonials.length) return null`).
+
+Provera nad produkcijom: Shi Sham ima **0 odobrenih utisaka**, pa se danas vidi
+samo prvi — kao prazna sekcija sa naslovom „Utisci klijenata". Drugi ne renderuje
+ništa.
+
+Odluka: `content.testimonials` je jedan blok sa `presentationVariant`;
+produkcijski prikaz (`cards`) je podrazumevan za theme-2, a `highlights` ostaje
+dostupan kao varijanta istog bloka — ne kao druga sekcija.
+
+> **Posledica koju treba znati:** u stanju koje danas ne postoji (tenant na
+> theme-2 sa bar jednim odobrenim utiskom) stari kod bi prikazao dve sekcije
+> utisaka, novi prikazuje jednu. Za sve stvarne tenante DOM je nepromenjen.
+
+## 6.8 Theme2 regresija — rezultat (2026-08-17)
+
+Shi Sham (`shisham-frizerski-salon`, theme-2), produkcioni build, `39faebd` (pre)
+vs radno stablo (posle), worktree + `Host:` subdomen.
+
+| | pre | posle | delta |
+|---|---|---|---|
+| `<body>` | 35 533 B | 35 533 B | **0 — bajt-u-bajt** |
+| `<head>` | 5 016 B | 5 122 B | +106 B (jedan `<link rel="preload">` više) |
+| cela strana, gzip | 15 195 B | 15 236 B | +41 B (+0,3 %) |
+
+Razlika u `<head>`-u je posledica izmenjenog chunk grafa (nova `blocks.tsx` /
+`blockProps.ts`), ne sadržaja. Uklanjanje druge sekcije utisaka nije promenilo
+ništa u DOM-u, jer je kod ovog tenanta ionako renderovala `null`.
+
+TTFB, 40 naizmeničnih parova: median 117,5 → 118,2 ms; razlika po paru median
++0,2 ms, sredina +0,4 ms, sd 13,0 ms — šum.
+
 ## 7. Redosled (T2A)
 
 1. ✅ `packages/theme-engine` — tipovi (`ThemeDocument`, `LayoutDefinition`) +
@@ -466,8 +540,11 @@ transfera.
    - ✅ **Theme1** (`visibility: "theme-document"`): 7 CMS sekcija ide kroz
      blokove, theme-native ostaje na zatečenim propovima (6.5). Regresija
      prošla — DOM identičan, TTFB nepromenjen (6.6).
-   - ⏳ theme-2…theme-8 — i dalje `visibility: "legacy-flags"`. Theme2 je prvi
-     stvarni test compat sloja (4 bezuslovne sekcije).
+   - ✅ **Theme2** — prvi test compat sloja: hero/about/servicesPreview/
+     testimonials idu kroz `<LegacyAlwaysThemeBlock>`, gallery/booking kroz
+     `<ThemeBlock>`. Uveden model varijanti prikaza (6.7). Regresija prošla —
+     `<body>` identičan, TTFB nepromenjen (6.8).
+   - ⏳ theme-3…theme-8 — i dalje `visibility: "legacy-flags"`.
 6. Tek kada prva tema prođe regresiju, `ThemeLandingProps` počinje da se svodi na:
    `document`, `brandingVars`, `resolveHref`, `reduceMotion`, `headerProps`,
    `footerProps`. **Nijedan stari flag se ne uklanja pre toga.**

@@ -129,7 +129,7 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
   },
   {
     theme: "theme-2",
-    visibility: "legacy-flags",
+    visibility: "theme-document",
     // Tema ignoriše hero/about/services/testimonials/faq flagove — renderuje ih uvek.
     honoredFlags: ["appointmentEnabled", "galleryEnabled"],
     nodes: [
@@ -141,7 +141,9 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
       cms("appointmentSection", "booking.services", "appointmentEnabled"),
       native("theme-2/why-choose-us"),
       native("theme-2/pricing"),
-      cms("testimonials", "content.testimonials", "always (dva odvojena prikaza)"),
+      // Ranije dva odvojena prikaza (drugi je imao guard za prazan spisak, pa se
+      // kod tenanta bez utisaka nije ni video). Sada jedan blok + varijanta.
+      cms("testimonials", "content.testimonials", "always (varijanta prikaza: cards)"),
       native("theme-2/cta-appointment"),
       shell("theme-2/footer"),
     ],
