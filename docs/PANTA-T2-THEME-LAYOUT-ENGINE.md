@@ -403,6 +403,41 @@ Cilj granice:
 Time nijedna tema ne ostaje na `IService`/`TenantStats`, a registry ne postaje
 univerzalni data bus.
 
+### Naličje istog pravila: deljeni izvor nije vlasništvo sekcije
+
+Zabrana iznad kaže da native element ne sme da pozajmljuje podatke **od bloka**.
+Ne kaže da podatak pripada sekciji u kojoj se danas prikazuje —
+[ARCHITECTURAL_RULES.md §3.4](../ARCHITECTURAL_RULES.md):
+
+> Podatak nije vlasništvo sekcije samo zato što ga trenutni dizajn prikazuje u
+> toj sekciji. Deljeni izvor može koristiti više nezavisnih blokova; kompozicija
+> određuje gde se podatak prikazuje.
+
+Konkretno za `tenantStats()`:
+
+```
+             tenantStats()          ne:  About → SocialProof
+              /    |    \                Testimonials → About
+         About   Proof   Testimonials    Hero → Testimonials
+```
+
+Svaki blok ga traži sam, iz istog memoizovanog izvora. Zato `theme-2` sme da
+prikaže metrike u about sekciji, a `theme-1` u zasebnoj native sekciji, bez
+ikakve veze između te dve.
+
+**Namerno se NE standardizuje „social proof" kao jedna sekcija ni jedan tip
+bloka.** To je pre svega presentation/composition koncept, a oblik dokaza se
+razlikuje po vertikali: salonu su dokaz broj klijenata i završenih termina,
+edukatoru mogu biti sertifikati, broj obučenih salona, stručne saradnje ili
+rezultati edukacija. Sertifikat nije metrika, referenca nije metrika — pa bi
+zajednički `SocialProof { clientCount, appointmentCount, … }` pukao već na prvoj
+education vertikali.
+
+Ako se obrazac kasnije zaista ponovi, razmatra se nešto generičnije (proof
+signals kao unija: metrika / utisak / kredencijal / studija slučaja / saradnja),
+a tema bira gde ih raspoređuje. Do tada — bez apstrakcije; prvi stvarni education
+zahtev je ulazni materijal, ne pretpostavka.
+
 ## 6.6 Theme1 regresija — rezultat (2026-08-17)
 
 Mereno nad stvarnim tenantom `marysoll-makeup-nails` (theme-1, custom domen

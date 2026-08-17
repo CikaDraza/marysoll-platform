@@ -40,10 +40,10 @@ export interface ContentHeroData {
 export interface ContentAboutData {
   content: Landing["about"] | undefined;
   /**
-   * Tenant metrike (klijenti, urađeni tretmani). Neke teme ih prikazuju UNUTAR
-   * about sekcije, druge u zasebnoj native sekciji — zato blok koji ih prikazuje
-   * uzima svoj podatak iz deljenog, memoizovanog izvora umesto da ga pozajmljuje
-   * od druge sekcije.
+   * Tenant metrike — NISU vlasništvo about sekcije, samo ih neke teme prikazuju
+   * baš tu (druge u zasebnoj native sekciji). Svaki blok koji ih prikazuje traži
+   * ih sam iz deljenog memoizovanog izvora; nema zavisnosti između sekcija.
+   * Vidi ARCHITECTURAL_RULES.md §3.4.
    */
   stats: TenantStats | undefined;
 }
@@ -169,6 +169,7 @@ export interface BlockDataSource {
   salon(): Promise<SalonProfileData>;
   services(): Promise<IService[]>;
   testimonials(): Promise<PublicTestimonial[]>;
+  /** Deljeni izvor metrika — sme ga tražiti svaki blok kome dizajn to nalaže. */
   tenantStats(): Promise<TenantStats | undefined>;
 }
 

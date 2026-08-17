@@ -47,6 +47,12 @@ Code must be strictly segregated into designated operational layers:
 
 - Following Next.js 16+ conventions, the global interception, rewriting, and middleware logic is handled via `proxy.ts` (replacing the deprecated `middleware.ts`).
 
+### 3.4 Data Ownership vs. Composition
+
+- **A piece of data is not owned by a section merely because the current design displays it there.** A shared data source may be used by several independent blocks; composition decides *where* the data appears.
+- Consumers of a shared source must reach for it **independently**, through the request-scoped (memoised) source. Never create sibling dependencies such as `About → SocialProof` or `Testimonials → About` just because two sections happen to render the same underlying value.
+- Practical consequence: do not rename or relocate a shared source to match whichever section currently renders it, and do not fold unrelated concepts into one payload to make a single section convenient.
+
 ---
 
 ## 4. State Management & Data Fetching
