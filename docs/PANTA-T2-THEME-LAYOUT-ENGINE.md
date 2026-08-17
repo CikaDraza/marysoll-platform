@@ -388,6 +388,12 @@ sada radi.)
 Preostali `always` slučajevi za normalizaciju: theme-2 `hero`/`about`/
 `servicesPreview`, theme-5 (5 sekcija), theme-7 `appointmentSection`.
 
+**Ovaj slučaj se NE uzima kao presedan.** Normalizovan je jer je postojala
+dokazana korisnička namera: vlasnik je sekciju ugasio, sistem je odluku ignorisao
+i prikazivao prazan naslov. Za preostale slučajeve ne znamo da li je
+`enabled: false` stvarna namera ili stale podatak — dok se to ne utvrdi, compat
+ostaje. **Normalizuje se samo uz dokaz ili odluku, nikad automatski.**
+
 ## 6.5 Theme-native podaci: zabrana pozajmljivanja iz bloka
 
 Prva migracija (Theme1) je namerno **dva sveta**, i to se vidi u kodu:
@@ -429,7 +435,7 @@ univerzalni data bus.
 
 Zabrana iznad kaže da native element ne sme da pozajmljuje podatke **od bloka**.
 Ne kaže da podatak pripada sekciji u kojoj se danas prikazuje —
-[ARCHITECTURAL_RULES.md §3.4](../ARCHITECTURAL_RULES.md):
+[ARCHITECTURAL_RULES.md §3.5](../ARCHITECTURAL_RULES.md):
 
 > Podatak nije vlasništvo sekcije samo zato što ga trenutni dizajn prikazuje u
 > toj sekciji. Deljeni izvor može koristiti više nezavisnih blokova; kompozicija
@@ -601,10 +607,90 @@ Booking sekcija je deljena sa theme-1; oba današnja tenanta imaju
 `primaryColor: #000000`, pa je promena vizuelno neprimetna, a štiti od svetlog
 brend primary-ja.
 
-**Otvoreno:** treba definisati gde brend boje uopšte smeju da se koriste i na
-kojim temama — od „tema u potpunosti zaključava brend paletu" do „kontrast guard
-koji sam bira čitljivu varijantu". Ovo NIJE deo T2A; zapisano da se ad-hoc
-popravke ne pomešaju sa pravilom.
+### Šta je stvarni uzrok
+
+Problem nije to što je Shi Sham izabrao crnu. Problem je što smo implicitno imali:
+
+```
+brand.primary = boja eyebrow-a = boja statistike = boja booking ikonice
+```
+
+A to **nisu ista semantička uloga**. Komponenta je direktno odlučila da je
+`primaryColor` boja teksta, ikonice i akcenta — što je odluka koja pripada temi,
+ne komponenti.
+
+### Pravilo koje važi ODMAH
+
+> Komponenta ne odlučuje da je brend boja boja teksta, ikonice ili akcenta. Gde
+> se brend boja sme mapirati odlučuje **tema**.
+>
+> T2A sme da popravi **dokazanu nečitljivost** lokalnim theme-safe tokenom, ali
+> NE definiše globalnu brand-color politiku.
+
+Tri gornje izmene su tačno to: dokazana nečitljivost, lokalno rešena, bez
+uvođenja opšteg pravila.
+
+### Ciljni model (NIJE implementiran)
+
+Sačuvano kao smer, da se ad-hoc popravke ne pomešaju sa arhitekturom:
+
+```
+BRAND INPUT (primary, secondary)
+        ↓
+THEME COLOR POLICY
+        ↓
+SEMANTIČKI TOKENI
+  accent · accentStrong · textOnDark · textOnLight
+  surface · surfaceAlt · border · ctaBackground · ctaText
+```
+
+Tako theme-2 može reći „`brand.primary` se možda uopšte ne koristi,
+`brand.secondary` samo na CTA/pozadini, `accent` = yellow-400, `textOnDark` =
+white", dok svetla minimalistička tema sme `brand.primary → accent`. **Ne mora
+postojati jedna globalna politika za svih osam tema.**
+
+Verovatno će trebati tri politike po temi:
+
+```ts
+type ThemeColorPolicy = "locked" | "constrained" | "adaptive";
+```
+
+| politika | značenje | primer |
+|---|---|---|
+| `locked` | dizajn zavisi od precizne palete; tenant menja logo, slike i sadržaj, ali ne ključne boje | theme-2 je vrlo verovatno ovde ili blizu |
+| `constrained` | brend boje se primaju, ali samo u određenim semantičkim slotovima (npr. primary sme na CTA/pozadinu, nikad na tekst preko tamne površine) | |
+| `adaptive` | veća personalizacija, uz validaciju i mapiranje u bezbedne tokene | |
+
+To je fleksibilnije od oba ekstrema („svaka tema mora primiti primary+secondary
+svuda" / „nijedna tema ne sme koristiti brend boje").
+
+### Kontrast guard — treća faza, i to na konfiguraciji, ne na renderu
+
+**Ne** kao runtime magija tipa `if (contrastBad) lighten(primary)` — tako se
+dobija boja koju korisnik nikada nije izabrao i koja više nije njegov brend.
+
+Umesto toga, u trenutku izbora boje:
+
+```
+korisnik izabere boju → theme policy proveri
+   ✓ dozvoljena za ovaj semantic slot
+   ✗ nije bezbedna → ponudi najbližu dozvoljenu / theme accent
+```
+
+Dakle validation-time, ne render-time.
+
+### Zašto model ostaje otvoren do Education dizajna
+
+Za beauty temu je sasvim prihvatljivo: tema nosi jak art direction, brend je logo
++ fotografije + par akcenata. Profesionalna edukatorka može očekivati suprotno:
+njena boja kao centralni deo identiteta, neutralne površine, brend akcenat kroz
+CTA, kredencijale i edukativne kartice.
+
+Ako sada od theme-2 problema napravimo univerzalno pravilo, lako bismo ograničili
+Education pre nego što uopšte vidimo njen dizajn. Globalni model se definiše tek
+kada postoji **najmanje drugi stvarni tip tenanta** — i tada se ide ka
+theme-level color policy + semantičkim tokenima, ne ka prostom primary/secondary
+sistemu.
 
 ## 7. Redosled (T2A)
 

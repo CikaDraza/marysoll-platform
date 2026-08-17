@@ -43,7 +43,7 @@ export interface ContentAboutData {
    * Tenant metrike — NISU vlasništvo about sekcije, samo ih neke teme prikazuju
    * baš tu (druge u zasebnoj native sekciji). Svaki blok koji ih prikazuje traži
    * ih sam iz deljenog memoizovanog izvora; nema zavisnosti između sekcija.
-   * Vidi ARCHITECTURAL_RULES.md §3.4.
+   * Vidi ARCHITECTURAL_RULES.md §3.5.
    */
   stats: TenantStats | undefined;
 }

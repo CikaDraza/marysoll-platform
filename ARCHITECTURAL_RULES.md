@@ -47,7 +47,14 @@ Code must be strictly segregated into designated operational layers:
 
 - Following Next.js 16+ conventions, the global interception, rewriting, and middleware logic is handled via `proxy.ts` (replacing the deprecated `middleware.ts`).
 
-### 3.4 Data Ownership vs. Composition
+### 3.4 Brand Colors: the Theme Decides the Mapping
+
+- **A component must never decide that a brand colour is the colour of text, an icon, or an accent.** Where a brand colour may be mapped is a decision that belongs to the **theme**, not to the component that happens to render the pixel.
+- Tenant brand input (`primaryColor`, `secondaryColor`) is not a general-purpose palette: the same value carries different semantic roles (accent, text-on-dark, CTA background…) and those roles have different contrast requirements.
+- Until a theme-level colour policy exists, a proven readability failure may be fixed with a **local, theme-safe token** — never by inventing a global brand-colour rule from a single theme's problem.
+- Contrast correction, when it comes, belongs at **configuration time** (validate the chosen colour against the theme's policy and offer the nearest allowed value), never at render time — silently lightening a colour produces something the user never chose and which is no longer their brand.
+
+### 3.5 Data Ownership vs. Composition
 
 - **A piece of data is not owned by a section merely because the current design displays it there.** A shared data source may be used by several independent blocks; composition decides *where* the data appears.
 - Consumers of a shared source must reach for it **independently**, through the request-scoped (memoised) source. Never create sibling dependencies such as `About → SocialProof` or `Testimonials → About` just because two sections happen to render the same underlying value.
