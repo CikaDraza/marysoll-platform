@@ -692,6 +692,94 @@ kada postoji **najmanje drugi stvarni tip tenanta** — i tada se ide ka
 theme-level color policy + semantičkim tokenima, ne ka prostom primary/secondary
 sistemu.
 
+## 6.10 Booking ima tri prezentacione površine, ne tri feature-a
+
+```
+BOOKING DOMAIN
+      │
+      └── BookingWidget
+             ├── inline landing sekcija
+             ├── modal
+             └── zasebna /termini strana
+```
+
+To **nisu tri booking feature-a** — to su tri površine istog booking proizvoda.
+Na strani i dalje postoji samo jedan `booking.services` blok. Modal nije druga
+landing sekcija nego interaktivna površina/launcher istog proizvoda, pa ovo ne
+krši pravilo „jedan koncept = jedan blok" (6.7).
+
+### Šta `appointmentSection.enabled` znači
+
+> **Da li želim vidljivu booking sekciju unutar landing strane?**
+
+Ne znači „da li booking uopšte postoji na ovom sajtu". Ta razlika je bitna:
+
+| `enabled` | Home strana | Hero CTA → modal | `/termini` |
+|---|---|---|---|
+| `false` | nema inline sekcije | radi | radi |
+| `true` | headline + subheadline + instructions + stalno vidljiv widget | radi | radi |
+
+Zatečeno stanje to već potvrđuje: **theme-8 nema `appointmentSection` u
+kompoziciji**, ali booking postoji — `Theme8ModalProvider` dobija salon +
+services i u modal ubacuje `Y2KBookingCard`, dok Hero CTA na hidratisanoj strani
+radi `preventDefault()` + `open("book")`. `href` ostaje progressive-enhancement
+fallback ka `/termini` ako JS ne radi. To je dobra osnova — samo je danas
+theme-8-specifično hardkodovana.
+
+### Posledica za theme-7 i theme-8
+
+theme-7 **nije** poseban booking domen; ima samo drugačiji placement:
+
+```
+theme-7   Hero ├── marketing sadržaj
+               └── booking.services (presentation: hero-column)
+
+theme-8   Hero └── CTA → booking modal
+```
+
+Provereno nad živom bazom (2026-08-17):
+
+| tenant | tema | `appointmentSection.enabled` |
+|---|---|---|
+| Kiki Kiss | theme-7 | `true` |
+| The Lash Room | theme-8 | `false` |
+
+Zato normalizacija theme-7 (`always` → normalno gejtovanje) **ne menja ništa
+vizuelno** — samo toggle konačno počinje da radi. Kod theme-8 nema šta da se
+menja: sekcija je već isključena, a booking i dalje radi kroz modal i `/termini`.
+
+### Sledeće (posle T2A, ne sada)
+
+Implicitno pravilo „primarni Hero CTA u theme-8 = uvek otvori booking modal" ne
+ostaje trajno. Umesto theme-8 booking flaga uvodi se generički CTA action
+kontrakt:
+
+```ts
+type CtaAction =
+  | { kind: "navigate"; href: string }
+  | { kind: "open-widget"; widget: "booking.services" | "booking.consultation" }
+  | { kind: "scroll-to-block"; blockId: string };
+```
+
+U Landing CMS-u to ostaje jednostavno za vlasnicu:
+
+```
+Sekcija za zakazivanje
+  [ ] Prikaži zakazivanje na početnoj strani
+      Naslov / Podnaslov / Uputstvo
+
+Akcija Hero dugmeta
+  ○ Otvori zakazivanje      ○ Idi na stranicu      ○ Idi do sekcije
+```
+
+Tema ograničava šta podržava. Opcija „otvori zakazivanje" se prikazuje **samo za
+theme-8** dok druge teme ne dobiju BookingWidget kao modal — inače bi vlasnica
+mogla da izabere ponašanje koje njena tema ne ume da prikaže.
+
+> **theme-8 je custom tema** za The Lash Room (Anja) i ne koristi se za druge
+> tenante. Fallback tekstovi i slike se zadržavaju. Moguće proširenje ako Anja
+> krene i sa edukacijom.
+
 ## 7. Redosled (T2A)
 
 1. ✅ `packages/theme-engine` — tipovi (`ThemeDocument`, `LayoutDefinition`) +
