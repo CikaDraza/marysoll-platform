@@ -10,9 +10,10 @@
  *     renderuju i prazne. To je zatečeno ponašanje, ne popravlja se u T2A.
  */
 
-import type { AboutTextLink, HeroImage, IService } from "@/types";
+import type { AboutTextLink, IService } from "@/types";
 import type { PublicTestimonial } from "@/types/public-testimonials";
 import { aboutStatsItems, type StatItem } from "../blocks/statsItems";
+import { galleryRender, type GalleryRender } from "../blocks/galleryRender";
 import type {
   ContentAboutData,
   ContentGalleryData,
@@ -95,50 +96,6 @@ export function theme2ServicesCatalogProps(
   };
 }
 
-type GalleryTreatments = NonNullable<ContentGalleryData["content"]>["treatments"];
-
-export type Theme2GalleryRender =
-  | { layout: "masonry"; props: { images?: HeroImage[]; headline?: string } }
-  | {
-      layout: "grid";
-      props: {
-        instagramUrl: string;
-        instagramTag: string;
-        headline?: string;
-        subheadline?: string;
-        treatments?: GalleryTreatments;
-        tenantSlug?: string;
-      };
-    };
-
-export function theme2GalleryRender(
-  data: ContentGalleryData,
-  tenantSlug?: string,
-): Theme2GalleryRender {
-  const { content, galleryVariant, instagramFallback } = data;
-
-  if (galleryVariant === "images-only") {
-    return {
-      layout: "masonry",
-      props: { images: content?.images, headline: content?.headline },
-    };
-  }
-
-  return {
-    layout: "grid",
-    props: {
-      instagramUrl: content?.instagram?.link || instagramFallback,
-      instagramTag: content?.instagram?.username || instagramFallback,
-      headline: content?.headline,
-      subheadline: content?.subheadline,
-      treatments:
-        content?.treatments && content.treatments.length > 0
-          ? content.treatments
-          : undefined,
-      tenantSlug,
-    },
-  };
-}
 
 export interface Theme2TestimonialsRender {
   variant: TestimonialsVariant;
@@ -157,4 +114,23 @@ export function theme2TestimonialsRender(
     variant: variant ?? "cards",
     props: { testimonials: data.testimonials, headline: "" },
   };
+}
+
+export type Theme2GalleryRender =
+  | Extract<GalleryRender, { layout: "masonry" }>
+  | {
+      layout: "showcase";
+      props: Extract<GalleryRender, { layout: "showcase" }>["props"] & {
+        tenantSlug?: string;
+      };
+    };
+
+export function theme2GalleryRender(
+  data: ContentGalleryData,
+  tenantSlug?: string,
+): Theme2GalleryRender {
+  const render = galleryRender(data);
+  return render.layout === "masonry"
+    ? render
+    : { ...render, props: { ...render.props, tenantSlug } };
 }

@@ -10,7 +10,8 @@
  * Funkcije ne znaju za React i ne čitaju ništa van podataka svog bloka.
  */
 
-import type { HeroImage, IService, SalonProfileData } from "@/types";
+import { galleryRender, type GalleryRender } from "../blocks/galleryRender";
+import type { IService, SalonProfileData } from "@/types";
 import type {
   BookingServicesData,
   ContentAboutData,
@@ -133,47 +134,6 @@ export function theme1TestimonialsProps(
   };
 }
 
-type GalleryTreatments = NonNullable<ContentGalleryData["content"]>["treatments"];
-
-export type Theme1GalleryRender =
-  | { layout: "masonry"; props: { images?: HeroImage[]; headline?: string } }
-  | {
-      layout: "zigzag";
-      props: {
-        instagramUrl: string;
-        instagramTag: string;
-        headline?: string;
-        subheadline?: string;
-        treatments?: GalleryTreatments;
-      };
-    };
-
-export function theme1GalleryRender(
-  data: ContentGalleryData,
-): Theme1GalleryRender {
-  const { content, galleryVariant, instagramFallback } = data;
-
-  if (galleryVariant === "images-only") {
-    return {
-      layout: "masonry",
-      props: { images: content?.images, headline: content?.headline },
-    };
-  }
-
-  return {
-    layout: "zigzag",
-    props: {
-      instagramUrl: content?.instagram?.link || instagramFallback,
-      instagramTag: content?.instagram?.username || instagramFallback,
-      headline: content?.headline,
-      subheadline: content?.subheadline,
-      treatments:
-        content?.treatments && content.treatments.length > 0
-          ? content.treatments
-          : undefined,
-    },
-  };
-}
 
 export interface Theme1FaqProps {
   headline?: string;
@@ -191,4 +151,10 @@ export function theme1FaqProps(data: ContentFaqData): Theme1FaqProps {
     supportText: data.content?.support?.text,
     supportEmail: data.content?.support?.email,
   };
+}
+
+export function theme1GalleryRender(
+  data: ContentGalleryData,
+): GalleryRender {
+  return galleryRender(data);
 }

@@ -46,6 +46,12 @@ export interface ContentAboutData {
    * Vidi ARCHITECTURAL_RULES.md §3.5.
    */
   stats: TenantStats | undefined;
+  /**
+   * Ručno upisane stavke iz CMS-a (`landing.stats`) — druga vrsta iste stvari:
+   * `stats` su izmerene metrike, ovo je ono što je vlasnik sam napisao. Theme-4
+   * pada na njih kada metrika nema; ostale teme ih danas ne koriste.
+   */
+  authoredStats: { value: string; label: string }[] | undefined;
 }
 
 export interface ContentTeamData {

@@ -13,6 +13,7 @@
 
 import type { AboutTextLink, HeroImage, IService } from "@/types";
 import { aboutStatsItems, type StatItem } from "../blocks/statsItems";
+import { galleryRender, type GalleryRender } from "../blocks/galleryRender";
 import type {
   ContentAboutData,
   ContentBlogData,
@@ -85,47 +86,6 @@ export function theme3ServicesCatalogProps(
   };
 }
 
-type GalleryTreatments = NonNullable<ContentGalleryData["content"]>["treatments"];
-
-export type Theme3GalleryRender =
-  | { layout: "masonry"; props: { images?: HeroImage[]; headline?: string } }
-  | {
-      layout: "zigzag";
-      props: {
-        instagramUrl: string;
-        instagramTag: string;
-        headline?: string;
-        subheadline?: string;
-        treatments?: GalleryTreatments;
-      };
-    };
-
-export function theme3GalleryRender(
-  data: ContentGalleryData,
-): Theme3GalleryRender {
-  const { content, galleryVariant, instagramFallback } = data;
-
-  if (galleryVariant === "images-only") {
-    return {
-      layout: "masonry",
-      props: { images: content?.images, headline: content?.headline },
-    };
-  }
-
-  return {
-    layout: "zigzag",
-    props: {
-      instagramUrl: content?.instagram?.link || instagramFallback,
-      instagramTag: content?.instagram?.username || instagramFallback,
-      headline: content?.headline,
-      subheadline: content?.subheadline,
-      treatments:
-        content?.treatments && content.treatments.length > 0
-          ? content.treatments
-          : undefined,
-    },
-  };
-}
 
 export interface Theme3FaqProps {
   items?: { question: string; answer: string }[];
@@ -158,4 +118,10 @@ export function theme3BlogProps(
     authorName: data.author.name,
     authorImage: data.author.image,
   };
+}
+
+export function theme3GalleryRender(
+  data: ContentGalleryData,
+): GalleryRender {
+  return galleryRender(data);
 }

@@ -77,7 +77,11 @@ const contentAbout: FeatureBlockDefinition<"content.about"> = {
       deps.landingStructure(),
       deps.tenantStats(),
     ]);
-    return { content: ls?.landing?.about, stats };
+    return {
+      content: ls?.landing?.about,
+      stats,
+      authoredStats: ls?.landing?.stats,
+    };
   },
 };
 
