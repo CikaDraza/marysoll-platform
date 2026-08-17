@@ -12,7 +12,7 @@
 
 import type { AboutTextLink, HeroImage, IService } from "@/types";
 import type { PublicTestimonial } from "@/types/public-testimonials";
-import { formatStatValue } from "@/lib/tenant/tenantStatsUtils";
+import { aboutStatsItems, type StatItem } from "../blocks/statsItems";
 import type {
   ContentAboutData,
   ContentGalleryData,
@@ -61,36 +61,16 @@ export interface Theme2AboutProps {
   text: string[] | string;
   links: AboutTextLink[];
   imageUrl: string;
-  stats?: { value: string; label: string }[];
+  stats?: StatItem[];
 }
 
 export function theme2AboutProps(data: ContentAboutData): Theme2AboutProps {
-  const stats = data.stats;
   return {
     title: data.content?.headline || "O nama",
     text: data.content?.paragraphs || "Saznajte više o nama",
     links: data.content?.links ?? [],
     imageUrl: THEME2_ABOUT_IMAGE_URL,
-    stats: stats
-      ? [
-          {
-            value: formatStatValue(stats.clientCount),
-            label: "Zadovoljnih klijenata",
-          },
-          {
-            value: formatStatValue(stats.completedAppointmentCount),
-            label: "Urađenih tretmana",
-          },
-          ...(data.content?.yearsOfExperience
-            ? [
-                {
-                  value: `${data.content.yearsOfExperience}+`,
-                  label: "Godina iskustva",
-                },
-              ]
-            : []),
-        ]
-      : undefined,
+    stats: aboutStatsItems(data.stats, data.content?.yearsOfExperience),
   };
 }
 

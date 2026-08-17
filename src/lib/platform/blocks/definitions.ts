@@ -167,8 +167,14 @@ const contentBlog: FeatureBlockDefinition<"content.blog"> = {
   capability: null,
   parseConfig: parseWith<"content.blog">(sourceSchema("blog")),
   async load({ deps }) {
-    const ls = await deps.landingStructure();
-    return { content: ls?.landing?.blog };
+    const [ls, salon] = await Promise.all([
+      deps.landingStructure(),
+      deps.salon(),
+    ]);
+    return {
+      content: ls?.landing?.blog,
+      author: { name: salon.name, image: salon.logo ?? undefined },
+    };
   },
 };
 

@@ -89,6 +89,11 @@ export interface ContentFaqData {
 
 export interface ContentBlogData {
   content: NonNullable<Landing["blog"]> | undefined;
+  /**
+   * Autor objava je salon (ime + logo). Blok ga traži sam iz deljenog izvora —
+   * ne pozajmljuje ga od hero ili about bloka (ARCHITECTURAL_RULES.md §3.5).
+   */
+  author: { name: string; image?: string };
 }
 
 export interface ContentPerksData {

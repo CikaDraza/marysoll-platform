@@ -156,7 +156,7 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
   },
   {
     theme: "theme-3",
-    visibility: "legacy-flags",
+    visibility: "theme-document",
     honoredFlags: [
       "heroEnabled",
       "aboutEnabled",

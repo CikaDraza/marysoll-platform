@@ -715,7 +715,10 @@ sistemu.
      testimonials idu kroz `<LegacyAlwaysThemeBlock>`, gallery/booking kroz
      `<ThemeBlock>`. Uveden model varijanti prikaza (6.7). Regresija prošla —
      `<body>` identičan, TTFB nepromenjen (6.8).
-   - ⏳ theme-3…theme-8 — i dalje `visibility: "legacy-flags"`.
+   - ✅ **Theme3** — najpravolinijskija: poštuje svih 8 svojih flagova, nema
+     nijednu bezuslovnu sekciju, pa nema compat putanje. Uveden `content.blog`
+     autor (ime + logo salona) i deljeni `aboutStatsItems`.
+   - ⏳ theme-4…theme-8 — i dalje `visibility: "legacy-flags"`.
 6. Tek kada prva tema prođe regresiju, `ThemeLandingProps` počinje da se svodi na:
    `document`, `brandingVars`, `resolveHref`, `reduceMotion`, `headerProps`,
    `footerProps`. **Nijedan stari flag se ne uklanja pre toga.**
