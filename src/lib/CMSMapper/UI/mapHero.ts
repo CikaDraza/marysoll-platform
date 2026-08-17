@@ -1,8 +1,17 @@
 import { LandingStructure, SalonProfileData } from "@/types";
 
-export function mapHero(ls: LandingStructure | undefined, profile: SalonProfileData, tenantSlug?: string) {
+/**
+ * Ulaz na nivou SEKCIJE — koriste ga Feature Block renderi, koji dobijaju samo
+ * svoj deo CMS-a, ne ceo `LandingStructure`. `mapHero` je tanak omotač nad ovim,
+ * pa zatečeni pozivaoci ostaju nepromenjeni.
+ */
+export function mapHeroSection(
+  section: LandingStructure["landing"]["hero"] | undefined,
+  profile: SalonProfileData,
+  tenantSlug?: string,
+) {
   const p = tenantSlug ? `/${tenantSlug}` : "";
-  const hero = ls?.landing?.hero ?? ({} as Partial<LandingStructure["landing"]["hero"]>);
+  const hero = section ?? ({} as Partial<LandingStructure["landing"]["hero"]>);
 
   return {
     headline: hero.headline ?? profile.name,
@@ -21,4 +30,12 @@ export function mapHero(ls: LandingStructure | undefined, profile: SalonProfileD
       location: hero.contact?.location || `${profile.city}, ${profile.street}`,
     },
   };
+}
+
+export function mapHero(
+  ls: LandingStructure | undefined,
+  profile: SalonProfileData,
+  tenantSlug?: string,
+) {
+  return mapHeroSection(ls?.landing?.hero, profile, tenantSlug);
 }

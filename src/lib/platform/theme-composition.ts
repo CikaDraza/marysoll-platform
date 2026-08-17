@@ -209,7 +209,7 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
   },
   {
     theme: "theme-5",
-    visibility: "legacy-flags",
+    visibility: "theme-document",
     // Najmanje CMS-gated tema: sve osim artists/testimonials je bezuslovno.
     honoredFlags: ["artistsEnabled", "testimonialsEnabled"],
     nodes: [

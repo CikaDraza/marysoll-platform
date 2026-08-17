@@ -23,9 +23,23 @@ function layoutSourceOf(theme: string): string {
   return readFileSync(path.join(LAYOUT_DIR, `Theme${n}Landing.tsx`), "utf8");
 }
 
-/** CMS flagovi koje fajl teme stvarno pominje. */
+/**
+ * Kod bez komentara. Migracija se OBJAŠNJAVA u komentarima („tema poštuje samo
+ * `artistsEnabled`…"), pa bi provera nad sirovim tekstom kažnjavala dokumentaciju
+ * umesto koda. Skidaju se blok komentari i linije koje počinju `//` ili `*` —
+ * `https://` u sredini linije ostaje netaknut.
+ */
+function codeOf(theme: string): string {
+  return layoutSourceOf(theme)
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .split("\n")
+    .filter((line) => !/^\s*(\/\/|\*)/.test(line))
+    .join("\n");
+}
+
+/** CMS flagovi koje fajl teme stvarno koristi (u kodu, ne u komentaru). */
 function flagsUsedBy(theme: string): Set<string> {
-  return new Set(layoutSourceOf(theme).match(/[a-zA-Z]+Enabled/g) ?? []);
+  return new Set(codeOf(theme).match(/[a-zA-Z]+Enabled/g) ?? []);
 }
 
 /**

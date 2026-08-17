@@ -1,11 +1,19 @@
 import { IService, LandingStructure } from "@/types";
 
-export function mapServices(ls: LandingStructure | undefined, services: IService[]) {
+/** Ulaz na nivou sekcije (vidi `mapHeroSection`). */
+export function mapServicesSection(
+  section: LandingStructure["landing"]["servicesPreview"] | undefined,
+  services: IService[],
+) {
   return {
     label: "Our Services",
-    headline: ls?.landing?.servicesPreview?.headline ?? "Makeup Packages",
-    subheadline: ls?.landing?.servicesPreview?.subheadline ?? "",
-    showIcons: ls?.landing?.servicesPreview?.showIcons ?? true,
+    headline: section?.headline ?? "Makeup Packages",
+    subheadline: section?.subheadline ?? "",
+    showIcons: section?.showIcons ?? true,
     services,
   };
+}
+
+export function mapServices(ls: LandingStructure | undefined, services: IService[]) {
+  return mapServicesSection(ls?.landing?.servicesPreview, services);
 }
