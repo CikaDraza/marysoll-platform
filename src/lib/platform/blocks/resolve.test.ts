@@ -22,6 +22,7 @@ import { resolveBlockData } from "./resolve";
 import { LEGACY_ALWAYS_ORIGIN, resolveThemeBlockData } from "./theme-render";
 import type {
   BookingServicesData,
+  ContentAboutData,
   ContentGalleryData,
   ContentHeroData,
   ContentTestimonialsData,
@@ -163,7 +164,22 @@ describe("legacy-always compat (inventar 6.1)", () => {
     );
   });
 
-  it("theme-2 dobija testimonials iako je enabled=false", async () => {
+  it("theme-2 dobija about iako je to sekcija koju CMS može da ugasi", async () => {
+    const document = landingStructureToThemeDocument(kiki, { theme: "theme-2" });
+    const data = await resolveThemeBlockData({
+      document,
+      theme: "theme-2",
+      deps: depsFor(kiki),
+    });
+
+    const block = data[sectionBlockId("about")];
+    expect(block).toBeDefined();
+    expect((block!.data as ContentAboutData).content).toEqual(kiki.landing.about);
+  });
+
+  it("theme-2 utisci VIŠE nisu compat — sekcija poštuje CMS toggle", async () => {
+    // Normalizacija po odluci vlasnika (spec 6.4): ranije se prazna sekcija
+    // prikazivala uprkos isključenom toggle-u.
     const document = landingStructureToThemeDocument(kiki, { theme: "theme-2" });
     const data = await resolveThemeBlockData({
       document,
@@ -172,11 +188,7 @@ describe("legacy-always compat (inventar 6.1)", () => {
     });
 
     expect(kiki.landing.testimonials.enabled).toBe(false);
-    const block = data[sectionBlockId("testimonials")];
-    expect(block?.origin).toBe(LEGACY_ALWAYS_ORIGIN);
-    expect((block!.data as ContentTestimonialsData).testimonials).toEqual(
-      TESTIMONIALS,
-    );
+    expect(data[sectionBlockId("testimonials")]).toBeUndefined();
   });
 
   it("theme-1/3/4/6/8 ne dobijaju nijedan compat blok", async () => {
@@ -218,9 +230,8 @@ describe("legacy-always compat (inventar 6.1)", () => {
 
 describe("bez waterfall-a (spec 5.2)", () => {
   it("resurs se povlači jednom, ma koliko blokova ga tražilo", async () => {
-    // theme-2 nad ovim tenantom traži sva četiri resursa: testimonials samo
-    // kroz compat blok (sekcija je `enabled: false`, a tema je renderuje uvek).
-    const [, ls] = tenants.find(([s]) => s === "kiki-kiss-beauty")!;
+    // Tenant sa uključenim utiscima, da svih pet resursa bude zatraženo.
+    const [, ls] = tenants.find(([s]) => s === "marysoll-makeup-nails")!;
     const landingStructure = vi.fn(async () => ls);
     const salon = vi.fn(async () => salonFor(ls));
     const services = vi.fn(async () => SERVICES);

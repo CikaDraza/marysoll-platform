@@ -4,8 +4,9 @@
  * Referentna istina je doslovna kopija JSX izraza iz `Theme2Landing` pre
  * migracije (commit 704d56f).
  *
- * Theme2 je prvi test compat sloja: hero/about/servicesPreview/testimonials su
- * bezuslovne sekcije, pa moraju imati podatke i kad je `enabled: false`.
+ * Theme2 je prvi test compat sloja: hero/about/servicesPreview su bezuslovne
+ * sekcije, pa moraju imati podatke i kad je `enabled: false`. Utisci su od
+ * T2A-FOLLOWUP normalizacije (spec 6.4) izuzeti — ta sekcija poštuje CMS toggle.
  */
 import { describe, expect, it } from "vitest";
 import type { IService, LandingStructure, SalonProfileData } from "@/types";
@@ -42,10 +43,15 @@ const tenants = Object.entries(
   fixtures as unknown as Record<string, LandingStructure>,
 );
 const SHISHAM = tenants.find(([s]) => s === "shisham-frizerski-salon")![1];
+/** Tenant sa UKLJUČENIM utiscima — posle normalizacije samo takav ima blok. */
+const WITH_TESTIMONIALS = tenants.find(([s]) => s === "marysoll-makeup-nails")![1];
 
 const TENANT_SLUG = "shisham-frizerski-salon";
 const SERVICES = [{ _id: "s1", name: "Šišanje" }] as unknown as IService[];
 const TESTIMONIALS: PublicTestimonial[] = [];
+const SOME_TESTIMONIALS: PublicTestimonial[] = [
+  { _id: "t1", clientName: "Ana", rating: 5, comment: "Odlično" },
+];
 const STATS: TenantStats = {
   clientCount: 137,
   appointmentCount: 480,
@@ -246,43 +252,56 @@ describe.each(tenants)("%s — propovi su identični starom putu", (slug, ls) =>
     }
   });
 
-  it("testimonials — jedan blok, produkcijska varijanta", async () => {
-    const { salon, data } = await blockDataFor(ls);
+  it("testimonials — jedan blok, produkcijska varijanta (kad je uključeno)", async () => {
+    const { salon, data } = await blockDataFor(ls, {
+      testimonials: SOME_TESTIMONIALS,
+    });
     const block = data[sectionBlockId("testimonials")];
+
+    // Posle normalizacije (spec 6.4) sekcija poštuje CMS toggle.
+    if (!block) {
+      expect(ls.landing.testimonials.enabled).toBe(false);
+      return;
+    }
+
     const render = theme2TestimonialsRender(
-      block!.data as ContentTestimonialsData,
-      (block!.config as TestimonialsBlockConfig).presentationVariant,
+      block.data as ContentTestimonialsData,
+      (block.config as TestimonialsBlockConfig).presentationVariant,
     );
     expect(render.variant).toBe("cards");
     expect(render.props).toEqual(
-      legacyProps(ls, salon, STATS, TESTIMONIALS).testimonials,
+      legacyProps(ls, salon, STATS, SOME_TESTIMONIALS).testimonials,
     );
   });
 });
 
-describe("compat: bezuslovne sekcije imaju podatke i kad su ugašene", () => {
-  it("Shi Sham ima testimonials.enabled=false, a blok ipak postoji", async () => {
-    expect(SHISHAM.landing.testimonials.enabled).toBe(false);
+describe("compat i normalizacija", () => {
+  it("tri bezuslovne sekcije su razrešene", async () => {
     const { data } = await blockDataFor(SHISHAM);
-    const block = data[sectionBlockId("testimonials")];
-    expect(block).toBeDefined();
-    expect(block!.origin).toBe(LEGACY_ALWAYS_ORIGIN);
-    expect(
-      (block!.config as TestimonialsBlockConfig).presentationVariant,
-    ).toBe("cards");
-  });
-
-  it("sve četiri bezuslovne sekcije su razrešene", async () => {
-    const { data } = await blockDataFor(SHISHAM);
-    for (const source of ["hero", "about", "servicesPreview", "testimonials"]) {
+    for (const source of ["hero", "about", "servicesPreview"]) {
       expect(data[sectionBlockId(source as never)], source).toBeDefined();
     }
+  });
+
+  it("bezuslovna sekcija nosi compat oznaku samo kad je CMS ugasio", async () => {
+    const { data } = await blockDataFor(SHISHAM);
+    // Kod ovog tenanta su hero/about/servicesPreview uključeni, pa dolaze
+    // normalnim putem — compat postoji, ali nije potreban.
+    expect(SHISHAM.landing.hero.enabled).toBe(true);
+    expect(data[sectionBlockId("hero")]!.origin).toBeUndefined();
+    expect(LEGACY_ALWAYS_ORIGIN).toBe("legacy-always");
+  });
+
+  it("utisci: Shi Sham ih je ugasio u CMS-u i sekcije više nema", async () => {
+    expect(SHISHAM.landing.testimonials.enabled).toBe(false);
+    const { data } = await blockDataFor(SHISHAM);
+    expect(data[sectionBlockId("testimonials")]).toBeUndefined();
   });
 });
 
 describe("varijanta prikaza", () => {
   it("bira drugi prikaz kad je config tako kaže", async () => {
-    const { data } = await blockDataFor(SHISHAM);
+    const { data } = await blockDataFor(WITH_TESTIMONIALS);
     const block = data[sectionBlockId("testimonials")];
     expect(
       theme2TestimonialsRender(
@@ -293,7 +312,7 @@ describe("varijanta prikaza", () => {
   });
 
   it("bez zadate varijante pada na produkcijsku (cards)", async () => {
-    const { data } = await blockDataFor(SHISHAM);
+    const { data } = await blockDataFor(WITH_TESTIMONIALS);
     const block = data[sectionBlockId("testimonials")];
     expect(
       theme2TestimonialsRender(block!.data as ContentTestimonialsData, undefined)
@@ -302,7 +321,7 @@ describe("varijanta prikaza", () => {
   });
 
   it("prazan spisak utisaka ide u prikaz nepromenjen (bez guarda)", async () => {
-    const { data } = await blockDataFor(SHISHAM, { testimonials: [] });
+    const { data } = await blockDataFor(WITH_TESTIMONIALS, { testimonials: [] });
     const block = data[sectionBlockId("testimonials")];
     const render = theme2TestimonialsRender(
       block!.data as ContentTestimonialsData,

@@ -366,6 +366,28 @@ generička migracija. Dva legitimna ishoda:
 Tek tada se brišu `legacy-always.ts`, `theme-render.ts` i
 `LegacyAlwaysThemeBlock`, a pozivi postaju obični `<ThemeBlock>`.
 
+#### Rešeni slučajevi
+
+| tenant | tema | sekcija | sačuvan `enabled` | pre | odluka | datum |
+|---|---|---|---|---|---|---|
+| Shi Sham | theme-2 | `testimonials` | `false` | prikazivala se prazna (samo naslov) | **poštuj flag** — sekcija nestaje | 2026-08-17 |
+
+Prvi slučaj je rešen ranije nego što je plan predviđao, jer ga je vlasnik sam
+prijavio: sekcija je u CMS-u isključena („Landing / Preporuke"), a na sajtu se
+ipak prikazivala — i to prazna, bez podataka i bez fallback-a. Odluka je da
+`enabled: false` bude ispoštovan, pa `testimonials` više nije bezuslovna sekcija
+theme-2 (`honoredFlags` dobija `testimonialsEnabled`, compat poziv postaje običan
+`<ThemeBlock>`).
+
+Uz to je `Theme2Testimonials` dobio guard za prazan spisak — sekcija koja je
+uključena, a nema nijedan utisak, više ne renderuje sam naslov. (Alternativa koja
+je razmatrana — prikaži tek ako ima više od 3 utiska — odbačena je jer bi bila
+nevidljivo pravilo koje vlasnik ne može ni da vidi ni da kontroliše, dok toggle
+sada radi.)
+
+Preostali `always` slučajevi za normalizaciju: theme-2 `hero`/`about`/
+`servicesPreview`, theme-5 (5 sekcija), theme-7 `appointmentSection`.
+
 ## 6.5 Theme-native podaci: zabrana pozajmljivanja iz bloka
 
 Prva migracija (Theme1) je namerno **dva sveta**, i to se vidi u kodu:
@@ -555,6 +577,34 @@ ništa u DOM-u, jer je kod ovog tenanta ionako renderovala `null`.
 
 TTFB, 40 naizmeničnih parova: median 117,5 → 118,2 ms; razlika po paru median
 +0,2 ms, sredina +0,4 ms, sd 13,0 ms — šum.
+
+> Merenje važi za stanje na dan migracije. Odmah posle njega je, po odluci
+> vlasnika, sekcija utisaka normalizovana (6.4) i boje zaključane (6.9), pa se
+> DOM Shi Sham-a **namerno** razlikuje od gornjeg snimka: sekcija manje (8 → 7).
+
+## 6.9 Zaključane boje u tamnim temama (otvoreno pitanje)
+
+Brend boje su per-tenant, a teme pretpostavljaju da su upotrebljive na svojoj
+pozadini. Ta pretpostavka ne važi: Shi Sham ima `primaryColor: #000000`, pa je na
+theme-2 (`bg-black`) svaki `text-(--primary-color)` bio nevidljiv.
+
+Zaključano do sada (theme-2 je tamna tema i klijent tu ne može pouzdano da uskladi
+boje):
+
+| mesto | bilo | sada | zašto |
+|---|---|---|---|
+| about eyebrow „O meni" | `--primary-color` | `text-yellow-400` | crno na crnom |
+| about statistika (brojevi) | `--primary-color` | `text-yellow-400` | crno na crnom |
+| booking koraci (ikonice) | `--primary-color` | `text-black` | pozadina sekcije je bela |
+
+Booking sekcija je deljena sa theme-1; oba današnja tenanta imaju
+`primaryColor: #000000`, pa je promena vizuelno neprimetna, a štiti od svetlog
+brend primary-ja.
+
+**Otvoreno:** treba definisati gde brend boje uopšte smeju da se koriste i na
+kojim temama — od „tema u potpunosti zaključava brend paletu" do „kontrast guard
+koji sam bira čitljivu varijantu". Ovo NIJE deo T2A; zapisano da se ad-hoc
+popravke ne pomešaju sa pravilom.
 
 ## 7. Redosled (T2A)
 

@@ -2,21 +2,21 @@
 /**
  * Theme2Landing — druga tema migrirana na Feature Block-ove (T2A, korak 5).
  *
- * Ovo je prvi stvarni test compat sloja: theme-2 renderuje četiri CMS sekcije
- * BEZ obzira na `enabled` flag (inventar 6.1), pa one idu kroz
+ * Ovo je prvi stvarni test compat sloja: theme-2 renderuje tri CMS sekcije BEZ
+ * obzira na `enabled` flag (inventar 6.1), pa one idu kroz
  * `<LegacyAlwaysThemeBlock>` — isti registry, isti loader, isti renderer,
  * zaobiđena samo provera postojanja bloka u dokumentu.
  *
- *   hero / about / servicesPreview / testimonials → LegacyAlwaysThemeBlock ⚠️
- *   gallery / appointmentSection                  → ThemeBlock
- *   WhyChooseUs / pricing / CTA                   → theme-2 native
+ *   hero / about / servicesPreview               → LegacyAlwaysThemeBlock ⚠️
+ *   gallery / appointmentSection / testimonials  → ThemeBlock
+ *   WhyChooseUs / pricing / CTA                  → theme-2 native
  *
- * PROMENA KOJU TREBA ZNATI: stari kod je renderovao DVA prikaza utisaka —
- * `Theme2Testimonials` (bez guarda za prazno) i, posle CTA sekcije,
- * `Theme2TestimonialsSection` (sa guardom). Sada je to jedan blok
- * `content.testimonials` sa varijantom prikaza; produkcioni prikaz (`cards`)
- * je zadržan. Drugi prikaz ostaje dostupan kao varijanta istog bloka, ne kao
- * druga sekcija — jedan koncept, jedan blok.
+ * UTISCI: stari kod je renderovao DVA prikaza (`Theme2Testimonials` bez guarda i,
+ * posle CTA sekcije, `Theme2TestimonialsSection` sa guardom), oba bezuslovno.
+ * Sada je to jedan blok `content.testimonials` sa varijantom prikaza (`cards`),
+ * i sekcija POŠTUJE CMS toggle — prva T2A-FOLLOWUP normalizacija, po odluci
+ * vlasnika (spec 6.4). Ranije se sekcija prikazivala prazna iako je u CMS-u
+ * isključena.
  */
 import { useMemo } from "react";
 import {
@@ -86,11 +86,7 @@ export function Theme2Landing(props: ThemeLandingProps) {
           <ThemeBlock document={document} type="booking.services" />
           <Theme2WhyChooseUs />
           <Theme2PricingSection services={services} tenantSlug={tenantSlug} />
-          <LegacyAlwaysThemeBlock
-            theme="theme-2"
-            source="testimonials"
-            type="content.testimonials"
-          />
+          <ThemeBlock document={document} type="content.testimonials" />
           <Theme2CTAAppointmentSection
             salonName={salon.name}
             tenantSlug={tenantSlug}

@@ -155,13 +155,17 @@ describe.each(THEME_COMPOSITIONS)("$theme", (composition) => {
 });
 
 describe("nalazi koji menjaju plan migracije", () => {
-  it("Theme2 renderuje hero/about/services/testimonials bez obzira na CMS", () => {
+  it("Theme2 renderuje hero/about/services bez obzira na CMS", () => {
     expect(unconditionalCmsBlocks("theme-2").sort()).toEqual([
       "about",
       "hero",
       "servicesPreview",
-      "testimonials",
     ]);
+  });
+
+  it("Theme2 utisci VIŠE nisu bezuslovni (normalizacija, spec 6.4)", () => {
+    expect(unconditionalCmsBlocks("theme-2")).not.toContain("testimonials");
+    expect(compositionFor("theme-2")!.honoredFlags).toContain("testimonialsEnabled");
   });
 
   it("Theme5 je najmanje CMS-gated tema", () => {

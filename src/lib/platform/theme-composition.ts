@@ -130,8 +130,10 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
   {
     theme: "theme-2",
     visibility: "theme-document",
-    // Tema ignoriše hero/about/services/testimonials/faq flagove — renderuje ih uvek.
-    honoredFlags: ["appointmentEnabled", "galleryEnabled"],
+    // Tema ignoriše hero/about/services flagove — renderuje ih uvek.
+    // `testimonialsEnabled` se POŠTUJE od T2A-FOLLOWUP normalizacije (spec 6.4):
+    // vlasnik je sekciju ugasio u CMS-u, a ona se svejedno prikazivala prazna.
+    honoredFlags: ["appointmentEnabled", "galleryEnabled", "testimonialsEnabled"],
     nodes: [
       shell("theme-2/header"),
       cms("hero", "content.hero", "always"),
@@ -141,9 +143,13 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
       cms("appointmentSection", "booking.services", "appointmentEnabled"),
       native("theme-2/why-choose-us"),
       native("theme-2/pricing"),
-      // Ranije dva odvojena prikaza (drugi je imao guard za prazan spisak, pa se
-      // kod tenanta bez utisaka nije ni video). Sada jedan blok + varijanta.
-      cms("testimonials", "content.testimonials", "always (varijanta prikaza: cards)"),
+      // Ranije dva odvojena prikaza, oba bezuslovna. Sada jedan blok + varijanta,
+      // i sekcija poštuje CMS toggle (normalizacija, spec 6.4).
+      cms(
+        "testimonials",
+        "content.testimonials",
+        "testimonialsEnabled (varijanta prikaza: cards)",
+      ),
       native("theme-2/cta-appointment"),
       shell("theme-2/footer"),
     ],

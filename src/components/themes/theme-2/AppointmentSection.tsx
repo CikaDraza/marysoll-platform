@@ -75,7 +75,9 @@ export function Theme2AppointmentSection({
                       {instruction.Icon && (
                         <instruction.Icon
                           aria-hidden="true"
-                          className="absolute top-1 left-1 size-5 text-(--primary-color)"
+                          // Zaključano na crno — pozadina sekcije je bela.
+                          // Isto kao u theme-1 verziji (ovo je njen duplikat).
+                          className="absolute top-1 left-1 size-5 text-black"
                         />
                       )}
                       {instruction.name}

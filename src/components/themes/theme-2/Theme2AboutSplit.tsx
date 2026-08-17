@@ -39,7 +39,10 @@ export function Theme2AboutSplit({ title, text, links = [], imageUrl, stats }: P
       {/* TEXT */}
       <div className="lg:order-1 relative w-full lg:w-3/5 min-h-[60vh] lg:h-auto overflow-hidden flex items-center justify-center px-6 py-12 lg:py-0">
         <div className="px-6 py-8 max-w-4xl">
-          <p className="text-(--primary-color) uppercase tracking-[0.3em] text-xs mb-4">
+          {/* Zaključana žuta — theme-2 je tamna tema i brend boje se na njoj ne
+              mogu pouzdano uskladiti (primary sme biti i crn). Ista žuta kao
+              eyebrow u WhatOffer i akcenti u Footer-u. */}
+          <p className="text-yellow-400 uppercase tracking-[0.3em] text-xs mb-4">
             O meni
           </p>
 
@@ -61,10 +64,9 @@ export function Theme2AboutSplit({ title, text, links = [], imageUrl, stats }: P
             <div className="flex gap-10 mt-8">
               {stats.map((s, i) => (
                 <div key={i}>
-                  {/* Ista boja kao H2 iznad (nasleđeni text-white sa sekcije):
-                      brend primary sme biti i crn (#000000), pa je broj na
-                      bg-black bio nevidljiv. */}
-                  <div className="text-2xl font-bold text-white">{s.value}</div>
+                  {/* Zaključana žuta, isto kao eyebrow: brend primary sme biti
+                      crn (#000000), pa je broj na bg-black bio nevidljiv. */}
+                  <div className="text-2xl font-bold text-yellow-400">{s.value}</div>
                   <div className="text-sm text-gray-400 mt-1">{s.label}</div>
                 </div>
               ))}
