@@ -721,7 +721,12 @@ sistemu.
    - ✅ **Theme4** — 6 CMS sekcija, bez compat-a. Otkriven trostruki fallback
      statistike (metrike → CMS `landing.stats` → fiksne vrednosti teme), pa
      `content.about` dobija `authoredStats`.
-   - ⏳ theme-5…theme-8 — i dalje `visibility: "legacy-flags"`.
+   - ✅ **Theme6** — 6 CMS sekcija. Jedini izuzetak u platformi: theme-native
+     `instagram-strip` je uslovljen CMS flagom (`galleryEnabled`) i prikazuje CMS
+     sadržaj, pa theme-6 i posle migracije koristi jedan stari flag. Guard u
+     testu je izoštren umesto popušten: migrirana tema sme flag SAMO tamo gde
+     inventar beleži uslovljen native element.
+   - ⏳ theme-5, theme-7, theme-8 — i dalje `visibility: "legacy-flags"`.
 6. Tek kada prva tema prođe regresiju, `ThemeLandingProps` počinje da se svodi na:
    `document`, `brandingVars`, `resolveHref`, `reduceMotion`, `headerProps`,
    `footerProps`. **Nijedan stari flag se ne uklanja pre toga.**

@@ -96,8 +96,25 @@ describe.each(THEME_COMPOSITIONS)("$theme", (composition) => {
   // u dokumentu, pa se inventar proverava protiv `<ThemeBlock type="…">` poziva.
   // Ovo hvata baš ono što vizuelna regresija teško vidi: izostavljenu ili
   // premeštenu sekciju.
-  it.runIf(!legacy)("ne koristi nijedan stari CMS flag", () => {
-    expect([...flagsUsedBy(composition.theme)]).toEqual([]);
+  /**
+   * Migrirana tema vidljivost CMS sekcija čita iz dokumenta, pa stari flag sme
+   * da preživi SAMO tamo gde inventar beleži theme-native element uslovljen tim
+   * flagom (danas: `theme-6/instagram-strip`). Nije popuštanje pravila — spisak
+   * je izveden iz inventara, pa nov flag u temi obara test.
+   */
+  it.runIf(!legacy)("stari CMS flag koristi samo tamo gde inventar to beleži", () => {
+    const allowed = new Set(
+      composition.nodes
+        .filter((n) => n.kind === "theme-native" && n.conditional)
+        .flatMap((n) =>
+          ALL_FLAGS.filter((f) =>
+            (n as { conditional: string }).conditional.includes(f),
+          ),
+        ),
+    );
+    expect([...flagsUsedBy(composition.theme)].sort()).toEqual(
+      [...allowed].sort(),
+    );
   });
 
   it.runIf(!legacy)("renderuje tačno CMS blokove iz inventara, istim redom", () => {

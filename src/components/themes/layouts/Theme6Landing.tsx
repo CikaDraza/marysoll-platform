@@ -1,186 +1,129 @@
 "use client";
 /**
- * Theme6Landing — landing blok teme theme-6, izdvojen iz ThemeLayout (Faza 4).
- * ThemeLayout ga učitava kroz next/dynamic pa tenant dobija SAMO chunk
- * svoje teme (ranije su sve teme išle u svaki landing bundle).
+ * Theme6Landing — šesta tema migrirana na Feature Block-ove (T2A, korak 5).
+ *
+ *   hero / about / servicesPreview / testimonials / artists / gallery
+ *                                          → ThemeBlock
+ *   featureCards / pricing / promoBanner /
+ *   instagramStrip / newsletter            → theme-6 native (stari propovi)
+ *
+ * IZUZETAK KOJI TREBA ZNATI: `Theme6InstagramStrip` je u inventaru theme-native,
+ * ali je jedini native element u celoj platformi koji je uslovljen CMS flagom
+ * (`galleryEnabled`) i prikazuje CMS sadržaj (instagram + slike galerije). Zato
+ * theme-6 i posle migracije koristi jedan stari flag.
+ *
+ * Nije pretvoren u drugu `content.gallery` sekciju jer bi to bio drugi blok iste
+ * semantike — što je zabranjeno (spec 6.7). Prava odluka („da li je traka druga
+ * prezentacija galerije ili zaseban koncept") ostavljena je svesno otvorenom;
+ * theme-6 nema nijednog tenanta, pa je nema ko ni dokazati.
  */
+import { useMemo } from "react";
 import {
-  Theme6AboutEditorial,
   Theme6FeatureCards,
   Theme6Footer,
   Theme6Header,
-  Theme6Hero,
   Theme6InstagramStrip,
   Theme6Newsletter,
-  Theme6PortfolioGallery,
   Theme6PricingSection,
   Theme6PromoBanner,
-  Theme6ServicesGrid,
-  Theme6TeamSection,
-  Theme6Testimonials,
 } from "../theme-6";
-import {
-  formatStatValue,
-} from "@/lib/tenant/tenantStatsUtils";
+import { THEME6_BLOCK_RENDERERS } from "../theme-6/blocks";
+import { ThemeBlock } from "../blocks/ThemeBlock";
+import { ThemeBlockScope } from "../blocks/ThemeBlockScope";
 import type { ThemeLandingProps } from "./types";
 
 export function Theme6Landing(props: ThemeLandingProps) {
   const {
-    aboutEnabled,
-    artistsEnabled,
+    blockData,
     brandingVars,
+    clientSlug,
+    document,
     galleryEnabled,
     googleFontHref,
-    heroEnabled,
     instagram,
     ls,
     resolveHref,
     resolvedCta,
     salon,
     services,
-    servicesPreviewEnabled,
     tenantSlug,
-    tenantStats,
-    testimonials,
-    testimonialsEnabled,
   } = props;
 
-  const galleryImages = (ls?.landing?.gallery?.images ?? []).map((img) => ({
-    src: img.src,
-    title: img.alt,
-  }));
+  const routing = useMemo(
+    () => ({ tenantSlug, clientSlug, resolveHref }),
+    [tenantSlug, clientSlug, resolveHref],
+  );
+
   const instagramImages = (ls?.landing?.gallery?.images ?? [])
     .slice(0, 6)
     .map((img) => ({ src: img.src }));
 
   return (
-    <div className="min-h-screen flex flex-col" style={brandingVars}>
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="stylesheet" href={googleFontHref} />
-      <Theme6Header
-        salonName={salon.name}
-        logo={salon.logo ?? undefined}
-        homeHref={resolveHref("/")}
-        navigation={[
-          { label: "Naslovna", href: resolveHref("/") },
-          { label: "Usluge", href: resolveHref("/usluge") },
-          { label: "Blog", href: resolveHref("/blogs") },
-          { label: "Termini", href: resolveHref("/termini") },
-        ]}
-        cta={{ label: "Zakaži", href: resolvedCta.primary.href }}
-      />
-      <main className="flex-1 flex flex-col overflow-x-hidden">
-        {heroEnabled && (
-          <Theme6Hero
-            salonName={salon.name}
-            salonDescription={salon.description}
-            headline={ls?.landing?.hero?.headline}
-            subheadline={ls?.landing?.hero?.subheadline}
-            imageUrl={ls?.landing?.hero?.image?.src}
+    <ThemeBlockScope
+      theme="theme-6"
+      data={blockData}
+      renderers={THEME6_BLOCK_RENDERERS}
+      routing={routing}
+    >
+      <div className="min-h-screen flex flex-col" style={brandingVars}>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="stylesheet" href={googleFontHref} />
+        <Theme6Header
+          salonName={salon.name}
+          logo={salon.logo ?? undefined}
+          homeHref={resolveHref("/")}
+          navigation={[
+            { label: "Naslovna", href: resolveHref("/") },
+            { label: "Usluge", href: resolveHref("/usluge") },
+            { label: "Blog", href: resolveHref("/blogs") },
+            { label: "Termini", href: resolveHref("/termini") },
+          ]}
+          cta={{ label: "Zakaži", href: resolvedCta.primary.href }}
+        />
+        <main className="flex-1 flex flex-col overflow-x-hidden">
+          <ThemeBlock document={document} type="content.hero" />
+          <ThemeBlock document={document} type="content.about" />
+
+          <Theme6FeatureCards />
+
+          <ThemeBlock document={document} type="services.catalog" />
+
+          <Theme6PricingSection
+            services={services}
+            tenantSlug={tenantSlug}
+            headline={ls?.landing?.servicesPreview?.headline}
+          />
+
+          <ThemeBlock document={document} type="content.testimonials" />
+          <ThemeBlock document={document} type="content.team" />
+          <ThemeBlock document={document} type="content.gallery" />
+
+          <Theme6PromoBanner
             cta={{
               label: resolvedCta.primary.text || "Zakaži",
               href: resolvedCta.primary.href,
             }}
           />
-        )}
-        {aboutEnabled && (
-          <Theme6AboutEditorial
-            headline={ls?.landing?.about?.headline}
-            paragraphs={
-              Array.isArray(ls?.landing?.about?.paragraphs)
-                ? ls.landing.about.paragraphs
-                : undefined
-            }
-            links={ls?.landing?.about?.links ?? []}
-            stats={
-              tenantStats
-                ? [
-                    {
-                      value: formatStatValue(tenantStats.clientCount),
-                      label: "Zadovoljnih klijenata",
-                    },
-                    {
-                      value: formatStatValue(
-                        tenantStats.completedAppointmentCount,
-                      ),
-                      label: "Urađenih tretmana",
-                    },
-                    ...(ls?.landing?.about?.yearsOfExperience
-                      ? [
-                          {
-                            value: `${ls.landing.about.yearsOfExperience}+`,
-                            label: "Godina iskustva",
-                          },
-                        ]
-                      : []),
-                  ]
-                : undefined
-            }
-          />
-        )}
-        <Theme6FeatureCards />
-        {servicesPreviewEnabled && services.length > 0 && (
-          <Theme6ServicesGrid
-            services={services}
-            headline={ls?.landing?.servicesPreview?.headline}
-            subheadline={ls?.landing?.servicesPreview?.subheadline}
-            tenantSlug={tenantSlug}
-          />
-        )}
-        <Theme6PricingSection
-          services={services}
-          tenantSlug={tenantSlug}
-          headline={ls?.landing?.servicesPreview?.headline}
-        />
-        {testimonialsEnabled && testimonials.length > 0 && (
-          <Theme6Testimonials
-            testimonials={testimonials.map((t) => ({
-              name: t.clientName,
-              text: t.comment,
-            }))}
-          />
-        )}
-        {artistsEnabled && (
-          <Theme6TeamSection
-            headline={ls?.landing?.artists?.headline}
-            members={ls?.landing?.artists?.members?.map((m) => ({
-              name: m.name,
-              role: m.role,
-              image: m.image?.src,
-            }))}
-          />
-        )}
-        {galleryEnabled && galleryImages.length > 0 && (
-          <Theme6PortfolioGallery
-            headline={ls?.landing?.gallery?.headline}
-            subheadline={ls?.landing?.gallery?.subheadline}
-            images={galleryImages}
-          />
-        )}
-        <Theme6PromoBanner
-          cta={{
-            label: resolvedCta.primary.text || "Zakaži",
-            href: resolvedCta.primary.href,
-          }}
-        />
-        {galleryEnabled && (
-          <Theme6InstagramStrip
-            instagramUrl={ls?.landing?.gallery?.instagram?.link || instagram}
-            instagramTag={ls?.landing?.gallery?.instagram?.username}
-            images={instagramImages.length > 0 ? instagramImages : undefined}
-          />
-        )}
-        <Theme6Newsletter />
-      </main>
-      <Theme6Footer
-        salonName={salon.name}
-        phone={salon.phone}
-        email={salon.email}
-        instagram={salon.social?.instagram}
-        facebook={salon.social?.facebook}
-        tenantSlug={tenantSlug}
-      />
-    </div>
-  );
 
+          {galleryEnabled && (
+            <Theme6InstagramStrip
+              instagramUrl={ls?.landing?.gallery?.instagram?.link || instagram}
+              instagramTag={ls?.landing?.gallery?.instagram?.username}
+              images={instagramImages.length > 0 ? instagramImages : undefined}
+            />
+          )}
+
+          <Theme6Newsletter />
+        </main>
+        <Theme6Footer
+          salonName={salon.name}
+          phone={salon.phone}
+          email={salon.email}
+          instagram={salon.social?.instagram}
+          facebook={salon.social?.facebook}
+          tenantSlug={tenantSlug}
+        />
+      </div>
+    </ThemeBlockScope>
+  );
 }
