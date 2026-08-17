@@ -257,7 +257,7 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
   },
   {
     theme: "theme-7",
-    visibility: "legacy-flags",
+    visibility: "theme-document",
     // Booking je unutar hero sekcije (bookingSlot), pa appointmentEnabled nema efekta.
     honoredFlags: [
       "heroEnabled",

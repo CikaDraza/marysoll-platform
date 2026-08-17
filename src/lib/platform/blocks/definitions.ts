@@ -60,10 +60,22 @@ const contentHero: FeatureBlockDefinition<"content.hero"> = {
   capability: null,
   parseConfig: parseWith<"content.hero">(heroConfigSchema),
   async load({ deps }) {
-    const [ls, salon] = await Promise.all([deps.landingStructure(), deps.salon()]);
+    const [ls, salon, stats] = await Promise.all([
+      deps.landingStructure(),
+      deps.salon(),
+      deps.tenantStats(),
+    ]);
     // Isti merge koristi i zatečeni put za nemigrirane teme (`helpers/heroSocial`).
     const social = mergeHeroSocial(salon.social, ls?.landing?.hero?.socialLinks);
-    return { content: ls?.landing?.hero, salon: { ...salon, social } };
+    return {
+      content: ls?.landing?.hero,
+      salon: { ...salon, social },
+      stats,
+      experience: {
+        yearsOfExperience: ls?.landing?.about?.yearsOfExperience,
+        openingYear: ls?.landing?.about?.openingYear,
+      },
+    };
   },
 };
 
@@ -73,14 +85,16 @@ const contentAbout: FeatureBlockDefinition<"content.about"> = {
   capability: null,
   parseConfig: parseWith<"content.about">(sourceSchema("about")),
   async load({ deps }) {
-    const [ls, stats] = await Promise.all([
+    const [ls, stats, salon] = await Promise.all([
       deps.landingStructure(),
       deps.tenantStats(),
+      deps.salon(),
     ]);
     return {
       content: ls?.landing?.about,
       stats,
       authoredStats: ls?.landing?.stats,
+      salonName: salon.name,
     };
   },
 };

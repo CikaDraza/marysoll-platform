@@ -14,7 +14,7 @@
  * remount bloka (izgubljeno stanje, ponovljene animacije, skok LCP-a).
  */
 
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import type {
   BlockConfigByType,
   BlockDataByType,
@@ -26,6 +26,13 @@ export interface BlockRenderProps<K extends FeatureBlockType> {
   config: BlockConfigByType[K];
   blockId: string;
   theme: string;
+  /**
+   * Blokovi koje je KOMPOZICIJA smestila unutar ovog bloka (theme-7 drži
+   * `booking.services` u hero slotu). Renderer ih samo ubacuje na svoje mesto —
+   * ne zna šta su ni odakle im podaci, pa ovo NIJE pozajmljivanje tuđih podataka
+   * nego slot, isti pojam koji `LayoutDefinition` već koristi.
+   */
+  slots?: Record<string, ReactNode>;
 }
 
 export type ThemeBlockRenderers = {

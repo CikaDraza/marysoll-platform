@@ -23,6 +23,7 @@
  * registry-ja ili loadera.
  */
 
+import type { ReactNode } from "react";
 import type { FeatureBlockType } from "@/lib/platform/blocks/types";
 import { renderBlockLookup } from "./renderLookup";
 import { lookupLegacyAlwaysBlock } from "./selection";
@@ -36,12 +37,14 @@ export interface LegacyAlwaysThemeBlockProps<
   /** CMS sekcija iz inventara, npr. "appointmentSection". */
   source: string;
   type: K;
+  slots?: Record<string, ReactNode>;
 }
 
 export function LegacyAlwaysThemeBlock<K extends FeatureBlockType>({
   theme,
   source,
   type,
+  slots,
 }: LegacyAlwaysThemeBlockProps<K>) {
   const scope = useThemeBlockScope();
   if (!scope) return null;
@@ -58,5 +61,6 @@ export function LegacyAlwaysThemeBlock<K extends FeatureBlockType>({
       data: scope.data,
     }),
     type,
+    slots,
   );
 }

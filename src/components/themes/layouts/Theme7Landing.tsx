@@ -1,45 +1,49 @@
 "use client";
 /**
- * Theme7Landing — landing blok teme theme-7, izdvojen iz ThemeLayout (Faza 4).
- * ThemeLayout ga učitava kroz next/dynamic pa tenant dobija SAMO chunk
- * svoje teme (ranije su sve teme išle u svaki landing bundle).
+ * Theme7Landing — sedma tema migrirana na Feature Block-ove (T2A, korak 5).
+ *
+ *   hero / about / servicesPreview / gallery / testimonials / faq → ThemeBlock
+ *   appointmentSection → LegacyAlwaysThemeBlock ⚠️, ali kao SLOT unutar hero-a
+ *   socialProof → theme-7 native (stari propovi)
+ *
+ * BOOKING JE SLOT, NE SEKCIJA (spec 6.10). Zato je `appointmentSection` u
+ * inventaru „always": renderuje se kad god se renderuje hero, bez obzira na
+ * `appointmentEnabled`. Kompozicija pravi element i predaje ga hero bloku; ako
+ * je hero isključen, nestaje i booking — tačno kao danas.
+ *
+ * Živi tenant (Kiki Kiss) ima `appointmentSection.enabled = true`, pa će buduća
+ * normalizacija biti vizuelno neutralna — samo će toggle početi da radi.
  */
+import { useMemo } from "react";
 import {
-  Theme7AboutUs,
-  Theme7BookingCard,
-  Theme7FAQSection,
   Theme7Footer,
-  Theme7GallerySection,
   Theme7Header,
-  Theme7Hero,
-  Theme7Services,
   Theme7SocialProof,
-  Theme7TestimonialsSection,
 } from "../theme-7";
-import {
-  shouldShowWorkingHours,
-} from "@/helpers/workingHoursDisplay";
+import { THEME7_BLOCK_RENDERERS } from "../theme-7/blocks";
+import { LegacyAlwaysThemeBlock } from "../blocks/LegacyAlwaysThemeBlock";
+import { ThemeBlock } from "../blocks/ThemeBlock";
+import { ThemeBlockScope } from "../blocks/ThemeBlockScope";
+import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
 import type { ThemeLandingProps } from "./types";
 
 export function Theme7Landing(props: ThemeLandingProps) {
   const {
-    aboutEnabled,
+    blockData,
     clientSlug,
-    faqEnabled,
-    galleryEnabled,
+    document,
     headerProps,
-    heroEnabled,
     instagram,
     ls,
-    resolvedCta,
+    resolveHref,
     salon,
-    services,
-    servicesPreviewEnabled,
     tenantSlug,
-    tenantStats,
-    testimonials,
-    testimonialsEnabled,
   } = props;
+
+  const routing = useMemo(
+    () => ({ tenantSlug, clientSlug, resolveHref }),
+    [tenantSlug, clientSlug, resolveHref],
+  );
 
   // Fixed Lash Room palette — ignores tenant branding. --primary-color is forced
   // to neon so the reused HomepageAppointmentWidget recolors to match the theme.
@@ -53,93 +57,52 @@ export function Theme7Landing(props: ThemeLandingProps) {
   // Lash Room display + UI fonts (variable href matches the per-theme font-load pattern)
   const lashFontHref =
     "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Jost:wght@300;400;500;600&display=swap";
-  const aboutImage = ls?.landing?.about?.image?.src
-    ? {
-        src: ls.landing.about.image.src,
-        alt: ls.landing.about.image.alt ?? "",
-      }
-    : undefined;
 
   return (
-    <div
-      className="min-h-screen flex flex-col bg-paper text-ink font-jost"
-      style={lashVars}
+    <ThemeBlockScope
+      theme="theme-7"
+      data={blockData}
+      renderers={THEME7_BLOCK_RENDERERS}
+      routing={routing}
     >
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="stylesheet" href={lashFontHref} />
-      <Theme7Header {...headerProps} />
-      <main className="flex-1 overflow-x-hidden flex flex-col">
-        {heroEnabled && (
-          <Theme7Hero
-            heroData={{
-              headline: ls?.landing?.hero?.headline,
-              subheadline: ls?.landing?.hero?.subheadline,
+      <div
+        className="min-h-screen flex flex-col bg-paper text-ink font-jost"
+        style={lashVars}
+      >
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="stylesheet" href={lashFontHref} />
+        <Theme7Header {...headerProps} />
+        <main className="flex-1 overflow-x-hidden flex flex-col">
+          <ThemeBlock
+            document={document}
+            type="content.hero"
+            slots={{
+              booking: (
+                <LegacyAlwaysThemeBlock
+                  theme="theme-7"
+                  source="appointmentSection"
+                  type="booking.services"
+                />
+              ),
             }}
-            cta={resolvedCta}
-            tenantStats={tenantStats}
-            yearsOfExperience={ls?.landing?.about?.yearsOfExperience}
-            openingYear={ls?.landing?.about?.openingYear}
-            bookingSlot={
-              <Theme7BookingCard
-                tenantSlug={tenantSlug}
-                clientSlug={clientSlug ?? tenantSlug}
-                salon={salon}
-                services={services}
-              />
-            }
           />
-        )}
-        {aboutEnabled && (
-          <Theme7AboutUs
-            about={{
-              headline: ls?.landing?.about?.headline,
-              paragraphs: ls?.landing?.about?.paragraphs ?? [],
-              links: ls?.landing?.about?.links ?? [],
-              image: aboutImage,
-            }}
-            founderName={salon.name}
-          />
-        )}
-        <Theme7SocialProof instagramUrl={igLink} instagramHandle={igHandle} />
-        {servicesPreviewEnabled && services.length > 0 && (
-          <Theme7Services
-            services={services}
-            tenantSlug={tenantSlug}
-            headline={ls?.landing?.servicesPreview?.headline}
-            subheadline={ls?.landing?.servicesPreview?.subheadline}
-          />
-        )}
-        {galleryEnabled && (
-          <Theme7GallerySection
-            treatments={ls?.landing?.gallery?.treatments}
-            headline={ls?.landing?.gallery?.headline}
-            tenantSlug={tenantSlug}
-          />
-        )}
-        {testimonialsEnabled && (
-          <Theme7TestimonialsSection
-            testimonials={testimonials.length > 0 ? testimonials : undefined}
-            headline={ls?.landing?.testimonials?.headline}
-          />
-        )}
-        {faqEnabled && (
-          <Theme7FAQSection
-            items={ls?.landing?.faq?.items}
-            headline={ls?.landing?.faq?.headline}
-            supportText={ls?.landing?.faq?.support?.text}
-          />
-        )}
-      </main>
-      <Theme7Footer
-        salonName={salon.name}
-        logo={salon.logo ?? undefined}
-        instagramUrl={igLink}
-        instagramHandle={igHandle}
-        email={salon.contactEmail || salon.email}
-        workingHours={salon.workingHours}
-        showWorkingHours={shouldShowWorkingHours(salon)}
-      />
-    </div>
+          <ThemeBlock document={document} type="content.about" />
+          <Theme7SocialProof instagramUrl={igLink} instagramHandle={igHandle} />
+          <ThemeBlock document={document} type="services.catalog" />
+          <ThemeBlock document={document} type="content.gallery" />
+          <ThemeBlock document={document} type="content.testimonials" />
+          <ThemeBlock document={document} type="content.faq" />
+        </main>
+        <Theme7Footer
+          salonName={salon.name}
+          logo={salon.logo ?? undefined}
+          instagramUrl={igLink}
+          instagramHandle={igHandle}
+          email={salon.contactEmail || salon.email}
+          workingHours={salon.workingHours}
+          showWorkingHours={shouldShowWorkingHours(salon)}
+        />
+      </div>
+    </ThemeBlockScope>
   );
-
 }

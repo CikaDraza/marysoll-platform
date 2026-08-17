@@ -35,6 +35,14 @@ export interface ContentHeroData {
    * podatak hero bloka, a ne teme.
    */
   salon: SalonProfileData;
+  /**
+   * Metrike i staž koje NEKE teme prikazuju u hero-u („godine rada", broj
+   * klijenata). Hero ih traži sam iz istog deljenog izvora kao about blok —
+   * nema zavisnosti između blokova (ARCHITECTURAL_RULES.md §3.5). Staž se danas
+   * čuva u `about` CMS sekciji; to je mesto skladištenja, ne vlasništvo.
+   */
+  stats: TenantStats | undefined;
+  experience: { yearsOfExperience?: number; openingYear?: number };
 }
 
 export interface ContentAboutData {
@@ -52,6 +60,11 @@ export interface ContentAboutData {
    * pada na njih kada metrika nema; ostale teme ih danas ne koriste.
    */
   authoredStats: { value: string; label: string }[] | undefined;
+  /**
+   * Ime salona/brenda — neke teme ga u about sekciji prikazuju kao potpis
+   * osnivačice. Blok ga traži sam, ne pozajmljuje od hero bloka (§3.5).
+   */
+  salonName: string;
 }
 
 export interface ContentTeamData {

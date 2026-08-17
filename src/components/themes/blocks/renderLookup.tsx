@@ -9,7 +9,7 @@
  * ovako je strukturna.
  */
 
-import { createElement, type ReactElement } from "react";
+import { createElement, type ReactElement, type ReactNode } from "react";
 import type { FeatureBlockType } from "@/lib/platform/blocks/types";
 import { rendererFor } from "./renderers";
 import type { BlockLookup } from "./selection";
@@ -19,6 +19,7 @@ export function renderBlockLookup<K extends FeatureBlockType>(
   scope: ThemeBlockScopeValue,
   lookup: BlockLookup,
   type: K,
+  slots?: Record<string, ReactNode>,
 ): ReactElement | null {
   if (lookup.status === "absent") return null;
   if (lookup.status === "skip") {
@@ -46,5 +47,6 @@ export function renderBlockLookup<K extends FeatureBlockType>(
     config: resolved.config as never,
     blockId: resolved.id,
     theme: scope.theme,
+    ...(slots ? { slots } : {}),
   });
 }
