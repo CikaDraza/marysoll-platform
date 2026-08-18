@@ -264,7 +264,10 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
       cms("artists", "content.team", "artistsEnabled"),
       cms("gallery", "content.gallery", "galleryEnabled && galleryImages.length > 0"),
       native("theme-6/promo-banner"),
-      native("theme-6/instagram-strip", "galleryEnabled"),
+      // Vidljivost se izvodi u aplikacijskom sloju (theme-6 native view model),
+      // pa tema više ne vidi nijedan CMS flag. Semantički je i dalje vezana za
+      // vidljivost galerije — zato `galleryEnabled` ostaje u honoredFlags.
+      native("theme-6/instagram-strip", "vidljivost iz native view modela"),
       native("theme-6/newsletter"),
       shell("theme-6/footer"),
     ],

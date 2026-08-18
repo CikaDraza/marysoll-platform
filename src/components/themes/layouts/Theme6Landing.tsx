@@ -5,17 +5,15 @@
  *   hero / about / servicesPreview / testimonials / artists / gallery
  *                                          → ThemeBlock
  *   featureCards / pricing / promoBanner /
- *   instagramStrip / newsletter            → theme-6 native (stari propovi)
+ *   instagramStrip / newsletter            → theme-6 native
  *
- * IZUZETAK KOJI TREBA ZNATI: `Theme6InstagramStrip` je u inventaru theme-native,
- * ali je jedini native element u celoj platformi koji je uslovljen CMS flagom
- * (`galleryEnabled`) i prikazuje CMS sadržaj (instagram + slike galerije). Zato
- * theme-6 i posle migracije koristi jedan stari flag.
+ * `Theme6InstagramStrip` je bio jedini native element u platformi uslovljen CMS
+ * toggle-om i sa CMS sadržajem. Sada mu aplikacijski sloj izračuna view model
+ * (`theme-6/nativeData.ts`) — vidljivost, link i slike — pa tema ne vidi ni
+ * toggle ni `landingStructure`.
  *
  * Nije pretvoren u drugu `content.gallery` sekciju jer bi to bio drugi blok iste
- * semantike — što je zabranjeno (spec 6.7). Prava odluka („da li je traka druga
- * prezentacija galerije ili zaseban koncept") ostavljena je svesno otvorenom;
- * theme-6 nema nijednog tenanta, pa je nema ko ni dokazati.
+ * semantike, što je zabranjeno (spec 6.7).
  */
 import { useMemo } from "react";
 import {
@@ -38,25 +36,21 @@ export function Theme6Landing(props: ThemeLandingProps) {
     brandingVars,
     clientSlug,
     document,
-    galleryEnabled,
     googleFontHref,
-    instagram,
-    ls,
     resolveHref,
     resolvedCta,
     salon,
     services,
     tenantSlug,
+    themeNative,
   } = props;
+
+  const native = themeNative["theme-6"];
 
   const routing = useMemo(
     () => ({ tenantSlug, clientSlug, resolveHref }),
     [tenantSlug, clientSlug, resolveHref],
   );
-
-  const instagramImages = (ls?.landing?.gallery?.images ?? [])
-    .slice(0, 6)
-    .map((img) => ({ src: img.src }));
 
   return (
     <ThemeBlockScope
@@ -91,7 +85,7 @@ export function Theme6Landing(props: ThemeLandingProps) {
           <Theme6PricingSection
             services={services}
             tenantSlug={tenantSlug}
-            headline={ls?.landing?.servicesPreview?.headline}
+            headline={native?.pricingHeadline}
           />
 
           <ThemeBlock document={document} type="content.testimonials" />
@@ -105,11 +99,11 @@ export function Theme6Landing(props: ThemeLandingProps) {
             }}
           />
 
-          {galleryEnabled && (
+          {native?.instagramStrip.visible && (
             <Theme6InstagramStrip
-              instagramUrl={ls?.landing?.gallery?.instagram?.link || instagram}
-              instagramTag={ls?.landing?.gallery?.instagram?.username}
-              images={instagramImages.length > 0 ? instagramImages : undefined}
+              instagramUrl={native.instagramStrip.instagramUrl}
+              instagramTag={native.instagramStrip.instagramTag}
+              images={native.instagramStrip.images}
             />
           )}
 

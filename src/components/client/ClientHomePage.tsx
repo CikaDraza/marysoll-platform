@@ -25,6 +25,7 @@ import type {
   ManualSlotsMap,
 } from "@/types";
 import { landingStructureToThemeDocument } from "@/lib/platform/theme-client";
+import { buildThemeNative } from "@/lib/platform/theme-native";
 import {
   preloadedBlockDataSource,
   resolveBlockData,
@@ -295,6 +296,10 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     }),
   });
 
+  // Native delovi teme dobijaju svoj view model — bez domenskih tipova i bez
+  // CMS flagova u zajedničkom kontraktu.
+  const themeNative = buildThemeNative(landingTheme, salonData);
+
   return (
     <ThemeLayout
       theme={landingTheme}
@@ -303,6 +308,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
       testimonials={testimonialList}
       document={themeDocument}
       blockData={blockData}
+      themeNative={themeNative}
       tenantSlug={themeSlug}
       clientSlug={tenantSlug || undefined}
       tenantStats={tenantStats}

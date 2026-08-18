@@ -15,6 +15,7 @@ import dynamic from "next/dynamic";
 import { useCallback, type ComponentType } from "react";
 import type { ThemeDocument } from "@panta/theme-engine";
 import type { ResolvedBlockMap } from "@/lib/platform/blocks/render-types";
+import type { ThemeNativeData } from "@/lib/platform/theme-native";
 import { resolveHeroCtas } from "@/helpers/heroCta";
 import { mergeHeroSocial } from "@/helpers/heroSocial";
 import type { LandingTheme } from "@/types";
@@ -44,6 +45,7 @@ interface ThemeLayoutProps {
    */
   document: ThemeDocument;
   blockData: ResolvedBlockMap;
+  themeNative: ThemeNativeData;
   /**
    * tenantSlug — controls URL prefix in nav links.
    * undefined on custom domain (so nav links are root-relative: /login, /usluge).
@@ -69,6 +71,7 @@ export function ThemeLayout({
   testimonials,
   document,
   blockData,
+  themeNative,
   tenantSlug,
   clientSlug,
   tenantStats,
@@ -174,6 +177,7 @@ export function ThemeLayout({
     testimonials,
     document,
     blockData,
+    themeNative,
     tenantSlug,
     clientSlug,
     tenantStats,

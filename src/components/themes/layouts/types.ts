@@ -10,6 +10,7 @@ import type { IService, SalonProfileData } from "@/types";
 import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import type { PublicTestimonial } from "@/types/public-testimonials";
 import type { ResolvedBlockMap } from "@/lib/platform/blocks/render-types";
+import type { ThemeNativeData } from "@/lib/platform/theme-native";
 import type { ResolvedHeroCta } from "@/helpers/heroCta";
 
 export type Testimonial = PublicTestimonial;
@@ -54,8 +55,13 @@ export interface ThemeLandingProps {
    * flag se ne uklanja dok sve teme ne pređu (spec 7, korak 6).
    */
   document: ThemeDocument;
-  /** Podaci blokova iz jednog server prolaza (`resolveThemeBlockData`). */
+  /** Podaci blokova iz jednog server prolaza (`resolveBlockData`). */
   blockData: ResolvedBlockMap;
+  /**
+   * View modeli theme-native delova, po temi. Native element više ne dobija
+   * domenske tipove ni CMS flagove — dobija tačno ono što prikazuje.
+   */
+  themeNative: ThemeNativeData;
 
   // Izvedeno u ThemeLayout-u
   /**
