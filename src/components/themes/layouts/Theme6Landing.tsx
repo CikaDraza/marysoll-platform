@@ -38,14 +38,11 @@ export function Theme6Landing(props: ThemeLandingProps) {
     document,
     googleFontHref,
     resolveHref,
-    resolvedCta,
-    salon,
-    services,
     tenantSlug,
     themeNative,
   } = props;
 
-  const native = themeNative["theme-6"];
+  const native = themeNative["theme-6"]!;
 
   const routing = useMemo(
     () => ({ tenantSlug, clientSlug, resolveHref }),
@@ -62,18 +59,7 @@ export function Theme6Landing(props: ThemeLandingProps) {
       <div className="min-h-screen flex flex-col" style={brandingVars}>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="stylesheet" href={googleFontHref} />
-        <Theme6Header
-          salonName={salon.name}
-          logo={salon.logo ?? undefined}
-          homeHref={resolveHref("/")}
-          navigation={[
-            { label: "Naslovna", href: resolveHref("/") },
-            { label: "Usluge", href: resolveHref("/usluge") },
-            { label: "Blog", href: resolveHref("/blogs") },
-            { label: "Termini", href: resolveHref("/termini") },
-          ]}
-          cta={{ label: "Zakaži", href: resolvedCta.primary.href }}
-        />
+        <Theme6Header {...native.header} />
         <main className="flex-1 flex flex-col overflow-x-hidden">
           <ThemeBlock document={document} type="content.hero" />
           <ThemeBlock document={document} type="content.about" />
@@ -82,24 +68,15 @@ export function Theme6Landing(props: ThemeLandingProps) {
 
           <ThemeBlock document={document} type="services.catalog" />
 
-          <Theme6PricingSection
-            services={services}
-            tenantSlug={tenantSlug}
-            headline={native?.pricingHeadline}
-          />
+          <Theme6PricingSection {...native.pricing} />
 
           <ThemeBlock document={document} type="content.testimonials" />
           <ThemeBlock document={document} type="content.team" />
           <ThemeBlock document={document} type="content.gallery" />
 
-          <Theme6PromoBanner
-            cta={{
-              label: resolvedCta.primary.text || "Zakaži",
-              href: resolvedCta.primary.href,
-            }}
-          />
+          <Theme6PromoBanner {...native.promoBanner} />
 
-          {native?.instagramStrip.visible && (
+          {native.instagramStrip.visible && (
             <Theme6InstagramStrip
               instagramUrl={native.instagramStrip.instagramUrl}
               instagramTag={native.instagramStrip.instagramTag}
@@ -109,14 +86,7 @@ export function Theme6Landing(props: ThemeLandingProps) {
 
           <Theme6Newsletter />
         </main>
-        <Theme6Footer
-          salonName={salon.name}
-          phone={salon.phone}
-          email={salon.email}
-          instagram={salon.social?.instagram}
-          facebook={salon.social?.facebook}
-          tenantSlug={tenantSlug}
-        />
+        <Theme6Footer {...native.footer} />
       </div>
     </ThemeBlockScope>
   );

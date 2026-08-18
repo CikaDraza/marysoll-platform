@@ -40,13 +40,12 @@ export function Theme1Landing(props: ThemeLandingProps) {
     footerProps,
     googleFontHref,
     headerProps,
-    ls,
     resolveHref,
-    salon,
-    services,
     tenantSlug,
-    tenantStats,
+    themeNative,
   } = props;
+
+  const native = themeNative["theme-1"]!;
 
   const routing = useMemo(
     () => ({ tenantSlug, clientSlug, resolveHref }),
@@ -67,21 +66,15 @@ export function Theme1Landing(props: ThemeLandingProps) {
         <main className="flex-1 overflow-x-hidden flex flex-col pt-20">
           <ThemeBlock document={document} type="content.hero" />
           <ThemeBlock document={document} type="content.about" />
-          <Theme1SocialProof
-            tenantStats={tenantStats}
-            yearsOfExperience={ls?.landing?.about?.yearsOfExperience}
-          />
+          <Theme1SocialProof {...native.socialProof} />
           <ThemeBlock document={document} type="services.catalog" />
           <ThemeBlock document={document} type="booking.services" />
           <ThemeBlock document={document} type="content.testimonials" />
           <ThemeBlock document={document} type="content.gallery" />
-          <Theme1PricingSection services={services} tenantSlug={tenantSlug} />
+          <Theme1PricingSection {...native.pricing} />
           <ThemeBlock document={document} type="content.faq" />
           <Theme1ImageGenerationSection />
-          <Theme1CTABookingSection
-            salonName={salon.name}
-            tenantSlug={tenantSlug}
-          />
+          <Theme1CTABookingSection {...native.ctaBooking} />
         </main>
         <Theme1Footer {...footerProps} />
       </div>

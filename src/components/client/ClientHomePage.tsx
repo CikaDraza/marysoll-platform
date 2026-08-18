@@ -25,7 +25,10 @@ import type {
   ManualSlotsMap,
 } from "@/types";
 import { landingStructureToThemeDocument } from "@/lib/platform/theme-client";
-import { buildThemeNative } from "@/lib/platform/theme-native";
+import {
+  buildThemeBranding,
+  buildThemeNative,
+} from "@/lib/platform/theme-native";
 import {
   preloadedBlockDataSource,
   resolveBlockData,
@@ -298,21 +301,57 @@ export async function ClientHomePage({ tenantSlug }: Props) {
 
   // Native delovi teme dobijaju svoj view model — bez domenskih tipova i bez
   // CMS flagova u zajedničkom kontraktu.
-  const themeNative = buildThemeNative(landingTheme, salonData);
+  const themeNative = buildThemeNative(landingTheme, {
+    salon: salonData,
+    services: serviceList,
+    testimonials: testimonialList,
+    tenantStats,
+    tenantSlug: themeSlug,
+    clientSlug: tenantSlug || undefined,
+    showTheme8TestimonialFixtures,
+  });
+
+  // Shell (header/footer) i dizajn tokeni se takođe računaju ovde — tema ih
+  // dobija gotove, pa `ThemeLayout` ostaje čist dispečer.
+  const branding = buildThemeBranding(salonData);
+  const galleryEnabled =
+    salonData.landingStructure?.landing?.gallery?.enabled ?? true;
+
+  const headerProps = {
+    tenantSlug: themeSlug,
+    clientSlug: tenantSlug || themeSlug,
+    salonName: salonData.name,
+    salonLogo: salonData.logo ?? null,
+    instagramUrl: galleryEnabled
+      ? salonData.social?.instagram || ""
+      : undefined,
+    primaryColor: salonData.branding?.primaryColor || "#a855f7",
+    secondaryColor: salonData.branding?.secondaryColor || "#ec4899",
+  };
+
+  const footerProps = {
+    tenantSlug: themeSlug,
+    salonName: salonData.name,
+    description: salonData.description ?? undefined,
+    logo: salonData.logo ?? undefined,
+    city: salonData.city ?? undefined,
+    instagram: salonData.social?.instagram,
+    facebook: salonData.social?.facebook,
+    tiktok: salonData.social?.tiktok,
+  };
 
   return (
     <ThemeLayout
       theme={landingTheme}
-      salon={salonData}
-      services={serviceList}
-      testimonials={testimonialList}
       document={themeDocument}
       blockData={blockData}
       themeNative={themeNative}
+      brandingVars={branding.brandingVars}
+      googleFontHref={branding.googleFontHref}
+      headerProps={headerProps}
+      footerProps={footerProps}
       tenantSlug={themeSlug}
       clientSlug={tenantSlug || undefined}
-      tenantStats={tenantStats}
-      showTheme8TestimonialFixtures={showTheme8TestimonialFixtures}
       reduceMotion={reduceMotion}
     />
   );

@@ -36,10 +36,11 @@ export function Theme3Landing(props: ThemeLandingProps) {
     googleFontHref,
     headerProps,
     resolveHref,
-    salon,
-    services,
     tenantSlug,
+    themeNative,
   } = props;
+
+  const native = themeNative["theme-3"]!;
 
   const routing = useMemo(
     () => ({ tenantSlug, clientSlug, resolveHref }),
@@ -69,26 +70,17 @@ export function Theme3Landing(props: ThemeLandingProps) {
           <ThemeBlock document={document} type="content.testimonials" />
           <ThemeBlock document={document} type="content.gallery" />
 
-          <Theme3PricingSoft
-            services={services}
-            tenantSlug={tenantSlug}
-            headline="Cenovnik"
-          />
+          <Theme3PricingSoft {...native.pricing} />
 
           <ThemeBlock document={document} type="booking.services" />
           <ThemeBlock document={document} type="content.faq" />
           <ThemeBlock document={document} type="content.blog" />
 
-          <Theme3CTA tenantSlug={tenantSlug} />
+          <Theme3CTA {...native.cta} />
           <NewsletterSection />
         </main>
 
-        <Theme3Footer
-          {...footerProps}
-          salonName={salon.name}
-          salonDescription={salon.description}
-          salonCity={salon.city}
-        />
+        <Theme3Footer {...footerProps} {...native.footer} />
       </div>
     </ThemeBlockScope>
   );

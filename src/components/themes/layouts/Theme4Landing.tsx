@@ -20,7 +20,6 @@ import {
 import { THEME4_BLOCK_RENDERERS } from "../theme-4/blocks";
 import { ThemeBlock } from "../blocks/ThemeBlock";
 import { ThemeBlockScope } from "../blocks/ThemeBlockScope";
-import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
 import type { ThemeLandingProps } from "./types";
 
 export function Theme4Landing(props: ThemeLandingProps) {
@@ -33,11 +32,11 @@ export function Theme4Landing(props: ThemeLandingProps) {
     googleFontHref,
     headerProps,
     resolveHref,
-    resolvedCta,
-    salon,
-    salonWithMergedSocial,
     tenantSlug,
+    themeNative,
   } = props;
+
+  const native = themeNative["theme-4"]!;
 
   const routing = useMemo(
     () => ({ tenantSlug, clientSlug, resolveHref }),
@@ -55,20 +54,15 @@ export function Theme4Landing(props: ThemeLandingProps) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="stylesheet" href={googleFontHref} />
 
-        <Theme4Header
-          {...headerProps}
-          cta={resolvedCta.secondary}
-          salon={salonWithMergedSocial}
-          salonPhone={salon.phone}
-        />
+        <Theme4Header {...headerProps} {...native.header} />
 
         <main className="flex-1 flex flex-col overflow-x-hidden">
           <ThemeBlock document={document} type="content.hero" />
           <ThemeBlock document={document} type="content.about" />
           <ThemeBlock document={document} type="services.catalog" />
 
-          {salon?.workingHours && shouldShowWorkingHours(salon) && (
-            <Theme4WorkingHours workingHours={salon.workingHours} />
+          {native.workingHours && (
+            <Theme4WorkingHours workingHours={native.workingHours} />
           )}
 
           <Theme4CTA
@@ -86,7 +80,7 @@ export function Theme4Landing(props: ThemeLandingProps) {
           <ThemeBlock document={document} type="content.faq" />
         </main>
 
-        <Theme4Footer {...footerProps} salon={salon} />
+        <Theme4Footer {...footerProps} {...native.footer} />
       </div>
     </ThemeBlockScope>
   );

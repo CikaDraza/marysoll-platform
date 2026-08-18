@@ -1,27 +1,32 @@
 "use client";
 /**
- * ThemeLayout — dispečer landing tema (Faza 4 refaktor).
+ * ThemeLayout — dispečer landing tema.
  *
- * Ranije: 1100+ linija sa svih 8 tema statički importovano → svaki tenant
- * landing je slao klijentu kod SVIH tema (~344 kB chunk). Sada svaka tema
- * živi u src/components/themes/layouts/ThemeNLanding.tsx i učitava se kroz
- * next/dynamic — tenant dobija samo chunk svoje teme (SSR ostaje uključen).
+ * Svaka tema živi u `layouts/ThemeNLanding.tsx` i učitava se kroz next/dynamic,
+ * pa tenant dobija samo chunk svoje teme (SSR ostaje uključen).
  *
- * Sve izvedene vrednosti (CMS flagovi, branding, hrefovi) se i dalje računaju
- * ovde JEDNOM i prosleđuju kao ThemeLandingProps.
+ * T2A, korak 6: ovde se VIŠE NE računa ništa poslovno. Ranije su se ovde izvodili
+ * svih deset CMS flagova, varijanta galerije, merge social linkova i hero CTA —
+ * i sve to prosleđivalo svakoj temi. Sada to radi server (`ClientHomePage`), kroz
+ * `document`/`blockData` i per-theme view modele.
+ *
+ * Jedino što ostaje ovde je `resolveHref`: funkcija se ne može serijalizovati iz
+ * server komponente, pa se pravi na klijentu — istim helperom koji server koristi
+ * pri gradnji native view modela.
  */
 
 import dynamic from "next/dynamic";
-import { useCallback, type ComponentType } from "react";
+import { useMemo, type ComponentType } from "react";
 import type { ThemeDocument } from "@panta/theme-engine";
 import type { ResolvedBlockMap } from "@/lib/platform/blocks/render-types";
 import type { ThemeNativeData } from "@/lib/platform/theme-native";
-import { resolveHeroCtas } from "@/helpers/heroCta";
-import { mergeHeroSocial } from "@/helpers/heroSocial";
+import { makeResolveHref } from "@/helpers/tenantHref";
 import type { LandingTheme } from "@/types";
-import type { IService, SalonProfileData } from "@/types";
-import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
-import type { Testimonial, ThemeLandingProps } from "./layouts/types";
+import type {
+  ThemeFooterShared,
+  ThemeHeaderShared,
+  ThemeLandingProps,
+} from "./layouts/types";
 
 const THEME_LANDINGS: Record<LandingTheme, ComponentType<ThemeLandingProps>> = {
   "theme-1": dynamic(() => import("./layouts/Theme1Landing").then((m) => m.Theme1Landing)),
@@ -36,176 +41,47 @@ const THEME_LANDINGS: Record<LandingTheme, ComponentType<ThemeLandingProps>> = {
 
 interface ThemeLayoutProps {
   theme: LandingTheme;
-  salon: SalonProfileData;
-  services: IService[];
-  testimonials: Testimonial[];
-  /**
-   * Raspored CMS blokova i njihovi podaci — oboje se računa na serveru
-   * (`ClientHomePage`), pa migrirana tema ne fetch-uje ništa sa klijenta.
-   */
   document: ThemeDocument;
   blockData: ResolvedBlockMap;
   themeNative: ThemeNativeData;
-  /**
-   * tenantSlug — controls URL prefix in nav links.
-   * undefined on custom domain (so nav links are root-relative: /login, /usluge).
-   * "/kiki-makeup" on path-based routing.
-   */
+  brandingVars: React.CSSProperties;
+  googleFontHref: string;
+  headerProps: ThemeHeaderShared;
+  footerProps: ThemeFooterShared;
   tenantSlug?: string;
-  /**
-   * clientSlug — always the real DB slug, used for LoggedButton panel links.
-   * On custom domain tenantSlug is undefined but clientSlug is still "kiki-makeup"
-   * so LoggedButton can build correct /kiki-makeup/panel links (middleware rewrites these).
-   */
   clientSlug?: string;
-  tenantStats?: TenantStats;
-  showTheme8TestimonialFixtures?: boolean;
-  /** iOS "safe" render (vidi ThemeLandingProps.reduceMotion) — iz ClientHomePage po UA. */
   reduceMotion?: boolean;
 }
 
 export function ThemeLayout({
   theme,
-  salon,
-  services,
-  testimonials,
   document,
   blockData,
   themeNative,
+  brandingVars,
+  googleFontHref,
+  headerProps,
+  footerProps,
   tenantSlug,
   clientSlug,
-  tenantStats,
-  showTheme8TestimonialFixtures,
   reduceMotion,
 }: ThemeLayoutProps) {
-  const instagram = salon.social?.instagram || "";
-  const ls = salon.landingStructure;
-
-  // ── Resolve internal hrefs: prefix with tenantSlug, pass external URLs through ──
-  // useCallback: identitet ulazi u ThemeBlockScope routing kod migriranih tema.
-  const resolveHref = useCallback(
-    (href: string) => {
-      if (!href) return "#";
-      if (/^https?:\/\//.test(href)) return href;
-      const prefix = tenantSlug ? `/${tenantSlug}` : "";
-      return href.startsWith("/") ? `${prefix}${href}` : `${prefix}/${href}`;
-    },
-    [tenantSlug],
-  );
-
-  // ── Merge CMS hero social links over salon.social (CMS wins if non-empty) ──
-  // Isti helper koristi i hero blok migrirane teme — jedna definicija merge-a.
-  const salonWithMergedSocial = {
-    ...salon,
-    social: mergeHeroSocial(salon.social, ls?.landing?.hero?.socialLinks),
-  };
-
-  // ── CMS section enabled flags (default true if not set) ────────────────
-  const heroEnabled = ls?.landing?.hero?.enabled ?? true;
-  const aboutEnabled = ls?.landing?.about?.enabled ?? true;
-  const servicesPreviewEnabled = ls?.landing?.servicesPreview?.enabled ?? true;
-  const appointmentEnabled = ls?.landing?.appointmentSection?.enabled ?? true;
-  const testimonialsEnabled = ls?.landing?.testimonials?.enabled ?? true;
-  const artistsEnabled = ls?.landing?.artists?.enabled ?? true;
-  const galleryEnabled = ls?.landing?.gallery?.enabled ?? true;
-  const faqEnabled = ls?.landing?.faq?.enabled ?? true;
-  const blogEnabled = ls?.landing?.blog?.enabled ?? false;
-  const perksEnabled = ls?.landing?.perks?.enabled ?? false;
-
-  // ── Effective gallery variant (CMS override > theme default) ────────────
-  const THEME_GALLERY_DEFAULTS: Record<
-    string,
-    "images-only" | "images-with-category"
-  > = {
-    "theme-1": "images-with-category",
-    "theme-2": "images-with-category",
-    "theme-3": "images-only",
-    "theme-4": "images-only",
-    "theme-5": "images-only",
-    "theme-6": "images-only",
-    "theme-7": "images-with-category",
-    "theme-8": "images-with-category",
-  };
-  const effectiveGalleryVariant: "images-only" | "images-with-category" =
-    ls?.landing?.gallery?.galleryVariant ??
-    THEME_GALLERY_DEFAULTS[theme] ??
-    "images-only";
-
-  const footerProps = {
-    tenantSlug,
-    salonName: salon.name,
-    description: salon.description ?? undefined,
-    logo: salon.logo ?? undefined,
-    city: salon.city ?? undefined,
-    instagram: salon.social?.instagram,
-    facebook: salon.social?.facebook,
-    tiktok: salon.social?.tiktok,
-  };
-
-  // ── Per-tenant branding: CSS vars injected on the theme root ─────────────
-  // Overrides the global :root vars so all bg-(--primary-color) / text-(--secondary-color)
-  // classes in the theme pick up this tenant's palette automatically.
-  const primaryColor = salon.branding?.primaryColor || "#a855f7";
-  const secondaryColor = salon.branding?.secondaryColor || "#ec4899";
-
-  const headerProps = {
-    tenantSlug,
-    clientSlug: clientSlug ?? tenantSlug,
-    salonName: salon.name,
-    salonLogo: salon.logo ?? null,
-    instagramUrl: galleryEnabled ? instagram : undefined,
-    primaryColor,
-    secondaryColor,
-  };
-  const fontFamily = salon.branding?.fontFamily || "Inter";
-  const brandingVars = {
-    "--primary-color": primaryColor,
-    "--secondary-color": secondaryColor,
-    "--main-font": `'${fontFamily}', sans-serif`,
-    fontFamily: `'${fontFamily}', sans-serif`,
-  } as React.CSSProperties;
-  // Google Fonts import URL for the tenant's chosen font
-  const googleFontHref = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontFamily)}:wght@300;400;500;600;700;800&display=swap`;
-
-  // ── Hero CTA with resolved hrefs ────────────────────────────────────────
-  // Isti helper koristi i renderer migrirane teme — jedna definicija defaulta.
-  const resolvedCta = resolveHeroCtas(ls?.landing?.hero?.ctas, resolveHref);
+  // useMemo: identitet ulazi u ThemeBlockScope routing, pa bi nova funkcija po
+  // renderu nepotrebno osvežavala kontekst.
+  const resolveHref = useMemo(() => makeResolveHref(tenantSlug), [tenantSlug]);
 
   const landingProps: ThemeLandingProps = {
-    salon,
-    services,
-    testimonials,
     document,
     blockData,
     themeNative,
     tenantSlug,
     clientSlug,
-    tenantStats,
-    showTheme8TestimonialFixtures,
-    reduceMotion,
-    instagram,
-    ls,
     resolveHref,
-    salonWithMergedSocial,
-    heroEnabled,
-    aboutEnabled,
-    servicesPreviewEnabled,
-    appointmentEnabled,
-    testimonialsEnabled,
-    artistsEnabled,
-    galleryEnabled,
-    faqEnabled,
-    blogEnabled,
-    perksEnabled,
-    effectiveGalleryVariant,
-    footerProps,
-    headerProps,
-    primaryColor,
-    secondaryColor,
-    fontFamily,
     brandingVars,
     googleFontHref,
-    resolvedCta,
+    headerProps,
+    footerProps,
+    reduceMotion,
   };
 
   const Landing = THEME_LANDINGS[theme];

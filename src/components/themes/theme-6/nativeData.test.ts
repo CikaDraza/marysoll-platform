@@ -6,7 +6,8 @@
  * bez renderovanja.
  */
 import { describe, expect, it } from "vitest";
-import type { LandingStructure } from "@/types";
+import type { LandingStructure, SalonProfileData } from "@/types";
+import { makeResolveHref } from "@/helpers/tenantHref";
 import fixtures from "@/lib/platform/__fixtures__/landing-structures.json";
 import { buildTheme6Native } from "./nativeData";
 
@@ -22,26 +23,48 @@ function withGallery(patch: Partial<LandingStructure["landing"]["gallery"]>) {
   } as LandingStructure;
 }
 
+/** Salon sa zadatim CMS-om — builder sada prima ceo profil, ne samo strukturu. */
+function salonWith(
+  landingStructure: LandingStructure | undefined,
+  instagram = "salon_ig",
+): SalonProfileData {
+  return {
+    _id: "s6",
+    name: "Demo 6",
+    email: "demo@example.com",
+    description: "",
+    phone: "060/000",
+    street: "",
+    city: "",
+    social: { instagram },
+    landingStructure,
+  } as unknown as SalonProfileData;
+}
+
+const build = (
+  landingStructure: LandingStructure | undefined,
+  instagram = "salon_ig",
+) =>
+  buildTheme6Native({
+    salon: salonWith(landingStructure, instagram),
+    tenantSlug: "demo-6",
+    resolveHref: makeResolveHref("demo-6"),
+  });
+
 describe("vidljivost trake", () => {
   it("prati galleryEnabled iz CMS-a", () => {
     expect(
-      buildTheme6Native({
-        landingStructure: withGallery({ enabled: true }),
-        salonInstagram: "ig",
-      }).instagramStrip.visible,
+      build(withGallery({ enabled: true }), "ig").instagramStrip.visible,
     ).toBe(true);
 
     expect(
-      buildTheme6Native({
-        landingStructure: withGallery({ enabled: false }),
-        salonInstagram: "ig",
-      }).instagramStrip.visible,
+      build(withGallery({ enabled: false }), "ig").instagramStrip.visible,
     ).toBe(false);
   });
 
   it("bez CMS podataka je vidljiva (isti default kao stari flag)", () => {
     expect(
-      buildTheme6Native({ landingStructure: undefined, salonInstagram: "ig" })
+      build(undefined, "ig")
         .instagramStrip.visible,
     ).toBe(true);
   });
@@ -49,21 +72,17 @@ describe("vidljivost trake", () => {
 
 describe("sadržaj trake", () => {
   it("instagram link iz CMS-a ima prednost nad salonskim", () => {
-    const native = buildTheme6Native({
-      landingStructure: withGallery({
+    const native = build(
+      withGallery({
         instagram: { link: "https://ig.example/cms", username: "@cms" },
       }),
-      salonInstagram: "salon_ig",
-    });
+    );
     expect(native.instagramStrip.instagramUrl).toBe("https://ig.example/cms");
     expect(native.instagramStrip.instagramTag).toBe("@cms");
   });
 
   it("bez CMS linka pada na salonski instagram", () => {
-    const native = buildTheme6Native({
-      landingStructure: withGallery({ instagram: { username: "@x" } }),
-      salonInstagram: "salon_ig",
-    });
+    const native = build(withGallery({ instagram: { username: "@x" } }), "salon_ig");
     expect(native.instagramStrip.instagramUrl).toBe("salon_ig");
   });
 
@@ -72,19 +91,13 @@ describe("sadržaj trake", () => {
       src: `img-${i}.png`,
       alt: `slika ${i}`,
     }));
-    const native = buildTheme6Native({
-      landingStructure: withGallery({ images }),
-      salonInstagram: "ig",
-    });
+    const native = build(withGallery({ images }), "ig");
     expect(native.instagramStrip.images).toHaveLength(6);
     expect(native.instagramStrip.images![0]).toEqual({ src: "img-0.png" });
   });
 
   it("bez slika vraća undefined, ne prazan niz (komponenta ima svoj default)", () => {
-    const native = buildTheme6Native({
-      landingStructure: withGallery({ images: [] }),
-      salonInstagram: "ig",
-    });
+    const native = build(withGallery({ images: [] }), "ig");
     expect(native.instagramStrip.images).toBeUndefined();
   });
 
@@ -97,7 +110,7 @@ describe("sadržaj trake", () => {
       },
     };
     expect(
-      buildTheme6Native({ landingStructure: ls, salonInstagram: "ig" })
+      build(ls, "ig")
         .pricingHeadline,
     ).toBe("Naš cenovnik");
   });

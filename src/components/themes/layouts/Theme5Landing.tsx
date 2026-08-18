@@ -25,7 +25,6 @@ import { THEME5_BLOCK_RENDERERS } from "../theme-5/blocks";
 import { ThemeBlock } from "../blocks/ThemeBlock";
 import { ThemeBlockScope } from "../blocks/ThemeBlockScope";
 import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
-import { mapCMS } from "@/lib/CMSMapper/mapCMS";
 import type { ThemeLandingProps } from "./types";
 
 export function Theme5Landing(props: ThemeLandingProps) {
@@ -35,23 +34,18 @@ export function Theme5Landing(props: ThemeLandingProps) {
     clientSlug,
     document,
     googleFontHref,
-    primaryColor,
     resolveHref,
-    salon,
-    secondaryColor,
-    services,
     tenantSlug,
-    tenantStats,
-    testimonials,
+    themeNative,
   } = props;
+
+  const native = themeNative["theme-5"]!;
+  const ui = native.ui;
 
   const routing = useMemo(
     () => ({ tenantSlug, clientSlug, resolveHref }),
     [tenantSlug, clientSlug, resolveHref],
   );
-
-  // Native sekcije i shell i dalje koriste zatečeni view model.
-  const ui = mapCMS(salon, services, testimonials, tenantSlug, tenantStats);
 
   return (
     <ThemeBlockScope
@@ -66,17 +60,17 @@ export function Theme5Landing(props: ThemeLandingProps) {
 
         <Theme5Header
           data={ui.header}
-          primaryColor={primaryColor}
-          secondaryColor={secondaryColor}
+          primaryColor={native.brand.primaryColor}
+          secondaryColor={native.brand.secondaryColor}
           tenantSlug={tenantSlug}
-          clientSlug={clientSlug ?? tenantSlug}
+          clientSlug={native.clientSlug ?? tenantSlug}
         />
 
         <main className="flex-1 flex flex-col overflow-x-hidden">
           <ThemeBlock document={document} type="content.hero" />
           <ThemeBlock document={document} type="services.catalog" />
 
-          {shouldShowWorkingHours(salon) && (
+          {shouldShowWorkingHours(native.salon) && (
             <Theme5WorkingHours
               workingHours={ui.workingHours.workingHours}
               tenantSlug={tenantSlug}
@@ -92,7 +86,7 @@ export function Theme5Landing(props: ThemeLandingProps) {
 
           <ThemeBlock document={document} type="booking.services" />
 
-          <Theme5Pricing services={services} tenantSlug={tenantSlug} />
+          <Theme5Pricing {...native.pricing} />
           <Theme5CTA data={ui.cta} />
 
           <ThemeBlock document={document} type="content.team" />

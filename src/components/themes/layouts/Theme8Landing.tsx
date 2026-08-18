@@ -47,9 +47,6 @@ import { THEME8_BLOCK_RENDERERS } from "../theme-8/blocks";
 import { Theme8FixturesProvider } from "../theme-8/fixturesContext";
 import { ThemeBlock } from "../blocks/ThemeBlock";
 import { ThemeBlockScope } from "../blocks/ThemeBlockScope";
-import {
-  shouldShowWorkingHours,
-} from "@/helpers/workingHoursDisplay";
 import type { ThemeLandingProps } from "./types";
 
 export function Theme8Landing(props: ThemeLandingProps) {
@@ -58,33 +55,22 @@ export function Theme8Landing(props: ThemeLandingProps) {
     clientSlug,
     document,
     headerProps,
-    instagram,
-    ls,
     reduceMotion,
     resolveHref,
-    salon,
-    services,
     tenantSlug,
-    tenantStats,
-    showTheme8TestimonialFixtures,
+    themeNative,
   } = props;
+
+  const native = themeNative["theme-8"]!;
 
   const routing = useMemo(
     () => ({ tenantSlug, clientSlug, resolveHref }),
     [tenantSlug, clientSlug, resolveHref],
   );
 
-  const igLink = ls?.landing?.gallery?.instagram?.link || instagram;
-  const igHandle = ls?.landing?.gallery?.instagram?.username;
   // Y2K display + UI fonts (variable href matches the per-theme font-load pattern)
   const y2kFontHref =
     "https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Caveat:wght@600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap";
-  const aboutImage = ls?.landing?.about?.image?.src
-    ? {
-        src: ls.landing.about.image.src,
-        alt: ls.landing.about.image.alt ?? "",
-      }
-    : undefined;
 
   const content = (
     <div
@@ -107,10 +93,7 @@ export function Theme8Landing(props: ThemeLandingProps) {
           Na iOS (reduceMotion) ga NE renderujemo — skida se samo iz JS-a, pa bi
           na uređaju gde hydration padne visio zauvek ("logo stoji"). */}
       {!reduceMotion && (
-        <Theme8Preloader
-          logo={salon.logo ?? undefined}
-          salonName={salon.name}
-        />
+        <Theme8Preloader {...native.preloader} />
       )}
       <Y2KFilters />
       {/* Multi-layer graffiti decoration system (all pointer-events-none) */}
@@ -118,14 +101,7 @@ export function Theme8Landing(props: ThemeLandingProps) {
       <FixedDecorLayer />
       <DoodleLayer />
 
-      <Theme8ModalProvider
-        booking={{
-          tenantSlug,
-          clientSlug: clientSlug ?? tenantSlug,
-          salon,
-          services,
-        }}
-      >
+      <Theme8ModalProvider booking={native.bookingModal}>
         <IntroFade
           className="relative z-10 flex flex-col min-h-screen"
           delay={0.95}
@@ -137,9 +113,9 @@ export function Theme8Landing(props: ThemeLandingProps) {
             <ThemeBlock document={document} type="content.about" />
 
             <Theme8SocialProof
-              instagramUrl={igLink}
-              instagramHandle={igHandle}
-              tenantStats={tenantStats}
+              instagramUrl={native.socialProof.url}
+              instagramHandle={native.socialProof.handle}
+              tenantStats={native.socialProof.tenantStats}
             />
             <ThemeBlock document={document} type="services.catalog" />
             <ThemeBlock document={document} type="content.gallery" />
@@ -150,13 +126,13 @@ export function Theme8Landing(props: ThemeLandingProps) {
             <Theme8Tribute />
           </main>
           <Theme8Footer
-            salonName={salon.name}
-            logo={salon.logo ?? undefined}
-            instagramUrl={igLink}
-            instagramHandle={igHandle}
-            email={salon.contactEmail || salon.email}
-            workingHours={salon.workingHours}
-            showWorkingHours={shouldShowWorkingHours(salon)}
+            salonName={native.footer.salonName}
+            logo={native.footer.logo}
+            instagramUrl={native.footer.instagram.url}
+            instagramHandle={native.footer.instagram.handle}
+            email={native.footer.email}
+            workingHours={native.footer.workingHours}
+            showWorkingHours={Boolean(native.footer.workingHours)}
           />
         </IntroFade>
       </Theme8ModalProvider>
@@ -178,7 +154,7 @@ export function Theme8Landing(props: ThemeLandingProps) {
         renderers={THEME8_BLOCK_RENDERERS}
         routing={routing}
       >
-        <Theme8FixturesProvider value={Boolean(showTheme8TestimonialFixtures)}>
+        <Theme8FixturesProvider value={native.showTestimonialFixtures}>
           {content}
         </Theme8FixturesProvider>
       </ThemeBlockScope>

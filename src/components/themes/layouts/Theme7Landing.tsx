@@ -18,7 +18,6 @@ import {
 import { THEME7_BLOCK_RENDERERS } from "../theme-7/blocks";
 import { ThemeBlock } from "../blocks/ThemeBlock";
 import { ThemeBlockScope } from "../blocks/ThemeBlockScope";
-import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
 import type { ThemeLandingProps } from "./types";
 
 export function Theme7Landing(props: ThemeLandingProps) {
@@ -27,12 +26,12 @@ export function Theme7Landing(props: ThemeLandingProps) {
     clientSlug,
     document,
     headerProps,
-    instagram,
-    ls,
     resolveHref,
-    salon,
     tenantSlug,
+    themeNative,
   } = props;
+
+  const native = themeNative["theme-7"]!;
 
   const routing = useMemo(
     () => ({ tenantSlug, clientSlug, resolveHref }),
@@ -46,8 +45,6 @@ export function Theme7Landing(props: ThemeLandingProps) {
     "--secondary-color": "#ff79b0",
     fontFamily: "Jost, sans-serif",
   } as React.CSSProperties;
-  const igLink = ls?.landing?.gallery?.instagram?.link || instagram;
-  const igHandle = ls?.landing?.gallery?.instagram?.username;
   // Lash Room display + UI fonts (variable href matches the per-theme font-load pattern)
   const lashFontHref =
     "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Jost:wght@300;400;500;600&display=swap";
@@ -77,20 +74,23 @@ export function Theme7Landing(props: ThemeLandingProps) {
             }}
           />
           <ThemeBlock document={document} type="content.about" />
-          <Theme7SocialProof instagramUrl={igLink} instagramHandle={igHandle} />
+          <Theme7SocialProof
+            instagramUrl={native.socialProof.url}
+            instagramHandle={native.socialProof.handle}
+          />
           <ThemeBlock document={document} type="services.catalog" />
           <ThemeBlock document={document} type="content.gallery" />
           <ThemeBlock document={document} type="content.testimonials" />
           <ThemeBlock document={document} type="content.faq" />
         </main>
         <Theme7Footer
-          salonName={salon.name}
-          logo={salon.logo ?? undefined}
-          instagramUrl={igLink}
-          instagramHandle={igHandle}
-          email={salon.contactEmail || salon.email}
-          workingHours={salon.workingHours}
-          showWorkingHours={shouldShowWorkingHours(salon)}
+          salonName={native.footer.salonName}
+          logo={native.footer.logo}
+          instagramUrl={native.footer.instagram.url}
+          instagramHandle={native.footer.instagram.handle}
+          email={native.footer.email}
+          workingHours={native.footer.workingHours}
+          showWorkingHours={Boolean(native.footer.workingHours)}
         />
       </div>
     </ThemeBlockScope>

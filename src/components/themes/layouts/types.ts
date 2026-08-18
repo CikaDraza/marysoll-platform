@@ -1,13 +1,25 @@
 /**
  * Deljeni props za per-theme landing komponente (ThemeNLanding).
- * ThemeLayout izračuna sve izvedene vrednosti JEDNOM (CMS flagovi, branding,
- * hrefovi…) i prosledi ih izabranoj temi kroz next/dynamic — tako svaka tema
- * živi u svom chunku, a logika pripreme nije kopirana po temama.
+ *
+ * T2A, korak 6 — NEUTRALIZOVAN KONTRAKT. Ranije je ovde stajalo:
+ * `salon: SalonProfileData`, `services: IService[]`, `testimonials`,
+ * `tenantStats`, `landingStructure`, `salonWithMergedSocial` i deset
+ * `*Enabled` flagova. Zbog toga je svaka nova vertikala morala da dira ovaj
+ * fajl, `ThemeLayout` i svih osam tema.
+ *
+ * Sada kontrakt ne zna nijedan poslovni pojam:
+ *
+ *   document + blockData → ŠTA se prikazuje i sa kojim podacima (registry)
+ *   themeNative          → view modeli native delova, po temi
+ *   header/footer        → shell
+ *   brandingVars/font    → dizajn tokeni
+ *   routing              → tenantSlug / clientSlug / resolveHref
+ *
+ * Nova tema (npr. edukacija) dodaje svoj blok u registry i svoj native view
+ * model — a ovaj fajl ostaje netaknut.
  */
 import type { CSSProperties } from "react";
 import type { ThemeDocument } from "@panta/theme-engine";
-import type { IService, SalonProfileData } from "@/types";
-import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import type { PublicTestimonial } from "@/types/public-testimonials";
 import type { ResolvedBlockMap } from "@/lib/platform/blocks/render-types";
 import type { ThemeNativeData } from "@/lib/platform/theme-native";
@@ -40,57 +52,30 @@ export interface ThemeHeaderShared {
 }
 
 export interface ThemeLandingProps {
-  salon: SalonProfileData;
-  services: IService[];
-  testimonials: Testimonial[];
-  tenantSlug?: string;
-  clientSlug?: string;
-  tenantStats?: TenantStats;
-  /** Privremeni preview fixtures, dozvoljeni samo na staging/preview hostu. */
-  showTheme8TestimonialFixtures?: boolean;
-
-  /**
-   * Raspored CMS blokova (T2A). Migrirana tema čita SAMO ovo za vidljivost
-   * sekcija; nemigrirane i dalje koriste `*Enabled` flagove ispod. Nijedan stari
-   * flag se ne uklanja dok sve teme ne pređu (spec 7, korak 6).
-   */
+  /** Raspored CMS blokova — vidljivost sekcije je postojanje bloka. */
   document: ThemeDocument;
   /** Podaci blokova iz jednog server prolaza (`resolveBlockData`). */
   blockData: ResolvedBlockMap;
-  /**
-   * View modeli theme-native delova, po temi. Native element više ne dobija
-   * domenske tipove ni CMS flagove — dobija tačno ono što prikazuje.
-   */
+  /** View modeli theme-native delova, po temi. */
   themeNative: ThemeNativeData;
 
-  // Izvedeno u ThemeLayout-u
+  // ── Rutiranje ──────────────────────────────────────────────────────────
+  /** Prefiks u nav linkovima; `undefined` na custom domenu (linkovi su root-relative). */
+  tenantSlug?: string;
+  /** Stvarni DB slug — `LoggedButton` gradi `/{slug}/panel` i na custom domenu. */
+  clientSlug?: string;
+  /** Isti resolver koji koristi i server pri gradnji native view modela. */
+  resolveHref: (href: string) => string;
+
+  // ── Dizajn i shell ─────────────────────────────────────────────────────
+  brandingVars: CSSProperties;
+  googleFontHref: string;
+  headerProps: ThemeHeaderShared;
+  footerProps: ThemeFooterShared;
+
   /**
    * "Safe" render bez ulazne animacije/preloadera — postavlja se za iOS (UA)
    * jer tamo hydration ume da padne, pa strana mora da bude vidljiva iz SSR-a.
-   * Tema ga koristi da forsira reduced-motion (MotionConfig) i preskoči preloader.
    */
   reduceMotion?: boolean;
-  instagram: string;
-  ls: SalonProfileData["landingStructure"];
-  resolveHref: (href: string) => string;
-  salonWithMergedSocial: SalonProfileData;
-  heroEnabled: boolean;
-  aboutEnabled: boolean;
-  servicesPreviewEnabled: boolean;
-  appointmentEnabled: boolean;
-  testimonialsEnabled: boolean;
-  artistsEnabled: boolean;
-  galleryEnabled: boolean;
-  faqEnabled: boolean;
-  blogEnabled: boolean;
-  perksEnabled: boolean;
-  effectiveGalleryVariant: "images-only" | "images-with-category";
-  footerProps: ThemeFooterShared;
-  headerProps: ThemeHeaderShared;
-  primaryColor: string;
-  secondaryColor: string;
-  fontFamily: string;
-  brandingVars: CSSProperties;
-  googleFontHref: string;
-  resolvedCta: ResolvedHeroCta;
 }

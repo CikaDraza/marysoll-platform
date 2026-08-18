@@ -38,10 +38,11 @@ export function Theme2Landing(props: ThemeLandingProps) {
     googleFontHref,
     headerProps,
     resolveHref,
-    salon,
-    services,
     tenantSlug,
+    themeNative,
   } = props;
+
+  const native = themeNative["theme-2"]!;
 
   const routing = useMemo(
     () => ({ tenantSlug, clientSlug, resolveHref }),
@@ -69,12 +70,9 @@ export function Theme2Landing(props: ThemeLandingProps) {
           <ThemeBlock document={document} type="content.gallery" />
           <ThemeBlock document={document} type="booking.services" />
           <Theme2WhyChooseUs />
-          <Theme2PricingSection services={services} tenantSlug={tenantSlug} />
+          <Theme2PricingSection {...native.pricing} />
           <ThemeBlock document={document} type="content.testimonials" />
-          <Theme2CTAAppointmentSection
-            salonName={salon.name}
-            tenantSlug={tenantSlug}
-          />
+          <Theme2CTAAppointmentSection {...native.ctaAppointment} />
         </main>
         <Theme2Footer {...footerProps} tenantSlug={tenantSlug} />
       </div>

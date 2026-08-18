@@ -882,16 +882,36 @@ launcher (modal) bez inline sekcije.
      (99 515 B, `reduceMotion` — bez preloadera); TTFB razlika po paru +0,2 ms.
 
    **Svih osam tema je migrirano.** Sledi korak 6 — svođenje `ThemeLandingProps`.
-6. Tek kada prva tema prođe regresiju, `ThemeLandingProps` počinje da se svodi na:
-   `document`, `brandingVars`, `resolveHref`, `reduceMotion`, `headerProps`,
-   `footerProps`. **Nijedan stari flag se ne uklanja pre toga.**
+6. ✅ **Svođenje `ThemeLandingProps`** — završeno. Kontrakt više ne zna nijedan
+   poslovni pojam:
+
+   | pre | posle |
+   |---|---|
+   | `salon: SalonProfileData`, `services: IService[]`, `testimonials`, `tenantStats`, `ls`, `salonWithMergedSocial` | — |
+   | 10 × `*Enabled` + `effectiveGalleryVariant` + `resolvedCta` | — |
+   | `primaryColor`, `secondaryColor`, `fontFamily` | `brandingVars`, `googleFontHref` |
+   | — | `document`, `blockData`, `themeNative` |
+   | `headerProps`, `footerProps`, `tenantSlug`, `clientSlug`, `resolveHref`, `reduceMotion` | isto |
+
+   `ThemeLayout` je postao čist dispečer: više ne računa nijedan flag, varijantu
+   galerije, merge social linkova ni hero CTA — sve to radi server. Jedino što
+   ostaje na klijentu je `resolveHref`, jer se funkcija ne može serijalizovati iz
+   server komponente; pravi se istim helperom (`helpers/tenantHref`) koji server
+   koristi pri gradnji view modela.
+
+   Theme-native delovi dobijaju **presentation view model po temi**
+   (`lib/platform/theme-native.ts`). Preostali dug: neke teme i dalje prosleđuju
+   `IService[]` svojim cenovnicima kroz svoj VM — domenski tip time nije nestao,
+   ali je izašao iz ZAJEDNIČKOG kontrakta; sužavanje tih komponenti je zaseban
+   korak sa svojom regresijom.
 
 ## 8. Acceptance criteria
 
-- [ ] Postojeći salon bez education capability izgleda i ponaša se **identično** kao pre.
+- [x] Postojeći salon bez education capability izgleda i ponaša se **identično** kao pre
+      (regresija po temi; `<body>` bajt-u-bajt identičan na sva tri živa tenanta).
 - [ ] `packages/theme-engine` nema import `Service`, `Appointment`, `Campaign`,
       `mongoose`, `react`, `next`.
-- [ ] Nijedna tema ne sadrži `if (tenant.type === …)` ni vertikalno granjanje.
+- [x] Nijedna tema ne sadrži `if (tenant.type === …)` ni vertikalno granjanje.
 - [ ] Novi feature blok se dodaje **bez ijedne izmene** u `packages/theme-engine`.
 - [ ] Nepoznat `type` bloka: render = skip + telemetry, **publish = error**.
 - [ ] `slot` se validira protiv `LayoutDefinition` — nepostojeći slot je greška.
