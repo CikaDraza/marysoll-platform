@@ -130,15 +130,20 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
   {
     theme: "theme-2",
     visibility: "theme-document",
-    // Tema ignoriše hero/about/services flagove — renderuje ih uvek.
-    // `testimonialsEnabled` se POŠTUJE od T2A-FOLLOWUP normalizacije (spec 6.4):
-    // vlasnik je sekciju ugasio u CMS-u, a ona se svejedno prikazivala prazna.
-    honoredFlags: ["appointmentEnabled", "galleryEnabled", "testimonialsEnabled"],
+    // Sve sekcije poštuju CMS toggle od T2A-FOLLOWUP normalizacije (spec 6.4).
+    honoredFlags: [
+      "heroEnabled",
+      "aboutEnabled",
+      "servicesPreviewEnabled",
+      "appointmentEnabled",
+      "testimonialsEnabled",
+      "galleryEnabled",
+    ],
     nodes: [
       shell("theme-2/header"),
-      cms("hero", "content.hero", "always"),
-      cms("about", "content.about", "always"),
-      cms("servicesPreview", "services.catalog", "always"),
+      cms("hero", "content.hero", "heroEnabled"),
+      cms("about", "content.about", "aboutEnabled"),
+      cms("servicesPreview", "services.catalog", "servicesPreviewEnabled"),
       cms("gallery", "content.gallery", "galleryEnabled (varijanta bira masonry/grid)"),
       cms("appointmentSection", "booking.services", "appointmentEnabled"),
       native("theme-2/why-choose-us"),
@@ -210,21 +215,30 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
   {
     theme: "theme-5",
     visibility: "theme-document",
-    // Najmanje CMS-gated tema: sve osim artists/testimonials je bezuslovno.
-    honoredFlags: ["artistsEnabled", "testimonialsEnabled"],
+    // Ranije najmanje CMS-gated tema (5 bezuslovnih sekcija); od T2A-FOLLOWUP
+    // normalizacije poštuje sve svoje flagove (spec 6.4).
+    honoredFlags: [
+      "heroEnabled",
+      "aboutEnabled",
+      "servicesPreviewEnabled",
+      "appointmentEnabled",
+      "artistsEnabled",
+      "testimonialsEnabled",
+      "galleryEnabled",
+    ],
     nodes: [
       shell("theme-5/header"),
-      cms("hero", "content.hero", "always"),
-      cms("servicesPreview", "services.catalog", "always"),
+      cms("hero", "content.hero", "heroEnabled"),
+      cms("servicesPreview", "services.catalog", "servicesPreviewEnabled"),
       native("theme-5/working-hours"),
       native("theme-5/how-it-works"),
-      cms("appointmentSection", "booking.services", "always"),
+      cms("appointmentSection", "booking.services", "appointmentEnabled"),
       native("theme-5/pricing"),
       native("theme-5/cta"),
       cms("artists", "content.team", "artistsEnabled"),
-      cms("about", "content.about", "always"),
+      cms("about", "content.about", "aboutEnabled"),
       cms("testimonials", "content.testimonials", "testimonialsEnabled"),
-      cms("gallery", "content.gallery", "always"),
+      cms("gallery", "content.gallery", "galleryEnabled"),
       shell("theme-5/footer"),
     ],
   },
@@ -258,9 +272,11 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
   {
     theme: "theme-7",
     visibility: "theme-document",
-    // Booking je unutar hero sekcije (bookingSlot), pa appointmentEnabled nema efekta.
+    // Booking je unutar hero sekcije (bookingSlot). Do T2A-FOLLOWUP normalizacije
+    // se renderovao bezuslovno; sada poštuje flag, ali i dalje nestaje sa hero-om.
     honoredFlags: [
       "heroEnabled",
+      "appointmentEnabled",
       "aboutEnabled",
       "servicesPreviewEnabled",
       "testimonialsEnabled",
@@ -270,7 +286,7 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
     nodes: [
       shell("theme-7/header"),
       cms("hero", "content.hero", "heroEnabled"),
-      cms("appointmentSection", "booking.services", "always (slot u hero sekciji)"),
+      cms("appointmentSection", "booking.services", "appointmentEnabled (slot u hero sekciji)"),
       cms("about", "content.about", "aboutEnabled"),
       native("theme-7/social-proof"),
       cms("servicesPreview", "services.catalog", "servicesPreviewEnabled && services.length > 0"),

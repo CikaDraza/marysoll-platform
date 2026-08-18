@@ -2,14 +2,11 @@
 /**
  * Theme2Landing — druga tema migrirana na Feature Block-ove (T2A, korak 5).
  *
- * Ovo je prvi stvarni test compat sloja: theme-2 renderuje tri CMS sekcije BEZ
- * obzira na `enabled` flag (inventar 6.1), pa one idu kroz
- * `<LegacyAlwaysThemeBlock>` — isti registry, isti loader, isti renderer,
- * zaobiđena samo provera postojanja bloka u dokumentu.
+ * Sve CMS sekcije poštuju svoj `enabled` flag — ranije su hero, about i
+ * servicesPreview bile bezuslovne (compat sloj), normalizovano u T2A-FOLLOWUP.
  *
- *   hero / about / servicesPreview               → LegacyAlwaysThemeBlock ⚠️
- *   gallery / appointmentSection / testimonials  → ThemeBlock
- *   WhyChooseUs / pricing / CTA                  → theme-2 native
+ *   sve CMS sekcije                → ThemeBlock
+ *   WhyChooseUs / pricing / CTA    → theme-2 native
  *
  * UTISCI: stari kod je renderovao DVA prikaza (`Theme2Testimonials` bez guarda i,
  * posle CTA sekcije, `Theme2TestimonialsSection` sa guardom), oba bezuslovno.
@@ -27,7 +24,6 @@ import {
   Theme2WhyChooseUs,
 } from "../theme-2";
 import { THEME2_BLOCK_RENDERERS } from "../theme-2/blocks";
-import { LegacyAlwaysThemeBlock } from "../blocks/LegacyAlwaysThemeBlock";
 import { ThemeBlock } from "../blocks/ThemeBlock";
 import { ThemeBlockScope } from "../blocks/ThemeBlockScope";
 import type { ThemeLandingProps } from "./types";
@@ -67,21 +63,9 @@ export function Theme2Landing(props: ThemeLandingProps) {
         <link rel="stylesheet" href={googleFontHref} />
         <Theme2Header {...headerProps} />
         <main className="flex-1 overflow-x-hidden flex flex-col">
-          <LegacyAlwaysThemeBlock
-            theme="theme-2"
-            source="hero"
-            type="content.hero"
-          />
-          <LegacyAlwaysThemeBlock
-            theme="theme-2"
-            source="about"
-            type="content.about"
-          />
-          <LegacyAlwaysThemeBlock
-            theme="theme-2"
-            source="servicesPreview"
-            type="services.catalog"
-          />
+          <ThemeBlock document={document} type="content.hero" />
+          <ThemeBlock document={document} type="content.about" />
+          <ThemeBlock document={document} type="services.catalog" />
           <ThemeBlock document={document} type="content.gallery" />
           <ThemeBlock document={document} type="booking.services" />
           <Theme2WhyChooseUs />

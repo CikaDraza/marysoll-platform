@@ -23,9 +23,7 @@ export type BlockSkipReason =
   /** Blok postoji u dokumentu, ali server prolaz nije ostavio podatke za njega. */
   | "missing_data"
   /** Tema nema renderer za taj tip (npr. tema bez booking sekcije). */
-  | "missing_renderer"
-  /** Compat putanja pozvana za par (tema, sekcija) koji nije u inventaru. */
-  | "legacy_always_not_allowed";
+  | "missing_renderer";
 
 export interface BlockSkipEvent {
   reason: BlockSkipReason;
@@ -44,12 +42,6 @@ export interface ResolvedBlock<K extends FeatureBlockType = FeatureBlockType> {
   schemaVersion: number;
   config: BlockConfigByType[K];
   data: BlockDataByType[K];
-  /**
-   * Postavljeno samo za blok koji NIJE došao iz dokumenta. Provenijencija služi
-   * telemetriji i reviziji (u T2A: `legacy-always`) — renderer je ne dobija,
-   * jer bi prikaz koji zavisi od porekla bloka bio promena ponašanja.
-   */
-  origin?: string;
 }
 
 export type ResolvedBlockMap = Record<string, ResolvedBlock>;

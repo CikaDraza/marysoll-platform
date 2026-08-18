@@ -1,9 +1,8 @@
 /**
  * Theme5 migracija — regresija nad stvarnim tenantima + STRES-TEST compat sloja.
  *
- * theme-5 renderuje pet CMS sekcija bez obzira na `enabled`, pa je ovo jedini
- * slučaj gde compat mora da izdrži više sekcija odjednom, uključujući tenanta
- * kome je sekcija stvarno ugašena (Lash Room, `appointmentSection: false`).
+ * theme-5 je ranije renderovala pet CMS sekcija bez obzira na `enabled`; posle
+ * T2A-FOLLOWUP normalizacije (spec 6.4) sve poštuju svoj toggle.
  *
  * Referentna istina je `mapCMS(...)` — isti view model koji je tema koristila
  * pre migracije (commit f2b64f4). Ako bi poziv po sekciji dao drugu vrednost od
@@ -20,9 +19,8 @@ import {
   sectionBlockId,
 } from "@/lib/platform/theme-client";
 import {
-  LEGACY_ALWAYS_ORIGIN,
   preloadedBlockDataSource,
-  resolveThemeBlockData,
+  resolveBlockData,
 } from "@/lib/platform/blocks";
 import type {
   BookingServicesData,
@@ -84,7 +82,7 @@ function legacyUi(ls: LandingStructure, salon: SalonProfileData) {
 async function blockDataFor(ls: LandingStructure) {
   const salon = salonFor(ls);
   const document = landingStructureToThemeDocument(ls, { theme: "theme-5" });
-  const data = await resolveThemeBlockData({
+  const data = await resolveBlockData({
     document,
     theme: "theme-5",
     tenantSlug: TENANT_SLUG,
@@ -157,13 +155,16 @@ describe.each(tenants)("%s — view model je identičan mapCMS-u", (slug, ls) =>
     ).toEqual(legacyUi(ls, salon).testimonials);
   });
 
-  it("booking", async () => {
+  it("booking (kad je sekcija uključena)", async () => {
     const { salon, data } = await blockDataFor(ls);
     const block = data[sectionBlockId("appointmentSection")];
-    expect(block, slug).toBeDefined();
+    if (!block) {
+      expect(ls.landing.appointmentSection.enabled).toBe(false);
+      return;
+    }
     expect(
       theme5BookingProps(
-        block!.data as BookingServicesData,
+        block.data as BookingServicesData,
         TENANT_SLUG,
         CLIENT_SLUG,
       ),
@@ -259,8 +260,8 @@ describe("prikovane vrednosti theme-5 view modela", () => {
   });
 });
 
-describe("compat: pet bezuslovnih sekcija", () => {
-  const ALWAYS = [
+describe("normalizovano: pet nekada bezuslovnih sekcija", () => {
+  const NEKADA_ALWAYS = [
     "hero",
     "servicesPreview",
     "appointmentSection",
@@ -268,40 +269,27 @@ describe("compat: pet bezuslovnih sekcija", () => {
     "gallery",
   ] as const;
 
-  it("sve su razrešene kod svakog tenanta", async () => {
+  it("uključene sekcije su razrešene kod svakog tenanta", async () => {
     for (const [slug, ls] of tenants) {
       const { data } = await blockDataFor(ls);
-      for (const source of ALWAYS) {
-        expect(data[sectionBlockId(source)], `${slug}/${source}`).toBeDefined();
+      for (const source of NEKADA_ALWAYS) {
+        const enabled = ls.landing[source]?.enabled !== false;
+        const has = Boolean(data[sectionBlockId(source)]);
+        expect(has, `${slug}/${source}`).toBe(enabled);
       }
     }
   });
 
-  it("Lash Room ima appointmentSection ugašen, a blok ipak postoji", async () => {
+  it("Lash Room: ugašen appointmentSection više NE daje blok", async () => {
     expect(LASH_ROOM.landing.appointmentSection.enabled).toBe(false);
     const { data } = await blockDataFor(LASH_ROOM);
-    const block = data[sectionBlockId("appointmentSection")];
-    expect(block!.origin).toBe(LEGACY_ALWAYS_ORIGIN);
-    // Compat blok ima PUNE podatke, ne prazan objekat.
-    expect((block!.data as BookingServicesData).services).toEqual(SERVICES);
+    expect(data[sectionBlockId("appointmentSection")]).toBeUndefined();
   });
 
-  it("compat oznaku nose samo sekcije koje je CMS ugasio", async () => {
+  it("uključene sekcije istog tenanta i dalje imaju pune podatke", async () => {
     const { data } = await blockDataFor(LASH_ROOM);
-    const compat = Object.entries(data)
-      .filter(([, b]) => b.origin === LEGACY_ALWAYS_ORIGIN)
-      .map(([id]) => id)
-      .sort();
-    expect(compat).toEqual([sectionBlockId("appointmentSection")]);
-  });
-
-  it("artists i testimonials NISU compat — tema ih gejtuje", async () => {
-    const kiki = tenants.find(([s]) => s === "kiki-kiss-beauty")![1];
-    expect(kiki.landing.artists.enabled).toBe(false);
-    expect(kiki.landing.testimonials.enabled).toBe(false);
-
-    const { data } = await blockDataFor(kiki);
-    expect(data[sectionBlockId("artists")]).toBeUndefined();
-    expect(data[sectionBlockId("testimonials")]).toBeUndefined();
+    for (const source of ["hero", "about", "gallery", "servicesPreview"] as const) {
+      expect(data[sectionBlockId(source)], source).toBeDefined();
+    }
   });
 });

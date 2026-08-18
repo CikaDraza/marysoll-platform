@@ -42,19 +42,9 @@ function flagsUsedBy(theme: string): Set<string> {
   return new Set(codeOf(theme).match(/[a-zA-Z]+Enabled/g) ?? []);
 }
 
-/**
- * Tipovi blokova redom pojavljivanja — i normalni `<ThemeBlock>` i compat
- * `<LegacyAlwaysThemeBlock>`, jer su za kompoziciju ravnopravni: oba su ista
- * sekcija na istom mestu, razlikuje ih samo način pronalaženja bloka.
- */
+/** Tipovi blokova redom pojavljivanja u kodu teme. */
 function themeBlockTypesUsedBy(theme: string): string[] {
-  const re = /<(?:ThemeBlock|LegacyAlwaysThemeBlock)\s[^>]*?type="([^"]+)"/g;
-  return [...layoutSourceOf(theme).matchAll(re)].map((m) => m[1]);
-}
-
-/** CMS sekcije koje migrirana tema renderuje kroz compat putanju. */
-function legacyAlwaysSourcesUsedBy(theme: string): string[] {
-  const re = /<LegacyAlwaysThemeBlock\s[^>]*?source="([^"]+)"/g;
+  const re = /<ThemeBlock\s[^>]*?type="([^"]+)"/g;
   return [...layoutSourceOf(theme).matchAll(re)].map((m) => m[1]);
 }
 
@@ -137,12 +127,11 @@ describe.each(THEME_COMPOSITIONS)("$theme", (composition) => {
     );
   });
 
-  // Compat putanja je dozvoljena TAČNO za bezuslovne sekcije — ni manje (tiha
-  // promena ponašanja) ni više (compat koji tema ne sme da koristi).
-  it.runIf(!legacy)("compat blokove koristi tačno za bezuslovne sekcije", () => {
-    expect([...legacyAlwaysSourcesUsedBy(composition.theme)].sort()).toEqual(
-      [...unconditionalCmsBlocks(composition.theme)].sort(),
-    );
+  // Compat sloj je uklonjen u T2A-FOLLOWUP normalizaciji — nijedna tema ga više
+  // ne sme koristiti, ni u kodu ni u inventaru.
+  it.runIf(!legacy)("ne koristi compat komponentu", () => {
+    expect(codeOf(composition.theme)).not.toContain("LegacyAlwaysThemeBlock");
+    expect(unconditionalCmsBlocks(composition.theme)).toEqual([]);
   });
 
   it("svaki cms-block ima poznat blockType i neprazan uslov", () => {
@@ -186,32 +175,10 @@ describe.each(THEME_COMPOSITIONS)("$theme", (composition) => {
 });
 
 describe("nalazi koji menjaju plan migracije", () => {
-  it("Theme2 renderuje hero/about/services bez obzira na CMS", () => {
-    expect(unconditionalCmsBlocks("theme-2").sort()).toEqual([
-      "about",
-      "hero",
-      "servicesPreview",
-    ]);
-  });
-
-  it("Theme2 utisci VIŠE nisu bezuslovni (normalizacija, spec 6.4)", () => {
-    expect(unconditionalCmsBlocks("theme-2")).not.toContain("testimonials");
-    expect(compositionFor("theme-2")!.honoredFlags).toContain("testimonialsEnabled");
-  });
-
-  it("Theme5 je najmanje CMS-gated tema", () => {
-    expect(unconditionalCmsBlocks("theme-5").sort()).toEqual([
-      "about",
-      "appointmentSection",
-      "gallery",
-      "hero",
-      "servicesPreview",
-    ]);
-  });
-
-  it("Theme7 renderuje booking uvek jer je u hero slotu", () => {
-    expect(unconditionalCmsBlocks("theme-7")).toEqual(["appointmentSection"]);
-    expect(compositionFor("theme-7")?.honoredFlags).not.toContain("appointmentEnabled");
+  it("nijedna tema više ne renderuje CMS sekciju bezuslovno (spec 6.4)", () => {
+    for (const c of THEME_COMPOSITIONS) {
+      expect(unconditionalCmsBlocks(c.theme), c.theme).toEqual([]);
+    }
   });
 
   it("Theme8 nema booking ni team blok, ali ima shell slojeve", () => {

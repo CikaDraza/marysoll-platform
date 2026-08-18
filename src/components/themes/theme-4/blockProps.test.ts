@@ -19,7 +19,7 @@ import {
 } from "@/lib/platform/theme-client";
 import {
   preloadedBlockDataSource,
-  resolveThemeBlockData,
+  resolveBlockData,
 } from "@/lib/platform/blocks";
 import type {
   ContentAboutData,
@@ -164,7 +164,7 @@ async function blockDataFor(
   const tenantStats = "tenantStats" in opts ? opts.tenantStats : STATS;
   const salon = salonFor(ls);
   const document = landingStructureToThemeDocument(ls, { theme: "theme-4" });
-  const data = await resolveThemeBlockData({
+  const data = await resolveBlockData({
     document,
     theme: "theme-4",
     tenantSlug: TENANT_SLUG,
@@ -336,10 +336,13 @@ describe("polja koja fixture ne pokriva", () => {
 });
 
 describe("theme-4 nema compat putanju", () => {
-  it("nijedan blok ne dolazi compat putanjom", async () => {
+  it("skup blokova je tačno onaj iz dokumenta", async () => {
     for (const [slug, ls] of tenants) {
       const { data } = await blockDataFor(ls);
-      expect(Object.values(data).filter((b) => b.origin), slug).toEqual([]);
+      const document = landingStructureToThemeDocument(ls, { theme: "theme-4" });
+      expect(Object.keys(data).sort(), slug).toEqual(
+        document.sections.flatMap((x) => x.blocks.map((b) => b.id)).sort(),
+      );
     }
   });
 

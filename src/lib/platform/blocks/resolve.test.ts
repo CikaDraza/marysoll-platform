@@ -4,8 +4,8 @@
  * Dokazuje tri stvari koje su uslov za migraciju tema:
  *   1. podaci koje blok dobije su isti oni koje danas dobija sekcija teme;
  *   2. loaderi se izvršavaju paralelno, uz dedupe resursa (spec 5.2);
- *   3. bezuslovne sekcije (inventar 6.1) dobijaju podatke i kad su `enabled:
- *      false` — inače bi theme-2/5/7 posle migracije imale prazne sekcije.
+ *   3. posle T2A-FOLLOWUP normalizacije SVAKA sekcija poštuje svoj CMS toggle —
+ *      compat sloja više nema (spec 6.4).
  */
 import { describe, expect, it, vi } from "vitest";
 import type { ThemeDocument } from "@panta/theme-engine";
@@ -19,7 +19,6 @@ import {
 import { createBlockDataSource, preloadedBlockDataSource } from "./deps";
 import { createFeatureBlockRegistry } from "./registry";
 import { resolveBlockData } from "./resolve";
-import { LEGACY_ALWAYS_ORIGIN, resolveThemeBlockData } from "./theme-render";
 import type {
   BookingServicesData,
   ContentAboutData,
@@ -70,7 +69,7 @@ describe("paritet podataka nad stvarnim tenantima", () => {
   for (const [slug, ls] of tenants) {
     it(`${slug}: svaki vidljivi blok dobije sadržaj svoje CMS sekcije`, async () => {
       const document = landingStructureToThemeDocument(ls, { theme: "theme-1" });
-      const data = await resolveThemeBlockData({
+      const data = await resolveBlockData({
         document,
         theme: "theme-1",
         deps: depsFor(ls),
@@ -105,7 +104,7 @@ describe("paritet podataka nad stvarnim tenantima", () => {
   it("isključena sekcija nema blok (theme-1 poštuje flagove)", async () => {
     const [, ls] = tenants.find(([s]) => s === "the-lash-room-by-anja")!;
     const document = landingStructureToThemeDocument(ls, { theme: "theme-1" });
-    const data = await resolveThemeBlockData({
+    const data = await resolveBlockData({
       document,
       theme: "theme-1",
       deps: depsFor(ls),
@@ -118,7 +117,7 @@ describe("paritet podataka nad stvarnim tenantima", () => {
   it("testimonials blok nosi i CMS naslov i zapise iz baze", async () => {
     const [, ls] = tenants.find(([s]) => s === "marysoll-makeup-nails")!;
     const document = landingStructureToThemeDocument(ls, { theme: "theme-1" });
-    const data = await resolveThemeBlockData({
+    const data = await resolveBlockData({
       document,
       theme: "theme-1",
       deps: depsFor(ls),
@@ -131,93 +130,12 @@ describe("paritet podataka nad stvarnim tenantima", () => {
   });
 });
 
-describe("legacy-always compat (inventar 6.1)", () => {
+describe("normalizovano: sve sekcije poštuju CMS toggle (spec 6.4)", () => {
   const [, lashRoom] = tenants.find(([s]) => s === "the-lash-room-by-anja")!;
   const [, kiki] = tenants.find(([s]) => s === "kiki-kiss-beauty")!;
 
-  it("theme-5 dobija appointmentSection iako je enabled=false", async () => {
-    const document = landingStructureToThemeDocument(lashRoom, { theme: "theme-5" });
-    const data = await resolveThemeBlockData({
-      document,
-      theme: "theme-5",
-      deps: depsFor(lashRoom),
-    });
-
-    const booking = data[sectionBlockId("appointmentSection")];
-    expect(booking).toBeDefined();
-    expect(booking!.origin).toBe(LEGACY_ALWAYS_ORIGIN);
-    // Isti registry, isti loader — compat blok ima pune podatke, ne prazan objekat.
-    const bookingData = booking!.data as BookingServicesData;
-    expect(bookingData.services).toEqual(SERVICES);
-    expect(bookingData.content).toEqual(lashRoom.landing.appointmentSection);
-  });
-
-  it("theme-7 isto (booking je slot u hero sekciji)", async () => {
-    const document = landingStructureToThemeDocument(lashRoom, { theme: "theme-7" });
-    const data = await resolveThemeBlockData({
-      document,
-      theme: "theme-7",
-      deps: depsFor(lashRoom),
-    });
-    expect(data[sectionBlockId("appointmentSection")]?.origin).toBe(
-      LEGACY_ALWAYS_ORIGIN,
-    );
-  });
-
-  it("theme-2 dobija about iako je to sekcija koju CMS može da ugasi", async () => {
-    const document = landingStructureToThemeDocument(kiki, { theme: "theme-2" });
-    const data = await resolveThemeBlockData({
-      document,
-      theme: "theme-2",
-      deps: depsFor(kiki),
-    });
-
-    const block = data[sectionBlockId("about")];
-    expect(block).toBeDefined();
-    expect((block!.data as ContentAboutData).content).toEqual(kiki.landing.about);
-  });
-
-  it("theme-2 utisci VIŠE nisu compat — sekcija poštuje CMS toggle", async () => {
-    // Normalizacija po odluci vlasnika (spec 6.4): ranije se prazna sekcija
-    // prikazivala uprkos isključenom toggle-u.
-    const document = landingStructureToThemeDocument(kiki, { theme: "theme-2" });
-    const data = await resolveThemeBlockData({
-      document,
-      theme: "theme-2",
-      deps: depsFor(kiki),
-    });
-
-    expect(kiki.landing.testimonials.enabled).toBe(false);
-    expect(data[sectionBlockId("testimonials")]).toBeUndefined();
-  });
-
-  it("theme-1/3/4/6/8 ne dobijaju nijedan compat blok", async () => {
-    for (const theme of ["theme-1", "theme-3", "theme-4", "theme-6", "theme-8"]) {
-      const document = landingStructureToThemeDocument(lashRoom, { theme });
-      const data = await resolveThemeBlockData({
-        document,
-        theme,
-        deps: depsFor(lashRoom),
-      });
-      const compat = Object.values(data).filter((b) => b.origin);
-      expect(compat, theme).toEqual([]);
-    }
-  });
-
-  it("compat ne duplira blok koji je već u dokumentu", async () => {
-    // Kod ovog tenanta je gallery uključen, a theme-5 ga renderuje bezuslovno.
-    const document = landingStructureToThemeDocument(kiki, { theme: "theme-5" });
-    const data = await resolveThemeBlockData({
-      document,
-      theme: "theme-5",
-      deps: depsFor(kiki),
-    });
-
-    expect(kiki.landing.gallery.enabled).toBe(true);
-    expect(data[sectionBlockId("gallery")]?.origin).toBeUndefined();
-  });
-
-  it("običan resolveBlockData NE zna za compat — bezuslovne sekcije izostaju", async () => {
+  it("theme-5 više NE renderuje ugašen appointmentSection", async () => {
+    expect(lashRoom.landing.appointmentSection.enabled).toBe(false);
     const document = landingStructureToThemeDocument(lashRoom, { theme: "theme-5" });
     const data = await resolveBlockData({
       document,
@@ -225,6 +143,52 @@ describe("legacy-always compat (inventar 6.1)", () => {
       deps: depsFor(lashRoom),
     });
     expect(data[sectionBlockId("appointmentSection")]).toBeUndefined();
+  });
+
+  it("theme-7 isto — booking je slot u hero-u, ali poštuje flag", async () => {
+    const document = landingStructureToThemeDocument(lashRoom, { theme: "theme-7" });
+    const data = await resolveBlockData({
+      document,
+      theme: "theme-7",
+      deps: depsFor(lashRoom),
+    });
+    expect(data[sectionBlockId("appointmentSection")]).toBeUndefined();
+  });
+
+  it("theme-2 utisci poštuju toggle", async () => {
+    expect(kiki.landing.testimonials.enabled).toBe(false);
+    const document = landingStructureToThemeDocument(kiki, { theme: "theme-2" });
+    const data = await resolveBlockData({
+      document,
+      theme: "theme-2",
+      deps: depsFor(kiki),
+    });
+    expect(data[sectionBlockId("testimonials")]).toBeUndefined();
+  });
+
+  it("uključena sekcija se i dalje renderuje kod svake teme", async () => {
+    for (const theme of ["theme-2", "theme-5", "theme-7"]) {
+      const document = landingStructureToThemeDocument(kiki, { theme });
+      const data = await resolveBlockData({ document, theme, deps: depsFor(kiki) });
+      expect(kiki.landing.appointmentSection.enabled, theme).toBe(true);
+      expect(data[sectionBlockId("appointmentSection")], theme).toBeDefined();
+      expect(
+        (data[sectionBlockId("appointmentSection")]!.data as BookingServicesData)
+          .services,
+      ).toEqual(SERVICES);
+    }
+  });
+
+  it("skup blokova je UVEK jednak dokumentu — nema dodataka van njega", async () => {
+    for (const theme of ["theme-1", "theme-2", "theme-5", "theme-7", "theme-8"]) {
+      for (const [slug, ls] of tenants) {
+        const document = landingStructureToThemeDocument(ls, { theme });
+        const data = await resolveBlockData({ document, theme, deps: depsFor(ls) });
+        expect(Object.keys(data).sort(), `${theme}/${slug}`).toEqual(
+          document.sections.flatMap((x) => x.blocks.map((b) => b.id)).sort(),
+        );
+      }
+    }
   });
 });
 
@@ -239,7 +203,7 @@ describe("bez waterfall-a (spec 5.2)", () => {
     const tenantStats = vi.fn(async () => undefined);
 
     const document = landingStructureToThemeDocument(ls, { theme: "theme-2" });
-    const data = await resolveThemeBlockData({
+    const data = await resolveBlockData({
       document,
       theme: "theme-2",
       deps: createBlockDataSource({

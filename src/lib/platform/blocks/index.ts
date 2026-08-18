@@ -11,9 +11,7 @@
  *   definitions.ts   deset blokova iz spec 6
  *   registry.ts      lookup + BlockTypeResolver za engine
  *   deps.ts          request-scoped izvor podataka (dedupe)
- *   resolve.ts       paralelni server prolaz (generičan)
- *   legacy-always.ts ⚠️ privremena kompatibilnost (vidi T2A-FOLLOWUP)
- *   theme-render.ts  ⚠️ prolaz za temu = resolve + compat blokovi
+ *   resolve.ts       paralelni server prolaz
  */
 
 export type {
@@ -59,20 +57,4 @@ export {
   type BlockDataFetchers,
   type PreloadedTenantSnapshot,
 } from "./deps";
-export {
-  resolveBlockData,
-  type ExtraBlock,
-  type ResolveBlockDataOptions,
-} from "./resolve";
-
-// ⚠️ Privremeno (T2A compat) — briše se u T2A-FOLLOWUP.
-export {
-  LEGACY_ALWAYS_ORIGIN,
-  resolveThemeBlockData,
-  type ResolveThemeBlockDataOptions,
-} from "./theme-render";
-export {
-  isLegacyAlwaysAllowed,
-  legacyAlwaysBlocks,
-  legacyAlwaysSources,
-} from "./legacy-always";
+export { resolveBlockData, type ResolveBlockDataOptions } from "./resolve";

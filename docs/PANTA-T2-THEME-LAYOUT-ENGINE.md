@@ -371,6 +371,9 @@ Tek tada se brišu `legacy-always.ts`, `theme-render.ts` i
 | tenant | tema | sekcija | sačuvan `enabled` | pre | odluka | datum |
 |---|---|---|---|---|---|---|
 | Shi Sham | theme-2 | `testimonials` | `false` | prikazivala se prazna (samo naslov) | **poštuj flag** — sekcija nestaje | 2026-08-17 |
+| — | theme-2 | `hero`, `about`, `servicesPreview` | — | bezuslovno | **poštuj flag** (tema bez živog tenanta) | 2026-08-18 |
+| — | theme-5 | `hero`, `servicesPreview`, `appointmentSection`, `about`, `gallery` | — | bezuslovno | **poštuj flag** (tema bez živog tenanta) | 2026-08-18 |
+| Kiki Kiss | theme-7 | `appointmentSection` | `true` | bezuslovno (slot u hero-u) | **poštuj flag** — vizuelno neutralno, toggle proradio | 2026-08-18 |
 
 Prvi slučaj je rešen ranije nego što je plan predviđao, jer ga je vlasnik sam
 prijavio: sekcija je u CMS-u isključena („Landing / Preporuke"), a na sajtu se
@@ -385,8 +388,19 @@ je razmatrana — prikaži tek ako ima više od 3 utiska — odbačena je jer bi
 nevidljivo pravilo koje vlasnik ne može ni da vidi ni da kontroliše, dok toggle
 sada radi.)
 
-Preostali `always` slučajevi za normalizaciju: theme-2 `hero`/`about`/
-`servicesPreview`, theme-5 (5 sekcija), theme-7 `appointmentSection`.
+**Normalizacija je završena — nijedna tema više ne renderuje CMS sekciju mimo
+njenog flaga.** Compat sloj je zbog toga obrisan: `legacy-always.ts`,
+`theme-render.ts`, `LegacyAlwaysThemeBlock.tsx`, uz `extraBlocks`/`origin`
+mehaniku u `resolve.ts`. Stanje je provereno nad živom bazom neposredno pre
+promene: jedini pogođeni živi tenant (Kiki Kiss, theme-7) imao je
+`appointmentSection.enabled = true`, pa je promena vizuelno neutralna — dobio je
+samo toggle koji radi. theme-2 i theme-5 u tom trenutku nisu imale nijednog
+tenanta.
+
+Regresija (produkcioni build, oba živa tenanta): `<body>` bajt-u-bajt identičan
+(Kiki Kiss 34 469 B, Lash Room 101 305 B); `<head>` ima **jedan `<link
+rel="preload">` MANJE** jer je compat kod nestao iz chunk grafa; gzip cele strane
+−26 B / −29 B; TTFB razlika po paru +0,2 ms.
 
 **Ovaj slučaj se NE uzima kao presedan.** Normalizovan je jer je postojala
 dokazana korisnička namera: vlasnik je sekciju ugasio, sistem je odluku ignorisao
@@ -888,8 +902,8 @@ launcher (modal) bez inline sekcije.
       paralelno na serveru sa request dedupe-om.
 - [ ] Sve postojeće teme prolaze vizuelnu **i performansnu** regresiju (LCP) na
       demo tenantima.
-- [ ] Svaki `always` cms-block iz inventara (6.1) je svesno rešen po temi —
-      nijedna tema tiho ne počne/prestane da poštuje CMS flag.
+- [x] Svaki `always` cms-block iz inventara (6.1) je svesno rešen po temi —
+      nijedna tema tiho ne počne/prestane da poštuje CMS flag (6.4).
 - [x] Legacy composition compatibility nije deo `@panta/theme-engine` ni
       FeatureBlockRegistry domena; `LegacyAlwaysThemeBlock` renderuje samo par
       `theme` + `source` koji Composition Inventory označava kao `always` (6.4).

@@ -12,8 +12,6 @@
  */
 
 import type { LayoutBlock, ThemeDocument } from "@panta/theme-engine";
-import { blockTypeForSection, sectionBlockId } from "@/lib/platform/theme-client";
-import { isLegacyAlwaysAllowed } from "@/lib/platform/blocks/legacy-always";
 import type {
   BlockSkipEvent,
   ResolvedBlock,
@@ -63,58 +61,6 @@ export function lookupThemeBlock(params: {
         blockId: block.id,
         theme,
         detail: "blok je u dokumentu, ali ga server prolaz nije učitao",
-      },
-    };
-  }
-
-  return { status: "render", resolved };
-}
-
-/**
- * COMPAT put: zaobilazi se SAMO provera postojanja u dokumentu. Sve ostalo
- * (registry, loader, renderer) je isto. Dozvoljen je isključivo par (tema,
- * sekcija) koji Composition Inventory označava kao bezuslovan.
- */
-export function lookupLegacyAlwaysBlock(params: {
-  /** Tema za koju se tvrdi da sekciju renderuje bezuslovno. */
-  theme: string;
-  /** Tema iz scope-a — mora se poklapati, inače je poziv kopiran u pogrešnu temu. */
-  scopeTheme: string;
-  source: string;
-  type: FeatureBlockType;
-  data: ResolvedBlockMap;
-}): BlockLookup {
-  const { theme, scopeTheme, source, type, data } = params;
-
-  const deny = (detail: string): BlockLookup => ({
-    status: "skip",
-    event: { reason: "legacy_always_not_allowed", type, theme: scopeTheme, detail },
-  });
-
-  if (theme !== scopeTheme) {
-    return deny(`prop theme="${theme}" ne odgovara temi scope-a "${scopeTheme}"`);
-  }
-  if (!isLegacyAlwaysAllowed(theme, source)) {
-    return deny(
-      `"${source}" nije bezuslovna sekcija teme ${theme} u Composition Inventaru`,
-    );
-  }
-  if (blockTypeForSection(source) !== type) {
-    return deny(
-      `sekcija "${source}" je blok "${blockTypeForSection(source)}", a traženo je "${type}"`,
-    );
-  }
-
-  const resolved = data[sectionBlockId(source)];
-  if (!resolved) {
-    return {
-      status: "skip",
-      event: {
-        reason: "missing_data",
-        type,
-        blockId: sectionBlockId(source),
-        theme: scopeTheme,
-        detail: "bezuslovna sekcija nije učitana u server prolazu",
       },
     };
   }

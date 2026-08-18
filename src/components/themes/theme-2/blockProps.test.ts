@@ -4,9 +4,8 @@
  * Referentna istina je doslovna kopija JSX izraza iz `Theme2Landing` pre
  * migracije (commit 704d56f).
  *
- * Theme2 je prvi test compat sloja: hero/about/servicesPreview su bezuslovne
- * sekcije, pa moraju imati podatke i kad je `enabled: false`. Utisci su od
- * T2A-FOLLOWUP normalizacije (spec 6.4) izuzeti — ta sekcija poštuje CMS toggle.
+ * Posle T2A-FOLLOWUP normalizacije (spec 6.4) SVE sekcije theme-2 poštuju svoj
+ * CMS toggle — ranije su hero/about/servicesPreview bile bezuslovne.
  */
 import { describe, expect, it } from "vitest";
 import type { IService, LandingStructure, SalonProfileData } from "@/types";
@@ -19,9 +18,8 @@ import {
   sectionBlockId,
 } from "@/lib/platform/theme-client";
 import {
-  LEGACY_ALWAYS_ORIGIN,
   preloadedBlockDataSource,
-  resolveThemeBlockData,
+  resolveBlockData,
 } from "@/lib/platform/blocks";
 import type {
   ContentAboutData,
@@ -180,7 +178,7 @@ async function blockDataFor(
 ) {
   const salon = salonFor(ls);
   const document = landingStructureToThemeDocument(ls, { theme: "theme-2" });
-  const data = await resolveThemeBlockData({
+  const data = await resolveBlockData({
     document,
     theme: "theme-2",
     tenantSlug: TENANT_SLUG,
@@ -215,7 +213,7 @@ describe.each(tenants)("%s — propovi su identični starom putu", (slug, ls) =>
   it("about bez tenant metrika → stats undefined", async () => {
     const salon = salonFor(ls);
     const document = landingStructureToThemeDocument(ls, { theme: "theme-2" });
-    const data = await resolveThemeBlockData({
+    const data = await resolveBlockData({
       document,
       theme: "theme-2",
       deps: preloadedBlockDataSource({
@@ -275,21 +273,24 @@ describe.each(tenants)("%s — propovi su identični starom putu", (slug, ls) =>
   });
 });
 
-describe("compat i normalizacija", () => {
-  it("tri bezuslovne sekcije su razrešene", async () => {
+describe("normalizovano: sve sekcije poštuju CMS toggle", () => {
+  it("uključene sekcije su razrešene", async () => {
     const { data } = await blockDataFor(SHISHAM);
     for (const source of ["hero", "about", "servicesPreview"]) {
       expect(data[sectionBlockId(source as never)], source).toBeDefined();
     }
   });
 
-  it("bezuslovna sekcija nosi compat oznaku samo kad je CMS ugasio", async () => {
-    const { data } = await blockDataFor(SHISHAM);
-    // Kod ovog tenanta su hero/about/servicesPreview uključeni, pa dolaze
-    // normalnim putem — compat postoji, ali nije potreban.
-    expect(SHISHAM.landing.hero.enabled).toBe(true);
-    expect(data[sectionBlockId("hero")]!.origin).toBeUndefined();
-    expect(LEGACY_ALWAYS_ORIGIN).toBe("legacy-always");
+  it("ugašena sekcija više NEMA blok (normalizovano)", async () => {
+    const ls: LandingStructure = {
+      ...SHISHAM,
+      landing: {
+        ...SHISHAM.landing,
+        hero: { ...SHISHAM.landing.hero, enabled: false },
+      },
+    };
+    const { data } = await blockDataFor(ls);
+    expect(data[sectionBlockId("hero")]).toBeUndefined();
   });
 
   it("utisci: Shi Sham ih je ugasio u CMS-u i sekcije više nema", async () => {

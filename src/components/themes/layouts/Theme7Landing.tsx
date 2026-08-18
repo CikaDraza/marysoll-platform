@@ -2,17 +2,12 @@
 /**
  * Theme7Landing — sedma tema migrirana na Feature Block-ove (T2A, korak 5).
  *
- *   hero / about / servicesPreview / gallery / testimonials / faq → ThemeBlock
- *   appointmentSection → LegacyAlwaysThemeBlock ⚠️, ali kao SLOT unutar hero-a
- *   socialProof → theme-7 native (stari propovi)
+ *   sve CMS sekcije → ThemeBlock
+ *   socialProof     → theme-7 native (stari propovi)
  *
- * BOOKING JE SLOT, NE SEKCIJA (spec 6.10). Zato je `appointmentSection` u
- * inventaru „always": renderuje se kad god se renderuje hero, bez obzira na
- * `appointmentEnabled`. Kompozicija pravi element i predaje ga hero bloku; ako
- * je hero isključen, nestaje i booking — tačno kao danas.
- *
- * Živi tenant (Kiki Kiss) ima `appointmentSection.enabled = true`, pa će buduća
- * normalizacija biti vizuelno neutralna — samo će toggle početi da radi.
+ * BOOKING JE SLOT, NE SEKCIJA (spec 6.10): kompozicija pravi booking element i
+ * predaje ga hero bloku. Od T2A-FOLLOWUP normalizacije poštuje i svoj flag, pa
+ * nestaje ako ga vlasnica ugasi — a i dalje nestaje zajedno sa hero-om.
  */
 import { useMemo } from "react";
 import {
@@ -21,7 +16,6 @@ import {
   Theme7SocialProof,
 } from "../theme-7";
 import { THEME7_BLOCK_RENDERERS } from "../theme-7/blocks";
-import { LegacyAlwaysThemeBlock } from "../blocks/LegacyAlwaysThemeBlock";
 import { ThemeBlock } from "../blocks/ThemeBlock";
 import { ThemeBlockScope } from "../blocks/ThemeBlockScope";
 import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
@@ -78,11 +72,7 @@ export function Theme7Landing(props: ThemeLandingProps) {
             type="content.hero"
             slots={{
               booking: (
-                <LegacyAlwaysThemeBlock
-                  theme="theme-7"
-                  source="appointmentSection"
-                  type="booking.services"
-                />
+                <ThemeBlock document={document} type="booking.services" />
               ),
             }}
           />

@@ -27,7 +27,7 @@ import type {
 import { landingStructureToThemeDocument } from "@/lib/platform/theme-client";
 import {
   preloadedBlockDataSource,
-  resolveThemeBlockData,
+  resolveBlockData,
 } from "@/lib/platform/blocks";
 import { normalizeVacations } from "@/helpers/vacations";
 import { shouldUseTheme8TestTestimonials } from "@/helpers/theme8DevelopmentTestimonials";
@@ -283,7 +283,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     salonData.landingStructure,
     { theme: landingTheme },
   );
-  const blockData = await resolveThemeBlockData({
+  const blockData = await resolveBlockData({
     document: themeDocument,
     theme: landingTheme,
     tenantSlug: themeSlug,

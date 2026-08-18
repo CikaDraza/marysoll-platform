@@ -8,10 +8,6 @@
  * Nijedan problem sa blokom ne obara stranu (spec 5.1): nepoznat tip, nepodržan
  * `schemaVersion`, neispravan config ili pukao loader → blok se preskoči i
  * prijavi telemetriji. Strogost živi na publish-u, ne na renderu.
- *
- * `extraBlocks` je generičan otvor za blokove koje dokument ne sadrži. Ovaj
- * modul ne zna zašto bi takav blok postojao — to zna pozivalac
- * (`theme-render.ts`, jedini koji danas koristi otvor).
  */
 
 import {
@@ -28,18 +24,11 @@ import type {
 } from "./render-types";
 import type { BlockDataSource, FeatureBlockType } from "./types";
 
-/** Blok van dokumenta + oznaka odakle je došao (ide u `ResolvedBlock.origin`). */
-export interface ExtraBlock {
-  block: LayoutBlock;
-  origin: string;
-}
-
 export interface ResolveBlockDataOptions {
   document: ThemeDocument;
   theme: string;
   deps: BlockDataSource;
   tenantSlug?: string;
-  extraBlocks?: ExtraBlock[];
   registry?: FeatureBlockRegistry;
   telemetry?: BlockTelemetry;
 }
@@ -57,7 +46,6 @@ export async function resolveBlockData({
   theme,
   deps,
   tenantSlug,
-  extraBlocks = [],
   registry = FEATURE_BLOCK_REGISTRY,
   telemetry = defaultTelemetry,
 }: ResolveBlockDataOptions): Promise<ResolvedBlockMap> {
@@ -75,14 +63,7 @@ export async function resolveBlockData({
     });
   }
 
-  const pending: ExtraBlock[] = [
-    ...blocks.map((block) => ({ block, origin: "" })),
-    ...extraBlocks,
-  ];
-
-  const resolved = await Promise.all(
-    pending.map(({ block, origin }) => loadOne(block, origin)),
-  );
+  const resolved = await Promise.all(blocks.map((block) => loadOne(block)));
 
   const map: ResolvedBlockMap = {};
   for (const entry of resolved) {
@@ -99,10 +80,7 @@ export async function resolveBlockData({
     return undefined;
   }
 
-  async function loadOne(
-    block: LayoutBlock,
-    origin: string,
-  ): Promise<ResolvedBlock | undefined> {
+  async function loadOne(block: LayoutBlock): Promise<ResolvedBlock | undefined> {
     const definition = registry.get(block.type);
     if (!definition) return skip("unknown_block_type", block);
 
@@ -132,7 +110,6 @@ export async function resolveBlockData({
         schemaVersion: block.schemaVersion,
         config: parsed.value,
         data,
-        ...(origin ? { origin } : {}),
       } as ResolvedBlock;
     } catch (error) {
       return skip(

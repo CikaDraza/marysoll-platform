@@ -19,7 +19,7 @@ import {
 } from "@/lib/platform/theme-client";
 import {
   preloadedBlockDataSource,
-  resolveThemeBlockData,
+  resolveBlockData,
 } from "@/lib/platform/blocks";
 import type {
   ContentAboutData,
@@ -167,7 +167,7 @@ function legacyProps(
 async function blockDataFor(ls: LandingStructure) {
   const salon = salonFor(ls);
   const document = landingStructureToThemeDocument(ls, { theme: "theme-3" });
-  const data = await resolveThemeBlockData({
+  const data = await resolveBlockData({
     document,
     theme: "theme-3",
     tenantSlug: TENANT_SLUG,
@@ -232,13 +232,12 @@ describe("theme-3 poštuje sve svoje flagove — nema compat putanje", () => {
   const [, lashRoom] = tenants.find(([s]) => s === "the-lash-room-by-anja")!;
   const [, kiki] = tenants.find(([s]) => s === "kiki-kiss-beauty")!;
 
-  it("nijedan blok ne dolazi compat putanjom", async () => {
+  it("skup blokova je tačno onaj iz dokumenta", async () => {
     for (const [slug, ls] of tenants) {
-      const { data } = await blockDataFor(ls);
-      expect(
-        Object.values(data).filter((b) => b.origin),
-        slug,
-      ).toEqual([]);
+      const { data, document } = await blockDataFor(ls);
+      expect(Object.keys(data).sort(), slug).toEqual(
+        document.sections.flatMap((x) => x.blocks.map((b) => b.id)).sort(),
+      );
     }
   });
 
@@ -288,7 +287,7 @@ describe("blog blok nosi autora iz salona", () => {
     };
     const document = landingStructureToThemeDocument(ls, { theme: "theme-3" });
     const salon = { ...salonFor(ls), logo: null } as SalonProfileData;
-    const data = await resolveThemeBlockData({
+    const data = await resolveBlockData({
       document,
       theme: "theme-3",
       tenantSlug: TENANT_SLUG,

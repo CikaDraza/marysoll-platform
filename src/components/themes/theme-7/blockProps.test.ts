@@ -17,9 +17,8 @@ import {
   sectionBlockId,
 } from "@/lib/platform/theme-client";
 import {
-  LEGACY_ALWAYS_ORIGIN,
   preloadedBlockDataSource,
-  resolveThemeBlockData,
+  resolveBlockData,
 } from "@/lib/platform/blocks";
 import type {
   BookingServicesData,
@@ -151,7 +150,7 @@ function legacyProps(ls: LandingStructure, salon: SalonProfileData) {
 async function blockDataFor(ls: LandingStructure) {
   const salon = salonFor(ls);
   const document = landingStructureToThemeDocument(ls, { theme: "theme-7" });
-  const data = await resolveThemeBlockData({
+  const data = await resolveBlockData({
     document,
     theme: "theme-7",
     tenantSlug: TENANT_SLUG,
@@ -221,13 +220,16 @@ describe.each(tenants)("%s — propovi su identični starom putu", (slug, ls) =>
     ).toEqual(legacyProps(ls, salon).faq);
   });
 
-  it("booking je uvek razrešen — slot u hero-u", async () => {
+  it("booking — slot u hero-u, kad je sekcija uključena", async () => {
     const { salon, data } = await blockDataFor(ls);
     const block = data[sectionBlockId("appointmentSection")];
-    expect(block, slug).toBeDefined();
+    if (!block) {
+      expect(ls.landing.appointmentSection.enabled).toBe(false);
+      return;
+    }
     expect(
       theme7BookingProps(
-        block!.data as BookingServicesData,
+        block.data as BookingServicesData,
         TENANT_SLUG,
         CLIENT_SLUG,
       ),
@@ -236,28 +238,19 @@ describe.each(tenants)("%s — propovi su identični starom putu", (slug, ls) =>
 });
 
 describe("booking kao slot (spec 6.10)", () => {
-  it("Kiki Kiss ima appointmentSection uključen — blok NIJE compat", async () => {
+  it("Kiki Kiss ima appointmentSection uključen → booking postoji", async () => {
     expect(KIKI.landing.appointmentSection.enabled).toBe(true);
     const { data } = await blockDataFor(KIKI);
-    expect(data[sectionBlockId("appointmentSection")]!.origin).toBeUndefined();
-  });
-
-  it("kad je sekcija ugašena, compat je i dalje drži (booking je u hero-u)", async () => {
-    const [, lashRoom] = tenants.find(([s]) => s === "the-lash-room-by-anja")!;
-    expect(lashRoom.landing.appointmentSection.enabled).toBe(false);
-    const { data } = await blockDataFor(lashRoom);
     const block = data[sectionBlockId("appointmentSection")];
-    expect(block!.origin).toBe(LEGACY_ALWAYS_ORIGIN);
+    expect(block).toBeDefined();
     expect((block!.data as BookingServicesData).services).toEqual(SERVICES);
   });
 
-  it("compat nosi TAČNO booking, ništa drugo", async () => {
+  it("ugašena sekcija → nema bloka, pa hero slot ostaje prazan", async () => {
     const [, lashRoom] = tenants.find(([s]) => s === "the-lash-room-by-anja")!;
+    expect(lashRoom.landing.appointmentSection.enabled).toBe(false);
     const { data } = await blockDataFor(lashRoom);
-    const compat = Object.entries(data)
-      .filter(([, b]) => b.origin)
-      .map(([id]) => id);
-    expect(compat).toEqual([sectionBlockId("appointmentSection")]);
+    expect(data[sectionBlockId("appointmentSection")]).toBeUndefined();
   });
 });
 
@@ -265,7 +258,7 @@ describe("prazna stanja", () => {
   it("bez usluga se sekcija usluga ne prikazuje", async () => {
     const salon = salonFor(KIKI);
     const document = landingStructureToThemeDocument(KIKI, { theme: "theme-7" });
-    const data = await resolveThemeBlockData({
+    const data = await resolveBlockData({
       document,
       theme: "theme-7",
       deps: preloadedBlockDataSource({

@@ -2,12 +2,10 @@
 /**
  * Theme5Landing — peta tema migrirana na Feature Block-ove (T2A, korak 5).
  *
- * NAJVEĆI TEST COMPAT SLOJA: theme-5 renderuje PET CMS sekcija bez obzira na
- * `enabled` flag, a poštuje samo `artistsEnabled` i `testimonialsEnabled`.
+ * Ranije najveći test compat sloja — pet CMS sekcija se renderovalo bez obzira
+ * na `enabled`. Posle T2A-FOLLOWUP normalizacije tema poštuje sve svoje flagove.
  *
- *   hero / servicesPreview / appointmentSection / about / gallery
- *                                    → LegacyAlwaysThemeBlock ⚠️
- *   artists / testimonials           → ThemeBlock
+ *   sve CMS sekcije                           → ThemeBlock
  *   workingHours / howItWorks / pricing / CTA → theme-5 native (stari propovi)
  *
  * `mapCMS` ostaje: theme-5 je jedina tema koja je već imala view-model sloj.
@@ -24,7 +22,6 @@ import {
   Theme5WorkingHours,
 } from "../theme-5";
 import { THEME5_BLOCK_RENDERERS } from "../theme-5/blocks";
-import { LegacyAlwaysThemeBlock } from "../blocks/LegacyAlwaysThemeBlock";
 import { ThemeBlock } from "../blocks/ThemeBlock";
 import { ThemeBlockScope } from "../blocks/ThemeBlockScope";
 import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
@@ -76,16 +73,8 @@ export function Theme5Landing(props: ThemeLandingProps) {
         />
 
         <main className="flex-1 flex flex-col overflow-x-hidden">
-          <LegacyAlwaysThemeBlock
-            theme="theme-5"
-            source="hero"
-            type="content.hero"
-          />
-          <LegacyAlwaysThemeBlock
-            theme="theme-5"
-            source="servicesPreview"
-            type="services.catalog"
-          />
+          <ThemeBlock document={document} type="content.hero" />
+          <ThemeBlock document={document} type="services.catalog" />
 
           {shouldShowWorkingHours(salon) && (
             <Theme5WorkingHours
@@ -101,30 +90,18 @@ export function Theme5Landing(props: ThemeLandingProps) {
             tenantSlug={tenantSlug}
           />
 
-          <LegacyAlwaysThemeBlock
-            theme="theme-5"
-            source="appointmentSection"
-            type="booking.services"
-          />
+          <ThemeBlock document={document} type="booking.services" />
 
           <Theme5Pricing services={services} tenantSlug={tenantSlug} />
           <Theme5CTA data={ui.cta} />
 
           <ThemeBlock document={document} type="content.team" />
 
-          <LegacyAlwaysThemeBlock
-            theme="theme-5"
-            source="about"
-            type="content.about"
-          />
+          <ThemeBlock document={document} type="content.about" />
 
           <ThemeBlock document={document} type="content.testimonials" />
 
-          <LegacyAlwaysThemeBlock
-            theme="theme-5"
-            source="gallery"
-            type="content.gallery"
-          />
+          <ThemeBlock document={document} type="content.gallery" />
         </main>
 
         <Theme5Footer data={ui.footer} />

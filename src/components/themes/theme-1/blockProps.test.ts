@@ -16,7 +16,7 @@ import fixtures from "@/lib/platform/__fixtures__/landing-structures.json";
 import { landingStructureToThemeDocument, sectionBlockId } from "@/lib/platform/theme-client";
 import {
   preloadedBlockDataSource,
-  resolveThemeBlockData,
+  resolveBlockData,
 } from "@/lib/platform/blocks";
 import type {
   BookingServicesData,
@@ -175,7 +175,7 @@ function legacyProps(ls: LandingStructure, salon: SalonProfileData) {
 async function blockDataFor(ls: LandingStructure) {
   const salon = salonFor(ls);
   const document = landingStructureToThemeDocument(ls, { theme: "theme-1" });
-  const data = await resolveThemeBlockData({
+  const data = await resolveBlockData({
     document,
     theme: "theme-1",
     tenantSlug: TENANT_SLUG,
@@ -275,7 +275,7 @@ describe("granični slučajevi koje stari put jeste imao", () => {
 
   it("bez usluga se services sekcija ne prikazuje", async () => {
     const document = landingStructureToThemeDocument(ls, { theme: "theme-1" });
-    const data = await resolveThemeBlockData({
+    const data = await resolveBlockData({
       document,
       theme: "theme-1",
       deps: preloadedBlockDataSource({
@@ -294,7 +294,7 @@ describe("granični slučajevi koje stari put jeste imao", () => {
 
   it("bez utisaka prop ostaje undefined, ne prazan niz", async () => {
     const document = landingStructureToThemeDocument(ls, { theme: "theme-1" });
-    const data = await resolveThemeBlockData({
+    const data = await resolveBlockData({
       document,
       theme: "theme-1",
       deps: preloadedBlockDataSource({
