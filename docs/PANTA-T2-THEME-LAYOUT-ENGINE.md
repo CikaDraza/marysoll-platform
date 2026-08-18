@@ -780,6 +780,44 @@ mogla da izabere ponašanje koje njena tema ne ume da prikaže.
 > tenante. Fallback tekstovi i slike se zadržavaju. Moguće proširenje ako Anja
 > krene i sa edukacijom.
 
+## 6.11 Granica za finalni cleanup: blok ≠ widget ≠ launcher
+
+Pre nego što `ThemeLandingProps` bude sveden (korak 6), zaključava se razlika
+koja se do sada podrazumevala:
+
+```
+booking.services  ≠  BookingWidget  ≠  CTA launcher
+```
+
+| pojam | šta je | ko ga poseduje |
+|---|---|---|
+| `booking.services` **blok** | odluka „ovde, na ovom mestu strane, stoji zakazivanje" + njegov sadržaj (naslov, uputstva) | `ThemeDocument` / kompozicija |
+| **BookingWidget** | sam proizvod: izbor usluge, slobodni termini, potvrda | Booking domen |
+| **CTA launcher** | radnja dugmeta koja otvara/vodi do widget-a | tema + CMS podešavanje |
+
+Iz toga slede tri legitimne kombinacije nad ISTIM proizvodom:
+
+```
+Hero CTA → modal            Hero CTA → #booking → inline widget
+Hero CTA → /termini → widget
+```
+
+…i tenant sme imati **više njih odjednom** — npr. modal iz hero-a *i* inline
+sekciju niže na strani. To ne krši „jedan koncept = jedan blok" (6.7): blok je i
+dalje jedan; modal i `/termini` su druge površine istog proizvoda, ne druge
+sekcije.
+
+Praktične posledice za korak 6:
+
+- `Theme8ModalProvider` (i svaki budući launcher) ne sme da zavisi od
+  `appointmentSection.enabled` — to je odluka o *sekciji*, ne o *proizvodu*;
+- widget podaci (usluge, radno vreme, dostupnost) idu kroz booking domen, ne
+  kroz `ThemeLandingProps`;
+- `CtaAction` (6.10) je jedina veza između dugmeta i površine.
+
+theme-8 je zato dobar test buduće arhitekture: jedina je tema koja već danas ima
+launcher (modal) bez inline sekcije.
+
 ## 7. Redosled (T2A)
 
 1. ✅ `packages/theme-engine` — tipovi (`ThemeDocument`, `LayoutDefinition`) +
