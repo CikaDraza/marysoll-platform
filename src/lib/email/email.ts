@@ -353,10 +353,17 @@ export async function sendSuperAdminChatNotification(
     ? "💬 Nova poruka od Marysoll podrške"
     : `💬 Nova poruka od salona ${data.salonName}`;
 
+  // Isti bulletproof šablon kao ctaButton u templates/: boja na <td> (bgcolor +
+  // background-color) i padding na ćeliji — Outlook ne boji pouzdano inline <a>
+  // niti mu primenjuje padding, pa bi belo na belom nestalo.
   const button = data.url
-    ? `<p style="margin:24px 0 8px;">
-         <a href="${data.url}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;">Otvori chat</a>
-       </p>`
+    ? `<table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin:24px 0 8px;">
+         <tr>
+           <td align="center" bgcolor="#7c3aed" style="border-radius:8px;background-color:#7c3aed;padding:12px 24px;mso-padding-alt:12px 24px;">
+             <a href="${data.url}" style="display:inline-block;color:#ffffff;text-decoration:none;font-weight:600;">Otvori chat</a>
+           </td>
+         </tr>
+       </table>`
     : "";
 
   const content = `
