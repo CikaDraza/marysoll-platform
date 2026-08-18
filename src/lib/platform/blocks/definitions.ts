@@ -145,11 +145,12 @@ const contentTestimonials: FeatureBlockDefinition<"content.testimonials"> = {
   capability: null,
   parseConfig: parseWith<"content.testimonials">(testimonialsConfigSchema),
   async load({ deps }) {
-    const [ls, testimonials] = await Promise.all([
+    const [ls, testimonials, stats] = await Promise.all([
       deps.landingStructure(),
       deps.testimonials(),
+      deps.tenantStats(),
     ]);
-    return { content: ls?.landing?.testimonials, testimonials };
+    return { content: ls?.landing?.testimonials, testimonials, stats };
   },
 };
 

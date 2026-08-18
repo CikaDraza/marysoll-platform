@@ -90,6 +90,11 @@ export interface BookingServicesData {
 export interface ContentTestimonialsData {
   content: Landing["testimonials"] | undefined;
   testimonials: PublicTestimonial[];
+  /**
+   * Metrike — neke teme porede `reviewCount` sa brojem prikazanih utisaka da bi
+   * znale ima li još za dovlačenje. Blok ih traži sam iz deljenog izvora (§3.5).
+   */
+  stats: TenantStats | undefined;
 }
 
 export type GalleryVariant = "images-only" | "images-with-category";

@@ -282,7 +282,7 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
   },
   {
     theme: "theme-8",
-    visibility: "legacy-flags",
+    visibility: "theme-document",
     // Nema booking sekcije ni artists/blog — Y2K shell slojevi su bitan deo teme.
     honoredFlags: [
       "heroEnabled",

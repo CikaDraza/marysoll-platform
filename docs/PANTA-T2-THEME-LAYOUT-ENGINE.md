@@ -823,7 +823,13 @@ mogla da izabere ponašanje koje njena tema ne ume da prikaže.
      tenantom (Kiki Kiss): `<body>` bajt-u-bajt identičan (34 469 B), `<head>`
      +83 B (jedan preload više), gzip +47 B; TTFB 40 parova, razlika po paru
      median −0,6 ms.
-   - ⏳ theme-8 — i dalje `visibility: "legacy-flags"`.
+   - ✅ **Theme8** — poslednja. Sedam CMS sekcija kroz `<ThemeBlock>`; deset
+     shell slojeva i `Theme8ModalProvider` netaknuti. Booking ostaje modal +
+     `/termini` (6.10), nije blok. Regresija nad živim tenantom (The Lash Room):
+     `<body>` bajt-u-bajt identičan i na desktopu (101 305 B) i na iOS putanji
+     (99 515 B, `reduceMotion` — bez preloadera); TTFB razlika po paru +0,2 ms.
+
+   **Svih osam tema je migrirano.** Sledi korak 6 — svođenje `ThemeLandingProps`.
 6. Tek kada prva tema prođe regresiju, `ThemeLandingProps` počinje da se svodi na:
    `document`, `brandingVars`, `resolveHref`, `reduceMotion`, `headerProps`,
    `footerProps`. **Nijedan stari flag se ne uklanja pre toga.**
