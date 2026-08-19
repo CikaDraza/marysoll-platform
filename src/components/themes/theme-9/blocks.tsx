@@ -18,6 +18,7 @@ import {
   theme9FeaturedEducationProps,
   theme9GuidedCareProcessProps,
   theme9HeroProps,
+  theme9LatestEducationProps,
   theme9ProfessionalPathProps,
   theme9TopicHubProps,
 } from "./blockProps";
@@ -27,6 +28,7 @@ import { Theme9Credentials } from "./Credentials";
 import { Theme9FeaturedEducation } from "./FeaturedEducation";
 import { Theme9GuidedCareProcess } from "./GuidedCareProcess";
 import { Theme9Hero } from "./Hero";
+import { Theme9LatestEducation } from "./LatestEducation";
 import { Theme9ProfessionalPath } from "./ProfessionalPath";
 import { Theme9TopicHub } from "./TopicHub";
 
@@ -81,6 +83,11 @@ function ProfessionalPathBlock({
   );
 }
 
+function LatestEducationBlock({ data }: BlockRenderProps<"content.blog">) {
+  const { tenantSlug } = useThemeRouting();
+  return <Theme9LatestEducation {...theme9LatestEducationProps(data, tenantSlug)} />;
+}
+
 export const THEME9_BLOCK_RENDERERS: ThemeBlockRenderers = {
   "content.hero": HeroBlock,
   "content.audience-paths": AudiencePathsBlock,
@@ -90,4 +97,5 @@ export const THEME9_BLOCK_RENDERERS: ThemeBlockRenderers = {
   "content.guided-care-process": GuidedCareProcessBlock,
   "content.professional-path": ProfessionalPathBlock,
   "content.credentials": CredentialsBlock,
+  "content.blog": LatestEducationBlock,
 };

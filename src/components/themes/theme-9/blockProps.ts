@@ -14,6 +14,7 @@ import type {
   ContentCredentialsData,
   ContentFeaturedEducationData,
   ContentGuidedCareProcessData,
+  ContentBlogData,
   ContentHeroData,
   ContentProfessionalPathData,
   ContentTopicHubData,
@@ -25,6 +26,7 @@ import type { Theme9CredentialsProps } from "./Credentials";
 import type { Theme9FeaturedEducationProps } from "./FeaturedEducation";
 import type { Theme9GuidedCareProcessProps } from "./GuidedCareProcess";
 import type { Theme9HeroProps } from "./Hero";
+import type { Theme9LatestEducationProps } from "./LatestEducation";
 import type { Theme9ProfessionalPathProps } from "./ProfessionalPath";
 import type { Theme9TopicHubProps } from "./TopicHub";
 
@@ -215,5 +217,16 @@ export function theme9ProfessionalPathProps(
     note: c?.note,
     formats: c?.formats ?? [],
     cta: c?.cta ? { text: c.cta.text, href: resolveHref(c.cta.href) } : undefined,
+  };
+}
+
+export function theme9LatestEducationProps(
+  data: ContentBlogData,
+  tenantSlug?: string,
+): Theme9LatestEducationProps {
+  return {
+    headline: data.content?.headline,
+    paragraph: data.content?.paragraph,
+    tenantSlug,
   };
 }

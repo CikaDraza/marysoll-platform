@@ -15,6 +15,8 @@ export type { Theme9GuidedCareProcessProps } from "./GuidedCareProcess";
 export { Theme9Header } from "./Header";
 export { Theme9Hero } from "./Hero";
 export type { Theme9HeroProps } from "./Hero";
+export { Theme9LatestEducation } from "./LatestEducation";
+export type { Theme9LatestEducationProps } from "./LatestEducation";
 export { Theme9ProfessionalPath } from "./ProfessionalPath";
 export type { Theme9ProfessionalPathProps } from "./ProfessionalPath";
 export { Theme9TopicHub } from "./TopicHub";
