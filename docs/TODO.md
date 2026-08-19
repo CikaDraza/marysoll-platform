@@ -147,3 +147,68 @@ nagradi. T3 je prilika da to preraste u čist ugovor
 | `themePages` i 6 theme-9 landing sekcija nemaju CMS polja — sadržaj se za sada autoriše kroz `npm run seed:theme9 -- --tenant=<slug>` | `AdminLandingCMS.tsx` | otvoreno; seed piše u ISTA polja, pa kad editor stigne ništa se ne migrira |
 | `theme-3/BlogSection` i dalje dovlači objave klijentskim `useBlogPosts` iako `content.blog` loader sada isporučuje `posts` — isti waterfall koji je theme-9 upravo izgubila | `theme-3/BlogSection.tsx` | otvoreno, sada trivijalno |
 | 6 theme-9 sekcija nije bilo u mongoose shemi (`strict` bi ih tiho odbacio pri snimanju) ✅ | `models/SalonProfile.ts` | rešeno u ovom slice-u |
+| **Tri ručne projekcije istog `SalonProfile` dokumenta** — svako novo polje mora u sve tri ili tiho nestane, a TypeScript ne hvata nijednu (sva su polja opciona, pa je izostavljanje validan objekat) | mongoose shema `models/SalonProfile.ts` (upis) · `api/public/[tenantSlug]/salon-profile/route.ts` (API) · `client/ClientHomePage.tsx` `salonData` (strana) | **otvoreno — vidi belešku ispod** |
+
+### Dug: jedan mapper umesto tri ručne projekcije
+
+Isti propust se ponovio **tri puta** tokom theme-9 rada, svaki put sa istim
+simptomom — polje postoji u bazi, tip ga dozvoljava, a do teme ne stigne:
+
+1. 6 theme-9 landing sekcija nije bilo u mongoose shemi → `strict` ih je tiho
+   odbacivao pri snimanju;
+2. `shortDescription` / `themePages` / `themeBookingPreview` nisu bili u
+   projekciji javnog API-ja → nikad nisu stizali do podstrana;
+3. ista tri polja nisu bila u `salonData` u
+   [ClientHomePage.tsx](../src/components/client/ClientHomePage.tsx) → launcher
+   zakazivanja je renderovan kao `data-booking-launcher="pending"`, dugmad
+   vidljiva ali mrtva.
+
+Treći je najskuplji za dijagnozu: strana se renderuje potpuno normalno, jer
+sadržaj ide kroz `landingStructure` koji jeste prepisan. Nema greške, nema
+praznog stanja — samo dugme koje ne radi.
+
+**Zašto tipovi ne pomažu.** Sva tri polja su opciona na `SalonProfileData`.
+Objekat bez njih je validan `SalonProfileData`, pa `tsc` nema šta da prijavi.
+Jedini signal je runtime ponašanje.
+
+**Predlog:** jedan deljeni `toSalonProfileData(doc)` u `lib/tenant/`, koji sve
+tri putanje pozivaju, plus test koji poredi ključeve rezultata sa poljima
+`SalonProfileData` i pada kad se pojavi polje koje mapper ne prepisuje.
+
+**Kada:** pre CMS polja za theme-9 sekcije. Tada u profil ulazi desetak novih
+polja odjednom, i ovaj propust prestaje da bude jednokratna greška — postaje
+sistematičan.
+
+### Ugovor: `initialOfferingId` — CTA sa kartice ne ponavlja korak 01
+
+Tok zakazivanja je **offering-first**: ponuda → termin → upitnik → pregled.
+Redosled nije kozmetika — tek kad je ponuda poznata, poznati su `duration` i
+`resource`, pa Booking Engine uopšte može da odgovori koji su datumi i slotovi
+slobodni i šta je `firstAvailable`.
+
+Iz toga slede dva ulaza u **isti** tok:
+
+```
+GENERIČKI CTA                      CTA SA KARTICE PONUDE
+„Zakaži konsultaciju"              [Individualna konsultacija] [Zakaži]
+        ↓                                    ↓
+01 Ponuda                          offeringId već poznat → korak 01 se preskače
+02 Datum i vreme                   02 Datum i vreme
+03 Intake                          03 Intake
+04 Pregled                         04 Pregled
+```
+
+```ts
+useBookingFlow({ initialOfferingId?: string })
+```
+
+**Isti hook, drugo ulazno stanje — nikad drugi tok.** Ako se pojavi drugi tok,
+availability i intake se granaju po ulaznoj tački i to se više ne vraća.
+
+Nije implementirano jer takav CTA još ne postoji; zapisano da se ne izgubi kad
+Consultation domen (Slice 7) donese kartice pojedinačnih ponuda.
+
+**Terminologija je već očišćena:** prikaz koristi `offerings` / `offeringId` /
+`offeringTitle` / `pickOffering()`, ne `service*`. Privremeni prikaz ne sme kroz
+mala vrata vratiti jednačinu `Consultation = Service`, koju Slice 7 postoji da
+razdvoji.

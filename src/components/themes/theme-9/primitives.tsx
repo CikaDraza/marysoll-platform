@@ -53,7 +53,14 @@ export function Chip({
 }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-3 py-1 text-[12.5px] leading-none ${CHIP_VARIANT[variant]} ${className}`}
+      /**
+       * `w-fit` je nužan, ne dekoracija: `inline-flex` ne pomaže kad je chip
+       * flex-item (kartice su `flex-col`) — tada ga `align-items: stretch`
+       * razvuče preko cele širine kartice i pozadina pilule postane traka.
+       * `width: fit-content` gasi stretch, a u `flex-row` kontekstu ne dira
+       * vertikalno poravnanje kao što bi `self-start`.
+       */
+      className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-[12.5px] leading-none ${CHIP_VARIANT[variant]} ${className}`}
     >
       {children}
     </span>

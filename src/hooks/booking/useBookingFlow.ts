@@ -14,16 +14,36 @@
  *   (kasnije) "live" — pravi upis kroz engine.
  *
  * Draft živi ceo session dijaloga: `back` je pravi workflow back, ne restart —
- * povratak na anketu čuva odgovore, povratak na termin čuva uslugu.
+ * povratak na anketu čuva odgovore, povratak na termin čuva ponudu.
+ *
+ * REDOSLED JE OFFERING-FIRST: ponuda → termin → upitnik → pregled. Nije
+ * kozmetika. Tek kad je ponuda poznata, poznati su trajanje i resurs, pa
+ * availability uopšte može da odgovori koji su termini stvarno slobodni. Dok
+ * prikaz nudi fiksne probne datume razlika se ne vidi, ali kad `availability-core`
+ * stigne (docs/TODO.md, Slice 3) tok se ne menja — samo izvor termina.
+ *
+ * NAZIVI: `offering`, ne `service`. Consultation je zaseban domen (Slice 7) i
+ * ne sme se svesti na salonsku uslugu preko privremenog prikaza.
+ *
+ * UGOVOR ZA KASNIJE — `initialOfferingId`: CTA sa kartice pojedinačne ponude
+ * („Individualna konsultacija · Zakaži") ulazi u tok sa već poznatom ponudom i
+ * preskače korak 01, dok generički CTA („Zakaži konsultaciju") počinje od
+ * njega. Isti hook, drugo ulazno stanje — nikad drugi tok. Nije implementirano
+ * jer takav CTA još ne postoji.
  */
 import { useCallback, useMemo, useState } from "react";
 import type { ThemeBookingPreview } from "@/types";
 
-export type BookingStage = "slots" | "service" | "intake" | "review" | "done";
+export type BookingStage =
+  | "offering"
+  | "slots"
+  | "intake"
+  | "review"
+  | "done";
 
 export interface BookingFlowState {
   stage: BookingStage;
-  serviceId?: string;
+  offeringId?: string;
   dateId?: string;
   time?: string;
   answers: Record<string, string>;
@@ -39,8 +59,8 @@ export interface UseBookingFlowOptions {
 }
 
 export interface BookingSubmitPayload {
-  serviceId?: string;
-  serviceTitle?: string;
+  offeringId?: string;
+  offeringTitle?: string;
   priceLabel?: string;
   dateLong?: string;
   time?: string;
@@ -51,7 +71,7 @@ export interface BookingSubmitPayload {
 }
 
 const EMPTY: BookingFlowState = {
-  stage: "slots",
+  stage: "offering",
   answers: {},
   freeText: "",
   intakeSkipped: false,
@@ -71,9 +91,9 @@ export function useBookingFlow({
     ? data.checkinFreeText
     : data.intakeFreeText;
 
-  const service = useMemo(
-    () => data.services.find((s) => s.id === state.serviceId),
-    [data.services, state.serviceId],
+  const offering = useMemo(
+    () => data.offerings.find((o) => o.id === state.offeringId),
+    [data.offerings, state.offeringId],
   );
   const date = useMemo(
     () => data.dates.find((d) => d.id === state.dateId),
@@ -92,8 +112,17 @@ export function useBookingFlow({
     setState((prev) => ({ ...prev, time }));
   }, []);
 
-  const pickService = useCallback((serviceId: string) => {
-    setState((prev) => ({ ...prev, serviceId }));
+  /**
+   * Izbor ponude poništava termin. Prelazak sa 45-minutne konsultacije na
+   * 60-minutni paket znači da ranije izabrani slot više nije nužno validan —
+   * tiho zadržan termin bi bio obećanje koje engine kasnije ne može da ispuni.
+   */
+  const pickOffering = useCallback((offeringId: string) => {
+    setState((prev) =>
+      prev.offeringId === offeringId
+        ? prev
+        : { ...prev, offeringId, dateId: undefined, time: undefined },
+    );
   }, []);
 
   const answer = useCallback((questionId: string, value: string) => {
@@ -111,9 +140,18 @@ export function useBookingFlow({
     setState((prev) => ({ ...prev, stage }));
   }, []);
 
-  /** Iz widget-a u modal: termin je izabran, korak 01 ga zatiče popunjenog. */
+  /** Korak 01 → 02: ponuda je izabrana, termini se traže za nju. */
+  const confirmOffering = useCallback(() => {
+    setState((prev) => (prev.offeringId ? { ...prev, stage: "slots" } : prev));
+  }, []);
+
+  /** Korak 02 → 03: termin je izabran. */
   const confirmSlot = useCallback(() => {
-    setState((prev) => (prev.dateId && prev.time ? { ...prev, stage: "service" } : prev));
+    setState((prev) =>
+      prev.dateId && prev.time
+        ? { ...prev, intakeSkipped: false, stage: "intake" }
+        : prev,
+    );
   }, []);
 
   const skipIntake = useCallback(() => {
@@ -129,9 +167,9 @@ export function useBookingFlow({
     setError(null);
     try {
       await onSubmit({
-        serviceId: service?.id,
-        serviceTitle: service?.title,
-        priceLabel: service?.priceLabel,
+        offeringId: offering?.id,
+        offeringTitle: offering?.title,
+        priceLabel: offering?.priceLabel,
         dateLong: date?.long,
         time: state.time,
         returningClient,
@@ -147,7 +185,7 @@ export function useBookingFlow({
     } finally {
       setSubmitting(false);
     }
-  }, [date, onSubmit, questions, returningClient, service, state]);
+  }, [date, offering, onSubmit, questions, returningClient, state]);
 
   const reset = useCallback(() => {
     setState(EMPTY);
@@ -156,7 +194,7 @@ export function useBookingFlow({
 
   return {
     state,
-    service,
+    offering,
     date,
     questions,
     freeTextLabel,
@@ -166,10 +204,11 @@ export function useBookingFlow({
     error,
     pickDate,
     pickTime,
-    pickService,
+    pickOffering,
     answer,
     setFreeText,
     go,
+    confirmOffering,
     confirmSlot,
     skipIntake,
     toIntake,
