@@ -158,7 +158,7 @@ export interface ThemeNativeByTheme {
 export type ThemeNativeData = Partial<ThemeNativeByTheme>;
 
 /** Instagram: CMS galerija ima prednost nad salonskim profilom. */
-function instagramOf(salon: SalonProfileData): NativeInstagram {
+export function instagramOf(salon: SalonProfileData): NativeInstagram {
   const gallery = salon.landingStructure?.landing?.gallery;
   const fallback = salon.social?.instagram || "";
   return {
