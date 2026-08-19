@@ -28,7 +28,11 @@ export function Theme9Footer({
   const columns: { title: string; links: { label: string; href: string }[] }[] = [
     {
       title: "Edukacija",
-      links: [{ label: "Teme", href: `${base}/blogs` }],
+      links: [
+        { label: "Teme", href: `${base}/blogs` },
+        { label: "Za klijente", href: `${base}/za-klijente` },
+        { label: "Za profesionalce", href: `${base}/za-profesionalce` },
+      ],
     },
     {
       title: "O meni",

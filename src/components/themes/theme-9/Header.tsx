@@ -46,12 +46,11 @@ export function Theme9Header({
   // Bez hardkodovanog imena: tema nije Marina, ona joj je prvi tenant.
   const displayName = salonName;
 
-  // `/za-klijente` i `/za-profesionalce` stižu u svom slice-u (tada im treba i
-  // unos u CLIENT_TENANT_PATHS) — do tada nav ne sme da vodi na 404.
   const navItems = [
     { name: "Početna", href: `${base}/` },
+    { name: "Za klijente", href: `${base}/za-klijente` },
+    { name: "Za profesionalce", href: `${base}/za-profesionalce` },
     { name: "Edukacija", href: `${base}/blogs` },
-    { name: "O meni", href: `${base}/#o-meni` },
   ];
 
   return (

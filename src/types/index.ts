@@ -793,6 +793,8 @@ export interface SalonProfile {
   seo?: SeoData;
   branding?: IBranding;
   landingStructure?: LandingStructure;
+  /** Sadržaj tematskih podstranica; odvojeno od landing kompozicije. */
+  themePages?: TenantThemePages;
   isDemo?: boolean;
   clientGender?: ClientGender;
 }
@@ -1225,6 +1227,69 @@ export interface LandingStructure {
   };
 }
 
+/**
+ * Sadržaj tematskih podstranica — MINIMALNI `PageDocument`.
+ *
+ * ZAŠTO NIJE U `LandingStructure.pages`: `LandingStructure` opisuje kompoziciju
+ * LANDING teme (koje sekcije stoje na početnoj i kojim redom). Današnji
+ * `pages.servicesPage` / `pages.appointmentsPage` nose samo naslov i pasus —
+ * ubacivanje punih strana (kartice, koraci, FAQ, CTA) tamo pretvorilo bi
+ * landing kompoziciju u opšti CMS. Granica je: kompozicija teme ≠ sadržaj
+ * strane, i ovde je povučena i na nivou skladištenja.
+ *
+ * PUT NADALJE: kad druga tema bude tražila svoje strane, ovaj oblik prelazi u
+ * dokument sastavljen od Feature Block-ova. Danas to nije moguće bez
+ * parametrizacije loadera — svaki blok je vezan za tačno jednu sekciju u
+ * `landing.*` (`sourceSchema("audiencePaths")`), pa isti blok ne može da čita
+ * sadržaj druge strane. Ta izmena engine-a ne pripada ovom slice-u.
+ */
+export interface ThemePageHero {
+  eyebrow?: string;
+  headline?: string;
+  lead?: string;
+  /** Sitan tekst ispod CTA (npr. „od 4.900 RSD · 45 min"). */
+  note?: string;
+  cta?: { text: string; href: string };
+  image?: HeroImage;
+}
+
+export interface ThemePageHeading {
+  eyebrow?: string;
+  headline?: string;
+  lead?: string;
+}
+
+export interface TenantThemePage {
+  enabled: boolean;
+  hero?: ThemePageHero;
+  /** Kartice: „zašto konsultacija" / „formati programa". */
+  cards?: {
+    heading?: ThemePageHeading;
+    items: { kind?: string; title: string; text?: string; meta?: string }[];
+  };
+  /** Numerisani niz: proces nege / moduli programa. */
+  steps?: {
+    heading?: ThemePageHeading;
+    items: { title: string; text?: string; meta?: string; points?: string[] }[];
+  };
+  faq?: {
+    heading?: ThemePageHeading;
+    image?: HeroImage;
+    items: { question: string; answer: string }[];
+  };
+  cta?: {
+    headline?: string;
+    lead?: string;
+    cta?: { text: string; href: string };
+    /** Ton panela; tema odlučuje kako ga crta. */
+    tone?: "accent" | "warm";
+  };
+}
+
+export type ThemePageKey = "za-klijente" | "za-profesionalce";
+
+export type TenantThemePages = Partial<Record<ThemePageKey, TenantThemePage>>;
+
 export interface SalonProfileData {
   _id: string;
   name: string;
@@ -1232,6 +1297,8 @@ export interface SalonProfileData {
   description: string;
   landingTheme?: LandingTheme;
   landingStructure?: LandingStructure;
+  /** Sadržaj tematskih podstranica; odvojeno od landing kompozicije. */
+  themePages?: TenantThemePages;
   clientGender?: ClientGender;
   isDemo?: boolean;
   logo?: string | null;

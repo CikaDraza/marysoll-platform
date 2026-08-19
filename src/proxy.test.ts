@@ -289,6 +289,16 @@ describe("tenant subdomen (host-based)", () => {
     expect(rewritePath(res)).toBe("/tenant/manifest");
   });
 
+  it.each(["/za-klijente", "/za-profesionalce"])(
+    "%s se prepisuje na /tenant/... (theme-9 strane)",
+    async (path) => {
+      // Tenant BEZ custom domena — inače bi kanonski 301 pretekao rewrite.
+      const { res } = await runProxy("no-domain-salon.marysoll.com", path);
+      expect(rewritePath(res)).toBe(`/tenant${path}`);
+      expect(forwardedHeader(res, "x-tenant-slug")).toBe("no-domain-salon");
+    },
+  );
+
   it("/api/public/* prolazi bez guarda", async () => {
     const { res } = await runProxy(
       "no-domain-salon.marysoll.com",

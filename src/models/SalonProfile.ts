@@ -222,6 +222,108 @@ const SalonProfileSchema = new mongoose.Schema(
             secondary: ctaSchema,
           },
         },
+
+        // ── theme-9 „Expert Editorial" sekcije ─────────────────────────────
+        // Shema je eksplicitna (mongoose `strict` je podrazumevan), pa svaka
+        // nova sekcija MORA i ovde — inače se tiho odbacuje pri snimanju.
+        audiencePaths: {
+          enabled: { type: Boolean, default: false },
+          eyebrow: { type: String },
+          headline: { type: String },
+          paths: {
+            type: [
+              {
+                id: { type: String },
+                chip: { type: String },
+                title: { type: String },
+                lead: { type: String },
+                bullets: { type: [String], default: [] },
+                href: { type: String },
+                tone: { type: String, enum: ["surface", "accent"] },
+              },
+            ],
+            default: [],
+          },
+        },
+        topicHub: {
+          enabled: { type: Boolean, default: false },
+          eyebrow: { type: String },
+          headline: { type: String },
+          filters: {
+            type: [{ id: { type: String }, label: { type: String } }],
+            default: [],
+          },
+          topics: {
+            type: [
+              {
+                id: { type: String },
+                group: { type: String },
+                title: { type: String },
+                lead: { type: String },
+                tags: { type: [String], default: [] },
+                href: { type: String },
+              },
+            ],
+            default: [],
+          },
+        },
+        guidedCareProcess: {
+          enabled: { type: Boolean, default: false },
+          eyebrow: { type: String },
+          headline: { type: String },
+          lead: { type: String },
+          steps: {
+            type: [{ title: { type: String }, text: { type: String } }],
+            default: [],
+          },
+        },
+        credentials: {
+          enabled: { type: Boolean, default: false },
+          eyebrow: { type: String },
+          headline: { type: String },
+          lead: { type: String },
+          pillars: {
+            type: [{ title: { type: String }, text: { type: String } }],
+            default: [],
+          },
+          note: { type: String },
+        },
+        featuredEducation: {
+          enabled: { type: Boolean, default: false },
+          eyebrow: { type: String },
+          status: { type: String },
+          headline: { type: String },
+          lead: { type: String },
+          learn: { type: [String], default: [] },
+          details: {
+            format: { type: String },
+            duration: { type: String },
+            startDate: { type: String },
+            price: { type: String },
+          },
+          pendingLabel: { type: String },
+          cta: ctaSchema,
+          note: { type: String },
+        },
+        professionalPath: {
+          enabled: { type: Boolean, default: false },
+          eyebrow: { type: String },
+          headline: { type: String },
+          lead: { type: String },
+          note: { type: String },
+          formats: {
+            type: [
+              {
+                kind: { type: String },
+                title: { type: String },
+                text: { type: String },
+                priceFrom: { type: String },
+              },
+            ],
+            default: [],
+          },
+          cta: ctaSchema,
+        },
       },
       pages: {
         servicesPage: {
@@ -310,6 +412,20 @@ const SalonProfileSchema = new mongoose.Schema(
       primaryColor: { type: String, default: "#a855f7" },
       secondaryColor: { type: String, default: "#ec4899" },
       fontFamily: { type: String, default: "Inter" },
+    },
+
+    /**
+     * Sadržaj tematskih podstranica — minimalni `PageDocument`, ODVOJEN od
+     * `landingStructure`. Landing struktura opisuje kompoziciju početne strane;
+     * ovo je sadržaj strana. Granica je povučena i na nivou skladištenja da
+     * landing kompozicija ne postane opšti CMS.
+     *
+     * `Mixed` jer je oblik po strani isti (`TenantThemePage`) i validira se u
+     * aplikacijskom sloju; ključevi su `ThemePageKey`.
+     */
+    themePages: {
+      type: mongoose.Schema.Types.Mixed,
+      default: undefined,
     },
 
     landingTheme: {

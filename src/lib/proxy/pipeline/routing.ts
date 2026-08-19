@@ -47,6 +47,9 @@ const CLIENT_TENANT_PATHS = new Set([
   "/newsletter",
   "/blogs",
   "/checkin",
+  // theme-9 „Expert Editorial" strane; ostale teme ih nemaju i vraćaju not-found.
+  "/za-klijente",
+  "/za-profesionalce",
 ]);
 
 const PLATFORM_SUBDOMAINS = new Set(["admin", "superadmin", "app", "www"]);
