@@ -387,7 +387,7 @@ export async function newsletterPromotionTemplate(data: {
  */
 export async function bookingPreviewTemplate(data: {
   salonName: string;
-  serviceTitle?: string;
+  offeringTitle?: string;
   priceLabel?: string;
   dateLong?: string;
   time?: string;
@@ -434,7 +434,7 @@ export async function bookingPreviewTemplate(data: {
     <p style="margin:0 0 20px 0;">Neko je upravo prošao kroz zakazivanje na sajtu salona <strong>${data.salonName}</strong>.</p>
 
     <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 24px 0;">
-      ${row("Usluga", data.serviceTitle)}
+      ${row("Konsultacija", data.offeringTitle)}
       ${row("Termin", [data.dateLong, data.time].filter(Boolean).join(" · ") || undefined)}
       ${row("Cena", data.priceLabel)}
       ${row("Tip klijenta", data.returningClient ? "Povratnica (kratak check-in)" : "Nova klijentkinja (pun upitnik)")}

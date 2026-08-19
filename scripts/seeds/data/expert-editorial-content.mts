@@ -581,7 +581,7 @@ export const salonShortDescription = "Skincare edukacija";
 export const bookingPreview = {
   enabled: true,
   month: "avgust 2026",
-  services: [
+  offerings: [
     {
       id: "individualna",
       title: "Individualna konsultacija",

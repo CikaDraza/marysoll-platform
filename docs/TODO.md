@@ -178,3 +178,37 @@ tri putanje pozivaju, plus test koji poredi ključeve rezultata sa poljima
 **Kada:** pre CMS polja za theme-9 sekcije. Tada u profil ulazi desetak novih
 polja odjednom, i ovaj propust prestaje da bude jednokratna greška — postaje
 sistematičan.
+
+### Ugovor: `initialOfferingId` — CTA sa kartice ne ponavlja korak 01
+
+Tok zakazivanja je **offering-first**: ponuda → termin → upitnik → pregled.
+Redosled nije kozmetika — tek kad je ponuda poznata, poznati su `duration` i
+`resource`, pa Booking Engine uopšte može da odgovori koji su datumi i slotovi
+slobodni i šta je `firstAvailable`.
+
+Iz toga slede dva ulaza u **isti** tok:
+
+```
+GENERIČKI CTA                      CTA SA KARTICE PONUDE
+„Zakaži konsultaciju"              [Individualna konsultacija] [Zakaži]
+        ↓                                    ↓
+01 Ponuda                          offeringId već poznat → korak 01 se preskače
+02 Datum i vreme                   02 Datum i vreme
+03 Intake                          03 Intake
+04 Pregled                         04 Pregled
+```
+
+```ts
+useBookingFlow({ initialOfferingId?: string })
+```
+
+**Isti hook, drugo ulazno stanje — nikad drugi tok.** Ako se pojavi drugi tok,
+availability i intake se granaju po ulaznoj tački i to se više ne vraća.
+
+Nije implementirano jer takav CTA još ne postoji; zapisano da se ne izgubi kad
+Consultation domen (Slice 7) donese kartice pojedinačnih ponuda.
+
+**Terminologija je već očišćena:** prikaz koristi `offerings` / `offeringId` /
+`offeringTitle` / `pickOffering()`, ne `service*`. Privremeni prikaz ne sme kroz
+mala vrata vratiti jednačinu `Consultation = Service`, koju Slice 7 postoji da
+razdvoji.

@@ -1366,7 +1366,15 @@ export interface TenantThemePage {
  * definitivne usluge, cene, termine i pitanja. Kada stignu Consultation domen
  * (Slice 7) i Booking Engine (Slice 5), ovo polje se BRIŠE — ne migrira se.
  */
-export interface ThemeBookingPreviewService {
+/**
+ * Ponuda u prikazu toka — namerno NIJE `Service`.
+ *
+ * Marinin proizvod je konsultacija, a Consultation je zaseban domen
+ * (docs/TODO.md, Slice 7). Da je ovo polje ostalo `services`, privremeni
+ * prikaz bi kroz mala vrata vratio jednačinu `Consultation = Service`, koju
+ * cela ova tema postoji da razdvoji.
+ */
+export interface ThemeBookingPreviewOffering {
   id: string;
   title: string;
   duration?: string;
@@ -1383,7 +1391,7 @@ export interface ThemeBookingPreviewQuestion {
 export interface ThemeBookingPreview {
   enabled: boolean;
   month?: string;
-  services: ThemeBookingPreviewService[];
+  offerings: ThemeBookingPreviewOffering[];
   dates: { id: string; dow: string; day: string; long: string }[];
   times: string[];
   /** Pun upitnik — nova klijentkinja. */

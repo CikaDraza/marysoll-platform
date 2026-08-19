@@ -21,7 +21,7 @@ import { sendEmail } from "@/lib/email/email";
 import { bookingPreviewTemplate } from "@/lib/email/templates/otherTemplates";
 
 const bodySchema = z.object({
-  serviceTitle: z.string().max(160).optional(),
+  offeringTitle: z.string().max(160).optional(),
   priceLabel: z.string().max(60).optional(),
   dateLong: z.string().max(60).optional(),
   time: z.string().max(20).optional(),

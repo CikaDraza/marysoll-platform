@@ -2,8 +2,10 @@
 /**
  * Theme9BookingDialog — prikaz toka zakazivanja.
  *
- * DVE POVRŠINE, jedan dijalog: prvo widget sa terminima, pa koraci. Kad se
- * izabere termin, korak 01 ga zatiče POPUNJENOG i može da se promeni.
+ * REDOSLED: 01 vrsta konsultacije → 02 datum i vreme → 03 upitnik → 04 pregled.
+ * Ponuda ide PRVA jer tek ona određuje trajanje i resurs, pa tek posle nje
+ * dostupnost uopšte može da bude tačna. Termin izabran pre ponude bio bi
+ * pogađanje koje bi se posle promene ponude tiho pokvarilo.
  *
  * NIŠTA SE NE UPISUJE. Ekran potvrde to izričito kaže — modal koji tvrdi da je
  * termin zakazan, a ne upisuje ga, opasan je čim izađe iz staging-a.
@@ -25,9 +27,10 @@ interface Props {
 }
 
 const STEP_LABEL: Record<string, string> = {
-  service: "01 — Izbor i termin",
-  intake: "02 — Kratak upitnik",
-  review: "03 — Pregled",
+  offering: "01 — Vrsta konsultacije",
+  slots: "02 — Datum i vreme",
+  intake: "03 — Kratak upitnik",
+  review: "04 — Pregled",
 };
 
 export function Theme9BookingDialog({
@@ -99,11 +102,7 @@ export function Theme9BookingDialog({
     }`;
 
   const headerTitle =
-    state.stage === "slots"
-      ? "Izaberi termin"
-      : state.stage === "done"
-        ? "Proba je poslata"
-        : STEP_LABEL[state.stage];
+    state.stage === "done" ? "Proba je poslata" : STEP_LABEL[state.stage];
 
   return (
     <div
@@ -137,8 +136,95 @@ export function Theme9BookingDialog({
         </header>
 
         <div className="flex flex-col gap-6 px-5 py-6 md:px-8">
+          {state.stage === "offering" && (
+            <>
+              <div className="flex flex-col gap-2.5">
+                <span className="text-ee-text-muted text-[11px] tracking-[0.14em] uppercase">
+                  Izaberi vrstu konsultacije
+                </span>
+                <div className="flex flex-col gap-3">
+                  {data.offerings.map((o) => {
+                    const selected = state.offeringId === o.id;
+                    return (
+                      <button
+                        key={o.id}
+                        type="button"
+                        onClick={() => flow.pickOffering(o.id)}
+                        className={`flex flex-col gap-3 rounded-[18px] border p-5 text-left transition-colors ${
+                          selected
+                            ? "border-ee-accent bg-[color-mix(in_oklab,#c6d5a8_20%,#ffffff)]"
+                            : "border-ee-border bg-ee-surface hover:border-ee-accent/40"
+                        }`}
+                      >
+                        <span className="flex items-start justify-between gap-4">
+                          <span className="flex flex-col">
+                            <span className="font-newsreader text-ee-accent text-[21px]">
+                              {o.title}
+                            </span>
+                            {o.duration && (
+                              <span className="text-ee-text-muted text-[12.5px]">
+                                {o.duration}
+                              </span>
+                            )}
+                          </span>
+                          <span className="flex items-center gap-3">
+                            {o.priceLabel && (
+                              <span className="font-newsreader text-ee-accent text-[18px] whitespace-nowrap">
+                                {o.priceLabel}
+                              </span>
+                            )}
+                            <span
+                              aria-hidden
+                              className={`h-[18px] w-[18px] flex-none rounded-full ${
+                                selected
+                                  ? "border-ee-accent border-[5px]"
+                                  : "border-ee-border border-[1.5px]"
+                              }`}
+                            />
+                          </span>
+                        </span>
+                        {o.includes && o.includes.length > 0 && (
+                          <span className="border-ee-border flex flex-col gap-1.5 border-t pt-3">
+                            {o.includes.map((inc) => (
+                              <span
+                                key={inc}
+                                className="text-ee-text-muted flex gap-2 text-[13.5px]"
+                              >
+                                <span className="text-ee-terracotta" aria-hidden>
+                                  —
+                                </span>
+                                {inc}
+                              </span>
+                            ))}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <Footer
+                note={
+                  flow.offering?.priceLabel
+                    ? `Cena: ${flow.offering.priceLabel}`
+                    : "Izaberi vrstu konsultacije"
+                }
+                nextLabel="Nastavi"
+                nextDisabled={!state.offeringId}
+                onNext={flow.confirmOffering}
+              />
+            </>
+          )}
+
           {state.stage === "slots" && (
             <>
+              <OfferingSummary
+                title={flow.offering?.title}
+                duration={flow.offering?.duration}
+                onChange={() => flow.go("offering")}
+              />
+
               <div className="flex flex-col gap-2.5">
                 <span className="text-ee-text-muted text-[11px] tracking-[0.14em] uppercase">
                   Datum{data.month ? ` · ${data.month}` : ""}
@@ -184,101 +270,14 @@ export function Theme9BookingDialog({
               <Footer
                 note={
                   flow.slotChosen
-                    ? "Termin možeš da promeniš i u sledećem koraku."
+                    ? "Termini su prikazani za izabranu konsultaciju."
                     : "Izaberi datum i vreme"
                 }
+                backLabel="← Nazad"
+                onBack={() => flow.go("offering")}
                 nextLabel="Nastavi"
                 nextDisabled={!flow.slotChosen}
                 onNext={flow.confirmSlot}
-              />
-            </>
-          )}
-
-          {state.stage === "service" && (
-            <>
-              <SlotSummary
-                dateLabel={flow.date?.long}
-                time={state.time}
-                onChange={() => flow.go("slots")}
-              />
-
-              <div className="flex flex-col gap-2.5">
-                <span className="text-ee-text-muted text-[11px] tracking-[0.14em] uppercase">
-                  Izaberi uslugu
-                </span>
-                <div className="flex flex-col gap-3">
-                  {data.services.map((s) => {
-                    const selected = state.serviceId === s.id;
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => flow.pickService(s.id)}
-                        className={`flex flex-col gap-3 rounded-[18px] border p-5 text-left transition-colors ${
-                          selected
-                            ? "border-ee-accent bg-[color-mix(in_oklab,#c6d5a8_20%,#ffffff)]"
-                            : "border-ee-border bg-ee-surface hover:border-ee-accent/40"
-                        }`}
-                      >
-                        <span className="flex items-start justify-between gap-4">
-                          <span className="flex flex-col">
-                            <span className="font-newsreader text-ee-accent text-[21px]">
-                              {s.title}
-                            </span>
-                            {s.duration && (
-                              <span className="text-ee-text-muted text-[12.5px]">
-                                {s.duration}
-                              </span>
-                            )}
-                          </span>
-                          <span className="flex items-center gap-3">
-                            {s.priceLabel && (
-                              <span className="font-newsreader text-ee-accent text-[18px] whitespace-nowrap">
-                                {s.priceLabel}
-                              </span>
-                            )}
-                            <span
-                              aria-hidden
-                              className={`h-[18px] w-[18px] flex-none rounded-full ${
-                                selected
-                                  ? "border-ee-accent border-[5px]"
-                                  : "border-ee-border border-[1.5px]"
-                              }`}
-                            />
-                          </span>
-                        </span>
-                        {s.includes && s.includes.length > 0 && (
-                          <span className="border-ee-border flex flex-col gap-1.5 border-t pt-3">
-                            {s.includes.map((inc) => (
-                              <span
-                                key={inc}
-                                className="text-ee-text-muted flex gap-2 text-[13.5px]"
-                              >
-                                <span className="text-ee-terracotta" aria-hidden>
-                                  —
-                                </span>
-                                {inc}
-                              </span>
-                            ))}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <Footer
-                note={
-                  flow.service?.priceLabel
-                    ? `Cena: ${flow.service.priceLabel}`
-                    : "Izaberi uslugu"
-                }
-                backLabel="← Nazad"
-                onBack={() => flow.go("slots")}
-                nextLabel="Nastavi"
-                nextDisabled={!state.serviceId}
-                onNext={flow.toIntake}
               />
             </>
           )}
@@ -341,7 +340,7 @@ export function Theme9BookingDialog({
               <Footer
                 note={`${flow.answeredCount} / ${flow.questions.length} odgovoreno`}
                 backLabel="← Nazad"
-                onBack={() => flow.go("service")}
+                onBack={() => flow.go("slots")}
                 skipLabel={
                   data.allowIntakeSkip !== false ? "Preskoči za sada" : undefined
                 }
@@ -360,8 +359,8 @@ export function Theme9BookingDialog({
 
               <div className="border-ee-border bg-ee-surface flex flex-col rounded-[18px] border p-5">
                 <Row
-                  label={flow.service?.title ?? "Usluga"}
-                  value={flow.service?.duration}
+                  label={flow.offering?.title ?? "Konsultacija"}
+                  value={flow.offering?.duration}
                   serif
                 />
                 <Row
@@ -371,7 +370,7 @@ export function Theme9BookingDialog({
                     "Nije izabran"
                   }
                 />
-                <Row label="Cena" value={flow.service?.priceLabel} serif />
+                <Row label="Cena" value={flow.offering?.priceLabel} serif />
                 <Row
                   label={returningClient ? "Check-in" : "Upitnik"}
                   value={
@@ -440,26 +439,30 @@ export function Theme9BookingDialog({
   );
 }
 
-function SlotSummary({
-  dateLabel,
-  time,
+/**
+ * Podsetnik na izabranu ponudu iznad kalendara — termini ispod nje važe za
+ * NJU. Promena vodi nazad na korak 01 i poništava termin (`pickOffering`).
+ */
+function OfferingSummary({
+  title,
+  duration,
   onChange,
 }: {
-  dateLabel?: string;
-  time?: string;
+  title?: string;
+  duration?: string;
   onChange: () => void;
 }) {
   return (
     <div className="border-ee-border bg-ee-surface flex flex-wrap items-center justify-between gap-3 rounded-[14px] border px-4 py-3">
       <span className="text-ee-text text-[14.5px] font-semibold">
-        {[dateLabel, time].filter(Boolean).join(" · ")}
+        {[title, duration].filter(Boolean).join(" · ")}
       </span>
       <button
         type="button"
         onClick={onChange}
         className="text-ee-accent text-[13.5px] underline underline-offset-[3px]"
       >
-        Promeni termin
+        Promeni konsultaciju
       </button>
     </div>
   );
