@@ -3,6 +3,7 @@ import {
   fetchPublicSalonProfile,
   fetchPublicServices,
 } from "@/lib/tenant/fetchTenantData";
+import { shellNeedsServices } from "@/lib/platform/theme-shell-native";
 import { TenantShellClient } from "./TenantShellClient";
 
 interface Props {
@@ -26,11 +27,12 @@ export async function TenantPageShell({ tenantSlug, children }: Props) {
   const basePath = headersList.get("x-tenant-base-path") ?? "";
   const themeSlug = basePath ? tenantSlug : undefined;
 
-  // Services are only needed by the theme-8 shell (its footer booking modal).
-  const services =
-    salon.landingTheme === "theme-8"
-      ? await fetchPublicServices(slugFromHeader)
-      : [];
+  // Katalog usluga traži samo shell koji ima booking površinu (danas theme-8
+  // footer modal). Odluku drži `theme-shell-native`, ne ova strana — inače bi
+  // svaka nova tema morala da se doda i ovde.
+  const services = shellNeedsServices(salon.landingTheme ?? "")
+    ? await fetchPublicServices(slugFromHeader)
+    : [];
 
   return (
     <TenantShellClient salon={salon} tenantSlug={themeSlug} services={services}>

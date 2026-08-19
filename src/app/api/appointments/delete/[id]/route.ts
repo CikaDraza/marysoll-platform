@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { verifyToken } from "@/lib/auth/auth-server";
+import { logSuperAdminAccess, tenantScopeFrom } from "@/lib/auth/tenantScope";
 
 export async function DELETE(
   req: Request,
@@ -28,7 +29,20 @@ export async function DELETE(
       );
     }
 
-    const deleted = await Appointment.findByIdAndDelete(id);
+    // Izolacija tenanta: brisanje po ID-ju je ranije bilo bez provere vlasništva,
+    // pa je admin jednog salona mogao da obriše termin drugog salona.
+    const scope = tenantScopeFrom(user);
+    if (!scope.ok) {
+      return NextResponse.json({ error: scope.error }, { status: scope.status });
+    }
+    if (scope.isSuperAdmin) {
+      logSuperAdminAccess("SUPERADMIN_UNSCOPED_APPOINTMENT_DELETE", user, req.url);
+    }
+
+    const deleted = await Appointment.findOneAndDelete({
+      _id: id,
+      ...scope.filter,
+    });
 
     if (!deleted) {
       return NextResponse.json(

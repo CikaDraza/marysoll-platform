@@ -17,8 +17,10 @@ interface Testimonial {
   adminReply?: string;
 }
 
-function mapGallery(ls: LandingStructure | undefined) {
-  const gallery = ls?.landing?.gallery;
+/** Ulaz na nivou sekcije — koriste ga Feature Block renderi (vidi `mapHeroSection`). */
+export function mapGallerySection(
+  gallery: LandingStructure["landing"]["gallery"] | undefined,
+) {
   return {
     images: gallery?.images?.map((img) => img.src) ?? [],
     headline: gallery?.headline,
@@ -26,12 +28,15 @@ function mapGallery(ls: LandingStructure | undefined) {
     instagram: gallery?.instagram,
     instagramTag: gallery?.instagram?.ctaText,
     instagramUrl: gallery?.instagram?.link,
-    enabled:
-      gallery !== undefined ? (ls?.landing?.gallery?.enabled ?? true) : true,
+    enabled: gallery !== undefined ? (gallery.enabled ?? true) : true,
   };
 }
 
-function mapTestimonials(testimonials: Testimonial[]) {
+function mapGallery(ls: LandingStructure | undefined) {
+  return mapGallerySection(ls?.landing?.gallery);
+}
+
+export function mapTestimonialsItems(testimonials: Testimonial[]) {
   return {
     items: testimonials.map((t) => ({
       quote: t.comment,
@@ -74,7 +79,7 @@ export function mapCMS(
     howItWorks: mapHowItWorks(ls, services),
     cta: mapCTA(ls, tenantSlug),
     gallery: mapGallery(ls),
-    testimonials: mapTestimonials(testimonials),
+    testimonials: mapTestimonialsItems(testimonials),
     footer: mapFooter(salon, tenantSlug),
 
     enabled: {

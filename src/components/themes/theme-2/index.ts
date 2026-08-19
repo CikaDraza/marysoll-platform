@@ -8,7 +8,6 @@ export { Theme2GallerySection } from "./GallerySection";
 export { Theme2PricingSection } from "./PricingSection";
 export { Theme2ImageGenerationSection } from "./ImageGenerationSection";
 export { Theme2CTAAppointmentSection } from "./CTAAppointmentSection";
-export { Theme2AppointmentSection } from "./AppointmentSection";
 export { Theme2TestimonialsSection } from "./TestimonialsSection";
 export { Theme2ServicesPreview } from "./Theme2ServicesPreview";
 export { Theme2GalleryGrid } from "./Theme2GalleryGrid";

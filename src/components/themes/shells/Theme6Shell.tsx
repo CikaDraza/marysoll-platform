@@ -1,26 +1,21 @@
 "use client";
 /**
- * Theme6Shell — Header/Footer omotač teme theme-6 za tenant podstranice,
- * izdvojen iz TenantShellClient (Faza 4b). Učitava se kroz next/dynamic
- * pa podstranice šalju samo header/footer SVOJE teme.
+ * Theme6Shell — Header/Footer omotač teme theme-6 za tenant podstranice.
  */
 import { Theme6Footer, Theme6Header } from "../theme-6";
 import type { ThemeShellProps } from "./types";
 
 export function Theme6Shell(props: ThemeShellProps) {
-  const {
-    salon,
-    tenantSlug,
-    children,
-    base,
-    brandingVars,
-  } = props;
+  const { shellNative, tenantSlug, children, base, brandingVars } = props;
+
+  const native = shellNative["theme-6"];
+  if (!native) return <div style={brandingVars}>{children}</div>;
 
   return (
     <div style={brandingVars}>
       <Theme6Header
-        salonName={salon.name}
-        logo={salon.logo ?? undefined}
+        salonName={native.salonName}
+        logo={native.logo}
         homeHref={`${base}/`}
         navigation={[
           { label: "Naslovna", href: `${base}/` },
@@ -32,14 +27,13 @@ export function Theme6Shell(props: ThemeShellProps) {
       />
       {children}
       <Theme6Footer
-        salonName={salon.name}
-        phone={salon.phone}
-        email={salon.email}
-        instagram={salon.social?.instagram}
-        facebook={salon.social?.facebook}
+        salonName={native.salonName}
+        phone={native.phone}
+        email={native.email}
+        instagram={native.social.instagram}
+        facebook={native.social.facebook}
         tenantSlug={tenantSlug}
       />
     </div>
   );
-
 }

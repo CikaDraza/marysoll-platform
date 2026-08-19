@@ -73,9 +73,12 @@ export function Theme1AppointmentSection({
                   <div key={idx} className="relative pl-9">
                     <dt className="inline font-semibold text-gray-900">
                       {instruction.Icon && (
+                        // Zaključano na crno: pozadina sekcije je bela, pa bi
+                        // svetao brend primary učinio ikonicu nevidljivom.
+                        // Ista boja kao H2 ove sekcije (`text-black`).
                         <instruction.Icon
                           aria-hidden="true"
-                          className="absolute top-1 left-1 size-5 text-(--primary-color)"
+                          className="absolute top-1 left-1 size-5 text-black"
                         />
                       )}
                       {instruction.name}

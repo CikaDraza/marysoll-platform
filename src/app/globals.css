@@ -50,6 +50,29 @@
   /* Theme-8 fonts (loaded via <link> in the theme-8 ThemeLayout block) */
   --font-bagel: "Bagel Fat One", cursive;
   --font-caveat: Caveat, cursive;
+
+  /* Theme-9 "Skincare Marina" — Expert Editorial paleta.
+     colorPolicy: "locked" — tenant branding se NE mapira na ovu temu
+     (ARCHITECTURAL_RULES.md §3.4: gde brend boja sme da ide odlučuje tema). */
+  --color-ee-canvas: #faf8f3; /* topla krem podloga stranice */
+  --color-ee-surface: #ffffff; /* kartice, svetle sekcije */
+  --color-ee-text: #3a2e28; /* coffee — telo teksta */
+  --color-ee-sage: #8a9d82; /* eyebrow, numeracija */
+  --color-ee-terracotta: #d1a48c; /* CTA band, akcenti */
+  --color-ee-accent: #2e3b2e; /* forest — naslovi, primarni CTA, tamne sekcije */
+  --color-ee-accent-hover: #3d4d3d;
+  --color-ee-accent-lift: #3a4a3a;
+  --color-ee-accent-soft: #4e5f4c;
+  --color-ee-accent-contrast: #c6d5a8; /* meadow — tekst i CTA na forest podlozi */
+  --color-ee-meadow-hover: #d5e2bc;
+  /* Izvedene vrednosti iz prototipa — color-mix nad tokenima, bez novih heksova. */
+  --color-ee-surface-muted: color-mix(in oklab, #c6d5a8 22%, #faf8f3);
+  --color-ee-border: color-mix(in oklab, #3a2e28 12%, transparent);
+  --color-ee-text-muted: color-mix(in oklab, #3a2e28 66%, transparent);
+
+  /* Theme-9 fonts (loaded via <link> u Theme9 shell/landing bloku) */
+  --font-newsreader: Newsreader, Georgia, serif;
+  --font-instrument-sans: "Instrument Sans", system-ui, sans-serif;
 }
 
 /* Salon brand CSS variables (used by public themes) */

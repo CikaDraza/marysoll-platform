@@ -1,8 +1,22 @@
 "use client";
 /**
- * Theme8Landing — landing blok teme theme-8, izdvojen iz ThemeLayout (Faza 4).
- * ThemeLayout ga učitava kroz next/dynamic pa tenant dobija SAMO chunk
- * svoje teme (ranije su sve teme išle u svaki landing bundle).
+ * Theme8Landing — osma i poslednja tema migrirana na Feature Block-ove
+ * (T2A, korak 5).
+ *
+ *   hero / about / servicesPreview / gallery / perks / testimonials / faq
+ *                                     → ThemeBlock
+ *   socialProof / tribute             → theme-8 native (stari propovi)
+ *   preloader, Y2K filteri, background/decor/doodle/sparkle, modal provider,
+ *   intro fade, header, footer        → shell (10 slojeva, netaknuti)
+ *
+ * BOOKING: theme-8 nema inline booking sekciju. Booking postoji kroz
+ * `Theme8ModalProvider` (Hero CTA → modal) i `/termini` — dve od tri površine
+ * istog booking proizvoda (spec 6.10). Modal je shell sloj i zato i dalje prima
+ * `salon`/`services` starim putem: nije vezan za `appointmentSection.enabled`,
+ * jer bi ga to pretvorilo u „booking postoji samo ako je sekcija uključena".
+ *
+ * iOS: `reduceMotion` i dalje gasi preloader i ulazne animacije. Ništa u
+ * migraciji ne dira taj put — SSR HTML mora ostati vidljiv i bez hidratacije.
  */
 import {
   Theme8AboutUs,
@@ -20,6 +34,7 @@ import {
   Theme8Tribute,
   Y2KFilters,
 } from "../theme-8";
+import { useMemo } from "react";
 import {
   BackgroundWall,
   DoodleLayer,
@@ -28,46 +43,34 @@ import {
   SparkleLayer,
 } from "../theme-8/motion";
 import { ForceReduceMotionProvider } from "../theme-8/motion/reduceMotion";
-import {
-  shouldShowWorkingHours,
-} from "@/helpers/workingHoursDisplay";
+import { THEME8_BLOCK_RENDERERS } from "../theme-8/blocks";
+import { Theme8FixturesProvider } from "../theme-8/fixturesContext";
+import { ThemeBlock } from "../blocks/ThemeBlock";
+import { ThemeBlockScope } from "../blocks/ThemeBlockScope";
 import type { ThemeLandingProps } from "./types";
 
 export function Theme8Landing(props: ThemeLandingProps) {
   const {
-    aboutEnabled,
+    blockData,
     clientSlug,
-    faqEnabled,
-    galleryEnabled,
+    document,
     headerProps,
-    heroEnabled,
-    instagram,
-    ls,
-    perksEnabled,
     reduceMotion,
     resolveHref,
-    resolvedCta,
-    salon,
-    services,
-    servicesPreviewEnabled,
     tenantSlug,
-    tenantStats,
-    testimonials,
-    testimonialsEnabled,
-    showTheme8TestimonialFixtures,
+    themeNative,
   } = props;
 
-  const igLink = ls?.landing?.gallery?.instagram?.link || instagram;
-  const igHandle = ls?.landing?.gallery?.instagram?.username;
+  const native = themeNative["theme-8"]!;
+
+  const routing = useMemo(
+    () => ({ tenantSlug, clientSlug, resolveHref }),
+    [tenantSlug, clientSlug, resolveHref],
+  );
+
   // Y2K display + UI fonts (variable href matches the per-theme font-load pattern)
   const y2kFontHref =
     "https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Caveat:wght@600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap";
-  const aboutImage = ls?.landing?.about?.image?.src
-    ? {
-        src: ls.landing.about.image.src,
-        alt: ls.landing.about.image.alt ?? "",
-      }
-    : undefined;
 
   const content = (
     <div
@@ -90,10 +93,7 @@ export function Theme8Landing(props: ThemeLandingProps) {
           Na iOS (reduceMotion) ga NE renderujemo — skida se samo iz JS-a, pa bi
           na uređaju gde hydration padne visio zauvek ("logo stoji"). */}
       {!reduceMotion && (
-        <Theme8Preloader
-          logo={salon.logo ?? undefined}
-          salonName={salon.name}
-        />
+        <Theme8Preloader {...native.preloader} />
       )}
       <Y2KFilters />
       {/* Multi-layer graffiti decoration system (all pointer-events-none) */}
@@ -101,14 +101,7 @@ export function Theme8Landing(props: ThemeLandingProps) {
       <FixedDecorLayer />
       <DoodleLayer />
 
-      <Theme8ModalProvider
-        booking={{
-          tenantSlug,
-          clientSlug: clientSlug ?? tenantSlug,
-          salon,
-          services,
-        }}
-      >
+      <Theme8ModalProvider booking={native.bookingModal}>
         <IntroFade
           className="relative z-10 flex flex-col min-h-screen"
           delay={0.95}
@@ -116,118 +109,30 @@ export function Theme8Landing(props: ThemeLandingProps) {
         >
           <Theme8Header {...headerProps} />
           <main className="flex-1 overflow-x-clip flex flex-col mt-6">
-            {heroEnabled && (
-              <Theme8Hero
-                heroData={{
-                  headline: ls?.landing?.hero?.headline,
-                  subheadline: ls?.landing?.hero?.subheadline,
-                  image: ls?.landing?.hero?.image,
-                  images: ls?.landing?.hero?.images,
-                }}
-                cta={resolvedCta}
-                salonName={salon.name}
-                salonCity={salon.city}
-                eyebrow={ls?.landing?.hero?.theme8?.eyebrow}
-                wordmark={ls?.landing?.hero?.theme8?.wordmark}
-                marquee={ls?.landing?.hero?.theme8?.marquee}
-                photoCaptions={ls?.landing?.hero?.theme8?.photoCaptions}
-                tenantStats={tenantStats}
-                yearsOfExperience={ls?.landing?.about?.yearsOfExperience}
-                openingYear={ls?.landing?.about?.openingYear}
-              />
-            )}
-            {aboutEnabled && (
-              <Theme8AboutUs
-                about={{
-                  headline: ls?.landing?.about?.headline,
-                  paragraphs: ls?.landing?.about?.paragraphs ?? [],
-                  links: ls?.landing?.about?.links ?? [],
-                  image: aboutImage,
-                  images: ls?.landing?.about?.images,
-                }}
-                founderName={salon.name}
-              />
-            )}
+            <ThemeBlock document={document} type="content.hero" />
+            <ThemeBlock document={document} type="content.about" />
 
             <Theme8SocialProof
-              instagramUrl={igLink}
-              instagramHandle={igHandle}
-              tenantStats={tenantStats}
+              instagramUrl={native.socialProof.url}
+              instagramHandle={native.socialProof.handle}
+              tenantStats={native.socialProof.tenantStats}
             />
-            {servicesPreviewEnabled && services.length > 0 && (
-              <Theme8Services
-                services={services}
-                tenantSlug={tenantSlug}
-                headline={ls?.landing?.servicesPreview?.headline}
-                subheadline={ls?.landing?.servicesPreview?.subheadline}
-              />
-            )}
-            {galleryEnabled && (
-              <Theme8GallerySection
-                treatments={ls?.landing?.gallery?.treatments}
-                headline={ls?.landing?.gallery?.headline}
-                tenantSlug={tenantSlug}
-              />
-            )}
-            {perksEnabled && (
-              <Theme8Perks
-                perks={{
-                  pill: ls?.landing?.perks?.pill,
-                  eyebrow: ls?.landing?.perks?.eyebrow,
-                  headline: ls?.landing?.perks?.headline,
-                  paragraphs: ls?.landing?.perks?.paragraphs ?? [],
-                  images: ls?.landing?.perks?.images,
-                  ctas: {
-                    // Prazan href se NE resolve-uje (resolveHref bi vratio "#"
-                    // i lažno prikazao dugme) — komponenta krije dugme bez URL-a.
-                    primary: {
-                      text: ls?.landing?.perks?.ctas?.primary?.text ?? "",
-                      href: ls?.landing?.perks?.ctas?.primary?.href
-                        ? resolveHref(ls.landing.perks.ctas.primary.href)
-                        : "",
-                    },
-                    secondary: {
-                      text: ls?.landing?.perks?.ctas?.secondary?.text ?? "",
-                      href: ls?.landing?.perks?.ctas?.secondary?.href
-                        ? resolveHref(ls.landing.perks.ctas.secondary.href)
-                        : "",
-                    },
-                  },
-                }}
-              />
-            )}
-            {testimonialsEnabled && (
-              <Theme8TestimonialsSection
-                // Placeholder kartice ostaju samo dok salon nema nijedan
-                // odobren utisak. SSR šalje najnovija tri; carousel po potrebi
-                // učita sledeća najviše tri iz javne API rute.
-                testimonials={testimonials}
-                tenantSlug={clientSlug ?? tenantSlug}
-                initialHasMore={
-                  (tenantStats?.reviewCount ?? 0) > testimonials.length ||
-                  (showTheme8TestimonialFixtures && testimonials.length === 0)
-                }
-                headline={ls?.landing?.testimonials?.headline}
-              />
-            )}
-            {faqEnabled && (
-              <Theme8FAQSection
-                items={ls?.landing?.faq?.items}
-                headline={ls?.landing?.faq?.headline}
-                supportText={ls?.landing?.faq?.support?.text}
-              />
-            )}
+            <ThemeBlock document={document} type="services.catalog" />
+            <ThemeBlock document={document} type="content.gallery" />
+            <ThemeBlock document={document} type="content.perks" />
+            <ThemeBlock document={document} type="content.testimonials" />
+            <ThemeBlock document={document} type="content.faq" />
             {/* Tribute — non-CMS, always last before the footer */}
             <Theme8Tribute />
           </main>
           <Theme8Footer
-            salonName={salon.name}
-            logo={salon.logo ?? undefined}
-            instagramUrl={igLink}
-            instagramHandle={igHandle}
-            email={salon.contactEmail || salon.email}
-            workingHours={salon.workingHours}
-            showWorkingHours={shouldShowWorkingHours(salon)}
+            salonName={native.footer.salonName}
+            logo={native.footer.logo}
+            instagramUrl={native.footer.instagram.url}
+            instagramHandle={native.footer.instagram.handle}
+            email={native.footer.email}
+            workingHours={native.footer.workingHours}
+            showWorkingHours={Boolean(native.footer.workingHours)}
           />
         </IntroFade>
       </Theme8ModalProvider>
@@ -243,7 +148,16 @@ export function Theme8Landing(props: ThemeLandingProps) {
   // klijentski JS nikad ne izvrši. Ostali uređaji (value=false) dobijaju pun doživljaj.
   return (
     <ForceReduceMotionProvider value={Boolean(reduceMotion)}>
-      {content}
+      <ThemeBlockScope
+        theme="theme-8"
+        data={blockData}
+        renderers={THEME8_BLOCK_RENDERERS}
+        routing={routing}
+      >
+        <Theme8FixturesProvider value={native.showTestimonialFixtures}>
+          {content}
+        </Theme8FixturesProvider>
+      </ThemeBlockScope>
     </ForceReduceMotionProvider>
   );
 }

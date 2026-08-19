@@ -23,10 +23,23 @@ import type {
   LandingStructure,
   SalonProfileData,
   ManualSlotsMap,
+  TenantThemePages,
+  ThemeBookingPreview,
 } from "@/types";
+import { landingStructureToThemeDocument } from "@/lib/platform/theme-client";
+import {
+  buildThemeBranding,
+  buildThemeNative,
+} from "@/lib/platform/theme-native";
+import {
+  preloadedBlockDataSource,
+  resolveBlockData,
+} from "@/lib/platform/blocks";
 import { normalizeVacations } from "@/helpers/vacations";
 import { shouldUseTheme8TestTestimonials } from "@/helpers/theme8DevelopmentTestimonials";
 import { getTenantStats } from "@/lib/tenant/getTenantStats";
+import { NewsletterCampaign } from "@/models/NewsletterCampaign";
+import { mapBlogPost, publishedBlogFilter } from "@/lib/tenant/blogPosts";
 
 interface Props {
   tenantSlug: string;
@@ -71,6 +84,7 @@ async function getTenantData(tenantSlug: string) {
 
   return {
     tenant,
+    tenantId,
     salon,
     services,
     testimonials,
@@ -147,6 +161,17 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     email: String(s?.email ?? ""),
     description: String(s?.description ?? ""),
     landingTheme,
+    // Ova projekcija je RUCNA: svako novo polje profila mora i ovde, inace
+    // tiho ne stigne do teme (bez greske, bez tipa koji bi to uhvatio).
+    shortDescription: s?.shortDescription
+      ? String(s.shortDescription)
+      : undefined,
+    themePages: s?.themePages
+      ? (JSON.parse(JSON.stringify(s.themePages)) as TenantThemePages)
+      : undefined,
+    themeBookingPreview: s?.themeBookingPreview
+      ? (JSON.parse(JSON.stringify(s.themeBookingPreview)) as ThemeBookingPreview)
+      : undefined,
     landingStructure: s?.landingStructure
       ? (JSON.parse(JSON.stringify(s.landingStructure)) as LandingStructure)
       : undefined,
@@ -271,16 +296,90 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     adminReply: t.adminReply ? String(t.adminReply) : undefined,
   }));
 
+  // ── Feature blokovi: raspored + podaci, u ISTOM server prolazu ──────────
+  // `preloadedBlockDataSource` deli već povučene podatke (salon/usluge/utiske),
+  // pa loaderi ne pokreću nijedan nov upit — brzina strane ostaje ista (T2A).
+  const themeDocument = landingStructureToThemeDocument(
+    salonData.landingStructure,
+    { theme: landingTheme },
+  );
+  const blockData = await resolveBlockData({
+    document: themeDocument,
+    theme: landingTheme,
+    tenantSlug: themeSlug,
+    deps: preloadedBlockDataSource({
+      salon: salonData,
+      services: serviceList,
+      testimonials: testimonialList,
+      tenantStats,
+      // Lenj: poziva se SAMO ako tema ima blog blok. Teme bez njega ne plaćaju
+      // upit, a one koje ga imaju dobijaju objave u istom server prolazu —
+      // bez klijentskog waterfall-a posle hidratacije.
+      blogPosts: async (limit) => {
+        const campaigns = await NewsletterCampaign.find(
+          publishedBlogFilter(data.tenantId),
+        )
+          .sort({ createdAt: -1 })
+          .limit(limit)
+          .lean();
+        return JSON.parse(JSON.stringify(campaigns)).map(mapBlogPost);
+      },
+    }),
+  });
+
+  // Native delovi teme dobijaju svoj view model — bez domenskih tipova i bez
+  // CMS flagova u zajedničkom kontraktu.
+  const themeNative = buildThemeNative(landingTheme, {
+    salon: salonData,
+    services: serviceList,
+    testimonials: testimonialList,
+    tenantStats,
+    tenantSlug: themeSlug,
+    clientSlug: tenantSlug || undefined,
+    showTheme8TestimonialFixtures,
+  });
+
+  // Shell (header/footer) i dizajn tokeni se takođe računaju ovde — tema ih
+  // dobija gotove, pa `ThemeLayout` ostaje čist dispečer.
+  const branding = buildThemeBranding(salonData);
+  const galleryEnabled =
+    salonData.landingStructure?.landing?.gallery?.enabled ?? true;
+
+  const headerProps = {
+    tenantSlug: themeSlug,
+    clientSlug: tenantSlug || themeSlug,
+    salonName: salonData.name,
+    salonLogo: salonData.logo ?? null,
+    instagramUrl: galleryEnabled
+      ? salonData.social?.instagram || ""
+      : undefined,
+    primaryColor: salonData.branding?.primaryColor || "#a855f7",
+    secondaryColor: salonData.branding?.secondaryColor || "#ec4899",
+  };
+
+  const footerProps = {
+    tenantSlug: themeSlug,
+    salonName: salonData.name,
+    description: salonData.description ?? undefined,
+    logo: salonData.logo ?? undefined,
+    city: salonData.city ?? undefined,
+    instagram: salonData.social?.instagram,
+    facebook: salonData.social?.facebook,
+    tiktok: salonData.social?.tiktok,
+  };
+
   return (
     <ThemeLayout
       theme={landingTheme}
-      salon={salonData}
-      services={serviceList}
-      testimonials={testimonialList}
+      document={themeDocument}
+      blockData={blockData}
+      themeNative={themeNative}
+      brandingVars={branding.brandingVars}
+      googleFontHref={branding.googleFontHref}
+      headerProps={headerProps}
+      footerProps={footerProps}
       tenantSlug={themeSlug}
       clientSlug={tenantSlug || undefined}
-      tenantStats={tenantStats}
-      showTheme8TestimonialFixtures={showTheme8TestimonialFixtures}
       reduceMotion={reduceMotion}
     />
   );

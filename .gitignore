@@ -9,6 +9,10 @@ node_modules/
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+.fallow
+.claude
+.agents
+.codex
 
 # testing
 /coverage

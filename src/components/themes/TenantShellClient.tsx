@@ -16,6 +16,7 @@
 import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 import type { LandingTheme, SalonProfileData, IService } from "@/types";
+import { buildThemeShellNative } from "@/lib/platform/theme-shell-native";
 import type { ThemeShellProps } from "./shells/types";
 
 const THEME_SHELLS: Record<LandingTheme, ComponentType<ThemeShellProps>> = {
@@ -27,15 +28,20 @@ const THEME_SHELLS: Record<LandingTheme, ComponentType<ThemeShellProps>> = {
   "theme-6": dynamic(() => import("./shells/Theme6Shell").then((m) => m.Theme6Shell)),
   "theme-7": dynamic(() => import("./shells/Theme7Shell").then((m) => m.Theme7Shell)),
   "theme-8": dynamic(() => import("./shells/Theme8Shell").then((m) => m.Theme8Shell)),
+  "theme-9": dynamic(() => import("./shells/Theme9Shell").then((m) => m.Theme9Shell)),
 };
 
 /** Teme sa fiksnom tipografijom — ne učitavaju tenant font. */
-const FIXED_FONT_THEMES: LandingTheme[] = ["theme-7", "theme-8"];
+const FIXED_FONT_THEMES: LandingTheme[] = ["theme-7", "theme-8", "theme-9"];
 
 interface Props {
   salon: SalonProfileData;
   tenantSlug?: string;
-  /** Only needed by the theme-8 branch (booking modal); empty for other themes. */
+  /**
+   * Katalog usluga — traži ga SAMO shell koji ima booking površinu (danas
+   * theme-8 footer modal). Server ga dovlači po `shellNeedsServices`, pa je za
+   * ostale teme prazan i ne ulazi u shell ugovor, nego u njihov view model.
+   */
   services?: IService[];
   children: React.ReactNode;
 }
@@ -71,7 +77,6 @@ export function TenantShellClient({
   };
 
   const footerProps = {
-    salon,
     tenantSlug,
     salonName: salon.name,
     salonDescription: salon.description ?? undefined,
@@ -81,6 +86,15 @@ export function TenantShellClient({
     facebook: salon.social?.facebook,
     tiktok: salon.social?.tiktok,
   };
+
+  // View model shell delova te teme — jedini put kojim domenski podaci
+  // stižu do shell-a. Zajednički ugovor ih više ne nosi.
+  const shellNative = buildThemeShellNative(theme, {
+    salon,
+    services,
+    tenantSlug,
+    clientSlug: tenantSlug,
+  });
 
   const Shell = THEME_SHELLS[theme] ?? THEME_SHELLS["theme-1"];
 
@@ -93,9 +107,9 @@ export function TenantShellClient({
         </>
       )}
       <Shell
-        salon={salon}
+        shellNative={shellNative}
         tenantSlug={tenantSlug}
-        services={services}
+        clientSlug={tenantSlug}
         base={base}
         brandingVars={brandingVars}
         headerProps={headerProps}
