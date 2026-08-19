@@ -113,6 +113,7 @@ function serializeProfile(doc: Record<string, unknown>) {
     // Projekcija je eksplicitna, pa svako novo polje MORA i ovde — inače tiho
     // ne stigne do strane, bez ijedne greške.
     themePages: doc.themePages ?? null,
+    themeBookingPreview: doc.themeBookingPreview ?? null,
     contactEmail: String((doc.contactEmail as string) ?? ""),
     newsletterEmail: String((doc.newsletterEmail as string) ?? ""),
   };

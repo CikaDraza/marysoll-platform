@@ -3,14 +3,13 @@
  *
  * Ovo je LAUNCHER (spec 6.11), ne sekcija i ne link ka salonskom booking-u.
  *
- * DOK EXPERT BOOKING FLOW NE STIGNE (Slice 4/7) DUGME JE INERTNO. Namerno NEMA
- * fallback na `/termini`: ta ruta je salonski Service Booking, a Consultation je
- * zaseban domen. Lažni fallback bi u produkciji napravio tačno onu prečicu
- * (Marina → Service → Appointment) koju cela ova tema treba da spreči.
- *
- * Kada launcher dobije `CtaAction: { kind: "open-widget" }`, ovde se dodaje
- * `href` + `onClick` i dugme prestaje da bude inertno.
+ * Otvara PRIKAZ toka (`Theme9BookingProvider`) kada tenant ima podatke; inače
+ * ostaje vidljivo ali inertno. Namerno NEMA fallback na `/termini`: ta ruta je
+ * salonski Service Booking, a Consultation je zaseban domen. Lažni fallback bi
+ * napravio tačno onu prečicu (Marina → Service → Appointment) koju cela ova
+ * tema treba da spreči.
  */
+import { useBookingLauncher } from "./booking/bookingLauncherContext";
 import { ArrowCircle } from "./primitives";
 
 interface Props {
@@ -25,13 +24,20 @@ export function BookingCta({
   arrow = 36,
   className = "",
 }: Props) {
+  const launcher = useBookingLauncher();
+
   return (
     <button
       type="button"
-      aria-disabled="true"
-      data-booking-launcher="pending"
-      title="Zakazivanje konsultacije biće dostupno uskoro."
-      className={`group bg-ee-accent text-ee-canvas inline-flex items-center gap-3 rounded-full font-semibold ${className}`}
+      onClick={launcher.available ? launcher.open : undefined}
+      aria-disabled={launcher.available ? undefined : "true"}
+      data-booking-launcher={launcher.available ? "preview" : "pending"}
+      title={
+        launcher.available
+          ? undefined
+          : "Zakazivanje konsultacije biće dostupno uskoro."
+      }
+      className={`group bg-ee-accent text-ee-canvas inline-flex items-center gap-3 rounded-full font-semibold ${launcher.available ? "hover:bg-ee-accent-lift transition-colors" : ""} ${className}`}
     >
       {arrow > 0 && <ArrowCircle size={arrow} />}
       {label}

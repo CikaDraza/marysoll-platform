@@ -481,6 +481,15 @@ const SalonProfileSchema = new mongoose.Schema(
       default: undefined,
     },
 
+    /**
+     * Podaci za PRIKAZ toka zakazivanja (theme-9, staging). Privremeno polje —
+     * briše se kad stignu Consultation domen i Booking Engine.
+     */
+    themeBookingPreview: {
+      type: mongoose.Schema.Types.Mixed,
+      default: undefined,
+    },
+
     landingTheme: {
       type: String,
       enum: [

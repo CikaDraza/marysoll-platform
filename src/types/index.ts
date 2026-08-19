@@ -801,6 +801,8 @@ export interface SalonProfile {
   landingStructure?: LandingStructure;
   /** Sadržaj tematskih podstranica; odvojeno od landing kompozicije. */
   themePages?: TenantThemePages;
+  /** Podaci za PRIKAZ toka zakazivanja; briše se kad stigne Booking Engine. */
+  themeBookingPreview?: ThemeBookingPreview;
   isDemo?: boolean;
   clientGender?: ClientGender;
 }
@@ -1351,6 +1353,49 @@ export interface TenantThemePage {
   };
 }
 
+/**
+ * Podaci za PRIKAZ toka zakazivanja (theme-9).
+ *
+ * PRIVREMENO I NAMERNO ODVOJENO. Ovo nije landing sekcija — to su podaci
+ * launcher-a i widget-a (spec 6.11), pa ne idu u `landingStructure`. Nisu ni
+ * domenski entiteti: usluge, termini i pitanja su ovde AUTORSKI TEKST koji
+ * vlasnica potvrđuje, a ne `Service`, `BookingReservation` ni
+ * `QuestionnaireDefinition`.
+ *
+ * Svrha je jedna: da vlasnica na staging-u prođe kroz ceo tok i da nam
+ * definitivne usluge, cene, termine i pitanja. Kada stignu Consultation domen
+ * (Slice 7) i Booking Engine (Slice 5), ovo polje se BRIŠE — ne migrira se.
+ */
+export interface ThemeBookingPreviewService {
+  id: string;
+  title: string;
+  duration?: string;
+  priceLabel?: string;
+  includes?: string[];
+}
+
+export interface ThemeBookingPreviewQuestion {
+  id: string;
+  label: string;
+  options: string[];
+}
+
+export interface ThemeBookingPreview {
+  enabled: boolean;
+  month?: string;
+  services: ThemeBookingPreviewService[];
+  dates: { id: string; dow: string; day: string; long: string }[];
+  times: string[];
+  /** Pun upitnik — nova klijentkinja. */
+  intake: ThemeBookingPreviewQuestion[];
+  intakeFreeText?: string;
+  /** Kratak check-in — povratnica (ulogovana klijentkinja). */
+  checkin: ThemeBookingPreviewQuestion[];
+  checkinFreeText?: string;
+  allowIntakeSkip?: boolean;
+  confirmNote?: string;
+}
+
 export type ThemePageKey = "za-klijente" | "za-profesionalce";
 
 export type TenantThemePages = Partial<Record<ThemePageKey, TenantThemePage>>;
@@ -1370,6 +1415,8 @@ export interface SalonProfileData {
   landingStructure?: LandingStructure;
   /** Sadržaj tematskih podstranica; odvojeno od landing kompozicije. */
   themePages?: TenantThemePages;
+  /** Podaci za PRIKAZ toka zakazivanja; briše se kad stigne Booking Engine. */
+  themeBookingPreview?: ThemeBookingPreview;
   clientGender?: ClientGender;
   isDemo?: boolean;
   logo?: string | null;

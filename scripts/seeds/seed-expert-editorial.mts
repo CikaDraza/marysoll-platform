@@ -24,6 +24,7 @@ import {
   sharedLandingSections,
   theme9LandingSections,
   themePages,
+  bookingPreview,
   type SeedThemePage,
 } from "./data/expert-editorial-content.mts";
 
@@ -126,7 +127,7 @@ async function main() {
   }
 
   // ── Šta se upisuje ────────────────────────────────────────────────────────
-  const set: Record<string, unknown> = { themePages };
+  const set: Record<string, unknown> = { themePages, themeBookingPreview: bookingPreview };
   for (const [name, section] of Object.entries(theme9LandingSections)) {
     set[`landingStructure.landing.${name}`] = section;
   }

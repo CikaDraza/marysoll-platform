@@ -567,3 +567,94 @@ export const sharedLandingSections = {
  * pun `description` je pasus i u header-u je gurao navigaciju u drugi red.
  */
 export const salonShortDescription = "Skincare edukacija";
+
+// ─── Prikaz toka zakazivanja ─────────────────────────────────────────────────
+
+/**
+ * Podaci za PRIKAZ toka (staging). Usluge, cene, termini i pitanja su ovde
+ * AUTORSKI TEKST za potvrdu, ne domenski entiteti — cela svrha je da vlasnica
+ * prođe tok i vrati nam definitivne vrednosti.
+ *
+ * Cene su iste privremene vrednosti iz handoff-a; termini su iz prototipa i
+ * NISU stvarna dostupnost.
+ */
+export const bookingPreview = {
+  enabled: true,
+  month: "avgust 2026",
+  services: [
+    {
+      id: "individualna",
+      title: "Individualna konsultacija",
+      duration: "45 min",
+      priceLabel: "4.900 RSD",
+      includes: [
+        "Procena tipa i trenutnog stanja kože",
+        "Analiza postojeće rutine",
+        "Preporuka daljih koraka",
+      ],
+    },
+    {
+      id: "paket",
+      title: "Vođeni paket",
+      duration: "45 min + 25 min",
+      priceLabel: "8.900 RSD",
+      includes: [
+        "Sve iz individualne konsultacije",
+        "Pisani plan nege (PDF)",
+        "Follow-up nakon 4 nedelje",
+      ],
+    },
+  ],
+  dates: [
+    { id: "d1", dow: "uto", day: "25.", long: "25. avgust" },
+    { id: "d2", dow: "sre", day: "26.", long: "26. avgust" },
+    { id: "d3", dow: "čet", day: "27.", long: "27. avgust" },
+    { id: "d4", dow: "sub", day: "29.", long: "29. avgust" },
+  ],
+  times: ["10:00", "12:00", "17:00", "18:30"],
+  intake: [
+    {
+      id: "reason",
+      label: "Šta je glavni razlog zakazivanja?",
+      options: [
+        "Nečistoće i akne",
+        "Osetljivost i crvenilo",
+        "Dehidriranost i zatezanje",
+        "Znaci starenja",
+        "Nisam sigurna",
+      ],
+    },
+    {
+      id: "duration",
+      label: "Koliko dugo traje to stanje?",
+      options: ["Do 3 meseca", "3–12 meseci", "Duže od godinu", "Ne znam"],
+    },
+    {
+      id: "actives",
+      label: "Da li trenutno koristiš aktivne sastojke?",
+      options: ["Da, redovno", "Ponekad", "Ne", "Ne znam šta koristim"],
+    },
+    {
+      id: "reaction",
+      label: "Da li je koža reagovala na neki proizvod?",
+      options: ["Da", "Ne", "Nisam sigurna"],
+    },
+  ],
+  intakeFreeText: "Šta bi želela da postigneš? (opciono)",
+  checkin: [
+    {
+      id: "change",
+      label: "Kako je koža reagovala od poslednjeg razgovora?",
+      options: ["Bolje", "Bez promene", "Lošije", "Nisam sigurna"],
+    },
+    {
+      id: "adherence",
+      label: "Da li si mogla da sprovodiš plan?",
+      options: ["Da, u celini", "Delimično", "Ne"],
+    },
+  ],
+  checkinFreeText: "Ima li nešto novo što bi trebalo da znam? (opciono)",
+  allowIntakeSkip: true,
+  confirmNote:
+    "Potvrda termina dolazi na email. Termin možeš da otkažeš ili pomeriš najkasnije 24h unapred.",
+};

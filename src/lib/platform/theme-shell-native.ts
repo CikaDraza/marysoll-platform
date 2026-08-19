@@ -62,6 +62,8 @@ export interface ThemeShellNativeByTheme {
     };
   };
   "theme-9": {
+    /** Launcher zakazivanja i na podstranicama — vidi spec 6.11. */
+    bookingPreview?: SalonProfileData["themeBookingPreview"];
     header: { salonName: string; logo?: string; kicker?: string };
     footer: { salonName: string; tagline?: string; email: string; instagramUrl?: string };
   };
@@ -152,6 +154,9 @@ export function buildThemeShellNative(
     case "theme-9":
       return {
         "theme-9": {
+          bookingPreview: salon.themeBookingPreview?.enabled
+            ? salon.themeBookingPreview
+            : undefined,
           header: {
             salonName: salon.name,
             logo: salon.logo ?? undefined,

@@ -38,7 +38,7 @@ export function Theme9FinalCta({
 
   return (
     <section id="final-cta" className="bg-ee-canvas">
-      <div className="mx-auto max-w-[1240px] px-5 pb-14 md:px-8 md:pb-20 lg:px-14 lg:pb-[110px]">
+      <div className="mx-auto max-w-[1240px] px-5 py-14 md:px-8 md:pb-20 lg:px-14 lg:pb-[110px]">
         <Reveal>
           <div className="bg-ee-terracotta grid grid-cols-[repeat(auto-fit,minmax(min(100%,320px),1fr))] items-center gap-7 rounded-[28px] p-9 md:p-14 lg:gap-[60px] lg:p-[76px]">
             <div className="flex flex-col gap-[22px]">

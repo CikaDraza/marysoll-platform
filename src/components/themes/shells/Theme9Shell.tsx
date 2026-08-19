@@ -6,6 +6,7 @@
  * `colorPolicy: "locked"`, tenant branding se ne mapira (ARCHITECTURAL_RULES §3.4).
  */
 import { Theme9Footer, Theme9Header } from "../theme-9";
+import { Theme9BookingProvider } from "../theme-9/booking/Theme9BookingProvider";
 import type { ThemeShellProps } from "./types";
 
 const THEME9_FONT_HREF =
@@ -16,6 +17,10 @@ export function Theme9Shell(props: ThemeShellProps) {
   const native = shellNative["theme-9"];
 
   return (
+    <Theme9BookingProvider
+      data={native?.bookingPreview}
+      tenantSlug={headerProps.clientSlug ?? tenantSlug}
+    >
     <div className="bg-ee-canvas text-ee-text font-instrument-sans flex min-h-screen flex-col overflow-x-clip antialiased">
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="stylesheet" href={THEME9_FONT_HREF} />
@@ -40,5 +45,6 @@ export function Theme9Shell(props: ThemeShellProps) {
         />
       )}
     </div>
+    </Theme9BookingProvider>
   );
 }

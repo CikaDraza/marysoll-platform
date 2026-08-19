@@ -22,6 +22,7 @@
  */
 import { useMemo } from "react";
 import { Theme9Footer, Theme9Header } from "../theme-9";
+import { Theme9BookingProvider } from "../theme-9/booking/Theme9BookingProvider";
 import { THEME9_BLOCK_RENDERERS } from "../theme-9/blocks";
 import { ThemeBlock } from "../blocks/ThemeBlock";
 import { ThemeBlockScope } from "../blocks/ThemeBlockScope";
@@ -49,6 +50,12 @@ export function Theme9Landing(props: ThemeLandingProps) {
       renderers={THEME9_BLOCK_RENDERERS}
       routing={routing}
     >
+      {/* Launcher je iznad kompozicije: nije sekcija i ne zavisi od
+          `appointmentSection.enabled` (spec 6.11). */}
+      <Theme9BookingProvider
+        data={native.bookingPreview}
+        tenantSlug={clientSlug ?? tenantSlug}
+      >
       <div className="bg-ee-canvas text-ee-text font-instrument-sans flex min-h-screen flex-col overflow-x-clip antialiased">
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="stylesheet" href={THEME9_FONT_HREF} />
@@ -84,6 +91,7 @@ export function Theme9Landing(props: ThemeLandingProps) {
           tenantSlug={tenantSlug}
         />
       </div>
+      </Theme9BookingProvider>
     </ThemeBlockScope>
   );
 }

@@ -128,6 +128,12 @@ export interface Theme6WithPricing extends Theme6NativeData {
  * što je tačno granica koju ova tema čuva.
  */
 export interface Theme9NativeData {
+  /**
+   * Launcher zakazivanja — podaci widget-a i modala. Nije sekcija (spec 6.11),
+   * pa NE zavisi od `appointmentSection.enabled`. Privremeno: sadržaj je
+   * autorski tekst za PRIKAZ toka; Booking Engine ga zamenjuje.
+   */
+  bookingPreview?: SalonProfileData["themeBookingPreview"];
   header: {
     salonName: string;
     logo?: string;
@@ -305,6 +311,9 @@ export function buildThemeNative(
     case "theme-9":
       return {
         "theme-9": {
+          bookingPreview: salon.themeBookingPreview?.enabled
+            ? salon.themeBookingPreview
+            : undefined,
           header: {
             salonName: salon.name,
             logo: salon.logo ?? undefined,
