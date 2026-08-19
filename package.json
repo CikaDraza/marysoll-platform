@@ -16,7 +16,7 @@
     "fixtures:theme": "node --env-file=.env.local scripts/make-theme-fixtures.mjs",
     "backfill:identity": "echo 'Deprecated — backfill-user-identity script removed'",
     "test:watch": "vitest",
-    "seed:marina-pages": "node --env-file=.env.local scripts/seeds/seed-marina-theme-pages.mts"
+    "seed:theme9": "node --env-file=.env.local scripts/seeds/seed-expert-editorial.mts"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.19",

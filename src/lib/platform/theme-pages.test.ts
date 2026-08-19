@@ -92,7 +92,7 @@ describe("seed nije fallback teme", () => {
         // Testovi su izuzeti — ovaj fajl i sam pominje te nazive.
         if (!/\.(ts|tsx|mts)$/.test(entry) || /\.test\.(ts|tsx)$/.test(entry)) continue;
         const src = readFileSync(full, "utf8");
-        if (src.includes("scripts/seeds") || src.includes("marina-theme-pages")) {
+        if (src.includes("scripts/seeds") || src.includes("expert-editorial-content")) {
           offenders.push(full);
         }
       }
