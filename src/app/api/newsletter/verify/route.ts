@@ -5,11 +5,14 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { AudienceContact } from "@/models/AudienceContact";
 import { Tenant } from "@/models/Tenant";
 import { Types } from "mongoose";
+import { platformOrigin, tenantOrigin } from "@/lib/platform/host-context";
 
-const platformUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://marysoll.com";
-const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
-
-async function resolveTenantBaseUrl(token: string): Promise<string> {
+/** Salon kome pretplatnik pripada — u okruženju iz koga je link otvoren. */
+async function resolveTenantBaseUrl(
+  token: string,
+  req: NextRequest,
+): Promise<string> {
+  const fallback = platformOrigin(req);
   try {
     await connectToDB();
     const contact = (await AudienceContact.findOne({
@@ -18,7 +21,7 @@ async function resolveTenantBaseUrl(token: string): Promise<string> {
       .select("tenantId")
       .lean()) as { tenantId?: Types.ObjectId } | null;
 
-    if (!contact?.tenantId) return platformUrl;
+    if (!contact?.tenantId) return fallback;
 
     const tenant = (await Tenant.findById(contact.tenantId)
       .select("slug customDomain customDomainVerified")
@@ -28,28 +31,23 @@ async function resolveTenantBaseUrl(token: string): Promise<string> {
       customDomainVerified?: boolean;
     } | null;
 
-    if (tenant?.customDomain && tenant.customDomainVerified) {
-      return `https://${tenant.customDomain}`;
-    }
-    if (tenant?.slug) {
-      return `https://${tenant.slug}.${baseDomain}`;
-    }
+    if (tenant?.slug) return tenantOrigin({ ...tenant, slug: tenant.slug }, req);
   } catch {
     // fall through
   }
-  return platformUrl;
+  return fallback;
 }
 
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token");
   if (!token) {
     return NextResponse.redirect(
-      `${platformUrl}/newsletter/verify-failed?reason=no-token`,
+      `${platformOrigin(req)}/newsletter/verify-failed?reason=no-token`,
     );
   }
 
   // Resolve tenant base URL before verification clears the token
-  const baseUrl = await resolveTenantBaseUrl(token);
+  const baseUrl = await resolveTenantBaseUrl(token, req);
 
   try {
     const result = await verifyNewsletterSubscription(token);

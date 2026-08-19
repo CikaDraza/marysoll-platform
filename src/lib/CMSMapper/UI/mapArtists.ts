@@ -1,8 +1,9 @@
 import { LandingStructure } from "@/types";
 
-export function mapArtists(ls: LandingStructure | undefined) {
-  const artists = ls?.landing?.artists;
-
+/** Ulaz na nivou sekcije (vidi `mapHeroSection`). */
+export function mapArtistsSection(
+  artists: LandingStructure["landing"]["artists"] | undefined,
+) {
   return {
     headline: artists?.headline ?? "Our Artists",
     members:
@@ -17,4 +18,8 @@ export function mapArtists(ls: LandingStructure | undefined) {
       })) ?? [],
     enabled: artists !== undefined ? artists.enabled : true,
   };
+}
+
+export function mapArtists(ls: LandingStructure | undefined) {
+  return mapArtistsSection(ls?.landing?.artists);
 }

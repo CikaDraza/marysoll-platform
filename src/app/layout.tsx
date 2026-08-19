@@ -8,13 +8,12 @@ import { InAppBrowserBanner } from "@/components/shared/InAppBrowserBanner";
 import { AddToHomeScreenBanner } from "@/components/shared/AddToHomeScreenBanner";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+import { platformOrigin } from "@/lib/platform/host-context";
 
 export const metadata: Metadata = {
   // Absolute base for resolving relative OG/Twitter image URLs. Without it,
   // Next falls back to http://localhost:3006 and social previews break in prod.
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL ?? "https://marysoll.com",
-  ),
+  metadataBase: new URL(platformOrigin()),
   title: "Marysoll",
   description: "Beauty Salon Platform",
   // Bez ovoga browser ne vidi manifest → "Add to Home Screen" pravi običnu

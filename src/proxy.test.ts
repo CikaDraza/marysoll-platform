@@ -29,6 +29,11 @@ const TENANTS: Record<
     slug: "no-domain-salon",
     customDomain: null,
   },
+  "marina-stanisavljevic-skincare-edukacija": {
+    id: "t-marina",
+    slug: "marina-stanisavljevic-skincare-edukacija",
+    customDomain: "marina-skincare.rs",
+  },
 };
 
 const DOMAINS: Record<string, { id: string; slug: string }> = {
@@ -224,6 +229,42 @@ describe("staging apex (qa/staging.marysoll.com, path-based tenant)", () => {
     expect(rewritePath(res)).toBeNull();
   });
 
+  it("staging.marysoll.com/login → marketing pass (platformska prijava, ne slug)", async () => {
+    const { res } = await runProxy("staging.marysoll.com", "/login");
+    expect(forwardedHeader(res, "x-domain-type")).toBe("marketing");
+    expect(rewritePath(res)).toBeNull();
+    expect(res.headers.get("location")).toBeNull();
+  });
+
+  it("staging.marysoll.com/dashboard → marketing pass (panel na istom hostu)", async () => {
+    const { res } = await runProxy("staging.marysoll.com", "/dashboard");
+    expect(forwardedHeader(res, "x-domain-type")).toBe("marketing");
+    expect(forwardedHeader(res, "x-tenant-slug")).toBe("");
+    expect(rewritePath(res)).toBeNull();
+    expect(res.headers.get("location")).toBeNull();
+  });
+
+  it("staging.marysoll.com/{slug} salona sa CUSTOM domenom → path-based, BEZ 301 na prod", async () => {
+    const { res } = await runProxy(
+      "staging.marysoll.com",
+      "/marina-stanisavljevic-skincare-edukacija",
+    );
+    expect(res.headers.get("location")).toBeNull(); // nema kanonskog redirecta
+    expect(rewritePath(res)).toBe("/tenant");
+    expect(forwardedHeader(res, "x-tenant-base-path")).toBe(
+      "/marina-stanisavljevic-skincare-edukacija",
+    );
+  });
+
+  it("PRODUKCIJA nedirnuta: {slug}.marysoll.com i dalje 301 na custom domen", async () => {
+    const { res } = await runProxy(
+      "marina-stanisavljevic-skincare-edukacija.marysoll.com",
+      "/",
+    );
+    expect(res.status).toBe(301);
+    expect(res.headers.get("location")).toBe("https://marina-skincare.rs/");
+  });
+
   it("staging.marysoll.com/{slug}/termini → rewrite /tenant/termini", async () => {
     const { res } = await runProxy(
       "staging.marysoll.com",
@@ -289,6 +330,16 @@ describe("tenant subdomen (host-based)", () => {
     expect(rewritePath(res)).toBe("/tenant/manifest");
   });
 
+  it.each(["/za-klijente", "/za-profesionalce"])(
+    "%s se prepisuje na /tenant/... (theme-9 strane)",
+    async (path) => {
+      // Tenant BEZ custom domena — inače bi kanonski 301 pretekao rewrite.
+      const { res } = await runProxy("no-domain-salon.marysoll.com", path);
+      expect(rewritePath(res)).toBe(`/tenant${path}`);
+      expect(forwardedHeader(res, "x-tenant-slug")).toBe("no-domain-salon");
+    },
+  );
+
   it("/api/public/* prolazi bez guarda", async () => {
     const { res } = await runProxy(
       "no-domain-salon.marysoll.com",
@@ -309,6 +360,17 @@ describe("custom domen (kikikiss.beauty)", () => {
       calls.some((c) => c.url.pathname === "/api/internal/resolve-domain"),
     ).toBe(true);
   });
+
+  it.each(["/za-klijente", "/za-profesionalce"])(
+    "%s radi i na custom domenu",
+    async (path) => {
+      const { res } = await runProxy("kikikiss.beauty", path);
+      expect(rewritePath(res)).toBe(`/tenant${path}`);
+      expect(forwardedHeader(res, "x-tenant-slug")).toBe("kiki-kiss-beauty");
+      // Custom domen je već kanonski — bez 301 na sebe samog.
+      expect(res.status).not.toBe(301);
+    },
+  );
 
   it("nema kanonskog redirecta kada je host VEĆ custom domen", async () => {
     const { res } = await runProxy("kikikiss.beauty", "/termini");

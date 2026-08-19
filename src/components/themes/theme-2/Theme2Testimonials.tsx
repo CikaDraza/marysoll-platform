@@ -13,6 +13,10 @@ interface Props {
 }
 
 export function Theme2Testimonials({ testimonials = [], headline }: Props) {
+  // Bez utisaka nema ni sekcije: ranije se prikazivao samo naslov iznad prazne
+  // mreže. Isti guard već ima Theme2TestimonialsSection.
+  if (testimonials.length === 0) return null;
+
   return (
     <section className="bg-black py-24">
       <div className="max-w-6xl mx-auto px-6">

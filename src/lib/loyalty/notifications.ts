@@ -15,9 +15,12 @@ import { sendWebPushToUser, sendWebPushToMany } from "@/lib/webPush";
 import { TenantUser } from "@/models/TenantUser";
 import { connectToDB } from "@/lib/db/mongodb";
 import type { INotification } from "@/types";
+import {
+  ADMIN_APPOINTMENTS_PATH,
+  clientPanelPath,
+} from "@/lib/notifications/pushTargets";
 
-const CLIENT_PANEL_URL = "/panel?tab=Nagrade";
-const ADMIN_APPOINTMENTS_URL = "/dashboard?tab=termini";
+const ADMIN_APPOINTMENTS_URL = ADMIN_APPOINTMENTS_PATH;
 
 export interface LoyaltyNotificationParams {
   tenantId: Types.ObjectId | string;
@@ -58,7 +61,7 @@ export async function createLoyaltyNotification(
       body: params.message,
       icon,
       tag: `loyalty-${params.type}-${params.recipientProfileId}`,
-      url: CLIENT_PANEL_URL,
+      url: await clientPanelPath(params.tenantId, "?tab=Nagrade"),
     });
   } catch (err) {
     console.error("[loyalty] notification failed:", err);

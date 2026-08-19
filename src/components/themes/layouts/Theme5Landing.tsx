@@ -1,116 +1,105 @@
 "use client";
 /**
- * Theme5Landing — landing blok teme theme-5, izdvojen iz ThemeLayout (Faza 4).
- * ThemeLayout ga učitava kroz next/dynamic pa tenant dobija SAMO chunk
- * svoje teme (ranije su sve teme išle u svaki landing bundle).
+ * Theme5Landing — peta tema migrirana na Feature Block-ove (T2A, korak 5).
+ *
+ * Ranije najveći test compat sloja — pet CMS sekcija se renderovalo bez obzira
+ * na `enabled`. Posle T2A-FOLLOWUP normalizacije tema poštuje sve svoje flagove.
+ *
+ *   sve CMS sekcije                           → ThemeBlock
+ *   workingHours / howItWorks / pricing / CTA → theme-5 native (stari propovi)
+ *
+ * `mapCMS` ostaje: theme-5 je jedina tema koja je već imala view-model sloj.
+ * Blokovi ga zovu po sekciji (`map*Section`), a native delovi i shell i dalje
+ * kroz pun `mapCMS` poziv — dok se `ThemeLandingProps` ne svede (korak 6).
  */
+import { useMemo, type ComponentProps } from "react";
 import {
-  Theme5About,
-  Theme5AppointmentSection,
-  Theme5Artists,
   Theme5CTA,
   Theme5Footer,
-  Theme5Gallery,
   Theme5Header,
-  Theme5Hero,
   Theme5HowItWorks,
   Theme5Pricing,
-  Theme5Services,
-  Theme5Testimonials,
   Theme5WorkingHours,
 } from "../theme-5";
-import {
-  shouldShowWorkingHours,
-} from "@/helpers/workingHoursDisplay";
-import {
-  mapCMS,
-} from "@/lib/CMSMapper/mapCMS";
-import type { ComponentProps } from "react";
+import { THEME5_BLOCK_RENDERERS } from "../theme-5/blocks";
+import { ThemeBlock } from "../blocks/ThemeBlock";
+import { ThemeBlockScope } from "../blocks/ThemeBlockScope";
+import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
 import type { ThemeLandingProps } from "./types";
 
 export function Theme5Landing(props: ThemeLandingProps) {
   const {
-    artistsEnabled,
+    blockData,
     brandingVars,
     clientSlug,
+    document,
     googleFontHref,
-    primaryColor,
-    salon,
-    secondaryColor,
-    services,
+    resolveHref,
     tenantSlug,
-    tenantStats,
-    testimonials,
-    testimonialsEnabled,
+    themeNative,
   } = props;
 
-  const ui = mapCMS(salon, services, testimonials, tenantSlug, tenantStats);
+  const native = themeNative["theme-5"]!;
+  const ui = native.ui;
 
-  return (
-    <div className="min-h-screen flex flex-col" style={brandingVars}>
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="stylesheet" href={googleFontHref} />
-      {/* HEADER */}
-      <Theme5Header
-        data={ui.header}
-        primaryColor={primaryColor}
-        secondaryColor={secondaryColor}
-        tenantSlug={tenantSlug}
-        clientSlug={clientSlug ?? tenantSlug}
-      />
-      <main className="flex-1 flex flex-col overflow-x-hidden">
-        {/* 1. HERO */}
-        <Theme5Hero data={ui.hero} tenantSlug={tenantSlug} />
-        {/* 2. SERVICES */}
-        <Theme5Services
-          data={ui.services}
-          services={ui.services.services}
-          tenantSlug={tenantSlug}
-        />
-        {/* 3. WORKING HOURS */}
-        {shouldShowWorkingHours(salon) && (
-          <Theme5WorkingHours
-            workingHours={ui.workingHours.workingHours}
-            tenantSlug={tenantSlug}
-          />
-        )}
-        {/* 4. HOW IT WORKS */}
-        <Theme5HowItWorks
-          data={
-            ui.howItWorks as ComponentProps<typeof Theme5HowItWorks>["data"]
-          }
-          tenantSlug={tenantSlug}
-        />
-        {/* 5. APPOINTMENT */}
-        <Theme5AppointmentSection
-          tenantSlug={tenantSlug}
-          clientSlug={clientSlug ?? tenantSlug}
-          salon={salon}
-          services={services}
-        />
-        {/* 6. PRICING */}
-        <Theme5Pricing services={services} tenantSlug={tenantSlug} />
-        {/* 6. CTA */}
-        <Theme5CTA data={ui.cta} />
-        {/* 7. ARTISTS */}
-        {artistsEnabled && (
-          <Theme5Artists data={ui?.artists} tenantSlug={tenantSlug} />
-        )}
-        {/* 8. STATS */}
-        <Theme5About data={ui.about} tenantSlug={tenantSlug} />
-        {/* 9. TESTIMONIALS */}
-        {testimonialsEnabled && (
-          <Theme5Testimonials
-            data={ui.testimonials}
-            tenantSlug={tenantSlug}
-          />
-        )}
-        {/* 10. GALLERY */}
-        <Theme5Gallery data={ui.gallery} tenantSlug={tenantSlug} />
-      </main>
-      {/* FOOTER */}
-      <Theme5Footer data={ui.footer} />
-    </div>
+  const routing = useMemo(
+    () => ({ tenantSlug, clientSlug, resolveHref }),
+    [tenantSlug, clientSlug, resolveHref],
   );
 
+  return (
+    <ThemeBlockScope
+      theme="theme-5"
+      data={blockData}
+      renderers={THEME5_BLOCK_RENDERERS}
+      routing={routing}
+    >
+      <div className="min-h-screen flex flex-col" style={brandingVars}>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="stylesheet" href={googleFontHref} />
+
+        <Theme5Header
+          data={ui.header}
+          primaryColor={native.brand.primaryColor}
+          secondaryColor={native.brand.secondaryColor}
+          tenantSlug={tenantSlug}
+          clientSlug={native.clientSlug ?? tenantSlug}
+        />
+
+        <main className="flex-1 flex flex-col overflow-x-hidden">
+          <ThemeBlock document={document} type="content.hero" />
+          <ThemeBlock document={document} type="services.catalog" />
+
+          {shouldShowWorkingHours(native.salon) && (
+            <Theme5WorkingHours
+              workingHours={ui.workingHours.workingHours}
+              tenantSlug={tenantSlug}
+            />
+          )}
+
+          <Theme5HowItWorks
+            data={
+              ui.howItWorks as ComponentProps<typeof Theme5HowItWorks>["data"]
+            }
+            tenantSlug={tenantSlug}
+          />
+
+          <ThemeBlock document={document} type="booking.services" />
+
+          <Theme5Pricing {...native.pricing} />
+          <Theme5CTA data={ui.cta} />
+
+          <ThemeBlock document={document} type="content.team" />
+
+          <ThemeBlock document={document} type="content.about" />
+
+          <ThemeBlock document={document} type="content.testimonials" />
+
+          <ThemeBlock document={document} type="content.gallery" />
+        </main>
+
+        <Theme5Footer data={ui.footer} />
+      </div>
+    </ThemeBlockScope>
+  );
 }

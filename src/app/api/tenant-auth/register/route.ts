@@ -24,6 +24,7 @@ import {
   normalizeContactValue,
   normalizeInstagram,
 } from "@/lib/contactRules";
+import { tenantOrigin } from "@/lib/platform/host-context";
 
 export async function POST(req: NextRequest) {
   try {
@@ -142,7 +143,7 @@ export async function POST(req: NextRequest) {
             clientName: name.trim(),
             salonName: tenant.name,
             verificationToken,
-            salonBaseUrl: `https://${tenant.slug}.marysoll.com`,
+            salonBaseUrl: tenantOrigin(tenant, req),
             tenantId: tenant._id.toString(),
           });
         } catch (e) {
@@ -179,7 +180,7 @@ export async function POST(req: NextRequest) {
             clientName: existing.name,
             salonName: tenant.name,
             verificationToken,
-            salonBaseUrl: `https://${tenant.slug}.marysoll.com`,
+            salonBaseUrl: tenantOrigin(tenant, req),
             tenantId: tenant._id.toString(),
           });
         } catch (e) {
@@ -243,7 +244,7 @@ export async function POST(req: NextRequest) {
         clientName: name.trim(),
         salonName: tenant.name,
         verificationToken,
-        salonBaseUrl: `https://${tenant.slug}.marysoll.com`,
+        salonBaseUrl: tenantOrigin(tenant, req),
         tenantId: tenant._id.toString(),
       });
     } catch (e) {

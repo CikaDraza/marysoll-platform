@@ -4,50 +4,9 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { publicApi } from "@/lib/api";
 import { INewsletterCampaign } from "@/types";
+import { mapBlogPost, type MappedBlogPost } from "@/lib/tenant/blogPosts";
 import { useTenant } from "@/contexts/TenantContext";
 import type { PaginationInfo } from "@/types";
-
-export interface MappedBlogPost {
-  _id: string;
-  slug: string;
-  title: string;
-  description: string;
-  dateFormatted: string;
-  dateISO: string;
-  categoryTitle: string;
-  ogImage: string;
-  initials: string;
-}
-
-function mapPost(campaign: INewsletterCampaign): MappedBlogPost {
-  const lp = campaign.landingPage;
-  const rawSlug = lp?.slug ?? "";
-  const slug = rawSlug.replace(/^\/blog\/+/i, "").replace(/^\/+/, "");
-  const title = lp?.seo?.title || campaign.name;
-  const semanticType = lp?.semanticType ?? "blog";
-  const createdAt = new Date(campaign.createdAt);
-
-  return {
-    _id: String(campaign._id),
-    slug,
-    title,
-    description: lp?.seo?.description ?? "",
-    dateFormatted: createdAt.toLocaleDateString("sr-RS", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }),
-    dateISO: createdAt.toISOString().split("T")[0],
-    categoryTitle: semanticType.charAt(0).toUpperCase() + semanticType.slice(1),
-    ogImage: lp?.seo?.ogImage ?? "",
-    initials: title
-      .split(" ")
-      .slice(0, 2)
-      .map((w) => w[0])
-      .join("")
-      .toUpperCase(),
-  };
-}
 
 interface UseBlogPostsOptions {
   page?: number;
@@ -95,7 +54,7 @@ export function useBlogPosts({
   }
 
   return {
-    posts: (data?.data ?? []).map(mapPost),
+    posts: (data?.data ?? []).map(mapBlogPost),
     pagination: {
       page,
       limit,
@@ -108,3 +67,5 @@ export function useBlogPosts({
     handlePageChange,
   };
 }
+
+export type { MappedBlogPost };

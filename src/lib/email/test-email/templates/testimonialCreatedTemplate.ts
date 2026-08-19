@@ -1,4 +1,5 @@
 import { wrapEmailLayout } from "@/lib/email";
+import { platformOrigin } from "@/lib/platform/host-context";
 
 export async function testimonialCreatedTemplate(data: {
   clientName: string;
@@ -29,7 +30,7 @@ export async function testimonialCreatedTemplate(data: {
           <table role="presentation" border="0" cellpadding="0" cellspacing="0">
             <tr>
               <td align="center" bgcolor="#7c3aed" style="border-radius:50px;background-color:#7c3aed;padding:14px 36px;mso-padding-alt:14px 36px;">
-                <a href="${process.env.NEXTAUTH_URL}/dashboard?tab=Moje Preporuke" style="display:inline-block;font-family:'Georgia',serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.8px;white-space:nowrap;">
+                <a href="${platformOrigin()}/dashboard?tab=Moje Preporuke" style="display:inline-block;font-family:'Georgia',serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.8px;white-space:nowrap;">
                 Pregledaj komentare
                 </a>
               </td>

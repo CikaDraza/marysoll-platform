@@ -25,6 +25,8 @@ const SalonProfileSchema = new mongoose.Schema(
     name: { type: String, required: true },
     email: { type: String, required: true },
     description: { type: String },
+    /** Kratka brend linija za header/footer; `description` je pun opis salona. */
+    shortDescription: { type: String },
 
     isDemo: { type: Boolean, default: false },
 
@@ -32,6 +34,8 @@ const SalonProfileSchema = new mongoose.Schema(
       landing: {
         hero: {
           enabled: { type: Boolean, default: true },
+          eyebrow: { type: String },
+          quote: { type: String },
           headline: { type: String },
           subheadline: { type: String },
           whereWhatForWhom: { type: String },
@@ -78,8 +82,23 @@ const SalonProfileSchema = new mongoose.Schema(
         },
         about: {
           enabled: { type: Boolean, default: true },
+          eyebrow: { type: String },
           headline: { type: String },
           paragraphs: { type: [String], default: [] },
+          // Tabela kredencijala uz biografiju (theme-9). Nije isto što i blok
+          // `content.credentials` — taj nosi stubove „zašto baš ona".
+          credentials: {
+            type: [
+              {
+                label: { type: String },
+                value: { type: String },
+                note: { type: String },
+              },
+            ],
+            default: [],
+          },
+          showCredentials: { type: Boolean, default: true },
+          badge: { name: { type: String }, role: { type: String } },
           links: {
             type: [
               {
@@ -222,6 +241,142 @@ const SalonProfileSchema = new mongoose.Schema(
             secondary: ctaSchema,
           },
         },
+
+        // ── theme-9 „Expert Editorial" sekcije ─────────────────────────────
+        // Shema je eksplicitna (mongoose `strict` je podrazumevan), pa svaka
+        // nova sekcija MORA i ovde — inače se tiho odbacuje pri snimanju.
+        audiencePaths: {
+          enabled: { type: Boolean, default: false },
+          eyebrow: { type: String },
+          headline: { type: String },
+          lead: { type: String },
+          paths: {
+            type: [
+              {
+                id: { type: String },
+                chip: { type: String },
+                title: { type: String },
+                lead: { type: String },
+                bullets: { type: [String], default: [] },
+                href: { type: String },
+                ctaLabel: { type: String },
+                tone: { type: String, enum: ["surface", "accent"] },
+              },
+            ],
+            default: [],
+          },
+        },
+        topicHub: {
+          enabled: { type: Boolean, default: false },
+          eyebrow: { type: String },
+          headline: { type: String },
+          filters: {
+            type: [{ id: { type: String }, label: { type: String } }],
+            default: [],
+          },
+          topics: {
+            type: [
+              {
+                id: { type: String },
+                group: { type: String },
+                title: { type: String },
+                lead: { type: String },
+                tags: { type: [String], default: [] },
+                href: { type: String },
+              },
+            ],
+            default: [],
+          },
+        },
+        guidedCareProcess: {
+          enabled: { type: Boolean, default: false },
+          eyebrow: { type: String },
+          headline: { type: String },
+          lead: { type: String },
+          steps: {
+            type: [{ title: { type: String }, text: { type: String } }],
+            default: [],
+          },
+        },
+        credentials: {
+          enabled: { type: Boolean, default: false },
+          eyebrow: { type: String },
+          headline: { type: String },
+          lead: { type: String },
+          pillars: {
+            type: [{ title: { type: String }, text: { type: String } }],
+            default: [],
+          },
+          social: {
+            label: { type: String },
+            title: { type: String },
+            linkLabel: { type: String },
+            url: { type: String },
+            images: {
+              type: [{ src: { type: String }, alt: { type: String } }],
+              default: [],
+            },
+          },
+          note: { type: String },
+        },
+        finalCta: {
+          enabled: { type: Boolean, default: false },
+          eyebrow: { type: String },
+          headline: { type: String },
+          lead: { type: String },
+          calendar: {
+            label: { type: String },
+            month: { type: String },
+            slots: {
+              type: [
+                {
+                  day: { type: String },
+                  time: { type: String },
+                  selected: { type: Boolean, default: false },
+                },
+              ],
+              default: [],
+            },
+          },
+          ctaLabel: { type: String },
+          note: { type: String },
+        },
+        featuredEducation: {
+          enabled: { type: Boolean, default: false },
+          eyebrow: { type: String },
+          status: { type: String },
+          headline: { type: String },
+          lead: { type: String },
+          learn: { type: [String], default: [] },
+          details: {
+            format: { type: String },
+            duration: { type: String },
+            startDate: { type: String },
+            price: { type: String },
+          },
+          pendingLabel: { type: String },
+          cta: ctaSchema,
+          note: { type: String },
+        },
+        professionalPath: {
+          enabled: { type: Boolean, default: false },
+          eyebrow: { type: String },
+          headline: { type: String },
+          lead: { type: String },
+          note: { type: String },
+          formats: {
+            type: [
+              {
+                kind: { type: String },
+                title: { type: String },
+                text: { type: String },
+                priceFrom: { type: String },
+              },
+            ],
+            default: [],
+          },
+          cta: ctaSchema,
+        },
       },
       pages: {
         servicesPage: {
@@ -312,6 +467,29 @@ const SalonProfileSchema = new mongoose.Schema(
       fontFamily: { type: String, default: "Inter" },
     },
 
+    /**
+     * Sadržaj tematskih podstranica — minimalni `PageDocument`, ODVOJEN od
+     * `landingStructure`. Landing struktura opisuje kompoziciju početne strane;
+     * ovo je sadržaj strana. Granica je povučena i na nivou skladištenja da
+     * landing kompozicija ne postane opšti CMS.
+     *
+     * `Mixed` jer je oblik po strani isti (`TenantThemePage`) i validira se u
+     * aplikacijskom sloju; ključevi su `ThemePageKey`.
+     */
+    themePages: {
+      type: mongoose.Schema.Types.Mixed,
+      default: undefined,
+    },
+
+    /**
+     * Podaci za PRIKAZ toka zakazivanja (theme-9, staging). Privremeno polje —
+     * briše se kad stignu Consultation domen i Booking Engine.
+     */
+    themeBookingPreview: {
+      type: mongoose.Schema.Types.Mixed,
+      default: undefined,
+    },
+
     landingTheme: {
       type: String,
       enum: [
@@ -323,6 +501,7 @@ const SalonProfileSchema = new mongoose.Schema(
         "theme-6",
         "theme-7",
         "theme-8",
+        "theme-9",
       ],
       default: "theme-1",
     },

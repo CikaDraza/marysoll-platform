@@ -1,0 +1,29 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+
+  // Isključeno iz analize u celosti. Ovo NISU izvorni fajlovi projekta — svaki
+  // nalaz nad njima je šum koji zaklanja stvarne nalaze u `src/` i `packages/`.
+  //
+  // `ignorePatterns` se UNIJA sa fallow default-ima (node_modules, dist, build,
+  // coverage, *.min.js…), ne zamenjuje ih.
+  "ignorePatterns": [
+    // Claude Design handoff — vendored HTML/CSS/JS prototip tuđeg design systema.
+    // Nije naš kod i ne sme da se refaktoriše: to je referentni dizajn.
+    // (`support.js` 1912 LOC i `_ds_bundle.js` sami su dizali stotine nalaza.)
+    "design/**",
+
+    // Arhitektonska dokumentacija i tracker — markdown, bez izvršnog koda.
+    "docs/**",
+    "*.md",
+
+    // Build izlaz i statika.
+    ".next/**",
+    "public/**",
+
+    // Alatke i konfiguracija van aplikacije.
+    "scripts/**",
+    "*.config.mjs",
+    "*.config.ts",
+    "next-env.d.ts"
+  ]
+}

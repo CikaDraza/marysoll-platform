@@ -1,4 +1,5 @@
 import { wrapEmailLayout } from "@/lib/email";
+import { platformOrigin } from "@/lib/platform/host-context";
 
 export async function appointmentCancelledTemplate(data: {
   clientName: string;
@@ -35,7 +36,7 @@ export async function appointmentCancelledTemplate(data: {
         <p style="margin:0 0 16px 0;">Možete zakazati novi termin putem naše platforme.</p>
           <tr>
             <td align="center" bgcolor="#7c3aed" style="border-radius:50px;background-color:#7c3aed;padding:14px 36px;mso-padding-alt:14px 36px;">
-              <a href="${process.env.NEXTAUTH_URL}/dashboard?tab=Zakazivanja" style="display:inline-block;font-family:'Georgia',serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.8px;white-space:nowrap;">
+              <a href="${platformOrigin()}/dashboard?tab=Zakazivanja" style="display:inline-block;font-family:'Georgia',serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.8px;white-space:nowrap;">
                 Zakaži novi termin
               </a>
             </td>

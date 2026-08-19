@@ -19,13 +19,10 @@ import {
   sendNewsletterVerificationEmail,
 } from "./email/email";
 import { Types } from "mongoose";
+import { platformOrigin, tenantOrigin } from "@/lib/platform/host-context";
 
-const platformBaseUrl =
-  process.env.NEXTAUTH_URL ||
-  process.env.NEXT_PUBLIC_APP_URL ||
-  "https://marysoll.com";
-const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "marysoll.com";
-const trackingDomain = platformBaseUrl;
+// Origin se računa PRI POZIVU (ne pri importu) — isti kod servira prod, staging
+// i dev, pa mejl mora da nosi linkove okruženja iz koga je poslat.
 const bookingBaseUrl =
   process.env.NEXT_PUBLIC_BOOKING_BASE_URL || "https://booking.marysoll.com";
 
@@ -45,13 +42,7 @@ function getLandingBaseUrl(
     customDomainVerified?: boolean;
   } | null,
 ): string {
-  if (tenant?.customDomain && tenant.customDomainVerified) {
-    return `https://${tenant.customDomain}`;
-  }
-  if (tenant?.slug) {
-    return `https://${tenant.slug}.${baseDomain}`;
-  }
-  return platformBaseUrl;
+  return tenant?.slug ? tenantOrigin(tenant) : platformOrigin();
 }
 
 function getNewsletterLandingUrl(
@@ -71,7 +62,7 @@ function getPlatformNewsletterLandingUrl(landingSlug: string): string {
   }
 
   const cleanSlug = normalizeNewsletterLandingSlug(landingSlug);
-  return `${platformBaseUrl.replace(/\/+$/, "")}/newsletter/${cleanSlug}`;
+  return `${platformOrigin()}/newsletter/${cleanSlug}`;
 }
 
 export async function subscribeToNewsletter(data: NewsletterSubscriptionData) {
@@ -430,7 +421,7 @@ export async function sendCampaignEmails(campaignId: string) {
     finalUrl = isPlatformCampaign
       ? campaign.ctaSlug?.startsWith("http")
         ? campaign.ctaSlug
-        : platformBaseUrl
+        : platformOrigin()
       : campaign.ctaSlug?.startsWith("http")
         ? campaign.ctaSlug
         : `${getLandingBaseUrl(tenant)}${ctaSlug}`;
@@ -455,20 +446,20 @@ export async function sendCampaignEmails(campaignId: string) {
   });
 
   function buildMessage(recipient: Recipient) {
-    const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/newsletter/unsubscribe?token=${recipient.unsubscribeToken}`;
+    const unsubscribeUrl = `${platformOrigin()}/api/newsletter/unsubscribe?token=${recipient.unsubscribeToken}`;
     const trackingPixelId = crypto.randomUUID();
     const clickTrackingId = crypto.randomUUID();
     const campaignId = campaign._id.toString();
 
     const trackingCtaUrl =
-      `${trackingDomain}/api/newsletter/track/click` +
+      `${platformOrigin()}/api/newsletter/track/click` +
       `?campaign=${campaignId}` +
       `&subscriber=${recipient.subscriberId}` +
       `&log=${clickTrackingId}` +
       `&url=${encodeURIComponent(finalUrl)}`;
 
     const trackingOpenUrl =
-      `${trackingDomain}/api/newsletter/track/open` +
+      `${platformOrigin()}/api/newsletter/track/open` +
       `?campaign=${campaignId}` +
       `&subscriber=${recipient.subscriberId}` +
       `&log=${trackingPixelId}`;

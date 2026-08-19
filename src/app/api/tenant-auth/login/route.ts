@@ -22,8 +22,10 @@ import {
   generateRefreshToken,
 } from "@/lib/auth/auth-server";
 import { buildTenantTokenResponse } from "@/lib/auth/tokenResponse";
+import { platformUrl } from "@/lib/platform/host-context";
 
-const SUPPORT_LINK = "https://marysoll.com/kontakt";
+/** Marysoll podrška — BEZ hosta zahteva (prijava stiže sa domena SALONA). */
+const supportLink = () => platformUrl("/kontakt");
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,7 +54,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Prijava zahteva kontekst salona.",
-          hint: SUPPORT_LINK,
+          hint: supportLink(),
         },
         { status: 400 },
       );
@@ -66,7 +68,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Salon nije pronađen. Proverite link ili kontaktirajte podršku.",
-          hint: SUPPORT_LINK,
+          hint: supportLink(),
         },
         { status: 404 },
       );

@@ -792,7 +792,17 @@ export interface SalonProfile {
   cancellationWindowHours?: number;
   seo?: SeoData;
   branding?: IBranding;
+  /**
+   * Kratka brend linija (npr. „Skincare edukacija") — header ispod imena i
+   * footer tagline. Odvojena od `description`, koji je pun opis salona i u
+   * header-u je gurao navigaciju u drugi red.
+   */
+  shortDescription?: string;
   landingStructure?: LandingStructure;
+  /** Sadržaj tematskih podstranica; odvojeno od landing kompozicije. */
+  themePages?: TenantThemePages;
+  /** Podaci za PRIKAZ toka zakazivanja; briše se kad stigne Booking Engine. */
+  themeBookingPreview?: ThemeBookingPreview;
   isDemo?: boolean;
   clientGender?: ClientGender;
 }
@@ -805,7 +815,8 @@ export type LandingTheme =
   | "theme-5"
   | "theme-6"
   | "theme-7"
-  | "theme-8";
+  | "theme-8"
+  | "theme-9";
 
 /**
  * Controls which gallery editor UI is shown in the CMS and
@@ -881,6 +892,15 @@ export interface LandingStructure {
 
       variant?: "center-image" | "split-left-image" | "grid-right-images";
 
+      /**
+       * Kratak nadnaslov iznad h1 (theme-9). NEMA fallback na `salon.description`
+       * — taj tekst je opis salona, često dug pasus, i razbijao je hero.
+       */
+      eyebrow?: string;
+
+      /** Citat u uglu hero slike (theme-9). */
+      quote?: string;
+
       headline?: string; // fallback: salon name
       subheadline?: string;
       whereWhatForWhom?: string;
@@ -946,9 +966,25 @@ export interface LandingStructure {
     about: {
       enabled: boolean;
 
+      /** Nadnaslov iznad naslova (theme-9: „O meni"). */
+      eyebrow?: string;
       headline?: string;
       paragraphs: string[]; // max 2 u UI
       links?: AboutTextLink[];
+
+      /**
+       * Tabela kredencijala u About sekciji (obrazovanje, praksa, jezik rada).
+       * NIJE isto što i blok `content.credentials` — taj nosi stubove „zašto
+       * baš ona"; ovo je suvi spisak uz biografiju. Oba postoje u dizajnu.
+       */
+      credentials?: { label: string; value: string; note?: string }[];
+      /** Vlasnica sme da isključi tabelu, a da zadrži biografiju. */
+      showCredentials?: boolean;
+      /**
+       * Vizit-kartica u uglu About slike (theme-9): logo, ime i uloga.
+       * `name` pada na ime salona; logo dolazi iz profila.
+       */
+      badge?: { name?: string; role?: string };
 
       /** Optional about-section image. Layout falls back gracefully when absent. */
       image?: HeroImage;
@@ -1097,6 +1133,139 @@ export interface LandingStructure {
         secondary?: { text: string; href: string };
       };
     };
+
+    // ── theme-9 „Expert Editorial" sekcije ───────────────────────────────────
+    // Šest autorskih (`content.*`) sekcija education-first teme. Sve su
+    // OPCIONE i podrazumevano ISKLJUČENE — postojeći tenanti ne smeju dobiti
+    // prazne blokove. Nijedna nije domenski entitet: `featuredEducation` i
+    // `professionalPath` su marketinški teaseri dok ne prikazuju stvarni
+    // `EducationOffering` (tada prelaze na `education.*` + capability).
+
+    /** Dve putanje na početnoj: „za tebe lično" i „za tvoj tim". */
+    audiencePaths?: {
+      enabled: boolean;
+      eyebrow?: string;
+      /** Naslov levo („Odaberi svoj put"). */
+      headline?: string;
+      /** Rečenica desno, uz naslov („Dva pravca edukacije, isti pristup koži."). */
+      lead?: string;
+      paths?: {
+        id: string;
+        chip?: string;
+        title: string;
+        lead?: string;
+        bullets?: string[];
+        href?: string;
+        /** Tekst dugmeta na kartici („Za klijente"). */
+        ctaLabel?: string;
+        /** Vizuelni ton kartice; tema odlučuje kako ga crta. */
+        tone?: "surface" | "accent";
+      }[];
+    };
+
+    /** Filtrirana lista stručnih tema (procena kože, aktivni sastojci, SPF…). */
+    topicHub?: {
+      enabled: boolean;
+      eyebrow?: string;
+      headline?: string;
+      filters?: { id: string; label: string }[];
+      topics?: {
+        id: string;
+        /** Ključ filtera kome tema pripada; `filters[].id`. */
+        group?: string;
+        title: string;
+        lead?: string;
+        tags?: string[];
+        href?: string;
+      }[];
+    };
+
+    /** Metod rada kroz korake (intake → plan → praćenje). */
+    guidedCareProcess?: {
+      enabled: boolean;
+      eyebrow?: string;
+      headline?: string;
+      lead?: string;
+      steps?: { title: string; text?: string }[];
+    };
+
+    /** Stubovi kredibiliteta — obrazovanje, sertifikacija, stručni dokaz. */
+    credentials?: {
+      enabled: boolean;
+      eyebrow?: string;
+      headline?: string;
+      lead?: string;
+      pillars?: { title: string; text?: string }[];
+      /** Instagram kartica kao šesta ćelija mreže stubova. */
+      social?: {
+        label?: string;
+        title?: string;
+        linkLabel?: string;
+        url?: string;
+        images?: HeroImage[];
+      };
+      note?: string;
+    };
+
+    /**
+     * Završni panel sa prikazom slobodnih termina.
+     *
+     * `content.*`, a ne `booking.*`: dok T3 Booking Engine ne postoji, slotovi
+     * su STATIČAN tekst iz CMS-a — informacija, ne dostupnost. Kada widget
+     * stigne, sekcija dobija njegov slot i ovaj oblik prestaje da važi.
+     */
+    finalCta?: {
+      enabled: boolean;
+      eyebrow?: string;
+      headline?: string;
+      lead?: string;
+      calendar?: {
+        label?: string;
+        month?: string;
+        slots?: { day: string; time: string; selected?: boolean }[];
+      };
+      ctaLabel?: string;
+      note?: string;
+    };
+
+    /**
+     * Istaknuta edukacija. Dok je `details` prazno, sekcija je teaser („u
+     * pripremi") — zato `content.*`, a ne `education.*`.
+     */
+    featuredEducation?: {
+      enabled: boolean;
+      eyebrow?: string;
+      status?: string;
+      headline?: string;
+      lead?: string;
+      learn?: string[];
+      details?: {
+        format?: string;
+        duration?: string;
+        startDate?: string;
+        price?: string;
+      };
+      /** Tekst umesto nepotvrđene vrednosti (npr. „u pripremi"). */
+      pendingLabel?: string;
+      cta?: { text: string; href: string };
+      note?: string;
+    };
+
+    /** Program za salone i timove — inquiry kanal, bez samostalnog checkout-a. */
+    professionalPath?: {
+      enabled: boolean;
+      eyebrow?: string;
+      headline?: string;
+      lead?: string;
+      note?: string;
+      formats?: {
+        kind?: string;
+        title: string;
+        text?: string;
+        priceFrom?: string;
+      }[];
+      cta?: { text: string; href: string };
+    };
   };
 
   pages: {
@@ -1125,13 +1294,137 @@ export interface LandingStructure {
   };
 }
 
+/**
+ * Sadržaj tematskih podstranica — MINIMALNI `PageDocument`.
+ *
+ * ZAŠTO NIJE U `LandingStructure.pages`: `LandingStructure` opisuje kompoziciju
+ * LANDING teme (koje sekcije stoje na početnoj i kojim redom). Današnji
+ * `pages.servicesPage` / `pages.appointmentsPage` nose samo naslov i pasus —
+ * ubacivanje punih strana (kartice, koraci, FAQ, CTA) tamo pretvorilo bi
+ * landing kompoziciju u opšti CMS. Granica je: kompozicija teme ≠ sadržaj
+ * strane, i ovde je povučena i na nivou skladištenja.
+ *
+ * PUT NADALJE: kad druga tema bude tražila svoje strane, ovaj oblik prelazi u
+ * dokument sastavljen od Feature Block-ova. Danas to nije moguće bez
+ * parametrizacije loadera — svaki blok je vezan za tačno jednu sekciju u
+ * `landing.*` (`sourceSchema("audiencePaths")`), pa isti blok ne može da čita
+ * sadržaj druge strane. Ta izmena engine-a ne pripada ovom slice-u.
+ */
+export interface ThemePageHero {
+  eyebrow?: string;
+  headline?: string;
+  lead?: string;
+  /** Sitan tekst ispod CTA (npr. „od 4.900 RSD · 45 min"). */
+  note?: string;
+  cta?: { text: string; href: string };
+  image?: HeroImage;
+}
+
+export interface ThemePageHeading {
+  eyebrow?: string;
+  headline?: string;
+  lead?: string;
+}
+
+export interface TenantThemePage {
+  enabled: boolean;
+  hero?: ThemePageHero;
+  /** Kartice: „zašto konsultacija" / „formati programa". */
+  cards?: {
+    heading?: ThemePageHeading;
+    items: { kind?: string; title: string; text?: string; meta?: string }[];
+  };
+  /** Numerisani niz: proces nege / moduli programa. */
+  steps?: {
+    heading?: ThemePageHeading;
+    items: { title: string; text?: string; meta?: string; points?: string[] }[];
+  };
+  faq?: {
+    heading?: ThemePageHeading;
+    image?: HeroImage;
+    items: { question: string; answer: string }[];
+  };
+  cta?: {
+    headline?: string;
+    lead?: string;
+    cta?: { text: string; href: string };
+    /** Ton panela; tema odlučuje kako ga crta. */
+    tone?: "accent" | "warm";
+  };
+}
+
+/**
+ * Podaci za PRIKAZ toka zakazivanja (theme-9).
+ *
+ * PRIVREMENO I NAMERNO ODVOJENO. Ovo nije landing sekcija — to su podaci
+ * launcher-a i widget-a (spec 6.11), pa ne idu u `landingStructure`. Nisu ni
+ * domenski entiteti: usluge, termini i pitanja su ovde AUTORSKI TEKST koji
+ * vlasnica potvrđuje, a ne `Service`, `BookingReservation` ni
+ * `QuestionnaireDefinition`.
+ *
+ * Svrha je jedna: da vlasnica na staging-u prođe kroz ceo tok i da nam
+ * definitivne usluge, cene, termine i pitanja. Kada stignu Consultation domen
+ * (Slice 7) i Booking Engine (Slice 5), ovo polje se BRIŠE — ne migrira se.
+ */
+/**
+ * Ponuda u prikazu toka — namerno NIJE `Service`.
+ *
+ * Marinin proizvod je konsultacija, a Consultation je zaseban domen
+ * (docs/TODO.md, Slice 7). Da je ovo polje ostalo `services`, privremeni
+ * prikaz bi kroz mala vrata vratio jednačinu `Consultation = Service`, koju
+ * cela ova tema postoji da razdvoji.
+ */
+export interface ThemeBookingPreviewOffering {
+  id: string;
+  title: string;
+  duration?: string;
+  priceLabel?: string;
+  includes?: string[];
+}
+
+export interface ThemeBookingPreviewQuestion {
+  id: string;
+  label: string;
+  options: string[];
+}
+
+export interface ThemeBookingPreview {
+  enabled: boolean;
+  month?: string;
+  offerings: ThemeBookingPreviewOffering[];
+  dates: { id: string; dow: string; day: string; long: string }[];
+  times: string[];
+  /** Pun upitnik — nova klijentkinja. */
+  intake: ThemeBookingPreviewQuestion[];
+  intakeFreeText?: string;
+  /** Kratak check-in — povratnica (ulogovana klijentkinja). */
+  checkin: ThemeBookingPreviewQuestion[];
+  checkinFreeText?: string;
+  allowIntakeSkip?: boolean;
+  confirmNote?: string;
+}
+
+export type ThemePageKey = "za-klijente" | "za-profesionalce";
+
+export type TenantThemePages = Partial<Record<ThemePageKey, TenantThemePage>>;
+
 export interface SalonProfileData {
   _id: string;
   name: string;
   email: string;
   description: string;
   landingTheme?: LandingTheme;
+  /**
+   * Kratka brend linija (npr. „Skincare edukacija") — header ispod imena i
+   * footer tagline. Odvojena od `description`, koji je pun opis salona i u
+   * header-u je gurao navigaciju u drugi red.
+   */
+  shortDescription?: string;
   landingStructure?: LandingStructure;
+  /** Sadržaj tematskih podstranica; odvojeno od landing kompozicije. */
+  themePages?: TenantThemePages;
+  /** Podaci za PRIKAZ toka zakazivanja; briše se kad stigne Booking Engine. */
+  themeBookingPreview?: ThemeBookingPreview;
   clientGender?: ClientGender;
   isDemo?: boolean;
   logo?: string | null;

@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/psihointegritet-design-system-9b777129-4357-4736-b780-b3a5e908ed92/fonts/fonts.css">
+  <link rel="stylesheet" href="_ds/psihointegritet-design-system-9b777129-4357-4736-b780-b3a5e908ed92/styles.css">
+  <script src="_ds/psihointegritet-design-system-9b777129-4357-4736-b780-b3a5e908ed92/_ds_bundle.js"></script>
+  <script src="./image-slot.js"></script>
+  <style>
+    body{
+      margin:0;
+      /* ExpertEditorialThemeScheme — tenant tokens derived from PsihointegritetUI */
+      --ee-canvas:var(--color-panel-canvas);
+      --ee-surface:var(--color-surface);
+      --ee-surface-muted:color-mix(in oklab, var(--color-meadow) 22%, var(--color-panel-canvas));
+      --ee-text:var(--color-coffee);
+      --ee-text-muted:color-mix(in oklab, var(--color-coffee) 66%, transparent);
+      --ee-sage:var(--color-sage);
+      --ee-terracotta:var(--color-warm);
+      --ee-accent:var(--color-forest);
+      --ee-accent-contrast:var(--color-meadow);
+      --ee-border:color-mix(in oklab, var(--color-coffee) 12%, transparent);
+      --ee-display:var(--font-newsreader),Georgia,serif;
+      --ee-body:var(--font-instrument-sans),system-ui,sans-serif;
+      --ee-wide:1240px;
+      --ee-prose:64ch;
+      background:var(--color-panel-canvas);
+      color:var(--color-coffee);
+      font-family:var(--font-instrument-sans),system-ui,sans-serif;
+      -webkit-font-smoothing:antialiased;
+    }
+    a:not([class]){color:var(--color-forest);text-decoration:none}
+    a:not([class]):hover{color:var(--color-forest-soft)}
+    h1,h2,h3,h4{font-weight:400;margin:0}
+    p{margin:0}
+    ::selection{background:var(--color-meadow);color:var(--color-forest)}
+  </style>
+</helmet>
+
+<div style="min-height:100vh;overflow-x:hidden">
+
+<header style="position:sticky;top:0;z-index:60;backdrop-filter:blur(14px);background:color-mix(in oklab, var(--ee-canvas) 84%, transparent);border-bottom:1px solid var(--ee-border)">
+  <div style="max-width:var(--ee-wide);margin:0 auto;padding:14px clamp(20px,4vw,56px);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px 24px">
+    <button onClick="{{ goHome }}" style="display:flex;align-items:center;gap:11px;background:none;border:0;padding:0;cursor:pointer;text-align:left">
+      <span style="width:30px;height:30px;border-radius:50%;background:var(--ee-accent);display:flex;align-items:center;justify-content:center;font-family:var(--ee-display);font-size:14px;color:var(--ee-accent-contrast);letter-spacing:.02em">M</span>
+      <span style="display:flex;flex-direction:column;line-height:1.1">
+        <span style="font-family:var(--ee-display);font-size:16.5px;color:var(--ee-accent);letter-spacing:-.01em">Marina B. Stanisavljević</span>
+        <span style="font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ee-sage);margin-top:3px">Skincare edukacija</span>
+      </span>
+    </button>
+    <nav aria-label="Glavna navigacija" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:4px">
+      <button onClick="{{ goHome }}" style="position:relative;background:none;border:0;cursor:pointer;font-family:var(--ee-body);font-size:13.5px;font-weight:500;color:var(--ee-text);padding:9px 14px;border-radius:999px" style-hover="background:var(--ee-surface-muted)">Početna<span style="position:absolute;left:14px;right:14px;bottom:4px;height:1.5px;background:var(--ee-sage);opacity:{{ homeOn }}"></span></button>
+      <button onClick="{{ goClients }}" style="position:relative;background:none;border:0;cursor:pointer;font-family:var(--ee-body);font-size:13.5px;font-weight:500;color:var(--ee-text);padding:9px 14px;border-radius:999px" style-hover="background:var(--ee-surface-muted)">Za klijente<span style="position:absolute;left:14px;right:14px;bottom:4px;height:1.5px;background:var(--ee-sage);opacity:{{ clientsOn }}"></span></button>
+      <button onClick="{{ goPros }}" style="position:relative;background:none;border:0;cursor:pointer;font-family:var(--ee-body);font-size:13.5px;font-weight:500;color:var(--ee-text);padding:9px 14px;border-radius:999px" style-hover="background:var(--ee-surface-muted)">Za profesionalce<span style="position:absolute;left:14px;right:14px;bottom:4px;height:1.5px;background:var(--ee-sage);opacity:{{ prosOn }}"></span></button>
+      <a href="#teme" style="font-family:var(--ee-body);font-size:13.5px;font-weight:500;color:var(--ee-text);padding:9px 14px;border-radius:999px" style-hover="background:var(--ee-surface-muted)">Teme</a>
+      <span style="width:14px"></span>
+      <button onClick="{{ openBooking }}" class="group bg-forest hover:bg-forest-lift text-canvas relative inline-flex items-center overflow-hidden rounded-full font-semibold whitespace-nowrap no-underline transition-colors duration-[250ms] gap-2.5 py-1.5 pr-[18px] pl-1.5 text-[13.5px]" style="border:0;cursor:pointer;font-family:var(--ee-body)">
+        <span aria-hidden="true" class="bg-forest-soft relative inline-flex -rotate-45 items-center justify-center rounded-full transition-transform duration-300 group-hover:rotate-0" style="width:30px;height:30px;flex:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-canvas)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></span><span class="relative">Zakaži konsultaciju</span>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main data-screen-label="HOME" data-page="/" style="display:{{ homeDisplay }}">
+
+  <section id="hero" data-block="hero" data-block-kind="content" data-cms="content.hero" style="padding:clamp(40px,6vw,72px) 0 clamp(28px,4vw,44px)">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:clamp(32px,5vw,72px);align-items:end">
+      <div style="display:flex;flex-direction:column;gap:26px;padding-bottom:12px">
+        <span style="display:inline-flex;align-items:center;gap:9px;align-self:flex-start;border:1px solid var(--ee-border);background:var(--ee-surface);border-radius:999px;padding:7px 15px 7px 12px;font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ee-text-muted)">
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--ee-accent)"></span>Stručna edukacija o nezi kože
+        </span>
+        <h1 style="font-family:var(--ee-display);font-size:clamp(40px,5.6vw,78px);line-height:1.0;letter-spacing:-.028em;color:var(--ee-accent);text-wrap:balance">Nega kože počinje od procene, ne od proizvoda.</h1>
+        <p style="max-width:52ch;font-size:17.5px;line-height:1.72;color:var(--ee-text-muted)">Edukativni sadržaj o zdravlju kože, svesti o sastojcima i rutinama koje je moguće dosledno sprovoditi — za one koji brinu o svojoj koži i za salone koji žele stručniji pristup.</p>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:18px;margin-top:2px">
+          <button onClick="{{ openBooking }}" class="group bg-forest hover:bg-forest-lift text-canvas relative inline-flex items-center overflow-hidden rounded-full font-semibold whitespace-nowrap no-underline transition-colors duration-[250ms] gap-3 py-2 pr-6 pl-2 text-[14.5px]" style="border:0;cursor:pointer;font-family:var(--ee-body)">
+            <span aria-hidden="true" class="bg-forest-soft relative inline-flex -rotate-45 items-center justify-center rounded-full transition-transform duration-300 group-hover:rotate-0" style="width:36px;height:36px;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-canvas)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></span><span class="relative">Zakaži konsultaciju</span>
+          </button>
+          <x-import component-from-global-scope="PsihointegritetUI.ArrowLink" href="#teme" tone="underline" hint-size="170px,24px">Istraži edukaciju</x-import>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:14px;padding-top:22px;border-top:1px solid var(--ee-border)">
+          <span style="font-size:12.5px;letter-spacing:.03em;color:var(--ee-text-muted)">Procena kože</span>
+          <span style="font-size:12.5px;color:var(--ee-sage)">·</span>
+          <span style="font-size:12.5px;letter-spacing:.03em;color:var(--ee-text-muted)">Aktivni sastojci</span>
+          <span style="font-size:12.5px;color:var(--ee-sage)">·</span>
+          <span style="font-size:12.5px;letter-spacing:.03em;color:var(--ee-text-muted)">Kombinovanje u rutini</span>
+          <span style="font-size:12.5px;color:var(--ee-sage)">·</span>
+          <span style="font-size:12.5px;letter-spacing:.03em;color:var(--ee-text-muted)">SPF i fotoprotekcija</span>
+        </div>
+      </div>
+      <div style="position:relative">
+        <div style="position:relative;aspect-ratio:4/5;border-radius:28px;overflow:hidden;background:var(--ee-surface-muted)">
+          <image-slot id="hero-portret" shape="rounded" radius="28" placeholder="Editorijal portret — 4:5"></image-slot>
+        </div>
+        <div style="position:absolute;left:-14px;bottom:26px;pointer-events:none;display:flex;align-items:center;gap:12px;background:var(--ee-surface);border:1px solid var(--ee-border);border-radius:999px;padding:9px 20px 9px 10px;box-shadow:var(--shadow-pill)">
+          <span style="width:38px;height:38px;border-radius:50%;background:var(--ee-accent);display:flex;align-items:center;justify-content:center;font-family:var(--ee-display);font-size:15px;color:var(--ee-accent-contrast)">MS</span>
+          <span style="display:flex;flex-direction:column;line-height:1.25">
+            <span style="font-size:13px;font-weight:600;color:var(--ee-text)">Marina B. Stanisavljević</span>
+            <span style="font-size:11px;color:var(--ee-text-muted)">Beautician &amp; Esthetician</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="staze" data-block="audiencePaths" data-block-kind="content" data-cms="content.audiencePaths" style="padding:clamp(56px,7vw,110px) 0">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px)">
+      <div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:34px">
+        <x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="sage" hint-size="160px,18px">Odaberi svoj put</x-import>
+        <p style="font-size:13.5px;color:var(--ee-text-muted)">Dva pravca edukacije, isti pristup koži.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:clamp(16px,2vw,26px)">
+        <article style="background:var(--ee-surface);border:1px solid var(--ee-border);border-radius:20px;padding:clamp(26px,3vw,42px);display:flex;flex-direction:column;gap:22px;min-height:100%" style-hover="border-color:color-mix(in oklab, var(--color-forest) 30%, transparent)">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+            <span style="font-family:var(--ee-display);font-size:34px;color:var(--ee-sage);line-height:1">01</span>
+            <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="label" hint-size="110px,26px">Za tebe lično</x-import>
+          </div>
+          <h2 style="font-family:var(--ee-display);font-size:clamp(28px,3vw,40px);line-height:1.06;letter-spacing:-.02em;color:var(--ee-accent)">Lična nega</h2>
+          <p style="font-size:16px;line-height:1.7;color:var(--ee-text-muted);max-width:38ch">Razumevanje sopstvene kože pre kupovine proizvoda: tip i trenutno stanje, potreba, cilj nege i rutina koju možeš da sprovodiš.</p>
+          <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:11px">
+            <li style="display:flex;gap:11px;align-items:flex-start;font-size:14.5px;line-height:1.55;color:var(--ee-text)"><span style="width:5px;height:5px;border-radius:50%;background:var(--ee-terracotta);margin-top:7px;flex:none"></span>Procena tipa i stanja kože</li>
+            <li style="display:flex;gap:11px;align-items:flex-start;font-size:14.5px;line-height:1.55;color:var(--ee-text)"><span style="width:5px;height:5px;border-radius:50%;background:var(--ee-terracotta);margin-top:7px;flex:none"></span>Izbor aktivnih sastojaka prema potrebi</li>
+            <li style="display:flex;gap:11px;align-items:flex-start;font-size:14.5px;line-height:1.55;color:var(--ee-text)"><span style="width:5px;height:5px;border-radius:50%;background:var(--ee-terracotta);margin-top:7px;flex:none"></span>Pisani plan nege i praćenje reakcije</li>
+          </ul>
+          <div style="margin-top:auto;padding-top:8px">
+            <button onClick="{{ goClients }}" style="display:inline-flex;align-items:center;gap:12px;background:none;border:0;padding:0;cursor:pointer;font-family:var(--ee-body);font-size:14.5px;font-weight:600;color:var(--ee-accent)">Za klijente<span style="width:34px;height:34px;border-radius:50%;background:var(--ee-accent-contrast);display:flex;align-items:center;justify-content:center;font-size:14px">→</span></button>
+          </div>
+        </article>
+        <article style="background:var(--ee-accent);border:1px solid var(--ee-accent);border-radius:20px;padding:clamp(26px,3vw,42px);display:flex;flex-direction:column;gap:22px;min-height:100%;position:relative;overflow:hidden">
+          <div style="position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:color-mix(in oklab, var(--color-meadow) 14%, transparent);pointer-events:none"></div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+            <span style="font-family:var(--ee-display);font-size:34px;color:color-mix(in oklab, var(--color-meadow) 70%, transparent);line-height:1">02</span>
+            <span style="border:1px solid color-mix(in oklab, var(--color-meadow) 40%, transparent);border-radius:999px;padding:5px 13px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ee-accent-contrast)">Za tvoj tim</span>
+          </div>
+          <h2 style="font-family:var(--ee-display);font-size:clamp(28px,3vw,40px);line-height:1.06;letter-spacing:-.02em;color:#fff">Saloni</h2>
+          <p style="font-size:16px;line-height:1.7;color:color-mix(in oklab, #fff 78%, transparent);max-width:38ch">Edukacija za kozmetičare i timove: sistematična procena kože, grupe aktivnih sastojaka i način na koji se preporuka objašnjava klijentu.</p>
+          <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:11px">
+            <li style="display:flex;gap:11px;align-items:flex-start;font-size:14.5px;line-height:1.55;color:color-mix(in oklab, #fff 88%, transparent)"><span style="width:5px;height:5px;border-radius:50%;background:var(--ee-accent-contrast);margin-top:7px;flex:none"></span>Radionica u salonu ili online kurs</li>
+            <li style="display:flex;gap:11px;align-items:flex-start;font-size:14.5px;line-height:1.55;color:color-mix(in oklab, #fff 88%, transparent)"><span style="width:5px;height:5px;border-radius:50%;background:var(--ee-accent-contrast);margin-top:7px;flex:none"></span>PDF materijali za internu upotrebu</li>
+            <li style="display:flex;gap:11px;align-items:flex-start;font-size:14.5px;line-height:1.55;color:color-mix(in oklab, #fff 88%, transparent)"><span style="width:5px;height:5px;border-radius:50%;background:var(--ee-accent-contrast);margin-top:7px;flex:none"></span>Mentorstvo 1:1 nakon edukacije</li>
+          </ul>
+          <div style="margin-top:auto;padding-top:8px">
+            <button onClick="{{ goPros }}" style="display:inline-flex;align-items:center;gap:12px;background:none;border:0;padding:0;cursor:pointer;font-family:var(--ee-body);font-size:14.5px;font-weight:600;color:#fff">Za profesionalce<span style="width:34px;height:34px;border-radius:50%;background:color-mix(in oklab, var(--color-meadow) 24%, transparent);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--ee-accent-contrast)">→</span></button>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="o-meni" data-block="about" data-block-kind="content" data-cms="content.about" style="padding:clamp(56px,7vw,110px) 0;background:var(--ee-surface)">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:clamp(36px,5vw,84px);align-items:center">
+      <div style="display:flex;flex-direction:column;gap:30px">
+        <x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="sage" hint-size="90px,18px">O meni</x-import>
+        <h2 style="font-family:var(--ee-display);font-size:clamp(30px,3.7vw,52px);line-height:1.05;letter-spacing:-.024em;color:var(--ee-accent);max-width:22ch">Marina B. Stanisavljević</h2>
+        <p style="font-size:17px;line-height:1.75;color:var(--ee-text-muted);max-width:50ch">Kozmetičar i estetičar. Radim sa klijentima na proceni kože i izgradnji rutine, i paralelno pišem edukativne materijale o nezi kože — jer većina pitanja koja dobijam nisu pitanja o proizvodima, nego o razumevanju sopstvene kože.</p>
+        <p style="font-size:17px;line-height:1.75;color:var(--ee-text-muted);max-width:50ch">Ne verujem u univerzalne recepte i ne preporučujem proizvod pre procene. Radije ću objasniti zašto nešto radi, nego dati listu za kupovinu.</p>
+        <div style="display:flex;flex-direction:column;gap:0;border-top:1px solid var(--ee-border)">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:8px 20px;padding:20px 0;border-bottom:1px solid var(--ee-border)">
+            <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ee-sage)">Obrazovanje</span>
+            <p style="font-size:15px;line-height:1.6;color:var(--ee-text)">Sertifikovani kozmetičar i estetičar<br><span style="font-size:13px;color:var(--ee-text-muted)">naziv programa i institucije — CMS polje</span></p>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:8px 20px;padding:20px 0;border-bottom:1px solid var(--ee-border)">
+            <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ee-sage)">Praksa</span>
+            <p style="font-size:15px;line-height:1.6;color:var(--ee-text)">Rad sa klijentima na proceni kože i vođenju rutine<br><span style="font-size:13px;color:var(--ee-text-muted)">period i mesto rada — CMS polje</span></p>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:8px 20px;padding:20px 0;border-bottom:1px solid var(--ee-border)">
+            <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ee-sage)">Edukativni rad</span>
+            <p style="font-size:15px;line-height:1.6;color:var(--ee-text)">Stručni tekstovi i materijali o nezi kože<br><span style="font-size:13px;color:var(--ee-text-muted)">procena kože · aktivni sastojci · kombinovanje · SPF</span></p>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:8px 20px;padding:20px 0;border-bottom:1px solid var(--ee-border)">
+            <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ee-sage)">Jezik rada</span>
+            <p style="font-size:15px;line-height:1.6;color:var(--ee-text)">Srpski<br><span style="font-size:13px;color:var(--ee-text-muted)">online i uživo</span></p>
+          </div>
+        </div>
+      </div>
+      <div style="position:relative">
+        <div style="position:relative;aspect-ratio:3/4;border-radius:28px;overflow:hidden;background:var(--ee-surface-muted)">
+          <image-slot id="about-portret" shape="rounded" radius="28" placeholder="Foto: Marina — portret, 3:4"></image-slot>
+        </div>
+        <div style="position:absolute;right:-10px;bottom:-18px;pointer-events:none;background:var(--ee-surface-muted);border:1px solid var(--ee-border);border-radius:18px;padding:16px 20px;max-width:250px">
+          <p style="font-family:var(--ee-display);font-size:17px;line-height:1.35;color:var(--ee-accent)">„Ne preporučujem proizvod pre procene kože."</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="teme" data-block="topicHub" data-block-kind="content" data-cms="content.topicHub" style="padding:clamp(56px,7vw,110px) 0">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px)">
+      <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:26px;margin-bottom:36px">
+        <div style="display:flex;flex-direction:column;gap:18px;max-width:46ch">
+          <x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="sage" hint-size="120px,18px">Teme edukacije</x-import>
+          <h2 style="font-family:var(--ee-display);font-size:clamp(30px,3.7vw,52px);line-height:1.05;letter-spacing:-.024em;color:var(--ee-accent)">Četiri teme koje rešavaju najčešće greške u nezi.</h2>
+        </div>
+        <x-import component-from-global-scope="PsihointegritetUI.TabPills" tabs="{{ topicTabs }}" active-id="{{ topicActive }}" on-change="{{ onTopic }}" hint-size="320px,32px"></x-import>
+      </div>
+      <div style="display:flex;flex-direction:column;border-top:1px solid var(--ee-border)">
+        <a href="#edukacija" style="display:{{ row1 }};grid-template-columns:64px minmax(0,1fr) auto;gap:clamp(16px,3vw,40px);align-items:center;padding:clamp(22px,2.6vw,34px) 6px;border-bottom:1px solid var(--ee-border)" style-hover="background:var(--ee-surface)">
+          <span style="font-family:var(--ee-display);font-size:22px;color:var(--ee-sage)">01</span>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <h3 style="font-family:var(--ee-display);font-size:clamp(22px,2.4vw,32px);line-height:1.15;color:var(--ee-accent)">Procena kože</h3>
+            <p style="font-size:15px;line-height:1.6;color:var(--ee-text-muted);max-width:58ch">Prvi korak u pravilnoj nezi: razlikovanje tipa kože od trenutnog stanja i praktičan pristup odabiru nege.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+              <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="tagOutlined" hint-size="70px,26px">Osnove</x-import>
+              <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="tagOutlined" hint-size="90px,26px">Tip vs. stanje</x-import>
+            </div>
+          </div>
+          <span style="width:44px;height:44px;border-radius:50%;border:1px solid var(--ee-border);display:flex;align-items:center;justify-content:center;color:var(--ee-accent);font-size:15px">→</span>
+        </a>
+        <a href="#edukacija" style="display:{{ row2 }};grid-template-columns:64px minmax(0,1fr) auto;gap:clamp(16px,3vw,40px);align-items:center;padding:clamp(22px,2.6vw,34px) 6px;border-bottom:1px solid var(--ee-border)" style-hover="background:var(--ee-surface)">
+          <span style="font-family:var(--ee-display);font-size:22px;color:var(--ee-sage)">02</span>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <h3 style="font-family:var(--ee-display);font-size:clamp(22px,2.4vw,32px);line-height:1.15;color:var(--ee-accent)">Aktivni sastojci u nezi kože</h3>
+            <p style="font-size:15px;line-height:1.6;color:var(--ee-text-muted);max-width:58ch">Od potrebe kože do pravilnog izbora aktivnog sastojka — funkcija, namena i mesto u rutini.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+              <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="tagOutlined" hint-size="110px,26px">Aktivni sastojci</x-import>
+              <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="tagOutlined" hint-size="80px,26px">Cilj nege</x-import>
+            </div>
+          </div>
+          <span style="width:44px;height:44px;border-radius:50%;border:1px solid var(--ee-border);display:flex;align-items:center;justify-content:center;color:var(--ee-accent);font-size:15px">→</span>
+        </a>
+        <a href="#edukacija" style="display:{{ row3 }};grid-template-columns:64px minmax(0,1fr) auto;gap:clamp(16px,3vw,40px);align-items:center;padding:clamp(22px,2.6vw,34px) 6px;border-bottom:1px solid var(--ee-border)" style-hover="background:var(--ee-surface)">
+          <span style="font-family:var(--ee-display);font-size:22px;color:var(--ee-sage)">03</span>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <h3 style="font-family:var(--ee-display);font-size:clamp(22px,2.4vw,32px);line-height:1.15;color:var(--ee-accent)">Kombinovanje aktivnih sastojaka</h3>
+            <p style="font-size:15px;line-height:1.6;color:var(--ee-text-muted);max-width:58ch">Kako izgraditi efikasnu, ali uravnoteženu rutinu — postepeno uvođenje i briga o kožnoj barijeri.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+              <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="tagOutlined" hint-size="110px,26px">Aktivni sastojci</x-import>
+              <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="tagOutlined" hint-size="70px,26px">Rutina</x-import>
+            </div>
+          </div>
+          <span style="width:44px;height:44px;border-radius:50%;border:1px solid var(--ee-border);display:flex;align-items:center;justify-content:center;color:var(--ee-accent);font-size:15px">→</span>
+        </a>
+        <a href="#edukacija" style="display:{{ row4 }};grid-template-columns:64px minmax(0,1fr) auto;gap:clamp(16px,3vw,40px);align-items:center;padding:clamp(22px,2.6vw,34px) 6px;border-bottom:1px solid var(--ee-border)" style-hover="background:var(--ee-surface)">
+          <span style="font-family:var(--ee-display);font-size:22px;color:var(--ee-sage)">04</span>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <h3 style="font-family:var(--ee-display);font-size:clamp(22px,2.4vw,32px);line-height:1.15;color:var(--ee-accent)">SPF i fotoprotekcija</h3>
+            <p style="font-size:15px;line-height:1.6;color:var(--ee-text-muted);max-width:58ch">Zaštita tokom cele godine: UVA i UVB, širokospektralna zaštita i pravilna primena u svakodnevnoj nezi.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+              <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="tagOutlined" hint-size="70px,26px">Zaštita</x-import>
+              <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="tagOutlined" hint-size="60px,26px">SPF</x-import>
+            </div>
+          </div>
+          <span style="width:44px;height:44px;border-radius:50%;border:1px solid var(--ee-border);display:flex;align-items:center;justify-content:center;color:var(--ee-accent);font-size:15px">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section id="online-edukacija" data-block="featuredEducation" data-block-kind="business" data-cms="education.featuredOffering" style="padding:clamp(56px,7vw,110px) 0">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px)">
+      <div style="background:var(--ee-accent);border-radius:28px;padding:clamp(30px,4vw,60px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:clamp(28px,4vw,60px);align-items:start">
+        <div style="display:flex;flex-direction:column;gap:22px">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
+            <x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="meadow" hint-size="150px,18px">Online edukacija</x-import>
+            <span style="border:1px solid color-mix(in oklab, var(--color-meadow) 40%, transparent);border-radius:999px;padding:5px 13px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ee-accent-contrast)">U pripremi</span>
+          </div>
+          <h2 style="font-family:var(--ee-display);font-size:clamp(30px,3.7vw,50px);line-height:1.05;letter-spacing:-.024em;color:#fff;max-width:24ch">Razumi svoju kožu i napravi rutinu koju možeš da održiš.</h2>
+          <p style="font-size:16.5px;line-height:1.72;color:color-mix(in oklab, #fff 76%, transparent);max-width:46ch">Prva plaćena online edukacija — za žene koje ne žele još jednu listu proizvoda, nego da razumeju šta se sa njihovom kožom dešava i zašto.</p>
+          <ul style="list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px 26px">
+            <li style="display:flex;gap:11px;align-items:flex-start;font-size:14.5px;line-height:1.55;color:color-mix(in oklab, #fff 86%, transparent)"><span style="width:5px;height:5px;border-radius:50%;background:var(--ee-accent-contrast);margin-top:7px;flex:none"></span>Kako da proceniš tip i stanje svoje kože</li>
+            <li style="display:flex;gap:11px;align-items:flex-start;font-size:14.5px;line-height:1.55;color:color-mix(in oklab, #fff 86%, transparent)"><span style="width:5px;height:5px;border-radius:50%;background:var(--ee-accent-contrast);margin-top:7px;flex:none"></span>Šta aktivni sastojci zaista rade</li>
+            <li style="display:flex;gap:11px;align-items:flex-start;font-size:14.5px;line-height:1.55;color:color-mix(in oklab, #fff 86%, transparent)"><span style="width:5px;height:5px;border-radius:50%;background:var(--ee-accent-contrast);margin-top:7px;flex:none"></span>Kako se rutina gradi postepeno</li>
+            <li style="display:flex;gap:11px;align-items:flex-start;font-size:14.5px;line-height:1.55;color:color-mix(in oklab, #fff 86%, transparent)"><span style="width:5px;height:5px;border-radius:50%;background:var(--ee-accent-contrast);margin-top:7px;flex:none"></span>Zaštita koja se ne preskače</li>
+          </ul>
+        </div>
+        <div style="background:color-mix(in oklab, #fff 9%, transparent);border:1px solid color-mix(in oklab, var(--color-meadow) 22%, transparent);border-radius:22px;padding:clamp(24px,2.6vw,32px);display:flex;flex-direction:column;gap:18px">
+          <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ee-accent-contrast)">Detalji</span>
+          <div style="display:flex;flex-direction:column;gap:0">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:13px 0;border-bottom:1px solid color-mix(in oklab, var(--color-meadow) 16%, transparent)">
+              <span style="font-size:14px;color:color-mix(in oklab, #fff 66%, transparent)">Format</span>
+              <span style="font-size:14px;color:color-mix(in oklab, #fff 42%, transparent);font-style:italic">Marina potvrđuje</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:13px 0;border-bottom:1px solid color-mix(in oklab, var(--color-meadow) 16%, transparent)">
+              <span style="font-size:14px;color:color-mix(in oklab, #fff 66%, transparent)">Trajanje</span>
+              <span style="font-size:14px;color:color-mix(in oklab, #fff 42%, transparent);font-style:italic">Marina potvrđuje</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:13px 0;border-bottom:1px solid color-mix(in oklab, var(--color-meadow) 16%, transparent)">
+              <span style="font-size:14px;color:color-mix(in oklab, #fff 66%, transparent)">Datum početka</span>
+              <span style="font-size:14px;color:color-mix(in oklab, #fff 42%, transparent);font-style:italic">Marina potvrđuje</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:13px 0">
+              <span style="font-size:14px;color:color-mix(in oklab, #fff 66%, transparent)">Cena</span>
+              <span style="font-size:14px;color:color-mix(in oklab, #fff 42%, transparent);font-style:italic">Marina potvrđuje</span>
+            </div>
+          </div>
+          <x-import component-from-global-scope="PsihointegritetUI.ButtonLink" href="#final-cta" variant="meadow" size="lg" hint-size="220px,54px">Prijavi interesovanje</x-import>
+          <p style="font-size:12.5px;line-height:1.55;color:color-mix(in oklab, #fff 56%, transparent)">Prijava nije obavezujuća — dobijaš obaveštenje kada Marina objavi format, termin i cenu.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="konsultacija" data-block="consultation" data-block-kind="business" data-cms="consultation.offerings" style="padding:clamp(56px,7vw,110px) 0;background:var(--ee-surface-muted)">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:clamp(36px,5vw,80px);align-items:start">
+      <div style="display:flex;flex-direction:column;gap:24px;position:sticky;top:110px">
+        <x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="sage" hint-size="120px,18px">Konsultacija</x-import>
+        <h2 style="font-family:var(--ee-display);font-size:clamp(30px,3.7vw,50px);line-height:1.05;letter-spacing:-.024em;color:var(--ee-accent);max-width:20ch">Plan nege koji je moguće sprovesti.</h2>
+        <p style="font-size:16.5px;line-height:1.72;color:var(--ee-text-muted);max-width:44ch">Zajedno prolazimo kroz stanje kože, dosadašnju rutinu i cilj nege. Rezultat je pisani plan sa jasnim redosledom koraka i praćenjem reakcije kože.</p>
+        <div style="margin-top:6px">
+          <button onClick="{{ openBooking }}" class="group bg-forest hover:bg-forest-lift text-canvas relative inline-flex items-center overflow-hidden rounded-full font-semibold whitespace-nowrap no-underline transition-colors duration-[250ms] gap-3 py-2 pr-6 pl-2 text-[14.5px]" style="border:0;cursor:pointer;font-family:var(--ee-body)">
+            <span aria-hidden="true" class="bg-forest-soft relative inline-flex -rotate-45 items-center justify-center rounded-full transition-transform duration-300 group-hover:rotate-0" style="width:36px;height:36px;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-canvas)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></span><span class="relative">Zakaži konsultaciju</span>
+          </button>
+        </div>
+        <p style="font-size:12.5px;color:var(--ee-text-muted)">Odgovor na upit u roku od 48h · online ili u salonu</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <article style="background:var(--ee-surface);border:1px solid var(--ee-border);border-radius:20px;padding:clamp(22px,2.4vw,30px);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:12px 20px" style-hover="border-color:color-mix(in oklab, var(--color-forest) 26%, transparent)">
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <h3 style="font-family:var(--ee-display);font-size:25px;line-height:1.2;color:var(--ee-accent)">1:1 online konsultacija</h3>
+              <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="label" hint-size="70px,26px">45 min</x-import>
+            </div>
+            <p style="font-size:15px;line-height:1.65;color:var(--ee-text-muted);max-width:52ch">Video razgovor: procena tipa i stanja kože, analiza postojeće rutine i definisanje cilja nege.</p>
+          </div>
+          <span style="font-family:var(--ee-display);font-size:19px;color:var(--ee-accent);white-space:nowrap">od 4.900 RSD</span>
+        </article>
+        <article style="background:var(--ee-surface);border:1px solid var(--ee-border);border-radius:20px;padding:clamp(22px,2.4vw,30px);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:12px 20px" style-hover="border-color:color-mix(in oklab, var(--color-forest) 26%, transparent)">
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <h3 style="font-family:var(--ee-display);font-size:25px;line-height:1.2;color:var(--ee-accent)">Pregled u salonu</h3>
+              <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="label" hint-size="70px,26px">60 min</x-import>
+            </div>
+            <p style="font-size:15px;line-height:1.65;color:var(--ee-text-muted);max-width:52ch">Procena kože uživo, uz razgovor o navikama nege, osetljivosti i prethodno korišćenim proizvodima.</p>
+          </div>
+          <span style="font-family:var(--ee-display);font-size:19px;color:var(--ee-accent);white-space:nowrap">od 5.900 RSD</span>
+        </article>
+        <article style="background:var(--ee-surface);border:1px solid var(--ee-border);border-radius:20px;padding:clamp(22px,2.4vw,30px);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:12px 20px" style-hover="border-color:color-mix(in oklab, var(--color-forest) 26%, transparent)">
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <h3 style="font-family:var(--ee-display);font-size:25px;line-height:1.2;color:var(--ee-accent)">Pisani plan nege</h3>
+              <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="labelWarm" hint-size="60px,26px">PDF</x-import>
+            </div>
+            <p style="font-size:15px;line-height:1.65;color:var(--ee-text-muted);max-width:52ch">Dokument sa redosledom koraka, učestalošću primene i napomenama šta pratiti u prvim nedeljama.</p>
+          </div>
+          <span style="font-family:var(--ee-display);font-size:19px;color:var(--ee-accent);white-space:nowrap">uz konsultaciju</span>
+        </article>
+        <article style="background:var(--ee-surface);border:1px solid var(--ee-border);border-radius:20px;padding:clamp(22px,2.4vw,30px);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:12px 20px" style-hover="border-color:color-mix(in oklab, var(--color-forest) 26%, transparent)">
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <h3 style="font-family:var(--ee-display);font-size:25px;line-height:1.2;color:var(--ee-accent)">Follow-up nakon 4 nedelje</h3>
+              <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="label" hint-size="70px,26px">25 min</x-import>
+            </div>
+            <p style="font-size:15px;line-height:1.65;color:var(--ee-text-muted);max-width:52ch">Provera kako je koža reagovala i prilagođavanje rutine — postepeno, bez nepotrebnog komplikovanja.</p>
+          </div>
+          <span style="font-family:var(--ee-display);font-size:19px;color:var(--ee-accent);white-space:nowrap">od 2.400 RSD</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="kako-radim" data-block="howIWork" data-block-kind="content" data-cms="content.guidedCareProcess" style="padding:clamp(56px,7vw,110px) 0">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px)">
+      <div style="display:flex;flex-direction:column;gap:18px;max-width:46ch;margin-bottom:clamp(30px,4vw,52px)">
+        <x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="sage" hint-size="110px,18px">Kako radim</x-import>
+        <h2 style="font-family:var(--ee-display);font-size:clamp(30px,3.7vw,52px);line-height:1.05;letter-spacing:-.024em;color:var(--ee-accent)">Pet koraka, uvek u istom redosledu.</h2>
+      </div>
+      <ol style="list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,185px),1fr));gap:clamp(14px,2vw,26px)">
+        <li style="display:flex;flex-direction:column;gap:14px;padding-top:22px;border-top:2px solid var(--ee-accent)">
+          <span style="font-family:var(--ee-display);font-size:15px;color:var(--ee-sage)">01</span>
+          <h3 style="font-family:var(--ee-display);font-size:22px;line-height:1.18;color:var(--ee-accent)">Procena kože</h3>
+          <p style="font-size:14px;line-height:1.6;color:var(--ee-text-muted)">Tip kože i trenutno stanje — dehidriranost, osetljivost, barijera.</p>
+        </li>
+        <li style="display:flex;flex-direction:column;gap:14px;padding-top:22px;border-top:2px solid color-mix(in oklab, var(--color-forest) 60%, transparent)">
+          <span style="font-family:var(--ee-display);font-size:15px;color:var(--ee-sage)">02</span>
+          <h3 style="font-family:var(--ee-display);font-size:22px;line-height:1.18;color:var(--ee-accent)">Potreba i cilj</h3>
+          <p style="font-size:14px;line-height:1.6;color:var(--ee-text-muted)">Cilj nege se definiše pre izbora bilo kog proizvoda.</p>
+        </li>
+        <li style="display:flex;flex-direction:column;gap:14px;padding-top:22px;border-top:2px solid color-mix(in oklab, var(--color-forest) 45%, transparent)">
+          <span style="font-family:var(--ee-display);font-size:15px;color:var(--ee-sage)">03</span>
+          <h3 style="font-family:var(--ee-display);font-size:22px;line-height:1.18;color:var(--ee-accent)">Izbor sastojaka</h3>
+          <p style="font-size:14px;line-height:1.6;color:var(--ee-text-muted)">Sastojak se bira prema funkciji i potrebi, ne prema popularnosti.</p>
+        </li>
+        <li style="display:flex;flex-direction:column;gap:14px;padding-top:22px;border-top:2px solid color-mix(in oklab, var(--color-forest) 30%, transparent)">
+          <span style="font-family:var(--ee-display);font-size:15px;color:var(--ee-sage)">04</span>
+          <h3 style="font-family:var(--ee-display);font-size:22px;line-height:1.18;color:var(--ee-accent)">Postepeno uvođenje</h3>
+          <p style="font-size:14px;line-height:1.6;color:var(--ee-text-muted)">Jedan po jedan proizvod, da se zna na šta koža reaguje.</p>
+        </li>
+        <li style="display:flex;flex-direction:column;gap:14px;padding-top:22px;border-top:2px solid color-mix(in oklab, var(--color-forest) 18%, transparent)">
+          <span style="font-family:var(--ee-display);font-size:15px;color:var(--ee-sage)">05</span>
+          <h3 style="font-family:var(--ee-display);font-size:22px;line-height:1.18;color:var(--ee-accent)">Praćenje i prilagođavanje</h3>
+          <p style="font-size:14px;line-height:1.6;color:var(--ee-text-muted)">Rutina se koriguje prema reakciji kože tokom vremena.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+  <section id="za-salone" data-block="professionalEducation" data-block-kind="business" data-cms="education.professionalPath" style="padding:clamp(60px,7vw,120px) 0;background:var(--ee-accent)">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px)">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:clamp(30px,4vw,64px);align-items:end;margin-bottom:clamp(32px,4vw,54px)">
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="meadow" hint-size="180px,18px">Edukacija za profesionalce</x-import>
+          <h2 style="font-family:var(--ee-display);font-size:clamp(30px,3.7vw,52px);line-height:1.05;letter-spacing:-.024em;color:#fff;max-width:24ch">Stručniji pristup koži u tvom salonu.</h2>
+        </div>
+        <p style="font-size:16.5px;line-height:1.72;color:color-mix(in oklab, #fff 74%, transparent);max-width:46ch">Program se prilagođava nivou znanja tima. Fokus je na sistematičnoj proceni kože, razumevanju aktivnih sastojaka i komunikaciji preporuke klijentu jednostavnim jezikom.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,215px),1fr));gap:14px">
+        <article style="background:color-mix(in oklab, #fff 8%, transparent);border:1px solid color-mix(in oklab, var(--color-meadow) 22%, transparent);border-radius:18px;padding:26px 22px;display:flex;flex-direction:column;gap:14px;min-height:230px" style-hover="background:color-mix(in oklab, #fff 13%, transparent)">
+          <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ee-accent-contrast)">01 · Uživo</span>
+          <h3 style="font-family:var(--ee-display);font-size:24px;line-height:1.15;color:#fff">Radionica u salonu</h3>
+          <p style="font-size:14px;line-height:1.6;color:color-mix(in oklab, #fff 70%, transparent)">Poludnevna radionica za tim, sa primerima iz prakse i vežbama procene kože.</p>
+          <span style="margin-top:auto;font-size:13px;color:var(--ee-accent-contrast)">od 39.000 RSD / tim</span>
+        </article>
+        <article style="background:color-mix(in oklab, #fff 8%, transparent);border:1px solid color-mix(in oklab, var(--color-meadow) 22%, transparent);border-radius:18px;padding:26px 22px;display:flex;flex-direction:column;gap:14px;min-height:230px" style-hover="background:color-mix(in oklab, #fff 13%, transparent)">
+          <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ee-accent-contrast)">02 · Online</span>
+          <h3 style="font-family:var(--ee-display);font-size:24px;line-height:1.15;color:#fff">Online kurs</h3>
+          <p style="font-size:14px;line-height:1.6;color:color-mix(in oklab, #fff 70%, transparent)">Moduli koje tim prolazi sopstvenim tempom, sa proverom razumevanja.</p>
+          <span style="margin-top:auto;font-size:13px;color:var(--ee-accent-contrast)">od 12.000 RSD / osoba</span>
+        </article>
+        <article style="background:color-mix(in oklab, #fff 8%, transparent);border:1px solid color-mix(in oklab, var(--color-meadow) 22%, transparent);border-radius:18px;padding:26px 22px;display:flex;flex-direction:column;gap:14px;min-height:230px" style-hover="background:color-mix(in oklab, #fff 13%, transparent)">
+          <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ee-accent-contrast)">03 · 1:1</span>
+          <h3 style="font-family:var(--ee-display);font-size:24px;line-height:1.15;color:#fff">Mentorstvo</h3>
+          <p style="font-size:14px;line-height:1.6;color:color-mix(in oklab, #fff 70%, transparent)">Individualna podrška kozmetičaru kroz konkretne slučajeve iz prakse.</p>
+          <span style="margin-top:auto;font-size:13px;color:var(--ee-accent-contrast)">od 6.900 RSD / sesija</span>
+        </article>
+        <article style="background:color-mix(in oklab, #fff 8%, transparent);border:1px solid color-mix(in oklab, var(--color-meadow) 22%, transparent);border-radius:18px;padding:26px 22px;display:flex;flex-direction:column;gap:14px;min-height:230px" style-hover="background:color-mix(in oklab, #fff 13%, transparent)">
+          <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ee-accent-contrast)">04 · Materijali</span>
+          <h3 style="font-family:var(--ee-display);font-size:24px;line-height:1.15;color:#fff">PDF materijali</h3>
+          <p style="font-size:14px;line-height:1.6;color:color-mix(in oklab, #fff 70%, transparent)">Stručni materijali za internu upotrebu i podsetnik posle edukacije.</p>
+          <span style="margin-top:auto;font-size:13px;color:var(--ee-accent-contrast)">uz program</span>
+        </article>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:22px;margin-top:clamp(28px,3vw,44px);padding-top:26px;border-top:1px solid color-mix(in oklab, var(--color-meadow) 20%, transparent)">
+        <p style="font-size:14.5px;color:color-mix(in oklab, #fff 76%, transparent);max-width:52ch">Program se dogovara prema broju članova tima, nivou znanja i vrsti usluga koje salon pruža.</p>
+        <button onClick="{{ goPros }}" style="display:inline-flex;align-items:center;gap:10px;background:var(--ee-accent-contrast);border:0;border-radius:999px;padding:14px 24px;cursor:pointer;font-family:var(--ee-body);font-size:14.5px;font-weight:600;color:var(--ee-accent)" style-hover="background:var(--color-meadow-hover)">Vidi program za salone <span style="font-size:14px">→</span></button>
+      </div>
+    </div>
+  </section>
+
+
+  <section id="iskustva" data-block="credentials" data-block-kind="content" data-cms="content.credentials" style="padding:clamp(56px,7vw,110px) 0;background:var(--ee-surface)">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px)">
+      <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:34px">
+        <div style="display:flex;flex-direction:column;gap:18px;max-width:44ch">
+          <x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="sage" hint-size="120px,18px">Zašto Marina</x-import>
+          <h2 style="font-family:var(--ee-display);font-size:clamp(30px,3.7vw,50px);line-height:1.05;letter-spacing:-.024em;color:var(--ee-accent)">Stručnost nije samo sertifikat.</h2>
+        </div>
+        <p style="font-size:15px;line-height:1.7;color:var(--ee-text-muted);max-width:34ch">Pet stvari po kojima se poznaje da li neko razume kožu — i po kojima Marina radi.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,265px),1fr));gap:16px">
+        <article style="background:var(--ee-surface-muted);border-radius:20px;padding:clamp(24px,2.6vw,32px);display:flex;flex-direction:column;gap:13px">
+          <span style="font-family:var(--ee-display);font-size:26px;color:var(--ee-sage);line-height:1">01</span>
+          <h3 style="font-family:var(--ee-display);font-size:23px;line-height:1.18;color:var(--ee-accent)">Obrazovanje i sertifikacija</h3>
+          <p style="font-size:14.5px;line-height:1.65;color:var(--ee-text-muted)">Formalno obrazovanje kozmetičara i estetičara kao osnova, a ne kao završena priča.</p>
+        </article>
+        <article style="background:var(--ee-surface-muted);border-radius:20px;padding:clamp(24px,2.6vw,32px);display:flex;flex-direction:column;gap:13px">
+          <span style="font-family:var(--ee-display);font-size:26px;color:var(--ee-sage);line-height:1">02</span>
+          <h3 style="font-family:var(--ee-display);font-size:23px;line-height:1.18;color:var(--ee-accent)">Praktično iskustvo</h3>
+          <p style="font-size:14.5px;line-height:1.65;color:var(--ee-text-muted)">Rad sa stvarnom kožom, stvarnim reakcijama i rutinama koje se sprovode van teorije.</p>
+        </article>
+        <article style="background:var(--ee-surface-muted);border-radius:20px;padding:clamp(24px,2.6vw,32px);display:flex;flex-direction:column;gap:13px">
+          <span style="font-family:var(--ee-display);font-size:26px;color:var(--ee-sage);line-height:1">03</span>
+          <h3 style="font-family:var(--ee-display);font-size:23px;line-height:1.18;color:var(--ee-accent)">Edukativni rad</h3>
+          <p style="font-size:14.5px;line-height:1.65;color:var(--ee-text-muted)">Stručni tekstovi i materijali koji stoje javno — provereni, a ne prepričani.</p>
+        </article>
+        <article style="background:var(--ee-surface-muted);border-radius:20px;padding:clamp(24px,2.6vw,32px);display:flex;flex-direction:column;gap:13px">
+          <span style="font-family:var(--ee-display);font-size:26px;color:var(--ee-sage);line-height:1">04</span>
+          <h3 style="font-family:var(--ee-display);font-size:23px;line-height:1.18;color:var(--ee-accent)">Jasno objašnjenje</h3>
+          <p style="font-size:14.5px;line-height:1.65;color:var(--ee-text-muted)">Kompleksne teme prevedene u ono što možeš da primeniš već iste nedelje.</p>
+        </article>
+        <article style="background:var(--ee-surface-muted);border-radius:20px;padding:clamp(24px,2.6vw,32px);display:flex;flex-direction:column;gap:13px">
+          <span style="font-family:var(--ee-display);font-size:26px;color:var(--ee-sage);line-height:1">05</span>
+          <h3 style="font-family:var(--ee-display);font-size:23px;line-height:1.18;color:var(--ee-accent)">Individualni pristup</h3>
+          <p style="font-size:14.5px;line-height:1.65;color:var(--ee-text-muted)">Bez univerzalnih recepata — procena se radi za tvoju kožu, ne za tip kože uopšte.</p>
+        </article>
+        <div style="background:var(--ee-accent);border-radius:20px;padding:clamp(24px,2.6vw,32px);display:flex;flex-direction:column;gap:18px">
+          <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ee-accent-contrast)">Instagram</span>
+          <p style="font-family:var(--ee-display);font-size:22px;line-height:1.3;color:#fff">Edukacija i u kratkom formatu, svake nedelje.</p>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+            <div style="position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden"><image-slot id="ig-1" shape="rounded" radius="12" placeholder="IG 1"></image-slot></div>
+            <div style="position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden"><image-slot id="ig-2" shape="rounded" radius="12" placeholder="IG 2"></image-slot></div>
+            <div style="position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden"><image-slot id="ig-3" shape="rounded" radius="12" placeholder="IG 3"></image-slot></div>
+            <div style="position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden"><image-slot id="ig-4" shape="rounded" radius="12" placeholder="IG 4"></image-slot></div>
+          </div>
+          <a href="#final-cta" style="margin-top:auto;font-size:13.5px;font-weight:600;color:var(--ee-accent-contrast)">Instagram handle — CMS polje →</a>
+        </div>
+      </div>
+      <p style="margin-top:20px;font-size:13px;line-height:1.6;color:var(--ee-text-muted);max-width:70ch">Iskustva klijenata dobijaju svoj blok kada ih zaista bude — bez izmišljenih citata i bez brojki koje ništa ne znače.</p>
+    </div>
+  </section>
+
+  <section id="edukacija" data-block="latestEducation" data-block-kind="content" data-cms="content.latestEducation" style="padding:clamp(56px,7vw,110px) 0">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px)">
+      <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:34px">
+        <div style="display:flex;flex-direction:column;gap:18px;max-width:42ch">
+          <x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="sage" hint-size="140px,18px">Najnovija edukacija</x-import>
+          <h2 style="font-family:var(--ee-display);font-size:clamp(30px,3.7vw,50px);line-height:1.05;letter-spacing:-.024em;color:var(--ee-accent)">Stručni tekstovi, bez pojednostavljivanja.</h2>
+        </div>
+        <x-import component-from-global-scope="PsihointegritetUI.ArrowLink" href="#teme" tone="underline" hint-size="120px,24px">Sve teme</x-import>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:clamp(16px,2vw,26px)">
+        <article style="display:flex;flex-direction:column;gap:16px">
+          <div style="position:relative;aspect-ratio:4/3;border-radius:20px;overflow:hidden;background:var(--ee-surface-muted)">
+            <image-slot id="art-1" shape="rounded" radius="20" placeholder="Naslovna slika teksta — 4:3"></image-slot>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="tag" hint-size="70px,26px">Osnove</x-import>
+            <span style="font-size:12px;color:var(--ee-text-muted)">6 min čitanja</span>
+          </div>
+          <h3 style="font-family:var(--ee-display);font-size:27px;line-height:1.15;color:var(--ee-accent)">Procena kože: prvi korak u pravilnoj nezi</h3>
+          <p style="font-size:15px;line-height:1.65;color:var(--ee-text-muted)">Zašto pitanje nije „koji je moj tip kože", već „u kakvom je stanju moja koža trenutno".</p>
+          <x-import component-from-global-scope="PsihointegritetUI.ArrowLink" href="#teme" circled="{{ true }}" hint-size="150px,34px">Pročitaj tekst</x-import>
+        </article>
+        <article style="display:flex;flex-direction:column;gap:16px">
+          <div style="position:relative;aspect-ratio:4/3;border-radius:20px;overflow:hidden;background:var(--ee-surface-muted)">
+            <image-slot id="art-2" shape="rounded" radius="20" placeholder="Naslovna slika teksta — 4:3"></image-slot>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="tag" hint-size="110px,26px">Aktivni sastojci</x-import>
+            <span style="font-size:12px;color:var(--ee-text-muted)">8 min čitanja</span>
+          </div>
+          <h3 style="font-family:var(--ee-display);font-size:27px;line-height:1.15;color:var(--ee-accent)">Aktivni sastojci: funkcija je važnija od popularnosti</h3>
+          <p style="font-size:15px;line-height:1.65;color:var(--ee-text-muted)">Kako se sastojak bira prema potrebi kože i cilju nege, a ne prema trendu na mrežama.</p>
+          <x-import component-from-global-scope="PsihointegritetUI.ArrowLink" href="#teme" circled="{{ true }}" hint-size="150px,34px">Pročitaj tekst</x-import>
+        </article>
+        <article style="display:flex;flex-direction:column;gap:16px">
+          <div style="position:relative;aspect-ratio:4/3;border-radius:20px;overflow:hidden;background:var(--ee-surface-muted)">
+            <image-slot id="art-3" shape="rounded" radius="20" placeholder="Naslovna slika teksta — 4:3"></image-slot>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="tag" hint-size="70px,26px">Zaštita</x-import>
+            <span style="font-size:12px;color:var(--ee-text-muted)">11 min čitanja</span>
+          </div>
+          <h3 style="font-family:var(--ee-display);font-size:27px;line-height:1.15;color:var(--ee-accent)">SPF i fotoprotekcija u svakodnevnoj nezi</h3>
+          <p style="font-size:15px;line-height:1.65;color:var(--ee-text-muted)">Zaštita tokom cele godine: UVA, UVB, širokospektralna zaštita i pravilna primena.</p>
+          <x-import component-from-global-scope="PsihointegritetUI.ArrowLink" href="#teme" circled="{{ true }}" hint-size="150px,34px">Pročitaj tekst</x-import>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="final-cta" data-block="finalCta" data-block-kind="business" data-cms="booking.consultation" style="padding:0 0 clamp(56px,7vw,110px)">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px)">
+      <div style="background:var(--ee-terracotta);border-radius:28px;padding:clamp(38px,5vw,76px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:clamp(28px,4vw,60px);align-items:center">
+        <div style="display:flex;flex-direction:column;gap:22px">
+          <x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="coffee" hint-size="140px,18px">Sledeći korak</x-import>
+          <h2 style="font-family:var(--ee-display);font-size:clamp(30px,3.9vw,54px);line-height:1.04;letter-spacing:-.024em;color:var(--color-coffee);max-width:24ch">Rezerviši termin i saznaj šta tvojoj koži zaista treba.</h2>
+          <p style="font-size:16.5px;line-height:1.7;color:color-mix(in oklab, var(--color-coffee) 78%, transparent);max-width:44ch">Izaberi slobodan termin u kalendaru — za ličnu konsultaciju ili razgovor o edukaciji za salon.</p>
+        </div>
+        <div style="background:var(--ee-surface);border-radius:22px;padding:clamp(24px,2.6vw,32px);display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ee-text-muted)">Slobodni termini</span>
+            <span style="font-size:12px;color:var(--ee-sage)">avgust 2026</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+            <span style="border:1px solid var(--ee-border);border-radius:12px;padding:11px 6px;text-align:center;font-size:13px;color:var(--ee-text)">pon 18<br><span style="font-size:11px;color:var(--ee-text-muted)">10:00</span></span>
+            <span style="border:1px solid var(--ee-accent);background:var(--ee-accent);border-radius:12px;padding:11px 6px;text-align:center;font-size:13px;color:#fff">sre 20<br><span style="font-size:11px;color:var(--ee-accent-contrast)">17:30</span></span>
+            <span style="border:1px solid var(--ee-border);border-radius:12px;padding:11px 6px;text-align:center;font-size:13px;color:var(--ee-text)">čet 21<br><span style="font-size:11px;color:var(--ee-text-muted)">12:00</span></span>
+            <span style="border:1px solid var(--ee-border);border-radius:12px;padding:11px 6px;text-align:center;font-size:13px;color:var(--ee-text)">pet 22<br><span style="font-size:11px;color:var(--ee-text-muted)">09:00</span></span>
+          </div>
+          <button onClick="{{ openBooking }}" class="group bg-forest hover:bg-forest-lift text-canvas relative inline-flex items-center overflow-hidden rounded-full font-semibold whitespace-nowrap no-underline transition-colors duration-[250ms] gap-3 py-2 pr-6 pl-2 text-[14.5px]" style="border:0;cursor:pointer;font-family:var(--ee-body);align-self:flex-start">
+            <span aria-hidden="true" class="bg-forest-soft relative inline-flex -rotate-45 items-center justify-center rounded-full transition-transform duration-300 group-hover:rotate-0" style="width:36px;height:36px;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-canvas)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></span><span class="relative">Otvori zakazivanje</span>
+          </button>
+          <p style="font-size:12px;line-height:1.5;color:var(--ee-text-muted)">Potvrda termina i kratak upitnik o koži dolaze na email.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<main data-screen-label="ZA KLIJENTE" data-page="/za-klijente" style="display:{{ clientsDisplay }}">
+  <x-import component-from-global-scope="PsihointegritetUI.PageHero" tone="meadow" id="klijenti-hero" hint-size="100%,420px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:clamp(28px,4vw,64px);align-items:center">
+      <div style="display:flex;flex-direction:column;gap:22px">
+        <x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="coffee" hint-size="110px,18px">Za klijente</x-import>
+        <h1 style="font-family:var(--ee-display);font-size:clamp(34px,4.6vw,64px);line-height:1.02;letter-spacing:-.026em;color:var(--ee-accent);max-width:22ch">Lična nega bez nagađanja.</h1>
+        <p style="font-size:17px;line-height:1.72;color:color-mix(in oklab, var(--color-coffee) 76%, transparent);max-width:48ch">Konsultacija u kojoj zajedno prolazimo kroz stanje tvoje kože, dosadašnju rutinu i realan cilj nege — i praviš plan koji možeš da sprovodiš.</p>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:18px">
+          <button onClick="{{ openBooking }}" class="group bg-forest hover:bg-forest-lift text-canvas relative inline-flex items-center overflow-hidden rounded-full font-semibold whitespace-nowrap no-underline transition-colors duration-[250ms] gap-3 py-2 pr-6 pl-2 text-[14.5px]" style="border:0;cursor:pointer;font-family:var(--ee-body)">
+            <span aria-hidden="true" class="bg-forest-soft relative inline-flex -rotate-45 items-center justify-center rounded-full transition-transform duration-300 group-hover:rotate-0" style="width:36px;height:36px;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-canvas)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></span><span class="relative">Zakaži konsultaciju</span>
+          </button>
+          <span style="font-size:13px;color:color-mix(in oklab, var(--color-coffee) 65%, transparent)">od 4.900 RSD · online ili u salonu</span>
+        </div>
+      </div>
+      <div style="position:relative;aspect-ratio:1/1;border-radius:24px;overflow:hidden;background:color-mix(in oklab, #fff 55%, transparent)">
+        <image-slot id="klijenti-hero-foto" shape="rounded" radius="24" placeholder="Foto: detalj nege / koža — 1:1"></image-slot>
+      </div>
+    </div>
+  </x-import>
+
+  <section data-block="reasons" data-block-kind="content" data-cms="clients_reasons" style="padding:clamp(56px,7vw,100px) 0">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px)">
+      <x-import component-from-global-scope="PsihointegritetUI.SectionHeading" eyebrow="Kada ima smisla" title="Prepoznaješ li se u nečemu od ovoga?" description="Najčešće situacije u kojima konsultacija donosi jasnoću." hint-size="100%,160px"></x-import>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,265px),1fr));gap:16px;margin-top:34px">
+        <article style="background:var(--ee-surface);border:1px solid var(--ee-border);border-radius:20px;padding:clamp(24px,2.6vw,32px);display:flex;flex-direction:column;gap:14px">
+          <span style="font-family:var(--ee-display);font-size:28px;color:var(--ee-sage)">01</span>
+          <h3 style="font-family:var(--ee-display);font-size:24px;line-height:1.18;color:var(--ee-accent)">Kupujem, ali ne znam da li mi treba</h3>
+          <p style="font-size:15px;line-height:1.65;color:var(--ee-text-muted)">Proizvodi se biraju po popularnosti sastojka, a ne po potrebi kože.</p>
+        </article>
+        <article style="background:var(--ee-surface);border:1px solid var(--ee-border);border-radius:20px;padding:clamp(24px,2.6vw,32px);display:flex;flex-direction:column;gap:14px">
+          <span style="font-family:var(--ee-display);font-size:28px;color:var(--ee-sage)">02</span>
+          <h3 style="font-family:var(--ee-display);font-size:24px;line-height:1.18;color:var(--ee-accent)">Koža je masna, a ipak zategnuta</h3>
+          <p style="font-size:15px;line-height:1.65;color:var(--ee-text-muted)">Agresivno odmašćivanje često dodatno narušava ravnotežu kože.</p>
+        </article>
+        <article style="background:var(--ee-surface);border:1px solid var(--ee-border);border-radius:20px;padding:clamp(24px,2.6vw,32px);display:flex;flex-direction:column;gap:14px">
+          <span style="font-family:var(--ee-display);font-size:28px;color:var(--ee-sage)">03</span>
+          <h3 style="font-family:var(--ee-display);font-size:24px;line-height:1.18;color:var(--ee-accent)">Rutina je postala prekomplikovana</h3>
+          <p style="font-size:15px;line-height:1.65;color:var(--ee-text-muted)">Previše aktivnih proizvoda uvedenih istovremeno — bez jasnog cilja.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section data-block="process" data-block-kind="content" data-cms="clients_process" style="padding:clamp(56px,7vw,100px) 0;background:var(--ee-surface)">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:clamp(32px,4vw,72px)">
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="sage" hint-size="150px,18px">Kako izgleda</x-import>
+        <h2 style="font-family:var(--ee-display);font-size:clamp(28px,3.4vw,46px);line-height:1.06;letter-spacing:-.022em;color:var(--ee-accent)">Konsultacija u četiri koraka.</h2>
+        <p style="font-size:16px;line-height:1.72;color:var(--ee-text-muted);max-width:40ch">Pre termina dobijaš kratak upitnik o koži i dosadašnjoj nezi, da razgovor krene od konkretnih podataka.</p>
+      </div>
+      <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border-top:1px solid var(--ee-border)">
+        <li style="display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:20px;align-items:center;padding:24px 0;border-bottom:1px solid var(--ee-border)">
+          <span style="font-family:var(--ee-display);font-size:19px;color:var(--ee-sage)">01</span>
+          <div><h3 style="font-family:var(--ee-display);font-size:22px;color:var(--ee-accent)">Upitnik o koži</h3><p style="font-size:14.5px;line-height:1.6;color:var(--ee-text-muted);margin-top:6px">Navike nege, prethodni proizvodi, reakcije i cilj.</p></div>
+          <span style="font-size:12.5px;color:var(--ee-text-muted)">pre termina</span>
+        </li>
+        <li style="display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:20px;align-items:center;padding:24px 0;border-bottom:1px solid var(--ee-border)">
+          <span style="font-family:var(--ee-display);font-size:19px;color:var(--ee-sage)">02</span>
+          <div><h3 style="font-family:var(--ee-display);font-size:22px;color:var(--ee-accent)">Procena i razgovor</h3><p style="font-size:14.5px;line-height:1.6;color:var(--ee-text-muted);margin-top:6px">Razlikovanje tipa i stanja kože, prioriteti nege.</p></div>
+          <span style="font-size:12.5px;color:var(--ee-text-muted)">45–60 min</span>
+        </li>
+        <li style="display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:20px;align-items:center;padding:24px 0;border-bottom:1px solid var(--ee-border)">
+          <span style="font-family:var(--ee-display);font-size:19px;color:var(--ee-sage)">03</span>
+          <div><h3 style="font-family:var(--ee-display);font-size:22px;color:var(--ee-accent)">Pisani plan nege</h3><p style="font-size:14.5px;line-height:1.6;color:var(--ee-text-muted);margin-top:6px">Redosled koraka, učestalost i šta pratiti prve nedelje.</p></div>
+          <span style="font-size:12.5px;color:var(--ee-text-muted)">PDF, do 3 dana</span>
+        </li>
+        <li style="display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:20px;align-items:center;padding:24px 0;border-bottom:1px solid var(--ee-border)">
+          <span style="font-family:var(--ee-display);font-size:19px;color:var(--ee-sage)">04</span>
+          <div><h3 style="font-family:var(--ee-display);font-size:22px;color:var(--ee-accent)">Follow-up</h3><p style="font-size:14.5px;line-height:1.6;color:var(--ee-text-muted);margin-top:6px">Provera reakcije kože i prilagođavanje rutine.</p></div>
+          <span style="font-size:12.5px;color:var(--ee-text-muted)">nakon 4 nedelje</span>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section data-block="faq" data-block-kind="content" data-cms="clients_faq" style="padding:clamp(56px,7vw,100px) 0">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:clamp(32px,4vw,72px);align-items:start">
+      <div style="position:relative;aspect-ratio:3/4;border-radius:24px;overflow:hidden;background:var(--ee-surface-muted)">
+        <image-slot id="klijenti-faq-foto" shape="rounded" radius="24" placeholder="Foto: proizvod / detalj — 3:4"></image-slot>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:24px">
+        <x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="sage" hint-size="140px,18px">Česta pitanja</x-import>
+        <h2 style="font-family:var(--ee-display);font-size:clamp(28px,3.4vw,46px);line-height:1.06;letter-spacing:-.022em;color:var(--ee-accent);max-width:24ch">Odgovori pre nego što rezervišeš.</h2>
+        <x-import component-from-global-scope="PsihointegritetUI.Accordion" items="{{ faqClients }}" default-open-id="k1" hint-size="100%,340px"></x-import>
+      </div>
+    </div>
+  </section>
+
+  <section id="klijenti-cta" data-block="finalCta" data-block-kind="business" data-cms="booking.consultation" style="padding:0 0 clamp(56px,7vw,100px)">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px)">
+      <div style="background:var(--ee-accent);border-radius:28px;padding:clamp(36px,4.6vw,68px);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:30px">
+        <div style="display:flex;flex-direction:column;gap:16px;max-width:30ch">
+          <h2 style="font-family:var(--ee-display);font-size:clamp(28px,3.4vw,46px);line-height:1.05;color:#fff">Spremna si da razumeš svoju kožu?</h2>
+          <p style="font-size:15.5px;line-height:1.65;color:color-mix(in oklab, #fff 74%, transparent)">Izaberi termin u kalendaru — potvrda i upitnik dolaze na email.</p>
+        </div>
+        <x-import component-from-global-scope="PsihointegritetUI.ButtonLink" href="#klijenti-hero" variant="meadow" size="lg" hint-size="220px,54px">Rezerviši termin</x-import>
+      </div>
+    </div>
+  </section>
+</main>
+
+<main data-screen-label="ZA PROFESIONALCE" data-page="/za-profesionalce" style="display:{{ prosDisplay }}">
+  <x-import component-from-global-scope="PsihointegritetUI.PageHero" tone="forest" id="pros-hero" hint-size="100%,420px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:clamp(28px,4vw,64px);align-items:center">
+      <div style="display:flex;flex-direction:column;gap:22px">
+        <x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="meadow" hint-size="140px,18px">Za profesionalce</x-import>
+        <h1 style="font-family:var(--ee-display);font-size:clamp(34px,4.6vw,64px);line-height:1.02;letter-spacing:-.026em;color:#fff;max-width:22ch">Edukacija za salone i timove.</h1>
+        <p style="font-size:17px;line-height:1.72;color:color-mix(in oklab, #fff 76%, transparent);max-width:48ch">Sistematična procena kože, razumevanje grupa aktivnih sastojaka i način na koji se preporuka objašnjava klijentu — prilagođeno nivou znanja tvog tima.</p>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:18px">
+          <x-import component-from-global-scope="PsihointegritetUI.ButtonLink" href="#pros-cta" variant="meadow" size="lg" hint-size="220px,54px">Zatraži program</x-import>
+          <span style="font-size:13px;color:color-mix(in oklab, #fff 62%, transparent)">od 39.000 RSD / tim · radionica ili online</span>
+        </div>
+      </div>
+      <div style="position:relative;aspect-ratio:1/1;border-radius:24px;overflow:hidden;background:color-mix(in oklab, #fff 52%, transparent)">
+        <image-slot id="pros-hero-foto" shape="rounded" radius="24" placeholder="Foto: radionica / tim u salonu — 1:1"></image-slot>
+      </div>
+    </div>
+  </x-import>
+
+  <section data-block="formats" data-block-kind="business" data-cms="pro_formats" style="padding:clamp(56px,7vw,100px) 0">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px)">
+      <x-import component-from-global-scope="PsihointegritetUI.SectionHeading" eyebrow="Formati" title="Četiri načina da tim nadogradi znanje" description="Formati se kombinuju — radionica kao osnova, online kurs za nove članove tima." hint-size="100%,160px"></x-import>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:16px;margin-top:34px">
+        <article style="background:var(--ee-surface);border:1px solid var(--ee-border);border-radius:20px;padding:clamp(24px,2.6vw,34px);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:14px 18px">
+          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:12px">
+            <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="label" hint-size="70px,26px">Uživo</x-import>
+            <h3 style="font-family:var(--ee-display);font-size:26px;line-height:1.15;color:var(--ee-accent)">Radionica u salonu</h3>
+            <p style="font-size:15px;line-height:1.65;color:var(--ee-text-muted);max-width:44ch">Poludnevni format za ceo tim: procena kože, primeri iz prakse i vežbe na konkretnim slučajevima.</p>
+          </div>
+          <span style="font-family:var(--ee-display);font-size:18px;color:var(--ee-accent);white-space:nowrap">od 39.000 RSD</span>
+        </article>
+        <article style="background:var(--ee-surface);border:1px solid var(--ee-border);border-radius:20px;padding:clamp(24px,2.6vw,34px);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:14px 18px">
+          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:12px">
+            <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="label" hint-size="70px,26px">Online</x-import>
+            <h3 style="font-family:var(--ee-display);font-size:26px;line-height:1.15;color:var(--ee-accent)">Online kurs</h3>
+            <p style="font-size:15px;line-height:1.65;color:var(--ee-text-muted);max-width:44ch">Moduli koje tim prolazi sopstvenim tempom, sa proverom razumevanja na kraju svakog dela.</p>
+          </div>
+          <span style="font-family:var(--ee-display);font-size:18px;color:var(--ee-accent);white-space:nowrap">od 12.000 RSD</span>
+        </article>
+        <article style="background:var(--ee-surface);border:1px solid var(--ee-border);border-radius:20px;padding:clamp(24px,2.6vw,34px);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:14px 18px">
+          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:12px">
+            <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="label" hint-size="60px,26px">1:1</x-import>
+            <h3 style="font-family:var(--ee-display);font-size:26px;line-height:1.15;color:var(--ee-accent)">Mentorstvo</h3>
+            <p style="font-size:15px;line-height:1.65;color:var(--ee-text-muted);max-width:44ch">Individualne sesije za kozmetičara: rad na stvarnim slučajevima klijenata i komunikaciji preporuke.</p>
+          </div>
+          <span style="font-family:var(--ee-display);font-size:18px;color:var(--ee-accent);white-space:nowrap">od 6.900 RSD</span>
+        </article>
+        <article style="background:var(--ee-surface);border:1px solid var(--ee-border);border-radius:20px;padding:clamp(24px,2.6vw,34px);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:14px 18px">
+          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:12px">
+            <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="labelWarm" hint-size="90px,26px">Materijali</x-import>
+            <h3 style="font-family:var(--ee-display);font-size:26px;line-height:1.15;color:var(--ee-accent)">PDF materijali</h3>
+            <p style="font-size:15px;line-height:1.65;color:var(--ee-text-muted);max-width:44ch">Stručni materijali za internu upotrebu: procena kože, aktivni sastojci, kombinovanje, SPF.</p>
+          </div>
+          <span style="font-family:var(--ee-display);font-size:18px;color:var(--ee-accent);white-space:nowrap">uz program</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section data-block="curriculum" data-block-kind="content" data-cms="pro_modules" style="padding:clamp(56px,7vw,100px) 0;background:var(--ee-surface-muted)">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px)">
+      <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:34px">
+        <div style="display:flex;flex-direction:column;gap:18px;max-width:40ch">
+          <x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="sage" hint-size="90px,18px">Program</x-import>
+          <h2 style="font-family:var(--ee-display);font-size:clamp(28px,3.4vw,46px);line-height:1.06;letter-spacing:-.022em;color:var(--ee-accent)">Četiri modula, jedna logika.</h2>
+        </div>
+        <p style="font-size:14.5px;color:var(--ee-text-muted);max-width:34ch">Procena → potreba → izbor sastojka → postepeno uvođenje → praćenje reakcije.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:16px">
+        <article style="background:var(--ee-surface);border-radius:20px;padding:clamp(24px,2.6vw,34px);display:flex;flex-direction:column;gap:16px">
+          <span style="font-family:var(--ee-display);font-size:15px;color:var(--ee-sage)">Modul 01</span>
+          <h3 style="font-family:var(--ee-display);font-size:26px;line-height:1.15;color:var(--ee-accent)">Procena kože</h3>
+          <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px">
+            <li style="display:flex;gap:10px;font-size:14.5px;line-height:1.55;color:var(--ee-text-muted)"><span style="color:var(--ee-terracotta)">—</span>Tip kože i produkcija sebuma</li>
+            <li style="display:flex;gap:10px;font-size:14.5px;line-height:1.55;color:var(--ee-text-muted)"><span style="color:var(--ee-terracotta)">—</span>Stanje kože: dehidriranost, osetljivost, barijera</li>
+            <li style="display:flex;gap:10px;font-size:14.5px;line-height:1.55;color:var(--ee-text-muted)"><span style="color:var(--ee-terracotta)">—</span>Najčešće greške u proceni</li>
+          </ul>
+        </article>
+        <article style="background:var(--ee-surface);border-radius:20px;padding:clamp(24px,2.6vw,34px);display:flex;flex-direction:column;gap:16px">
+          <span style="font-family:var(--ee-display);font-size:15px;color:var(--ee-sage)">Modul 02</span>
+          <h3 style="font-family:var(--ee-display);font-size:26px;line-height:1.15;color:var(--ee-accent)">Aktivni sastojci</h3>
+          <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px">
+            <li style="display:flex;gap:10px;font-size:14.5px;line-height:1.55;color:var(--ee-text-muted)"><span style="color:var(--ee-terracotta)">—</span>Funkcija, namena i razlozi za oprez</li>
+            <li style="display:flex;gap:10px;font-size:14.5px;line-height:1.55;color:var(--ee-text-muted)"><span style="color:var(--ee-terracotta)">—</span>Povezivanje potrebe kože i cilja nege</li>
+            <li style="display:flex;gap:10px;font-size:14.5px;line-height:1.55;color:var(--ee-text-muted)"><span style="color:var(--ee-terracotta)">—</span>Zašto više sastojaka ne znači bolju negu</li>
+          </ul>
+        </article>
+        <article style="background:var(--ee-surface);border-radius:20px;padding:clamp(24px,2.6vw,34px);display:flex;flex-direction:column;gap:16px">
+          <span style="font-family:var(--ee-display);font-size:15px;color:var(--ee-sage)">Modul 03</span>
+          <h3 style="font-family:var(--ee-display);font-size:26px;line-height:1.15;color:var(--ee-accent)">Kombinovanje u rutini</h3>
+          <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px">
+            <li style="display:flex;gap:10px;font-size:14.5px;line-height:1.55;color:var(--ee-text-muted)"><span style="color:var(--ee-terracotta)">—</span>Postepeno uvođenje i praćenje reakcije</li>
+            <li style="display:flex;gap:10px;font-size:14.5px;line-height:1.55;color:var(--ee-text-muted)"><span style="color:var(--ee-terracotta)">—</span>Nega barijere kao osnova rutine</li>
+            <li style="display:flex;gap:10px;font-size:14.5px;line-height:1.55;color:var(--ee-text-muted)"><span style="color:var(--ee-terracotta)">—</span>Kada je rutina preopterećena</li>
+          </ul>
+        </article>
+        <article style="background:var(--ee-surface);border-radius:20px;padding:clamp(24px,2.6vw,34px);display:flex;flex-direction:column;gap:16px">
+          <span style="font-family:var(--ee-display);font-size:15px;color:var(--ee-sage)">Modul 04</span>
+          <h3 style="font-family:var(--ee-display);font-size:26px;line-height:1.15;color:var(--ee-accent)">SPF i fotoprotekcija</h3>
+          <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px">
+            <li style="display:flex;gap:10px;font-size:14.5px;line-height:1.55;color:var(--ee-text-muted)"><span style="color:var(--ee-terracotta)">—</span>UVA, UVB i širokospektralna zaštita</li>
+            <li style="display:flex;gap:10px;font-size:14.5px;line-height:1.55;color:var(--ee-text-muted)"><span style="color:var(--ee-terracotta)">—</span>SPF 30 vs. 50 i količina nanošenja</li>
+            <li style="display:flex;gap:10px;font-size:14.5px;line-height:1.55;color:var(--ee-text-muted)"><span style="color:var(--ee-terracotta)">—</span>Kako klijentu objasniti značaj zaštite</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section data-block="faq" data-block-kind="content" data-cms="pro_faq" style="padding:clamp(56px,7vw,100px) 0">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:clamp(32px,4vw,72px);align-items:start">
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="sage" hint-size="140px,18px">Organizacija</x-import>
+        <h2 style="font-family:var(--ee-display);font-size:clamp(28px,3.4vw,44px);line-height:1.06;letter-spacing:-.022em;color:var(--ee-accent)">Kako se dogovara edukacija.</h2>
+        <p style="font-size:15.5px;line-height:1.7;color:var(--ee-text-muted);max-width:38ch">Kratak uvodni razgovor, procena nivoa znanja tima, predlog programa i termina.</p>
+        <div style="position:relative;aspect-ratio:4/3;border-radius:20px;overflow:hidden;background:var(--ee-surface-muted);margin-top:8px">
+          <image-slot id="pros-faq-foto" shape="rounded" radius="20" placeholder="Foto: edukacija u salonu — 4:3"></image-slot>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:22px">
+        <x-import component-from-global-scope="PsihointegritetUI.Accordion" items="{{ faqPros }}" default-open-id="p1" hint-size="100%,340px"></x-import>
+      </div>
+    </div>
+  </section>
+
+  <section id="pros-cta" data-block="finalCta" data-block-kind="business" data-cms="booking.consultation" style="padding:0 0 clamp(56px,7vw,100px)">
+    <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px)">
+      <div style="background:var(--ee-terracotta);border-radius:28px;padding:clamp(36px,4.6vw,68px);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:30px">
+        <div style="display:flex;flex-direction:column;gap:16px;max-width:32ch">
+          <h2 style="font-family:var(--ee-display);font-size:clamp(28px,3.4vw,46px);line-height:1.05;color:var(--color-coffee)">Dogovorimo edukaciju za tvoj tim.</h2>
+          <p style="font-size:15.5px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 78%, transparent)">Pošalji broj članova tima i vrstu usluga — predlog programa dolazi u roku od 48h.</p>
+        </div>
+        <x-import component-from-global-scope="PsihointegritetUI.AnimatedCtaLink" href="#pros-hero" label="Zatraži predlog programa" hint-size="260px,52px"></x-import>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div role="dialog" aria-modal="true" aria-label="Zakazivanje konsultacije" data-block="bookingModal" data-block-kind="business" data-cms="booking.modal" style="display:{{ bkDisplay }};position:fixed;inset:0;z-index:200;align-items:flex-start;justify-content:center;padding:clamp(16px,4vh,56px) 16px;background:color-mix(in oklab, var(--color-coffee) 42%, transparent);backdrop-filter:blur(6px);overflow-y:auto">
+  <div style="width:100%;max-width:620px;background:var(--ee-canvas);border-radius:24px;box-shadow:var(--shadow-panel-card);overflow:hidden;display:flex;flex-direction:column">
+
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:22px clamp(20px,3vw,32px) 18px;border-bottom:1px solid var(--ee-border)">
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <span style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ee-sage)">Zakazivanje kod Marine</span>
+        <span style="font-family:var(--ee-display);font-size:20px;line-height:1.2;color:var(--ee-accent)">{{ bkStepLabel }}</span>
+        <div style="display:{{ bkStepsDisplay }};gap:6px;margin-top:2px">
+          <span style="{{ bkDot1 }}"></span>
+          <span style="{{ bkDot2 }}"></span>
+          <span style="{{ bkDot3 }}"></span>
+        </div>
+      </div>
+      <button onClick="{{ closeBooking }}" aria-label="Zatvori" style="width:36px;height:36px;flex:none;border-radius:50%;border:1px solid var(--ee-border);background:var(--ee-surface);color:var(--ee-text);cursor:pointer;font-size:15px;line-height:1" style-hover="background:var(--ee-surface-muted)">×</button>
+    </div>
+
+    <div style="display:{{ bkStep1 }};flex-direction:column;gap:26px;padding:clamp(22px,3vw,30px)">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ee-text-muted)">Datum · avgust 2026</span><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,90px),1fr));gap:8px">
+          <sc-for list="{{ bkDates }}" as="dt" hint-placeholder-count="4">
+            <button onClick="{{ dt.onPick }}" style="{{ dt.style }}">
+              <span style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.75">{{ dt.dow }}</span>
+              <span style="font-family:var(--ee-display);font-size:19px;line-height:1">{{ dt.day }}</span>
+            </button>
+          </sc-for>
+        </div><div style="display:flex;flex-direction:column;gap:12px">
+        
+        <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ee-text-muted)">Vreme</span><div style="display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,90px),1fr)); gap: 8px; height: auto">
+          <sc-for list="{{ bkTimes }}" as="tm" hint-placeholder-count="4">
+            <button onClick="{{ tm.onPick }}" style="{{ tm.style }}">
+              <span style="font-size:14.5px">{{ tm.label }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </div><span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ee-text-muted)">Izaberi uslugu</span>
+        <sc-for list="{{ bkServices }}" as="sv" hint-placeholder-count="2">
+          <button onClick="{{ sv.onPick }}" style="{{ sv.cardStyle }}">
+            <span style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;width:100%">
+              <span style="display:flex;flex-direction:column;gap:4px">
+                <span style="font-family:var(--ee-display);font-size:21px;line-height:1.2;color:var(--ee-accent)">{{ sv.title }}</span>
+                <span style="font-size:12.5px;color:var(--ee-text-muted)">{{ sv.duration }}</span>
+              </span>
+              <span style="display:flex;align-items:center;gap:12px">
+                <span style="font-family:var(--ee-display);font-size:18px;color:var(--ee-accent);white-space:nowrap">{{ sv.priceLabel }}</span>
+                <span style="{{ sv.markStyle }}"></span>
+              </span>
+            </span>
+            <span style="display:flex;flex-direction:column;gap:7px;padding-top:10px;border-top:1px solid var(--ee-border);width:100%">
+              <sc-for list="{{ sv.includesList }}" as="inc" hint-placeholder-count="3">
+                <span style="display:flex;gap:9px;align-items:flex-start;font-size:13.5px;line-height:1.5;color:var(--ee-text-muted);text-align:left"><span style="color:var(--ee-terracotta)">—</span>{{ inc }}</span>
+              </sc-for>
+            </span>
+          </button>
+        </sc-for>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        
+        
+      </div>
+
+      
+
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding-top:20px;border-top:1px solid var(--ee-border)">
+        <span style="font-size:13.5px;color:var(--ee-text-muted)">{{ bkStep1Note }}</span>
+        <button onClick="{{ bkToStep2 }}" class="bg-forest text-canvas hover:bg-forest-hover inline-flex items-center justify-center rounded-full font-semibold px-7 py-[15px] text-[15px]" style="border:0;cursor:pointer;font-family:var(--ee-body);opacity:{{ bkStep1Ready }};pointer-events:{{ bkStep1Enabled }}">Nastavi</button>
+      </div>
+    </div>
+
+    <div style="display:{{ bkStep2 }};flex-direction:column;gap:24px;padding:clamp(22px,3vw,30px)">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <h3 style="font-family:var(--ee-display);font-size:23px;line-height:1.25;color:var(--ee-accent);max-width:34ch">{{ bkStep2Title }}</h3>
+        <p style="font-size:14.5px;line-height:1.6;color:var(--ee-text-muted);max-width:46ch">{{ bkStep2Lead }}</p>
+      </div>
+      <sc-for list="{{ bkQuestions }}" as="q" hint-placeholder-count="4">
+        <div style="display:flex;flex-direction:column;gap:11px;padding-bottom:20px;border-bottom:1px solid var(--ee-border)">
+          <span style="display:flex;gap:10px;align-items:baseline;font-size:14.5px;font-weight:600;color:var(--ee-text)"><span style="font-family:var(--ee-display);font-weight:400;color:var(--ee-sage)">{{ q.index }}</span>{{ q.label }}</span>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <sc-for list="{{ q.options }}" as="o" hint-placeholder-count="4">
+              <button onClick="{{ o.onPick }}" style="{{ o.style }}">{{ o.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <label for="bk-goal" style="font-size:14.5px;font-weight:600;color:var(--ee-text)">{{ bkGoalLabel }}</label>
+        <textarea id="bk-goal" rows="3" value="{{ bkGoalValue }}" onChange="{{ onGoal }}" placeholder="Slobodan tekst — par rečenica je dovoljno." style="width:100%;box-sizing:border-box;resize:vertical;border:1px solid var(--ee-border);border-radius:14px;background:var(--ee-surface);padding:13px 15px;font-family:var(--ee-body);font-size:14.5px;line-height:1.6;color:var(--ee-text)"></textarea>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding-top:20px;border-top:1px solid var(--ee-border)">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px">
+          <button onClick="{{ bkToStep1 }}" style="background:none;border:0;padding:0;cursor:pointer;font-family:var(--ee-body);font-size:13.5px;color:var(--ee-text-muted)">← Nazad</button>
+          <span style="font-size:12.5px;color:var(--ee-sage)">{{ bkAnsweredLabel }}</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px">
+          <button onClick="{{ bkSkipIntake }}" style="display:{{ bkSkipDisplay }};align-items:center;background:none;border:0;padding:0;cursor:pointer;font-family:var(--ee-body);font-size:13.5px;color:var(--ee-text-muted);text-decoration:underline;text-underline-offset:3px">Preskoči za sada</button>
+          <button onClick="{{ bkToStep3 }}" class="bg-forest text-canvas hover:bg-forest-hover inline-flex items-center justify-center rounded-full font-semibold px-7 py-[15px] text-[15px]" style="border:0;cursor:pointer;font-family:var(--ee-body)">Nastavi</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:{{ bkStep3 }};flex-direction:column;gap:22px;padding:clamp(22px,3vw,30px)">
+      <h3 style="font-family:var(--ee-display);font-size:23px;line-height:1.25;color:var(--ee-accent)">Proveri i zakaži.</h3>
+      <div style="background:var(--ee-surface);border:1px solid var(--ee-border);border-radius:18px;padding:clamp(20px,2.4vw,26px);display:flex;flex-direction:column;gap:0">
+        <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--ee-border)">
+          <span style="font-family:var(--ee-display);font-size:21px;line-height:1.2;color:var(--ee-accent)">{{ bkSummaryService }}</span>
+          <span style="font-size:12.5px;color:var(--ee-text-muted)">{{ bkSummaryDuration }}</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 0;border-bottom:1px solid var(--ee-border)">
+          <span style="font-size:14px;color:var(--ee-text-muted)">Termin</span>
+          <span style="font-size:14.5px;font-weight:600;color:var(--ee-text)">{{ bkSummaryWhen }}</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 0;border-bottom:1px solid var(--ee-border)">
+          <span style="font-size:14px;color:var(--ee-text-muted)">Cena</span>
+          <span style="font-family:var(--ee-display);font-size:19px;color:var(--ee-accent)">{{ bkSummaryPrice }}</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:12px;padding-top:14px">
+          <span style="font-size:14px;color:var(--ee-text-muted)">Intake</span>
+          <span style="{{ bkIntakeStyle }}">{{ bkIntakeMark }} {{ bkIntakeLabel }}</span>
+        </div>
+      </div>
+      <p style="font-size:12.5px;line-height:1.6;color:var(--ee-text-muted)">Potvrda termina dolazi na email. Termin možeš da otkažeš ili pomeriš najkasnije 24h unapred.</p>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding-top:18px;border-top:1px solid var(--ee-border)">
+        <button onClick="{{ bkToStep2 }}" style="background:none;border:0;padding:0;cursor:pointer;font-family:var(--ee-body);font-size:13.5px;color:var(--ee-text-muted)">← Nazad</button>
+        <button onClick="{{ bkConfirm }}" class="bg-forest text-canvas hover:bg-forest-hover inline-flex items-center justify-center rounded-full font-semibold px-8 py-4 text-[15.5px]" style="border:0;cursor:pointer;font-family:var(--ee-body);letter-spacing:.02em">Zakaži</button>
+      </div>
+    </div>
+
+    <div style="display:{{ bkDoneDisplay }};flex-direction:column;gap:18px;padding:clamp(28px,3.4vw,40px);align-items:flex-start">
+      <span style="width:52px;height:52px;border-radius:50%;background:var(--ee-accent-contrast);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--ee-accent)">✓</span>
+      <h3 style="font-family:var(--ee-display);font-size:27px;line-height:1.2;color:var(--ee-accent);max-width:26ch">Termin je zakazan.</h3>
+      <p style="font-size:15px;line-height:1.7;color:var(--ee-text-muted);max-width:44ch">{{ bkSummaryService }} · {{ bkSummaryWhen }}. Potvrda i pripremne napomene dolaze na email.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:6px">
+        <button onClick="{{ closeBooking }}" class="bg-forest text-canvas hover:bg-forest-hover inline-flex items-center justify-center rounded-full font-semibold px-7 py-[15px] text-[15px]" style="border:0;cursor:pointer;font-family:var(--ee-body)">Zatvori</button>
+        <button onClick="{{ bkRestart }}" style="background:none;border:0;padding:0;cursor:pointer;font-family:var(--ee-body);font-size:13.5px;color:var(--ee-text-muted);text-decoration:underline;text-underline-offset:3px">Zakaži još jedan termin</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer style="background:var(--ee-accent);padding:clamp(48px,6vw,84px) 0 34px">
+  <div style="max-width:var(--ee-wide);margin:0 auto;padding:0 clamp(20px,4vw,56px)">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:clamp(26px,3vw,54px);padding-bottom:40px;border-bottom:1px solid color-mix(in oklab, var(--color-meadow) 18%, transparent)">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <span style="font-family:var(--ee-display);font-size:24px;color:#fff;letter-spacing:-.01em">Marina B. Stanisavljević</span>
+        <p style="font-size:14.5px;line-height:1.7;color:color-mix(in oklab, #fff 66%, transparent);max-width:34ch">Beautician &amp; Esthetician · Skincare edukacija · Beauty content creator</p>
+      </div>
+      <nav aria-label="Edukacija" style="display:flex;flex-direction:column;gap:12px">
+        <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ee-accent-contrast)">Edukacija</span>
+        <a href="#teme" style="font-size:14px;color:color-mix(in oklab, #fff 74%, transparent)">Procena kože</a>
+        <a href="#teme" style="font-size:14px;color:color-mix(in oklab, #fff 74%, transparent)">Aktivni sastojci</a>
+        <a href="#teme" style="font-size:14px;color:color-mix(in oklab, #fff 74%, transparent)">Kombinovanje</a>
+        <a href="#teme" style="font-size:14px;color:color-mix(in oklab, #fff 74%, transparent)">SPF i fotoprotekcija</a>
+      </nav>
+      <nav aria-label="Usluge" style="display:flex;flex-direction:column;gap:12px">
+        <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ee-accent-contrast)">Usluge</span>
+        <button onClick="{{ goClients }}" style="background:none;border:0;padding:0;text-align:left;cursor:pointer;font-family:var(--ee-body);font-size:14px;color:color-mix(in oklab, #fff 74%, transparent)">Za klijente</button>
+        <button onClick="{{ goPros }}" style="background:none;border:0;padding:0;text-align:left;cursor:pointer;font-family:var(--ee-body);font-size:14px;color:color-mix(in oklab, #fff 74%, transparent)">Za profesionalce</button>
+        <a href="#konsultacija" style="font-size:14px;color:color-mix(in oklab, #fff 74%, transparent)">Konsultacija</a>
+        <a href="#za-salone" style="font-size:14px;color:color-mix(in oklab, #fff 74%, transparent)">Edukacija za salone</a>
+      </nav>
+      <nav aria-label="Kontakt" style="display:flex;flex-direction:column;gap:12px">
+        <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ee-accent-contrast)">Kontakt</span>
+        <a href="#final-cta" style="font-size:14px;color:color-mix(in oklab, #fff 74%, transparent)">Rezervacija termina</a>
+        <a href="#iskustva" style="font-size:14px;color:color-mix(in oklab, #fff 74%, transparent)">Instagram</a>
+        <a href="#o-meni" style="font-size:14px;color:color-mix(in oklab, #fff 74%, transparent)">O meni</a>
+      </nav>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;padding-top:22px">
+      <span style="font-size:12px;color:color-mix(in oklab, #fff 52%, transparent)">© 2026 Marina B. Stanisavljević · Sva prava zadržana</span>
+      <span style="font-size:12px;color:color-mix(in oklab, #fff 52%, transparent)">Sadržaj uređuje tenant kroz Landing CMS · Marysoll platforma</span>
+    </div>
+  </div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1024},&quot;returningClient&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Booking modal&quot;},&quot;allowIntakeSkip&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Booking modal&quot;}}">
+const SERVICES = [
+  { id: 'individualna', title: 'Individualna konsultacija', duration: '45 min', price: 4900,
+    priceLabel: '4.900 RSD',
+    includes: ['Procena tipa i trenutnog stanja kože', 'Analiza postojeće rutine', 'Preporuka daljih koraka'] },
+  { id: 'paket', title: 'Vođeni paket', duration: '45 min + 25 min', price: 8900,
+    priceLabel: '8.900 RSD',
+    includes: ['Sve iz individualne konsultacije', 'Pisani plan nege (PDF)', 'Follow-up nakon 4 nedelje'] }
+];
+
+const DATES = [
+  { id: 'd1', dow: 'uto', day: '25.', month: 'avgust', long: '25. avgust' },
+  { id: 'd2', dow: 'sre', day: '26.', month: 'avgust', long: '26. avgust' },
+  { id: 'd3', dow: 'čet', day: '27.', month: 'avgust', long: '27. avgust' },
+  { id: 'd4', dow: 'sub', day: '29.', month: 'avgust', long: '29. avgust' }
+];
+
+const TIMES = ['10:00', '12:00', '17:00', '18:30'];
+
+const INTAKE = [
+  { id: 'reason', label: 'Šta je glavni razlog zakazivanja?',
+    options: ['Nečistoće i akne', 'Osetljivost i crvenilo', 'Dehidriranost i zatezanje', 'Znaci starenja', 'Nisam sigurna'] },
+  { id: 'duration', label: 'Koliko dugo traje to stanje?',
+    options: ['Do 3 meseca', '3–12 meseci', 'Duže od godinu', 'Ne znam'] },
+  { id: 'actives', label: 'Da li trenutno koristiš aktivne sastojke?',
+    options: ['Da, redovno', 'Ponekad', 'Ne', 'Ne znam šta koristim'] },
+  { id: 'reaction', label: 'Da li je koža reagovala na neki proizvod?',
+    options: ['Da', 'Ne', 'Nisam sigurna'] }
+];
+
+const CHECKIN = [
+  { id: 'change', label: 'Kako je koža reagovala od poslednjeg razgovora?',
+    options: ['Bolje', 'Bez promene', 'Lošije', 'Nisam sigurna'] },
+  { id: 'adherence', label: 'Da li si mogla da sprovodiš plan?',
+    options: ['Da, u celini', 'Delimično', 'Ne'] }
+];
+
+class Component extends DCLogic {
+  state = {
+    route: 'home', topic: 'sve',
+    bkOpen: false, bkStep: 1, bkService: 'individualna', bkDate: null, bkTime: null,
+    bkAnswers: {}, bkGoal: '', bkSkipped: false, bkDone: false
+  };
+
+  go(route) {
+    this.setState({ route });
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
+  }
+
+  openBooking = () => this.setState({
+    bkOpen: true, bkStep: 1, bkDone: false, bkSkipped: false,
+    bkDate: null, bkTime: null, bkAnswers: {}, bkGoal: ''
+  });
+
+  closeBooking = () => this.setState({ bkOpen: false });
+
+  renderVals() {
+    const { route, topic } = this.state;
+    const s = this.state;
+    const returning = this.props.returningClient ?? false;
+    const allowSkip = this.props.allowIntakeSkip ?? true;
+    const questions = returning ? CHECKIN : INTAKE;
+    const rowStyle = (group) => (topic === 'sve' || topic === group ? 'grid' : 'none');
+    const service = SERVICES.find(x => x.id === s.bkService) || SERVICES[0];
+    const dateObj = DATES.find(d => d.id === s.bkDate);
+    const answered = questions.filter(q => s.bkAnswers[q.id]).length;
+    const pill = (on) => on
+      ? 'display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 6px;border-radius:14px;border:1px solid var(--ee-accent);background:var(--ee-accent);color:#fff;cursor:pointer;font-family:var(--ee-body);font-size:14px;transition:background .18s,border-color .18s'
+      : 'display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 6px;border-radius:14px;border:1px solid var(--ee-border);background:var(--ee-surface);color:var(--ee-text);cursor:pointer;font-family:var(--ee-body);font-size:14px;transition:background .18s,border-color .18s';
+    const opt = (on) => on
+      ? 'padding:9px 16px;border-radius:999px;border:1px solid var(--ee-accent);background:var(--ee-accent);color:#fff;cursor:pointer;font-family:var(--ee-body);font-size:13.5px;transition:background .18s,border-color .18s'
+      : 'padding:9px 16px;border-radius:999px;border:1px solid var(--ee-border);background:var(--ee-surface);color:var(--ee-text);cursor:pointer;font-family:var(--ee-body);font-size:13.5px;transition:background .18s,border-color .18s';
+
+    return {
+      // ——— booking modal ———
+      bkDisplay: s.bkOpen ? 'flex' : 'none',
+      bkStep1: s.bkStep === 1 && !s.bkDone ? 'flex' : 'none',
+      bkStep2: s.bkStep === 2 && !s.bkDone ? 'flex' : 'none',
+      bkStep3: s.bkStep === 3 && !s.bkDone ? 'flex' : 'none',
+      bkDoneDisplay: s.bkDone ? 'flex' : 'none',
+      bkStepsDisplay: s.bkDone ? 'none' : 'flex',
+      bkStepLabel: s.bkStep === 1 ? '01 — Izbor i termin'
+        : s.bkStep === 2 ? (returning ? '02 — Kratak check-in' : '02 — Kratak intake')
+        : '03 — Pregled i zakazivanje',
+      bkStep2Title: returning ? 'Kratak follow-up check-in.' : 'Da bi se Marina pripremila za prvi razgovor.',
+      bkStep2Lead: returning
+        ? 'Samo dve stvari — da razgovor krene od toga gde si sada.'
+        : 'Nekoliko kratkih pitanja. Nema tačnog odgovora; ovo je samo priprema.',
+      bkDot1: 'width:26px;height:2px;border-radius:2px;background:var(--ee-accent)',
+      bkDot2: s.bkStep >= 2 ? 'width:26px;height:2px;border-radius:2px;background:var(--ee-accent)' : 'width:26px;height:2px;border-radius:2px;background:var(--ee-border)',
+      bkDot3: s.bkStep >= 3 ? 'width:26px;height:2px;border-radius:2px;background:var(--ee-accent)' : 'width:26px;height:2px;border-radius:2px;background:var(--ee-border)',
+      bkServices: SERVICES.map(x => {
+        const on = x.id === s.bkService;
+        return {
+          ...x,
+          includesList: x.includes,
+          onPick: () => this.setState({ bkService: x.id }),
+          cardStyle: on
+            ? 'text-align:left;display:flex;flex-direction:column;gap:12px;padding:22px;border-radius:18px;border:1.5px solid var(--ee-accent);background:color-mix(in oklab, var(--color-meadow) 20%, var(--ee-surface));cursor:pointer;transition:border-color .18s,background .18s'
+            : 'text-align:left;display:flex;flex-direction:column;gap:12px;padding:22px;border-radius:18px;border:1px solid var(--ee-border);background:var(--ee-surface);cursor:pointer;transition:border-color .18s,background .18s',
+          markStyle: on
+            ? 'width:18px;height:18px;border-radius:50%;border:5px solid var(--ee-accent);flex:none'
+            : 'width:18px;height:18px;border-radius:50%;border:1.5px solid var(--ee-border);flex:none'
+        };
+      }),
+      bkDates: DATES.map(d => ({ ...d, style: pill(d.id === s.bkDate), onPick: () => this.setState({ bkDate: d.id, bkTime: null }) })),
+      bkTimes: TIMES.map((t, i) => ({
+        label: t,
+        style: pill(s.bkTime === t) + (i === 3 && s.bkDate === 'd4' ? ';opacity:.35;pointer-events:none' : ''),
+        onPick: () => this.setState({ bkTime: t })
+      })),
+      bkQuestions: questions.map((q, qi) => ({
+        index: String(qi + 1).padStart(2, '0'),
+        label: q.label,
+        options: q.options.map(o => ({
+          label: o,
+          style: opt(s.bkAnswers[q.id] === o),
+          onPick: () => this.setState({ bkAnswers: { ...s.bkAnswers, [q.id]: o } })
+        }))
+      })),
+      bkGoalValue: s.bkGoal,
+      bkGoalLabel: returning ? 'Ima li nešto novo što bi trebalo da znam? (opciono)' : 'Šta bi želela da postigneš? (opciono)',
+      onGoal: (e) => this.setState({ bkGoal: e.target.value }),
+      bkSkipDisplay: allowSkip ? 'inline-flex' : 'none',
+      bkAnsweredLabel: answered + ' / ' + questions.length + ' odgovoreno',
+
+      bkSummaryService: service.title,
+      bkSummaryDuration: service.duration,
+      bkSummaryPrice: service.priceLabel,
+      bkSummaryWhen: dateObj && s.bkTime ? dateObj.long + ' · ' + s.bkTime : 'Termin nije izabran',
+      bkIntakeMark: s.bkSkipped ? '○' : '✓',
+      bkIntakeLabel: s.bkSkipped ? 'preskočen' : (returning ? 'check-in popunjen' : 'popunjen'),
+      bkIntakeStyle: s.bkSkipped
+        ? 'display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ee-text-muted)'
+        : 'display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ee-accent)',
+      bkStep1Ready: s.bkDate && s.bkTime ? 1 : .4,
+      bkStep1Enabled: s.bkDate && s.bkTime ? 'auto' : 'none',
+      bkStep1Note: s.bkDate && s.bkTime ? 'Cena: ' + service.priceLabel : 'Izaberi datum i vreme',
+
+      openBooking: this.openBooking,
+      closeBooking: this.closeBooking,
+      bkToStep1: () => this.setState({ bkStep: 1 }),
+      bkToStep2: () => this.setState({ bkStep: 2 }),
+      bkToStep3: () => this.setState({ bkStep: 3, bkSkipped: false }),
+      bkSkipIntake: () => this.setState({ bkStep: 3, bkSkipped: true }),
+      bkConfirm: () => this.setState({ bkDone: true }),
+      bkRestart: this.openBooking,
+
+      // ——— page ———
+      row1: rowStyle('osnove'),
+      row2: rowStyle('aktivni'),
+      row3: rowStyle('aktivni'),
+      row4: rowStyle('zastita'),
+      homeDisplay: route === 'home' ? 'block' : 'none',
+      clientsDisplay: route === 'clients' ? 'block' : 'none',
+      prosDisplay: route === 'pros' ? 'block' : 'none',
+      homeOn: route === 'home' ? 1 : 0,
+      clientsOn: route === 'clients' ? 1 : 0,
+      prosOn: route === 'pros' ? 1 : 0,
+      goHome: () => this.go('home'),
+      goClients: () => this.go('clients'),
+      goPros: () => this.go('pros'),
+      topicActive: topic,
+      onTopic: (id) => this.setState({ topic: id }),
+      // NOTE: data-cms keys below match handoff/marina-fixture.js top-level keys
+      // (content.hero, content.audiencePaths, content.about, content.topicHub,
+      //  education.featuredOffering, consultation.offerings, content.guidedCareProcess,
+      //  education.professionalPath, content.credentials, content.latestEducation, booking.consultation)
+      topicTabs: [
+        { id: 'sve', label: 'Sve teme' },
+        { id: 'osnove', label: 'Osnove' },
+        { id: 'aktivni', label: 'Aktivni sastojci' },
+        { id: 'zastita', label: 'Zaštita' }
+      ],
+      faqClients: [
+        { id: 'k1', question: 'Da li konsultacija zamenjuje pregled dermatologa?', answer: 'Ne. Konsultacija je edukativne prirode i odnosi se na negu kože, izbor proizvoda i rutinu. Za dijagnostiku i lečenje kožnih stanja uputiću te lekaru.' },
+        { id: 'k2', question: 'Moram li da znam svoj tip kože pre termina?', answer: 'Ne. Upravo procena tipa i trenutnog stanja kože je prvi deo konsultacije — najčešća greška je poistovećivanje tipa kože sa stanjem kože.' },
+        { id: 'k3', question: 'Da li treba da kupim nove proizvode?', answer: 'Ne obavezno. Prvo prolazimo kroz ono što već koristiš. Često je rešenje pojednostavljenje rutine, a ne dodavanje novih proizvoda.' },
+        { id: 'k4', question: 'Kada se vide rezultati?', answer: 'Zavisi od stanja kože i cilja nege. Zato je follow-up nakon četiri nedelje deo procesa — tada pratimo reakciju i prilagođavamo rutinu.' }
+      ],
+      faqPros: [
+        { id: 'p1', question: 'Koliko ljudi može da učestvuje u radionici?', answer: 'Format je namenjen manjim timovima, do desetak osoba, kako bi svi imali priliku da rade na konkretnim primerima iz prakse.' },
+        { id: 'p2', question: 'Da li je program prilagođen početnicima?', answer: 'Program se prilagođava nivou znanja tima. Pre dogovora prolazimo kratku procenu — šta tim već primenjuje i gde nastaju najčešće greške.' },
+        { id: 'p3', question: 'Šta tim dobija posle edukacije?', answer: 'Stručne PDF materijale za internu upotrebu i jasan okvir preporuke: procena → potreba → izbor sastojka → postepeno uvođenje → praćenje reakcije.' },
+        { id: 'p4', question: 'Može li edukacija da se organizuje online?', answer: 'Da. Online kurs se koristi kao samostalan format ili kao priprema pre radionice uživo, a mentorstvo 1:1 se uvek odvija online.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

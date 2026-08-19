@@ -34,6 +34,7 @@ import { wrapEmailLayout, resolveSalon } from "@/lib/email/wrapEmailLayout";
 import { Resend } from "resend";
 import { resend } from "./resend";
 import { resolveTenantNewsletterSender } from "@/lib/email/tenantEmailSettings";
+import { platformOrigin } from "@/lib/platform/host-context";
 
 // Helper: strip HTML tags to produce plain-text fallback
 function htmlToText(html: string): string {
@@ -495,7 +496,7 @@ export async function sendResetEmail(
   name = "korisniče",
   tenantId?: string | null,
 ): Promise<void> {
-  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
+  const resetUrl = `${platformOrigin()}/reset-password?token=${token}`;
   const html = await passwordResetTemplate({ name, resetUrl, tenantId });
   const identity = await resolveSalonEmailIdentity(tenantId, "system");
   await sendEmail({
@@ -653,8 +654,7 @@ export async function sendNewsletterVerificationEmail(
   verificationToken: string,
   tenantId?: string | null,
 ): Promise<void> {
-  const platformUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const verifyUrl = `${platformUrl}/api/newsletter/verify?token=${verificationToken}`;
+  const verifyUrl = `${platformOrigin()}/api/newsletter/verify?token=${verificationToken}`;
   const html = await newsletterVerificationTemplate({ verifyUrl, tenantId });
   const sender = await resolveTenantNewsletterSender(tenantId);
   await sendEmail({
