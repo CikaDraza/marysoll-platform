@@ -11,9 +11,24 @@
  */
 import type { BlockRenderProps, ThemeBlockRenderers } from "../blocks/renderers";
 import { useThemeRouting } from "../blocks/ThemeBlockScope";
-import { theme9AboutProps, theme9HeroProps } from "./blockProps";
+import {
+  theme9AboutProps,
+  theme9AudiencePathsProps,
+  theme9CredentialsProps,
+  theme9FeaturedEducationProps,
+  theme9GuidedCareProcessProps,
+  theme9HeroProps,
+  theme9ProfessionalPathProps,
+  theme9TopicHubProps,
+} from "./blockProps";
 import { Theme9About } from "./AboutSection";
+import { Theme9AudiencePaths } from "./AudiencePaths";
+import { Theme9Credentials } from "./Credentials";
+import { Theme9FeaturedEducation } from "./FeaturedEducation";
+import { Theme9GuidedCareProcess } from "./GuidedCareProcess";
 import { Theme9Hero } from "./Hero";
+import { Theme9ProfessionalPath } from "./ProfessionalPath";
+import { Theme9TopicHub } from "./TopicHub";
 
 function HeroBlock({ data }: BlockRenderProps<"content.hero">) {
   const { resolveHref } = useThemeRouting();
@@ -24,7 +39,55 @@ function AboutBlock({ data }: BlockRenderProps<"content.about">) {
   return <Theme9About {...theme9AboutProps(data)} />;
 }
 
+function AudiencePathsBlock({
+  data,
+}: BlockRenderProps<"content.audience-paths">) {
+  const { resolveHref } = useThemeRouting();
+  return <Theme9AudiencePaths {...theme9AudiencePathsProps(data, resolveHref)} />;
+}
+
+function TopicHubBlock({ data }: BlockRenderProps<"content.topic-hub">) {
+  const { resolveHref } = useThemeRouting();
+  return <Theme9TopicHub {...theme9TopicHubProps(data, resolveHref)} />;
+}
+
+function GuidedCareProcessBlock({
+  data,
+}: BlockRenderProps<"content.guided-care-process">) {
+  return <Theme9GuidedCareProcess {...theme9GuidedCareProcessProps(data)} />;
+}
+
+function CredentialsBlock({ data }: BlockRenderProps<"content.credentials">) {
+  return <Theme9Credentials {...theme9CredentialsProps(data)} />;
+}
+
+function FeaturedEducationBlock({
+  data,
+}: BlockRenderProps<"content.featured-education">) {
+  const { resolveHref } = useThemeRouting();
+  return (
+    <Theme9FeaturedEducation
+      {...theme9FeaturedEducationProps(data, resolveHref)}
+    />
+  );
+}
+
+function ProfessionalPathBlock({
+  data,
+}: BlockRenderProps<"content.professional-path">) {
+  const { resolveHref } = useThemeRouting();
+  return (
+    <Theme9ProfessionalPath {...theme9ProfessionalPathProps(data, resolveHref)} />
+  );
+}
+
 export const THEME9_BLOCK_RENDERERS: ThemeBlockRenderers = {
   "content.hero": HeroBlock,
+  "content.audience-paths": AudiencePathsBlock,
   "content.about": AboutBlock,
+  "content.topic-hub": TopicHubBlock,
+  "content.featured-education": FeaturedEducationBlock,
+  "content.guided-care-process": GuidedCareProcessBlock,
+  "content.professional-path": ProfessionalPathBlock,
+  "content.credentials": CredentialsBlock,
 };

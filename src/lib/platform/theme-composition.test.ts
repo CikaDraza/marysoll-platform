@@ -8,6 +8,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { FEATURE_BLOCK_REGISTRY } from "./blocks";
 import {
   THEME_COMPOSITIONS,
   cmsBlockTypes,
@@ -136,18 +137,9 @@ describe.each(THEME_COMPOSITIONS)("$theme", (composition) => {
   });
 
   it("svaki cms-block ima poznat blockType i neprazan uslov", () => {
-    const KNOWN = new Set([
-      "content.hero",
-      "content.about",
-      "content.team",
-      "services.catalog",
-      "booking.services",
-      "content.testimonials",
-      "content.gallery",
-      "content.faq",
-      "content.blog",
-      "content.perks",
-    ]);
+    // Izvedeno iz registry-ja, ne hardkodirano: inventar i registry ne smeju da
+    // se raziđu kad se doda nov blok.
+    const KNOWN = new Set<string>(FEATURE_BLOCK_REGISTRY.types());
     for (const node of composition.nodes) {
       if (node.kind !== "cms-block") continue;
       expect(KNOWN.has(node.blockType), `nepoznat blockType ${node.blockType}`).toBe(true);
@@ -166,6 +158,9 @@ describe.each(THEME_COMPOSITIONS)("$theme", (composition) => {
     for (const node of composition.nodes) {
       if (node.kind !== "cms-block") continue;
       if (node.conditional.startsWith("always")) continue;
+      // Sekcije nastale u ThemeDocument eri nikad nisu imale `*Enabled` prop —
+      // vidljivost im je postojanje bloka, pa nemaju flag da imenuju.
+      if (node.conditional === "section-enabled") continue;
       const named = ALL_FLAGS.filter((f) => node.conditional.includes(f));
       expect(named.length, `${node.source}: uslov ne imenuje flag`).toBeGreaterThan(0);
       for (const flag of named) {

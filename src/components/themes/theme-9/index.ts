@@ -1,12 +1,24 @@
 /** theme-9 „Expert Editorial" — education-first tema (prvi tenant: Marina). */
 export { Theme9About } from "./AboutSection";
 export type { Theme9AboutProps } from "./AboutSection";
+export { Theme9AudiencePaths } from "./AudiencePaths";
+export type { Theme9AudiencePathsProps } from "./AudiencePaths";
 export { BookingCta } from "./BookingCta";
+export { Theme9Credentials } from "./Credentials";
+export type { Theme9CredentialsProps } from "./Credentials";
+export { Theme9FeaturedEducation } from "./FeaturedEducation";
+export type { Theme9FeaturedEducationProps } from "./FeaturedEducation";
 export { Theme9Footer } from "./Footer";
 export type { Theme9FooterProps } from "./Footer";
+export { Theme9GuidedCareProcess } from "./GuidedCareProcess";
+export type { Theme9GuidedCareProcessProps } from "./GuidedCareProcess";
 export { Theme9Header } from "./Header";
 export { Theme9Hero } from "./Hero";
 export type { Theme9HeroProps } from "./Hero";
+export { Theme9ProfessionalPath } from "./ProfessionalPath";
+export type { Theme9ProfessionalPathProps } from "./ProfessionalPath";
+export { Theme9TopicHub } from "./TopicHub";
+export type { Theme9TopicHubProps } from "./TopicHub";
 export { ArrowCircle, Chip, Eyebrow } from "./primitives";
 export { Reveal } from "./Reveal";
 export { THEME9_BLOCK_RENDERERS } from "./blocks";

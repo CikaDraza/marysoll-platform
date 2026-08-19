@@ -1098,6 +1098,105 @@ export interface LandingStructure {
         secondary?: { text: string; href: string };
       };
     };
+
+    // ── theme-9 „Expert Editorial" sekcije ───────────────────────────────────
+    // Šest autorskih (`content.*`) sekcija education-first teme. Sve su
+    // OPCIONE i podrazumevano ISKLJUČENE — postojeći tenanti ne smeju dobiti
+    // prazne blokove. Nijedna nije domenski entitet: `featuredEducation` i
+    // `professionalPath` su marketinški teaseri dok ne prikazuju stvarni
+    // `EducationOffering` (tada prelaze na `education.*` + capability).
+
+    /** Dve putanje na početnoj: „za tebe lično" i „za tvoj tim". */
+    audiencePaths?: {
+      enabled: boolean;
+      eyebrow?: string;
+      headline?: string;
+      paths?: {
+        id: string;
+        chip?: string;
+        title: string;
+        lead?: string;
+        bullets?: string[];
+        href?: string;
+        /** Vizuelni ton kartice; tema odlučuje kako ga crta. */
+        tone?: "surface" | "accent";
+      }[];
+    };
+
+    /** Filtrirana lista stručnih tema (procena kože, aktivni sastojci, SPF…). */
+    topicHub?: {
+      enabled: boolean;
+      eyebrow?: string;
+      headline?: string;
+      filters?: { id: string; label: string }[];
+      topics?: {
+        id: string;
+        /** Ključ filtera kome tema pripada; `filters[].id`. */
+        group?: string;
+        title: string;
+        lead?: string;
+        tags?: string[];
+        href?: string;
+      }[];
+    };
+
+    /** Metod rada kroz korake (intake → plan → praćenje). */
+    guidedCareProcess?: {
+      enabled: boolean;
+      eyebrow?: string;
+      headline?: string;
+      lead?: string;
+      steps?: { title: string; text?: string }[];
+    };
+
+    /** Stubovi kredibiliteta — obrazovanje, sertifikacija, stručni dokaz. */
+    credentials?: {
+      enabled: boolean;
+      eyebrow?: string;
+      headline?: string;
+      lead?: string;
+      pillars?: { title: string; text?: string }[];
+      note?: string;
+    };
+
+    /**
+     * Istaknuta edukacija. Dok je `details` prazno, sekcija je teaser („u
+     * pripremi") — zato `content.*`, a ne `education.*`.
+     */
+    featuredEducation?: {
+      enabled: boolean;
+      eyebrow?: string;
+      status?: string;
+      headline?: string;
+      lead?: string;
+      learn?: string[];
+      details?: {
+        format?: string;
+        duration?: string;
+        startDate?: string;
+        price?: string;
+      };
+      /** Tekst umesto nepotvrđene vrednosti (npr. „u pripremi"). */
+      pendingLabel?: string;
+      cta?: { text: string; href: string };
+      note?: string;
+    };
+
+    /** Program za salone i timove — inquiry kanal, bez samostalnog checkout-a. */
+    professionalPath?: {
+      enabled: boolean;
+      eyebrow?: string;
+      headline?: string;
+      lead?: string;
+      note?: string;
+      formats?: {
+        kind?: string;
+        title: string;
+        text?: string;
+        priceFrom?: string;
+      }[];
+      cta?: { text: string; href: string };
+    };
   };
 
   pages: {

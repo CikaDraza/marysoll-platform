@@ -15,7 +15,16 @@ import type {
   ContentAboutData,
   ContentHeroData,
 } from "@/lib/platform/blocks/types";
-import { theme9AboutProps, theme9HeroProps } from "./blockProps";
+import {
+  theme9AboutProps,
+  theme9AudiencePathsProps,
+  theme9CredentialsProps,
+  theme9FeaturedEducationProps,
+  theme9GuidedCareProcessProps,
+  theme9HeroProps,
+  theme9ProfessionalPathProps,
+  theme9TopicHubProps,
+} from "./blockProps";
 
 const identity = (href: string) => href;
 const prefixed = (href: string) => `/marina${href}`;
@@ -210,5 +219,137 @@ describe("theme9AboutProps", () => {
 
   it("bez authoredStats kredencijali su prazni, ne undefined", () => {
     expect(theme9AboutProps(aboutData()).credentials).toEqual([]);
+  });
+});
+
+// ─── autorske sekcije theme-9 ────────────────────────────────────────────────
+// Zajednička invarijanta svih šest: prazan CMS daje PRAZAN NIZ, nikad
+// `undefined` — komponenta sme da radi `.map` bez guarda.
+
+describe("theme9 autorske sekcije — prazan CMS", () => {
+  it("svi maperi vraćaju prazne nizove umesto undefined", () => {
+    expect(
+      theme9AudiencePathsProps({ content: undefined }, identity).paths,
+    ).toEqual([]);
+
+    const hub = theme9TopicHubProps({ content: undefined }, identity);
+    expect(hub.topics).toEqual([]);
+    expect(hub.filters).toEqual([]);
+
+    expect(
+      theme9GuidedCareProcessProps({ content: undefined }).steps,
+    ).toEqual([]);
+    expect(theme9CredentialsProps({ content: undefined }).pillars).toEqual([]);
+    expect(
+      theme9FeaturedEducationProps({ content: undefined }, identity).learn,
+    ).toEqual([]);
+    expect(
+      theme9ProfessionalPathProps({ content: undefined }, identity).formats,
+    ).toEqual([]);
+  });
+});
+
+describe("theme9AudiencePathsProps", () => {
+  it("prolazi href kroz resolveHref, a bez href-a ga izostavlja", () => {
+    const props = theme9AudiencePathsProps(
+      {
+        content: {
+          enabled: true,
+          paths: [
+            { id: "a", title: "Lična nega", href: "/za-klijente", tone: "surface" },
+            { id: "b", title: "Saloni" },
+          ],
+        },
+      },
+      prefixed,
+    );
+
+    expect(props.paths[0].href).toBe("/marina/za-klijente");
+    expect(props.paths[1].href).toBeUndefined();
+    expect(props.paths[1].bullets).toEqual([]);
+  });
+});
+
+describe("theme9TopicHubProps", () => {
+  it("čuva group kao ključ filtera i normalizuje tagove", () => {
+    const props = theme9TopicHubProps(
+      {
+        content: {
+          enabled: true,
+          filters: [{ id: "aktivni", label: "Aktivni sastojci" }],
+          topics: [
+            { id: "t1", title: "Retinol", group: "aktivni", tags: ["nega"] },
+            { id: "t2", title: "SPF" },
+          ],
+        },
+      },
+      identity,
+    );
+
+    expect(props.filters).toEqual([{ id: "aktivni", label: "Aktivni sastojci" }]);
+    expect(props.topics[0].group).toBe("aktivni");
+    expect(props.topics[1].tags).toEqual([]);
+  });
+});
+
+describe("theme9FeaturedEducationProps", () => {
+  it("uvek daje četiri reda detalja, redom format → trajanje → datum → cena", () => {
+    const props = theme9FeaturedEducationProps(
+      { content: { enabled: true, details: { format: "Online" } } },
+      identity,
+    );
+
+    expect(props.details.map((d) => d.label)).toEqual([
+      "Format",
+      "Trajanje",
+      "Datum početka",
+      "Cena",
+    ]);
+    expect(props.details[0].value).toBe("Online");
+    expect(props.details[1].value).toBeUndefined();
+  });
+
+  it("pendingLabel ima podrazumevanu vrednost", () => {
+    expect(
+      theme9FeaturedEducationProps({ content: undefined }, identity).pendingLabel,
+    ).toBe("Uskoro");
+    expect(
+      theme9FeaturedEducationProps(
+        { content: { enabled: true, pendingLabel: "Marina potvrđuje" } },
+        identity,
+      ).pendingLabel,
+    ).toBe("Marina potvrđuje");
+  });
+
+  it("razrešava CTA href, a bez CTA ga izostavlja", () => {
+    expect(
+      theme9FeaturedEducationProps(
+        { content: { enabled: true, cta: { text: "Prijavi", href: "/prijava" } } },
+        prefixed,
+      ).cta,
+    ).toEqual({ text: "Prijavi", href: "/marina/prijava" });
+
+    expect(
+      theme9FeaturedEducationProps({ content: { enabled: true } }, identity).cta,
+    ).toBeUndefined();
+  });
+});
+
+describe("theme9ProfessionalPathProps", () => {
+  it("prenosi formate i razrešava CTA", () => {
+    const props = theme9ProfessionalPathProps(
+      {
+        content: {
+          enabled: true,
+          formats: [{ title: "Radionica", priceFrom: "od 30.000 RSD" }],
+          cta: { text: "Zatraži predlog", href: "/kontakt" },
+        },
+      },
+      prefixed,
+    );
+
+    expect(props.formats).toHaveLength(1);
+    expect(props.formats[0].priceFrom).toBe("od 30.000 RSD");
+    expect(props.cta?.href).toBe("/marina/kontakt");
   });
 });

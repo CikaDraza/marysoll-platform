@@ -21,22 +21,51 @@ import { FEATURE_BLOCK_REGISTRY, createFeatureBlockRegistry } from "./registry";
 import type { FeatureBlockDefinition, FeatureBlockType } from "./types";
 
 describe("registracija", () => {
-  it("registruje svih deset blokova iz mapiranja spec 6", () => {
-    expect(FEATURE_BLOCK_DEFINITIONS).toHaveLength(10);
-    expect(FEATURE_BLOCK_REGISTRY.types().sort()).toEqual(
-      [
-        "booking.services",
-        "content.about",
-        "content.blog",
-        "content.faq",
-        "content.gallery",
-        "content.hero",
-        "content.perks",
-        "content.team",
-        "content.testimonials",
-        "services.catalog",
-      ].sort(),
+  /** Deset blokova iz mapiranja spec 6 — osnovni skup svih tema 1–8. */
+  const SPEC6_BLOCKS = [
+    "booking.services",
+    "content.about",
+    "content.blog",
+    "content.faq",
+    "content.gallery",
+    "content.hero",
+    "content.perks",
+    "content.team",
+    "content.testimonials",
+    "services.catalog",
+  ];
+
+  /**
+   * theme-9 „Expert Editorial" autorske sekcije. Svi su `content.*` i svi imaju
+   * `capability: null` — ako neki od njih ikad postane domenski (`education.*`),
+   * mora istovremeno dobiti i capability, pa test ispod to i proverava.
+   */
+  const THEME9_BLOCKS = [
+    "content.audience-paths",
+    "content.credentials",
+    "content.featured-education",
+    "content.guided-care-process",
+    "content.professional-path",
+    "content.topic-hub",
+  ];
+
+  it("registruje spec-6 blokove i theme-9 autorske sekcije", () => {
+    expect(FEATURE_BLOCK_DEFINITIONS).toHaveLength(
+      SPEC6_BLOCKS.length + THEME9_BLOCKS.length,
     );
+    expect(FEATURE_BLOCK_REGISTRY.types().sort()).toEqual(
+      [...SPEC6_BLOCKS, ...THEME9_BLOCKS].sort(),
+    );
+  });
+
+  it("nijedan domenski blok nema capability: null", () => {
+    for (const def of FEATURE_BLOCK_DEFINITIONS) {
+      if (def.type.startsWith("content.")) continue;
+      // `services.catalog` i `booking.services` su T2A placeholderi (spec 9);
+      // svaki NOVI domenski blok mora doći sa capability-jem.
+      if (SPEC6_BLOCKS.includes(def.type)) continue;
+      expect(def.capability, def.type).not.toBeNull();
+    }
   });
 
   it("pokriva svaki tip koji adapter ume da napravi", () => {

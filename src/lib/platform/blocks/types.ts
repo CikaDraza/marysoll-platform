@@ -125,6 +125,35 @@ export interface ContentPerksData {
 }
 
 /** Tipovi blokova koje registry poznaje + podaci koje njihov loader vraća. */
+// ─── theme-9 „Expert Editorial" — autorske sekcije ────────────────────────────
+// Sve su `content.*`: nose tekst koji vlasnica piše, ne domenske entitete.
+// `featuredEducation` i `professionalPath` postaju `education.*` (uz capability
+// i loader nad `EducationOffering`) tek kad prestanu da budu teaseri.
+
+export interface ContentAudiencePathsData {
+  content: Landing["audiencePaths"] | undefined;
+}
+
+export interface ContentTopicHubData {
+  content: Landing["topicHub"] | undefined;
+}
+
+export interface ContentGuidedCareProcessData {
+  content: Landing["guidedCareProcess"] | undefined;
+}
+
+export interface ContentCredentialsData {
+  content: Landing["credentials"] | undefined;
+}
+
+export interface ContentFeaturedEducationData {
+  content: Landing["featuredEducation"] | undefined;
+}
+
+export interface ContentProfessionalPathData {
+  content: Landing["professionalPath"] | undefined;
+}
+
 export interface BlockDataByType {
   "content.hero": ContentHeroData;
   "content.about": ContentAboutData;
@@ -136,6 +165,12 @@ export interface BlockDataByType {
   "content.faq": ContentFaqData;
   "content.blog": ContentBlogData;
   "content.perks": ContentPerksData;
+  "content.audience-paths": ContentAudiencePathsData;
+  "content.topic-hub": ContentTopicHubData;
+  "content.guided-care-process": ContentGuidedCareProcessData;
+  "content.credentials": ContentCredentialsData;
+  "content.featured-education": ContentFeaturedEducationData;
+  "content.professional-path": ContentProfessionalPathData;
 }
 
 export type FeatureBlockType = keyof BlockDataByType;
@@ -184,6 +219,13 @@ export interface BlockConfigByType {
   "content.faq": BaseBlockConfig;
   "content.blog": BaseBlockConfig;
   "content.perks": BaseBlockConfig;
+  // theme-9: sve nose samo `source` — nemaju varijante prikaza.
+  "content.audience-paths": BaseBlockConfig;
+  "content.topic-hub": BaseBlockConfig;
+  "content.guided-care-process": BaseBlockConfig;
+  "content.credentials": BaseBlockConfig;
+  "content.featured-education": BaseBlockConfig;
+  "content.professional-path": BaseBlockConfig;
 }
 
 // ─── Izvor podataka (request-scoped, dedupe) ──────────────────────────────────

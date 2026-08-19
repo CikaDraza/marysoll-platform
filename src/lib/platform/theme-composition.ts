@@ -45,7 +45,14 @@ export type LegacyCompositionNode =
       source: string;
       /** Tip bloka u novom kontraktu. */
       blockType: string;
-      /** Uslov pod kojim se danas renderuje; "always" = tema ignoriše flag. */
+      /**
+       * Uslov pod kojim se danas renderuje.
+       *   `"<flag>Enabled"`   — tema čita zatečeni CMS flag;
+       *   `"always…"`         — tema ignoriše flag i renderuje bezuslovno;
+       *   `"section-enabled"` — sekcija je nastala u ThemeDocument eri i nikad
+       *                         nije imala `*Enabled` prop: vidljivost JE
+       *                         postojanje bloka u dokumentu.
+       */
       conditional: string;
     }
   | {
@@ -341,11 +348,30 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
     // `booking.services`: Marinin proizvod je Consultation, zaseban domen
     // (`booking.consultations`) koji stiže u svom slice-u. Booking je ovde
     // launcher (Hero/Header CTA → `/termini`), ne inline sekcija — spec 6.10/6.11.
-    honoredFlags: ["heroEnabled", "aboutEnabled"],
+    honoredFlags: ["heroEnabled", "aboutEnabled", "blogEnabled"],
     nodes: [
       shell("theme-9/header"),
       cms("hero", "content.hero", "heroEnabled"),
+      cms("audiencePaths", "content.audience-paths", "section-enabled"),
       cms("about", "content.about", "aboutEnabled"),
+      cms("topicHub", "content.topic-hub", "section-enabled"),
+      cms(
+        "featuredEducation",
+        "content.featured-education",
+        "section-enabled",
+      ),
+      cms(
+        "guidedCareProcess",
+        "content.guided-care-process",
+        "section-enabled",
+      ),
+      cms(
+        "professionalPath",
+        "content.professional-path",
+        "section-enabled",
+      ),
+      cms("credentials", "content.credentials", "section-enabled"),
+      cms("blog", "content.blog", "blogEnabled"),
       shell("theme-9/footer"),
     ],
   },

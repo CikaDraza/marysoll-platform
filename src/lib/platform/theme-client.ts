@@ -36,6 +36,14 @@ const SECTION_DEFAULT_ENABLED = {
   faq: true,
   blog: false,
   perks: false,
+  // theme-9 „Expert Editorial" sekcije. `false` je obavezno: uključivanjem bi
+  // svih osam postojećih tema odjednom dobilo šest blokova bez renderera.
+  audiencePaths: false,
+  topicHub: false,
+  guidedCareProcess: false,
+  credentials: false,
+  featuredEducation: false,
+  professionalPath: false,
 } as const;
 
 export type LandingSectionKey = keyof typeof SECTION_DEFAULT_ENABLED;
@@ -59,9 +67,35 @@ const SECTION_BLOCK_MAP: Record<
   faq: { sectionType: "content", blockType: "content.faq" },
   blog: { sectionType: "content", blockType: "content.blog" },
   perks: { sectionType: "content", blockType: "content.perks" },
+  audiencePaths: {
+    sectionType: "content",
+    blockType: "content.audience-paths",
+  },
+  topicHub: { sectionType: "content", blockType: "content.topic-hub" },
+  guidedCareProcess: {
+    sectionType: "content",
+    blockType: "content.guided-care-process",
+  },
+  credentials: { sectionType: "content", blockType: "content.credentials" },
+  featuredEducation: {
+    sectionType: "content",
+    blockType: "content.featured-education",
+  },
+  professionalPath: {
+    sectionType: "content",
+    blockType: "content.professional-path",
+  },
 };
 
-/** Redosled sekcija na landing strani — isti kao u današnjim ThemeNLanding. */
+/**
+ * Redosled sekcija na landing strani — isti kao u današnjim ThemeNLanding.
+ *
+ * Ovo je redosled SASTAVLJANJA dokumenta, ne redosled renderovanja: konkretna
+ * tema crta blokove redom kojim ih poziva u svom JSX-u (i taj redosled čuva
+ * composition inventory + test). Zato su theme-9 sekcije dodate na kraj —
+ * ubacivanje između postojećih ključeva ne bi promenilo nijednu temu, samo bi
+ * sugerisalo redosled koji ovde ne važi.
+ */
 export const SECTION_ORDER: LandingSectionKey[] = [
   "hero",
   "about",
@@ -73,6 +107,12 @@ export const SECTION_ORDER: LandingSectionKey[] = [
   "faq",
   "blog",
   "perks",
+  "audiencePaths",
+  "topicHub",
+  "guidedCareProcess",
+  "credentials",
+  "featuredEducation",
+  "professionalPath",
 ];
 
 export function blockTypeForSection(key: LandingSectionKey): string {

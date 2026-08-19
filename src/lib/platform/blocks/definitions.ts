@@ -208,6 +208,93 @@ const contentPerks: FeatureBlockDefinition<"content.perks"> = {
   },
 };
 
+// ─── theme-9 „Expert Editorial" — autorske sekcije ────────────────────────────
+//
+// Šest blokova sa istim, trivijalnim loaderom: pročitaj svoju CMS sekciju i
+// vrati je. Nemaju varijante prikaza (config je samo `source`) i nemaju
+// capability — tekst koji vlasnica piše nije poslovna sposobnost.
+//
+// `content.featured-education` i `content.professional-path` su NAMERNO
+// `content.*`: dok prikazuju samo tekst, oni su teaseri. Kada budu crtali
+// stvarni `EducationOffering`, postaju `education.*` sa loaderom nad tim
+// modelom i `capability: "education.catalog"` — domenski naziv uz
+// `capability: null` je zabranjen (docs/TODO.md, Tvrde granice).
+
+const contentAudiencePaths: FeatureBlockDefinition<"content.audience-paths"> = {
+  type: "content.audience-paths",
+  schemaVersions: [1],
+  capability: null,
+  parseConfig: parseWith<"content.audience-paths">(sourceSchema("audiencePaths")),
+  async load({ deps }) {
+    const ls = await deps.landingStructure();
+    return { content: ls?.landing?.audiencePaths };
+  },
+};
+
+const contentTopicHub: FeatureBlockDefinition<"content.topic-hub"> = {
+  type: "content.topic-hub",
+  schemaVersions: [1],
+  capability: null,
+  parseConfig: parseWith<"content.topic-hub">(sourceSchema("topicHub")),
+  async load({ deps }) {
+    const ls = await deps.landingStructure();
+    return { content: ls?.landing?.topicHub };
+  },
+};
+
+const contentGuidedCareProcess: FeatureBlockDefinition<"content.guided-care-process"> =
+  {
+    type: "content.guided-care-process",
+    schemaVersions: [1],
+    capability: null,
+    parseConfig: parseWith<"content.guided-care-process">(
+      sourceSchema("guidedCareProcess"),
+    ),
+    async load({ deps }) {
+      const ls = await deps.landingStructure();
+      return { content: ls?.landing?.guidedCareProcess };
+    },
+  };
+
+const contentCredentials: FeatureBlockDefinition<"content.credentials"> = {
+  type: "content.credentials",
+  schemaVersions: [1],
+  capability: null,
+  parseConfig: parseWith<"content.credentials">(sourceSchema("credentials")),
+  async load({ deps }) {
+    const ls = await deps.landingStructure();
+    return { content: ls?.landing?.credentials };
+  },
+};
+
+const contentFeaturedEducation: FeatureBlockDefinition<"content.featured-education"> =
+  {
+    type: "content.featured-education",
+    schemaVersions: [1],
+    capability: null,
+    parseConfig: parseWith<"content.featured-education">(
+      sourceSchema("featuredEducation"),
+    ),
+    async load({ deps }) {
+      const ls = await deps.landingStructure();
+      return { content: ls?.landing?.featuredEducation };
+    },
+  };
+
+const contentProfessionalPath: FeatureBlockDefinition<"content.professional-path"> =
+  {
+    type: "content.professional-path",
+    schemaVersions: [1],
+    capability: null,
+    parseConfig: parseWith<"content.professional-path">(
+      sourceSchema("professionalPath"),
+    ),
+    async load({ deps }) {
+      const ls = await deps.landingStructure();
+      return { content: ls?.landing?.professionalPath };
+    },
+  };
+
 export const FEATURE_BLOCK_DEFINITIONS = [
   contentHero,
   contentAbout,
@@ -219,4 +306,10 @@ export const FEATURE_BLOCK_DEFINITIONS = [
   contentFaq,
   contentBlog,
   contentPerks,
+  contentAudiencePaths,
+  contentTopicHub,
+  contentGuidedCareProcess,
+  contentCredentials,
+  contentFeaturedEducation,
+  contentProfessionalPath,
 ] as const satisfies readonly FeatureBlockDefinition<FeatureBlockType>[];

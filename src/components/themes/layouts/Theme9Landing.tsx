@@ -4,8 +4,11 @@
  *
  * Prva education-first tema; prvi realni tenant je Marina, ali tema NIJE Marina
  * i ne sme da nosi njeno ime ni fallback podatke. Slice 2 nosi PREZENTACIJU:
- *   hero / about        → ThemeBlock (postojeći tipovi)
- *   header / footer     → theme-9 native (view model iz `buildThemeNative`)
+ *   hero / about / blog                    → ThemeBlock (postojeći tipovi)
+ *   audience-paths / topic-hub /
+ *   featured-education / guided-care-process /
+ *   professional-path / credentials        → ThemeBlock (autorske sekcije teme)
+ *   header / footer                        → theme-9 native view model
  *
  * ŠTA NAMERNO NIJE OVDE:
  *   - `services.catalog` / `booking.services` — Marinina konsultacija NIJE
@@ -58,9 +61,18 @@ export function Theme9Landing(props: ThemeLandingProps) {
           kicker={native.header.kicker}
         />
 
+        {/* Redosled je redosled sekcija na strani — mora se poklapati sa
+            inventarom u `theme-composition.ts` (čuva ga composition test). */}
         <main className="flex-1">
           <ThemeBlock document={document} type="content.hero" />
+          <ThemeBlock document={document} type="content.audience-paths" />
           <ThemeBlock document={document} type="content.about" />
+          <ThemeBlock document={document} type="content.topic-hub" />
+          <ThemeBlock document={document} type="content.featured-education" />
+          <ThemeBlock document={document} type="content.guided-care-process" />
+          <ThemeBlock document={document} type="content.professional-path" />
+          <ThemeBlock document={document} type="content.credentials" />
+          <ThemeBlock document={document} type="content.blog" />
         </main>
 
         <Theme9Footer

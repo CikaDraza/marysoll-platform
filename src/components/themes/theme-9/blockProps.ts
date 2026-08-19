@@ -8,10 +8,25 @@
  * ovde NE pojavljuje ni `services.catalog` ni `booking.services`, jer bi to
  * značilo da je Marinina konsultacija salonska usluga. Nije.
  */
-import type { ContentAboutData, ContentHeroData } from "@/lib/platform/blocks/types";
+import type {
+  ContentAboutData,
+  ContentAudiencePathsData,
+  ContentCredentialsData,
+  ContentFeaturedEducationData,
+  ContentGuidedCareProcessData,
+  ContentHeroData,
+  ContentProfessionalPathData,
+  ContentTopicHubData,
+} from "@/lib/platform/blocks/types";
 import { resolveHeroCtas } from "@/helpers/heroCta";
 import type { Theme9AboutProps } from "./AboutSection";
+import type { Theme9AudiencePathsProps } from "./AudiencePaths";
+import type { Theme9CredentialsProps } from "./Credentials";
+import type { Theme9FeaturedEducationProps } from "./FeaturedEducation";
+import type { Theme9GuidedCareProcessProps } from "./GuidedCareProcess";
 import type { Theme9HeroProps } from "./Hero";
+import type { Theme9ProfessionalPathProps } from "./ProfessionalPath";
+import type { Theme9TopicHubProps } from "./TopicHub";
 
 /** „Procena kože · Aktivni sastojci · …" — iz `whereWhatForWhom`, razdvojeno tačkom ili zarezom. */
 function keywordsOf(raw?: string): string[] {
@@ -85,5 +100,120 @@ export function theme9AboutProps(data: ContentAboutData): Theme9AboutProps {
     image: image?.src
       ? { url: image.src, alt: image.alt || data.salonName }
       : undefined,
+  };
+}
+
+// ─── theme-9 autorske sekcije ────────────────────────────────────────────────
+// Mapiranja su namerno plitka: CMS oblik je već oblikovan po ovim sekcijama, pa
+// mapper samo popunjava praznine (prazan niz umesto `undefined`) i razrešava
+// interne linkove. Nema izvedene logike — nju drži komponenta.
+
+export function theme9AudiencePathsProps(
+  data: ContentAudiencePathsData,
+  resolveHref: (href: string) => string,
+): Theme9AudiencePathsProps {
+  const c = data.content;
+  return {
+    eyebrow: c?.eyebrow,
+    headline: c?.headline,
+    paths: (c?.paths ?? []).map((p) => ({
+      id: p.id,
+      chip: p.chip,
+      title: p.title,
+      lead: p.lead,
+      bullets: p.bullets ?? [],
+      href: p.href ? resolveHref(p.href) : undefined,
+      tone: p.tone,
+    })),
+  };
+}
+
+export function theme9TopicHubProps(
+  data: ContentTopicHubData,
+  resolveHref: (href: string) => string,
+): Theme9TopicHubProps {
+  const c = data.content;
+  return {
+    eyebrow: c?.eyebrow,
+    headline: c?.headline,
+    filters: c?.filters ?? [],
+    topics: (c?.topics ?? []).map((t) => ({
+      id: t.id,
+      group: t.group,
+      title: t.title,
+      lead: t.lead,
+      tags: t.tags ?? [],
+      href: t.href ? resolveHref(t.href) : undefined,
+    })),
+  };
+}
+
+export function theme9GuidedCareProcessProps(
+  data: ContentGuidedCareProcessData,
+): Theme9GuidedCareProcessProps {
+  const c = data.content;
+  return {
+    eyebrow: c?.eyebrow,
+    headline: c?.headline,
+    lead: c?.lead,
+    steps: c?.steps ?? [],
+  };
+}
+
+export function theme9CredentialsProps(
+  data: ContentCredentialsData,
+): Theme9CredentialsProps {
+  const c = data.content;
+  return {
+    eyebrow: c?.eyebrow,
+    headline: c?.headline,
+    lead: c?.lead,
+    pillars: c?.pillars ?? [],
+    note: c?.note,
+  };
+}
+
+/** Redosled redova u kartici detalja; prazna vrednost pada na `pendingLabel`. */
+const FEATURED_DETAIL_LABELS = [
+  ["format", "Format"],
+  ["duration", "Trajanje"],
+  ["startDate", "Datum početka"],
+  ["price", "Cena"],
+] as const;
+
+export function theme9FeaturedEducationProps(
+  data: ContentFeaturedEducationData,
+  resolveHref: (href: string) => string,
+): Theme9FeaturedEducationProps {
+  const c = data.content;
+  const details = c?.details;
+  return {
+    eyebrow: c?.eyebrow,
+    status: c?.status,
+    headline: c?.headline,
+    lead: c?.lead,
+    learn: c?.learn ?? [],
+    details: FEATURED_DETAIL_LABELS.map(([key, label]) => ({
+      label,
+      value: details?.[key],
+    })),
+    pendingLabel: c?.pendingLabel || "Uskoro",
+    cta: c?.cta ? { text: c.cta.text, href: resolveHref(c.cta.href) } : undefined,
+    note: c?.note,
+  };
+}
+
+export function theme9ProfessionalPathProps(
+  data: ContentProfessionalPathData,
+  resolveHref: (href: string) => string,
+): Theme9ProfessionalPathProps {
+  const c = data.content;
+  return {
+    eyebrow: c?.eyebrow,
+    headline: c?.headline,
+    lead: c?.lead,
+    note: c?.note,
+    formats: c?.formats ?? [],
+    cta: c?.cta ? { text: c.cta.text, href: resolveHref(c.cta.href) } : undefined,
   };
 }
