@@ -112,7 +112,8 @@ export async function notifyAdminsCompletionPrompt(params: {
       body: `⏳ ${message}`,
       icon,
       tag: `loyalty-completion-prompt-${params.appointmentId}`,
-      url: ADMIN_APPOINTMENTS_URL,
+      // Deep-link: lista sama skoči na stranu tog termina i osvetli ga.
+      url: `${ADMIN_APPOINTMENTS_URL}&appointmentId=${params.appointmentId}`,
     });
   } catch (err) {
     console.error("[loyalty] completion prompt failed:", err);

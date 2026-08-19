@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/loyalty",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/newsletter/campaigns/scheduler",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

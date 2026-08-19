@@ -30,7 +30,7 @@ import {
   newsletterVerificationTemplate,
   newsletterPromotionTemplate,
 } from "@/lib/email/templates/otherTemplates";
-import { wrapEmailLayout } from "@/lib/email/wrapEmailLayout";
+import { wrapEmailLayout, resolveSalon } from "@/lib/email/wrapEmailLayout";
 import { Resend } from "resend";
 import { resend } from "./resend";
 import { resolveTenantNewsletterSender } from "@/lib/email/tenantEmailSettings";
@@ -353,10 +353,17 @@ export async function sendSuperAdminChatNotification(
     ? "💬 Nova poruka od Marysoll podrške"
     : `💬 Nova poruka od salona ${data.salonName}`;
 
+  // Isti bulletproof šablon kao ctaButton u templates/: boja na <td> (bgcolor +
+  // background-color) i padding na ćeliji — Outlook ne boji pouzdano inline <a>
+  // niti mu primenjuje padding, pa bi belo na belom nestalo.
   const button = data.url
-    ? `<p style="margin:24px 0 8px;">
-         <a href="${data.url}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;">Otvori chat</a>
-       </p>`
+    ? `<table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin:24px 0 8px;">
+         <tr>
+           <td align="center" bgcolor="#7c3aed" style="border-radius:8px;background-color:#7c3aed;padding:12px 24px;mso-padding-alt:12px 24px;">
+             <a href="${data.url}" style="display:inline-block;color:#ffffff;text-decoration:none;font-weight:600;">Otvori chat</a>
+           </td>
+         </tr>
+       </table>`
     : "";
 
   const content = `
@@ -561,6 +568,79 @@ export async function sendNewsletterEmail(
   }
 
   return { success: true, messageId: data?.id };
+}
+
+/** Jedna poruka u newsletter batch-u — sadržaj je već personalizovan po primaocu. */
+export interface NewsletterBatchMessage {
+  to: string;
+  subject: string;
+  htmlContent: string;
+  unsubscribeUrl: string;
+  trackingData?: {
+    campaignId: string;
+    subscriberId: string;
+    trackingPixelId?: string;
+  };
+}
+
+/**
+ * Šalje jedan chunk newsletter poruka kroz Resend batch API (jedan HTTP poziv
+ * za sve primaoce u chunk-u), isti obrazac koji koristi `executeSend`.
+ *
+ * Slanje jedan-po-jedan je za kampanju od 50+ primalaca trajalo predugo da bi
+ * stalo u životni vek serverless funkcije, pa bi se slanje prekidalo u pola.
+ * Batch to svodi na jedan poziv po chunk-u.
+ *
+ * HTML se i dalje renderuje po primaocu (tracking pixel i unsubscribe link su
+ * jedinstveni), ali se brending saluna razrešava jednom za ceo chunk.
+ *
+ * Chunk mora biti <= NEWSLETTER_BATCH_SIZE; pozivalac deli listu i upisuje
+ * logove po chunk-u, da prekid usred slanja ne izgubi trag o već poslatom.
+ */
+export const NEWSLETTER_BATCH_SIZE = 50;
+
+export async function sendNewsletterBatch(
+  messages: NewsletterBatchMessage[],
+  tenantId?: string | null,
+): Promise<{ success: boolean; error?: unknown }> {
+  if (messages.length === 0) return { success: true };
+
+  const [sender, salon] = await Promise.all([
+    resolveTenantNewsletterSender(tenantId),
+    resolveSalon(tenantId),
+  ]);
+
+  const payload = await Promise.all(
+    messages.map(async (m) => {
+      const html = await newsletterPromotionTemplate({
+        clientName: "Pretplatniče/Pretplatnice",
+        subject: m.subject,
+        content: m.htmlContent,
+        unsubscribeUrl: m.unsubscribeUrl,
+        trackingData: m.trackingData,
+        tenantId,
+        salon,
+      });
+
+      return {
+        from: sender.from,
+        to: m.to,
+        subject: m.subject,
+        html,
+        text: htmlToText(html),
+        replyTo: sender.replyTo,
+      };
+    }),
+  );
+
+  const { error } = await sender.client.batch.send(payload);
+
+  if (error) {
+    console.error("❌ Resend newsletter batch error:", error);
+    return { success: false, error };
+  }
+
+  return { success: true };
 }
 
 /**

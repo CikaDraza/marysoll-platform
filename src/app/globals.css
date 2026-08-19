@@ -214,6 +214,34 @@ body {
   color: #c4b5fd; /* violet-300 */
 }
 
+/* Podsetnik "termini čekaju potvrdu" — pulsira samo dugme, da privuče oko bez
+   treperenja cele sekcije. Animira se box-shadow (compositor nit). */
+.pulse-cta {
+  animation: pulseCta 1.6s ease-out infinite;
+}
+/* Boja pulsa: --pulse-color na elementu, inače brend boja. */
+@keyframes pulseCta {
+  0% {
+    box-shadow: 0 0 0 0
+      color-mix(in srgb, var(--pulse-color, var(--primary-color)) 65%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 10px
+      color-mix(in srgb, var(--pulse-color, var(--primary-color)) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0
+      color-mix(in srgb, var(--pulse-color, var(--primary-color)) 0%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulse-cta {
+    animation: none;
+    box-shadow: 0 0 0 4px
+      color-mix(in srgb, var(--pulse-color, var(--primary-color)) 25%, transparent);
+  }
+}
+
 @keyframes fadeUp {
   to { opacity: 1; transform: translateY(0); }
 }

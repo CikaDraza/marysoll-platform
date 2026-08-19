@@ -3,10 +3,107 @@
  * ProfilTab — izdvojen iz app/dashboard/page.tsx (Faza 4c).
  * Sav state/handleri žive u AdminDashboard i stižu kroz DashboardTabProps.
  */
-import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline";
 import Image from "next/image";
+import type { RefObject } from "react";
 import { THEMES, card, inp, lbl } from "./shared";
 import type { DashboardTabProps } from "./types";
+
+/**
+ * Jedno polje za logo (sajt / notifikacije). Dva ovakva stoje jedno pored
+ * drugog u jednom redu, pa su akcije ikonice (olovka / kanta) umesto punih
+ * dugmadi koje su ranije trošile celu kolonu po visini.
+ */
+function LogoField({
+  label,
+  alt,
+  placeholder,
+  preview,
+  inputRef,
+  accept,
+  onChange,
+  onRemove,
+  hint,
+  priority,
+}: {
+  label: string;
+  alt: string;
+  placeholder: string;
+  preview: string | null | undefined;
+  inputRef: RefObject<HTMLInputElement | null>;
+  accept: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemove: () => void;
+  hint: string;
+  priority?: boolean;
+}) {
+  return (
+    // subgrid: labela / pregled / akcije / napomena se poravnavaju sa susednim
+    // poljem, bez obzira na to koliko redova zauzme tekst.
+    <div className="grid grid-rows-subgrid row-span-4 justify-items-center gap-3">
+      <p className={lbl + " w-full self-start"}>{label}</p>
+      <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
+        {preview ? (
+          <Image
+            src={preview}
+            alt={alt}
+            width={96}
+            height={96}
+            priority={priority}
+            className="w-full h-full object-contain"
+          />
+        ) : (
+          <span className="text-4xl">{placeholder}</span>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={onChange}
+      />
+      {preview ? (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            title="Promeni logo"
+            aria-label="Promeni logo"
+            className="w-9 h-9 flex items-center justify-center bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition"
+          >
+            <PencilIcon className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            title="Ukloni logo"
+            aria-label="Ukloni logo"
+            className="w-9 h-9 flex items-center justify-center border border-red-200 dark:border-red-800 text-red-500 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+          >
+            <TrashIcon className="w-4 h-4" />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="flex items-center gap-1.5 px-3 py-2 bg-violet-600 text-white text-sm font-semibold rounded-xl hover:bg-violet-700 transition"
+        >
+          <PlusIcon className="w-4 h-4" />
+          Dodaj logo
+        </button>
+      )}
+      <p className="text-[11px] text-gray-400 text-center">{hint}</p>
+    </div>
+  );
+}
 
 
 
@@ -52,87 +149,31 @@ export function ProfilTab(props: DashboardTabProps) {
           card + " lg:col-span-1 flex flex-col items-center gap-4"
         }
       >
-        <p className={lbl + " w-full"}>Logo sajta (i favicon)</p>
-        <div className="w-28 h-28 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
-          {sp.logoPreview ? (
-            <Image
-              src={sp.logoPreview}
-              alt="Logo"
-              width={112}
-              height={112}
-              className="w-full h-full object-contain"
-            />
-          ) : (
-            <span className="text-4xl">🏪</span>
-          )}
-        </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={sp.handleLogoChange}
-        />
-        <button
-          onClick={() => fileRef.current?.click()}
-          className="w-full py-2 bg-violet-600 text-white text-sm font-semibold rounded-xl hover:bg-violet-700 transition"
-        >
-          {sp.logoPreview ? "Promeni logo" : "Dodaj logo"}
-        </button>
-        {sp.logoPreview && (
-          <button
-            onClick={sp.removeLogo}
-            className="w-full py-2 border border-red-200 dark:border-red-800 text-red-500 text-sm rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition"
-          >
-            Ukloni logo
-          </button>
-        )}
-        <p className="text-[11px] text-gray-400 text-center">
-          PNG · JPG · WebP · Maks. 5 MB
-        </p>
-
-        {/* Logo za notifikacije i mejlove */}
-        <div className="w-full border-t border-gray-100 dark:border-gray-800 pt-4 flex flex-col items-center gap-3">
-          <p className={lbl + " w-full"}>Logo za notifikacije i mejlove</p>
-          <div className="w-28 h-28 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
-            {sp.notificationLogoPreview ? (
-              <Image
-                src={sp.notificationLogoPreview}
-                alt="Logo za notifikacije"
-                width={112}
-                height={112}
-                priority
-                className="w-full h-full object-contain"
-              />
-            ) : (
-              <span className="text-4xl">🔔</span>
-            )}
-          </div>
-          <input
-            ref={notifLogoRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            className="hidden"
-            onChange={sp.handleNotificationLogoChange}
+        {/* Oba loga u jednom redu — po pola širine kolone */}
+        <div className="w-full grid grid-cols-2 grid-rows-[auto_auto_auto_auto] gap-x-4 gap-y-3">
+          <LogoField
+            label="Logo sajta (i favicon)"
+            alt="Logo"
+            placeholder="🏪"
+            preview={sp.logoPreview}
+            inputRef={fileRef}
+            accept="image/*"
+            onChange={sp.handleLogoChange}
+            onRemove={sp.removeLogo}
+            hint="PNG · JPG · WebP · Maks. 5 MB"
           />
-          <button
-            onClick={() => notifLogoRef.current?.click()}
-            className="w-full py-2 bg-violet-600 text-white text-sm font-semibold rounded-xl hover:bg-violet-700 transition"
-          >
-            {sp.notificationLogoPreview ? "Promeni logo" : "Dodaj logo"}
-          </button>
-          {sp.notificationLogoPreview && (
-            <button
-              onClick={sp.removeNotificationLogo}
-              className="w-full py-2 border border-red-200 dark:border-red-800 text-red-500 text-sm rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition"
-            >
-              Ukloni logo
-            </button>
-          )}
-          <p className="text-[11px] text-gray-400 text-center">
-            Prikazuje se u mejlovima i push notifikacijama. PNG · JPG ·
-            WebP (bez SVG). Ako se ne postavi, koristi se Marysoll logo.
-          </p>
+          <LogoField
+            label="Logo za notifikacije i mejlove"
+            alt="Logo za notifikacije"
+            placeholder="🔔"
+            preview={sp.notificationLogoPreview}
+            inputRef={notifLogoRef}
+            accept="image/png,image/jpeg,image/webp"
+            onChange={sp.handleNotificationLogoChange}
+            onRemove={sp.removeNotificationLogo}
+            hint="Mejlovi i push notifikacije. PNG · JPG · WebP (bez SVG). Ako se ne postavi, koristi se Marysoll logo."
+            priority
+          />
         </div>
 
         {/* Branding colors */}

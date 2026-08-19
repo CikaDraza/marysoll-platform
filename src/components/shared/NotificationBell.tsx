@@ -50,9 +50,21 @@ function getNotificationHref(
     return `${panelBase}?tab=chat`;
   }
 
+  // Podsetnik da termin nije označen (Growth Studio) — vodi pravo na taj termin.
+  if (notification.type === "loyalty_completion_prompt") {
+    const href = `${panelBase}?tab=termini`;
+    return notification.appointmentId
+      ? `${href}&appointmentId=${notification.appointmentId}`
+      : href;
+  }
+
   if (notification.type.includes("appointment")) {
     const tab = isAdmin ? "termini" : "Moji Termini";
-    return `${panelBase}?tab=${encodeURIComponent(tab)}`;
+    const href = `${panelBase}?tab=${encodeURIComponent(tab)}`;
+    // Admin lista ume da skoči na konkretan termin (paging + skrol + highlight).
+    return isAdmin && notification.appointmentId
+      ? `${href}&appointmentId=${notification.appointmentId}`
+      : href;
   }
 
   if (notification.type.includes("testimonial")) {

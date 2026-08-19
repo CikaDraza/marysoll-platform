@@ -14,7 +14,8 @@ import {
   platformAudienceContactTypeCondition,
 } from "@/lib/newsletter/audienceFilter";
 import {
-  sendNewsletterEmail,
+  NEWSLETTER_BATCH_SIZE,
+  sendNewsletterBatch,
   sendNewsletterVerificationEmail,
 } from "./email/email";
 import { Types } from "mongoose";
@@ -406,79 +407,71 @@ export async function sendCampaignEmails(campaignId: string) {
     return { sentCount: 0, bounceCount: 0, status: "sent" as const };
   }
 
-  let sentCount = 0;
-  let bounceCount = 0;
+  function normalizeSlug(slug?: string) {
+    if (!slug) return "/";
+    if (slug.startsWith("http")) {
+      try {
+        return new URL(slug).pathname;
+      } catch {
+        return "/";
+      }
+    }
+    return slug.startsWith("/") ? slug : `/${slug}`;
+  }
 
-  for (const recipient of recipients) {
+  /** Odredišni URL CTA dugmeta je isti za sve primaoce — računa se jednom. */
+  let finalUrl: string;
+  if (campaign.campaignType === "email-landing" && campaign.landingPage?.slug) {
+    finalUrl = isPlatformCampaign
+      ? getPlatformNewsletterLandingUrl(campaign.landingPage.slug)
+      : getNewsletterLandingUrl(campaign.landingPage.slug);
+  } else {
+    const ctaSlug = normalizeSlug(campaign.ctaSlug);
+    finalUrl = isPlatformCampaign
+      ? campaign.ctaSlug?.startsWith("http")
+        ? campaign.ctaSlug
+        : platformBaseUrl
+      : campaign.ctaSlug?.startsWith("http")
+        ? campaign.ctaSlug
+        : `${getLandingBaseUrl(tenant)}${ctaSlug}`;
+  }
+
+  /**
+   * Primaoci koji već imaju log za ovu kampanju se preskaču. Bez toga bi svako
+   * ponovno pokretanje — ručno iz panela ili kroz scheduler recovery — poslalo
+   * mejl ponovo svima od prvog primaoca.
+   */
+  const existingLogs = await NewsletterLog.find({ campaignId: campaign._id })
+    .select("recipientEmail")
+    .lean<{ recipientEmail: string }[]>();
+  const alreadyProcessed = new Set(existingLogs.map((l) => l.recipientEmail));
+
+  // Isti Set hvata i duplikate unutar same liste primalaca — ručno unete liste
+  // ih redovno imaju, a bez ovoga bi ta adresa dobila mejl dvaput.
+  const pending = recipients.filter((r) => {
+    if (alreadyProcessed.has(r.email)) return false;
+    alreadyProcessed.add(r.email);
+    return true;
+  });
+
+  function buildMessage(recipient: Recipient) {
     const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/newsletter/unsubscribe?token=${recipient.unsubscribeToken}`;
     const trackingPixelId = crypto.randomUUID();
     const clickTrackingId = crypto.randomUUID();
-
-    const trackingData = {
-      campaignId: campaign._id.toString(),
-      subscriberId: recipient.subscriberId,
-      trackingPixelId,
-      clickTrackingId,
-    };
-
-    let finalUrl: string;
-    if (
-      campaign.campaignType === "email-landing" &&
-      campaign.landingPage?.slug
-    ) {
-      finalUrl = isPlatformCampaign
-        ? getPlatformNewsletterLandingUrl(campaign.landingPage.slug)
-        : getNewsletterLandingUrl(campaign.landingPage.slug);
-    } else {
-      function normalizeSlug(slug?: string) {
-        if (!slug) return "/";
-        if (slug.startsWith("http")) {
-          try {
-            return new URL(slug).pathname;
-          } catch {
-            return "/";
-          }
-        }
-        return slug.startsWith("/") ? slug : `/${slug}`;
-      }
-      const ctaSlug = normalizeSlug(campaign.ctaSlug);
-      finalUrl = isPlatformCampaign
-        ? campaign.ctaSlug?.startsWith("http")
-          ? campaign.ctaSlug
-          : platformBaseUrl
-        : campaign.ctaSlug?.startsWith("http")
-        ? campaign.ctaSlug
-        : `${getLandingBaseUrl(tenant)}${ctaSlug}`;
-    }
+    const campaignId = campaign._id.toString();
 
     const trackingCtaUrl =
       `${trackingDomain}/api/newsletter/track/click` +
-      `?campaign=${trackingData.campaignId}` +
-      `&subscriber=${trackingData.subscriberId}` +
-      `&log=${trackingData.clickTrackingId}` +
+      `?campaign=${campaignId}` +
+      `&subscriber=${recipient.subscriberId}` +
+      `&log=${clickTrackingId}` +
       `&url=${encodeURIComponent(finalUrl)}`;
 
     const trackingOpenUrl =
       `${trackingDomain}/api/newsletter/track/open` +
-      `?campaign=${trackingData.campaignId}` +
-      `&subscriber=${trackingData.subscriberId}` +
-      `&log=${trackingData.trackingPixelId}`;
-
-    const newsletterLog = await NewsletterLog.create({
-      scope: campaign.scope ?? "tenant",
-      tenantId: isPlatformCampaign ? undefined : campaign.tenantId,
-      platformOwnerId: isPlatformCampaign
-        ? campaign.platformOwnerId
-        : undefined,
-      campaignId: campaign._id,
-      recipientEmail: recipient.email,
-      ...(Types.ObjectId.isValid(recipient.subscriberId) && {
-        recipientProfileId: new Types.ObjectId(recipient.subscriberId),
-      }),
-      status: "sent",
-      trackingPixelId,
-      clickTrackingId,
-    });
+      `?campaign=${campaignId}` +
+      `&subscriber=${recipient.subscriberId}` +
+      `&log=${trackingPixelId}`;
 
     const personalizedContent = campaign.content
       .replace(/{{clientName}}/g, recipient.name || "poštovana")
@@ -486,26 +479,73 @@ export async function sendCampaignEmails(campaignId: string) {
       .replace(/{{trackingCtaUrl}}/g, trackingCtaUrl)
       .replace(/{{trackingOpenUrl}}/g, trackingOpenUrl);
 
-    try {
-      await sendNewsletterEmail(
-        recipient.email,
-        campaign.subject,
-        personalizedContent,
+    return {
+      recipient,
+      trackingPixelId,
+      clickTrackingId,
+      message: {
+        to: recipient.email,
+        subject: campaign.subject,
+        htmlContent: personalizedContent,
         unsubscribeUrl,
-        trackingData,
-        isPlatformCampaign ? null : campaignTenantId,
-      );
-
-      sentCount++;
-      campaign.sentCount = sentCount;
-    } catch (err) {
-      console.error(`Greška pri slanju na ${recipient.email}:`, err);
-      newsletterLog.status = "bounced";
-      await newsletterLog.save();
-      bounceCount++;
-      campaign.bounceCount = bounceCount;
-    }
+        trackingData: {
+          campaignId,
+          subscriberId: recipient.subscriberId,
+          trackingPixelId,
+        },
+      },
+    };
   }
+
+  /**
+   * Slanje ide u chunk-ovima kroz Resend batch API — jedan HTTP poziv po
+   * chunk-u umesto jednog po primaocu. Logovi se upisuju odmah posle svakog
+   * chunk-a, pa prekid usred kampanje ne izgubi trag o već poslatom.
+   */
+  for (let i = 0; i < pending.length; i += NEWSLETTER_BATCH_SIZE) {
+    const prepared = pending
+      .slice(i, i + NEWSLETTER_BATCH_SIZE)
+      .map(buildMessage);
+
+    const { success } = await sendNewsletterBatch(
+      prepared.map((p) => p.message),
+      isPlatformCampaign ? null : campaignTenantId,
+    );
+
+    await NewsletterLog.insertMany(
+      prepared.map((p) => ({
+        scope: campaign.scope ?? "tenant",
+        tenantId: isPlatformCampaign ? undefined : campaign.tenantId,
+        platformOwnerId: isPlatformCampaign
+          ? campaign.platformOwnerId
+          : undefined,
+        campaignId: campaign._id,
+        recipientEmail: p.recipient.email,
+        ...(Types.ObjectId.isValid(p.recipient.subscriberId) && {
+          recipientProfileId: new Types.ObjectId(p.recipient.subscriberId),
+        }),
+        status: success ? "sent" : "bounced",
+        trackingPixelId: p.trackingPixelId,
+        clickTrackingId: p.clickTrackingId,
+      })),
+    );
+  }
+
+  /**
+   * Brojači se izvode iz logova, a ne iz brojača u petlji — tako su tačni i kad
+   * je kampanja dovršena u više navrata. Status logova raste sent → opened →
+   * clicked, pa je sve što nije "bounced" uspešno isporučeno.
+   */
+  const [sentCount, bounceCount] = await Promise.all([
+    NewsletterLog.countDocuments({
+      campaignId: campaign._id,
+      status: { $ne: "bounced" },
+    }),
+    NewsletterLog.countDocuments({
+      campaignId: campaign._id,
+      status: "bounced",
+    }),
+  ]);
 
   campaign.status = sentCount > 0 ? "sent" : "failed";
   campaign.sentCount = sentCount;
