@@ -35,6 +35,7 @@ const SalonProfileSchema = new mongoose.Schema(
         hero: {
           enabled: { type: Boolean, default: true },
           eyebrow: { type: String },
+          quote: { type: String },
           headline: { type: String },
           subheadline: { type: String },
           whereWhatForWhom: { type: String },
@@ -97,7 +98,7 @@ const SalonProfileSchema = new mongoose.Schema(
             default: [],
           },
           showCredentials: { type: Boolean, default: true },
-          pullQuote: { type: String },
+          badge: { name: { type: String }, role: { type: String } },
           links: {
             type: [
               {

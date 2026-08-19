@@ -92,6 +92,7 @@ const contentAbout: FeatureBlockDefinition<"content.about"> = {
     ]);
     return {
       content: ls?.landing?.about,
+      salonLogo: salon.logo ?? undefined,
       stats,
       authoredStats: ls?.landing?.stats,
       salonName: salon.name,

@@ -66,6 +66,11 @@ export interface ContentAboutData {
    * osnivačice. Blok ga traži sam, ne pozajmljuje od hero bloka (§3.5).
    */
   salonName: string;
+  /**
+   * Logo salona — About vizit-kartica ga prikazuje. Blok ga traži sam iz
+   * deljenog izvora, ne pozajmljuje ga od hero bloka (ARCHITECTURAL_RULES §3.5).
+   */
+  salonLogo?: string;
 }
 
 export interface ContentTeamData {

@@ -20,7 +20,8 @@ export interface Theme9HeroProps {
   primaryCta: { text: string; href?: string };
   secondaryCta?: { text: string; href: string };
   image?: { url: string; alt?: string };
-  badge?: { initials: string; name: string; role?: string };
+  /** Citat u uglu slike. Vizit-kartica sa imenom je na About slici. */
+  quote?: string;
 }
 
 export function Theme9Hero({
@@ -31,11 +32,11 @@ export function Theme9Hero({
   primaryCta,
   secondaryCta,
   image,
-  badge,
+  quote,
 }: Theme9HeroProps) {
   return (
     <section id="hero" className="bg-ee-canvas">
-      <div className="mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(min(100%,380px),1fr))] items-end gap-8 px-5 py-14 md:px-8 md:py-20 lg:gap-[72px] lg:px-14 lg:py-[110px]">
+      <div className="mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(min(100%,380px),1fr))] items-center gap-8 px-5 py-14 md:px-8 md:py-20 lg:gap-[72px] lg:px-14 lg:py-[110px]">
         <Reveal className="flex flex-col gap-6">
           {eyebrow && (
             <span className="bg-ee-surface border-ee-border inline-flex w-fit items-center gap-2 rounded-full border px-3.5 py-1.5">
@@ -105,22 +106,12 @@ export function Theme9Hero({
               />
             </div>
 
-            {badge && (
-              <div className="bg-ee-surface absolute bottom-[26px] -left-3.5 flex items-center gap-3 rounded-2xl px-4 py-3 shadow-[0_10px_30px_rgba(58,46,40,0.14)]">
-                <span className="bg-ee-accent text-ee-canvas font-newsreader flex h-[38px] w-[38px] items-center justify-center rounded-full text-[15px]">
-                  {badge.initials}
-                </span>
-                <span className="flex flex-col leading-tight">
-                  <span className="font-newsreader text-ee-accent text-[15px]">
-                    {badge.name}
-                  </span>
-                  {badge.role && (
-                    <span className="text-ee-text-muted text-[11.5px]">
-                      {badge.role}
-                    </span>
-                  )}
-                </span>
-              </div>
+            {quote && (
+              <blockquote className="bg-ee-surface-muted border-ee-border pointer-events-none absolute -bottom-[18px] -left-2.5 max-w-[250px] rounded-[18px] border px-5 py-4">
+                <p className="font-newsreader text-ee-accent text-[17px] leading-[1.35]">
+                  {`„${quote}“`}
+                </p>
+              </blockquote>
             )}
           </Reveal>
         )}

@@ -896,6 +896,9 @@ export interface LandingStructure {
        */
       eyebrow?: string;
 
+      /** Citat u uglu hero slike (theme-9). */
+      quote?: string;
+
       headline?: string; // fallback: salon name
       subheadline?: string;
       whereWhatForWhom?: string;
@@ -975,8 +978,11 @@ export interface LandingStructure {
       credentials?: { label: string; value: string; note?: string }[];
       /** Vlasnica sme da isključi tabelu, a da zadrži biografiju. */
       showCredentials?: boolean;
-      /** Citat preko slike, u uglu (theme-9). */
-      pullQuote?: string;
+      /**
+       * Vizit-kartica u uglu About slike (theme-9): logo, ime i uloga.
+       * `name` pada na ime salona; logo dolazi iz profila.
+       */
+      badge?: { name?: string; role?: string };
 
       /** Optional about-section image. Layout falls back gracefully when absent. */
       image?: HeroImage;

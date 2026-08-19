@@ -5,6 +5,16 @@
  */
 import Image from "next/image";
 import { Eyebrow } from "./primitives";
+
+/** Monogram kad logo nije postavljen. */
+function initialsOf(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w.charAt(0).toUpperCase())
+    .join("");
+}
 import { Reveal } from "./Reveal";
 
 export interface Theme9AboutProps {
@@ -12,7 +22,8 @@ export interface Theme9AboutProps {
   headline: string;
   paragraphs: string[];
   credentials: { label: string; value: string; note?: string }[];
-  pullQuote?: string;
+  /** Vizit-kartica u donjem desnom uglu slike: logo/monogram, ime, uloga. */
+  badge?: { logo?: string; name: string; role?: string };
   image?: { url: string; alt?: string };
 }
 
@@ -21,7 +32,7 @@ export function Theme9About({
   headline,
   paragraphs,
   credentials,
-  pullQuote,
+  badge,
   image,
 }: Theme9AboutProps) {
   return (
@@ -81,12 +92,32 @@ export function Theme9About({
               />
             </div>
 
-            {pullQuote && (
-              <blockquote className="bg-ee-surface-muted border-ee-border pointer-events-none absolute -right-2.5 -bottom-[18px] max-w-[250px] rounded-[18px] border px-5 py-4">
-                <p className="font-newsreader text-ee-accent text-[17px] leading-[1.35]">
-                  {`„${pullQuote}“`}
-                </p>
-              </blockquote>
+            {badge && (
+              <div className="bg-ee-surface absolute -right-2.5 -bottom-[18px] flex items-center gap-3 rounded-2xl px-4 py-3 shadow-[0_10px_30px_rgba(58,46,40,0.14)]">
+                {badge.logo ? (
+                  <Image
+                    src={badge.logo}
+                    alt={badge.name}
+                    width={38}
+                    height={38}
+                    className="h-[38px] w-[38px] flex-none rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="bg-ee-accent text-ee-canvas font-newsreader flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full text-[15px]">
+                    {initialsOf(badge.name)}
+                  </span>
+                )}
+                <span className="flex flex-col leading-tight">
+                  <span className="font-newsreader text-ee-accent text-[15px]">
+                    {badge.name}
+                  </span>
+                  {badge.role && (
+                    <span className="text-ee-text-muted text-[11.5px]">
+                      {badge.role}
+                    </span>
+                  )}
+                </span>
+              </div>
             )}
           </Reveal>
         )}

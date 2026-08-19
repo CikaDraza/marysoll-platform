@@ -187,11 +187,12 @@ describe("theme9HeroProps", () => {
     expect(theme9HeroProps(heroData(), identity).image).toBeUndefined();
   });
 
-  it("gradi inicijale badge-a iz prve dve reči imena", () => {
-    expect(theme9HeroProps(heroData(), identity).badge).toEqual({
-      initials: "MB",
-      name: "Marina B. Stanisavljević",
-    });
+  it("citat na hero slici dolazi iz CMS-a", () => {
+    expect(
+      theme9HeroProps(heroData({ quote: "Procena pre proizvoda." }), identity)
+        .quote,
+    ).toBe("Procena pre proizvoda.");
+    expect(theme9HeroProps(heroData(), identity).quote).toBeUndefined();
   });
 });
 
@@ -248,13 +249,28 @@ describe("theme9AboutProps", () => {
     expect(props.paragraphs).toEqual(["Biografija."]);
   });
 
-  it("eyebrow i pullQuote dolaze iz CMS-a, naslov pada na ime", () => {
-    const withCms = theme9AboutProps(
-      aboutData({ eyebrow: "Ko sam", pullQuote: "Procena pre proizvoda." }),
+  it("eyebrow dolazi iz CMS-a, naslov pada na ime", () => {
+    expect(theme9AboutProps(aboutData({ eyebrow: "Ko sam" })).eyebrow).toBe(
+      "Ko sam",
     );
-    expect(withCms.eyebrow).toBe("Ko sam");
-    expect(withCms.pullQuote).toBe("Procena pre proizvoda.");
     expect(theme9AboutProps(aboutData()).eyebrow).toBe("O meni");
+  });
+
+  it("vizit-kartica: ime pada na ime salona, logo iz profila", () => {
+    const fromCms = theme9AboutProps(
+      aboutData({ badge: { name: "Marina B.", role: "Beautician" } }, {
+        salonLogo: "/logo.png",
+      }),
+    );
+    expect(fromCms.badge).toEqual({
+      logo: "/logo.png",
+      name: "Marina B.",
+      role: "Beautician",
+    });
+
+    const fallback = theme9AboutProps(aboutData());
+    expect(fallback.badge?.name).toBe("Marina B. Stanisavljević");
+    expect(fallback.badge?.role).toBeUndefined();
   });
 
   it("bez authoredStats kredencijali su prazni, ne undefined", () => {

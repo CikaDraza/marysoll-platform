@@ -42,15 +42,6 @@ function keywordsOf(raw?: string): string[] {
     .slice(0, 4);
 }
 
-function initialsOf(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w.charAt(0).toUpperCase())
-    .join("");
-}
-
 export function theme9HeroProps(
   data: ContentHeroData,
   resolveHref: (href: string) => string,
@@ -80,10 +71,7 @@ export function theme9HeroProps(
     primaryCta: { text: cta.primary.text || "Zakaži konsultaciju", href: primaryHref },
     secondaryCta: c?.ctas?.secondary?.href ? cta.secondary : undefined,
     image: image?.src ? { url: image.src, alt: image.alt || salonName } : undefined,
-    badge: {
-      initials: initialsOf(salonName),
-      name: salonName,
-    },
+    quote: c?.quote,
   };
 }
 
@@ -102,7 +90,12 @@ export function theme9AboutProps(data: ContentAboutData): Theme9AboutProps {
     headline: c?.headline || data.salonName,
     paragraphs: (c?.paragraphs ?? []).filter(Boolean),
     credentials: showCredentials ? (c?.credentials ?? []) : [],
-    pullQuote: c?.pullQuote,
+    // Vizit-kartica: ime pada na ime salona, logo dolazi iz profila.
+    badge: {
+      logo: data.salonLogo,
+      name: c?.badge?.name || data.salonName,
+      role: c?.badge?.role,
+    },
     image: image?.src
       ? { url: image.src, alt: image.alt || data.salonName }
       : undefined,

@@ -516,6 +516,8 @@ export const sharedLandingSections = {
   hero: {
     enabled: true,
     eyebrow: "Stručna edukacija o nezi kože",
+    // Citat ide na HERO sliku; vizit-kartica sa imenom je na About slici.
+    quote: "Ne preporučujem proizvod pre procene kože.",
     headline: "Nega kože počinje od procene, ne od proizvoda.",
     subheadline:
       "Edukativni sadržaj o zdravlju kože, svesti o sastojcima i rutinama koje je moguće dosledno sprovoditi — za one koji brinu o svojoj koži i za salone koji žele stručniji pristup.",
@@ -530,7 +532,7 @@ export const sharedLandingSections = {
     // Naslov je IME — „O meni" je nadnaslov, po dizajnu.
     headline: "Marina B. Stanisavljević",
     showCredentials: true,
-    pullQuote: "Ne preporučujem proizvod pre procene kože.",
+    badge: { name: "Marina B. Stanisavljević", role: "Beautician & Esthetician" },
     credentials: [
       // `note` je namerno prazan gde ga Marina još nije potvrdila. U prototipu
       // je tu stajalo „naziv programa i institucije — CMS polje" — to je
