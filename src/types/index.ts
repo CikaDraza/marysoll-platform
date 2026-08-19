@@ -792,6 +792,12 @@ export interface SalonProfile {
   cancellationWindowHours?: number;
   seo?: SeoData;
   branding?: IBranding;
+  /**
+   * Kratka brend linija (npr. „Skincare edukacija") — header ispod imena i
+   * footer tagline. Odvojena od `description`, koji je pun opis salona i u
+   * header-u je gurao navigaciju u drugi red.
+   */
+  shortDescription?: string;
   landingStructure?: LandingStructure;
   /** Sadržaj tematskih podstranica; odvojeno od landing kompozicije. */
   themePages?: TenantThemePages;
@@ -884,6 +890,12 @@ export interface LandingStructure {
 
       variant?: "center-image" | "split-left-image" | "grid-right-images";
 
+      /**
+       * Kratak nadnaslov iznad h1 (theme-9). NEMA fallback na `salon.description`
+       * — taj tekst je opis salona, često dug pasus, i razbijao je hero.
+       */
+      eyebrow?: string;
+
       headline?: string; // fallback: salon name
       subheadline?: string;
       whereWhatForWhom?: string;
@@ -949,9 +961,22 @@ export interface LandingStructure {
     about: {
       enabled: boolean;
 
+      /** Nadnaslov iznad naslova (theme-9: „O meni"). */
+      eyebrow?: string;
       headline?: string;
       paragraphs: string[]; // max 2 u UI
       links?: AboutTextLink[];
+
+      /**
+       * Tabela kredencijala u About sekciji (obrazovanje, praksa, jezik rada).
+       * NIJE isto što i blok `content.credentials` — taj nosi stubove „zašto
+       * baš ona"; ovo je suvi spisak uz biografiju. Oba postoje u dizajnu.
+       */
+      credentials?: { label: string; value: string; note?: string }[];
+      /** Vlasnica sme da isključi tabelu, a da zadrži biografiju. */
+      showCredentials?: boolean;
+      /** Citat preko slike, u uglu (theme-9). */
+      pullQuote?: string;
 
       /** Optional about-section image. Layout falls back gracefully when absent. */
       image?: HeroImage;
@@ -1112,7 +1137,10 @@ export interface LandingStructure {
     audiencePaths?: {
       enabled: boolean;
       eyebrow?: string;
+      /** Naslov levo („Odaberi svoj put"). */
       headline?: string;
+      /** Rečenica desno, uz naslov („Dva pravca edukacije, isti pristup koži."). */
+      lead?: string;
       paths?: {
         id: string;
         chip?: string;
@@ -1120,6 +1148,8 @@ export interface LandingStructure {
         lead?: string;
         bullets?: string[];
         href?: string;
+        /** Tekst dugmeta na kartici („Za klijente"). */
+        ctaLabel?: string;
         /** Vizuelni ton kartice; tema odlučuje kako ga crta. */
         tone?: "surface" | "accent";
       }[];
@@ -1296,6 +1326,12 @@ export interface SalonProfileData {
   email: string;
   description: string;
   landingTheme?: LandingTheme;
+  /**
+   * Kratka brend linija (npr. „Skincare edukacija") — header ispod imena i
+   * footer tagline. Odvojena od `description`, koji je pun opis salona i u
+   * header-u je gurao navigaciju u drugi red.
+   */
+  shortDescription?: string;
   landingStructure?: LandingStructure;
   /** Sadržaj tematskih podstranica; odvojeno od landing kompozicije. */
   themePages?: TenantThemePages;

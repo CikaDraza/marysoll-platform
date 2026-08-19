@@ -25,6 +25,8 @@ const SalonProfileSchema = new mongoose.Schema(
     name: { type: String, required: true },
     email: { type: String, required: true },
     description: { type: String },
+    /** Kratka brend linija za header/footer; `description` je pun opis salona. */
+    shortDescription: { type: String },
 
     isDemo: { type: Boolean, default: false },
 
@@ -32,6 +34,7 @@ const SalonProfileSchema = new mongoose.Schema(
       landing: {
         hero: {
           enabled: { type: Boolean, default: true },
+          eyebrow: { type: String },
           headline: { type: String },
           subheadline: { type: String },
           whereWhatForWhom: { type: String },
@@ -78,8 +81,23 @@ const SalonProfileSchema = new mongoose.Schema(
         },
         about: {
           enabled: { type: Boolean, default: true },
+          eyebrow: { type: String },
           headline: { type: String },
           paragraphs: { type: [String], default: [] },
+          // Tabela kredencijala uz biografiju (theme-9). Nije isto što i blok
+          // `content.credentials` — taj nosi stubove „zašto baš ona".
+          credentials: {
+            type: [
+              {
+                label: { type: String },
+                value: { type: String },
+                note: { type: String },
+              },
+            ],
+            default: [],
+          },
+          showCredentials: { type: Boolean, default: true },
+          pullQuote: { type: String },
           links: {
             type: [
               {
@@ -230,6 +248,7 @@ const SalonProfileSchema = new mongoose.Schema(
           enabled: { type: Boolean, default: false },
           eyebrow: { type: String },
           headline: { type: String },
+          lead: { type: String },
           paths: {
             type: [
               {
@@ -239,6 +258,7 @@ const SalonProfileSchema = new mongoose.Schema(
                 lead: { type: String },
                 bullets: { type: [String], default: [] },
                 href: { type: String },
+                ctaLabel: { type: String },
                 tone: { type: String, enum: ["surface", "accent"] },
               },
             ],

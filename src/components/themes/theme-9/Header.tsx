@@ -29,7 +29,12 @@ interface Props {
   /** Obavezno — tema nema fallback ime; ono dolazi iz `SalonProfile`. */
   salonName: string;
   salonLogo?: string | null;
-  /** Nadnaslov ispod imena (npr. „Skincare edukacija"). */
+  /**
+   * Kratka brend linija ispod imena („Skincare edukacija"). Dolazi iz
+   * `SalonProfile.shortDescription`, NIKAD iz `description` — pun opis salona je
+   * pasus i gurao je navigaciju i CTA u drugi red. Ovde je dodatno ograničena i
+   * skraćena, da ni predugačka vrednost ne razbije traku.
+   */
   kicker?: string;
 }
 
@@ -56,7 +61,7 @@ export function Theme9Header({
   return (
     <header className="bg-ee-canvas/85 border-ee-border sticky top-0 z-[60] border-b backdrop-blur-[14px]">
       <div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-x-6 gap-y-3.5 px-5 py-3.5 md:px-8 lg:px-14">
-        <Link href={`${base}/`} className="flex items-center gap-2.5">
+        <Link href={`${base}/`} className="flex min-w-0 max-w-[min(100%,340px)] items-center gap-2.5">
           {salonLogo ? (
             <Image
               src={salonLogo}
@@ -70,12 +75,15 @@ export function Theme9Header({
               {displayName.charAt(0)}
             </span>
           )}
-          <span className="flex flex-col leading-tight">
-            <span className="font-newsreader text-ee-accent text-[16.5px]">
+          <span className="flex min-w-0 flex-col leading-tight">
+            <span className="font-newsreader text-ee-accent truncate text-[16.5px]">
               {displayName}
             </span>
             {kicker && (
-              <span className="text-ee-sage text-[9.5px] tracking-[0.2em] uppercase">
+              <span
+                title={kicker}
+                className="text-ee-sage max-w-[26ch] truncate text-[9.5px] tracking-[0.2em] uppercase"
+              >
                 {kicker}
               </span>
             )}

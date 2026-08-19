@@ -308,11 +308,13 @@ export function buildThemeNative(
           header: {
             salonName: salon.name,
             logo: salon.logo ?? undefined,
-            kicker: salon.description || undefined,
+            // `shortDescription`, NE `description`: pun opis salona je često
+            // pasus i u header-u je gurao navigaciju i CTA u drugi red.
+            kicker: salon.shortDescription || undefined,
           },
           footer: {
             salonName: salon.name,
-            tagline: salon.description || undefined,
+            tagline: salon.shortDescription || salon.description || undefined,
             email: salon.contactEmail || salon.email,
             workingHours,
             instagram: instagramOf(salon),

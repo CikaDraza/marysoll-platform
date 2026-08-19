@@ -10,7 +10,7 @@
  *     tuđi sajt;
  *   - podrazumevano piše SAMO nove theme-9 sekcije i `themePages`, što nijedna
  *     zatečena tema ne renderuje → upis ne može da promeni živ sajt;
- *   - `hero`/`about`/`stats`/`blog`/`description` dele se sa zatečenim temama i
+ *   - `hero`/`about`/`blog`/`shortDescription` dele se sa zatečenim temama i
  *     idu samo uz `--overwrite-shared`, uz ispis onoga što se gubi.
  *
  * Pokretanje (Node 24+, čita .env.local):
@@ -20,7 +20,7 @@
 import mongoose from "mongoose";
 import {
   SEEDABLE_TENANTS,
-  salonDescription,
+  salonShortDescription,
   sharedLandingSections,
   theme9LandingSections,
   themePages,
@@ -136,19 +136,19 @@ async function main() {
       landing?: Record<string, unknown>;
     };
     console.log("  ⚠ --overwrite-shared: menja se i sadržaj koji vidi zatečena tema:");
-    console.log(`     description: ${JSON.stringify(profile.description ?? "")}`);
-    for (const key of ["hero", "about", "stats", "blog"]) {
+    console.log(`     shortDescription: ${JSON.stringify(profile.shortDescription ?? "")}`);
+    for (const key of ["hero", "about", "blog"]) {
       const before = JSON.stringify(ls.landing?.[key] ?? null);
       console.log(`     ${key}: ${before.slice(0, 90)}${before.length > 90 ? "…" : ""}`);
     }
 
-    set.description = salonDescription;
+    set.shortDescription = salonShortDescription;
     for (const [name, section] of Object.entries(sharedLandingSections)) {
       set[`landingStructure.landing.${name}`] = section;
     }
   } else {
     console.log(
-      "  hero/about/stats/blog/description NISU dirani (dodaj --overwrite-shared).",
+      "  hero/about/blog/shortDescription NISU dirani (dodaj --overwrite-shared).",
     );
   }
 

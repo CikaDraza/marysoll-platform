@@ -26,7 +26,7 @@ export function Eyebrow({
 }) {
   return (
     <span
-      className={`font-instrument-sans text-[11px] font-semibold tracking-[0.14em] uppercase ${EYEBROW_TONE[tone]} ${className}`}
+      className={`font-instrument-sans text-[12.5px] font-semibold tracking-[0.16em] uppercase ${EYEBROW_TONE[tone]} ${className}`}
     >
       {children}
     </span>

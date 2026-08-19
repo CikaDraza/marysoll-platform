@@ -123,7 +123,7 @@ nagradi. T3 je prilika da to preraste u čist ugovor
 | `/api/slots` koristi engleske ključeve dana, ostatak baze srpske → vraća prazno | `api/slots/route.ts:22` | Slice 3 |
 | ~~`design/` handoff bundle ulazi u `fallow` analizu~~ ✅ | `.fallowrc.jsonc` | rešeno — `ignorePatterns` za `design/`, `docs/`, `public/`, `.next/`, `scripts/`; 8942 → 6471 analiziranih |
 | ~~`ThemeShellProps` nosi `salon: SalonProfileData` + `services: IService[]`~~ ✅ | `shells/types.ts` + novi `lib/platform/theme-shell-native.ts` | rešeno — ugovor neutralan, guard test `shells/types.test.ts` |
-| Kredencijali se prelazno mapiraju iz `authoredStats` u About | `theme-9/blockProps.ts` | briše se kad stigne blok `content.credentials` |
+| ~~Kredencijali se prelazno mapiraju iz `authoredStats` u About~~ ✅ | `about.credentials` | rešeno — About tabela ima svoje polje; blok `content.credentials` nosi stubove i to su dve različite stvari u dizajnu |
 | `themePages` i 6 theme-9 landing sekcija nemaju CMS polja — sadržaj se za sada autoriše kroz `npm run seed:theme9 -- --tenant=<slug>` | `AdminLandingCMS.tsx` | otvoreno; seed piše u ISTA polja, pa kad editor stigne ništa se ne migrira |
 | `theme-3/BlogSection` i dalje dovlači objave klijentskim `useBlogPosts` iako `content.blog` loader sada isporučuje `posts` — isti waterfall koji je theme-9 upravo izgubila | `theme-3/BlogSection.tsx` | otvoreno, sada trivijalno |
 | 6 theme-9 sekcija nije bilo u mongoose shemi (`strict` bi ih tiho odbacio pri snimanju) ✅ | `models/SalonProfile.ts` | rešeno u ovom slice-u |

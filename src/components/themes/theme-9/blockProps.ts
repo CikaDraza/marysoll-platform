@@ -64,12 +64,13 @@ export function theme9HeroProps(
   const primaryHref = c?.ctas?.primary?.href ? cta.primary.href : undefined;
 
   // Mapiranje CMS polja na editorial hero:
-  //   description      → eyebrow (pill iznad naslova)
+  //   hero.eyebrow     → pill iznad naslova (NIKAD `salon.description` —
+  //                      pun opis salona je pasus i razbijao je hero)
   //   headline         → h1
   //   subheadline      → lead pasus
   //   whereWhatForWhom → keyword traka (razdvojena · , ili |)
   return {
-    eyebrow: data.salon.description || undefined,
+    eyebrow: c?.eyebrow || undefined,
     title: c?.headline || salonName,
     lead: c?.subheadline,
     keywords: keywordsOf(c?.whereWhatForWhom),
@@ -87,18 +88,18 @@ export function theme9AboutProps(data: ContentAboutData): Theme9AboutProps {
   const c = data.content;
   const image = c?.image;
 
+  // Kredencijali imaju SVOJE polje (`about.credentials`), ne pozajmljuju
+  // `landing.stats`. Tabela uz biografiju nije isto što i blok
+  // `content.credentials` — taj nosi stubove „zašto baš ona"; oba postoje u
+  // dizajnu i ne smeju deliti izvor.
+  const showCredentials = c?.showCredentials !== false;
+
   return {
-    eyebrow: "O meni",
+    eyebrow: c?.eyebrow || "O meni",
     headline: c?.headline || data.salonName,
     paragraphs: (c?.paragraphs ?? []).filter(Boolean),
-    // PRELAZNO: kredencijali danas dolaze iz `landing.stats`. Kad stigne blok
-    // `content.credentials` (obrazovanje, sertifikacija, stručni dokaz), OVO SE
-    // BRIŠE — About ostaje biografija/priča/slika, kredencijali dobijaju svoju
-    // sekciju. Ne smeju živeti na oba mesta.
-    credentials: (data.authoredStats ?? []).map((s) => ({
-      label: s.label,
-      value: s.value,
-    })),
+    credentials: showCredentials ? (c?.credentials ?? []) : [],
+    pullQuote: c?.pullQuote,
     image: image?.src
       ? { url: image.src, alt: image.alt || data.salonName }
       : undefined,
@@ -118,6 +119,7 @@ export function theme9AudiencePathsProps(
   return {
     eyebrow: c?.eyebrow,
     headline: c?.headline,
+    lead: c?.lead,
     paths: (c?.paths ?? []).map((p) => ({
       id: p.id,
       chip: p.chip,
@@ -125,6 +127,7 @@ export function theme9AudiencePathsProps(
       lead: p.lead,
       bullets: p.bullets ?? [],
       href: p.href ? resolveHref(p.href) : undefined,
+      ctaLabel: p.ctaLabel,
       tone: p.tone,
     })),
   };

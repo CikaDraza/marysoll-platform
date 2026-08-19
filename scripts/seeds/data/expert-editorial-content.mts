@@ -280,9 +280,9 @@ export const themePages: Record<string, SeedThemePage> = {
 export const theme9LandingSections = {
   audiencePaths: {
     enabled: true,
-    eyebrow: "Dve staze",
-    headline:
-      "Ista osnova, dva različita cilja — lična nega i stručni rad u salonu.",
+    eyebrow: "Odaberi svoj put",
+    headline: "Odaberi svoj put",
+    lead: "Dva pravca edukacije, isti pristup koži.",
     paths: [
       {
         id: "licna-nega",
@@ -295,6 +295,7 @@ export const theme9LandingSections = {
           "Pisani plan nege i praćenje reakcije",
         ],
         href: "/za-klijente",
+        ctaLabel: "Za klijente",
         tone: "surface" as const,
       },
       {
@@ -308,6 +309,7 @@ export const theme9LandingSections = {
           "Mentorstvo 1:1 nakon edukacije",
         ],
         href: "/za-profesionalce",
+        ctaLabel: "Za profesionalce",
         tone: "accent" as const,
       },
     ],
@@ -475,6 +477,7 @@ export const theme9LandingSections = {
 export const sharedLandingSections = {
   hero: {
     enabled: true,
+    eyebrow: "Stručna edukacija o nezi kože",
     headline: "Nega kože počinje od procene, ne od proizvoda.",
     subheadline:
       "Edukativni sadržaj o zdravlju kože, svesti o sastojcima i rutinama koje je moguće dosledno sprovoditi — za one koji brinu o svojoj koži i za salone koji žele stručniji pristup.",
@@ -485,20 +488,35 @@ export const sharedLandingSections = {
   },
   about: {
     enabled: true,
-    headline: "O meni",
+    eyebrow: "O meni",
+    // Naslov je IME — „O meni" je nadnaslov, po dizajnu.
+    headline: "Marina B. Stanisavljević",
+    showCredentials: true,
+    pullQuote: "Ne preporučujem proizvod pre procene kože.",
+    credentials: [
+      {
+        label: "Obrazovanje",
+        value: "Sertifikovani kozmetičar i estetičar",
+        note: "naziv programa i institucije — dopuniti",
+      },
+      {
+        label: "Praksa",
+        value: "Rad sa klijentima na proceni kože i vođenju rutine",
+        note: "period i mesto rada — dopuniti",
+      },
+      {
+        label: "Edukativni rad",
+        value: "Stručni tekstovi i materijali o nezi kože",
+        note: "procena kože · aktivni sastojci · kombinovanje · SPF",
+      },
+      { label: "Jezik rada", value: "Srpski", note: "online i uživo" },
+    ],
     paragraphs: [
       "Kozmetičar i estetičar. Radim sa klijentima na proceni kože i izgradnji rutine, i paralelno pišem edukativne materijale o nezi kože — jer većina pitanja koja dobijam nisu pitanja o proizvodima, nego o razumevanju sopstvene kože.",
       "Ne verujem u univerzalne recepte i ne preporučujem proizvod pre procene. Radije ću objasniti zašto nešto radi, nego dati listu za kupovinu.",
     ],
     image: { src: "/images/theme-9/about-portret.webp", alt: "Portret" },
   },
-  /** Kredencijali u About-u — prelazno mapiranje dok `content.credentials` ne preuzme. */
-  stats: [
-    { label: "Obrazovanje", value: "Sertifikovani kozmetičar i estetičar" },
-    { label: "Praksa", value: "Rad sa klijentima na proceni kože i vođenju rutine" },
-    { label: "Edukativni rad", value: "Stručni tekstovi i materijali o nezi kože" },
-    { label: "Jezik rada", value: "Srpski — online i uživo" },
-  ],
   blog: {
     enabled: true,
     headline: "Poslednji tekstovi",
@@ -506,5 +524,8 @@ export const sharedLandingSections = {
   },
 };
 
-/** Opis salona — hero eyebrow, header kicker i footer tagline čitaju odavde. */
-export const salonDescription = "Stručna edukacija o nezi kože";
+/**
+ * Kratka brend linija — header ispod imena i footer tagline. Namerno kratka:
+ * pun `description` je pasus i u header-u je gurao navigaciju u drugi red.
+ */
+export const salonShortDescription = "Skincare edukacija";

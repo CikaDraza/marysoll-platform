@@ -77,6 +77,7 @@ describe("theme9HeroProps", () => {
   it("mapira CMS polja na editorial hero", () => {
     const props = theme9HeroProps(
       heroData({
+        eyebrow: "Stručna edukacija o nezi kože",
         headline: "Nega kože počinje od procene.",
         subheadline: "Edukativni sadržaj o zdravlju kože.",
         whereWhatForWhom: "Procena kože · Aktivni sastojci",
@@ -86,7 +87,16 @@ describe("theme9HeroProps", () => {
 
     expect(props.title).toBe("Nega kože počinje od procene.");
     expect(props.lead).toBe("Edukativni sadržaj o zdravlju kože.");
-    expect(props.eyebrow).toBe("Skincare edukacija");
+    expect(props.eyebrow).toBe("Stručna edukacija o nezi kože");
+  });
+
+  // Regresija: dugačak opis salona je razbijao hero i header.
+  it("eyebrow NIKAD ne pada na opis salona", () => {
+    const props = theme9HeroProps(
+      heroData({}, { description: "Vrlo dug opis salona koji je ranije curio u eyebrow." }),
+      identity,
+    );
+    expect(props.eyebrow).toBeUndefined();
   });
 
   it("pada na ime salona kad headline nije upisan", () => {
@@ -209,14 +219,38 @@ describe("theme9AboutProps", () => {
     );
   });
 
-  // PRELAZNO — briše se kad stigne blok `content.credentials`.
-  it("prelazno mapira authoredStats u kredencijale", () => {
+  it("kredencijali imaju svoje polje, ne pozajmljuju landing.stats", () => {
     const props = theme9AboutProps(
-      aboutData({}, { authoredStats: [{ label: "Praksa", value: "8 godina" }] }),
+      aboutData({
+        credentials: [
+          { label: "Praksa", value: "8 godina", note: "Beograd" },
+        ],
+      }),
     );
     expect(props.credentials).toEqual([
-      { label: "Praksa", value: "8 godina" },
+      { label: "Praksa", value: "8 godina", note: "Beograd" },
     ]);
+  });
+
+  it("showCredentials: false sakriva tabelu, biografija ostaje", () => {
+    const props = theme9AboutProps(
+      aboutData({
+        showCredentials: false,
+        paragraphs: ["Biografija."],
+        credentials: [{ label: "Praksa", value: "8 godina" }],
+      }),
+    );
+    expect(props.credentials).toEqual([]);
+    expect(props.paragraphs).toEqual(["Biografija."]);
+  });
+
+  it("eyebrow i pullQuote dolaze iz CMS-a, naslov pada na ime", () => {
+    const withCms = theme9AboutProps(
+      aboutData({ eyebrow: "Ko sam", pullQuote: "Procena pre proizvoda." }),
+    );
+    expect(withCms.eyebrow).toBe("Ko sam");
+    expect(withCms.pullQuote).toBe("Procena pre proizvoda.");
+    expect(theme9AboutProps(aboutData()).eyebrow).toBe("O meni");
   });
 
   it("bez authoredStats kredencijali su prazni, ne undefined", () => {

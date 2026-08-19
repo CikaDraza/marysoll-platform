@@ -3,12 +3,15 @@
  * Druga kartica je tamna (forest) sa dekorativnim krugom, po prototipu.
  */
 import { AnchorLink } from "../shared/AnchorLink";
-import { ArrowCircle, Chip, Eyebrow } from "./primitives";
+import { Chip, Eyebrow } from "./primitives";
 import { Reveal } from "./Reveal";
 
 export interface Theme9AudiencePathsProps {
   eyebrow?: string;
+  /** Naslov levo. */
   headline?: string;
+  /** Rečenica desno, uz naslov. */
+  lead?: string;
   paths: {
     id: string;
     chip?: string;
@@ -16,6 +19,8 @@ export interface Theme9AudiencePathsProps {
     lead?: string;
     bullets: string[];
     href?: string;
+    /** Tekst dugmeta („Za klijente"); bez njega se CTA ne renderuje. */
+    ctaLabel?: string;
     tone?: "surface" | "accent";
   }[];
 }
@@ -23,6 +28,7 @@ export interface Theme9AudiencePathsProps {
 export function Theme9AudiencePaths({
   eyebrow,
   headline,
+  lead,
   paths,
 }: Theme9AudiencePathsProps) {
   if (paths.length === 0) return null;
@@ -30,12 +36,19 @@ export function Theme9AudiencePaths({
   return (
     <section id="staze" className="bg-ee-canvas">
       <div className="mx-auto max-w-[1240px] px-5 py-14 md:px-8 md:py-20 lg:px-14 lg:py-[110px]">
-        {(eyebrow || headline) && (
-          <Reveal className="mb-8 flex flex-wrap items-end justify-between gap-4">
-            {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-            {headline && (
-              <p className="font-instrument-sans text-ee-text-muted max-w-[46ch] text-[15.5px] leading-relaxed">
-                {headline}
+        {(eyebrow || headline || lead) && (
+          <Reveal className="mb-9 flex flex-wrap items-baseline justify-between gap-4">
+            <div className="flex flex-col gap-2">
+              {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
+              {headline && (
+                <h2 className="font-newsreader text-ee-accent text-[clamp(26px,3vw,40px)] leading-[1.06] tracking-[-0.02em]">
+                  {headline}
+                </h2>
+              )}
+            </div>
+            {lead && (
+              <p className="font-instrument-sans text-ee-text-muted max-w-[46ch] text-[13.5px] leading-relaxed">
+                {lead}
               </p>
             )}
           </Reveal>
@@ -60,17 +73,21 @@ export function Theme9AudiencePaths({
                     />
                   )}
 
-                  <div className="relative flex items-center gap-3">
+                  {/* Broj levo, oznaka skroz desno — `justify-between`, po dizajnu. */}
+                  <div className="relative flex items-start justify-between gap-4">
                     <span
-                      className={`font-newsreader text-[34px] leading-none ${dark ? "text-ee-accent-contrast" : "text-ee-sage"}`}
+                      className={`font-newsreader text-[34px] leading-none ${dark ? "text-ee-accent-contrast/70" : "text-ee-sage"}`}
                     >
                       {String(i + 1).padStart(2, "0")}
                     </span>
-                    {path.chip && (
-                      <Chip variant={dark ? "tagOutlined" : "tag"}>
-                        {path.chip}
-                      </Chip>
-                    )}
+                    {path.chip &&
+                      (dark ? (
+                        <span className="border-ee-accent-contrast/40 text-ee-accent-contrast rounded-full border px-3.5 py-[5px] text-[11px] tracking-[0.1em] uppercase">
+                          {path.chip}
+                        </span>
+                      ) : (
+                        <Chip variant="label">{path.chip}</Chip>
+                      ))}
                   </div>
 
                   <h3
@@ -96,7 +113,7 @@ export function Theme9AudiencePaths({
                         >
                           <span
                             aria-hidden
-                            className={`mt-2 h-[5px] w-[5px] flex-none rounded-full ${dark ? "bg-ee-accent-contrast" : "bg-ee-sage"}`}
+                            className={`mt-[7px] h-[5px] w-[5px] flex-none rounded-full ${dark ? "bg-ee-accent-contrast" : "bg-ee-terracotta"}`}
                           />
                           {b}
                         </li>
@@ -104,14 +121,25 @@ export function Theme9AudiencePaths({
                     </ul>
                   )}
 
-                  {path.href && (
-                    <AnchorLink
-                      href={path.href}
-                      className="group relative mt-auto inline-flex w-fit items-center gap-2 pt-2"
-                      aria-label={path.title}
-                    >
-                      <ArrowCircle size={34} />
-                    </AnchorLink>
+                  {path.href && path.ctaLabel && (
+                    <div className="relative mt-auto pt-2">
+                      <AnchorLink
+                        href={path.href}
+                        className={`font-instrument-sans inline-flex items-center gap-3 text-[14.5px] font-semibold ${dark ? "text-white" : "text-ee-accent"}`}
+                      >
+                        {path.ctaLabel}
+                        <span
+                          aria-hidden
+                          className={`flex h-[34px] w-[34px] items-center justify-center rounded-full text-[14px] ${
+                            dark
+                              ? "bg-ee-accent-contrast/24 text-ee-accent-contrast"
+                              : "bg-ee-accent-contrast text-ee-accent"
+                          }`}
+                        >
+                          →
+                        </span>
+                      </AnchorLink>
+                    </div>
                   )}
                 </article>
               </Reveal>

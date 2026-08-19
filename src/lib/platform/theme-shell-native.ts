@@ -155,11 +155,11 @@ export function buildThemeShellNative(
           header: {
             salonName: salon.name,
             logo: salon.logo ?? undefined,
-            kicker: salon.description || undefined,
+            kicker: salon.shortDescription || undefined,
           },
           footer: {
             salonName: salon.name,
-            tagline: salon.description || undefined,
+            tagline: salon.shortDescription || salon.description || undefined,
             email: salon.contactEmail || salon.email,
             instagramUrl: instagramOf(salon).url || undefined,
           },

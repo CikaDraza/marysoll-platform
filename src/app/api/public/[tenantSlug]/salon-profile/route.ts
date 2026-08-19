@@ -107,6 +107,7 @@ function serializeProfile(doc: Record<string, unknown>) {
     },
     landingTheme: String(doc.landingTheme ?? "theme-1"),
     clientGender: doc.clientGender === "female" ? "female" : "neutral",
+    shortDescription: String((doc.shortDescription as string) ?? ""),
     landingStructure: doc.landingStructure ?? null,
     // Sadržaj tematskih podstranica (`/za-klijente`, `/za-profesionalce`).
     // Projekcija je eksplicitna, pa svako novo polje MORA i ovde — inače tiho

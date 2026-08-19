@@ -27,7 +27,7 @@ export function Theme9About({
   return (
     <section id="o-meni" className="bg-ee-surface">
       <div className="mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(min(100%,340px),1fr))] items-center gap-9 px-5 py-14 md:px-8 md:py-20 lg:gap-[84px] lg:px-14 lg:py-[110px]">
-        <Reveal className="flex flex-col gap-5">
+        <Reveal className="flex flex-col gap-[30px]">
           {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
 
           <h2 className="font-newsreader text-ee-accent text-[clamp(30px,3.7vw,52px)] leading-[1.05] tracking-[-0.024em]">
@@ -44,19 +44,21 @@ export function Theme9About({
           ))}
 
           {credentials.length > 0 && (
-            <dl className="mt-2 flex flex-col">
+            <dl className="border-ee-border mt-2 flex flex-col border-t">
               {credentials.map((c) => (
                 <div
                   key={c.label}
-                  className="border-ee-border grid grid-cols-[repeat(auto-fit,minmax(min(100%,200px),1fr))] gap-2 border-b py-4 last:border-b-0"
+                  className="border-ee-border grid grid-cols-[repeat(auto-fit,minmax(min(100%,200px),1fr))] gap-x-5 gap-y-2 border-b py-5"
                 >
                   <dt className="text-ee-sage text-[11px] tracking-[0.14em] uppercase">
                     {c.label}
                   </dt>
-                  <dd className="flex flex-col">
-                    <span className="text-ee-text text-[15px]">{c.value}</span>
+                  <dd className="flex flex-col gap-0.5">
+                    <span className="text-ee-text text-[15px] leading-[1.6]">
+                      {c.value}
+                    </span>
                     {c.note && (
-                      <span className="text-ee-text-muted text-[13px]">
+                      <span className="text-ee-text-muted text-[13px] leading-[1.5]">
                         {c.note}
                       </span>
                     )}
@@ -80,9 +82,9 @@ export function Theme9About({
             </div>
 
             {pullQuote && (
-              <blockquote className="bg-ee-surface -right-2.5 -bottom-[18px] max-w-[250px] rounded-[18px] px-5 py-4 shadow-[0_14px_34px_rgba(58,46,40,0.1)] md:absolute">
-                <p className="font-newsreader text-ee-accent text-[17px] leading-snug">
-                  {pullQuote}
+              <blockquote className="bg-ee-surface-muted border-ee-border pointer-events-none absolute -right-2.5 -bottom-[18px] max-w-[250px] rounded-[18px] border px-5 py-4">
+                <p className="font-newsreader text-ee-accent text-[17px] leading-[1.35]">
+                  {`„${pullQuote}“`}
                 </p>
               </blockquote>
             )}
