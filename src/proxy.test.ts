@@ -29,6 +29,11 @@ const TENANTS: Record<
     slug: "no-domain-salon",
     customDomain: null,
   },
+  "marina-stanisavljevic-skincare-edukacija": {
+    id: "t-marina",
+    slug: "marina-stanisavljevic-skincare-edukacija",
+    customDomain: "marina-skincare.rs",
+  },
 };
 
 const DOMAINS: Record<string, { id: string; slug: string }> = {
@@ -222,6 +227,42 @@ describe("staging apex (qa/staging.marysoll.com, path-based tenant)", () => {
     expect(forwardedHeader(res, "x-domain-type")).toBe("marketing");
     expect(forwardedHeader(res, "x-tenant-slug")).toBe("");
     expect(rewritePath(res)).toBeNull();
+  });
+
+  it("staging.marysoll.com/login → marketing pass (platformska prijava, ne slug)", async () => {
+    const { res } = await runProxy("staging.marysoll.com", "/login");
+    expect(forwardedHeader(res, "x-domain-type")).toBe("marketing");
+    expect(rewritePath(res)).toBeNull();
+    expect(res.headers.get("location")).toBeNull();
+  });
+
+  it("staging.marysoll.com/dashboard → marketing pass (panel na istom hostu)", async () => {
+    const { res } = await runProxy("staging.marysoll.com", "/dashboard");
+    expect(forwardedHeader(res, "x-domain-type")).toBe("marketing");
+    expect(forwardedHeader(res, "x-tenant-slug")).toBe("");
+    expect(rewritePath(res)).toBeNull();
+    expect(res.headers.get("location")).toBeNull();
+  });
+
+  it("staging.marysoll.com/{slug} salona sa CUSTOM domenom → path-based, BEZ 301 na prod", async () => {
+    const { res } = await runProxy(
+      "staging.marysoll.com",
+      "/marina-stanisavljevic-skincare-edukacija",
+    );
+    expect(res.headers.get("location")).toBeNull(); // nema kanonskog redirecta
+    expect(rewritePath(res)).toBe("/tenant");
+    expect(forwardedHeader(res, "x-tenant-base-path")).toBe(
+      "/marina-stanisavljevic-skincare-edukacija",
+    );
+  });
+
+  it("PRODUKCIJA nedirnuta: {slug}.marysoll.com i dalje 301 na custom domen", async () => {
+    const { res } = await runProxy(
+      "marina-stanisavljevic-skincare-edukacija.marysoll.com",
+      "/",
+    );
+    expect(res.status).toBe(301);
+    expect(res.headers.get("location")).toBe("https://marina-skincare.rs/");
   });
 
   it("staging.marysoll.com/{slug}/termini → rewrite /tenant/termini", async () => {

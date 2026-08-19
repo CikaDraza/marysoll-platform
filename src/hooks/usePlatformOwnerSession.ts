@@ -17,6 +17,7 @@
 
 import { useEffect, useState } from "react";
 import { getUserFromToken } from "@/lib/auth/auth-client";
+import { adminOrigin } from "@/lib/platform/host-context";
 
 export interface OwnerSessionUser {
   name: string;
@@ -38,14 +39,11 @@ const ANON: OwnerSession = { status: "anon", source: null, user: null };
 
 /**
  * Base URL admin origin-a (gde živi tenant-access-token cookie).
- * Localhost/dev: isti origin (token je već lokalno vidljiv, remote se i ne koristi).
+ * Path-based hostovi (localhost/dev, *.vercel.app, staging/qa apex): isti origin
+ * — panel je tu na `/dashboard`, a token je već lokalno vidljiv.
  */
 export function adminBaseUrl(): string {
-  if (typeof window === "undefined") return "";
-  const host = window.location.hostname;
-  if (host === "localhost" || host.startsWith("127.")) return "";
-  const base = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
-  return `https://admin.${base}`;
+  return adminOrigin();
 }
 
 interface WhoamiResponse {

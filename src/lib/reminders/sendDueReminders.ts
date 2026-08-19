@@ -11,6 +11,10 @@ import { createNotification, getSalonBranding } from "@/lib/notificationService"
 import { sendWebPushToUser } from "@/lib/webPush";
 import { Types } from "mongoose";
 import { belgradeDateStr, belgradeToUTC } from "@/lib/utils/belgradeTime";
+import {
+  ADMIN_APPOINTMENTS_PATH,
+  clientPanelPath,
+} from "@/lib/notifications/pushTargets";
 
 interface ReminderAppointment {
   _id: Types.ObjectId;
@@ -117,7 +121,7 @@ export async function sendDueReminders(): Promise<{
         body: clientBody,
         icon,
         tag: `appt-reminder-${bucket}-${appt._id}`,
-        url: "/panel?tab=Moji%20Termini",
+        url: await clientPanelPath(appt.tenantId, "?tab=Moji%20Termini"),
       },
       { requireSettings: ["appointmentReminder"] },
     );
@@ -154,7 +158,7 @@ export async function sendDueReminders(): Promise<{
             body: adminBody,
             icon,
             tag: `appt-reminder-${bucket}-${appt._id}`,
-            url: "/admin/termini",
+            url: ADMIN_APPOINTMENTS_PATH,
           },
           { requireSettings: ["appointmentReminder"] },
         ),

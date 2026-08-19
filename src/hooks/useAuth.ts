@@ -10,12 +10,21 @@
  *   - marysoll.com/login (no slug prefix)  → /api/auth/login (platform)
  *   - marysoll.com/[slug]/login            → /api/tenant-auth/login
  *   - [slug].marysoll.com / custom domain  → /api/tenant-auth/login
+ *
+ * Path-based hostovi (localhost/LAN, *.vercel.app, staging/qa apex) nemaju
+ * admin/tenant subdomene — SVE ostaje na istom hostu (host-context.ts).
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { getRawToken, getUserFromToken } from "@/lib/auth/auth-client";
 import { detectCustomDomain } from "@/hooks/useClientRouting";
+import {
+  BASE_DOMAIN,
+  isPathBasedHost,
+  tenantSlugFromPath,
+} from "@/lib/platform/host-context";
+import { loginRedirectUrl, logoutRedirectUrl } from "@/lib/auth/loginRedirect";
 import { publicApi, api } from "@/lib/api";
 import { useCallback, useEffect } from "react";
 import type { DecodedUser } from "@/types/auth/types";
@@ -55,9 +64,14 @@ interface LoginApiResponse {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getBaseDomain(): string {
-  return process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+  return BASE_DOMAIN;
 }
 
+/**
+ * Da li host dozvoljava domain-scoped (`.marysoll.com`) cookie-je — server ih
+ * postavlja u produkciji, pa ih odjava tu i briše. Localhost/LAN nemaju domain
+ * cookie; staging/preview ga imaju (NODE_ENV=production) i moraju da ga obrišu.
+ */
 function isProductionDomain(): boolean {
   if (typeof window === "undefined") return false;
   const host = window.location.hostname;
@@ -65,28 +79,9 @@ function isProductionDomain(): boolean {
     host !== "localhost" &&
     !host.startsWith("127.") &&
     !host.startsWith("192.168.") &&
-    // Vercel preview buildovi: ostani na preview hostu (relativni /dashboard),
-    // inače bi login sa preview-a redirektovao na produkcijski admin domen
     !host.endsWith(".vercel.app")
   );
 }
-
-// Paths that belong to the platform — not tenant slugs
-const PLATFORM_PATHS = new Set([
-  "login",
-  "register",
-  "dashboard",
-  "superadmin",
-  "api",
-  "newsletter",
-  "privacy",
-  "terms",
-  "unauthorized",
-  "forgot-password",
-  "reset-password",
-  "verify-email",
-  "resend-verification",
-]);
 
 /**
  * Determine the auth endpoint based purely on URL context.
@@ -107,23 +102,16 @@ function getLoginEndpoint(): "/tenant-auth/login" | "/auth/login" {
   // Superadmin domain → platform auth
   if (hostname === `superadmin.${base}`) return "/auth/login";
 
-  // Dev / LAN / Vercel preview: use path-based routing identical to base domain
-  // (preview hostovi *.vercel.app nemaju tenant kontekst — bez ovoga bi login
-  // pao u tenant-auth granu i vratio "Prijava zahteva kontekst salona").
-  const isPathBasedHost =
-    hostname === "localhost" ||
-    hostname.startsWith("127.") ||
-    hostname.startsWith("192.168.") ||
-    hostname.endsWith(".vercel.app");
-
-  // Base domain, www, or local dev: decide by path prefix
-  if (isPathBasedHost || hostname === base || hostname === `www.${base}`) {
-    const firstSegment = pathname.split("/").filter(Boolean)[0] ?? "";
+  // Path-based hostovi (dev/LAN, *.vercel.app preview, staging/qa apex) i apex
+  // marketing domen: kontekst nosi PUTANJA. Bez ovoga bi login na
+  // staging.marysoll.com pao u tenant-auth granu ("Prijava zahteva kontekst salona").
+  if (
+    isPathBasedHost(hostname) ||
+    hostname === base ||
+    hostname === `www.${base}`
+  ) {
     // Non-reserved first segment = tenant slug → tenant auth
-    if (firstSegment && !PLATFORM_PATHS.has(firstSegment)) {
-      return "/tenant-auth/login";
-    }
-    return "/auth/login";
+    return tenantSlugFromPath(pathname) ? "/tenant-auth/login" : "/auth/login";
   }
 
   // Any subdomain or custom domain → tenant auth
@@ -138,18 +126,14 @@ function getRegisterEndpoint(): "/tenant-auth/register" | "/auth/register" {
 
   if (hostname === `superadmin.${base}`) return "/auth/register";
 
-  const isPathBasedHost =
-    hostname === "localhost" ||
-    hostname.startsWith("127.") ||
-    hostname.startsWith("192.168.") ||
-    hostname.endsWith(".vercel.app");
-
-  if (isPathBasedHost || hostname === base || hostname === `www.${base}`) {
-    const firstSegment = pathname.split("/").filter(Boolean)[0] ?? "";
-    if (firstSegment && !PLATFORM_PATHS.has(firstSegment)) {
-      return "/tenant-auth/register";
-    }
-    return "/auth/register";
+  if (
+    isPathBasedHost(hostname) ||
+    hostname === base ||
+    hostname === `www.${base}`
+  ) {
+    return tenantSlugFromPath(pathname)
+      ? "/tenant-auth/register"
+      : "/auth/register";
   }
 
   return "/tenant-auth/register";
@@ -290,25 +274,15 @@ export function useAuth() {
       await queryClient.refetchQueries({ queryKey: ["authUser"] });
       setTimeout(() => updateOnlineStatus(true), 100);
 
-      const base = getBaseDomain();
-      const encoded = encodeURIComponent(data.token);
-      const prod = isProductionDomain();
-
-      if (data.user.isSuperAdmin) {
-        // SUPER_ADMIN → superadmin dashboard (from any login page)
-        window.location.replace(
-          prod
-            ? `https://superadmin.${base}/superadmin/dashboard`
-            : `/superadmin/dashboard`,
-        );
-      } else if (data.user.isAdmin) {
-        // OWNER/ADMIN/STAFF → admin panel via callback token handoff
-        window.location.replace(
-          prod
-            ? `https://admin.${base}/auth/callback?token=${encoded}&redirect=/dashboard`
-            : `/dashboard`,
-        );
-      }
+      // Produkcija → admin./superadmin. subdomen (cross-host handoff);
+      // dev/preview/staging → relativno na istom hostu. Klijenti: null.
+      const target = loginRedirectUrl({
+        isAdmin: data.user.isAdmin,
+        isSuperAdmin: data.user.isSuperAdmin,
+        token: data.token,
+        hostname: window.location.hostname,
+      });
+      if (target) window.location.replace(target);
       // Clients — login page handles redirect
     },
     onError: (err: unknown) => {
@@ -370,27 +344,14 @@ export function useAuth() {
       queryClient.clear();
       toast.success("Uspešno ste se odjavili");
 
-      const tenantSlug = variables?.tenantSlug;
-
-      if (tenantSlug) {
-        const base = getBaseDomain();
-        // Tenant subdomains ({slug}.marysoll.com) and custom domains both serve
-        // tenant routes at the root, so logout must return to "/login" on the
-        // same host. detectCustomDomain() covers both (a subdomain is NOT an
-        // apex host). Only the apex path-based host (marysoll.com/{slug}) and
-        // local/LAN dev use the "/{slug}/login" prefix.
-        window.location.href = detectCustomDomain()
-          ? "/login"
-          : isProductionDomain()
-            ? `https://${base}/${tenantSlug}/login`
-            : `/${tenantSlug}/login`;
-        return;
-      }
-
-      const base = getBaseDomain();
-      window.location.href = isProductionDomain()
-        ? `https://${base}/login`
-        : "/login";
+      // Tenant subdomen i custom domen serviraju salon na rootu → "/login" na
+      // istom hostu (detectCustomDomain pokriva oba). Path-based okruženja i
+      // apex koriste "/{slug}/login" prefiks.
+      window.location.href = logoutRedirectUrl({
+        hostname: window.location.hostname,
+        isTenantHost: detectCustomDomain(),
+        tenantSlug: variables?.tenantSlug,
+      });
     },
   });
 

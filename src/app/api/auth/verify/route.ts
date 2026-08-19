@@ -10,22 +10,7 @@ import {
   TRIAL_DAYS,
 } from "@/lib/email/onboarding";
 import { verifyOwnerNewsletterContact } from "@/lib/newsletterService";
-
-function getTenantPublicUrl(tenant: {
-  slug: string;
-  customDomain?: string | null;
-  customDomainVerified?: boolean;
-}): string {
-  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
-  // Na staging-u custom domen pokazuje na prod → koristi staging subdomen.
-  const isStaging = baseDomain.startsWith("staging.");
-
-  if (!isStaging && tenant.customDomain && tenant.customDomainVerified) {
-    return `https://${tenant.customDomain}`;
-  }
-
-  return `https://${tenant.slug}.${baseDomain}`;
-}
+import { platformOrigin, tenantOrigin } from "@/lib/platform/host-context";
 
 /**
  * GET /api/auth/verify?token=xxx&type=owner|client
@@ -39,7 +24,8 @@ export async function GET(request: NextRequest) {
   const token = searchParams.get("token");
   const type = searchParams.get("type") ?? "client";
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  // Sve iz OVOG zahteva: verifikacija otvorena na staging-u ostaje na staging-u.
+  const baseUrl = platformOrigin(request);
 
   if (!token) {
     return NextResponse.redirect(`${baseUrl}/verify-email?error=missing_token`);
@@ -70,7 +56,7 @@ export async function GET(request: NextRequest) {
           customDomainVerified?: boolean;
         } | null;
         const tenantLoginUrl = existingTenant
-          ? `${getTenantPublicUrl(existingTenant)}/login`
+          ? `${tenantOrigin(existingTenant, request)}/login`
           : `${baseUrl}/login`;
         return NextResponse.redirect(
           `${baseUrl}/verify-email?already_verified=true&loginUrl=${encodeURIComponent(tenantLoginUrl)}`,
@@ -139,7 +125,7 @@ export async function GET(request: NextRequest) {
             email: tenantUser.email,
             ownerName: tenantUser.name,
             salonName: tenant.name,
-            subdomain: `${tenant.slug}.marysoll.com`,
+            subdomain: tenantOrigin(tenant, request).replace(/^https?:\/\//, ""),
             trialEndsAt,
           });
         } catch (e) {
@@ -156,7 +142,7 @@ export async function GET(request: NextRequest) {
       const tenant = await Tenant.findById(tenantUser.tenantId);
       if (tenant) {
         salonName = tenant.name;
-        salonUrl = getTenantPublicUrl(tenant);
+        salonUrl = tenantOrigin(tenant, request);
       }
 
       try {
@@ -172,7 +158,7 @@ export async function GET(request: NextRequest) {
       }
 
       const tenantLoginUrl = tenant
-        ? `${getTenantPublicUrl(tenant)}/login`
+        ? `${tenantOrigin(tenant, request)}/login`
         : `${baseUrl}/login`;
       return NextResponse.redirect(
         `${baseUrl}/verify-email?success=client&loginUrl=${encodeURIComponent(tenantLoginUrl)}`,

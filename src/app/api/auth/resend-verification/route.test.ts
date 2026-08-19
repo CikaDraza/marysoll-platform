@@ -70,12 +70,16 @@ function clientDoc(overrides: Record<string, unknown> = {}): Doc {
 
 const TENANT = { _id: "t-marina", name: "Marina Beauty", slug: "marina-beauty" };
 
-function request(body: object, tenantSlugHeader: string | null) {
+function request(
+  body: object,
+  tenantSlugHeader: string | null,
+  host = "marysoll.com",
+) {
   const headers: Record<string, string> = { "content-type": "application/json" };
   if (tenantSlugHeader !== null) headers["x-tenant-slug"] = tenantSlugHeader;
-  return new NextRequest("https://marysoll.com/api/auth/resend-verification", {
+  return new NextRequest(`https://${host}/api/auth/resend-verification`, {
     method: "POST",
-    headers,
+    headers: { ...headers, host },
     body: JSON.stringify(body),
   });
 }
@@ -174,6 +178,21 @@ describe("POST /api/auth/resend-verification", () => {
       verificationToken: client.verificationToken,
     });
     expect(sendOwnerVerificationEmail).not.toHaveBeenCalled();
+  });
+
+  it("staging host → mejl nosi staging (path-based) URL salona", async () => {
+    vi.mocked(Tenant.findOne).mockReturnValue(
+      leanQuery(TENANT) as unknown as ReturnType<typeof Tenant.findOne>,
+    );
+    vi.mocked(TenantUser.findOne).mockReturnValue(query(clientDoc()) as never);
+
+    await POST(
+      request({ email: "ana@example.com" }, "marina-beauty", "staging.marysoll.com"),
+    );
+
+    expect(vi.mocked(sendClientVerificationEmail).mock.calls[0][0]).toMatchObject({
+      salonBaseUrl: "https://staging.marysoll.com/marina-beauty",
+    });
   });
 
   it("nepoznat salon u headeru → ista poruka, bez mejla", async () => {

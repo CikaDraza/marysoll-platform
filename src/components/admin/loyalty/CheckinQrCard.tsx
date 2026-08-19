@@ -5,24 +5,24 @@
  * i beleži dolazak (/checkin na javnom domenu salona). Phase 1 dopuna.
  *
  * URL je HOST-based (custom domen ili {slug}.marysoll.com) jer je path-based
- * check-in blokiran u produkciji (proxy IS_PROD gate).
+ * check-in blokiran u produkciji (proxy IS_PROD gate) — izuzev path-based
+ * hostova (dev/preview/staging), gde `tenantSiteUrl` ostaje na tom hostu.
  */
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
-
-const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+import { tenantOrigin } from "@/lib/platform/host-context";
 
 export function CheckinQrCard() {
   const { tenant } = useTenantAdmin();
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   const checkinUrl = tenant?.slug
-    ? `https://${
-        tenant.customDomain && tenant.customDomainVerified
-          ? tenant.customDomain
-          : `${tenant.slug}.${BASE_DOMAIN}`
-      }/checkin`
+    ? `${tenantOrigin({
+        slug: tenant.slug,
+        customDomain: tenant.customDomain,
+        customDomainVerified: tenant.customDomainVerified,
+      })}/checkin`
     : null;
 
   useEffect(() => {

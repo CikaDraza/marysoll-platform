@@ -20,6 +20,11 @@ import {
 } from "./email/email";
 import { sendWebPushToUser, sendWebPushToMany } from "@/lib/webPush";
 import { usableRasterLogo } from "@/lib/branding/rasterLogo";
+import {
+  ADMIN_APPOINTMENTS_PATH,
+  ADMIN_TESTIMONIALS_PATH,
+  clientPanelPath,
+} from "@/lib/notifications/pushTargets";
 
 // ── Salon branding for push payloads ─────────────────────────────────────────
 // Exportovano i za loyalty notifikacije (lib/loyalty/notifications.ts).
@@ -470,8 +475,10 @@ export async function createAppointmentNotification(
 
   const config = notificationConfig[type];
 
-  const panelUrl = "/panel?tab=Moji%20Termini";
-  const adminUrl = "/admin/termini";
+  // Push putanje po okruženju (prod: /panel na tenant domenu; staging/dev:
+  // /{slug}/panel). Admin je uvek /dashboard — /admin/* ruta ne postoji.
+  const panelUrl = await clientPanelPath(appointment.tenantId, "?tab=Moji%20Termini");
+  const adminUrl = ADMIN_APPOINTMENTS_PATH;
 
   if (type === "message") {
     if (additionalData?.sender === "client") {
@@ -909,8 +916,8 @@ export async function createTestimonialNotification(
   } as const;
 
   const fullType = fullTypeMap[type];
-  const adminUrl = "/admin/preporuke";
-  const panelUrl = "/panel?tab=Moje%20Preporuke";
+  const adminUrl = ADMIN_TESTIMONIALS_PATH;
+  const panelUrl = await clientPanelPath(testimonial.tenantId, "?tab=Moje%20Preporuke");
 
   const stars = "⭐".repeat(Math.min(testimonial.rating ?? 5, 5));
 

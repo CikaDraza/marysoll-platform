@@ -7,6 +7,7 @@ import {
   sendClientVerificationEmail,
   sendOwnerVerificationEmail,
 } from "@/lib/email/onboarding";
+import { tenantOrigin } from "@/lib/platform/host-context";
 
 /**
  * POST /api/auth/resend-verification
@@ -103,11 +104,13 @@ export async function POST(req: NextRequest) {
     }
 
     const tenant = await Tenant.findById(tenantUser.tenantId)
-      .select("_id name slug")
+      .select("_id name slug customDomain customDomainVerified")
       .lean<{
         _id: import("mongoose").Types.ObjectId;
         name: string;
         slug: string;
+        customDomain?: string | null;
+        customDomainVerified?: boolean;
       }>();
 
     if (!tenant) {
@@ -119,8 +122,10 @@ export async function POST(req: NextRequest) {
     tenantUser.verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await tenantUser.save();
 
-    const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
-    const salonBaseUrl = `https://${tenant.slug}.${baseDomain}`;
+    // URL salona u okruženju iz koga je zahtev stigao (prod → subdomen/custom
+    // domen, staging/dev → `{origin}/{slug}`).
+    const salonBaseUrl = tenantOrigin(tenant, req);
+    const salonHost = salonBaseUrl.replace(/^https?:\/\//, "");
 
     if (tenantUser.role === "OWNER") {
       await sendOwnerVerificationEmail({
@@ -128,7 +133,7 @@ export async function POST(req: NextRequest) {
         ownerName: tenantUser.name,
         salonName: tenant.name,
         verificationToken,
-        subdomain: `${tenant.slug}.${baseDomain}`,
+        subdomain: salonHost,
       });
     } else {
       await sendClientVerificationEmail({

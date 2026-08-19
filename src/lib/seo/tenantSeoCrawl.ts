@@ -3,6 +3,7 @@ import "server-only";
 import { Tenant } from "@/models/Tenant";
 import type { LandingRenderSnapshot } from "@/lib/seo/marketingLandingSnapshot";
 import { crawlRenderedMarketingPage } from "@/lib/seo/crawlRenderedMarketingPage";
+import { tenantOrigin } from "@/lib/platform/host-context";
 
 export type TenantSeoPageKey = "home" | "services" | "appointments";
 
@@ -28,12 +29,8 @@ export async function resolveTenantLandingCrawlUrl(tenantId: string) {
 
   if (!tenant?.slug) throw new Error("Tenant nije pronađen");
 
-  if (tenant.customDomain && tenant.customDomainVerified) {
-    return `https://${tenant.customDomain}`;
-  }
-
-  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
-  return `https://${tenant.slug}.${baseDomain}`;
+  // Crawl-uje se sajt OVOG okruženja (na staging-u staging kopija, ne prod).
+  return tenantOrigin({ ...tenant, slug: tenant.slug });
 }
 
 function buildTenantSeoPageUrls(homeUrl: string) {

@@ -8,11 +8,13 @@
  *
  * `base` rules (set server-side by the proxy, never guessed client-side):
  *   - ""          on production — subdomain / custom domain — links: /login, /panel
- *   - "/{slug}"   on localhost path-based dev — links: /kiki-kiss/panel
+ *   - "/{slug}"   on path-based hostovima (localhost dev, *.vercel.app preview,
+ *                 staging/qa apex) — links: /kiki-kiss/panel
  */
 "use client";
 
 import { useTenant } from "@/contexts/TenantContext";
+import { BASE_DOMAIN, isPathBasedHost } from "@/lib/platform/host-context";
 
 interface ClientRouting {
   tenantSlug: string;
@@ -28,17 +30,15 @@ interface ClientRouting {
 export function detectCustomDomain(): boolean {
   if (typeof window === "undefined") return false;
   const host = window.location.hostname;
-  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
+  const baseDomain = BASE_DOMAIN;
 
-  if (
-    host !== "localhost" &&
-    !host.startsWith("127.") &&
-    !host.startsWith("192.168.") &&
-    // Vercel preview buildovi nisu tenant custom domeni
-    !host.endsWith(".vercel.app") &&
-    !host.endsWith(baseDomain) &&
-    host !== baseDomain
-  ) {
+  // Path-based hostovi (localhost/LAN, *.vercel.app preview, staging/qa apex)
+  // NIKAD nisu tenant host — salon tamo živi na `/{slug}`. Bez ovog izuzetka
+  // `staging.marysoll.com` prolazi kao "subdomen koji nije platformski" i sve
+  // in-salon veze izgube `/{slug}` prefiks.
+  if (isPathBasedHost(host)) return false;
+
+  if (!host.endsWith(baseDomain) && host !== baseDomain) {
     return true;
   }
 

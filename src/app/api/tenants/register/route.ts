@@ -10,6 +10,7 @@ import { sendOwnerVerificationEmail, TRIAL_DAYS } from "@/lib/email/onboarding";
 import { upsertOwnerNewsletterContact } from "@/lib/newsletterService";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import { BASE_DOMAIN } from "@/lib/platform/host-context";
 
 /**
  * POST /api/tenants/register
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
       slug = `${baseSlug}-${counter++}`;
     }
 
-    const subdomain = `${slug}.marysoll.com`;
+    const subdomain = `${slug}.${BASE_DOMAIN}`;
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const hashedPassword = await bcrypt.hash(password, 12);

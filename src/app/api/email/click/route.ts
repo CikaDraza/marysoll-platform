@@ -9,8 +9,10 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { EmailCampaign } from "@/models/EmailCampaign";
 import { CampaignEvent } from "@/models/CampaignEvent";
 import { AudienceContact } from "@/models/AudienceContact";
+import { platformOrigin } from "@/lib/platform/host-context";
 
-const FALLBACK = process.env.NEXT_PUBLIC_APP_URL ?? "https://marysoll.com";
+/** Kad tracking link nema odredište — vrati korisnika na TAJ isti sajt. */
+const fallbackUrl = (req: NextRequest) => platformOrigin(req);
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
@@ -77,5 +79,5 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(FALLBACK);
+  return NextResponse.redirect(fallbackUrl(req));
 }

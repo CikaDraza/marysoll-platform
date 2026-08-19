@@ -14,6 +14,7 @@ import { Tenant } from "@/models/Tenant";
 import { Types } from "mongoose";
 import { getSalonClientGender } from "@/lib/salonClientGender";
 import { clientNoun, clientNounCap, genderPast } from "@/lib/clientWording";
+import { platformOrigin, tenantUrl } from "@/lib/platform/host-context";
 
 // ── Tenant client panel URL resolution ────────────────────────────────────────
 /**
@@ -46,24 +47,19 @@ async function resolveClientPanelUrl(
     } | null;
     if (!tenant) return fallback;
 
-    // 1. Verified custom domain (e.g. https://marysoll.makeup/panel)
-    if (tenant.customDomain && tenant.customDomainVerified) {
-      return `https://${tenant.customDomain}/panel${query}`;
-    }
+    // Okruženje odlučuje oblik: produkcija → verifikovan custom domen ili
+    // {slug}.marysoll.com; staging/qa/dev → {origin}/{slug} (path-based).
+    const slug = tenant.slug || tenant.subdomain;
+    if (!slug) return fallback;
 
-    const platformHost = new URL(base).host.replace(/^www\./, "");
-
-    // 2. Subdomain (e.g. https://marysoll-makeup-nails.marysoll.com/panel)
-    if (tenant.subdomain) {
-      return `https://${tenant.subdomain}.${platformHost}/panel${query}`;
-    }
-
-    // 3. Path slug — only when neither custom domain nor subdomain is set
-    if (tenant.slug) {
-      return `https://${platformHost}/${tenant.slug}/panel${query}`;
-    }
-
-    return fallback;
+    return tenantUrl(
+      {
+        slug,
+        customDomain: tenant.customDomain,
+        customDomainVerified: tenant.customDomainVerified,
+      },
+      `/panel${query}`,
+    );
   } catch {
     return fallback;
   }
@@ -185,8 +181,8 @@ function ctaButton(label: string, url: string): string {
   </table>`;
 }
 
-const appUrl = () =>
-  process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "";
+/** Origin platforme za okruženje iz koga se mejl šalje (prod/staging/dev). */
+const appUrl = () => platformOrigin();
 
 // ── Templates ─────────────────────────────────────────────────────────────────
 
