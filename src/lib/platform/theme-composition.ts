@@ -337,7 +337,7 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
   {
     theme: "theme-9",
     visibility: "theme-document",
-    // „Skincare Marina" — prva education-first tema. Nema `services.catalog` ni
+    // „Expert Editorial" — prva education-first tema. Nema `services.catalog` ni
     // `booking.services`: Marinin proizvod je Consultation, zaseban domen
     // (`booking.consultations`) koji stiže u svom slice-u. Booking je ovde
     // launcher (Hero/Header CTA → `/termini`), ne inline sekcija — spec 6.10/6.11.

@@ -13,6 +13,11 @@
  * 2. Stil se menja imperativno, ne kroz `setState` — po ARCHITECTURAL_RULES §4.4
  *    („nikad setState direktno u useEffect"). Ovo je čisto vizuelni efekat nad
  *    jednim čvorom, pa mu React re-render i ne treba.
+ *
+ * Zašto NE koristi `ThemeLandingProps.reduceMotion`: taj iOS-safe signal postoji
+ * da bi tema mogla da preskoči ulaznu animaciju koja bi inače sakrila SSR HTML
+ * (theme-8 preloader). Ovde se sadržaj nikad ne renderuje skriven — skrivanje
+ * se dešava tek posle hidratacije — pa flag nema šta da spreči.
  */
 import { useEffect, useRef } from "react";
 

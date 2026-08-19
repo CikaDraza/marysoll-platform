@@ -41,6 +41,11 @@ export function theme9HeroProps(
   const salonName = data.salon.name;
   const image = c?.image ?? c?.images?.[0];
 
+  // `resolveHeroCtas` podrazumevano vraća `/termini` — to je salonski Service
+  // Booking i ova tema ga NE koristi. Href se prosleđuje samo ako ga je tenant
+  // stvarno upisao; inače Hero renderuje inertan launcher (`BookingCta`).
+  const primaryHref = c?.ctas?.primary?.href ? cta.primary.href : undefined;
+
   // Mapiranje CMS polja na editorial hero:
   //   description      → eyebrow (pill iznad naslova)
   //   headline         → h1
@@ -51,8 +56,8 @@ export function theme9HeroProps(
     title: c?.headline || salonName,
     lead: c?.subheadline,
     keywords: keywordsOf(c?.whereWhatForWhom),
-    primaryCta: cta.primary,
-    secondaryCta: cta.secondary,
+    primaryCta: { text: cta.primary.text || "Zakaži konsultaciju", href: primaryHref },
+    secondaryCta: c?.ctas?.secondary?.href ? cta.secondary : undefined,
     image: image?.src ? { url: image.src, alt: image.alt || salonName } : undefined,
     badge: {
       initials: initialsOf(salonName),
@@ -69,8 +74,10 @@ export function theme9AboutProps(data: ContentAboutData): Theme9AboutProps {
     eyebrow: "O meni",
     headline: c?.headline || data.salonName,
     paragraphs: (c?.paragraphs ?? []).filter(Boolean),
-    // Kredencijali su danas ručno upisane stavke iz CMS-a (`landing.stats`).
-    // To je mesto skladištenja, ne vlasništvo sekcije (ARCHITECTURAL_RULES §3.5).
+    // PRELAZNO: kredencijali danas dolaze iz `landing.stats`. Kad stigne blok
+    // `content.credentials` (obrazovanje, sertifikacija, stručni dokaz), OVO SE
+    // BRIŠE — About ostaje biografija/priča/slika, kredencijali dobijaju svoju
+    // sekciju. Ne smeju živeti na oba mesta.
     credentials: (data.authoredStats ?? []).map((s) => ({
       label: s.label,
       value: s.value,

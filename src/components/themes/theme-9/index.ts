@@ -1,6 +1,7 @@
-/** theme-9 „Skincare Marina" — Expert Editorial. */
+/** theme-9 „Expert Editorial" — education-first tema (prvi tenant: Marina). */
 export { Theme9About } from "./AboutSection";
 export type { Theme9AboutProps } from "./AboutSection";
+export { BookingCta } from "./BookingCta";
 export { Theme9Footer } from "./Footer";
 export type { Theme9FooterProps } from "./Footer";
 export { Theme9Header } from "./Header";

@@ -120,11 +120,12 @@ export interface Theme6WithPricing extends Theme6NativeData {
 }
 
 /**
- * theme-9 „Skincare Marina" — Expert Editorial.
+ * theme-9 „Expert Editorial" — prva education-first tema (prvi tenant: Marina).
  *
- * Booking je ovde launcher + widget, ne sekcija (spec 6.11): `bookingLauncher`
- * nosi podatke koje Hero CTA prosleđuje widget-u, i NE zavisi od
- * `appointmentSection.enabled` — to je odluka o sekciji, ne o proizvodu.
+ * NEMA `bookingLauncher` sa `salon`/`services`. Launcher će dobiti NEUTRALAN
+ * ugovor (rutiranje + `CtaAction`) kad stigne Consultation domen — ubacivanje
+ * `IService[]` sada bi značilo da je Marinina konsultacija salonska usluga,
+ * što je tačno granica koju ova tema čuva.
  */
 export interface Theme9NativeData {
   header: {
@@ -132,12 +133,6 @@ export interface Theme9NativeData {
     logo?: string;
     /** Nadnaslov ispod imena u logotipu (npr. „Skincare edukacija"). */
     kicker?: string;
-  };
-  bookingLauncher: {
-    tenantSlug?: string;
-    clientSlug?: string;
-    salon: SalonProfileData;
-    services: IService[];
   };
   footer: {
     salonName: string;
@@ -314,12 +309,6 @@ export function buildThemeNative(
             salonName: salon.name,
             logo: salon.logo ?? undefined,
             kicker: salon.description || undefined,
-          },
-          bookingLauncher: {
-            tenantSlug,
-            clientSlug: clientSlug ?? tenantSlug,
-            salon,
-            services: input.services,
           },
           footer: {
             salonName: salon.name,

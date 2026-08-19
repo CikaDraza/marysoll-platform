@@ -1,12 +1,13 @@
 /**
  * Theme9Hero — editorial hero: tekst levo, portret 4:5 desno sa lebdećim badge-om.
  *
- * Primarni CTA je LAUNCHER, ne sekcija (spec 6.11). Do T3 Booking Engine-a
- * `href` vodi na `/termini`; kad dugme dobije `CtaAction: open-widget`, `href`
- * ostaje progressive-enhancement fallback za rad bez JS-a.
+ * Primarni CTA je LAUNCHER, ne sekcija (spec 6.11). Kad tenant NIJE sam upisao
+ * href, dugme je inertno (`BookingCta`) — namerno bez fallbacka na `/termini`,
+ * jer je to salonski Service Booking, a Consultation je zaseban domen.
  */
 import Image from "next/image";
 import { AnchorLink } from "../shared/AnchorLink";
+import { BookingCta } from "./BookingCta";
 import { ArrowCircle, Eyebrow } from "./primitives";
 import { Reveal } from "./Reveal";
 
@@ -15,7 +16,8 @@ export interface Theme9HeroProps {
   title: string;
   lead?: string;
   keywords: string[];
-  primaryCta: { text: string; href: string };
+  /** `href` postoji samo kad ga je tenant sam upisao; inače je CTA inertan. */
+  primaryCta: { text: string; href?: string };
   secondaryCta?: { text: string; href: string };
   image?: { url: string; alt?: string };
   badge?: { initials: string; name: string; role?: string };
@@ -53,13 +55,20 @@ export function Theme9Hero({
           )}
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            <AnchorLink
-              href={primaryCta.href}
-              className="group bg-ee-accent hover:bg-ee-accent-lift text-ee-canvas inline-flex items-center gap-3 rounded-full py-2 pr-6 pl-2 text-[14.5px] font-semibold transition-colors duration-[250ms]"
-            >
-              <ArrowCircle size={36} />
-              {primaryCta.text}
-            </AnchorLink>
+            {primaryCta.href ? (
+              <AnchorLink
+                href={primaryCta.href}
+                className="group bg-ee-accent hover:bg-ee-accent-lift text-ee-canvas inline-flex items-center gap-3 rounded-full py-2 pr-6 pl-2 text-[14.5px] font-semibold transition-colors duration-[250ms]"
+              >
+                <ArrowCircle size={36} />
+                {primaryCta.text}
+              </AnchorLink>
+            ) : (
+              <BookingCta
+                label={primaryCta.text}
+                className="py-2 pr-6 pl-2 text-[14.5px]"
+              />
+            )}
 
             {secondaryCta && (
               <AnchorLink

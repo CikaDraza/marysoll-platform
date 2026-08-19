@@ -1,8 +1,9 @@
 "use client";
 /**
- * Theme9Landing — „Skincare Marina", Expert Editorial.
+ * Theme9Landing — „Expert Editorial".
  *
- * Prva education-first tema. Slice 2 nosi PREZENTACIJU:
+ * Prva education-first tema; prvi realni tenant je Marina, ali tema NIJE Marina
+ * i ne sme da nosi njeno ime ni fallback podatke. Slice 2 nosi PREZENTACIJU:
  *   hero / about        → ThemeBlock (postojeći tipovi)
  *   header / footer     → theme-9 native (view model iz `buildThemeNative`)
  *

@@ -104,7 +104,7 @@ export const THEMES: {
   },
   {
     id: "theme-9",
-    label: "Skincare Marina",
+    label: "Expert Editorial",
     description:
       "Editorijalni dizajn za stručnu edukaciju i konsultacije o nezi kože",
     previewColors: ["#faf8f3", "#2e3b2e", "#c6d5a8"],

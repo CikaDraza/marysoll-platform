@@ -22,25 +22,21 @@ export function Theme9Footer({
   const base = tenantSlug ? `/${tenantSlug}` : "";
   const year = new Date().getFullYear();
 
+  // Bez `/usluge` i `/termini`: to je salonski Service Booking tok, a ova tema
+  // je education-first (vidi Theme9Header). Anchor linkovi su prefiksovani sa
+  // `base` + `/` da rade i sa podstranica, ne samo sa početne.
   const columns: { title: string; links: { label: string; href: string }[] }[] = [
     {
       title: "Edukacija",
-      links: [
-        { label: "Teme", href: `${base}/blogs` },
-        { label: "Cenovnik", href: `${base}/usluge` },
-      ],
+      links: [{ label: "Teme", href: `${base}/blogs` }],
     },
     {
-      title: "Usluge",
-      links: [
-        { label: "O meni", href: "#o-meni" },
-        { label: "Zakazivanje", href: `${base}/termini` },
-      ],
+      title: "O meni",
+      links: [{ label: "Biografija", href: `${base}/#o-meni` }],
     },
     {
       title: "Kontakt",
       links: [
-        { label: "Rezervacija termina", href: `${base}/termini` },
         ...(instagramUrl ? [{ label: "Instagram", href: instagramUrl }] : []),
         ...(email ? [{ label: email, href: `mailto:${email}` }] : []),
       ],

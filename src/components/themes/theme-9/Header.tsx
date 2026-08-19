@@ -6,9 +6,14 @@
  * bio samo UI. Ovde nav radi kao u ostalim temama: prave rute kroz `base`,
  * `useAuth` + `LoggedButton`, isti ugovor kao Theme7/Theme8 header.
  *
- * Primarni CTA je LAUNCHER (spec 6.11), ne sekcija. Do T3 Booking Engine-a
- * vodi na `/termini` — to ostaje progressive-enhancement fallback i kasnije,
- * kad dugme dobije `CtaAction: open-widget`.
+ * NAV NAMERNO NE VODI NA `/usluge` NI `/termini`. Te rute pripadaju salonskom
+ * Service Booking toku, a ova tema je education-first: Consultation je zaseban
+ * domen (`booking.consultations`). Slanje education tenanta na legacy service
+ * flow bi u produkciji napravilo tačno onu prečicu koju tema treba da spreči.
+ *
+ * Primarni CTA je LAUNCHER (spec 6.11), ne sekcija. Vizuelno stoji, ali je
+ * INERTAN dok Expert Booking flow ne stigne (Slice 4/7) — nema fallback na
+ * legacy `/termini`.
  */
 import { useState } from "react";
 import Image from "next/image";
@@ -16,12 +21,13 @@ import Link from "next/link";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import LoggedButton from "@/components/auth/LoggedButton";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowCircle } from "./primitives";
+import { BookingCta } from "./BookingCta";
 
 interface Props {
   tenantSlug?: string;
   clientSlug?: string;
-  salonName?: string;
+  /** Obavezno — tema nema fallback ime; ono dolazi iz `SalonProfile`. */
+  salonName: string;
   salonLogo?: string | null;
   /** Nadnaslov ispod imena (npr. „Skincare edukacija"). */
   kicker?: string;
@@ -37,15 +43,15 @@ export function Theme9Header({
   const [menuOpen, setMenuOpen] = useState(false);
   const { user } = useAuth();
   const base = tenantSlug ? `/${tenantSlug}` : "";
-  const displayName = salonName ?? "Marina B. Stanisavljević";
+  // Bez hardkodovanog imena: tema nije Marina, ona joj je prvi tenant.
+  const displayName = salonName;
 
   // `/za-klijente` i `/za-profesionalce` stižu u svom slice-u (tada im treba i
   // unos u CLIENT_TENANT_PATHS) — do tada nav ne sme da vodi na 404.
   const navItems = [
     { name: "Početna", href: `${base}/` },
-    { name: "Usluge", href: `${base}/usluge` },
     { name: "Edukacija", href: `${base}/blogs` },
-    { name: "Termini", href: `${base}/termini` },
+    { name: "O meni", href: `${base}/#o-meni` },
   ];
 
   return (
@@ -88,13 +94,7 @@ export function Theme9Header({
             </Link>
           ))}
           <span className="w-3.5" />
-          <Link
-            href={`${base}/termini`}
-            className="group bg-ee-accent hover:bg-ee-accent-lift text-ee-canvas inline-flex items-center gap-2.5 rounded-full py-1.5 pr-[18px] pl-1.5 text-[13.5px] font-semibold transition-colors duration-[250ms]"
-          >
-            <ArrowCircle size={30} />
-            Zakaži konsultaciju
-          </Link>
+          <BookingCta className="py-1.5 pr-[18px] pl-1.5 text-[13.5px]" arrow={30} />
           <span className="ml-2">
             <LoggedButton user={user ?? null} tenantSlug={clientSlug ?? tenantSlug} />
           </span>
@@ -128,13 +128,9 @@ export function Theme9Header({
                 {item.name}
               </Link>
             ))}
-            <Link
-              href={`${base}/termini`}
-              onClick={() => setMenuOpen(false)}
-              className="bg-ee-accent text-ee-canvas mt-2 rounded-full px-5 py-3 text-center text-[14.5px] font-semibold"
-            >
-              Zakaži konsultaciju
-            </Link>
+            <span className="mt-2">
+              <BookingCta className="w-full justify-center px-5 py-3 text-[14.5px]" arrow={0} />
+            </span>
             <span className="mt-2">
               <LoggedButton
                 user={user ?? null}
