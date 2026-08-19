@@ -29,8 +29,9 @@ export async function POST(req: NextRequest) {
     const crawlUrl =
       body.crawlUrl ||
       process.env.MARKETING_SEO_CRAWL_URL ||
-      // Podrazumevano se crawl-uje marketing sajt OVOG okruženja.
-      platformOrigin(req);
+      // Marketing sajt OVOG okruženja — BEZ hosta zahteva, jer zahtev stiže sa
+      // superadmin.marysoll.com, a crawl-uje se javni sajt.
+      platformOrigin();
 
     let crawlError: string | undefined;
     let snapshot: LandingRenderSnapshot;

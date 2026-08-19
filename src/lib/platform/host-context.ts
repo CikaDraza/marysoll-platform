@@ -203,9 +203,9 @@ function joinUrl(origin: string, path: string): string {
  *   3. DEV (`NODE_ENV !== "production"`) — uvek lokalni server. `.env.local`
  *      obično nosi PRODUKCIJSKI `NEXT_PUBLIC_APP_URL`, pa bi ga dev mejlovi i
  *      redirecti inače koristili. Lokalni/LAN `NEXT_PUBLIC_APP_URL` se poštuje.
- *   4. `NEXT_PUBLIC_APP_URL` (ili legacy `NEXTAUTH_URL`) — env po DEPLOYU
- *      (produkcija / staging / qa). Jači od VERCEL_URL-a, jer staging i qa jesu
- *      preview deployi ali imaju STALAN domen.
+ *   4. `NEXT_PUBLIC_APP_URL` — env po DEPLOYU (produkcija / staging / qa).
+ *      Jači od VERCEL_URL-a, jer staging i qa jesu preview deployi ali imaju
+ *      STALAN domen.
  *   5. Vercel preview BEZ svog domena — `https://${VERCEL_URL}`.
  *   6. `https://${BASE_DOMAIN}`.
  */
@@ -216,9 +216,9 @@ export function platformOrigin(req?: RequestLike): string {
   }
   if (typeof window !== "undefined") return window.location.origin;
 
-  // NEXTAUTH_URL je legacy alias — stariji deployi ga imaju umesto APP_URL-a.
-  const rawEnvUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL;
-  const envUrl = rawEnvUrl ? normalizeOrigin(rawEnvUrl) : "";
+  const envUrl = process.env.NEXT_PUBLIC_APP_URL
+    ? normalizeOrigin(process.env.NEXT_PUBLIC_APP_URL)
+    : "";
 
   if (process.env.NODE_ENV !== "production") {
     const envHost = hostOfOrigin(envUrl);

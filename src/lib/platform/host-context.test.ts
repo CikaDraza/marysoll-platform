@@ -18,7 +18,6 @@ interface LoadEnv {
   /** Deploy env: "production" = pravi build (prod/staging/qa), inače dev. */
   nodeEnv?: string;
   appUrl?: string;
-  nextAuthUrl?: string;
   vercelEnv?: string;
   vercelUrl?: string;
 }
@@ -28,7 +27,6 @@ async function load(env: LoadEnv = {}): Promise<HostContext> {
   vi.stubEnv("NEXT_PUBLIC_BASE_DOMAIN", env.baseDomain ?? "marysoll.com");
   vi.stubEnv("NODE_ENV", env.nodeEnv ?? "production");
   vi.stubEnv("NEXT_PUBLIC_APP_URL", env.appUrl ?? "");
-  vi.stubEnv("NEXTAUTH_URL", env.nextAuthUrl ?? "");
   vi.stubEnv("VERCEL_ENV", env.vercelEnv ?? "");
   vi.stubEnv("VERCEL_URL", env.vercelUrl ?? "");
   if (env.stagingHosts !== undefined) {
@@ -214,13 +212,6 @@ describe("platformOrigin", () => {
       vercelUrl: "marysoll-git-staging.vercel.app",
     });
     expect(platformOrigin()).toBe("https://staging.marysoll.com");
-  });
-
-  it("legacy NEXTAUTH_URL i dalje važi kad APP_URL nije postavljen", async () => {
-    const { platformOrigin } = await load({
-      nextAuthUrl: "https://qa.marysoll.com",
-    });
-    expect(platformOrigin()).toBe("https://qa.marysoll.com");
   });
 
   it("bez ičega pada na BASE_DOMAIN", async () => {

@@ -39,7 +39,6 @@ async function loadModules(env: Env = {}) {
   vi.resetModules();
   vi.stubEnv("NEXT_PUBLIC_BASE_DOMAIN", "marysoll.com");
   vi.stubEnv("NEXT_PUBLIC_APP_URL", env.appUrl ?? "");
-  vi.stubEnv("NEXTAUTH_URL", "");
   vi.stubEnv("NODE_ENV", env.nodeEnv ?? "production");
   vi.stubEnv("VERCEL_ENV", "");
   vi.stubEnv("VERCEL_URL", "");
@@ -197,6 +196,33 @@ describe("marysoll.com (produkcija)", () => {
     expect(host.platformUrl("/dashboard")).toBe("https://marysoll.com/dashboard");
     expect(host.tenantUrl(TENANT, "/panel")).toBe(
       "https://marina-skincare.rs/panel",
+    );
+  });
+
+  it("dashboard na admin.marysoll.com NE sme da ponudi admin host kao sajt salona", async () => {
+    const { host } = await loadModules(PROD);
+    browserOn("admin.marysoll.com");
+    // Regresija: `platformOrigin()` bi ovde dao admin.marysoll.com/{slug} —
+    // adresu koja ne servira javni sajt salona.
+    expect(host.tenantOrigin({ slug: SLUG })).toBe(
+      `https://${SLUG}.marysoll.com`,
+    );
+  });
+
+  it("linkovi ka Marysoll marketingu se grade iz env-a, ne iz hosta zahteva", async () => {
+    const { host } = await loadModules(PROD);
+    // Kontakt/CTA/SEO crawl kreće sa superadmin panela ili sa domena salona —
+    // ako bi uzeli host zahteva, link bi vodio tamo umesto na javni sajt.
+    const fromSuperadmin = {
+      headers: {
+        get: (n: string) =>
+          n.toLowerCase() === "host" ? "superadmin.marysoll.com" : null,
+      },
+    };
+    expect(host.platformUrl("/kontakt")).toBe("https://marysoll.com/kontakt");
+    // Kad host zahteva JESTE relevantan (verifikacioni link iz mejla), prosleđuje se.
+    expect(host.platformUrl("/kontakt", fromSuperadmin)).toBe(
+      "https://superadmin.marysoll.com/kontakt",
     );
   });
 

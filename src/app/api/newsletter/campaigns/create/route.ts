@@ -99,7 +99,9 @@ export async function POST(request: Request) {
       defaultTemplateSlug: defaultTemplateSlug,
       ctaSlug:
         ctaSlug ||
-        (newsletterScope.scope === "platform" ? `${platformOrigin(request)}/` : null),
+        // BEZ `request`: kampanju kreira superadmin sa superadmin.marysoll.com,
+        // a CTA vodi na JAVNI marketing sajt tog okruženja.
+        (newsletterScope.scope === "platform" ? `${platformOrigin()}/` : null),
       subject: subject.trim(),
       previewText: previewText.trim(),
       content,

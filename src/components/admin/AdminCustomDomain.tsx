@@ -14,7 +14,7 @@
 import { useState, useEffect } from "react";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import type { DomainSearchResult } from "@/hooks/useTenantAdmin";
-import { platformOrigin } from "@/lib/platform/host-context";
+import { BASE_DOMAIN, tenantOrigin } from "@/lib/platform/host-context";
 
 // ─── Style tokens (mirrors dashboard/page.tsx) ─────────────────────────────
 
@@ -138,9 +138,16 @@ export function AdminCustomDomain() {
         ? "Level 2: MX detected"
         : "Level 1: Reply-To only";
 
-  // Path-based fallback URL — always available regardless of custom domain status
-  const platformHost = platformOrigin().replace(/^https?:\/\//, "");
-  const pathBasedUrl = tenant?.slug ? `${platformOrigin()}/${tenant.slug}` : null;
+  // Podrazumevana javna adresa salona — ono što ostaje kad custom domena nema
+  // ili nije verifikovan: `{slug}.marysoll.com` u produkciji, `{origin}/{slug}`
+  // na path-based okruženjima. Namerno BEZ custom domena (njega ovde i menjamo).
+  //
+  // NE `platformOrigin()`: dashboard se servira sa `admin.marysoll.com`, pa bi
+  // to dalo `admin.marysoll.com/{slug}` — adresu koja ne servira javni sajt.
+  const publicSiteUrl = tenant?.slug ? tenantOrigin({ slug: tenant.slug }) : null;
+  const publicSiteHost = publicSiteUrl
+    ? publicSiteUrl.replace(/^https?:\/\//, "")
+    : `vas-salon.${BASE_DOMAIN}`;
 
   // Show fallback warning if domain set but NOT verified
   const showFallbackWarning = hasDomain && !isVerified;
@@ -166,16 +173,16 @@ export function AdminCustomDomain() {
                     {tenant.customDomain}
                   </code>{" "}
                   je sačuvan ali DNS verifikacija nije potvrđena. Salon je
-                  trenutno dostupan na path-based URL-u:
+                  trenutno dostupan na podrazumevanoj adresi:
                 </p>
-                {pathBasedUrl && (
+                {publicSiteUrl && (
                   <a
-                    href={pathBasedUrl}
+                    href={publicSiteUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 hover:text-amber-900 underline underline-offset-2"
                   >
-                    {pathBasedUrl}
+                    {publicSiteHost}
                     <svg
                       className="w-3 h-3 opacity-60"
                       viewBox="0 0 12 12"
@@ -345,7 +352,7 @@ export function AdminCustomDomain() {
               </code>{" "}
               umesto na{" "}
               <code className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded">
-                {platformHost}/{tenant?.slug ?? "vas-salon"}
+                {publicSiteHost}
               </code>
               .
             </p>
@@ -530,7 +537,7 @@ export function AdminCustomDomain() {
               <div className="flex-1 rounded-xl border border-red-100 bg-red-50 p-4">
                 <p className="text-xs text-red-700 font-semibold mb-3">
                   Sigurno želite da uklonite custom domen? Vaš salon će biti
-                  dostupan samo na {platformHost}/{tenant?.slug}.
+                  dostupan samo na {publicSiteHost}.
                 </p>
                 <div className="flex gap-2">
                   <button
