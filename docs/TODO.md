@@ -13,7 +13,7 @@
 | 2 | theme-9 prezentacija | 🟡 u toku | **Urađeno:** registracija na svih 15 mesta, Expert Editorial tokeni u `@theme`, `colorPolicy: locked`, Header/Hero/About/Footer, `Reveal`, renderer mapa, landing + shell, inventar i test (9 tema). **Sledeće:** 6 novih blok tipova (audience-paths, topic-hub, guided-care-process, credentials, featured-education, professional-path), ekstrakcija 13 slika iz `.image-slots.state.json`, pa **neutralizacija `ThemeShellProps`**, pa `/za-klijente` i `/za-profesionalce`. | [PANTA-T2-THEME-LAYOUT-ENGINE.md](PANTA-T2-THEME-LAYOUT-ENGINE.md) + `design/Skincare_Platform_Design-handoff/` |
 | 3 | `availability-core` | ⬜ nije počet | Spajanje četiri kopije kalendarske logike u jedan modul; `[start, end)`, UTC + timezone, pauze, odmori. | PANTA-T3-BOOKING-ENGINE.md *(nastaje u Slice 5)* |
 | 4 | Booking UI apstrakcija | ⬜ nije počet | `useBookingFlow({ bookingProductAdapter, presentation })` + `BookingThemeTokens`. **Bez production write-a.** | PANTA-T3-BOOKING-ENGINE.md + T2 §6.10/6.11 |
-| 5 | ★ T3 Booking Engine CORE | ⬜ nije počet | `BookingReservation` kao kanonski occupancy, `BookingDayLock` serijalizacija, idempotencija, quote snapshot, conflict recovery. | PANTA-T3-BOOKING-ENGINE.md *(nastaje ovde)* |
+| 5 | ★ T3 Booking Engine CORE | ⬜ nije počet | `BookingReservation` kao kanonski occupancy, `BookingDayLock` serijalizacija, idempotencija, quote snapshot, conflict recovery, **`BookingFacts` contract** (`availabilityClass`, override i lifecycle činjenice) kao jedini ulaz za budući Pricing/Loyalty obračun. | PANTA-T3-BOOKING-ENGINE.md *(nastaje ovde)* |
 | 6 | ★ Migracija + concurrency gate | ⬜ nije počet | Sve write rute na `BookingEngine.reserve()`; architecture test protiv direktnog `appointment.save()`. | PANTA-T3-BOOKING-ENGINE.md |
 | 7 | Consultation domen | ⬜ nije počet | `ConsultationOffering` → `ConsultationBooking` → `BookingReservation`. Marinin glavni proizvod; **nije `Service`**. | PANTA-T3-BOOKING-ENGINE.md *(Consultation adapter)* |
 | 8 | Hold | ⬜ nije počet | `BookingHold` 7–10 min, `confirmHold()` kroz istu day-lock transakciju. | PANTA-T3-BOOKING-ENGINE.md |
@@ -33,6 +33,82 @@ Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran
 - **Consultation nije `Service`** — ne sme deliti `services.catalog` ni `booking.services`.
 - **Domenski naziv `education.*` uz `capability: null` je zabranjen** — ili domenski blok sa loaderom i capability-jem, ili `content.*` teaser.
 - **Admin ekrani ne pre Slice 1.**
+
+## Zaključani engine integration contracts
+
+### Booking → Pricing → Loyalty
+
+Booking Engine je autoritet za **činjenice o rezervaciji i vremenu**. Ne računa
+pricing pravila niti loyalty nagrade.
+
+```text
+BOOKING ENGINE
+utvrđuje činjenice
+│
+├── bookingId / reservationId
+├── tenantId
+├── clientId
+├── resourceKey
+├── productType / productRef
+├── startsAt / endsAt
+├── duration
+├── availabilityClass
+│   ├── standard
+│   ├── extended
+│   └── exceptional
+├── outsidePreferredHours
+├── ownerOverride + overrideReason
+├── reschedule facts
+├── late cancellation / no-show
+└── completed
+        │
+        ├──────────────► PRICING ENGINE
+        │                računa cenu / surcharge / quote
+        │
+        └──────────────► LOYALTY ENGINE
+                         računa earn / deduct / reward / reversal
+```
+
+**Granice:**
+
+- Booking Engine odlučuje da li je termin validan, slobodan i kojoj
+  `availabilityClass` pripada.
+- Pricing Engine **ne** odlučuje availability; iz Booking činjenica računa cenu,
+  surcharge i finalni quote.
+- Loyalty Engine **ne** zaključuje sam iz sata da li je termin standardni,
+  extended ili exceptional — dobija klasifikovane Booking činjenice.
+- Booking Engine **ne** računa loyalty poene niti popuste zbog ponašanja klijenta.
+- Loyalty preview pre zakazivanja je **read-only**: `previewReward(bookingFacts)`
+  ne menja ledger.
+- Stvarni loyalty efekat nastaje tek iz događaja
+  `booking.created | rescheduled | completed | no_show | cancelled`
+  i mora biti **idempotentan**.
+- Pricing/Loyalty rezultat sme biti prikazan korisniku **PRE** finalne potvrde:
+  cena, surcharge i očekivana nagrada ne smeju prvi put biti otkriveni tek nakon
+  realizacije termina.
+- Reversal/correction mora imati **stabilan source/event id** da retry ili isti
+  događaj ne može dvaput dodati ili oduzeti vrednost.
+
+**Primer podele:** salon definiše 09–18 standard, 18–21 extended, 21–00 i 05:00
+exceptional. Booking Engine vraća samo `{ startsAt, endsAt, availabilityClass:
+"exceptional", outsidePreferredHours: true }`. Pricing iz toga računa `+30%`,
+Loyalty potpuno nezavisno `redovan dolazak +2`, `bez kasnog pomeranja +1`,
+`late reschedule −2`. Korisnica pre klika `Zakaži` vidi i cenu sa dodatkom i
+očekivane poene.
+
+**Zašto se zaključava sada, a ne kad Pricing Engine bude postojao:** problem
+ponovne obrade već postoji i danas je rešen lokalno na modelu —
+`Appointment.loyaltyProcessed { completed, noShow, revertCount }`
+([Appointment.ts:103](../src/models/Appointment.ts#L103)), gde `revertCount`
+ulazi u event `sourceId` da bi ponovni completion posle reverta mogao ponovo da
+nagradi. T3 je prilika da to preraste u čist ugovor
+`booking događaj → event/source id → Loyalty Engine → ledger → idempotency/reversal`.
+
+> **Ovo NIJE nalog za novi Pricing/Loyalty slice.** Ne pravi se „Slice 14 Pricing
+> Engine" niti se dira postojeća Loyalty implementacija. Zapisuje se samo ugovor,
+> da T3 proizvede dovoljno dobre činjenice i da niko kasnije ne ugura obračun
+> poena ili surcharge direktno u Booking Engine.
+
 
 ## Zatečeni dugovi koje ovaj luk zatvara
 
