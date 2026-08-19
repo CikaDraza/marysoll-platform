@@ -532,15 +532,13 @@ export const sharedLandingSections = {
     showCredentials: true,
     pullQuote: "Ne preporučujem proizvod pre procene kože.",
     credentials: [
-      {
-        label: "Obrazovanje",
-        value: "Sertifikovani kozmetičar i estetičar",
-        note: "naziv programa i institucije — dopuniti",
-      },
+      // `note` je namerno prazan gde ga Marina još nije potvrdila. U prototipu
+      // je tu stajalo „naziv programa i institucije — CMS polje" — to je
+      // dizajnerska napomena, ne sadržaj, i ne sme se objaviti na javnoj strani.
+      { label: "Obrazovanje", value: "Sertifikovani kozmetičar i estetičar" },
       {
         label: "Praksa",
         value: "Rad sa klijentima na proceni kože i vođenju rutine",
-        note: "period i mesto rada — dopuniti",
       },
       {
         label: "Edukativni rad",

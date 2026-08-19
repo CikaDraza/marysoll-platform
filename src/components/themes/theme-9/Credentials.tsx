@@ -56,24 +56,32 @@ export function Theme9Credentials({
           )}
         </Reveal>
 
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,265px),1fr))] gap-4">
-          {pillars.map((p, i) => (
-            <Reveal key={p.title} delay={i * 60}>
-              <article className="bg-ee-surface-muted flex h-full flex-col gap-2.5 rounded-[20px] p-6">
-                <h3 className="font-newsreader text-ee-accent text-[20px] leading-snug">
-                  {p.title}
-                </h3>
-                {p.text && (
-                  <p className="font-instrument-sans text-ee-text-muted text-[14.5px] leading-[1.65]">
-                    {p.text}
-                  </p>
-                )}
-              </article>
-            </Reveal>
-          ))}
+        {/* Instagram ide u SVOJU desnu kolonu (1/4 širine, puna visina) da
+            njegova visina ne rasteže kolonu sa stubovima. Stubovi se levo šire
+            koliko im treba i prelamaju u drugi red, jednakih visina.
+            Na mobilnom je sve jedna kolona. */}
+        <div
+          className={`grid gap-4 ${social ? "lg:grid-cols-4" : ""}`}
+        >
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,265px),1fr))] gap-4 lg:col-span-3">
+            {pillars.map((p, i) => (
+              <Reveal key={p.title} delay={i * 60} className="h-full">
+                <article className="bg-ee-surface-muted flex h-full flex-col gap-2.5 rounded-[20px] p-6">
+                  <h3 className="font-newsreader text-ee-accent text-[20px] leading-snug">
+                    {p.title}
+                  </h3>
+                  {p.text && (
+                    <p className="font-instrument-sans text-ee-text-muted text-[14.5px] leading-[1.65]">
+                      {p.text}
+                    </p>
+                  )}
+                </article>
+              </Reveal>
+            ))}
+          </div>
 
           {social && (social.title || social.images?.length) && (
-            <Reveal delay={pillars.length * 60}>
+            <Reveal delay={pillars.length * 60} className="lg:col-span-1 lg:h-full">
               <div className="bg-ee-accent text-ee-canvas flex h-full flex-col gap-[18px] rounded-[20px] p-6 lg:p-8">
                 <span className="text-ee-accent-contrast text-[11px] tracking-[0.14em] uppercase">
                   {social.label || "Instagram"}

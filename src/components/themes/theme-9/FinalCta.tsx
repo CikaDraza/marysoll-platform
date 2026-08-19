@@ -90,7 +90,7 @@ export function Theme9FinalCta({
 
               <BookingCta
                 label={ctaLabel || "Otvori zakazivanje"}
-                className="self-start py-2 pr-6 pl-2 text-[14.5px]"
+                className="w-full justify-center py-3 pr-6 pl-2 text-[14.5px]"
               />
 
               {note && (

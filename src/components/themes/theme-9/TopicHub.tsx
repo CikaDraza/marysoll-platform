@@ -43,8 +43,10 @@ export function Theme9TopicHub({
   return (
     <section id="teme" className="bg-ee-canvas">
       <div className="mx-auto max-w-[1240px] px-5 py-14 md:px-8 md:py-20 lg:px-14 lg:py-[110px]">
-        <Reveal className="mb-9 flex flex-col items-start justify-between gap-5 lg:flex-row lg:flex-nowrap lg:items-end">
-          <div className="flex min-w-0 flex-col gap-3">
+        <Reveal className="mb-9 flex flex-col items-start justify-between gap-5 lg:flex-row lg:items-end">
+          {/* `min-w-0` + `basis` — naslov se prelama u nov red umesto da
+              stisne tabove; tabovi ispod imaju `shrink-0`. */}
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
             {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
             {headline && (
               <h2 className="font-newsreader text-ee-accent max-w-[46ch] text-[clamp(30px,3.7vw,52px)] leading-[1.05] tracking-[-0.024em]">
@@ -54,7 +56,7 @@ export function Theme9TopicHub({
           </div>
 
           {filters.length > 0 && (
-            <div className="flex flex-wrap gap-2 lg:flex-nowrap">
+            <div className="flex shrink-0 flex-wrap gap-2 lg:flex-nowrap">
               {[{ id: ALL, label: "Sve" }, ...filters].map((f) => (
                 <button
                   key={f.id}

@@ -34,6 +34,25 @@ Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran
 - **Domenski naziv `education.*` uz `capability: null` je zabranjen** — ili domenski blok sa loaderom i capability-jem, ili `content.*` teaser.
 - **Admin ekrani ne pre Slice 1.**
 
+## Otvorena odluka: prazan CMS ne sme da razbije dizajn
+
+theme-9 sekcije danas **nestaju** kad im je sadržaj prazan. Za Marinu to nije
+problem — sve joj je seed-ovano — ali čim se tema dodeli drugom tenantu, on
+otvori panel i vidi polovinu strane.
+
+Pravilo koje treba da važi:
+
+> Tenant popunjava ono što mu je omogućeno. Sve ostalo mora da **postoji** — ili
+> se menja, ili se uklanja i preuređuje — ali ne sme da naruši vizuelni izgled.
+
+Rešenje **nije** Marinin sadržaj kao runtime fallback: to je njen tekst i njena
+biografija. Rešenje su **neutralni tekstovi na nivou teme**, kao što ih theme-8
+već ima za svoju vertikalu. Otvoreno je koje sekcije dobijaju neutralan default,
+a koje se legitimno gase (npr. Instagram kartica bez naloga nema šta da prikaže).
+
+Odluku doneti **pre nego što tema ode drugom tenantu**, ne pre toga.
+
+
 ## Zaključani engine integration contracts
 
 ### Booking → Pricing → Loyalty

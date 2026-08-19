@@ -47,7 +47,9 @@ export function Theme9ProfessionalPath({
           )}
         </Reveal>
 
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,290px),1fr))] gap-4">
+        {/* Eksplicitni breakpointi umesto `auto-fit`: na full HD-u su
+            veće kartice stale po tri, a dizajn traži četiri. */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {formats.map((f, i) => (
             <Reveal key={f.title} delay={i * 60}>
               <article className="flex h-full min-h-[280px] flex-col gap-3.5 rounded-[20px] bg-white/[0.08] p-7 transition-colors duration-200 hover:bg-white/[0.13] lg:p-8">
