@@ -10,6 +10,11 @@
  * Interceptor na `api` automatski dodaje Bearer token.
  */
 import axios from "axios";
+import {
+  BASE_DOMAIN,
+  isPathBasedHost,
+  tenantSlugFromPath,
+} from "@/lib/platform/host-context";
 
 const BASE = "/api";
 
@@ -71,17 +76,16 @@ api.interceptors.response.use(
       } catch {
         // Refresh nije uspeo — odjavi korisnika
         localStorage.removeItem("token");
-        const baseDomain =
-          process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
         const host = window.location.hostname;
-        const isProd =
-          host !== "localhost" &&
-          !host.startsWith("127.") &&
-          // Vercel preview: ostani na preview hostu (relativni /login)
-          !host.endsWith(".vercel.app");
-        window.location.href = isProd
-          ? `https://${baseDomain}/login`
-          : "/login";
+        // Path-based hostovi (dev, *.vercel.app preview, staging/qa apex): ostani
+        // na istom hostu. Ako je korisnik bio u salonu (`/{slug}/…`), vrati ga na
+        // login TOG salona — inače bi završio na platformskoj prijavi.
+        if (isPathBasedHost(host)) {
+          const slug = tenantSlugFromPath(window.location.pathname);
+          window.location.href = slug ? `/${slug}/login` : "/login";
+        } else {
+          window.location.href = `https://${BASE_DOMAIN}/login`;
+        }
       }
     }
     return Promise.reject(error);

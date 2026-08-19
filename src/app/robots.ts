@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { platformUrl } from "@/lib/platform/host-context";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -19,6 +20,6 @@ export default function robots(): MetadataRoute.Robots {
         "/resend-verification/",
       ],
     },
-    sitemap: "https://marysoll.com/sitemap.xml",
+    sitemap: platformUrl("/sitemap.xml"),
   };
 }

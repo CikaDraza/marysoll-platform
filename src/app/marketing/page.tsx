@@ -92,9 +92,8 @@ export default function MarketingPage() {
 
   useEffect(() => {
     if (!isLoading && (!user || (!user.isAdmin && !user.isSuperAdmin))) {
-      window.location.replace(
-        `${process.env.NEXT_PUBLIC_APP_URL ?? "https://marysoll.com"}/login`,
-      );
+      // Isti origin (klijent) — dev/staging ne ispadaju na produkciju.
+      window.location.replace("/login");
     }
   }, [isLoading, user]);
 

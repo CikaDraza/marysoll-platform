@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/psihointegritet-design-system-9b777129-4357-4736-b780-b3a5e908ed92/fonts/fonts.css">
+  <link rel="stylesheet" href="_ds/psihointegritet-design-system-9b777129-4357-4736-b780-b3a5e908ed92/styles.css">
+  <script src="_ds/psihointegritet-design-system-9b777129-4357-4736-b780-b3a5e908ed92/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;background:var(--color-panel-canvas);color:var(--color-coffee);font-family:var(--font-instrument-sans),system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+    a:not([class]){color:var(--color-forest)}
+    h1,h2,h3,h4{font-weight:400;margin:0}
+    p{margin:0}
+    th{text-align:left}
+  </style>
+</helmet>
+
+<div style="max-width:1080px;margin:0 auto;padding:clamp(36px,5vw,72px) clamp(20px,4vw,48px) 96px">
+
+  <header style="display:flex;flex-direction:column;gap:18px;padding-bottom:34px;border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 14%, transparent)">
+    <x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="sage" hint-size="180px,18px">Design handoff · v1</x-import>
+    <h1 style="font-family:var(--font-newsreader),Georgia,serif;font-size:clamp(32px,4.4vw,58px);line-height:1.04;letter-spacing:-.026em;color:var(--color-forest);max-width:24ch">Marina tenant tema — ExpertEditorial</h1>
+    <p style="font-size:16.5px;line-height:1.7;color:color-mix(in oklab, var(--color-coffee) 70%, transparent);max-width:64ch">Vizuelni prototip: <a href="Marina Skincare Theme.dc.html">Marina Skincare Theme</a> — HOME, /za-klijente i /za-profesionalce. Statični fixture podaci, bez engine wiring-a. Ovaj dokument je ulaz za refaktor u postojeći Marysoll sistem (Next.js + Tailwind v4 + psihointegritet-ds).</p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+      <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="tagOutlined" hint-size="150px,26px">PsihointegritetUI 0.1.0</x-import>
+      <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="tagOutlined" hint-size="120px,26px">Tailwind v4 tokeni</x-import>
+      <x-import component-from-global-scope="PsihointegritetUI.Chip" variant="tagOutlined" hint-size="140px,26px">Landing CMS blokovi</x-import>
+    </div>
+  </header>
+
+  <section style="padding:44px 0;border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 14%, transparent)">
+    <h2 style="font-family:var(--font-newsreader),Georgia,serif;font-size:30px;color:var(--color-forest);margin-bottom:18px">1 · Pretpostavke</h2>
+    <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px;max-width:74ch">
+      <li style="display:flex;gap:12px;font-size:15.5px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 76%, transparent)"><span style="color:var(--color-warm)">01</span><span><strong>Copy je izveden iz Marininih PDF-ova</strong> (procena kože, aktivni sastojci, kombinovanje, SPF) — kratke verzije za sekcije, puni tekstovi ostaju kao članci.</span></li>
+      <li style="display:flex;gap:12px;font-size:15.5px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 76%, transparent)"><span style="color:var(--color-warm)">02</span><span><strong>Nema još stvarnih fotografija</strong> — svaka slika je image slot sa definisanim odnosom strana; Marina može da ubaci fotografiju direktno u prototip.</span></li>
+      <li style="display:flex;gap:12px;font-size:15.5px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 76%, transparent)"><span style="color:var(--color-warm)">03</span><span><strong>Bez izmišljenog socijalnog dokaza.</strong> Proof sekcija je prepravljena u „Stručnost nije samo sertifikat" — pet stubova kredibiliteta. Nema statistika ni citata; <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">credentials.testimonials</code> je prazan niz i dobija svoj blok kada Marina bude imala stvarna iskustva.</span></li>
+      <li style="display:flex;gap:12px;font-size:15.5px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 76%, transparent)"><span style="color:var(--color-warm)">03b</span><span><strong>Taksonomija je po vlasništvu podatka, ne po prisustvu CTA-a.</strong> Hero, Audience Paths, About, Topic Hub, How I Work i Latest Education su premešteni u <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">content.*</code> — to su autorski tekstovi koje Marina piše, čak i kad sadrže CTA (CTA je samo referenca na akciju). U <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">business</code> ostaju samo stvarni domenski entiteti: usluge, cene, termini, programi. Videti sekciju 2 i 3.</span></li>
+      <li style="display:flex;gap:12px;font-size:15.5px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 76%, transparent)"><span style="color:var(--color-warm)">04</span><span><strong>Glavni CTA otvara Expert Booking modal</strong> (tri koraka), ne skroluje na sekciju. Cene su konkretne u modalu, a na stranici samo „od…". Funnel: Hero → Booking modal → Intake → Potvrda.</span></li>
+      <li style="display:flex;gap:12px;font-size:15.5px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 76%, transparent)"><span style="color:var(--color-warm)">05</span><span><strong>Featured Education je namerno nedovršen.</strong> Format, trajanje, datum i cena stoje kao „Marina potvrđuje" (<code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">details: null</code>) — ne pretpostavljamo da li je live, snimljeno ili kombinacija.</span></li>
+      <li style="display:flex;gap:12px;font-size:15.5px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 76%, transparent)"><span style="color:var(--color-warm)">06</span><span><strong>Motion je suptilan</strong> — jedan reveal pattern po sekciji, bez paralaksa i bez scroll-jacking-a.</span></li>
+    </ul>
+  </section>
+
+  <section style="padding:44px 0;border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 14%, transparent)">
+    <h2 style="font-family:var(--font-newsreader),Georgia,serif;font-size:30px;color:var(--color-forest);margin-bottom:18px">2 · Tri sloja elemenata</h2>
+    <p style="font-size:15.5px;line-height:1.7;color:color-mix(in oklab, var(--color-coffee) 72%, transparent);max-width:70ch;margin-bottom:16px">U mockupu je svaki blok označen atributima <code style="font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--color-surface);padding:2px 6px;border-radius:6px">data-block</code>, <code style="font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--color-surface);padding:2px 6px;border-radius:6px">data-block-kind</code> i <code style="font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--color-surface);padding:2px 6px;border-radius:6px">data-cms</code> — direktno mapiranje na tri sloja.</p>
+    <div style="background:var(--color-surface);border:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent);border-radius:18px;padding:22px 24px;margin-bottom:24px">
+      <p style="font-size:14.5px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 78%, transparent)"><strong style="color:var(--color-forest)">Pravilo razvrstavanja:</strong> ne pita se „ima li blok CTA" — skoro svaki ima. Pita se <strong style="color:var(--color-forest)">čiji je podatak</strong>. Ako je tekst koji Marina piše i menja kao copy (poruka, opis, princip), to je <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">content.*</code> — CTA unutra je samo referenca na akciju (npr. <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">action: "openBookingModal"</code>), ne domenski zapis. Ako je stvarni entitet platforme sa cenom, terminom ili statusom, to je <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">consultation.*</code> / <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">education.*</code> / <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">booking.*</code>.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px">
+      <article style="background:var(--color-surface);border:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent);border-radius:20px;padding:26px;display:flex;flex-direction:column;gap:12px">
+        <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-sage)">Content blocks</span>
+        <h3 style="font-family:var(--font-newsreader),Georgia,serif;font-size:22px;color:var(--color-forest)">Autorski tekst</h3>
+        <p style="font-size:14.5px;line-height:1.6;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">Hero, Audience Paths, About, Topic Hub, How I Work (guided care process), Credentials, Latest Education. Marina ih piše i menja kao copy; CTA unutra je referenca na akciju, ne podatak.</p>
+      </article>
+      <article style="background:var(--color-surface);border:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent);border-radius:20px;padding:26px;display:flex;flex-direction:column;gap:12px">
+        <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-sage)">Business / feature blocks</span>
+        <h3 style="font-family:var(--font-newsreader),Georgia,serif;font-size:22px;color:var(--color-forest)">Domen platforme</h3>
+        <p style="font-size:14.5px;line-height:1.6;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">Consultation offerings, Professional path, Featured education offering, Booking (final CTA + modal) — usluge, cene, termini, status ponude.</p>
+      </article>
+      <article style="background:var(--color-surface);border:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent);border-radius:20px;padding:26px;display:flex;flex-direction:column;gap:12px">
+        <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-sage)">Theme-native presentation</span>
+        <h3 style="font-family:var(--font-newsreader),Georgia,serif;font-size:22px;color:var(--color-forest)">Dizajn i motion</h3>
+        <p style="font-size:14.5px;line-height:1.6;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">ExpertEditorialThemeScheme: boje, tipografija, širine, radiusi, sticky/image-stage i reveal motion. Blok ne zna kako izgleda — tema odlučuje.</p>
+      </article>
+    </div>
+  </section>
+
+  <section style="padding:44px 0;border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 14%, transparent)">
+    <h2 style="font-family:var(--font-newsreader),Georgia,serif;font-size:30px;color:var(--color-forest);margin-bottom:8px">3 · Blok mapa → Landing CMS</h2>
+    <p style="font-size:14.5px;line-height:1.6;color:color-mix(in oklab, var(--color-coffee) 66%, transparent);margin-bottom:22px">Redosled je redosled sekcija na HOME stranici.</p>
+    <div style="overflow-x:auto">
+    <table style="border-collapse:collapse;width:100%;min-width:760px;font-size:13.5px">
+      <thead>
+        <tr style="border-bottom:1.5px solid var(--color-forest)">
+          <th style="padding:11px 12px 11px 0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-sage)">Blok</th>
+          <th style="padding:11px 12px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-sage)">data-cms</th>
+          <th style="padding:11px 12px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-sage)">Tip</th>
+          <th style="padding:11px 12px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-sage)">CMS polja</th>
+          <th style="padding:11px 0 11px 12px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-sage)">DS komponente</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)">
+          <td style="padding:13px 12px 13px 0;font-weight:600;color:var(--color-forest)">Hero</td>
+          <td style="padding:13px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">content.hero</td>
+          <td style="padding:13px 12px;color:var(--color-sage)">content</td>
+          <td style="padding:13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">eyebrow, title, lead, primaryCta (<code style="font-family:ui-monospace,Menlo,monospace;font-size:12px">action: openBookingModal</code>), secondaryCta → #teme, keywords[4], image, badge</td>
+          <td style="padding:13px 0 13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">ArrowLink · CTA pill = DS klase + strelica (AnimatedCtaContent zahteva internu <code style="font-family:ui-monospace,Menlo,monospace;font-size:12px">size</code> mapu pa je u prototipu inline)</td>
+        </tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)">
+          <td style="padding:13px 12px 13px 0;font-weight:600;color:var(--color-forest)">Audience Paths</td>
+          <td style="padding:13px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">content.audiencePaths</td>
+          <td style="padding:13px 12px;color:var(--color-sage)">content</td>
+          <td style="padding:13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">paths[2]: index, chip, title, lead, bullets[3], href (route ref), tone</td>
+          <td style="padding:13px 0 13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">Eyebrow, Chip, Reveal</td>
+        </tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)">
+          <td style="padding:13px 12px 13px 0;font-weight:600;color:var(--color-forest)">About</td>
+          <td style="padding:13px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">content.about</td>
+          <td style="padding:13px 12px;color:var(--color-sage)">content</td>
+          <td style="padding:13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">name, role, body[2], credentials[4]: label/value/note, pullQuote, image — biografija, ne metodologija (metod je u guidedCareProcess)</td>
+          <td style="padding:13px 0 13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">Eyebrow</td>
+        </tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)">
+          <td style="padding:13px 12px 13px 0;font-weight:600;color:var(--color-forest)">Expert Approach <span style="font-weight:400;color:var(--color-warm)">otvoreno</span></td>
+          <td style="padding:13px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">content.expertApproach</td>
+          <td style="padding:13px 12px;color:var(--color-sage)">content</td>
+          <td style="padding:13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">U prototipu su ovo tri principa unutar About-a (Procena pre proizvoda, Funkcija pre popularnosti, Doslednost pre količine). Kod refaktora izdvojiti u sopstveni blok ako treba da živi nezavisno od biografije — trenutno nema dovoljno sadržaja za punu sekciju.</td>
+          <td style="padding:13px 0 13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">—</td>
+        </tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)">
+          <td style="padding:13px 12px 13px 0;font-weight:600;color:var(--color-forest)">Topic Hub</td>
+          <td style="padding:13px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">content.topicHub</td>
+          <td style="padding:13px 12px;color:var(--color-sage)">content</td>
+          <td style="padding:13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">topics[]: index, group, title, lead, tags[], href · topicFilters[]</td>
+          <td style="padding:13px 0 13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">TabPills, Chip, Eyebrow</td>
+        </tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)">
+          <td style="padding:13px 12px 13px 0;font-weight:600;color:var(--color-forest)">Featured Offering <span style="font-weight:400;color:var(--color-warm)">novo</span></td>
+          <td style="padding:13px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">education.featuredOffering</td>
+          <td style="padding:13px 12px;color:var(--color-warm)">business</td>
+          <td style="padding:13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">status, title, lead, learn[4], details: format/duration/startDate/price (svi <code style="font-family:ui-monospace,Menlo,monospace;font-size:12px">null</code>), pendingLabel, cta, note</td>
+          <td style="padding:13px 0 13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">Eyebrow (meadow), ButtonLink (meadow)</td>
+        </tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)">
+          <td style="padding:13px 12px 13px 0;font-weight:600;color:var(--color-forest)">Consultation</td>
+          <td style="padding:13px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">consultation.offerings</td>
+          <td style="padding:13px 12px;color:var(--color-warm)">business</td>
+          <td style="padding:13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">title, lead, note, cta, items[]: title, duration, priceFrom, text</td>
+          <td style="padding:13px 0 13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">Chip, Eyebrow · CTA = booking.modal</td>
+        </tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)">
+          <td style="padding:13px 12px 13px 0;font-weight:600;color:var(--color-forest)">Guided Care Process <span style="font-weight:400;color:var(--color-warm)">preimenovano</span></td>
+          <td style="padding:13px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">content.guidedCareProcess</td>
+          <td style="padding:13px 12px;color:var(--color-sage)">content</td>
+          <td style="padding:13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">steps[5]: index, title, text — intake → plan → follow-up, bivše „How I Work"</td>
+          <td style="padding:13px 0 13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">Eyebrow</td>
+        </tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)">
+          <td style="padding:13px 12px 13px 0;font-weight:600;color:var(--color-forest)">Professional Path</td>
+          <td style="padding:13px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">education.professionalPath</td>
+          <td style="padding:13px 12px;color:var(--color-warm)">business</td>
+          <td style="padding:13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">title, lead, note, formats[4]: kind, title, text, priceFrom · modules[4]. Za sada je ovo inquiry kanal — nema samostalnog checkout-a.</td>
+          <td style="padding:13px 0 13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">Eyebrow (meadow), ButtonLink</td>
+        </tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)">
+          <td style="padding:13px 12px 13px 0;font-weight:600;color:var(--color-forest)">Credentials <span style="font-weight:400;color:var(--color-warm)">preimenovano</span></td>
+          <td style="padding:13px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">content.credentials</td>
+          <td style="padding:13px 12px;color:var(--color-sage)">content</td>
+          <td style="padding:13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">pillars[5], social: handle (null), slots[4], note — bivši „Proof"; testimonials[] prazno do stvarnih</td>
+          <td style="padding:13px 0 13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">Eyebrow · StatCard i MonogramAvatar izbačeni</td>
+        </tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)">
+          <td style="padding:13px 12px 13px 0;font-weight:600;color:var(--color-forest)">Testimonials <span style="font-weight:400;color:var(--color-warm)">buduće</span></td>
+          <td style="padding:13px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">content.testimonials</td>
+          <td style="padding:13px 12px;color:var(--color-sage)">content</td>
+          <td style="padding:13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">Odvojen blok od Credentials — dodaje se tek kad Marina ima stvarna iskustva klijenata. Trenutno ne postoji u prototipu.</td>
+          <td style="padding:13px 0 13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">—</td>
+        </tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)">
+          <td style="padding:13px 12px 13px 0;font-weight:600;color:var(--color-forest)">Latest Education</td>
+          <td style="padding:13px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">content.latestEducation</td>
+          <td style="padding:13px 12px;color:var(--color-sage)">content</td>
+          <td style="padding:13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">articles[3]: category, readingTime, title, excerpt, image, href — statično sada, data-backed kasnije (izvor: Marinini tekstovi)</td>
+          <td style="padding:13px 0 13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">Chip, ArrowLink (circled), ResourceCard*</td>
+        </tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)">
+          <td style="padding:13px 12px 13px 0;font-weight:600;color:var(--color-forest)">Final CTA (Booking) <span style="font-weight:400;color:var(--color-warm)">preimenovano</span></td>
+          <td style="padding:13px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">booking.consultation</td>
+          <td style="padding:13px 12px;color:var(--color-warm)">business</td>
+          <td style="padding:13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">title, lead, calendar: month, slots[4], cta, note — appointmentSection, isti podatak na sve tri stranice</td>
+          <td style="padding:13px 0 13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">Eyebrow (coffee)</td>
+        </tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)">
+          <td style="padding:13px 12px 13px 0;font-weight:600;color:var(--color-forest)">Booking modal <span style="font-weight:400;color:var(--color-warm)">novo</span></td>
+          <td style="padding:13px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">booking.modal</td>
+          <td style="padding:13px 12px;color:var(--color-warm)">business</td>
+          <td style="padding:13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">services[2], month, dates[], times[], intake[4], checkin[2], allowIntakeSkip, confirmNote</td>
+          <td style="padding:13px 0 13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">theme-native (dialog)</td>
+        </tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)">
+          <td style="padding:13px 12px 13px 0;font-weight:600;color:var(--color-forest)">/za-klijente</td>
+          <td style="padding:13px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">clients_*</td>
+          <td style="padding:13px 12px;color:var(--color-sage)">content + business</td>
+          <td style="padding:13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">clients_reasons[3], clients_process[4], clients_faq[4], clients_cta</td>
+          <td style="padding:13px 0 13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">PageHero (meadow), SectionHeading, Accordion, ButtonLink</td>
+        </tr>
+        <tr>
+          <td style="padding:13px 12px 13px 0;font-weight:600;color:var(--color-forest)">/za-profesionalce</td>
+          <td style="padding:13px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">pro_*</td>
+          <td style="padding:13px 12px;color:var(--color-sage)">content + business</td>
+          <td style="padding:13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">pro_formats[4], pro_modules[4], pro_faq[4], pro_cta</td>
+          <td style="padding:13px 0 13px 12px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">PageHero (forest), SectionHeading, Accordion, AnimatedCtaLink</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <p style="font-size:13px;line-height:1.6;color:color-mix(in oklab, var(--color-coffee) 60%, transparent);margin-top:14px">* ResourceCard je DS komponenta za listu resursa; u mockupu je kartica članka komponovana od DS atoma jer traži naslovnu sliku, kategoriju i vreme čitanja. Pri refaktoru odlučiti: proširiti ResourceCard ili zadržati kompoziciju.</p>
+  </section>
+
+  <section style="padding:44px 0;border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 14%, transparent)">
+    <h2 style="font-family:var(--font-newsreader),Georgia,serif;font-size:30px;color:var(--color-forest);margin-bottom:8px">4 · ExpertEditorialThemeScheme</h2>
+    <p style="font-size:14.5px;line-height:1.6;color:color-mix(in oklab, var(--color-coffee) 66%, transparent);margin-bottom:20px">Ceo fajl: <code style="font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--color-surface);padding:2px 6px;border-radius:6px">handoff/expert-editorial-theme.js</code> · nijedna vrednost nije nov heks — sve su DS tokeni ili color-mix nad tokenom.</p>
+    <pre style="margin:0;background:var(--color-forest);color:color-mix(in oklab, #fff 88%, transparent);border-radius:18px;padding:26px;overflow-x:auto;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;line-height:1.75">colors
+  canvas           var(--color-panel-canvas)                 #faf8f3
+  surface          var(--color-surface)                      #ffffff
+  surfaceMuted     color-mix(oklab, meadow 22%, canvas)      meadow band
+  text             var(--color-coffee)                       #3a2e28
+  textMuted        color-mix(oklab, coffee 66%, transparent)
+  sage             var(--color-sage)                         #8a9d82
+  terracotta       var(--color-warm)                         #d1a48c
+  accent           var(--color-forest)                       #2e3b2e
+  accentContrast   var(--color-meadow)                       #c6d5a8
+  border           color-mix(oklab, coffee 12%, transparent)
+
+typography
+  display   Newsreader        clamp(40px, 5.6vw, 78px)   lh 1.00   ls -0.028em
+  heading   Newsreader        clamp(30px, 3.7vw, 52px)   lh 1.05   ls -0.024em
+  body      Instrument Sans   17px                       lh 1.72
+  caption   Instrument Sans   12.5px                     lh 1.50   textMuted
+  eyebrow   Instrument Sans   11px  ls 0.14em  uppercase  sage
+
+content
+  proseWidth 64ch     wideWidth 1240px     sectionGap clamp(56px, 7vw, 110px)
+  paragraphGap 20px   imageRadius 28px (kartica 20px / tile 12px)
+  tableStyle 'rows'      samo horizontalne linije coffee/12
+  calloutStyle 'quote'   surfaceMuted, radius 18px, serif 17px, bez ikonice
+
+motion
+  sectionTransition  reveal-fade-up   opacity 0-1, y 28-0, 700ms, cubic-bezier(.22,1,.36,1), once
+  mediaTransition    hold-scale       scale 1 - 1.02, 600ms ease-out
+  reducedMotion      static           bez transformacija i fade-a</pre>
+  </section>
+
+  <section style="padding:44px 0;border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 14%, transparent)">
+    <h2 style="font-family:var(--font-newsreader),Georgia,serif;font-size:30px;color:var(--color-forest);margin-bottom:8px">5 · marinaDesignFixture</h2>
+    <p style="font-size:14.5px;line-height:1.6;color:color-mix(in oklab, var(--color-coffee) 66%, transparent);margin-bottom:20px">Ceo fajl: <code style="font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--color-surface);padding:2px 6px;border-radius:6px">handoff/marina-fixture.js</code> — isti tekst koji je u prototipu, spreman kao seed za CMS.</p>
+    <pre style="margin:0;background:var(--color-surface);border:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent);border-radius:18px;padding:26px;overflow-x:auto;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;line-height:1.8;color:var(--color-coffee)">marinaDesignFixture
+  hero                    title, lead, 2 CTA, keywords[4], badge
+  audiencePaths[2]        licna-nega (surface) · saloni (forest)
+  about                   name, role, body[2], credentials[4], pullQuote
+                          (expertApproach principi trenutno žive ovde — v. sekcija 3)
+  topics[4]               procena-koze · aktivni-sastojci · kombinovanje · spf
+  topicFilters[4]         sve · osnove · aktivni · zastita
+  featuredOffering        learn[4], details: sve null do potvrde
+  booking                 services[2], dates[4], times[4], intake[4], checkin[2]
+  consultation            items[4], process[4], faq[4], reasons[3]
+  professionalEducation   formats[4], modules[4], faq[4]
+  howIWork[5]             procena - potreba - sastojak - uvodjenje - pracenje
+                          (= content.guidedCareProcess)
+  credentials             pillars[5], social, testimonials[] prazno
+                          (= content.credentials; bivši "proof")
+  latestEducation[3]      kategorija, vreme citanja, excerpt, slot
+  finalCta                calendar.slots[4], note (= booking.consultation)
+  footer                  columns[3], legal, platform
+
+  * placeholder vrednosti</pre>
+  </section>
+
+  <section style="padding:44px 0;border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 14%, transparent)">
+    <h2 style="font-family:var(--font-newsreader),Georgia,serif;font-size:30px;color:var(--color-forest);margin-bottom:8px">5b · Expert Booking modal</h2>
+    <p style="font-size:14.5px;line-height:1.6;color:color-mix(in oklab, var(--color-coffee) 66%, transparent);margin-bottom:22px">Otvara ga svaki primarni CTA (header, hero, Consultation, Final CTA, /za-klijente hero). Tri koraka; stanje je lokalno u komponenti, bez rute.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px;margin-bottom:26px">
+      <article style="background:var(--color-surface);border:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:11px">
+        <span style="font-family:var(--font-newsreader),Georgia,serif;font-size:15px;color:var(--color-sage)">01</span>
+        <h3 style="font-family:var(--font-newsreader),Georgia,serif;font-size:21px;color:var(--color-forest)">Izbor i termin</h3>
+        <p style="font-size:14px;line-height:1.6;color:color-mix(in oklab, var(--color-coffee) 72%, transparent)">Individualna konsultacija ili Vođeni paket — sa listom šta uključuje i tačnom cenom. Zatim datum i vreme. „Nastavi" je zatamnjen dok termin nije izabran.</p>
+      </article>
+      <article style="background:var(--color-surface);border:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:11px">
+        <span style="font-family:var(--font-newsreader),Georgia,serif;font-size:15px;color:var(--color-sage)">02</span>
+        <h3 style="font-family:var(--font-newsreader),Georgia,serif;font-size:21px;color:var(--color-forest)">Kratak intake</h3>
+        <p style="font-size:14px;line-height:1.6;color:color-mix(in oklab, var(--color-coffee) 72%, transparent)">Četiri pitanja sa neutralnim odgovorima (razlog, trajanje, aktivni sastojci, reakcija) + slobodan tekst. Brojač odgovora je vidljiv, nijedno pitanje nije obavezno.</p>
+      </article>
+      <article style="background:var(--color-surface);border:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:11px">
+        <span style="font-family:var(--font-newsreader),Georgia,serif;font-size:15px;color:var(--color-sage)">03</span>
+        <h3 style="font-family:var(--font-newsreader),Georgia,serif;font-size:21px;color:var(--color-forest)">Pregled i zakazivanje</h3>
+        <p style="font-size:14px;line-height:1.6;color:color-mix(in oklab, var(--color-coffee) 72%, transparent)">Usluga, termin, cena i status intake-a (✓ popunjen / ○ preskočen). „Zakaži" vodi na potvrdu u istom modalu.</p>
+      </article>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px">
+      <div style="background:var(--color-panel-canvas);border:1px solid color-mix(in oklab, var(--color-coffee) 12%, transparent);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:11px">
+        <h3 style="font-family:var(--font-newsreader),Georgia,serif;font-size:20px;color:var(--color-forest)">Povratna klijentkinja</h3>
+        <p style="font-size:14px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 72%, transparent)">Prop <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">returningClient</code> menja korak 02 u follow-up check-in (dva pitanja: kako je koža reagovala, da li je plan bio izvodljiv). Kada Care Journey postoji, engine odlučuje da li se korak 02 uopšte prikazuje.</p>
+      </div>
+      <div style="background:var(--color-panel-canvas);border:1px solid color-mix(in oklab, var(--color-coffee) 12%, transparent);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:11px">
+        <h3 style="font-family:var(--font-newsreader),Georgia,serif;font-size:20px;color:var(--color-forest)">Preskakanje intake-a</h3>
+        <p style="font-size:14px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 72%, transparent)">Prop <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">allowIntakeSkip</code> (default <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">true</code>) prikazuje „Preskoči za sada". Marina odlučuje — ako je intake obavezan, postavi na <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">false</code> i dugme se ne renderuje.</p>
+      </div>
+      <div style="background:var(--color-panel-canvas);border:1px solid color-mix(in oklab, var(--color-coffee) 12%, transparent);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:11px">
+        <h3 style="font-family:var(--font-newsreader),Georgia,serif;font-size:20px;color:var(--color-forest)">Za implementaciju</h3>
+        <p style="font-size:14px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 72%, transparent)">Termini su statični. Pri wiring-u: slobodni slotovi iz booking providera, zaključavanje slota na koraku 03, intake odgovori idu na rezervaciju (ne u opšti profil), i email potvrda sa pripremnim napomenama.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding:44px 0;border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 14%, transparent)">
+    <h2 style="font-family:var(--font-newsreader),Georgia,serif;font-size:30px;color:var(--color-forest);margin-bottom:20px">6 · Motion spec</h2>
+    <div style="display:flex;flex-direction:column;border-top:1px solid color-mix(in oklab, var(--color-coffee) 12%, transparent)">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px;padding:18px 0;border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 12%, transparent)">
+        <span style="font-weight:600;color:var(--color-forest);font-size:14.5px">Sekcija ulazi u vidno polje</span>
+        <span style="font-size:14px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">opacity 0→1, y 28→0 · 700ms · cubic-bezier(.22,1,.36,1) · once, amount 0.08</span>
+        <span style="font-size:13px;color:var(--color-sage);font-family:ui-monospace,Menlo,monospace">Reveal</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px;padding:18px 0;border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 12%, transparent)">
+        <span style="font-weight:600;color:var(--color-forest);font-size:14.5px">Primarni CTA hover</span>
+        <span style="font-size:14px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">sheen sweep + strelica se rotira −45°→0° · 600ms / 300ms · background lift</span>
+        <span style="font-size:13px;color:var(--color-sage);font-family:ui-monospace,Menlo,monospace">AnimatedCtaLink</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px;padding:18px 0;border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 12%, transparent)">
+        <span style="font-weight:600;color:var(--color-forest);font-size:14.5px">Kartica / red teme hover</span>
+        <span style="font-size:14px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">border-color → forest 26% · background → surface · 200ms ease</span>
+        <span style="font-size:13px;color:var(--color-sage);font-family:ui-monospace,Menlo,monospace">theme-native</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px;padding:18px 0;border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 12%, transparent)">
+        <span style="font-weight:600;color:var(--color-forest);font-size:14.5px">Slika hover</span>
+        <span style="font-size:14px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">scale 1→1.02 · 600ms ease-out · overflow hidden na okviru</span>
+        <span style="font-size:13px;color:var(--color-sage);font-family:ui-monospace,Menlo,monospace">mediaTransition</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px;padding:18px 0;border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 12%, transparent)">
+        <span style="font-weight:600;color:var(--color-forest);font-size:14.5px">FAQ otvaranje</span>
+        <span style="font-size:14px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">plus rotira 45°, pozadina meadow/40 · fade-in panela · 300ms</span>
+        <span style="font-size:13px;color:var(--color-sage);font-family:ui-monospace,Menlo,monospace">Accordion</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px;padding:18px 0;border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 12%, transparent)">
+        <span style="font-weight:600;color:var(--color-forest);font-size:14.5px">prefers-reduced-motion</span>
+        <span style="font-size:14px;color:color-mix(in oklab, var(--color-coffee) 70%, transparent)">svi reveal-ovi i scale-ovi se gase; hover boje ostaju</span>
+        <span style="font-size:13px;color:var(--color-sage);font-family:ui-monospace,Menlo,monospace">reducedMotion</span>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding:44px 0;border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 14%, transparent)">
+    <h2 style="font-family:var(--font-newsreader),Georgia,serif;font-size:30px;color:var(--color-forest);margin-bottom:20px">7 · SEO i HTML struktura</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px">
+      <div style="background:var(--color-surface);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:11px">
+        <h3 style="font-family:var(--font-newsreader),Georgia,serif;font-size:20px;color:var(--color-forest)">Hijerarhija</h3>
+        <p style="font-size:14px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 72%, transparent)">Jedan h1 po stranici (Hero / PageHero), h2 po sekciji, h3 za kartice i module. Svaka sekcija je <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">section</code> sa id-om za anchor navigaciju; članci su <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">article</code>, koraci <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">ol</code>, citati <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">blockquote</code>.</p>
+      </div>
+      <div style="background:var(--color-surface);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:11px">
+        <h3 style="font-family:var(--font-newsreader),Georgia,serif;font-size:20px;color:var(--color-forest)">Structured data</h3>
+        <p style="font-size:14px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 72%, transparent)">Koristiti DS <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">JsonLd</code>: Person (Marina) + Service (konsultacija, edukacija) na HOME, Article + BreadcrumbList na stranicama tema, FAQPage na /za-klijente i /za-profesionalce.</p>
+      </div>
+      <div style="background:var(--color-surface);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:11px">
+        <h3 style="font-family:var(--font-newsreader),Georgia,serif;font-size:20px;color:var(--color-forest)">Ključne fraze</h3>
+        <p style="font-size:14px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 72%, transparent)">„procena kože", „aktivni sastojci", „kombinovanje aktivnih sastojaka", „SPF i fotoprotekcija", „edukacija za kozmetičare", „konsultacija za negu kože" — svaka ima svoj URL u Topic Hub-u.</p>
+      </div>
+      <div style="background:var(--color-surface);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:11px">
+        <h3 style="font-family:var(--font-newsreader),Georgia,serif;font-size:20px;color:var(--color-forest)">Slike</h3>
+        <p style="font-size:14px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 72%, transparent)">Svaki slot ima definisan odnos strana (4:5, 3:4, 4:3, 1:1) da ne bi bilo layout shift-a. Alt tekst je CMS polje po slici, ne generisan.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding:44px 0">
+    <h2 style="font-family:var(--font-newsreader),Georgia,serif;font-size:30px;color:var(--color-forest);margin-bottom:20px">8 · Refaktor u postojeći sistem</h2>
+    <ol style="list-style:none;margin:0 0 34px;padding:0;display:flex;flex-direction:column;gap:14px;max-width:74ch">
+      <li style="display:flex;gap:14px;font-size:15px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 76%, transparent)"><span style="font-family:var(--font-newsreader),Georgia,serif;color:var(--color-sage);font-size:17px">01</span><span>Prototip koristi inline stilove sa DS tokenima (<code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">var(--color-*)</code>) — pri refaktoru zameniti DS utility klasama iz tabele ispod. Vrednosti su identične, nema vizuelne razlike.</span></li>
+      <li style="display:flex;gap:14px;font-size:15px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 76%, transparent)"><span style="font-family:var(--font-newsreader),Georgia,serif;color:var(--color-sage);font-size:17px">02</span><span>Svaki <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">data-block</code> postaje jedna blok komponenta koja prima props iz fixture-a; tema (ExpertEditorialThemeScheme) ostaje jedini vlasnik izgleda.</span></li>
+      <li style="display:flex;gap:14px;font-size:15px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 76%, transparent)"><span style="font-family:var(--font-newsreader),Georgia,serif;color:var(--color-sage);font-size:17px">03</span><span>Rute: HOME <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">/</code>, <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">/za-klijente</code>, <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">/za-profesionalce</code>. U prototipu su tri <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">main</code> elementa sa <code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">data-page</code> atributom i klijentskim prebacivanjem.</span></li>
+      <li style="display:flex;gap:14px;font-size:15px;line-height:1.65;color:color-mix(in oklab, var(--color-coffee) 76%, transparent)"><span style="font-family:var(--font-newsreader),Georgia,serif;color:var(--color-sage);font-size:17px">04</span><span>Zameniti placeholder podatke: fotografije, brojevi u Proof-u, cene, citati klijenata, Instagram handle i realni termini iz booking sistema.</span></li>
+    </ol>
+    <div style="overflow-x:auto">
+    <table style="border-collapse:collapse;width:100%;min-width:560px;font-size:13.5px">
+      <thead>
+        <tr style="border-bottom:1.5px solid var(--color-forest)">
+          <th style="padding:11px 12px 11px 0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-sage)">Uloga u temi</th>
+          <th style="padding:11px 12px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-sage)">Inline u prototipu</th>
+          <th style="padding:11px 0 11px 12px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-sage)">DS utility klasa</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)"><td style="padding:12px 12px 12px 0;color:var(--color-forest);font-weight:600">canvas</td><td style="padding:12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">var(--color-panel-canvas)</td><td style="padding:12px 0 12px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">bg-panel-canvas</td></tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)"><td style="padding:12px 12px 12px 0;color:var(--color-forest);font-weight:600">surface</td><td style="padding:12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">var(--color-surface)</td><td style="padding:12px 0 12px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">bg-surface</td></tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)"><td style="padding:12px 12px 12px 0;color:var(--color-forest);font-weight:600">naslov</td><td style="padding:12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">var(--font-newsreader) + forest</td><td style="padding:12px 0 12px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">font-serif text-forest</td></tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)"><td style="padding:12px 12px 12px 0;color:var(--color-forest);font-weight:600">telo teksta</td><td style="padding:12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">coffee 66% / 72%</td><td style="padding:12px 0 12px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">text-coffee/72</td></tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)"><td style="padding:12px 12px 12px 0;color:var(--color-forest);font-weight:600">linija / border</td><td style="padding:12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">coffee 12%</td><td style="padding:12px 0 12px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">border-coffee/12</td></tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)"><td style="padding:12px 12px 12px 0;color:var(--color-forest);font-weight:600">kartica</td><td style="padding:12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">border-radius 20px</td><td style="padding:12px 0 12px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">rounded-card</td></tr>
+        <tr style="border-bottom:1px solid color-mix(in oklab, var(--color-coffee) 10%, transparent)"><td style="padding:12px 12px 12px 0;color:var(--color-forest);font-weight:600">tile / stat</td><td style="padding:12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">12px / 18px</td><td style="padding:12px 0 12px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">rounded-tile / rounded-stat</td></tr>
+        <tr><td style="padding:12px 12px 12px 0;color:var(--color-forest);font-weight:600">floating pill</td><td style="padding:12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">var(--shadow-pill)</td><td style="padding:12px 0 12px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">shadow-pill</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div style="margin-top:38px;background:var(--color-warm);border-radius:22px;padding:clamp(26px,3vw,40px);display:flex;flex-direction:column;gap:14px">
+      <h3 style="font-family:var(--font-newsreader),Georgia,serif;font-size:26px;color:var(--color-coffee)">Otvoreno pre implementacije</h3>
+      <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px">
+        <li style="font-size:14.5px;line-height:1.6;color:color-mix(in oklab, var(--color-coffee) 82%, transparent)">— Fotografije: portret, rad u salonu, detalji proizvoda (4:5, 3:4, 4:3, 1:1)</li>
+        <li style="font-size:14.5px;line-height:1.6;color:color-mix(in oklab, var(--color-coffee) 82%, transparent)">— Specifičnosti u About-u: naziv programa, institucija, period prakse</li>
+        <li style="font-size:14.5px;line-height:1.6;color:color-mix(in oklab, var(--color-coffee) 82%, transparent)">— Featured Education: format, trajanje, datum početka i cena</li>
+        <li style="font-size:14.5px;line-height:1.6;color:color-mix(in oklab, var(--color-coffee) 82%, transparent)">— Booking provider, slobodni slotovi i konačne cene usluga</li>
+        <li style="font-size:14.5px;line-height:1.6;color:color-mix(in oklab, var(--color-coffee) 82%, transparent)">— Da li je intake obavezan (<code style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px">allowIntakeSkip</code>)</li>
+        <li style="font-size:14.5px;line-height:1.6;color:color-mix(in oklab, var(--color-coffee) 82%, transparent)">— Šablon stranice članka (Topic Hub trenutno linkuje na sekciju, ne na /teme/*)</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+</x-dc>
+</body>
+</html>

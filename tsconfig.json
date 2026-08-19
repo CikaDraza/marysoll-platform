@@ -6,6 +6,9 @@
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
+    // Node 24 izvršava .ts skripte native-om (type stripping), a on traži
+    // eksplicitnu `.ts` ekstenziju u importu. Bezbedno uz `noEmit`.
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",

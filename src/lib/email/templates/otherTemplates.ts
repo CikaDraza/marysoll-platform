@@ -7,8 +7,10 @@ import "server-only";
  */
 
 import { wrapEmailLayout, type SalonData } from "@/lib/email/wrapEmailLayout";
+import { platformOrigin } from "@/lib/platform/host-context";
 
-const appUrl = () => process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "";
+/** Origin platforme za okruženje iz koga se mejl šalje (prod/staging/dev). */
+const appUrl = () => platformOrigin();
 
 function ctaButton(label: string, url: string): string {
   return `
@@ -377,4 +379,85 @@ export async function newsletterPromotionTemplate(data: {
     { title: data.subject, content: innerContent, tenantId: data.tenantId },
     data.salon,
   );
+}
+
+// ── Proba zakazivanja (theme-9 prikaz toka) ───────────────────────────────────
+/**
+ * Mejl koji nastaje kada vlasnica prođe kroz PRIKAZ toka zakazivanja na
+ * staging-u. NIJE potvrda termina — termin nije zakazan i tekst to izričito
+ * kaže, da ni ona ni superadmin ne pomisle da u kalendaru nešto stoji.
+ */
+export async function bookingPreviewTemplate(data: {
+  salonName: string;
+  offeringTitle?: string;
+  priceLabel?: string;
+  dateLong?: string;
+  time?: string;
+  returningClient: boolean;
+  intakeSkipped: boolean;
+  answers: { question: string; answer: string }[];
+  freeText: string;
+}): Promise<string> {
+  const row = (label: string, value?: string) =>
+    value
+      ? `<tr>
+          <td style="padding:8px 0;border-bottom:1px solid #f0e8f4;font-size:13px;color:#9089b0;width:40%;">${label}</td>
+          <td style="padding:8px 0;border-bottom:1px solid #f0e8f4;font-size:14px;color:#3d2952;font-weight:600;">${value}</td>
+        </tr>`
+      : "";
+
+  const answers = data.intakeSkipped
+    ? `<p style="margin:0;font-size:14px;color:#9089b0;font-style:italic;">Upitnik je preskočen.</p>`
+    : data.answers.length > 0
+      ? data.answers
+          .map(
+            (a) => `
+        <div style="margin:0 0 14px 0;">
+          <p style="margin:0 0 3px 0;font-size:12.5px;color:#9089b0;">${a.question}</p>
+          <p style="margin:0;font-size:14.5px;color:#3d2952;font-weight:600;">${a.answer}</p>
+        </div>`,
+          )
+          .join("")
+      : `<p style="margin:0;font-size:14px;color:#9089b0;font-style:italic;">Nijedno pitanje nije odgovoreno.</p>`;
+
+  const content = `
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
+      bgcolor="#fff7ed" style="background-color:#fff7ed;border-radius:12px;margin:0 0 20px 0;">
+      <tr>
+        <td style="padding:16px 20px;">
+          <p style="margin:0;font-family:'Georgia',serif;font-size:14px;line-height:1.6;color:#7c2d12;">
+            <strong>Ovo je proba, ne zakazan termin.</strong> Tok zakazivanja se testira na
+            staging okruženju — ništa nije upisano u kalendar.
+          </p>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin:0 0 20px 0;">Neko je upravo prošao kroz zakazivanje na sajtu salona <strong>${data.salonName}</strong>.</p>
+
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 24px 0;">
+      ${row("Konsultacija", data.offeringTitle)}
+      ${row("Termin", [data.dateLong, data.time].filter(Boolean).join(" · ") || undefined)}
+      ${row("Cena", data.priceLabel)}
+      ${row("Tip klijenta", data.returningClient ? "Povratnica (kratak check-in)" : "Nova klijentkinja (pun upitnik)")}
+    </table>
+
+    <p style="margin:0 0 10px 0;font-size:13px;color:#9089b0;text-transform:uppercase;letter-spacing:1px;">
+      ${data.returningClient ? "Check-in" : "Početni upitnik"}
+    </p>
+    ${answers}
+
+    ${
+      data.freeText
+        ? `<p style="margin:18px 0 6px 0;font-size:13px;color:#9089b0;text-transform:uppercase;letter-spacing:1px;">Slobodan tekst</p>
+           <p style="margin:0;font-size:14.5px;color:#3d2952;line-height:1.7;white-space:pre-wrap;">${data.freeText}</p>`
+        : ""
+    }
+
+    <p style="margin:24px 0 0 0;font-size:13px;color:#9089b0;font-style:italic;">
+      Ako nešto u toku ili sadržaju treba da se promeni — usluge, cene, termini ili pitanja — javi i menjamo pre nego što zakazivanje postane stvarno.
+    </p>
+  `;
+
+  return wrapEmailLayout({ title: "Proba zakazivanja", content });
 }

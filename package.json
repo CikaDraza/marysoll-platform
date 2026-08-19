@@ -13,8 +13,10 @@
     "test": "vitest run",
     "test:engines": "npm test --workspaces --if-present",
     "migrate:subscription-index": "node --env-file=.env.local scripts/fix-subscription-index.mjs",
+    "fixtures:theme": "node --env-file=.env.local scripts/make-theme-fixtures.mjs",
     "backfill:identity": "echo 'Deprecated — backfill-user-identity script removed'",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seed:theme9": "node --env-file=.env.local scripts/seeds/seed-expert-editorial.mts"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.19",

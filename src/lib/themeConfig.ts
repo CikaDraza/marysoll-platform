@@ -58,4 +58,9 @@ export const THEME_CONFIG: Record<LandingTheme, ThemeSectionConfig> = {
     hero: { hasImage: true, maxImages: 1 },
     gallery: { variant: "images-with-category" },
   },
+  /** Theme-9 "Skincare Marina" — editorial hero with a 4:5 portrait, gallery is masonry. */
+  "theme-9": {
+    hero: { hasImage: true, maxImages: 1 },
+    gallery: { variant: "images-only" },
+  },
 };

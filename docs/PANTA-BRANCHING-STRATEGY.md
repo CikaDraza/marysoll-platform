@@ -20,10 +20,16 @@ Nezavršeni rad živi samo na task granama, na primer:
 
 ```text
 agent/referral-phase-2b-and-engine-roadmap
-staging/production-engines/loyalty/referral-gate
-staging/production-engines/theme/layout-contract
-staging/production-fixes/ios-pwa-install
+product-engines/theme-engine/layout-contract
+product-engines/loyalty-engine/referral-gate
+fixes/ios-pwa-install
 ```
+
+> Task grana **ne sme** da se ugnezdi ispod imena stalne grane: dok postoji
+> `staging/production-engines`, git ne dozvoljava ref
+> `staging/production-engines/theme/layout-contract` („cannot lock ref …
+> exists"). Zato engine task grane koriste prefiks `product-engines/<engine>/…`,
+> isto kao ranije `product-engines/diagnostic-engine/identity-loyalty-health`.
 
 ## URL matrica za test domene
 
@@ -107,6 +113,11 @@ tenantima i unapred pripremljenim zapisima.
 ## Reference
 
 - [Product Engines vizija](../ARHITEKTURA-ENGINES.md)
+- [T2A Theme/Layout Engine granica](PANTA-T2-THEME-LAYOUT-ENGINE.md)
+- [T2B Tenant verticals & capabilities](PANTA-TENANT-VERTICALS-CAPABILITIES.md)
+- [Education vertikala](PANTA-EDUCATION-VERTICAL.md)
+- [Distribution Engine](PANTA-DISTRIBUTION-ENGINE.md)
+- [Growth Studio](PANTA-GROWTH-STUDIO.md)
 - [Identity & Loyalty Health](PANTA-IDENTITY-LOYALTY-HEALTH.md)
 - [Proxy pipeline](PROXY-PIPELINE.md)
 - [Cross-platform optimizacija](CROSS-PLATFORM-OPTIMIZATION.md)

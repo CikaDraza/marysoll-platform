@@ -1,4 +1,5 @@
 import { wrapEmailLayout } from "@/lib/email";
+import { platformOrigin } from "@/lib/platform/host-context";
 
 export async function newsletterPromotionTemplate(data: {
   clientName: string;
@@ -13,7 +14,7 @@ export async function newsletterPromotionTemplate(data: {
   };
 }) {
   const trackingPixel = data.trackingData
-    ? `<img alt="" style="display:none" src="${process.env.NEXTAUTH_URL}/api/newsletter/track/open?campaign=${data.trackingData.campaignId}&subscriber=${data.trackingData.subscriberId}" width="1" height="1" />`
+    ? `<img alt="" style="display:none" src="${platformOrigin()}/api/newsletter/track/open?campaign=${data.trackingData.campaignId}&subscriber=${data.trackingData.subscriberId}" width="1" height="1" />`
     : "";
   const content = `
     <p style="margin:0 0 16px 0;">Poštovani/a <strong>${data.clientName}</strong>,</p>
@@ -28,7 +29,7 @@ export async function newsletterPromotionTemplate(data: {
               Otkaži pretplatu
             </a> | 
             <a style="color: #5D0156;" href="${
-              process.env.NEXTAUTH_URL
+              platformOrigin()
             }/cookie-policy#open-preferences">
               Podesi preferencije
             </a>

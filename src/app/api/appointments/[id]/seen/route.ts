@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { verifyToken } from "@/lib/auth/auth-server";
+import { tenantScopeFrom } from "@/lib/auth/tenantScope";
 
 export async function POST(
   req: Request,
@@ -18,11 +19,16 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Izolacija tenanta: ranije se markiralo po golom ID-ju, pa je korisnik
+    // jednog salona mogao da označi tuđi termin kao pročitan.
+    const scope = tenantScopeFrom(user);
+    if (!scope.ok) {
+      return NextResponse.json({ error: scope.error }, { status: scope.status });
+    }
+
     const isAdmin = user.isAdmin;
 
-    const appointmentId = id;
-
-    await Appointment.findByIdAndUpdate(appointmentId, {
+    await Appointment.findOneAndUpdate({ _id: id, ...scope.filter }, {
       ...(isAdmin
         ? {
             "lastSeen.admin": new Date(),

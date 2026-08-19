@@ -11,7 +11,7 @@ import type { NextRequest } from "next/server";
 import { identityClient } from "@/lib/platform/identity-client";
 import type { DecodedToken } from "@/lib/platform/identity-client";
 import type { AuthOut } from "./types";
-import { BASE_DOMAIN, IS_PROD } from "./constants";
+import { BASE_DOMAIN, IS_PROD, isPathBasedHost } from "./constants";
 
 /**
  * Reads the access token from the request.
@@ -92,6 +92,22 @@ export async function guardApi(
   return null;
 }
 
+/**
+ * Gde poslati neprijavljenog korisnika. Na path-based hostovima (dev,
+ * *.vercel.app preview, staging/qa apex) login je na ISTOM hostu — bez ovoga
+ * bi staging redirektovao na produkcijski `https://marysoll.com/login`.
+ */
+function loginRedirectUrl(request: NextRequest): URL {
+  const host = request.headers.get("host") ?? request.nextUrl.hostname;
+  if (isPathBasedHost(host)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = "";
+    return url;
+  }
+  return new URL(`https://${BASE_DOMAIN}/login`);
+}
+
 export async function guardPage(
   request: NextRequest,
   resolvedTenantId: string | null,
@@ -99,7 +115,7 @@ export async function guardPage(
   needSuperAdmin = false,
   out: AuthOut = {},
 ): Promise<NextResponse | null> {
-  const loginUrl = new URL(`https://${BASE_DOMAIN}/login`);
+  const loginUrl = loginRedirectUrl(request);
   const unauthorizedUrl = new URL("/unauthorized", request.url);
 
   const decoded = await authenticate(request, out);

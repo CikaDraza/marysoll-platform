@@ -4,23 +4,18 @@
  * Headeri za interne fetch-eve: lib/platform/internal-fetch.ts.
  */
 
+import { PLATFORM_PATH_SEGMENTS } from "@/lib/platform/host-context";
+
 export const IS_PROD = process.env.NODE_ENV === "production";
 export const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
 export const CUSTOM_CLIENT_DOMAIN = process.env.CUSTOM_CLIENT_DOMAIN ?? null;
 
 /**
- * Staging apex hostovi koji se ponašaju kao marketing i dozvoljavaju PATH-BASED
- * tenant rutiranje (kao localhost/preview): npr. `qa.marysoll.com/{slug}` ili
- * `staging.marysoll.com/{slug}` otvara salon, iako `BASE_DOMAIN` ostaje
- * `marysoll.com` (pa bi ih inače wildcard grana pojela kao tenant subdomen).
- * Env override: `STAGING_PATH_HOSTS="a.com,b.com"`. Default pokriva qa i staging.
+ * Staging apex hostovi (`staging.marysoll.com`, `qa.marysoll.com`) i ostatak
+ * host-konteksta žive u lib/platform/host-context.ts — deljeno sa klijentom,
+ * da proxy i browser nikad ne odluče različito o istom hostu.
  */
-export const STAGING_PATH_HOSTS = new Set(
-  (process.env.STAGING_PATH_HOSTS ?? "staging.marysoll.com,qa.marysoll.com")
-    .split(",")
-    .map((h) => h.trim().toLowerCase())
-    .filter(Boolean),
-);
+export { STAGING_PATH_HOSTS, isPathBasedHost } from "@/lib/platform/host-context";
 
 /** Returns true when the request host is a fully custom domain (not *.marysoll.com or localhost). */
 export function isCustomDomain(hostname: string, baseDomain: string): boolean {
@@ -70,32 +65,14 @@ export const CLIENT_PROTECTED_API_ROUTES = [
   "/api/users/me",
 ];
 
+/**
+ * Rezervisani top-level segmenti = platformske putanje (deljene sa klijentom,
+ * da login forma i proxy isto odluče šta je slug a šta platformska ruta) plus
+ * par čisto proxy-jevskih.
+ */
 export const RESERVED_TOP_SEGMENTS = new Set([
-  "dashboard",
-  "superadmin",
-  "login",
-  "register",
-  "forgot-password",
-  "reset-password",
-  "verify-email",
-  "resend-verification",
-  "checkout",
-  "api",
-  "_next",
+  ...PLATFORM_PATH_SEGMENTS,
   "favicon.ico",
-  "newsletter",
-  "privacy",
   "Pronađi termin",
-  "terms-and-conditions",
-  "refund",
-  "pricing",
-  "kontakt",
-  "booking",
-  "unauthorized",
-  "logout",
-  "tenant", // internal route prefix — must never be treated as a tenant slug
-  "marketing",
-  "assets", // static public assets folder
-  "dijagnostika", // samouslužna mrežna dijagnostika (/dijagnostika)
 ]);
 

@@ -102,6 +102,13 @@ export const THEMES: {
     description: "Razigrani Y2K dizajn sa grafitima za lash & brow studio",
     previewColors: ["#2a0d22", "#ff2e97", "#8B16C9"],
   },
+  {
+    id: "theme-9",
+    label: "Expert Editorial",
+    description:
+      "Editorijalni dizajn za stručnu edukaciju i konsultacije o nezi kože",
+    previewColors: ["#faf8f3", "#2e3b2e", "#c6d5a8"],
+  },
 ];
 
 // ─── Style tokens ─────────────────────────────────────────────────────────────

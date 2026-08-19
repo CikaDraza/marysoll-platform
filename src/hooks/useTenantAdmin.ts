@@ -16,6 +16,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
+import { tenantOrigin } from "@/lib/platform/host-context";
 
 interface TenantPublicData {
   slug: string;
@@ -242,36 +243,21 @@ export function useTenantAdmin() {
   // ── getTenantUrl ─────────────────────────────────────────────────────────
 
   /**
-   * Builds the public URL for this tenant.
-   * Only uses customDomain if customDomainVerified is true in DB.
-   * Falls back to path-based URL otherwise.
+   * Javni URL salona („Sajt Salona →" u headeru/sidebaru/kalendaru).
+   *
+   * Host-based (produkcija): verifikovan custom domen, inače {slug}.marysoll.com.
+   * Path-based host (localhost dev, *.vercel.app preview, staging/qa apex):
+   * ostajemo na TOM hostu — `{origin}/{slug}`. Custom domen i prod subdomen
+   * pokazuju na produkciju, pa bi odveli vlasnika iz staging okruženja.
    */
   function getTenantUrl(): string {
     if (!tenant) return "";
 
-    const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
-    // Staging build (staging.*): custom domen (npr. kikikiss.beauty) uvek pokazuje
-    // na PRODUKCIJU, pa ga na staging-u ignorišemo i koristimo staging subdomen
-    // tenanta ({slug}.staging.marysoll.com). Bez ovoga "Sajt Salona →" vodi na prod.
-    const isStaging = baseDomain.startsWith("staging.");
-
-    // 1. Fully custom domain (e.g. kikikiss.beauty) — samo na produkciji
-    if (!isStaging && tenant.customDomain && tenant.customDomainVerified) {
-      return `https://${tenant.customDomain}`;
-    }
-
-    // 2. Tenant subdomain (e.g. kiki-kiss.marysoll.com / kiki-kiss.staging.marysoll.com)
-    const isProd =
-      typeof window !== "undefined" &&
-      window.location.hostname !== "localhost" &&
-      !window.location.hostname.startsWith("127.");
-    if (isProd) {
-      return `https://${tenant.slug}.${baseDomain}`;
-    }
-
-    // 3. Dev fallback — path-based
-    const port = typeof window !== "undefined" ? window.location.port : "3000";
-    return `http://localhost:${port}/${tenant.slug}`;
+    return tenantOrigin({
+      slug: tenant.slug,
+      customDomain: tenant.customDomain,
+      customDomainVerified: tenant.customDomainVerified,
+    });
   }
 
   return {

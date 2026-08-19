@@ -2,8 +2,11 @@ import { HeroImage, LandingStructure } from "@/types";
 import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import { formatStatValue } from "@/lib/tenant/tenantStatsUtils";
 
-export function mapAbout(ls: LandingStructure | undefined, tenantStats?: TenantStats) {
-  const about = ls?.landing?.about;
+/** Ulaz na nivou sekcije (vidi `mapHeroSection`). */
+export function mapAboutSection(
+  about: LandingStructure["landing"]["about"] | undefined,
+  tenantStats?: TenantStats,
+) {
 
   const stats: { label: string; value: string }[] = [];
 
@@ -28,4 +31,11 @@ export function mapAbout(ls: LandingStructure | undefined, tenantStats?: TenantS
     alt: about?.image?.alt ?? "Salon interior with stylist and client",
     enabled: about !== undefined ? about.enabled : true,
   };
+}
+
+export function mapAbout(
+  ls: LandingStructure | undefined,
+  tenantStats?: TenantStats,
+) {
+  return mapAboutSection(ls?.landing?.about, tenantStats);
 }

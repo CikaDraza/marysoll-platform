@@ -7,6 +7,7 @@ import "server-only";
  */
 
 import { sendEmail } from "./email";
+import { platformOrigin } from "@/lib/platform/host-context";
 import {
   ownerVerificationTemplate,
   ownerWelcomeTemplate,
@@ -27,7 +28,7 @@ export async function sendOwnerVerificationEmail(params: {
   verificationToken: string;
   subdomain: string;
 }): Promise<void> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const baseUrl = platformOrigin();
   const verifyUrl = `${baseUrl}/verify-email?token=${params.verificationToken}&type=owner`;
 
   const html = await ownerVerificationTemplate({
@@ -53,8 +54,7 @@ export async function sendOwnerWelcomeEmail(params: {
   subdomain: string;
   trialEndsAt: Date;
 }): Promise<void> {
-  const dashboardUrl =
-    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const dashboardUrl = platformOrigin();
   const trialEndsFormatted = params.trialEndsAt.toLocaleDateString("sr-RS", {
     day: "numeric",
     month: "long",
@@ -88,7 +88,7 @@ export async function sendClientVerificationEmail(params: {
   salonBaseUrl: string | undefined;
   tenantId?: string | null;
 }): Promise<void> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const baseUrl = platformOrigin();
   const verifyUrl = `${baseUrl}/verify-email?token=${params.verificationToken}&type=client`;
 
   const html = await clientVerificationTemplate({

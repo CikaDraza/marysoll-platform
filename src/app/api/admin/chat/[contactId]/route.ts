@@ -7,6 +7,7 @@ import { Notification } from "@/models/Notification";
 import { getSalonBranding } from "@/lib/notificationService";
 import { sendWebPushToUser } from "@/lib/webPush";
 import mongoose from "mongoose";
+import { ADMIN_CHAT_PATH } from "@/lib/notifications/pushTargets";
 
 function participantKey(a: string, b: string): [string, string] {
   return a < b ? [a, b] : [b, a];
@@ -173,7 +174,7 @@ export async function POST(
       body: `💬 ${me.name}: ${content?.trim() ? content.trim().slice(0, 80) : "📎 Prilog"}`,
       icon,
       tag: `chat-internal-${decoded.tenantUserId}`,
-      url: "/admin/chat",
+      url: ADMIN_CHAT_PATH,
     });
   } catch {
     /* push is non-critical */
