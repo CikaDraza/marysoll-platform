@@ -13,6 +13,7 @@ import { SalonProfile } from "@/models/SalonProfile";
 import { ProfilPlatforme } from "@/models/ProfilPlatforme";
 import { Types } from "mongoose";
 import { usableRasterLogo } from "@/lib/branding/rasterLogo";
+import { platformOrigin } from "@/lib/platform/host-context";
 
 export interface EmailLayoutData {
   title: string;
@@ -112,10 +113,7 @@ export async function wrapEmailLayout(
   const salon = salonOverride ?? (await resolveSalon(data.tenantId));
 
   const salonName = salon.name;
-  const appUrl =
-    process.env.NEXTAUTH_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    "https://marysoll.com";
+  const appUrl = platformOrigin();
 
   return `<!DOCTYPE html>
 <html lang="sr" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">

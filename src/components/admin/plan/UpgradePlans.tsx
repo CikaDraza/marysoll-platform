@@ -17,6 +17,7 @@ import {
   PLAN_DISPLAY_NAMES,
   type PlanName,
 } from "@/lib/plans/planFeatures";
+import { BASE_DOMAIN, isPathBasedHost } from "@/lib/platform/host-context";
 
 // Planovi koji se nude i redosled prikaza
 const DISPLAY_PLANS: PlanName[] = ["maria", "claudia", "kiki"];
@@ -102,11 +103,13 @@ export function UpgradePlans() {
       // je odobren samo za taj domen, ne i za admin.marysoll.com. Auth je već
       // odrađen (POST iznad), a /checkout stranica ne zahteva JWT — čita samo
       // _ptxn i returnTo iz URL-a i otvara Paddle.js overlay.
-      // Na localhost-u (dev) ostani na istom origin-u — nema domain approval-a.
+      // Na path-based hostovima (dev, *.vercel.app preview, staging/qa apex)
+      // ostani na istom origin-u — tamo se testira sandbox, a domain approval
+      // ionako važi samo za produkcijski apex.
       const host = window.location.hostname;
-      const isLocal = host === "localhost" || host.startsWith("127.");
-      const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
-      const checkoutBase = isLocal ? window.location.origin : `https://${baseDomain}`;
+      const checkoutBase = isPathBasedHost(host)
+        ? window.location.origin
+        : `https://${BASE_DOMAIN}`;
       // Baza povratka — /checkout stranica sama dodaje checkout=success (uspeh) ili
       // checkout=cancelled (zatvaranje bez plaćanja).
       const returnTo = `${window.location.origin}/dashboard?tab=pretplata`;

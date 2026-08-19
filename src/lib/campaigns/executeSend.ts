@@ -14,6 +14,7 @@ import { CampaignEvent } from "@/models/CampaignEvent";
 import { wrapEmailLayout } from "@/lib/email/wrapEmailLayout";
 import { resolveTenantNewsletterSender } from "@/lib/email/tenantEmailSettings";
 import { Types } from "mongoose";
+import { platformOrigin } from "@/lib/platform/host-context";
 
 type RecipientContact = {
   _id: string;
@@ -22,8 +23,8 @@ type RecipientContact = {
   lastName?: string;
 };
 
-const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ?? "https://www.marysoll.com";
+/** Origin okruženja iz koga kampanja ide (tracking/unsubscribe linkovi). */
+const APP_URL = platformOrigin();
 
 function escapeRegex(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

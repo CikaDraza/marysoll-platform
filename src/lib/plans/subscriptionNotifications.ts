@@ -16,6 +16,7 @@ import { sendEmail } from "@/lib/email/email";
 import { wrapEmailLayout } from "@/lib/email/wrapEmailLayout";
 import { PLAN_DISPLAY_NAMES } from "./planFeatures";
 import type { PlanName } from "./planFeatures";
+import { platformUrl } from "@/lib/platform/host-context";
 
 export async function notifySubscriptionCancelled(params: {
   tenantId: string;
@@ -77,7 +78,7 @@ export async function notifySubscriptionCancelled(params: {
       return;
     }
 
-    const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://marysoll.com"}/dashboard`;
+    const dashboardUrl = platformUrl("/dashboard");
     const html = await wrapEmailLayout({
       title,
       content: `

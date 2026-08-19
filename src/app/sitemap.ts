@@ -2,12 +2,15 @@ import type { MetadataRoute } from "next";
 import { connectToDB } from "@/lib/db/mongodb";
 import { SalonProfile } from "@/models/SalonProfile";
 import { Tenant } from "@/models/Tenant";
+import { platformOrigin, tenantOrigin } from "@/lib/platform/host-context";
 
 // (Next.js segment config — čita ga framework, sitemap za Google crawlere)
 // fallow-ignore-next-line unused-export
 export const dynamic = "force-dynamic";
 
-const PLATFORM_BASE_URL = "https://marysoll.com";
+// Sitemap opisuje okruženje u kome je generisan — na staging-u staging URL-ove,
+// u produkciji produkcijske (nikad izmešano).
+const PLATFORM_BASE_URL = platformOrigin();
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
 
 type TenantSitemapDoc = {
@@ -66,19 +69,19 @@ function getPlatformRoutes(): MetadataRoute.Sitemap {
 }
 
 function getTenantCanonicalBaseUrl(tenant: TenantSitemapDoc): string | null {
-  const customDomain = tenant.customDomain
-    ? normalizeHostname(tenant.customDomain)
-    : "";
+  const slug = normalizeHostname(tenant.subdomain || tenant.slug || "").replace(
+    `.${BASE_DOMAIN}`,
+    "",
+  );
+  if (!slug) return null;
 
-  if (customDomain && tenant.customDomainVerified) {
-    return `https://${customDomain}`;
-  }
-
-  const subdomain = normalizeHostname(tenant.subdomain || tenant.slug || "")
-    .replace(`.${BASE_DOMAIN}`, "");
-  if (!subdomain) return null;
-
-  return `https://${subdomain}.${BASE_DOMAIN}`;
+  return tenantOrigin({
+    slug,
+    customDomain: tenant.customDomain
+      ? normalizeHostname(tenant.customDomain)
+      : null,
+    customDomainVerified: tenant.customDomainVerified,
+  });
 }
 
 async function getTenantSitemapEntries(): Promise<MetadataRoute.Sitemap> {

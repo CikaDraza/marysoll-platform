@@ -14,6 +14,7 @@ import type {
   MarketingLandingStructure,
   PerformanceSeoSnapshot,
 } from "@/types/marketing-landing";
+import { platformOrigin } from "@/lib/platform/host-context";
 
 export async function POST(req: NextRequest) {
   const auth = requireSuperAdmin(req);
@@ -28,8 +29,8 @@ export async function POST(req: NextRequest) {
     const crawlUrl =
       body.crawlUrl ||
       process.env.MARKETING_SEO_CRAWL_URL ||
-      process.env.NEXT_PUBLIC_APP_URL ||
-      "https://marysoll.com";
+      // Podrazumevano se crawl-uje marketing sajt OVOG okruženja.
+      platformOrigin(req);
 
     let crawlError: string | undefined;
     let snapshot: LandingRenderSnapshot;

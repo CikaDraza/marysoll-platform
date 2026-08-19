@@ -20,8 +20,9 @@ import type { Metadata } from "next";
 import { connectToDB } from "@/lib/db/mongodb";
 import { ProfilPlatforme } from "@/models/ProfilPlatforme";
 import { getMarketingLanding } from "@/lib/server/getMarketingLanding";
+import { platformOrigin } from "@/lib/platform/host-context";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://marysoll.com";
+const BASE_URL = platformOrigin();
 
 const DEFAULT_METADATA = {
   title: "Marysoll — Platforma za beauty salone",

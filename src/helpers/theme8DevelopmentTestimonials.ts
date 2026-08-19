@@ -1,4 +1,5 @@
 import type { PublicTestimonial } from "@/types/public-testimonials";
+import { isPathBasedHost } from "@/lib/platform/host-context";
 
 /** Privremena druga strana za proveru Theme-8 swipe animacije. */
 export const THEME8_DEVELOPMENT_TESTIMONIALS: PublicTestimonial[] = [
@@ -23,17 +24,11 @@ export const THEME8_DEVELOPMENT_TESTIMONIALS: PublicTestimonial[] = [
   },
 ];
 
-/** Nikada ne prikazuj test utiske na pravim produkcionim tenant domenima. */
+/**
+ * Nikada ne prikazuj test utiske na pravim produkcionim tenant domenima —
+ * samo u dev-u i na path-based okruženjima (preview, staging/qa).
+ */
 export function shouldUseTheme8TestTestimonials(hostname: string): boolean {
   if (process.env.NODE_ENV !== "production") return true;
-
-  const host = hostname.split(":")[0].toLowerCase();
-  const stagingHosts = new Set(
-    (process.env.STAGING_PATH_HOSTS ?? "staging.marysoll.com,qa.marysoll.com")
-      .split(",")
-      .map((value) => value.trim().toLowerCase())
-      .filter(Boolean),
-  );
-
-  return stagingHosts.has(host) || host.endsWith(".vercel.app");
+  return isPathBasedHost(hostname);
 }

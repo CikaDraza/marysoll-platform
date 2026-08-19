@@ -6,6 +6,7 @@ import { requireFeature } from "@/lib/plans/planEnforcement";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 import { resolveNewsletterAdminScope } from "@/lib/newsletter/adminTenantScope";
 import { normalizePlatformAudienceFilter } from "@/lib/newsletter/audienceFilter";
+import { platformOrigin } from "@/lib/platform/host-context";
 
 export async function POST(request: Request) {
   try {
@@ -98,7 +99,7 @@ export async function POST(request: Request) {
       defaultTemplateSlug: defaultTemplateSlug,
       ctaSlug:
         ctaSlug ||
-        (newsletterScope.scope === "platform" ? "https://marysoll.com/" : null),
+        (newsletterScope.scope === "platform" ? `${platformOrigin(request)}/` : null),
       subject: subject.trim(),
       previewText: previewText.trim(),
       content,

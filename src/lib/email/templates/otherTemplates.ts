@@ -7,8 +7,10 @@ import "server-only";
  */
 
 import { wrapEmailLayout, type SalonData } from "@/lib/email/wrapEmailLayout";
+import { platformOrigin } from "@/lib/platform/host-context";
 
-const appUrl = () => process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "";
+/** Origin platforme za okruženje iz koga se mejl šalje (prod/staging/dev). */
+const appUrl = () => platformOrigin();
 
 function ctaButton(label: string, url: string): string {
   return `

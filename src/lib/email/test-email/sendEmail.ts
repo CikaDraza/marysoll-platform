@@ -8,6 +8,7 @@ import { testimonialCreatedTemplate } from "./templates/testimonialCreatedTempla
 import { newsletterPromotionTemplate } from "./templates/newsletterPromotionTemplate";
 import { emailVerificationTemplate } from "./templates/emailVerificationTemplate";
 import { appointmentCreatedTemplate } from "./templates/appointmentCreated";
+import { platformOrigin } from "@/lib/platform/host-context";
 
 // Mock data za testiranje — koristi se samo u test-email ruti
 const MOCK = {
@@ -122,7 +123,7 @@ export async function buildEmail(
           `,
           ctaUrl: `${process.env.LANDING_DOMAIN}/krema-za-lice`,
           ctaLabel: "🎉 Ne propustite sjajnu ponudu",
-          unsubscribeUrl: `${process.env.NEXTAUTH_URL}/api/newsletter/unsubscribe?token=${unsubscribeToken}`,
+          unsubscribeUrl: `${platformOrigin()}/api/newsletter/unsubscribe?token=${unsubscribeToken}`,
           trackingData: {
             campaignId: "698cae1ce665e15fee737e98",
             subscriberId: "690f39152df51d0b882f5145",
@@ -136,7 +137,7 @@ export async function buildEmail(
         subject: "Potvrdite vašu email adresu",
         html: await emailVerificationTemplate({
           clientName,
-          verificationUrl: `${process.env.NEXTAUTH_URL}/login/verify-email?token=test-token-123`,
+          verificationUrl: `${platformOrigin()}/login/verify-email?token=test-token-123`,
           ctaLabel: "Potvrdi email adresu",
         }),
         emailType: "system",

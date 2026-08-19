@@ -14,6 +14,7 @@
 import { useState, useEffect } from "react";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import type { DomainSearchResult } from "@/hooks/useTenantAdmin";
+import { platformOrigin } from "@/lib/platform/host-context";
 
 // ─── Style tokens (mirrors dashboard/page.tsx) ─────────────────────────────
 
@@ -138,8 +139,8 @@ export function AdminCustomDomain() {
         : "Level 1: Reply-To only";
 
   // Path-based fallback URL — always available regardless of custom domain status
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
-  const pathBasedUrl = tenant?.slug ? `${siteUrl}/${tenant.slug}` : null;
+  const platformHost = platformOrigin().replace(/^https?:\/\//, "");
+  const pathBasedUrl = tenant?.slug ? `${platformOrigin()}/${tenant.slug}` : null;
 
   // Show fallback warning if domain set but NOT verified
   const showFallbackWarning = hasDomain && !isVerified;
@@ -344,7 +345,7 @@ export function AdminCustomDomain() {
               </code>{" "}
               umesto na{" "}
               <code className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded">
-                marysoll.com/{tenant?.slug ?? "vas-salon"}
+                {platformHost}/{tenant?.slug ?? "vas-salon"}
               </code>
               .
             </p>
@@ -529,7 +530,7 @@ export function AdminCustomDomain() {
               <div className="flex-1 rounded-xl border border-red-100 bg-red-50 p-4">
                 <p className="text-xs text-red-700 font-semibold mb-3">
                   Sigurno želite da uklonite custom domen? Vaš salon će biti
-                  dostupan samo na marysoll.com/{tenant?.slug}.
+                  dostupan samo na {platformHost}/{tenant?.slug}.
                 </p>
                 <div className="flex gap-2">
                   <button

@@ -1,6 +1,7 @@
 // app/api/newsletter/track/click/route.ts
 import { trackClick } from "@/lib/newsletterService";
 import { NextRequest, NextResponse } from "next/server";
+import { platformOrigin } from "@/lib/platform/host-context";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -10,8 +11,8 @@ export async function GET(req: NextRequest) {
   const log = searchParams.get("log");
   const url = searchParams.get("url");
 
-  // Fallback URL ako nešto pođe po zlu
-  const fallbackUrl = "https://www.marysoll.com";
+  // Fallback URL ako nešto pođe po zlu — sajt OVOG okruženja
+  const fallbackUrl = platformOrigin(req);
 
   // Logujemo klik samo ako imamo sve potrebne podatke
   if (campaign && (subscriber || log) && url) {
