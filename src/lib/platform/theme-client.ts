@@ -44,6 +44,7 @@ const SECTION_DEFAULT_ENABLED = {
   credentials: false,
   featuredEducation: false,
   professionalPath: false,
+  finalCta: false,
 } as const;
 
 export type LandingSectionKey = keyof typeof SECTION_DEFAULT_ENABLED;
@@ -85,6 +86,7 @@ const SECTION_BLOCK_MAP: Record<
     sectionType: "content",
     blockType: "content.professional-path",
   },
+  finalCta: { sectionType: "content", blockType: "content.final-cta" },
 };
 
 /**
@@ -113,6 +115,7 @@ export const SECTION_ORDER: LandingSectionKey[] = [
   "credentials",
   "featuredEducation",
   "professionalPath",
+  "finalCta",
 ];
 
 export function blockTypeForSection(key: LandingSectionKey): string {

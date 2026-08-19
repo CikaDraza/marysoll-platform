@@ -146,18 +146,22 @@ describe("theme9HeroProps", () => {
     expect(props.secondaryCta).toBeUndefined();
   });
 
-  it("poštuje href koji je tenant upisao, kroz resolveHref", () => {
+  it("primarni CTA je UVEK launcher — CMS href se ignoriše", () => {
+    // Zatečeni tenanti ovde imaju `/termini` (salonski Service Booking).
+    // Ova tema ga ne koristi: primarni CTA otvara zakazivanje, ne navigira.
     const props = theme9HeroProps(
       heroData({
         ctas: {
-          primary: { text: "Zakaži", href: "/kontakt" },
+          primary: { text: "Zakaži", href: "/termini" },
           secondary: { text: "Istraži", href: "/blogs" },
         },
       }),
       prefixed,
     );
 
-    expect(props.primaryCta).toEqual({ text: "Zakaži", href: "/marina/kontakt" });
+    expect(props.primaryCta.href).toBeUndefined();
+    expect(props.primaryCta.text).toBe("Zakaži");
+    // Sekundarni CTA jeste običan link i prolazi kroz resolveHref.
     expect(props.secondaryCta).toEqual({
       text: "Istraži",
       href: "/marina/blogs",

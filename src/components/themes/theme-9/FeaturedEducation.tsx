@@ -58,7 +58,7 @@ export function Theme9FeaturedEducation({
               )}
 
               {learn.length > 0 && (
-                <ul className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-x-6 gap-y-2.5">
+                <ul className="flex flex-col gap-2.5">
                   {learn.map((item) => (
                     <li
                       key={item}

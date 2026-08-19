@@ -6,7 +6,7 @@
  * `education.professional-path` sa capability-jem.
  */
 import { AnchorLink } from "../shared/AnchorLink";
-import { Chip, Eyebrow } from "./primitives";
+import { Eyebrow } from "./primitives";
 import { Reveal } from "./Reveal";
 
 export interface Theme9ProfessionalPathProps {
@@ -47,21 +47,25 @@ export function Theme9ProfessionalPath({
           )}
         </Reveal>
 
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,215px),1fr))] gap-3.5">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,290px),1fr))] gap-4">
           {formats.map((f, i) => (
             <Reveal key={f.title} delay={i * 60}>
-              <article className="flex h-full min-h-[230px] flex-col gap-3 rounded-[18px] bg-white/[0.08] p-6 transition-colors duration-200 hover:bg-white/[0.13]">
-                {f.kind && <Chip variant="tagOutlined">{f.kind}</Chip>}
-                <h3 className="font-newsreader text-[22px] leading-snug">
+              <article className="flex h-full min-h-[280px] flex-col gap-3.5 rounded-[20px] bg-white/[0.08] p-7 transition-colors duration-200 hover:bg-white/[0.13] lg:p-8">
+                {f.kind && (
+                  <span className="border-ee-accent-contrast/40 text-ee-accent-contrast w-fit rounded-full border px-3.5 py-[5px] text-[11px] tracking-[0.1em] uppercase">
+                    {f.kind}
+                  </span>
+                )}
+                <h3 className="font-newsreader text-[26px] leading-snug">
                   {f.title}
                 </h3>
                 {f.text && (
-                  <p className="font-instrument-sans text-ee-canvas/70 text-[14px] leading-[1.65]">
+                  <p className="font-instrument-sans text-ee-canvas/72 text-[15px] leading-[1.7]">
                     {f.text}
                   </p>
                 )}
                 {f.priceFrom && (
-                  <span className="font-newsreader text-ee-accent-contrast mt-auto text-[19px]">
+                  <span className="font-newsreader text-ee-accent-contrast mt-auto text-[21px]">
                     {f.priceFrom}
                   </span>
                 )}

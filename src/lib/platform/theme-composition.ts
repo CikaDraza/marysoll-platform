@@ -372,6 +372,7 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
       ),
       cms("credentials", "content.credentials", "section-enabled"),
       cms("blog", "content.blog", "blogEnabled"),
+      cms("finalCta", "content.final-cta", "section-enabled"),
       shell("theme-9/footer"),
     ],
   },

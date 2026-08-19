@@ -299,6 +299,17 @@ const contentProfessionalPath: FeatureBlockDefinition<"content.professional-path
     },
   };
 
+const contentFinalCta: FeatureBlockDefinition<"content.final-cta"> = {
+  type: "content.final-cta",
+  schemaVersions: [1],
+  capability: null,
+  parseConfig: parseWith<"content.final-cta">(sourceSchema("finalCta")),
+  async load({ deps }) {
+    const ls = await deps.landingStructure();
+    return { content: ls?.landing?.finalCta };
+  },
+};
+
 export const FEATURE_BLOCK_DEFINITIONS = [
   contentHero,
   contentAbout,
@@ -316,4 +327,5 @@ export const FEATURE_BLOCK_DEFINITIONS = [
   contentCredentials,
   contentFeaturedEducation,
   contentProfessionalPath,
+  contentFinalCta,
 ] as const satisfies readonly FeatureBlockDefinition<FeatureBlockType>[];

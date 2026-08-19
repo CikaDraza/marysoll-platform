@@ -47,6 +47,7 @@ describe("registracija", () => {
     "content.guided-care-process",
     "content.professional-path",
     "content.topic-hub",
+    "content.final-cta",
   ];
 
   it("registruje spec-6 blokove i theme-9 autorske sekcije", () => {

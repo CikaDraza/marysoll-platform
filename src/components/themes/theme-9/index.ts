@@ -8,6 +8,8 @@ export { Theme9Credentials } from "./Credentials";
 export type { Theme9CredentialsProps } from "./Credentials";
 export { Theme9FeaturedEducation } from "./FeaturedEducation";
 export type { Theme9FeaturedEducationProps } from "./FeaturedEducation";
+export { Theme9FinalCta } from "./FinalCta";
+export type { Theme9FinalCtaProps } from "./FinalCta";
 export { Theme9Footer } from "./Footer";
 export type { Theme9FooterProps } from "./Footer";
 export { Theme9GuidedCareProcess } from "./GuidedCareProcess";

@@ -16,6 +16,7 @@ import {
   theme9AudiencePathsProps,
   theme9CredentialsProps,
   theme9FeaturedEducationProps,
+  theme9FinalCtaProps,
   theme9GuidedCareProcessProps,
   theme9HeroProps,
   theme9LatestEducationProps,
@@ -26,6 +27,7 @@ import { Theme9About } from "./AboutSection";
 import { Theme9AudiencePaths } from "./AudiencePaths";
 import { Theme9Credentials } from "./Credentials";
 import { Theme9FeaturedEducation } from "./FeaturedEducation";
+import { Theme9FinalCta } from "./FinalCta";
 import { Theme9GuidedCareProcess } from "./GuidedCareProcess";
 import { Theme9Hero } from "./Hero";
 import { Theme9LatestEducation } from "./LatestEducation";
@@ -88,6 +90,10 @@ function LatestEducationBlock({ data }: BlockRenderProps<"content.blog">) {
   return <Theme9LatestEducation {...theme9LatestEducationProps(data, tenantSlug)} />;
 }
 
+function FinalCtaBlock({ data }: BlockRenderProps<"content.final-cta">) {
+  return <Theme9FinalCta {...theme9FinalCtaProps(data)} />;
+}
+
 export const THEME9_BLOCK_RENDERERS: ThemeBlockRenderers = {
   "content.hero": HeroBlock,
   "content.audience-paths": AudiencePathsBlock,
@@ -98,4 +104,5 @@ export const THEME9_BLOCK_RENDERERS: ThemeBlockRenderers = {
   "content.professional-path": ProfessionalPathBlock,
   "content.credentials": CredentialsBlock,
   "content.blog": LatestEducationBlock,
+  "content.final-cta": FinalCtaBlock,
 };

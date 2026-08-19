@@ -306,6 +306,38 @@ const SalonProfileSchema = new mongoose.Schema(
             type: [{ title: { type: String }, text: { type: String } }],
             default: [],
           },
+          social: {
+            label: { type: String },
+            title: { type: String },
+            linkLabel: { type: String },
+            url: { type: String },
+            images: {
+              type: [{ src: { type: String }, alt: { type: String } }],
+              default: [],
+            },
+          },
+          note: { type: String },
+        },
+        finalCta: {
+          enabled: { type: Boolean, default: false },
+          eyebrow: { type: String },
+          headline: { type: String },
+          lead: { type: String },
+          calendar: {
+            label: { type: String },
+            month: { type: String },
+            slots: {
+              type: [
+                {
+                  day: { type: String },
+                  time: { type: String },
+                  selected: { type: Boolean, default: false },
+                },
+              ],
+              default: [],
+            },
+          },
+          ctaLabel: { type: String },
           note: { type: String },
         },
         featuredEducation: {

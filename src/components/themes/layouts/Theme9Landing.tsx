@@ -73,6 +73,7 @@ export function Theme9Landing(props: ThemeLandingProps) {
           <ThemeBlock document={document} type="content.professional-path" />
           <ThemeBlock document={document} type="content.credentials" />
           <ThemeBlock document={document} type="content.blog" />
+          <ThemeBlock document={document} type="content.final-cta" />
         </main>
 
         <Theme9Footer

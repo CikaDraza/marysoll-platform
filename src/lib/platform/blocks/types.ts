@@ -162,6 +162,10 @@ export interface ContentProfessionalPathData {
   content: Landing["professionalPath"] | undefined;
 }
 
+export interface ContentFinalCtaData {
+  content: Landing["finalCta"] | undefined;
+}
+
 export interface BlockDataByType {
   "content.hero": ContentHeroData;
   "content.about": ContentAboutData;
@@ -179,6 +183,7 @@ export interface BlockDataByType {
   "content.credentials": ContentCredentialsData;
   "content.featured-education": ContentFeaturedEducationData;
   "content.professional-path": ContentProfessionalPathData;
+  "content.final-cta": ContentFinalCtaData;
 }
 
 export type FeatureBlockType = keyof BlockDataByType;
@@ -234,6 +239,7 @@ export interface BlockConfigByType {
   "content.credentials": BaseBlockConfig;
   "content.featured-education": BaseBlockConfig;
   "content.professional-path": BaseBlockConfig;
+  "content.final-cta": BaseBlockConfig;
 }
 
 // ─── Izvor podataka (request-scoped, dedupe) ──────────────────────────────────

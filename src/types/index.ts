@@ -1188,6 +1188,35 @@ export interface LandingStructure {
       headline?: string;
       lead?: string;
       pillars?: { title: string; text?: string }[];
+      /** Instagram kartica kao šesta ćelija mreže stubova. */
+      social?: {
+        label?: string;
+        title?: string;
+        linkLabel?: string;
+        url?: string;
+        images?: HeroImage[];
+      };
+      note?: string;
+    };
+
+    /**
+     * Završni panel sa prikazom slobodnih termina.
+     *
+     * `content.*`, a ne `booking.*`: dok T3 Booking Engine ne postoji, slotovi
+     * su STATIČAN tekst iz CMS-a — informacija, ne dostupnost. Kada widget
+     * stigne, sekcija dobija njegov slot i ovaj oblik prestaje da važi.
+     */
+    finalCta?: {
+      enabled: boolean;
+      eyebrow?: string;
+      headline?: string;
+      lead?: string;
+      calendar?: {
+        label?: string;
+        month?: string;
+        slots?: { day: string; time: string; selected?: boolean }[];
+      };
+      ctaLabel?: string;
       note?: string;
     };
 

@@ -16,6 +16,7 @@
  * legacy `/termini`.
  */
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
@@ -38,6 +39,17 @@ interface Props {
   kicker?: string;
 }
 
+/**
+ * Aktivna stavka: tačno poklapanje za početnu, prefiks za podstranice — da
+ * `/blogs/neki-tekst` i dalje označi „Edukacija".
+ */
+function isActive(pathname: string | null, href: string, base: string): boolean {
+  if (!pathname) return false;
+  const home = `${base}/` || "/";
+  if (href === home) return pathname === base || pathname === home;
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function Theme9Header({
   tenantSlug,
   clientSlug,
@@ -47,6 +59,7 @@ export function Theme9Header({
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user } = useAuth();
+  const pathname = usePathname();
   const base = tenantSlug ? `/${tenantSlug}` : "";
   // Bez hardkodovanog imena: tema nije Marina, ona joj je prvi tenant.
   const displayName = salonName;
@@ -91,15 +104,24 @@ export function Theme9Header({
         </Link>
 
         <nav aria-label="Glavna navigacija" className="hidden items-center gap-1 lg:flex">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="hover:bg-ee-surface-muted text-ee-text rounded-full px-3.5 py-2.5 text-[13.5px] font-medium transition-colors"
-            >
-              {item.name}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const active = isActive(pathname, item.href, base);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className="hover:bg-ee-surface-muted text-ee-text relative rounded-full px-3.5 py-2.5 text-[13.5px] font-medium transition-colors"
+              >
+                {item.name}
+                {/* Donja crta aktivne stranice — po dizajnu, sage, unutar padding-a. */}
+                <span
+                  aria-hidden
+                  className={`bg-ee-sage absolute right-3.5 bottom-1 left-3.5 h-[1.5px] transition-opacity ${active ? "opacity-100" : "opacity-0"}`}
+                />
+              </Link>
+            );
+          })}
           <span className="w-3.5" />
           <BookingCta className="py-1.5 pr-[18px] pl-1.5 text-[13.5px]" arrow={30} />
           <span className="ml-2">
@@ -125,16 +147,20 @@ export function Theme9Header({
       {menuOpen && (
         <div className="border-ee-border bg-ee-canvas border-t px-5 pb-5 lg:hidden">
           <nav aria-label="Glavna navigacija" className="flex flex-col gap-1 pt-3">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMenuOpen(false)}
-                className="hover:bg-ee-surface-muted text-ee-text rounded-xl px-3 py-2.5 text-[15px]"
-              >
-                {item.name}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const active = isActive(pathname, item.href, base);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMenuOpen(false)}
+                  aria-current={active ? "page" : undefined}
+                  className={`text-ee-text rounded-xl px-3 py-2.5 text-[15px] ${active ? "bg-ee-surface-muted" : "hover:bg-ee-surface-muted"}`}
+                >
+                  {item.name}
+                </Link>
+              );
+            })}
             <span className="mt-2">
               <BookingCta className="w-full justify-center px-5 py-3 text-[14.5px]" arrow={0} />
             </span>

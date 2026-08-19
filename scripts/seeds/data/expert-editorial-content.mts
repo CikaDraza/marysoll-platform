@@ -327,6 +327,7 @@ export const theme9LandingSections = {
     topics: [
       {
         id: "procena-koze",
+        href: "/blogs/procena-koze",
         group: "osnove",
         title: "Procena kože",
         lead: "Prvi korak u pravilnoj nezi: razlikovanje tipa kože od trenutnog stanja i praktičan pristup odabiru nege.",
@@ -334,6 +335,7 @@ export const theme9LandingSections = {
       },
       {
         id: "aktivni-sastojci",
+        href: "/blogs/aktivni-sastojci",
         group: "aktivni",
         title: "Aktivni sastojci u nezi kože",
         lead: "Od potrebe kože do pravilnog izbora aktivnog sastojka — funkcija, namena i mesto u rutini.",
@@ -341,6 +343,7 @@ export const theme9LandingSections = {
       },
       {
         id: "kombinovanje",
+        href: "/blogs/kombinovanje",
         group: "aktivni",
         title: "Kombinovanje aktivnih sastojaka",
         lead: "Kako izgraditi efikasnu, ali uravnoteženu rutinu — postepeno uvođenje i briga o kožnoj barijeri.",
@@ -348,6 +351,7 @@ export const theme9LandingSections = {
       },
       {
         id: "spf",
+        href: "/blogs/spf",
         group: "zastita",
         title: "SPF i fotoprotekcija",
         lead: "Zaštita tokom cele godine: UVA i UVB, širokospektralna zaštita i pravilna primena u svakodnevnoj nezi.",
@@ -371,6 +375,7 @@ export const theme9LandingSections = {
     // NAMERNO PRAZNO — u dizajnu se prikazuje kao „Marina potvrđuje".
     details: {},
     pendingLabel: "Marina potvrđuje",
+    cta: { text: "Prijavi interesovanje", href: "/za-klijente" },
     note: "Prijava nije obavezujuća — dobijaš obaveštenje kada Marina objavi format, termin i cenu.",
   },
 
@@ -466,7 +471,40 @@ export const theme9LandingSections = {
         text: "Bez univerzalnih recepata — procena se radi za tvoju kožu, ne za tip kože uopšte.",
       },
     ],
+    social: {
+      label: "Instagram",
+      title: "Edukacija i u kratkom formatu, svake nedelje.",
+      linkLabel: "Prati na Instagramu",
+      url: "https://www.instagram.com/",
+      images: [
+        { src: "/images/theme-9/ig-1.webp", alt: "Instagram objava 1" },
+        { src: "/images/theme-9/ig-2.webp", alt: "Instagram objava 2" },
+        { src: "/images/theme-9/ig-3.webp", alt: "Instagram objava 3" },
+        { src: "/images/theme-9/ig-4.webp", alt: "Instagram objava 4" },
+      ],
+    },
     note: "Iskustva klijenata dobijaju svoj blok kada ih zaista bude — bez izmišljenih citata i bez brojki koje ništa ne znače.",
+  },
+
+  finalCta: {
+    enabled: true,
+    eyebrow: "Sledeći korak",
+    headline: "Rezerviši termin i saznaj šta tvojoj koži zaista treba.",
+    lead: "Izaberi slobodan termin u kalendaru — za ličnu konsultaciju ili razgovor o edukaciji za salon.",
+    // PRIVREMENO: statični slotovi iz dizajna. Prави widget stiže sa T3
+    // Booking Engine-om; do tada ovo je prikaz, ne dostupnost.
+    calendar: {
+      label: "Slobodni termini",
+      month: "avgust 2026",
+      slots: [
+        { day: "pon 18", time: "10:00" },
+        { day: "sre 20", time: "17:30", selected: true },
+        { day: "čet 21", time: "12:00" },
+        { day: "pet 22", time: "09:00" },
+      ],
+    },
+    ctaLabel: "Otvori zakazivanje",
+    note: "Potvrda termina i kratak upitnik o koži dolaze na email.",
   },
 };
 

@@ -13,6 +13,7 @@ import type {
   ContentAudiencePathsData,
   ContentCredentialsData,
   ContentFeaturedEducationData,
+  ContentFinalCtaData,
   ContentGuidedCareProcessData,
   ContentBlogData,
   ContentHeroData,
@@ -24,6 +25,7 @@ import type { Theme9AboutProps } from "./AboutSection";
 import type { Theme9AudiencePathsProps } from "./AudiencePaths";
 import type { Theme9CredentialsProps } from "./Credentials";
 import type { Theme9FeaturedEducationProps } from "./FeaturedEducation";
+import type { Theme9FinalCtaProps } from "./FinalCta";
 import type { Theme9GuidedCareProcessProps } from "./GuidedCareProcess";
 import type { Theme9HeroProps } from "./Hero";
 import type { Theme9LatestEducationProps } from "./LatestEducation";
@@ -58,10 +60,11 @@ export function theme9HeroProps(
   const salonName = data.salon.name;
   const image = c?.image ?? c?.images?.[0];
 
-  // `resolveHeroCtas` podrazumevano vraća `/termini` — to je salonski Service
-  // Booking i ova tema ga NE koristi. Href se prosleđuje samo ako ga je tenant
-  // stvarno upisao; inače Hero renderuje inertan launcher (`BookingCta`).
-  const primaryHref = c?.ctas?.primary?.href ? cta.primary.href : undefined;
+  // Primarni CTA je UVEK launcher zakazivanja, nikad link. U dizajnu je to
+  // `action: "openBookingModal"`, a ne href. Zato se `ctas.primary.href` iz
+  // CMS-a namerno IGNORIŠE: zatečeni tenanti tamo imaju `/termini`, salonsku
+  // Service Booking rutu koju ova tema ne koristi.
+  const primaryHref = undefined;
 
   // Mapiranje CMS polja na editorial hero:
   //   hero.eyebrow     → pill iznad naslova (NIKAD `salon.description` —
@@ -174,6 +177,35 @@ export function theme9CredentialsProps(
     headline: c?.headline,
     lead: c?.lead,
     pillars: c?.pillars ?? [],
+    social: c?.social
+      ? {
+          label: c.social.label,
+          title: c.social.title,
+          linkLabel: c.social.linkLabel,
+          url: c.social.url,
+          images: (c.social.images ?? []).map((i) => ({ src: i.src, alt: i.alt })),
+        }
+      : undefined,
+    note: c?.note,
+  };
+}
+
+export function theme9FinalCtaProps(
+  data: ContentFinalCtaData,
+): Theme9FinalCtaProps {
+  const c = data.content;
+  return {
+    eyebrow: c?.eyebrow,
+    headline: c?.headline,
+    lead: c?.lead,
+    calendar: c?.calendar
+      ? {
+          label: c.calendar.label,
+          month: c.calendar.month,
+          slots: c.calendar.slots ?? [],
+        }
+      : undefined,
+    ctaLabel: c?.ctaLabel,
     note: c?.note,
   };
 }

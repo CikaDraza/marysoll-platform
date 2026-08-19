@@ -4,6 +4,7 @@
  * Namerno bez statistike i bez citata klijenata: iskustva dobijaju svoj blok
  * (`content.testimonials`) tek kada budu stvarna.
  */
+import Image from "next/image";
 import { Eyebrow } from "./primitives";
 import { Reveal } from "./Reveal";
 
@@ -13,6 +14,17 @@ export interface Theme9CredentialsProps {
   lead?: string;
   pillars: { title: string; text?: string }[];
   note?: string;
+  /**
+   * Instagram kartica — šesta ćelija u mreži stubova, forest podloga sa 2×2
+   * mrežom slika. Renderuje se samo kad ima bar naslov ili slike.
+   */
+  social?: {
+    label?: string;
+    title?: string;
+    linkLabel?: string;
+    url?: string;
+    images?: { src: string; alt?: string }[];
+  };
 }
 
 export function Theme9Credentials({
@@ -21,6 +33,7 @@ export function Theme9Credentials({
   lead,
   pillars,
   note,
+  social,
 }: Theme9CredentialsProps) {
   if (pillars.length === 0) return null;
 
@@ -58,6 +71,51 @@ export function Theme9Credentials({
               </article>
             </Reveal>
           ))}
+
+          {social && (social.title || social.images?.length) && (
+            <Reveal delay={pillars.length * 60}>
+              <div className="bg-ee-accent text-ee-canvas flex h-full flex-col gap-[18px] rounded-[20px] p-6 lg:p-8">
+                <span className="text-ee-accent-contrast text-[11px] tracking-[0.14em] uppercase">
+                  {social.label || "Instagram"}
+                </span>
+                {social.title && (
+                  <p className="font-newsreader text-[22px] leading-[1.3] text-white">
+                    {social.title}
+                  </p>
+                )}
+
+                {social.images && social.images.length > 0 && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {social.images.slice(0, 4).map((img, i) => (
+                      <div
+                        key={img.src}
+                        className="relative aspect-square overflow-hidden rounded-[12px]"
+                      >
+                        <Image
+                          src={img.src}
+                          alt={img.alt || `Instagram ${i + 1}`}
+                          fill
+                          sizes="(max-width: 768px) 40vw, 12vw"
+                          className="object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {social.url && (
+                  <a
+                    href={social.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-ee-accent-contrast mt-auto text-[13.5px] font-semibold"
+                  >
+                    {social.linkLabel || "Prati na Instagramu"} →
+                  </a>
+                )}
+              </div>
+            </Reveal>
+          )}
         </div>
 
         {note && (
