@@ -320,6 +320,17 @@ describe("custom domen (kikikiss.beauty)", () => {
     ).toBe(true);
   });
 
+  it.each(["/za-klijente", "/za-profesionalce"])(
+    "%s radi i na custom domenu",
+    async (path) => {
+      const { res } = await runProxy("kikikiss.beauty", path);
+      expect(rewritePath(res)).toBe(`/tenant${path}`);
+      expect(forwardedHeader(res, "x-tenant-slug")).toBe("kiki-kiss-beauty");
+      // Custom domen je već kanonski — bez 301 na sebe samog.
+      expect(res.status).not.toBe(301);
+    },
+  );
+
   it("nema kanonskog redirecta kada je host VEĆ custom domen", async () => {
     const { res } = await runProxy("kikikiss.beauty", "/termini");
     expect(res.status).not.toBe(301);

@@ -13,13 +13,13 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
+import { resolveThemePage } from "@/lib/platform/theme-pages";
 import { TenantPageShell } from "@/components/themes/TenantPageShell";
 import { Theme9ContentPage } from "@/components/themes/theme-9/pages/Theme9ContentPage";
 
 export const dynamic = "force-dynamic";
 
 const PAGE_KEY = "za-profesionalce" as const;
-const THEMES_WITH_PAGE = ["theme-9"];
 
 export async function generateMetadata(): Promise<Metadata> {
   const h = await headers();
@@ -43,12 +43,9 @@ export default async function Page() {
   const tenantSlug = h.get("x-tenant-slug") ?? "";
   const profile = await fetchPublicSalonProfile(tenantSlug);
 
-  if (!profile || !THEMES_WITH_PAGE.includes(profile.landingTheme ?? "")) {
-    notFound();
-  }
-
-  const page = profile.themePages?.[PAGE_KEY];
-  if (!page?.enabled) notFound();
+  // Jedno pravilo za obe rute; bez fallback sadržaja (vidi `theme-pages.ts`).
+  const page = resolveThemePage(profile, PAGE_KEY);
+  if (!page) notFound();
 
   return (
     <TenantPageShell tenantSlug={tenantSlug}>
