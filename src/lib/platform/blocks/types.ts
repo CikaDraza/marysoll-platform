@@ -17,6 +17,7 @@
 import type { IService, LandingStructure, SalonProfileData } from "@/types";
 import type { PublicTestimonial } from "@/types/public-testimonials";
 import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
+import type { MappedBlogPost } from "@/lib/tenant/blogPosts";
 import type { LandingSectionKey } from "../theme-client";
 
 type Landing = LandingStructure["landing"];
@@ -113,6 +114,13 @@ export interface ContentFaqData {
 
 export interface ContentBlogData {
   content: NonNullable<Landing["blog"]> | undefined;
+  /**
+   * Objave iz server loadera. Ranije ih je theme-9 dovlačila klijentskim
+   * hook-om, što je pravilo waterfall posle hidratacije i kršilo granicu iz
+   * spec 5.2 („blok dobija podatke kroz loader, tema samo renderuje").
+   * Teme koje prikazuju samo naslov i pasus ovo polje jednostavno ignorišu.
+   */
+  posts: MappedBlogPost[];
   /**
    * Autor objava je salon (ime + logo). Blok ga traži sam iz deljenog izvora —
    * ne pozajmljuje ga od hero ili about bloka (ARCHITECTURAL_RULES.md §3.5).
@@ -242,6 +250,12 @@ export interface BlockDataSource {
   testimonials(): Promise<PublicTestimonial[]>;
   /** Deljeni izvor metrika — sme ga tražiti svaki blok kome dizajn to nalaže. */
   tenantStats(): Promise<TenantStats | undefined>;
+  /**
+   * Objavljeni tekstovi tenanta. LENJ: poziva se samo ako neki blok stvarno
+   * traži objave, pa teme bez blog sekcije ne plaćaju nijedan upit.
+   * Memoizovan po `limit`-u, kao i ostali izvori po zahtevu (spec 5.2).
+   */
+  blogPosts(limit?: number): Promise<MappedBlogPost[]>;
 }
 
 export interface BlockLoaderContext<TConfig> {

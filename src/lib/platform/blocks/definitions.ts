@@ -186,13 +186,17 @@ const contentBlog: FeatureBlockDefinition<"content.blog"> = {
   capability: null,
   parseConfig: parseWith<"content.blog">(sourceSchema("blog")),
   async load({ deps }) {
-    const [ls, salon] = await Promise.all([
+    // Objave idu kroz izvor, ne kroz klijentski hook: waterfall posle
+    // hidratacije bi prekršio granicu iz spec 5.2 i pomerio LCP.
+    const [ls, salon, posts] = await Promise.all([
       deps.landingStructure(),
       deps.salon(),
+      deps.blogPosts(3),
     ]);
     return {
       content: ls?.landing?.blog,
       author: { name: salon.name, image: salon.logo ?? undefined },
+      posts,
     };
   },
 };

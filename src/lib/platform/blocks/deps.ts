@@ -13,6 +13,7 @@
 import type { IService, LandingStructure, SalonProfileData } from "@/types";
 import type { PublicTestimonial } from "@/types/public-testimonials";
 import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
+import type { MappedBlogPost } from "@/lib/tenant/blogPosts";
 import type { BlockDataSource } from "./types";
 
 /** Memoizacija promise-a: drugi pozivalac dobija prvi promise, ne novi posao. */
@@ -30,7 +31,25 @@ export interface BlockDataFetchers {
   services: () => Promise<IService[]>;
   testimonials: () => Promise<PublicTestimonial[]>;
   tenantStats: () => Promise<TenantStats | undefined>;
+  /** Lenj i po `limit`-u memoizovan; podrazumevano prazno (tema bez bloga). */
+  blogPosts?: (limit: number) => Promise<MappedBlogPost[]>;
 }
+
+/** `once()` po argumentu — dva bloka sa istim `limit`-om dele isti promise. */
+function onceByLimit<T>(
+  fn: (limit: number) => Promise<T>,
+): (limit?: number) => Promise<T> {
+  const pending = new Map<number, Promise<T>>();
+  return (limit = DEFAULT_BLOG_LIMIT) => {
+    const hit = pending.get(limit);
+    if (hit) return hit;
+    const started = fn(limit);
+    pending.set(limit, started);
+    return started;
+  };
+}
+
+const DEFAULT_BLOG_LIMIT = 3;
 
 /**
  * Napravi izvor podataka od stvarnih upita. Svaki `fetcher` se poziva najviše
@@ -45,6 +64,7 @@ export function createBlockDataSource(
     services: once(fetchers.services),
     testimonials: once(fetchers.testimonials),
     tenantStats: once(fetchers.tenantStats),
+    blogPosts: onceByLimit(fetchers.blogPosts ?? (async () => [])),
   };
 }
 
@@ -55,6 +75,12 @@ export interface PreloadedTenantSnapshot {
   tenantStats?: TenantStats;
   /** Podrazumevano `salon.landingStructure`. */
   landingStructure?: LandingStructure;
+  /**
+   * Objave se NE prosleđuju kao gotova vrednost nego kao funkcija: strana ne
+   * zna unapred da li tema uopšte ima blog blok, a lenj poziv znači da teme bez
+   * njega ne plaćaju upit.
+   */
+  blogPosts?: (limit: number) => Promise<MappedBlogPost[]>;
 }
 
 /**
@@ -72,5 +98,6 @@ export function preloadedBlockDataSource(
     services: async () => snapshot.services,
     testimonials: async () => snapshot.testimonials,
     tenantStats: async () => snapshot.tenantStats,
+    blogPosts: snapshot.blogPosts,
   });
 }

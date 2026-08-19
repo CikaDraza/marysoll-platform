@@ -36,6 +36,8 @@ import {
 import { normalizeVacations } from "@/helpers/vacations";
 import { shouldUseTheme8TestTestimonials } from "@/helpers/theme8DevelopmentTestimonials";
 import { getTenantStats } from "@/lib/tenant/getTenantStats";
+import { NewsletterCampaign } from "@/models/NewsletterCampaign";
+import { mapBlogPost, publishedBlogFilter } from "@/lib/tenant/blogPosts";
 
 interface Props {
   tenantSlug: string;
@@ -80,6 +82,7 @@ async function getTenantData(tenantSlug: string) {
 
   return {
     tenant,
+    tenantId,
     salon,
     services,
     testimonials,
@@ -296,6 +299,18 @@ export async function ClientHomePage({ tenantSlug }: Props) {
       services: serviceList,
       testimonials: testimonialList,
       tenantStats,
+      // Lenj: poziva se SAMO ako tema ima blog blok. Teme bez njega ne plaćaju
+      // upit, a one koje ga imaju dobijaju objave u istom server prolazu —
+      // bez klijentskog waterfall-a posle hidratacije.
+      blogPosts: async (limit) => {
+        const campaigns = await NewsletterCampaign.find(
+          publishedBlogFilter(data.tenantId),
+        )
+          .sort({ createdAt: -1 })
+          .limit(limit)
+          .lean();
+        return JSON.parse(JSON.stringify(campaigns)).map(mapBlogPost);
+      },
     }),
   });
 

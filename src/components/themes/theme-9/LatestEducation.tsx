@@ -1,17 +1,21 @@
-"use client";
 /**
  * Theme9LatestEducation — poslednji stručni tekstovi („Latest Education").
  *
- * Prototip je ovu sekciju crtao sa tri statične kartice. Ovde je od početka
- * data-backed: `useBlogPosts({ limit: 3 })` vraća stvarne objave tenanta, pa se
- * sekcija ne mora ručno održavati. Naslov i uvod dolaze iz `content.blog`.
+ * ČISTA PREZENTACIJA. Objave stižu kroz `content.blog` loader
+ * (`BlockDataSource.blogPosts`), u istom server prolazu kao ostali blokovi.
+ *
+ * Ranije je ovde stajao `useBlogPosts({ limit: 3 })` — klijentski React Query
+ * hook koji je posle hidratacije pravio nov zahtev ka
+ * `/api/public/{slug}/blog-posts`. To je bio waterfall koji spec 5.2 zabranjuje:
+ * blok dobija podatke kroz loader, tema samo renderuje. `/blogs` listing sme i
+ * dalje da koristi hook — tamo pagination traži klijentsko stanje.
  *
  * Bez ijedne objave grid se ne renderuje — ostaje samo zaglavlje sa linkom ka
  * `/blogs`, umesto praznog rama.
  */
 import Image from "next/image";
 import Link from "next/link";
-import { useBlogPosts } from "@/hooks/newsletter/useBlogPosts";
+import type { MappedBlogPost } from "@/lib/tenant/blogPosts";
 import { ArrowCircle, Chip, Eyebrow } from "./primitives";
 import { Reveal } from "./Reveal";
 
@@ -19,14 +23,15 @@ export interface Theme9LatestEducationProps {
   headline?: string;
   paragraph?: string;
   tenantSlug?: string;
+  posts: MappedBlogPost[];
 }
 
 export function Theme9LatestEducation({
   headline,
   paragraph,
   tenantSlug,
+  posts,
 }: Theme9LatestEducationProps) {
-  const { posts, isLoading } = useBlogPosts({ limit: 3 });
   const base = tenantSlug ? `/${tenantSlug}` : "";
 
   if (!headline && posts.length === 0) return null;
@@ -104,12 +109,6 @@ export function Theme9LatestEducation({
               </Reveal>
             ))}
           </div>
-        )}
-
-        {isLoading && posts.length === 0 && (
-          <p className="font-instrument-sans text-ee-text-muted text-[14px]">
-            Učitavanje…
-          </p>
         )}
       </div>
     </section>

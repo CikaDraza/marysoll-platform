@@ -228,5 +228,6 @@ export function theme9LatestEducationProps(
     headline: data.content?.headline,
     paragraph: data.content?.paragraph,
     tenantSlug,
+    posts: data.posts,
   };
 }

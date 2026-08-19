@@ -125,4 +125,6 @@ nagradi. T3 je prilika da to preraste u čist ugovor
 | ~~`ThemeShellProps` nosi `salon: SalonProfileData` + `services: IService[]`~~ ✅ | `shells/types.ts` + novi `lib/platform/theme-shell-native.ts` | rešeno — ugovor neutralan, guard test `shells/types.test.ts` |
 | Kredencijali se prelazno mapiraju iz `authoredStats` u About | `theme-9/blockProps.ts` | briše se kad stigne blok `content.credentials` |
 | `themePages` nema CMS editor — sadržaj `/za-klijente` i `/za-profesionalce` se za sada seed-uje | `AdminLandingCMS.tsx` | otvoreno |
+| 6 theme-9 landing sekcija nema CMS polja — registrovane su i renderuju se, ali vlasnica ih ne može popuniti kroz panel | `AdminLandingCMS.tsx` | otvoreno |
+| `theme-3/BlogSection` i dalje dovlači objave klijentskim `useBlogPosts` iako `content.blog` loader sada isporučuje `posts` — isti waterfall koji je theme-9 upravo izgubila | `theme-3/BlogSection.tsx` | otvoreno, sada trivijalno |
 | 6 theme-9 sekcija nije bilo u mongoose shemi (`strict` bi ih tiho odbacio pri snimanju) ✅ | `models/SalonProfile.ts` | rešeno u ovom slice-u |

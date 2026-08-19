@@ -15,6 +15,7 @@ import type {
   ContentAboutData,
   ContentHeroData,
 } from "@/lib/platform/blocks/types";
+import type { MappedBlogPost } from "@/lib/tenant/blogPosts";
 import {
   theme9AboutProps,
   theme9AudiencePathsProps,
@@ -22,6 +23,7 @@ import {
   theme9FeaturedEducationProps,
   theme9GuidedCareProcessProps,
   theme9HeroProps,
+  theme9LatestEducationProps,
   theme9ProfessionalPathProps,
   theme9TopicHubProps,
 } from "./blockProps";
@@ -351,5 +353,33 @@ describe("theme9ProfessionalPathProps", () => {
     expect(props.formats).toHaveLength(1);
     expect(props.formats[0].priceFrom).toBe("od 30.000 RSD");
     expect(props.cta?.href).toBe("/marina/kontakt");
+  });
+});
+
+describe("theme9LatestEducationProps", () => {
+  const post = { _id: "p1", title: "Retinol" } as MappedBlogPost;
+
+  it("prosleđuje objave iz loadera — bez klijentskog dohvata", () => {
+    const props = theme9LatestEducationProps(
+      {
+        content: { enabled: true, headline: "Tekstovi" },
+        author: { name: "Marina" },
+        posts: [post],
+      },
+      "marina",
+    );
+
+    expect(props.posts).toEqual([post]);
+    expect(props.headline).toBe("Tekstovi");
+    expect(props.tenantSlug).toBe("marina");
+  });
+
+  it("prazan spisak objava ostaje prazan niz", () => {
+    expect(
+      theme9LatestEducationProps(
+        { content: undefined, author: { name: "Marina" }, posts: [] },
+        undefined,
+      ).posts,
+    ).toEqual([]);
   });
 });
