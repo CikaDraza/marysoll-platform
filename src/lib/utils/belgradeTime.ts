@@ -11,6 +11,22 @@ export function belgradeDateStr(d: Date): string {
   }).format(d);
 }
 
+/** Trenutni datum i vreme u Europe/Belgrade kao stringovi ("YYYY-MM-DD", "HH:MM"). */
+export function belgradeNowParts(d: Date = new Date()): {
+  dateStr: string;
+  timeStr: string;
+} {
+  return {
+    dateStr: belgradeDateStr(d),
+    timeStr: new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Belgrade",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(d),
+  };
+}
+
 /** Interpretira "YYYY-MM-DD" + "HH:MM" kao Europe/Belgrade i vraća tačan UTC Date. */
 export function belgradeToUTC(dateStr: string, timeStr: string): Date {
   const midnight = new Date(`${dateStr}T00:00:00Z`);

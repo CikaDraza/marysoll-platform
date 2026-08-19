@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { ImageSelect } from "@/components/elements/ImageSelect";
 import LoaderButton from "@/components/elements/LoaderButton";
 import { useGeneratedImages } from "@/hooks/newsletter";
+import { useAuth } from "@/hooks/useAuth";
 import {
   MinusIcon,
   PlusIcon,
@@ -18,6 +19,7 @@ export function GeneratedImagesPanel({
   imagesHook: ReturnType<typeof useGeneratedImages>;
 }) {
   const { images, updatePrompt, generate, add, remove } = imagesHook;
+  const { token } = useAuth();
   const queryClient = useQueryClient();
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -30,6 +32,7 @@ export function GeneratedImagesPanel({
 
       const res = await fetch("/api/cloudinary/images", {
         method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
 

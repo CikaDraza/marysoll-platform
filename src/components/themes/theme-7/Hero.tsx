@@ -5,14 +5,13 @@ import { motion } from "framer-motion";
 import { formatStatValue } from "@/lib/tenant/tenantStatsUtils";
 import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import { FadeUp } from "./FadeUp";
-import Image from "next/image";
 import { AnchorLink } from "../shared/AnchorLink";
 
 interface Props {
+  /** Theme-7 hero je čisto tipografski — bez slike (booking kartica je vizual). */
   heroData: {
     headline?: string;
     subheadline?: string;
-    image?: { src?: string; alt?: string };
   };
   cta: {
     primary: { text: string; href: string };
@@ -106,18 +105,19 @@ export function Theme7Hero({
               <span className="h-px w-10 bg-neon shadow-[0_0_12px_#ff2e88]" />
               Beauty &amp; artistry studio
             </p>
-            <h1 className="font-cormorant font-semibold leading-[0.92] tracking-[-0.01em] text-6xl sm:text-7xl lg:text-[6.7rem]">
+            <h1 className="font-cormorant font-semibold leading-[0.92] tracking-[-0.01em] text-5xl sm:text-7xl lg:text-[6.7rem] break-words">
               <AccentHeadline headline={heroData.headline} />
             </h1>
             <p className="mt-8 text-lg lg:text-xl text-cream/70 leading-relaxed max-w-xl">
               {heroData.subheadline || DEFAULT_DESCRIPTION}
             </p>
 
-            <div className="mt-10 flex flex-wrap items-center gap-4">
+            {/* Mobilni: dugmad jedno ispod drugog preko cele širine kontejnera. */}
+            <div className="mt-10 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-4">
               <AnchorLink
                 href={cta.primary.href}
                 offset={90}
-                className="group inline-flex items-center gap-2 rounded-full bg-neon px-7 py-3.5 text-[13px] uppercase tracking-[0.18em] font-medium text-white shadow-[0_12px_40px_-10px_#ff2e88] hover:-translate-y-0.5 hover:shadow-[0_18px_55px_-10px_#ff2e88] transition-all duration-300"
+                className="group flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-neon px-7 py-3.5 text-[13px] uppercase tracking-[0.18em] font-medium text-white shadow-[0_12px_40px_-10px_#ff2e88] hover:-translate-y-0.5 hover:shadow-[0_18px_55px_-10px_#ff2e88] transition-all duration-300"
               >
                 {cta.primary.text || "Book your appointment"}
                 <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">
@@ -127,48 +127,41 @@ export function Theme7Hero({
               <AnchorLink
                 href="#gallery"
                 offset={90}
-                className="inline-flex items-center gap-2 text-[13px] uppercase tracking-[0.18em] text-cream/80 hover:text-white border-b border-cream/25 hover:border-white pb-1 transition-colors"
+                className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-full sm:rounded-none border border-cream/25 sm:border-0 sm:border-b px-7 py-3.5 sm:px-0 sm:py-0 sm:pb-1 text-[13px] uppercase tracking-[0.18em] text-cream/80 hover:text-white hover:border-white transition-colors"
               >
                 View the work
               </AnchorLink>
             </div>
 
-            <div className="mt-14 flex items-center gap-10">
+            <div className="mt-14 flex items-center gap-5 sm:gap-10">
               <div>
-                <div className="font-cormorant text-4xl">
+                <div className="font-cormorant text-3xl sm:text-4xl">
                   {rating}
                   <span className="text-neon">★</span>
                 </div>
-                <div className="text-[11px] uppercase tracking-[0.2em] text-cream/50 mt-1">
+                <div className="text-[10px] sm:text-[11px] uppercase tracking-[0.14em] sm:tracking-[0.2em] text-cream/50 mt-1">
                   Client rating
                 </div>
               </div>
               <div className="h-10 w-px bg-cream/15" />
               <div>
-                <div className="font-cormorant text-4xl">{setsCrafted}</div>
-                <div className="text-[11px] uppercase tracking-[0.2em] text-cream/50 mt-1">
+                <div className="font-cormorant text-3xl sm:text-4xl">{setsCrafted}</div>
+                <div className="text-[10px] sm:text-[11px] uppercase tracking-[0.14em] sm:tracking-[0.2em] text-cream/50 mt-1">
                   Sets crafted
                 </div>
               </div>
               <div className="h-10 w-px bg-cream/15" />
               <div>
-                <div className="font-cormorant text-4xl">{years}</div>
-                <div className="text-[11px] uppercase tracking-[0.2em] text-cream/50 mt-1">
+                <div className="font-cormorant text-3xl sm:text-4xl">{years}</div>
+                <div className="text-[10px] sm:text-[11px] uppercase tracking-[0.14em] sm:tracking-[0.2em] text-cream/50 mt-1">
                   Of artistry
                 </div>
               </div>
             </div>
           </FadeUp>
 
-          {/* RIGHT: booking card — full column width on desktop, centered & contained on mobile */}
-          <div className="lg:col-span-5 w-full max-w-md mx-auto lg:max-w-none min-w-0 relative z-30 lg:-mb-40">
-            <Image
-              src={heroData.image?.src || "/images/theme-7/hero-image-lash.png"}
-              alt={heroData.image?.alt || "Hero image"}
-              width={300}
-              height={500}
-              className="w-96 h-auto -mb-50 object-cover"
-            />
+          {/* RIGHT: booking card — puna širina kontejnera, centrirano na mobilnom */}
+          <div className="lg:col-span-5 w-full mx-auto min-w-0 relative z-30 lg:-mb-40">
             {bookingSlot}
           </div>
         </div>

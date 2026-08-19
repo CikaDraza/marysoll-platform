@@ -45,25 +45,19 @@ import {
 import type { PendingAppointment } from "@/components/shared/BookingModal";
 import type {
   WorkingHoursMap,
-  DayOfWeek,
-  ITimeSlot,
   IService,
   SalonProfileData,
   ManualSlotsMap,
 } from "@/types";
 import { manualTimesForDate, isManualSlotTaken } from "@/helpers/manualSlots";
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const DAY_NAMES_SR: DayOfWeek[] = [
-  "Nedelja",
-  "Ponedeljak",
-  "Utorak",
-  "Sreda",
-  "Četvrtak",
-  "Petak",
-  "Subota",
-];
+import {
+  findFirstAvailableDay,
+  generateSlots,
+  getWorkingRange,
+  isDayFullyBooked,
+  isSlotBooked,
+  toMins,
+} from "@/helpers/widgetAvailability";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -75,64 +69,6 @@ type PublicAppt = {
   serviceName: string;
   status: string;
 };
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function toMins(t: string): number {
-  const [h, m] = t.split(":").map(Number);
-  return h * 60 + m;
-}
-
-function getWorkingRange(
-  workingHours: WorkingHoursMap | undefined,
-  date: Date,
-): { isWorking: boolean; start: string; end: string } {
-  if (!workingHours) return { isWorking: false, start: "", end: "" };
-  const dayName = DAY_NAMES_SR[getDay(date)] as DayOfWeek;
-  const slots = (workingHours[dayName] ?? []) as ITimeSlot[];
-  if (!slots.length) return { isWorking: false, start: "", end: "" };
-  const starts = slots.map((s) => s.from).sort();
-  const ends = slots.map((s) => s.to).sort();
-  return { isWorking: true, start: starts[0], end: ends[ends.length - 1] };
-}
-
-function generateSlots(start: string, end: string): string[] {
-  const slots: string[] = [];
-  let cur = toMins(start);
-  const endM = toMins(end);
-  while (cur < endM) {
-    const h = Math.floor(cur / 60)
-      .toString()
-      .padStart(2, "0");
-    const m = (cur % 60).toString().padStart(2, "0");
-    slots.push(`${h}:${m}`);
-    cur += 30;
-  }
-  return slots;
-}
-
-function isSlotBooked(
-  appointments: PublicAppt[],
-  dateStr: string,
-  slot: string,
-): boolean {
-  const slotMin = toMins(slot);
-  return appointments.some((a) => {
-    if (a.date !== dateStr) return false;
-    const startMin = toMins(a.time);
-    const endMin = startMin + (a.duration || 60);
-    return slotMin >= startMin && slotMin < endMin;
-  });
-}
-
-function isDayFullyBooked(
-  appointments: PublicAppt[],
-  slots: string[],
-  dateStr: string,
-): boolean {
-  if (!slots.length) return false;
-  return slots.every((slot) => isSlotBooked(appointments, dateStr, slot));
-}
 
 // ─── DayView ──────────────────────────────────────────────────────────────────
 
@@ -421,10 +357,12 @@ export default function HomepageAppointmentWidget({
   const effectiveSlug = clientSlug ?? tenantSlug;
 
   const [viewMode, setViewMode] = useState<ViewMode>("week");
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [weekStart, setWeekStart] = useState(
-    startOfWeek(new Date(), { weekStartsOn: 1 }),
-  );
+  // Fokus (dan / sedmica / traka dana) je "korisnikov izbor ILI auto-fokus":
+  // dok je korisnički izbor `null`, prikaz prati prvi slobodan dan koji se
+  // izračuna čim stignu termini. Svaka korisnička akcija upisuje konkretan
+  // datum i od tada auto-fokus više ne pomera prikaz.
+  const [userDate, setUserDate] = useState<Date | null>(null);
+  const [userWeekStart, setUserWeekStart] = useState<Date | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalDate, setModalDate] = useState("");
   const [modalTime, setModalTime] = useState("");
@@ -434,7 +372,7 @@ export default function HomepageAppointmentWidget({
   > | null>(null);
 
   // Day strip offset (for arrow navigation beyond the initial window)
-  const [stripOffset, setStripOffset] = useState(-3); // days from today
+  const [userStripOffset, setUserStripOffset] = useState<number | null>(null); // days from today
   const stripScrollRef = useRef<HTMLDivElement>(null);
   const selectedDayRef = useRef<HTMLButtonElement>(null);
   // Set when a date change should recenter the strip — distinguishes a real
@@ -459,6 +397,33 @@ export default function HomepageAppointmentWidget({
   const workingHours = salon.workingHours as WorkingHoursMap | undefined;
   const isManual = salon.availabilityMode === "manualSlots";
   const manualSlots = salon.manualSlots as ManualSlotsMap | undefined;
+
+  // ── Auto-fokus na prvi slobodan dan ────────────────────────────────────────
+  // Ako današnji dan nema nijedan slobodan termin (npr. sve popunjeno nedelju
+  // dana unapred), prikaz se sam pomera na prvi dan koji ima slobodan termin —
+  // klijent ne mora da traži gde ima mesta. Važi za oba režima dostupnosti
+  // (radno vreme i pojedinačni termini). Dugme "Danas" i dalje vraća na danas.
+  const today = useMemo(() => new Date(), []);
+  const autoFocusDay = useMemo(() => {
+    if (isLoading) return null;
+    const firstFree = findFirstAvailableDay({
+      workingHours,
+      manualSlots,
+      isManual,
+      appointments,
+    });
+    return firstFree && !isSameDay(firstFree, today) ? firstFree : null;
+  }, [isLoading, appointments, workingHours, manualSlots, isManual, today]);
+
+  const selectedDate = userDate ?? autoFocusDay ?? today;
+  const weekStart = useMemo(
+    () =>
+      userWeekStart ?? startOfWeek(autoFocusDay ?? today, { weekStartsOn: 1 }),
+    [userWeekStart, autoFocusDay, today],
+  );
+  const stripOffset =
+    userStripOffset ??
+    (autoFocusDay ? differenceInCalendarDays(autoFocusDay, today) - 3 : -3);
 
   // ── Pending appointment restore on mount ───────────────────────────────────
   useEffect(() => {
@@ -548,26 +513,25 @@ export default function HomepageAppointmentWidget({
   // ── Day strip days ─────────────────────────────────────────────────────────
   const stripDays = useMemo(
     () =>
-      Array.from({ length: 14 }, (_, i) =>
-        addDays(new Date(), stripOffset + i),
-      ),
-    [stripOffset],
+      Array.from({ length: 14 }, (_, i) => addDays(today, stripOffset + i)),
+    [stripOffset, today],
   );
 
   // Move the selection to a date: keep it inside the 14-day strip window and
   // flag the strip to recenter on it. Used by the day arrows, day buttons and
   // week→day drill-in — NOT the strip's own browse arrows.
-  const selectDate = useCallback((date: Date) => {
-    pendingCenterRef.current = true;
-    setSelectedDate(date);
-    setStripOffset((prev) => {
-      const idx = differenceInCalendarDays(date, addDays(new Date(), prev));
-      // Already in the window — keep the user's browse offset untouched.
-      if (idx >= 0 && idx <= 13) return prev;
-      // Re-anchor so the selected day sits ~3 from the left (matches "Danas").
-      return differenceInCalendarDays(date, new Date()) - 3;
-    });
-  }, []);
+  const selectDate = useCallback(
+    (date: Date) => {
+      pendingCenterRef.current = true;
+      setUserDate(date);
+      const idx = differenceInCalendarDays(date, addDays(today, stripOffset));
+      // Van trenutnog prozora — re-anchor tako da izabrani dan stoji ~3 mesta
+      // od leve ivice (isto kao "Danas"); u prozoru ostaje kako korisnik gleda.
+      if (idx < 0 || idx > 13)
+        setUserStripOffset(differenceInCalendarDays(date, today) - 3);
+    },
+    [stripOffset, today],
+  );
 
   // Recenter the strip on the selected day once the window/layout settles. The
   // pending flag keeps the strip's own browse arrows (which only move the
@@ -617,11 +581,12 @@ export default function HomepageAppointmentWidget({
               </div>
               <button
                 onClick={() => {
-                  const today = new Date();
+                  // "Danas" ostaje nepromenjen: vraća fokus na današnji dan i
+                  // gasi auto-fokus (korisnički izbor od sada ima prednost).
                   pendingCenterRef.current = true;
-                  setSelectedDate(today);
-                  setWeekStart(startOfWeek(today, { weekStartsOn: 1 }));
-                  setStripOffset(-3);
+                  setUserDate(today);
+                  setUserWeekStart(startOfWeek(today, { weekStartsOn: 1 }));
+                  setUserStripOffset(-3);
                 }}
                 className="px-3 py-1.5 text-xs font-semibold bg-(--primary-color)/20 text-(--primary-color) rounded-lg hover:bg-(--primary-color)/30 transition cursor-pointer"
               >
@@ -634,7 +599,7 @@ export default function HomepageAppointmentWidget({
               <button
                 onClick={() =>
                   viewMode === "week"
-                    ? setWeekStart((w) => subWeeks(w, 1))
+                    ? setUserWeekStart(subWeeks(weekStart, 1))
                     : selectDate(subDays(selectedDate, 1))
                 }
                 className="p-1.5 rounded-lg hover:bg-gray-100 transition text-gray-400 hover:text-gray-700 cursor-pointer"
@@ -647,7 +612,7 @@ export default function HomepageAppointmentWidget({
               <button
                 onClick={() =>
                   viewMode === "week"
-                    ? setWeekStart((w) => addWeeks(w, 1))
+                    ? setUserWeekStart(addWeeks(weekStart, 1))
                     : selectDate(addDays(selectedDate, 1))
                 }
                 className="p-1.5 rounded-lg hover:bg-gray-100 transition text-gray-400 hover:text-gray-700 cursor-pointer"
@@ -680,7 +645,7 @@ export default function HomepageAppointmentWidget({
                 {/* Day strip with arrows */}
                 <div className="flex items-center gap-2 mb-4">
                   <button
-                    onClick={() => setStripOffset((o) => o - 1)}
+                    onClick={() => setUserStripOffset(stripOffset - 1)}
                     className="flex-shrink-0 p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition cursor-pointer"
                     aria-label="Prethodni dan"
                   >
@@ -727,7 +692,7 @@ export default function HomepageAppointmentWidget({
                   </div>
 
                   <button
-                    onClick={() => setStripOffset((o) => o + 1)}
+                    onClick={() => setUserStripOffset(stripOffset + 1)}
                     className="flex-shrink-0 p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition cursor-pointer"
                     aria-label="Sledeći dan"
                   >

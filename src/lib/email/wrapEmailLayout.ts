@@ -21,7 +21,7 @@ export interface EmailLayoutData {
   tenantId?: string | null;
 }
 
-interface SalonData {
+export interface SalonData {
   name: string;
   description?: string;
   logo?: string | null;
@@ -58,7 +58,14 @@ async function resolvePlatform(): Promise<SalonData> {
   }
 }
 
-async function resolveSalon(tenantId?: string | null): Promise<SalonData> {
+/**
+ * Razrešava brending saluna. Izloženo je da bi masovna slanja (newsletter batch)
+ * mogla da ga razreše jednom i proslede kao `salonOverride`, umesto jednog
+ * SalonProfile upita po primaocu.
+ */
+export async function resolveSalon(
+  tenantId?: string | null,
+): Promise<SalonData> {
   if (!tenantId) return resolvePlatform();
 
   try {

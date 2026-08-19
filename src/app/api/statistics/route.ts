@@ -42,9 +42,18 @@ interface IAppointment {
   serviceName: string;
   date: string;
   time: string;
+  status?: string;
   note?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+/** Prihod jednog termina = zbir stavki (cena × količina). */
+function appointmentRevenue(a: IAppointment): number {
+  return (a.services ?? []).reduce(
+    (sum, s) => sum + (s.price * s.quantity || 0),
+    0,
+  );
 }
 
 interface IUser {
@@ -156,12 +165,37 @@ export async function GET(req: NextRequest) {
       .map(([service, count]) => ({ service, count }));
 
     // -------------------------
-    // 4. UKUPAN PRIHOD
+    // 4. PRIHOD — potencijalni / ostvareni / neostvareni
     // -------------------------
+    // Potencijalni = svi zakazani termini u mesecu (bez obzira na status).
+    // Ostvareni    = samo oni koje je admin označio kao završene ("došla").
+    // Neostvareni  = otkazani i odbijeni termini (prihod koji je propao).
     const totalRevenue = Object.values(revenueByService).reduce(
       (acc, val) => acc + val,
       0
     );
+
+    let completedRevenue = 0;
+    let cancelledRevenue = 0;
+    let noShowRevenue = 0;
+    let completedCount = 0;
+    let cancelledCount = 0;
+
+    appointments.forEach((a) => {
+      const revenue = appointmentRevenue(a);
+      if (a.status === "completed") {
+        completedRevenue += revenue;
+        completedCount++;
+      } else if (
+        a.status === "appointment_cancelled" ||
+        a.status === "appointment_rejected"
+      ) {
+        cancelledRevenue += revenue;
+        cancelledCount++;
+      } else if (a.status === "no_show") {
+        noShowRevenue += revenue;
+      }
+    });
 
     // -------------------------
     // 5. PROSEČAN RAZMAK TERMINA
@@ -192,21 +226,38 @@ export async function GET(req: NextRequest) {
     // -------------------------
     // 6. STATUS KLIJENATA
     // -------------------------
+    // "Aktivni" = različiti klijenti koji su zakazali u ovom mesecu.
     const clientsThisMonth = new Set(appointments.map((a) => a.clientEmail));
-
-    const newClients = users.filter((user) => {
-      const firstA = appointments.find((a) => a.clientEmail === user.email);
-      if (!firstA) return false;
-
-      const created = new Date(firstA.createdAt ?? "");
-      return (
-        created.getMonth() + 1 === Number(month) &&
-        created.getFullYear() === Number(year)
-      );
-    });
-
     const activeClients = clientsThisMonth.size;
     const inactiveClients = users.length - clientsThisMonth.size;
+
+    // "Novi" = klijent čiji je PRVI termin ikad nastao u ovom mesecu.
+    // Raniji račun je tražio prvi termin unutar već filtrirane (mesečne) liste,
+    // pa je uslov uvek bio tačan i "novi" je bio jednak broju aktivnih.
+    const firstEverByEmail = clientsThisMonth.size
+      ? await Appointment.aggregate<{ _id: string; firstCreatedAt: Date }>([
+          {
+            $match: {
+              ...(tenantId ? { tenantId: new Types.ObjectId(tenantId) } : {}),
+              clientEmail: { $in: [...clientsThisMonth] },
+            },
+          },
+          { $group: { _id: "$clientEmail", firstCreatedAt: { $min: "$createdAt" } } },
+        ])
+      : [];
+
+    const newClientEmails = firstEverByEmail
+      .filter((c) => c.firstCreatedAt >= start && c.firstCreatedAt < end)
+      .map((c) => c._id);
+    const newClients = newClientEmails.length;
+    // Ostatak aktivnih su povratni — već su zakazivali ranije.
+    const returningClients = activeClients - newClients;
+
+    // Nalozi registrovani u ovom mesecu (nezavisno od toga jesu li zakazali).
+    const registeredThisMonth = users.filter((u) => {
+      const created = new Date(u.createdAt ?? "");
+      return created >= start && created < end;
+    }).length;
 
     // -------------------------
     // 7. DETALJNA RASPODELA USLUGA
@@ -235,13 +286,23 @@ export async function GET(req: NextRequest) {
 
       totalAppointments: appointments.length,
       totalRevenue,
+      revenue: {
+        potential: totalRevenue,
+        completed: completedRevenue,
+        cancelled: cancelledRevenue,
+        noShow: noShowRevenue,
+        completedCount,
+        cancelledCount,
+      },
       avgTimeGap,
 
       clients: {
         total: users.length,
         active: activeClients,
         inactive: inactiveClients,
-        new: newClients.length,
+        new: newClients,
+        returning: returningClients,
+        registeredThisMonth,
       },
     });
   } catch (err) {

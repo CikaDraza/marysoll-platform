@@ -74,7 +74,6 @@ export function Theme7Landing(props: ThemeLandingProps) {
             heroData={{
               headline: ls?.landing?.hero?.headline,
               subheadline: ls?.landing?.hero?.subheadline,
-              image: ls?.landing?.hero?.image,
             }}
             cta={resolvedCta}
             tenantStats={tenantStats}

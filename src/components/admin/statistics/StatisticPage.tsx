@@ -16,7 +16,7 @@ export const StatisticsPage: React.FC = () => {
     return features.aiMarketingAnalysis ? "ai" : "full";
   })();
 
-  const { clients, totalAppointments, totalRevenue } = useStatistics({
+  const { clients, totalAppointments, revenue } = useStatistics({
     month: selectedMonth,
     year: selectedYear,
   });
@@ -131,28 +131,59 @@ export const StatisticsPage: React.FC = () => {
                   {totalAppointments || 0}
                 </span>
               </div>
-              <div className="flex flex-col lg:flex-row justify-between items-center p-3 bg-green-50 dark:bg-gray-950 rounded-lg">
-                <span className="text-sm font-medium text-green-700">
-                  Ukupan prihod
+              {/* Prihod: potencijal (svi zakazani) → ostvaren (označeni kao
+                  došli) → neostvaren (otkazani/odbijeni). */}
+              <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-1 p-3 bg-sky-50 dark:bg-gray-950 rounded-lg">
+                <span className="text-sm font-medium text-sky-700">
+                  Ukupan potencijalni prihod
                 </span>
-                <span className="text-lg font-bold text-green-900">
-                  {global ? formatCurrency(totalRevenue) : formatCurrency(0)}
+                <span className="text-lg font-bold text-sky-900 dark:text-sky-300">
+                  {formatCurrency(revenue.potential)}
+                </span>
+              </div>
+              <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-1 p-3 bg-green-50 dark:bg-gray-950 rounded-lg">
+                <span className="text-sm font-medium text-green-700">
+                  Ostvaren prihod
+                  <span className="block text-[11px] font-normal text-green-600/70">
+                    Termini označeni kao završeni ({revenue.completedCount})
+                  </span>
+                </span>
+                <span className="text-lg font-bold text-green-900 dark:text-green-300">
+                  {formatCurrency(revenue.completed)}
+                </span>
+              </div>
+              <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-1 p-3 bg-red-50 dark:bg-gray-950 rounded-lg">
+                <span className="text-sm font-medium text-red-700">
+                  Neostvaren prihod
+                  <span className="block text-[11px] font-normal text-red-600/70">
+                    Otkazani i odbijeni termini ({revenue.cancelledCount})
+                  </span>
+                </span>
+                <span className="text-lg font-bold text-red-900 dark:text-red-300">
+                  {formatCurrency(revenue.cancelled)}
                 </span>
               </div>
               <div className="flex justify-between items-center p-3 bg-purple-50 dark:bg-gray-950 rounded-lg">
                 <span className="text-sm font-medium text-purple-700">
                   Aktivni klijenti
+                  <span className="block text-[11px] font-normal text-purple-600/70">
+                    Zakazali u ovom mesecu — {clients?.new || 0} novih,{" "}
+                    {clients?.returning || 0} povratnih
+                  </span>
                 </span>
-                <span className="text-lg font-bold text-purple-900">
+                <span className="text-lg font-bold text-purple-900 dark:text-purple-300">
                   {clients?.active || 0}
                 </span>
               </div>
               <div className="flex justify-between items-center p-3 bg-orange-50 dark:bg-gray-950 rounded-lg">
                 <span className="text-sm font-medium text-orange-700">
-                  Novi klijenti
+                  Novi nalozi
+                  <span className="block text-[11px] font-normal text-orange-600/70">
+                    Registrovali se u ovom mesecu
+                  </span>
                 </span>
-                <span className="text-lg font-bold text-orange-900">
-                  {clients?.new || 0}
+                <span className="text-lg font-bold text-orange-900 dark:text-orange-300">
+                  {clients?.registeredThisMonth || 0}
                 </span>
               </div>
             </div>

@@ -6,6 +6,7 @@ import { FilterQuery, Types } from "mongoose";
 import mongoose from "mongoose";
 import { IAppointment, PaginationInfo } from "@/types";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
+import { belgradeNowParts } from "@/lib/utils/belgradeTime";
 
 export async function GET(req: Request) {
   try {
@@ -102,12 +103,67 @@ export async function GET(req: Request) {
       filter.status = "completed";
     } else if (status === "no_show") {
       filter.status = "no_show";
+    } else if (status === "unmarked") {
+      // "Neoznačeni": odobreni termini koji su već počeli a admin ih još nije
+      // označio kao završene / nedolazak. Datum i vreme su lokalni stringovi
+      // ("YYYY-MM-DD", "HH:mm") pa poređenje stringova radi ispravno.
+      const { dateStr, timeStr } = belgradeNowParts();
+      filter.status = "appointment_approved";
+      filter.$and = [
+        {
+          $or: [
+            { date: { $lt: dateStr } },
+            { date: dateStr, time: { $lte: timeStr } },
+          ],
+        },
+      ];
+    }
+
+    // ── locate: na kojoj se strani nalazi konkretan termin ────────────────────
+    // Koristi ga deep-link iz notifikacije (?tab=termini&appointmentId=...) da
+    // prebaci paginaciju na stranu na kojoj taj termin zaista jeste.
+    const locateId = searchParams.get("locate");
+    if (locateId) {
+      if (!Types.ObjectId.isValid(locateId)) {
+        return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+      }
+      const target = await Appointment.findOne({
+        ...filter,
+        _id: new Types.ObjectId(locateId),
+      })
+        .select("createdAt")
+        .lean<{ _id: Types.ObjectId; createdAt: Date } | null>();
+
+      if (!target) {
+        return NextResponse.json({ found: false, page: null });
+      }
+
+      // Isti redosled kao lista (createdAt desc, pa _id desc): broj termina
+      // ispred ciljanog određuje njegovu stranu.
+      const before = await Appointment.countDocuments({
+        $and: [
+          filter,
+          {
+            $or: [
+              { createdAt: { $gt: target.createdAt } },
+              { createdAt: target.createdAt, _id: { $gt: target._id } },
+            ],
+          },
+        ],
+      });
+
+      return NextResponse.json({
+        found: true,
+        page: Math.floor(before / limit) + 1,
+      });
     }
 
     // Pipeline za paginaciju
     const aggregationPipeline: mongoose.PipelineStage[] = [
       { $match: filter },
-      { $sort: { createdAt: -1 } },
+      // _id kao tie-break: bez njega termini sa istim createdAt mogu da menjaju
+      // redosled između strana, pa "locate" pokaže pogrešnu stranu.
+      { $sort: { createdAt: -1, _id: -1 } },
       {
         $facet: {
           metadata: [{ $count: "total" }],

@@ -6,7 +6,7 @@ import "server-only";
  * All use wrapEmailLayout for salon-branded HTML wrapper.
  */
 
-import { wrapEmailLayout } from "@/lib/email/wrapEmailLayout";
+import { wrapEmailLayout, type SalonData } from "@/lib/email/wrapEmailLayout";
 
 const appUrl = () => process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "";
 
@@ -17,8 +17,8 @@ function ctaButton(label: string, url: string): string {
       <td align="center">
         <table role="presentation" border="0" cellpadding="0" cellspacing="0">
           <tr>
-            <td align="center" style="border-radius:50px;background:linear-gradient(135deg,#ff80b5 0%,#9089fc 100%);">
-              <a href="${url}" style="display:inline-block;padding:14px 36px;font-family:'Georgia',serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.8px;white-space:nowrap;">
+            <td align="center" bgcolor="#7c3aed" style="border-radius:50px;background-color:#7c3aed;padding:14px 36px;mso-padding-alt:14px 36px;">
+              <a href="${url}" style="display:inline-block;font-family:'Georgia',serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.8px;white-space:nowrap;">
                 ${label}
               </a>
             </td>
@@ -343,6 +343,8 @@ export async function newsletterPromotionTemplate(data: {
   ctaLabel?: string;
   unsubscribeUrl: string;
   tenantId?: string | null;
+  /** Već razrešen brending saluna — batch slanje ga prosleđuje da izbegne upit po primaocu. */
+  salon?: SalonData;
   trackingData?: {
     campaignId: string;
     subscriberId: string;
@@ -371,5 +373,8 @@ export async function newsletterPromotionTemplate(data: {
     ${trackingPixel}
   `;
 
-  return wrapEmailLayout({ title: data.subject, content: innerContent, tenantId: data.tenantId });
+  return wrapEmailLayout(
+    { title: data.subject, content: innerContent, tenantId: data.tenantId },
+    data.salon,
+  );
 }

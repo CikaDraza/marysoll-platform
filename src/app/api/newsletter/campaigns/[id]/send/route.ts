@@ -14,6 +14,9 @@ interface SendRequestBody {
   action: "send" | "pause" | "resume" | "stop";
 }
 
+/** Slanje se čeka u zahtevu, pa treba više od podrazumevanog limita. */
+export const maxDuration = 60;
+
 export async function POST(
   request: Request,
   context: { params: Promise<{ id: string }> },
@@ -95,24 +98,34 @@ export async function POST(
         campaign.sentAt = now;
         await campaign.save();
 
-        // Pokreni slanje (fire-and-forget)
-        sendCampaignEmails(campaign._id.toString())
-          .then((result) => {
-            console.log(
-              `Kampanja ${campaign._id} završena: poslato ${result?.sentCount ?? 0}, nije poslato ${result?.bounceCount ?? 0}`,
-            );
-          })
-          .catch((err) => {
-            console.error(`Greška pri slanju kampanje ${campaign._id}:`, err);
-            NewsletterCampaign.findByIdAndUpdate(campaign._id, {
-              status: "failed",
-            }).catch(console.error);
+        /**
+         * Slanje se čeka. Ranije je išlo fire-and-forget, ali serverless
+         * funkcija se zamrzava čim vrati odgovor, pa je petlja umirala posle
+         * par primalaca i kampanja je zauvek ostajala u statusu "sending".
+         * Batch slanje stane u maxDuration; ostatak (jako velike liste) pokupi
+         * scheduler cron, koji preskače već obrađene primaoce.
+         */
+        try {
+          const result = await sendCampaignEmails(campaign._id.toString());
+          console.log(
+            `Kampanja ${campaign._id} završena: poslato ${result?.sentCount ?? 0}, nije poslato ${result?.bounceCount ?? 0}`,
+          );
+
+          return NextResponse.json({
+            message: `Kampanja poslata na ${result?.sentCount ?? 0} adresa`,
+            campaign: await NewsletterCampaign.findById(campaign._id),
+          });
+        } catch (err) {
+          console.error(`Greška pri slanju kampanje ${campaign._id}:`, err);
+          await NewsletterCampaign.findByIdAndUpdate(campaign._id, {
+            status: "failed",
           });
 
-        return NextResponse.json({
-          message: "Kampanja pokrenuta – slanje je u toku...",
-          campaign,
-        });
+          return NextResponse.json(
+            { error: "Slanje kampanje nije uspelo" },
+            { status: 500 },
+          );
+        }
       }
 
       case "pause":
@@ -125,22 +138,38 @@ export async function POST(
         campaign.status = "paused";
         break;
 
-      case "resume":
+      case "resume": {
         if (campaign.status !== "paused") {
           return NextResponse.json(
             { error: "Samo pauzirana kampanja može biti nastavljena" },
             { status: 400 },
           );
         }
-        campaign.status = "sending";
 
-        // Nastavi slanje
-        sendCampaignEmails(campaign._id.toString()).catch((err) => {
+        // Status mora biti snimljen PRE slanja — sendCampaignEmails učitava
+        // kampanju iz baze i odustaje ako status nije "sending".
+        campaign.status = "sending";
+        await campaign.save();
+
+        try {
+          const result = await sendCampaignEmails(campaign._id.toString());
+
+          return NextResponse.json({
+            message: `Kampanja nastavljena – poslato na ${result?.sentCount ?? 0} adresa`,
+            campaign: await NewsletterCampaign.findById(campaign._id),
+          });
+        } catch (err) {
           console.error("Resume send error:", err);
-          campaign.status = "failed";
-          campaign.save();
-        });
-        break;
+          await NewsletterCampaign.findByIdAndUpdate(campaign._id, {
+            status: "failed",
+          });
+
+          return NextResponse.json(
+            { error: "Nastavak slanja nije uspeo" },
+            { status: 500 },
+          );
+        }
+      }
 
       case "stop":
         if (!["sending", "paused", "scheduled"].includes(campaign.status)) {

@@ -65,6 +65,74 @@ export async function resolveCloudinaryUploadFolder(
   return `${base}/landing`;
 }
 
+type CloudinaryResource = {
+  public_id: string;
+  secure_url: string;
+  width: number;
+  height: number;
+  format: string;
+  created_at: string;
+  bytes: number;
+  original_filename?: string;
+  filename?: string;
+};
+
+function mapResource(r: CloudinaryResource): CloudinaryResource {
+  return {
+    public_id: r.public_id,
+    secure_url: r.secure_url,
+    width: r.width,
+    height: r.height,
+    format: r.format,
+    created_at: r.created_at,
+    bytes: r.bytes,
+    // Search API vraća `filename`, Admin API `original_filename`.
+    original_filename: r.original_filename ?? r.filename ?? "",
+  };
+}
+
+/**
+ * Lista resurse tenant foldera, najnovije prvo.
+ *
+ * Koristi Search API jer je account u "dynamic folders" modu: slike uploadovane
+ * direktno iz Cloudinary konzole imaju folder samo u `asset_folder`, dok im
+ * `public_id` ostaje bez putanje (npr. `septembarski-termini_qxi5id`). Zbog toga
+ * ih `api.resources({ prefix })` — koje pretražuje public_id — nikad ne vrati.
+ * `folder:` izraz u Search-u pokriva oba slučaja.
+ *
+ * Fallback na prefix listanje ako Search padne (npr. rate limit 429), da lista
+ * nikad ne ostane prazna.
+ */
+export async function listCloudinaryResources(
+  folder: string,
+  resourceType: "image" | "video" = "image",
+): Promise<CloudinaryResource[]> {
+  const newestFirst = (a: CloudinaryResource, b: CloudinaryResource) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+
+  try {
+    const res = await cloudinary.search
+      .expression(
+        `resource_type:${resourceType} AND (folder:"${folder}" OR folder:"${folder}/*")`,
+      )
+      .sort_by("created_at", "desc")
+      .max_results(100)
+      .execute();
+    return (res.resources as CloudinaryResource[]).map(mapResource);
+  } catch (err) {
+    console.error("Cloudinary search failed, fallback na prefix listanje:", err);
+    const res = await cloudinary.api.resources({
+      type: "upload",
+      resource_type: resourceType,
+      prefix: `${folder}/`,
+      max_results: 500,
+    });
+    return (res.resources as CloudinaryResource[])
+      .map(mapResource)
+      .sort(newestFirst);
+  }
+}
+
 /**
  * Extracts the Cloudinary public_id from a secure_url.
  * Handles both versioned and non-versioned URLs.

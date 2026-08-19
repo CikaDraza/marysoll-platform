@@ -1,3 +1,7 @@
+"use client";
+
+import { useSearchParams } from "next/navigation";
+import { api } from "@/lib/api";
 import { formatISODate } from "@/helpers/formatISODate";
 import { statusMeta } from "@/lib/appointmentColors";
 import { displayClientContact } from "@/lib/contactRules";
@@ -25,12 +29,15 @@ import {
 interface AppointmentListItemProps {
   appointment: IAppointment;
   onOpenChat: (appointment: IAppointment) => void;
+  /** Termin na koji je admin došao deep-linkom iz notifikacije. */
+  isHighlighted?: boolean;
 }
 
 // components/admin/AdminAppointments.tsx - AppointmentListItem deo
 function AppointmentListItem({
   appointment,
   onOpenChat,
+  isHighlighted = false,
 }: AppointmentListItemProps) {
   const { updateAppointmentStatus } = useAppointmentMutations();
   const { data: salon } = useSalonProfile();
@@ -65,7 +72,14 @@ function AppointmentListItem({
   };
 
   return (
-    <li className="flex flex-col lg:flex-row justify-between gap-x-6 py-5 border-b dark:last:border-gray-900 last:border-gray-50 border-gray-200 dark:border-slate-800">
+    <li
+      id={`appointment-${appointment._id}`}
+      className={`flex flex-col lg:flex-row justify-between gap-x-6 py-5 border-b dark:last:border-gray-900 last:border-gray-50 border-gray-200 dark:border-slate-800 transition-colors duration-500 ${
+        isHighlighted
+          ? "-mx-3 px-3 rounded-xl ring-2 ring-(--primary-color) bg-(--primary-color)/5"
+          : ""
+      }`}
+    >
       <div className="flex min-w-0 gap-x-4 flex-1">
         <div className="min-w-0 flex-auto">
           {isOnline ? (
@@ -488,6 +502,15 @@ export default function AdminAppointments() {
     useState<IAppointment | null>(null);
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const { data: salon } = useSalonProfile();
+  const clientGender = salon?.clientGender;
+
+  // Deep-link iz notifikacije: /dashboard?tab=termini&appointmentId=<id>
+  const searchParams = useSearchParams();
+  const focusId = searchParams.get("appointmentId");
+  // Jednom po ID-u: server kaže na kojoj je strani termin, lista skoči tamo.
+  const locatedRef = useRef<string | null>(null);
 
   // Koristi useDebounce custom hook
   const debouncedText = useDebounce(textQuery, 500); // 500ms za text
@@ -510,8 +533,48 @@ export default function AdminAppointments() {
     status: debouncedStatus,
   });
 
-  const appointments = response?.appointments || [];
+  const appointments = useMemo(
+    () => response?.appointments || [],
+    [response?.appointments],
+  );
   const pagination = response?.pagination;
+
+  // Broj neoznačenih (prošlih, a još "Odobreno") termina — podsetnik na vrhu.
+  const { data: unmarkedResponse } = useAppointments({
+    status: "unmarked",
+    limit: 1,
+  });
+  const unmarkedCount = unmarkedResponse?.pagination?.totalCount ?? 0;
+
+  // ── Deep-link: nađi stranu termina, pa skroluj i osvetli ga ────────────────
+  useEffect(() => {
+    if (!focusId || locatedRef.current === focusId) return;
+    locatedRef.current = focusId;
+    async function locate(id: string) {
+      try {
+        const { data } = await api.get<{ found: boolean; page: number | null }>(
+          `/appointments?locate=${encodeURIComponent(id)}&limit=10`,
+        );
+        // Deep-link uvek pokazuje ceo spisak — bez zatečenih filtera.
+        setTextQuery("");
+        setDateQuery("");
+        setStatusFilter("");
+        if (data?.found && data.page) setPage(data.page);
+        setHighlightId(id);
+      } catch {
+        /* ako ne uspe, lista ostaje kakva jeste */
+      }
+    }
+    locate(focusId);
+  }, [focusId]);
+
+  // Skrol na osvetljeni termin čim se pojavi u renderovanoj listi.
+  useEffect(() => {
+    if (!highlightId) return;
+    const el = document.getElementById(`appointment-${highlightId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlightId, appointments]);
 
   const handleOpenChat = async (appointment: IAppointment) => {
     setSelectedAppointment(appointment);
@@ -558,6 +621,35 @@ export default function AdminAppointments() {
 
   return (
     <div className="space-y-6">
+      {/* PODSETNIK: termini koji su prošli a nisu označeni ─────────────────── */}
+      {unmarkedCount > 0 && statusFilter !== "unmarked" && (
+        <div className="rounded-2xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <span className="text-xl leading-none">⏳</span>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-amber-900 dark:text-amber-200">
+              {unmarkedCount === 1
+                ? "1 termin čeka na potvrdu da je završen"
+                : `${unmarkedCount} termina čeka na potvrdu da su završeni`}
+            </p>
+            <p className="text-xs text-amber-800/80 dark:text-amber-200/70 mt-0.5">
+              Termin je prošao — da li je {clientNoun(clientGender)}{" "}
+              {genderPast(clientGender, "došla", "došao")} na termin? Označite{" "}
+              {arrivedLabel(clientGender)} ili {noShowLabel(clientGender)} da bi
+              statistika i program nagrađivanja bili tačni.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setStatusFilter("unmarked");
+              setPage(1);
+            }}
+            className="pulse-cta [--pulse-color:#d97706] cursor-pointer shrink-0 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors"
+          >
+            Prikaži ih
+          </button>
+        </div>
+      )}
+
       {/* SEARCH BAR */}
       <div className={`${card}`}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -601,6 +693,7 @@ export default function AdminAppointments() {
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
             >
               <option value="">Svi termini</option>
+              <option value="unmarked">Neoznačeni (prošli)</option>
               <option value="pending">Na čekaju</option>
               <option value="completed">Završeno</option>
               <option value="approved">Odobren</option>
@@ -653,6 +746,7 @@ export default function AdminAppointments() {
                   key={appointment._id}
                   appointment={appointment}
                   onOpenChat={handleOpenChat}
+                  isHighlighted={appointment._id === highlightId}
                 />
               ))}
             </ul>

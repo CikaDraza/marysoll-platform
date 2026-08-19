@@ -6,6 +6,22 @@ interface StatsCardsProps {
   year: number;
 }
 
+/** Lokativ meseca za naslov kartice ("Zakazali u avgustu"). */
+const MONTHS_LOCATIVE = [
+  "januaru",
+  "februaru",
+  "martu",
+  "aprilu",
+  "maju",
+  "junu",
+  "julu",
+  "avgustu",
+  "septembru",
+  "oktobru",
+  "novembru",
+  "decembru",
+];
+
 export const StatsCards: React.FC<StatsCardsProps> = ({ month, year }) => {
   const {
     totalRevenue,
@@ -56,15 +72,15 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ month, year }) => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      {/* Ukupan prihod */}
+      {/* Ukupan potencijalni prihod — svi zakazani termini, bez obzira na ishod */}
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-4 border-l-4 border-green-500">
         <div className="flex justify-between items-start">
           <div className="pr-2">
             <p className="text-sm font-medium text-gray-600 dark:text-zinc-300">
-              Ukupan prihod
+              Ukupan potencijalni prihod
             </p>
             <p className="text-xs text-gray-700 dark:text-zinc-300">
-              Za {month}/{year}
+              Za zakazane termine {month}/{year}
             </p>
           </div>
           <div className="bg-green-100 p-1 rounded-lg">
@@ -120,17 +136,26 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ month, year }) => {
         </p>
       </div>
 
-      {/* Aktivni klijenti */}
+      {/* Klijenti koji su zakazali u mesecu — sa podelom novi / povratni */}
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-4 border-l-4 border-purple-500">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-sm font-medium text-gray-600 dark:text-zinc-300">
-              Aktivni klijenti
+              Zakazali u {MONTHS_LOCATIVE[month - 1]}
             </p>
             <p className="text-2xl font-bold text-gray-900 dark:text-zinc-300">
               {clients.active}
             </p>
-            <p className="text-xs text-green-600 mt-1">+{clients.new} novih</p>
+            <p className="text-xs mt-1">
+              <span className="text-green-600 font-semibold">
+                {clients.new} {clients.new === 1 ? "nov" : "novih"}
+              </span>
+              <span className="text-gray-400"> · </span>
+              <span className="text-gray-500 dark:text-zinc-400">
+                {clients.returning}{" "}
+                {clients.returning === 1 ? "povratni" : "povratnih"}
+              </span>
+            </p>
           </div>
           <div className="bg-purple-100 p-2 rounded-lg">
             <svg
@@ -149,7 +174,16 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ month, year }) => {
           </div>
         </div>
         <p className="text-xs text-gray-500 dark:text-zinc-300 mt-2">
-          Od ukupno {clients.total}
+          Ukupno registrovanih {clients.total}
+          {clients.registeredThisMonth > 0 && (
+            <span className="text-green-600">
+              {" "}
+              · +{clients.registeredThisMonth}{" "}
+              {clients.registeredThisMonth === 1
+                ? "nov nalog"
+                : "novih naloga"}
+            </span>
+          )}
         </p>
       </div>
 
