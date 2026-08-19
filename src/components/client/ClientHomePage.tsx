@@ -23,6 +23,8 @@ import type {
   LandingStructure,
   SalonProfileData,
   ManualSlotsMap,
+  TenantThemePages,
+  ThemeBookingPreview,
 } from "@/types";
 import { landingStructureToThemeDocument } from "@/lib/platform/theme-client";
 import {
@@ -159,6 +161,17 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     email: String(s?.email ?? ""),
     description: String(s?.description ?? ""),
     landingTheme,
+    // Ova projekcija je RUCNA: svako novo polje profila mora i ovde, inace
+    // tiho ne stigne do teme (bez greske, bez tipa koji bi to uhvatio).
+    shortDescription: s?.shortDescription
+      ? String(s.shortDescription)
+      : undefined,
+    themePages: s?.themePages
+      ? (JSON.parse(JSON.stringify(s.themePages)) as TenantThemePages)
+      : undefined,
+    themeBookingPreview: s?.themeBookingPreview
+      ? (JSON.parse(JSON.stringify(s.themeBookingPreview)) as ThemeBookingPreview)
+      : undefined,
     landingStructure: s?.landingStructure
       ? (JSON.parse(JSON.stringify(s.landingStructure)) as LandingStructure)
       : undefined,
