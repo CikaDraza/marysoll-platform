@@ -37,6 +37,7 @@ const THEME_LANDINGS: Record<LandingTheme, ComponentType<ThemeLandingProps>> = {
   "theme-6": dynamic(() => import("./layouts/Theme6Landing").then((m) => m.Theme6Landing)),
   "theme-7": dynamic(() => import("./layouts/Theme7Landing").then((m) => m.Theme7Landing)),
   "theme-8": dynamic(() => import("./layouts/Theme8Landing").then((m) => m.Theme8Landing)),
+  "theme-9": dynamic(() => import("./layouts/Theme9Landing").then((m) => m.Theme9Landing)),
 };
 
 interface ThemeLayoutProps {

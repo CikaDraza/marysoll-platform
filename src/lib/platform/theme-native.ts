@@ -119,6 +119,35 @@ export interface Theme6WithPricing extends Theme6NativeData {
   pricing: NativePricing;
 }
 
+/**
+ * theme-9 „Skincare Marina" — Expert Editorial.
+ *
+ * Booking je ovde launcher + widget, ne sekcija (spec 6.11): `bookingLauncher`
+ * nosi podatke koje Hero CTA prosleđuje widget-u, i NE zavisi od
+ * `appointmentSection.enabled` — to je odluka o sekciji, ne o proizvodu.
+ */
+export interface Theme9NativeData {
+  header: {
+    salonName: string;
+    logo?: string;
+    /** Nadnaslov ispod imena u logotipu (npr. „Skincare edukacija"). */
+    kicker?: string;
+  };
+  bookingLauncher: {
+    tenantSlug?: string;
+    clientSlug?: string;
+    salon: SalonProfileData;
+    services: IService[];
+  };
+  footer: {
+    salonName: string;
+    tagline?: string;
+    email: string;
+    workingHours?: SalonProfileData["workingHours"];
+    instagram: NativeInstagram;
+  };
+}
+
 export interface ThemeNativeByTheme {
   "theme-1": Theme1NativeData;
   "theme-2": Theme2NativeData;
@@ -128,6 +157,7 @@ export interface ThemeNativeByTheme {
   "theme-6": Theme6WithPricing;
   "theme-7": Theme7NativeData;
   "theme-8": Theme8NativeData;
+  "theme-9": Theme9NativeData;
 }
 
 export type ThemeNativeData = Partial<ThemeNativeByTheme>;
@@ -274,6 +304,30 @@ export function buildThemeNative(
             instagram: instagramOf(salon),
           },
           showTestimonialFixtures: Boolean(input.showTheme8TestimonialFixtures),
+        },
+      };
+
+    case "theme-9":
+      return {
+        "theme-9": {
+          header: {
+            salonName: salon.name,
+            logo: salon.logo ?? undefined,
+            kicker: salon.description || undefined,
+          },
+          bookingLauncher: {
+            tenantSlug,
+            clientSlug: clientSlug ?? tenantSlug,
+            salon,
+            services: input.services,
+          },
+          footer: {
+            salonName: salon.name,
+            tagline: salon.description || undefined,
+            email: salon.contactEmail || salon.email,
+            workingHours,
+            instagram: instagramOf(salon),
+          },
         },
       };
 

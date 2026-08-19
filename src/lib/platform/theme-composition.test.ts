@@ -61,11 +61,11 @@ const ALL_FLAGS: LegacyCmsFlag[] = [
   "perksEnabled",
 ];
 
-describe("inventar pokriva svih 8 tema", () => {
-  it("ima tačno 8 zapisa, bez duplikata", () => {
-    expect(THEME_COMPOSITIONS).toHaveLength(8);
+describe("inventar pokriva svih 9 tema", () => {
+  it("ima tačno 9 zapisa, bez duplikata", () => {
+    expect(THEME_COMPOSITIONS).toHaveLength(9);
     const ids = THEME_COMPOSITIONS.map((c) => c.theme);
-    expect(new Set(ids).size).toBe(8);
+    expect(new Set(ids).size).toBe(9);
     expect(ids).toEqual([
       "theme-1",
       "theme-2",
@@ -75,6 +75,7 @@ describe("inventar pokriva svih 8 tema", () => {
       "theme-6",
       "theme-7",
       "theme-8",
+      "theme-9",
     ]);
   });
 });

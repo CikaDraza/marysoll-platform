@@ -97,6 +97,7 @@ export async function PUT(req: NextRequest) {
         "theme-6",
         "theme-7",
         "theme-8",
+        "theme-9",
       ].includes(landingTheme)
     ) {
       profile.landingTheme = landingTheme;

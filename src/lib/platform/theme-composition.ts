@@ -334,6 +334,21 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
       shell("theme-8/sparkle-layer"),
     ],
   },
+  {
+    theme: "theme-9",
+    visibility: "theme-document",
+    // „Skincare Marina" — prva education-first tema. Nema `services.catalog` ni
+    // `booking.services`: Marinin proizvod je Consultation, zaseban domen
+    // (`booking.consultations`) koji stiže u svom slice-u. Booking je ovde
+    // launcher (Hero/Header CTA → `/termini`), ne inline sekcija — spec 6.10/6.11.
+    honoredFlags: ["heroEnabled", "aboutEnabled"],
+    nodes: [
+      shell("theme-9/header"),
+      cms("hero", "content.hero", "heroEnabled"),
+      cms("about", "content.about", "aboutEnabled"),
+      shell("theme-9/footer"),
+    ],
+  },
 ];
 
 export function compositionFor(theme: string): ThemeComposition | undefined {

@@ -27,10 +27,11 @@ const THEME_SHELLS: Record<LandingTheme, ComponentType<ThemeShellProps>> = {
   "theme-6": dynamic(() => import("./shells/Theme6Shell").then((m) => m.Theme6Shell)),
   "theme-7": dynamic(() => import("./shells/Theme7Shell").then((m) => m.Theme7Shell)),
   "theme-8": dynamic(() => import("./shells/Theme8Shell").then((m) => m.Theme8Shell)),
+  "theme-9": dynamic(() => import("./shells/Theme9Shell").then((m) => m.Theme9Shell)),
 };
 
 /** Teme sa fiksnom tipografijom — ne učitavaju tenant font. */
-const FIXED_FONT_THEMES: LandingTheme[] = ["theme-7", "theme-8"];
+const FIXED_FONT_THEMES: LandingTheme[] = ["theme-7", "theme-8", "theme-9"];
 
 interface Props {
   salon: SalonProfileData;
