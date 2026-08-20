@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { PasswordVisibilityButton } from "@/components/auth/PasswordVisibilityButton";
 
 type Step = "loading" | "form" | "invalid" | "success";
 
@@ -200,13 +201,10 @@ export default function ResetPasswordForm() {
                       className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-12 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white transition"
                       autoFocus
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((p) => !p)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
-                    >
-                      {showPassword ? "Sakrij" : "Prikaži"}
-                    </button>
+                    <PasswordVisibilityButton
+                      visible={showPassword}
+                      onToggle={() => setShowPassword((value) => !value)}
+                    />
                   </div>
 
                   {/* Strength bar */}
@@ -239,20 +237,26 @@ export default function ResetPasswordForm() {
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">
                     Potvrda lozinke
                   </label>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    required
-                    value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
-                    placeholder="Ponovite lozinku"
-                    className={`w-full border rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white transition ${
-                      confirm.length > 0 && confirm !== password
-                        ? "border-red-300 ring-1 ring-red-200"
-                        : confirm.length > 0 && confirm === password
-                          ? "border-green-300"
-                          : "border-gray-200"
-                    }`}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={confirm}
+                      onChange={(e) => setConfirm(e.target.value)}
+                      placeholder="Ponovite lozinku"
+                      className={`w-full border rounded-xl px-4 py-3 pr-12 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white transition ${
+                        confirm.length > 0 && confirm !== password
+                          ? "border-red-300 ring-1 ring-red-200"
+                          : confirm.length > 0 && confirm === password
+                            ? "border-green-300"
+                            : "border-gray-200"
+                      }`}
+                    />
+                    <PasswordVisibilityButton
+                      visible={showPassword}
+                      onToggle={() => setShowPassword((value) => !value)}
+                    />
+                  </div>
                   {confirm.length > 0 && confirm !== password && (
                     <p className="text-xs text-red-500 mt-1">
                       Lozinke se ne poklapaju
