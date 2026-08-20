@@ -6,6 +6,7 @@ import { useUserMutations } from "@/hooks/useUserMutations";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import Loader from "../elements/Loader";
+import { PasswordVisibilityButton } from "@/components/auth/PasswordVisibilityButton";
 
 const inp = [
   "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
@@ -35,6 +36,7 @@ export default function ClientProfile() {
     confirmPassword: "",
   });
   const [showPasswordFields, setShowPasswordFields] = useState(false);
+  const [showPasswordValues, setShowPasswordValues] = useState(false);
 
   if (isLoading) return <Loader />;
   if (!user) return <p>Korisnik nije pronađen</p>;
@@ -61,6 +63,7 @@ export default function ClientProfile() {
   const handleCancel = () => {
     setIsEditing(false);
     setShowPasswordFields(false);
+    setShowPasswordValues(false);
   };
 
   const handleUpdate = async (e: React.SubmitEvent) => {
@@ -221,14 +224,21 @@ export default function ClientProfile() {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Nova lozinka
                   </label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="••••••••"
-                    className="w-full rounded-md border-gray-200 p-3 bg-gray-50 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPasswordValues ? "text" : "password"}
+                      name="password"
+                      autoComplete="new-password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="••••••••"
+                      className="w-full rounded-md border-gray-200 p-3 pr-12 bg-gray-50 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+                    />
+                    <PasswordVisibilityButton
+                      visible={showPasswordValues}
+                      onToggle={() => setShowPasswordValues((value) => !value)}
+                    />
+                  </div>
                   <p className="text-xs text-gray-500 mt-2">
                     Najmanje 6 karaktera
                   </p>
@@ -238,14 +248,21 @@ export default function ClientProfile() {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Potvrdi lozinku
                   </label>
-                  <input
-                    type="password"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    placeholder="••••••••"
-                    className="w-full rounded-md border-gray-200 p-3 bg-gray-50 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPasswordValues ? "text" : "password"}
+                      name="confirmPassword"
+                      autoComplete="new-password"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      placeholder="••••••••"
+                      className="w-full rounded-md border-gray-200 p-3 pr-12 bg-gray-50 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+                    />
+                    <PasswordVisibilityButton
+                      visible={showPasswordValues}
+                      onToggle={() => setShowPasswordValues((value) => !value)}
+                    />
+                  </div>
                 </div>
               </div>
             ) : (

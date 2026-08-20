@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { useClientRouting } from "@/hooks/useClientRouting";
 import { useTenant } from "@/contexts/TenantContext";
 import { Y2KRegisterForm } from "@/components/themes/shared/Y2KRegisterForm";
+import { PasswordVisibilityButton } from "@/components/auth/PasswordVisibilityButton";
 type Step = "form" | "check_email";
 
 export default function ClientRegisterPage() {
@@ -20,6 +21,7 @@ function DefaultClientRegisterPage() {
   const [step, setStep] = useState<Step>("form");
   const [loading, setLoading] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -171,15 +173,23 @@ function DefaultClientRegisterPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Lozinka *
             </label>
-            <input
-              type="password"
-              required
-              minLength={8}
-              value={form.password}
-              onChange={(e) => set("password", e.target.value)}
-              className="w-full border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Min. 8 karaktera"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                value={form.password}
+                onChange={(e) => set("password", e.target.value)}
+                className="w-full border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Min. 8 karaktera"
+              />
+              <PasswordVisibilityButton
+                visible={showPassword}
+                onToggle={() => setShowPassword((value) => !value)}
+              />
+            </div>
           </div>
 
           <div>

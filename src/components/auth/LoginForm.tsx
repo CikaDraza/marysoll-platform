@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { PasswordVisibilityButton } from "@/components/auth/PasswordVisibilityButton";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -15,6 +16,7 @@ export default function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({ email: "", password: "" });
   const [unverifiedEmail, setUnverifiedEmail] = useState(false);
 
@@ -119,24 +121,30 @@ export default function LoginForm() {
             Zaboravili ste lozinku?
           </Link>
         </div>
-        <input
-          type="password"
-          name="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => {
-            setPassword(e.target.value);
-            if (fieldErrors.password)
-              setFieldErrors((prev) => ({ ...prev, password: "" }));
-          }}
-          className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition ${
-            fieldErrors.password
-              ? "border-red-400 bg-red-50 dark:bg-red-950"
-              : "border-gray-200 dark:border-gray-700"
-          }`}
-          placeholder="••••••••"
-          disabled={isLoggingIn}
-        />
+        <div className="relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            name="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (fieldErrors.password)
+                setFieldErrors((prev) => ({ ...prev, password: "" }));
+            }}
+            className={`w-full border rounded-xl px-4 py-2.5 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition ${
+              fieldErrors.password
+                ? "border-red-400 bg-red-50 dark:bg-red-950"
+                : "border-gray-200 dark:border-gray-700"
+            }`}
+            placeholder="••••••••"
+            disabled={isLoggingIn}
+          />
+          <PasswordVisibilityButton
+            visible={showPassword}
+            onToggle={() => setShowPassword((value) => !value)}
+          />
+        </div>
         {fieldErrors.password && (
           <p className="text-red-500 text-xs mt-1">{fieldErrors.password}</p>
         )}
