@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { verifyToken } from "@/lib/auth/auth-server";
+import { actorScopeFrom, logSuperAdminAccess } from "@/lib/auth/tenantScope";
 import { createAppointmentNotification } from "@/lib/notificationService";
 
 export async function POST(req: Request) {
@@ -21,6 +22,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid token" }, { status: 403 });
     }
 
+    // Izolacija: ranije je `findById(appointmentId)` značio da svaki ulogovan
+    // korisnik može da upiše poruku u tuđi termin (i tuđeg salona) i time
+    // pošalje notifikaciju tuđim adminima.
+    const scope = actorScopeFrom(decoded);
+    if (!scope.ok) {
+      return NextResponse.json({ error: scope.error }, { status: scope.status });
+    }
+    if (scope.isSuperAdmin) {
+      logSuperAdminAccess(
+        "SUPERADMIN_UNSCOPED_APPOINTMENT_MESSAGE",
+        decoded,
+        req.url,
+      );
+    }
+
     const { appointmentId, message } = await req.json();
     if (!appointmentId || !message) {
       return NextResponse.json(
@@ -29,7 +45,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const appointment = await Appointment.findById(appointmentId);
+    const appointment = await Appointment.findOne({
+      _id: appointmentId,
+      ...scope.filter,
+    });
     if (!appointment) {
       return NextResponse.json(
         { error: "Termin nije pronađen" },
@@ -37,8 +56,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Use isAdmin from JWT — no extra DB call needed
-    const isAdmin = decoded.isAdmin ?? false;
+    // Privilegije iz scope-a, ne iz golog tokena (vidi tenantScope.ts).
+    const isAdmin = scope.actor !== "client";
 
     // Dodaj poruku
     const newMessage = {
@@ -47,8 +66,8 @@ export async function POST(req: Request) {
       timestamp: new Date(),
     };
 
-    const updatedAppointment = await Appointment.findByIdAndUpdate(
-      appointmentId,
+    const updatedAppointment = await Appointment.findOneAndUpdate(
+      { _id: appointmentId, ...scope.filter },
       {
         $push: { messages: newMessage },
         $set: {
