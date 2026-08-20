@@ -6,8 +6,8 @@
 > **v0.2 (Architecture Review):** graf domena ispravljen (Inquiry visi o Offering-u,
 > ne o Session-u), terminologija zaključana na `EducationEnrollment`, i `inquiry` /
 > `session_booking` dobijaju **odvojene command kontrakte**.
-> Isporuka je podeljena: **Slice 3** = Offering + Inquiry, **Slice 6** = Session +
-> Enrollment (posle T3 Booking kontrakta).
+> U aktuelnom [TODO-u](TODO.md) Education je Slice 11. Unutrašnji redosled ostaje:
+> prvo Offering + Inquiry, zatim Session + Enrollment posle T3 Booking kontrakta.
 
 ## 1. Education NIJE proširenje `Service`
 

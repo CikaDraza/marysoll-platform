@@ -8,10 +8,11 @@
 
 | # | Slice | Status | Gde smo stali | Dokument |
 |---|---|---|---|---|
+| H0 | Theme-9 content preservation | ⛔ hitno | Admin forma pri svakom `sp.save()` šalje ceo, nepotpuno mapiran `landingStructure`; server njime zamenjuje profil. Čuvanje čak i radnog vremena/SEO-a može ukloniti 7 theme-9 sekcija i dopunska hero/about polja. Pre daljeg produkcijskog uređivanja: lossless mapper + regresioni test. | [ARHITEKTURA-ENGINES.md](ARHITEKTURA-ENGINES.md#hitni-nalaz-pre-nastavka-roadmapa) |
 | 0 | Prerequisite gate | ⬜ nije počet | Čeka odvojenu staging bazu, T2B capability resolver i v0.3 dopunu sa `consultations.catalog` / `booking.consultations` / `questionnaires.forms` — ta tri capability-ja danas ne postoje. | [PANTA-TENANT-VERTICALS-CAPABILITIES.md](PANTA-TENANT-VERTICALS-CAPABILITIES.md) |
 | 1 | IA dokument | ⬜ nije počet | Treba napisati `PANTA-ADMIN-CLIENT-WORKSPACES.md`: tri matrice (beauty / education / hybrid) × admin nav · client nav · capability · resource owner. Blokira svaki admin ekran. | PANTA-ADMIN-CLIENT-WORKSPACES.md *(nastaje ovde)* |
-| 2 | theme-9 prezentacija | 🟡 čeka CMS polja | **Urađeno:** registracija na svih 15 mesta, Expert Editorial tokeni u `@theme`, `colorPolicy: locked`, Header/Hero/About/Footer, `Reveal`, renderer mapa, landing + shell, inventar i test (9 tema). **+ 6 novih blok tipova** registrovano (audience-paths, topic-hub, guided-care-process, credentials, featured-education, professional-path) sa CMS sekcijama, loaderima i komponentama; HOME renderuje svih 9 sekcija. **+ 13 slika** ekstrahovano u `public/images/theme-9/` (seed sadržaj, NE fallback teme — vidi README tamo) i `content.blog` dobio data-backed renderer preko `useBlogPosts`. **+ `ThemeShellProps` neutralizovan**, **+ `/za-klijente` i `/za-profesionalce`** (novi `themePages` ugovor, odvojen od `landingStructure`). Slice je gotov osim CMS polja. Sadržaj seed-ovan za `kiki-kiss-beauty` (lokalni pregled) i za `marina-stanisavljevic-skincare-edukacija` — **taj tenant je već prebačen na theme-9 i seed je odrađen nad produkcijskom bazom 2026-08-20** (7 landing sekcija + `themePages` + `themeBookingPreview`; `hero`/`about`/`blog`/`shortDescription` NISU dirani, oni idu samo uz `--overwrite-shared`). | [PANTA-T2-THEME-LAYOUT-ENGINE.md](PANTA-T2-THEME-LAYOUT-ENGINE.md) + `design/Skincare_Platform_Design-handoff/` |
-| 3 | `availability-core` | ✅ gotovo | **Urađeno:** `@panta/booking-engine` — `AvailabilityQuery → AvailabilityResult`, čist TS bez React/Next/DB i bez I/O; `[start, end)`, eksplicitna zona, DST (prolećni dan ima 23 sata, nepostojeći sat se ne nudi), pauze i odmori kao rez intervala, ručni termini pod istim overlap ugovorom, `availabilityClass` + `outsidePreferredHours` kao ULAZ za Slice 5. Domen ostaje u `lib/booking/availabilityAdapter.ts` (srpski dani, legacy string, statusi, `SalonProfile`). 63 testa + guard granice paketa + regresija protiv zatečenih kopija (paritet gde nije bilo buga, **namerna razlika** za pauzu/odmor/srpski dan). Migrirane 2 rute: `/api/slots` i `/api/marketplace/slots` (obe su zbog engleskih ključeva dana praktično uvek vraćale prazno). **Migrirano je sve:** obe `slots` rute, oba javna widgeta (`HomepageAppointmentWidget`, `Y2K…`), `BookingProvider`, `ClientCreateModal`, `ClientEditModal`. `helpers/widgetAvailability.ts` je OBRISAN, a `availableTimesForDate` izvađen iz `helpers/parseWorkingHours.ts` (tamo je ostalo samo parsiranje i prikaz). Stare implementacije žive kao zamrznut snimak u regresionom testu, da dokaz ostane proverljiv i posle brisanja. Widgeti sada prosleđuju i `vacations` — javni profil ih je vraćao oduvek, ali ih niko nije čitao. **Ostaje van Slice 3:** `isWithinWorkingHours` (server-side validacija upisa) ide na Booking Engine u Slice 5/6, a modalni tok još ne prima `vacations` kroz lanac propova. | PANTA-T3-BOOKING-ENGINE.md *(nastaje u Slice 5)* |
+| 2 | theme-9 prezentacija | 🟡 prikaz gotov; editor/rizici otvoreni | **Urađeno:** registracija na svih 15 mesta, Expert Editorial tokeni u `@theme`, `colorPolicy: locked`, Header/Hero/About/Footer, `Reveal`, renderer mapa, landing + shell, inventar i test (9 tema). **+ 7 novih blok tipova** registrovano (audience-paths, topic-hub, guided-care-process, credentials, featured-education, professional-path, final-cta); HOME kompozicija renderuje ukupno **10 CMS blokova** (hero + 7 novih + about + blog). **+ 13 slika**, data-backed `content.blog`, neutralan `ThemeShellProps`, `/za-klijente` i `/za-profesionalce`. Otvoreno: H0 lossless save, urednička polja, neutralan kompletan fallback i content-aware navigacija (header sada može voditi na 404). TODO beleži produkcijski seed Marine 2026-08-20; repozitorijum dokazuje skriptu i strukturu, ali ne može sam potvrditi stanje produkcijske baze. | [PANTA-T2-THEME-LAYOUT-ENGINE.md](PANTA-T2-THEME-LAYOUT-ENGINE.md) + `design/Skincare_Platform_Design-handoff/` |
+| 3 | `availability-core` | ✅ gotovo | **Urađeno:** `@panta/booking-engine` — `AvailabilityQuery → AvailabilityResult`, čist TS bez React/Next/DB i bez I/O; `[start, end)`, eksplicitna zona, DST, pauze i odmori kao rez intervala, ručni termini pod istim overlap ugovorom, `availabilityClass` + `outsidePreferredHours` kao ULAZ za Slice 5. Domen ostaje u `lib/booking/availabilityAdapter.ts`. Ponovljena provera: **33 paket testa + 48 adapter/widget testa = 81 fokusirani test**; svi prolaze. Migrirane su obe `slots` rute, oba javna widgeta, `BookingProvider`, `ClientCreateModal`, `ClientEditModal`; stare kopije su uklonjene ili zadržane samo kao zamrznuta regresiona referenca. **Van Slice 3:** serverski upis još ne koristi novi core i ne učitava `vacations`, a modalni tok još ne prima `vacations` kroz ceo lanac propova. | PANTA-T3-BOOKING-ENGINE.md *(dokument treba napisati pre Slice 5)* |
 | 4 | Booking UI apstrakcija | 🟡 prikaz gotov | `useBookingFlow` + theme-9 dijalog, **offering-first**: ponuda → datum i vreme → upitnik → pregled → potvrda (redosled nije kozmetika — vidi ugovor `initialOfferingId` niže). Launcher kroz kontekst, terminologija `offering*`, ne `service*`. **Bez ijednog upisa** — slanje samo šalje mejl vlasnici i superadminu, da potvrdi usluge, cene, termine i pitanja. Ostaje: `bookingProductAdapter` i `BookingThemeTokens` za ostale teme. | PANTA-T3-BOOKING-ENGINE.md + T2 §6.10/6.11 |
 | 5 | ★ T3 Booking Engine CORE | ⬜ nije počet | `BookingReservation` kao kanonski occupancy, `BookingDayLock` serijalizacija, idempotencija, quote snapshot, conflict recovery, **`BookingFacts` contract** (`availabilityClass`, override i lifecycle činjenice) kao jedini ulaz za budući Pricing/Loyalty obračun. | PANTA-T3-BOOKING-ENGINE.md *(nastaje ovde)* |
 | 6 | ★ Migracija + concurrency gate | ⬜ nije počet | Sve write rute na `BookingEngine.reserve()`; architecture test protiv direktnog `appointment.save()`. | PANTA-T3-BOOKING-ENGINE.md |
@@ -27,12 +28,34 @@ Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran
 
 ## Tvrde granice
 
+- **Theme-9 profil se ne uređuje u produkciji dok H0 lossless-save test ne prođe.**
+  Promena nepovezanog polja danas može obrisati seedovani sadržaj.
 - **Theme-9 ne dobija sopstveni booking write put pre Slice 5.** Do tada UI/QA sme koristiti postojeće rute samo u izolovanom test okruženju — race-unsafe su.
 - **Slice 6 concurrency gate mora proći pre Slice 10.** Marina ne prima stvarne rezervacije pre toga.
 - **Nijedna API ruta ne sme kreirati ni menjati occupancy mimo Booking Engine-a.**
 - **Consultation nije `Service`** — ne sme deliti `services.catalog` ni `booking.services`.
 - **Domenski naziv `education.*` uz `capability: null` je zabranjen** — ili domenski blok sa loaderom i capability-jem, ili `content.*` teaser.
 - **Admin ekrani ne pre Slice 1.**
+- **Bezbednosni scope termina mora biti prisutan na aktivnoj grani.** Ispravka na
+  `staging/production-fixes` ne računa se kao završena dok nije spojena i
+  proverena ovde.
+
+## Hitno: admin save ne sme da izgubi theme-9 sadržaj
+
+`useSalonProfileAdmin.mapLandingSections()` trenutno izostavlja svih sedam
+theme-9 sekcija, kao i dopunska `hero`/`about` polja. Svaki tab koji pozove
+zajednički `sp.save()` ipak šalje ceo tako osiromašen `landingStructure`, a API
+njime zamenjuje postojeći objekat. Rizik zato nije ograničen na CMS ekran:
+čuvanje profila, radnog vremena ili Social/SEO podešavanja može ukloniti
+seedovani sadržaj.
+
+Zatvaranje H0 zahteva:
+
+1. lossless mapiranje svih poznatih polja i čuvanje budućih/nepoznatih polja;
+2. jedan deljeni `toSalonProfileData()`/write mapper umesto ručnih projekcija;
+3. test „učitaj theme-9 → promeni nepovezano polje → sačuvaj → sadržaj identičan“;
+4. zaseban test za `themePages` i `themeBookingPreview`;
+5. tek zatim produkcijsko uređivanje.
 
 ## Otvorena odluka: prazan CMS ne sme da razbije dizajn
 
@@ -133,30 +156,33 @@ nagradi. T3 je prilika da to preraste u čist ugovor
 
 | Dug | Gde | Zatvara ga |
 |---|---|---|
-| TOCTOU trka pri zakazivanju (nema unique indeksa, transakcije ni idempotencije) | `api/appointments/create`, `.../guest`, `create-guest`, `marketplace/appointments` | Slice 5–6 |
-| Reschedule menja datum i vreme bez ijedne provere dostupnosti | `api/appointments/update/[id]` | Slice 6 |
+| TOCTOU trka pri zakazivanju (nema jedinstvenog occupancy autoriteta, transakcije ni booking idempotencije) | pet create putanja: `api/appointments/create`, public `.../guest`, `create-guest`, `marketplace/appointments`, legacy `api/booking` | Slice 5–6 |
+| Reschedule nije centralizovan: opšti update menja datum/vreme bez availability provere, a i dva bolja toka rade odvojeni check + save | `api/appointments/update/[id]` + dva `clientFlows` ulaza | Slice 6 |
+| Legacy marketplace `Slot.reserve` jeste atomski petominutni reserve, ali nema vlasnički token, nije vezan za `Appointment` i ne štiti ostale tokove | `models/Slot.ts`, `api/marketplace/slots/{reserve,book}` | Slice 5/8 — integrisati kao izvedeni prikaz ili ukloniti kao drugi izvor istine |
 | ~~Kopije kalendarske logike (bilo ih je PET, ne četiri)~~ ✅ | sve svedeno na `@panta/booking-engine` + `lib/booking/availabilityAdapter.ts` | Slice 3 |
 | ~~`getWorkingRange()` briše pauzu — widget i modal se ne slažu~~ ✅ | obrisan zajedno sa `helpers/widgetAvailability.ts` | Slice 3 — rez intervala umesto min/max |
 | ~~Widget proverava zauzetost samo nad POČETKOM kandidata — 60-min termin u 11:30 prolazi pored zauzetog u 12:00~~ ✅ | isto | Slice 3 |
 | ~~`salon.vacations` se ne gleda pri dostupnosti — može se zakazati usred odmora~~ ✅ | jezgro, obe rute i oba widgeta | Slice 3 — modalni tok još ne prosleđuje `vacations` (lanac propova), zabeleženo uz Slice 3 |
 | ~~Theme whitelist pri kreiranju salona ide samo do `theme-6`~~ ✅ | `api/salon-profile/create/route.ts:76` | Slice 2 — popravljeno, sada do `theme-9` |
 | ~~`/api/slots` koristi engleske ključeve dana → uvek prazno~~ ✅ (isto i `api/marketplace/slots`) | `api/slots/route.ts`, `api/marketplace/slots/route.ts` | rešeno — obe rute idu kroz `availabilityAdapter` |
-| ~~`design/` handoff bundle ulazi u `fallow` analizu~~ ✅ | `.fallowrc.jsonc` | rešeno — `ignorePatterns` za `design/`, `docs/`, `public/`, `.next/`, `scripts/`; 8942 → 6471 analiziranih |
+| ~~`design/` handoff bundle ulazi u `fallow` analizu~~ ✅ | `.fallowrc.jsonc` | ignore konfiguracija postoji; trenutni workspace nema instaliran `fallow` executable, pa nova health/dead-code analiza nije mogla biti pokrenuta bez instalacije |
 | ~~`ThemeShellProps` nosi `salon: SalonProfileData` + `services: IService[]`~~ ✅ | `shells/types.ts` + novi `lib/platform/theme-shell-native.ts` | rešeno — ugovor neutralan, guard test `shells/types.test.ts` |
 | ~~Kredencijali se prelazno mapiraju iz `authoredStats` u About~~ ✅ | `about.credentials` | rešeno — About tabela ima svoje polje; blok `content.credentials` nosi stubove i to su dve različite stvari u dizajnu |
 | `themeBookingPreview` je PRIVREMENO polje — briše se kad stignu Consultation domen i Booking Engine | `models/SalonProfile.ts` | Slice 5/7 |
-| `themePages` i 6 theme-9 landing sekcija nemaju CMS polja — sadržaj se za sada autoriše kroz `npm run seed:theme9 -- --tenant=<slug>` | `AdminLandingCMS.tsx` | otvoreno; seed piše u ISTA polja, pa kad editor stigne ništa se ne migrira |
+| Preview tekst obećava potvrdu/pomeranje termina, a završni ekran tačno kaže da termin nije zakazan | theme-9 seed sadržaj + `Theme9BookingDialog` | pre javnog QA uskladiti poruku tako da korisnica ne pomisli da je zahtev rezervacija |
+| `themePages` i 7 theme-9 landing sekcija nemaju urednička polja — sadržaj se za sada autoriše kroz `npm run seed:theme9 -- --tenant=<slug>` | `AdminLandingCMS.tsx` | otvoreno; polja postoje u bazi, ali editor ih ne prikazuje |
+| **Admin save gubi theme-9 polja iz forme i može njima da prepiše ceo profil** | `useSalonProfileAdmin.mapLandingSections()` → `sp.save()` → `api/salon-profile/update` | **H0 — pre bilo kog drugog theme-9 admin rada** |
 | `theme-3/BlogSection` i dalje dovlači objave klijentskim `useBlogPosts` iako `content.blog` loader sada isporučuje `posts` — isti waterfall koji je theme-9 upravo izgubila | `theme-3/BlogSection.tsx` | otvoreno, sada trivijalno |
-| 6 theme-9 sekcija nije bilo u mongoose shemi (`strict` bi ih tiho odbacio pri snimanju) ✅ | `models/SalonProfile.ts` | rešeno u ovom slice-u |
-| ~~Termin se dohvatao po golom `_id`-ju — svaki ulogovan korisnik je mogao da izmeni ili komentariše tuđi termin, i u tuđem salonu~~ ✅ | `api/appointments/update/[id]`, `api/appointments/message`, `api/testimonials/create` | rešeno van ovog luka — `actorScopeFrom` (tenant + `clientProfileId`) + guard test protiv `Appointment.findById*`; commit na `staging/production-fixes` |
-| **Tri ručne projekcije istog `SalonProfile` dokumenta** — svako novo polje mora u sve tri ili tiho nestane, a TypeScript ne hvata nijednu (sva su polja opciona, pa je izostavljanje validan objekat) | mongoose shema `models/SalonProfile.ts` (upis) · `api/public/[tenantSlug]/salon-profile/route.ts` (API) · `client/ClientHomePage.tsx` `salonData` (strana) | **otvoreno — vidi belešku ispod** |
+| ~~7 theme-9 sekcija nije bilo u mongoose shemi (`strict` bi ih tiho odbacio pri snimanju)~~ ✅ | `models/SalonProfile.ts` | rešeno u ovom slice-u |
+| **Aktivna grana i dalje dohvata/menja termin po golom `_id`-ju** | `api/appointments/update/[id]`, `api/appointments/message` | ispravka `actorScopeFrom` postoji samo na `staging/production-fixes` (`ae936af`); preneti, spojiti i testirati na ovoj grani pre release-a |
+| **Više ručnih projekcija istog `SalonProfile` dokumenta** — novo polje može tiho nestati jer su polja opciona; admin write mapper sada pokazuje i rizik gubitka sadržaja | mongoose schema · javni profile API · `ClientHomePage` · `useSalonProfileAdmin` write forma | **H0 + zajednički mapper — vidi belešku ispod** |
 
-### Dug: jedan mapper umesto tri ručne projekcije
+### Dug: jedan mapper umesto ručnih projekcija
 
 Isti propust se ponovio **tri puta** tokom theme-9 rada, svaki put sa istim
 simptomom — polje postoji u bazi, tip ga dozvoljava, a do teme ne stigne:
 
-1. 6 theme-9 landing sekcija nije bilo u mongoose shemi → `strict` ih je tiho
+1. 7 theme-9 landing sekcija nije bilo u mongoose shemi → `strict` ih je tiho
    odbacivao pri snimanju;
 2. `shortDescription` / `themePages` / `themeBookingPreview` nisu bili u
    projekciji javnog API-ja → nikad nisu stizali do podstrana;
@@ -164,6 +190,8 @@ simptomom — polje postoji u bazi, tip ga dozvoljava, a do teme ne stigne:
    [ClientHomePage.tsx](../src/components/client/ClientHomePage.tsx) → launcher
    zakazivanja je renderovan kao `data-booking-launcher="pending"`, dugmad
    vidljiva ali mrtva.
+4. admin forma izostavlja 7 landing sekcija i dopunska hero/about polja, a ipak
+   šalje ceo objekat na zamenu → čuvanje nepovezanog polja može obrisati sadržaj.
 
 Treći je najskuplji za dijagnozu: strana se renderuje potpuno normalno, jer
 sadržaj ide kroz `landingStructure` koji jeste prepisan. Nema greške, nema
@@ -173,13 +201,11 @@ praznog stanja — samo dugme koje ne radi.
 Objekat bez njih je validan `SalonProfileData`, pa `tsc` nema šta da prijavi.
 Jedini signal je runtime ponašanje.
 
-**Predlog:** jedan deljeni `toSalonProfileData(doc)` u `lib/tenant/`, koji sve
-tri putanje pozivaju, plus test koji poredi ključeve rezultata sa poljima
-`SalonProfileData` i pada kad se pojavi polje koje mapper ne prepisuje.
+**Predlog:** jedan deljeni `toSalonProfileData(doc)` u `lib/tenant/` za read
+putanje i lossless write mapper/patch ugovor za admin formu, plus test koji pada
+kad se pojavi polje koje mapper ne čuva.
 
-**Kada:** pre CMS polja za theme-9 sekcije. Tada u profil ulazi desetak novih
-polja odjednom, i ovaj propust prestaje da bude jednokratna greška — postaje
-sistematičan.
+**Kada:** odmah kao H0, pre CMS polja i pre daljeg produkcijskog uređivanja.
 
 ### Ugovor: `initialOfferingId` — CTA sa kartice ne ponavlja korak 01
 

@@ -10,7 +10,7 @@
 > **v0.2.2:** FeatureBlockRegistry (6.3) + odluka o `always` slučajevima: T2A ih
 > zadržava kroz izbrisiv compat sloj, normalizacija je zaseban posao
 > (T2A-FOLLOWUP, 6.4).
-> T2 iz [ARHITEKTURA-ENGINES.md](../ARHITEKTURA-ENGINES.md), podeljen na
+> T2 iz [ARHITEKTURA-ENGINES.md](ARHITEKTURA-ENGINES.md), podeljen na
 > **T2A (Theme/Layout boundary)** i **T2B (Tenant verticals + capabilities,
 > vidi [PANTA-TENANT-VERTICALS-CAPABILITIES.md](PANTA-TENANT-VERTICALS-CAPABILITIES.md))**.
 > Okidač: Education vertikala (Marina) — prvi tenant koji nije „salon = usluge + termini".
@@ -449,7 +449,7 @@ univerzalni data bus.
 
 Zabrana iznad kaže da native element ne sme da pozajmljuje podatke **od bloka**.
 Ne kaže da podatak pripada sekciji u kojoj se danas prikazuje —
-[ARCHITECTURAL_RULES.md §3.5](../ARCHITECTURAL_RULES.md):
+[ARCHITECTURAL_RULES.md §3.5](ARCHITECTURAL_RULES.md):
 
 > Podatak nije vlasništvo sekcije samo zato što ga trenutni dizajn prikazuje u
 > toj sekciji. Deljeni izvor može koristiti više nezavisnih blokova; kompozicija
@@ -980,7 +980,7 @@ kao zaseban prerequisite (vidi [T2B 6.1](PANTA-TENANT-VERTICALS-CAPABILITIES.md)
 
 ## Reference
 
-- [Product Engines vizija](../ARHITEKTURA-ENGINES.md)
+- [Product Engines vizija](ARHITEKTURA-ENGINES.md)
 - [Tenant verticals & capabilities](PANTA-TENANT-VERTICALS-CAPABILITIES.md)
 - [Education vertikala](PANTA-EDUCATION-VERTICAL.md)
 - [Branching strategija](PANTA-BRANCHING-STRATEGY.md)
