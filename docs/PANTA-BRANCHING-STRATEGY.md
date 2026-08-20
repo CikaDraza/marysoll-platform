@@ -112,7 +112,7 @@ tenantima i unapred pripremljenim zapisima.
 
 ## Reference
 
-- [Product Engines vizija](../ARHITEKTURA-ENGINES.md)
+- [Product Engines vizija](ARHITEKTURA-ENGINES.md)
 - [T2A Theme/Layout Engine granica](PANTA-T2-THEME-LAYOUT-ENGINE.md)
 - [T2B Tenant verticals & capabilities](PANTA-TENANT-VERTICALS-CAPABILITIES.md)
 - [Education vertikala](PANTA-EDUCATION-VERTICAL.md)

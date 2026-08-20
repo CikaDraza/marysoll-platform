@@ -1,31 +1,42 @@
-# Marysoll → Product Engines arhitektura (radni nacrt)
+# Marysoll → Product Engines arhitektura (živi pregled)
 
-> Zapisano 2026-07-04 po Milanovoj viziji. Ovo je nacrt za zajedničku analizu —
-> detaljan plan pravimo posle završetka Faze 4 optimizacije.
+> Zapisano 2026-07-04 po Milanovoj viziji. Dokument ostaje strateška slika
+> Product Engines inicijative; operativni redosled i status pojedinačnih rezova
+> vodi [TODO.md](TODO.md).
 > Radni naziv inicijative: **Labs / "Panteleymon" (Panta)**.
-> Poslednja revizija stvarnog stanja koda: **2026-08-09**.
+> Poslednja revizija stvarnog stanja koda: **2026-08-20**.
 
-## Problem danas
+## Polazni problem i današnje stanje
 
-Sve se razvija zajedno u jednom Next.js monolitu: promena zbog jednog salona
-utiče na Booking → Booking utiče na Landing → Landing utiče na Admin.
-Marysoll postaje **platforma za digitalne proizvode u beauty industriji** —
-monolit to ne može da nosi.
+Inicijativa je pokrenuta zato što se sve razvijalo u jednom Next.js monolitu:
+promena zbog jednog salona lako je prelazila iz Booking-a u Landing i Admin.
+Taj problem više nije netaknut — danas postoje izdvojeni paketi za Theme,
+Booking availability, Diagnostic, Loyalty i Event Bus — ali aplikacija i dalje
+poseduje većinu upisa u bazu, adaptera i korisničkih ekrana. Razdvajanje je zato
+**započeto, ne završeno**.
+
+Marysoll se razvija u platformu za digitalne proizvode u beauty, consultation i
+education domenima. Novi domeni ne smeju biti samo posebne stranice iste
+monolitne aplikacije; moraju imati jasna pravila vlasništva i jedan autoritet za
+svaku poslovnu odluku.
 
 ## Ciljna slika
 
-```
-                Marysoll Platform
-                   Super Admin
-                        │
-             Tenant / Salon Manager
-                        │
-   ┌───────────┬────────────┬─────────────┐
- Booking     Landing     Marketing    Analytics
-                   ENGINES
+```text
+                         Marysoll Platform
+                 Super Admin / Tenant Manager
+                               │
+              Tenant vertikale + capabilities (T2B)
+                               │
+          Admin ───────── API ───────── Javni/client UI
+                               │
+      ┌────────┬─────────┬──────────┬────────────┬───────────┐
+     Theme   Booking   Loyalty   Diagnostic   Event Bus   budući engine-i
 ```
 
-**Marysoll više ništa ne implementira — Marysoll samo orkestrira.**
+**Cilj:** Marysoll orkestrira proizvode i korisničke tokove, dok poslovna
+pravila koja mogu samostalno da žive pripadaju odgovarajućem engine-u. Ovo je
+pravac rada, ne tvrdnja da je današnji kod već dostigao cilj.
 
 ## Architecture Principles (usvojeno)
 
@@ -55,24 +66,73 @@ svoje testove. Marysoll ih uvozi kao zavisnosti.
 - **Faza 3:** poseban servis sa sopstvenom bazom, kešom, skaliranjem
 - **Faza 4:** CDN/edge distribucija statičkih delova (theme JSON, CSS, media, preview asseti)
 
+## Gde smo sada (provereno 2026-08-20)
+
+Platforma se nalazi **posle glavnog T2A Theme/Layout reza, a pre T2B i
+bezbednog T3 jezgra za upis rezervacija**:
+
+- ✅ T0/T1 osnova, Diagnostic Engine, Event Bus i Loyalty Engine Phase 0/1 +
+  Referral 2b postoje u kodu; referral i dalje čeka live QA/release gate.
+- 🟡 **Glavni T2A kod je završen:** `@panta/theme-engine`, Feature Block
+  Registry, migracija svih osam zatečenih tema i neutralan zajednički theme
+  ugovor postoje. Otvorene su još tri izlazne provere: direktan test dodavanja
+  potpuno novog bloka, uklanjanje poslednjeg blog waterfall-a iz theme-3 i
+  vizuelna/LCP regresija svih tema.
+- 🟡 **theme-9 prezentacija postoji**, uključujući podstrane i prikaz toka
+  konsultacije, ali CMS editor i stvarno zakazivanje još ne postoje. Preview
+  šalje samo probni mejl i namerno ne kreira termin.
+- ✅ **T3 Slice 3 availability-core je završen:** isti obračun slobodnih termina
+  koriste rute i UI potrošači. To je read/računska polovina Booking Engine-a.
+- ⬜ **T2B nije implementiran:** nema tenant vertikala, capability resolvera,
+  readiness stanja ni jedinstvenog capability gate-a za admin, API i public
+  renderer. Postojeći plan-feature gate ostaje zaseban, stariji mehanizam.
+- ⬜ **T3 write/core nije implementiran:** nema kanonske rezervacije, day-lock
+  serijalizacije, booking idempotencije ni jedne atomic reserve operacije koja
+  važi za sve putanje. Postoji stariji petominutni `Slot` reserve za deo
+  marketplace toka, ali nije vezan za `Appointment`, nema vlasnički token i ne
+  predstavlja planirani `BookingHold` ni centralni autoritet za zauzetost.
+
+### Hitni nalaz pre nastavka roadmapa
+
+Theme-9 administratorska forma pri čuvanju ponovo sastavlja ceo profil, ali
+izostavlja sedam theme-9 sekcija i dodatna hero/about polja. Server zatim tim
+nepotpunim objektom zamenjuje postojeći sadržaj. Zbog toga čak i čuvanje radnog
+vremena, društvenih mreža ili osnovnih podataka može obrisati ili vratiti na
+podrazumevano seedovani theme-9 sadržaj.
+
+Ovo nije samo „CMS još nema sva polja“, već **rizik gubitka već unetog sadržaja**.
+Pre bilo kakvog daljeg produkcijskog uređivanja theme-9 treba sačuvati nepoznata
+polja pri upisu, uvesti jedan zajednički mapper i dodati regresioni test.
+
+**Sledeći hard gate nije novi ekran:** prvo zaustavljanje navedenog rizika
+gubitka theme-9 sadržaja i odvojena staging baza; zatim T2B revizija v0.3
+(uključujući `consultations.catalog`, `booking.consultations` i
+`questionnaires.forms`) i IA dokument za beauty/education/hybrid navigaciju.
+Tek posle toga idu T2B implementacija, T3 Booking CORE i migracija svih write
+ruta.
+
 ## Katalog engine-a (domeni)
 
 | Engine | Domen (ukratko) | Samostalan proizvod? |
 |---|---|---|
-| **Theme Engine** | Theme, Preset, Brand, Assets, Animations, Typography, Layout, Sections, Component Registry, Motion, Accessibility, Responsive Rules + verzionisanje (Draft/Published/Archived/Preview) | DA — dental, restorani, agencije, SaaS builderi |
-| **Booking Engine** | Service, Variation, Duration, Employee, Schedule, Price, Addons, Resources, Availability, Booking/Cancellation Policy, Deposit, Confirmation, Reminder | DA — frizeri, barberi, tattoo, fotografi, advokati, konsultanti |
-| **Marketing Engine** | Campaign, Email, SMS, Push, IG/FB/TikTok, Blog, Landing, CTA, Coupons, Automation + AI agenti (generate campaign/CTA/blog/caption/FAQ, SEO, keywords, content refresh) | delimično |
+| **Theme Engine** 🟡 **T2A glavni kod gotov** | Generički ThemeDocument, brand/tokens, layout, sections/slots, Feature Block Registry granica i Draft/Published/Archived/Preview lifecycle. Tri završne provere, T2B capability razrešenje i CMS/publishing sazrevanje ostaju otvoreni koraci. | DA — dental, restorani, agencije, SaaS builderi |
+| **Booking Engine** 🟡 **availability gotov; write/core nije** | Raspored, pauze, odmori, resursi i obračun slobodnih termina postoje u `@panta/booking-engine`. Kanonska rezervacija, concurrency/day-lock, idempotencija, hold, policy i potvrda tek slede. | DA — frizeri, barberi, tattoo, fotografi, advokati, konsultanti |
+| **Distribution Engine** ⬜ | Offer, Campaign, placement, attribution i channel artifacts. Ne poseduje sadržaj ni transport; Content govori šta, Notification šalje, Distribution odlučuje gde i kako. Zamenjuje raniji preširoki naziv „Marketing Engine“. | DA — multi-channel distribucija za više vertikala |
 | **AI Engine — Core AI** | samo LLM: Completion, Streaming, Embeddings, Memory, Agents, Prompt Library, Moderation | DA |
 | **AI Engine — AI Skills** | agenti: SEO Expert, Landing Expert, Theme Designer, Booking Assistant, Marketing Writer, Support Agent, Review Analyzer, Brand Consultant | DA |
-| **Diagnostic Engine** ✅ **(T1 GOTOV · Identity & Loyalty Health GOTOV 2026-07-11)** | DVE porodice iza iste granice: **browser** (Device, OS, Browser, Viewport, Push, Network, Storage, Permissions, Crash Reports — entry `.`) i **server-side data-integrity** (Identity & Loyalty Health: 9 read-only provera po tenantu — entry `./integrity`; superadmin Dijagnostika tab; spec `docs/PANTA-IDENTITY-LOYALTY-HEALTH.md`). Salon dobija Diagnostic Dashboard: "Run Diagnostics" → "Share report" (T5). | **DA — možda najzanimljiviji**; bilo koji SaaS |
+| **Diagnostic Engine** ✅ **(T1 GOTOV · Identity & Loyalty Health GOTOV)** | DVE porodice iza iste granice: **browser** (uređaj/browser, mreža, push, storage, permissions, crash i performance signali — entry `.`) i **server-side data-integrity** (**10** read-only provera po tenantu — entry `./integrity`; superadmin Dijagnostika tab; spec `docs/PANTA-IDENTITY-LOYALTY-HEALTH.md`). Tenant-facing „Run Diagnostics / Share report“ dashboard ostaje T5. | **DA — možda najzanimljiviji**; bilo koji SaaS |
 | **Analytics Engine** | Appointments, Revenue, Returning Clients, Cancellation Rate, Popular Services, Heatmaps, Funnels, SEO, Conversion, Performance (LCP/CLS/FID), Errors | DA |
 | **Content Engine** | Pages, Sections, Rich Text, Media, Localization, SEO, Versioning, Publishing, Drafts. (CMS ≠ Content Engine; Landing samo renderuje.) | DA |
 | **Media Engine** | Images, Videos, Compression, CDN, Optimization, Formats, Responsive, Gallery, Storage, Animations (Framer/Spline/Canva) | DA |
 | **Notification Engine** | Email, SMS, Push, WhatsApp, Webhook, Slack, Discord. Booking samo kaže "Send reminder" — engine odlučuje kako. | DA |
 | **Identity Engine** | Users, Roles, Permissions, Tenants, Organizations, Sessions, OAuth, Audit. Koriste ga svi engine-i. | DA |
-| **Loyalty (Growth) Engine** ✅ **V1 + Referral 2b u kodu; live QA čeka** | Points/Currency, **Streaks** (navika ≠ valuta), Rewards, **Vouchers**, **Gifts**, **Bonusi**, **Popusti**, Referral/Affiliate, Share Voucher, Tiers (Bronze/Silver/Gold/VIP), **QR Check-in**, Redemption, Birthday/personalized/AI rewards, salon acquisition signals. Growth Studio, QR/streak, share, merge i referral hard-gate postoje; Phase 3 premium ostaje. | **DA** — retail/beauty/fitness/svaki repeat-business |
+| **Loyalty Engine** ✅ **V1 + Referral 2b u kodu; live QA čeka** | Points/Currency, streaks, rewards, vouchers, referral/share i QR check-in postoje. Tiers, birthday/personalized/AI rewards ostaju Phase 3. Današnji `AdminGrowthStudio` je legacy naziv Loyalty UI-ja; budući Growth Studio je zaseban composition surface za distribuciju i rast. | **DA** — retail/beauty/fitness/svaki repeat-business |
 
-## Loyalty (Growth) Engine — v2 vizija i stvarno stanje
+T2B capability resolver **nije novi engine**. To je platformski sloj koji spaja
+ono što proizvod podržava, šta plan dozvoljava i šta je tenant uključio, a zatim
+istu odluku primenjuje u administraciji, API-ju i javnom sajtu.
+
+## Loyalty Engine — v2 vizija i stvarno stanje
 
 **Nije "digitalizacija loyalty kartice" — mali beauty growth loop koji pravi retenciju i prihod:**
 
@@ -81,17 +141,18 @@ Dolazak klijentkinje → identifikacija → event → pravilo → nagrada → po
 ```
 
 Loyalty NIJE izolovana funkcija: postavlja se kao **Loyalty Engine + Event Bus** integracija
-(događaji, ne direktne veze). Granica prema drugima: popusti-kao-marketing (promo kodovi u
-kampanji) su **Marketing Engine** (Coupons); slanje "dobili ste vaučer" je **Notification
+(događaji, ne direktne veze). Granica prema drugima: komercijalne ponude i njihova
+distribucija su **Distribution Engine**; slanje "dobili ste vaučer" je **Notification
 Engine**; primena vaučera na termin je **cross-engine** (Loyalty vlasnik pravila, Booking
 potrošač); acquisition/ROI signali hrane **Analytics Engine**.
 
-**Već postoji u kodu (Growth Studio = temelj za Phase 0 extraction):** `src/lib/loyalty/`
-(engine, **events**, hooks, ledger, accounts, config, vouchers, cron, pricing, notifications,
-loyalty.test) · modeli `LoyaltyAccount / LoyaltyConfig / Voucher` · **Moments** player
-(`components/loyalty/LoyaltyMoments.tsx` + `LoyaltyCelebrationOverlay`) · Growth Studio admin
-UI · `/api/loyalty/{client,admin}/*` + `/api/cron/loyalty`. v2 ne piše ispočetka — **izmešta
-i formalizuje** ovo iza granice `@panta/loyalty-engine`.
+**Već postoji u kodu:** `@panta/loyalty-engine` sadrži čista pravila za valutu,
+vaučere, streak i Referral 2b; aplikacija zadržava DB/IO orkestraciju kroz adapter.
+Postoje i `src/lib/loyalty/`, modeli `LoyaltyAccount / LoyaltyConfig / Voucher /
+Referral`, **Moments** player, postojeći `AdminGrowthStudio` Loyalty UI,
+`/api/loyalty/{client,admin}/*` i `/api/cron/loyalty`. Phase 0 izdvajanje je
+završeno; naziv postojećeg admin ekrana ne znači da je budući zajednički Growth
+Studio već napravljen.
 
 ### Kraj-u-kraj priča (obično CRM vs platforma)
 ```
@@ -125,16 +186,17 @@ Psihološki jak mehanizam. **Points = valuta; Streak = navika** (dva odvojena po
 5 poseta  → free add-on
 10 poseta → VIP reward
 ```
-Model `LoyaltyStreak { clientId, salonId, currentStreak, longestStreak, lastVisitDate,
-milestones:[{ visits, reward }] }`.
+Check-in niz se danas čuva u `LoyaltyAccount` poljima `checkinStreak`,
+`longestCheckinStreak` i `lastCheckinAt`; čisto pravilo obračuna živi u
+`@panta/loyalty-engine`. Ne postoji zaseban `LoyaltyStreak` model.
 
 ### 3. Referral / Affiliate (podmodul)
 `Loyalty Engine → Rewards + Referrals`. Ana dovodi Milicu → Ana: +100 points + referral
 badge + VIP progress; Milica: 10% prve usluge + 50 welcome points; salon:
 `new_customer_acquisition` event.
 ```
-Referral { id, referrerClientId, referredClientId, salonId,
-  status: [invited, registered, completed_first_visit], rewardGiven }
+Referral { tenantId, referrerTenantUserId, referredTenantUserId,
+  firstAppointmentId, status: [booked, completed, rewarded, invalidated], rewardGiven }
 ```
 **Anti-abuse (KRITIČNO):** nagrada tek kad nova osoba **register + book + complete visit** —
 nikad samo na poziv.
@@ -153,11 +215,11 @@ Većina loyalty sistema gleda samo klijenta. Ovde i salon dobija signal → hran
 Ne `Booking ──> Loyalty`, nego preko **Event Bus**-a:
 ```
 Booking Engine ─┐
-                ├─> Event Bus ──> Loyalty / Marketing / Analytics / Notification
+                ├─> Event Bus ──> Loyalty / Distribution / Analytics / Notification
 events: appointment_completed · client_checkin · referral_completed · voucher_used
 ```
 Ovo je konkretan ulaz za **T8** (kontrakti: eventi vs direktni pozivi). Kasnije: AI analizira
-ponašanje, Marketing šalje kampanje, Analytics meri ROI — svi kroz iste evente.
+ponašanje, Distribution bira plasman ponude, Analytics meri ROI — svi kroz iste evente.
 
 ### 7. Loyalty Moments — događaji koje VIŠE engine-a konzumira
 Već postoji `LoyaltyMoments` (celebration player); v2 ga širi sa "samo poseta" na **lifecycle
@@ -168,67 +230,53 @@ samo Loyalty-jev** — jedan event fan-out-uje na više engine-a (fan-out je raz
 client_anniversary { salonId, clientId, years: 1 }
    ├─ Loyalty       → { points: 500, badge: "One Year Member" }
    ├─ Notification  → "Već godinu dana ste deo naše zajednice ❤️"
-   ├─ Marketing     → campaign "Anniversary offer"
+   ├─ Distribution  → campaign "Anniversary offer"
    └─ AI            → tag "High loyalty customer" (profile enrichment)
 ```
 Isto važi za `first_visit` (Loyalty: welcome points + start streak · Notification: "Hvala na
-poverenju ✨" · Marketing: onboarding campaign · Analytics: conversion tracking · AI: profile
+poverenju ✨" · Distribution: onboarding campaign · Analytics: conversion tracking · AI: profile
 enrichment). Reward rule po eventu je konfiguracija (nastavlja `LoyaltyConfig`), ne kod.
 
-### Plan implementacije (fazno) — čist scope
-- **Phase 0 — extraction (bez promene ponašanja):** `Growth Studio → @panta/loyalty-engine` +
-  adapter (`lib/platform/loyalty-client`), isti obrazac kao Diagnostic. Cilj: samo granica
-  ownership-a; postojeći feature radi identično. Nula novih feature-a.
-- **Phase 1 — QR check-in + streak:** `/checkin/{salonId}` → `client_checkin` → visit record →
+### Stanje implementacije po fazama
+- ✅ **Phase 0 — extraction (bez promene ponašanja):** čista pravila su u
+  `@panta/loyalty-engine`, a aplikacija ih koristi kroz adapter
+  `lib/platform/loyalty-client`.
+- ✅ **Phase 1 — QR check-in + streak:** `/checkin/{salonId}` → `client_checkin` → visit record →
   streak update → points. Minimalni kontrakt:
   ```
   ClientCheckInEvent { type: "client_checkin", salonId, clientId, timestamp, source }
   ```
-- **Phase 2 — growth:** referral program · share voucher · friend rewards · salon acquisition tracking.
-- **Phase 3 — premium:** tiers (Bronze/Silver/Gold/VIP) · birthday automation · personalized rewards ·
+- 🟡 **Phase 2 — growth:** share/merge i Referral 2b su u kodu; live QA i release
+  gate ostaju otvoreni.
+- ⬜ **Phase 3 — premium:** tiers (Bronze/Silver/Gold/VIP) · birthday automation · personalized rewards ·
   AI predlozi ("Milica nije bila 45 dana → ponudi brow refresh voucher").
 
 **Network effect:** salon dobija alat za zadržavanje klijenata, klijentkinje imaju razlog da
 dovode nove — prvi engine koji Marysoll-u pravi network effect.
 
-## Taskovi za zajedničku analizu (redosled ćemo dogovoriti)
+## Stanje inicijativa i otvoreni poslovi
 
-- [x] **T0. Završiti Fazu 4** optimizacije + preostale popravke (preduslov svega). ✅
-- [x] **T1. Monorepo skeleton + prvi engine** ✅ **GOTOVO**: npm workspaces + `packages/diagnostic-engine`
-      (`@panta/diagnostic-engine`) + adapter `lib/platform/diagnostic-client.ts` + Dijagnostika tab
-      (superadmin) sa export/Zod. Vitest = root runner. Obrazac granice postavljen za sve dalje engine-e.
-- [ ] **T-LOYALTY. Loyalty (Growth) Engine** — **Phase 0, Phase 1 i Phase 2b su u kodu**;
-      live QA Referral toka na `staging.marysoll.com` je release gate. **Phase 3**
-      (tiers/birthday/personalized/AI rewards) ostaje otvorena. Loyalty Moments =
-      multi-consumer eventi (fan-out → više engine-a).
-- [ ] **T2. Theme/Layout Engine granice** 🔜 **SLEDEĆI**: šta iz `components/themes/`, `lib/themeConfig`,
-      CMS gallery varijanti i `layouts/types.ts` ulazi u paket; definisati Theme JSON
-      kontrakt (preset/brand/assets/sections) + verzionisanje (draft/published/archived/preview).
-- [ ] **T3. Booking Engine domen**: popisati domenski model koji VEĆ postoji
-      (Service/Variation..., booking.ts, clientFlows.ts, cancellation.ts iz Faze 3 su
-      začetak) i šta nedostaje (Employee, Resources, Deposit…).
-- [ ] **T4. AI razdvajanje Core/Skills**: mapirati postojeće agente (content, layout,
-      SEO, orchestrator, deepseek provider) na Core AI vs AI Skills; mikroservis plan
-      (već odlučeno da klijenti idu u poseban servis — Faza 2b).
-- [ ] **T5. Diagnostic Engine proširenje**: beacon + /dijagnostika + DiagReport →
-      Diagnostic Dashboard po salonu ("Run Diagnostics" / "Share report");
-      popisati module (device/permissions/push/storage/performance/crash).
-- [ ] **T6. Notification Engine**: konsolidovati email/push/notif logiku
-      (notificationService, webPush, tenantEmailSettings) iza jednog API-ja.
-- [ ] **T7. Identity Engine**: auth-server, tokenResponse, role/permissions —
-      granice i tipovi (koristi ga sve).
-- [ ] **T8. Kontrakti između engine-a + Event Bus**: prvih 5 tipizovanih kontrakata
-      postoji u `@panta/event-bus`; Loyalty trenutno sluša `client_checkin` i
-      `referral_completed`. Preostaje priključivanje ostalih emitera/consumer-a i
-      odgovornih engine-a. Šta Marysoll
-      orkestrator sme da zna. Konkretan pokretač je Loyalty (T-LOYALTY). **NE praviti generički bus
-      prerano** — prvih 5 kontrakata dovoljno: `appointment_completed · client_checkin · first_visit ·
-      referral_completed · voucher_used`. Svaki engine postaje **subscriber** (Booking emituje;
-      Loyalty/Marketing/Analytics/Notification/AI slušaju). NE direktne veze `Booking→Loyalty`.
-      Postoji začetak: `src/lib/loyalty/events.ts` + `hooks.ts`.
-- [ ] **T9. Booking.marysoll.com** prilagoditi novom sistemu radnog vremena +
-      marketplace rute optimizacija (odloženo iz Faze 3) — prvi potrošač
-      Booking Engine API-ja.
+Operativni detalji po slice-u vode se u [TODO.md](TODO.md). Ova tabela čuva
+širu sliku i sprečava da završena etapa ponovo bude proglašena „sledećom“.
+
+| Inicijativa | Status 2026-08-20 | Stvarno stanje / sledeći korak |
+|---|---|---|
+| **T0 optimizacija** | ✅ završeno | Preduslov za engines luk je zatvoren. |
+| **T1 monorepo + Diagnostic** | ✅ završeno | Paket, adapter, browser dijagnostika, beacon, superadmin ekran i 10 integrity provera postoje. Tenant-facing dashboard ostaje buduće proširenje. |
+| **Loyalty** | 🟡 kod završen do Referral 2b | Phase 0/1 i Referral 2b postoje; live QA/release gate i Phase 3 premium ostaju. |
+| **H0 theme-9 zaštita sadržaja** | 🔴 hitno | Ispraviti lossy admin save, uvesti zajednički mapper i regresioni test pre daljeg produkcijskog uređivanja. |
+| **T2A Theme/Layout** | 🟡 glavni kod završen | Paket, registry, lifecycle i migracija osam tema postoje; zatvoriti tri preostala acceptance kriterijuma. |
+| **T2B vertikale/capabilities** | ⬜ nije implementirano — sledeći arhitektonski rez | Dopuniti v0.3, implementirati resolver + admin/API/public gate, dry-run/backfill i release provere. |
+| **T3 availability + prikaz toka** | 🟡 delimično završeno | Availability paket i potrošači postoje; theme-9 demo/preview šalje mejl, ali ne rezerviše termin. |
+| **T3 Booking write/core** | ⬜ nije implementirano | Napisati specifikaciju, uvesti kanonsku rezervaciju, day-lock, idempotenciju, BookingFacts, hold i migrirati sve create/reschedule putanje. |
+| **Consultation / Questionnaire / Education / Care** | ⬜ nije implementirano | Redosled: Consultation + hold + intake + theme-9 E2E; zatim Education, navigacija i Care Workspace. |
+| **T4 AI Core/Skills** | ⬜ backlog | Mapirati postojeće agente i njihove granice tek posle aktuelnih release gate-ova. |
+| **T5 Diagnostic proširenje** | 🟡 delimično | Osnova postoji; salon-facing dashboard, performance/console prikaz i eventualne bezbedne repair akcije ostaju. |
+| **T6 Notification** | ⬜ backlog | Konsolidovati email/push/notification logiku iza jednog ugovora. |
+| **T7 Identity** | ⬜ backlog | Izdvojiti auth, role/permissions i audit granice. |
+| **T8 Event Bus** | 🟡 delimično | Paket i prvih pet ugovora postoje; povezivanje ostalih emitera i potrošača nije završeno. |
+| **T9 Marketplace** | 🟡 delimično | Čitanje slobodnih termina koristi novi availability core; booking write ostaje legacy do T3 migracije. |
+| **Distribution + novi Growth Studio** | ⬜ budući poslovni luk | Specifikacije postoje; modeli, runtime engine i novi composition surface ne postoje. |
 
 ## Loyalty roadmap — V1 → V2 (potvrđeno 2026-07-08)
 
@@ -266,25 +314,51 @@ konkretan salon-potreba.
 (namerno). Identitet = ulogovana sesija skenera; jedan check-in po klijentu/danu
 (streak+poeni). Srca ostaju po završenom terminu (admin). Ne dirati dalje.
 
-## Redosled rada (potvrđeno 2026-07-07)
+## Redosled rada (revidirano 2026-08-20)
 
-```
-✅ T0/T1 foundation (Diagnostic Engine + monorepo obrazac)
-✅ T-LOYALTY Phase 0/1 + share/merge + Referral Phase 2b (kod)
-🧪 Referral live QA na staging-u → zatim release na main
-🔜 T2 Theme/Layout Engine granica i verzionisani Theme JSON kontrakt
-🔜 T8 consumers — Marketing / Notification / Analytics / AI slušaju iste evente
-🔜 T-LOYALTY Phase 3 tek posle Theme/Layout odluke
-```
-Loyalty V1 više nije sledeći neizgrađen engine; sledeća arhitektonska odluka je
-Theme/Layout Engine granica. Referral ostaje iza staging live-test gate-a dok PR
-ne prođe integracioni tok.
+1. **Hitno sačuvati theme-9 sadržaj pri svakom admin upisu.** Jedan zajednički
+   mapper + regresioni test moraju dokazati da promena radnog vremena ili SEO-a
+   ne briše landing sekcije, podstrane ni booking preview.
+2. **Preneti bezbednosnu ispravku za scope termina na aktivnu granu.** Commit
+   postoji na `staging/production-fixes`, ali trenutna grana i dalje dohvata i
+   menja termin po golom `_id`-ju. Pojačati test da proverava sam DB upit, ne
+   samo prisustvo reči `tenantId` u fajlu.
+3. **Obezbediti odvojenu staging bazu ili potpuno izolovano test okruženje.**
+   Dokumentacioni rad može teći paralelno, ali backfill i live provere ne smeju
+   dirati produkciju.
+4. **Dopuniti T2B specifikaciju na v0.3:** `consultations.catalog`,
+   `booking.consultations`, `questionnaires.forms`, readiness i pravila
+   degradacije.
+5. **Napisati `PANTA-ADMIN-CLIENT-WORKSPACES.md`.** Zaključati beauty, education
+   i hybrid matrice za admin/client navigaciju, capability i resource owner-a.
+6. **Implementirati T2B na sva tri mesta:** admin, API i javni renderer; zatim
+   dry-run/backfill, audit i release gate.
+7. **Zatvoriti tri T2A acceptance kriterijuma** i theme-9 CMS/fallback/navigation
+   dugove. Linkovi ka podstranama moraju pratiti stvarno dostupan sadržaj.
+8. **Napisati `PANTA-T3-BOOKING-ENGINE.md` pre CORE implementacije.** Dokument
+   već treba da opiše završeni availability deo i delimični preview, a ne da
+   nastane tek kada Slice 5 počne.
+9. **Implementirati T3 Booking CORE:** kanonska rezervacija, day-lock ili
+   ekvivalentna transakcijska zaštita, idempotentni retry, BookingFacts,
+   centralni conflict recovery i jasan status starog `Slot` sistema.
+10. **Migrirati svih pet create putanja i sva tri reschedule ulaza** na jedan
+    servis; concurrency test je release gate.
+11. **Napraviti Consultation + BookingHold + Questionnaire/Intake**, pa tek onda
+    uključiti stvarno theme-9 zakazivanje.
+12. **Posle toga:** Education domen, capability-aware navigacija i Care
+    Workspace; Distribution Engine i novi Growth Studio vode se kao naredni
+    poslovni luk.
 
-## Napomene uz tekuću optimizaciju (Faza 4)
+Referral live QA može teći paralelno kada postoji bezbedan staging. AI,
+Notification i ostala šira izdvajanja ostaju backlog dok aktuelni T2B/T3 release
+gate-ovi ne budu zatvoreni.
 
-- **AdminLandingCMS**: samo osnovna optimizacija — theming ide u Theme Engine
-  (poseban servis, Marysoll ga koristi kroz API ili CDN), pa dubok refaktor CMS-a nema smisla sada.
-- **TenantShellClient**: proceniti dobit vs kompleksnost SSR parent + client islands pristupa.
-- **React pravila** (po ARCHITECTURAL_RULES.md): useEffect sa svim zavisnostima;
-  setState na mount/unmount kroz async wrapper kad je zavisnost dinamička
-  (React 19 — rizik infinite loop); useMemo gde sprečava nepotrebne re-rendere.
+## Dokumenti koji još treba da nastanu
+
+- `PANTA-T3-BOOKING-ENGINE.md` — stanje availability dela, write/core ugovor,
+  migracija, konkurentni zahtevi, hold i Consultation adapter.
+- `PANTA-ADMIN-CLIENT-WORKSPACES.md` — beauty/education/hybrid matrice i granice
+  admin/client navigacije.
+
+Njihovo odsustvo je navedeno u TODO-u kao planirano, ali Booking dokument više
+ne treba odlagati: dva ranija slice-a već zavise od odluka koje treba da zabeleži.

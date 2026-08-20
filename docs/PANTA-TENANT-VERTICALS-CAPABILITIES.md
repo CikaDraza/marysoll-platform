@@ -1,6 +1,6 @@
 # PANTA T2B — Tenant verticals i capability resolver (odluka 2026-08-16, rev. v0.2)
 
-> Deo T2 iz [ARHITEKTURA-ENGINES.md](../ARHITEKTURA-ENGINES.md).
+> Deo T2 iz [ARHITEKTURA-ENGINES.md](ARHITEKTURA-ENGINES.md).
 > Prati [T2A Theme/Layout granicu](PANTA-T2-THEME-LAYOUT-ENGINE.md).
 > **v0.2 (Architecture Review):** `enabled` i `configured` razdvojeni
 > (`ResolvedCapability` vs `CapabilityReadiness`), uveden jedinstven server entry
@@ -137,7 +137,7 @@ koji ima capability — gate je `requireCapability()`, tačka.
 ### 3.2 Capability NIJE autorizacija korisnika
 
 Capability je svojstvo **tenanta**, ne osobe. Po
-[ARCHITECTURAL_RULES.md](../ARCHITECTURAL_RULES.md) autorizacija ostaje
+[ARCHITECTURAL_RULES.md](ARCHITECTURAL_RULES.md) autorizacija ostaje
 centralizovana, pa je efektivni pristup:
 
 ```
@@ -189,7 +189,7 @@ Za T2A to je prihvatljivo (render/refaktor bez promene podataka). **Za T2B nije*
 prvi put pišemo migraciju/backfill preko svih tenanta, a odmah zatim dolaze
 `EducationOffering`, `Lead`, `Campaign` kolekcije.
 
-Zato je **release prerequisite za Slice 2**: odvojena staging Mongo baza (ili
+Zato je **release prerequisite za T2B backfill/release**: odvojena staging Mongo baza (ili
 potpuno izolovan data environment) pre nego što ijedan backfill krene sa staging
 grane. Dok to ne postoji, T2B se ne merge-uje u `staging/production-engines`.
 

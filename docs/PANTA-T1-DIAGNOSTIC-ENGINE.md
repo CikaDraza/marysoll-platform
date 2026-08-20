@@ -1,8 +1,10 @@
-# PANTA T1 — Diagnostic Engine: analiza (2026-07-07)
+# PANTA T1 — Diagnostic Engine: završena istorijska specifikacija (2026-07-07)
 
-> Labs / "Panteleymon" inicijativa, grana `labs/panta-diagnostic-engine`.
 > T1 iz ARHITEKTURA-ENGINES.md: **monorepo skeleton + prvi engine kao paket**.
-> Sve na ovoj grani ostaje bez merge-a dok se ne razvije i istestira u celini.
+> Dokument beleži originalni plan sa grane `labs/panta-diagnostic-engine`.
+> Implementacija je u međuvremenu završena i nalazi se u aktuelnom kodu; budući
+> otvoreni poslovi vode se u [ARHITEKTURA-ENGINES.md](ARHITEKTURA-ENGINES.md) i
+> [TODO.md](TODO.md).
 
 ## 1. Zašto Diagnostic Engine prvi
 

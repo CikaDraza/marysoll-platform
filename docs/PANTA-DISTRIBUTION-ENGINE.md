@@ -1,7 +1,7 @@
 # PANTA T-DISTRIBUTION — Distribution Engine (odluka 2026-08-16, rev. v0.2)
 
 > Zamenjuje preširoko zamišljen „Marketing Engine" iz
-> [ARHITEKTURA-ENGINES.md](../ARHITEKTURA-ENGINES.md) jasnijom podelom domena.
+> [ARHITEKTURA-ENGINES.md](ARHITEKTURA-ENGINES.md) jasnijom podelom domena.
 > Katalog engine-a je usklađen 2026-08-16 — „Marketing Engine" više nije
 > autoritativan pojam ni na jednom mestu.
 > **v0.2 (Architecture Review):** `subject` je generički `ResourceRef` (engine ne
@@ -209,7 +209,7 @@ AudienceContact  = osoba u audience/contact odnosu — consent/status eksplicitn
 Lead             = konkretno iskazano poslovno interesovanje
 ```
 
-### 5.1 ⚠️ `ExternalProspect` ≠ `AudienceContact` (pre Slice 4)
+### 5.1 ⚠️ `ExternalProspect` ≠ `AudienceContact` (pre prve Distribution implementacije)
 
 Postojeći `AudienceContact` ima `source: linkedin | scraper | manual` i
 `subscribed: true` kao **default** (provereno u modelu). Ako outreach lista uđe
@@ -221,7 +221,8 @@ tiho postaje
 
 > „Ovaj kontakt je subscriber u Marininoj publici."
 
-To je pogrešno i pravno i produktno. Zato se pre Slice 4 zaključava treći pojam:
+To je pogrešno i pravno i produktno. Zato se pre prve Distribution
+implementacije zaključava treći pojam:
 
 | Zapis | Šta znači | Marketing consent |
 |---|---|---|
