@@ -909,27 +909,48 @@ launcher (modal) bez inline sekcije.
 
 - [x] Postojeći salon bez education capability izgleda i ponaša se **identično** kao pre
       (regresija po temi; `<body>` bajt-u-bajt identičan na sva tri živa tenanta).
-- [ ] `packages/theme-engine` nema import `Service`, `Appointment`, `Campaign`,
-      `mongoose`, `react`, `next`.
+- [x] `packages/theme-engine` nema import `Service`, `Appointment`, `Campaign`,
+      `mongoose`, `react`, `next`. — `blocks/registry.test.ts` „engine paket ne
+      uvozi ništa iz aplikacije" pokriva sva četiri fajla paketa i zabranjuje i
+      `@/…` i `react|next|mongoose|zod`; domenski tip nema drugim putem kako da uđe.
 - [x] Nijedna tema ne sadrži `if (tenant.type === …)` ni vertikalno granjanje.
 - [ ] Novi feature blok se dodaje **bez ijedne izmene** u `packages/theme-engine`.
-- [ ] Nepoznat `type` bloka: render = skip + telemetry, **publish = error**.
-- [ ] `slot` se validira protiv `LayoutDefinition` — nepostojeći slot je greška.
-- [ ] `published`/`archived` revizije su immutable; `publish` je atomska zamena.
-- [ ] `lifecycle` prelazi i monotonost `version`-a su validirani u paketu i
-      pokriveni testovima.
+      — dizajn to omogućava (`BlockTypeResolver` se ubrizgava), ali nijedan test
+      to ne dokazuje direktno; ostaje neštiklirano dok test ne registruje nov tip
+      i ne pokaže da publish prolazi bez diranja paketa.
+- [x] Nepoznat `type` bloka: render = skip + telemetry, **publish = error**.
+      — `theme-engine.test.ts` „nepoznat blok — render tolerantan, publish strog"
+      + `blocks/resolve.test.ts` „nepoznat tip → skip + telemetrija".
+- [x] `slot` se validira protiv `LayoutDefinition` — nepostojeći slot je greška.
+      — `theme-engine.test.ts` „odbija nepostojeći slot".
+- [x] `published`/`archived` revizije su immutable; `publish` je atomska zamena.
+      — `theme-engine.test.ts` „izmena objavljene teme pravi novu draft reviziju,
+      original netaknut" + „publish arhivira prethodnu aktivnu reviziju u istom
+      rezultatu".
+- [x] `lifecycle` prelazi i monotonost `version`-a su validirani u paketu i
+      pokriveni testovima. — „dozvoljava draft → published, zabranjuje published →
+      draft" + „odbija publish revizije koja nije novija od aktivne".
 - [ ] Prvi render strane nema po-blok klijentski waterfall — loaderi se izvršavaju
-      paralelno na serveru sa request dedupe-om.
+      paralelno na serveru sa request dedupe-om. — **pipeline jeste dokazan**
+      (`blocks/resolve.test.ts` „bez waterfall-a (spec 5.2)": dedupe + paralelno
+      izvršavanje), ali `theme-3/BlogSection` i dalje dovlači objave klijentskim
+      `useBlogPosts` i zaobilazi loader. Kriterijum je o STRANI, ne o pipeline-u.
 - [ ] Sve postojeće teme prolaze vizuelnu **i performansnu** regresiju (LCP) na
-      demo tenantima.
+      demo tenantima. — regresija je ručno odrađena i zapisana za theme-1/2/7/8
+      (`<body>` bajt-u-bajt, TTFB), ne za svih osam, LCP nije meren i nijedan
+      test to ne čuva.
 - [x] Svaki `always` cms-block iz inventara (6.1) je svesno rešen po temi —
       nijedna tema tiho ne počne/prestane da poštuje CMS flag (6.4).
 - [x] Legacy composition compatibility nije deo `@panta/theme-engine` ni
       FeatureBlockRegistry domena; `LegacyAlwaysThemeBlock` renderuje samo par
       `theme` + `source` koji Composition Inventory označava kao `always` (6.4).
-- [ ] Composition inventar se proverava protiv koda tema (test pada ako tema
-      doda ili ukloni flag, a inventar ostane isti).
-- [ ] Nijedan theme-native element nije pretvoren u Feature Block bez odluke.
+- [x] Composition inventar se proverava protiv koda tema (test pada ako tema
+      doda ili ukloni flag, a inventar ostane isti). — `theme-composition.test.ts`
+      čita `Theme{n}Landing.tsx` i poredi `flagsUsedBy()` i `themeBlockTypesUsedBy()`
+      sa inventarom (komentari se skidaju da dokumentacija ne bi bila kažnjena).
+- [x] Nijedan theme-native element nije pretvoren u Feature Block bez odluke.
+      — isti test: pretvaranje native elementa u `<ThemeBlock>` menja skup tipova
+      u kodu, pa test pada dok se inventar ne ažurira — a to ažuriranje JESTE odluka.
 
 ## 9. Non-goals za T2A — disciplina slice-a
 

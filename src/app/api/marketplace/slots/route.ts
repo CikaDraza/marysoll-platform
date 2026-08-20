@@ -11,39 +11,15 @@ import { SalonProfile } from "@/models/SalonProfile";
 import { Appointment } from "@/models/Appointment";
 import { Service } from "@/models/Service";
 import { verifySignature } from "@/lib/middleware/verifySignature";
+import {
+  availabilityForDate,
+  type BookedAppointment,
+  type SalonAvailabilityProfile,
+} from "@/lib/booking/availabilityAdapter";
 import { checkRateLimit } from "@/lib/middleware/rateLimiter";
-import { manualTimesForDate, isManualSlotTaken } from "@/helpers/manualSlots";
+import { manualTimesForDate } from "@/helpers/manualSlots";
 
 const SLOT_INTERVAL = 30;
-
-function timeToMin(t: string): number {
-  const [h, m] = t.split(":").map(Number);
-  return h * 60 + (m ?? 0);
-}
-
-function minToTime(min: number): string {
-  return `${Math.floor(min / 60).toString().padStart(2, "0")}:${(min % 60).toString().padStart(2, "0")}`;
-}
-
-function dateToDayKey(dateStr: string): string {
-  const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-  return days[new Date(dateStr).getDay()];
-}
-
-function parseWorkingHours(wh: unknown, dayKey: string): { from: string; to: string } | null {
-  if (!wh || typeof wh !== "object") return null;
-  const daySlots = (wh as Record<string, unknown>)[dayKey];
-  if (!daySlots) return null;
-  if (Array.isArray(daySlots) && daySlots.length > 0) {
-    const s = daySlots[0] as { from?: string; to?: string };
-    if (s.from && s.to) return { from: s.from, to: s.to };
-  }
-  if (typeof daySlots === "string") {
-    const parts = daySlots.split(" - ");
-    if (parts.length === 2) return { from: parts[0].trim(), to: parts[1].trim() };
-  }
-  return null;
-}
 
 /**
  * Veličina bloka slota za workingHours režim:
@@ -96,7 +72,7 @@ export async function GET(req: NextRequest) {
     await connectToDB();
 
     const salon = await SalonProfile.findById(salonId)
-      .select("tenantId workingHours availabilityMode manualSlots")
+      .select("tenantId workingHours availabilityMode manualSlots vacations")
       .lean();
     if (!salon) {
       return NextResponse.json({ error: "Salon nije pronađen" }, { status: 404 });
@@ -104,96 +80,62 @@ export async function GET(req: NextRequest) {
 
     const s = salon as Record<string, unknown>;
     const tenantId = String(s.tenantId ?? "");
-    const availabilityMode =
-      s.availabilityMode === "manualSlots" ? "manualSlots" : "workingHours";
+    const isManual = s.availabilityMode === "manualSlots";
 
-    // Zauzeti termini tog dana — potrebni za oba režima (overlap po trajanju).
-    const booked = await Appointment.find({
+    const booked = (await Appointment.find({
       tenantId,
       date,
       status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
     })
-      .select("time duration")
-      .lean();
+      .select("time duration status")
+      .lean()) as unknown as { time?: string; duration?: number; status?: string }[];
 
-    // ── manualSlots režim: samo ručno definisani, budući i nezauzeti termini ──
-    if (availabilityMode === "manualSlots") {
-      const bookedForCheck = booked.map((a) => {
-        const appt = a as Record<string, unknown>;
-        return {
-          date,
-          time: String(appt.time ?? "00:00"),
-          duration: typeof appt.duration === "number" ? appt.duration : 60,
-        };
-      });
-      const now = new Date();
-
-      const slots = manualTimesForDate(
-        s.manualSlots as Record<string, { time: string; duration: number; serviceId?: string }[]>,
-        date,
-      )
-        .filter((slot) => new Date(`${date}T${slot.time}`) >= now)
-        .filter(
-          (slot) =>
-            !isManualSlotTaken(bookedForCheck, date, timeToMin(slot.time), slot.duration),
-        )
-        .map((slot) => {
-          const start = timeToMin(slot.time);
-          const out: Record<string, unknown> = {
-            _id: `${salonId}_${date}_${slot.time}`,
-            salonId,
-            startTime: `${date}T${slot.time}:00`,
-            endTime: `${date}T${minToTime(start + slot.duration)}:00`,
-            isAvailable: true,
-            duration: slot.duration,
-          };
-          if (slot.serviceId) out.serviceId = slot.serviceId;
-          return out;
-        });
-
-      return NextResponse.json(slots);
-    }
-
-    // ── workingHours režim: fiksni korak unutar radnog vremena ──
-    const hours = parseWorkingHours(s.workingHours, dateToDayKey(date));
-    if (!hours) return NextResponse.json([]);
+    const appointments: BookedAppointment[] = booked.map((a) => ({
+      date,
+      time: String(a.time ?? "00:00"),
+      ...(typeof a.duration === "number" ? { duration: a.duration } : {}),
+      ...(a.status ? { status: a.status } : {}),
+    }));
 
     const slotDuration = await resolveSlotDuration(serviceId, searchParams.get("duration"));
 
-    const bookedRanges = booked.map((a) => {
-      const appt = a as Record<string, unknown>;
-      const start = timeToMin(String(appt.time ?? "00:00"));
-      const dur = typeof appt.duration === "number" ? appt.duration : 60;
-      return { start, end: start + dur };
+    const { slots } = availabilityForDate({
+      tenantId,
+      localDate: date,
+      durationMinutes: slotDuration,
+      stepMinutes: SLOT_INTERVAL,
+      profile: s as SalonAvailabilityProfile,
+      appointments,
+      now: new Date(),
     });
 
-    const startMin = timeToMin(hours.from);
-    const endMin = timeToMin(hours.to);
-    const slots: {
-      _id: string;
-      salonId: string;
-      startTime: string;
-      endTime: string;
-      isAvailable: boolean;
-      duration: number;
-    }[] = [];
+    // Ručni termin sme da nosi unapred izabranu uslugu — to je podatak profila,
+    // ne availability pojam, pa se vraća iz profila po vremenu početka.
+    const manualById = new Map(
+      manualTimesForDate(
+        s.manualSlots as Record<string, { time: string; duration: number; serviceId?: string }[]>,
+        date,
+      ).map((slot) => [slot.time, slot]),
+    );
 
-    for (let t = startMin; t + slotDuration <= endMin; t += SLOT_INTERVAL) {
-      const slotEnd = t + slotDuration;
-      const taken = bookedRanges.some((b) => t < b.end && slotEnd > b.start);
-      if (!taken) {
-        slots.push({
-          _id: `${salonId}_${date}_${minToTime(t)}`,
+    return NextResponse.json(
+      slots.map((slot) => {
+        const minutes = Math.round(
+          (slot.endsAt.getTime() - slot.startsAt.getTime()) / 60_000,
+        );
+        const out: Record<string, unknown> = {
+          _id: `${salonId}_${date}_${slot.localStart}`,
           salonId,
-          startTime: `${date}T${minToTime(t)}:00`,
-          endTime: `${date}T${minToTime(slotEnd)}:00`,
+          startTime: `${date}T${slot.localStart}:00`,
+          endTime: `${date}T${slot.localEnd}:00`,
           isAvailable: true,
-          duration: slotDuration,
-        });
-      }
-    }
-
-    return NextResponse.json(slots);
+          duration: minutes,
+        };
+        const manual = isManual ? manualById.get(slot.localStart) : undefined;
+        if (manual?.serviceId) out.serviceId = manual.serviceId;
+        return out;
+      }),
+    );
   } catch (err) {
     console.error("[GET /api/marketplace/slots]", err);
     return NextResponse.json({ error: "Greška pri učitavanju termina" }, { status: 500 });

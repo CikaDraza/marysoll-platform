@@ -25,7 +25,7 @@ import {
   isManualSlotTaken,
   timeToMin,
 } from "@/helpers/manualSlots";
-import { availableTimesForDate } from "@/helpers/parseWorkingHours";
+import { availableTimesForDate } from "@/lib/booking/availabilityAdapter";
 import type { IService, IAppointment } from "@/types";
 import type {
   BookingAuthDestination,
@@ -285,10 +285,12 @@ export function BookingProvider({
   const availableClassicTimes = useMemo(() => {
     if (isManualMode || workingHours == null) return workingHours == null ? null : [];
     return availableTimesForDate({
-      workingHours,
-      dateStr: selectedDate,
-      durationMin: totalDuration || 60,
-      booked: bookedAppointments ?? [],
+      tenantId: "booking-modal",
+      localDate: selectedDate,
+      durationMinutes: totalDuration || 60,
+      profile: { workingHours },
+      appointments: bookedAppointments ?? [],
+      now: new Date(),
     });
   }, [isManualMode, workingHours, selectedDate, totalDuration, bookedAppointments]);
 
