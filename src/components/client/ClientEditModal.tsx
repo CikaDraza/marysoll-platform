@@ -4,10 +4,8 @@ import React, { useMemo, useState } from "react";
 import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
 import { XMarkIcon, TrashIcon, ClockIcon } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
-import {
-  availableTimesForDate,
-  type WorkingHoursInput,
-} from "@/helpers/parseWorkingHours";
+import type { WorkingHoursInput } from "@/helpers/parseWorkingHours";
+import { availableTimesForDate } from "@/lib/booking/availabilityAdapter";
 import {
   manualTimesForDate,
   isManualSlotTaken,
@@ -180,10 +178,12 @@ export default function ClientEditModal({
       ),
   );
   const timeOptions = availableTimesForDate({
-    workingHours,
-    dateStr: selectedDate,
-    durationMin: totalDuration || 60,
-    booked: bookedWithoutOwn,
+    tenantId: "client-edit",
+    localDate: selectedDate,
+    durationMinutes: totalDuration || 60,
+    profile: { workingHours },
+    appointments: bookedWithoutOwn,
+    now: new Date(),
   });
   const classicTimeOptions =
     selectedTime && !timeOptions.includes(selectedTime)

@@ -1,8 +1,6 @@
 import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
-import {
-  availableTimesForDate,
-  type WorkingHoursInput,
-} from "@/helpers/parseWorkingHours";
+import type { WorkingHoursInput } from "@/helpers/parseWorkingHours";
+import { availableTimesForDate } from "@/lib/booking/availabilityAdapter";
 import {
   manualTimesForDate,
   isManualSlotTaken,
@@ -130,10 +128,12 @@ export default function ClientCreateModal({
   // Klasičan režim: ponuda vremena = radno vreme − zauzeto − prošlost,
   // uračunato trajanje izabrane usluge (UX odluka 2026-07-05).
   const timeOptions = availableTimesForDate({
-    workingHours,
-    dateStr: selectedDate,
-    durationMin: totalDuration || 60,
-    booked: bookedAppointments ?? [],
+    tenantId: "client-create",
+    localDate: selectedDate,
+    durationMinutes: totalDuration || 60,
+    profile: { workingHours },
+    appointments: bookedAppointments ?? [],
+    now: new Date(),
   });
   const classicTimeOptions =
     selectedTime && !timeOptions.includes(selectedTime)

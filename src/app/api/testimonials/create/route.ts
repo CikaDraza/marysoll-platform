@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { verifyToken } from "@/lib/auth/auth-server";
+import { tenantScopeFrom } from "@/lib/auth/tenantScope";
 import { TenantUser } from "@/models/TenantUser";
 import { createTestimonialNotification } from "@/lib/notificationService";
 import { Testimonial } from "@/models/Testimonial";
@@ -27,11 +28,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No tenant context" }, { status: 403 });
     }
 
+    // Tenant scope: provera ispod je bila samo po e-mailu, a isti e-mail sme da
+    // postoji u VIŠE salona (unique je po paru tenant+email). Klijent salona A
+    // je time mogao da ostavi utisak na termin salona B sa istim e-mailom.
+    const scope = tenantScopeFrom(user);
+    if (!scope.ok) {
+      return NextResponse.json({ error: scope.error }, { status: scope.status });
+    }
+
     const body = await req.json();
     const { appointmentId, rating, comment } = body;
 
-    // Proveri da li termin postoji i pripada korisniku
-    const appointment = await Appointment.findById(appointmentId);
+    // Termin mora da postoji U OVOM salonu i da pripada pozivaocu.
+    const appointment = await Appointment.findOne({
+      _id: appointmentId,
+      ...scope.filter,
+    });
     if (!appointment) {
       return NextResponse.json(
         { error: "Termin nije pronađen" },
