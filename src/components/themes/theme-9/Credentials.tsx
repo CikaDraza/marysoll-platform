@@ -41,7 +41,7 @@ export function Theme9Credentials({
     <section id="iskustva" className="bg-ee-surface">
       <div className="mx-auto max-w-[1240px] px-5 py-14 md:px-8 md:py-20 lg:px-14 lg:py-[110px]">
         <Reveal className="mb-8 flex flex-wrap items-end justify-between gap-5">
-          <div className="flex max-w-[42ch] flex-col gap-3">
+          <div className="flex max-w-[42ch] flex-col gap-4">
             {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
             {headline && (
               <h2 className="font-newsreader text-ee-accent text-[clamp(30px,3.7vw,52px)] leading-[1.05] tracking-[-0.024em]">

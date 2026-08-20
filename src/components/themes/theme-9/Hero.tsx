@@ -8,7 +8,7 @@
 import Image from "next/image";
 import { AnchorLink } from "../shared/AnchorLink";
 import { BookingCta } from "./BookingCta";
-import { ArrowCircle, Eyebrow } from "./primitives";
+import { ArrowCircle } from "./primitives";
 import { Reveal } from "./Reveal";
 
 export interface Theme9HeroProps {
@@ -37,11 +37,11 @@ export function Theme9Hero({
   return (
     <section id="hero" className="bg-ee-canvas">
       <div className="mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(min(100%,380px),1fr))] items-center gap-8 px-5 py-14 md:px-8 md:py-20 lg:gap-[72px] lg:px-14 lg:py-[110px]">
-        <Reveal className="flex flex-col gap-6">
+        <Reveal className="flex flex-col gap-[26px]">
           {eyebrow && (
-            <span className="bg-ee-surface border-ee-border inline-flex w-fit items-center gap-2 rounded-full border px-3.5 py-1.5">
-              <span className="bg-ee-sage h-1.5 w-1.5 rounded-full" aria-hidden />
-              <Eyebrow>{eyebrow}</Eyebrow>
+            <span className="bg-ee-surface border-ee-border text-ee-text-muted font-instrument-sans inline-flex w-fit items-center gap-[9px] rounded-full border py-[7px] pr-[15px] pl-3 text-[11.5px] tracking-[0.13em] uppercase">
+              <span className="bg-ee-accent h-[7px] w-[7px] rounded-full" aria-hidden />
+              {eyebrow}
             </span>
           )}
 

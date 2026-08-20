@@ -32,7 +32,7 @@ export function Theme9ProfessionalPath({
     <section id="za-salone" className="bg-ee-accent text-ee-canvas">
       <div className="mx-auto max-w-[1240px] px-5 py-14 md:px-8 md:py-20 lg:px-14 lg:py-[110px]">
         <Reveal className="mb-8 grid grid-cols-[repeat(auto-fit,minmax(min(100%,320px),1fr))] items-end gap-6">
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             {eyebrow && <Eyebrow tone="meadow">{eyebrow}</Eyebrow>}
             {headline && (
               <h2 className="font-newsreader text-[clamp(30px,3.7vw,52px)] leading-[1.05] tracking-[-0.024em]">

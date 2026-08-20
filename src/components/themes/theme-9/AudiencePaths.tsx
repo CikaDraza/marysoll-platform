@@ -38,7 +38,7 @@ export function Theme9AudiencePaths({
       <div className="mx-auto max-w-[1240px] px-5 py-14 md:px-8 md:py-20 lg:px-14 lg:py-[110px]">
         {(eyebrow || headline || lead) && (
           <Reveal className="mb-9 flex flex-wrap items-baseline justify-between gap-4">
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-4">
               {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
               {headline && (
                 <h2 className="font-newsreader text-ee-accent text-[clamp(26px,3vw,40px)] leading-[1.06] tracking-[-0.02em]">
