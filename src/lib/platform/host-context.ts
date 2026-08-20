@@ -83,6 +83,26 @@ export function isPathBasedHost(hostname: string): boolean {
   );
 }
 
+/**
+ * Ključ OKRUŽENJA kome host pripada — dva hosta sa istim ključem servira ISTI
+ * deploy (ista baza, iste sesije), pa im root-relativna putanja znači isto.
+ *
+ * Cela produkcija je JEDAN ključ (apex, `admin.`, `{slug}.`, custom domen
+ * salona), jer je iza svih njih isti deploy. Staging/qa i SVAKI preview deploy
+ * su zasebni ključevi — tamo ista putanja vodi u drugu sesiju.
+ *
+ * Koristi ga `lib/webPush.ts`: push pretplata je vezana za origin na kome je
+ * service worker registrovan, pa se pretplate iz tuđeg okruženja preskaču.
+ */
+export function environmentKey(hostname: string): string {
+  const host = bareHost(hostname);
+  if (!host) return "unknown";
+  if (isLocalHost(host)) return "local";
+  // Staging/qa i preview: host JESTE okruženje (staging ≠ qa ≠ svaki preview).
+  if (isStagingPathHost(host) || host.endsWith(".vercel.app")) return host;
+  return "production";
+}
+
 /** Trenutni host u browseru; "" tokom SSR-a. */
 export function currentHost(): string {
   return typeof window === "undefined" ? "" : window.location.hostname;
@@ -242,6 +262,20 @@ export function platformOrigin(req?: RequestLike): string {
 /** Apsolutni platformski URL: `platformUrl("/dashboard?tab=pretplata")`. */
 export function platformUrl(path = "", req?: RequestLike): string {
   return joinUrl(platformOrigin(req), path);
+}
+
+/** Ključ okruženja iz apsolutnog origin-a; "" ako origin nije validan URL. */
+export function environmentKeyOfOrigin(origin: string): string {
+  const host = hostOfOrigin(origin);
+  return host ? environmentKey(host) : "";
+}
+
+/**
+ * Ključ okruženja u kome se OVAJ kod izvršava — za poređenje sa okruženjem u
+ * kome je nastao neki zapis (push pretplata sa preview deploya i sl.).
+ */
+export function currentEnvironmentKey(req?: RequestLike): string {
+  return environmentKeyOfOrigin(platformOrigin(req));
 }
 
 /**

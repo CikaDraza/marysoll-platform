@@ -17,6 +17,8 @@ import { Schema, Document, Types, model, models } from "mongoose";
 export interface IAuthUserPushSubscription {
   endpoint: string;
   keys: { p256dh: string; auth: string };
+  /** Origin na kome je SW registrovan — vidi ITenantUserPushSubscription.origin. */
+  origin?: string;
   createdAt: Date;
 }
 
@@ -80,6 +82,7 @@ const authUserSchema = new Schema<IAuthUser>(
           p256dh: { type: String, required: true },
           auth: { type: String, required: true },
         },
+        origin: { type: String, default: null },
         createdAt: { type: Date, default: Date.now },
       },
     ],

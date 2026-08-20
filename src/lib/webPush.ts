@@ -5,6 +5,10 @@ import { getVapidKeys } from "@/lib/vapid";
 import { TenantUser } from "@/models/TenantUser";
 import { AuthUser } from "@/models/AuthUser";
 import { Types } from "mongoose";
+import {
+  currentEnvironmentKey,
+  environmentKeyOfOrigin,
+} from "@/lib/platform/host-context";
 import type { UserNotificationSettings } from "@/types";
 
 export interface PushPayload {
@@ -18,6 +22,7 @@ export interface PushPayload {
 type StoredSubscription = {
   endpoint: string;
   keys: { p256dh: string; auth: string };
+  origin?: string | null;
 };
 
 let vapidInitialized = false;
@@ -34,14 +39,37 @@ function initVapid() {
 }
 
 /**
+ * Pretplate koje pripadaju OVOM okruženju.
+ *
+ * Push `url` je root-relativan (`/dashboard?tab=termini`) i service worker ga
+ * razrešava na originu na kome je REGISTROVAN — ne na onom sa koga je push
+ * poslat. Preview deployi dele bazu sa produkcijom, pa je pretplata napravljena
+ * na `…vercel.app` u istom dokumentu: produkcijski push bi tamo otvorio
+ * `…vercel.app/dashboard`, gde nema sesije → redirect na goli `/login`.
+ *
+ * Pretplate BEZ `origin`-a starije su od tog polja i namerno prolaze — inače bi
+ * svi postojeći korisnici ostali bez push-a do sledećeg re-subscribe-a.
+ * `check-subscription` ih popunjava pri sledećoj poseti.
+ */
+function forThisEnvironment(
+  subscriptions: StoredSubscription[],
+): StoredSubscription[] {
+  const env = currentEnvironmentKey();
+  return subscriptions.filter(
+    (sub) => !sub.origin || environmentKeyOfOrigin(sub.origin) === env,
+  );
+}
+
+/**
  * Core sender — šalje payload na sve prosleđene pretplate i vraća mrtve endpoint-e
  * (HTTP 410/404) koje pozivalac treba da ukloni.
  */
 async function sendToSubscriptions(
-  subscriptions: StoredSubscription[],
+  allSubscriptions: StoredSubscription[],
   payload: PushPayload,
 ): Promise<string[]> {
   initVapid();
+  const subscriptions = forThisEnvironment(allSubscriptions);
   if (!vapidInitialized || !subscriptions.length) return [];
 
   const message = JSON.stringify(payload);
@@ -50,7 +78,10 @@ async function sendToSubscriptions(
   await Promise.allSettled(
     subscriptions.map(async (sub) => {
       try {
-        await webpush.sendNotification(sub, message);
+        await webpush.sendNotification(
+          { endpoint: sub.endpoint, keys: sub.keys },
+          message,
+        );
       } catch (err: unknown) {
         const status = (err as { statusCode?: number }).statusCode;
         if (status === 410 || status === 404) {
