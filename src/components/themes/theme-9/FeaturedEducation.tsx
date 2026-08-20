@@ -40,16 +40,17 @@ export function Theme9FeaturedEducation({
         <Reveal>
           <div className="bg-ee-accent text-ee-canvas grid grid-cols-[repeat(auto-fit,minmax(min(100%,320px),1fr))] items-start gap-8 rounded-[28px] p-8 md:p-12 lg:p-[60px]">
             <div className="flex flex-col gap-5">
-              <div className="flex flex-wrap items-center gap-3">
-                {eyebrow && <Eyebrow tone="meadow">{eyebrow}</Eyebrow>}
-                {status && <Chip variant="tagOutlined">{status}</Chip>}
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  {eyebrow && <Eyebrow tone="meadow">{eyebrow}</Eyebrow>}
+                  {status && <Chip variant="tagOutlined">{status}</Chip>}
+                </div>
+                {headline && (
+                  <h2 className="font-newsreader max-w-[24ch] text-[clamp(30px,3.7vw,50px)] leading-[1.05] tracking-[-0.024em]">
+                    {headline}
+                  </h2>
+                )}
               </div>
-
-              {headline && (
-                <h2 className="font-newsreader max-w-[24ch] text-[clamp(30px,3.7vw,50px)] leading-[1.05] tracking-[-0.024em]">
-                  {headline}
-                </h2>
-              )}
 
               {lead && (
                 <p className="font-instrument-sans text-ee-canvas/80 max-w-[52ch] text-[16px] leading-[1.72]">

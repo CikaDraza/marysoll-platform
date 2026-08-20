@@ -16,6 +16,7 @@
  * Pokretanje (Node 24+, čita .env.local):
  *   npm run seed:theme9 -- --tenant=kiki-kiss-beauty --dry-run
  *   npm run seed:theme9 -- --tenant=kiki-kiss-beauty --overwrite-shared
+ *   npm run seed:theme9 -- --tenant=marina-stanisavljevic-skincare-edukacija --hero-eyebrow-only
  */
 import mongoose from "mongoose";
 import {
@@ -34,7 +35,13 @@ const DB_NAME = process.env.DB_NAME || "marysoll_db";
 const args = process.argv.slice(2);
 const DRY_RUN = args.includes("--dry-run");
 const OVERWRITE_SHARED = args.includes("--overwrite-shared");
+const HERO_EYEBROW_ONLY = args.includes("--hero-eyebrow-only");
 const tenantArg = args.find((a) => a.startsWith("--tenant="))?.split("=")[1];
+
+if (HERO_EYEBROW_ONLY && OVERWRITE_SHARED) {
+  console.error("❌ --hero-eyebrow-only i --overwrite-shared ne mogu zajedno.");
+  process.exit(1);
+}
 
 if (!MONGODB_URI) {
   console.error("❌ MONGODB_URI nije postavljen (koristi: --env-file=.env.local)");
@@ -127,12 +134,29 @@ async function main() {
   }
 
   // ── Šta se upisuje ────────────────────────────────────────────────────────
-  const set: Record<string, unknown> = { themePages, themeBookingPreview: bookingPreview };
-  for (const [name, section] of Object.entries(theme9LandingSections)) {
-    set[`landingStructure.landing.${name}`] = section;
+  const set: Record<string, unknown> = HERO_EYEBROW_ONLY
+    ? {
+        "landingStructure.landing.hero.eyebrow":
+          sharedLandingSections.hero.eyebrow,
+      }
+    : { themePages, themeBookingPreview: bookingPreview };
+
+  if (!HERO_EYEBROW_ONLY) {
+    for (const [name, section] of Object.entries(theme9LandingSections)) {
+      set[`landingStructure.landing.${name}`] = section;
+    }
   }
 
-  if (OVERWRITE_SHARED) {
+  if (HERO_EYEBROW_ONLY) {
+    const currentHero = (profile.landingStructure as {
+      landing?: { hero?: { eyebrow?: string } };
+    } | undefined)?.landing?.hero;
+    console.log("  ✓ --hero-eyebrow-only: menja se samo Hero eyebrow:");
+    console.log(`     pre: ${JSON.stringify(currentHero?.eyebrow ?? "")}`);
+    console.log(
+      `     posle: ${JSON.stringify(sharedLandingSections.hero.eyebrow)}`,
+    );
+  } else if (OVERWRITE_SHARED) {
     const ls = (profile.landingStructure ?? {}) as {
       landing?: Record<string, unknown>;
     };
