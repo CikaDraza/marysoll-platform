@@ -34,6 +34,7 @@ import { normalizePhone } from "@/helpers/normalizePhone";
 import { EMPTY_WORKING_HOURS } from "@/types/constants";
 import { pruneAndValidateManualSlots } from "@/helpers/manualSlots";
 import { normalizeVacations } from "@/helpers/vacations";
+import { mapLandingStructureForAdmin } from "@/lib/salon-profile/content-preservation";
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
@@ -164,164 +165,14 @@ function mapWorkingHours(p: SalonProfile): WorkingHoursMap {
   return wh;
 }
 
-// Landing deo CMS strukture sa default-ima po sekcijama.
-function mapLandingSections(
-  rawLanding: NonNullable<LandingStructure["landing"]>,
-): NonNullable<LandingStructure["landing"]> {
-  return {
-      hero: {
-        enabled: rawLanding.hero?.enabled ?? true,
-        headline: rawLanding.hero?.headline ?? "",
-        subheadline: rawLanding.hero?.subheadline ?? "",
-        whereWhatForWhom: rawLanding.hero?.whereWhatForWhom ?? "",
-        image: rawLanding.hero?.image,
-        images: rawLanding.hero?.images,
-        contact: {
-          location: rawLanding.hero?.contact?.location ?? "",
-          phone: rawLanding.hero?.contact?.phone ?? "",
-        },
-        socialLinks: {
-          instagram: rawLanding.hero?.socialLinks?.instagram ?? "",
-          facebook: rawLanding.hero?.socialLinks?.facebook ?? "",
-          tiktok: rawLanding.hero?.socialLinks?.tiktok ?? "",
-          whatsapp: rawLanding.hero?.socialLinks?.whatsapp ?? "",
-          telegram: rawLanding.hero?.socialLinks?.telegram ?? "",
-        },
-        ctas: {
-          primary: {
-            text: rawLanding.hero?.ctas?.primary?.text ?? "Zakaži termin",
-            href: rawLanding.hero?.ctas?.primary?.href ?? "/termini",
-          },
-          secondary: rawLanding.hero?.ctas?.secondary
-            ? { text: rawLanding.hero.ctas.secondary.text ?? "", href: rawLanding.hero.ctas.secondary.href ?? "" }
-            : undefined,
-        },
-        // Theme-8 (Y2K) hero text overrides — passed through untouched.
-        theme8: rawLanding.hero?.theme8,
-      },
-      about: {
-        enabled: rawLanding.about?.enabled ?? true,
-        headline: rawLanding.about?.headline ?? "",
-        paragraphs: rawLanding.about?.paragraphs ?? [],
-        links: rawLanding.about?.links ?? [],
-        image: rawLanding.about?.image,
-        images: rawLanding.about?.images,
-        yearsOfExperience: rawLanding.about?.yearsOfExperience,
-        openingYear: rawLanding.about?.openingYear,
-      },
-      artists: {
-        enabled: rawLanding.artists?.enabled ?? false,
-        headline: rawLanding.artists?.headline ?? "",
-        members: rawLanding.artists?.members ?? [],
-      },
-      servicesPreview: {
-        enabled: rawLanding.servicesPreview?.enabled ?? true,
-        headline: rawLanding.servicesPreview?.headline ?? "",
-        subheadline: rawLanding.servicesPreview?.subheadline ?? "",
-        showIcons: rawLanding.servicesPreview?.showIcons ?? true,
-        image: rawLanding.servicesPreview?.image,
-      },
-      appointmentSection: {
-        enabled: rawLanding.appointmentSection?.enabled ?? true,
-        headline: rawLanding.appointmentSection?.headline ?? "",
-        subheadline: rawLanding.appointmentSection?.subheadline ?? "",
-        instructions: rawLanding.appointmentSection?.instructions ?? [],
-      },
-      stats: rawLanding.stats ?? [],
-      testimonials: {
-        enabled: rawLanding.testimonials?.enabled ?? true,
-        headline: rawLanding.testimonials?.headline ?? "",
-      },
-      gallery: {
-        enabled: rawLanding.gallery?.enabled ?? true,
-        headline: rawLanding.gallery?.headline ?? "",
-        subheadline: rawLanding.gallery?.subheadline ?? "",
-        instagram: {
-          username: rawLanding.gallery?.instagram?.username ?? "",
-          link: rawLanding.gallery?.instagram?.link ?? "",
-          ctaText: rawLanding.gallery?.instagram?.ctaText ?? "",
-        },
-        treatments: rawLanding.gallery?.treatments ?? [],
-        images: rawLanding.gallery?.images ?? [],
-        variant: rawLanding.gallery?.variant,
-        galleryVariant: rawLanding.gallery?.galleryVariant,
-      },
-      faq: {
-        enabled: rawLanding.faq?.enabled ?? true,
-        headline: rawLanding.faq?.headline ?? "",
-        subheadline: rawLanding.faq?.subheadline ?? "",
-        support: {
-          text: rawLanding.faq?.support?.text ?? "",
-          email: rawLanding.faq?.support?.email ?? "",
-        },
-        items: rawLanding.faq?.items ?? [],
-      },
-      blog: {
-        enabled: rawLanding.blog?.enabled ?? false,
-        headline: rawLanding.blog?.headline ?? "",
-        paragraph: rawLanding.blog?.paragraph ?? "",
-      },
-      perks: {
-        enabled: rawLanding.perks?.enabled ?? false,
-        pill: rawLanding.perks?.pill ?? "",
-        eyebrow: rawLanding.perks?.eyebrow ?? "",
-        headline: rawLanding.perks?.headline ?? "",
-        paragraphs: rawLanding.perks?.paragraphs ?? [],
-        images: rawLanding.perks?.images ?? [],
-        ctas: {
-          primary: {
-            text: rawLanding.perks?.ctas?.primary?.text ?? "",
-            href: rawLanding.perks?.ctas?.primary?.href ?? "",
-          },
-          secondary: {
-            text: rawLanding.perks?.ctas?.secondary?.text ?? "",
-            href: rawLanding.perks?.ctas?.secondary?.href ?? "",
-          },
-        },
-      },
-  };
-}
-
-// Pages deo CMS strukture (usluge/termini stranice).
-function mapPages(
-  rawPages: NonNullable<LandingStructure["pages"]>,
-): NonNullable<LandingStructure["pages"]> {
-  return {
-    servicesPage: {
-        headline: rawPages.servicesPage?.headline ?? "",
-        subheadline: rawPages.servicesPage?.subheadline ?? "",
-        paragraph: rawPages.servicesPage?.paragraph ?? "",
-      },
-      appointmentsPage: {
-        headline: rawPages.appointmentsPage?.headline ?? "",
-        subheadline: rawPages.appointmentsPage?.subheadline ?? "",
-        paragraph: rawPages.appointmentsPage?.paragraph ?? "",
-        ctas: {
-          primary: {
-            text: rawPages.appointmentsPage?.ctas?.primary?.text ?? "",
-            href: rawPages.appointmentsPage?.ctas?.primary?.href ?? "",
-          },
-          secondary: {
-            text: rawPages.appointmentsPage?.ctas?.secondary?.text ?? "",
-            href: rawPages.appointmentsPage?.ctas?.secondary?.href ?? "",
-          },
-      },
-    },
-  };
-}
-
 // Mapira SalonProfile iz DB u formu — normalizacija je razbijena po sekcijama
 // (radno vreme / landing / pages) da nijedna funkcija ne bude grana-monolit.
 function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
   const rawProfile = p as unknown as Record<string, unknown>;
   const landingTheme = (rawProfile.landingTheme as LandingTheme) || "theme-1";
 
-  const rawLS =
-    (rawProfile.landingStructure as LandingStructure | undefined) ?? {};
-  const landingStructure: LandingStructure = {
-    landing: mapLandingSections((rawLS as LandingStructure).landing ?? {}),
-    pages: mapPages((rawLS as LandingStructure).pages ?? {}),
-  };
+  const rawLS = rawProfile.landingStructure as LandingStructure | undefined;
+  const landingStructure = mapLandingStructureForAdmin(rawLS);
 
   return {
     name: p.name ?? "",

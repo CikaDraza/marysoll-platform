@@ -12,6 +12,8 @@ import { DecodedToken } from "@/types/auth/types";
 import { revalidateMarketplaceCaches } from "@/lib/marketplace/revalidateMarketplace";
 import { pruneAndValidateManualSlots } from "@/helpers/manualSlots";
 import { normalizeVacations } from "@/helpers/vacations";
+import type { LandingStructure } from "@/types";
+import { mergeLandingStructureUpdate } from "@/lib/salon-profile/content-preservation";
 
 export async function PUT(req: NextRequest) {
   try {
@@ -103,7 +105,16 @@ export async function PUT(req: NextRequest) {
       profile.landingTheme = landingTheme;
     }
     const landingStructure = parseJSON("landingStructure");
-    if (landingStructure) profile.landingStructure = landingStructure;
+    if (landingStructure) {
+      const current = profile.toObject().landingStructure as
+        | LandingStructure
+        | undefined;
+      profile.landingStructure = mergeLandingStructureUpdate(
+        current,
+        landingStructure as LandingStructure,
+      );
+      profile.markModified("landingStructure");
+    }
 
     // Logo
     const logoFile = form.get("logo");
