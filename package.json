@@ -16,7 +16,8 @@
     "fixtures:theme": "node --env-file=.env.local scripts/make-theme-fixtures.mjs",
     "backfill:identity": "echo 'Deprecated — backfill-user-identity script removed'",
     "test:watch": "vitest",
-    "seed:theme9": "node --env-file=.env.local scripts/seeds/seed-expert-editorial.mts"
+    "seed:theme9": "node --env-file=.env.local scripts/seeds/seed-expert-editorial.mts",
+    "push:subscriptions": "node --env-file=.env.local scripts/prune-push-subscriptions.mjs"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.19",

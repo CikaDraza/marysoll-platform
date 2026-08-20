@@ -329,6 +329,8 @@ export interface IUser extends Document {
   pushSubscriptions: Array<{
     endpoint: string;
     keys: { p256dh: string; auth: string };
+    /** Origin na kome je SW registrovan — vidi ITenantUserPushSubscription. */
+    origin?: string | null;
     createdAt: Date;
   }>;
 }
