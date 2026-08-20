@@ -42,12 +42,14 @@ export function Theme9FinalCta({
         <Reveal>
           <div className="bg-ee-terracotta grid grid-cols-[repeat(auto-fit,minmax(min(100%,320px),1fr))] items-center gap-7 rounded-[28px] p-9 md:p-14 lg:gap-[60px] lg:p-[76px]">
             <div className="flex flex-col gap-[22px]">
-              {eyebrow && <Eyebrow tone="coffee">{eyebrow}</Eyebrow>}
-              {headline && (
-                <h2 className="font-newsreader text-ee-text max-w-[24ch] text-[clamp(30px,3.9vw,54px)] leading-[1.04] tracking-[-0.024em]">
-                  {headline}
-                </h2>
-              )}
+              <div className="flex flex-col gap-4">
+                {eyebrow && <Eyebrow tone="coffee">{eyebrow}</Eyebrow>}
+                {headline && (
+                  <h2 className="font-newsreader text-ee-text max-w-[24ch] text-[clamp(30px,3.9vw,54px)] leading-[1.04] tracking-[-0.024em]">
+                    {headline}
+                  </h2>
+                )}
+              </div>
               {lead && (
                 <p className="font-instrument-sans text-ee-text/78 max-w-[44ch] text-[16.5px] leading-[1.7]">
                   {lead}

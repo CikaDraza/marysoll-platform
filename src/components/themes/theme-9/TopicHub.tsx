@@ -46,7 +46,7 @@ export function Theme9TopicHub({
         <Reveal className="mb-9 flex flex-col items-start justify-between gap-5 lg:flex-row lg:items-end">
           {/* `min-w-0` + `basis` — naslov se prelama u nov red umesto da
               stisne tabove; tabovi ispod imaju `shrink-0`. */}
-          <div className="flex min-w-0 flex-1 flex-col gap-3">
+          <div className="flex min-w-0 flex-1 flex-col gap-4">
             {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
             {headline && (
               <h2 className="font-newsreader text-ee-accent max-w-[46ch] text-[clamp(30px,3.7vw,52px)] leading-[1.05] tracking-[-0.024em]">

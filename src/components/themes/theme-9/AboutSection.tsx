@@ -39,11 +39,12 @@ export function Theme9About({
     <section id="o-meni" className="bg-ee-surface">
       <div className="mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(min(100%,340px),1fr))] items-center gap-9 px-5 py-14 md:px-8 md:py-20 lg:gap-[84px] lg:px-14 lg:py-[110px]">
         <Reveal className="flex flex-col gap-[30px]">
-          {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-
-          <h2 className="font-newsreader text-ee-accent text-[clamp(30px,3.7vw,52px)] leading-[1.05] tracking-[-0.024em]">
-            {headline}
-          </h2>
+          <div className="flex flex-col gap-4">
+            {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
+            <h2 className="font-newsreader text-ee-accent text-[clamp(30px,3.7vw,52px)] leading-[1.05] tracking-[-0.024em]">
+              {headline}
+            </h2>
+          </div>
 
           {paragraphs.map((p, i) => (
             <p

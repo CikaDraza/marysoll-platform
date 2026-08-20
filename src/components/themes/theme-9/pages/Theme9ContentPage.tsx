@@ -44,18 +44,20 @@ export function Theme9ContentPage({
               }`}
             >
               <div className="flex flex-col gap-5">
-                {hero.eyebrow && (
-                  <Eyebrow tone={darkHero ? "meadow" : "coffee"}>
-                    {hero.eyebrow}
-                  </Eyebrow>
-                )}
-                {hero.headline && (
-                  <h1
-                    className={`font-newsreader text-[clamp(34px,4.6vw,64px)] leading-[1.02] tracking-[-0.026em] ${darkHero ? "" : "text-ee-accent"}`}
-                  >
-                    {hero.headline}
-                  </h1>
-                )}
+                <div className="flex flex-col gap-4">
+                  {hero.eyebrow && (
+                    <Eyebrow tone={darkHero ? "meadow" : "coffee"}>
+                      {hero.eyebrow}
+                    </Eyebrow>
+                  )}
+                  {hero.headline && (
+                    <h1
+                      className={`font-newsreader text-[clamp(34px,4.6vw,64px)] leading-[1.02] tracking-[-0.026em] ${darkHero ? "" : "text-ee-accent"}`}
+                    >
+                      {hero.headline}
+                    </h1>
+                  )}
+                </div>
                 {hero.lead && (
                   <p
                     className={`font-instrument-sans max-w-[52ch] text-[16.5px] leading-[1.72] ${darkHero ? "text-ee-canvas/80" : "text-ee-text-muted"}`}
@@ -265,12 +267,14 @@ function SectionHeading({
   }
   return (
     <Reveal className="flex max-w-[46ch] flex-col gap-3">
-      {heading.eyebrow && <Eyebrow>{heading.eyebrow}</Eyebrow>}
-      {heading.headline && (
-        <h2 className="font-newsreader text-ee-accent text-[clamp(30px,3.7vw,52px)] leading-[1.05] tracking-[-0.024em]">
-          {heading.headline}
-        </h2>
-      )}
+      <div className="flex flex-col gap-4">
+        {heading.eyebrow && <Eyebrow>{heading.eyebrow}</Eyebrow>}
+        {heading.headline && (
+          <h2 className="font-newsreader text-ee-accent text-[clamp(30px,3.7vw,52px)] leading-[1.05] tracking-[-0.024em]">
+            {heading.headline}
+          </h2>
+        )}
+      </div>
       {heading.lead && (
         <p className="font-instrument-sans text-ee-text-muted text-[16px] leading-[1.72]">
           {heading.lead}
