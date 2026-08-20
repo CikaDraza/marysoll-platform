@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { resolveTenant, verifyToken } from "@/lib/auth/auth-server";
+import { actorScopeFrom, logSuperAdminAccess } from "@/lib/auth/tenantScope";
 import { createAppointmentNotification } from "@/lib/notificationService";
 import { loyaltyOnAppointmentStatusChange } from "@/lib/loyalty/hooks";
 import { IAppointment } from "@/types";
@@ -52,8 +53,22 @@ export async function PUT(
       return NextResponse.json({ error: "Invalid token" }, { status: 403 });
     }
 
+    // Izolacija: token kaže SAMO ko je pozivalac, ne i čiji je termin. Ranije je
+    // `findById(id)` značio da svaki ulogovan korisnik može da izmeni bilo koji
+    // termin na platformi ako mu zna `_id` — i tuđeg salona i tuđeg klijenta.
+    const scope = actorScopeFrom(decoded);
+    if (!scope.ok) {
+      return NextResponse.json({ error: scope.error }, { status: scope.status });
+    }
+    if (scope.isSuperAdmin) {
+      logSuperAdminAccess(
+        "SUPERADMIN_UNSCOPED_APPOINTMENT_UPDATE",
+        decoded,
+        req.url,
+      );
+    }
+
     const tenant = await resolveTenant(req);
-    const tenantId = tenant?._id ?? null;
 
     if (tenant) {
       const isActive =
@@ -86,7 +101,7 @@ export async function PUT(
     delete raw.completionPromptSentAt;
     delete raw.loyaltyProcessed;
 
-    const appointment = await Appointment.findById(id);
+    const appointment = await Appointment.findOne({ _id: id, ...scope.filter });
 
     if (!appointment) {
       return NextResponse.json(
@@ -95,8 +110,9 @@ export async function PUT(
       );
     }
 
-    // Use isAdmin from JWT — no extra DB call needed
-    const isAdmin = decoded.isAdmin ?? false;
+    // Privilegije se čitaju iz SCOPE-a, ne iz golog tokena: `decoded.isAdmin`
+    // znači „admin je negde", a scope znači „admin je nad OVIM terminom".
+    const isAdmin = scope.actor !== "client";
 
     // Completion i no-show su isključivo admin akcije (od njih zavisi
     // dodela loyalty nagrada — klijent ne sme sam da "završi" termin).
@@ -194,16 +210,20 @@ export async function PUT(
       });
     }
 
-    const updated = await Appointment.findByIdAndUpdate(id, updatedData, {
-      new: true,
-    });
+    const updated = await Appointment.findOneAndUpdate(
+      { _id: id, ...scope.filter },
+      updatedData,
+      { new: true },
+    );
 
     // Notifikacija za promenu statusa
     if (updatedData.status && updatedData.status !== appointment.status) {
+      // Tenant se uzima IZ TERMINA: host-resolved tenant je null na admin
+      // hostu (nema `x-tenant-slug`), pa je notifikacija nastajala bez tenanta.
       await handleStatusChangeNotification(
         appointment,
         updatedData.status,
-        tenantId!,
+        appointment.tenantId,
       );
 
       // Growth Studio: dodela/povlačenje nagrada + voucher lifecycle
@@ -257,7 +277,7 @@ async function handleStatusChangeNotification(
     await createAppointmentNotification(
       {
         _id: appointment._id?.toString() || "",
-        tenantId: tenantId!,
+        tenantId,
         clientProfileId: appointment.clientProfileId?.toString() || "",
         clientName: clientName,
         serviceName: appointment.serviceName,
