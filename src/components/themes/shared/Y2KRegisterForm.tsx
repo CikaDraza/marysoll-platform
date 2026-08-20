@@ -7,6 +7,7 @@ import { useClientRouting } from "@/hooks/useClientRouting";
 import { useTenant } from "@/contexts/TenantContext";
 import { genderPast } from "@/lib/clientWording";
 import { Y2KAuthShell } from "./Y2KAuthShell";
+import { PasswordVisibilityButton } from "@/components/auth/PasswordVisibilityButton";
 
 type Step = "form" | "check_email";
 
@@ -27,6 +28,7 @@ export function Y2KRegisterForm() {
   const [step, setStep] = useState<Step>("form");
   const [loading, setLoading] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -165,18 +167,30 @@ export function Y2KRegisterForm() {
             placeholder="ana@email.com"
           />
         </label>
-        <label className={labelCls}>
+        <div>
+          <label className={labelCls} htmlFor="y2k-register-password">
           Lozinka *
+          </label>
+          <div className="relative">
           <input
-            type="password"
+            id="y2k-register-password"
+            type={showPassword ? "text" : "password"}
+            name="password"
+            autoComplete="new-password"
             required
             minLength={8}
             value={form.password}
             onChange={(e) => set("password", e.target.value)}
-            className={inputCls}
+            className={`${inputCls} pr-12`}
             placeholder="Min. 8 karaktera"
           />
-        </label>
+            <PasswordVisibilityButton
+              visible={showPassword}
+              onToggle={() => setShowPassword((value) => !value)}
+              className="text-[#9a7d8b] hover:text-y2k-ink"
+            />
+          </div>
+        </div>
         <label className={labelCls}>
           Telefon
           <input

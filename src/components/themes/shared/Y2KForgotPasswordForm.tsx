@@ -13,7 +13,7 @@ type Step = "form" | "sent";
  * endpoint as ClientForgotPasswordPage (app/tenant/forgot-password), restyled Y2K.
  */
 export function Y2KForgotPasswordForm() {
-  const { base } = useClientRouting();
+  const { base, tenantSlug } = useClientRouting();
   const [step, setStep] = useState<Step>("form");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,7 +25,10 @@ export function Y2KForgotPasswordForm() {
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          tenantSlug,
+        }),
       });
       if (res.ok) setStep("sent");
       else toast.error("Greška na serveru. Pokušajte ponovo.");
@@ -75,6 +78,10 @@ export function Y2KForgotPasswordForm() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
         <input
           type="email"
+          name="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}

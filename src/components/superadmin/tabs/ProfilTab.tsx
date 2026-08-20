@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useSuperAdminPassword } from "@/hooks/useSuperAdminPassword";
 import { useSuperAdminPlatformProfile } from "@/hooks/useSuperAdminPlatformProfile";
+import { PasswordVisibilityButton } from "@/components/auth/PasswordVisibilityButton";
 import {
   superAdminCardClass as card,
   superAdminInputClass as inp,
@@ -24,6 +25,7 @@ export function ProfilTab() {
     confirmPassword: "",
   });
   const [pwError, setPwError] = useState("");
+  const [showPasswords, setShowPasswords] = useState(false);
 
   async function handleSaveAccount(e: React.FormEvent) {
     e.preventDefault();
@@ -228,42 +230,60 @@ export function ProfilTab() {
           <form onSubmit={handlePasswordChange} className="space-y-4">
             <div>
               <label className={lbl}>Trenutna lozinka</label>
-              <input
-                type="password"
-                className={inp}
-                value={pwForm.currentPassword}
-                onChange={(e) =>
-                  setPwForm((p) => ({ ...p, currentPassword: e.target.value }))
-                }
-                autoComplete="current-password"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords ? "text" : "password"}
+                  className={`${inp} pr-12`}
+                  value={pwForm.currentPassword}
+                  onChange={(e) =>
+                    setPwForm((p) => ({ ...p, currentPassword: e.target.value }))
+                  }
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                />
+                <PasswordVisibilityButton
+                  visible={showPasswords}
+                  onToggle={() => setShowPasswords((value) => !value)}
+                />
+              </div>
             </div>
             <div>
               <label className={lbl}>Nova lozinka</label>
-              <input
-                type="password"
-                className={inp}
-                value={pwForm.newPassword}
-                onChange={(e) =>
-                  setPwForm((p) => ({ ...p, newPassword: e.target.value }))
-                }
-                autoComplete="new-password"
-                placeholder="Najmanje 8 karaktera"
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords ? "text" : "password"}
+                  className={`${inp} pr-12`}
+                  value={pwForm.newPassword}
+                  onChange={(e) =>
+                    setPwForm((p) => ({ ...p, newPassword: e.target.value }))
+                  }
+                  autoComplete="new-password"
+                  placeholder="Najmanje 8 karaktera"
+                />
+                <PasswordVisibilityButton
+                  visible={showPasswords}
+                  onToggle={() => setShowPasswords((value) => !value)}
+                />
+              </div>
             </div>
             <div>
               <label className={lbl}>Potvrdite novu lozinku</label>
-              <input
-                type="password"
-                className={inp}
-                value={pwForm.confirmPassword}
-                onChange={(e) =>
-                  setPwForm((p) => ({ ...p, confirmPassword: e.target.value }))
-                }
-                autoComplete="new-password"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords ? "text" : "password"}
+                  className={`${inp} pr-12`}
+                  value={pwForm.confirmPassword}
+                  onChange={(e) =>
+                    setPwForm((p) => ({ ...p, confirmPassword: e.target.value }))
+                  }
+                  autoComplete="new-password"
+                  placeholder="••••••••"
+                />
+                <PasswordVisibilityButton
+                  visible={showPasswords}
+                  onToggle={() => setShowPasswords((value) => !value)}
+                />
+              </div>
               {pwForm.confirmPassword &&
                 pwForm.newPassword !== pwForm.confirmPassword && (
                   <p className="text-red-400 text-xs mt-1">

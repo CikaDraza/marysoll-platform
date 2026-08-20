@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { IUser } from "@/types";
 import { useUserMutations } from "@/hooks/useUserMutations";
 import AlertModal from "../modals/AlertModal";
+import { PasswordVisibilityButton } from "@/components/auth/PasswordVisibilityButton";
 
 interface Props {
   isOpen: boolean;
@@ -35,6 +36,7 @@ function ClientUpdateModal({
 
   const [formData, setFormData] = useState(initialFormData);
   const [showPasswordFields, setShowPasswordFields] = useState(false);
+  const [showPasswordValues, setShowPasswordValues] = useState(false);
   const [message, setMessage] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -218,14 +220,21 @@ function ClientUpdateModal({
                     <label className="block text-sm font-semibold text-gray-700 mb-1">
                       Nova lozinka
                     </label>
-                    <input
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="••••••••"
-                      className="mt-1 block w-full rounded-md border-gray-200 p-2 bg-gray-100 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPasswordValues ? "text" : "password"}
+                        name="password"
+                        autoComplete="new-password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        placeholder="••••••••"
+                        className="mt-1 block w-full rounded-md border-gray-200 p-2 pr-12 bg-gray-100 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+                      />
+                      <PasswordVisibilityButton
+                        visible={showPasswordValues}
+                        onToggle={() => setShowPasswordValues((value) => !value)}
+                      />
+                    </div>
                     <p className="text-xs text-gray-500 mt-1">
                       Najmanje 6 karaktera
                     </p>
@@ -235,14 +244,21 @@ function ClientUpdateModal({
                     <label className="block text-sm font-semibold text-gray-700 mb-1">
                       Potvrdi lozinku
                     </label>
-                    <input
-                      type="password"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      placeholder="••••••••"
-                      className="mt-1 block w-full rounded-md border-gray-200 p-2 bg-gray-100 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPasswordValues ? "text" : "password"}
+                        name="confirmPassword"
+                        autoComplete="new-password"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        placeholder="••••••••"
+                        className="mt-1 block w-full rounded-md border-gray-200 p-2 pr-12 bg-gray-100 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
+                      />
+                      <PasswordVisibilityButton
+                        visible={showPasswordValues}
+                        onToggle={() => setShowPasswordValues((value) => !value)}
+                      />
+                    </div>
                   </div>
                   {message && (
                     <span className="text-(--red-color) text-xs">

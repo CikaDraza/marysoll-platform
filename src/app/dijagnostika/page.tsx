@@ -17,7 +17,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   buildNetworkProbes,
+  runLoginServiceProbe,
   runNetworkProbe,
+  runPasswordResetServiceProbe,
   runCollectors,
   type ModuleResult,
 } from "@/lib/platform/diagnostic-client";
@@ -44,6 +46,17 @@ export default function DijagnostikaPage() {
         prev.map((x) => (x.key === result.key ? result : x)),
       );
     }
+
+    // Kontrolisani zahtevi sa rezervisanim `.invalid` nalogom. Ne menjaju
+    // nijedan stvaran nalog i ne šalju email, ali potvrđuju auth API + DB put.
+    const authResults = await Promise.all([
+      runLoginServiceProbe(`https://${BASE}/api/auth/login`),
+      runPasswordResetServiceProbe(
+        `https://${BASE}/api/auth/forgot-password`,
+      ),
+    ]);
+    done.push(...authResults);
+    setResults((prev) => [...prev, ...authResults]);
 
     // Collectori uređaja (device/push/storage/permissions) — brzi, bez mreže
     const collected = await runCollectors();

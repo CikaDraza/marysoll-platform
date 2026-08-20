@@ -8,6 +8,7 @@ import { useClientRouting } from "@/hooks/useClientRouting";
 import { useTenant } from "@/contexts/TenantContext";
 import { Y2KLoginForm } from "@/components/themes/shared/Y2KLoginForm";
 import { PENDING_STORAGE_KEY } from "@/components/shared/booking/types";
+import { PasswordVisibilityButton } from "@/components/auth/PasswordVisibilityButton";
 
 export default function ClientLoginPage() {
   const { landingTheme } = useTenant();
@@ -21,6 +22,7 @@ function DefaultClientLoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -104,6 +106,10 @@ function DefaultClientLoginPage() {
             </label>
             <input
               type="email"
+              name="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -117,14 +123,22 @@ function DefaultClientLoginPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Lozinka
             </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="••••••••"
+              />
+              <PasswordVisibilityButton
+                visible={showPassword}
+                onToggle={() => setShowPassword((value) => !value)}
+              />
+            </div>
           </div>
 
           <div className="flex items-center justify-between text-sm">

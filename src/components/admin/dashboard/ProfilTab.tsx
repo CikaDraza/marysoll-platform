@@ -11,9 +11,10 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
-import type { RefObject } from "react";
+import { useState, type RefObject } from "react";
 import { THEMES, card, inp, lbl } from "./shared";
 import type { DashboardTabProps } from "./types";
+import { PasswordVisibilityButton } from "@/components/auth/PasswordVisibilityButton";
 
 /**
  * Jedno polje za logo (sajt / notifikacije). Dva ovakva stoje jedno pored
@@ -108,6 +109,8 @@ function LogoField({
 
 
 export function ProfilTab(props: DashboardTabProps) {
+  const [showPasswords, setShowPasswords] = useState(false);
+  const [showResendApiKey, setShowResendApiKey] = useState(false);
   const {
     confirmDeleteSalon,
     deleteAccountInput,
@@ -470,19 +473,25 @@ export function ProfilTab(props: DashboardTabProps) {
                     Vaš sopstveni Resend API ključ (Full Access) za slanje
                     emailova sa vašeg domena.
                   </p>
-                  <input
-                    type="password"
-                    className={inp + " font-mono"}
-                    value={
-                      (sp.form as { resendApiKey?: string })
-                        .resendApiKey ?? ""
-                    }
-                    onChange={(e) =>
-                      sp.setField("resendApiKey", e.target.value)
-                    }
-                    placeholder="re_••••••••••••••••"
-                    autoComplete="off"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showResendApiKey ? "text" : "password"}
+                      className={`${inp} pr-12 font-mono`}
+                      value={
+                        (sp.form as { resendApiKey?: string })
+                          .resendApiKey ?? ""
+                      }
+                      onChange={(e) =>
+                        sp.setField("resendApiKey", e.target.value)
+                      }
+                      placeholder="re_••••••••••••••••"
+                      autoComplete="off"
+                    />
+                    <PasswordVisibilityButton
+                      visible={showResendApiKey}
+                      onToggle={() => setShowResendApiKey((value) => !value)}
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -520,51 +529,69 @@ export function ProfilTab(props: DashboardTabProps) {
           >
             <div>
               <label className={lbl}>Trenutna lozinka</label>
-              <input
-                type="password"
-                className={inp}
-                value={pwForm.currentPassword}
-                onChange={(e) =>
-                  setPwForm((p) => ({
-                    ...p,
-                    currentPassword: e.target.value,
-                  }))
-                }
-                autoComplete="current-password"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords ? "text" : "password"}
+                  className={`${inp} pr-12`}
+                  value={pwForm.currentPassword}
+                  onChange={(e) =>
+                    setPwForm((p) => ({
+                      ...p,
+                      currentPassword: e.target.value,
+                    }))
+                  }
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                />
+                <PasswordVisibilityButton
+                  visible={showPasswords}
+                  onToggle={() => setShowPasswords((value) => !value)}
+                />
+              </div>
             </div>
             <div>
               <label className={lbl}>Nova lozinka</label>
-              <input
-                type="password"
-                className={inp}
-                value={pwForm.newPassword}
-                onChange={(e) =>
-                  setPwForm((p) => ({
-                    ...p,
-                    newPassword: e.target.value,
-                  }))
-                }
-                autoComplete="new-password"
-                placeholder="Najmanje 8 karaktera"
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords ? "text" : "password"}
+                  className={`${inp} pr-12`}
+                  value={pwForm.newPassword}
+                  onChange={(e) =>
+                    setPwForm((p) => ({
+                      ...p,
+                      newPassword: e.target.value,
+                    }))
+                  }
+                  autoComplete="new-password"
+                  placeholder="Najmanje 8 karaktera"
+                />
+                <PasswordVisibilityButton
+                  visible={showPasswords}
+                  onToggle={() => setShowPasswords((value) => !value)}
+                />
+              </div>
             </div>
             <div>
               <label className={lbl}>Potvrdite novu lozinku</label>
-              <input
-                type="password"
-                className={inp}
-                value={pwForm.confirmPassword}
-                onChange={(e) =>
-                  setPwForm((p) => ({
-                    ...p,
-                    confirmPassword: e.target.value,
-                  }))
-                }
-                autoComplete="new-password"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords ? "text" : "password"}
+                  className={`${inp} pr-12`}
+                  value={pwForm.confirmPassword}
+                  onChange={(e) =>
+                    setPwForm((p) => ({
+                      ...p,
+                      confirmPassword: e.target.value,
+                    }))
+                  }
+                  autoComplete="new-password"
+                  placeholder="••••••••"
+                />
+                <PasswordVisibilityButton
+                  visible={showPasswords}
+                  onToggle={() => setShowPasswords((value) => !value)}
+                />
+              </div>
               {pwForm.confirmPassword &&
                 pwForm.newPassword !== pwForm.confirmPassword && (
                   <p className="text-red-500 text-xs mt-1">

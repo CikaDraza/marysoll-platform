@@ -9,6 +9,7 @@ import { useTenant } from "@/contexts/TenantContext";
 import { genderPast } from "@/lib/clientWording";
 import { Y2KAuthShell } from "./Y2KAuthShell";
 import { PENDING_STORAGE_KEY } from "@/components/shared/booking/types";
+import { PasswordVisibilityButton } from "@/components/auth/PasswordVisibilityButton";
 
 const inputCls =
   "mt-1.5 block w-full px-3.5 py-3 border-[3px] border-y2k-ink rounded-[14px] text-[15px] text-y2k-ink bg-white outline-none placeholder:text-[#c9b3c0] focus:shadow-[3px_3px_0_#8B16C9] transition-shadow";
@@ -27,6 +28,7 @@ export function Y2KLoginForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -107,8 +109,12 @@ export function Y2KLoginForm() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 mt-5">
         <label className={labelCls}>
           Email
-          <input
-            type="email"
+        <input
+          type="email"
+          name="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -119,14 +125,23 @@ export function Y2KLoginForm() {
         </label>
         <label className={labelCls}>
           Lozinka
+        <div className="relative">
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
+            name="password"
+            autoComplete="current-password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className={inputCls}
+            className={`${inputCls} pr-12`}
             placeholder="••••••••"
           />
+          <PasswordVisibilityButton
+            visible={showPassword}
+            onToggle={() => setShowPassword((value) => !value)}
+            className="text-[#9a7d8b] hover:text-y2k-ink"
+          />
+        </div>
         </label>
 
         <div className="flex items-center justify-between text-xs">
