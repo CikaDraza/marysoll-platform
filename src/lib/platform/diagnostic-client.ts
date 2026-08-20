@@ -15,6 +15,8 @@ export {
   buildNetworkProbes,
   runNetworkProbe,
   runNetworkProbes,
+  runLoginServiceProbe,
+  runPasswordResetServiceProbe,
   runCollectors,
   runDiagnostics,
 } from "@panta/diagnostic-engine";

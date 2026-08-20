@@ -104,6 +104,10 @@ function DefaultClientLoginPage() {
             </label>
             <input
               type="email"
+              name="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -119,6 +123,8 @@ function DefaultClientLoginPage() {
             </label>
             <input
               type="password"
+              name="password"
+              autoComplete="current-password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}

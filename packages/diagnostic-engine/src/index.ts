@@ -25,6 +25,10 @@ export {
   runNetworkProbe,
   runNetworkProbes,
 } from "./probes/network";
+export {
+  runLoginServiceProbe,
+  runPasswordResetServiceProbe,
+} from "./probes/auth";
 
 export { collectDevice } from "./collectors/device";
 export { collectBrowserContext, detectInApp } from "./collectors/browser";

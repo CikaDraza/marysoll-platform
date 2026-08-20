@@ -107,8 +107,12 @@ export function Y2KLoginForm() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 mt-5">
         <label className={labelCls}>
           Email
-          <input
-            type="email"
+        <input
+          type="email"
+          name="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -119,8 +123,10 @@ export function Y2KLoginForm() {
         </label>
         <label className={labelCls}>
           Lozinka
-          <input
-            type="password"
+        <input
+          type="password"
+          name="password"
+          autoComplete="current-password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}

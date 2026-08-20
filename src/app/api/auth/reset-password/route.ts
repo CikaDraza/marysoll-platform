@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectToDB } from "@/lib/db/mongodb";
+import { AuthUser } from "@/models/AuthUser";
 import { TenantUser } from "@/models/TenantUser";
 
 /**
  * POST /api/auth/reset-password
  *
- * Tenant-scoped password reset — finds TenantUser by resetPasswordToken.
- * Token is tenant-specific (generated in forgot-password on TenantUser).
+ * Resetuje TenantUser token (salon i management nalozi), odnosno AuthUser
+ * token za SUPER_ADMIN. Tokeni su nasumični, jednokratni i važe jedan sat.
  */
 export async function POST(request: Request) {
   try {
@@ -33,17 +34,32 @@ export async function POST(request: Request) {
       resetPasswordExpiry: { $gt: new Date() },
     });
 
-    if (!tenantUser) {
+    if (tenantUser) {
+      tenantUser.password = await bcrypt.hash(newPassword, 12);
+      tenantUser.resetPasswordToken = null;
+      tenantUser.resetPasswordExpiry = null;
+      await tenantUser.save();
+
+      return NextResponse.json({ message: "Lozinka je uspešno promenjena" });
+    }
+
+    const authUser = await AuthUser.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() },
+      platformRole: "SUPER_ADMIN",
+    });
+
+    if (!authUser) {
       return NextResponse.json(
         { error: "Token je nevažeći ili je istekao" },
         { status: 400 },
       );
     }
 
-    tenantUser.password = await bcrypt.hash(newPassword, 12);
-    tenantUser.resetPasswordToken = null;
-    tenantUser.resetPasswordExpiry = null;
-    await tenantUser.save();
+    authUser.passwordHash = await bcrypt.hash(newPassword, 12);
+    authUser.resetPasswordToken = null;
+    authUser.resetPasswordExpires = null;
+    await authUser.save();
 
     return NextResponse.json({ message: "Lozinka je uspešno promenjena" });
   } catch (error) {

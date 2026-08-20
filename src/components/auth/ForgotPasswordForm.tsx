@@ -71,6 +71,10 @@ export default function ForgotPasswordForm() {
                   </label>
                   <input
                     type="email"
+                    name="email"
+                    autoComplete="email"
+                    autoCapitalize="none"
+                    spellCheck={false}
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -116,11 +120,12 @@ export default function ForgotPasswordForm() {
                   onClick={async () => {
                     setLoading(true);
                     try {
-                      await fetch("/api/auth/forgot-password", {
+                      const res = await fetch("/api/auth/forgot-password", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ email }),
                       });
+                      if (!res.ok) throw new Error("Reset request failed");
                       toast.success("Link je ponovo poslat!");
                     } catch {
                       toast.error("Greška. Pokušajte ponovo.");

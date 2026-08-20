@@ -82,6 +82,10 @@ export default function LoginForm() {
         </label>
         <input
           type="email"
+          name="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);
@@ -117,6 +121,8 @@ export default function LoginForm() {
         </div>
         <input
           type="password"
+          name="password"
+          autoComplete="current-password"
           value={password}
           onChange={(e) => {
             setPassword(e.target.value);
