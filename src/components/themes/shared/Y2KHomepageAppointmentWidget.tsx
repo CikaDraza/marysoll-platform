@@ -17,6 +17,7 @@ import {
   endOfWeek,
   eachDayOfInterval,
   isSameDay,
+  parseISO,
   getDay,
   addDays,
   subDays,
@@ -37,18 +38,11 @@ import type { PendingAppointment } from "@/components/shared/BookingModal";
 import type {
   WorkingHoursMap,
   IService,
+  IVacation,
   SalonProfileData,
   ManualSlotsMap,
 } from "@/types";
-import { manualTimesForDate, isManualSlotTaken } from "@/helpers/manualSlots";
-import {
-  findFirstAvailableDay,
-  generateSlots,
-  getWorkingRange,
-  isDayFullyBooked,
-  isSlotBooked,
-  toMins,
-} from "@/helpers/widgetAvailability";
+import { firstAvailableDate, widgetDay } from "@/lib/booking/widgetDay";
 import { useTheme8Modal } from "@/components/themes/theme-8/theme8ModalContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -70,6 +64,7 @@ function DayView({
   workingHours,
   isManual,
   manualSlots,
+  vacations,
   onSlotClick,
 }: {
   selectedDate: Date;
@@ -77,18 +72,18 @@ function DayView({
   workingHours: WorkingHoursMap | undefined;
   isManual: boolean;
   manualSlots?: ManualSlotsMap;
+  vacations?: IVacation[];
   onSlotClick: (date: string, time: string) => void;
 }) {
   const dateStr = format(selectedDate, "yyyy-MM-dd");
-  const range = getWorkingRange(workingHours, selectedDate);
-  const manualForDay = isManual ? manualTimesForDate(manualSlots, dateStr) : [];
-  const isWorking = isManual ? manualForDay.length > 0 : range.isWorking;
-  const slots: { time: string; duration?: number }[] = isManual
-    ? manualForDay
-    : (range.isWorking ? generateSlots(range.start, range.end) : []).map(
-        (t) => ({ time: t }),
-      );
-  const now = new Date();
+  const day = widgetDay(dateStr, {
+    workingHours,
+    manualSlots,
+    isManual,
+    appointments,
+    vacations,
+  });
+  const { isWorking, slots } = day;
 
   if (!isWorking) {
     // Radnim danima (pon–pet) bez termina piše "popunjeno" — "ne radi" zbunjuje
@@ -109,15 +104,8 @@ function DayView({
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
       {slots.map((slot) => {
-        const booked = isManual
-          ? isManualSlotTaken(
-              appointments,
-              dateStr,
-              toMins(slot.time),
-              slot.duration ?? 60,
-            )
-          : isSlotBooked(appointments, dateStr, slot.time);
-        const isPast = new Date(`${dateStr}T${slot.time}`) < now;
+        const booked = slot.taken;
+        const isPast = slot.past;
 
         if (booked) {
           return (
@@ -155,7 +143,7 @@ function DayView({
               {slot.time}
             </span>
             <span className="text-[10px] text-y2k-ink/40 group-hover:text-white/90 font-bold">
-              {isManual && slot.duration ? `${slot.duration} min` : "+ Zakaži"}
+              {isManual ? `${slot.durationMinutes} min` : "+ Zakaži"}
             </span>
           </button>
         );
@@ -172,6 +160,7 @@ function WeekView({
   workingHours,
   isManual,
   manualSlots,
+  vacations,
   selectedDate,
   onDayClick,
 }: {
@@ -180,6 +169,7 @@ function WeekView({
   workingHours: WorkingHoursMap | undefined;
   isManual: boolean;
   manualSlots?: ManualSlotsMap;
+  vacations?: IVacation[];
   selectedDate: Date;
   onDayClick: (day: Date) => void;
 }) {
@@ -221,23 +211,10 @@ function WeekView({
       <div className="grid grid-cols-7 gap-1 pb-3 sm:gap-1.5 min-w-[336px]">
         {days.map((day, i) => {
           const dateStr = format(day, "yyyy-MM-dd");
-          const range = getWorkingRange(workingHours, day);
-          const manualForDay = isManual
-            ? manualTimesForDate(manualSlots, dateStr)
-            : [];
-          const isWorking = isManual
-            ? manualForDay.length > 0
-            : range.isWorking;
-          const slots = isManual
-            ? manualForDay.map((s) => s.time)
-            : range.isWorking
-              ? generateSlots(range.start, range.end)
-              : [];
-          const fullyBooked =
-            isWorking && isDayFullyBooked(appointments, slots, dateStr);
-          const bookedCount = slots.filter((s) =>
-            isSlotBooked(appointments, dateStr, s),
-          ).length;
+          const { isWorking, fullyBooked, bookedCount, slots } = widgetDay(
+            dateStr,
+            { workingHours, manualSlots, isManual, appointments, vacations },
+          );
           const isSelected = isSameDay(day, selectedDate);
           const isToday = isSameDay(day, new Date());
 
@@ -393,6 +370,8 @@ export default function Y2KHomepageAppointmentWidget({
   const workingHours = salon.workingHours as WorkingHoursMap | undefined;
   const isManual = salon.availabilityMode === "manualSlots";
   const manualSlots = salon.manualSlots as ManualSlotsMap | undefined;
+  // Odmori su bili u javnom profilu, ali ih widget nije prosleđivao.
+  const vacations = salon.vacations;
 
   // ── Auto-fokus na prvi slobodan dan ────────────────────────────────────────
   // Ako današnji dan nema nijedan slobodan termin (npr. sve popunjeno nedelju
@@ -402,14 +381,22 @@ export default function Y2KHomepageAppointmentWidget({
   const today = useMemo(() => new Date(), []);
   const autoFocusDay = useMemo(() => {
     if (isLoading) return null;
-    const firstFree = findFirstAvailableDay({
-      workingHours,
-      manualSlots,
-      isManual,
-      appointments,
-    });
-    return firstFree && !isSameDay(firstFree, today) ? firstFree : null;
-  }, [isLoading, appointments, workingHours, manualSlots, isManual, today]);
+    const firstFree = firstAvailableDate(
+      { workingHours, manualSlots, isManual, appointments, vacations },
+      format(today, "yyyy-MM-dd"),
+    );
+    if (!firstFree) return null;
+    const firstFreeDay = parseISO(firstFree);
+    return isSameDay(firstFreeDay, today) ? null : firstFreeDay;
+  }, [
+    isLoading,
+    appointments,
+    workingHours,
+    manualSlots,
+    isManual,
+    vacations,
+    today,
+  ]);
 
   const selectedDate = userDate ?? autoFocusDay ?? today;
   const weekStart = useMemo(
@@ -626,6 +613,7 @@ export default function Y2KHomepageAppointmentWidget({
                 weekStart={weekStart}
                 appointments={appointments}
                 workingHours={workingHours}
+                vacations={vacations}
                 isManual={isManual}
                 manualSlots={manualSlots}
                 selectedDate={selectedDate}
@@ -650,12 +638,13 @@ export default function Y2KHomepageAppointmentWidget({
                     {stripDays.map((day, i) => {
                       const isSelected = isSameDay(day, selectedDate);
                       const isToday = isSameDay(day, new Date());
-                      const isWorking = isManual
-                        ? manualTimesForDate(
-                            manualSlots,
-                            format(day, "yyyy-MM-dd"),
-                          ).length > 0
-                        : getWorkingRange(workingHours, day).isWorking;
+                      const isWorking = widgetDay(format(day, "yyyy-MM-dd"), {
+                        workingHours,
+                        manualSlots,
+                        isManual,
+                        appointments,
+                        vacations,
+                      }).isWorking;
                       return (
                         <button
                           key={i}
@@ -695,6 +684,7 @@ export default function Y2KHomepageAppointmentWidget({
                   selectedDate={selectedDate}
                   appointments={appointments}
                   workingHours={workingHours}
+                  vacations={vacations}
                   isManual={isManual}
                   manualSlots={manualSlots}
                   onSlotClick={handleSlotClick}

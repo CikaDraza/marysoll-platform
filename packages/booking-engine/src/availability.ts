@@ -153,7 +153,11 @@ export function computeAvailability(
   const weekday = weekdayOf(localDate) as WeekdayIndex;
 
   const vacationCuts = vacationCutsFor(localDate, query.vacations);
-  const useManual = !!query.manualSlots?.length;
+  // Režim se bira PRISUSTVOM polja, ne njegovom dužinom. Prazan niz znači
+  // „salon radi na ručne termine, ali za ovaj dan nije definisao nijedan" —
+  // dakle zatvoreno. Da se gleda dužina, taj dan bi tiho pao nazad na raspored
+  // i widget bi nudio termine koje salon nije objavio.
+  const useManual = Array.isArray(query.manualSlots);
 
   let candidates: MinuteInterval[];
   if (useManual) {
@@ -220,8 +224,12 @@ export function hasAnyAvailability(query: AvailabilityQuery): boolean {
 
 /**
  * Prvi dan (od `fromDate`) koji ima ijedan slobodan termin, ili `null` u okviru
- * horizonta. Widget je ovo računao svojom kopijom pravila, pa je „prvi slobodan
- * dan" umeo da pokaže dan koji dropdown zatim odbije.
+ * horizonta.
+ *
+ * VAŽNO: menja se samo `localDate`, pa upit mora biti nezavisan od datuma —
+ * važi za raspored, ne i za `manualSlots` i `vacations`, koji se razlikuju po
+ * danu. Pozivalac koji ih ima gradi upit iznova za svaki dan (vidi
+ * `findFirstAvailableDate` u aplikacijskom adapteru).
  */
 export function findFirstAvailableDay(
   query: AvailabilityQuery,

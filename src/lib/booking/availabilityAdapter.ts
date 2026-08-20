@@ -18,8 +18,8 @@
  */
 
 import {
+  addDays,
   computeAvailability,
-  findFirstAvailableDay as findFirstDay,
   // Konverzija zone ide kroz engine — adapter ne sme da pravi svoju kopiju.
   zonedTimeToUtc,
   type AvailabilityBand,
@@ -233,10 +233,84 @@ export function availableTimesForDate(input: BuildQueryInput): string[] {
   return availabilityForDate(input).slots.map((slot) => slot.localStart);
 }
 
-/** Prvi dan sa slobodnim terminom — zamenjuje `findFirstAvailableDay` iz widgeta. */
+/**
+ * Prvi dan sa slobodnim terminom — zamenjuje `findFirstAvailableDay` iz widgeta.
+ *
+ * Upit se gradi IZNOVA za svaki dan. Ručni termini su ključevani datumom, a
+ * odmori zavise od datuma, pa bi petlja koja menja samo `localDate` nosila
+ * slotove prvog dana kroz ceo horizont — svaki dan bi izgledao kao prvi.
+ */
 export function findFirstAvailableDate(
   input: BuildQueryInput,
   options: { fromDate: string; horizonDays?: number },
 ): string | null {
-  return findFirstDay(buildAvailabilityQuery(input), options);
+  const horizon = Math.max(options.horizonDays ?? 60, 0);
+  for (let offset = 0; offset <= horizon; offset++) {
+    const localDate = addDays(options.fromDate, offset);
+    const slots = computeAvailability(
+      buildAvailabilityQuery({ ...input, localDate }),
+    ).slots;
+    if (slots.length) return localDate;
+  }
+  return null;
+}
+
+// ─── Prikaz: widget crta i zauzete termine, ne samo slobodne ─────────────────
+
+/** Jedan termin u mreži widgeta — zauzet i prošao su RAZLIČITA stanja. */
+export interface DaySlotState {
+  time: string;
+  endTime: string;
+  durationMinutes: number;
+  taken: boolean;
+  past: boolean;
+}
+
+export type DayAvailabilityState = "closed" | "full" | "free";
+
+/**
+ * Svi termini dana sa stanjem.
+ *
+ * Core namerno vraća SAMO slobodne — zauzetost je njegov filter, ne izlaz. Zato
+ * se ovde računa dvaput: jednom bez zauzetosti (puna ponuda dana, ono što
+ * widget crta) i jednom sa njom (šta je stvarno slobodno). Alternativa bi bila
+ * da core vraća i odbijene kandidate sa razlogom — to je prikaz, i ne pripada
+ * mu dok ga ne zatraži više od jednog potrošača.
+ */
+export function daySlotStates(input: BuildQueryInput): DaySlotState[] {
+  const offered = computeAvailability(
+    buildAvailabilityQuery({ ...input, appointments: [], now: undefined }),
+  ).slots;
+
+  const freeStarts = new Set(
+    computeAvailability(
+      buildAvailabilityQuery({ ...input, now: undefined }),
+    ).slots.map((slot) => slot.localStart),
+  );
+
+  const nowMs = (input.now ?? new Date()).getTime();
+
+  return offered.map((slot) => ({
+    time: slot.localStart,
+    endTime: slot.localEnd,
+    durationMinutes: Math.round(
+      (slot.endsAt.getTime() - slot.startsAt.getTime()) / 60_000,
+    ),
+    taken: !freeStarts.has(slot.localStart),
+    past: slot.startsAt.getTime() < nowMs,
+  }));
+}
+
+/**
+ * Stanje dana za mesečni prikaz.
+ *   `closed` — salon tog dana ne nudi ništa (neradan dan ili odmor),
+ *   `full`   — nudi, ali je sve zauzeto ili prošlo,
+ *   `free`   — ima bar jedan termin koji se može kliknuti.
+ */
+export function dayAvailabilityState(
+  input: BuildQueryInput,
+): DayAvailabilityState {
+  const slots = daySlotStates(input);
+  if (!slots.length) return "closed";
+  return slots.some((slot) => !slot.taken && !slot.past) ? "free" : "full";
 }

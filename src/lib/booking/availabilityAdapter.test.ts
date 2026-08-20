@@ -12,18 +12,12 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import {
-  availableTimesForDate as oldModalTimes,
-} from "@/helpers/parseWorkingHours";
-import {
-  generateSlots as oldGenerateSlots,
-  getWorkingRange as oldGetWorkingRange,
-  isSlotBooked as oldIsSlotBooked,
-} from "@/helpers/widgetAvailability";
 import type { WorkingHoursMap } from "@/types";
 import {
   availableTimesForDate,
   buildAvailabilityQuery,
+  dayAvailabilityState,
+  daySlotStates,
   findFirstAvailableDate,
   parseDayRanges,
   toOccupancies,
@@ -184,6 +178,138 @@ describe("odmori i ručni termini iz profila", () => {
     expect(query.manualSlots).toEqual([]);
   });
 });
+
+
+// ─── Zamrznut snimak implementacije PRE Slice 3 ──────────────────────────────
+//
+// Stari kod je obrisan iz produkcije (`helpers/widgetAvailability.ts` i
+// `availableTimesForDate`), ali regresija mora da ostane proverljiva. Zato
+// kopije žive OVDE. Ne dirati ih: ovo je istorijski zapis, ne implementacija.
+
+const OLD_DAY_NAMES = [
+  "Nedelja",
+  "Ponedeljak",
+  "Utorak",
+  "Sreda",
+  "Četvrtak",
+  "Petak",
+  "Subota",
+];
+
+function oldToMin(time: string): number {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + (m || 0);
+}
+
+function oldFromMin(min: number): string {
+  return `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+}
+
+function oldParseDaySlots(value: unknown): { from: string; to: string }[] {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value
+      .map((slot) => {
+        const s = slot as Record<string, unknown>;
+        const from = String(s?.from ?? "").trim();
+        const to = String(s?.to ?? "").trim();
+        return from && to ? { from, to } : null;
+      })
+      .filter((s): s is { from: string; to: string } => s !== null);
+  }
+  if (typeof value === "string" && value.trim()) {
+    const match = value.match(/(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})/);
+    if (match) return [{ from: match[1], to: match[2] }];
+  }
+  return [];
+}
+
+function oldDayRanges(workingHours: unknown, dateStr: string) {
+  const day = new Date(`${dateStr}T00:00:00`);
+  const name = OLD_DAY_NAMES[day.getDay()];
+  return oldParseDaySlots((workingHours as Record<string, unknown>)?.[name]);
+}
+
+function oldOverlaps(
+  booked: { date: string; time: string; duration?: number }[],
+  dateStr: string,
+  time: string,
+  duration: number,
+): boolean {
+  const start = oldToMin(time);
+  const end = start + duration;
+  return booked.some((a) => {
+    if (a.date !== dateStr) return false;
+    const s = oldToMin(a.time);
+    const e = s + (a.duration || 60);
+    return start < e && end > s;
+  });
+}
+
+/** `helpers/parseWorkingHours.availableTimesForDate` — modalni tok. */
+function oldModalTimes(args: {
+  workingHours: unknown;
+  dateStr: string;
+  durationMin: number;
+  booked: { date: string; time: string; duration?: number }[];
+  stepMin?: number;
+  now?: Date;
+}): string[] {
+  const { workingHours, dateStr, durationMin, booked, stepMin = 30 } = args;
+  const now = args.now ?? new Date();
+  const duration = Math.max(durationMin, 1);
+  const times: string[] = [];
+  for (const range of oldDayRanges(workingHours, dateStr)) {
+    const start = oldToMin(range.from);
+    const end = oldToMin(range.to);
+    for (let t = start; t + duration <= end; t += stepMin) {
+      const time = oldFromMin(t);
+      if (new Date(`${dateStr}T${time}`) < now) continue;
+      if (oldOverlaps(booked, dateStr, time, duration)) continue;
+      times.push(time);
+    }
+  }
+  return times;
+}
+
+/** `helpers/widgetAvailability.getWorkingRange` — min(from)/max(to), briše pauzu. */
+function oldGetWorkingRange(
+  workingHours: unknown,
+  date: Date,
+): { isWorking: boolean; start: string; end: string } {
+  const name = OLD_DAY_NAMES[date.getDay()];
+  const slots = ((workingHours as Record<string, unknown>)?.[name] ?? []) as {
+    from: string;
+    to: string;
+  }[];
+  if (!slots.length) return { isWorking: false, start: "", end: "" };
+  const starts = slots.map((s) => s.from).sort();
+  const ends = slots.map((s) => s.to).sort();
+  return { isWorking: true, start: starts[0], end: ends[ends.length - 1] };
+}
+
+/** `helpers/widgetAvailability.generateSlots` — korak 30, bez provere trajanja. */
+function oldGenerateSlots(start: string, end: string): string[] {
+  const slots: string[] = [];
+  for (let cur = oldToMin(start); cur < oldToMin(end); cur += 30) {
+    slots.push(oldFromMin(cur));
+  }
+  return slots;
+}
+
+/** `helpers/widgetAvailability.isSlotBooked` — gleda SAMO početak kandidata. */
+function oldIsSlotBooked(
+  appointments: { date: string; time: string; duration?: number }[],
+  dateStr: string,
+  slot: string,
+): boolean {
+  const slotMin = oldToMin(slot);
+  return appointments.some((a) => {
+    if (a.date !== dateStr) return false;
+    const start = oldToMin(a.time);
+    return slotMin >= start && slotMin < start + (a.duration || 60);
+  });
+}
 
 // ─── 1. PARITET: gde stari sistem nije grešio ────────────────────────────────
 
@@ -388,5 +514,90 @@ describe("granica paketa: availability core ne zna domen", () => {
       const src = codeOf(file);
       expect(src, file).not.toMatch(/\bfetch\(|\bawait\b|Date\.now\(\)|process\.env/);
     }
+  });
+});
+
+// ─── Prikaz u widgetu ────────────────────────────────────────────────────────
+
+describe("daySlotStates — zauzeto i prošlo su različita stanja", () => {
+  /** Widget crta mrežu na 30 min, bez obzira na trajanje usluge. */
+  const grid = (over: Partial<BuildQueryInput> = {}) =>
+    input({ durationMinutes: 30, stepMinutes: 30, ...over });
+
+  it("puna ponuda dana ostaje vidljiva i kad je termin zauzet", () => {
+    const states = daySlotStates(
+      grid({ appointments: [{ date: MONDAY, time: "10:00", duration: 60 }] }),
+    );
+    // 09:00–17:00 na 30 min = 16 termina; nijedan ne nestaje.
+    expect(states).toHaveLength(16);
+    expect(states.find((s) => s.time === "10:00")?.taken).toBe(true);
+    expect(states.find((s) => s.time === "10:30")?.taken).toBe(true);
+    expect(states.find((s) => s.time === "11:00")?.taken).toBe(false);
+  });
+
+  it("prošlo se razlikuje od zauzetog", () => {
+    const states = daySlotStates(
+      grid({ now: new Date("2026-08-24T08:30:00Z") }), // 10:30 u Beogradu
+    );
+    expect(states.find((s) => s.time === "09:00")).toMatchObject({
+      past: true,
+      taken: false,
+    });
+    expect(states.find((s) => s.time === "11:00")).toMatchObject({
+      past: false,
+      taken: false,
+    });
+  });
+
+  it("ručni termin nosi svoje trajanje", () => {
+    const states = daySlotStates(
+      grid({
+        profile: {
+          availabilityMode: "manualSlots",
+          manualSlots: { [MONDAY]: [{ time: "10:00", duration: 90 }] },
+        },
+      }),
+    );
+    expect(states).toEqual([
+      { time: "10:00", endTime: "11:30", durationMinutes: 90, taken: false, past: false },
+    ]);
+  });
+});
+
+describe("dayAvailabilityState — tri stanja u mesečnom prikazu", () => {
+  const grid = (over: Partial<BuildQueryInput> = {}) =>
+    input({ durationMinutes: 30, stepMinutes: 30, ...over });
+
+  it("neradan dan i odmor su `closed`", () => {
+    expect(dayAvailabilityState(grid({ localDate: SUNDAY }))).toBe("closed");
+    expect(
+      dayAvailabilityState(
+        grid({
+          profile: {
+            workingHours: WORKING_HOURS,
+            vacations: [{ from: MONDAY, to: MONDAY }],
+          },
+        }),
+      ),
+    ).toBe("closed");
+  });
+
+  it("sve zauzeto je `full`, ne `closed` — salon tog dana radi", () => {
+    const allDay = Array.from({ length: 8 }, (_, i) => ({
+      date: MONDAY,
+      time: `${String(9 + i).padStart(2, "0")}:00`,
+      duration: 60,
+    }));
+    expect(dayAvailabilityState(grid({ appointments: allDay }))).toBe("full");
+  });
+
+  it("dan u kome je sve prošlo je `full`, ne `free`", () => {
+    expect(
+      dayAvailabilityState(grid({ now: new Date("2026-08-24T20:00:00Z") })),
+    ).toBe("full");
+  });
+
+  it("bar jedan slobodan i budući termin je `free`", () => {
+    expect(dayAvailabilityState(grid())).toBe("free");
   });
 });

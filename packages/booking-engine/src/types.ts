@@ -80,8 +80,9 @@ export interface AvailabilityQuery {
   vacations?: VacationRange[];
 
   /**
-   * Režim ručnih termina: kada je prisutno (i neprazno), ponuda su TAČNO ovi
-   * termini — raspored i korak se ne koriste. Odmori i zauzetost i dalje važe.
+   * Režim ručnih termina: kada je polje PRISUTNO (makar i prazan niz), ponuda su
+   * tačno ovi termini — raspored i korak se ne koriste. Prazan niz je zatvoren
+   * dan, ne povratak na raspored. Odmori i zauzetost i dalje važe.
    */
   manualSlots?: ManualSlot[];
 
