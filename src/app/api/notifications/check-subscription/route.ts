@@ -5,7 +5,9 @@ import {
   addPushSubscription,
   hasPushSubscription,
   resolvePushTarget,
+  setPushSubscriptionOrigin,
 } from "@/lib/pushSubscriptionStore";
+import { platformOrigin } from "@/lib/platform/host-context";
 
 export async function POST(req: Request) {
   try {
@@ -29,13 +31,18 @@ export async function POST(req: Request) {
     }
 
     const isActive = await hasPushSubscription(decoded, subscription.endpoint);
+    const origin = platformOrigin(req);
 
-    // Ako nije sačuvana (npr. re-subscribe na novom uređaju), sačuvaj je
     if (!isActive && subscription.keys) {
+      // Nije sačuvana (npr. re-subscribe na novom uređaju) — sačuvaj je.
       await addPushSubscription(decoded, {
         endpoint: subscription.endpoint,
         keys: subscription.keys,
+        origin,
       });
+    } else if (isActive) {
+      // Postoji — popuni/osveži `origin` (zapisi stariji od tog polja).
+      await setPushSubscriptionOrigin(decoded, subscription.endpoint, origin);
     }
 
     return NextResponse.json({

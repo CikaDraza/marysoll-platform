@@ -8,7 +8,8 @@
  *   3. marysoll.com/login               → admin.marysoll.com (cross-host handoff)
  *   4. produkcijski dashboard           → custom domen, inače {slug}.marysoll.com
  *
- * Plus notifikacije (push + in-app) i mejlovi, jer i oni nose linkove.
+ * Plus notifikacije (push + in-app) i mejlovi, jer i oni nose linkove — i
+ * kome se push UOPŠTE šalje: pretplata iz tuđeg okruženja se preskače.
  *
  * Env se čita pri importu modula → vi.resetModules() + stub + svež import.
  */
@@ -27,6 +28,48 @@ vi.mock("@/models/Tenant", () => ({
     findById: () => ({ select: () => ({ lean: async () => ({ slug: SLUG }) }) }),
   },
 }));
+
+/** Deljeno stanje za push mockove (vi.mock factory se hoistuje iznad modula). */
+const pushState = vi.hoisted(() => ({
+  /** Endpoint-i na koje je web-push STVARNO pozvan. */
+  sent: [] as string[],
+  subscriptions: [] as Array<{
+    endpoint: string;
+    keys: { p256dh: string; auth: string };
+    origin?: string | null;
+  }>,
+}));
+
+vi.mock("web-push", () => ({
+  default: {
+    setVapidDetails: () => {},
+    sendNotification: async (sub: { endpoint: string }) => {
+      pushState.sent.push(sub.endpoint);
+    },
+  },
+}));
+
+vi.mock("@/lib/vapid", () => ({
+  getVapidKeys: () => ({
+    publicKey: "pub",
+    privateKey: "priv",
+    email: "push@marysoll.com",
+  }),
+  urlBase64ToUint8Array: () => new Uint8Array(),
+}));
+
+vi.mock("@/models/TenantUser", () => ({
+  TenantUser: {
+    findById: () => ({
+      select: () => ({
+        lean: async () => ({ pushSubscriptions: pushState.subscriptions }),
+      }),
+    }),
+    findByIdAndUpdate: async () => {},
+  },
+}));
+
+vi.mock("@/models/AuthUser", () => ({ AuthUser: {} }));
 
 interface Env {
   /** Origin deploya (NEXT_PUBLIC_APP_URL). */
@@ -263,5 +306,82 @@ describe("localhost (dev)", () => {
   it("push klijentu nosi /{slug}/panel", async () => {
     const { push } = await loadModules(DEV);
     expect(await push.clientPanelPath("t-1")).toBe(`/${SLUG}/panel`);
+  });
+});
+
+// ─── 5: KOME SE PUSH ŠALJE ────────────────────────────────────────────────────
+//
+// Push `url` je root-relativan, a service worker ga razrešava na originu na
+// kome je REGISTROVAN. Preview deployi dele bazu sa produkcijom, pa je pretplata
+// sa `…vercel.app` u istom dokumentu: produkcijski podsetnik je tamo otvarao
+// `…vercel.app/dashboard?tab=termini`, gde nema sesije → goli `/login`.
+
+const PREVIEW_HOST =
+  "marysoll-platform-git-optimizacija-f-8d0886-cikadrazas-projects.vercel.app";
+
+/** Pretplate istog korisnika, napravljene na raznim originima. */
+const SUBSCRIPTIONS = [
+  ["prod-admin", "https://admin.marysoll.com"],
+  ["prod-tenant", `https://${SLUG}.marysoll.com`],
+  ["prod-custom", "https://marina-skincare.rs"],
+  ["staging", "https://staging.marysoll.com"],
+  ["preview", `https://${PREVIEW_HOST}`],
+  ["dev", "http://localhost:3006"],
+  ["legacy", null], // zapis stariji od `origin` polja
+].map(([endpoint, origin]) => ({
+  endpoint: endpoint as string,
+  keys: { p256dh: "p", auth: "a" },
+  origin,
+}));
+
+/** Pošalje podsetnik iz zadatog okruženja → endpoint-i koji su ga dobili. */
+async function pushFrom(env: Env & { vercelUrl?: string }): Promise<string[]> {
+  vi.resetModules();
+  vi.stubEnv("NEXT_PUBLIC_BASE_DOMAIN", "marysoll.com");
+  vi.stubEnv("NEXT_PUBLIC_APP_URL", env.appUrl ?? "");
+  vi.stubEnv("NODE_ENV", env.nodeEnv ?? "production");
+  vi.stubEnv("VERCEL_ENV", env.vercelUrl ? "preview" : "");
+  vi.stubEnv("VERCEL_URL", env.vercelUrl ?? "");
+
+  pushState.sent = [];
+  pushState.subscriptions = SUBSCRIPTIONS;
+
+  const { sendWebPushToUser } = await import("@/lib/webPush");
+  await sendWebPushToUser("tenant-user-1", {
+    title: "Salon",
+    body: "⏰ Podsetnik: Korekcija Mix Tehnika",
+    url: "/dashboard?tab=termini",
+  });
+  return [...pushState.sent].sort();
+}
+
+describe("push se šalje samo pretplatama iz istog okruženja", () => {
+  it("produkcija gađa sve svoje hostove (apex, subdomen, custom domen)", async () => {
+    expect(await pushFrom({ appUrl: "https://marysoll.com" })).toEqual([
+      "legacy",
+      "prod-admin",
+      "prod-custom",
+      "prod-tenant",
+    ]);
+  });
+
+  it("preview deploy gađa samo svoju pretplatu", async () => {
+    expect(await pushFrom({ vercelUrl: PREVIEW_HOST })).toEqual([
+      "legacy",
+      "preview",
+    ]);
+  });
+
+  it("staging ne gađa produkciju ni obrnuto", async () => {
+    expect(await pushFrom({ appUrl: "https://staging.marysoll.com" })).toEqual([
+      "legacy",
+      "staging",
+    ]);
+  });
+
+  it("lokalni dev ne šalje push pravim korisnicima", async () => {
+    expect(
+      await pushFrom({ nodeEnv: "development", appUrl: "https://marysoll.com" }),
+    ).toEqual(["dev", "legacy"]);
   });
 });

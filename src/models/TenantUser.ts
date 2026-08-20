@@ -76,6 +76,12 @@ export interface ITenantUserPushSubscription {
     p256dh: string;
     auth: string;
   };
+  /**
+   * Origin na kome je service worker registrovan (npr. `https://marysoll.com`).
+   * Push `url` je root-relativan i razrešava se BAŠ na ovom originu, pa se po
+   * njemu filtrira kome se šalje. Nedostaje na pretplatama starijim od polja.
+   */
+  origin?: string;
   createdAt: Date;
 }
 
@@ -282,6 +288,8 @@ const tenantUserSchema = new Schema<ITenantUser>(
           p256dh: { type: String, required: true },
           auth: { type: String, required: true },
         },
+        // Origin pretplate — vidi ITenantUserPushSubscription.origin.
+        origin: { type: String, default: null },
         createdAt: { type: Date, default: Date.now },
       },
     ],
