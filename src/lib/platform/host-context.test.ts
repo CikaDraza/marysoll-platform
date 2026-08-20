@@ -277,3 +277,39 @@ describe("platformUrl", () => {
     );
   });
 });
+
+describe("environmentKey", () => {
+  it("svi produkcijski hostovi dele jedan ključ", async () => {
+    const h = await load();
+    for (const host of [
+      "marysoll.com",
+      "admin.marysoll.com",
+      "superadmin.marysoll.com",
+      "the-lash-room.marysoll.com",
+      "marina-skincare.rs", // custom domen salona
+    ]) {
+      expect(h.environmentKey(host)).toBe("production");
+    }
+  });
+
+  it("staging, qa i svaki preview su ZASEBNA okruženja", async () => {
+    const h = await load();
+    expect(h.environmentKey("staging.marysoll.com")).toBe("staging.marysoll.com");
+    expect(h.environmentKey("qa.marysoll.com")).toBe("qa.marysoll.com");
+    expect(h.environmentKey("app-git-a-x.vercel.app")).not.toBe(
+      h.environmentKey("app-git-b-y.vercel.app"),
+    );
+  });
+
+  it("localhost i LAN su isto okruženje (telefon na dev serveru)", async () => {
+    const h = await load();
+    expect(h.environmentKey("localhost:3006")).toBe("local");
+    expect(h.environmentKey("192.168.1.5:3006")).toBe("local");
+  });
+
+  it("environmentKeyOfOrigin: prazan string za nevalidan origin", async () => {
+    const h = await load();
+    expect(h.environmentKeyOfOrigin("https://admin.marysoll.com")).toBe("production");
+    expect(h.environmentKeyOfOrigin("nije-url")).toBe("");
+  });
+});

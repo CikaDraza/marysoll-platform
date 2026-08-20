@@ -11,6 +11,7 @@ import {
   addPushSubscription,
   resolvePushTarget,
 } from "@/lib/pushSubscriptionStore";
+import { platformOrigin } from "@/lib/platform/host-context";
 
 export async function POST(req: Request) {
   try {
@@ -55,10 +56,13 @@ export async function POST(req: Request) {
       }
     }
 
-    // Sačuvaj subscription (TenantUser ili AuthUser, preko helpera)
+    // Sačuvaj subscription (TenantUser ili AuthUser, preko helpera).
+    // `origin` = odakle zahtev STVARNO dolazi — service worker će root-relativni
+    // push `url` razrešiti baš tamo, pa se po njemu kasnije filtrira slanje.
     await addPushSubscription(decoded, {
       endpoint: subscription.endpoint,
       keys: subscription.keys,
+      origin: platformOrigin(req),
     });
 
     // Test push notifikacija za potvrdu
