@@ -40,6 +40,7 @@ import { shouldUseTheme8TestTestimonials } from "@/helpers/theme8DevelopmentTest
 import { getTenantStats } from "@/lib/tenant/getTenantStats";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 import { mapBlogPost, publishedBlogFilter } from "@/lib/tenant/blogPosts";
+import { resolveTenantCapabilitySnapshot } from "@/lib/platform/capabilities-server";
 
 interface Props {
   tenantSlug: string;
@@ -303,10 +304,14 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     salonData.landingStructure,
     { theme: landingTheme },
   );
+  const capabilitySnapshot = await resolveTenantCapabilitySnapshot(
+    String(data.tenantId),
+  );
   const blockData = await resolveBlockData({
     document: themeDocument,
     theme: landingTheme,
     tenantSlug: themeSlug,
+    ...(capabilitySnapshot ? { capabilities: capabilitySnapshot } : {}),
     deps: preloadedBlockDataSource({
       salon: salonData,
       services: serviceList,

@@ -23,6 +23,11 @@ import type {
   ResolvedBlockMap,
 } from "./render-types";
 import type { BlockDataSource, FeatureBlockType } from "./types";
+import type {
+  CapabilityReadiness,
+  TenantCapability,
+  TenantCapabilitySnapshot,
+} from "@/types/tenant-capabilities";
 
 export interface ResolveBlockDataOptions {
   document: ThemeDocument;
@@ -31,7 +36,27 @@ export interface ResolveBlockDataOptions {
   tenantSlug?: string;
   registry?: FeatureBlockRegistry;
   telemetry?: BlockTelemetry;
+  /** Server-side capability snapshot konkretnog public tenanta. */
+  capabilities?: TenantCapabilitySnapshot;
+  /** Domen kasnije priključuje stvarni readiness provider; T2B ga ne izmišlja. */
+  readiness?: CapabilityReadinessProvider;
+  onDiagnostic?: BlockReadinessDiagnostic;
 }
+
+export interface CapabilityReadinessProvider {
+  resolve(input: {
+    capability: TenantCapability;
+    blockId: string;
+    type: FeatureBlockType;
+  }): Promise<CapabilityReadiness> | CapabilityReadiness;
+}
+
+export type BlockReadinessDiagnostic = (event: {
+  capability: TenantCapability;
+  blockId: string;
+  type: FeatureBlockType;
+  readiness: "degraded";
+}) => void;
 
 const defaultTelemetry: BlockTelemetry = (event) => {
   console.warn(
@@ -48,6 +73,9 @@ export async function resolveBlockData({
   tenantSlug,
   registry = FEATURE_BLOCK_REGISTRY,
   telemetry = defaultTelemetry,
+  capabilities,
+  readiness,
+  onDiagnostic,
 }: ResolveBlockDataOptions): Promise<ResolvedBlockMap> {
   const { blocks, skipped } = selectRenderableBlocks(document, registry);
 
@@ -90,6 +118,37 @@ export async function resolveBlockData({
         block,
         `schemaVersion=${block.schemaVersion}`,
       );
+    }
+
+    if (definition.capability !== null) {
+      const resolved = capabilities?.capabilities[definition.capability];
+      if (!resolved?.enabled) {
+        return skip("capability_disabled", block, definition.capability);
+      }
+
+      // Nema provider-a ≠ readiness heuristika: granica je eksplicitna i
+      // fail-closed sve dok konkretan domen ne pruži realan status.
+      const state = readiness
+        ? await readiness.resolve({
+            capability: definition.capability,
+            blockId: block.id,
+            type: block.type as FeatureBlockType,
+          })
+        : "unconfigured";
+      if (state === "unconfigured") {
+        return skip("capability_unconfigured", block, definition.capability);
+      }
+      if (state === "degraded") {
+        onDiagnostic?.({
+          capability: definition.capability,
+          blockId: block.id,
+          type: block.type as FeatureBlockType,
+          readiness: state,
+        });
+        if ((definition.degradedPolicy ?? "skip") === "skip") {
+          return skip("capability_degraded", block, definition.capability);
+        }
+      }
     }
 
     const parsed = definition.parseConfig(block.config);

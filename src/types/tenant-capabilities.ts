@@ -45,7 +45,6 @@ export type TenantCapabilitySnapshot = {
   capabilities: Record<TenantCapability, ResolvedCapability>;
 };
 
-/** @expected-unused T2B-B readiness integration contract. */
 export type CapabilityReadiness = "unconfigured" | "ready" | "degraded";
 
 const tenantVerticalSchema = z.enum(TENANT_VERTICALS);

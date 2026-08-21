@@ -11,6 +11,10 @@ import { describe, expect, it, vi } from "vitest";
 import type { ThemeDocument } from "@panta/theme-engine";
 import type { IService, LandingStructure, SalonProfileData } from "@/types";
 import type { PublicTestimonial } from "@/types/public-testimonials";
+import {
+  TENANT_CAPABILITIES,
+  type TenantCapabilitySnapshot,
+} from "@/types/tenant-capabilities";
 import fixtures from "../__fixtures__/landing-structures.json";
 import {
   landingStructureToThemeDocument,
@@ -21,7 +25,6 @@ import { createFeatureBlockRegistry } from "./registry";
 import { resolveBlockData } from "./resolve";
 import type {
   BookingServicesData,
-  ContentAboutData,
   ContentGalleryData,
   ContentHeroData,
   ContentTestimonialsData,
@@ -127,6 +130,132 @@ describe("paritet podataka nad stvarnim tenantima", () => {
       ?.data as ContentTestimonialsData;
     expect(block.testimonials).toEqual(TESTIMONIALS);
     expect(block.content).toEqual(ls.landing.testimonials);
+  });
+});
+
+function capabilitySnapshot(
+  enabled: boolean,
+): TenantCapabilitySnapshot {
+  return {
+    capabilities: Object.fromEntries(
+      TENANT_CAPABILITIES.map((capability) => [
+        capability,
+        {
+          capability,
+          enabled: capability === "services.catalog" && enabled,
+          platformAvailable: true,
+          planEntitled: true,
+          tenantEnabled: capability === "services.catalog" && enabled,
+        },
+      ]),
+    ) as TenantCapabilitySnapshot["capabilities"],
+  };
+}
+
+describe("T2B public capability i readiness gate", () => {
+  const document: ThemeDocument = {
+    version: 1,
+    layoutDefinitionId: "marysoll-landing-v1",
+    brand: { colors: {}, typography: {} },
+    lifecycle: "published",
+    sections: [
+      {
+        id: "services",
+        sectionType: "content",
+        blocks: [
+          {
+            id: "services-block",
+            type: "services.catalog",
+            schemaVersion: 1,
+            slot: "main",
+            config: { source: "servicesPreview" },
+          },
+        ],
+      },
+    ],
+  };
+
+  function registry(policy: "render" | "skip" = "skip") {
+    return createFeatureBlockRegistry([
+      {
+        type: "services.catalog",
+        schemaVersions: [1],
+        capability: "services.catalog",
+        degradedPolicy: policy,
+        parseConfig: () => ({ ok: true, value: { source: "servicesPreview" } }),
+        load: async () => ({ content: undefined, services: SERVICES }),
+      },
+    ]);
+  }
+
+  it("capability:null ostaje backward-compatible u stvarnom registry-ju", async () => {
+    const data = await resolveBlockData({
+      document,
+      theme: "theme-1",
+      deps: depsFor(tenants[0]![1]),
+    });
+    expect(data["services-block"]).toBeDefined();
+  });
+
+  it("disabled capability se ne renderuje", async () => {
+    const telemetry = vi.fn();
+    const data = await resolveBlockData({
+      document,
+      theme: "theme-1",
+      deps: depsFor(tenants[0]![1]),
+      registry: registry(),
+      capabilities: capabilitySnapshot(false),
+      telemetry,
+    });
+    expect(data).toEqual({});
+    expect(telemetry).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: "capability_disabled" }),
+    );
+  });
+
+  it("unconfigured blok ostaje skriven public, dok admin capability ostaje enabled", async () => {
+    const telemetry = vi.fn();
+    const data = await resolveBlockData({
+      document,
+      theme: "theme-1",
+      deps: depsFor(tenants[0]![1]),
+      registry: registry(),
+      capabilities: capabilitySnapshot(true),
+      readiness: { resolve: () => "unconfigured" },
+      telemetry,
+    });
+    expect(data).toEqual({});
+    expect(capabilitySnapshot(true).capabilities["services.catalog"].enabled).toBe(true);
+    expect(telemetry).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: "capability_unconfigured" }),
+    );
+  });
+
+  it("ready blok se renderuje, a degraded prati deklarisanu policy i dijagnostiku", async () => {
+    const ready = await resolveBlockData({
+      document,
+      theme: "theme-1",
+      deps: depsFor(tenants[0]![1]),
+      registry: registry(),
+      capabilities: capabilitySnapshot(true),
+      readiness: { resolve: () => "ready" },
+    });
+    expect(ready["services-block"]).toBeDefined();
+
+    const diagnostic = vi.fn();
+    const degraded = await resolveBlockData({
+      document,
+      theme: "theme-1",
+      deps: depsFor(tenants[0]![1]),
+      registry: registry("render"),
+      capabilities: capabilitySnapshot(true),
+      readiness: { resolve: () => "degraded" },
+      onDiagnostic: diagnostic,
+    });
+    expect(degraded["services-block"]).toBeDefined();
+    expect(diagnostic).toHaveBeenCalledWith(
+      expect.objectContaining({ readiness: "degraded" }),
+    );
   });
 });
 

@@ -4,7 +4,7 @@ import type {
 } from "@/types/tenant-capabilities";
 
 /** Workspace je samo projekcija već razrešenog capability-ja. */
-export const ADMIN_WORKSPACE_CAPABILITIES = {
+const ADMIN_WORKSPACE_CAPABILITIES = {
   usluge: "services.catalog",
   termini: "booking.services",
   kalendar: "booking.services",
@@ -12,7 +12,7 @@ export const ADMIN_WORKSPACE_CAPABILITIES = {
   growth: "loyalty.rewards",
 } as const satisfies Record<string, TenantCapability>;
 
-export const CLIENT_WORKSPACE_CAPABILITIES = {
+const CLIENT_WORKSPACE_CAPABILITIES = {
   "Moji Termini": "booking.services",
   Zakazivanja: "booking.services",
   Nagrade: "loyalty.rewards",
