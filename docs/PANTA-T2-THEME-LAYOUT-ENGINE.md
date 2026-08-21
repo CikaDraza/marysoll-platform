@@ -832,6 +832,30 @@ Praktične posledice za korak 6:
 theme-8 je zato dobar test buduće arhitekture: jedina je tema koja već danas ima
 launcher (modal) bez inline sekcije.
 
+## 6.12 Privatne prezentacione teme — application access policy (2026-08-21)
+
+Theme access odgovara na pitanje **koju prezentaciju tenant sme da izabere**.
+To nije capability i ne odlučuje o poslovnim funkcijama, planu, vertikalama,
+bookingu ili sadržaju teme.
+
+Privremeni application-level policy van `packages/theme-engine` drži sledeću
+matricu:
+
+| Tema | Vidljivost | Dozvoljen tenant |
+|---|---|---|
+| theme-1 … theme-7 | javna | svi tenanti, bez promene zatečenog ponašanja |
+| theme-8 | privatna | `the-lash-room-by-anja` |
+| theme-9 | privatna | `marina-stanisavljevic-skincare-edukacija` |
+
+Jedan čisti `canTenantUseTheme({ theme, tenantSlug })` koriste picker i serverski
+write put. Picker je samo projekcija; server preko autentifikovanog `tenantId`
+čita aktuelni `Tenant.slug` i vraća `403 THEME_NOT_AVAILABLE` za ručni pokušaj
+zaobilaženja.
+
+Slugovi su prelazno backing skladište odluke. Kada persistent tenant-level
+entitlement postane potreban, menja se taj application sloj, bez unošenja
+tenant-identiteta u Theme Engine i bez spajanja sa budućim T2B capability-jem.
+
 ## 7. Redosled (T2A)
 
 1. ✅ `packages/theme-engine` — tipovi (`ThemeDocument`, `LayoutDefinition`) +
@@ -975,8 +999,11 @@ To je jedini dokaz da je nastala granica, a ne novi rewrite.
 
 Po završetku T2A radi se **kratak review stvarnog koda protiv ovog dokumenta**
 (granica, zavisnosti paketa, registry, loaderi, invarijante). T2B kreće tek ako
-granica u kodu izgleda onako kako je ovde definisana — plus odvojena staging baza
-kao zaseban prerequisite (vidi [T2B 6.1](PANTA-TENANT-VERTICALS-CAPABILITIES.md)).
+granica u kodu izgleda onako kako je ovde definisana i poštuje shared-DB safety
+gate: backward-compatible opcione schema promene, resolveri koji rade sa starim
+dokumentima, tenant-scoped dry-run skripte i bez destruktivnog bulk backfill-a.
+Odvojena staging baza nije prerequisite za ovu odluku; pun T2B v0.3 ugovor je
+sledeći zaseban slice.
 
 ## Reference
 

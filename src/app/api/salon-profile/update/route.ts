@@ -7,24 +7,26 @@ import {
   deleteFromCloudinary,
   getTenantFolder,
 } from "@/lib/cloudinary";
-import { requireAdmin } from "@/lib/auth/auth-server";
-import { DecodedToken } from "@/types/auth/types";
+import { requireTenantAdmin } from "@/lib/auth/auth-server";
 import { revalidateMarketplaceCaches } from "@/lib/marketplace/revalidateMarketplace";
 import { pruneAndValidateManualSlots } from "@/helpers/manualSlots";
 import { normalizeVacations } from "@/helpers/vacations";
 import type { LandingStructure } from "@/types";
 import { mergeLandingStructureUpdate } from "@/lib/salon-profile/content-preservation";
+import {
+  THEME_NOT_AVAILABLE,
+  isLandingTheme,
+} from "@/lib/platform/theme-access";
+import { canTenantIdUseTheme } from "@/lib/platform/theme-access-server";
 
 export async function PUT(req: NextRequest) {
   try {
     await connectToDB();
-    const auth = requireAdmin(req) as { decoded: DecodedToken } | NextResponse;
-    if (auth instanceof NextResponse) return auth;
-    const tenantId = auth.decoded.tenantId;
+    const auth = requireTenantAdmin(req);
+    if (!auth.success) return auth.response;
+    const tenantId = auth.tenantId;
 
-    const profile = tenantId
-      ? await SalonProfile.findOne({ tenantId })
-      : await SalonProfile.findOne({});
+    const profile = await SalonProfile.findOne({ tenantId });
     if (!profile)
       return NextResponse.json(
         { error: "Profil ne postoji." },
@@ -36,6 +38,20 @@ export async function PUT(req: NextRequest) {
       const val = form.get(key);
       return val && typeof val === "string" ? JSON.parse(val) : fallback;
     };
+
+    const requestedTheme = form.get("landingTheme");
+    if (isLandingTheme(requestedTheme)) {
+      if (!(await canTenantIdUseTheme({ tenantId, theme: requestedTheme }))) {
+        return NextResponse.json(
+          {
+            error: "Ova tema nije dostupna ovom nalogu.",
+            code: THEME_NOT_AVAILABLE,
+          },
+          { status: 403 },
+        );
+      }
+      profile.landingTheme = requestedTheme;
+    }
 
     // Text fields
     for (const field of [
@@ -88,22 +104,6 @@ export async function PUT(req: NextRequest) {
     if (seo) profile.seo = seo;
     const branding = parseJSON("branding");
     if (branding) profile.branding = branding;
-    const landingTheme = (form.get("landingTheme") as string) || "theme-1";
-    if (
-      [
-        "theme-1",
-        "theme-2",
-        "theme-3",
-        "theme-4",
-        "theme-5",
-        "theme-6",
-        "theme-7",
-        "theme-8",
-        "theme-9",
-      ].includes(landingTheme)
-    ) {
-      profile.landingTheme = landingTheme;
-    }
     const landingStructure = parseJSON("landingStructure");
     if (landingStructure) {
       const current = profile.toObject().landingStructure as

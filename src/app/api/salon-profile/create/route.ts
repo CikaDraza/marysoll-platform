@@ -2,22 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { SalonProfile } from "@/models/SalonProfile";
 import { uploadToCloudinary, getTenantFolder } from "@/lib/cloudinary";
-import { requireAdmin } from "@/lib/auth/auth-server";
-import { DecodedToken } from "@/types/auth/types";
+import { requireTenantAdmin } from "@/lib/auth/auth-server";
 import { pruneAndValidateManualSlots } from "@/helpers/manualSlots";
 import { normalizeVacations } from "@/helpers/vacations";
+import {
+  THEME_NOT_AVAILABLE,
+  isLandingTheme,
+} from "@/lib/platform/theme-access";
+import { canTenantIdUseTheme } from "@/lib/platform/theme-access-server";
 
 export async function POST(req: NextRequest) {
   try {
     await connectToDB();
-    const auth = (await requireAdmin(req)) as
-      | { decoded: DecodedToken }
-      | NextResponse;
-    if (auth instanceof NextResponse) return auth;
-    const tenantId = auth.decoded.tenantId;
-    const existing = tenantId
-      ? await SalonProfile.exists({ tenantId })
-      : await SalonProfile.exists({});
+    const auth = requireTenantAdmin(req);
+    if (!auth.success) return auth.response;
+    const tenantId = auth.tenantId;
+
+    const existing = await SalonProfile.exists({ tenantId });
     if (existing) {
       return NextResponse.json(
         { error: "Profil već postoji. Koristite PUT /update." },
@@ -27,19 +28,31 @@ export async function POST(req: NextRequest) {
 
     const form = await req.formData();
 
+    const parseJSON = (key: string) => {
+      const val = form.get(key);
+      return val && typeof val === "string" ? JSON.parse(val) : {};
+    };
+
+    const requestedTheme = form.get("landingTheme");
+    const landingTheme = isLandingTheme(requestedTheme)
+      ? requestedTheme
+      : "theme-1";
+    if (!(await canTenantIdUseTheme({ tenantId, theme: landingTheme }))) {
+      return NextResponse.json(
+        {
+          error: "Ova tema nije dostupna ovom nalogu.",
+          code: THEME_NOT_AVAILABLE,
+        },
+        { status: 403 },
+      );
+    }
+
     let logoUrl: string | null = null;
     const logoFile = form.get("logo");
     if (logoFile instanceof File && logoFile.size > 0) {
       const folder = await getTenantFolder(tenantId);
       logoUrl = await uploadToCloudinary(logoFile, folder);
     }
-
-    const parseJSON = (key: string) => {
-      const val = form.get(key);
-      return val && typeof val === "string" ? JSON.parse(val) : {};
-    };
-
-    const landingTheme = (form.get("landingTheme") as string) || "theme-1";
     const cancellationWindowHoursRaw = form.get("cancellationWindowHours");
     const cancellationWindowHours =
       typeof cancellationWindowHoursRaw === "string" &&
@@ -60,7 +73,7 @@ export async function POST(req: NextRequest) {
     const showWorkingHours = form.get("showWorkingHours") !== "false";
 
     const created = await SalonProfile.create({
-      tenantId: tenantId ?? undefined,
+      tenantId,
       name: form.get("name"),
       email: form.get("email"),
       description: form.get("description") ?? "",
@@ -73,19 +86,7 @@ export async function POST(req: NextRequest) {
       marketingPhone: form.get("marketingPhone") ?? "",
       resendApiKey: form.get("resendApiKey") ?? "",
       logo: logoUrl,
-      landingTheme: [
-        "theme-1",
-        "theme-2",
-        "theme-3",
-        "theme-4",
-        "theme-5",
-        "theme-6",
-        "theme-7",
-        "theme-8",
-        "theme-9",
-      ].includes(landingTheme)
-        ? landingTheme
-        : "theme-1",
+      landingTheme,
       social: parseJSON("social"),
       workingHours: parseJSON("workingHours"),
       vacations: normalizeVacations(parseJSON("vacations")),

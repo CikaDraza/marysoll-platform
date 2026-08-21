@@ -5,6 +5,7 @@
  */
 import type { IService } from "@/types";
 import type { LandingTheme } from "@/types";
+import { availableThemesForTenant } from "@/lib/platform/theme-access";
 
 export const SR_DAY_SHORT = ["Ned", "Pon", "Uto", "Sre", "Čet", "Pet", "Sub"];
 export const MANUAL_DAYS_AHEAD = 14;
@@ -47,7 +48,7 @@ export function dayOffsetFromToday(dateKey: string): number {
 
 // ─── Themes ───────────────────────────────────────────────────────────────────
 
-export const THEMES: {
+const THEMES: {
   id: LandingTheme;
   label: string;
   description: string;
@@ -110,6 +111,14 @@ export const THEMES: {
     previewColors: ["#faf8f3", "#2e3b2e", "#c6d5a8"],
   },
 ];
+
+/** Theme picker projection. Server policy remains the authorization source. */
+export function themePickerThemesForTenant(
+  tenantSlug?: string | null,
+): typeof THEMES {
+  const availableThemes = new Set(availableThemesForTenant(tenantSlug));
+  return THEMES.filter((theme) => availableThemes.has(theme.id));
+}
 
 // ─── Style tokens ─────────────────────────────────────────────────────────────
 
