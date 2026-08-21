@@ -22,6 +22,7 @@ import { SingleImageField } from "./campaign/SingleImageField";
 import LoaderButton from "../elements/LoaderButton";
 import AdminSemanticModal from "./campaign/AdminSemanticModal";
 import type { NewsletterClientScope } from "@/lib/newsletter/clientScope";
+import { renderNewsletterPreviewHtml } from "@/lib/newsletter/previewHtml";
 import {
   PLATFORM_AUDIENCE_FILTERS,
   PLATFORM_AUDIENCE_FILTER_LABELS,
@@ -513,7 +514,7 @@ function AdminNewsletterDashboard({ scope }: AdminNewsletterDashboardProps) {
                 </div>
                 <div className="h-64 bg-white">
                   <iframe
-                    srcDoc={template.htmlTemplate}
+                    srcDoc={renderNewsletterPreviewHtml(template.htmlTemplate)}
                     className="w-full h-full border-0"
                     title={`Preview ${template.name}`}
                     sandbox="allow-same-origin"
@@ -611,7 +612,7 @@ function AdminNewsletterDashboard({ scope }: AdminNewsletterDashboardProps) {
                   </div>
                   <div className="h-64 bg-white">
                     <iframe
-                      srcDoc={template.htmlTemplate}
+                      srcDoc={renderNewsletterPreviewHtml(template.htmlTemplate)}
                       className="w-full h-full border-0"
                       title={`Preview ${template.name}`}
                       sandbox="allow-same-origin"
@@ -699,6 +700,7 @@ function AdminNewsletterDashboard({ scope }: AdminNewsletterDashboardProps) {
                         value={formData.variables?.[variable.name]}
                         onChange={(url) => updateVariable(variable.name, url)}
                         label={variable.label}
+                        scope={scope}
                       />
                     ) : variable.type === "textarea" ? (
                       <textarea
@@ -817,7 +819,7 @@ function AdminNewsletterDashboard({ scope }: AdminNewsletterDashboardProps) {
               <h4 className="font-semibold mb-3">Preview templejta:</h4>
               <div className="border dark:border-gray-700 rounded-lg overflow-hidden">
                 <iframe
-                  srcDoc={formData.content}
+                  srcDoc={renderNewsletterPreviewHtml(formData.content)}
                   className="w-full h-screen min-h-96"
                   title="Custom Template Preview"
                   sandbox="allow-same-origin"
@@ -1456,7 +1458,7 @@ function AdminNewsletterDashboard({ scope }: AdminNewsletterDashboardProps) {
             </div>
             <div className="p-6">
               <iframe
-                srcDoc={previewCampaign.content}
+                srcDoc={renderNewsletterPreviewHtml(previewCampaign.content)}
                 className="w-full h-screen min-h-96 border-2 border-gray-200 rounded-lg"
                 title="Email Preview"
                 sandbox="allow-same-origin"
