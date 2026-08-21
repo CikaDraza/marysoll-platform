@@ -4,9 +4,11 @@
 > [ARHITEKTURA-ENGINES.md](ARHITEKTURA-ENGINES.md), posle
 > [T2A Theme/Layout granice](PANTA-T2-THEME-LAYOUT-ENGINE.md).
 >
-> Ovaj dokument zaključava ugovor. Produkcijski `TenantCapability`,
-> `ResolvedCapability`, `CapabilityReadiness`, `requireCapability()` i
-> capability-aware admin/API/public gate **još ne postoje u kodu**.
+> Ovaj dokument zaključava ugovor. **T2B-A foundation je implementiran:**
+> Tenant persistence, registry, pure/server resolver, plan adapter,
+> `requireCapability()` i new-tenant provisioning postoje u kodu.
+> Capability-aware admin/client projekcija, business API gate, public renderer
+> i readiness integracija ostaju naredni T2B-B slice.
 
 ## 1. Šta rešavamo
 
@@ -214,8 +216,9 @@ await requireCapability(tenantId, "education.catalog");
 ```
 
 Feature Block Registry već ima polje `capability`, ali svi aktivni blokovi danas
-imaju `capability: null`, a resolver ga ne proverava. Theme-9 `content.*` blokovi
-su sadržajni teaseri, ne Education/Consultation domeni.
+imaju `capability: null`, a T2B-A resolver još nije povezan sa rendererom.
+Theme-9 `content.*` blokovi su sadržajni teaseri, ne Education/Consultation
+domeni.
 
 Statični Theme8/9 access policy ostaje odvojen. On odgovara na pitanje koju
 prezentaciju tenant sme da koristi; capability odgovara koje poslovne funkcije
@@ -246,17 +249,17 @@ postoji“ ne znači „funkcija je dostupna“.
 
 | Capability | Stvarni domen danas | Prvi T2B `platformAvailable` | Legacy beauty default | Marina education-first cilj | Hybrid cilj | Plan izvor |
 |---|---|---:|---:|---:|---:|---|
-| `services.catalog` | `Service` postoji | `true` | `true` | `false` | `true` | postojeći core-plan ugovor mora biti eksplicitno mapiran |
-| `booking.services` | `Appointment` i availability postoje; T3 write authority ne | `true` za legacy tok | `true` | `false` | `true` | postojeći appointments plan feature |
+| `services.catalog` | `Service` postoji | `true` | `true` | `false` | `true` | `core` — postojeće Service rute nemaju plan gate |
+| `booking.services` | `Appointment` i availability postoje; T3 write authority ne | `true` za legacy tok | `true` | `false` | `true` | plan feature `appointments` |
 | `consultations.catalog` | `ConsultationOffering` ne postoji | `false` | `false` | buduće `true` | buduće `true` | dodati u `PLAN_FEATURES` pre uključivanja |
 | `booking.consultations` | `ConsultationBooking`/kanonska rezervacija ne postoje | `false` | `false` | buduće `true` | buduće `true` | dodati pre uključivanja |
 | `questionnaires.forms` | questionnaires/intake domen ne postoji | `false` | `false` | buduće `true` | buduće `true` | dodati pre uključivanja |
 | `education.catalog` | `EducationOffering` ne postoji | `false` | `false` | buduće `true` | buduće `true` | dodati pre uključivanja |
 | `education.inquiries` | `EducationInquiry` ne postoji | `false` | `false` | buduće `true` | buduće `true` | dodati pre uključivanja |
 | `booking.education` | `EducationEnrollment` i booking adapter ne postoje | `false` | `false` | buduće, po potrebi | buduće `true` | dodati pre uključivanja |
-| `audience.contacts` | `AudienceContact` i postojeći tokovi postoje | `true` | `true` | po eksplicitnoj odluci | po eksplicitnoj odluci | mapirati na postojeći marketing/plan ugovor |
+| `audience.contacts` | `AudienceContact` i osnovni registration/newsletter tokovi postoje bez plan gate-a; napredni Audience/AI UI ima zaseban `emailCampaignAi` gate | `true` | `true` | po eksplicitnoj odluci | po eksplicitnoj odluci | `core`; ne otključava napredne kampanje |
 | `distribution.campaigns` | Distribution Engine modeli/runtime ne postoje | `false` | `false` | `false` | buduće `true` | dodati pre uključivanja |
-| `loyalty.rewards` | Loyalty Engine postoji | `true` | `true` | opciono | opciono | postojeći loyalty plan feature |
+| `loyalty.rewards` | Loyalty Engine postoji | `true` | `true` | opciono | opciono | plan feature `loyaltyCore` |
 
 `booking.services=true` čuva postojeći proizvod; ne proglašava race-unsafe
 `Appointment` write ispravnim. Novi theme-9 booking ostaje read-only preview do
@@ -287,30 +290,38 @@ Postojeći tenant se može materijalizovati tek pri namernom provisioning/edit
 upisu. To nije obavezna masovna migracija i ne menja značenje njegovog starog
 dokumenta.
 
-## 9. Implementacioni redosled posle ovog dokumenta
+## 9. Implementacioni status
 
-1. dodati opcione Tenant tipove/shemu i čiste resolver funkcije;
-2. dodati platform registry i eksplicitno `PLAN_FEATURES` mapiranje;
-3. uvesti `requireCapability(tenantId, capability)`;
-4. povezati isti resolver sa admin/client navigacijom, API-jima i public block
-   rendererom;
-5. dodati tenant-scoped provisioning sa dry-run/`--apply` pravilom;
-6. testirati legacy beauty, education-first, hybrid, explicit disable,
-   plan-denied, platform-unavailable, readiness i ownership slučajeve.
+T2B-A foundation:
+
+1. ✅ opcioni Tenant tipovi/shema i pure resolver;
+2. ✅ platform registry i adapter na postojeći `PLAN_FEATURES` ugovor;
+3. ✅ `resolveTenantCapability()` i `requireCapability()`;
+4. ✅ novi Tenant dobija eksplicitne beauty vertikale i override-e kroz jedan
+   provisioning helper;
+5. ✅ legacy/persistence/provisioning/plan/server testovi bez DB upisa.
+
+T2B-B integration ostaje otvoren:
+
+1. ⬜ admin/client capability projekcija i navigacija;
+2. ⬜ business API gate-ovi;
+3. ⬜ public Feature Block gate;
+4. ⬜ readiness loaderi/politike;
+5. ⬜ triple-gate i permission/ownership integracioni testovi.
 
 ## 10. Acceptance criteria
 
-- [ ] Legacy tenant bez novih polja zadržava postojeće beauty ponašanje bez
+- [x] Legacy tenant bez novih polja zadržava postojeće beauty ponašanje bez
       masovnog upisa u bazu.
-- [ ] Novi tenant eksplicitno dobija vertikale i capability override-e.
-- [ ] Education-first tenant postoji bez `services.catalog` i
+- [x] Novi tenant eksplicitno dobija vertikale i capability override-e.
+- [x] Education-first tenant postoji bez `services.catalog` i
       `booking.services`.
-- [ ] Hybrid tenant može imati oba domena bez promene tipa naloga.
+- [x] Hybrid tenant može imati oba domena bez promene tipa naloga.
 - [ ] Jedan resolver važi u admin/client UI-ju, API-ju i public rendereru.
 - [ ] API test dokazuje da skriven UI nije jedina zaštita.
 - [ ] `unconfigured` otvara admin onboarding, ali ne prikazuje public blok.
 - [ ] `degraded` prati politiku feature-a i šalje dijagnostički signal.
-- [ ] `requireCapability()` koristi postojeći plan ugovor, ne paralelni sistem.
+- [x] `requireCapability()` koristi postojeći plan ugovor, ne paralelni sistem.
 - [ ] Test dokazuje `permission ∩ capability ∩ ownership`.
 - [ ] Shared-DB Safety Contract je pokriven testovima/guardovima za skripte.
 

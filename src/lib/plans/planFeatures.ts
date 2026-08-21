@@ -416,6 +416,29 @@ export function resolveEffectivePlan(
 }
 
 /**
+ * Jedino pravilo za vremenski ograničene superadmin feature override-e.
+ * Server potrošači ga dele da capability i postojeći requireFeature ne mogu
+ * različito da protumače isti Subscription dokument.
+ */
+export function resolveActiveFeatureOverrides(
+  subscription:
+    | {
+        featureOverrides?: Partial<PlanFeatures> | null;
+        overrideExpiresAt?: Date | string | null;
+      }
+    | null
+    | undefined,
+  now: Date = new Date(),
+): Partial<PlanFeatures> | null {
+  if (!subscription?.featureOverrides || !subscription.overrideExpiresAt) {
+    return null;
+  }
+  const expiresAt = new Date(subscription.overrideExpiresAt);
+  if (Number.isNaN(expiresAt.getTime()) || expiresAt <= now) return null;
+  return subscription.featureOverrides;
+}
+
+/**
  * Provjeri da li plan ima konkretan feature.
  * Koristi se za jednostavne boolean provjere.
  */
