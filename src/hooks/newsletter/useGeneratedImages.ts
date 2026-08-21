@@ -9,6 +9,8 @@ import {
   getNewsletterScopeHeaders,
   type NewsletterClientScope,
 } from "@/lib/newsletter/clientScope";
+import { getImageGenerationErrorMessage } from "@/lib/newsletter/imageGenerationError";
+import { getImageGenerationUrl } from "@/lib/newsletter/imageGenerationResponse";
 
 /**
  * Hook za upravljanje generisanim slikama za landing page
@@ -58,18 +60,23 @@ export function useGeneratedImages(
         });
 
         if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "Failed to generate image");
+          const errorPayload: unknown = await res.json().catch(() => null);
+          throw new Error(getImageGenerationErrorMessage(errorPayload));
         }
 
-        const data = await res.json();
+        const data: unknown = await res.json();
+        const generatedUrl = getImageGenerationUrl(data);
 
-        if (!data.url) throw new Error("No image URL returned");
+        if (!generatedUrl) {
+          throw new Error(
+            "AI servis nije vratio sliku. Pokušajte ponovo za nekoliko minuta.",
+          );
+        }
 
         setImages((prev) =>
           prev.map((item, i) =>
             i === index
-              ? { ...item, url: data.url, isGenerating: false }
+              ? { ...item, url: generatedUrl, isGenerating: false }
               : item,
           ),
         );
@@ -77,10 +84,12 @@ export function useGeneratedImages(
         // Invalidate cloudinary query for instant update
         queryClient.invalidateQueries({ queryKey: ["cloudinary-images"] });
         toast.success("Slika generisana");
-        return data.url;
+        return generatedUrl;
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "Image generation failed",
+          error instanceof Error
+            ? error.message
+            : "Generisanje slike trenutno nije dostupno. Pokušajte ponovo za nekoliko minuta.",
         );
         setImages((prev) =>
           prev.map((item, i) =>
