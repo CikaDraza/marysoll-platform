@@ -12,9 +12,12 @@ import {
 } from "@/lib/plans/planFeatures";
 import { resolveCapability } from "@/lib/platform/capabilities";
 import {
+  TENANT_CAPABILITIES,
   isTenantCapability,
   type ResolvedCapability,
+  type TenantCapability,
   type TenantCapabilityConfiguration,
+  type TenantCapabilitySnapshot,
   type TenantVertical,
 } from "@/types/tenant-capabilities";
 import { Subscription } from "@/models/Subscription";
@@ -79,6 +82,41 @@ async function lookupTenantCapability(
     kind: "resolved",
     value: resolveCapability({ tenant, capability, planFeatures }),
   };
+}
+
+/**
+ * Server-side projekcija za admin i client workspace.
+ * Tenant i Subscription se čitaju jednom; browser dobija samo gotov rezultat.
+ */
+export async function resolveTenantCapabilitySnapshot(
+  tenantId: string | null | undefined,
+): Promise<TenantCapabilitySnapshot | null> {
+  if (!tenantId || !Types.ObjectId.isValid(tenantId)) return null;
+
+  await connectToDB();
+  const [tenant, subscription] = await Promise.all([
+    Tenant.findById(tenantId)
+      .select("verticals capabilityConfiguration plan paid planExpiresAt")
+      .lean<TenantCapabilityRecord>(),
+    Subscription.findOne({ tenantId }).lean<SubscriptionPlanRecord>(),
+  ]);
+  if (!tenant) return null;
+
+  const plan = resolveEffectivePlan(subscription, tenant);
+  const planFeatures = getPlanFeatures(
+    plan,
+    resolveActiveFeatureOverrides(subscription),
+  );
+  const capabilities = {} as Record<TenantCapability, ResolvedCapability>;
+  for (const capability of TENANT_CAPABILITIES) {
+    capabilities[capability] = resolveCapability({
+      tenant,
+      capability,
+      planFeatures,
+    });
+  }
+
+  return { capabilities };
 }
 
 export async function resolveTenantCapability(

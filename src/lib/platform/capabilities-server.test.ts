@@ -14,6 +14,7 @@ import { Tenant } from "@/models/Tenant";
 import { Subscription } from "@/models/Subscription";
 import {
   requireCapability,
+  resolveTenantCapabilitySnapshot,
   resolveTenantCapability,
 } from "./capabilities-server";
 
@@ -67,6 +68,20 @@ describe("T2B server capability contract", () => {
     await expect(
       requireCapability(TENANT_ID, "services.catalog"),
     ).resolves.toBeNull();
+  });
+
+  it("projektuje kompletan skup capability-ja jednim server-side ugovorom", async () => {
+    mockLookup({ tenant: { plan: "maria", paid: false } });
+
+    await expect(resolveTenantCapabilitySnapshot(TENANT_ID)).resolves.toMatchObject({
+      capabilities: {
+        "services.catalog": { enabled: true },
+        "booking.services": { enabled: true },
+        "education.catalog": { enabled: false, platformAvailable: false },
+      },
+    });
+    expect(Tenant.findById).toHaveBeenCalledTimes(1);
+    expect(Subscription.findOne).toHaveBeenCalledTimes(1);
   });
 
   it("odbija platform-unavailable capability", async () => {

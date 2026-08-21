@@ -37,6 +37,14 @@ export interface ResolvedCapability {
   tenantEnabled: boolean;
 }
 
+/**
+ * Jedina serializovana projekcija koju UI dobija za capability-aware workspace.
+ * Plan, vertikale i tenant override-i se nikada ne računaju u browseru.
+ */
+export type TenantCapabilitySnapshot = {
+  capabilities: Record<TenantCapability, ResolvedCapability>;
+};
+
 /** @expected-unused T2B-B readiness integration contract. */
 export type CapabilityReadiness = "unconfigured" | "ready" | "degraded";
 
