@@ -22,7 +22,11 @@ export async function POST(req: Request) {
     );
     if (!newsletterScope) {
       return NextResponse.json(
-        { error: "Newsletter scope nije validan" },
+        {
+          error:
+            "Nije moguće odrediti nalog za newsletter. Osvežite stranicu i pokušajte ponovo.",
+          code: "NEWSLETTER_SCOPE_INVALID",
+        },
         { status: 403 },
       );
     }
@@ -40,7 +44,10 @@ export async function POST(req: Request) {
     const { prompt } = await req.json();
     if (!prompt || prompt.trim() === "") {
       return NextResponse.json(
-        { error: "Prompt cannot be empty." },
+        {
+          error: "Unesite opis slike koju želite da generišete.",
+          code: "IMAGE_PROMPT_REQUIRED",
+        },
         { status: 400 },
       );
     }
@@ -60,7 +67,11 @@ export async function POST(req: Request) {
   } catch (error: unknown) {
     console.error("Newsletter image generation error:", error);
     return NextResponse.json(
-      { error: "Image generation failed." },
+      {
+        error:
+          "Generisanje slike trenutno nije dostupno. Pokušajte ponovo za nekoliko minuta.",
+        code: "IMAGE_GENERATION_UNAVAILABLE",
+      },
       { status: 500 },
     );
   }
