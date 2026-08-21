@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { Appointment } from "@/models/Appointment";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 type Params = { params: Promise<{ tenantSlug: string }> };
 
@@ -21,6 +22,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
     if (!tenant) {
       return NextResponse.json({ success: false, error: "Salon nije pronađen" }, { status: 404 });
     }
+    const denied = await requireCapability(
+      String((tenant as Record<string, unknown>)._id),
+      "booking.services",
+    );
+    if (denied) return NextResponse.json([]);
 
     const appointments = await Appointment.find({
       tenantId: (tenant as Record<string, unknown>)._id,

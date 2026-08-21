@@ -9,6 +9,7 @@ import { loyaltyOnAppointmentStatusChange } from "@/lib/loyalty/hooks";
 import { IAppointment } from "@/types";
 import { Notification } from "@/models/Notification";
 import { Types } from "mongoose";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 interface UpdateAppointmentData {
   status?:
@@ -66,6 +67,10 @@ export async function PUT(
         decoded,
         req.url,
       );
+    }
+    if (!scope.isSuperAdmin) {
+      const denied = await requireCapability(decoded.tenantId, "booking.services");
+      if (denied) return denied;
     }
 
     const tenant = await resolveTenant(req);

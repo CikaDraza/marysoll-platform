@@ -18,6 +18,7 @@ import {
   type BookedAppointment,
   type SalonAvailabilityProfile,
 } from "@/lib/booking/availabilityAdapter";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 const SLOT_INTERVAL = 30;
 
@@ -52,6 +53,8 @@ export async function GET(req: NextRequest) {
     }
 
     const s = salon as Record<string, unknown>;
+    const denied = await requireCapability(String(s.tenantId ?? ""), "booking.services");
+    if (denied) return NextResponse.json([]);
 
     let slotDuration = SLOT_INTERVAL;
     if (serviceId) {

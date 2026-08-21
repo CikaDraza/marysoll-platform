@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin } from "@/lib/auth/auth-server";
-import { requireFeature } from "@/lib/plans/planEnforcement";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 import { LoyaltyConfig } from "@/models/LoyaltyConfig";
 import { DEFAULT_LOYALTY_CONFIG } from "@/lib/loyalty/config";
 
@@ -99,7 +99,7 @@ const configSchema = z.object({
 export async function GET(req: NextRequest) {
   const auth = requireAdmin(req);
   if (!auth.success) return auth.response;
-  const denied = await requireFeature(auth.decoded.tenantId, "loyaltyCore");
+  const denied = await requireCapability(auth.decoded.tenantId, "loyalty.rewards");
   if (denied) return denied;
 
   await connectToDB();
@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const auth = requireAdmin(req);
   if (!auth.success) return auth.response;
-  const denied = await requireFeature(auth.decoded.tenantId, "loyaltyCore");
+  const denied = await requireCapability(auth.decoded.tenantId, "loyalty.rewards");
   if (denied) return denied;
 
   let body: unknown;

@@ -9,6 +9,7 @@ import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
 import { LoyaltyAccount } from "@/models/LoyaltyAccount";
 import { getLoyaltyConfig } from "@/lib/loyalty/config";
 import { isLoyaltyActive } from "@/lib/loyalty/events";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 export async function GET(req: NextRequest) {
   const token = getTokenFromRequest(req);
@@ -16,6 +17,8 @@ export async function GET(req: NextRequest) {
   if (!decoded?.tenantUserId || !decoded.tenantId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await requireCapability(decoded.tenantId, "loyalty.rewards");
+  if (denied) return denied;
 
   await connectToDB();
   const [{ active }, config, account] = await Promise.all([

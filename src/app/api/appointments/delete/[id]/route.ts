@@ -4,6 +4,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { verifyToken } from "@/lib/auth/auth-server";
 import { logSuperAdminAccess, tenantScopeFrom } from "@/lib/auth/tenantScope";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 export async function DELETE(
   req: Request,
@@ -37,6 +38,10 @@ export async function DELETE(
     }
     if (scope.isSuperAdmin) {
       logSuperAdminAccess("SUPERADMIN_UNSCOPED_APPOINTMENT_DELETE", user, req.url);
+    }
+    if (!scope.isSuperAdmin) {
+      const denied = await requireCapability(user.tenantId, "booking.services");
+      if (denied) return denied;
     }
 
     const deleted = await Appointment.findOneAndDelete({

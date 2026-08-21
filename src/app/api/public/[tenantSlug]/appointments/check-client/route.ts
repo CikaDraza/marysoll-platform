@@ -10,6 +10,7 @@ import { Types } from "mongoose";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { findExistingClient } from "@/lib/users/findExistingClient";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 type Params = { params: Promise<{ tenantSlug: string }> };
 
@@ -29,6 +30,8 @@ export async function GET(req: NextRequest, { params }: Params) {
     if (!tenant) {
       return NextResponse.json({ exists: false, isRegistered: false });
     }
+    const denied = await requireCapability(String(tenant._id), "booking.services");
+    if (denied) return NextResponse.json({ exists: false, isRegistered: false });
 
     const match = await findExistingClient({
       tenantId: tenant._id,

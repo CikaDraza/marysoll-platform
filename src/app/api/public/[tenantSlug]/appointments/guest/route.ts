@@ -27,6 +27,7 @@ import {
 } from "@/lib/appointments/booking";
 import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 type Params = { params: Promise<{ tenantSlug: string }> };
 
@@ -51,6 +52,8 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     const tenant = tenantDoc as unknown as ITenant;
     const tenantId = tenant._id?.toString();
+    const denied = await requireCapability(tenantId, "booking.services");
+    if (denied) return denied;
 
     // ── Check salon can accept bookings ───────────────────────────────────────
     if (!canAcceptBookings(tenant)) {

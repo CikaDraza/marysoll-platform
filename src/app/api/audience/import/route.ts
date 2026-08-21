@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { AudienceContact } from "@/models/AudienceContact";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 import { Types } from "mongoose";
 
 interface ImportContactInput {
@@ -25,6 +26,12 @@ export async function POST(req: NextRequest) {
   try {
     const authResult: AdminAuthResult = await requireAdmin(req);
     if (!authResult.success) return authResult.response;
+
+    const denied = await requireCapability(
+      authResult.decoded.tenantId,
+      "audience.contacts",
+    );
+    if (denied) return denied;
 
     const rawTenantId = authResult.decoded.tenantId;
     if (!rawTenantId) {

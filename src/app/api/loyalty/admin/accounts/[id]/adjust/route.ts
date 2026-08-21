@@ -7,7 +7,7 @@ import crypto from "crypto";
 import { z } from "zod";
 import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin } from "@/lib/auth/auth-server";
-import { requireFeature } from "@/lib/plans/planEnforcement";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 import { LoyaltyAccount } from "@/models/LoyaltyAccount";
 import { LoyaltyEvent } from "@/models/LoyaltyEvent";
 import { postLedgerEntry } from "@/lib/loyalty/ledger";
@@ -29,7 +29,7 @@ export async function POST(
 ) {
   const auth = requireAdmin(req);
   if (!auth.success) return auth.response;
-  const denied = await requireFeature(auth.decoded.tenantId, "loyaltyCore");
+  const denied = await requireCapability(auth.decoded.tenantId, "loyalty.rewards");
   if (denied) return denied;
 
   const { id } = await context.params;
