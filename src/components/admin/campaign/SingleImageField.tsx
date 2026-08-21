@@ -10,25 +10,31 @@ import LoaderButton from "@/components/elements/LoaderButton";
 import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import type { NewsletterClientScope } from "@/lib/newsletter/clientScope";
 
 interface SingleImageFieldProps {
   value: string;
   onChange: (url: string) => void;
   label?: string;
+  scope?: NewsletterClientScope;
 }
 
 /**
  * Komponenta za odabir ili generisanje jedne slike
  * Koristi se za email-only kampanje (Glavna slika)
  */
-export function SingleImageField({ value, onChange }: SingleImageFieldProps) {
+export function SingleImageField({
+  value,
+  onChange,
+  scope,
+}: SingleImageFieldProps) {
   const { token } = useAuth();
   const {
     data: cloudinaryData,
     isLoading: isLoadingImages,
     refetch,
   } = useCloudinaryImages(token);
-  const singleImage = useSingleImage(value);
+  const singleImage = useSingleImage(value, scope);
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);

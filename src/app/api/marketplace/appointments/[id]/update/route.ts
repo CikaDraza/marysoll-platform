@@ -13,6 +13,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { verifySignature } from "@/lib/middleware/verifySignature";
 import { rescheduleAppointmentAsClient } from "@/lib/appointments/clientFlows";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 import type { IAppointmentService } from "@/types";
 
 export async function PUT(
@@ -63,6 +64,8 @@ export async function PUT(
     if (!appointment) {
       return NextResponse.json({ error: "Termin nije pronađen." }, { status: 404 });
     }
+    const denied = await requireCapability(String(appointment.tenantId), "booking.services");
+    if (denied) return denied;
 
     const result = await rescheduleAppointmentAsClient(appointment, {
       date: data.date as string,

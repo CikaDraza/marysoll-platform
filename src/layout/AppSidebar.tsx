@@ -8,6 +8,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useChatUnread } from "@/hooks/useChatUnread";
 import { usePlanStatus } from "@/hooks/usePlanStatus";
+import { useTenantCapabilities } from "@/hooks/useTenantCapabilities";
+import { isResolvedCapabilityEnabled } from "@/lib/platform/workspace-capabilities";
+import type { TenantCapability } from "@/types/tenant-capabilities";
 import Image from "next/image";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -60,7 +63,14 @@ type NavItem = {
   icon: React.ReactNode;
   path?: string;
   tab?: string; // for dashboard tab navigation
-  subItems?: { name: string; path?: string; tab?: string; badge?: string }[];
+  capability?: TenantCapability;
+  subItems?: {
+    name: string;
+    path?: string;
+    tab?: string;
+    badge?: string;
+    capability?: TenantCapability;
+  }[];
 };
 
 const AdminNav: NavItem[] = [
@@ -78,19 +88,21 @@ const AdminNav: NavItem[] = [
     name: "Usluge",
     icon: <Icon d={icons.scissors} />,
     path: "/dashboard?tab=usluge",
+    capability: "services.catalog",
   },
   {
     name: "Termini",
     icon: <Icon d={icons.clock} />,
     subItems: [
-      { name: "Lista termina", tab: "termini" },
-      { name: "Kalendar", tab: "kalendar" },
+      { name: "Lista termina", tab: "termini", capability: "booking.services" },
+      { name: "Kalendar", tab: "kalendar", capability: "booking.services" },
     ],
   },
   {
     name: "Klijenti",
     icon: <Icon d={icons.users} />,
     path: "/dashboard?tab=klijenti",
+    capability: "audience.contacts",
   },
   {
     name: "Growth Studio",
@@ -98,6 +110,7 @@ const AdminNav: NavItem[] = [
       <Icon d="M20 12v9H4v-9M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z" />
     ),
     path: "/dashboard?tab=growth",
+    capability: "loyalty.rewards",
   },
   {
     name: "Statistika",
@@ -233,6 +246,7 @@ const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered, closeMobileSidebar } =
     useSidebar();
   const { user } = useAuth();
+  const { data: capabilitySnapshot } = useTenantCapabilities();
   const pathname = usePathname();
   const tenant = useTenantAdmin();
 
@@ -290,6 +304,15 @@ const AppSidebar: React.FC = () => {
 
   const { data: planStatusData } = usePlanStatus();
   const plan = planStatusData?.plan ?? "maria";
+  const visibleAdminNav = AdminNav.flatMap((item) => {
+    if (!isResolvedCapabilityEnabled(capabilitySnapshot, item.capability)) {
+      return [];
+    }
+    const subItems = item.subItems?.filter((sub) =>
+      isResolvedCapabilityEnabled(capabilitySnapshot, sub.capability),
+    );
+    return item.subItems && !subItems?.length ? [] : [{ ...item, subItems }];
+  });
 
   return (
     <aside
@@ -333,7 +356,7 @@ const AppSidebar: React.FC = () => {
           </p>
         )}
 
-        {AdminNav.map((item, idx) => {
+        {visibleAdminNav.map((item, idx) => {
           const active = isActive(item);
           const submenuOpen = openSubmenu === idx;
 

@@ -197,6 +197,32 @@ export function requireAdmin(request: Request): AdminAuthResult {
 }
 
 /**
+ * Tenant-scoped extension of requireAdmin for routes that must never fall back
+ * to an arbitrary profile when a superadmin token has no tenant context.
+ */
+export type TenantAdminAuthResult =
+  | { success: true; tenantId: string }
+  | { success: false; response: NextResponse };
+
+export function requireTenantAdmin(request: Request): TenantAdminAuthResult {
+  const auth = requireAdmin(request);
+  if (!auth.success) return auth;
+
+  const { tenantId } = auth.decoded;
+  if (!tenantId) {
+    return {
+      success: false,
+      response: NextResponse.json(
+        { error: "Nedostaje kontekst naloga.", code: "TENANT_CONTEXT_REQUIRED" },
+        { status: 403 },
+      ),
+    };
+  }
+
+  return { success: true, tenantId };
+}
+
+/**
  * Guard za opštu autentifikaciju (bilo koji korisnik).
  */
 export function requireAuth(
@@ -227,4 +253,3 @@ export function requireSuperAdmin(
   }
   return { decoded };
 }
-

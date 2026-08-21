@@ -146,6 +146,7 @@ export function SeoToolbar() {
           onChange={(url) =>
             update("seo", { ...ls.seo, ogImage: url })
           }
+          scope={{ scope: "platform" }}
         />
       </div>
     </div>

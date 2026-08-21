@@ -1,17 +1,25 @@
 // src/hooks/newsletter/useSingleImage.ts
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { UseSingleImageReturn } from "@/types/newsletter";
+import {
+  getNewsletterScopeHeaders,
+  type NewsletterClientScope,
+} from "@/lib/newsletter/clientScope";
 
 /**
  * Hook za upravljanje jednom slikom (za email-only kampanje)
  * Podržava generisanje putem AI ili odabir iz Cloudinary
  */
-export function useSingleImage(initialUrl: string = ""): UseSingleImageReturn {
+export function useSingleImage(
+  initialUrl: string = "",
+  scope?: NewsletterClientScope,
+): UseSingleImageReturn {
   const queryClient = useQueryClient();
+  const scopeHeaders = useMemo(() => getNewsletterScopeHeaders(scope), [scope]);
 
   const [prompt, setPrompt] = useState("");
   const [url, setUrl] = useState(initialUrl);
@@ -28,7 +36,7 @@ export function useSingleImage(initialUrl: string = ""): UseSingleImageReturn {
     try {
       const res = await fetch("/api/newsletter/campaigns/generate-images", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...scopeHeaders },
         body: JSON.stringify({ prompt }),
       });
 
@@ -64,7 +72,7 @@ export function useSingleImage(initialUrl: string = ""): UseSingleImageReturn {
     } finally {
       setIsGenerating(false);
     }
-  }, [prompt, queryClient]);
+  }, [prompt, queryClient, scopeHeaders]);
 
   const reset = useCallback(() => {
     setPrompt("");

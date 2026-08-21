@@ -6,14 +6,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { Types } from "mongoose";
 import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin } from "@/lib/auth/auth-server";
-import { requireFeature } from "@/lib/plans/planEnforcement";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 import { LoyaltyAccount } from "@/models/LoyaltyAccount";
 import { TenantUser } from "@/models/TenantUser";
 
 export async function GET(req: NextRequest) {
   const auth = requireAdmin(req);
   if (!auth.success) return auth.response;
-  const denied = await requireFeature(auth.decoded.tenantId, "loyaltyCore");
+  const denied = await requireCapability(auth.decoded.tenantId, "loyalty.rewards");
   if (denied) return denied;
 
   await connectToDB();

@@ -3,13 +3,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Service } from "@/models/Service";
 import { requireAdmin } from "@/lib/auth/auth-server";
-import { DecodedToken } from "@/types/auth/types";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 export async function GET(req: NextRequest) {
   try {
     await connectToDB();
-    const auth = requireAdmin(req) as { decoded: DecodedToken } | NextResponse;
-    if (auth instanceof NextResponse) return auth;
+    const auth = requireAdmin(req);
+    if (!auth.success) return auth.response;
+    const denied = await requireCapability(auth.decoded.tenantId, "services.catalog");
+    if (denied) return denied;
     const tenantId = auth.decoded.tenantId;
 
     const { searchParams } = new URL(req.url);

@@ -4,6 +4,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { verifyToken } from "@/lib/auth/auth-server";
 import { actorScopeFrom, logSuperAdminAccess } from "@/lib/auth/tenantScope";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 import { createAppointmentNotification } from "@/lib/notificationService";
 
 export async function POST(req: Request) {
@@ -28,6 +29,10 @@ export async function POST(req: Request) {
     const scope = actorScopeFrom(decoded);
     if (!scope.ok) {
       return NextResponse.json({ error: scope.error }, { status: scope.status });
+    }
+    if (!scope.isSuperAdmin) {
+      const denied = await requireCapability(decoded.tenantId, "booking.services");
+      if (denied) return denied;
     }
     if (scope.isSuperAdmin) {
       logSuperAdminAccess(

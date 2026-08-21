@@ -6,6 +6,8 @@ import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useClientRouting } from "@/hooks/useClientRouting";
 import { usePublicSalonProfile } from "@/hooks/useSalonProfile";
+import { useTenantCapabilities } from "@/hooks/useTenantCapabilities";
+import { isClientWorkspaceTabAvailable } from "@/lib/platform/workspace-capabilities";
 import Loader from "@/components/elements/Loader";
 import {
   ClientPanelLayout,
@@ -56,6 +58,7 @@ export default function ClientPanelPage() {
   const searchParams = useSearchParams();
   const { base, tenantSlug } = useClientRouting();
   const { isLoggedIn, isLoading } = useAuth();
+  const { data: capabilitySnapshot } = useTenantCapabilities();
   const { data: salon } = usePublicSalonProfile(tenantSlug);
 
   // Tab je izveden DIREKTNO iz URL-a (jedini izvor istine) — bez lokalnog
@@ -63,8 +66,14 @@ export default function ClientPanelPage() {
   // (dupli izvor istine → tab se intermitentno ne prebaci / vrati nazad).
   // Navigacija ide preko <Link> u ClientPanelLayout-u. Isti fix kao admin.
   const tabParam = searchParams.get("tab") as PanelTab | null;
-  const activeTab: PanelTab =
+  const requestedTab: PanelTab =
     tabParam && ALL_TAB_IDS.includes(tabParam) ? tabParam : "Moji Termini";
+  const activeTab: PanelTab = isClientWorkspaceTabAvailable(
+    capabilitySnapshot,
+    requestedTab,
+  )
+    ? requestedTab
+    : "Moj Profil";
 
   useEffect(() => {
     if (!isLoading && !isLoggedIn) {
@@ -93,6 +102,7 @@ export default function ClientPanelPage() {
       activeTab={activeTab}
       salonName={salon?.name}
       salonLogo={salon?.logo ?? null}
+      capabilitySnapshot={capabilitySnapshot}
     >
       {activeTab === "Moji Termini" && <ClientAppointments />}
       {activeTab === "Zakazivanja" && <AppointmentCalendar />}

@@ -4,6 +4,7 @@ import { Appointment } from "@/models/Appointment";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
 import { rescheduleAppointmentAsClient } from "@/lib/appointments/clientFlows";
 import type { IAppointmentService } from "@/types";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 export async function PUT(
   req: NextRequest,
@@ -16,6 +17,8 @@ export async function PUT(
   if (!decoded?.tenantUserId || !decoded.tenantId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await requireCapability(decoded.tenantId, "booking.services");
+  if (denied) return denied;
 
   const { id } = await context.params;
   const appointment = await Appointment.findOne({

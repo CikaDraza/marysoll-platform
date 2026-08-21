@@ -3,6 +3,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
 import { cancelAppointmentAsClient } from "@/lib/appointments/clientFlows";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 export async function POST(
   req: NextRequest,
@@ -15,6 +16,8 @@ export async function POST(
   if (!decoded?.tenantUserId || !decoded.tenantId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await requireCapability(decoded.tenantId, "booking.services");
+  if (denied) return denied;
 
   const { id } = await context.params;
   const appointment = await Appointment.findOne({

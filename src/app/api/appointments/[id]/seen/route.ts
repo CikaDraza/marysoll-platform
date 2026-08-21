@@ -3,6 +3,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { verifyToken } from "@/lib/auth/auth-server";
 import { tenantScopeFrom } from "@/lib/auth/tenantScope";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 export async function POST(
   req: Request,
@@ -24,6 +25,10 @@ export async function POST(
     const scope = tenantScopeFrom(user);
     if (!scope.ok) {
       return NextResponse.json({ error: scope.error }, { status: scope.status });
+    }
+    if (!scope.isSuperAdmin) {
+      const denied = await requireCapability(user.tenantId, "booking.services");
+      if (denied) return denied;
     }
 
     const isAdmin = user.isAdmin;

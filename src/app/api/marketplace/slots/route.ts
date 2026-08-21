@@ -18,6 +18,7 @@ import {
 } from "@/lib/booking/availabilityAdapter";
 import { checkRateLimit } from "@/lib/middleware/rateLimiter";
 import { manualTimesForDate } from "@/helpers/manualSlots";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 const SLOT_INTERVAL = 30;
 
@@ -80,6 +81,8 @@ export async function GET(req: NextRequest) {
 
     const s = salon as Record<string, unknown>;
     const tenantId = String(s.tenantId ?? "");
+    const denied = await requireCapability(tenantId, "booking.services");
+    if (denied) return NextResponse.json([]);
     const isManual = s.availabilityMode === "manualSlots";
 
     const booked = (await Appointment.find({
