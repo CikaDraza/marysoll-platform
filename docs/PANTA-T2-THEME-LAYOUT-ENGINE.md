@@ -1003,7 +1003,10 @@ granica u kodu izgleda onako kako je ovde definisana i poštuje shared-DB safety
 gate: backward-compatible opcione schema promene, resolveri koji rade sa starim
 dokumentima, tenant-scoped dry-run skripte i bez destruktivnog bulk backfill-a.
 Odvojena staging baza nije prerequisite za ovu odluku; pun T2B v0.3 ugovor je
-sledeći zaseban slice.
+zaključan u
+[PANTA-TENANT-VERTICALS-CAPABILITIES.md](PANTA-TENANT-VERTICALS-CAPABILITIES.md),
+a admin/client granice u
+[PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md).
 
 ## Reference
 

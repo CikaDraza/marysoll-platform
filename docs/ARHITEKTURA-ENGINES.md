@@ -4,7 +4,7 @@
 > Product Engines inicijative; operativni redosled i status pojedinačnih rezova
 > vodi [TODO.md](TODO.md).
 > Radni naziv inicijative: **Labs / "Panteleymon" (Panta)**.
-> Poslednja revizija stvarnog stanja koda: **2026-08-20**.
+> Poslednja revizija stvarnog stanja koda: **2026-08-21**.
 
 ## Polazni problem i današnje stanje
 
@@ -66,50 +66,50 @@ svoje testove. Marysoll ih uvozi kao zavisnosti.
 - **Faza 3:** poseban servis sa sopstvenom bazom, kešom, skaliranjem
 - **Faza 4:** CDN/edge distribucija statičkih delova (theme JSON, CSS, media, preview asseti)
 
-## Gde smo sada (provereno 2026-08-20)
+## Gde smo sada (provereno 2026-08-21)
 
 Platforma se nalazi **posle glavnog T2A Theme/Layout reza, a pre T2B i
 bezbednog T3 jezgra za upis rezervacija**:
 
 - ✅ T0/T1 osnova, Diagnostic Engine, Event Bus i Loyalty Engine Phase 0/1 +
   Referral 2b postoje u kodu; referral i dalje čeka live QA/release gate.
-- 🟡 **Glavni T2A kod je završen:** `@panta/theme-engine`, Feature Block
-  Registry, migracija svih osam zatečenih tema i neutralan zajednički theme
-  ugovor postoje. Otvorene su još tri izlazne provere: direktan test dodavanja
-  potpuno novog bloka, uklanjanje poslednjeg blog waterfall-a iz theme-3 i
-  vizuelna/LCP regresija svih tema.
+- ✅ **T2A Theme/Layout je prihvaćen:** `@panta/theme-engine`, Feature Block
+  Registry, migracija tema i neutralan zajednički theme ugovor postoje.
+  Preostali theme-3 waterfall i vizuelne/LCP provere vode se kao odvojeni dug,
+  ne kao blokada T2B arhitekture.
+- ✅ **H0 theme-9 lossless write je zatvoren:** admin write mapper i serverski
+  section merge čuvaju buduća polja i namerne `[]`, `false` i `""` vrednosti.
+- ✅ **Private Theme8/9 access je zatvoren:** application policy važi i u UI-ju
+  i na serveru, dok Theme Engine ostaje bez tenant slugova.
 - 🟡 **theme-9 prezentacija postoji**, uključujući podstrane i prikaz toka
   konsultacije, ali CMS editor i stvarno zakazivanje još ne postoje. Preview
   šalje samo probni mejl i namerno ne kreira termin.
 - ✅ **T3 Slice 3 availability-core je završen:** isti obračun slobodnih termina
   koriste rute i UI potrošači. To je read/računska polovina Booking Engine-a.
-- ⬜ **T2B nije implementiran:** nema tenant vertikala, capability resolvera,
-  readiness stanja ni jedinstvenog capability gate-a za admin, API i public
-  renderer. Postojeći plan-feature gate ostaje zaseban, stariji mehanizam.
+- 🟡 **T2B v0.3 ugovor i Workspace IA su zaključani, kod nije
+  implementiran:** nema tenant vertikala, capability resolvera, readiness
+  stanja ni jedinstvenog capability gate-a za admin, API i public renderer.
+  Postojeći `PLAN_FEATURES` ostaje plan entitlement izvor.
 - ⬜ **T3 write/core nije implementiran:** nema kanonske rezervacije, day-lock
   serijalizacije, booking idempotencije ni jedne atomic reserve operacije koja
   važi za sve putanje. Postoji stariji petominutni `Slot` reserve za deo
   marketplace toka, ali nije vezan za `Appointment`, nema vlasnički token i ne
   predstavlja planirani `BookingHold` ni centralni autoritet za zauzetost.
 
-### Hitni nalaz pre nastavka roadmapa
+### Sledeći hard gate
 
-Theme-9 administratorska forma pri čuvanju ponovo sastavlja ceo profil, ali
-izostavlja sedam theme-9 sekcija i dodatna hero/about polja. Server zatim tim
-nepotpunim objektom zamenjuje postojeći sadržaj. Zbog toga čak i čuvanje radnog
-vremena, društvenih mreža ili osnovnih podataka može obrisati ili vratiti na
-podrazumevano seedovani theme-9 sadržaj.
+H0 i private Theme8/9 su zatvoreni. T2B v0.3 i Workspace IA sada zaključavaju
+shared-DB rollout, `tenantEnabled`, readiness, tri capability gate-a i
+permission/ownership granice. Sledeći funkcionalni rez je T2B capability
+foundation.
 
-Ovo nije samo „CMS još nema sva polja“, već **rizik gubitka već unetog sadržaja**.
-Pre bilo kakvog daljeg produkcijskog uređivanja theme-9 treba sačuvati nepoznata
-polja pri upisu, uvesti jedan zajednički mapper i dodati regresioni test.
-
-**Sledeći hard gate nije novi ekran:** prvo zaustavljanje navedenog rizika
-gubitka theme-9 sadržaja i odvojena staging baza; zatim T2B revizija v0.3
-(uključujući `consultations.catalog`, `booking.consultations` i
-`questionnaires.forms`) i IA dokument za beauty/education/hybrid navigaciju.
-Tek posle toga idu T2B implementacija, T3 Booking CORE i migracija svih write
-ruta.
+Odvojena staging baza nije prerequisite. Produkcija, staging i QA trenutno dele
+Mongo bazu, pa važi
+[Shared-DB Safety Contract](PANTA-TENANT-VERTICALS-CAPABILITIES.md#8-shared-db-safety-contract):
+optional/backward-compatible schema, legacy runtime default, tenant-scoped
+skripte, dry-run po defaultu, eksplicitni `--apply` i bez globalnog backfill-a.
+Posle capability foundation-a dolaze T3 Booking CORE i migracija svih write
+ruta. Theme-9 do tada ostaje read-only preview.
 
 ## Katalog engine-a (domeni)
 
@@ -259,14 +259,14 @@ dovode nove — prvi engine koji Marysoll-u pravi network effect.
 Operativni detalji po slice-u vode se u [TODO.md](TODO.md). Ova tabela čuva
 širu sliku i sprečava da završena etapa ponovo bude proglašena „sledećom“.
 
-| Inicijativa | Status 2026-08-20 | Stvarno stanje / sledeći korak |
+| Inicijativa | Status 2026-08-21 | Stvarno stanje / sledeći korak |
 |---|---|---|
 | **T0 optimizacija** | ✅ završeno | Preduslov za engines luk je zatvoren. |
 | **T1 monorepo + Diagnostic** | ✅ završeno | Paket, adapter, browser dijagnostika, beacon, superadmin ekran i 10 integrity provera postoje. Tenant-facing dashboard ostaje buduće proširenje. |
 | **Loyalty** | 🟡 kod završen do Referral 2b | Phase 0/1 i Referral 2b postoje; live QA/release gate i Phase 3 premium ostaju. |
-| **H0 theme-9 zaštita sadržaja** | 🔴 hitno | Ispraviti lossy admin save, uvesti zajednički mapper i regresioni test pre daljeg produkcijskog uređivanja. |
-| **T2A Theme/Layout** | 🟡 glavni kod završen | Paket, registry, lifecycle i migracija osam tema postoje; zatvoriti tri preostala acceptance kriterijuma. |
-| **T2B vertikale/capabilities** | ⬜ nije implementirano — sledeći arhitektonski rez | Dopuniti v0.3, implementirati resolver + admin/API/public gate, dry-run/backfill i release provere. |
+| **H0 theme-9 zaštita sadržaja** | ✅ završeno | Lossless admin write mapper, serverski section merge i regresioni testovi čuvaju postojeća, buduća i namerno prazna polja. |
+| **T2A Theme/Layout** | ✅ prihvaćeno | Paket, registry, lifecycle, migracija tema i private Theme8/9 application policy postoje. |
+| **T2B vertikale/capabilities** | 🟡 ugovor zaključan; kod nije implementiran | v0.3 i Workspace IA postoje; slede opcioni Tenant ugovor, resolver, `requireCapability()` i admin/API/public gate bez globalnog backfill-a. |
 | **T3 availability + prikaz toka** | 🟡 delimično završeno | Availability paket i potrošači postoje; theme-9 demo/preview šalje mejl, ali ne rezerviše termin. |
 | **T3 Booking write/core** | ⬜ nije implementirano | Napisati specifikaciju, uvesti kanonsku rezervaciju, day-lock, idempotenciju, BookingFacts, hold i migrirati sve create/reschedule putanje. |
 | **Consultation / Questionnaire / Education / Care** | ⬜ nije implementirano | Redosled: Consultation + hold + intake + theme-9 E2E; zatim Education, navigacija i Care Workspace. |
@@ -314,42 +314,38 @@ konkretan salon-potreba.
 (namerno). Identitet = ulogovana sesija skenera; jedan check-in po klijentu/danu
 (streak+poeni). Srca ostaju po završenom terminu (admin). Ne dirati dalje.
 
-## Redosled rada (revidirano 2026-08-20)
+## Redosled rada (revidirano 2026-08-21)
 
-1. **Hitno sačuvati theme-9 sadržaj pri svakom admin upisu.** Jedan zajednički
-   mapper + regresioni test moraju dokazati da promena radnog vremena ili SEO-a
-   ne briše landing sekcije, podstrane ni booking preview.
-2. **Preneti bezbednosnu ispravku za scope termina na aktivnu granu.** Commit
-   postoji na `staging/production-fixes`, ali trenutna grana i dalje dohvata i
-   menja termin po golom `_id`-ju. Pojačati test da proverava sam DB upit, ne
-   samo prisustvo reči `tenantId` u fajlu.
-3. **Obezbediti odvojenu staging bazu ili potpuno izolovano test okruženje.**
-   Dokumentacioni rad može teći paralelno, ali backfill i live provere ne smeju
-   dirati produkciju.
-4. **Dopuniti T2B specifikaciju na v0.3:** `consultations.catalog`,
-   `booking.consultations`, `questionnaires.forms`, readiness i pravila
-   degradacije.
-5. **Napisati `PANTA-ADMIN-CLIENT-WORKSPACES.md`.** Zaključati beauty, education
-   i hybrid matrice za admin/client navigaciju, capability i resource owner-a.
-6. **Implementirati T2B na sva tri mesta:** admin, API i javni renderer; zatim
-   dry-run/backfill, audit i release gate.
-7. **Zatvoriti tri T2A acceptance kriterijuma** i theme-9 CMS/fallback/navigation
-   dugove. Linkovi ka podstranama moraju pratiti stvarno dostupan sadržaj.
-8. **Napisati `PANTA-T3-BOOKING-ENGINE.md` pre CORE implementacije.** Dokument
+1. ✅ **H0 i private Theme8/9 su završeni.** Lossless write i application-level
+   access policy nalaze se na aktivnoj grani.
+2. ✅ **T2B v0.3 i Workspace IA su zaključani.** Capability rečnik obuhvata
+   consultation i questionnaires ugovore, a matrice razdvajaju permission,
+   capability, ownership i readiness.
+3. **Implementirati T2B foundation:** optional `verticals` i capability override,
+   legacy beauty runtime default, platform/`PLAN_FEATURES`/tenant resolver i
+   `requireCapability()`.
+4. **Povezati isti resolver na sva tri mesta:** admin/client UI, API i javni
+   renderer. Test mora dokazati da direktan API zahtev ne prolazi samo zato što
+   je UI stavka skrivena.
+5. **Primeni Shared-DB Safety Contract:** nema obaveznog globalnog backfill-a;
+   seed/dev izmene su tenant-scoped, dry-run po defaultu i zahtevaju `--apply`.
+6. **Zatvoriti theme-9 CMS/fallback/navigation dugove.** Linkovi ka podstranama
+   moraju pratiti stvarno dostupan sadržaj.
+7. **Napisati `PANTA-T3-BOOKING-ENGINE.md` pre CORE implementacije.** Dokument
    već treba da opiše završeni availability deo i delimični preview, a ne da
    nastane tek kada Slice 5 počne.
-9. **Implementirati T3 Booking CORE:** kanonska rezervacija, day-lock ili
+8. **Implementirati T3 Booking CORE:** kanonska rezervacija, day-lock ili
    ekvivalentna transakcijska zaštita, idempotentni retry, BookingFacts,
    centralni conflict recovery i jasan status starog `Slot` sistema.
-10. **Migrirati svih pet create putanja i sva tri reschedule ulaza** na jedan
+9. **Migrirati svih pet create putanja i sva tri reschedule ulaza** na jedan
     servis; concurrency test je release gate.
-11. **Napraviti Consultation + BookingHold + Questionnaire/Intake**, pa tek onda
+10. **Napraviti Consultation + BookingHold + Questionnaire/Intake**, pa tek onda
     uključiti stvarno theme-9 zakazivanje.
-12. **Posle toga:** Education domen, capability-aware navigacija i Care
+11. **Posle toga:** Education domen, capability-aware navigacija i Care
     Workspace; Distribution Engine i novi Growth Studio vode se kao naredni
     poslovni luk.
 
-Referral live QA može teći paralelno kada postoji bezbedan staging. AI,
+Referral live QA može teći paralelno uz tenant-scoped Shared-DB pravila. AI,
 Notification i ostala šira izdvajanja ostaju backlog dok aktuelni T2B/T3 release
 gate-ovi ne budu zatvoreni.
 
@@ -357,8 +353,7 @@ gate-ovi ne budu zatvoreni.
 
 - `PANTA-T3-BOOKING-ENGINE.md` — stanje availability dela, write/core ugovor,
   migracija, konkurentni zahtevi, hold i Consultation adapter.
-- `PANTA-ADMIN-CLIENT-WORKSPACES.md` — beauty/education/hybrid matrice i granice
-  admin/client navigacije.
-
-Njihovo odsustvo je navedeno u TODO-u kao planirano, ali Booking dokument više
-ne treba odlagati: dva ranija slice-a već zavise od odluka koje treba da zabeleži.
+T2B v0.3 i
+[PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md) sada postoje.
+Booking dokument više ne treba odlagati: završeni availability i naredni write
+slice zavise od ugovora koji treba da zabeleži.

@@ -6,6 +6,13 @@
 >
 > Predmet: dokumentacija, ceo projekat, Theme-9, buduće vrste poslovanja i
 > zakazivanje.
+>
+> **Istorijski presek — delimično prevaziđen 21. avgusta 2026.** H0 zaštita,
+> private Theme8/9 policy i appointment tenant/client scope su u međuvremenu
+> stigli na aktivnu granu. T2B v0.3 i
+> [Workspace IA](PANTA-ADMIN-CLIENT-WORKSPACES.md) sada postoje kao
+> dokumentacioni ugovori; capability kod i T3 Booking write authority i dalje
+> ne postoje. Tekst ispod ostaje neizmenjen kao trag tadašnjeg pregleda.
 
 ## Kratak zaključak
 
