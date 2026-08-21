@@ -30,7 +30,7 @@ export function SingleImageField({
 }: SingleImageFieldProps) {
   // `mainImage` može doći kao prazan ili whitespace placeholder iz newsletter
   // template-a; next/image nikada ne sme dobiti takav src.
-  const selectedImageUrl = value?.trim() ?? "";
+  const selectedImageUrl = typeof value === "string" ? value.trim() : "";
   const { token } = useAuth();
   const {
     data: cloudinaryData,

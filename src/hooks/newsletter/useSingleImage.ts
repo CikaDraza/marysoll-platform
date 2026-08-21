@@ -10,6 +10,7 @@ import {
   type NewsletterClientScope,
 } from "@/lib/newsletter/clientScope";
 import { getImageGenerationErrorMessage } from "@/lib/newsletter/imageGenerationError";
+import { getImageGenerationUrl } from "@/lib/newsletter/imageGenerationResponse";
 
 /**
  * Hook za upravljanje jednom slikom (za email-only kampanje)
@@ -23,7 +24,9 @@ export function useSingleImage(
   const scopeHeaders = useMemo(() => getNewsletterScopeHeaders(scope), [scope]);
 
   const [prompt, setPrompt] = useState("");
-  const [url, setUrl] = useState(initialUrl);
+  const [url, setUrl] = useState(() =>
+    typeof initialUrl === "string" ? initialUrl : "",
+  );
   const [isGenerating, setIsGenerating] = useState(false);
 
   const generate = useCallback(async (): Promise<string | null> => {
@@ -51,21 +54,22 @@ export function useSingleImage(
         throw new Error(getImageGenerationErrorMessage(errorPayload));
       }
 
-      const data = await res.json();
+      const data: unknown = await res.json();
+      const generatedUrl = getImageGenerationUrl(data);
 
-      if (!data.url) {
+      if (!generatedUrl) {
         throw new Error(
           "AI servis nije vratio sliku. Pokušajte ponovo za nekoliko minuta.",
         );
       }
 
-      setUrl(data.url);
+      setUrl(generatedUrl);
 
       // Invalidate cloudinary query for instant update
       queryClient.invalidateQueries({ queryKey: ["cloudinary-images"] });
 
       toast.success("Slika uspešno generisana!");
-      return data.url;
+      return generatedUrl;
     } catch (error) {
       toast.error(
         error instanceof Error

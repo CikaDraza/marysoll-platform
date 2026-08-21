@@ -5,6 +5,7 @@ import { requireFeature } from "@/lib/plans/planEnforcement";
 import { uploadBase64ToCloudinary, getTenantFolder } from "@/lib/cloudinary";
 import { generateImage } from "@/lib/ai/orchestrator";
 import { resolveNewsletterAdminScope } from "@/lib/newsletter/adminTenantScope";
+import type { GenerateImageResponse } from "@/types/newsletter";
 
 const SUPERADMIN_IMAGE_FOLDER = "superadmin/images";
 
@@ -58,12 +59,13 @@ export async function POST(req: Request) {
     const folder = newsletterScope.scope === "platform"
       ? SUPERADMIN_IMAGE_FOLDER
       : await getTenantFolder(newsletterScope.tenantId);
-    const url = await uploadBase64ToCloudinary(base64Image, folder);
+    const uploadResult = await uploadBase64ToCloudinary(base64Image, folder);
 
     // 6. Return the secure URL
-    return NextResponse.json({
-      url,
-    });
+    const response: GenerateImageResponse = {
+      url: uploadResult.secure_url,
+    };
+    return NextResponse.json(response);
   } catch (error: unknown) {
     console.error("Newsletter image generation error:", error);
     return NextResponse.json(
