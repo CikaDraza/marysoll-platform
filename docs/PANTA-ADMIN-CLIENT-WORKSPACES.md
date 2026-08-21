@@ -160,7 +160,100 @@ zasebno zaključani.
 | Nagrade | `loyalty.rewards` | sopstveni loyalty nalog | tenant + korisnik | opciono | postoji/doraditi sastavljanje |
 | Profil | core | sopstveni nalog | sopstveni profil | — | postoji |
 
-## 4. Vlasništvo domenskih resursa
+## 4. Product decision — Consultation → Skin Care Kutak lifecycle
+
+Ova odluka beleži potvrđeni skincare tok, ali još ne predstavlja specifikaciju
+Care domena niti dozvolu za njegovu implementaciju:
+
+```text
+guest booking
+→ interni guest/client odnos
+→ immutable Initial IntakeResponse snapshot
+→ stručnjak pregleda odgovore pre konsultacije
+→ konsultacija
+→ Current Assessment / stručna dopuna
+→ CarePlan draft
+→ review / ready
+→ publish / share
+→ obaveštenje „Vaš Skin Care Kutak je spreman“
+→ claim / invite
+→ korisnica potvrđuje nalog i postavlja credentials
+→ postojeći guest/client odnos vezuje se za registrovani nalog
+→ pristup privatnom Skin Care Kutku
+```
+
+Registracija nije uslov za prvi booking. Platforma sme ranije da napravi interni
+guest/client odnos, ali credential nalog ne nastaje neprimetno: korisnica ga
+eksplicitno preuzima kroz claim/invite korak. Identity handoff i modeli nisu deo
+ove odluke i tek treba da budu specificirani.
+
+### 4.1 Intake i procena nisu isti zapis
+
+- `Initial IntakeResponse` je nepromenljiv istorijski snapshot onoga što je
+  korisnica prvobitno navela.
+- `Current Assessment` je trenutno važeća stručna procena koju Marina može da
+  dopuni ili ispravi bez gubitka originalnog odgovora.
+- Kasnije promene nastaju kao nova istorijska stanja, a ne kao overwrite prvog
+  intake-a.
+- Budući UI može dati manji vizuelni fokus početnim odgovorima, ali oni uvek
+  ostaju dostupni.
+
+### 4.2 CareJourney, CarePlan i dokumenti
+
+Domenski radni naziv je `CareJourney`; ne koristimo `PatientRecord` niti
+medicinsko-ambulantske termine. „Skin Care Kutak“ je naziv client-facing
+proizvoda i interfejsa, ne persistence modela.
+
+`CareJourney` konceptualno okuplja početni snapshot, trenutnu procenu, glavni
+problem, ciljeve, konsultacije, verzije planova, zapažanja, fotografije napretka
+i vremensku liniju. `CarePlan` je strukturisan i verzionisan podatak (`v1`, `v2`,
+`v3`) koji obuhvata problem/cilj, trenutno stanje, status, plan, preporuke,
+praćenje i istoriju promena.
+
+```text
+draft ≠ shared
+draft → review / ready → publish / share → notification
+```
+
+Klijentkinja vidi samo eksplicitno objavljenu/deljenu verziju. Stručne beleške
+ostaju privatne. PDF nije source of truth: on je `CareDocument`, attachment ili
+export strukturisanog plana. Personalizovani plan nije Blog, CMS sadržaj niti
+`EducationOffering`; pripada konkretnoj klijentkinji i njenom `CareJourney`-u.
+
+### 4.3 ProgressMedia je privatan resurs
+
+Fotografije napretka nisu gallery polje. Budući `ProgressMedia` najmanje nosi
+`tenantId`, `clientId`, `careJourneyId`, `uploadedBy`, `capturedAt`, slobodni
+`bodyArea`/label, `assetRef`, opcionu belešku i visibility. Enum zona se sada ne
+zaključava: realan tok može obuhvatiti više zona lica, vrat/dekolte, ruke, šake,
+leđa, telo, noge i druge oblasti, a konačnu taksonomiju treba definisati sa
+stručnjakom.
+
+Pristup mora proveravati:
+
+```text
+permission ∩ tenant scope ∩ client ownership
+```
+
+Fotografije nisu javni sadržaj. Ako storage ostane Cloudinary, smer je privatan
+tenant/client-scoped prefix ili folder uz authenticated/signed delivery. Naziv
+foldera sam po sebi nije authorization.
+
+### 4.4 Public Education nije Private Care
+
+Public Education je opšti stručni sadržaj za širu publiku. Private Care je
+individualna procena, plan, preporuka, dokument, fotografija i istorija
+konkretne klijentkinje. Theme-9 Blog i „Edukacije“ ostaju javni content surface;
+personalizovani Care podaci nikada se ne objavljuju kroz Blog, CMS ili
+`EducationOffering`.
+
+Kao UX smer, Skin Care Kutak treba da bude jedan jednostavan prostor za trenutno
+stanje, cilj, aktivni plan, preporuke, napredak, dokumente, istoriju i sledeći
+korak, bez traženja kroz veliki broj tabova. Kontekstualni CTA kasnije može biti
+follow-up, povezana javna edukacija ili kontakt sa stručnjakom. Chat i vreme za
+odgovor ostaju samo buduća product mogućnost dok Marina ne definiše workflow.
+
+## 5. Vlasništvo domenskih resursa
 
 Capability nikada ne zamenjuje filter vlasništva.
 
@@ -186,7 +279,7 @@ draft CarePlan ≠ shared CarePlan
 Server mora eksplicitno projektovati deljivi deo. Ne oslanja se na to da klijent
 „ne zna URL“ niti vraća ceo dokument pa sakriva polja u React-u.
 
-## 5. Šta ovaj dokument ne tvrdi
+## 6. Šta ovaj dokument ne tvrdi
 
 - Ne tvrdi da `ConsultationOffering`, `EducationOffering`,
   `EducationEnrollment`, `BookingReservation`, questionnaires, CareJourney ili
@@ -196,7 +289,7 @@ Server mora eksplicitno projektovati deljivi deo. Ne oslanja se na to da klijent
 - Ne menja Theme8/9 access policy i ne vezuje workspace za `landingTheme`.
 - Ne uključuje stvarni theme-9 booking pre T3 concurrency gate-a.
 
-## 6. Implementacioni gate
+## 7. Implementacioni gate
 
 Pre prikaza bilo koje nove stavke moraju postojati:
 

@@ -20,11 +20,11 @@
 | 6 | ★ Migracija + concurrency gate | ⬜ nije počet | Sve write rute na `BookingEngine.reserve()`; architecture test protiv direktnog `appointment.save()`. | PANTA-T3-BOOKING-ENGINE.md |
 | 7 | Consultation domen | ⬜ nije počet | `ConsultationOffering` → `ConsultationBooking` → `BookingReservation`. Marinin glavni proizvod; **nije `Service`**. | PANTA-T3-BOOKING-ENGINE.md *(Consultation adapter)* |
 | 8 | Hold | ⬜ nije počet | `BookingHold` 7–10 min, `confirmHold()` kroz istu day-lock transakciju. | PANTA-T3-BOOKING-ENGINE.md |
-| 9 | Questionnaire + Intake | ⬜ nije počet | Generički `lib/questionnaires/` sa snapshot verzionisanjem; `PendingAppointment` → `BookingDraft`. | [PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md) |
+| 9 | Questionnaire + Intake | ⬜ nije počet | Guest-first booking ostaje moguć; generički intake čuva immutable početni snapshot, odvaja stručni Current Assessment od originalnog odgovora i kasnije podržava eksplicitni claim/invite identity handoff. | [PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md#4-product-decision--consultation--skin-care-kutak-lifecycle) |
 | 10 | ★ theme-9 booking end-to-end | ⬜ nije počet | Hero CTA → widget → modal → intake → preview → hold → atomic booking. **Marina sme primati konsultacije tek odavde.** | PANTA-T3-BOOKING-ENGINE.md |
 | 11 | Education domen | ⬜ nije počet | `EducationOffering` + `EducationInquiry`; Featured Offering blok prelazi na domenski tip sa capability-jem. | [PANTA-EDUCATION-VERTICAL.md](PANTA-EDUCATION-VERTICAL.md) |
 | 12 | Admin/client navigacija | ⬜ nije počet | Implementacija zaključane IA: Ponuda · Termini/Dostupnost · Klijenti · capability-aware nav. | [PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md) |
-| 13 | Care Workspace | ⬜ nije počet | Stručni karton, CareJourney, CarePlan verzije, Observations, private/shared granica. | [PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md) |
+| 13 | Care Workspace | ⬜ nije počet | `CareJourney`, strukturisan/verzionisan `CarePlan`, draft/private/shared granica, `CareDocument` PDF/attachment/export, privatni `ProgressMedia` i timeline/history. | [PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md#4-product-decision--consultation--skin-care-kutak-lifecycle) |
 
 Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran
 

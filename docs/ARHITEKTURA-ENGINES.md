@@ -132,6 +132,11 @@ T2B capability resolver **nije novi engine**. To je platformski sloj koji spaja
 ono što proizvod podržava, šta plan dozvoljava i šta je tenant uključio, a zatim
 istu odluku primenjuje u administraciji, API-ju i javnom sajtu.
 
+**Cross-domain granica:** Public Education i CMS predstavljaju opšti stručni
+sadržaj za širu publiku. Individualna procena, `CarePlan`, stručne beleške,
+`CareDocument`/PDF, `ProgressMedia` i istorija konkretne klijentkinje pripadaju
+Private Care domenu i nikada nisu Blog, CMS ili `EducationOffering` podaci.
+
 ## Loyalty Engine — v2 vizija i stvarno stanje
 
 **Nije "digitalizacija loyalty kartice" — mali beauty growth loop koji pravi retenciju i prihod:**
