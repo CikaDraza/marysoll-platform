@@ -10,25 +10,34 @@ import LoaderButton from "@/components/elements/LoaderButton";
 import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import type { NewsletterClientScope } from "@/lib/newsletter/clientScope";
 
 interface SingleImageFieldProps {
   value: string;
   onChange: (url: string) => void;
   label?: string;
+  scope?: NewsletterClientScope;
 }
 
 /**
  * Komponenta za odabir ili generisanje jedne slike
  * Koristi se za email-only kampanje (Glavna slika)
  */
-export function SingleImageField({ value, onChange }: SingleImageFieldProps) {
+export function SingleImageField({
+  value,
+  onChange,
+  scope,
+}: SingleImageFieldProps) {
+  // `mainImage` može doći kao prazan ili whitespace placeholder iz newsletter
+  // template-a; next/image nikada ne sme dobiti takav src.
+  const selectedImageUrl = typeof value === "string" ? value.trim() : "";
   const { token } = useAuth();
   const {
     data: cloudinaryData,
     isLoading: isLoadingImages,
     refetch,
   } = useCloudinaryImages(token);
-  const singleImage = useSingleImage(value);
+  const singleImage = useSingleImage(value, scope);
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -174,7 +183,7 @@ export function SingleImageField({ value, onChange }: SingleImageFieldProps) {
                 type="button"
                 onClick={() => handleCloudinarySelect(img.secure_url)}
                 className={`relative shrink-0 w-24 h-24 rounded-lg border-2 transition-all overflow-hidden ${
-                  value === img.secure_url
+                  selectedImageUrl === img.secure_url
                     ? "border-pink-500 ring-2 ring-pink-200"
                     : "border-transparent hover:border-gray-300"
                 }`}
@@ -197,19 +206,18 @@ export function SingleImageField({ value, onChange }: SingleImageFieldProps) {
       </div>
 
       {/* Preview */}
-      {value && (
+      {selectedImageUrl ? (
         <div className="mt-4">
           <label className="block text-xs font-medium text-gray-600 mb-2">
             Preview
           </label>
           <div className="relative h-40 w-full max-w-xs rounded-lg overflow-hidden border border-gray-200">
             <Image
-              src={value}
+              src={selectedImageUrl}
               alt="Selected image"
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 33vw"
-              preload={true}
             />
           </div>
           <button
@@ -223,7 +231,7 @@ export function SingleImageField({ value, onChange }: SingleImageFieldProps) {
             Ukloni sliku
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

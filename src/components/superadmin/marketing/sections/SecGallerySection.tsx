@@ -55,6 +55,7 @@ export function SecGallerySection() {
               gallery: { ...ls.secondary.gallery, image: url },
             })
           }
+          scope={{ scope: "platform" }}
         />
       </div>
     </div>
