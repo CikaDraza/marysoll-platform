@@ -1,5 +1,5 @@
 import type { ClientSession } from "mongoose";
-import type { AvailabilityQuery, Occupancy } from "@panta/booking-engine";
+import type { AvailabilityQuery } from "@panta/booking-engine";
 
 export const RESERVATION_STATUSES = [
   "pending",
@@ -163,7 +163,10 @@ export interface LifecycleCommand extends IdempotentCommand {
   occurredAt: Date;
 }
 
-export type CancelCommand = LifecycleCommand;
+export interface CancelCommand extends LifecycleCommand {
+  /** Server-resolved cancellation policy; browser ne odlučuje ovu činjenicu. */
+  late: boolean;
+}
 export type RejectCommand = LifecycleCommand;
 export type CompleteCommand = LifecycleCommand;
 export type MarkNoShowCommand = LifecycleCommand;
@@ -176,7 +179,6 @@ export interface BookingCommandResult {
 
 export interface BookingAvailabilityContext {
   query: AvailabilityQuery;
-  canonicalOccupancies?: Occupancy[];
 }
 
 export interface BookingAvailabilityProvider {
