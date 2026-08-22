@@ -1,5 +1,3 @@
-import "server-only";
-
 import type { Metadata } from "next";
 import type { SalonProfileData } from "@/types";
 import { BASE_DOMAIN, isPathBasedHost } from "@/lib/platform/host-context";
@@ -50,18 +48,20 @@ export function tenantPageMetadata(
   description: string,
 ): Metadata {
   const url = getCanonicalUrl(context, pathname);
-  const image = profile?.logo || profile?.notificationLogo || undefined;
+  // Tenant-aware favicon is resolved by the proxy to the tenant logo. It is a
+  // modest but correct fallback when a salon has not uploaded an OG image.
+  const image = profile?.logo || profile?.notificationLogo || getCanonicalUrl(context, "/favicon.ico");
   return {
     title,
     description,
     alternates: { canonical: url },
     openGraph: {
       title, description, url, siteName: profile?.name || "Salon", type: "website",
-      ...(image ? { images: [{ url: image }] } : {}),
+      images: [{ url: image }],
     },
     twitter: {
       card: "summary_large_image", title, description,
-      ...(image ? { images: [image] } : {}),
+      images: [image],
     },
     robots: context.isPreview ? { index: false, follow: false } : undefined,
   };
