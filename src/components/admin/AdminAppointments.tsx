@@ -665,7 +665,7 @@ export default function AdminAppointments() {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Ime, email, usluga..."
+                placeholder="Ime, mejl, usluga, @instagram, @tiktok..."
                 value={textQuery}
                 onChange={(e) => {
                   setTextQuery(e.target.value);

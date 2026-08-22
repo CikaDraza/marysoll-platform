@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { headers } from "next/headers";
 import { getCanonicalUrl, getPublicSiteContext } from "@/lib/seo/public-site";
+import { buildRobotsRules } from "@/lib/seo/robotsRules";
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
   const h = await headers();
@@ -11,23 +12,11 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     publicHost: h.get("x-public-host") ?? "",
   });
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-      disallow: [
-        "/superadmin/",
-        "/admin/",
-        "/dashboard/",
-        "/api/",
-        "/login/",
-        "/register/",
-        "/auth/",
-        "/forgot-password/",
-        "/reset-password/",
-        "/verify-email/",
-        "/resend-verification/",
-      ],
-    },
+    rules: buildRobotsRules(),
+    // Preview/staging namerno OSTAJE crawlable: zaštita je `noindex` meta tag
+    // iz tenantPageMetadata. Da smo ovde stavili Disallow, crawler ne bi ni
+    // pročitao taj tag, pa bi linkovan preview URL mogao da završi u indeksu
+    // bez sadržaja. Izostavlja se samo sitemap, da se preview ne reklamira.
     sitemap: context.isPreview ? undefined : getCanonicalUrl(context, "/sitemap.xml"),
   };
 }

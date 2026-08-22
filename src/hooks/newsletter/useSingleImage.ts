@@ -9,6 +9,8 @@ import {
   getNewsletterScopeHeaders,
   type NewsletterClientScope,
 } from "@/lib/newsletter/clientScope";
+import { getImageGenerationErrorMessage } from "@/lib/newsletter/imageGenerationError";
+import { getImageGenerationUrl } from "@/lib/newsletter/imageGenerationResponse";
 
 /**
  * Hook za upravljanje jednom slikom (za email-only kampanje)
@@ -22,7 +24,9 @@ export function useSingleImage(
   const scopeHeaders = useMemo(() => getNewsletterScopeHeaders(scope), [scope]);
 
   const [prompt, setPrompt] = useState("");
-  const [url, setUrl] = useState(initialUrl);
+  const [url, setUrl] = useState(() =>
+    typeof initialUrl === "string" ? initialUrl : "",
+  );
   const [isGenerating, setIsGenerating] = useState(false);
 
   const generate = useCallback(async (): Promise<string | null> => {
@@ -41,32 +45,36 @@ export function useSingleImage(
       });
 
       if (!res.ok) {
-        // Read the response body as text to see what was returned
-        const errorText = await res.text();
-        console.error("DALL-E proxy error:", res.status, errorText);
-        // If the response was JSON, you can still try to parse it
-        try {
-          const errJson = JSON.parse(errorText);
-          throw new Error(errJson.error || "Server error");
-        } catch {
-          throw new Error(`Server error: ${errorText.substring(0, 200)}`);
-        }
+        const errorPayload: unknown = await res.json().catch(() => null);
+        console.error(
+          "Image generation request failed:",
+          res.status,
+          errorPayload,
+        );
+        throw new Error(getImageGenerationErrorMessage(errorPayload));
       }
 
-      const data = await res.json();
+      const data: unknown = await res.json();
+      const generatedUrl = getImageGenerationUrl(data);
 
-      if (!data.url) throw new Error("No image URL returned");
+      if (!generatedUrl) {
+        throw new Error(
+          "AI servis nije vratio sliku. Pokušajte ponovo za nekoliko minuta.",
+        );
+      }
 
-      setUrl(data.url);
+      setUrl(generatedUrl);
 
       // Invalidate cloudinary query for instant update
       queryClient.invalidateQueries({ queryKey: ["cloudinary-images"] });
 
       toast.success("Slika uspešno generisana!");
-      return data.url;
+      return generatedUrl;
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Image generation failed",
+        error instanceof Error
+          ? error.message
+          : "Generisanje slike trenutno nije dostupno. Pokušajte ponovo za nekoliko minuta.",
       );
       return null;
     } finally {

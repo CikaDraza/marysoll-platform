@@ -264,8 +264,9 @@ function SuperAdminNewsletterTab({
   onSelect: (tenant: TenantRow) => void;
 }) {
   const [mode, setMode] = useState<"platform" | "tenant">("platform");
+  const isTenantNewsletter = mode === "tenant";
   const activeScope =
-    mode === "platform"
+    !isTenantNewsletter
       ? ({ scope: "platform" } as const)
       : selected
         ? ({ scope: "tenant", tenantId: selected._id } as const)
@@ -300,10 +301,14 @@ function SuperAdminNewsletterTab({
               </select>
             </div>
             <div>
-              <label className={lbl}>Salon</label>
+              <label
+                className={`${lbl} ${isTenantNewsletter ? "" : "text-slate-600"}`}
+              >
+                Salon
+              </label>
               <select
                 value={selected?._id ?? ""}
-                disabled={mode === "platform"}
+                disabled={!isTenantNewsletter}
                 onChange={(event) => {
                   const tenant = tenants.find(
                     (item) => item._id === event.target.value,
@@ -312,7 +317,11 @@ function SuperAdminNewsletterTab({
                     onSelect(tenant);
                   }
                 }}
-                className={inp}
+                className={`${inp} ${
+                  isTenantNewsletter
+                    ? "cursor-pointer"
+                    : "cursor-not-allowed border-slate-800 bg-slate-800 text-slate-500 opacity-60"
+                }`}
               >
                 <option value="">Izaberi salon...</option>
                 {tenants.map((tenant) => (

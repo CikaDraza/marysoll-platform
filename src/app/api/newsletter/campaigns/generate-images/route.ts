@@ -5,6 +5,7 @@ import { requireFeature } from "@/lib/plans/planEnforcement";
 import { uploadBase64ToCloudinary, getTenantFolder } from "@/lib/cloudinary";
 import { generateImage } from "@/lib/ai/orchestrator";
 import { resolveNewsletterAdminScope } from "@/lib/newsletter/adminTenantScope";
+import type { GenerateImageResponse } from "@/types/newsletter";
 
 const SUPERADMIN_IMAGE_FOLDER = "superadmin/images";
 
@@ -22,7 +23,11 @@ export async function POST(req: Request) {
     );
     if (!newsletterScope) {
       return NextResponse.json(
-        { error: "Newsletter scope nije validan" },
+        {
+          error:
+            "Nije moguće odrediti nalog za newsletter. Osvežite stranicu i pokušajte ponovo.",
+          code: "NEWSLETTER_SCOPE_INVALID",
+        },
         { status: 403 },
       );
     }
@@ -40,7 +45,10 @@ export async function POST(req: Request) {
     const { prompt } = await req.json();
     if (!prompt || prompt.trim() === "") {
       return NextResponse.json(
-        { error: "Prompt cannot be empty." },
+        {
+          error: "Unesite opis slike koju želite da generišete.",
+          code: "IMAGE_PROMPT_REQUIRED",
+        },
         { status: 400 },
       );
     }
@@ -51,16 +59,21 @@ export async function POST(req: Request) {
     const folder = newsletterScope.scope === "platform"
       ? SUPERADMIN_IMAGE_FOLDER
       : await getTenantFolder(newsletterScope.tenantId);
-    const url = await uploadBase64ToCloudinary(base64Image, folder);
+    const uploadResult = await uploadBase64ToCloudinary(base64Image, folder);
 
     // 6. Return the secure URL
-    return NextResponse.json({
-      url,
-    });
+    const response: GenerateImageResponse = {
+      url: uploadResult.secure_url,
+    };
+    return NextResponse.json(response);
   } catch (error: unknown) {
     console.error("Newsletter image generation error:", error);
     return NextResponse.json(
-      { error: "Image generation failed." },
+      {
+        error:
+          "Generisanje slike trenutno nije dostupno. Pokušajte ponovo za nekoliko minuta.",
+        code: "IMAGE_GENERATION_UNAVAILABLE",
+      },
       { status: 500 },
     );
   }

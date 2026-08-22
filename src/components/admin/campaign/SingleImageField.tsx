@@ -28,6 +28,9 @@ export function SingleImageField({
   onChange,
   scope,
 }: SingleImageFieldProps) {
+  // `mainImage` može doći kao prazan ili whitespace placeholder iz newsletter
+  // template-a; next/image nikada ne sme dobiti takav src.
+  const selectedImageUrl = typeof value === "string" ? value.trim() : "";
   const { token } = useAuth();
   const {
     data: cloudinaryData,
@@ -180,7 +183,7 @@ export function SingleImageField({
                 type="button"
                 onClick={() => handleCloudinarySelect(img.secure_url)}
                 className={`relative shrink-0 w-24 h-24 rounded-lg border-2 transition-all overflow-hidden ${
-                  value === img.secure_url
+                  selectedImageUrl === img.secure_url
                     ? "border-pink-500 ring-2 ring-pink-200"
                     : "border-transparent hover:border-gray-300"
                 }`}
@@ -203,19 +206,18 @@ export function SingleImageField({
       </div>
 
       {/* Preview */}
-      {value && (
+      {selectedImageUrl ? (
         <div className="mt-4">
           <label className="block text-xs font-medium text-gray-600 mb-2">
             Preview
           </label>
           <div className="relative h-40 w-full max-w-xs rounded-lg overflow-hidden border border-gray-200">
             <Image
-              src={value}
+              src={selectedImageUrl}
               alt="Selected image"
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 33vw"
-              preload={true}
             />
           </div>
           <button
@@ -229,7 +231,7 @@ export function SingleImageField({
             Ukloni sliku
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
