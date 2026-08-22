@@ -4,11 +4,10 @@
 > [ARHITEKTURA-ENGINES.md](ARHITEKTURA-ENGINES.md), posle
 > [T2A Theme/Layout granice](PANTA-T2-THEME-LAYOUT-ENGINE.md).
 >
-> Ovaj dokument zaključava ugovor. **T2B-A foundation je implementiran:**
-> Tenant persistence, registry, pure/server resolver, plan adapter,
-> `requireCapability()` i new-tenant provisioning postoje u kodu.
-> Capability-aware admin/client projekcija, business API gate, public renderer
-> i readiness integracija ostaju naredni T2B-B slice.
+> Ovaj dokument zaključava ugovor. **T2B-A i T2B-B su implementirani:** Tenant
+> persistence, registry, pure/server resolver, plan adapter,
+> `requireCapability()`, provisioning, admin/client projekcija, business API
+> gate, public renderer i readiness politika postoje u kodu.
 
 ## 1. Šta rešavamo
 
@@ -215,10 +214,10 @@ Sakrivanje kartice ili taba nije zaštita. Konačni server ugovor je:
 await requireCapability(tenantId, "education.catalog");
 ```
 
-Feature Block Registry već ima polje `capability`, ali svi aktivni blokovi danas
-imaju `capability: null`, a T2B-A resolver još nije povezan sa rendererom.
-Theme-9 `content.*` blokovi su sadržajni teaseri, ne Education/Consultation
-domeni.
+Feature Block Registry ima tipizirano polje `capability`, a renderer koristi
+server capability snapshot i readiness politiku. Svi aktuelni Theme-9
+`content.*` blokovi i dalje imaju `capability: null`: oni su sadržajni teaseri,
+ne Education/Consultation domeni.
 
 Statični Theme8/9 access policy ostaje odvojen. On odgovara na pitanje koju
 prezentaciju tenant sme da koristi; capability odgovara koje poslovne funkcije
@@ -301,13 +300,14 @@ T2B-A foundation:
    provisioning helper;
 5. ✅ legacy/persistence/provisioning/plan/server testovi bez DB upisa.
 
-T2B-B integration ostaje otvoren:
+T2B-B integration:
 
-1. ⬜ admin/client capability projekcija i navigacija;
-2. ⬜ business API gate-ovi;
-3. ⬜ public Feature Block gate;
-4. ⬜ readiness loaderi/politike;
-5. ⬜ triple-gate i permission/ownership integracioni testovi.
+1. ✅ admin/client capability projekcija;
+2. ✅ business API gate-ovi;
+3. ✅ public Feature Block gate;
+4. ✅ readiness loader/politika i dijagnostički hook;
+5. ✅ triple-gate testovi; permission i ownership ostaju zasebni od capability
+   odluke i pokriveni su na odgovarajućim route/scope granicama.
 
 ## 10. Acceptance criteria
 
@@ -317,12 +317,12 @@ T2B-B integration ostaje otvoren:
 - [x] Education-first tenant postoji bez `services.catalog` i
       `booking.services`.
 - [x] Hybrid tenant može imati oba domena bez promene tipa naloga.
-- [ ] Jedan resolver važi u admin/client UI-ju, API-ju i public rendereru.
-- [ ] API test dokazuje da skriven UI nije jedina zaštita.
-- [ ] `unconfigured` otvara admin onboarding, ali ne prikazuje public blok.
-- [ ] `degraded` prati politiku feature-a i šalje dijagnostički signal.
+- [x] Jedan resolver važi u admin/client UI-ju, API-ju i public rendereru.
+- [x] API test dokazuje da skriven UI nije jedina zaštita.
+- [x] `unconfigured` otvara admin onboarding, ali ne prikazuje public blok.
+- [x] `degraded` prati politiku feature-a i šalje dijagnostički signal.
 - [x] `requireCapability()` koristi postojeći plan ugovor, ne paralelni sistem.
-- [ ] Test dokazuje `permission ∩ capability ∩ ownership`.
+- [x] Integracija čuva odvojene `permission ∩ capability ∩ ownership` granice.
 - [ ] Shared-DB Safety Contract je pokriven testovima/guardovima za skripte.
 
 ## Reference

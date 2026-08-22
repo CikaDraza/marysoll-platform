@@ -86,10 +86,9 @@ bezbednog T3 jezgra za upis rezervacija**:
   šalje samo probni mejl i namerno ne kreira termin.
 - ✅ **T3 Slice 3 availability-core je završen:** isti obračun slobodnih termina
   koriste rute i UI potrošači. To je read/računska polovina Booking Engine-a.
-- 🟡 **T2B v0.3 ugovor i Workspace IA su zaključani, kod nije
-  implementiran:** nema tenant vertikala, capability resolvera, readiness
-  stanja ni jedinstvenog capability gate-a za admin, API i public renderer.
-  Postojeći `PLAN_FEATURES` ostaje plan entitlement izvor.
+- ✅ **T2B v0.3 i triple-gate su implementirani:** optional tenant vertikale,
+  capability resolver, postojeći `PLAN_FEATURES` adapter, server snapshot,
+  admin/client projekcija, business API i public readiness gate postoje.
 - ⬜ **T3 write/core nije implementiran:** nema kanonske rezervacije, day-lock
   serijalizacije, booking idempotencije ni jedne atomic reserve operacije koja
   važi za sve putanje. Postoji stariji petominutni `Slot` reserve za deo
@@ -98,10 +97,10 @@ bezbednog T3 jezgra za upis rezervacija**:
 
 ### Sledeći hard gate
 
-H0 i private Theme8/9 su zatvoreni. T2B v0.3 i Workspace IA sada zaključavaju
-shared-DB rollout, `tenantEnabled`, readiness, tri capability gate-a i
-permission/ownership granice. Sledeći funkcionalni rez je T2B capability
-foundation.
+H0, private Theme8/9 i T2B-A/B su zatvoreni. T3 write authority je specifikovan
+u [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md); sledeći funkcionalni
+rez je Slice 5 Booking CORE, a live cutover tek posle Slice 6 migration i
+concurrency gate-a.
 
 Odvojena staging baza nije prerequisite. Produkcija, staging i QA trenutno dele
 Mongo bazu, pa važi
@@ -271,9 +270,9 @@ Operativni detalji po slice-u vode se u [TODO.md](TODO.md). Ova tabela čuva
 | **Loyalty** | 🟡 kod završen do Referral 2b | Phase 0/1 i Referral 2b postoje; live QA/release gate i Phase 3 premium ostaju. |
 | **H0 theme-9 zaštita sadržaja** | ✅ završeno | Lossless admin write mapper, serverski section merge i regresioni testovi čuvaju postojeća, buduća i namerno prazna polja. |
 | **T2A Theme/Layout** | ✅ prihvaćeno | Paket, registry, lifecycle, migracija tema i private Theme8/9 application policy postoje. |
-| **T2B vertikale/capabilities** | 🟡 ugovor zaključan; kod nije implementiran | v0.3 i Workspace IA postoje; slede opcioni Tenant ugovor, resolver, `requireCapability()` i admin/API/public gate bez globalnog backfill-a. |
+| **T2B vertikale/capabilities** | ✅ funkcionalno završeno | Optional Tenant ugovor, resolver, `requireCapability()`, admin/client projekcija, business API i public readiness gate postoje bez globalnog backfill-a. |
 | **T3 availability + prikaz toka** | 🟡 delimično završeno | Availability paket i potrošači postoje; theme-9 demo/preview šalje mejl, ali ne rezerviše termin. |
-| **T3 Booking write/core** | ⬜ nije implementirano | Napisati specifikaciju, uvesti kanonsku rezervaciju, day-lock, idempotenciju, BookingFacts, hold i migrirati sve create/reschedule putanje. |
+| **T3 Booking write/core** | 🟡 specifikacija zaključana; kod nije implementiran | [T3 ugovor](PANTA-T3-BOOKING-ENGINE.md) definiše 12 Appointment + 4 Slot write ulaza, kanonsku rezervaciju, day-lock, idempotenciju, outbox i Slice 5/6 gate. |
 | **Consultation / Questionnaire / Education / Care** | ⬜ nije implementirano | Redosled: Consultation + hold + intake + theme-9 E2E; zatim Education, navigacija i Care Workspace. |
 | **T4 AI Core/Skills** | ⬜ backlog | Mapirati postojeće agente i njihove granice tek posle aktuelnih release gate-ova. |
 | **T5 Diagnostic proširenje** | 🟡 delimično | Osnova postoji; salon-facing dashboard, performance/console prikaz i eventualne bezbedne repair akcije ostaju. |
@@ -319,31 +318,31 @@ konkretan salon-potreba.
 (namerno). Identitet = ulogovana sesija skenera; jedan check-in po klijentu/danu
 (streak+poeni). Srca ostaju po završenom terminu (admin). Ne dirati dalje.
 
-## Redosled rada (revidirano 2026-08-21)
+## Redosled rada (revidirano 2026-08-22)
 
 1. ✅ **H0 i private Theme8/9 su završeni.** Lossless write i application-level
    access policy nalaze se na aktivnoj grani.
 2. ✅ **T2B v0.3 i Workspace IA su zaključani.** Capability rečnik obuhvata
    consultation i questionnaires ugovore, a matrice razdvajaju permission,
    capability, ownership i readiness.
-3. **Implementirati T2B foundation:** optional `verticals` i capability override,
+3. ✅ **T2B foundation je implementiran:** optional `verticals` i capability override,
    legacy beauty runtime default, platform/`PLAN_FEATURES`/tenant resolver i
    `requireCapability()`.
-4. **Povezati isti resolver na sva tri mesta:** admin/client UI, API i javni
+4. ✅ **Isti resolver je povezan na sva tri mesta:** admin/client UI, API i javni
    renderer. Test mora dokazati da direktan API zahtev ne prolazi samo zato što
    je UI stavka skrivena.
 5. **Primeni Shared-DB Safety Contract:** nema obaveznog globalnog backfill-a;
    seed/dev izmene su tenant-scoped, dry-run po defaultu i zahtevaju `--apply`.
 6. **Zatvoriti theme-9 CMS/fallback/navigation dugove.** Linkovi ka podstranama
    moraju pratiti stvarno dostupan sadržaj.
-7. **Napisati `PANTA-T3-BOOKING-ENGINE.md` pre CORE implementacije.** Dokument
-   već treba da opiše završeni availability deo i delimični preview, a ne da
-   nastane tek kada Slice 5 počne.
+7. ✅ **T3 write authority specifikacija je zaključana** u
+   [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md): obuhvata završeni
+   availability deo, delimični preview i stvarni write inventory.
 8. **Implementirati T3 Booking CORE:** kanonska rezervacija, day-lock ili
    ekvivalentna transakcijska zaštita, idempotentni retry, BookingFacts,
    centralni conflict recovery i jasan status starog `Slot` sistema.
-9. **Migrirati svih pet create putanja i sva tri reschedule ulaza** na jedan
-    servis; concurrency test je release gate.
+9. **Migrirati svih 12 Appointment occupancy/lifecycle ulaza i razrešiti sva
+   četiri Slot write ulaza**; architecture i concurrency testovi su release gate.
 10. **Napraviti Consultation + BookingHold + Questionnaire/Intake**, pa tek onda
     uključiti stvarno theme-9 zakazivanje.
 11. **Posle toga:** Education domen, capability-aware navigacija i Care

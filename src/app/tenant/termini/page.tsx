@@ -17,6 +17,7 @@ import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
 import { WorkingHoursNote } from "@/components/shared/WorkingHoursNote";
 import { TenantPageShell } from "@/components/themes/TenantPageShell";
 import { Theme8AppointmentsPage } from "@/components/themes/theme-8";
+import { getPublicSiteContext, tenantPageMetadata } from "@/lib/seo/public-site";
 
 export const dynamic = "force-dynamic";
 
@@ -32,11 +33,12 @@ export async function generateMetadata(): Promise<Metadata> {
     (profile?.seo as Record<string, string>)?.terminiDescription ||
     `Pogledajte slobodne termine i zakažite posetu u salonu ${salonName}.`;
 
-  return {
-    title,
-    description,
-    openGraph: { title, description, type: "website" },
-  };
+  return tenantPageMetadata(profile, getPublicSiteContext({
+    domainType: h.get("x-domain-type") ?? "",
+    tenantSlug,
+    tenantCustomDomain: h.get("x-tenant-custom-domain") ?? "",
+    publicHost: h.get("x-public-host") ?? "",
+  }), "/termini", title, description);
 }
 
 export default async function TerminiPage() {

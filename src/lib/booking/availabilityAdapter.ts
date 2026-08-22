@@ -26,6 +26,7 @@ import {
   type AvailabilityQuery,
   type AvailabilityResult,
   type ManualSlot,
+  type Occupancy,
   type TimeRange,
   type VacationRange,
   type WeekdayIndex,
@@ -167,7 +168,7 @@ export function toManualSlots(
 export function toOccupancies(
   appointments: BookedAppointment[] | undefined,
   timezone: string = SALON_TIMEZONE,
-): AvailabilityQuery["occupancies"] {
+): Occupancy[] {
   if (!Array.isArray(appointments)) return [];
 
   return appointments
@@ -187,6 +188,8 @@ export interface BuildQueryInput {
   durationMinutes: number;
   profile: SalonAvailabilityProfile;
   appointments?: BookedAppointment[];
+  /** Canonical UTC occupancy; ne pretvara se nazad u legacy date/time oblik. */
+  occupancies?: Occupancy[];
   /** Nad čim se rezerviše. Do Slice 5 salon ima jedan resurs. */
   resourceKey?: string;
   timezone?: string;
@@ -212,7 +215,10 @@ export function buildAvailabilityQuery(input: BuildQueryInput): AvailabilityQuer
     ...(isManual
       ? { manualSlots: toManualSlots(input.profile.manualSlots, input.localDate) }
       : {}),
-    occupancies: toOccupancies(input.appointments, timezone),
+    occupancies: [
+      ...toOccupancies(input.appointments, timezone),
+      ...(input.occupancies ?? []),
+    ],
     ...(input.stepMinutes ? { stepMinutes: input.stepMinutes } : {}),
     ...(input.now ? { now: input.now } : {}),
     ...(input.bands ? { bands: input.bands } : {}),

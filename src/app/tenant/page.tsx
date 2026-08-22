@@ -13,6 +13,7 @@ import { headers } from "next/headers";
 import { ClientHomePage } from "@/components/client/ClientHomePage";
 import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
 import { usableRasterLogo } from "@/lib/branding/rasterLogo";
+import { getPublicSiteContext, tenantPageMetadata } from "@/lib/seo/public-site";
 
 const PLATFORM_PWA_ICON = "/marysoll_elegant_logo.png";
 
@@ -29,20 +30,23 @@ export async function generateMetadata(): Promise<Metadata> {
     (profile?.seo as Record<string, string>)?.homeDescription ||
     profile?.description ||
     "";
-  const logoUrl = profile?.logo ?? undefined;
   const installIcon = usableRasterLogo(profile?.notificationLogo)
     ? profile.notificationLogo
     : PLATFORM_PWA_ICON;
 
   return {
-    title,
-    description,
-    openGraph: {
+    ...tenantPageMetadata(
+      profile,
+      getPublicSiteContext({
+        domainType: h.get("x-domain-type") ?? "",
+        tenantSlug,
+        tenantCustomDomain: h.get("x-tenant-custom-domain") ?? "",
+        publicHost: h.get("x-public-host") ?? "",
+      }),
+      "/",
       title,
       description,
-      images: logoUrl ? [{ url: logoUrl }] : [],
-      type: "website",
-    },
+    ),
     // Instalirana aplikacija ne sme koristiti site logo: on može biti SVG.
     icons: { icon: installIcon, apple: installIcon },
   };

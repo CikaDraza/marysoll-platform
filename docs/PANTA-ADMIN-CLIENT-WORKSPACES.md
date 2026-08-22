@@ -6,7 +6,9 @@
 >
 > Capability ugovor je u
 > [PANTA-TENANT-VERTICALS-CAPABILITIES.md](PANTA-TENANT-VERTICALS-CAPABILITIES.md).
-> Capability-aware navigacija još nije implementirana.
+> Capability snapshot i postojeća admin/client navigaciona projekcija su
+> implementirani u T2B-B. Kompletna nova domain IA iz ovog dokumenta ostaje
+> Slice 12; ne treba je mešati sa završenim capability gate-om.
 
 ## 1. Osnovna pravila
 
