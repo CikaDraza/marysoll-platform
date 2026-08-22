@@ -18,6 +18,13 @@ import { BookingOutboxEvent } from "@/models/BookingOutboxEvent";
 import { Appointment } from "@/models/Appointment";
 import { loadUnmigratedAppointmentOccupancy } from "./legacyOccupancy";
 import { toOccupancies } from "./availabilityAdapter";
+import {
+  createServiceAppointmentDomainAdapter,
+  resolveServiceBookingProduct,
+  serviceAvailabilityProvider,
+} from "./serviceAdapter";
+import { Service } from "@/models/Service";
+import { SalonProfile } from "@/models/SalonProfile";
 
 const testDomainSchema = new Schema(
   {
@@ -168,6 +175,8 @@ describe.sequential("Booking CORE Mongo replica-set integration", () => {
       BookingOutboxEvent.syncIndexes(),
       TestBookingDomain.syncIndexes(),
       Appointment.syncIndexes(),
+      Service.syncIndexes(),
+      SalonProfile.syncIndexes(),
     ]);
   }, 120_000);
 
@@ -533,5 +542,142 @@ describe.sequential("Booking CORE Mongo replica-set integration", () => {
       ),
       ["BOOKING_SLOT_NOT_AVAILABLE"],
     );
+  });
+
+  it("resolves Service ownership, duration and immutable product snapshot server-side", async () => {
+    const tenantId = new Types.ObjectId().toString();
+    const otherTenantId = new Types.ObjectId().toString();
+    const service = await Service.create({
+      tenantId,
+      name: "Server service",
+      category: "test",
+      type: "single",
+      duration: 75,
+    });
+    await expectBookingCode(
+      resolveServiceBookingProduct({
+        tenantId: otherTenantId,
+        serviceId: service._id.toString(),
+      }),
+      ["BOOKING_PRODUCT_NOT_AVAILABLE"],
+    );
+    const resolved = await resolveServiceBookingProduct({
+      tenantId,
+      serviceId: service._id.toString(),
+    });
+    expect(resolved.resourceKey).toBe("salon");
+    expect(resolved.snapshot.durationMinutes).toBe(75);
+    expect(resolved.snapshot.name).toBe("Server service");
+    await Service.updateOne({ _id: service._id }, { $set: { name: "Changed", duration: 15 } });
+    expect(resolved.snapshot).toMatchObject({ name: "Server service", durationMinutes: 75 });
+  });
+
+  it("atomically creates Reservation ↔ Appointment with the Service adapter", async () => {
+    const tenantId = new Types.ObjectId().toString();
+    const clientRef = new Types.ObjectId().toString();
+    const appointmentId = new Types.ObjectId().toString();
+    await SalonProfile.create({
+      tenantId,
+      name: "Booking test salon",
+      email: "salon@example.test",
+      workingHours: { Ponedeljak: [{ from: "09:00", to: "18:00" }] },
+      availabilityMode: "workingHours",
+    });
+    const service = await Service.create({
+      tenantId,
+      name: "Atomic service",
+      category: "test",
+      type: "single",
+      duration: 60,
+    });
+    const product = await resolveServiceBookingProduct({
+      tenantId,
+      serviceId: service._id.toString(),
+    });
+    const command = reserveCommand({
+      tenantId,
+      clientRef,
+      domainRef: { type: "appointment", id: appointmentId },
+      productType: product.productType,
+      productRef: product.productRef,
+      productSnapshot: product.snapshot,
+    });
+    const result = await reserve(command, {
+      availability: serviceAvailabilityProvider,
+      domain: createServiceAppointmentDomainAdapter({
+        tenantId,
+        draft: {
+          clientRef,
+          clientName: "Atomic client",
+          clientEmail: "client@example.test",
+          serviceName: product.snapshot.name,
+          services: [
+            {
+              serviceId: product.productRef,
+              serviceName: product.snapshot.name,
+              quantity: 1,
+              duration: product.snapshot.durationMinutes,
+            },
+          ],
+        },
+      }),
+    });
+    const appointment = await Appointment.findById(appointmentId)
+      .lean<{ bookingReservationId: Types.ObjectId; duration: number }>();
+    const reservation = await BookingReservation.findById(result.reservation.reservationId)
+      .lean<{ domainRef: { type: string; id: string } }>();
+    expect(appointment?.bookingReservationId.toString()).toBe(result.reservation.reservationId);
+    expect(appointment?.duration).toBe(60);
+    expect(reservation?.domainRef).toEqual({ type: "appointment", id: appointmentId });
+  });
+
+  it("rolls back Service reservation when Appointment validation fails", async () => {
+    const tenantId = new Types.ObjectId().toString();
+    const clientRef = new Types.ObjectId().toString();
+    await SalonProfile.create({
+      tenantId,
+      name: "Rollback salon",
+      email: "rollback@example.test",
+      workingHours: { Ponedeljak: [{ from: "09:00", to: "18:00" }] },
+    });
+    const service = await Service.create({
+      tenantId,
+      name: "Rollback service",
+      category: "test",
+      type: "single",
+      duration: 60,
+    });
+    const product = await resolveServiceBookingProduct({
+      tenantId,
+      serviceId: service._id.toString(),
+    });
+    await expectBookingCode(
+      reserve(
+        reserveCommand({
+          tenantId,
+          clientRef,
+          domainRef: { type: "appointment", id: new Types.ObjectId().toString() },
+          productRef: product.productRef,
+          productSnapshot: product.snapshot,
+        }),
+        {
+          availability: serviceAvailabilityProvider,
+          domain: createServiceAppointmentDomainAdapter({
+            tenantId,
+            draft: {
+              clientRef,
+              clientName: "",
+              clientEmail: "invalid@example.test",
+              serviceName: product.snapshot.name,
+              services: [],
+            },
+          }),
+        },
+      ),
+      ["BOOKING_INFRASTRUCTURE_UNAVAILABLE"],
+    );
+    expect(await BookingReservation.countDocuments()).toBe(0);
+    expect(await Appointment.countDocuments()).toBe(0);
+    expect(await BookingOutboxEvent.countDocuments()).toBe(0);
   });
 });
