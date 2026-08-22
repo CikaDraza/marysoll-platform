@@ -821,7 +821,7 @@ potvrditi pre Slice 6. Ni jedna opcija ne dozvoljava dual authority.
 additive persistence modelima, centralnim bounded transaction retry-jem,
 `reserve`/atomic `reschedule`/lifecycle komandama, BookingFacts i transactional
 outbox upisom, transitional legacy reader-om i Service/Appointment adapter
-foundation-om. Novi suite ima 34 fokusirana testa, od čega 20 pokreće pravi
+foundation-om. Novi suite ima 35 fokusiranih testova, od čega 21 pokreće pravi
 `MongoMemoryReplSet` i proverava transakcije, concurrency, idempotency, rollback,
 outbox i cross-reference atomicity. To ne menja sledeće granice:
 

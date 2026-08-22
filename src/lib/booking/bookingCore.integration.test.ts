@@ -313,6 +313,34 @@ describe.sequential("Booking CORE Mongo replica-set integration", () => {
     expect(await BookingReservation.countDocuments()).toBe(1);
   });
 
+  it("enforces one Reservation link for the same domain record in MongoDB", async () => {
+    const tenantId = new Types.ObjectId().toString();
+    const domainRef = { type: "appointment", id: new Types.ObjectId().toString() };
+    await reserve(reserveCommand({ tenantId, domainRef }), dependencies());
+
+    await expectBookingCode(
+      reserve(
+        reserveCommand({
+          tenantId,
+          domainRef,
+          startsAt: new Date("2027-09-06T12:00:00Z"),
+          endsAt: new Date("2027-09-06T13:00:00Z"),
+        }),
+        dependencies(),
+      ),
+      ["BOOKING_CONFLICT", "BOOKING_INFRASTRUCTURE_UNAVAILABLE"],
+    );
+
+    expect(
+      await BookingReservation.countDocuments({
+        tenantId,
+        "domainRef.type": domainRef.type,
+        "domainRef.id": domainRef.id,
+      }),
+    ).toBe(1);
+    expect(await TestBookingDomain.countDocuments()).toBe(1);
+  });
+
   it("rejects reuse of an idempotency key with a changed trusted command", async () => {
     const command = reserveCommand();
     await reserve(command, dependencies());
