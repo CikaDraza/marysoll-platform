@@ -1,12 +1,12 @@
 # PANTA T3 — Booking Engine write authority (v1 architecture lock)
 
-> Status: **specifikacija zaključana; produkcioni write core još ne postoji**.
+> Status: **Slice 5 dark core implementiran; nije live booking authority**.
 > Datum pregleda stvarnog koda: 2026-08-22.
 > Preduslovi: završeni `availability-core` i T2B capability authority.
 >
-> Ovaj dokument je operativni ugovor za Slice 5 i Slice 6. Ne tvrdi da
-> `BookingReservation`, `BookingDayLock`, idempotency store ili booking outbox
-> danas postoje.
+> Ovaj dokument je operativni ugovor za Slice 5 i Slice 6. Slice 5 sada uvodi
+> `BookingReservation`, `BookingDayLock`, durable idempotency receipt i booking
+> outbox, ali nijedna postojeća production booking ruta još nije migrirana.
 
 ## 1. Svrha, granice i glavni invariant
 
@@ -456,6 +456,15 @@ Lock nije dugotrajni mutex niti browser hold. On je dokument koji se
 transakcije za isti tenant/resource/day zato pišu isti dokument; jedna dobija
 write conflict/retry, pa ne mogu obe potvrditi isti snapshot kao slobodan.
 
+Prvi paralelni upis ima dodatnu implementacionu nijansu: kada lock dokument još
+ne postoji, oba zahteva mogu pokušati `upsert` istog unique ključa. Zato centralni
+retry runner tretira i duplicate-key nad imenovanim
+`booking_day_lock_unique` indeksom, uz Mongo write conflict/transient label, kao
+concurrency retry signal. Ponavlja se **cela transakcija** — lock, read aktuelnog
+stanja i availability validacija — ne samo insert. Duplicate-key durable receipt
+indeksa nije isti slučaj: on abortira izgubljenu transakciju i razrešava se kao
+committed idempotent replay ili idempotency conflict.
+
 ### 10.1 `reserve()` transaction
 
 1. Pre transakcije: auth, permission i capability; server razrešava tenant,
@@ -808,6 +817,20 @@ potvrditi pre Slice 6. Ni jedna opcija ne dozvoljava dual authority.
   testira izolovano;
 - nema unsafe dual-write-a.
 
+**Implementacioni status 2026-08-22:** ovaj dark core je implementiran sa
+additive persistence modelima, centralnim bounded transaction retry-jem,
+`reserve`/atomic `reschedule`/lifecycle komandama, BookingFacts i transactional
+outbox upisom, transitional legacy reader-om i Service/Appointment adapter
+foundation-om. Novi suite ima 31 fokusirani test, od čega 17 pokreće pravi
+`MongoMemoryReplSet` i proverava transakcije, concurrency, idempotency, rollback,
+outbox i cross-reference atomicity. To ne menja sledeće granice:
+
+- core nije pozvan ni iz jedne postojeće production HTTP rute;
+- Appointment/Slot live write ponašanje je nepromenjeno;
+- stvarni deployment transaction smoke nije izvršen i ostaje hard release gate;
+- outbox worker, retry/reconciliation i svih 12 Appointment + 4 Slot write odluka
+  ostaju Slice 6.
+
 ### 21.2 Slice 6 — svi write ulazi i jedan cutover gate
 
 1. Implementirati compatibility occupancy reader: active BookingReservation +
@@ -956,13 +979,54 @@ pišu mimo njega.
 Hold concurrency testovi (expiry, confirm race, owner token) pripadaju Slice 8,
 ne Slice 5.
 
+### 23.3 Deployment transaction smoke procedura (nije izvršena)
+
+Lokalni `MongoMemoryReplSet` potvrđuje algoritam, ali ne deployment topology.
+Pre release odobrena osoba prvo radi read-only topology proveru na tačnoj ciljnoj
+deployment klasi:
+
+```bash
+mongosh "$MONGODB_URI/$DB_NAME" --quiet --eval '
+const h = db.adminCommand({ hello: 1 });
+printjson({ setName: h.setName, msg: h.msg, isWritablePrimary: h.isWritablePrimary });
+'
+```
+
+Prihvatljiv topology dokaz je replica-set `setName` ili `msg: "isdbgrid"` za
+mongos. Zatim, tek uz posebno odobrenje za write smoke, koristiti izolovanu bazu
+na istoj deployment klasi (nikad shared production/staging podatke) i izvršiti:
+
+```bash
+mongosh "$BOOKING_SMOKE_URI/$BOOKING_SMOKE_DB" --quiet --eval '
+const marker = UUID().toString();
+const session = db.getMongo().startSession();
+const smokeDb = session.getDatabase(db.getName());
+try {
+  session.withTransaction(() => {
+    smokeDb.booking_transaction_smoke.insertOne({ marker, side: "reservation" });
+    smokeDb.booking_transaction_smoke.insertOne({ marker, side: "outbox" });
+  });
+  const count = db.booking_transaction_smoke.countDocuments({ marker });
+  if (count !== 2) throw new Error(`transaction smoke count=${count}`);
+  print(`BOOKING_TRANSACTION_SMOKE_OK marker=${marker}`);
+} finally {
+  session.endSession();
+  db.booking_transaction_smoke.deleteMany({ marker });
+}
+'
+```
+
+Release zapis mora sačuvati deployment klasu, DB ime, timestamp, topology nalaz
+i `BOOKING_TRANSACTION_SMOKE_OK` marker. Ovaj Slice 5 zadatak nije pokrenuo ni
+read ni write komandu protiv spoljne baze.
+
 ## 24. Slice granice
 
 | Slice | Status / sadržaj |
 |---|---|
 | 3 | ✅ availability/read core |
 | 4 | 🟡 generic booking UI + Theme-9 preview; bez write-a |
-| 5 | Booking CORE: Reservation, DayLock, reserve, idempotency, BookingFacts, Service adapter foundation, transaction + outbox contract |
+| 5 | ✅ dark core implementiran: Reservation, DayLock, reserve, idempotency, BookingFacts, Service adapter foundation, transaction + outbox contract; nije live authority |
 | 6 | svi production write ulazi, legacy compatibility/adoption, Slot cutover, architecture guards, contention/outbox release gate |
 | 7 | ConsultationOffering/ConsultationBooking adapter i domen |
 | 8 | BookingHold kroz isti lock/transaction authority |
