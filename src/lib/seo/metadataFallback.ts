@@ -19,6 +19,8 @@
  * stvarno postoje u podacima tenanta.
  */
 
+import type { SalonProfileData } from "@/types";
+
 /** Gornja granica opisa — praktičan limit za SERP snippet. */
 export const DESCRIPTION_MAX = 160;
 
@@ -75,11 +77,36 @@ export interface TenantMetadataFacts {
   /** Hero copy iz landing CMS-a (headline/subheadline/whereWhatForWhom). */
   heroCopy?: Array<string | null | undefined>;
   /**
-   * Da li salon nudi online zakazivanje. Podrazumevano `true` jer svaki tenant
-   * sajt ima /termini stranicu; kada stigne capability flag, prosleđuje se ovde
-   * umesto da se izmišlja novo polje u bazi.
+   * Da li salon nudi online zakazivanje.
+   *
+   * NEMA podrazumevanu vrednost: rečenica o online zakazivanju se piše SAMO
+   * kada pozivalac eksplicitno prosledi `true` iz pouzdane trenutne činjenice.
+   * Postojanje /termini rute nije dokaz da tenant nudi zakazivanje — kada
+   * stigne capability signal, prosleđuje se ovde. Do tada je tiši opis bolji
+   * od tvrdnje koja može biti netačna.
    */
   bookingEnabled?: boolean;
+}
+
+/**
+ * Jedini graditelj činjenica za tenant metapodatke.
+ *
+ * Postoji da bi runtime metadata i SEO health gledali ISTI izvor teksta.
+ * Kada je health gradio svoj skraćeni skup bez hero copy-ja, prijavljivao je
+ * „opis se generiše" i za tenanta čiji meta opis stvarno dolazi iz CMS hero
+ * teksta.
+ */
+export function buildTenantMetadataFacts(
+  profile: SalonProfileData | null | undefined,
+): TenantMetadataFacts {
+  const hero = profile?.landingStructure?.landing?.hero;
+  return {
+    name: profile?.name,
+    description: profile?.description,
+    shortDescription: profile?.shortDescription,
+    city: profile?.city,
+    heroCopy: [hero?.subheadline, hero?.whereWhatForWhom, hero?.headline],
+  };
 }
 
 /** Prvi neprazan normalizovan tekst iz liste kandidata. */
@@ -93,14 +120,15 @@ function firstMeaningful(candidates: Array<unknown>): string {
 
 /**
  * Deterministički činjenični opis. Gradi se SAMO od polja koja postoje —
- * bez grada ako grada nema, bez zakazivanja ako je isključeno.
+ * bez grada ako grada nema, bez pominjanja zakazivanja dok ono nije
+ * eksplicitno potvrđeno.
  */
 export function buildFactualDescription(facts: TenantMetadataFacts): string {
   const name = normalizeCopy(facts.name);
   if (!name) return "";
 
   const city = normalizeCopy(facts.city);
-  const booking = facts.bookingEnabled !== false;
+  const booking = facts.bookingEnabled === true;
 
   // NAMERNO "Naziv — Grad." umesto "Naziv u Gradu.": srpski lokativ je
   // nepravilan (Loznica→Loznici, Kragujevac→Kragujevcu, Novi Sad→Novom Sadu,

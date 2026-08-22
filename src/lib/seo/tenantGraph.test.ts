@@ -241,3 +241,43 @@ describe("sameAs — povezivanje javnih profila", () => {
     expect(socialUrl(undefined, "tiktok")).toBeNull();
   });
 });
+
+describe("tenant graph — opis entiteta", () => {
+  it("koristi pun opis salona kada postoji", () => {
+    expect(node(graphFor(fullProfile()), "BeautySalon").description).toBe(
+      "Premium ekstenzije trepavica i Lash Lift.",
+    );
+  });
+
+  // REGRESIJA: graf je gledao samo `description`, pa je tenant sa popunjenom
+  // kratkom brend linijom ostajao potpuno bez opisa entiteta.
+  it("pada na shortDescription kada nema punog opisa", () => {
+    const graph = graphFor(
+      fullProfile({
+        description: "",
+        shortDescription: "Skincare edukacija",
+      } as Partial<SalonProfileData>),
+    );
+    expect(node(graph, "BeautySalon").description).toBe("Skincare edukacija");
+  });
+
+  it("izostavlja description kada nema nijednog javnog teksta", () => {
+    const graph = graphFor(
+      fullProfile({
+        description: "",
+        shortDescription: "",
+      } as Partial<SalonProfileData>),
+    );
+    expect(node(graph, "BeautySalon")).not.toHaveProperty("description");
+  });
+
+  it("NIKAD ne koristi generisanu SEO rečenicu kao opis entiteta", () => {
+    const graph = graphFor(
+      fullProfile({
+        description: "",
+        shortDescription: "",
+      } as Partial<SalonProfileData>),
+    );
+    expect(JSON.stringify(graph)).not.toContain("Pogledajte usluge");
+  });
+});

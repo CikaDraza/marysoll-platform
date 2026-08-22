@@ -100,6 +100,35 @@ describe("SEO health — kvalitet automatskog opisa", () => {
     expect(result).toContain("seo.description.generated");
   });
 
+  // REGRESIJA: health je gradio svoj skup činjenica bez hero copy-ja, pa je
+  // tenant čiji meta opis stvarno dolazi iz CMS hero teksta dobijao upozorenje
+  // da mu se opis generiše.
+  it("ne prijavljuje generisan opis kada hero copy popunjava meta opis", () => {
+    const profile = healthy({
+      description: "",
+      shortDescription: "",
+      seo: { uslugeTitle: "x" },
+      landingStructure: {
+        landing: {
+          hero: { subheadline: "Tretmani lica i tela za svaki tip kože" },
+        },
+      },
+    } as unknown as Partial<SalonProfileData>);
+    expect(codes(profile)).not.toContain("seo.description.generated");
+  });
+
+  it("prijavljuje generisan opis kada je hero copy prazan", () => {
+    const profile = healthy({
+      description: "",
+      shortDescription: "",
+      seo: { uslugeTitle: "x" },
+      landingStructure: {
+        landing: { hero: { subheadline: "   ", headline: "" } },
+      },
+    } as unknown as Partial<SalonProfileData>);
+    expect(codes(profile)).toContain("seo.description.generated");
+  });
+
   it("ne prijavljuje generisan opis kada postoji ručni SEO opis", () => {
     expect(
       codes(healthy({ description: "", shortDescription: "" })),
@@ -126,6 +155,27 @@ describe("SEO health — social", () => {
 
   it("prijavljuje nedostatak raster logo-a za notifikacije", () => {
     expect(codes(healthy({ notificationLogo: null }))).toContain(
+      "seo.social.rasterLogoMissing",
+    );
+  });
+
+  // REGRESIJA: provera je bila Boolean(notificationLogo), pa je SVG ili
+  // malformed vrednost prolazila kao "ima raster logo" iako ga social selector
+  // odbija.
+  it("SVG notificationLogo se broji kao da raster logo-a nema", () => {
+    expect(codes(healthy({ notificationLogo: `${CDN}/notif.svg` }))).toContain(
+      "seo.social.rasterLogoMissing",
+    );
+  });
+
+  it("vrednost bez ekstenzije se broji kao da raster logo-a nema", () => {
+    expect(codes(healthy({ notificationLogo: "   " }))).toContain(
+      "seo.social.rasterLogoMissing",
+    );
+  });
+
+  it("stvaran raster notificationLogo ne prijavljuje ništa", () => {
+    expect(codes(healthy({ notificationLogo: `${CDN}/notif.webp?v=2` }))).not.toContain(
       "seo.social.rasterLogoMissing",
     );
   });

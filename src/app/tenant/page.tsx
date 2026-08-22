@@ -17,6 +17,7 @@ import { getPublicSiteContext, tenantPageMetadata } from "@/lib/seo/public-site"
 import {
   resolveTenantTitle,
   resolveTenantDescription,
+  buildTenantMetadataFacts,
 } from "@/lib/seo/metadataFallback";
 
 const PLATFORM_PWA_ICON = "/marysoll_elegant_logo.png";
@@ -26,14 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const tenantSlug = h.get("x-tenant-slug") ?? "";
   const profile = await fetchPublicSalonProfile(tenantSlug);
 
-  const hero = profile?.landingStructure?.landing?.hero;
-  const facts = {
-    name: profile?.name,
-    description: profile?.description,
-    shortDescription: profile?.shortDescription,
-    city: profile?.city,
-    heroCopy: [hero?.subheadline, hero?.whereWhatForWhom, hero?.headline],
-  };
+  const facts = buildTenantMetadataFacts(profile);
   // Ručno uneseni SEO uvek pobeđuje; fallback ide kroz CMS/profil pa činjenice.
   const title = resolveTenantTitle(
     (profile?.seo as Record<string, string>)?.homeTitle,

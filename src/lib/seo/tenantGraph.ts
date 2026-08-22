@@ -19,6 +19,7 @@ import {
   type PublicSiteContext,
 } from "./public-site";
 import { getTenantRasterImage } from "./socialImage";
+import { normalizeCopy } from "./metadataFallback";
 
 export function socialUrl(
   value: string | undefined,
@@ -52,12 +53,19 @@ export function buildTenantGraph(
   // Samo stvarna raster slika — favicon nije fotografija salona.
   const image = getTenantRasterImage(profile);
 
+  // Opis entiteta sme da bude SAMO javni tekst o salonu: pun opis, pa kratka
+  // brend linija. Generisani SEO fallback ("Naziv — Grad. Pogledajte usluge…")
+  // ovde NE ulazi — to je snippet za SERP, a ne tvrdnja o entitetu; radije se
+  // description izostavlja nego da graf nosi platformsku rečenicu.
+  const businessDescription =
+    normalizeCopy(profile.description) || normalizeCopy(profile.shortDescription);
+
   const business = {
     "@type": "BeautySalon",
     "@id": `${origin}/#business`,
     name: profile.name,
     url: origin,
-    ...(profile.description ? { description: profile.description } : {}),
+    ...(businessDescription ? { description: businessDescription } : {}),
     ...(image ? { image } : {}),
     // Javno jer teme prikazuju isti broj kao tel: link.
     ...(profile.phone ? { telephone: profile.phone } : {}),

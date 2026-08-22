@@ -12,8 +12,13 @@
  */
 
 import type { SalonProfileData } from "@/types";
-import { getTenantRasterImage } from "./socialImage";
-import { resolveTenantDescription, normalizeCopy } from "./metadataFallback";
+import { getTenantRasterImage, isRasterSocialImage } from "./socialImage";
+import {
+  buildFactualDescription,
+  buildTenantMetadataFacts,
+  resolveTenantDescription,
+  normalizeCopy,
+} from "./metadataFallback";
 
 export type SeoHealthCode =
   | "seo.title.missing"
@@ -110,26 +115,25 @@ export function evaluateSeoHealth(
     issues.push({
       code: "seo.profile.descriptionMissing",
       severity: "warning",
-      message: "Salon nema javni opis — automatski opis se svodi na činjenice.",
+      message:
+        "Salon nema javni opis u profilu — structured data ostaje bez opisa.",
       hint: "Dodati opis salona; koristi se i na sajtu i u structured data.",
     });
   }
 
   // Da li početna trenutno pada na determinističku rečenicu.
-  const homeDescription = resolveTenantDescription(
-    manualField(profile, "home", "Description"),
-    {
-      name: profile.name,
-      description: profile.description,
-      shortDescription: profile.shortDescription,
-      city: profile.city,
-    },
-  );
+  //
+  // VAŽNO: činjenice se grade istim graditeljem kao u generateMetadata, pa i
+  // hero copy iz CMS-a ulazi u procenu. Bez toga bi tenant sa stvarnim hero
+  // tekstom u meta opisu dobijao lažno upozorenje da mu se opis generiše.
+  const facts = buildTenantMetadataFacts(profile);
+  const manualHomeDescription = manualField(profile, "home", "Description");
+  const homeDescription = resolveTenantDescription(manualHomeDescription, facts);
+  const factualDescription = buildFactualDescription(facts);
   const usingGeneratedFallback =
-    !manualField(profile, "home", "Description") &&
-    !description &&
-    !shortDescription &&
-    homeDescription.length > 0;
+    !manualHomeDescription &&
+    factualDescription.length > 0 &&
+    homeDescription === factualDescription;
   if (usingGeneratedFallback) {
     issues.push({
       code: "seo.description.generated",
@@ -161,7 +165,9 @@ export function evaluateSeoHealth(
       hint: "Otpremiti logo za notifikacije (PNG/JPG/WEBP); koristi se i za deljenje linkova.",
     });
   }
-  if (!profile.notificationLogo) {
+  // Ista provera koju koristi social selector: malformed ili SVG vrednost
+  // znači da raster logo-a NEMA, ma šta da stoji u polju.
+  if (!isRasterSocialImage(profile.notificationLogo)) {
     issues.push({
       code: "seo.social.rasterLogoMissing",
       severity: "info",

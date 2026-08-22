@@ -5,6 +5,7 @@ import {
   buildFactualDescription,
   resolveTenantDescription,
   resolveTenantTitle,
+  buildTenantMetadataFacts,
   DESCRIPTION_MAX,
 } from "./metadataFallback";
 
@@ -43,7 +44,7 @@ describe("ručni SEO je autoritet", () => {
 
   it("prazan/whitespace ručni unos se tretira kao da ga nema", () => {
     expect(resolveTenantDescription("   ", facts)).toBe(
-      "Lash Room by Anja — Loznica. Pogledajte usluge i zakažite termin online.",
+      "Lash Room by Anja — Loznica. Pogledajte usluge i informacije o salonu.",
     );
   });
 });
@@ -105,7 +106,10 @@ describe("deterministički činjenični fallback", () => {
   });
 
   it("bez grada NE izmišlja grad", () => {
-    const result = buildFactualDescription({ name: "Studio X" });
+    const result = buildFactualDescription({
+      name: "Studio X",
+      bookingEnabled: true,
+    });
     expect(result).toBe("Studio X. Pogledajte usluge i zakažite termin online.");
     expect(result).not.toContain("—");
   });
@@ -134,8 +138,31 @@ describe("deterministički činjenični fallback", () => {
 
   it("koristi se tek kada nema nijednog CMS teksta", () => {
     expect(
-      resolveTenantDescription(undefined, { name: "Studio X", city: "Loznica" }),
+      resolveTenantDescription(undefined, {
+        name: "Studio X",
+        city: "Loznica",
+        bookingEnabled: true,
+      }),
     ).toBe("Studio X — Loznica. Pogledajte usluge i zakažite termin online.");
+  });
+
+  // REGRESIJA: `bookingEnabled` je nekad bio `!== false`, pa je svaki tenant
+  // kome niko ništa nije prosledio dobijao tvrdnju o online zakazivanju.
+  it("bez eksplicitne potvrde NE tvrdi da postoji online zakazivanje", () => {
+    const result = buildFactualDescription({
+      name: "Studio X",
+      city: "Loznica",
+    });
+    expect(result).toBe(
+      "Studio X — Loznica. Pogledajte usluge i informacije o salonu.",
+    );
+    expect(result).not.toContain("zakažite");
+  });
+
+  it("undefined bookingEnabled se ponaša isto kao false", () => {
+    expect(
+      buildFactualDescription({ name: "Studio X", bookingEnabled: undefined }),
+    ).toBe(buildFactualDescription({ name: "Studio X", bookingEnabled: false }));
   });
 });
 
@@ -243,11 +270,60 @@ describe("gramatika činjeničnog fallback-a", () => {
   it("ne pravi pogrešan padež ni za jedan oblik naziva grada", () => {
     // Sve ovo bi prosto pravilo "u {grad}" pokvarilo.
     for (const city of ["Loznica", "Novi Sad", "Kragujevac", "Banja Luka", "Niš"]) {
-      const result = buildFactualDescription({ name: "Studio X", city });
+      const result = buildFactualDescription({
+        name: "Studio X",
+        city,
+        bookingEnabled: true,
+      });
       expect(result).toBe(
         `Studio X — ${city}. Pogledajte usluge i zakažite termin online.`,
       );
       expect(result).not.toMatch(/\bu\s+[A-ZŠĐČĆŽ]/);
     }
+  });
+});
+
+describe("buildTenantMetadataFacts — jedan izvor činjenica", () => {
+  const profileWithHero = {
+    name: "Studio X",
+    description: "",
+    shortDescription: "",
+    city: "Loznica",
+    landingStructure: {
+      landing: {
+        hero: {
+          headline: "Studio X",
+          subheadline: "Tretmani lica i tela za svaki tip kože",
+          whereWhatForWhom: "Nega u Loznici",
+        },
+      },
+    },
+  } as unknown as Parameters<typeof buildTenantMetadataFacts>[0];
+
+  it("uzima hero copy redosledom subheadline → whereWhatForWhom → headline", () => {
+    expect(buildTenantMetadataFacts(profileWithHero).heroCopy).toEqual([
+      "Tretmani lica i tela za svaki tip kože",
+      "Nega u Loznici",
+      "Studio X",
+    ]);
+  });
+
+  it("hero copy stvarno završi u opisu kada nema ručnog SEO-a ni opisa", () => {
+    expect(
+      resolveTenantDescription(
+        undefined,
+        buildTenantMetadataFacts(profileWithHero),
+      ),
+    ).toBe("Tretmani lica i tela za svaki tip kože");
+  });
+
+  it("bez profila vraća prazne činjenice umesto pucanja", () => {
+    expect(buildTenantMetadataFacts(null).name).toBeUndefined();
+  });
+
+  it("ne pretpostavlja zakazivanje — bookingEnabled ostaje neodređen", () => {
+    expect(buildTenantMetadataFacts(profileWithHero).bookingEnabled).toBe(
+      undefined,
+    );
   });
 });
