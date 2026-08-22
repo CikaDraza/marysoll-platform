@@ -61,11 +61,26 @@ export function getTenantSocialImage(
   profile: Pick<SalonProfileData, "logo" | "notificationLogo"> | null,
   context: PublicSiteContext,
 ): string {
+  return (
+    getTenantRasterImage(profile) ?? getCanonicalUrl(context, "/favicon.ico")
+  );
+}
+
+/**
+ * Stvarna raster slika tenanta, ili `null` kada je nema.
+ *
+ * Odvojeno od `getTenantSocialImage` jer structured data ne sme da tvrdi da je
+ * favicon fotografija salona — tamo je bolje izostaviti `image` nego poslati
+ * ikonicu. Social kartica, nasuprot tome, radije prikaže favicon nego ništa.
+ */
+export function getTenantRasterImage(
+  profile: Pick<SalonProfileData, "logo" | "notificationLogo"> | null,
+): string | null {
   if (isRasterSocialImage(profile?.notificationLogo)) {
     return profile!.notificationLogo as string;
   }
   if (isRasterSocialImage(profile?.logo)) {
     return profile!.logo as string;
   }
-  return getCanonicalUrl(context, "/favicon.ico");
+  return null;
 }
