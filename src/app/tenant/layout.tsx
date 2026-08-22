@@ -21,6 +21,8 @@ import { AddToHomeScreenBanner } from "@/components/shared/AddToHomeScreenBanner
 import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
 import { usableRasterLogo } from "@/lib/branding/rasterLogo";
 import { tenantAppName } from "@/lib/pwa/tenantAppName";
+import { getPublicSiteContext } from "@/lib/seo/public-site";
+import { TenantJsonLd } from "@/components/seo/TenantJsonLd";
 
 const PLATFORM_PWA_ICON = "/marysoll_elegant_logo.png";
 
@@ -63,6 +65,13 @@ export default async function TenantLayout({
   const tenantSlug = h.get("x-tenant-slug") ?? "";
   const tenantId = h.get("x-tenant-id") ?? "";
   const base = h.get("x-tenant-base-path") ?? "";
+  const context = getPublicSiteContext({
+    domainType: h.get("x-domain-type") ?? "",
+    tenantSlug,
+    tenantCustomDomain: h.get("x-tenant-custom-domain") ?? "",
+    publicHost: h.get("x-public-host") ?? "",
+  });
+  const pathname = h.get("x-public-pathname") ?? "/";
 
   if (!tenantSlug) {
     notFound();
@@ -84,6 +93,9 @@ export default async function TenantLayout({
       clientGender={clientGender}
     >
       <TenantThemeController />
+      {profile && context.kind === "TENANT" && (
+        <TenantJsonLd profile={profile} context={context} pathname={pathname} />
+      )}
       <TenantSiteBeacon />
       <AddToHomeScreenBanner audience="tenant" appName={appName} />
       {children}
