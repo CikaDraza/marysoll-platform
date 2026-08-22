@@ -18,6 +18,10 @@ import { WorkingHoursNote } from "@/components/shared/WorkingHoursNote";
 import { TenantPageShell } from "@/components/themes/TenantPageShell";
 import { Theme8AppointmentsPage } from "@/components/themes/theme-8";
 import { getPublicSiteContext, tenantPageMetadata } from "@/lib/seo/public-site";
+import {
+  resolveTenantTitle,
+  resolveTenantDescription,
+} from "@/lib/seo/metadataFallback";
 
 export const dynamic = "force-dynamic";
 
@@ -25,13 +29,23 @@ export async function generateMetadata(): Promise<Metadata> {
   const h = await headers();
   const tenantSlug = h.get("x-tenant-slug") ?? "";
   const profile = await fetchPublicSalonProfile(tenantSlug);
-  const salonName = profile?.name ?? "Salon";
-  const title =
-    (profile?.seo as Record<string, string>)?.terminiTitle ||
-    `Termini — ${salonName}`;
-  const description =
-    (profile?.seo as Record<string, string>)?.terminiDescription ||
-    `Pogledajte slobodne termine i zakažite posetu u salonu ${salonName}.`;
+  const hero = profile?.landingStructure?.landing?.hero;
+  const facts = {
+    name: profile?.name,
+    description: profile?.description,
+    shortDescription: profile?.shortDescription,
+    city: profile?.city,
+    heroCopy: [hero?.subheadline, hero?.whereWhatForWhom, hero?.headline],
+  };
+  const title = resolveTenantTitle(
+    (profile?.seo as Record<string, string>)?.terminiTitle,
+    facts,
+    { suffix: "Termini" },
+  );
+  const description = resolveTenantDescription(
+    (profile?.seo as Record<string, string>)?.terminiDescription,
+    facts,
+  );
 
   return tenantPageMetadata(profile, getPublicSiteContext({
     domainType: h.get("x-domain-type") ?? "",

@@ -14,6 +14,10 @@ import { ClientHomePage } from "@/components/client/ClientHomePage";
 import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
 import { usableRasterLogo } from "@/lib/branding/rasterLogo";
 import { getPublicSiteContext, tenantPageMetadata } from "@/lib/seo/public-site";
+import {
+  resolveTenantTitle,
+  resolveTenantDescription,
+} from "@/lib/seo/metadataFallback";
 
 const PLATFORM_PWA_ICON = "/marysoll_elegant_logo.png";
 
@@ -22,14 +26,23 @@ export async function generateMetadata(): Promise<Metadata> {
   const tenantSlug = h.get("x-tenant-slug") ?? "";
   const profile = await fetchPublicSalonProfile(tenantSlug);
 
-  const title =
-    (profile?.seo as Record<string, string>)?.homeTitle ||
-    profile?.name ||
-    "Salon";
-  const description =
-    (profile?.seo as Record<string, string>)?.homeDescription ||
-    profile?.description ||
-    "";
+  const hero = profile?.landingStructure?.landing?.hero;
+  const facts = {
+    name: profile?.name,
+    description: profile?.description,
+    shortDescription: profile?.shortDescription,
+    city: profile?.city,
+    heroCopy: [hero?.subheadline, hero?.whereWhatForWhom, hero?.headline],
+  };
+  // Ručno uneseni SEO uvek pobeđuje; fallback ide kroz CMS/profil pa činjenice.
+  const title = resolveTenantTitle(
+    (profile?.seo as Record<string, string>)?.homeTitle,
+    facts,
+  );
+  const description = resolveTenantDescription(
+    (profile?.seo as Record<string, string>)?.homeDescription,
+    facts,
+  );
   const installIcon = usableRasterLogo(profile?.notificationLogo)
     ? profile.notificationLogo
     : PLATFORM_PWA_ICON;
