@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { SalonProfileData } from "@/types";
 import { BASE_DOMAIN, isPathBasedHost } from "@/lib/platform/host-context";
+import { getTenantSocialImage } from "./socialImage";
 
 export type PublicSiteContext =
   | { kind: "PLATFORM"; origin: string; isPreview: boolean }
@@ -48,9 +49,9 @@ export function tenantPageMetadata(
   description: string,
 ): Metadata {
   const url = getCanonicalUrl(context, pathname);
-  // Tenant-aware favicon is resolved by the proxy to the tenant logo. It is a
-  // modest but correct fallback when a salon has not uploaded an OG image.
-  const image = profile?.logo || profile?.notificationLogo || getCanonicalUrl(context, "/favicon.ico");
+  // Social kartice smeju samo raster — logo sajta može biti SVG, koji nijedan
+  // social crawler ne renderuje. Lanac i fallback žive u ./socialImage.
+  const image = getTenantSocialImage(profile, context);
   return {
     title,
     description,
