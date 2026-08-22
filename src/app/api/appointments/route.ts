@@ -7,6 +7,13 @@ import mongoose from "mongoose";
 import { IAppointment, PaginationInfo } from "@/types";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
 import { belgradeNowParts } from "@/lib/utils/belgradeTime";
+import { TenantUser } from "@/models/TenantUser";
+import {
+  tokenizeSearch,
+  buildClientSearchFilter,
+  buildAppointmentSearchClauses,
+  APPOINTMENT_CLIENT_FIELDS,
+} from "@/lib/search/clientSearch";
 
 export async function GET(req: Request) {
   try {
@@ -52,6 +59,9 @@ export async function GET(req: Request) {
 
     // Kreiraj filter
     const filter: FilterQuery<IAppointment> = {};
+    // Sve $and klauzule idu ovde pa se upisuju jednom na kraju — i pretraga i
+    // "unmarked" filter koriste $and, a direktan upis bi jedan pregazio drugi.
+    const andClauses: FilterQuery<IAppointment>[] = [];
 
     // Tenant isolation: always scope to the caller's tenant.
     // SUPER_ADMIN has no tenantId — intentionally unscoped (logged above).
@@ -77,12 +87,45 @@ export async function GET(req: Request) {
       }
     }
 
-    if (search) {
-      filter.$or = [
-        { clientName: { $regex: search, $options: "i" } },
-        { clientEmail: { $regex: search, $options: "i" } },
-        { serviceName: { $regex: search, $options: "i" } },
-      ];
+    // ── Pretraga termina ──────────────────────────────────────────────────
+    // Termin nosi clientName/clientEmail/clientInstagram, ali NEMA TikTok. Zato
+    // se svaka reč traži i kroz profil klijenta (TenantUser), pa se poklopljeni
+    // klijenti ubacuju preko clientProfileId. Time TikTok radi i za sve stare
+    // termine, bez migracije podataka.
+    const searchTokens = tokenizeSearch(search);
+    if (searchTokens.length > 0) {
+      const clientFilter = buildClientSearchFilter(
+        search,
+        APPOINTMENT_CLIENT_FIELDS,
+      );
+
+      // Jedan upit: svi klijenti koji se poklapaju sa BAR JEDNOM rečju.
+      // Poklapanje po rečima se posle računa u memoriji, jer reč sme da se
+      // poklopi sa profilom ILI sa poljem na samom terminu (npr.
+      // "@tiktok_handle šišanje" — handle iz profila, usluga sa termina).
+      const clientScope: FilterQuery<Record<string, unknown>> = {};
+      if (!isSuperAdmin && decoded.tenantId) {
+        clientScope.tenantId = new Types.ObjectId(decoded.tenantId);
+      }
+      const anyToken = clientFilter
+        ? { $or: clientFilter.$and.flatMap((clause) => clause.$or) }
+        : {};
+
+      const candidates = await TenantUser.find(
+        { ...clientScope, ...anyToken },
+        { _id: 1, name: 1, email: 1, instagram: 1, tiktok: 1, phone: 1 },
+      ).lean<
+        Array<{
+          _id: Types.ObjectId;
+          name?: string;
+          email?: string;
+          instagram?: string;
+          tiktok?: string;
+          phone?: string;
+        }>
+      >();
+
+      andClauses.push(...buildAppointmentSearchClauses(search, candidates));
     }
 
     if (date) {
@@ -109,14 +152,16 @@ export async function GET(req: Request) {
       // ("YYYY-MM-DD", "HH:mm") pa poređenje stringova radi ispravno.
       const { dateStr, timeStr } = belgradeNowParts();
       filter.status = "appointment_approved";
-      filter.$and = [
-        {
-          $or: [
-            { date: { $lt: dateStr } },
-            { date: dateStr, time: { $lte: timeStr } },
-          ],
-        },
-      ];
+      andClauses.push({
+        $or: [
+          { date: { $lt: dateStr } },
+          { date: dateStr, time: { $lte: timeStr } },
+        ],
+      });
+    }
+
+    if (andClauses.length > 0) {
+      filter.$and = andClauses;
     }
 
     // ── locate: na kojoj se strani nalazi konkretan termin ────────────────────

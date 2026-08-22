@@ -305,6 +305,7 @@ export interface IUser extends Document {
   password: string;
   phone: string;
   instagram?: string;
+  tiktok?: string;
   marketingPhone?: string;
   newsletterEmail?: string;
   contactEmail?: string;
