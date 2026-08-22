@@ -205,6 +205,9 @@ export async function detectDomain(ctx: ProxyContext): Promise<null> {
   ctx.requestHeaders.set("x-domain-type", ctx.domainType);
   ctx.requestHeaders.set("x-tenant-slug", ctx.tenant.slug ?? "");
   ctx.requestHeaders.set("x-tenant-id", ctx.tenant.id ?? "");
+  // Trusted proxy-derived values for server-side SEO identity.
+  ctx.requestHeaders.set("x-tenant-custom-domain", ctx.tenant.customDomain ?? "");
+  ctx.requestHeaders.set("x-public-host", ctx.hostname);
   // x-tenant-base-path: tenant layout gradi klijentsku navigaciju od ovoga.
   // Prazan na prod/subdomenu (URL-ovi su root-relative); "/{slug}" na
   // path-based hostovima (localhost dev i Vercel preview).
