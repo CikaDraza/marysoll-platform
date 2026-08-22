@@ -405,6 +405,54 @@ describe.sequential("Booking CORE Mongo replica-set integration", () => {
     );
   });
 
+  it("commits exactly one of two concurrent reschedules to the same target", async () => {
+    const tenantId = new Types.ObjectId().toString();
+    const first = await reserve(reserveCommand({ tenantId }), dependencies());
+    const second = await reserve(
+      reserveCommand({
+        tenantId,
+        startsAt: new Date("2027-09-06T11:00:00Z"),
+        endsAt: new Date("2027-09-06T12:00:00Z"),
+      }),
+      dependencies(),
+    );
+    const target = {
+      startsAt: new Date("2027-09-06T13:00:00Z"),
+      endsAt: new Date("2027-09-06T14:00:00Z"),
+      timezone: "UTC",
+      actor: { type: "system" as const, id: "integration-test" },
+    };
+    const outcomes = await Promise.allSettled([
+      reschedule(
+        {
+          tenantId,
+          reservationId: first.reservation.reservationId,
+          idempotencyKey: crypto.randomUUID(),
+          ...target,
+        },
+        dependencies(),
+      ),
+      reschedule(
+        {
+          tenantId,
+          reservationId: second.reservation.reservationId,
+          idempotencyKey: crypto.randomUUID(),
+          ...target,
+        },
+        dependencies(),
+      ),
+    ]);
+    expect(outcomes.filter((item) => item.status === "fulfilled")).toHaveLength(1);
+    expect(outcomes.filter((item) => item.status === "rejected")).toHaveLength(1);
+    expect(
+      await BookingReservation.countDocuments({
+        tenantId,
+        startsAt: target.startsAt,
+        endsAt: target.endsAt,
+      }),
+    ).toBe(1);
+  });
+
   it("timely cancel and reject release, while late cancel remains blocking", async () => {
     const timely = await reserve(reserveCommand(), dependencies());
     const cancelled = await cancel(
@@ -544,6 +592,23 @@ describe.sequential("Booking CORE Mongo replica-set integration", () => {
     );
   });
 
+  it("rejects an override without a non-empty audit reason", async () => {
+    await expectBookingCode(
+      reserve(
+        reserveCommand({
+          override: {
+            actor: { type: "owner", id: "owner-1" },
+            reason: "   ",
+            bypassedChecks: ["schedule"],
+            requestedAt: new Date("2027-01-01T00:00:00Z"),
+          },
+        }),
+        dependencies(),
+      ),
+      ["BOOKING_PERMISSION_DENIED"],
+    );
+  });
+
   it("resolves Service ownership, duration and immutable product snapshot server-side", async () => {
     const tenantId = new Types.ObjectId().toString();
     const otherTenantId = new Types.ObjectId().toString();
@@ -570,6 +635,30 @@ describe.sequential("Booking CORE Mongo replica-set integration", () => {
     expect(resolved.snapshot.name).toBe("Server service");
     await Service.updateOne({ _id: service._id }, { $set: { name: "Changed", duration: 15 } });
     expect(resolved.snapshot).toMatchObject({ name: "Server service", durationMinutes: 75 });
+  });
+
+  it("preserves variant/extras meaning while resolving duration from Service state", async () => {
+    const tenantId = new Types.ObjectId().toString();
+    const service = await Service.create({
+      tenantId,
+      name: "Variant service",
+      category: "test",
+      type: "variant",
+      variants: [{ name: "Long", price: 0, duration: 50, perItem: false }],
+      extras: [{ name: "Care", price: 0, duration: 10, perItem: true }],
+    });
+    const stored = await Service.findById(service._id)
+      .lean<{ variants: Array<{ _id: Types.ObjectId }>; extras: Array<{ _id: Types.ObjectId }> }>();
+    const resolved = await resolveServiceBookingProduct({
+      tenantId,
+      serviceId: service._id.toString(),
+      selection: {
+        variantRef: stored!.variants[0]._id.toString(),
+        extraRefs: [{ ref: stored!.extras[0]._id.toString(), quantity: 2 }],
+      },
+    });
+    expect(resolved.snapshot.durationMinutes).toBe(70);
+    expect(resolved.snapshot.selection).toHaveLength(2);
   });
 
   it("atomically creates Reservation ↔ Appointment with the Service adapter", async () => {

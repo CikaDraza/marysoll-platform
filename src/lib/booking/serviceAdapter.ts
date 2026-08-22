@@ -129,13 +129,14 @@ export async function resolveServiceBookingProduct(input: {
     );
   }
   const selection = resolveSelection(service, input.selection ?? {});
+  const selectedDuration = selection.reduce(
+    (sum, item) => sum + item.durationMinutes * item.quantity,
+    0,
+  );
   const durationMinutes =
     service.type === "single"
-      ? service.duration
-      : selection.reduce(
-          (sum, item) => sum + item.durationMinutes * item.quantity,
-          0,
-        );
+      ? (service.duration ?? 0) + selectedDuration
+      : selectedDuration;
   if (!Number.isFinite(durationMinutes) || !durationMinutes || durationMinutes <= 0) {
     throw new BookingError("BOOKING_PRODUCT_NOT_AVAILABLE", "Usluga nema validno trajanje");
   }

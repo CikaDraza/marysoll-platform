@@ -4,6 +4,7 @@ import { BookingError } from "./errors";
 interface MongoFailure {
   code?: number;
   message?: string;
+  keyPattern?: Record<string, number>;
   errorLabels?: string[];
   hasErrorLabel?: (label: string) => boolean;
 }
@@ -17,7 +18,16 @@ function mongoFailure(error: unknown): MongoFailure {
 
 export function isDuplicateIndex(error: unknown, indexName: string): boolean {
   const failure = mongoFailure(error);
-  return failure.code === 11000 && Boolean(failure.message?.includes(indexName));
+  if (failure.code !== 11000) return false;
+  if (failure.message?.includes(indexName)) return true;
+  const keys = Object.keys(failure.keyPattern ?? {}).sort().join(",");
+  if (indexName === "booking_day_lock_unique") {
+    return keys === "localDate,resourceKey,tenantId";
+  }
+  if (indexName === "booking_operation_receipt_unique") {
+    return keys === "idempotencyKey,operationType,tenantId";
+  }
+  return false;
 }
 
 function hasLabel(error: unknown, label: string): boolean {
