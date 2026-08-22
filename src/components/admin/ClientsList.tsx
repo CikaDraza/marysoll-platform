@@ -1,13 +1,14 @@
-import { useUsers } from "@/hooks/useUsers";
+import { useClients } from "@/hooks/useClients";
 import Loader from "../elements/Loader";
+import Paginator from "../elements/Paginator";
 import { formatISODate } from "@/helpers/formatISODate";
 import {
   displayClientContact,
   isPlaceholderGuestEmail,
   normalizeInstagram,
 } from "@/lib/contactRules";
-import { useEffect, useMemo, useState } from "react";
-import { useSearchUsers } from "@/hooks/useSearchUsers";
+import { useMemo, useState } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { IUser } from "@/types";
 import ClientModalActionButtons from "./ClientModalActionButtons";
 import { useDuplicateGroups } from "@/hooks/useLoyaltyAdmin";
@@ -22,6 +23,7 @@ interface DupInfo {
 export default function ClientsList() {
   const [query, setQuery] = useState("");
   const [date, setDate] = useState("");
+  const [page, setPage] = useState(1);
   const [mergePair, setMergePair] = useState<{
     sourceId: string;
     targetId: string;
@@ -45,38 +47,30 @@ export default function ClientsList() {
     return map;
   }, [dupData]);
 
-  const [debouncedText, setDebouncedText] = useState("");
-  const [debouncedDate, setDebouncedDate] = useState("");
+  const debouncedText = useDebounce(query, 300);
+  const debouncedDate = useDebounce(date, 200);
 
-  // ⏳ DEBOUNCE TEXT (300ms)
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedText(query), 300);
-    return () => clearTimeout(t);
-  }, [query]);
-
-  // ⏳ DEBOUNCE DATE (200ms)
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedDate(date), 200);
-    return () => clearTimeout(t);
-  }, [date]);
-
-  // ⭐ Svi korisnici (bez admina)
+  // ⭐ Klijenti sa servera, 10 po strani (pretraga i datum se filtriraju na
+  // serveru — ne dovlači se cela lista pa seče u browseru)
   const {
-    data: allUsers = [],
+    data: response,
     isLoading: loadingAll,
     isError: errorAll,
-  } = useUsers();
+    isFetching: searching,
+  } = useClients({
+    page,
+    limit: 10,
+    query: debouncedText,
+    date: debouncedDate,
+  });
 
-  // ⭐ Rezultati pretrage
-  const { data: filteredUsers = [], isLoading: searching } = useSearchUsers(
-    debouncedText,
-    debouncedDate,
-  );
+  const users = useMemo(() => response?.users ?? [], [response?.users]);
+  const pagination = response?.pagination;
 
-  const users =
-    debouncedText.length > 0 || debouncedDate.length > 0
-      ? filteredUsers
-      : allUsers;
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   if (loadingAll) return <Loader />;
   if (errorAll) return <p>Greška pri učitavanju klijenata.</p>;
@@ -86,21 +80,32 @@ export default function ClientsList() {
       <div className="max-w-full flex flex-col lg:flex-row items-center mb-3">
         <h3 className="flex-1 font-semibold text-(--primary-color) text-2xl!">
           Lista svih klijenata
+          {pagination && pagination.totalCount > 0 && (
+            <span className="ml-2 text-sm font-normal text-gray-500">
+              ({pagination.totalCount})
+            </span>
+          )}
         </h3>
         <div className="flex flex-col lg:flex-row w-full lg:max-w-md gap-x-4 gap-y-2 lg:gap-y-0 mt-4 lg:mt-0">
           <input
             id="search-appointment"
             type="text"
-            placeholder="Pretraži klijente..."
+            placeholder="Ime, prezime, mejl, @instagram, @tiktok..."
             autoComplete="off"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1); // nova pretraga počinje od prve strane
+            }}
             className="min-w-0 w-full flex-auto border border-gray-200 dark:border-gray-700 rounded-md bg-white/5 px-3.5 py-2 text-base text-gray-600 outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color) sm:text-sm/6"
           />
           <input
             type="date"
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => {
+              setDate(e.target.value);
+              setPage(1);
+            }}
             className="mt-1 block w-full rounded-md border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-950 dark:text-gray-500 p-2 focus:outline-2 focus:-outline-offset-2 focus:outline-(--secondary-color)"
           />
         </div>
@@ -194,10 +199,22 @@ export default function ClientsList() {
           ))}
         </ul>
       )}
-      {loadingAll ||
-        (searching && (
-          <p className="text-xs text-gray-500 mt-1">Učitavanje korisnika...</p>
-        ))}
+
+      {!loadingAll && users.length === 0 && (
+        <p className="py-8 text-center text-sm text-gray-500">
+          {debouncedText || debouncedDate
+            ? "Nema klijenata za zadatu pretragu."
+            : "Još nema klijenata."}
+        </p>
+      )}
+
+      {pagination && pagination.totalPages > 1 && (
+        <Paginator pagination={pagination} onPageChange={handlePageChange} />
+      )}
+
+      {searching && !loadingAll && (
+        <p className="text-xs text-gray-500 mt-1">Učitavanje korisnika...</p>
+      )}
 
       {mergePair && (
         <MergePreviewModal
