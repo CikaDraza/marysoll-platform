@@ -102,6 +102,15 @@ export const INTEGRITY_CHECKS: readonly IntegrityCheckDefinition[] = [
     repair: "Reassign termina na canonical (mergedInto), odnosno ispravan profil.",
   },
   {
+    key: "seo.tenant.metadata",
+    name: "SEO profil tenanta",
+    description:
+      "Kvalitet javnih metapodataka salona: ručni SEO naslov/opis, opis salona, grad, javni profili na mrežama i raster slika za social karticu. Saveti — slab SEO profil ne sme da spreči objavljivanje sajta.",
+    defaultSeverity: "info",
+    repair:
+      "Popuniti nedostajuća polja u podešavanjima salona; ručno unet SEO uvek pobeđuje automatski fallback.",
+  },
+  {
     key: "notifications.push.subscriptions",
     name: "Push pretplate po korisniku",
     description:

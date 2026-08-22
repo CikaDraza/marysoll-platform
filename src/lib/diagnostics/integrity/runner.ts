@@ -27,6 +27,7 @@ import { collectBalanceMismatch } from "./collectors/balanceMismatch";
 import { collectVoucherOwner } from "./collectors/voucherOwner";
 import { collectAppointmentClient } from "./collectors/appointmentClient";
 import { collectPushSubscriptions } from "./collectors/pushSubscriptions";
+import { collectSeoHealth } from "./collectors/seoHealth";
 
 const COLLECTORS: Record<string, IntegrityCollector> = {
   "client.identity.duplicates": collectDuplicates,
@@ -38,6 +39,7 @@ const COLLECTORS: Record<string, IntegrityCollector> = {
   "loyalty.balance.mismatch": collectBalanceMismatch,
   "voucher.owner.invalid": collectVoucherOwner,
   "appointment.client.invalid": collectAppointmentClient,
+  "seo.tenant.metadata": collectSeoHealth,
   "notifications.push.subscriptions": collectPushSubscriptions,
 };
 

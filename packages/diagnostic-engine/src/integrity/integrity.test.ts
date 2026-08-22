@@ -30,10 +30,10 @@ function finding(
 }
 
 describe("integrity registry", () => {
-  it("sadrži tačno 10 provera iz spec-a, jedinstvene ključeve", () => {
-    expect(INTEGRITY_CHECKS).toHaveLength(10);
+  it("sadrži tačno 11 provera iz spec-a, jedinstvene ključeve", () => {
+    expect(INTEGRITY_CHECKS).toHaveLength(11);
     const keys = INTEGRITY_CHECKS.map((c) => c.key);
-    expect(new Set(keys).size).toBe(10);
+    expect(new Set(keys).size).toBe(11);
     expect(keys).toEqual([
       "client.identity.duplicates",
       "client.identity.mergedReferences",
@@ -44,6 +44,7 @@ describe("integrity registry", () => {
       "loyalty.balance.mismatch",
       "voucher.owner.invalid",
       "appointment.client.invalid",
+      "seo.tenant.metadata",
       "notifications.push.subscriptions",
     ]);
   });
