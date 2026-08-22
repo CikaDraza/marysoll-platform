@@ -30,7 +30,7 @@ function normalize(value: unknown): CanonicalValue {
   throw new TypeError(`Fingerprint ne podržava tip ${typeof value}`);
 }
 
-export function canonicalStringify(value: unknown): string {
+function canonicalStringify(value: unknown): string {
   return JSON.stringify(normalize(value));
 }
 

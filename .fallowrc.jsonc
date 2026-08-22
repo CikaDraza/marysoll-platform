@@ -25,5 +25,12 @@
     "*.config.mjs",
     "*.config.ts",
     "next-env.d.ts"
+  ],
+
+  // Existing transitive security override. npm's lockfile refresh can make a
+  // manifest-only scan call it unused even though it intentionally pins CVE
+  // exposure across optional/transitive paths.
+  "ignoreDependencyOverrides": [
+    { "package": "glob", "source": "package.json" }
   ]
 }

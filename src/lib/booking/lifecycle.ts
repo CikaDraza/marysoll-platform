@@ -3,7 +3,7 @@ import { BookingError } from "./errors";
 
 const ACTIVE = new Set<ReservationStatus>(["pending", "confirmed"]);
 
-export function assertActive(status: ReservationStatus): void {
+function assertActive(status: ReservationStatus): void {
   if (!ACTIVE.has(status)) {
     throw new BookingError("BOOKING_INVALID_STATE", `Status ${status} nije aktivan`);
   }

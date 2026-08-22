@@ -19,6 +19,8 @@ import { validateInterval } from "./timeContract";
 import { validateWriteAvailability } from "./writeAvailability";
 import { BookingReservation } from "@/models/BookingReservation";
 
+type AvailabilityDecision = Awaited<ReturnType<typeof validateWriteAvailability>>;
+
 function fingerprintInput(command: RescheduleCommand): object {
   return {
     tenantId: command.tenantId,
@@ -41,6 +43,43 @@ async function scopedReservation(
     throw new BookingError("BOOKING_RESERVATION_NOT_FOUND", "Rezervacija nije pronađena");
   }
   return record;
+}
+
+function assertUnchangedReservation(
+  current: ReservationRecord | null,
+  initial: ReservationRecord,
+): asserts current is ReservationRecord {
+  if (!current) {
+    throw new BookingError("BOOKING_RESERVATION_NOT_FOUND", "Rezervacija nije pronađena");
+  }
+  const moved =
+    current.localDate !== initial.localDate ||
+    current.resourceKey !== initial.resourceKey ||
+    current.lifecycleVersion !== initial.lifecycleVersion;
+  if (moved) {
+    throw new BookingError("BOOKING_CONFLICT", "Rezervacija je u međuvremenu promenjena");
+  }
+  if (current.status !== "pending" && current.status !== "confirmed") {
+    throw new BookingError("BOOKING_INVALID_STATE", "Rezervacija nije aktivna");
+  }
+}
+
+function reservationUpdate(input: {
+  command: RescheduleCommand;
+  localDate: string;
+  facts: ReturnType<typeof buildBookingFacts>;
+  availability: AvailabilityDecision;
+}): object {
+  return {
+    startsAt: input.command.startsAt,
+    endsAt: input.command.endsAt,
+    timezone: input.command.timezone,
+    localDate: input.localDate,
+    bookingFacts: input.facts,
+    ...(input.availability.overrideAudit
+      ? { overrideAudit: input.availability.overrideAudit }
+      : {}),
+  };
 }
 
 export async function reschedule(
@@ -87,19 +126,7 @@ export async function reschedule(
         })
           .session(session)
           .lean<ReservationRecord>();
-        if (!current) {
-          throw new BookingError("BOOKING_RESERVATION_NOT_FOUND", "Rezervacija nije pronađena");
-        }
-        if (
-          current.localDate !== initial.localDate ||
-          current.resourceKey !== initial.resourceKey ||
-          current.lifecycleVersion !== initial.lifecycleVersion
-        ) {
-          throw new BookingError("BOOKING_CONFLICT", "Rezervacija je u međuvremenu promenjena");
-        }
-        if (current.status !== "pending" && current.status !== "confirmed") {
-          throw new BookingError("BOOKING_INVALID_STATE", "Rezervacija nije aktivna");
-        }
+        assertUnchangedReservation(current, initial);
         const availability = await validateWriteAvailability({
           provider: dependencies.availability,
           tenantId: command.tenantId,
@@ -136,16 +163,12 @@ export async function reschedule(
             lifecycleVersion: current.lifecycleVersion,
           },
           {
-            $set: {
-              startsAt: command.startsAt,
-              endsAt: command.endsAt,
-              timezone: command.timezone,
+            $set: reservationUpdate({
+              command,
               localDate: interval.localDate,
-              bookingFacts: facts,
-              ...(availability.overrideAudit
-                ? { overrideAudit: availability.overrideAudit }
-                : {}),
-            },
+              facts,
+              availability,
+            }),
             $inc: { lifecycleVersion: 1 },
           },
           { session, new: true },

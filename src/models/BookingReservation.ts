@@ -1,4 +1,4 @@
-import { Schema, model, models, type InferSchemaType } from "mongoose";
+import { Schema, model, models } from "mongoose";
 import { RESERVATION_STATUSES } from "@/lib/booking/contracts";
 
 const actorSchema = new Schema(
@@ -65,8 +65,6 @@ bookingReservationSchema.index(
   { tenantId: 1, "domainRef.type": 1, "domainRef.id": 1 },
   { unique: true, name: "booking_reservation_domain_unique" },
 );
-
-export type BookingReservationDocument = InferSchemaType<typeof bookingReservationSchema>;
 
 export const BookingReservation =
   models.BookingReservation ||
