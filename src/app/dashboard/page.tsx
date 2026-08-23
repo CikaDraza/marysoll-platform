@@ -470,6 +470,25 @@ function AdminDashboard() {
 
   return (
     <DashboardLayout>
+      {/* ── Sajt još nije objavljen ──────────────────────────────────
+          Salon radi u panelu odmah; čeka se samo javna vidljivost. Baner
+          nestaje sam kada superadmin objavi sajt. */}
+      {tenant && tenant.status !== "active" && (
+        <div className="mb-6 rounded-2xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <span className="text-xl leading-none">⏳</span>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-amber-900 dark:text-amber-200">
+              Sajt salona još nije objavljen
+            </p>
+            <p className="text-xs text-amber-800/80 dark:text-amber-200/70 mt-0.5">
+              Salon je spreman — popunite profil, usluge i radno vreme, i
+              izaberite temu. Javićemo vam emailom i porukom čim sajt bude
+              vidljiv posetiocima.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── Page header ─────────────────────────────────────────────── */}
       <div className="mb-6">
         <div className="flex items-center gap-4 mb-5">
