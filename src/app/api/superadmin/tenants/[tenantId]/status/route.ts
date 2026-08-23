@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
+import { notifyOwnerOfSalonActivation } from "@/lib/tenantLifecycle/notify";
 
 type TenantStatus = "active" | "suspended" | "pending" | "cancelled";
 
@@ -48,6 +49,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       );
     }
 
+    const previousStatus = tenant.status;
     tenant.status = status;
 
     // Auto-logic when suspending or cancelling
@@ -59,6 +61,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     await tenant.save();
+
+    // Aktivacija javnog sajta je događaj koji vlasnica čeka — javi joj. Šalje se
+    // samo na stvarnom PRELAZU, da ponovni klik na „Aktiviraj" ne pošalje
+    // obaveštenje drugi put. `await` je nameran (serverless prekida
+    // fire-and-forget); funkcija nikad ne baca.
+    if (status === "active" && previousStatus !== "active") {
+      await notifyOwnerOfSalonActivation({ tenantId });
+    }
 
     return NextResponse.json({
       success: true,
