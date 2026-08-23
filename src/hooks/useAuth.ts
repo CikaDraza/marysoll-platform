@@ -180,9 +180,30 @@ export function useAuth() {
   } = useQuery<UserWithToken | null>({
     queryKey: ["authUser"],
     queryFn: fetchUser,
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
+    // Sesija se NE kešira zauvek. Na path-based hostovima (staging, localhost)
+    // admin panel i klijentski panel dele isti origin, pa prijava/odjava u
+    // drugom tabu menja sesiju i ovog taba. Sa `staleTime: Infinity` i bez
+    // refetch-a, panel je ostajao otvoren sa tuđim identitetom i slao ga na
+    // server — koji je onda ispravno vraćao 404 za termin van tog scope-a.
+    // `fetchUser` čita cookie/localStorage i dekodira JWT: nema mrežnog poziva,
+    // pa je česta ponovna provera praktično besplatna.
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
+
+  // Promena sesije u DRUGOM tabu istog origin-a. `storage` se emituje samo u
+  // ostalim tabovima, što je tačno slučaj koji nam je nedostajao: prijava ili
+  // odjava tamo mora da obori keširanog korisnika ovde, da bi guard stranice
+  // (npr. `!user.isAdmin` na /dashboard) mogao da odreaguje.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== "token") return;
+      queryClient.invalidateQueries({ queryKey: ["authUser"] });
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [queryClient]);
 
   // ── Online status (derived 3-state) ───────────────────────────────────────
   //   "pending" = auth still resolving, or status POST not yet confirmed (yellow)
