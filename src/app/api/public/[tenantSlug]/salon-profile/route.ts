@@ -138,6 +138,12 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     return NextResponse.json({
       success: true,
+      // Javni sajt je vidljiv tek kada salon pređe u `active`. Status ide uz
+      // profil da ga tenant layout može zaključati na jednom mestu, umesto da
+      // svaka strana pita zasebno.
+      tenantStatus:
+        ((tenant as Record<string, unknown>).status as string | undefined) ??
+        "pending",
       data: profile
         ? serializeProfile(profile as Record<string, unknown>)
         : null,

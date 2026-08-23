@@ -24,6 +24,8 @@ const NotificationSchema = new Schema(
         "testimonial_deleted",
         "testimonial_message",
         "chat_message",
+        "tenant_registered",
+        "tenant_activated",
         "generic",
         "loyalty_hearts_earned",
         "loyalty_points_earned",
