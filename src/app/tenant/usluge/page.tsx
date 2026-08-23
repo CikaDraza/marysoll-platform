@@ -14,6 +14,11 @@ import { TenantPageShell } from "@/components/themes/TenantPageShell";
 import { Theme8ServicesPage } from "@/components/themes/theme-8";
 import { LandingStructure, SalonProfileData } from "@/types";
 import { getPublicSiteContext, tenantPageMetadata } from "@/lib/seo/public-site";
+import {
+  resolveTenantTitle,
+  resolveTenantDescription,
+  buildTenantMetadataFacts,
+} from "@/lib/seo/metadataFallback";
 
 export const dynamic = "force-dynamic";
 
@@ -21,13 +26,16 @@ export async function generateMetadata(): Promise<Metadata> {
   const h = await headers();
   const tenantSlug = h.get("x-tenant-slug") ?? "";
   const profile = await fetchPublicSalonProfile(tenantSlug);
-  const salonName = profile?.name ?? "Salon";
-  const title =
-    (profile?.seo as Record<string, string>)?.uslugeTitle ||
-    `Usluge — ${salonName}`;
-  const description =
-    (profile?.seo as Record<string, string>)?.uslugeDescription ||
-    `Pogledajte cenovnik usluga salona ${salonName}.`;
+  const facts = buildTenantMetadataFacts(profile);
+  const title = resolveTenantTitle(
+    (profile?.seo as Record<string, string>)?.uslugeTitle,
+    facts,
+    { suffix: "Usluge" },
+  );
+  const description = resolveTenantDescription(
+    (profile?.seo as Record<string, string>)?.uslugeDescription,
+    facts,
+  );
 
   return tenantPageMetadata(profile, getPublicSiteContext({
     domainType: h.get("x-domain-type") ?? "",

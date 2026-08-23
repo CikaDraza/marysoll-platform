@@ -1,5 +1,5 @@
 import type { ClientSession } from "mongoose";
-import type { AvailabilityQuery } from "@panta/booking-engine";
+import type { AvailabilityQuery, Occupancy } from "@panta/booking-engine";
 
 export const RESERVATION_STATUSES = [
   "pending",
@@ -178,7 +178,25 @@ export interface BookingCommandResult {
 }
 
 export interface BookingAvailabilityContext {
-  query: AvailabilityQuery;
+  /**
+   * Raspored, pauze, odmori, zona — sve OSIM zauzetosti. `occupancies` je
+   * namerno izuzet: provider ne sme sam da komponuje occupancy, jer bi tada
+   * canonical `BookingReservation` zavisio od toga da li se provider setio da
+   * ga uključi.
+   */
+  query: Omit<AvailabilityQuery, "occupancies">;
+  /**
+   * Zauzetost iz izvora KOJI NIJE `BookingReservation`, izražena kao instanti.
+   *
+   * Polje je OBAVEZNO da bi svaki novi provider morao da donese odluku. Prazan
+   * niz je legitiman odgovor („nad ovim resursom ne postoji spoljašnja
+   * zauzetost"), ali mora biti napisan — ranije se propust nije video.
+   *
+   * Naziv je `external`, ne `transitional`: za Service je izvor prelazan
+   * (nemigriran `Appointment` do Slice 6 cutover-a), ali za buduće providere
+   * može biti trajan, npr. eksterni kalendar edukatora.
+   */
+  externalOccupancies: Occupancy[];
 }
 
 export interface BookingAvailabilityProvider {

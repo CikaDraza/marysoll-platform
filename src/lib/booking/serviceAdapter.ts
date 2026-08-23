@@ -6,6 +6,8 @@ import type {
 } from "./contracts";
 import { BookingError } from "./errors";
 import {
+  SALON_TIMEZONE,
+  toOccupancies,
   buildAvailabilityQuery,
   type BookedAppointment,
   type SalonAvailabilityProfile,
@@ -298,16 +300,22 @@ export const serviceAvailabilityProvider: BookingAvailabilityProvider = {
         localDate: input.localDate,
         session: input.session,
       });
+    const timezone = profile.timezone ?? SALON_TIMEZONE;
     return {
+      // Bez `appointments` — zauzetost ide isključivo kroz `externalOccupancies`,
+      // da bi je `validateWriteAvailability` komponovao na jednom mestu.
       query: buildAvailabilityQuery({
         tenantId: input.tenantId,
         resourceKey: input.resourceKey,
         localDate: input.localDate,
         durationMinutes: input.durationMinutes,
         profile,
-        appointments,
-        ...(profile.timezone ? { timezone: profile.timezone } : {}),
+        timezone,
       }),
+      // `now` se namerno NE prosleđuje: bez njega `blocking_until_end` ostaje
+      // blokirajuće, pa nijedan legacy zapis ne prestaje da drži svoj interval
+      // u odnosu na zatečeno ponašanje.
+      externalOccupancies: toOccupancies(appointments, timezone),
     };
   },
 };

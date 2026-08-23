@@ -833,9 +833,15 @@ outbox i cross-reference atomicity. To ne menja sledeće granice:
 
 ### 21.2 Slice 6 — svi write ulazi i jedan cutover gate
 
-1. Implementirati compatibility occupancy reader: active BookingReservation +
-   unmigrated legacy Appointment (isti status adapter) u istoj write-time
-   availability proveri.
+1. ~~Implementirati compatibility occupancy reader~~ **✅ Slice 6A.** Reader je
+   isporučen još u Slice 5 (`loadUnmigratedAppointmentOccupancy`); ono što je
+   nedostajalo bila je garancija, ne implementacija. Zatvoreno u 6A:
+   `BookingAvailabilityContext` sada traži eksplicitan `externalOccupancies`
+   (a `query` je `Omit<AvailabilityQuery, "occupancies">`, pa provider ne može
+   sam da komponuje occupancy), `validateWriteAvailability` je jedino mesto koje
+   spaja canonical `BookingReservation` + provider occupancy, a status odluka
+   živi u jednom modulu (`lib/booking/occupancyStatus.ts`) sa dve politike.
+   Dokazano produkcionim `serviceAvailabilityProvider` testom, ne test helperom.
 2. Prebaciti svih 12 Appointment entry point-a iz §3.1 na Booking commands;
    supporting Appointment write-ovi iz §3.2 ostaju u svojim domenima.
 3. Svaki novi Appointment nastaje atomically sa BookingReservation.
@@ -852,6 +858,51 @@ outbox i cross-reference atomicity. To ne menja sledeće granice:
 Ovo nije „dual write transition“: posle cutover-a nijedna stara ruta više ne
 piše occupancy samostalno. Legacy Appointment se samo čita kao transitional
 occupancy dok nije lazy/aditivno povezan.
+
+#### 21.2.1 Zašto status adapter nije simetričan (Slice 6A)
+
+`legacyAppointmentOccupancyPolicy` i `reservationOccupancyPolicy` NAMERNO daju
+različit odgovor za `no_show` i `completed`:
+
+| status | legacy `Appointment` | canonical `BookingReservation` |
+|---|---|---|
+| `no_show` | `blocking_until_end` | `released` |
+| `completed` | `blocking_until_end` | `released` |
+
+Canonical strana sme da ih pusti jer `lifecycleTarget()` baca
+`BOOKING_INVALID_STATE` za `complete`/`mark_no_show` pre `endsAt` — takav zapis
+ne može ni nastati pre kraja termina. Legacy strana ne sme: kasni otkaz klijenta
+postavlja `Appointment.status = "no_show"` u trenutku otkaza
+(`clientFlows.cancelAppointmentAsClient`), a ručni admin put sme isto i za
+`completed` (`update/[id]` proverava samo da je akter admin, ne i da je termin
+prošao). Da su svedeni na obično `released`, interval koji stvarno traje ili tek
+dolazi odmah bi se oslobodio.
+
+Treća vrednost politike (`blocking_until_end`) postoji samo zbog toga i nestaje
+kada legacy zapisi budu migrirani.
+
+#### 21.2.2 `appointment_rescheduled` ima dva značenja
+
+Diskriminator nije status nego prisustvo `proposedDate`:
+
+- **`rescheduled` + `proposedDate`** — admin je PREDLOŽIO novi termin
+  (`update/[id]`); zapis i dalje drži STARI interval.
+- **`rescheduled` bez `proposedDate`** — klijent je već POMERIO termin
+  (`clientFlows`); zapis drži novi interval.
+
+Za occupancy je današnje ponašanje tačno u oba slučaja, jer `date`/`time` uvek
+nose stvarno držani termin — zato 6A ovde ništa ne menja. Razlika je bitna tek
+za adoption mapper `Appointment.status → ReservationStatus` u Slice 6B, i zato
+empirijski report mora da grupiše po `(status, ima li proposedDate)`.
+
+#### 21.2.3 Dve zatečene rupe koje zatvara 6B
+
+Obe postoje pre Booking Engine-a i **nisu** regresija koju je engine uveo:
+
+1. Predlog ne rezerviše cilj — `proposedDate`/`proposedTime` ne drže nikakvo
+   zauzeće, pa dva klijenta mogu dobiti isti predloženi termin.
+2. Prihvatanje predloga nema authoritative availability recheck — `update/[id]`
+   radi `date = proposedDate` i `findOneAndUpdate`, bez ijedne provere.
 
 ### 21.3 Architecture guards posle Slice 6
 
