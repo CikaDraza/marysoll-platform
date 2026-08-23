@@ -960,6 +960,94 @@ stanja koje bi se čuvalo, pa odluka je **gašenje**, ne integracija —
 `generate` prestaje da bude occupancy izvor. To skida 4 od 16 putanja iz
 migracionog obima 6B/6C.
 
+#### 21.2.5 Odluka: ceo marketplace write površinski sloj se gasi (2026-08-23)
+
+Booking Marysoll je zasebna aplikacija koja je **van sinhronizacije sa
+platformom i trenutno je niko ne koristi**; nadogradnja joj dolazi tek posle
+upgrade-a same platforme. Uz mrtve Slot podatke iz §21.2.4, to zatvara i
+pitanje četiri marketplace `Appointment` write rute.
+
+Dokazi da je površina isključivo spoljna i neaktivna:
+
+- `POST /api/booking`, `POST /api/marketplace/appointments`,
+  `PUT /api/marketplace/appointments/[id]/update`,
+  `POST /api/marketplace/appointments/[id]/cancel` — sve HMAC-potpisane;
+  **nijedan poziv iz ovog repozitorijuma** ih ne gađa.
+- `/api/marketplace/slots/generate` **nije registrovan u `vercel.json`** —
+  nijedan cron ne generiše slotove, što potvrđuje najnoviji zapis od 2026-05-10.
+- `Appointment` nema polje o poreklu, pa se marketplace termini ne mogu
+  razlikovati u zatečenim podacima. Ta vidljivost stiže tek sa
+  `BookingReservation.source` (`marketplace`) posle migracije.
+
+**Zabeležena odluka, NE akcija za sada:** marketplace rute se neće migrirati.
+Kada dođe do cutover-a, gase se — isto kao Slot ulazi — uz eksplicitan odgovor
+(„marketplace čeka upgrade"), da poziv koji ipak stigne dobije vidljivu grešku
+umesto tihog double-booking-a. Kada Booking Marysoll bude nadograđen, gradi se
+direktno na Booking Engine, i na Consultation/`BookingHold` koji će do tada
+postojati.
+
+**Ništa se ne gasi sada.** Uvoditi produkcionu promenu u podsistem koji se
+ionako ponovo uklapa posle marketplace upgrade-a bilo bi rizik bez poslovnog
+razloga — vidi §21.3.
+
+Ograničenje koje ostaje na snazi za budući cutover: te rute tada ne smeju
+nastaviti da pišu `Appointment` direktno, jer bi prekršile tvrdu granicu
+„nijedna API ruta ne sme kreirati ni menjati occupancy mimo Booking Engine-a".
+Dok je `BookingReservation` dark-core i ne postoji kao production authority, ta
+granica se ne krši — postojeći sistem je i dalje jedini autoritet.
+
+#### 21.2.6 Obim Slice 6B kada se nastavi — 8 platformskih ulaza
+
+Posle §21.2.4 i §21.2.5, od 16 putanja iz §3 migriraće se **8**. Ovo je
+pripremljen obim za trenutak kada 6B bude odmrznut (§21.3), a ne tekući plan:
+
+| # | Entry point | Komanda |
+|---|---|---|
+| 1 | `POST /api/appointments/create` | `reserve` |
+| 2 | `POST /api/public/[tenantSlug]/appointments/guest` | `reserve` (guest) |
+| 3 | `POST /api/appointments/create-guest` | `reserve` + eksplicitan override |
+| 4 | `PUT /api/appointments/client/[id]/update` | `reschedule` |
+| 5 | `POST /api/appointments/client/[id]/cancel` | `cancel` |
+| 6 | `DELETE /api/appointments/delete/[id]` | `cancel`/archive; hard-delete samo kao retention operacija |
+| 7 | `GET /api/cron/loyalty → runAutoComplete` | `complete` |
+| 8 | `PUT /api/appointments/update/[id]` | **poslednji** — razdvojiti na `reschedule` / proposal / lifecycle / običan patch |
+
+Ugasiće se **8**: četiri Slot ulaza (§21.2.4) i četiri marketplace
+`Appointment` ulaza (§21.2.5).
+
+### 21.3 Slice 6B/6C — planski odloženo (2026-08-23)
+
+Booking cutover je **namerno zamrznut**, ne blokiran i ne zaboravljen.
+
+**Razlog:** Marysoll Booking trenutno nema aktivnu poslovnu upotrebu, a
+marketplace je ostao na staroj generaciji platforme i biće usklađen tek posle
+njenog upgrade-a. Nema poslovnog razloga da se menja production write authority
+za sistem koji niko ne koristi.
+
+**Šta je završeno i stoji:**
+
+- Slice 5 — Booking dark core;
+- Slice 6A — occupancy transition hardening;
+- empirijski/readiness gate-ovi (§21.2.4).
+
+**Šta se NE dira:**
+
+- nijedna od 12 `Appointment` write ruta, uključujući
+  `POST /api/appointments/create`;
+- Slot endpoint-i se ne gase samo radi arhitektonske čistoće;
+- produkcija nastavlja preko postojećeg `Appointment` sistema.
+
+`BookingReservation` ostaje **dark-core infrastruktura, ne production
+authority**. Sve četiri Booking kolekcije su prazne i tako ostaju do odmrzavanja.
+
+**Kada se nastavlja:** posle Marysoll platform/marketplace upgrade-a. Ulazna
+tačka je §21.2.6 (osam platformskih ulaza), uz ponovnu proveru empirije iz
+§21.2.4 — brojke su merene 2026-08-23 i do tada će zastareti.
+
+Pauza je uzeta **pre** prvog production write cutover-a, tako da nema
+nedovršene rizične migracije: nova arhitektura je izolovana i dokazana, a stari
+sistem netaknut.
+
 ### 21.3 Architecture guards posle Slice 6
 
 Zabranjeno:
