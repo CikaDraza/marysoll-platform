@@ -31,6 +31,11 @@ export interface TenantRow {
   lemonsqueezySubscriptionId: string | null;
   overrideNote: string | null;
   isDemo: boolean;
+  /** Signali spremnosti — prikazuju se na kartici salona koji čeka objavu. */
+  logo: string | null;
+  landingTheme: string | null;
+  hasWorkingHours: boolean;
+  servicesCount: number;
   owner: {
     _id: string;
     name: string;

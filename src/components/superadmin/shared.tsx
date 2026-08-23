@@ -56,11 +56,14 @@ export function StatusBadge({ status }: { status: string }) {
     cancelled: "Otkazan",
   };
 
+  // `pending` pulsira: to je jedino stanje koje traži da neko nešto uradi.
+  const pulse = status === "pending" ? " animate-pulse" : "";
+
   return (
     <span
       className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
         colors[status] ?? colors.cancelled
-      }`}
+      }${pulse}`}
     >
       {labels[status] ?? status}
     </span>
