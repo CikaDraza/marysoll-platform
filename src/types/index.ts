@@ -182,6 +182,7 @@ export interface IMessage {
 export interface IAppointment {
   _id?: string;
   tenantId?: string;
+  bookingReservationId?: string;
   clientProfileId?: string; // TenantUser._id
   staffProfileId?: string; // TenantUser._id (optional)
   clientName: string;

@@ -45,6 +45,26 @@ export async function fetchPublicSalonProfile(
   }
 }
 
+/**
+ * Status salona za javni sajt. Odvojeno od profila jer gate treba i kada
+ * profil još ne postoji (tek registrovan salon nema popunjen profil).
+ */
+export async function fetchTenantPublicStatus(
+  tenantSlug: string,
+): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `${getBaseUrl()}/api/public/${tenantSlug}/salon-profile`,
+      { headers: VERCEL_BYPASS_HEADERS, next: { revalidate: 60 } },
+    );
+    if (!res.ok) return null;
+    const json = await res.json();
+    return (json.tenantStatus as string | undefined) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchPublicServices(
   tenantSlug: string,
 ): Promise<IService[]> {

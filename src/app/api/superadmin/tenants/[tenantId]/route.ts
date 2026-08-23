@@ -10,7 +10,7 @@ import { TenantUser } from "@/models/TenantUser";
 import { Subscription } from "@/models/Subscription";
 import { SalonProfile } from "@/models/SalonProfile";
 import { Service } from "@/models/Service";
-import { Slot } from "@/models/Slot";
+import { deleteTenantBookingData } from "@/lib/tenant/bookingCascade";
 import { Appointment } from "@/models/Appointment";
 import { Category } from "@/models/Category";
 import { Testimonial } from "@/models/Testimonial";
@@ -42,12 +42,15 @@ export async function DELETE(
       return NextResponse.json({ error: "Salon nije pronađen" }, { status: 404 });
     }
 
+    // Occupancy prvi: Slot se razrešava preko `salonId`, a `SalonProfile` se
+    // briše u `Promise.all` ispod — posle njega salon više ne bi bio nalaziv.
+    await deleteTenantBookingData(tenantId);
+
     await Promise.all([
       TenantUser.deleteMany({ tenantId }),
       Subscription.deleteMany({ tenantId }),
       SalonProfile.deleteMany({ tenantId }),
       Service.deleteMany({ tenantId }),
-      Slot.deleteMany({ tenantId }),
       Appointment.deleteMany({ tenantId }),
       Category.deleteMany({ tenantId }),
       Testimonial.deleteMany({ tenantId }),

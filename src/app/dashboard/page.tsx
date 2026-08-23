@@ -14,6 +14,8 @@ import DashboardLayout from "@/layout/DashboardLayout";
 import Loader from "@/components/elements/Loader";
 import { api } from "@/lib/api";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
+import { useTenantCapabilities } from "@/hooks/useTenantCapabilities";
+import { isAdminWorkspaceTabAvailable } from "@/lib/platform/workspace-capabilities";
 import {
   ProfilTab,
   RadnoVremeTab,
@@ -169,6 +171,10 @@ function AdminDashboard() {
   const router = useRouter();
   // All hooks before early return
   const { user, token, logout, isLoading: authLoading } = useAuth();
+  const { data: capabilitySnapshot } = useTenantCapabilities();
+  const effectiveTab = isAdminWorkspaceTabAvailable(capabilitySnapshot, tab)
+    ? tab
+    : "profil";
 
   // Checkout intent iz marketing/pricing-a: anoniman posetilac je izabrao plaćeni
   // plan pa se u međuvremenu ulogovao/registrovao. Odvedi ga na Pretplatu i
@@ -503,46 +509,46 @@ function AdminDashboard() {
 
       {/* ═══ TAB: Profil ════════════════════════════════════════════ */}
       {/* ═══ TAB: Profil ════════════════════════════════════════════ */}
-      {tab === "profil" && <ProfilTab {...tabProps} />}
+      {effectiveTab === "profil" && <ProfilTab {...tabProps} />}
 
       {/* ═══ TAB: Radno vreme ═══════════════════════════════════════ */}
-      {tab === "radno-vreme" && <RadnoVremeTab {...tabProps} />}
+      {effectiveTab === "radno-vreme" && <RadnoVremeTab {...tabProps} />}
 
       {/* ═══ TAB: Social & SEO ══════════════════════════════════════ */}
-      {tab === "social-seo" && <SocialSeoTab {...tabProps} />}
-      {tab === "cms" && <AdminLandingCMS sp={sp} />}
+      {effectiveTab === "social-seo" && <SocialSeoTab {...tabProps} />}
+      {effectiveTab === "cms" && <AdminLandingCMS sp={sp} />}
 
       {/* ═══ TAB: Usluge ════════════════════════════════════════════ */}
       {/* ═══ TAB: Usluge ════════════════════════════════════════════ */}
-      {tab === "usluge" && <UslugeTab {...tabProps} />}
-      {tab === "termini" && <AdminAppointments />}
-      {tab === "kalendar" && <AppointmentAdminCalendar />}
-      {tab === "statistika" && (
+      {effectiveTab === "usluge" && <UslugeTab {...tabProps} />}
+      {effectiveTab === "termini" && <AdminAppointments />}
+      {effectiveTab === "kalendar" && <AppointmentAdminCalendar />}
+      {effectiveTab === "statistika" && (
         <FeatureGate feature="statistics">
           <StatisticsPage />
         </FeatureGate>
       )}
-      {tab === "newsletter" && (
+      {effectiveTab === "newsletter" && (
         <FeatureGate feature="newsletterCampaigns">
           <AdminNewsletterDashboard />
         </FeatureGate>
       )}
-      {tab === "email-campaign-ai" && (
+      {effectiveTab === "email-campaign-ai" && (
         <FeatureGate feature="unlimitedAiTokens" requiredPlan="enterprise">
           <EmailCampaignAIGenerator />
         </FeatureGate>
       )}
-      {tab === "preporuke" && <AdminTestimonials />}
-      {tab === "domen" && <AdminCustomDomain />}
-      {tab === "klijenti" && <ClientsList />}
-      {tab === "growth" && (
+      {effectiveTab === "preporuke" && <AdminTestimonials />}
+      {effectiveTab === "domen" && <AdminCustomDomain />}
+      {effectiveTab === "klijenti" && <ClientsList />}
+      {effectiveTab === "growth" && (
         <FeatureGate feature="loyaltyCore">
           <AdminGrowthStudio />
         </FeatureGate>
       )}
-      {tab === "chat" && <AdminChat />}
-      {tab === "pretplata" && <AdminPlanStatus />}
-      {tab === "notifikacije" && <NotificationSettings />}
+      {effectiveTab === "chat" && <AdminChat />}
+      {effectiveTab === "pretplata" && <AdminPlanStatus />}
+      {effectiveTab === "notifikacije" && <NotificationSettings />}
 
       {/* Service modal */}
       {svc.modalMode !== "closed" && <ServiceModal s={svc} />}

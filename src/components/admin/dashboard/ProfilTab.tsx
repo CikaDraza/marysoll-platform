@@ -12,7 +12,7 @@ import {
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import { useState, type RefObject } from "react";
-import { THEMES, card, inp, lbl } from "./shared";
+import { card, inp, lbl, themePickerThemesForTenant } from "./shared";
 import type { DashboardTabProps } from "./types";
 import { PasswordVisibilityButton } from "@/components/auth/PasswordVisibilityButton";
 
@@ -229,7 +229,7 @@ export function ProfilTab(props: DashboardTabProps) {
             Izaberite dizajn za stranicu vašeg salona
           </p>
           <div className="space-y-2">
-            {THEMES.map((theme) => {
+            {themePickerThemesForTenant(tenant?.slug).map((theme) => {
               const selected = sp.form.landingTheme === theme.id;
               return (
                 <button

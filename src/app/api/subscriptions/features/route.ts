@@ -11,6 +11,7 @@ import { requireAdmin } from "@/lib/auth/auth-server";
 import { connectToDB } from "@/lib/db/mongodb";
 import {
   getPlanFeatures,
+  resolveActiveFeatureOverrides,
   resolveEffectivePlan,
 } from "@/lib/plans/planFeatures";
 import type { PlanName } from "@/lib/plans/planFeatures";
@@ -82,12 +83,10 @@ export async function GET(req: NextRequest) {
     };
 
     // Provjeri da li je override aktivan
-    const overrides =
-      s.featureOverrides &&
-      s.overrideExpiresAt &&
-      new Date() < new Date(s.overrideExpiresAt)
-        ? s.featureOverrides
-        : null;
+    const overrides = resolveActiveFeatureOverrides({
+      featureOverrides: s.featureOverrides,
+      overrideExpiresAt: s.overrideExpiresAt,
+    });
 
     // Ista logika kao requireFeature: otkazana/istekla pretplata pada na
     // "maria"; superadmin dodela (Subscription internal ili Tenant.paid) važi.

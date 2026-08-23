@@ -19,6 +19,7 @@ import type { PublicTestimonial } from "@/types/public-testimonials";
 import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import type { MappedBlogPost } from "@/lib/tenant/blogPosts";
 import type { LandingSectionKey } from "../theme-client";
+import type { TenantCapability } from "@/types/tenant-capabilities";
 
 type Landing = LandingStructure["landing"];
 
@@ -292,10 +293,12 @@ export interface FeatureBlockDefinition<
   /** Verzije `config` sheme koje ova definicija ume da pročita. */
   schemaVersions: readonly number[];
   /**
-   * T2B placeholder: dok ne postoji capability resolver, svi blokovi su `null`
-   * (= dostupno svima, kao danas). Non-goal za T2A (spec 9).
+   * `null` čuva T2A backward compatibility. Non-null se razrešava server-side
+   * pre loadera; Theme-9 content.* teaseri namerno ostaju `null`.
    */
-  capability: string | null;
+  capability: TenantCapability | null;
+  /** Bezbedan fallback kada je capability enabled ali domen prijavi degradaciju. */
+  degradedPolicy?: "render" | "skip";
   parseConfig(raw: unknown): ConfigParseResult<BlockConfigByType[K]>;
   load(
     ctx: BlockLoaderContext<BlockConfigByType[K]>,

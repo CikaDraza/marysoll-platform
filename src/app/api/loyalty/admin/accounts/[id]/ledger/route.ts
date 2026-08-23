@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin } from "@/lib/auth/auth-server";
-import { requireFeature } from "@/lib/plans/planEnforcement";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 import { LoyaltyLedger } from "@/models/LoyaltyLedger";
 import { LoyaltyAccount } from "@/models/LoyaltyAccount";
 
@@ -14,7 +14,7 @@ export async function GET(
 ) {
   const auth = requireAdmin(req);
   if (!auth.success) return auth.response;
-  const denied = await requireFeature(auth.decoded.tenantId, "loyaltyCore");
+  const denied = await requireCapability(auth.decoded.tenantId, "loyalty.rewards");
   if (denied) return denied;
 
   const { id } = await context.params;

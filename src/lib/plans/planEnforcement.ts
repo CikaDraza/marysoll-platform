@@ -20,6 +20,7 @@ import { Subscription } from "@/models/Subscription";
 import { Tenant } from "@/models/Tenant";
 import {
   planHasFeature,
+  resolveActiveFeatureOverrides,
   resolveEffectivePlan,
 } from "@/lib/plans/planFeatures";
 import type { PlanFeatures, PlanName } from "@/lib/plans/planFeatures";
@@ -65,12 +66,7 @@ export async function requireFeature(
 
     const plan: PlanName = resolveEffectivePlan(subscription, tenant);
 
-    const overrides =
-      subscription?.featureOverrides &&
-      subscription?.overrideExpiresAt &&
-      new Date(subscription.overrideExpiresAt) > new Date()
-        ? subscription.featureOverrides
-        : null;
+    const overrides = resolveActiveFeatureOverrides(subscription);
 
     const allowed = planHasFeature(plan, feature, overrides);
 

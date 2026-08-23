@@ -18,7 +18,10 @@ import { CookiesModal } from "@/components/client/CookiesModal";
 import { TenantThemeController } from "@/components/themes/TenantThemeController";
 import { TenantSiteBeacon } from "@/components/shared/TenantSiteBeacon";
 import { AddToHomeScreenBanner } from "@/components/shared/AddToHomeScreenBanner";
-import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
+import {
+  fetchPublicSalonProfile,
+  fetchTenantPublicStatus,
+} from "@/lib/tenant/fetchTenantData";
 import { usableRasterLogo } from "@/lib/branding/rasterLogo";
 import { tenantAppName } from "@/lib/pwa/tenantAppName";
 import { getPublicSiteContext } from "@/lib/seo/public-site";
@@ -77,6 +80,18 @@ export default async function TenantLayout({
     notFound();
   }
 
+  // Javni sajt je vidljiv tek kada superadmin aktivira salon. Do tada salon
+  // POTPUNO radi u panelu (profil, usluge, termini) — čeka se samo javna
+  // vidljivost. Auth strane su izuzete da vlasnica može da se prijavi sa svog
+  // subdomena.
+  const status = await fetchTenantPublicStatus(tenantSlug);
+  const isAuthPath = /^\/(login|register|forgot-password|reset-password|verify-email|resend-verification)(\/|$)/.test(
+    pathname,
+  );
+  if (status && status !== "active" && !isAuthPath) {
+    return <TenantSitePending />;
+  }
+
   // Resolve the salon's landing theme so tenant auth pages can render the
   // matching themed form (e.g. the Y2K forms for "theme-8"). 5-min cached.
   const profile = await fetchPublicSalonProfile(tenantSlug);
@@ -101,5 +116,22 @@ export default async function TenantLayout({
       {children}
       <CookiesModal basePath={base} />
     </TenantProvider>
+  );
+}
+
+/** Javna strana salona koji još nije aktiviran. Bez pominjanja infrastrukture. */
+function TenantSitePending() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-6 dark:bg-gray-950">
+      <div className="max-w-md text-center">
+        <p className="text-4xl">✨</p>
+        <h1 className="mt-4 text-2xl font-semibold text-gray-900 dark:text-gray-50">
+          Sajt se priprema
+        </h1>
+        <p className="mt-3 text-gray-600 dark:text-gray-400">
+          Salon uskoro objavljuje svoju stranicu. Hvala na strpljenju.
+        </p>
+      </div>
+    </main>
   );
 }

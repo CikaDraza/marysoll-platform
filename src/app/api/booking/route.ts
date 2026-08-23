@@ -20,6 +20,7 @@ import {
 } from "@/lib/contactRules";
 import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
@@ -75,6 +76,8 @@ export async function POST(req: NextRequest) {
       );
     }
     const tenantId = String((salon as Record<string, unknown>).tenantId ?? "");
+    const denied = await requireCapability(tenantId, "booking.services");
+    if (denied) return denied;
     const cancellationWindowHours =
       typeof (salon as Record<string, unknown>).cancellationWindowHours ===
       "number"

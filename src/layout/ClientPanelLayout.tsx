@@ -11,6 +11,8 @@ import { NotificationBell } from "@/components/shared/NotificationBell";
 import { ThemeToggleButton } from "@/components/common/ThemeToggleButton";
 import Backdrop from "@/layout/Backdrop";
 import Image from "next/image";
+import { isClientWorkspaceTabAvailable } from "@/lib/platform/workspace-capabilities";
+import type { TenantCapabilitySnapshot } from "@/types/tenant-capabilities";
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
@@ -125,12 +127,14 @@ interface ClientSidebarProps {
   activeTab: PanelTab;
   salonName?: string;
   salonLogo?: string | null;
+  capabilitySnapshot?: TenantCapabilitySnapshot;
 }
 
 function ClientSidebar({
   activeTab,
   salonName,
   salonLogo,
+  capabilitySnapshot,
 }: ClientSidebarProps) {
   const {
     isExpanded,
@@ -154,7 +158,9 @@ function ClientSidebar({
           loyaltyMe.account.lifetimePoints > 0)),
   );
   const visibleTabs = PANEL_TABS.filter(
-    (t) => t.id !== "Nagrade" || showLoyaltyTab,
+    (tab) =>
+      isClientWorkspaceTabAvailable(capabilitySnapshot, tab.id) &&
+      (tab.id !== "Nagrade" || showLoyaltyTab),
   );
   const effectiveSalonName = salonName || tenantSalon?.name || "Salon";
   const effectiveSalonLogo = salonLogo ?? tenantSalon?.logo ?? null;
@@ -398,6 +404,7 @@ interface ClientPanelLayoutProps {
   activeTab: PanelTab;
   salonName?: string;
   salonLogo?: string | null;
+  capabilitySnapshot?: TenantCapabilitySnapshot;
 }
 
 export function ClientPanelLayout({
@@ -405,6 +412,7 @@ export function ClientPanelLayout({
   activeTab,
   salonName,
   salonLogo,
+  capabilitySnapshot,
 }: ClientPanelLayoutProps) {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
 
@@ -420,6 +428,7 @@ export function ClientPanelLayout({
         activeTab={activeTab}
         salonName={salonName}
         salonLogo={salonLogo}
+        capabilitySnapshot={capabilitySnapshot}
       />
       <Backdrop />
       <div

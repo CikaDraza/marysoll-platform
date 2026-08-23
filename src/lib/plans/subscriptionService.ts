@@ -15,6 +15,7 @@ import { Tenant } from "@/models/Tenant";
 import type { ISubscription } from "@/models/Subscription";
 import {
   getPlanFeatures,
+  resolveActiveFeatureOverrides,
   resolveEffectivePlan,
   type PlanName,
   type PlanFeatures,
@@ -93,12 +94,7 @@ async function getTenantFeatures(
   const sub = await getOrCreateSubscription(tenantId);
 
   // Provjeri da li je override istekao
-  const overrides =
-    sub.featureOverrides &&
-    sub.overrideExpiresAt &&
-    new Date() < sub.overrideExpiresAt
-      ? sub.featureOverrides
-      : null;
+  const overrides = resolveActiveFeatureOverrides(sub);
 
   return getPlanFeatures(await getEffectivePlan(sub, tenantId), overrides);
 }
@@ -179,4 +175,3 @@ export async function cancelSubscriptionFromPaddle(params: {
     },
   );
 }
-

@@ -8,7 +8,7 @@ import { Types } from "mongoose";
 import { z } from "zod";
 import { connectToDB } from "@/lib/db/mongodb";
 import { requireAdmin } from "@/lib/auth/auth-server";
-import { requireFeature } from "@/lib/plans/planEnforcement";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 import { Voucher } from "@/models/Voucher";
 import { TenantUser } from "@/models/TenantUser";
 import { issueVoucher } from "@/lib/loyalty/vouchers/service";
@@ -18,7 +18,7 @@ import { describeReward } from "@/lib/loyalty/engine";
 export async function GET(req: NextRequest) {
   const auth = requireAdmin(req);
   if (!auth.success) return auth.response;
-  const denied = await requireFeature(auth.decoded.tenantId, "loyaltyCore");
+  const denied = await requireCapability(auth.decoded.tenantId, "loyalty.rewards");
   if (denied) return denied;
 
   await connectToDB();
@@ -63,7 +63,7 @@ const issueSchema = z.object({
 export async function POST(req: NextRequest) {
   const auth = requireAdmin(req);
   if (!auth.success) return auth.response;
-  const denied = await requireFeature(auth.decoded.tenantId, "loyaltyCore");
+  const denied = await requireCapability(auth.decoded.tenantId, "loyalty.rewards");
   if (denied) return denied;
 
   let body: unknown;
