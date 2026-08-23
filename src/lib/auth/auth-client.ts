@@ -5,10 +5,23 @@
  * Koristi se u hooks i Client Components.
  * NE importovati u Server Components, API routes, ili middleware!
  *
- * Cookie priority (in order):
- *   1. localStorage["token"]            — set by useAuth on login / callback
- *   2. tenant-access-token cookie       — set by /api/tenant-auth/login
- *   3. platform-access-token cookie     — set by /api/auth/login (SUPER_ADMIN)
+ * IZVOR ISTINE ZA SESIJU — prioritet (ovim redom):
+ *   1. tenant-access-token cookie       — /api/tenant-auth/login
+ *   2. platform-access-token cookie     — /api/auth/login (SUPER_ADMIN)
+ *   3. localStorage["token"]            — SAMO keš, kad cookie ne postoji
+ *
+ * `localStorage` NIKADA ne sme imati prioritet nad aktivnom sesijom. Cookie je
+ * ono što je server postavio pri prijavi i ono što server čita
+ * (`getTokenFromRequest`); `localStorage` je klijentski keš za `Authorization:
+ * Bearer` pozive i može biti ustajao — posle refresh-a, odjave u drugom tabu
+ * ili prijave u drugom kontekstu. Dok je imao prioritet, panel je nastavljao da
+ * šalje STARI identitet, pa je server pravilno scope-ovao upit prema pogrešnom
+ * tenantu/akteru i vraćao 404 „nije pronađeno" — bez ijednog signala korisniku.
+ *
+ * Napomena o granici: ovo rešava USTAJAO keš. Ne rešava to što na path-based
+ * hostovima (staging, localhost) admin panel i klijentski panel dele ISTI
+ * origin, pa i cookie i `localStorage` imaju samo jedan slot; promenu konteksta
+ * u drugom tabu hvata `useAuth` preko `storage` događaja i ponovne provere.
  */
 
 import { DecodedUser } from "@/types/auth/types";
@@ -29,28 +42,38 @@ function readCookie(name: string): string | null {
  * Does NOT validate expiry — callers must check themselves.
  * No legacy cookie fallbacks.
  */
+function cacheToken(token: string): void {
+  try {
+    if (localStorage.getItem("token") !== token) {
+      localStorage.setItem("token", token);
+    }
+  } catch {
+    /* privatni prozor / blokiran storage — keš je opcion */
+  }
+}
+
 function readRawToken(): string | null {
   if (typeof window === "undefined") return null;
 
-  // 1. localStorage (highest priority — set explicitly by useAuth on login)
-  const fromStorage = localStorage.getItem("token");
-  if (fromStorage) return fromStorage;
-
-  // 2. Tenant scoped cookie (set by /api/tenant-auth/login, domain: undefined)
+  // 1. Aktivna sesija: tenant cookie (/api/tenant-auth/login, domain: undefined).
   const tenantCookie = readCookie("tenant-access-token");
   if (tenantCookie) {
-    try { localStorage.setItem("token", tenantCookie); } catch { /* ignore */ }
+    cacheToken(tenantCookie);
     return tenantCookie;
   }
 
-  // 3. Platform scoped cookie (set by /api/auth/login, domain: .marysoll.com)
+  // 2. Aktivna sesija: platform cookie (/api/auth/login, domain: .marysoll.com).
   const platformCookie = readCookie("platform-access-token");
   if (platformCookie) {
-    try { localStorage.setItem("token", platformCookie); } catch { /* ignore */ }
+    cacheToken(platformCookie);
     return platformCookie;
   }
 
-  return null;
+  // 3. Keš — samo kada aktivne sesije nema. Pokriva tokove bez čitljivog
+  //    cookie-ja (apex marketing origin, OAuth callback pre nego što cookie
+  //    stigne). Ako je cookie obrisan odjavom, ovde se više ne dolazi sa
+  //    prioritetom nego tek kao poslednja opcija.
+  return localStorage.getItem("token") ?? null;
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
