@@ -441,8 +441,7 @@ export async function sendSalonActivatedNotification(
   const content = `
     <p style="font-size:16px;margin:0 0 12px;">Javni sajt vašeg salona je od sada <strong>vidljiv posetiocima</strong>.</p>
     <div style="margin:16px 0;padding:14px 18px;background:#f0fdf4;border-radius:10px;border:1px solid #dcfce7;">
-      <p style="margin:0 0 6px;font-weight:600;color:#166534;">${escapeEmailHtml(data.salonName)}</p>
-      <p style="margin:0;color:#374151;">Adresa sajta: <strong>${escapeEmailHtml(data.siteUrl)}</strong></p>
+      <p style="margin:0;font-weight:600;color:#166534;">${escapeEmailHtml(data.salonName)}</p>
     </div>
     <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin:24px 0 8px;">
       <tr>
