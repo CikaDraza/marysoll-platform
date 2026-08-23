@@ -904,6 +904,62 @@ Obe postoje pre Booking Engine-a i **nisu** regresija koju je engine uveo:
 2. Prihvatanje predloga nema authoritative availability recheck — `update/[id]`
    radi `date = proposedDate` i `findOneAndUpdate`, bez ijedne provere.
 
+#### 21.2.4 Empirijski gate-ovi — rezultat (produkcija `marysoll_db`, 2026-08-23)
+
+Sva tri gate-a iz §21.2 su izmerena read-only skriptama u
+`scripts/reports/`. Nijedan upis, nikakav backfill.
+
+**1. Transaction capability — ✅ ZATVOREN.**
+Atlas **replica set** `atlas-h7t9jg-shard-0`, `maxWireVersion 25`. Booking core
+`withTransaction` je podržan. Hard release gate iz §21.1 je time skinut kao
+blocker; stvarni smoke kroz migriranu rutu ostaje deo 6C.
+
+**2. `appointment_rescheduled` empirija — ✅ ZATVOREN, ambigvitet je marginalan.**
+
+| mera | vrednost |
+|---|---|
+| ukupno `Appointment` | 154 |
+| sa `bookingReservationId` (migrirani) | **0** |
+| sa `proposedDate` (predlog u toku) | **0** |
+| `appointment_rescheduled` | **1** (2026-06-16, bez `proposedDate`) |
+| `no_show`/`completed` na intervalu koji nije prošao | **0** |
+
+Jedini `appointment_rescheduled` zapis je varijanta „već pomeren", koja nije
+dvosmislena — drži svoj tekući interval. Adoption mapper u 6B zato ne mora da
+rešava sporni slučaj nad zatečenim podacima; mora ga ipak podržati, jer put
+kojim nastaje i dalje postoji u kodu.
+
+Nula zapisa u `blocking_until_end` statusima na budućem intervalu znači da
+politika iz §21.2.1 danas ne menja nijedan konkretan zapis — ona je **zaštita
+mehanizma** (kasni otkaz i dalje pravi `no_show` pre `endsAt`), ne ispravka
+zatečenih podataka.
+
+**3. Marketplace Slot — ✅ ZATVOREN; podsistem je MRTAV u produkciji.**
+
+| mera | vrednost |
+|---|---|
+| ukupno `Slot` | 500 |
+| po statusu | **500 × `"free"`**, 0 `reserved`, 0 `booked` |
+| opseg `startTime` | 2026-04-27 → 2026-05-10 (sve u prošlosti) |
+| salona sa slotovima | 2 |
+
+Tri nezavisna dokaza da je podsistem van upotrebe:
+
+- `"free"` **nije u `Slot` enum-u** (`["maria","reserved","booked"]`) i nijedno
+  mesto u današnjem kodu ga ne piše — `generateSlotsForSalon` upisuje `"maria"`.
+  Ovih 500 zapisa je zaostatak starije verzije šeme.
+- `marketplace/search.querySlots()` filtrira `status: "maria"` **i**
+  `startTime >= now`. Produkcijski podaci padaju na **oba** uslova → upit vraća
+  nulu, i tako je mesecima.
+- Read putanja `GET /api/marketplace/slots` uopšte ne dodiruje `Slot` — računa
+  dostupnost iz `Appointment` kroz `availabilityForDate`.
+
+**Posledica za §3.1:** četiri Slot write ulaza ne treba migrirati. Nema živog
+stanja koje bi se čuvalo, pa odluka je **gašenje**, ne integracija —
+`reserve`/`book`/`release` se isključuju do `BookingHold` (Slice 8), a
+`generate` prestaje da bude occupancy izvor. To skida 4 od 16 putanja iz
+migracionog obima 6B/6C.
+
 ### 21.3 Architecture guards posle Slice 6
 
 Zabranjeno:
