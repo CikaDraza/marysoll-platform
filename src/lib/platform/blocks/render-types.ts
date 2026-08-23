@@ -20,6 +20,9 @@ export type BlockSkipReason =
   | "unsupported_schema_version"
   | "invalid_config"
   | "loader_failed"
+  | "capability_disabled"
+  | "capability_unconfigured"
+  | "capability_degraded"
   /** Blok postoji u dokumentu, ali server prolaz nije ostavio podatke za njega. */
   | "missing_data"
   /** Tema nema renderer za taj tip (npr. tema bez booking sekcije). */

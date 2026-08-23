@@ -23,6 +23,7 @@ import {
 import { findOrCreateGuestUser } from "@/lib/appointments/booking";
 import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 export async function POST(request: NextRequest) {
   const auth = requireAdmin(request);
@@ -33,6 +34,8 @@ export async function POST(request: NextRequest) {
   if (!decoded.tenantId) {
     return NextResponse.json({ error: "Tenant nije pronađen" }, { status: 404 });
   }
+  const denied = await requireCapability(decoded.tenantId, "booking.services");
+  if (denied) return denied;
 
   await connectToDB();
 

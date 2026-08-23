@@ -8,6 +8,7 @@ import { requireAdmin, type AdminAuthResult } from "@/lib/auth/auth-server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { AudienceSegment } from "@/models/AudienceSegment";
 import { Types } from "mongoose";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 export async function GET(
   req: Request,
@@ -16,6 +17,8 @@ export async function GET(
   try {
     const authResult: AdminAuthResult = await requireAdmin(req);
     if (!authResult.success) return authResult.response;
+    const denied = await requireCapability(authResult.decoded.tenantId, "audience.contacts");
+    if (denied) return denied;
 
     const { id } = await params;
     if (!Types.ObjectId.isValid(id)) {
@@ -47,6 +50,8 @@ export async function PATCH(
   try {
     const authResult: AdminAuthResult = await requireAdmin(req);
     if (!authResult.success) return authResult.response;
+    const denied = await requireCapability(authResult.decoded.tenantId, "audience.contacts");
+    if (denied) return denied;
 
     const { id } = await params;
     if (!Types.ObjectId.isValid(id)) {
@@ -93,6 +98,8 @@ export async function DELETE(
   try {
     const authResult: AdminAuthResult = await requireAdmin(req);
     if (!authResult.success) return authResult.response;
+    const denied = await requireCapability(authResult.decoded.tenantId, "audience.contacts");
+    if (denied) return denied;
 
     const { id } = await params;
     if (!Types.ObjectId.isValid(id)) {

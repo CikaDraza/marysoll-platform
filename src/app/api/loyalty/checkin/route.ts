@@ -5,6 +5,7 @@ import { LoyaltyAccount } from "@/models/LoyaltyAccount";
 import { isLoyaltyActive } from "@/lib/loyalty/events";
 import { platformBus } from "@/lib/platform/event-bus";
 import { registerPlatformSubscribers } from "@/lib/platform/subscribers";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 /**
  * POST /api/loyalty/checkin — QR check-in ulogovanog klijenta (Phase 1).
@@ -18,6 +19,8 @@ export async function POST(req: NextRequest) {
   if (!decoded?.tenantUserId || !decoded.tenantId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await requireCapability(decoded.tenantId, "loyalty.rewards");
+  if (denied) return denied;
 
   // Instrumentation registruje subscribere na boot-u; idempotentni safety net
   // za slučaj da hendler rute startuje pre instrumentation-a.

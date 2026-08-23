@@ -26,10 +26,15 @@ import {
   type AvailabilityQuery,
   type AvailabilityResult,
   type ManualSlot,
+  type Occupancy,
   type TimeRange,
   type VacationRange,
   type WeekdayIndex,
 } from "@panta/booking-engine";
+import {
+  legacyAppointmentOccupancyPolicy,
+  policyBlocksAt,
+} from "./occupancyStatus";
 import type {
   DayOfWeek,
   IVacation,
@@ -51,14 +56,6 @@ const WEEKDAY_KEYS: DayOfWeek[] = [
   "Subota",
 ];
 
-/**
- * Statusi koji NE zauzimaju termin. Sve ostalo blokira — uključujući `pending`,
- * jer neodobren zahtev i dalje drži vreme dok ga vlasnica ne reši.
- */
-export const NON_BLOCKING_STATUSES = new Set([
-  "appointment_rejected",
-  "appointment_cancelled",
-]);
 
 /** Termin kakav rute i widgeti već imaju pri ruci. */
 export interface BookedAppointment {
@@ -160,25 +157,36 @@ export function toManualSlots(
 /**
  * Termini → zauzetost kao INSTANTI.
  *
- * Otkazani i odbijeni ispadaju ovde, a ne u engine-u: status je domenski pojam.
+ * Status je domenski pojam i razrešava se ovde, ne u engine-u — kroz deljeni
+ * `legacyAppointmentOccupancyPolicy`. `now` je opciono; bez njega
+ * `blocking_until_end` (legacy `no_show` / `completed`) ostaje blokirajuće.
  * Trajanje bez vrednosti je 60 min — ista pretpostavka koju su nosile sve
  * zatečene implementacije.
  */
 export function toOccupancies(
   appointments: BookedAppointment[] | undefined,
   timezone: string = SALON_TIMEZONE,
-): AvailabilityQuery["occupancies"] {
+  now?: Date,
+): Occupancy[] {
   if (!Array.isArray(appointments)) return [];
 
   return appointments
     .filter((a) => a?.date && a?.time)
-    .filter((a) => !a.status || !NON_BLOCKING_STATUSES.has(a.status))
     .map((a) => {
       const [h, m] = a.time.split(":").map(Number);
       const startsAt = zonedTimeToUtc(a.date, h * 60 + (m || 0), timezone);
       const minutes = typeof a.duration === "number" && a.duration > 0 ? a.duration : 60;
-      return { startsAt, endsAt: new Date(startsAt.getTime() + minutes * 60_000) };
-    });
+      const endsAt = new Date(startsAt.getTime() + minutes * 60_000);
+      return { startsAt, endsAt, status: a.status };
+    })
+    .filter((item) =>
+      policyBlocksAt(
+        legacyAppointmentOccupancyPolicy(item.status),
+        item.endsAt,
+        now,
+      ),
+    )
+    .map(({ startsAt, endsAt }) => ({ startsAt, endsAt }));
 }
 
 export interface BuildQueryInput {
@@ -187,6 +195,8 @@ export interface BuildQueryInput {
   durationMinutes: number;
   profile: SalonAvailabilityProfile;
   appointments?: BookedAppointment[];
+  /** Canonical UTC occupancy; ne pretvara se nazad u legacy date/time oblik. */
+  occupancies?: Occupancy[];
   /** Nad čim se rezerviše. Do Slice 5 salon ima jedan resurs. */
   resourceKey?: string;
   timezone?: string;
@@ -212,7 +222,10 @@ export function buildAvailabilityQuery(input: BuildQueryInput): AvailabilityQuer
     ...(isManual
       ? { manualSlots: toManualSlots(input.profile.manualSlots, input.localDate) }
       : {}),
-    occupancies: toOccupancies(input.appointments, timezone),
+    occupancies: [
+      ...toOccupancies(input.appointments, timezone, input.now),
+      ...(input.occupancies ?? []),
+    ],
     ...(input.stepMinutes ? { stepMinutes: input.stepMinutes } : {}),
     ...(input.now ? { now: input.now } : {}),
     ...(input.bands ? { bands: input.bands } : {}),

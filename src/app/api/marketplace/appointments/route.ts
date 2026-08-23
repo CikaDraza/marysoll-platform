@@ -33,6 +33,7 @@ import {
 } from "@/lib/appointments/booking";
 import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 export async function GET(req: NextRequest) {
   const verify = verifySignature(req, "");
@@ -148,6 +149,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Salon nije pronađen." }, { status: 404 });
     }
     const tenantId = String((salon as Record<string, unknown>).tenantId ?? "");
+    const denied = await requireCapability(tenantId, "booking.services");
+    if (denied) return denied;
 
     const tenantDoc = await Tenant.findById(tenantId).lean();
     if (!tenantDoc) {

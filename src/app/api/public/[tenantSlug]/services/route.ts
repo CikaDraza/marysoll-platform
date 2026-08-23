@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { Service } from "@/models/Service";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 function serializeService(s: Record<string, unknown>) {
   return {
@@ -85,6 +86,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
     if (!tenant) {
       return NextResponse.json({ success: false, error: "Salon nije pronađen" }, { status: 404 });
     }
+    const denied = await requireCapability(
+      String((tenant as Record<string, unknown>)._id),
+      "services.catalog",
+    );
+    if (denied) return NextResponse.json([]);
     const services = await Service.find({
       tenantId: (tenant as Record<string, unknown>)._id,
     })

@@ -4,8 +4,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Slot } from "@/models/Slot";
+import { SalonProfile } from "@/models/SalonProfile";
 import { verifySignature } from "@/lib/middleware/verifySignature";
 import { checkRateLimit } from "@/lib/middleware/rateLimiter";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 // async function parseBody(
 //   req: NextRequest,
@@ -61,6 +63,13 @@ export async function POST(req: NextRequest) {
 
   const now = new Date();
   await connectToDB();
+  const salon = await SalonProfile.findById(salonId).select("tenantId").lean();
+  if (!salon) return NextResponse.json({ error: "Salon nije pronađen" }, { status: 404 });
+  const capabilityDenied = await requireCapability(
+    String((salon as Record<string, unknown>).tenantId ?? ""),
+    "booking.services",
+  );
+  if (capabilityDenied) return capabilityDenied;
 
   const result = await Slot.updateOne(
     {
@@ -110,6 +119,13 @@ export async function DELETE(req: NextRequest) {
   }
 
   await connectToDB();
+  const salon = await SalonProfile.findById(salonId).select("tenantId").lean();
+  if (!salon) return NextResponse.json({ error: "Salon nije pronađen" }, { status: 404 });
+  const capabilityDenied = await requireCapability(
+    String((salon as Record<string, unknown>).tenantId ?? ""),
+    "booking.services",
+  );
+  if (capabilityDenied) return capabilityDenied;
 
   const result = await Slot.updateOne(
     { salonId, startTime: start, status: "booked" },

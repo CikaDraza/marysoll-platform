@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import { IAppointment, PaginationInfo } from "@/types";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
 import { belgradeNowParts } from "@/lib/utils/belgradeTime";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 import { TenantUser } from "@/models/TenantUser";
 import {
   tokenizeSearch,
@@ -46,6 +47,10 @@ export async function GET(req: Request) {
     } else if (!decoded.tenantId) {
       // Non-super-admin without a tenantId in token has no valid scope.
       return NextResponse.json({ error: "Forbidden: no tenant context" }, { status: 403 });
+    }
+    if (!isSuperAdmin) {
+      const denied = await requireCapability(decoded.tenantId, "booking.services");
+      if (denied) return denied;
     }
 
     const { searchParams } = new URL(req.url);

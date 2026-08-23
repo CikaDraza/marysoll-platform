@@ -12,7 +12,7 @@ import { Appointment } from "@/models/Appointment";
 import { Service } from "@/models/Service";
 import { Testimonial } from "@/models/Testimonial";
 import { Notification } from "@/models/Notification";
-import { Slot } from "@/models/Slot";
+import { deleteTenantBookingData } from "@/lib/tenant/bookingCascade";
 import { EmailCampaign } from "@/models/EmailCampaign";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 import { NewsletterTemplate } from "@/models/NewsletterTemplate";
@@ -49,6 +49,10 @@ export async function DELETE(req: NextRequest) {
       authUserId?: import("mongoose").Types.ObjectId | null;
     } | null;
 
+    // Occupancy prvi: Slot se razrešava preko `salonId`, a `SalonProfile` se
+    // briše u `Promise.all` ispod — posle njega salon više ne bi bio nalaziv.
+    await deleteTenantBookingData(tenantId);
+
     // Cascade delete all tenant data
     await Promise.all([
       TenantUser.deleteMany({ tenantId }),
@@ -58,7 +62,6 @@ export async function DELETE(req: NextRequest) {
       Service.deleteMany({ tenantId }),
       Testimonial.deleteMany({ tenantId }),
       Notification.deleteMany({ tenantId }),
-      Slot.deleteMany({ tenantId }),
       EmailCampaign.deleteMany({ tenantId }),
       NewsletterCampaign.deleteMany({ tenantId }),
       NewsletterTemplate.deleteMany({ tenantId }),

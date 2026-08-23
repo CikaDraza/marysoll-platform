@@ -25,6 +25,12 @@ const messageSchema = new Schema(
 const appointmentSchema = new Schema(
   {
     tenantId: { type: Schema.Types.ObjectId, ref: "Tenant", required: true },
+    // Slice 5 additive cross-reference. Legacy Appointment dokumenti bez ovog
+    // polja ostaju validni i čitaju se kao transitional occupancy.
+    bookingReservationId: {
+      type: Schema.Types.ObjectId,
+      ref: "BookingReservation",
+    },
     clientProfileId: { type: Schema.Types.ObjectId, ref: "TenantUser", required: true },
     staffProfileId: { type: Schema.Types.ObjectId, ref: "TenantUser" },
     clientName: { type: String, required: true },
@@ -113,6 +119,10 @@ appointmentSchema.index({ tenantId: 1, clientProfileId: 1 });
 appointmentSchema.index({ tenantId: 1, date: 1 });
 appointmentSchema.index({ tenantId: 1, cancellationStatus: 1 });
 appointmentSchema.index({ tenantId: 1, status: 1, date: 1 });
+appointmentSchema.index(
+  { bookingReservationId: 1 },
+  { unique: true, sparse: true, name: "appointment_booking_reservation_unique" },
+);
 
 export const Appointment =
   models.Appointment || model("Appointment", appointmentSchema);

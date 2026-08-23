@@ -5,6 +5,7 @@ import { Voucher } from "@/models/Voucher";
 import { isLoyaltyActive } from "@/lib/loyalty/events";
 import { issueVoucher } from "@/lib/loyalty/vouchers/service";
 import type { RewardSpec } from "@/lib/loyalty/types";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 /**
  * POST /api/loyalty/client/share-voucher — klijent poklanja popust prijateljici
@@ -25,6 +26,8 @@ export async function POST(req: NextRequest) {
   if (!decoded?.tenantUserId || !decoded.tenantId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await requireCapability(decoded.tenantId, "loyalty.rewards");
+  if (denied) return denied;
 
   await connectToDB();
   const { active, config } = await isLoyaltyActive(decoded.tenantId);

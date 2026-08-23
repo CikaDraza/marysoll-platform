@@ -13,6 +13,7 @@ import { Types } from "mongoose";
 import { connectToDB } from "@/lib/db/mongodb";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
 import { Notification } from "@/models/Notification";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 const CELEBRATION_TYPES = [
   "loyalty_hearts_earned",
@@ -28,6 +29,8 @@ export async function GET(req: NextRequest) {
   if (!decoded?.tenantUserId || !decoded.tenantId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await requireCapability(decoded.tenantId, "loyalty.rewards");
+  if (denied) return denied;
 
   await connectToDB();
   const since = new Date(Date.now() - 7 * 24 * 3_600_000);
@@ -55,6 +58,8 @@ export async function POST(req: NextRequest) {
   if (!decoded?.tenantUserId || !decoded.tenantId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await requireCapability(decoded.tenantId, "loyalty.rewards");
+  if (denied) return denied;
 
   let body: unknown;
   try {

@@ -2,16 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Service } from "@/models/Service";
 import { requireAdmin } from "@/lib/auth/auth-server";
-import { DecodedToken } from "@/types/auth/types";
 import { revalidateMarketplaceCaches } from "@/lib/marketplace/revalidateMarketplace";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 export async function POST(req: NextRequest) {
   try {
     await connectToDB();
-    const auth = (await requireAdmin(req)) as
-      | { decoded: DecodedToken }
-      | NextResponse;
-    if (auth instanceof NextResponse) return auth;
+    const auth = requireAdmin(req);
+    if (!auth.success) return auth.response;
+    const denied = await requireCapability(auth.decoded.tenantId, "services.catalog");
+    if (denied) return denied;
     const tenantId = auth.decoded.tenantId;
 
     const body = await req.json();

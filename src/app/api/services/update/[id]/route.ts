@@ -2,19 +2,18 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Service } from "@/models/Service";
-import { verifyToken } from "@/lib/auth/auth-server";
+import { requireAdmin } from "@/lib/auth/auth-server";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function PUT(req: Request, { params }: Params) {
   try {
     await connectToDB();
-    const token = req.headers.get("authorization")?.replace("Bearer ", "");
-    if (!token)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const user = verifyToken(token);
-    if (!user || !user.isAdmin)
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const auth = requireAdmin(req);
+    if (!auth.success) return auth.response;
+    const denied = await requireCapability(auth.decoded.tenantId, "services.catalog");
+    if (denied) return denied;
 
     const body = await req.json();
 
@@ -43,7 +42,10 @@ export async function PUT(req: Request, { params }: Params) {
       } else if (enabled) {
         // fetch existing price to compute
         const { id } = await params;
-        const existing = await Service.findById(id);
+        const existing = await Service.findOne({
+          _id: id,
+          tenantId: auth.decoded.tenantId,
+        });
         if (existing) {
           finalPrice = Math.round(
             existing.price * priceMonthly * (1 - discount / 100)
@@ -53,10 +55,9 @@ export async function PUT(req: Request, { params }: Params) {
       subscriptionObj = { enabled, priceMonthly, discount, finalPrice };
     }
 
-    const updated = await Service.findByIdAndUpdate(
-      (
-        await params
-      ).id,
+    const { id } = await params;
+    const updated = await Service.findOneAndUpdate(
+      { _id: id, tenantId: auth.decoded.tenantId },
       {
         ...body,
         items: itemsArr.length ? itemsArr : undefined,

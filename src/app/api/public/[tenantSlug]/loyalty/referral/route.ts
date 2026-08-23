@@ -3,6 +3,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { Voucher } from "@/models/Voucher";
 import { LoyaltyConfig } from "@/models/LoyaltyConfig";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 /** Javni, read-only preview gift koda; ne otkriva identitet referrera. */
 export async function GET(
@@ -18,6 +19,8 @@ export async function GET(
     .select("_id")
     .lean<{ _id: unknown }>();
   if (!tenant) return NextResponse.json({ valid: false });
+  const denied = await requireCapability(String(tenant._id), "loyalty.rewards");
+  if (denied) return NextResponse.json({ valid: false });
 
   const [config, voucher] = await Promise.all([
     LoyaltyConfig.findOne({ tenantId: tenant._id })

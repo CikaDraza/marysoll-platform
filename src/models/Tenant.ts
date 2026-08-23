@@ -4,6 +4,12 @@
  * All other models reference tenantId for data isolation.
  */
 import { Schema, Document, Types, model, models } from "mongoose";
+import {
+  TENANT_CAPABILITIES,
+  TENANT_VERTICALS,
+  type TenantCapabilityConfiguration,
+  type TenantVertical,
+} from "@/types/tenant-capabilities";
 
 export interface ITenant extends Document {
   name: string;
@@ -15,6 +21,9 @@ export interface ITenant extends Document {
   verified: boolean;
   plan: "maria" | "claudia" | "kiki" | "enterprise";
   planExpiresAt: Date | null;
+  /** Missing means legacy pre-T2B tenant; never add a persistence default. */
+  verticals?: TenantVertical[];
+  capabilityConfiguration?: TenantCapabilityConfiguration;
   trialEndsAt: Date | null;
   isTrialActive: boolean;
   trialMode: "maria" | "card_required"; // how this tenant's trial was initiated
@@ -50,6 +59,35 @@ export interface ITenant extends Document {
   updatedAt: Date;
 }
 
+const TenantCapabilityOverrideSchema = new Schema(
+  {
+    capability: {
+      type: String,
+      enum: TENANT_CAPABILITIES,
+      required: true,
+    },
+    enabled: { type: Boolean, required: true },
+  },
+  { _id: false },
+);
+
+const TenantCapabilityConfigurationSchema = new Schema(
+  {
+    overrides: {
+      type: [TenantCapabilityOverrideSchema],
+      default: undefined,
+      validate: {
+        validator: (overrides: TenantCapabilityConfiguration["overrides"]) =>
+          overrides === undefined ||
+          new Set(overrides.map((override) => override.capability)).size ===
+            overrides.length,
+        message: "Capability override-i ne smeju biti duplirani",
+      },
+    },
+  },
+  { _id: false },
+);
+
 const TenantSchema = new Schema<ITenant>(
   {
     name: { type: String, required: true },
@@ -71,6 +109,34 @@ const TenantSchema = new Schema<ITenant>(
       type: String,
       enum: ["maria", "claudia", "kiki", "enterprise"],
       default: "maria",
+    },
+    verticals: {
+      type: [String],
+      enum: TENANT_VERTICALS,
+      default: undefined,
+      validate: [
+        {
+          validator: (verticals: TenantVertical[] | undefined) =>
+            verticals === undefined || verticals.length > 0,
+          message: "Tenant mora imati najmanje jednu vertikalu",
+        },
+        {
+          validator: (verticals: TenantVertical[] | undefined) =>
+            verticals === undefined ||
+            new Set(verticals).size === verticals.length,
+          message: "Vertikale ne smeju biti duplirane",
+        },
+      ],
+    },
+    capabilityConfiguration: {
+      type: TenantCapabilityConfigurationSchema,
+      default: undefined,
+      set: (
+        configuration: TenantCapabilityConfiguration | undefined,
+      ): TenantCapabilityConfiguration | undefined =>
+        configuration === undefined
+          ? undefined
+          : { overrides: configuration.overrides ?? [] },
     },
     planExpiresAt: { type: Date, default: null },
     trialEndsAt: { type: Date, default: null },
@@ -145,6 +211,21 @@ TenantSchema.index({ status: 1, ownerId: 1 });
 // pre("validate") mora — validacija se izvršava pre save-a; coercija ovde čini
 // dokument validnim i usput trajno očisti staru vrednost pri prvom snimanju.
 TenantSchema.pre("validate", function (next) {
+  // Missing T2B fields are reserved exclusively for hydrated legacy records.
+  // Every newly-created Tenant must go through the shared provisioning helper.
+  if (this.isNew && this.verticals === undefined) {
+    this.invalidate(
+      "verticals",
+      "Novi Tenant mora eksplicitno imati verticals",
+    );
+  }
+  if (this.isNew && this.capabilityConfiguration === undefined) {
+    this.invalidate(
+      "capabilityConfiguration",
+      "Novi Tenant mora eksplicitno imati capability konfiguraciju",
+    );
+  }
+
   const mode = this.trialMode as unknown as string;
   if (mode !== "maria" && mode !== "card_required") {
     this.trialMode = "maria";

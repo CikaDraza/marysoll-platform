@@ -6,6 +6,7 @@ import { SalonProfile } from "@/models/SalonProfile";
 import { Service } from "@/models/Service";
 import { verifySignature } from "@/lib/middleware/verifySignature";
 import { checkRateLimit } from "@/lib/middleware/rateLimiter";
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 export async function GET(req: NextRequest) {
   const verify = verifySignature(req, "");
@@ -32,6 +33,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Salon nije pronađen" }, { status: 404 });
     }
     const tenantId = String((salon as Record<string, unknown>).tenantId ?? "");
+    const denied = await requireCapability(tenantId, "services.catalog");
+    if (denied) return NextResponse.json([]);
 
     const services = await Service.find({ tenantId })
       .sort({ category: 1, name: 1 })

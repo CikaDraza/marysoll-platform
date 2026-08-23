@@ -11,6 +11,7 @@ import { upsertOwnerNewsletterContact } from "@/lib/newsletterService";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { BASE_DOMAIN } from "@/lib/platform/host-context";
+import { createInitialTenantCapabilityConfiguration } from "@/lib/platform/capabilities";
 
 /**
  * POST /api/tenants/register
@@ -100,6 +101,7 @@ export async function POST(request: NextRequest) {
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const hashedPassword = await bcrypt.hash(password, 12);
+    const initialCapabilities = createInitialTenantCapabilityConfiguration();
 
     // 1. AuthUser — platform-level identity for OWNER (marysoll.com access)
     const authUser = new AuthUser({
@@ -123,6 +125,7 @@ export async function POST(request: NextRequest) {
       paid: false,
       verified: false,
       plan: "maria",
+      ...initialCapabilities,
       planExpiresAt: null,
       trialEndsAt: null,
       isTrialActive: false,

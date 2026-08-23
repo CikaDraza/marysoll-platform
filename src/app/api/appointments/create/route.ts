@@ -26,6 +26,7 @@ import {
 } from "@/lib/appointments/booking";
 import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant"; // Uveri se da imaš ovaj import
+import { requireCapability } from "@/lib/platform/capabilities-server";
 
 export async function POST(request: NextRequest) {
   try {
@@ -81,6 +82,13 @@ export async function POST(request: NextRequest) {
         { status: 500 },
       );
     }
+    // Capability tenant je auth scope, ne proxy slug. Tenant koji se koristi za
+    // zapis mora biti isti scope da header ne bi birao drugi salon.
+    if (!decoded.tenantId || decoded.tenantId !== tenantId) {
+      return NextResponse.json({ error: "Forbidden: tenant mismatch" }, { status: 403 });
+    }
+    const denied = await requireCapability(decoded.tenantId, "booking.services");
+    if (denied) return denied;
 
     // Provera da li salon može primati zakazivanja
     if (!canAcceptBookings(tenant)) {
