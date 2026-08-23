@@ -58,6 +58,7 @@ const openAvailability: BookingAvailabilityProvider = {
         },
         stepMinutes: 30,
       },
+      externalOccupancies: [],
     };
   },
 };
@@ -71,10 +72,8 @@ const legacyAwareAvailability: BookingAvailabilityProvider = {
     });
     const base = await openAvailability.load(input);
     return {
-      query: {
-        ...base.query,
-        occupancies: toOccupancies(appointments, "UTC"),
-      },
+      query: base.query,
+      externalOccupancies: toOccupancies(appointments, "UTC"),
     };
   },
 };
@@ -599,6 +598,7 @@ describe.sequential("Booking CORE Mongo replica-set integration", () => {
             schedule: {},
             vacations: [{ from: input.localDate, to: input.localDate }],
           },
+          externalOccupancies: [],
         };
       },
     };
@@ -796,5 +796,177 @@ describe.sequential("Booking CORE Mongo replica-set integration", () => {
     expect(await BookingReservation.countDocuments()).toBe(0);
     expect(await Appointment.countDocuments()).toBe(0);
     expect(await BookingOutboxEvent.countDocuments()).toBe(0);
+  });
+  /**
+   * Legacy occupancy je do sada dokazivan test-lokalnim `legacyAwareAvailability`
+   * providerom, koji ručno ponavlja istu kompoziciju. To dokazuje funkciju, ali
+   * ne i da je PRODUKCIONI `serviceAvailabilityProvider` zaista koristi. Testovi
+   * ispod idu kroz pravi provider i pravi `SalonProfile`.
+   *
+   * Salon nema `timezone` polje u shemi, pa provider pada na Europe/Belgrade:
+   * 2027-09-06 je CEST (UTC+2), dakle legacy "12:00" == 10:00Z == interval koji
+   * `reserveCommand()` traži.
+   */
+  async function seedServiceSalon(tenantId: string) {
+    await SalonProfile.create({
+      tenantId,
+      name: "Legacy occupancy salon",
+      email: "legacy@example.test",
+      workingHours: { Ponedeljak: [{ from: "09:00", to: "18:00" }] },
+      availabilityMode: "workingHours",
+    });
+    const service = await Service.create({
+      tenantId,
+      name: "Legacy service",
+      category: "test",
+      type: "single",
+      duration: 60,
+    });
+    return resolveServiceBookingProduct({ tenantId, serviceId: service._id.toString() });
+  }
+
+  async function seedLegacyAppointment(input: {
+    tenantId: string;
+    status: string;
+    bookingReservationId?: Types.ObjectId;
+  }) {
+    await Appointment.collection.insertOne({
+      tenantId: new Types.ObjectId(input.tenantId),
+      clientProfileId: new Types.ObjectId(),
+      clientName: "Legacy klijent",
+      clientEmail: "legacy.client@example.test",
+      serviceName: "Legacy service",
+      date: "2027-09-06",
+      time: "12:00",
+      duration: 60,
+      status: input.status,
+      ...(input.bookingReservationId
+        ? { bookingReservationId: input.bookingReservationId }
+        : {}),
+    });
+  }
+
+  function serviceDeps(
+    tenantId: string,
+    product: Awaited<ReturnType<typeof seedServiceSalon>>,
+    clientRef: string,
+  ) {
+    return {
+      availability: serviceAvailabilityProvider,
+      domain: createServiceAppointmentDomainAdapter({
+        tenantId,
+        draft: {
+          clientRef,
+          clientName: "Novi klijent",
+          clientEmail: "novi@example.test",
+          serviceName: product.snapshot.name,
+          services: [
+            {
+              serviceId: product.productRef,
+              serviceName: product.snapshot.name,
+              quantity: 1,
+              duration: product.snapshot.durationMinutes,
+            },
+          ],
+        },
+      }),
+    };
+  }
+
+  function serviceReserve(
+    tenantId: string,
+    product: Awaited<ReturnType<typeof seedServiceSalon>>,
+    clientRef: string,
+  ) {
+    return reserveCommand({
+      tenantId,
+      clientRef,
+      domainRef: { type: "appointment", id: new Types.ObjectId().toString() },
+      productType: product.productType,
+      productRef: product.productRef,
+      productSnapshot: product.snapshot,
+    });
+  }
+
+  it("blocks reserve on an unmigrated Appointment through the production Service provider", async () => {
+    const tenantId = new Types.ObjectId().toString();
+    const product = await seedServiceSalon(tenantId);
+    const clientRef = new Types.ObjectId().toString();
+    await seedLegacyAppointment({ tenantId, status: "appointment_approved" });
+
+    await expectBookingCode(
+      reserve(serviceReserve(tenantId, product, clientRef), serviceDeps(tenantId, product, clientRef)),
+      ["BOOKING_SLOT_NOT_AVAILABLE"],
+    );
+    expect(await BookingReservation.countDocuments()).toBe(0);
+  });
+
+  it("keeps a late-cancel no_show blocking through the production Service provider", async () => {
+    const tenantId = new Types.ObjectId().toString();
+    const product = await seedServiceSalon(tenantId);
+    const clientRef = new Types.ObjectId().toString();
+    // `cancelAppointmentAsClient` postavlja `no_show` u trenutku kasnog otkaza,
+    // dakle PRE kraja termina — interval mora ostati zauzet.
+    await seedLegacyAppointment({ tenantId, status: "no_show" });
+
+    await expectBookingCode(
+      reserve(serviceReserve(tenantId, product, clientRef), serviceDeps(tenantId, product, clientRef)),
+      ["BOOKING_SLOT_NOT_AVAILABLE"],
+    );
+  });
+
+  it("lets a cancelled Appointment free its interval through the production provider", async () => {
+    const tenantId = new Types.ObjectId().toString();
+    const product = await seedServiceSalon(tenantId);
+    const clientRef = new Types.ObjectId().toString();
+    await seedLegacyAppointment({ tenantId, status: "appointment_cancelled" });
+
+    const result = await reserve(
+      serviceReserve(tenantId, product, clientRef),
+      serviceDeps(tenantId, product, clientRef),
+    );
+    expect(result.reservation.reservationId).toBeTruthy();
+  });
+
+  it("does not double-count an Appointment already linked to a Reservation (production provider)", async () => {
+    const tenantId = new Types.ObjectId().toString();
+    const product = await seedServiceSalon(tenantId);
+    const clientRef = new Types.ObjectId().toString();
+
+    // Prvi reserve pravi canonical rezervaciju i povezan Appointment.
+    const first = await reserve(
+      serviceReserve(tenantId, product, clientRef),
+      serviceDeps(tenantId, product, clientRef),
+    );
+    const linked = await Appointment.findOne({
+      bookingReservationId: new Types.ObjectId(first.reservation.reservationId),
+    }).lean<{ _id: Types.ObjectId }>();
+    expect(linked).not.toBeNull();
+
+    // Povezan Appointment ne sme ući u occupancy — canonical rezervacija ga
+    // već predstavlja. Da ulazi dvaput, availability bi i dalje bila zauzeta iz
+    // dva izvora; ovde se dokazuje da legacy reader takav zapis izostavlja.
+    const session = mongoose.connection.getClient().startSession();
+    try {
+      const legacy = await loadUnmigratedAppointmentOccupancy({
+        tenantId,
+        localDate: "2027-09-06",
+        session,
+      });
+      expect(legacy).toHaveLength(0);
+    } finally {
+      await session.endSession();
+    }
+  });
+
+  it("still blocks on canonical occupancy when the provider reports no external occupancy", async () => {
+    const tenantId = new Types.ObjectId().toString();
+    // `openAvailability` vraća `externalOccupancies: []` — dokaz da centralna
+    // kompozicija u `validateWriteAvailability` ne zavisi od providera.
+    await reserve(reserveCommand({ tenantId }), dependencies());
+    await expectBookingCode(
+      reserve(reserveCommand({ tenantId }), dependencies()),
+      ["BOOKING_SLOT_NOT_AVAILABLE"],
+    );
   });
 });

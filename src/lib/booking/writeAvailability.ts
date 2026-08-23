@@ -13,8 +13,7 @@ import type {
 import { BookingError } from "./errors";
 import type { ValidatedInterval } from "./timeContract";
 import { BookingReservation } from "@/models/BookingReservation";
-
-const BLOCKING_STATUSES = ["pending", "confirmed"] as const;
+import { BLOCKING_RESERVATION_STATUSES } from "./occupancyStatus";
 
 function requestedSlot(
   query: AvailabilityQuery,
@@ -74,7 +73,7 @@ export async function validateWriteAvailability(input: {
     tenantId: input.tenantId,
     resourceKey: input.resourceKey,
     localDate: input.interval.localDate,
-    status: { $in: BLOCKING_STATUSES },
+    status: { $in: BLOCKING_RESERVATION_STATUSES },
     ...(input.excludeReservationId ? { _id: { $ne: input.excludeReservationId } } : {}),
   })
     .session(input.session)
@@ -91,12 +90,11 @@ export async function validateWriteAvailability(input: {
     durationMinutes: input.interval.durationMinutes,
     session: input.session,
   });
+  // Jedino mesto koje komponuje occupancy. `occupancies` se postavlja POSLE
+  // spread-a, pa ništa što bi provider ostavio u `query` ne može da preživi.
   const query: AvailabilityQuery = {
     ...context.query,
-    occupancies: [
-      ...(context.query.occupancies ?? []),
-      ...canonicalOccupancies,
-    ],
+    occupancies: [...canonicalOccupancies, ...context.externalOccupancies],
   };
   const normal = requestedSlot(query, input.interval);
   if (normal) {
