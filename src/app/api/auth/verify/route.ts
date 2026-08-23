@@ -228,7 +228,12 @@ export async function POST(request: NextRequest) {
         const trialEndsAt = new Date();
         trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DAYS);
         tenant.verified = true;
-        tenant.status = "active";
+        // NAMERNO se ne dira `status`. Verifikacija dokazuje email i pokreće
+        // probni period — ne objavljuje javni sajt. Salon ostaje `pending` dok
+        // superadmin ne pregleda i ne klikne „Objavi sajt"; tek tada vlasnica
+        // dobija mejl i poruku da je sajt vidljiv. Ranije je ovde stajalo
+        // `status = "active"`, pa salon nikad nije prošao kroz čekanje i ceo
+        // tok objave se nije video.
         tenant.isTrialActive = true;
         tenant.trialEndsAt = trialEndsAt;
         await tenant.save();
