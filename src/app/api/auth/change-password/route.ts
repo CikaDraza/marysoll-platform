@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectToDB } from "@/lib/db/mongodb";
 import { TenantUser } from "@/models/TenantUser";
+import { AuthUser } from "@/models/AuthUser";
 import { requireAuth } from "@/lib/auth/auth-server";
 
 export async function POST(req: NextRequest) {
@@ -49,8 +50,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    tenantUser.password = await bcrypt.hash(newPassword, 12);
+    // Lozinka živi na DVA mesta: `TenantUser.password` (prijava na salon) i
+    // `AuthUser.passwordHash` (platformski identitet). Do sada se menjalo samo
+    // prvo, pa su se hash-evi razilazili. Kada se salon obriše, `TenantUser`
+    // nestaje i ostaje SAMO zastareo `AuthUser` hash — vlasnica tada ne može da
+    // se prijavi ni sa starom ni sa novom lozinkom. Zato se menjaju oba.
+    const nextHash = await bcrypt.hash(newPassword, 12);
+    tenantUser.password = nextHash;
     await tenantUser.save();
+
+    if (tenantUser.authUserId) {
+      await AuthUser.findByIdAndUpdate(tenantUser.authUserId, {
+        $set: { passwordHash: nextHash },
+      });
+    }
 
     return NextResponse.json({ message: "Lozinka uspešno promenjena." });
   } catch (err) {
