@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { connectToDB } from "@/lib/db/mongodb";
 import { AuthUser } from "@/models/AuthUser";
 import { TenantUser } from "@/models/TenantUser";
+import { hashPasswordAndSyncAuthUser } from "@/lib/auth/passwordSync";
 
 /**
  * POST /api/auth/reset-password
@@ -35,19 +36,14 @@ export async function POST(request: Request) {
     });
 
     if (tenantUser) {
-      const nextHash = await bcrypt.hash(newPassword, 12);
-      tenantUser.password = nextHash;
+      // Jedan hash u oba store-a — vidi `lib/auth/passwordSync.ts`.
+      tenantUser.password = await hashPasswordAndSyncAuthUser(
+        newPassword,
+        tenantUser.authUserId,
+      );
       tenantUser.resetPasswordToken = null;
       tenantUser.resetPasswordExpiry = null;
       await tenantUser.save();
-
-      // Isti hash i na platformski identitet — inače se dva store-a raziđu i
-      // nalog ostane zaključan čim `TenantUser` nestane (obrisan salon).
-      if (tenantUser.authUserId) {
-        await AuthUser.findByIdAndUpdate(tenantUser.authUserId, {
-          $set: { passwordHash: nextHash },
-        });
-      }
 
       return NextResponse.json({ message: "Lozinka je uspešno promenjena" });
     }
