@@ -35,18 +35,30 @@ export async function POST(request: Request) {
     });
 
     if (tenantUser) {
-      tenantUser.password = await bcrypt.hash(newPassword, 12);
+      const nextHash = await bcrypt.hash(newPassword, 12);
+      tenantUser.password = nextHash;
       tenantUser.resetPasswordToken = null;
       tenantUser.resetPasswordExpiry = null;
       await tenantUser.save();
 
+      // Isti hash i na platformski identitet — inače se dva store-a raziđu i
+      // nalog ostane zaključan čim `TenantUser` nestane (obrisan salon).
+      if (tenantUser.authUserId) {
+        await AuthUser.findByIdAndUpdate(tenantUser.authUserId, {
+          $set: { passwordHash: nextHash },
+        });
+      }
+
       return NextResponse.json({ message: "Lozinka je uspešno promenjena" });
     }
 
+    // Ranije je ovde stajalo `platformRole: "SUPER_ADMIN"`, pa vlasnica bez
+    // salona nije mogla ni da resetuje lozinku — bila je zaključana i iz
+    // prijave i iz oporavka. Token je dokaz vlasništva nad nalogom; uloga tu
+    // ništa ne dodaje.
     const authUser = await AuthUser.findOne({
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: new Date() },
-      platformRole: "SUPER_ADMIN",
     });
 
     if (!authUser) {
@@ -56,10 +68,18 @@ export async function POST(request: Request) {
       );
     }
 
-    authUser.passwordHash = await bcrypt.hash(newPassword, 12);
+    const nextHash = await bcrypt.hash(newPassword, 12);
+    authUser.passwordHash = nextHash;
     authUser.resetPasswordToken = null;
     authUser.resetPasswordExpires = null;
     await authUser.save();
+
+    // I obrnuti smer: ako nalog ima vezane salonske profile, i oni dobijaju
+    // isti hash, da prijava na salon radi sa istom lozinkom.
+    await TenantUser.updateMany(
+      { authUserId: authUser._id },
+      { $set: { password: nextHash } },
+    );
 
     return NextResponse.json({ message: "Lozinka je uspešno promenjena" });
   } catch (error) {
