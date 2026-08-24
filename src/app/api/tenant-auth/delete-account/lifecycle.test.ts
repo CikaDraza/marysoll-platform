@@ -41,7 +41,7 @@ describe("brisanje salona", () => {
   it("naplata je gate PRE brisanja — neuspeh znači nula delete-a", () => {
     const service = source("src/lib/tenant/deleteTenant.ts");
     const billingAt = service.indexOf("stopFutureBilling(tenantId)");
-    const cascadeAt = service.indexOf("deleteTenantBookingData(tenantId)");
+    const cascadeAt = service.indexOf("deleteTenantBookingData(");
     expect(billingAt).toBeGreaterThan(0);
     expect(cascadeAt).toBeGreaterThan(billingAt);
     expect(service).toContain("TENANT_BILLING_CANCELLATION_FAILED");
@@ -50,7 +50,7 @@ describe("brisanje salona", () => {
   it("ownership mismatch pada pre bilo kakvog brisanja", () => {
     const service = source("src/lib/tenant/deleteTenant.ts");
     const integrityAt = service.indexOf("TENANT_OWNERSHIP_INTEGRITY_ERROR");
-    const cascadeAt = service.indexOf("deleteTenantBookingData(tenantId)");
+    const cascadeAt = service.indexOf("deleteTenantBookingData(");
     expect(integrityAt).toBeGreaterThan(0);
     expect(cascadeAt).toBeGreaterThan(integrityAt);
   });

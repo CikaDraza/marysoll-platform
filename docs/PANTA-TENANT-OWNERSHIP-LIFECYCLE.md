@@ -51,6 +51,30 @@ Cascade i provere su na jednom mestu: `src/lib/tenant/deleteTenant.ts`. Obe
 rute (owner i superadmin) prolaze kroz njega, posle svojih authorization i
 business gate-ova. Superadmin zadržava zabranu brisanja salona u pretplati.
 
+### Redosled i atomičnost
+
+```
+1. ownership / integrity validacija
+2. Paddle otkazivanje            ← eksterni efekat, PRE transakcije
+3. start Mongo session + transaction
+4. Booking/Slot cascade          ← ista session
+5. svi tenant-scoped deleteMany  ← ista session
+6. Tenant delete                 ← ista session
+7. AuthUser cleanup              ← ista session
+8. commit
+```
+
+Ceo DB deo je u **jednoj transakciji**: pad na bilo kom koraku znači abort i
+nijedan dokument nije delimično uklonjen. Bez toga bi pad na 14. kolekciji
+ostavio poluobrisan salon — stanje koje ovaj lifecycle postoji da eliminiše.
+
+Paddle je namerno **izvan** transakcije jer se eksterni efekat ne može
+rollback-ovati. Ako DB transakcija posle toga padne, salon ostaje konzistentan
+a pretplata je već otkazana; brisanje se može ponoviti.
+
+`deleteTenantBookingData()` prima opcionu `session` da Booking/Slot cleanup ne
+ostane van atomske granice.
+
 ## 3. Canonical cascade
 
 `TENANT_SCOPED_CASCADE` u `deleteTenant.ts` je izvor istine i ugovor koji test
@@ -90,9 +114,24 @@ Odluka se donosi **pre** nego što članstva nestanu.
 
 ## 5. Naplata je tvrd gate
 
-Ako salon ima `billingProvider: "paddle"` i pretplatu u statusu `active` ili
-`past_due` sa `paddleSubscriptionId`, otkazivanje kod Paddle-a mora uspeti
-**pre** brisanja. Koristi se postojeći `cancelPaddleSubscription()`.
+Otkazivanje kod Paddle-a mora uspeti **pre** brisanja za svaku pretplatu koja
+još može da naplati. Gate NIJE ograničen na `active`/`past_due`:
+
+| status | može ponovo naplatiti? |
+|---|---|
+| `trialing` | da — konvertuje se u plaćeni |
+| `active` | da |
+| `past_due` | da — dunning ponavlja pokušaj |
+| `paused` | da — može se nastaviti |
+| `cancelled` | ne (terminalno) |
+| `expired` | ne (terminalno) |
+
+Terminalni skup je izveden iz `mapPaddleStatus()` u `lib/paddle.ts`: Paddle
+`canceled` → `cancelled`, nepoznat status → `expired`. Filter je zato
+`$nin: TERMINAL_SUBSCRIPTION_STATUSES`, a ne nabrajanje izabranih statusa —
+novi status podrazumevano ulazi u gate umesto da ga tiho zaobiđe.
+
+Koristi se postojeći `cancelPaddleSubscription()`.
 
 Lokalni `Subscription.deleteMany({ tenantId })` nije dovoljan: zapis bi nestao,
 a Paddle bi nastavio da naplaćuje.
