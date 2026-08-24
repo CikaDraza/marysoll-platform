@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectToDB } from "@/lib/db/mongodb";
 import { TenantUser } from "@/models/TenantUser";
+import { hashPasswordAndSyncAuthUser } from "@/lib/auth/passwordSync";
 import { requireAuth } from "@/lib/auth/auth-server";
 
 export async function POST(req: NextRequest) {
@@ -49,7 +50,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    tenantUser.password = await bcrypt.hash(newPassword, 12);
+    // Jedan hash u oba store-a — vidi `lib/auth/passwordSync.ts`.
+    tenantUser.password = await hashPasswordAndSyncAuthUser(
+      newPassword,
+      tenantUser.authUserId,
+    );
     await tenantUser.save();
 
     return NextResponse.json({ message: "Lozinka uspešno promenjena." });

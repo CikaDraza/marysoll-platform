@@ -3,9 +3,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { TenantUser } from "@/models/TenantUser";
 import { verifyToken } from "@/lib/auth/auth-server";
 import { normalizeInstagram } from "@/lib/contactRules";
-import bcrypt from "bcryptjs";
-
-const SALT_ROUNDS = 12;
+import { hashPasswordAndSyncAuthUser } from "@/lib/auth/passwordSync";
 
 export async function PUT(
   req: NextRequest,
@@ -66,9 +64,24 @@ export async function PUT(
       profileUpdate.instagram = normalizeInstagram(instagram) || null;
     }
 
-    // Password is now on TenantUser directly
+    // Lozinka upravljačkog naloga živi i na `AuthUser.passwordHash`. Ranije je
+    // ova ruta pisala samo `TenantUser.password`, pa su se hash-evi razilazili
+    // i nalog je ostajao zaključan čim jedan zapis nestane. Helper hešuje
+    // jednom i sinhronizuje kada članstvo ima povezan platformski nalog.
     if (password && password.trim() !== "") {
-      profileUpdate.password = await bcrypt.hash(password, SALT_ROUNDS);
+      const target = (await TenantUser.findById(id)
+        .select("authUserId")
+        .lean()) as { authUserId?: unknown } | null;
+      if (!target) {
+        return NextResponse.json(
+          { error: "Korisnik nije pronađen" },
+          { status: 404 },
+        );
+      }
+      profileUpdate.password = await hashPasswordAndSyncAuthUser(
+        password,
+        (target.authUserId as string | null | undefined) ?? null,
+      );
     }
 
     if (Object.keys(profileUpdate).length > 0) {

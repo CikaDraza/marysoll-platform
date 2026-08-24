@@ -39,7 +39,6 @@ export const ADMIN_PROTECTED_API_ROUTES = [
   "/api/testimonials/mark-read",
   "/api/salon-profile/create",
   "/api/salon-profile/update",
-  "/api/salon-profile/delete",
   "/api/salon-profile/update-seo",
   "/api/notifications",
   "/api/newsletter/templates",

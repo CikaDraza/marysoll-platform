@@ -32,15 +32,11 @@ export interface DashboardTabProps {
   setIdentityOpen: Dispatch<SetStateAction<boolean>>;
   identityForm: { slug: string; cloudinaryFolder: string };
   setIdentityForm: Dispatch<SetStateAction<{ slug: string; cloudinaryFolder: string }>>;
-  confirmDeleteSalon: boolean;
-  setConfirmDeleteSalon: Dispatch<SetStateAction<boolean>>;
   deleteSalonInput: string;
   setDeleteSalonInput: Dispatch<SetStateAction<string>>;
-  showDeleteAccount: boolean;
-  setShowDeleteAccount: Dispatch<SetStateAction<boolean>>;
-  deleteAccountInput: string;
-  setDeleteAccountInput: Dispatch<SetStateAction<string>>;
-  isDeletingAccount: boolean;
+  showDeleteSalon: boolean;
+  setShowDeleteSalon: Dispatch<SetStateAction<boolean>>;
+  isDeletingSalon: boolean;
   fileRef: RefObject<HTMLInputElement | null>;
   notifLogoRef: RefObject<HTMLInputElement | null>;
   pwForm: PwForm;
@@ -48,7 +44,7 @@ export interface DashboardTabProps {
   pwLoading: boolean;
   pwError: string;
   handlePasswordChange: (e: FormEvent) => Promise<void>;
-  handleDeleteAccount: () => Promise<void>;
+  handleDeleteSalon: () => Promise<void>;
   handleSaveWithAccount: () => void;
   metadataSeoResult: SeoAnalysisResult | null;
   setMetadataSeoResult: Dispatch<SetStateAction<SeoAnalysisResult | null>>;

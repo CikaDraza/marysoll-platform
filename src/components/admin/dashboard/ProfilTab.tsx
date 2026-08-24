@@ -112,31 +112,27 @@ export function ProfilTab(props: DashboardTabProps) {
   const [showPasswords, setShowPasswords] = useState(false);
   const [showResendApiKey, setShowResendApiKey] = useState(false);
   const {
-    confirmDeleteSalon,
-    deleteAccountInput,
     deleteSalonInput,
     fileRef,
-    handleDeleteAccount,
+    handleDeleteSalon,
     handlePasswordChange,
     handleSaveWithAccount,
     hasProfile,
     identityForm,
     identityOpen,
-    isDeletingAccount,
+    isDeletingSalon,
     isOwner,
     isUpdatingIdentity,
     notifLogoRef,
     pwError,
     pwForm,
     pwLoading,
-    setConfirmDeleteSalon,
-    setDeleteAccountInput,
     setDeleteSalonInput,
     setIdentityForm,
     setIdentityOpen,
     setPwForm,
-    setShowDeleteAccount,
-    showDeleteAccount,
+    setShowDeleteSalon,
+    showDeleteSalon,
     sp,
     tenant,
     updateIdentity,
@@ -711,113 +707,53 @@ export function ProfilTab(props: DashboardTabProps) {
           Opasna zona
         </p>
 
-        {/* ── Delete salon ── */}
-        {hasProfile && (
-          <div className="border-b border-red-100 dark:border-red-900/30 pb-5">
-            <p className="text-sm font-semibold text-red-700 dark:text-red-400 mb-0.5">
-              Obriši salon
-            </p>
-            <p className="text-xs text-red-500 dark:text-red-400/70 mb-3">
-              Briše profil salona. Vaš nalog ostaje aktivan — salon možete
-              ponovo kreirati.
-            </p>
-            {confirmDeleteSalon ? (
-              <div className="space-y-3">
-                <p className="text-xs text-red-600 dark:text-red-400">
-                  Upišite naziv salona{" "}
-                  <span className="font-bold">
-                    &quot;{sp.profile?.name}&quot;
-                  </span>{" "}
-                  da biste potvrdili:
-                </p>
-                <input
-                  type="text"
-                  value={deleteSalonInput}
-                  onChange={(e) => setDeleteSalonInput(e.target.value)}
-                  placeholder={sp.profile?.name ?? "Naziv salona"}
-                  className="w-full max-w-xs border border-red-300 dark:border-red-800 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 placeholder:text-gray-400 dark:placeholder:text-gray-600"
-                />
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => {
-                      sp.deleteProfile();
-                      setConfirmDeleteSalon(false);
-                      setDeleteSalonInput("");
-                    }}
-                    disabled={
-                      sp.isDeleting ||
-                      deleteSalonInput.trim() !==
-                        (sp.profile?.name ?? "").trim()
-                    }
-                    className="px-5 py-2 bg-red-600 text-white text-sm font-bold rounded-xl hover:bg-red-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {sp.isDeleting ? "Brisanje..." : "Da, obriši salon"}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setConfirmDeleteSalon(false);
-                      setDeleteSalonInput("");
-                    }}
-                    className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition"
-                  >
-                    Odustani
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => setConfirmDeleteSalon(true)}
-                className="px-5 py-2 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-semibold rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition"
-              >
-                Obriši salon
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* ── Delete account ── */}
+        {/* ── Trajno brisanje salona — JEDINA destruktivna owner akcija ──
+             Vidi je samo OWNER; ADMIN i STAFF ne. Potvrda ide preko NAZIVA
+             SALONA, ne emaila, jer se briše salon a ne nalog. */}
+        {user?.globalRole === "OWNER" && (
         <div>
           <p className="text-sm font-semibold text-red-700 dark:text-red-400 mb-0.5">
-            Obriši nalog
+            Trajno obriši salon
           </p>
           <p className="text-xs text-red-500 dark:text-red-400/70 mb-3">
-            Trajno briše vaš nalog, salon i sve podatke. Ova radnja je
-            nepovratna.
+            Trajno briše salon i sve njegove podatke, uključujući sadržaj,
+            usluge, termine, podatke klijenata i naloge vlasnika, administratora
+            i osoblja. Ova radnja je nepovratna. Ako želite samo pauzu, nemojte
+            brisati salon.
           </p>
-          {showDeleteAccount ? (
+          {showDeleteSalon ? (
             <div className="space-y-3">
               <p className="text-xs text-red-600 dark:text-red-400">
-                Upišite vašu email adresu{" "}
+                Upišite naziv salona{" "}
                 <span className="font-bold">
-                  &quot;{user?.email}&quot;
+                  &quot;{sp.profile?.name}&quot;
                 </span>{" "}
                 da biste potvrdili:
               </p>
               <input
-                type="email"
-                value={deleteAccountInput}
-                onChange={(e) => setDeleteAccountInput(e.target.value)}
-                placeholder={user?.email ?? "email@adresa.com"}
+                type="text"
+                value={deleteSalonInput}
+                onChange={(e) => setDeleteSalonInput(e.target.value)}
+                placeholder={sp.profile?.name ?? "Naziv salona"}
                 className="w-full max-w-xs border border-red-300 dark:border-red-800 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 placeholder:text-gray-400 dark:placeholder:text-gray-600"
               />
               <div className="flex items-center gap-3">
                 <button
-                  onClick={handleDeleteAccount}
+                  onClick={handleDeleteSalon}
                   disabled={
-                    isDeletingAccount ||
-                    deleteAccountInput.trim().toLowerCase() !==
-                      (user?.email ?? "").toLowerCase()
+                    isDeletingSalon ||
+                    deleteSalonInput.trim() !== (sp.profile?.name ?? "").trim()
                   }
                   className="px-5 py-2 bg-red-700 text-white text-sm font-bold rounded-xl hover:bg-red-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {isDeletingAccount
+                  {isDeletingSalon
                     ? "Brisanje..."
-                    : "Da, trajno obriši nalog"}
+                    : "Da, trajno obriši salon"}
                 </button>
                 <button
                   onClick={() => {
-                    setShowDeleteAccount(false);
-                    setDeleteAccountInput("");
+                    setShowDeleteSalon(false);
+                    setDeleteSalonInput("");
                   }}
                   className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition"
                 >
@@ -827,13 +763,14 @@ export function ProfilTab(props: DashboardTabProps) {
             </div>
           ) : (
             <button
-              onClick={() => setShowDeleteAccount(true)}
+              onClick={() => setShowDeleteSalon(true)}
               className="px-5 py-2 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-400 text-sm font-semibold rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition"
             >
-              Obriši nalog
+              Trajno obriši salon
             </button>
           )}
         </div>
+        )}
       </div>
     </div>
   </div>

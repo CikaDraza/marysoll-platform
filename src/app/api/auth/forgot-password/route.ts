@@ -72,12 +72,14 @@ export async function POST(request: NextRequest) {
           .lean<{ _id: import("mongoose").Types.ObjectId; name: string }>();
       }
 
-      // SUPER_ADMIN se takođe prijavljuje preko platformskog /login-a, ali
-      // nema TenantUser zapis. Njegov reset zato ostaje u AuthUser modelu.
+      // Nalozi bez `TenantUser` zapisa: SUPER_ADMIN (nikad ga i nema) i
+      // vlasnica koja je obrisala salon a zadržala nalog. Ranije je ovde
+      // stajao filter `platformRole: "SUPER_ADMIN"`, pa vlasnica bez salona
+      // nije mogla ni da zatraži reset — bila je zaključana i iz prijave i iz
+      // oporavka. Reset ide na `AuthUser`, koji je jedini preostali identitet.
       if (!tenantUser) {
         const authUser = await AuthUser.findOne({
           email: normalizedEmail,
-          platformRole: "SUPER_ADMIN",
         });
 
         if (!authUser) return NextResponse.json(GENERIC_RESPONSE);

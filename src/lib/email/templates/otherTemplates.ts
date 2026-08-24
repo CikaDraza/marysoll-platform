@@ -131,8 +131,8 @@ export async function ownerVerificationTemplate(data: {
         <td style="padding:20px 24px;">
           <p style="margin:0;font-family:'Georgia',serif;font-size:13px;color:#3d2952;line-height:2;">
             ✅ Probni period: <strong>${data.trialDays} dana besplatno</strong><br>
-            📅 Panel salona je odmah vaš — profil, usluge i termini<br>
-            🌐 Buduća adresa sajta: <strong>${data.subdomain}</strong> (čeka aktivaciju)
+            🌐 Vaš subdomen: <strong>${data.subdomain}</strong><br>
+            📅 Online zakazivanje odmah aktivno
           </p>
         </td>
       </tr>
@@ -162,8 +162,8 @@ export async function ownerWelcomeTemplate(data: {
           <p style="margin:0 0 8px;font-weight:700;color:#2d1b40;font-size:16px;">${data.salonName}</p>
           <p style="margin:0;font-family:'Georgia',serif;font-size:13px;color:#3d2952;line-height:2;">
             🎁 Probni period: <strong>${data.trialDays} dana</strong> (do ${data.trialEndsAt})<br>
-            📊 Salon: <strong style="color:#16a34a;">spreman za rad</strong><br>
-            🌐 Sajt: <strong>${data.subdomain}</strong> — <span style="color:#b45309;">čeka aktivaciju</span>
+            🌐 Subdomen: <strong>${data.subdomain}</strong><br>
+            📊 Status: <strong style="color:#16a34a;">Aktivan</strong>
           </p>
         </td>
       </tr>
@@ -172,12 +172,11 @@ export async function ownerWelcomeTemplate(data: {
     <p style="margin:0 0 20px;font-size:13px;color:#6b5b7e;line-height:1.9;">
       1. Popunite profil salona (logo, radno vreme, adresa)<br>
       2. Dodajte usluge i cenovnik<br>
-      3. Izaberite temu sajta<br>
-      Javićemo vam čim sajt bude aktivan — tada ga podelite klijentima.
+      3. Podelite link klijentima — mogu odmah da zakazuju
     </p>
     ${ctaButton("Otvorite Admin Panel →", data.dashboardUrl)}
   `;
-  return wrapEmailLayout({ title: "Salon je spreman! 🎉", content });
+  return wrapEmailLayout({ title: "Salon aktiviran! 🎉", content });
 }
 
 // ── Client verification ────────────────────────────────────────────────────────
