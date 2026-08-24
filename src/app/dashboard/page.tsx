@@ -161,11 +161,9 @@ function AdminDashboard() {
   const tab: Tab =
     tabParam && ALL_TABS.includes(tabParam) ? tabParam : "profil";
 
-  const [confirmDeleteSalon, setConfirmDeleteSalon] = useState(false);
+  const [showDeleteSalon, setShowDeleteSalon] = useState(false);
   const [deleteSalonInput, setDeleteSalonInput] = useState("");
-  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
-  const [deleteAccountInput, setDeleteAccountInput] = useState("");
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isDeletingSalon, setIsDeletingSalon] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const notifLogoRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -254,9 +252,9 @@ function AdminDashboard() {
       setPwLoading(false);
     }
   }
-  async function handleDeleteAccount() {
+  async function handleDeleteSalon() {
     if (!token) return;
-    setIsDeletingAccount(true);
+    setIsDeletingSalon(true);
     try {
       const res = await fetch("/api/tenant-auth/delete-account", {
         method: "DELETE",
@@ -271,7 +269,7 @@ function AdminDashboard() {
     } catch (err) {
       alert(err instanceof Error ? err.message : "Greška pri brisanju naloga");
     } finally {
-      setIsDeletingAccount(false);
+      setIsDeletingSalon(false);
     }
   }
 
@@ -457,11 +455,10 @@ function AdminDashboard() {
     sp, svc, hasProfile, user, token, tenant,
     updateIdentity, isUpdatingIdentity, isOwner,
     identityOpen, setIdentityOpen, identityForm, setIdentityForm,
-    confirmDeleteSalon, setConfirmDeleteSalon, deleteSalonInput, setDeleteSalonInput,
-    showDeleteAccount, setShowDeleteAccount, deleteAccountInput, setDeleteAccountInput,
-    isDeletingAccount, fileRef, notifLogoRef,
+    showDeleteSalon, setShowDeleteSalon, deleteSalonInput, setDeleteSalonInput,
+    isDeletingSalon, fileRef, notifLogoRef,
     pwForm, setPwForm, pwLoading, pwError,
-    handlePasswordChange, handleDeleteAccount, handleSaveWithAccount,
+    handlePasswordChange, handleDeleteSalon, handleSaveWithAccount,
     metadataSeoResult, setMetadataSeoResult, showMetadataSeoPanel, setShowMetadataSeoPanel,
     isAnalyzingMetadataSeo, isAutoFixingMetadataSeo,
     runMetadataSeoAnalysis, handleMetadataSeoAutoFix, handleSaveMetadataSeo,
