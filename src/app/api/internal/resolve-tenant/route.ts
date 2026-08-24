@@ -24,13 +24,9 @@ export async function GET(req: NextRequest) {
   try {
     await connectToDB();
 
-    // `pending` se NAMERNO razrešava. Sajt tada ne prikazuje salon nego stranu
-    // „Sajt se priprema" (tenant layout), ali proxy mora da razreši tenanta da
-    // bi ta strana uopšte bila dosegnuta — i da bi prijava sa subdomena radila.
-    // `suspended`/`cancelled` ostaju nerazrešeni, kao i do sada.
     const tenant = await Tenant.findOne({
       slug: slug.toLowerCase().trim(),
-      status: { $in: ["active", "pending"] },
+      status: "active",
     })
       .select("_id slug customDomain customDomainVerified")
       .lean<{
