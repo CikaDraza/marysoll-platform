@@ -42,6 +42,10 @@ Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran · ⏸ pla
   Legacy `no_show` nastaje i pri kasnom otkazu, dakle pre kraja termina — zato je
   `blocking_until_end`, ne `released`. Vidi T3 §21.2.1.
 - **Nijedna API ruta ne sme kreirati ni menjati occupancy mimo Booking Engine-a.**
+- **Salon nikada ne postoji bez vlasnika, ni vlasnički nalog bez salona.**
+  Jedina destruktivna owner akcija je „Trajno obriši salon", koja briše ceo
+  tenant boundary. Ownership transfer je specifikovan i ODLOŽEN — vidi
+  [PANTA-TENANT-OWNERSHIP-LIFECYCLE.md](PANTA-TENANT-OWNERSHIP-LIFECYCLE.md).
 - **Consultation nije `Service`** — ne sme deliti `services.catalog` ni `booking.services`.
 - **Domenski naziv `education.*` uz `capability: null` je zabranjen** — ili domenski blok sa loaderom i capability-jem, ili `content.*` teaser.
 - ✅ **T2B triple-gate je implementiran.** Admin/client projekcija, business API
