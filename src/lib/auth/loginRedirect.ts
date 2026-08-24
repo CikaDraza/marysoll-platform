@@ -18,6 +18,8 @@ import { BASE_DOMAIN, isLocalHost, isPathBasedHost } from "@/lib/platform/host-c
 export interface LoginRedirectParams {
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  /** Vlasnica bez salona — nalog živi, salon je obrisan ili još ne postoji. */
+  hasNoSalon?: boolean;
   /** Access token — potreban samo za cross-host handoff. */
   token: string;
   /** window.location.hostname u trenutku prijave. */
@@ -35,6 +37,13 @@ export function usesPlatformSubdomains(hostname: string): boolean {
 /** URL na koji treba preusmeriti; `null` za klijente salona (njih vodi login strana). */
 export function loginRedirectUrl(params: LoginRedirectParams): string | null {
   const crossHost = usesPlatformSubdomains(params.hostname);
+
+  // Vlasnica bez salona ne sme na `/dashboard` — guard tamo traži `isAdmin` i
+  // vrtelo bi je u krug na `/login`. Vodi je na kreiranje salona, na platformskom
+  // hostu (nema admin panela dok nema salona).
+  if (params.hasNoSalon) {
+    return crossHost ? `https://${BASE_DOMAIN}/novi-salon` : "/novi-salon";
+  }
 
   if (params.isSuperAdmin) {
     return crossHost

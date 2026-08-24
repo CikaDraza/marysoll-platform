@@ -34,7 +34,12 @@ describe("Tenant provisioning architecture", () => {
       CREATION_PATTERN.test(readFileSync(path.join(process.cwd(), file), "utf8")),
     );
 
-    expect(creationFiles).toEqual(["src/app/api/tenants/register/route.ts"]);
+    // Dva ulaza: javna registracija i kreiranje salona za već prijavljen nalog
+    // (vlasnica koja je obrisala salon a zadržala nalog).
+    expect(creationFiles.sort()).toEqual([
+      "src/app/api/tenants/create-for-me/route.ts",
+      "src/app/api/tenants/register/route.ts",
+    ]);
 
     for (const file of creationFiles) {
       const source = readFileSync(path.join(process.cwd(), file), "utf8");
