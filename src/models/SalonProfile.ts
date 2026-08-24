@@ -80,6 +80,16 @@ const SalonProfileSchema = new mongoose.Schema(
             },
           },
         },
+        /**
+         * Ručno upisane metrike („12 / godina iskustva"). Teme 2–5, 7 i 8 ih
+         * čitaju; do ovog puta polje je postojalo samo u TypeScript tipu, pa
+         * je sve upisano u CMS-u nestajalo pri snimanju. Vidi persistence
+         * ugovor u `@/types/landingPersistence`.
+         */
+        stats: {
+          type: [{ value: { type: String }, label: { type: String } }],
+          default: [],
+        },
         about: {
           enabled: { type: Boolean, default: true },
           eyebrow: { type: String },
