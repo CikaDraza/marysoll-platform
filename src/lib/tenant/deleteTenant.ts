@@ -1,5 +1,5 @@
 import "server-only";
-import { Types } from "mongoose";
+import mongoose, { Types, type ClientSession } from "mongoose";
 
 import { Tenant } from "@/models/Tenant";
 import { TenantUser } from "@/models/TenantUser";
@@ -107,10 +107,21 @@ export interface TenantDeletionResult {
  * Lokalni `Subscription.deleteMany` nije dovoljan: zapis bi nestao, a Paddle
  * bi nastavio da naplaćuje. Ako otkazivanje ne uspe, ništa se ne briše.
  */
+/**
+ * Statusi iz kojih Paddle više NE može da naplati.
+ *
+ * Izvedeno iz `mapPaddleStatus()` u `lib/paddle.ts`: Paddle `canceled` mapira
+ * se na `cancelled`, a svaki nepoznat status na `expired`. Sve ostalo —
+ * `trialing`, `active`, `past_due`, `paused` — može ponovo da naplati:
+ * trial se konvertuje u plaćeni, dunning ponavlja pokušaj, pauzirana
+ * pretplata se može nastaviti. Zato gate NIJE ograničen na `active`/`past_due`.
+ */
+const TERMINAL_SUBSCRIPTION_STATUSES = ["cancelled", "expired"] as const;
+
 async function stopFutureBilling(tenantId: string): Promise<boolean> {
   const subs = (await Subscription.find({
     tenantId,
-    status: { $in: ["active", "past_due"] },
+    status: { $nin: TERMINAL_SUBSCRIPTION_STATUSES },
   })
     .select("billingProvider paddleSubscriptionId")
     .lean()) as unknown as {
@@ -266,29 +277,47 @@ export async function deleteTenantPermanently(input: {
     removedAuthUserIds.push(String(authUserId));
   }
 
-  // ── Cascade ───────────────────────────────────────────────────────────────
+  // ── Cascade u JEDNOJ transakciji ──────────────────────────────────────────
+  // Bez transakcije bi pad na sredini ostavio poluobrisan salon — tačno stanje
+  // koje ovaj lifecycle postoji da eliminiše. Paddle je NAMERNO izvan: eksterni
+  // efekat se ne može rollback-ovati, pa je ispravan smer „otkaži pa briši".
+  // Ako DB transakcija posle toga padne, salon ostaje konzistentan a pretplata
+  // otkazana; brisanje se može ponoviti.
   const deletedCounts: Record<string, number> = {};
+  const session = await mongoose.startSession();
 
-  const booking = await deleteTenantBookingData(tenantId);
-  deletedCounts.Slot = booking.slots;
-  deletedCounts.BookingReservation = booking.reservations;
-  deletedCounts.BookingDayLock = booking.dayLocks;
-  deletedCounts.BookingOperationReceipt = booking.receipts;
-  deletedCounts.BookingOutboxEvent = booking.outboxEvents;
+  try {
+    await session.withTransaction(async () => {
+      // Brojači se resetuju na svaki pokušaj — `withTransaction` sme da retry-uje.
+      for (const key of Object.keys(deletedCounts)) delete deletedCounts[key];
 
-  for (const [name, model] of tenantScopedModels()) {
-    const result = await (
-      model as unknown as {
-        deleteMany(filter: Record<string, unknown>): Promise<{ deletedCount?: number }>;
+      const booking = await deleteTenantBookingData(tenantId, session);
+      deletedCounts.Slot = booking.slots;
+      deletedCounts.BookingReservation = booking.reservations;
+      deletedCounts.BookingDayLock = booking.dayLocks;
+      deletedCounts.BookingOperationReceipt = booking.receipts;
+      deletedCounts.BookingOutboxEvent = booking.outboxEvents;
+
+      for (const [name, model] of tenantScopedModels()) {
+        const result = await (
+          model as unknown as {
+            deleteMany(
+              filter: Record<string, unknown>,
+              options: { session: ClientSession },
+            ): Promise<{ deletedCount?: number }>;
+          }
+        ).deleteMany({ tenantId }, { session });
+        deletedCounts[name] = result.deletedCount ?? 0;
       }
-    ).deleteMany({ tenantId });
-    deletedCounts[name] = result.deletedCount ?? 0;
-  }
 
-  await Tenant.findByIdAndDelete(tenantId);
+      await Tenant.findByIdAndDelete(tenantId, { session });
 
-  for (const authUserId of removedAuthUserIds) {
-    await AuthUser.findByIdAndDelete(authUserId);
+      for (const authUserId of removedAuthUserIds) {
+        await AuthUser.findByIdAndDelete(authUserId, { session });
+      }
+    });
+  } finally {
+    await session.endSession();
   }
 
   return { deletedCounts, removedAuthUserIds, keptAuthUserIds, paddleCancelled };

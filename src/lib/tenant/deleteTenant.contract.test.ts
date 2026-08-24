@@ -133,3 +133,65 @@ describe("brisanje uvek nosi tenant scope", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+/**
+ * Paddle gate mora pokriti SVAKI status iz kog pretplata može ponovo da
+ * naplati. Raniji filter je bio `active`/`past_due`, pa bi `trialing` i
+ * `paused` prošli — trial se konvertuje u plaćeni, a pauzirana pretplata se
+ * može nastaviti.
+ */
+describe("Paddle gate pokriva sve neterminalne statuse", () => {
+  const SUBSCRIPTION_STATUSES = [
+    "trialing",
+    "active",
+    "past_due",
+    "cancelled",
+    "paused",
+    "expired",
+  ];
+
+  function terminalFromSource(): string[] {
+    const src = readFileSync(
+      path.join(process.cwd(), "src/lib/tenant/deleteTenant.ts"),
+      "utf8",
+    );
+    const block = src.slice(
+      src.indexOf("TERMINAL_SUBSCRIPTION_STATUSES = ["),
+      src.indexOf("] as const;", src.indexOf("TERMINAL_SUBSCRIPTION_STATUSES")),
+    );
+    return [...block.matchAll(/"(\w+)"/g)].map((m) => m[1]);
+  }
+
+  it("model i gate poznaju isti skup statusa", () => {
+    const model = readFileSync(
+      path.join(process.cwd(), "src/models/Subscription.ts"),
+      "utf8",
+    );
+    for (const status of SUBSCRIPTION_STATUSES) {
+      expect(model, `Subscription model mora poznavati "${status}"`).toContain(
+        `"${status}"`,
+      );
+    }
+  });
+
+  it("terminalni su tačno cancelled i expired", () => {
+    // Izvedeno iz `mapPaddleStatus()`: Paddle `canceled` → `cancelled`,
+    // nepoznat status → `expired`. Sve ostalo može ponovo da naplati.
+    expect(terminalFromSource().sort()).toEqual(["cancelled", "expired"]);
+  });
+
+  it("gate hvata trialing, paused i past_due — ne samo active", () => {
+    const terminal = new Set(terminalFromSource());
+    const covered = SUBSCRIPTION_STATUSES.filter((s) => !terminal.has(s));
+    expect(covered.sort()).toEqual(["active", "past_due", "paused", "trialing"]);
+  });
+
+  it("filter koristi $nin nad terminalnim, ne $in nad izabranim", () => {
+    const src = readFileSync(
+      path.join(process.cwd(), "src/lib/tenant/deleteTenant.ts"),
+      "utf8",
+    );
+    expect(src).toMatch(/\$nin:\s*TERMINAL_SUBSCRIPTION_STATUSES/);
+    expect(src).not.toMatch(/\$in:\s*\["active",\s*"past_due"\]/);
+  });
+});

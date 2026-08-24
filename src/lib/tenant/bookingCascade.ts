@@ -1,3 +1,4 @@
+import type { ClientSession } from "mongoose";
 import { SalonProfile } from "@/models/SalonProfile";
 import { Slot } from "@/models/Slot";
 import { BookingReservation } from "@/models/BookingReservation";
@@ -31,21 +32,29 @@ export interface TenantBookingCascadeResult {
  */
 export async function deleteTenantBookingData(
   tenantId: string,
+  /**
+   * Kada je zadat, sve operacije idu unutar iste transakcije kao ostatak
+   * cascade-a — inače bi Booking/Slot cleanup ostao van atomske granice i
+   * preživeo abort ostalih brisanja.
+   */
+  session?: ClientSession,
 ): Promise<TenantBookingCascadeResult> {
-  const salons = await SalonProfile.find({ tenantId }).select("_id").lean<
-    Array<{ _id: unknown }>
-  >();
+  const opts = session ? { session } : {};
+  const salons = await SalonProfile.find({ tenantId })
+    .select("_id")
+    .session(session ?? null)
+    .lean<Array<{ _id: unknown }>>();
   const salonIds = salons.map((salon) => salon._id);
 
   const [slots, reservations, dayLocks, receipts, outboxEvents] =
     await Promise.all([
       salonIds.length
-        ? Slot.deleteMany({ salonId: { $in: salonIds } })
+        ? Slot.deleteMany({ salonId: { $in: salonIds } }, opts)
         : Promise.resolve({ deletedCount: 0 }),
-      BookingReservation.deleteMany({ tenantId }),
-      BookingDayLock.deleteMany({ tenantId }),
-      BookingOperationReceipt.deleteMany({ tenantId }),
-      BookingOutboxEvent.deleteMany({ tenantId }),
+      BookingReservation.deleteMany({ tenantId }, opts),
+      BookingDayLock.deleteMany({ tenantId }, opts),
+      BookingOperationReceipt.deleteMany({ tenantId }, opts),
+      BookingOutboxEvent.deleteMany({ tenantId }, opts),
     ]);
 
   return {
