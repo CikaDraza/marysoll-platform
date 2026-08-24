@@ -111,6 +111,24 @@ export const INTEGRITY_CHECKS: readonly IntegrityCheckDefinition[] = [
       "Popuniti nedostajuća polja u podešavanjima salona; ručno unet SEO uvek pobeđuje automatski fallback.",
   },
   {
+    key: "tenant.ownership.missing",
+    name: "Salon bez vlasnika",
+    description:
+      "Tenant.ownerId ne pokazuje na postojeći AuthUser, ili salon nema tačno jedan OWNER membership, ili taj OWNER TenantUser nije vezan za istog vlasnika. Salon NIKADA ne sme postojati bez vlasnika — takav zapis niko ne može da preuzme kroz redovnu prijavu.",
+    defaultSeverity: "error",
+    repair:
+      "Superadmin eksplicitno radi Reassign ownership. NIKADA ne povezivati salon sa nalogom samo zato što se email poklapa — to je integrity incident, ne onboarding.",
+  },
+  {
+    key: "tenant.ownership.orphanAccount",
+    name: "Vlasnički nalog bez salona",
+    description:
+      "AuthUser sa platformRole OWNER koji nema nijedan TenantUser ni Tenant. Po lifecycle ugovoru ovo stanje ne nastaje: vlasnik ne može obrisati samo svoj nalog dok poseduje salon, a trajno brisanje uklanja i salon i nalog. Pojava znači nepotpuno brisanje ili stariji bug.",
+    defaultSeverity: "warning",
+    repair:
+      "Proveriti da li je brisanje prekinuto na pola. Ako nema podataka za spasavanje, ukloniti zaostali AuthUser; inače restore iz backup-a.",
+  },
+  {
     key: "notifications.push.subscriptions",
     name: "Push pretplate po korisniku",
     description:

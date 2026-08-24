@@ -131,7 +131,6 @@ export function adminOrigin(): string {
  */
 export const PLATFORM_PATH_SEGMENTS = new Set([
   "dashboard",
-  "novi-salon",
   "superadmin",
   "login",
   "register",

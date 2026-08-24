@@ -297,15 +297,9 @@ export function useAuth() {
 
       // Produkcija → admin./superadmin. subdomen (cross-host handoff);
       // dev/preview/staging → relativno na istom hostu. Klijenti: null.
-      // Vlasnica bez salona: prijava je prošla, ali token nema tenant kontekst.
-      // `tenantId === null` je precizniji signal od uloge; superadmin je izuzet
-      // jer i on nema tenanta, a klijenti salona ne dolaze kroz ovaj endpoint.
-      const hasNoSalon = !data.user.isSuperAdmin && !data.user.tenantId;
-
       const target = loginRedirectUrl({
         isAdmin: data.user.isAdmin,
         isSuperAdmin: data.user.isSuperAdmin,
-        hasNoSalon,
         token: data.token,
         hostname: window.location.hostname,
       });
