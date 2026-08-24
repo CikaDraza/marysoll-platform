@@ -552,6 +552,9 @@ describe("daySlotStates — zauzeto i prošlo su različita stanja", () => {
   it("ručni termin nosi svoje trajanje", () => {
     const states = daySlotStates(
       grid({
+        // `now` je OBAVEZAN kad se tvrdi `past` — bez njega test koristi stvarno
+        // vreme, pa je počeo da pada čim je kalendar stigao do MONDAY fiksture.
+        now: LONG_AGO,
         profile: {
           availabilityMode: "manualSlots",
           manualSlots: { [MONDAY]: [{ time: "10:00", duration: 90 }] },

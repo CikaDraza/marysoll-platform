@@ -99,102 +99,21 @@ export async function POST(request: NextRequest) {
 
     // ── 2. Try management roles via TenantUser ─────────────────────────────────
     // Prioritize OWNER, then ADMIN, then STAFF
-    let tenantUser = await TenantUser.findOne({
+    const tenantUser = await TenantUser.findOne({
       email: normalizedEmail,
       role: { $in: MANAGEMENT_ROLES },
     }).sort({ role: 1 }); // ADMIN < OWNER < STAFF — for consistent ordering
 
     if (!tenantUser) {
-      // ── Vlasnik bez salona ────────────────────────────────────────────────
-      // Salon i nalog su NAMERNO odvojeni: vlasnica sme da obriše salon a
-      // zadrži nalog, da bi kasnije napravila novi. Do sada je takav nalog
-      // ovde dobijao 403 i bio potpuno zaključan, iako je `AuthUser` živ i
-      // verifikovan. Sada se prijavljuje i dobija token bez tenanta.
-      if (authUser) {
-        const isValidAuth = await bcrypt.compare(
-          password,
-          authUser.passwordHash ?? "",
-        );
-        if (!isValidAuth) {
-          return NextResponse.json(
-            { error: "Pogrešna lozinka." },
-            { status: 401 },
-          );
-        }
-        if (!authUser.isEmailVerified) {
-          return NextResponse.json(
-            {
-              error: "Email adresa nije verifikovana.",
-              code: "EMAIL_NOT_VERIFIED",
-            },
-            { status: 401 },
-          );
-        }
-
-        // Samoisceljenje: salon postoji i `ownerId` dokazuje vlasništvo, a samo
-        // je veza (`TenantUser`) nestala. Vlasništvo je dokazivo, pa se veza
-        // vraća umesto da nalog ostane zaključan.
-        const ownedTenant = await Tenant.findOne({ ownerId: authUser._id });
-        if (ownedTenant) {
-          const restored = await TenantUser.create({
-            tenantId: ownedTenant._id,
-            authUserId: authUser._id,
-            email: authUser.email,
-            name: authUser.email.split("@")[0],
-            password: authUser.passwordHash,
-            role: "OWNER",
-            isEmailVerified: true,
-          });
-          console.error(
-            JSON.stringify({
-              event: "OWNER_TENANTUSER_RESTORED",
-              authUserId: authUser._id.toString(),
-              tenantId: ownedTenant._id.toString(),
-              timestamp: new Date().toISOString(),
-            }),
-          );
-          tenantUser = restored;
-        } else {
-          // Nema salona — prijava prolazi, ali token nema tenant kontekst.
-          const name = authUser.email.split("@")[0];
-          const accessToken = generateAccessToken(
-            authUser._id.toString(),
-            authUser.email,
-            false,
-            name,
-            null,
-            null,
-            false,
-            authUser.platformRole ?? "OWNER",
-            null,
-            "platform",
-          );
-          const refreshToken = generateRefreshToken(
-            authUser._id.toString(),
-            authUser.email,
-            false,
-            null,
-            null,
-            false,
-            "platform",
-          );
-          const res = buildPlatformTokenResponse(accessToken, refreshToken, {
-            id: authUser._id.toString(),
-            email: authUser.email,
-            name,
-            globalRole: authUser.platformRole ?? "OWNER",
-            isAdmin: false,
-            isSuperAdmin: false,
-          });
-          return res;
-        }
-      } else {
-        // Could be a CLIENT trying to use this endpoint, or simply no account
-        return NextResponse.json(
-          { error: "Pristup nije dozvoljen." },
-          { status: 403 },
-        );
-      }
+      // Nema upravljačkog naloga za ovaj email. Po lifecycle ugovoru salon
+      // NIKADA ne postoji bez vlasnika, a vlasnik ne može obrisati samo svoj
+      // nalog dok poseduje salon — pa „OWNER bez salona" nije legitimno stanje
+      // i ovde se ne pravi izuzetak. Ako se ipak pojavi, to je integrity
+      // incident za superadmina, ne korisnički tok.
+      return NextResponse.json(
+        { error: "Pristup nije dozvoljen." },
+        { status: 403 },
+      );
     }
 
     const isValid = await bcrypt.compare(password, tenantUser.password);

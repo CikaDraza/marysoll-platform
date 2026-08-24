@@ -778,11 +778,13 @@ export function ProfilTab(props: DashboardTabProps) {
         {/* ── Delete account ── */}
         <div>
           <p className="text-sm font-semibold text-red-700 dark:text-red-400 mb-0.5">
-            Obriši nalog
+            Trajno obriši salon i nalog
           </p>
           <p className="text-xs text-red-500 dark:text-red-400/70 mb-3">
-            Trajno briše vaš nalog, salon i sve podatke. Ova radnja je
-            nepovratna.
+            Briše salon, sadržaj, usluge, termine, podatke klijenata i vaš
+            Marysoll nalog — zajedno, i prekida buduću naplatu. Nalog ne može
+            ostati bez salona ni salon bez vlasnika. Ako želite samo pauzu,
+            zatražite da se sajt privremeno sakrije. Ova radnja je nepovratna.
           </p>
           {showDeleteAccount ? (
             <div className="space-y-3">
