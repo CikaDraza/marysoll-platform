@@ -172,6 +172,19 @@ function makeId(prefix: string, taken: (string | undefined)[]): string {
   return prefix + "-" + n;
 }
 
+/**
+ * PRIVREMENO — 2B korak 5 („CMS tri-state presentation") ovo zamenjuje.
+ *
+ * `enabled` je od 2B koraka 1 tri-state, a `SectionCard` zna samo za dva
+ * stanja. Dok ne dobije treće, prekidač prikazuje odsustvo odluke kao
+ * isključeno. To je ISTO ponašanje kao pre tri-state izmene (šema je tada
+ * materijalizovala `false`), pa ovo ne uvodi regresiju — ali jeste privremeno
+ * netačno i ne sme se isporučiti bez koraka 5.
+ */
+function toggleState(enabled?: boolean): boolean {
+  return enabled ?? false;
+}
+
 // ─── 1. audiencePaths ────────────────────────────────────────────────────────
 
 type AudiencePaths = NonNullable<Landing["audiencePaths"]>;
@@ -188,7 +201,7 @@ export function AudiencePathsEditor({ ls, update }: Theme9SectionsProps) {
       title="Theme-9 / Putanje za posetioce"
       badge="theme-9"
       tone="odd"
-      enabled={block.enabled}
+      enabled={toggleState(block.enabled)}
       onToggle={(v) => update("audiencePaths", { ...block, enabled: v })}
     >
       <Hint>
@@ -316,7 +329,7 @@ export function TopicHubEditor({ ls, update }: Theme9SectionsProps) {
       title="Theme-9 / Centar tema"
       badge="theme-9"
       tone="even"
-      enabled={block.enabled}
+      enabled={toggleState(block.enabled)}
       onToggle={(v) => update("topicHub", { ...block, enabled: v })}
     >
       <Hint>
@@ -480,7 +493,7 @@ export function FeaturedEducationEditor({ ls, update }: Theme9SectionsProps) {
       title="Theme-9 / Istaknuta edukacija"
       badge="theme-9"
       tone="odd"
-      enabled={block.enabled}
+      enabled={toggleState(block.enabled)}
       onToggle={(v) => update("featuredEducation", { ...block, enabled: v })}
     >
       <Hint>
@@ -623,7 +636,7 @@ export function GuidedCareProcessEditor({ ls, update }: Theme9SectionsProps) {
       title="Theme-9 / Vođeni proces nege"
       badge="theme-9"
       tone="even"
-      enabled={block.enabled}
+      enabled={toggleState(block.enabled)}
       onToggle={(v) => update("guidedCareProcess", { ...block, enabled: v })}
     >
       <Hint>Koraci kroz koje klijentkinja prolazi, redom.</Hint>
@@ -710,7 +723,7 @@ export function ProfessionalPathEditor({ ls, update }: Theme9SectionsProps) {
       title="Theme-9 / Profesionalni put"
       badge="theme-9"
       tone="odd"
-      enabled={block.enabled}
+      enabled={toggleState(block.enabled)}
       onToggle={(v) => update("professionalPath", { ...block, enabled: v })}
     >
       <Hint>
@@ -845,7 +858,7 @@ export function CredentialsEditor({ ls, update }: Theme9SectionsProps) {
       title="Theme-9 / Zašto baš ona"
       badge="theme-9"
       tone="even"
-      enabled={block.enabled}
+      enabled={toggleState(block.enabled)}
       onToggle={(v) => update("credentials", { ...block, enabled: v })}
     >
       <Hint>
@@ -1001,7 +1014,7 @@ export function FinalCtaEditor({ ls, update }: Theme9SectionsProps) {
       title="Theme-9 / Završni poziv"
       badge="theme-9"
       tone="odd"
-      enabled={block.enabled}
+      enabled={toggleState(block.enabled)}
       onToggle={(v) => update("finalCta", { ...block, enabled: v })}
     >
       <Hint>

@@ -256,7 +256,16 @@ const SalonProfileSchema = new mongoose.Schema(
         // Shema je eksplicitna (mongoose `strict` je podrazumevan), pa svaka
         // nova sekcija MORA i ovde — inače se tiho odbacuje pri snimanju.
         audiencePaths: {
-          enabled: { type: Boolean, default: false },
+          /**
+           * NAMERNO BEZ `default`. Tri-state je nosilac korisničke namere:
+           *   odsutno — nema odluke; odlučuje theme presentation policy
+           *   true    — vlasnica traži sekciju
+           *   false   — vlasnica je zabranjuje; apsolutni veto nad fallback-om
+           * Sa `default: false` bi „nikad konfigurisano" i „izričito ugašeno"
+           * kolabirali u isto stanje čim Mongoose materijalizuje dokument, a
+           * on ga materijalizuje uvek — i kad pozivalac ne pošalje ništa.
+           */
+          enabled: { type: Boolean },
           eyebrow: { type: String },
           headline: { type: String },
           lead: { type: String },
@@ -277,7 +286,16 @@ const SalonProfileSchema = new mongoose.Schema(
           },
         },
         topicHub: {
-          enabled: { type: Boolean, default: false },
+          /**
+           * NAMERNO BEZ `default`. Tri-state je nosilac korisničke namere:
+           *   odsutno — nema odluke; odlučuje theme presentation policy
+           *   true    — vlasnica traži sekciju
+           *   false   — vlasnica je zabranjuje; apsolutni veto nad fallback-om
+           * Sa `default: false` bi „nikad konfigurisano" i „izričito ugašeno"
+           * kolabirali u isto stanje čim Mongoose materijalizuje dokument, a
+           * on ga materijalizuje uvek — i kad pozivalac ne pošalje ništa.
+           */
+          enabled: { type: Boolean },
           eyebrow: { type: String },
           headline: { type: String },
           filters: {
@@ -299,7 +317,16 @@ const SalonProfileSchema = new mongoose.Schema(
           },
         },
         guidedCareProcess: {
-          enabled: { type: Boolean, default: false },
+          /**
+           * NAMERNO BEZ `default`. Tri-state je nosilac korisničke namere:
+           *   odsutno — nema odluke; odlučuje theme presentation policy
+           *   true    — vlasnica traži sekciju
+           *   false   — vlasnica je zabranjuje; apsolutni veto nad fallback-om
+           * Sa `default: false` bi „nikad konfigurisano" i „izričito ugašeno"
+           * kolabirali u isto stanje čim Mongoose materijalizuje dokument, a
+           * on ga materijalizuje uvek — i kad pozivalac ne pošalje ništa.
+           */
+          enabled: { type: Boolean },
           eyebrow: { type: String },
           headline: { type: String },
           lead: { type: String },
@@ -309,7 +336,16 @@ const SalonProfileSchema = new mongoose.Schema(
           },
         },
         credentials: {
-          enabled: { type: Boolean, default: false },
+          /**
+           * NAMERNO BEZ `default`. Tri-state je nosilac korisničke namere:
+           *   odsutno — nema odluke; odlučuje theme presentation policy
+           *   true    — vlasnica traži sekciju
+           *   false   — vlasnica je zabranjuje; apsolutni veto nad fallback-om
+           * Sa `default: false` bi „nikad konfigurisano" i „izričito ugašeno"
+           * kolabirali u isto stanje čim Mongoose materijalizuje dokument, a
+           * on ga materijalizuje uvek — i kad pozivalac ne pošalje ništa.
+           */
+          enabled: { type: Boolean },
           eyebrow: { type: String },
           headline: { type: String },
           lead: { type: String },
@@ -330,7 +366,16 @@ const SalonProfileSchema = new mongoose.Schema(
           note: { type: String },
         },
         finalCta: {
-          enabled: { type: Boolean, default: false },
+          /**
+           * NAMERNO BEZ `default`. Tri-state je nosilac korisničke namere:
+           *   odsutno — nema odluke; odlučuje theme presentation policy
+           *   true    — vlasnica traži sekciju
+           *   false   — vlasnica je zabranjuje; apsolutni veto nad fallback-om
+           * Sa `default: false` bi „nikad konfigurisano" i „izričito ugašeno"
+           * kolabirali u isto stanje čim Mongoose materijalizuje dokument, a
+           * on ga materijalizuje uvek — i kad pozivalac ne pošalje ništa.
+           */
+          enabled: { type: Boolean },
           eyebrow: { type: String },
           headline: { type: String },
           lead: { type: String },
@@ -352,7 +397,16 @@ const SalonProfileSchema = new mongoose.Schema(
           note: { type: String },
         },
         featuredEducation: {
-          enabled: { type: Boolean, default: false },
+          /**
+           * NAMERNO BEZ `default`. Tri-state je nosilac korisničke namere:
+           *   odsutno — nema odluke; odlučuje theme presentation policy
+           *   true    — vlasnica traži sekciju
+           *   false   — vlasnica je zabranjuje; apsolutni veto nad fallback-om
+           * Sa `default: false` bi „nikad konfigurisano" i „izričito ugašeno"
+           * kolabirali u isto stanje čim Mongoose materijalizuje dokument, a
+           * on ga materijalizuje uvek — i kad pozivalac ne pošalje ništa.
+           */
+          enabled: { type: Boolean },
           eyebrow: { type: String },
           status: { type: String },
           headline: { type: String },
@@ -369,7 +423,16 @@ const SalonProfileSchema = new mongoose.Schema(
           note: { type: String },
         },
         professionalPath: {
-          enabled: { type: Boolean, default: false },
+          /**
+           * NAMERNO BEZ `default`. Tri-state je nosilac korisničke namere:
+           *   odsutno — nema odluke; odlučuje theme presentation policy
+           *   true    — vlasnica traži sekciju
+           *   false   — vlasnica je zabranjuje; apsolutni veto nad fallback-om
+           * Sa `default: false` bi „nikad konfigurisano" i „izričito ugašeno"
+           * kolabirali u isto stanje čim Mongoose materijalizuje dokument, a
+           * on ga materijalizuje uvek — i kad pozivalac ne pošalje ništa.
+           */
+          enabled: { type: Boolean },
           eyebrow: { type: String },
           headline: { type: String },
           lead: { type: String },
