@@ -15,6 +15,7 @@ import {
   adminBaseUrl,
 } from "@/hooks/usePlatformOwnerSession";
 import { confirmAndResetBrowserData } from "@/lib/browser-reset";
+import { shortDisplayName } from "@/lib/displayName";
 import Link from "next/link";
 
 interface AuthStatusButtonProps {
@@ -86,7 +87,9 @@ export function AuthStatusButton({
         }`}
       >
         <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
-        <span className="max-w-[120px] truncate">{user.name}</span>
+        <span className="max-w-[14ch] truncate">
+          {shortDisplayName(user.name)}
+        </span>
         <span
           className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
             isDark ? "bg-blue-900/60 text-blue-300" : "bg-blue-100 text-blue-700"
@@ -148,7 +151,9 @@ export function AuthStatusButton({
         />
 
         {/* Name */}
-        <span className="max-w-[120px] truncate">{user.name}</span>
+        <span className="max-w-[14ch] truncate">
+          {shortDisplayName(user.name)}
+        </span>
 
         {/* Role badge */}
         <span

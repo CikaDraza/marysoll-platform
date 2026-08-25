@@ -12,6 +12,7 @@ import { ThemeToggleButton } from "@/components/common/ThemeToggleButton";
 import Backdrop from "@/layout/Backdrop";
 import Image from "next/image";
 import { isClientWorkspaceTabAvailable } from "@/lib/platform/workspace-capabilities";
+import { shortDisplayName } from "@/lib/displayName";
 import type { TenantCapabilitySnapshot } from "@/types/tenant-capabilities";
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
@@ -289,7 +290,7 @@ function ClientSidebar({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">
-                {user.name}
+                {shortDisplayName(user.name)}
               </p>
               <p className="text-[10px] text-gray-400 truncate">{user.email}</p>
             </div>
