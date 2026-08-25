@@ -2,7 +2,7 @@
 
 > Tracker za tekući luk rada: **T3 Booking Engine + Consultation domen + theme-9 „Skincare Marina"**.
 > Jedan red po slice-u. Detalji su u dokumentu koji je naveden uz slice — ovde stoji samo status i jedna rečenica.
-> Poslednja izmena: 2026-08-22 · grana `product-engines/theme-engine/layout-contract`
+> Poslednja izmena: 2026-08-25 · grana `product-engines/theme-engine/layout-contract`
 
 ## Status
 
@@ -255,6 +255,11 @@ availability i intake se granaju po ulaznoj tački i to se više ne vraća.
 
 Nije implementirano jer takav CTA još ne postoji; zapisano da se ne izgubi kad
 Consultation domen (Slice 7) donese kartice pojedinačnih ponuda.
+
+Isti ugovor pokriva i preferencu iz theme-9 `finalCta` (`preferredDate` / `preferredStartTime`), uz jednu asimetriju: ponuda sme da
+preskoči korak 01, preferirani termin NE sme da preskoči korak 02 jer mu
+validnost zavisi od trajanja ponude. Vidi
+[PANTA-THEME9-FINAL-CTA.md](PANTA-THEME9-FINAL-CTA.md).
 
 **Terminologija je već očišćena:** prikaz koristi `offerings` / `offeringId` /
 `offeringTitle` / `pickOffering()`, ne `service*`. Privremeni prikaz ne sme kroz
