@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
+import { shortDisplayName } from "@/lib/displayName";
 import { useClientRouting } from "@/hooks/useClientRouting";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
@@ -123,8 +124,13 @@ export default function LoggedButton({
         }}
         className={`inline-flex items-center gap-x-1.5 rounded-md px-3 py-2 text-xs 2xl:text-sm font-semibold focus:outline-none focus:ring-offset-2 focus:ring-offset-white`}
       >
-        {user.name ?? "Korisnik"}
-        <ChevronDownIcon aria-hidden="true" className="size-4 text-gray-500" />
+        <span className="max-w-[14ch] truncate">
+          {shortDisplayName(user.name) || "Korisnik"}
+        </span>
+        <ChevronDownIcon
+          aria-hidden="true"
+          className="size-4 shrink-0 text-gray-500"
+        />
       </MenuButton>
 
       <MenuItems
