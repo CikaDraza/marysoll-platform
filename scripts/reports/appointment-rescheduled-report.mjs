@@ -58,18 +58,12 @@ async function main() {
         $group: {
           _id: {
             status: "$status",
-            hasProposed: {
-              $and: [
-                { $ne: ["$proposedDate", null] },
-                { $ne: ["$proposedDate", undefined] },
-                { $ne: ["$proposedDate", ""] },
-              ],
-            },
+            // `$ifNull` pokriva i missing i null; `undefined` se NE sme
+            // pisati u pipeline — BSON serializer ga izbaci, pa `$ne` ostane
+            // sa jednim argumentom i tiho vraća true za svaki dokument.
+            hasProposed: { $ne: [{ $ifNull: ["$proposedDate", ""] }, ""] },
             migrated: {
-              $and: [
-                { $ne: ["$bookingReservationId", null] },
-                { $ne: ["$bookingReservationId", undefined] },
-              ],
+              $ne: [{ $ifNull: ["$bookingReservationId", null] }, null],
             },
           },
           count: { $sum: 1 },

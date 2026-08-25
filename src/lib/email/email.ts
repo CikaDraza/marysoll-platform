@@ -381,6 +381,83 @@ export async function sendSuperAdminChatNotification(
   return sendEmail({ to, subject, html });
 }
 
+// ── Tenant lifecycle ──────────────────────────────────────────────────────────
+
+/**
+ * Superadminu: neko je upravo registrovao salon i ČEKA aktivaciju domena.
+ *
+ * Namerno BEZ throttle-a — za razliku od chat poruka ovo je redak i vremenski
+ * osetljiv događaj: dok niko ne reaguje, vlasnica sedi bez javnog sajta i nema
+ * koga da pita.
+ */
+export async function sendTenantRegisteredNotification(
+  to: string | string[],
+  data: {
+    salonName: string;
+    ownerName: string;
+    ownerEmail: string;
+    subdomain: string;
+    url?: string | null;
+  },
+): Promise<{ success: boolean; messageId?: string }> {
+  const subject = `🆕 Nov salon čeka aktivaciju: ${data.salonName}`;
+
+  const button = data.url
+    ? `<table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin:24px 0 8px;">
+         <tr>
+           <td align="center" bgcolor="#7c3aed" style="border-radius:8px;background-color:#7c3aed;padding:12px 24px;mso-padding-alt:12px 24px;">
+             <a href="${data.url}" style="display:inline-block;color:#ffffff;text-decoration:none;font-weight:600;">Otvori salone</a>
+           </td>
+         </tr>
+       </table>`
+    : "";
+
+  const content = `
+    <p style="font-size:16px;margin:0 0 12px;">Registrovan je nov salon i <strong>čeka aktivaciju</strong>.</p>
+    <div style="margin:16px 0;padding:14px 18px;background:#f5f3ff;border-radius:10px;border:1px solid #ede9fe;">
+      <p style="margin:0 0 6px;font-weight:600;color:#5b21b6;">${escapeEmailHtml(data.salonName)}</p>
+      <p style="margin:0;color:#374151;line-height:1.9;">
+        Vlasnica: <strong>${escapeEmailHtml(data.ownerName)}</strong><br>
+        Email: ${escapeEmailHtml(data.ownerEmail)}<br>
+        Subdomen: <strong>${escapeEmailHtml(data.subdomain)}</strong>
+      </p>
+    </div>
+    <p style="font-size:14px;color:#374151;margin:0;">Salon već može da uređuje profil, usluge i termine. Javni sajt postaje vidljiv tek kada status pređe u <strong>Aktivan</strong>.</p>
+    ${button}
+    <p style="font-size:12px;color:#9ca3af;margin-top:16px;">Automatsko obaveštenje — ne odgovarajte na ovaj email.</p>
+  `;
+
+  const html = await wrapEmailLayout({ title: subject, content });
+  return sendEmail({ to, subject, html });
+}
+
+/** Vlasnici: javni sajt je upravo postao vidljiv. */
+export async function sendSalonActivatedNotification(
+  to: string | string[],
+  data: { salonName: string; siteUrl: string; dashboardUrl: string },
+): Promise<{ success: boolean; messageId?: string }> {
+  const subject = `🌐 Sajt salona ${data.salonName} je aktivan`;
+
+  const content = `
+    <p style="font-size:16px;margin:0 0 12px;">Javni sajt vašeg salona je od sada <strong>vidljiv posetiocima</strong>.</p>
+    <div style="margin:16px 0;padding:14px 18px;background:#f0fdf4;border-radius:10px;border:1px solid #dcfce7;">
+      <p style="margin:0;font-weight:600;color:#166534;">${escapeEmailHtml(data.salonName)}</p>
+    </div>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin:24px 0 8px;">
+      <tr>
+        <td align="center" bgcolor="#7c3aed" style="border-radius:8px;background-color:#7c3aed;padding:12px 24px;mso-padding-alt:12px 24px;">
+          <a href="${data.siteUrl}" style="display:inline-block;color:#ffffff;text-decoration:none;font-weight:600;">Pogledajte sajt</a>
+        </td>
+      </tr>
+    </table>
+    <p style="font-size:14px;color:#374151;margin:12px 0 0;">Izgled sajta menjate u panelu, u delu za temu i sadržaj.</p>
+    <p style="font-size:12px;color:#9ca3af;margin-top:16px;">Automatsko obaveštenje — ne odgovarajte na ovaj email.</p>
+  `;
+
+  const html = await wrapEmailLayout({ title: subject, content });
+  return sendEmail({ to, subject, html });
+}
+
 // ── Testimonial notifications ─────────────────────────────────────────────────
 export async function sendTestimonialNotification(
   to: string | string[],

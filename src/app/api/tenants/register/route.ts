@@ -7,6 +7,7 @@ import { TenantUser } from "@/models/TenantUser";
 import { SalonProfile } from "@/models/SalonProfile";
 import { Subscription } from "@/models/Subscription";
 import { sendOwnerVerificationEmail, TRIAL_DAYS } from "@/lib/email/onboarding";
+import { notifySuperAdminsOfTenantRegistration } from "@/lib/tenantLifecycle/notify";
 import { upsertOwnerNewsletterContact } from "@/lib/newsletterService";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
@@ -224,6 +225,17 @@ export async function POST(request: NextRequest) {
     } catch (emailErr) {
       console.error("⚠️ Verifikacioni email nije poslat:", emailErr);
     }
+
+    // 8. Superadmin mora da sazna da neko čeka aktivaciju. `await` je nameran —
+    //    fire-and-forget na serverless-u ume da bude prekinut pre slanja.
+    //    Funkcija nikad ne baca, pa ne može da obori registraciju.
+    await notifySuperAdminsOfTenantRegistration({
+      tenantId: tenant._id,
+      salonName: salonName.trim(),
+      ownerName: ownerName.trim(),
+      ownerEmail: normalizedEmail,
+      subdomain,
+    });
 
     return NextResponse.json(
       {

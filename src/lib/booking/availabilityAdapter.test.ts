@@ -522,7 +522,7 @@ describe("granica paketa: availability core ne zna domen", () => {
 describe("daySlotStates — zauzeto i prošlo su različita stanja", () => {
   /** Widget crta mrežu na 30 min, bez obzira na trajanje usluge. */
   const grid = (over: Partial<BuildQueryInput> = {}) =>
-    input({ durationMinutes: 30, stepMinutes: 30, ...over });
+    input({ durationMinutes: 30, stepMinutes: 30, now: LONG_AGO, ...over });
 
   it("puna ponuda dana ostaje vidljiva i kad je termin zauzet", () => {
     const states = daySlotStates(
@@ -552,6 +552,9 @@ describe("daySlotStates — zauzeto i prošlo su različita stanja", () => {
   it("ručni termin nosi svoje trajanje", () => {
     const states = daySlotStates(
       grid({
+        // `now` je OBAVEZAN kad se tvrdi `past` — bez njega test koristi stvarno
+        // vreme, pa je počeo da pada čim je kalendar stigao do MONDAY fiksture.
+        now: LONG_AGO,
         profile: {
           availabilityMode: "manualSlots",
           manualSlots: { [MONDAY]: [{ time: "10:00", duration: 90 }] },
@@ -565,8 +568,14 @@ describe("daySlotStates — zauzeto i prošlo su različita stanja", () => {
 });
 
 describe("dayAvailabilityState — tri stanja u mesečnom prikazu", () => {
+  /**
+   * `now` je fiksiran jer se prošlost filtrira stvarnim vremenom: bez toga
+   * test prolazi ujutru a pada popodne onog dana kada `MONDAY` fikstura
+   * postane današnji datum. Slučajevi kojima je vreme predmet tvrdnje ga
+   * eksplicitno pregaze kroz `over`.
+   */
   const grid = (over: Partial<BuildQueryInput> = {}) =>
-    input({ durationMinutes: 30, stepMinutes: 30, ...over });
+    input({ durationMinutes: 30, stepMinutes: 30, now: LONG_AGO, ...over });
 
   it("neradan dan i odmor su `closed`", () => {
     expect(dayAvailabilityState(grid({ localDate: SUNDAY }))).toBe("closed");

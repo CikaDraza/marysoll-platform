@@ -105,7 +105,11 @@ export async function POST(request: NextRequest) {
     }).sort({ role: 1 }); // ADMIN < OWNER < STAFF — for consistent ordering
 
     if (!tenantUser) {
-      // Could be a CLIENT trying to use this endpoint, or simply no account
+      // Nema upravljačkog naloga za ovaj email. Po lifecycle ugovoru salon
+      // NIKADA ne postoji bez vlasnika, a vlasnik ne može obrisati samo svoj
+      // nalog dok poseduje salon — pa „OWNER bez salona" nije legitimno stanje
+      // i ovde se ne pravi izuzetak. Ako se ipak pojavi, to je integrity
+      // incident za superadmina, ne korisnički tok.
       return NextResponse.json(
         { error: "Pristup nije dozvoljen." },
         { status: 403 },

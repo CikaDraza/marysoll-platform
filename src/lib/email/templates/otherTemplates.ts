@@ -161,8 +161,8 @@ export async function ownerWelcomeTemplate(data: {
         <td style="padding:20px 24px;">
           <p style="margin:0 0 8px;font-weight:700;color:#2d1b40;font-size:16px;">${data.salonName}</p>
           <p style="margin:0;font-family:'Georgia',serif;font-size:13px;color:#3d2952;line-height:2;">
-            🌐 Subdomen: <strong>${data.subdomain}</strong><br>
             🎁 Probni period: <strong>${data.trialDays} dana</strong> (do ${data.trialEndsAt})<br>
+            🌐 Subdomen: <strong>${data.subdomain}</strong><br>
             📊 Status: <strong style="color:#16a34a;">Aktivan</strong>
           </p>
         </td>

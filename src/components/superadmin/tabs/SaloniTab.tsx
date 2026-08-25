@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import AlertModal from "@/components/modals/AlertModal";
 import { SuperAdminSalonGeoLocationPanel } from "@/components/superadmin/SuperAdminSalonGeoLocationPanel";
@@ -16,6 +17,29 @@ import {
 import type { TenantRow } from "@/hooks/useSuperAdminTenants";
 import type { useSuperAdminTenants } from "@/hooks/useSuperAdminTenants";
 import { useSuperAdminMarketplaceBulk } from "@/hooks/useSuperAdminMarketplaceBulk";
+
+/** Jedan signal spremnosti na kartici salona koji čeka objavu. */
+function Readiness({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <span
+      title={ok ? `${label}: podešeno` : `${label}: nije podešeno`}
+      className={ok ? "text-emerald-400" : "text-slate-600"}
+    >
+      {ok ? "✓" : "○"} {label}
+    </span>
+  );
+}
+
+/** „čeka 3 dana" — koliko je salon na čekanju objave. */
+function daysWaiting(createdAt: string): string {
+  const dana = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(createdAt).getTime()) / 86_400_000),
+  );
+  if (dana === 0) return "danas";
+  if (dana === 1) return "1 dan";
+  return `${dana} dana`;
+}
 
 interface SalonIdentityPanelProps {
   tenant: TenantRow;
@@ -82,6 +106,12 @@ function SalonIdentityPanel({
             {form.slug || "—"}.marysoll.com
           </span>
         </p>
+        {tenant.status === "active" && form.slug !== tenant.slug && (
+          <p className="mt-1 text-[10px] font-semibold text-amber-400">
+            ⚠ Salon je objavljen. Promena sluga menja adresu sajta, a link koji
+            je vlasnica već dobila emailom prestaje da radi.
+          </p>
+        )}
       </div>
 
       <div>
@@ -194,6 +224,7 @@ export function SaloniTab({
   const [filterStatus, setFilterStatus] = useState("all");
   const [deleteTarget, setDeleteTarget] = useState<TenantRow | null>(null);
   const [demoTarget, setDemoTarget] = useState<TenantRow | null>(null);
+  const [publishTarget, setPublishTarget] = useState<TenantRow | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   // Spreči hydration mismatch na data-zavisnim disabled dugmadima: SSR i prvi
   // klijentski render daju istu vrednost dok se ne montira.
@@ -218,6 +249,18 @@ export function SaloniTab({
       return matchSearch && matchStatus;
     });
   }, [superAdmin.tenants, search, filterStatus]);
+
+  // Redosled: salon koji ČEKA objavu je jedini koji traži akciju, pa ide na vrh
+  // bez obzira na datum. Unutar grupe — najnoviji prvi. Samo po datumu bi jedan
+  // stari `pending` potonuo ispod novijih objavljenih salona.
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      const aPending = a.status === "pending" ? 0 : 1;
+      const bPending = b.status === "pending" ? 0 : 1;
+      if (aPending !== bPending) return aPending - bPending;
+      return +new Date(b.createdAt) - +new Date(a.createdAt);
+    });
+  }, [filtered]);
 
   const toggleExpand = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
@@ -295,7 +338,7 @@ export function SaloniTab({
       )}
 
       <div className="space-y-2">
-        {filtered.map((tenant) => {
+        {sorted.map((tenant) => {
           const isExpanded = expandedId === tenant._id;
           return (
             <div
@@ -315,6 +358,24 @@ export function SaloniTab({
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
+                    {/* Logo je i sadržaj i signal: prazan okvir = nije podešen. */}
+                    {tenant.logo ? (
+                      <Image
+                        src={tenant.logo}
+                        alt=""
+                        width={24}
+                        height={24}
+                        unoptimized
+                        className="h-6 w-6 shrink-0 rounded object-contain"
+                      />
+                    ) : (
+                      <span
+                        title="Logo nije podešen"
+                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded border border-dashed border-slate-600 text-[9px] text-slate-500"
+                      >
+                        ?
+                      </span>
+                    )}
                     <span className="font-semibold text-white">
                       {tenant.name}
                     </span>
@@ -343,6 +404,11 @@ export function SaloniTab({
                     <span>
                       {new Date(tenant.createdAt).toLocaleDateString("sr-RS")}
                     </span>
+                    {tenant.status === "pending" && (
+                      <span className="font-semibold text-amber-400">
+                        čeka {daysWaiting(tenant.createdAt)}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -370,13 +436,43 @@ export function SaloniTab({
                     </button>
                   </div>
                   {tenant.status !== "active" && (
-                    <button
-                      onClick={() => superAdmin.setStatus(tenant._id, "active")}
-                      disabled={superAdmin.isUpdatingStatus}
-                      className={btnGreen}
+                    <div className="flex items-center gap-2">
+                      {/* Spremnost: ono što bi superadmin ionako proveravao
+                          otvaranjem sajta u drugom tabu. */}
+                      <span className="flex items-center gap-1 text-[10px] text-slate-400">
+                        <Readiness ok={Boolean(tenant.logo)} label="logo" />
+                        <Readiness
+                          ok={Boolean(tenant.landingTheme)}
+                          label="tema"
+                        />
+                        <Readiness
+                          ok={tenant.hasWorkingHours}
+                          label="radno vreme"
+                        />
+                        <Readiness
+                          ok={tenant.servicesCount > 0}
+                          label={`usluge (${tenant.servicesCount})`}
+                        />
+                      </span>
+                      <button
+                        onClick={() => setPublishTarget(tenant)}
+                        disabled={superAdmin.isUpdatingStatus}
+                        className={`${btnGreen} animate-pulse`}
+                      >
+                        Objavi sajt
+                      </button>
+                    </div>
+                  )}
+                  {tenant.status === "active" && (
+                    <a
+                      href={`https://${tenant.slug}.marysoll.com`}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="px-3 py-2 text-xs font-semibold text-emerald-400 underline underline-offset-2 hover:text-emerald-300"
                     >
-                      Aktiviraj
-                    </button>
+                      Objavljen ↗
+                    </a>
                   )}
                   {tenant.status === "active" && (
                     <button
@@ -476,6 +572,27 @@ export function SaloniTab({
           if (demoTarget) {
             superAdmin.setDemo(demoTarget._id, !demoTarget.isDemo);
             setDemoTarget(null);
+          }
+        }}
+      />
+
+      <AlertModal
+        open={!!publishTarget}
+        setOpen={(value) => {
+          if (!value) setPublishTarget(null);
+        }}
+        title="Objavi sajt salona"
+        message={
+          publishTarget
+            ? `Sajt salona "${publishTarget.name}" postaje vidljiv na ${publishTarget.slug}.marysoll.com.\n\n` +
+              `Vlasnica dobija email i poruku u chatu sa linkom na tu adresu. ` +
+              `Ako slug treba promeniti, uradite to PRE objave — link u već poslatom emailu se ne menja.`
+            : ""
+        }
+        onConfirm={() => {
+          if (publishTarget) {
+            superAdmin.setStatus(publishTarget._id, "active");
+            setPublishTarget(null);
           }
         }}
       />

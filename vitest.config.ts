@@ -24,6 +24,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
+      // Vidi test/server-only-stub.ts — marker ostaje u build-u, testovi ga
+      // razrešavaju na no-op.
+      "server-only": path.resolve(__dirname, "test/server-only-stub.ts"),
     },
   },
 });

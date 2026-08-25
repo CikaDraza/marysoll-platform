@@ -44,7 +44,6 @@ export async function fetchPublicSalonProfile(
     return null;
   }
 }
-
 export async function fetchPublicServices(
   tenantSlug: string,
 ): Promise<IService[]> {

@@ -1147,7 +1147,14 @@ export interface LandingStructure {
 
     /** Dve putanje na početnoj: „za tebe lično" i „za tvoj tim". */
     audiencePaths?: {
-      enabled: boolean;
+      /**
+       * TRI-STATE, ne boolean. Odsustvo vrednosti je stvarno stanje:
+       *   undefined — vlasnica nije odlučila; odlučuje theme policy
+       *   true      — izričito traži sekciju
+       *   false     — izričito je zabranjuje (apsolutni veto)
+       * Zato ovde NEMA Mongoose default-a; vidi `SalonProfile` šemu.
+       */
+      enabled?: boolean;
       eyebrow?: string;
       /** Naslov levo („Odaberi svoj put"). */
       headline?: string;
@@ -1169,7 +1176,14 @@ export interface LandingStructure {
 
     /** Filtrirana lista stručnih tema (procena kože, aktivni sastojci, SPF…). */
     topicHub?: {
-      enabled: boolean;
+      /**
+       * TRI-STATE, ne boolean. Odsustvo vrednosti je stvarno stanje:
+       *   undefined — vlasnica nije odlučila; odlučuje theme policy
+       *   true      — izričito traži sekciju
+       *   false     — izričito je zabranjuje (apsolutni veto)
+       * Zato ovde NEMA Mongoose default-a; vidi `SalonProfile` šemu.
+       */
+      enabled?: boolean;
       eyebrow?: string;
       headline?: string;
       filters?: { id: string; label: string }[];
@@ -1186,7 +1200,14 @@ export interface LandingStructure {
 
     /** Metod rada kroz korake (intake → plan → praćenje). */
     guidedCareProcess?: {
-      enabled: boolean;
+      /**
+       * TRI-STATE, ne boolean. Odsustvo vrednosti je stvarno stanje:
+       *   undefined — vlasnica nije odlučila; odlučuje theme policy
+       *   true      — izričito traži sekciju
+       *   false     — izričito je zabranjuje (apsolutni veto)
+       * Zato ovde NEMA Mongoose default-a; vidi `SalonProfile` šemu.
+       */
+      enabled?: boolean;
       eyebrow?: string;
       headline?: string;
       lead?: string;
@@ -1195,7 +1216,14 @@ export interface LandingStructure {
 
     /** Stubovi kredibiliteta — obrazovanje, sertifikacija, stručni dokaz. */
     credentials?: {
-      enabled: boolean;
+      /**
+       * TRI-STATE, ne boolean. Odsustvo vrednosti je stvarno stanje:
+       *   undefined — vlasnica nije odlučila; odlučuje theme policy
+       *   true      — izričito traži sekciju
+       *   false     — izričito je zabranjuje (apsolutni veto)
+       * Zato ovde NEMA Mongoose default-a; vidi `SalonProfile` šemu.
+       */
+      enabled?: boolean;
       eyebrow?: string;
       headline?: string;
       lead?: string;
@@ -1219,7 +1247,14 @@ export interface LandingStructure {
      * stigne, sekcija dobija njegov slot i ovaj oblik prestaje da važi.
      */
     finalCta?: {
-      enabled: boolean;
+      /**
+       * TRI-STATE, ne boolean. Odsustvo vrednosti je stvarno stanje:
+       *   undefined — vlasnica nije odlučila; odlučuje theme policy
+       *   true      — izričito traži sekciju
+       *   false     — izričito je zabranjuje (apsolutni veto)
+       * Zato ovde NEMA Mongoose default-a; vidi `SalonProfile` šemu.
+       */
+      enabled?: boolean;
       eyebrow?: string;
       headline?: string;
       lead?: string;
@@ -1237,7 +1272,14 @@ export interface LandingStructure {
      * pripremi") — zato `content.*`, a ne `education.*`.
      */
     featuredEducation?: {
-      enabled: boolean;
+      /**
+       * TRI-STATE, ne boolean. Odsustvo vrednosti je stvarno stanje:
+       *   undefined — vlasnica nije odlučila; odlučuje theme policy
+       *   true      — izričito traži sekciju
+       *   false     — izričito je zabranjuje (apsolutni veto)
+       * Zato ovde NEMA Mongoose default-a; vidi `SalonProfile` šemu.
+       */
+      enabled?: boolean;
       eyebrow?: string;
       status?: string;
       headline?: string;
@@ -1257,7 +1299,14 @@ export interface LandingStructure {
 
     /** Program za salone i timove — inquiry kanal, bez samostalnog checkout-a. */
     professionalPath?: {
-      enabled: boolean;
+      /**
+       * TRI-STATE, ne boolean. Odsustvo vrednosti je stvarno stanje:
+       *   undefined — vlasnica nije odlučila; odlučuje theme policy
+       *   true      — izričito traži sekciju
+       *   false     — izričito je zabranjuje (apsolutni veto)
+       * Zato ovde NEMA Mongoose default-a; vidi `SalonProfile` šemu.
+       */
+      enabled?: boolean;
       eyebrow?: string;
       headline?: string;
       lead?: string;

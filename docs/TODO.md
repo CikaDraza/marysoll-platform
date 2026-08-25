@@ -2,7 +2,7 @@
 
 > Tracker za tekući luk rada: **T3 Booking Engine + Consultation domen + theme-9 „Skincare Marina"**.
 > Jedan red po slice-u. Detalji su u dokumentu koji je naveden uz slice — ovde stoji samo status i jedna rečenica.
-> Poslednja izmena: 2026-08-22 · grana `product-engines/theme-engine/layout-contract`
+> Poslednja izmena: 2026-08-25 · grana `product-engines/theme-engine/layout-contract`
 
 ## Status
 
@@ -17,7 +17,7 @@
 | 3 | `availability-core` | ✅ gotovo | **Urađeno:** `@panta/booking-engine` — `AvailabilityQuery → AvailabilityResult`, čist TS bez React/Next/DB i bez I/O; `[start, end)`, eksplicitna zona, DST, pauze i odmori kao rez intervala, ručni termini pod istim overlap ugovorom, `availabilityClass` + `outsidePreferredHours` kao ULAZ za Slice 5. Domen ostaje u `lib/booking/availabilityAdapter.ts`. Ponovljena provera: **33 paket testa + 48 adapter/widget testa = 81 fokusirani test**; svi prolaze. Migrirane su obe `slots` rute, oba javna widgeta, `BookingProvider`, `ClientCreateModal`, `ClientEditModal`; stare kopije su uklonjene ili zadržane samo kao zamrznuta regresiona referenca. **Van Slice 3:** serverski upis još ne koristi novi core i ne učitava `vacations`, a modalni tok još ne prima `vacations` kroz ceo lanac propova. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#21-coexistence-i-migracija) |
 | 4 | Booking UI apstrakcija | 🟡 prikaz gotov | `useBookingFlow` + theme-9 dijalog, **offering-first**: ponuda → datum i vreme → upitnik → pregled → potvrda (redosled nije kozmetika — vidi ugovor `initialOfferingId` niže). Launcher kroz kontekst, terminologija `offering*`, ne `service*`. **Bez ijednog upisa** — slanje samo šalje mejl vlasnici i superadminu, da potvrdi usluge, cene, termine i pitanja. Ostaje: `bookingProductAdapter` i `BookingThemeTokens` za ostale teme. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#33-readavailability-potrošači-nisu-write-authority) + T2 §6.10/6.11 |
 | 5 | ★ T3 Booking Engine CORE | ✅ dark core implementiran | Additive `BookingReservation`, `BookingDayLock`, durable receipt/outbox, neutralne lifecycle komande, write-time availability, legacy reader i Service/Appointment transaction adapter postoje; 35 novih fokusiranih testova (21 pravi MongoMemoryReplSet) prolaze. **Nije live authority:** production rute nisu migrirane, deployment transaction smoke ostaje hard release gate, a outbox worker/reconciliation i cutover pripadaju Slice 6. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#211-slice-5--dark-core) |
-| 6 | ★ Migracija + concurrency gate | 🟡 6A gotov; 6B/6C otvoreni | **6A — transition hardening (gotovo):** `BookingAvailabilityContext` traži eksplicitan `externalOccupancies`, a `query` je `Omit<AvailabilityQuery, "occupancies">` — provider više ne može sam da komponuje occupancy; `validateWriteAvailability` je jedino mesto kompozicije; jedan status modul (`lib/booking/occupancyStatus.ts`) sa dve politike i `blocking_until_end` za legacy `no_show`/`completed`; 5 novih testova kroz PRAVI `serviceAvailabilityProvider` + 13 unit testova politike. **Otvoreno:** svih 12 Appointment occupancy/lifecycle ulaza kroz Booking komande (6B); četiri Slot ulaza, outbox worker, architecture i contention gate, deployment transaction smoke (6C). Empirijski gate-ovi (`appointment_rescheduled` report po `(status, proposedDate)`, marketplace Slot usage, Mongo transaction capability) traže produkcioni pristup i nisu zatvoreni. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#212-slice-6--svi-write-ulazi-i-jedan-cutover-gate) |
+| 6 | ★ Migracija + concurrency gate | ⏸ planski odloženo | **Završeno:** Slice 5 dark core, 6A transition hardening i empirijski gate-ovi (T3 §21.2.4). **Odloženo:** production `Appointment` write migracija i Booking cutover nastavljaju se posle Marysoll platform/marketplace upgrade-a. Trenutno nema aktivnih Booking korisnika, pa nema poslovnog razloga za promenu production write authority-ja. Nijedna od 12 ruta se ne dira; Slot endpoint-i se ne gase samo radi arhitektonske čistoće. `BookingReservation` ostaje dark-core infrastruktura, ne production authority. Pripremljen obim za nastavak: 8 platformskih ulaza (T3 §21.2.6); empiriju iz §21.2.4 pre nastavka premeriti. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#213-slice-6b6c--planski-odloženo-2026-08-23) |
 | 7 | Consultation domen | ⬜ nije počet | `ConsultationOffering` → `ConsultationBooking` → `BookingReservation`. Marinin glavni proizvod; **nije `Service`**. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#142-consultation-i-education-granica) |
 | 8 | Hold | ⬜ nije počet | `BookingHold` kroz istu day-lock transakciju; konkretan TTL ostaje product odluka Slice 8. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#20-bookinghold-i-slot-transition) |
 | 9 | Questionnaire + Intake | ⬜ nije počet | Guest-first booking ostaje moguć; generički intake čuva immutable početni snapshot, odvaja stručni Current Assessment od originalnog odgovora i kasnije podržava eksplicitni claim/invite identity handoff. | [PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md#4-product-decision--consultation--skin-care-kutak-lifecycle) |
@@ -26,7 +26,7 @@
 | 12 | Admin/client navigacija | ⬜ nije počet | Implementacija zaključane IA: Ponuda · Termini/Dostupnost · Klijenti · capability-aware nav. | [PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md) |
 | 13 | Care Workspace | ⬜ nije počet | `CareJourney`, strukturisan/verzionisan `CarePlan`, draft/private/shared granica, `CareDocument` PDF/attachment/export, privatni `ProgressMedia` i timeline/history. | [PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md#4-product-decision--consultation--skin-care-kutak-lifecycle) |
 
-Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran
+Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran · ⏸ planski odloženo
 
 ## Tvrde granice
 
@@ -37,10 +37,15 @@ Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran
   Slice 5–6.** Postojeće `Appointment` write rute su race-unsafe i nisu
   dozvoljeni prečac za Theme-9.
 - **Slice 6 concurrency gate mora proći pre Slice 10.** Marina ne prima stvarne rezervacije pre toga.
+  Slice 6B/6C su planski odloženi (vidi red 6), pa je i Slice 10 time odložen.
 - **Nijedan legacy zapis ne sme prestati da blokira u odnosu na zatečeno ponašanje.**
   Legacy `no_show` nastaje i pri kasnom otkazu, dakle pre kraja termina — zato je
   `blocking_until_end`, ne `released`. Vidi T3 §21.2.1.
 - **Nijedna API ruta ne sme kreirati ni menjati occupancy mimo Booking Engine-a.**
+- **Salon nikada ne postoji bez vlasnika, ni vlasnički nalog bez salona.**
+  Jedina destruktivna owner akcija je „Trajno obriši salon", koja briše ceo
+  tenant boundary. Ownership transfer je specifikovan i ODLOŽEN — vidi
+  [PANTA-TENANT-OWNERSHIP-LIFECYCLE.md](PANTA-TENANT-OWNERSHIP-LIFECYCLE.md).
 - **Consultation nije `Service`** — ne sme deliti `services.catalog` ni `booking.services`.
 - **Domenski naziv `education.*` uz `capability: null` je zabranjen** — ili domenski blok sa loaderom i capability-jem, ili `content.*` teaser.
 - ✅ **T2B triple-gate je implementiran.** Admin/client projekcija, business API
@@ -250,6 +255,16 @@ availability i intake se granaju po ulaznoj tački i to se više ne vraća.
 
 Nije implementirano jer takav CTA još ne postoji; zapisano da se ne izgubi kad
 Consultation domen (Slice 7) donese kartice pojedinačnih ponuda.
+
+`initialOfferingId` **inicijalizuje stanje toka**, ne beleži ništa — ni booking,
+ni hold, ni rezervaciju; zato se korak 01 ne prikazuje. Stvarni zapis nastaje
+kroz authoritative write tok Booking Engine-a, mnogo kasnije.
+
+Isti ugovor pokriva i preferencu iz theme-9 `finalCta` (`preferredDate` /
+`preferredStartTime`), uz jednu asimetriju: ponuda sme da preskoči korak 01,
+preferirani termin NE sme da preskoči korak 02 jer mu validnost zavisi od
+trajanja ponude. Puna matrica ulaza je u
+[PANTA-THEME9-FINAL-CTA.md](PANTA-THEME9-FINAL-CTA.md) §4.2.
 
 **Terminologija je već očišćena:** prikaz koristi `offerings` / `offeringId` /
 `offeringTitle` / `pickOffering()`, ne `service*`. Privremeni prikaz ne sme kroz

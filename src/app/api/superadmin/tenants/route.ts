@@ -10,6 +10,7 @@ import { AuthUser } from "@/models/AuthUser";
 import { TenantUser } from "@/models/TenantUser";
 import { Subscription } from "@/models/Subscription";
 import { SalonProfile } from "@/models/SalonProfile";
+import { Service } from "@/models/Service";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
 
 export async function GET(req: NextRequest) {
@@ -22,6 +23,16 @@ export async function GET(req: NextRequest) {
     const tenants = await Tenant.find({}).sort({ createdAt: -1 }).lean();
 
     const now = new Date();
+
+    // Broj usluga po tenantu jednim upitom — signal spremnosti na kartici.
+    // Namerno van `map`-a da ne dodaje N+1 uz već postojeća dva upita po redu.
+    const serviceCounts = new Map<string, number>(
+      (
+        await Service.aggregate<{ _id: unknown; n: number }>([
+          { $group: { _id: "$tenantId", n: { $sum: 1 } } },
+        ])
+      ).map((row) => [String(row._id), row.n]),
+    );
 
     const enriched = await Promise.all(
       tenants.map(async (t) => {
@@ -58,8 +69,23 @@ export async function GET(req: NextRequest) {
         const salonProfile = (await SalonProfile.findOne({
           tenantId: tenant._id,
         })
-          .select("isDemo")
-          .lean()) as { isDemo?: boolean } | null;
+          .select("isDemo logo landingTheme workingHours")
+          .lean()) as {
+          isDemo?: boolean;
+          logo?: string | null;
+          landingTheme?: string | null;
+          workingHours?: Record<string, unknown> | null;
+        } | null;
+
+        // „Spremnost" je ono što superadmin ionako proverava pre objave sajta:
+        // ima li salon logo, izabranu temu, radno vreme i bar jednu uslugu.
+        const workingHours = salonProfile?.workingHours ?? null;
+        const hasWorkingHours = Boolean(
+          workingHours &&
+            Object.values(workingHours).some(
+              (v) => Array.isArray(v) && v.length > 0,
+            ),
+        );
 
         const trialEndsAt = tenant.trialEndsAt as Date | null;
         const trialDaysLeft = trialEndsAt
@@ -91,6 +117,12 @@ export async function GET(req: NextRequest) {
             ? (tenant.planExpiresAt as Date).toISOString()
             : null,
           createdAt: (tenant.createdAt as Date).toISOString(),
+          logo: salonProfile?.logo ? String(salonProfile.logo) : null,
+          landingTheme: salonProfile?.landingTheme
+            ? String(salonProfile.landingTheme)
+            : null,
+          hasWorkingHours,
+          servicesCount: serviceCounts.get(String(tenant._id)) ?? 0,
           lemonsqueezyCustomerId: tenant.lemonsqueezyCustomerId
             ? String(tenant.lemonsqueezyCustomerId)
             : null,

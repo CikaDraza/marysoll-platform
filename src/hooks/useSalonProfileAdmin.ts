@@ -265,14 +265,6 @@ async function apiSave(
   return (j.data ?? j) as SalonProfile;
 }
 
-async function apiDelete(token: string): Promise<void> {
-  const res = await fetch("/api/salon-profile/delete", {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error("Greška pri brisanju");
-}
-
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useSalonProfileAdmin() {
@@ -585,20 +577,6 @@ export function useSalonProfileAdmin() {
     onError: (e: Error) => toast.error(e.message || "Greška"),
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: () => apiDelete(token ?? ""),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["salonProfile"] });
-      setForm(emptyForm());
-      setLogoPreview(null);
-      setNotificationLogoPreview(null);
-      setNotificationLogoFile(null);
-      setIsEditing(false);
-      toast.success("Salon obrisan.");
-    },
-    onError: () => toast.error("Greška pri brisanju"),
-  });
-
   const startEdit = useCallback(() => {
     if (profile) setForm(mapProfileToForm(profile));
     setIsEditing(true);
@@ -651,7 +629,5 @@ export function useSalonProfileAdmin() {
     removeNotificationLogo,
     save: saveMutation.mutate,
     isSaving: saveMutation.isPending,
-    deleteProfile: deleteMutation.mutate,
-    isDeleting: deleteMutation.isPending,
   };
 }
