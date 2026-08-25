@@ -88,9 +88,10 @@ pokazuje samo zbir.
 | **2A.1** `landing.stats` persistence | ✅ | Polje koje čita šest tema, a šema ga nije imala — Mongoose ga je u `strict` režimu tiho odbacivao | task grana |
 | **2A.2** CMS editor za 7 blokova | ✅ | `Theme9Sections.tsx` + `primitives.tsx`; `theme9Coverage.guard.test.ts` pada ako se pojavi persistence polje bez unosa | task grana |
 | **2B.0** tri-state šema | ✅ | `default: false` uklonjen sa 7 theme-9 sekcija; `enabled` je opcion u tipu | task grana |
-| **2B.1** legacy implicit-false normalizacija | ⬜ | **SLEDEĆE.** Vidi §2B.1 niže | — |
-| **2B.2** production presentation resolver | ⬜ | Sloj između `definitions.load()` i theme-9 rendera | — |
-| **2B.3** neutralni fallback policy | ⬜ | Vidi „Otvorena odluka: prazan CMS…" niže | — |
+| **2B.0d** deploy tri-state šeme na produkciju | ⬜ | **RELEASE GATE.** Bez njega je `--apply` beskoristan — vidi „Redosled izdavanja" niže | — |
+| **2B.1** legacy implicit-false normalizacija | ⬜ | **SLEDEĆE.** `--dry-run` može odmah; `--apply` tek posle 2B.0d. Vidi §2B.1 niže | — |
+| **2B.2** production presentation resolver | ⬜ | Sloj između `definitions.load()` i theme-9 rendera. Kod sme nastati pre `--apply`; **deploy ne sme** | — |
+| **2B.3** eksplicitna policy za svih 7 | ⬜ | Policy coverage 7/7, neutralni payload samo 3 od 7 — vidi §2B.3 niže | — |
 | **2B.4** CMS tri-state kontrola | ⬜ | `toggleState()` danas laže — vidi §2B.4 niže | — |
 | **2C** content-aware page/navigation resolver | ⬜ | Header sme voditi na 404; vidi §2C niže | — |
 
@@ -101,6 +102,60 @@ undefined  → nema odluke; odlučuje presentation policy
 true       → vlasnica traži sekciju
 false      → vlasnica zabranjuje; apsolutni veto nad fallback-om
 ```
+
+### Redosled izdavanja — development order ≠ production rollout order
+
+Ovo je preciznije od „2B.2 je blokiran 2B.1-om". Kod sme da nastane ranije;
+**deploy** je ono što je uslovljeno.
+
+**Development order** — može teći bez čekanja:
+
+```text
+2B.1 migration script
+  → 2B.2 resolver
+    → 2B.3 policy
+      → 2B.4 CMS
+```
+
+**Production rollout order** — obavezan i nepromenljiv:
+
+```text
+RELEASE A
+  2A + 2B.0 tri-state šema
+  + migration script, BEZ automatskog izvršavanja
+        ↓
+  production deploy potvrđen
+        ↓
+  2B.1 --dry-run
+        ↓
+  pregled reporta
+        ↓
+  2B.1 --apply
+        ↓
+  ponovni --dry-run = 0 kandidata
+        ↓
+RELEASE B
+  2B.2 resolver + 2B.3 policy + 2B.4 CMS tri-state
+```
+
+**2B.0d je release gate.** Dok produkcija radi staru šemu sa `default: false`,
+Mongoose ponovo materijalizuje `enabled: false` pri prvom sledećem snimanju —
+pa bi `--apply` pre deploy-a bio praktično beskoristan:
+
+```text
+stara production šema (default: false)
+        ↓
+$unset migracija
+        ↓
+sledeći save
+        ↓
+Mongoose ponovo materijalizuje false
+```
+
+Resolver zato **ne mora da čeka da bi bio napisan, ali mora da čeka da bi bio
+deploy-ovan.** Ako resolver ode u produkciju istovremeno sa modelom, njegova
+ispravnost zavisi od toga da li je neko u međuvremenu stigao da pokrene
+migraciju — a to nije stanje na koje se sme osloniti.
 
 ### 2B.1 — legacy implicit-false normalizacija ← SLEDEĆE
 
@@ -166,6 +221,28 @@ theme-9 popravka menja ponašanje tema 1–8.
 | `blog` / `LatestEducation` | zaseban runtime-data policy; `enabled` i dalje ima `default: false` kao shared legacy sekcija |
 | `hero` | postojeći theme-9 mapper/fallback ugovor |
 
+### 2B.3 — policy coverage 7/7, neutralni sadržaj samo gde je bezbedan
+
+Razlikovati **presentation policy** od **neutral fallback content**. Resolver mora
+imati eksplicitnu odluku za **svih sedam** blokova; neće svih sedam imati
+fallback payload.
+
+Bez toga se za blokove bez odluke vraćamo na ono što 2B postoji da ukloni —
+slučajnu visibility semantiku iz `return null` same React komponente.
+
+| blok | odluka kad je prazan | neutralni sadržaj |
+|---|---|---|
+| `audiencePaths` | neutral default | **da** — mora biti usklađen sa 2C page availability |
+| `topicHub` | **HIDE** ako nema stvarnih tema | ne — teme i slug-ovi se ne izmišljaju |
+| `guidedCareProcess` | neutral default | **da** |
+| `credentials` | **HIDE** | ne — činjenice o stručnosti se ne izmišljaju |
+| `featuredEducation` | **HIDE** | ne — budući Education domen |
+| `professionalPath` | **HIDE** | ne — budući Education domen |
+| `finalCta` | neutral presentation CTA | **da** — bez izmišljenih slotova; kasnije Booking Engine availability |
+
+Dakle: **policy coverage 7/7, neutralni payload 3 od 7.** `HIDE` je puna,
+zapisana odluka — nije izostanak odluke.
+
 ### 2B.4 — CMS prekidač trenutno laže
 
 ```ts
@@ -185,6 +262,24 @@ Header theme-9 danas može voditi na 404. Uz to,
 predviđa da ta stavka vodi na `/edukacija`. **2C se ne sme projektovati bez tog
 dokumenta** — inače se navigacioni resolver piše dva puta.
 
+**Granica: 2C ne sme prosto zameniti `/blogs` sa `/edukacija`** dok ta ruta i
+capability nisu stvarno dostupni. Traži se kompatibilan resolver:
+
+```text
+Education Center dostupan
++ education.catalog resolved
++ ruta/stranica spremna
+        → Edukacija vodi na /edukacija
+
+inače, ako tenant legitimno koristi postojeći education/blog sadržaj
+        → Edukacija vodi na /blogs
+
+inače
+        → link se ne prikazuje
+```
+
+Tako 2C ne mora da se piše ponovo kada Edu Studio stigne.
+
 ### Planirani Education rad — namerno van tabele
 
 Tri dokumenta opisuju budući proizvod i **nisu** raspoređeni u slice-ove:
@@ -195,6 +290,25 @@ Tri dokumenta opisuju budući proizvod i **nisu** raspoređeni u slice-ove:
 
 Dodaju se u tabelu tek kad postanu aktivan implementacioni posao. Jedina tačka
 gde već sada obavezuju tekući rad je 2C (vidi gore).
+
+**Ne formulisati kao „samo palimo prekidač".** `education.catalog` i
+`education.inquiries` jesu registrovani u `lib/platform/capabilities.ts`, ali
+resolver traži tri uslova odjednom:
+
+```text
+enabled = platformAvailable && planEntitled && tenantEnabled
+```
+
+Danas su za `education.catalog` sva tri nepovoljna: `platformAvailable: false`,
+`plan: UNMAPPED` (a `resolveCapabilityPlanEntitlement()` za `unmapped`
+bezuslovno vraća `false`) i `legacyBeautyDefault: false`. Samo
+`platformAvailable: true` ne bi promenilo ništa — `true ∩ false ∩ true = false`.
+
+Tačna formulacija: **infrastruktura i capability ID već postoje**; kada
+Education postane aktivan proizvod, potrebno je otvoriti platform availability,
+definisati entitlement model i uključiti capability odgovarajućim tenantima.
+To je i dalje dobra vest — triple-gate iz 0C se koristi kakav jeste i ne pravi
+se nov sistem dozvola.
 
 ## Otvorena odluka: prazan CMS ne sme da razbije dizajn
 
