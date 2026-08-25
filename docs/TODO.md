@@ -282,7 +282,13 @@ Tako 2C ne mora da se piše ponovo kada Edu Studio stigne.
 
 ### Planirani Education rad — namerno van tabele
 
-Tri dokumenta opisuju budući proizvod i **nisu** raspoređeni u slice-ove:
+**Kanonski arhitektonski dokument luka:**
+[PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md) — zaključana workspace
+arhitektura (verticals, ne `tenantType`), Content Composer izdvajanje, Education
+domen, Client Workspace, Guide i program, u 11 faza. **Faza 0 počinje tek posle
+merge-a Slice 2B.**
+
+Tri prateća dokumenta nose product/domenski ulaz i **nisu** raspoređena u slice-ove:
 
 - [EDUCATION_CAPABILITY_GATE_AND_ADOPTION.md](EDUCATION_CAPABILITY_GATE_AND_ADOPTION.md) — `education.catalog` capability gate, Salon → Salon + Edu adopcija
 - [MARYSOLL_EDUCATION_CENTER_AND_EDU_STUDIO.md](MARYSOLL_EDUCATION_CENTER_AND_EDU_STUDIO.md) — javne rute `/edukacija`, Edu Studio
