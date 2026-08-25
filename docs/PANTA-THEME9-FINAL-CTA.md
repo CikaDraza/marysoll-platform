@@ -106,33 +106,88 @@ jeste da otvori postojeći widget sa unapred označenom preferencom.
 Za ovo već postoji presedan i pravilo: `useBookingFlow({ initialOfferingId? })`
 (TODO.md, „CTA sa kartice ne ponavlja korak 01"), uz izričito
 **„isti hook, drugo ulazno stanje — nikad drugi tok"**. Preferenca iz finalCta
-ide istim putem, kao još jedno ulazno stanje:
+ide istim putem, kao još jedno ulazno stanje.
+
+**Šta `initialOfferingId` jeste, a šta nije.** On isključivo **inicijalizuje
+stanje toka** pre nego što se tok prikaže; zato se korak 01 ne renderuje. Ne
+beleži ništa: ni booking, ni hold, ni rezervaciju. Poznato je samo *šta*
+korisnica želi da zakaže. Stvarni zapis nastaje mnogo kasnije, kroz
+authoritative write tok Booking Engine-a.
+
+### 4.2 Matrica ulaza
+
+| ulaz | prvi prikazani korak | šta se prosleđuje |
+|---|---|---|
+| običan „Zakaži" | **01 Ponuda** | ništa |
+| kartica konkretne ponude | **02 Datum i vreme** | `initialOfferingId` |
+| finalCta dan/termin | **01 Ponuda**, pa validacija u 02 | `preferredDate`, `preferredStartTime` |
+| kartica ponude + preferenca | **02 Datum i vreme** | sve troje |
+
+U poslednja dva reda korak 02 se **uvek prikazuje**. I kada je ponuda poznata i
+preferenca validna, korisnica mora da vidi i potvrdi termin koji Booking Engine
+smatra validnim — tok nikada ne preskače potvrdu termina umesto nje.
+
+### 4.3 Asimetrija — najvažniji deo ugovora
 
 ```ts
 useBookingFlow({
-  initialOfferingId?: string;     // preskače korak 01
-  preferredDate?: string;         // NE preskače korak 02
-  preferredStartTime?: string;    // NE preskače korak 02
+  initialOfferingId?: string;     // SME da preskoči korak 01
+  preferredDate?: string;         // NE SME da preskoči korak 02
+  preferredStartTime?: string;    // NE SME da preskoči korak 02
 })
 ```
 
-**Asimetrija je namerna i najvažniji deo ovog ugovora.**
-
 `initialOfferingId` sme da preskoči korak jer je ponuda činjenica koju je
 korisnica izabrala i koja ne zavisi ni od čega drugog. `preferredDate` i
-`preferredStartTime` **ne smeju** da preskoče korak 02, jer njihova validnost
-zavisi upravo od ponude koja u tom trenutku još nije poznata. Oni ulaze kao
-**predizbor u koraku 02**, koji se validira za izabranu ponudu pre nego što
-postane `validatedSlot`.
+`preferredStartTime` **ne smeju**, jer njihova validnost zavisi upravo od
+ponude koja u tom trenutku još nije poznata. Oni ulaze kao **predizbor u koraku
+02**, koji se validira za izabranu ponudu pre nego što postane `validatedSlot`.
 
-Ako se ova asimetrija ikad izgubi — ako preferenca počne da preskače korak 02 —
-dobija se tiho pogrešan termin za duže ponude, tačno onaj slučaj iz tabele gore.
+Ponašanje posle validacije:
 
-**Posledica po ugovor koji danas postoji:** `BookingLauncher.open()` ne prima
-argumente. Da bi finalCta prosledio preferencu, launcher mora da dobije opcioni
-ulaz (npr. `open({ preferredDate, preferredStartTime })`), a `useBookingFlow`
-polja koja razlikuju preferencu od izbora. Bez toga bi preferenca morala da se
-provuče kroz globalno stanje — što se ne radi.
+```
+preferenca validna        → 02 se otvara sa već selektovanim terminom
+preferenca nije validna   → 02 kaže da izabrano vreme nije dostupno
+                            za tu konsultaciju i nudi najbliže slobodne
+```
+
+Vreme koje je korisnica videla ne menja se tiho — ili se potvrdi, ili se
+izričito kaže da ne važi za tu ponudu.
+
+Ako se asimetrija ikad izgubi — ako preferenca počne da preskače korak 02 —
+dobija se tiho pogrešan termin za duže ponude, tačno slučaj iz tabele gore.
+
+### 4.4 Jedan ulaz, bez zaobilaznica
+
+`BookingLauncher.open()` danas ne prima argumente. Proširuje se eksplicitnim
+tipom, ne slobodnim objektom:
+
+```ts
+type BookingLaunchContext = {
+  initialOfferingId?: string;
+  preferredDate?: string;
+  preferredStartTime?: string;
+};
+
+open(context?: BookingLaunchContext): void;
+```
+
+Time je granica jedna i vidljiva:
+
+```
+UI površina (Hero / finalCta / kartica ponude)
+        ↓
+BookingLauncher.open(context)
+        ↓
+isti BookingWidget
+        ↓
+isti useBookingFlow(context)
+```
+
+**Zabranjeno kao način prenosa preference:** globalni booking store,
+`localStorage`, improvizacija kroz query parametre, drugi modal tok, drugi
+booking hook. Svaka od njih pravi drugi ulaz u isti proizvod, a onda se
+availability i intake granaju po ulaznoj tački i to se više ne vraća.
 
 ---
 

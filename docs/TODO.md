@@ -563,10 +563,15 @@ availability i intake se granaju po ulaznoj tački i to se više ne vraća.
 Nije implementirano jer takav CTA još ne postoji; zapisano da se ne izgubi kad
 Consultation domen (Slice 7) donese kartice pojedinačnih ponuda.
 
-Isti ugovor pokriva i preferencu iz theme-9 `finalCta` (`preferredDate` / `preferredStartTime`), uz jednu asimetriju: ponuda sme da
-preskoči korak 01, preferirani termin NE sme da preskoči korak 02 jer mu
-validnost zavisi od trajanja ponude. Vidi
-[PANTA-THEME9-FINAL-CTA.md](PANTA-THEME9-FINAL-CTA.md).
+`initialOfferingId` **inicijalizuje stanje toka**, ne beleži ništa — ni booking,
+ni hold, ni rezervaciju; zato se korak 01 ne prikazuje. Stvarni zapis nastaje
+kroz authoritative write tok Booking Engine-a, mnogo kasnije.
+
+Isti ugovor pokriva i preferencu iz theme-9 `finalCta` (`preferredDate` /
+`preferredStartTime`), uz jednu asimetriju: ponuda sme da preskoči korak 01,
+preferirani termin NE sme da preskoči korak 02 jer mu validnost zavisi od
+trajanja ponude. Puna matrica ulaza je u
+[PANTA-THEME9-FINAL-CTA.md](PANTA-THEME9-FINAL-CTA.md) §4.2.
 
 **Terminologija je već očišćena:** prikaz koristi `offerings` / `offeringId` /
 `offeringTitle` / `pickOffering()`, ne `service*`. Privremeni prikaz ne sme kroz
