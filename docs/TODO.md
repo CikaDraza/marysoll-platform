@@ -2,7 +2,12 @@
 
 > Tracker za tekući luk rada: **T3 Booking Engine + Consultation domen + theme-9 „Skincare Marina"**.
 > Jedan red po slice-u. Detalji su u dokumentu koji je naveden uz slice — ovde stoji samo status i jedna rečenica.
-> Poslednja izmena: 2026-08-22 · grana `product-engines/theme-engine/layout-contract`
+> Poslednja izmena: 2026-08-25 · `main` + task grana `product-engines/theme-engine/layout-contract`
+>
+> **Gde šta živi:** Slice 2A i 2B.0 su implementirani na task grani
+> `product-engines/theme-engine/layout-contract` (5 commita ispred `main`-a), ne na
+> `main`-u. `main` još ima staru šemu sa `default: false` na svih sedam theme-9
+> sekcija. Statusi ispod govore o **radu**, a napomene o **grani**.
 
 ## Status
 
@@ -13,7 +18,7 @@
 | 0B | T2B-A capability foundation | ✅ gotovo | Implementirani su optional Tenant persistence ugovor sa očuvanom `undefined` legacy semantikom, registry, pure/server resolver, postojeći plan adapter, `requireCapability()` i eksplicitni beauty provisioning za svaki novi Tenant. | [PANTA-TENANT-VERTICALS-CAPABILITIES.md](PANTA-TENANT-VERTICALS-CAPABILITIES.md#9-implementacioni-status) |
 | 0C | T2B-B triple-gate integration | ✅ gotovo | Implementirani su server capability snapshot, admin/client workspace projekcija, business API gate-ovi, public Feature Block gate i readiness politika; permission i ownership ostaju zasebne granice. | [PANTA-TENANT-VERTICALS-CAPABILITIES.md](PANTA-TENANT-VERTICALS-CAPABILITIES.md#5-jedan-resolver-tri-obavezna-gate-a) |
 | 1 | Workspace IA dokument | ✅ gotovo | Zaključane su BEAUTY, EDUCATION-FIRST i HYBRID admin/client matrice, permission i resource-ownership granice. JSX i capability-aware navigacija ostaju Slice 12. | [PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md) |
-| 2 | theme-9 prezentacija | 🟡 prikaz gotov; editor/rizici otvoreni | **Urađeno:** registracija na svih 15 mesta, Expert Editorial tokeni u `@theme`, `colorPolicy: locked`, Header/Hero/About/Footer, `Reveal`, renderer mapa, landing + shell, inventar i test (9 tema). **+ 7 novih blok tipova** registrovano (audience-paths, topic-hub, guided-care-process, credentials, featured-education, professional-path, final-cta); HOME kompozicija renderuje ukupno **10 CMS blokova** (hero + 7 novih + about + blog). **+ 13 slika**, data-backed `content.blog`, neutralan `ThemeShellProps`, `/za-klijente` i `/za-profesionalce`. H0 lossless save je zatvoren; otvoreni ostaju urednička polja, neutralan kompletan fallback i content-aware navigacija (header sada može voditi na 404). TODO beleži produkcijski seed Marine 2026-08-20; repozitorijum dokazuje skriptu i strukturu, ali ne može sam potvrditi stanje produkcijske baze. | [PANTA-T2-THEME-LAYOUT-ENGINE.md](PANTA-T2-THEME-LAYOUT-ENGINE.md) + `design/Skincare_Platform_Design-handoff/` |
+| 2 | theme-9 prezentacija | 🟡 2A gotov · 2B u toku | **Prikaz i autorstvo su zatvoreni; ostaje politika prikaza.** Puno razlaganje je u sekciji [Slice 2 — razlaganje](#slice-2--theme-9--razlaganje) niže. Ukratko: ✅ 2A.0 persistence drift guard · ✅ 2A.1 `landing.stats` persistence · ✅ 2A.2 CMS editor za 7 blokova · 🟡 2B presentation policy (✅ tri-state šema, ⬜ legacy normalizacija, ⬜ resolver, ⬜ neutralni fallback, ⬜ CMS tri-state kontrola) · ⬜ 2C content-aware page/navigation resolver. **Zatečeno pre 2A:** registracija na svih 15 mesta, Expert Editorial tokeni u `@theme`, `colorPolicy: locked`, Header/Hero/About/Footer, `Reveal`, renderer mapa, landing + shell, inventar i test (9 tema), 7 novih blok tipova, HOME kompozicija sa 10 CMS blokova, 13 slika, data-backed `content.blog`, neutralan `ThemeShellProps`, `/za-klijente` i `/za-profesionalce`. TODO beleži produkcijski seed Marine 2026-08-20; repozitorijum dokazuje skriptu i strukturu, ali ne može sam potvrditi stanje produkcijske baze. | [PANTA-T2-THEME-LAYOUT-ENGINE.md](PANTA-T2-THEME-LAYOUT-ENGINE.md) + `design/Skincare_Platform_Design-handoff/` |
 | 3 | `availability-core` | ✅ gotovo | **Urađeno:** `@panta/booking-engine` — `AvailabilityQuery → AvailabilityResult`, čist TS bez React/Next/DB i bez I/O; `[start, end)`, eksplicitna zona, DST, pauze i odmori kao rez intervala, ručni termini pod istim overlap ugovorom, `availabilityClass` + `outsidePreferredHours` kao ULAZ za Slice 5. Domen ostaje u `lib/booking/availabilityAdapter.ts`. Ponovljena provera: **33 paket testa + 48 adapter/widget testa = 81 fokusirani test**; svi prolaze. Migrirane su obe `slots` rute, oba javna widgeta, `BookingProvider`, `ClientCreateModal`, `ClientEditModal`; stare kopije su uklonjene ili zadržane samo kao zamrznuta regresiona referenca. **Van Slice 3:** serverski upis još ne koristi novi core i ne učitava `vacations`, a modalni tok još ne prima `vacations` kroz ceo lanac propova. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#21-coexistence-i-migracija) |
 | 4 | Booking UI apstrakcija | 🟡 prikaz gotov | `useBookingFlow` + theme-9 dijalog, **offering-first**: ponuda → datum i vreme → upitnik → pregled → potvrda (redosled nije kozmetika — vidi ugovor `initialOfferingId` niže). Launcher kroz kontekst, terminologija `offering*`, ne `service*`. **Bez ijednog upisa** — slanje samo šalje mejl vlasnici i superadminu, da potvrdi usluge, cene, termine i pitanja. Ostaje: `bookingProductAdapter` i `BookingThemeTokens` za ostale teme. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#33-readavailability-potrošači-nisu-write-authority) + T2 §6.10/6.11 |
 | 5 | ★ T3 Booking Engine CORE | ✅ dark core implementiran | Additive `BookingReservation`, `BookingDayLock`, durable receipt/outbox, neutralne lifecycle komande, write-time availability, legacy reader i Service/Appointment transaction adapter postoje; 35 novih fokusiranih testova (21 pravi MongoMemoryReplSet) prolaze. **Nije live authority:** production rute nisu migrirane, deployment transaction smoke ostaje hard release gate, a outbox worker/reconciliation i cutover pripadaju Slice 6. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#211-slice-5--dark-core) |
@@ -72,7 +77,128 @@ Zatvaranje H0 je pokriveno sledećim proverama:
 4. zaseban test za `themePages` i `themeBookingPreview`;
 5. kompatibilnost legacy tema 1/2/7/8 i serverska zaštita za stariji payload.
 
+## Slice 2 — Theme-9 · razlaganje
+
+Slice 2 je prerastao jedan red u tabeli. Ovo je zvanično razlaganje; tabela gore
+pokazuje samo zbir.
+
+| Korak | Status | Šta znači | Gde živi |
+|---|---|---|---|
+| **2A.0** persistence drift guard | ✅ | `LANDING_PERSISTED_KEYS` + dve nezavisne dvosmerne provere (compile-time nad `Landing`, runtime nad Mongoose šemom) | task grana |
+| **2A.1** `landing.stats` persistence | ✅ | Polje koje čita šest tema, a šema ga nije imala — Mongoose ga je u `strict` režimu tiho odbacivao | task grana |
+| **2A.2** CMS editor za 7 blokova | ✅ | `Theme9Sections.tsx` + `primitives.tsx`; `theme9Coverage.guard.test.ts` pada ako se pojavi persistence polje bez unosa | task grana |
+| **2B.0** tri-state šema | ✅ | `default: false` uklonjen sa 7 theme-9 sekcija; `enabled` je opcion u tipu | task grana |
+| **2B.1** legacy implicit-false normalizacija | ⬜ | **SLEDEĆE.** Vidi §2B.1 niže | — |
+| **2B.2** production presentation resolver | ⬜ | Sloj između `definitions.load()` i theme-9 rendera | — |
+| **2B.3** neutralni fallback policy | ⬜ | Vidi „Otvorena odluka: prazan CMS…" niže | — |
+| **2B.4** CMS tri-state kontrola | ⬜ | `toggleState()` danas laže — vidi §2B.4 niže | — |
+| **2C** content-aware page/navigation resolver | ⬜ | Header sme voditi na 404; vidi §2C niže | — |
+
+### Tri-state ugovor (2B.0, zaključan)
+
+```text
+undefined  → nema odluke; odlučuje presentation policy
+true       → vlasnica traži sekciju
+false      → vlasnica zabranjuje; apsolutni veto nad fallback-om
+```
+
+### 2B.1 — legacy implicit-false normalizacija ← SLEDEĆE
+
+**Zašto pre resolvera.** Uklanjanje `default: false` iz šeme **ne briše** već
+upisane vrednosti iz Mongo-a. Svaki `SalonProfile` sačuvan dok je default
+postojao i dalje fizički nosi:
+
+```json
+{ "audiencePaths": { "enabled": false, "paths": [] } }
+```
+
+Čim resolver počne da poštuje `false` kao apsolutni veto, taj **implicitni**
+false postaje nerazlučiv od stvarne odluke vlasnice. To je tačno problem koji
+2B.0 postoji da eliminiše — pa resolver ne sme pre normalizacije.
+
+**Migracija je konzervativna klasifikacija, ne masovni `$unset`.**
+
+Izveštaj po redu: `tenant · theme · section · enabled · meaningfulContent · decision`
+
+| stanje | odluka |
+|---|---|
+| `enabled === false` **i** nema meaningful autorskog sadržaja | kandidat za `$unset` |
+| `enabled === false` **i** postoji meaningful sadržaj | **NE DIRAJ** → report / ručni pregled |
+| `enabled === true` | **NE DIRAJ** |
+| `enabled` odsutno | **NE DIRAJ** |
+
+Obavezno: `--dry-run` i `--apply` kao odvojeni režimi, plus test idempotencije
+(drugo pokretanje ne sme promeniti nijedan dokument).
+
+**Prozor je sada.** Empirijski je utvrđeno da trenutno ne postoji nijedan
+legitimno ugašen theme-9 blok. Kasnije se više ne može bezbedno pretpostaviti da
+`false` nije stvarna korisnička odluka.
+
+### 2B.2 — resolver je zaseban sloj, ne loader
+
+`definitions.ts` **ne sme** da sazna za `enabled`. Header tog fajla to već
+izričito kaže, a svih sedam theme-9 loadera vraća samo `{ content }`. Da loader
+počne da odlučuje vidljivost, generički Feature Block loader bi primio theme-9
+presentation policy.
+
+```text
+definitions.load()          ← samo domenski/persistence podaci
+        │ raw authored data
+        ▼
+theme-9 presentation resolver
+        ├── enabled=false          → hidden
+        ├── authored               → authored
+        ├── empty + neutral policy → default
+        └── empty + bez sigurnog fallback-a → hidden
+        ▼
+mapper → komponenta
+```
+
+### Ne generalizovati svih 10 blokova
+
+2B resolver **ne sme** da tretira svaki `landing.*.enabled` jednako — inače
+theme-9 popravka menja ponašanje tema 1–8.
+
+| grupa | ugovor |
+|---|---|
+| 7 theme-9 autorskih blokova | novi tri-state visibility ugovor |
+| `about` | postojeći safe tenant-derived fallback (loader već dovlači `salon.name`, `salon.logo`, `tenantStats()`) |
+| `blog` / `LatestEducation` | zaseban runtime-data policy; `enabled` i dalje ima `default: false` kao shared legacy sekcija |
+| `hero` | postojeći theme-9 mapper/fallback ugovor |
+
+### 2B.4 — CMS prekidač trenutno laže
+
+```ts
+function toggleState(enabled?: boolean): boolean {
+  return enabled ?? false;
+}
+```
+
+`undefined` („odlučuje policy") vlasnici izgleda kao `OFF`. Nije regresija —
+isto je ponašanje kao pre 2B.0 — ali jeste **blocker za završetak 2B**.
+
+### 2C — content-aware page/navigation resolver
+
+Header theme-9 danas može voditi na 404. Uz to,
+`theme-9/Header.tsx` ima `{ name: "Edukacija", href: "/blogs" }`, dok
+[MARYSOLL_EDUCATION_CENTER_AND_EDU_STUDIO.md](MARYSOLL_EDUCATION_CENTER_AND_EDU_STUDIO.md)
+predviđa da ta stavka vodi na `/edukacija`. **2C se ne sme projektovati bez tog
+dokumenta** — inače se navigacioni resolver piše dva puta.
+
+### Planirani Education rad — namerno van tabele
+
+Tri dokumenta opisuju budući proizvod i **nisu** raspoređeni u slice-ove:
+
+- [EDUCATION_CAPABILITY_GATE_AND_ADOPTION.md](EDUCATION_CAPABILITY_GATE_AND_ADOPTION.md) — `education.catalog` capability gate, Salon → Salon + Edu adopcija
+- [MARYSOLL_EDUCATION_CENTER_AND_EDU_STUDIO.md](MARYSOLL_EDUCATION_CENTER_AND_EDU_STUDIO.md) — javne rute `/edukacija`, Edu Studio
+- [SKINCARE_EDUCATION_DOMAIN_PRODUCT_PARTNERSHIP.md](SKINCARE_EDUCATION_DOMAIN_PRODUCT_PARTNERSHIP.md) — domenski input Marine B. Stanisavljević
+
+Dodaju se u tabelu tek kad postanu aktivan implementacioni posao. Jedina tačka
+gde već sada obavezuju tekući rad je 2C (vidi gore).
+
 ## Otvorena odluka: prazan CMS ne sme da razbije dizajn
+
+> Ovo je **2B.3** iz razlaganja gore. Ne rešavati pre 2B.1 i 2B.2.
 
 theme-9 sekcije danas **nestaju** kad im je sadržaj prazan. Za Marinu to nije
 problem — sve joj je seed-ovano — ali čim se tema dodeli drugom tenantu, on
@@ -185,7 +311,8 @@ nagradi. T3 je prilika da to preraste u čist ugovor
 | ~~Kredencijali se prelazno mapiraju iz `authoredStats` u About~~ ✅ | `about.credentials` | rešeno — About tabela ima svoje polje; blok `content.credentials` nosi stubove i to su dve različite stvari u dizajnu |
 | `themeBookingPreview` je PRIVREMENO polje — briše se kad stignu Consultation domen i Booking Engine | `models/SalonProfile.ts` | Slice 5/7 |
 | Preview tekst obećava potvrdu/pomeranje termina, a završni ekran tačno kaže da termin nije zakazan | theme-9 seed sadržaj + `Theme9BookingDialog` | pre javnog QA uskladiti poruku tako da korisnica ne pomisli da je zahtev rezervacija |
-| `themePages` i 7 theme-9 landing sekcija nemaju urednička polja — sadržaj se za sada autoriše kroz `npm run seed:theme9 -- --tenant=<slug>` | `AdminLandingCMS.tsx` | otvoreno; polja postoje u bazi, ali editor ih ne prikazuje |
+| ~~7 theme-9 landing sekcija nema urednička polja~~ ✅ | `Theme9Sections.tsx` + `primitives.tsx` | **2A.2 zatvoren** — editor postoji za svih 7, `theme9Coverage.guard.test.ts` pada ako se pojavi persistence polje bez unosa. Na task grani, ne na `main`-u. |
+| `themePages` i dalje nema urednička polja — sadržaj se autoriše kroz `npm run seed:theme9 -- --tenant=<slug>` | `AdminLandingCMS.tsx` | otvoreno; polja postoje u bazi, ali editor ih ne prikazuje |
 | ~~Admin save gubi theme-9 polja iz forme i može njima da prepiše ceo profil~~ ✅ | `useSalonProfileAdmin` → `content-preservation` → `api/salon-profile/update` | **H0 zatvoren — lossless mapper + serverski section merge + regresioni testovi** |
 | `theme-3/BlogSection` i dalje dovlači objave klijentskim `useBlogPosts` iako `content.blog` loader sada isporučuje `posts` — isti waterfall koji je theme-9 upravo izgubila | `theme-3/BlogSection.tsx` | otvoreno, sada trivijalno |
 | ~~7 theme-9 sekcija nije bilo u mongoose shemi (`strict` bi ih tiho odbacio pri snimanju)~~ ✅ | `models/SalonProfile.ts` | rešeno u ovom slice-u |
