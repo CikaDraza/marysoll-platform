@@ -4,10 +4,14 @@
 > Jedan red po slice-u. Detalji su u dokumentu koji je naveden uz slice — ovde stoji samo status i jedna rečenica.
 > Poslednja izmena: 2026-08-26 · `main` + task grana `product-engines/theme-engine/layout-contract`
 >
-> **Gde šta živi:** Slice 2A i 2B.0 su implementirani na task grani
-> `product-engines/theme-engine/layout-contract` (5 commita ispred `main`-a), ne na
-> `main`-u. `main` još ima staru šemu sa `default: false` na svih sedam theme-9
+> **Gde šta živi:** Slice 2A i **ceo 2B** su implementirani na task grani
+> `product-engines/theme-engine/layout-contract` (9 commita ispred `main`-a), ne
+> na `main`-u. `main` još ima staru šemu sa `default: false` na svih sedam theme-9
 > sekcija. Statusi ispod govore o **radu**, a napomene o **grani**.
+>
+> ⚠️ **Razvoj 2B ≠ rollout 2B.** Kod je gotov; produkcijski redosled (2B.0d deploy
+> šeme → migracija `--apply` → release resolver/policy/CMS) tek predstoji. Vidi
+> „Redosled izdavanja" niže.
 
 ## Status
 
@@ -21,7 +25,7 @@
 
 | # | Slice | Status | Gde smo stali | Dokument |
 |---|---|---|---|---|
-| 2 | theme-9 prezentacija | 🟡 2A gotov · 2B u toku | **Prikaz i autorstvo su zatvoreni; ostaje politika prikaza.** Puno razlaganje je u sekciji [Slice 2 — razlaganje](#slice-2--theme-9--razlaganje) niže. Ukratko: ✅ 2A.0 persistence drift guard · ✅ 2A.1 `landing.stats` persistence · ✅ 2A.2 CMS editor za 7 blokova · 🟡 2B presentation policy (✅ tri-state šema, ⬜ legacy normalizacija, ⬜ resolver, ⬜ neutralni fallback, ⬜ CMS tri-state kontrola) · ⬜ 2C content-aware page/navigation resolver. **Zatečeno pre 2A:** registracija na svih 15 mesta, Expert Editorial tokeni u `@theme`, `colorPolicy: locked`, Header/Hero/About/Footer, `Reveal`, renderer mapa, landing + shell, inventar i test (9 tema), 7 novih blok tipova, HOME kompozicija sa 10 CMS blokova, 13 slika, data-backed `content.blog`, neutralan `ThemeShellProps`, `/za-klijente` i `/za-profesionalce`. TODO beleži produkcijski seed Marine 2026-08-20; repozitorijum dokazuje skriptu i strukturu, ali ne može sam potvrditi stanje produkcijske baze. | [PANTA-T2-THEME-LAYOUT-ENGINE.md](PANTA-T2-THEME-LAYOUT-ENGINE.md) + `design/Skincare_Platform_Design-handoff/` |
+| 2 | theme-9 prezentacija | 🟡 2A i 2B gotovi (razvoj) · 2C otvoren | **Prikaz i autorstvo su zatvoreni; ostaje politika prikaza.** Puno razlaganje je u sekciji [Slice 2 — razlaganje](#slice-2--theme-9--razlaganje) niže. Ukratko: ✅ 2A.0 persistence drift guard · ✅ 2A.1 `landing.stats` persistence · ✅ 2A.2 CMS editor za 7 blokova · ✅ 2B razvoj zatvoren (✅ tri-state šema · ✅ legacy normalizacija · ✅ presentation resolver · ✅ policy 7/7 + granice unosa · ✅ CMS tri-state) · ⬜ 2C content-aware page/navigation resolver. **Zatečeno pre 2A:** registracija na svih 15 mesta, Expert Editorial tokeni u `@theme`, `colorPolicy: locked`, Header/Hero/About/Footer, `Reveal`, renderer mapa, landing + shell, inventar i test (9 tema), 7 novih blok tipova, HOME kompozicija sa 10 CMS blokova, 13 slika, data-backed `content.blog`, neutralan `ThemeShellProps`, `/za-klijente` i `/za-profesionalce`. TODO beleži produkcijski seed Marine 2026-08-20; repozitorijum dokazuje skriptu i strukturu, ali ne može sam potvrditi stanje produkcijske baze. | [PANTA-T2-THEME-LAYOUT-ENGINE.md](PANTA-T2-THEME-LAYOUT-ENGINE.md) + `design/Skincare_Platform_Design-handoff/` |
 | 2C | theme-9 page/navigation resolver | ⬜ nije počet | Header theme-9 sme voditi na 404. **Edu plan ovo NE zamenjuje.** Traži kompatibilan resolver: Edu Centar spreman + `education.catalog` resolved + stranica spremna → `/edukacija`; inače legitiman postojeći blog sadržaj → `/blogs`; inače se link ne prikazuje. Detalji u sekciji [2C](#2c--content-aware-pagenavigation-resolver) niže. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md) |
 
 ### Booking / Consultation — zadržano

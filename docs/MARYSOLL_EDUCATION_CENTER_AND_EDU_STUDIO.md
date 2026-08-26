@@ -4,7 +4,8 @@
 **Public product name:** **Edukativni centar**  
 **Header navigation label:** **Edukacija**  
 **Admin creator name:** **Edu Studio**  
-**Implementation status:** Not scheduled in `TODO.md` yet
+**Implementation status:** Not scheduled in `TODO.md` yet  
+**Canonical for the Edu arc:** [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md) — where this document and the arc document disagree, **the arc document wins**.
 
 ## Goal
 
@@ -42,37 +43,82 @@ Where safe, legacy education links may redirect to the new route, but this must 
 
 ---
 
-## Phase 1 — Same content source, new public education surface
+## Phase 1 — Navigation compatibility, not shared storage
 
-The first implementation may reuse the existing content/article storage and loader where that is safe.
+> ⚠️ **This supersedes the earlier "same content source" plan**, which proposed
+> that `/edukacija` reuse the existing article storage and loader. That is no
+> longer the direction. [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md) is
+> canonical and locks the opposite: `/edukacija` reads **only** the new
+> `EducationContent`, and `/blogs` continues over `NewsletterCampaign`,
+> untouched.
+>
+> The old text is replaced rather than annotated because it was the single
+> place in the docs from which an implementer could conclude that Blog and
+> Education should share storage.
 
-The architectural change is initially the **domain surface and routing**, not necessarily a new storage model.
-
-Target:
+Blog and Education are **separate systems with separate storage**:
 
 ```text
-existing article/content source
-            |
-            +-> existing blog presentation where still required
-            |
-            +-> Education Center presentation
-                 /edukacija
-                 /edukacija/[slug]
+BLOG
+/blogs
+/blogs/[slug]
+        ↓
+NewsletterCampaign  (existing system, unchanged)
+
+EDUCATION
+/edukacija
+/edukacija/[slug]
+        ↓
+EducationContent  (new, authored in Edu Studio)
 ```
 
-This allows Theme-9 to move from the current `Edukacija -> blogs` behavior to a domain-correct public route before the full Education authoring system exists.
+Phase 1 is therefore about **navigation only**. The Theme-9 `Edukacija` nav item
+resolves three ways:
+
+```text
+Education Center available
++ education.catalog resolved
++ route/page ready
+        → /edukacija
+
+not ready, but the tenant legitimately uses existing blog content
+        → /blogs
+
+neither
+        → the link is not shown
+```
+
+This is transition/navigation compatibility. It explicitly does **not** mean:
+
+- `/blogs` and `/edukacija` reading the same posts;
+- `NewsletterCampaign` becoming `EducationContent`;
+- a global redirect from `/blogs` to `/edukacija`.
 
 ## Rule
 
-Reuse of an existing content source does not mean:
+The two domains stay apart because their purposes differ:
 
 ```text
-Education = Blog
+BLOG / NEWSLETTER              EDUCATION CONTENT
+marketing                      expert article · advice · guide
+campaigns                      video · downloadable material
+SEO posts                      public or private
+email distribution             assigned to a client
+promotions                     surfaces in Moj Prostor
+salon content                  links to Guide / Program
 ```
 
-It is a transitional storage/loader reuse only.
+Distribution stays a separate concern from authorship. Promoting a public
+education piece by email does not move it into the newsletter domain:
 
-The domain contract is Education.
+```text
+EducationContent
+        ↓  [ Promote by email ]
+NewsletterCampaign
+```
+
+Newsletter is the **distribution** channel; `EducationContent` remains the
+source entity. Text is never copied between the two systems.
 
 ---
 
