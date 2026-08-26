@@ -105,10 +105,65 @@ se u Vercel projektu pre live QA.
 
 ## Baza
 
-Produkcija, staging i QA trenutno dele `marysoll_db`. Zato su test domeni
-bezbedni za prikaz i kontrolisani QA, ali nisu sandbox podataka. Destruktivne
-radnje (merge korisnika, masovne izmene, stvarna slanja) rade se samo na demo
-tenantima i unapred pripremljenim zapisima.
+Na klasteru `ClusterMakeup` postoje dve baze:
+
+```text
+ClusterMakeup
+├── marysoll_db           ← PRODUKCIJA
+└── staging-marysoll_db   ← STAGING
+```
+
+Na Vercel-u je dodat `MONGODB_STAGING_URI`, sa imenom baze unutar samog URI-ja.
+
+### ⚠ Aplikacija još NE koristi staging bazu
+
+Razdvajanje baza je napravljeno, ali kod ga još ne poštuje. Dva razloga, oba
+tiha — nema greške, samo pogrešna baza:
+
+**1. `MONGODB_STAGING_URI` ne čita niko.** `src/lib/db/mongodb.ts` i svih sedam
+skripti čitaju isključivo `MONGODB_URI`. Nova promenljiva trenutno postoji samo
+u `.env.example` i u Vercel podešavanjima.
+
+**2. `dbName` opcija pobeđuje ime baze iz URI-ja.** Konekcija se pravi ovako:
+
+```ts
+const DB_NAME = process.env.DB_NAME || "marysoll_db";
+mongoose.connect(MONGODB_URI, { dbName: DB_NAME, … });
+```
+
+Pošto `DB_NAME` nije postavljen, `dbName` je uvek doslovno `"marysoll_db"` i
+**nadjačava** ime baze iz connection stringa. Dokazano empirijski nad
+`mongodb-memory-server`-om:
+
+```text
+URI traži    : staging-marysoll_db
+opcija traži : marysoll_db
+stvarno spojen na: marysoll_db
+```
+
+Posledica: i kad bi staging deployment dobio staging URI, aplikacija bi i dalje
+pisala u produkcijsku bazu.
+
+### Šta mora pre staging rollout-a
+
+Ovo je **tvrd gate**, ne preporuka — bez njega staging ne rešava rizik zbog kog
+postoji, a `migration --apply` bi menjao produkcijske profile:
+
+1. `MONGODB_URI` se postavlja **po okruženju** (staging deployment dobija staging
+   connection string), ili kod počne da čita `MONGODB_STAGING_URI`;
+2. `dbName` prestaje da se prosleđuje kad `DB_NAME` nije eksplicitno postavljen,
+   da ime iz URI-ja bude autoritet. Produkcijski URI **već nosi** `marysoll_db` u
+   putanji, pa je uklanjanje fallback-a bezbedno;
+3. isto važi za `scripts/*` — migraciona skripta ima isti obrazac;
+4. potvrditi u samom deployment-u na koju se bazu stvarno spaja, pre bilo kakvog
+   `--apply`.
+
+### Dok gate nije zatvoren
+
+Test domeni su bezbedni za **prikaz** i kontrolisani QA, ali **nisu sandbox
+podataka**. Destruktivne radnje (merge korisnika, masovne izmene, stvarna slanja,
+migracije sa `--apply`) rade se samo na demo tenantima i unapred pripremljenim
+zapisima.
 
 ## Reference
 
