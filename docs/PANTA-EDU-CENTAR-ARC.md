@@ -207,6 +207,43 @@ EducationContent {
 
 ---
 
+## FAZA 4B — `EducationOffering` + `EducationInquiry`
+
+Preuzeto iz starog Slice 11, koji se inače gubio pri razlaganju Education luka.
+Faza 0 rezerviše `/education/offerings` i `/education/inquiries`, ali modele
+niko nije implementirao — ovo je ta faza.
+
+```
+EducationOffering { tenantId, title, slug, format, duration?, price?, status }
+EducationInquiry  { tenantId, offeringId, clientProfileId?, contact, message,
+                    status: new|contacted|converted|closed }
+```
+
+⚠️ **`EducationInquiry` NIJE booking.** Nema availability, nema hold, nema
+rezervacije termina. To je upit koji Marina ručno obrađuje — isti princip kao
+`GuidedProgram` u Fazi 9. Pravi tok „izaberi → availability → booking → intake"
+pripada Consultation/Booking luku (Slice 7–10), ne ovome.
+
+`EducationInquiry` sme, ali ne mora, imati `clientProfileId` — upit može stići i
+od posetioca koji još nije klijent. Kad postoji, mora se zvati `clientProfileId`.
+
+**Capability:** `education.inquiries` (već registrovan, `platformAvailable:false`),
+odvojen od `education.catalog` — tenant sme objaviti ponudu pre nego što ima
+obradu upita.
+
+⚠️ Oba modela nose `tenantId` → **moraju** u `tenantScopedModels()`.
+
+**Tek ovde** `content.featured-education` i `content.professional-path` prestaju
+da budu `content.*` teaseri i postaju `education.*` blokovi sa loaderom nad
+`EducationOffering` i `capability: "education.catalog"` — kako `definitions.ts`
+i `docs/TODO.md` („Tvrde granice") već predviđaju.
+
+**Redosled prema Fazi 4:** `EducationContent` je Marinin prvi potreban proizvod
+(sadržaj), pa 4 ide prva. 4B sme i posle Faze 5 ako je prioritet brže pustiti
+javnu edukaciju.
+
+---
+
 ## FAZA 5 — Javno `/edukacija` → **release gate**
 
 - `src/app/tenant/edukacija/page.tsx` i `[...slug]/page.tsx` (catch-all, kao `/blogs`)
@@ -253,6 +290,46 @@ Sadržaj se sklapa **po capability-jima tenanta i stvarnim podacima klijenta**: 
 **`Moj Prostor`** — nov tab u `PANEL_TABS` (`src/layout/ClientPanelLayout.tsx`), telo kroz `next/dynamic({ssr:false})` kao ostali. `Moj Profil` ostaje samo identitet/podešavanja. Pod-rute ispod `/panel/…`; `"/panel"` je već u `CLIENT_TENANT_PATHS` → **nula izmena u proxy-ju**.
 
 ⚠️ Sve privatne strane: `export const metadata = { robots: { index:false, follow:false } }` (presedan `src/app/tenant/panel/page.tsx`), van sitemap-a, prefiks u `DISALLOWED_PATHS` (`src/lib/seo/robotsRules.ts`).
+
+### Adapteri u `Moj Prostor`
+
+`Moj Prostor` nije Education ekran — to je mesto gde klijent vidi **odnos sa tim
+biznisom kroz vreme**. Za salon: termini, nagrade, preporuke. Za Marinu:
+edukacija, vodiči, program, konsultacije. Za hibrid: sve zajedno.
+
+| adapter | stanje |
+|---|---|
+| `Appointment` | ✅ podaci postoje (`clientProfileId`, tenant-first indeks) |
+| `Testimonial` / Preporuke | ✅ podaci postoje (`clientProfileId`) |
+| **Loyalty** | ✅ **podaci I ekran postoje** — jedan od prvih adaptera |
+| Education (assignment) | → Faza 6B |
+| SkincareGuide | → Faza 8 |
+| GuidedProgram | → Faza 9 |
+| Intake | → stari Slice 9 |
+
+**Loyalty je najjeftiniji prvi adapter.** Klijentski panel već ima tab „Nagrade"
+(`PANEL_TABS`), sidebar ga prikazuje kad program teče ili kad klijent ima
+istoriju (`showLoyaltyTab`), i postoji pet gotovih ruta:
+`/api/loyalty/client/{me,ledger,vouchers,moments,share-voucher}`. Nedostaje samo
+da Loyalty postane deo jedinstvenog pregleda umesto izolovanog taba:
+
+```
+MOJE NAGRADE
+❤️ 4 srca    ⭐ 120 poena
+Još 1 srce do sledeće nagrade
+Dostupno: 15% popusta · važi do …
+[ Iskoristi / Pogledaj nagrade ]
+
+ISTORIJA
++2 poena   Dolazak na termin
++1 srce    24. avgust
+-50 poena  Iskorišćena nagrada
+```
+
+⚠️ **`Moj Prostor` ne postaje novi Loyalty Engine** — samo čita postojeće
+podatke. Zaseban „Nagrade" ekran u početku ostaje kao detaljna stranica na koju
+vodi CTA; da li uopšte treba da ostane top-level tab odlučuje se kasnije, iz
+upotrebe.
 
 Guide i Program kasnije samo **dodaju adaptere** u ovaj workspace.
 
