@@ -66,6 +66,7 @@ export function Theme9Landing(props: ThemeLandingProps) {
           salonName={native.header.salonName}
           salonLogo={native.header.logo ?? null}
           kicker={native.header.kicker}
+          nav={native.nav}
         />
 
         {/* Redosled je redosled sekcija na strani — mora se poklapati sa
@@ -89,6 +90,7 @@ export function Theme9Landing(props: ThemeLandingProps) {
           email={native.footer.email}
           instagramUrl={native.footer.instagram.url}
           tenantSlug={tenantSlug}
+          nav={native.nav}
         />
       </div>
       </Theme9BookingProvider>
