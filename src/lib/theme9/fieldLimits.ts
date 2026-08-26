@@ -21,7 +21,7 @@
  * Ovde žive samo brojevi. Zapaženi maksimumi po vrsti polja:
  *
  *     eyebrow   26   headline   62   lead      168   note   121
- *     itemTitle 27   itemText   83   bullet     40   chip    16
+ *     itemTitle 31   itemText  136   bullet     38   chip    13
  *     ctaLabel  22   price      21   slot        6   label   19
  *
  * POSLEDICA PO ZATEČEN SADRŽAJ

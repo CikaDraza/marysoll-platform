@@ -1153,8 +1153,11 @@ export interface LandingStructure {
        *   true      — izričito traži sekciju
        *   false     — izričito je zabranjuje (apsolutni veto)
        * Zato ovde NEMA Mongoose default-a; vidi `SalonProfile` šemu.
+       *
+       * `null` postoji SAMO u letu (panel → server) i znači „ukloni odluku";
+       * u bazi se nikad ne čuva. Vidi `lib/theme9/sectionDisplayChoice.ts`.
        */
-      enabled?: boolean;
+      enabled?: boolean | null;
       eyebrow?: string;
       /** Naslov levo („Odaberi svoj put"). */
       headline?: string;
@@ -1182,8 +1185,11 @@ export interface LandingStructure {
        *   true      — izričito traži sekciju
        *   false     — izričito je zabranjuje (apsolutni veto)
        * Zato ovde NEMA Mongoose default-a; vidi `SalonProfile` šemu.
+       *
+       * `null` postoji SAMO u letu (panel → server) i znači „ukloni odluku";
+       * u bazi se nikad ne čuva. Vidi `lib/theme9/sectionDisplayChoice.ts`.
        */
-      enabled?: boolean;
+      enabled?: boolean | null;
       eyebrow?: string;
       headline?: string;
       filters?: { id: string; label: string }[];
@@ -1206,8 +1212,11 @@ export interface LandingStructure {
        *   true      — izričito traži sekciju
        *   false     — izričito je zabranjuje (apsolutni veto)
        * Zato ovde NEMA Mongoose default-a; vidi `SalonProfile` šemu.
+       *
+       * `null` postoji SAMO u letu (panel → server) i znači „ukloni odluku";
+       * u bazi se nikad ne čuva. Vidi `lib/theme9/sectionDisplayChoice.ts`.
        */
-      enabled?: boolean;
+      enabled?: boolean | null;
       eyebrow?: string;
       headline?: string;
       lead?: string;
@@ -1222,8 +1231,11 @@ export interface LandingStructure {
        *   true      — izričito traži sekciju
        *   false     — izričito je zabranjuje (apsolutni veto)
        * Zato ovde NEMA Mongoose default-a; vidi `SalonProfile` šemu.
+       *
+       * `null` postoji SAMO u letu (panel → server) i znači „ukloni odluku";
+       * u bazi se nikad ne čuva. Vidi `lib/theme9/sectionDisplayChoice.ts`.
        */
-      enabled?: boolean;
+      enabled?: boolean | null;
       eyebrow?: string;
       headline?: string;
       lead?: string;
@@ -1253,8 +1265,11 @@ export interface LandingStructure {
        *   true      — izričito traži sekciju
        *   false     — izričito je zabranjuje (apsolutni veto)
        * Zato ovde NEMA Mongoose default-a; vidi `SalonProfile` šemu.
+       *
+       * `null` postoji SAMO u letu (panel → server) i znači „ukloni odluku";
+       * u bazi se nikad ne čuva. Vidi `lib/theme9/sectionDisplayChoice.ts`.
        */
-      enabled?: boolean;
+      enabled?: boolean | null;
       eyebrow?: string;
       headline?: string;
       lead?: string;
@@ -1278,8 +1293,11 @@ export interface LandingStructure {
        *   true      — izričito traži sekciju
        *   false     — izričito je zabranjuje (apsolutni veto)
        * Zato ovde NEMA Mongoose default-a; vidi `SalonProfile` šemu.
+       *
+       * `null` postoji SAMO u letu (panel → server) i znači „ukloni odluku";
+       * u bazi se nikad ne čuva. Vidi `lib/theme9/sectionDisplayChoice.ts`.
        */
-      enabled?: boolean;
+      enabled?: boolean | null;
       eyebrow?: string;
       status?: string;
       headline?: string;
@@ -1305,8 +1323,11 @@ export interface LandingStructure {
        *   true      — izričito traži sekciju
        *   false     — izričito je zabranjuje (apsolutni veto)
        * Zato ovde NEMA Mongoose default-a; vidi `SalonProfile` šemu.
+       *
+       * `null` postoji SAMO u letu (panel → server) i znači „ukloni odluku";
+       * u bazi se nikad ne čuva. Vidi `lib/theme9/sectionDisplayChoice.ts`.
        */
-      enabled?: boolean;
+      enabled?: boolean | null;
       eyebrow?: string;
       headline?: string;
       lead?: string;

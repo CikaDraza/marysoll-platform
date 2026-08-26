@@ -22,7 +22,12 @@
  */
 
 import type { LandingStructure } from "@/types";
-import { ImageInputField, inp, lbl, SectionCard } from "./primitives";
+import {
+  ImageInputField,
+  inp,
+  lbl,
+  TristateSectionCard,
+} from "./primitives";
 import {
   fieldFillState,
   fieldMax,
@@ -231,18 +236,21 @@ function makeId(prefix: string, taken: (string | undefined)[]): string {
 }
 
 /**
- * PRIVREMENO — 2B korak 5 („CMS tri-state presentation") ovo zamenjuje.
+ * PRIKAZ SEKCIJE — tri-state (2B.4, zatvoreno).
  *
- * `enabled` je od 2B koraka 1 tri-state, a `SectionCard` zna samo za dva
- * stanja. Dok ne dobije treće, prekidač prikazuje odsustvo odluke kao
- * isključeno. To je ISTO ponašanje kao pre tri-state izmene (šema je tada
- * materijalizovala `false`), pa ovo ne uvodi regresiju — ali jeste privremeno
- * netačno i ne sme se isporučiti bez koraka 5.
+ * Svih sedam sekcija koristi `TristateSectionCard`, ne binarni prekidač:
+ *
+ *     Podrazumevano  → `enabled` se UKLANJA iz dokumenta; odlučuje resolver
+ *     Uključeno      → `enabled: true`
+ *     Isključeno     → `enabled: false`, apsolutni veto
+ *
+ * Izbor „Podrazumevano" šalje `enabled: null`, što je jedini signal za
+ * uklanjanje odluke — izostavljen ključ bi lossless merge protumačio kao
+ * „ništa ne menjaj". Prevod radi `lib/theme9/sectionDisplayChoice.ts`, a
+ * uklanjanje `mergeLandingStructureUpdate()`.
+ *
+ * Nijedna promena izbora NE dira sadržaj sekcije.
  */
-function toggleState(enabled?: boolean): boolean {
-  return enabled ?? false;
-}
-
 // ─── 1. audiencePaths ────────────────────────────────────────────────────────
 
 type AudiencePaths = NonNullable<Landing["audiencePaths"]>;
@@ -255,12 +263,12 @@ export function AudiencePathsEditor({ ls, update }: Theme9SectionsProps) {
     update("audiencePaths", { ...block, paths: next });
 
   return (
-    <SectionCard
+    <TristateSectionCard
       title="Theme-9 / Putanje za posetioce"
       badge="theme-9"
       tone="odd"
-      enabled={toggleState(block.enabled)}
-      onToggle={(v) => update("audiencePaths", { ...block, enabled: v })}
+      enabled={block.enabled}
+      onChange={(v) => update("audiencePaths", { ...block, enabled: v })}
     >
       <Hint>
         Prva sekcija ispod hero-a. Razdvaja posetioce po nameri — na primer
@@ -376,7 +384,7 @@ export function AudiencePathsEditor({ ls, update }: Theme9SectionsProps) {
           }
         />
       </div>
-    </SectionCard>
+    </TristateSectionCard>
   );
 }
 
@@ -391,12 +399,12 @@ export function TopicHubEditor({ ls, update }: Theme9SectionsProps) {
   const topics = block.topics ?? [];
 
   return (
-    <SectionCard
+    <TristateSectionCard
       title="Theme-9 / Centar tema"
       badge="theme-9"
       tone="even"
-      enabled={toggleState(block.enabled)}
-      onToggle={(v) => update("topicHub", { ...block, enabled: v })}
+      enabled={block.enabled}
+      onChange={(v) => update("topicHub", { ...block, enabled: v })}
     >
       <Hint>
         Spisak tema koje posetilac može da filtrira. Svaka tema pripada jednoj
@@ -546,7 +554,7 @@ export function TopicHubEditor({ ls, update }: Theme9SectionsProps) {
           }
         />
       </div>
-    </SectionCard>
+    </TristateSectionCard>
   );
 }
 
@@ -561,12 +569,12 @@ export function FeaturedEducationEditor({ ls, update }: Theme9SectionsProps) {
   const details = block.details ?? {};
 
   return (
-    <SectionCard
+    <TristateSectionCard
       title="Theme-9 / Istaknuta edukacija"
       badge="theme-9"
       tone="odd"
-      enabled={toggleState(block.enabled)}
-      onToggle={(v) => update("featuredEducation", { ...block, enabled: v })}
+      enabled={block.enabled}
+      onChange={(v) => update("featuredEducation", { ...block, enabled: v })}
     >
       <Hint>
         Jedan istaknut program. Detalj koji ostavite prazan prikazuje se kao
@@ -700,7 +708,7 @@ export function FeaturedEducationEditor({ ls, update }: Theme9SectionsProps) {
         value={block.note}
         onChange={(v) => update("featuredEducation", { ...block, note: v })}
       />
-    </SectionCard>
+    </TristateSectionCard>
   );
 }
 
@@ -716,12 +724,12 @@ export function GuidedCareProcessEditor({ ls, update }: Theme9SectionsProps) {
   const steps = block.steps ?? [];
 
   return (
-    <SectionCard
+    <TristateSectionCard
       title="Theme-9 / Vođeni proces nege"
       badge="theme-9"
       tone="even"
-      enabled={toggleState(block.enabled)}
-      onToggle={(v) => update("guidedCareProcess", { ...block, enabled: v })}
+      enabled={block.enabled}
+      onChange={(v) => update("guidedCareProcess", { ...block, enabled: v })}
     >
       <Hint>Koraci kroz koje klijentkinja prolazi, redom.</Hint>
       <div className="grid grid-cols-2 gap-3">
@@ -792,7 +800,7 @@ export function GuidedCareProcessEditor({ ls, update }: Theme9SectionsProps) {
           }
         />
       </div>
-    </SectionCard>
+    </TristateSectionCard>
   );
 }
 
@@ -808,12 +816,12 @@ export function ProfessionalPathEditor({ ls, update }: Theme9SectionsProps) {
   const formats = block.formats ?? [];
 
   return (
-    <SectionCard
+    <TristateSectionCard
       title="Theme-9 / Profesionalni put"
       badge="theme-9"
       tone="odd"
-      enabled={toggleState(block.enabled)}
-      onToggle={(v) => update("professionalPath", { ...block, enabled: v })}
+      enabled={block.enabled}
+      onChange={(v) => update("professionalPath", { ...block, enabled: v })}
     >
       <Hint>
         Ponuda za kolege iz struke. Cena se ostavlja praznom dok nije potvrđena
@@ -931,7 +939,7 @@ export function ProfessionalPathEditor({ ls, update }: Theme9SectionsProps) {
         value={block.note}
         onChange={(v) => update("professionalPath", { ...block, note: v })}
       />
-    </SectionCard>
+    </TristateSectionCard>
   );
 }
 
@@ -953,12 +961,12 @@ export function CredentialsEditor({ ls, update }: Theme9SectionsProps) {
     update("credentials", { ...block, social: { ...social, ...change } });
 
   return (
-    <SectionCard
+    <TristateSectionCard
       title="Theme-9 / Zašto baš ona"
       badge="theme-9"
       tone="even"
-      enabled={toggleState(block.enabled)}
-      onToggle={(v) => update("credentials", { ...block, enabled: v })}
+      enabled={block.enabled}
+      onChange={(v) => update("credentials", { ...block, enabled: v })}
     >
       <Hint>
         Stubovi poverenja. Ovo NIJE tabela obrazovanja iz sekcije „O nama“ —
@@ -1100,7 +1108,7 @@ export function CredentialsEditor({ ls, update }: Theme9SectionsProps) {
         value={block.note}
         onChange={(v) => update("credentials", { ...block, note: v })}
       />
-    </SectionCard>
+    </TristateSectionCard>
   );
 }
 
@@ -1120,12 +1128,12 @@ export function FinalCtaEditor({ ls, update }: Theme9SectionsProps) {
     update("finalCta", { ...block, calendar: { ...calendar, ...change } });
 
   return (
-    <SectionCard
+    <TristateSectionCard
       title="Theme-9 / Završni poziv"
       badge="theme-9"
       tone="odd"
-      enabled={toggleState(block.enabled)}
-      onToggle={(v) => update("finalCta", { ...block, enabled: v })}
+      enabled={block.enabled}
+      onChange={(v) => update("finalCta", { ...block, enabled: v })}
     >
       <Hint>
         Poslednja sekcija stranice. Termini ispod su ILUSTRACIJA uz poziv na
@@ -1234,7 +1242,7 @@ export function FinalCtaEditor({ ls, update }: Theme9SectionsProps) {
           onChange={(v) => update("finalCta", { ...block, note: v })}
         />
       </div>
-    </SectionCard>
+    </TristateSectionCard>
   );
 }
 
