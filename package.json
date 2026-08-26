@@ -17,6 +17,7 @@
     "backfill:identity": "echo 'Deprecated — backfill-user-identity script removed'",
     "test:watch": "vitest",
     "seed:theme9": "node --env-file=.env.local scripts/seeds/seed-expert-editorial.mts",
+    "normalize:theme9": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/normalize-theme9-section-state.mts",
     "push:subscriptions": "node --env-file=.env.local scripts/prune-push-subscriptions.mjs"
   },
   "dependencies": {
