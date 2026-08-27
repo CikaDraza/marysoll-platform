@@ -5,10 +5,11 @@
 self.addEventListener("push", function (event) {
   if (event.data) {
     const data = event.data.json();
+    const notificationIcon = data.icon || "/marysoll_elegant_logo.png";
     const options = {
       body: data.body,
-      icon: data.icon || "/marysoll_elegant_logo.png",
-      badge: "/marysoll_elegant_logo.png",
+      icon: notificationIcon,
+      badge: notificationIcon,
       tag: data.tag,
       data: {
         url: data.url || "/",

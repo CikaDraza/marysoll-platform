@@ -19,7 +19,7 @@ import {
   sendTestimonialNotification,
 } from "./email/email";
 import { sendWebPushToUser, sendWebPushToMany } from "@/lib/webPush";
-import { usableRasterLogo } from "@/lib/branding/rasterLogo";
+import { resolveNotificationIcon } from "@/lib/branding/rasterLogo";
 import {
   ADMIN_APPOINTMENTS_PATH,
   ADMIN_TESTIMONIALS_PATH,
@@ -43,9 +43,7 @@ export async function getSalonBranding(
     // Ikona notifikacije = SAMO notificationLogo (upload je ograničen na raster
     // PNG/JPG/WebP), inače Marysoll default. Tenant `logo` se NE koristi jer može
     // biti SVG, koji web push ne renderuje (browser prikaže uzvičnik).
-    const icon = usableRasterLogo(profile?.notificationLogo)
-      ? profile!.notificationLogo!
-      : "/marysoll_elegant_logo.png";
+    const icon = resolveNotificationIcon(profile?.notificationLogo);
     return {
       icon,
       name: profile?.name || "Salon",
@@ -53,7 +51,7 @@ export async function getSalonBranding(
     };
   } catch {
     return {
-      icon: "/marysoll_elegant_logo.png",
+      icon: resolveNotificationIcon(null),
       name: "Salon",
       clientGender: "neutral",
     };
