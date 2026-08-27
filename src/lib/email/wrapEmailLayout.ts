@@ -12,7 +12,10 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { SalonProfile } from "@/models/SalonProfile";
 import { ProfilPlatforme } from "@/models/ProfilPlatforme";
 import { Types } from "mongoose";
-import { usableRasterLogo } from "@/lib/branding/rasterLogo";
+import {
+  DEFAULT_NOTIFICATION_ICON,
+  resolveNotificationIcon,
+} from "@/lib/branding/rasterLogo";
 import { platformOrigin } from "@/lib/platform/host-context";
 
 export interface EmailLayoutData {
@@ -80,14 +83,14 @@ export async function resolveSalon(
     return {
       name: String(raw.name ?? "Marysoll"),
       description: raw.description ? String(raw.description) : undefined,
-      // Mejlovi koriste notificationLogo, uz fallback na logo sajta — ali samo
-      // raster: SVG bi u Gmail/Outlook bio slomljena slika (null → template
-      // pada na platformski PNG).
-      logo: usableRasterLogo(raw.notificationLogo)
-        ? raw.notificationLogo
-        : usableRasterLogo(raw.logo)
-          ? raw.logo
-          : null,
+      // Jedini tenant authority za mejlove je notificationLogo. Shared resolver
+      // bira Marysoll fallback; null ovde ostavlja email boundary-u da napravi
+      // njegov apsolutni URL preko platformOrigin(). Site logo se ne razmatra.
+      logo:
+        resolveNotificationIcon(raw.notificationLogo) ===
+        DEFAULT_NOTIFICATION_ICON
+          ? null
+          : String(raw.notificationLogo),
       street: raw.street ? String(raw.street) : undefined,
       city: raw.city ? String(raw.city) : undefined,
       phone: raw.phone ? String(raw.phone) : undefined,

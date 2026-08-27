@@ -11,16 +11,11 @@ import {
   environmentKeyOfOrigin,
 } from "@/lib/platform/host-context";
 import type { UserNotificationSettings } from "@/types";
-
-export const DEFAULT_PUSH_ICON = "/marysoll_elegant_logo.png";
-
-function usablePushIcon(icon: unknown): icon is string {
-  return (
-    typeof icon === "string" &&
-    icon.trim() !== "" &&
-    !/\.svg(\?|#|$)/i.test(icon)
-  );
-}
+import {
+  DEFAULT_NOTIFICATION_ICON,
+  resolveNotificationIcon,
+  usableRasterLogo,
+} from "@/lib/branding/rasterLogo";
 
 export interface PushPayload {
   title: string;
@@ -87,7 +82,7 @@ async function sendToSubscriptions(
   // renderuju pouzdano, a payload nikada ne sme ostati bez Marysoll fallbacka.
   const message = JSON.stringify({
     ...payload,
-    icon: usablePushIcon(payload.icon) ? payload.icon : DEFAULT_PUSH_ICON,
+    icon: resolveNotificationIcon(payload.icon),
   });
   const deadEndpoints: string[] = [];
 
@@ -143,11 +138,11 @@ export async function sendWebPushToUser(
     // `notificationLogo` iz Dashboard > Profil. Običan site logo se ne koristi
     // jer sme biti SVG. Bez podešenog raster loga ostaje Marysoll fallback.
     let resolvedPayload = payload;
-    if (!usablePushIcon(payload.icon) && user.tenantId) {
+    if (!usableRasterLogo(payload.icon) && user.tenantId) {
       const profile = (await SalonProfile.findOne({ tenantId: user.tenantId })
         .select("notificationLogo")
         .lean()) as { notificationLogo?: string | null } | null;
-      if (usablePushIcon(profile?.notificationLogo)) {
+      if (usableRasterLogo(profile?.notificationLogo)) {
         resolvedPayload = { ...payload, icon: profile.notificationLogo };
       }
     }
@@ -190,7 +185,12 @@ export async function sendWebPushToAuthUser(
 
     if (!user?.pushSubscriptions?.length) return;
 
-    const dead = await sendToSubscriptions(user.pushSubscriptions, payload);
+    // AuthUser je platformski/superadmin kontekst: tenant logo iz payload-a ne
+    // sme da promeni platformsku Marysoll identifikaciju.
+    const dead = await sendToSubscriptions(user.pushSubscriptions, {
+      ...payload,
+      icon: DEFAULT_NOTIFICATION_ICON,
+    });
     if (dead.length) {
       await AuthUser.findByIdAndUpdate(authUserId, {
         $pull: { pushSubscriptions: { endpoint: { $in: dead } } },
