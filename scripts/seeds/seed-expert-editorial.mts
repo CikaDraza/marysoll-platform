@@ -30,7 +30,12 @@ import {
 } from "./data/expert-editorial-content.mts";
 
 const MONGODB_URI = process.env.MONGODB_URI;
-const DB_NAME = process.env.DB_NAME || "marysoll_db";
+/**
+ * Ime baze dolazi iz URI-ja. `dbName` opcija nadjacava connection string, pa se
+ * prosledjuje samo kad je DB_NAME eksplicitno postavljen — inace bi skripta
+ * uvek gadjala produkciju bez obzira na URI.
+ */
+const DB_NAME = process.env.DB_NAME;
 
 const args = process.argv.slice(2);
 const DRY_RUN = args.includes("--dry-run");
@@ -105,7 +110,7 @@ async function main() {
   }
   console.log("✓ Validacija sadržaja prošla");
 
-  await mongoose.connect(MONGODB_URI!, { dbName: DB_NAME });
+  await mongoose.connect(MONGODB_URI!, DB_NAME ? { dbName: DB_NAME } : {});
   const db = mongoose.connection.db!;
 
   const tenant = await db.collection("tenants").findOne({ slug: tenantArg });

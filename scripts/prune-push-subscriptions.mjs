@@ -26,7 +26,12 @@
 import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
-const DB_NAME = process.env.DB_NAME || "marysoll_db";
+/**
+ * Ime baze dolazi iz URI-ja. `dbName` opcija nadjacava connection string, pa se
+ * prosledjuje samo kad je DB_NAME eksplicitno postavljen — inace bi skripta
+ * uvek gadjala produkciju bez obzira na URI.
+ */
+const DB_NAME = process.env.DB_NAME;
 const COLLECTIONS = ["tenantusers", "authusers"];
 const NO_ORIGIN = "(bez origin-a — zapis stariji od polja)";
 
@@ -112,7 +117,7 @@ async function prune(coll) {
 }
 
 async function main() {
-  await mongoose.connect(MONGODB_URI, { dbName: DB_NAME });
+  await mongoose.connect(MONGODB_URI, DB_NAME ? { dbName: DB_NAME } : {});
   const colls = COLLECTIONS.map((name) => mongoose.connection.collection(name));
 
   console.log("STANJE PRE:");
