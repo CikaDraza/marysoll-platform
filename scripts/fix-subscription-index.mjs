@@ -15,7 +15,12 @@
 import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
-const DB_NAME = process.env.DB_NAME || "marysoll_db";
+/**
+ * Ime baze dolazi iz URI-ja. `dbName` opcija nadjacava connection string, pa se
+ * prosledjuje samo kad je DB_NAME eksplicitno postavljen — inace bi skripta
+ * uvek gadjala produkciju bez obzira na URI.
+ */
+const DB_NAME = process.env.DB_NAME;
 
 if (!MONGODB_URI) {
   console.error("❌ MONGODB_URI is not set (use: node --env-file=.env.local ...)");
@@ -45,7 +50,7 @@ function isAlreadyCorrect(index) {
 }
 
 async function main() {
-  await mongoose.connect(MONGODB_URI, { dbName: DB_NAME });
+  await mongoose.connect(MONGODB_URI, DB_NAME ? { dbName: DB_NAME } : {});
   const coll = mongoose.connection.collection("subscriptions");
 
   const indexes = await coll.indexes();

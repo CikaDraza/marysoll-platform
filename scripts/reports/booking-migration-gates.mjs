@@ -16,7 +16,12 @@
 import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
-const DB_NAME = process.env.DB_NAME || "marysoll_db";
+/**
+ * Ime baze dolazi iz URI-ja. `dbName` opcija nadjacava connection string, pa se
+ * prosledjuje samo kad je DB_NAME eksplicitno postavljen — inace bi skripta
+ * uvek gadjala produkciju bez obzira na URI.
+ */
+const DB_NAME = process.env.DB_NAME;
 
 if (!MONGODB_URI) {
   console.error("MONGODB_URI nije postavljen (probaj --env-file=.env.local).");
@@ -24,7 +29,7 @@ if (!MONGODB_URI) {
 }
 
 async function main() {
-  await mongoose.connect(MONGODB_URI, { dbName: DB_NAME });
+  await mongoose.connect(MONGODB_URI, DB_NAME ? { dbName: DB_NAME } : {});
   const admin = mongoose.connection.db.admin();
   const hello = await admin.command({ hello: 1 });
 
@@ -33,7 +38,8 @@ async function main() {
   const supportsTransactions = isReplicaSet || isSharded;
 
   console.log("\n=== 1. TRANSACTION CAPABILITY ===");
-  console.log(`  baza            : ${DB_NAME}`);
+  // Stvarno spojena baza, ne ono sto smo trazili — jedina istina posle connect-a.
+  console.log(`  baza            : ${mongoose.connection.name}`);
   console.log(`  topologija      : ${isSharded ? "sharded cluster" : isReplicaSet ? `replica set (${hello.setName})` : "standalone"}`);
   console.log(`  maxWireVersion  : ${hello.maxWireVersion}`);
   console.log(`  transakcije     : ${supportsTransactions ? "PODRŽANE ✓" : "NISU PODRŽANE ✗"}`);
