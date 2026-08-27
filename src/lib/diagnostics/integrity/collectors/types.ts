@@ -23,3 +23,6 @@ export interface CollectorOutput {
 export type IntegrityCollector = (
   ctx: CollectorContext,
 ) => Promise<CollectorOutput>;
+
+/** Platform provere nemaju tenant kome bi se nalaz legitimno pripisao. */
+export type PlatformIntegrityCollector = () => Promise<CollectorOutput>;

@@ -19,7 +19,12 @@ export type {
 } from "./types";
 export { FINDINGS_MAX, capMessage, capEvidence } from "./types";
 
-export type { IntegrityCheckDefinition, IntegrityCheckKey } from "./registry";
+export type {
+  IntegrityCheckDefinition,
+  IntegrityCheckKey,
+  IntegrityCheckKeyForScope,
+  IntegrityCheckScope,
+} from "./registry";
 export { INTEGRITY_CHECKS, getCheckDefinition } from "./registry";
 
 export type {
