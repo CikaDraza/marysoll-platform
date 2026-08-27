@@ -290,10 +290,29 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/**
+ * `enabled: null` je JEDINI signal za uklanjanje odluke o prikazu (2B.4).
+ *
+ * Tri-state (`odsutno` / `true` / `false`) se ne može izraziti izostavljanjem
+ * ključa: `JSON.stringify` briše `undefined`, a lossless merge izostavljen ključ
+ * ispravno tumači kao „ništa ne menjaj". Bez eksplicitnog signala odluka jednom
+ * doneta ne bi mogla da se povuče.
+ *
+ * `null` zato putuje samo od panela do servera i ovde nestaje — u bazi se nikad
+ * ne čuva. Vidi `lib/theme9/sectionDisplayChoice.ts`.
+ */
+function dropClearedDecision(section: Record<string, unknown>): Record<string, unknown> {
+  if (section.enabled !== null) return section;
+  const next = { ...section };
+  delete next.enabled;
+  return next;
+}
+
 function mergeRecord(current: unknown, incoming: unknown): unknown {
   if (incoming === undefined) return current;
-  if (!isRecord(current) || !isRecord(incoming)) return incoming;
-  return { ...current, ...incoming };
+  if (!isRecord(incoming)) return incoming;
+  if (!isRecord(current)) return dropClearedDecision(incoming);
+  return dropClearedDecision({ ...current, ...incoming });
 }
 
 function mergeNamedSections(

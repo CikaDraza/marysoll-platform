@@ -5,6 +5,7 @@
  * Fiksna Expert Editorial paleta i tipografija, identična početnoj strani —
  * `colorPolicy: "locked"`, tenant branding se ne mapira (ARCHITECTURAL_RULES §3.4).
  */
+import { homeOnlyTheme9Nav } from "@/lib/theme9/navigationResolver";
 import { Theme9Footer, Theme9Header } from "../theme-9";
 import { Theme9BookingProvider } from "../theme-9/booking/Theme9BookingProvider";
 import type { ThemeShellProps } from "./types";
@@ -13,8 +14,11 @@ const THEME9_FONT_HREF =
   "https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Instrument+Sans:wght@400;500;600;700&display=swap";
 
 export function Theme9Shell(props: ThemeShellProps) {
-  const { shellNative, tenantSlug, children, headerProps } = props;
+  const { shellNative, tenantSlug, base, children, headerProps } = props;
   const native = shellNative["theme-9"];
+  // 2C: nav dolazi razrešen iz view modela; bez njega samo „Početna" (nikad
+  // hardkodovane stavke, jer one vode na strane koje tenant možda nema).
+  const nav = native?.nav ?? homeOnlyTheme9Nav(base);
 
   return (
     <Theme9BookingProvider
@@ -31,6 +35,7 @@ export function Theme9Shell(props: ThemeShellProps) {
         salonName={native?.header.salonName ?? headerProps.salonName}
         salonLogo={native?.header.logo ?? headerProps.salonLogo}
         kicker={native?.header.kicker}
+        nav={nav}
       />
 
       <main className="flex-1">{children}</main>
@@ -42,6 +47,7 @@ export function Theme9Shell(props: ThemeShellProps) {
           email={native.footer.email}
           instagramUrl={native.footer.instagramUrl}
           tenantSlug={tenantSlug}
+          nav={nav}
         />
       )}
     </div>

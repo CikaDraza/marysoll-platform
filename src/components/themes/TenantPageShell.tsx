@@ -4,6 +4,10 @@ import {
   fetchPublicServices,
 } from "@/lib/tenant/fetchTenantData";
 import { shellNeedsServices } from "@/lib/platform/theme-shell-native";
+import {
+  resolveTheme9EducationFacts,
+  theme9NavNeedsFacts,
+} from "@/lib/theme9/navigation-server";
 import { TenantShellClient } from "./TenantShellClient";
 
 interface Props {
@@ -27,15 +31,28 @@ export async function TenantPageShell({ tenantSlug, children }: Props) {
   const basePath = headersList.get("x-tenant-base-path") ?? "";
   const themeSlug = basePath ? tenantSlug : undefined;
 
-  // Katalog usluga traži samo shell koji ima booking površinu (danas theme-8
-  // footer modal). Odluku drži `theme-shell-native`, ne ova strana — inače bi
-  // svaka nova tema morala da se doda i ovde.
-  const services = shellNeedsServices(salon.landingTheme ?? "")
-    ? await fetchPublicServices(slugFromHeader)
-    : [];
+  // Dopunski podaci se traže SAMO za temu kojoj trebaju; odluku drži lib, ne
+  // ova strana — inače bi svaka nova tema morala da se doda i ovde.
+  //   usluge  — shell sa booking površinom (danas theme-8 footer modal)
+  //   nav     — theme-9 činjenice o edukativnoj površini (2C)
+  // Podstranica ih prikuplja isto kao početna: da header na `/za-klijente` ne
+  // bi pokazivao drugi meni od header-a na `/`.
+  const [services, educationSurface] = await Promise.all([
+    shellNeedsServices(salon.landingTheme ?? "")
+      ? fetchPublicServices(slugFromHeader)
+      : Promise.resolve([]),
+    theme9NavNeedsFacts(salon.landingTheme)
+      ? resolveTheme9EducationFacts({ tenantSlug: slugFromHeader })
+      : Promise.resolve(undefined),
+  ]);
 
   return (
-    <TenantShellClient salon={salon} tenantSlug={themeSlug} services={services}>
+    <TenantShellClient
+      salon={salon}
+      tenantSlug={themeSlug}
+      services={services}
+      educationSurface={educationSurface}
+    >
       {children}
     </TenantShellClient>
   );

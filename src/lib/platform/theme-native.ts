@@ -24,6 +24,15 @@ import { resolveHeroCtas } from "@/helpers/heroCta";
 import { mergeHeroSocial } from "@/helpers/heroSocial";
 import { mapCMS } from "@/lib/CMSMapper/mapCMS";
 import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
+import { isThemePageAvailable } from "./theme-pages";
+import {
+  NO_EDUCATION_SURFACE,
+  THEME9_PAGE_KEYS,
+  resolveTheme9Nav,
+  type Theme9EducationFacts,
+  type Theme9NavItem,
+  type Theme9PageKey,
+} from "@/lib/theme9/navigationResolver";
 import {
   buildTheme6Native,
   type Theme6NativeData,
@@ -37,6 +46,12 @@ export interface ThemeNativeInput {
   tenantSlug?: string;
   clientSlug?: string;
   showTheme8TestimonialFixtures?: boolean;
+  /**
+   * 2C — činjenice o edukativnoj površini tenanta (`navigation-server.ts`).
+   * Izostavljene znače „ne znamo", a resolver na to odgovara fail-closed:
+   * stavka „Edukacija" se ne prikazuje. Vidi `buildTheme9Nav()`.
+   */
+  educationSurface?: Theme9EducationFacts;
 }
 
 /** Cenovnik: zajednički oblik za teme koje ga imaju kao native sekciju. */
@@ -129,6 +144,11 @@ export interface Theme6WithPricing extends Theme6NativeData {
  */
 export interface Theme9NativeData {
   /**
+   * 2C — razrešena navigacija. Header i Footer je NE računaju sami: stavka sme
+   * da postoji samo ako njeno odredište ima sadržaj.
+   */
+  nav: Theme9NavItem[];
+  /**
    * Launcher zakazivanja — podaci widget-a i modala. Nije sekcija (spec 6.11),
    * pa NE zavisi od `appointmentSection.enabled`. Privremeno: sadržaj je
    * autorski tekst za PRIKAZ toka; Booking Engine ga zamenjuje.
@@ -171,6 +191,32 @@ export function instagramOf(salon: SalonProfileData): NativeInstagram {
     url: gallery?.instagram?.link || fallback,
     handle: gallery?.instagram?.username,
   };
+}
+
+/**
+ * 2C — navigacija theme-9, jedina tema koja ima tematske podstranice.
+ *
+ * Dostupnost strane čita `isThemePageAvailable()` — ISTU funkciju preko koje
+ * ruta odlučuje da li vraća 404. Zato nav ne može da pokaže stavku koja vodi na
+ * stranu koje nema.
+ *
+ * Deli je `buildThemeNative` (početna) i `buildThemeShellNative` (podstranice),
+ * da meni ne bi bio različit na dve strane istog sajta.
+ */
+export function buildTheme9Nav(
+  salon: SalonProfileData,
+  tenantSlug: string | undefined,
+  education: Theme9EducationFacts = NO_EDUCATION_SURFACE,
+): Theme9NavItem[] {
+  const pages = Object.fromEntries(
+    THEME9_PAGE_KEYS.map((key) => [key, isThemePageAvailable(salon, key)]),
+  ) as Record<Theme9PageKey, boolean>;
+
+  return resolveTheme9Nav({
+    base: tenantSlug ? `/${tenantSlug}` : "",
+    pages,
+    education,
+  });
 }
 
 function pricingOf(input: ThemeNativeInput, headline?: string): NativePricing {
@@ -311,6 +357,7 @@ export function buildThemeNative(
     case "theme-9":
       return {
         "theme-9": {
+          nav: buildTheme9Nav(salon, tenantSlug, input.educationSurface),
           bookingPreview: salon.themeBookingPreview?.enabled
             ? salon.themeBookingPreview
             : undefined,

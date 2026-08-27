@@ -30,6 +30,18 @@
  * preskače korak 01, dok generički CTA („Zakaži konsultaciju") počinje od
  * njega. Isti hook, drugo ulazno stanje — nikad drugi tok. Nije implementirano
  * jer takav CTA još ne postoji.
+ *
+ * `initialOfferingId` INICIJALIZUJE STANJE, ne beleži ništa: ni booking, ni
+ * hold, ni rezervaciju. Zato se korak 01 ne prikazuje — poznato je samo šta
+ * korisnica želi da zakaže.
+ *
+ * UGOVOR ZA KASNIJE — `preferredDate` / `preferredStartTime`: theme-9 finalCta
+ * ulazi sa željenim danom i terminom, ali BEZ ponude. Ta preferenca NE sme da
+ * preskoči korak 02: trajanje ponude odlučuje da li je uopšte validna (15:00
+ * prolazi za 60 i 120 minuta, ne i za 180). Ulazi kao predizbor koji se
+ * validira; ako ne prođe, tok to kaže i nudi najbliže slobodno vreme, umesto da
+ * tiho promeni ono koje je korisnica videla. Matrica ulaza:
+ * `docs/PANTA-THEME9-FINAL-CTA.md` §4.2.
  */
 import { useCallback, useMemo, useState } from "react";
 import type { ThemeBookingPreview } from "@/types";

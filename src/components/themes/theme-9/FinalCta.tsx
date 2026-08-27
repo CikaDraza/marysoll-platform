@@ -8,6 +8,9 @@
  * ne sme se stvoriti utisak da je termin rezervisan klikom.
  *
  * Kada widget stigne, ova sekcija dobija njegov `slot` i statični blok nestaje.
+ * Ciljna semantika je zaključana u `docs/PANTA-THEME9-FINAL-CTA.md`: četiri
+ * ćelije iz stvarne dostupnosti, klik pamti `preferredDate`/`preferredStartTime`
+ * — nikad `validatedSlot` — i otvara ISTI widget, ne drugi tok.
  */
 import { BookingCta } from "./BookingCta";
 import { Eyebrow } from "./primitives";
