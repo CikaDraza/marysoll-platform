@@ -43,9 +43,14 @@ Briše:
 Pre bilo kakvog brisanja:
 
 1. `tenantId` mora biti validan — inače operacija pada;
-2. ownership invariant mora važiti — inače `TENANT_OWNERSHIP_INTEGRITY_ERROR`,
-   bez self-heal-a i bez traženja naloga po emailu;
+2. ownership invariant mora važiti: `Tenant.ownerId`, jedini OWNER
+   `TenantUser.authUserId` i postojeći `AuthUser._id` moraju biti isti — inače
+   `TENANT_OWNERSHIP_INTEGRITY_ERROR`, bez self-heal-a i bez traženja naloga po
+   emailu;
 3. buduća naplata mora biti zaustavljena (§5).
+
+Postojanje owner `AuthUser` dokumenta dokazuje se pre `stopFutureBilling()`,
+Paddle poziva, otvaranja Mongo sesije i bilo kog DB write/delete side-effecta.
 
 Cascade i provere su na jednom mestu: `src/lib/tenant/deleteTenant.ts`. Obe
 rute (owner i superadmin) prolaze kroz njega, posle svojih authorization i

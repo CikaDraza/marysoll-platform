@@ -15,6 +15,13 @@ import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { ImageSelect } from "@/components/elements/ImageSelect";
 import LoaderButton from "@/components/elements/LoaderButton";
+import {
+  SECTION_DISPLAY_CHOICES,
+  choiceFromEnabled,
+  choiceHint,
+  editorVisibleFor,
+  enabledFromChoice,
+} from "@/lib/theme9/sectionDisplayChoice";
 
 export const inp = [
   "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
@@ -70,6 +77,140 @@ export function ToggleSwitch({
 }
 
 // ─── Section card wrapper ─────────────────────────────────────────────────────
+
+/**
+ * Tri-state izbor prikaza sekcije (2B.4).
+ *
+ * Namerno NIJE checkbox sa „indeterminate" stanjem: to treće stanje vlasnici
+ * izgleda kao pokvarena kvačica, a ne kao odluka. Tri imenovana dugmeta kažu
+ * šta znače.
+ */
+export function TristateChoice({
+  value,
+  onChange,
+  label,
+}: {
+  value: boolean | null | undefined;
+  onChange: (next: boolean | null) => void;
+  label: string;
+}) {
+  const current = choiceFromEnabled(value);
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800/60"
+      >
+        {SECTION_DISPLAY_CHOICES.map((option) => {
+          const active = option.value === current;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => onChange(enabledFromChoice(option.value))}
+              className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition-colors ${
+                active
+                  ? "bg-violet-600 text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-[11px] text-gray-400 dark:text-gray-500">
+        {choiceHint(current)}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Kartica sekcije sa tri-state izborom.
+ *
+ * Zaseban od `SectionCard` namerno — legacy sekcije (teme 1–8) zadržavaju
+ * binarni prekidač i njihovo ponašanje se ne dira.
+ *
+ * Editor je vidljiv i u stanju „Podrazumevano": sadržaj je upravo ono na osnovu
+ * čega tema donosi odluku, pa bi sakriven editor bio zamka.
+ */
+export function TristateSectionCard({
+  id,
+  title,
+  badge,
+  enabled,
+  onChange,
+  children,
+  tone = "odd",
+  invalid = false,
+  errorMessage,
+}: {
+  id?: string;
+  title: string;
+  badge?: string;
+  enabled: boolean | null | undefined;
+  onChange: (next: boolean | null) => void;
+  children: React.ReactNode;
+  tone?: keyof typeof sectionCardTone;
+  invalid?: boolean;
+  errorMessage?: string;
+}) {
+  const choice = choiceFromEnabled(enabled);
+
+  return (
+    <div
+      id={id}
+      tabIndex={-1}
+      aria-invalid={invalid || undefined}
+      aria-describedby={invalid && id ? `${id}-error` : undefined}
+      className={`${sectionCardBase} ${sectionCardTone[tone]} scroll-mt-24 outline-none transition ${
+        invalid
+          ? "border-red-500 ring-2 ring-red-200 dark:border-red-400 dark:ring-red-900/50"
+          : ""
+      }`}
+    >
+      <div className="flex items-start justify-between gap-4 mb-5">
+        <div className="flex items-center gap-3">
+          <h3 className="font-bold text-gray-900 dark:text-white">{title}</h3>
+          {badge && (
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400">
+              {badge}
+            </span>
+          )}
+        </div>
+        <TristateChoice
+          value={enabled}
+          onChange={onChange}
+          label={`Prikaz sekcije: ${title}`}
+        />
+      </div>
+
+      {invalid && errorMessage && (
+        <p
+          id={id ? `${id}-error` : undefined}
+          role="alert"
+          className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
+        >
+          {errorMessage}
+        </p>
+      )}
+
+      {editorVisibleFor(choice) ? (
+        <div className="space-y-4">{children}</div>
+      ) : (
+        <p className="text-sm text-gray-400 dark:text-gray-500 italic">
+          Sekcija se ne prikazuje na sajtu. Sadržaj je sačuvan — vraćanjem na
+          „Podrazumevano” ili „Uključeno” pojavljuje se nepromenjen.
+        </p>
+      )}
+    </div>
+  );
+}
 
 export function SectionCard({
   title,

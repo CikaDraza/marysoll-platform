@@ -41,6 +41,10 @@ import { getTenantStats } from "@/lib/tenant/getTenantStats";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 import { mapBlogPost, publishedBlogFilter } from "@/lib/tenant/blogPosts";
 import { resolveTenantCapabilitySnapshot } from "@/lib/platform/capabilities-server";
+import {
+  resolveTheme9EducationFacts,
+  theme9NavNeedsFacts,
+} from "@/lib/theme9/navigation-server";
 
 interface Props {
   tenantSlug: string;
@@ -332,6 +336,13 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     }),
   });
 
+  // 2C: navigacija sme da ponudi samo odredišta koja stvarno imaju sadržaj.
+  // Dostupnost podstranica se čita iz profila (bez upita); ovde se dovlači samo
+  // ono što traži bazu, i to samo za temu kojoj treba.
+  const educationSurface = theme9NavNeedsFacts(landingTheme)
+    ? await resolveTheme9EducationFacts({ tenantId: data.tenantId })
+    : undefined;
+
   // Native delovi teme dobijaju svoj view model — bez domenskih tipova i bez
   // CMS flagova u zajedničkom kontraktu.
   const themeNative = buildThemeNative(landingTheme, {
@@ -342,6 +353,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     tenantSlug: themeSlug,
     clientSlug: tenantSlug || undefined,
     showTheme8TestimonialFixtures,
+    educationSurface,
   });
 
   // Shell (header/footer) i dizajn tokeni se takođe računaju ovde — tema ih

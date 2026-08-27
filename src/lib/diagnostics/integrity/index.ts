@@ -7,3 +7,5 @@ import "server-only";
  */
 
 export { runIntegrityChecks } from "./runner";
+export { runPlatformIntegrityChecks } from "./platformRunner";
+export type { PlatformIntegrityRun } from "./platformRunner";

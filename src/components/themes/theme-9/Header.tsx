@@ -14,6 +14,12 @@
  * Primarni CTA je LAUNCHER (spec 6.11), ne sekcija. Vizuelno stoji, ali je
  * INERTAN dok Expert Booking flow ne stigne (Slice 4/7) — nema fallback na
  * legacy `/termini`.
+ *
+ * 2C: NAV SE VIŠE NE PIŠE OVDE. Stavke stižu razrešene (`lib/theme9/
+ * navigationResolver.ts`), jer je hardkodovan niz vodio na strane koje za dati
+ * tenant ne postoje: `/za-klijente` i `/za-profesionalce` vraćaju 404 kad
+ * `themePages` nema sadržaj, a seed puni samo jednog tenanta. Header ovde bira
+ * SAMO natpise — odluku o postojanju odredišta donosi resolver.
  */
 import { useState } from "react";
 import { usePathname } from "next/navigation";
@@ -22,6 +28,7 @@ import Link from "next/link";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import LoggedButton from "@/components/auth/LoggedButton";
 import { useAuth } from "@/hooks/useAuth";
+import type { Theme9NavItem, Theme9NavKey } from "@/lib/theme9/navigationResolver";
 import { BookingCta } from "./BookingCta";
 
 interface Props {
@@ -37,7 +44,17 @@ interface Props {
    * skraćena, da ni predugačka vrednost ne razbije traku.
    */
   kicker?: string;
+  /** Razrešene stavke (2C) — Header ne odlučuje šta postoji, samo prikazuje. */
+  nav: Theme9NavItem[];
 }
+
+/** Natpisi su prezentacija i ostaju u temi; resolver zna samo ključeve. */
+const NAV_LABELS: Record<Theme9NavKey, string> = {
+  home: "Početna",
+  "za-klijente": "Za klijente",
+  "za-profesionalce": "Za profesionalce",
+  education: "Edukacija",
+};
 
 /**
  * Aktivna stavka: tačno poklapanje za početnu, prefiks za podstranice — da
@@ -56,6 +73,7 @@ export function Theme9Header({
   salonName,
   salonLogo,
   kicker,
+  nav,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user } = useAuth();
@@ -64,12 +82,10 @@ export function Theme9Header({
   // Bez hardkodovanog imena: tema nije Marina, ona joj je prvi tenant.
   const displayName = salonName;
 
-  const navItems = [
-    { name: "Početna", href: `${base}/` },
-    { name: "Za klijente", href: `${base}/za-klijente` },
-    { name: "Za profesionalce", href: `${base}/za-profesionalce` },
-    { name: "Edukacija", href: `${base}/blogs` },
-  ];
+  const navItems = nav.map((item) => ({
+    name: NAV_LABELS[item.key],
+    href: item.href,
+  }));
 
   return (
     <header className="bg-ee-canvas/85 border-ee-border sticky top-0 z-[60] border-b backdrop-blur-[14px]">

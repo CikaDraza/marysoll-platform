@@ -9,8 +9,12 @@
 
 import type { IntegritySeverity } from "./types";
 
+export type IntegrityCheckScope = "tenant" | "platform";
+
 export interface IntegrityCheckDefinition {
   key: string;
+  /** Granica podataka na kojoj se provera izvršava. */
+  scope: IntegrityCheckScope;
   /** Ljudski naziv za UI/support. */
   name: string;
   /** Šta provera utvrđuje. */
@@ -24,9 +28,10 @@ export interface IntegrityCheckDefinition {
   repair: string;
 }
 
-export const INTEGRITY_CHECKS: readonly IntegrityCheckDefinition[] = [
+export const INTEGRITY_CHECKS = [
   {
     key: "client.identity.duplicates",
+    scope: "tenant",
     name: "Mogući duplikati klijenata",
     description:
       "Isti normalizovani telefon na više klijentskih naloga — kandidati za merge (duplikat nije nužno korupcija).",
@@ -35,6 +40,7 @@ export const INTEGRITY_CHECKS: readonly IntegrityCheckDefinition[] = [
   },
   {
     key: "client.identity.mergedReferences",
+    scope: "tenant",
     name: "Reference na spojen nalog",
     description:
       "Merged/suspendovan korisnik (mergedInto postavljen) i dalje je primarni vlasnik aktivnih zapisa (termini, vaučeri, ledger…).",
@@ -43,6 +49,7 @@ export const INTEGRITY_CHECKS: readonly IntegrityCheckDefinition[] = [
   },
   {
     key: "client.identity.invalidReferences",
+    scope: "tenant",
     name: "Reference na nepostojeći nalog",
     description:
       "Domenski zapisi (Appointment/Voucher/…) pokazuju na korisnika koji ne postoji u bazi.",
@@ -52,6 +59,7 @@ export const INTEGRITY_CHECKS: readonly IntegrityCheckDefinition[] = [
   },
   {
     key: "loyalty.account.orphans",
+    scope: "tenant",
     name: "Loyalty nalozi bez vlasnika / klijenti bez naloga",
     description:
       "LoyaltyAccount pokazuje na nepostojećeg ili merged korisnika (error); aktivan klijent bez loyalty naloga (info — nastaje automatski pri prvom događaju).",
@@ -61,6 +69,7 @@ export const INTEGRITY_CHECKS: readonly IntegrityCheckDefinition[] = [
   },
   {
     key: "loyalty.account.duplicates",
+    scope: "tenant",
     name: "Duplirani loyalty nalozi",
     description:
       "Aktivan klijent sa više od jednog LoyaltyAccount-a (krši unique {tenantId, tenantUserId}).",
@@ -70,6 +79,7 @@ export const INTEGRITY_CHECKS: readonly IntegrityCheckDefinition[] = [
   },
   {
     key: "loyalty.ledger.mismatch",
+    scope: "tenant",
     name: "Ledger ↔ nalog nesklad",
     description:
       "Ledger unos čiji se tenantUserId ili tenantId ne slaže sa nalogom na koji pokazuje — balans se pripisuje pogrešnom klijentu.",
@@ -78,6 +88,7 @@ export const INTEGRITY_CHECKS: readonly IntegrityCheckDefinition[] = [
   },
   {
     key: "loyalty.balance.mismatch",
+    scope: "tenant",
     name: "Keširan balans ≠ ledger",
     description:
       "Sačuvana heartsBalance/pointsBalance polja se ne slažu sa zbirom iz ledgera (izvor istine).",
@@ -86,6 +97,7 @@ export const INTEGRITY_CHECKS: readonly IntegrityCheckDefinition[] = [
   },
   {
     key: "voucher.owner.invalid",
+    scope: "tenant",
     name: "Vaučer sa nevažećim vlasnikom",
     description:
       "Vlasnik vaučera ne postoji, merged je ili suspendovan, ili je iz pogrešnog tenanta — klijent ima vaučer koji ne vidi.",
@@ -95,6 +107,7 @@ export const INTEGRITY_CHECKS: readonly IntegrityCheckDefinition[] = [
   },
   {
     key: "appointment.client.invalid",
+    scope: "tenant",
     name: "Termin sa nevažećim klijent profilom",
     description:
       "Appointment.clientProfileId pokazuje na nepostojećeg/merged/suspendovanog korisnika ili pogrešan tenant — klijent ne vidi termin, completion ne dodeljuje srca pravom nalogu.",
@@ -103,6 +116,7 @@ export const INTEGRITY_CHECKS: readonly IntegrityCheckDefinition[] = [
   },
   {
     key: "seo.tenant.metadata",
+    scope: "tenant",
     name: "SEO profil tenanta",
     description:
       "Kvalitet javnih metapodataka salona: ručni SEO naslov/opis, opis salona, grad, javni profili na mrežama i raster slika za social karticu. Saveti — slab SEO profil ne sme da spreči objavljivanje sajta.",
@@ -112,6 +126,7 @@ export const INTEGRITY_CHECKS: readonly IntegrityCheckDefinition[] = [
   },
   {
     key: "tenant.ownership.missing",
+    scope: "tenant",
     name: "Salon bez vlasnika",
     description:
       "Tenant.ownerId ne pokazuje na postojeći AuthUser, ili salon nema tačno jedan OWNER membership, ili taj OWNER TenantUser nije vezan za istog vlasnika. Salon NIKADA ne sme postojati bez vlasnika — takav zapis niko ne može da preuzme kroz redovnu prijavu.",
@@ -121,6 +136,7 @@ export const INTEGRITY_CHECKS: readonly IntegrityCheckDefinition[] = [
   },
   {
     key: "tenant.ownership.orphanAccount",
+    scope: "platform",
     name: "Vlasnički nalog bez salona",
     description:
       "AuthUser sa platformRole OWNER koji nema nijedan TenantUser ni Tenant. Po zaključanom lifecycle ugovoru (docs/PANTA-TENANT-OWNERSHIP-LIFECYCLE.md) ovo stanje ne nastaje: jedina destruktivna owner akcija je trajno brisanje salona, koje uklanja i salon i vlasnički nalog. Pojava znači nepotpuno brisanje ili stariji bug.",
@@ -130,6 +146,7 @@ export const INTEGRITY_CHECKS: readonly IntegrityCheckDefinition[] = [
   },
   {
     key: "notifications.push.subscriptions",
+    scope: "tenant",
     name: "Push pretplate po korisniku",
     description:
       "Pregled aktivnih push pretplata (admin i klijent naloga): ko je pretplaćen, koliko uređaja, kad poslednji put — plus WARNING kad admin/staff ima push uključen u podešavanjima, ali nema nijednu registrovanu pretplatu.",
@@ -137,9 +154,13 @@ export const INTEGRITY_CHECKS: readonly IntegrityCheckDefinition[] = [
     repair:
       "WARNING: korisnik treba ponovo da omogući push u browseru/telefonu (podešavanja su uključena, ali pretplata nedostaje ili je istekla).",
   },
-] as const;
+] as const satisfies readonly IntegrityCheckDefinition[];
 
 export type IntegrityCheckKey = (typeof INTEGRITY_CHECKS)[number]["key"];
+export type IntegrityCheckKeyForScope<S extends IntegrityCheckScope> = Extract<
+  (typeof INTEGRITY_CHECKS)[number],
+  { scope: S }
+>["key"];
 
 /** Definicija po ključu — baca za nepoznat ključ (registry je izvor istine). */
 export function getCheckDefinition(key: string): IntegrityCheckDefinition {

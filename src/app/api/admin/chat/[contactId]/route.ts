@@ -5,6 +5,7 @@ import { SalonInternalChat } from "@/models/SalonInternalChat";
 import { TenantUser } from "@/models/TenantUser";
 import { Notification } from "@/models/Notification";
 import { getSalonBranding } from "@/lib/notificationService";
+import { DEFAULT_NOTIFICATION_ICON } from "@/lib/branding/rasterLogo";
 import { sendWebPushToUser } from "@/lib/webPush";
 import mongoose from "mongoose";
 import { ADMIN_CHAT_PATH } from "@/lib/notifications/pushTargets";
@@ -168,7 +169,7 @@ export async function POST(
   try {
     const { icon, name } = decoded.tenantId
       ? await getSalonBranding(decoded.tenantId)
-      : { icon: "/marysoll_elegant_logo.png", name: "Salon" };
+      : { icon: DEFAULT_NOTIFICATION_ICON, name: "Salon" };
     await sendWebPushToUser(contactId, {
       title: name,
       body: `💬 ${me.name}: ${content?.trim() ? content.trim().slice(0, 80) : "📎 Prilog"}`,

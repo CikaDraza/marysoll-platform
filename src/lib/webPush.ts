@@ -4,12 +4,18 @@ import webpush from "web-push";
 import { getVapidKeys } from "@/lib/vapid";
 import { TenantUser } from "@/models/TenantUser";
 import { AuthUser } from "@/models/AuthUser";
+import { SalonProfile } from "@/models/SalonProfile";
 import { Types } from "mongoose";
 import {
   currentEnvironmentKey,
   environmentKeyOfOrigin,
 } from "@/lib/platform/host-context";
 import type { UserNotificationSettings } from "@/types";
+import {
+  DEFAULT_NOTIFICATION_ICON,
+  resolveNotificationIcon,
+  usableRasterLogo,
+} from "@/lib/branding/rasterLogo";
 
 export interface PushPayload {
   title: string;
@@ -72,7 +78,12 @@ async function sendToSubscriptions(
   const subscriptions = forThisEnvironment(allSubscriptions);
   if (!vapidInitialized || !subscriptions.length) return [];
 
-  const message = JSON.stringify(payload);
+  // Poslednja zaštita pred izlazak ka browseru: SVG notification ikonice se ne
+  // renderuju pouzdano, a payload nikada ne sme ostati bez Marysoll fallbacka.
+  const message = JSON.stringify({
+    ...payload,
+    icon: resolveNotificationIcon(payload.icon),
+  });
   const deadEndpoints: string[] = [];
 
   await Promise.allSettled(
@@ -108,10 +119,11 @@ export async function sendWebPushToUser(
 ): Promise<void> {
   try {
     const user = (await TenantUser.findById(tenantUserId)
-      .select("pushSubscriptions notificationSettings")
+      .select("pushSubscriptions notificationSettings tenantId")
       .lean()) as {
       pushSubscriptions?: StoredSubscription[];
       notificationSettings?: Partial<UserNotificationSettings>;
+      tenantId?: Types.ObjectId;
     } | null;
 
     if (!user?.pushSubscriptions?.length) return;
@@ -122,7 +134,23 @@ export async function sendWebPushToUser(
     // Dodatni per-feature uslovi (svi moraju biti true / nedefinisani)
     if (opts?.requireSettings?.some((key) => settings?.[key] === false)) return;
 
-    const dead = await sendToSubscriptions(user.pushSubscriptions, payload);
+    // Ako pozivalac nije prosledio raster ikonicu, centralno pročitaj namenski
+    // `notificationLogo` iz Dashboard > Profil. Običan site logo se ne koristi
+    // jer sme biti SVG. Bez podešenog raster loga ostaje Marysoll fallback.
+    let resolvedPayload = payload;
+    if (!usableRasterLogo(payload.icon) && user.tenantId) {
+      const profile = (await SalonProfile.findOne({ tenantId: user.tenantId })
+        .select("notificationLogo")
+        .lean()) as { notificationLogo?: string | null } | null;
+      if (usableRasterLogo(profile?.notificationLogo)) {
+        resolvedPayload = { ...payload, icon: profile.notificationLogo };
+      }
+    }
+
+    const dead = await sendToSubscriptions(
+      user.pushSubscriptions,
+      resolvedPayload,
+    );
     if (dead.length) {
       await TenantUser.findByIdAndUpdate(tenantUserId, {
         $pull: { pushSubscriptions: { endpoint: { $in: dead } } },
@@ -157,7 +185,12 @@ export async function sendWebPushToAuthUser(
 
     if (!user?.pushSubscriptions?.length) return;
 
-    const dead = await sendToSubscriptions(user.pushSubscriptions, payload);
+    // AuthUser je platformski/superadmin kontekst: tenant logo iz payload-a ne
+    // sme da promeni platformsku Marysoll identifikaciju.
+    const dead = await sendToSubscriptions(user.pushSubscriptions, {
+      ...payload,
+      icon: DEFAULT_NOTIFICATION_ICON,
+    });
     if (dead.length) {
       await AuthUser.findByIdAndUpdate(authUserId, {
         $pull: { pushSubscriptions: { endpoint: { $in: dead } } },

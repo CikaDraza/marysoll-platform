@@ -2,6 +2,7 @@ import "server-only";
 
 import { connectToDB } from "@/lib/db/mongodb";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
+import { publishedBlogFilter } from "@/lib/tenant/blogPosts";
 import { INewsletterCampaign } from "@/types";
 
 function safeDecodeSlug(slug: string): string {
@@ -23,8 +24,7 @@ export async function getCampaign(
   const blogSlug = safeDecodeSlug(cleanPath.replace(/^\/blog\/+/i, ""));
 
   const campaign = await NewsletterCampaign.findOne({
-    tenantId,
-    campaignType: "email-landing",
+    ...publishedBlogFilter(tenantId),
     $or: [
       { "landingPage.slug": cleanPath },
       { "landingPage.slug": blogSlug },

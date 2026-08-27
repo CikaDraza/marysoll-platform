@@ -365,10 +365,10 @@ describe("theme9FeaturedEducationProps", () => {
     expect(props.details[1].value).toBeUndefined();
   });
 
-  it("pendingLabel ima podrazumevanu vrednost", () => {
+  it("pendingLabel dolazi samo iz persisted sadržaja", () => {
     expect(
       theme9FeaturedEducationProps({ content: undefined }, identity).pendingLabel,
-    ).toBe("Uskoro");
+    ).toBeUndefined();
     expect(
       theme9FeaturedEducationProps(
         { content: { enabled: true, pendingLabel: "Marina potvrđuje" } },
