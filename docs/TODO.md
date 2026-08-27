@@ -16,6 +16,7 @@
 > Release A     ✅ staging rehearsal
 > content cleanup ✅
 > Edu F0         ✅ staging
+> Edu F1         ✅ staging
 > ```
 >
 > Dalji Theme-9 završetak, QA i Edu Centar razvoj nastavljaju se samo na aktivnoj
@@ -34,7 +35,8 @@
 | # | Slice | Status | Gde smo stali | Dokument |
 |---|---|---|---|---|
 | 2 | theme-9 prezentacija | ✅ 2A · 2B · 2C · content cleanup | Theme-9 foundation je na `main`-u: persistence, tri-state, konzervativna normalizacija, fail-closed presentation resolver, 7/7 CMS authoring + minimum validacija i content-aware page/navigation resolver. Staging Release A/migration rehearsal je završen. Starter seed je provisioning koji defaultno čuva tenant-authored sadržaj. Dalji razvoj/QA je staging-only. | [PANTA-T2-THEME-LAYOUT-ENGINE.md](PANTA-T2-THEME-LAYOUT-ENGINE.md) |
-| Edu F0 | Vertical & workspace foundation | ✅ staging | Preset-aware onboarding, neutralni registration contract/UI, zaključano provisioning jezgro i `/education/{offerings,inquiries}` boundary su implementirani. Salon dashboard, Theme-9 i F1 nisu dirani. Sledeći razvojni korak je F1 tek kao zaseban slice. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#faza-0--vertical--workspace-foundation) |
+| Edu F0 | Vertical & workspace foundation | ✅ staging | Preset-aware onboarding, neutralni registration contract/UI, zaključano provisioning jezgro i `/education/{offerings,inquiries}` boundary su implementirani. Salon dashboard i Theme-9 nisu dirani. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#faza-0--vertical--workspace-foundation) |
+| Edu F1 | Content Composer | ✅ staging | Generički editor/render/schema/registry/score/SEO sloj je izdvojen, newsletter je ostao tanak adapter, a oba renderera koriste jedan `BlockList`. Karakterizacioni testovi čuvaju postojeći Newsletter contract. F2 nije počela. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#faza-1--content-composer-deljeni-sloj) |
 
 ### Booking / Consultation — zadržano
 
@@ -67,7 +69,7 @@ F4B  EducationOffering + EducationInquiry F9   GuidedProgram
 `EducationOffering` i `EducationInquiry` iz starog Slice 11 nisu izgubljeni —
 žive u **Fazi 4B**.
 
-✅ **Faza 0 je završena na aktivnoj staging razvojnoj liniji. Faza 1 nije počela.**
+✅ **Faze 0 i 1 su završene na aktivnoj staging razvojnoj liniji. Faza 2 nije počela.**
 
 ### Završeno
 

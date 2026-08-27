@@ -1,6 +1,6 @@
 # PANTA — Edu Centar: workspace arhitektura i Education domen
 
-> **Status:** ZAKLJUČANA ARHITEKTURA, FAZA 0 IMPLEMENTIRANA NA AKTIVNOJ STAGING LINIJI; FAZA 1 NIJE POČELA.
+> **Status:** ZAKLJUČANA ARHITEKTURA, FAZE 0 I 1 IMPLEMENTIRANE NA AKTIVNOJ STAGING LINIJI; FAZA 2 NIJE POČELA.
 > Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-27 · `staging/production-engines`
 >
 > **Faza 0 je počela tek pošto je Theme-9 contract/rollout foundation zatvoren i
@@ -171,6 +171,19 @@ Cilj: `src/components/content-composer/`, `src/lib/content/{blocks,schemas,regis
 **Ne dirati:** `AdminSemanticModal.tsx`, `src/hooks/newsletter/*`, `ctaCatalog.ts`, `landingPageAgent.ts`, `src/app/api/{campaigns,newsletter}/**`, `NewsletterCampaign.ts`. Campaign fajlovi postaju tanki adapteri.
 
 **Ne portovati:** `useAutoOptimizeLayout` (strukturno ne može poboljšati layout), mrtvi tipovi u `src/types/conversational/layout.ts`, `visibility: "minimized"` (nedostižan i neobrađen).
+
+### Implementacioni status Faze 1
+
+- ✅ karakterizacioni testovi zaključavaju sanitize, score, render filter/sort i ručni edit → save/publish bez AI poziva
+- ✅ generički editor i šest postojećih view komponenti žive u `src/components/content-composer/`
+- ✅ schema/parse, sanitize, text extraction, score, registry i SEO generator imaju domenski neutralno vlasništvo u `src/lib/content/`
+- ✅ preview prima header/metadata slotove; Newsletter naslov i SEO panel ostaju u tankom campaign adapteru
+- ✅ preview i public campaign renderer koriste isti registry-driven `BlockList`
+- ✅ `CtaKey` re-export je uklonjen, campaign objekat više nije zavisnost shared layout buildera, a `minimized` nije prenet u novi contract
+
+Faza 1 ne dodaje nove blokove, write-time Zod gate, Education modele ili
+capability wiring. `AdminSemanticModal`, newsletter hookovi/API rute,
+`ctaCatalog`, `landingPageAgent` i `NewsletterCampaign` nisu funkcionalno menjani.
 
 ---
 

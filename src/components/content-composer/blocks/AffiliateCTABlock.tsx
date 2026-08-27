@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { AffiliateCTABlock as AffiliateCTABlockType } from "@/types/landing-blocks";
+import { AffiliateCTABlock as AffiliateCTABlockType } from "@/lib/content/schemas/landing-blocks";
 
 interface AffiliateCTABlockProps {
   block: AffiliateCTABlockType;

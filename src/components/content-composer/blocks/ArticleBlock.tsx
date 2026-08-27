@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ArticleBlock as ArticleBlockType } from "@/types/landing-blocks";
+import { ArticleBlock as ArticleBlockType } from "@/lib/content/schemas/landing-blocks";
 
 interface ArticleBlockProps {
   block: ArticleBlockType;

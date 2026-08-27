@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { FeatureBlock as FeatureBlockType } from "@/types/landing-blocks";
+import { FeatureBlock as FeatureBlockType } from "@/lib/content/schemas/landing-blocks";
 
 interface FeatureBlockProps {
   block: FeatureBlockType;

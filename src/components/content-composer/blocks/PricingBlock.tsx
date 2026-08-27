@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PricingBlock as PricingBlockType } from "@/types/landing-blocks";
+import { PricingBlock as PricingBlockType } from "@/lib/content/schemas/landing-blocks";
 
 interface Props {
   block: PricingBlockType;

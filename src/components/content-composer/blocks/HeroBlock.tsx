@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { HeroBlock as HeroBlockType } from "@/types/landing-blocks";
+import { HeroBlock as HeroBlockType } from "@/lib/content/schemas/landing-blocks";
 
 interface HeroBlockProps {
   block: HeroBlockType;

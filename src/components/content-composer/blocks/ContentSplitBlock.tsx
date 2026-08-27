@@ -1,6 +1,6 @@
 import Image from "next/image";
 import clsx from "clsx";
-import { ContentSplitBlock as ContentSplitBlockType } from "@/types/landing-blocks";
+import { ContentSplitBlock as ContentSplitBlockType } from "@/lib/content/schemas/landing-blocks";
 
 export function ContentSplitBlockView({
   block,

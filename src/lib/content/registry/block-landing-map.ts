@@ -5,7 +5,7 @@ import {
   FeatureBlock,
   HeroBlock,
   PricingBlock,
-} from "./landing-blocks";
+} from "@/types/landing-blocks";
 
 export interface BlockLandingTypeMap {
   HeroBlock: HeroBlock;
