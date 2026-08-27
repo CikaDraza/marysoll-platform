@@ -12,7 +12,9 @@ import { SalonProfile } from "@/models/SalonProfile";
 import { Service } from "@/models/Service";
 import { Appointment } from "@/models/Appointment";
 import { LoyaltyLedger } from "@/models/LoyaltyLedger";
+import { Subscription } from "@/models/Subscription";
 import { Slot } from "@/models/Slot";
+import { cancelPaddleSubscription } from "@/lib/paddle";
 import { deleteTenantPermanently } from "./deleteTenant";
 
 /**
@@ -91,6 +93,7 @@ describe.sequential("deleteTenantPermanently — atomičnost", () => {
       services: await Service.countDocuments({ tenantId }),
       appointments: await Appointment.countDocuments({ tenantId }),
       loyalty: await LoyaltyLedger.countDocuments({ tenantId }),
+      subscriptions: await Subscription.countDocuments({ tenantId }),
       slots: await Slot.countDocuments({ salonId }),
     };
   }
@@ -102,13 +105,13 @@ describe.sequential("deleteTenantPermanently — atomičnost", () => {
     await deleteTenantPermanently({ tenantId: a.tenantId.toString() });
 
     expect(await snapshot(a.tenantId, a.salonId)).toEqual({
-      tenant: 0, members: 0, profile: 0, services: 0, appointments: 0, loyalty: 0, slots: 0,
+      tenant: 0, members: 0, profile: 0, services: 0, appointments: 0, loyalty: 0, subscriptions: 0, slots: 0,
     });
     expect(await AuthUser.countDocuments({ _id: a.authUserId })).toBe(0);
 
     // Drugi salon je potpuno netaknut.
     expect(await snapshot(b.tenantId, b.salonId)).toEqual({
-      tenant: 1, members: 1, profile: 1, services: 1, appointments: 1, loyalty: 1, slots: 1,
+      tenant: 1, members: 1, profile: 1, services: 1, appointments: 1, loyalty: 1, subscriptions: 0, slots: 1,
     });
     expect(await AuthUser.countDocuments({ _id: b.authUserId })).toBe(1);
   });
@@ -159,5 +162,26 @@ describe.sequential("deleteTenantPermanently — atomičnost", () => {
     ).rejects.toMatchObject({ code: "TENANT_OWNERSHIP_INTEGRITY_ERROR" });
 
     expect(await snapshot(a.tenantId, a.salonId)).toEqual(before);
+  });
+
+  it("nepostojeći owner AuthUser zaustavlja sve pre Paddle-a i DB write-a", async () => {
+    const a = await seedTenant("salon-f");
+    await Subscription.collection.insertOne({
+      tenantId: a.tenantId,
+      plan: "maria",
+      status: "active",
+      billingProvider: "paddle",
+      paddleSubscriptionId: "sub_owner_missing",
+    });
+    await AuthUser.deleteOne({ _id: a.authUserId });
+    const before = await snapshot(a.tenantId, a.salonId);
+
+    await expect(
+      deleteTenantPermanently({ tenantId: a.tenantId.toString() }),
+    ).rejects.toMatchObject({ code: "TENANT_OWNERSHIP_INTEGRITY_ERROR" });
+
+    expect(cancelPaddleSubscription).not.toHaveBeenCalled();
+    expect(await snapshot(a.tenantId, a.salonId)).toEqual(before);
+    expect(await AuthUser.countDocuments({ _id: a.authUserId })).toBe(0);
   });
 });
