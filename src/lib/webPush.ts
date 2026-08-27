@@ -12,6 +12,7 @@ import {
 } from "@/lib/platform/host-context";
 import type { UserNotificationSettings } from "@/types";
 import {
+  DEFAULT_NOTIFICATION_ICON,
   resolveNotificationIcon,
   usableRasterLogo,
 } from "@/lib/branding/rasterLogo";
@@ -68,11 +69,6 @@ function forThisEnvironment(
 /**
  * Core sender — šalje payload na sve prosleđene pretplate i vraća mrtve endpoint-e
  * (HTTP 410/404) koje pozivalac treba da ukloni.
- *
- * Ovo je JEDINO mesto kroz koje push izlazi ka browseru, pa se tvrdo pravilo
- * ikonice sprovodi ovde: SVG se NIKAD ne šalje. Browseri i mobilni telefoni ne
- * renderuju SVG kao notification ikonicu — prikažu uzvičnik. Zato tenant ima dva
- * loga: `logo` (sajt/favicon, sme SVG) i `notificationLogo` (raster, ovo).
  */
 async function sendToSubscriptions(
   allSubscriptions: StoredSubscription[],
@@ -82,6 +78,8 @@ async function sendToSubscriptions(
   const subscriptions = forThisEnvironment(allSubscriptions);
   if (!vapidInitialized || !subscriptions.length) return [];
 
+  // Poslednja zaštita pred izlazak ka browseru: SVG notification ikonice se ne
+  // renderuju pouzdano, a payload nikada ne sme ostati bez Marysoll fallbacka.
   const message = JSON.stringify({
     ...payload,
     icon: resolveNotificationIcon(payload.icon),
@@ -136,10 +134,9 @@ export async function sendWebPushToUser(
     // Dodatni per-feature uslovi (svi moraju biti true / nedefinisani)
     if (opts?.requireSettings?.some((key) => settings?.[key] === false)) return;
 
-    // Tenant push mora da bude brendiran i kad pozivalac zaboravi `icon` (ili
-    // pošalje SVG). Ikonica je `notificationLogo` iz Dashboard > Profil; logo
-    // sajta se namerno NE koristi jer sme biti SVG. Ako ni tenant nema raster
-    // logo, sendToSubscriptions padne na platformski default.
+    // Ako pozivalac nije prosledio raster ikonicu, centralno pročitaj namenski
+    // `notificationLogo` iz Dashboard > Profil. Običan site logo se ne koristi
+    // jer sme biti SVG. Bez podešenog raster loga ostaje Marysoll fallback.
     let resolvedPayload = payload;
     if (!usableRasterLogo(payload.icon) && user.tenantId) {
       const profile = (await SalonProfile.findOne({ tenantId: user.tenantId })
@@ -188,7 +185,12 @@ export async function sendWebPushToAuthUser(
 
     if (!user?.pushSubscriptions?.length) return;
 
-    const dead = await sendToSubscriptions(user.pushSubscriptions, payload);
+    // AuthUser je platformski/superadmin kontekst: tenant logo iz payload-a ne
+    // sme da promeni platformsku Marysoll identifikaciju.
+    const dead = await sendToSubscriptions(user.pushSubscriptions, {
+      ...payload,
+      icon: DEFAULT_NOTIFICATION_ICON,
+    });
     if (dead.length) {
       await AuthUser.findByIdAndUpdate(authUserId, {
         $pull: { pushSubscriptions: { endpoint: { $in: dead } } },

@@ -11,7 +11,15 @@ describe("resolveNotificationIcon", () => {
     );
   });
 
-  it.each([null, undefined, "", "   ", "https://cdn.example.com/logo.svg"])(
+  it.each([
+    null,
+    undefined,
+    "",
+    "   ",
+    "https://cdn.example.com/logo.svg",
+    "https://cdn.example.com/not-an-image.pdf",
+    "https://cdn.example.com/legacy.gif",
+  ])(
     "koristi Marysoll fallback kada notificationLogo nije upotrebljiv: %s",
     (logo) => {
       expect(resolveNotificationIcon(logo)).toBe(DEFAULT_NOTIFICATION_ICON);

@@ -1,13 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_NOTIFICATION_ICON } from "@/lib/branding/rasterLogo";
-
-/**
- * Tvrdo pravilo: browseri i mobilni telefoni NE renderuju SVG kao notification
- * ikonicu (prikažu uzvičnik). Zato tenant ima dva loga — `logo` (sajt/favicon,
- * sme SVG) i `notificationLogo` (raster, iz Dashboard > Profil). Ovi testovi
- * čuvaju da nijedan push ne izađe sa SVG ikonicom, bez obzira šta pozivalac
- * pošalje, i da tenantov logo stvarno stigne do browsera.
- */
 
 vi.mock("server-only", () => ({}));
 
@@ -50,7 +41,20 @@ vi.mock("@/models/TenantUser", () => ({
   },
 }));
 
-vi.mock("@/models/AuthUser", () => ({ AuthUser: {} }));
+vi.mock("@/models/AuthUser", () => ({
+  AuthUser: {
+    findById: () => ({
+      select: () => ({
+        lean: async () => ({
+          pushSubscriptions: [
+            { endpoint: "e2", keys: { p256dh: "p", auth: "a" }, origin: null },
+          ],
+        }),
+      }),
+    }),
+    findByIdAndUpdate: vi.fn(),
+  },
+}));
 
 vi.mock("@/models/SalonProfile", () => ({
   SalonProfile: {
@@ -63,6 +67,7 @@ vi.mock("@/models/SalonProfile", () => ({
 }));
 
 const CDN = "https://res.cloudinary.com/demo/image/upload";
+const MARYSOLL_ICON = "/marysoll_elegant_logo.png";
 
 async function push(payload: { icon?: string }): Promise<string | undefined> {
   state.sent = [];
@@ -75,15 +80,33 @@ async function push(payload: { icon?: string }): Promise<string | undefined> {
   return state.sent[0]?.icon;
 }
 
-describe("push ikonica", () => {
+async function platformPush(
+  payload: { icon?: string },
+): Promise<string | undefined> {
+  state.sent = [];
+  const { sendWebPushToAuthUser } = await import("@/lib/webPush");
+  await sendWebPushToAuthUser("auth-user-1", {
+    title: "Marysoll",
+    body: "poruka",
+    ...payload,
+  });
+  return state.sent[0]?.icon;
+}
+
+describe("web push ikonica", () => {
   beforeEach(() => {
     state.tenantId = "t-1";
     state.notificationLogo = null;
   });
 
-  it("koristi tenantov notificationLogo kad pozivalac ne pošalje ikonicu", async () => {
+  it("koristi PNG notificationLogo podešen u tenant Profilu", async () => {
     state.notificationLogo = `${CDN}/salon.png`;
     expect(await push({})).toBe(`${CDN}/salon.png`);
+  });
+
+  it("koristi WEBP notificationLogo podešen u tenant Profilu", async () => {
+    state.notificationLogo = `${CDN}/salon.webp`;
+    expect(await push({})).toBe(`${CDN}/salon.webp`);
   });
 
   it("poštuje eksplicitnu raster ikonicu pozivaoca", async () => {
@@ -93,25 +116,24 @@ describe("push ikonica", () => {
     );
   });
 
-  it("SVG od pozivaoca se odbacuje i zamenjuje tenantovim rasterom", async () => {
+  it("odbacuje SVG pozivaoca i koristi tenantov raster logo", async () => {
     state.notificationLogo = `${CDN}/salon.png`;
-    expect(await push({ icon: `${CDN}/logo-sajta.svg` })).toBe(
-      `${CDN}/salon.png`,
+    expect(await push({ icon: `${CDN}/logo.svg` })).toBe(`${CDN}/salon.png`);
+  });
+
+  it.each([null, `${CDN}/salon.svg`])(
+    "bez validnog tenant loga koristi Marysoll branding: %s",
+    async (logo) => {
+      state.notificationLogo = logo;
+      expect(await push({})).toBe(MARYSOLL_ICON);
+    },
+  );
+
+  it("platformski/superadmin push uvek dobija Marysoll branding", async () => {
+    expect(await platformPush({})).toBe(MARYSOLL_ICON);
+    expect(await platformPush({ icon: `${CDN}/tenant.png` })).toBe(
+      MARYSOLL_ICON,
     );
-  });
-
-  it("SVG kao notificationLogo pada na platformski default", async () => {
-    state.notificationLogo = `${CDN}/salon.svg`;
-    expect(await push({})).toBe(DEFAULT_NOTIFICATION_ICON);
-  });
-
-  it("bez tenantovog loga koristi platformski default", async () => {
-    expect(await push({})).toBe(DEFAULT_NOTIFICATION_ICON);
-  });
-
-  it("korisnik bez tenanta ne ostaje bez ikonice", async () => {
-    state.tenantId = undefined;
-    expect(await push({})).toBe(DEFAULT_NOTIFICATION_ICON);
   });
 
   it("nijedan izlaz nikada nije SVG", async () => {

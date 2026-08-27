@@ -5,7 +5,12 @@
 self.addEventListener("push", function (event) {
   if (event.data) {
     const data = event.data.json();
-    const notificationIcon = data.icon || "/marysoll_elegant_logo.png";
+    const validNotificationIcon =
+      typeof data.icon === "string" &&
+      /\.(?:png|jpe?g|webp)(?:\?|#|$)/i.test(data.icon);
+    const notificationIcon = validNotificationIcon
+      ? data.icon
+      : "/marysoll_elegant_logo.png";
     const options = {
       body: data.body,
       icon: notificationIcon,

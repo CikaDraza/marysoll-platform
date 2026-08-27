@@ -9,7 +9,9 @@
  */
 export function usableRasterLogo(url: unknown): url is string {
   return (
-    typeof url === "string" && url.trim() !== "" && !/\.svg(\?|#|$)/i.test(url)
+    typeof url === "string" &&
+    url.trim() !== "" &&
+    /\.(?:png|jpe?g|webp)(?:\?|#|$)/i.test(url)
   );
 }
 
