@@ -21,12 +21,17 @@ export async function DELETE(req: Request) {
     const { searchParams } = new URL(req.url);
     const mode = searchParams.get("mode");
 
-    // REŠENJE: Inicijalizujemo prazan filter.
-    // Pošto smo gore već proverili da je user.isAdmin, ne moramo dodavati userId u query.
-    const query: FilterQuery<INotification> = {};
+    // Ovaj endpoint je recipient-scoped i za SUPER_ADMIN-a: platformska uloga
+    // ne daje pravo da se kroz lično notification zvono brišu tuđi zapisi.
+    const query: FilterQuery<INotification> = {
+      recipientProfileId: user.tenantUserId ?? user.id,
+    };
 
-    // Ako želiš da Admin može da obriše samo SVOJE, ovde bi dodao query.userId = user.id
-    // Ali pošto želiš "Globalno" brisanje iz admin panela, ostavljamo prazno da obuhvati sve korisnike.
+    // Recipient je authority; tenantId je dodatna granica kada ga verifikovani
+    // token pouzdano nosi (platformski SUPER_ADMIN token ga nema).
+    if (user.tenantId) {
+      query.tenantId = user.tenantId;
+    }
 
     if (mode === "old") {
       const thirtyDaysAgo = new Date();
@@ -34,7 +39,6 @@ export async function DELETE(req: Request) {
       query.createdAt = { $lt: thirtyDaysAgo };
     }
 
-    // Ako je mode "all", query ostaje {}, što znači brisanje cele kolekcije
     const result = await Notification.deleteMany(query);
 
     return NextResponse.json({
