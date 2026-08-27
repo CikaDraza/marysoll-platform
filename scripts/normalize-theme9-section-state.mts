@@ -31,7 +31,12 @@ import {
 } from "../src/lib/theme9/sectionNormalization.ts";
 
 const MONGODB_URI = process.env.MONGODB_URI;
-const DB_NAME = process.env.DB_NAME || "marysoll_db";
+/**
+ * Ime baze dolazi iz URI-ja. `dbName` opcija nadjacava connection string, pa se
+ * prosledjuje samo kad je DB_NAME eksplicitno postavljen — inace bi ova skripta
+ * uvek gadjala produkciju bez obzira na URI. Vidi `src/lib/db/dbTarget.test.ts`.
+ */
+const DB_NAME = process.env.DB_NAME;
 
 const args = process.argv.slice(2);
 const APPLY = args.includes("--apply");
@@ -72,7 +77,7 @@ function pad(value: string, width: number): string {
 }
 
 async function main(): Promise<void> {
-  await mongoose.connect(MONGODB_URI!, { dbName: DB_NAME });
+  await mongoose.connect(MONGODB_URI!, DB_NAME ? { dbName: DB_NAME } : {});
   const db = mongoose.connection.db!;
 
   const tenantFilter: Record<string, unknown> = {};
@@ -98,8 +103,12 @@ async function main(): Promise<void> {
     .toArray();
   const slugById = new Map(tenants.map((t) => [String(t._id), t.slug as string]));
 
+  // STVARNA baza posle connect-a, ne ono sto smo trazili. Operater ovo mora
+  // videti pre nego sto odobri `--apply`.
+  const connectedDb = mongoose.connection.name;
+
   console.log(
-    `\n${APPLY ? "APPLY" : "DRY-RUN"} · ${profiles.length} profil(a)${
+    `\n${APPLY ? "APPLY" : "DRY-RUN"} · baza: ${connectedDb} · ${profiles.length} profil(a)${
       TENANT ? ` · tenant=${TENANT}` : " · svi tenanti"
     }\n`,
   );
@@ -155,7 +164,7 @@ async function main(): Promise<void> {
 
   if (APPLY) {
     console.log(
-      `\n  ✅ Primenjeno: ${pathsUnset} \`enabled\` polja skinuto sa ${profilesTouched} profila.`,
+      `\n  ✅ Primenjeno u bazi \`${connectedDb}\`: ${pathsUnset} \`enabled\` polja skinuto sa ${profilesTouched} profila.`,
     );
     console.log(
       `     Ponovi sa \`--dry-run\` — „KANDIDAT ZA \$unset\" mora biti 0.`,
