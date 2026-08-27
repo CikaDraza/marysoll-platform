@@ -34,12 +34,19 @@ import {
   fieldPurpose,
   type Theme9FieldKind,
 } from "@/lib/theme9/fieldLimits";
+import {
+  theme9EditorSection,
+  theme9RequiredFieldId,
+  theme9SectionId,
+  type Theme9ValidationIssue,
+} from "@/lib/theme9/sectionValidation";
 
 type Landing = LandingStructure["landing"];
 
 export interface Theme9SectionsProps {
   ls: LandingStructure;
   update: <K extends keyof Landing>(section: K, value: Landing[K]) => void;
+  validationIssue?: Theme9ValidationIssue;
 }
 
 // ─── Sitni pomoćnici ─────────────────────────────────────────────────────────
@@ -87,12 +94,14 @@ function FieldPurpose({ kind }: { kind: Theme9FieldKind }) {
 }
 
 function Text({
+  id,
   label,
   value,
   onChange,
   placeholder,
   kind,
 }: {
+  id?: string;
   label: string;
   value?: string;
   onChange: (v: string) => void;
@@ -105,6 +114,7 @@ function Text({
       <FieldHead label={label} length={current.length} kind={kind} />
       <FieldPurpose kind={kind} />
       <input
+        id={id}
         className={inp}
         value={current}
         maxLength={fieldMax(kind)}
@@ -208,9 +218,18 @@ function Item({
   );
 }
 
-function Add({ label, onClick }: { label: string; onClick: () => void }) {
+function Add({
+  id,
+  label,
+  onClick,
+}: {
+  id?: string;
+  label: string;
+  onClick: () => void;
+}) {
   return (
     <button
+      id={id}
       type="button"
       onClick={onClick}
       className="text-sm text-violet-600 dark:text-violet-400 hover:underline"
@@ -256,14 +275,17 @@ function makeId(prefix: string, taken: (string | undefined)[]): string {
 type AudiencePaths = NonNullable<Landing["audiencePaths"]>;
 type AudiencePathItem = NonNullable<AudiencePaths["paths"]>[number];
 
-export function AudiencePathsEditor({ ls, update }: Theme9SectionsProps) {
-  const block: AudiencePaths = ls.landing.audiencePaths ?? { enabled: true };
+export function AudiencePathsEditor({ ls, update, validationIssue }: Theme9SectionsProps) {
+  const block = theme9EditorSection(ls.landing, "audiencePaths");
   const paths = block.paths ?? [];
   const setPaths = (next: AudiencePathItem[]) =>
     update("audiencePaths", { ...block, paths: next });
 
   return (
     <TristateSectionCard
+      id={theme9SectionId("audiencePaths")}
+      invalid={validationIssue?.section === "audiencePaths"}
+      errorMessage={validationIssue?.section === "audiencePaths" ? validationIssue.message : undefined}
       title="Theme-9 / Putanje za posetioce"
       badge="theme-9"
       tone="odd"
@@ -319,6 +341,7 @@ export function AudiencePathsEditor({ ls, update }: Theme9SectionsProps) {
                   placeholder="Nega kože"
                 />
                 <Text
+                  id={i === 0 ? theme9RequiredFieldId("audiencePaths") : undefined}
                   kind="itemTitle"
                   label="Naslov"
                   value={path.title}
@@ -371,6 +394,7 @@ export function AudiencePathsEditor({ ls, update }: Theme9SectionsProps) {
           );
         })}
         <Add
+          id={paths.length === 0 ? theme9RequiredFieldId("audiencePaths") : undefined}
           label="+ Dodaj putanju"
           onClick={() =>
             setPaths([
@@ -393,13 +417,16 @@ export function AudiencePathsEditor({ ls, update }: Theme9SectionsProps) {
 type TopicHub = NonNullable<Landing["topicHub"]>;
 type TopicHubTopic = NonNullable<TopicHub["topics"]>[number];
 
-export function TopicHubEditor({ ls, update }: Theme9SectionsProps) {
-  const block: TopicHub = ls.landing.topicHub ?? { enabled: true };
+export function TopicHubEditor({ ls, update, validationIssue }: Theme9SectionsProps) {
+  const block = theme9EditorSection(ls.landing, "topicHub");
   const filters = block.filters ?? [];
   const topics = block.topics ?? [];
 
   return (
     <TristateSectionCard
+      id={theme9SectionId("topicHub")}
+      invalid={validationIssue?.section === "topicHub"}
+      errorMessage={validationIssue?.section === "topicHub" ? validationIssue.message : undefined}
       title="Theme-9 / Centar tema"
       badge="theme-9"
       tone="even"
@@ -492,6 +519,7 @@ export function TopicHubEditor({ ls, update }: Theme9SectionsProps) {
             >
               <div className="grid grid-cols-2 gap-2">
                 <Text
+                  id={i === 0 ? theme9RequiredFieldId("topicHub") : undefined}
                   kind="itemTitle"
                   label="Naslov"
                   value={topic.title}
@@ -542,6 +570,7 @@ export function TopicHubEditor({ ls, update }: Theme9SectionsProps) {
           );
         })}
         <Add
+          id={topics.length === 0 ? theme9RequiredFieldId("topicHub") : undefined}
           label="+ Dodaj temu"
           onClick={() =>
             update("topicHub", {
@@ -562,14 +591,18 @@ export function TopicHubEditor({ ls, update }: Theme9SectionsProps) {
 
 type FeaturedEducation = NonNullable<Landing["featuredEducation"]>;
 
-export function FeaturedEducationEditor({ ls, update }: Theme9SectionsProps) {
-  const block: FeaturedEducation = ls.landing.featuredEducation ?? {
-    enabled: true,
-  };
+export function FeaturedEducationEditor({ ls, update, validationIssue }: Theme9SectionsProps) {
+  const block: FeaturedEducation = theme9EditorSection(
+    ls.landing,
+    "featuredEducation",
+  );
   const details = block.details ?? {};
 
   return (
     <TristateSectionCard
+      id={theme9SectionId("featuredEducation")}
+      invalid={validationIssue?.section === "featuredEducation"}
+      errorMessage={validationIssue?.section === "featuredEducation" ? validationIssue.message : undefined}
       title="Theme-9 / Istaknuta edukacija"
       badge="theme-9"
       tone="odd"
@@ -597,6 +630,7 @@ export function FeaturedEducationEditor({ ls, update }: Theme9SectionsProps) {
         />
       </div>
       <Text
+        id={theme9RequiredFieldId("featuredEducation")}
         kind="headline"
         label="Naslov"
         value={block.headline}
@@ -717,14 +751,15 @@ export function FeaturedEducationEditor({ ls, update }: Theme9SectionsProps) {
 type GuidedCareProcess = NonNullable<Landing["guidedCareProcess"]>;
 type GuidedCareStep = NonNullable<GuidedCareProcess["steps"]>[number];
 
-export function GuidedCareProcessEditor({ ls, update }: Theme9SectionsProps) {
-  const block: GuidedCareProcess = ls.landing.guidedCareProcess ?? {
-    enabled: true,
-  };
+export function GuidedCareProcessEditor({ ls, update, validationIssue }: Theme9SectionsProps) {
+  const block = theme9EditorSection(ls.landing, "guidedCareProcess");
   const steps = block.steps ?? [];
 
   return (
     <TristateSectionCard
+      id={theme9SectionId("guidedCareProcess")}
+      invalid={validationIssue?.section === "guidedCareProcess"}
+      errorMessage={validationIssue?.section === "guidedCareProcess" ? validationIssue.message : undefined}
       title="Theme-9 / Vođeni proces nege"
       badge="theme-9"
       tone="even"
@@ -775,6 +810,7 @@ export function GuidedCareProcessEditor({ ls, update }: Theme9SectionsProps) {
               }
             >
               <Text
+                id={i === 0 ? theme9RequiredFieldId("guidedCareProcess") : undefined}
                 kind="itemTitle"
                 label={"Korak " + (i + 1)}
                 value={step.title}
@@ -791,6 +827,7 @@ export function GuidedCareProcessEditor({ ls, update }: Theme9SectionsProps) {
           );
         })}
         <Add
+          id={steps.length === 0 ? theme9RequiredFieldId("guidedCareProcess") : undefined}
           label="+ Dodaj korak"
           onClick={() =>
             update("guidedCareProcess", {
@@ -809,14 +846,15 @@ export function GuidedCareProcessEditor({ ls, update }: Theme9SectionsProps) {
 type ProfessionalPath = NonNullable<Landing["professionalPath"]>;
 type ProfessionalFormat = NonNullable<ProfessionalPath["formats"]>[number];
 
-export function ProfessionalPathEditor({ ls, update }: Theme9SectionsProps) {
-  const block: ProfessionalPath = ls.landing.professionalPath ?? {
-    enabled: true,
-  };
+export function ProfessionalPathEditor({ ls, update, validationIssue }: Theme9SectionsProps) {
+  const block = theme9EditorSection(ls.landing, "professionalPath");
   const formats = block.formats ?? [];
 
   return (
     <TristateSectionCard
+      id={theme9SectionId("professionalPath")}
+      invalid={validationIssue?.section === "professionalPath"}
+      errorMessage={validationIssue?.section === "professionalPath" ? validationIssue.message : undefined}
       title="Theme-9 / Profesionalni put"
       badge="theme-9"
       tone="odd"
@@ -876,6 +914,7 @@ export function ProfessionalPathEditor({ ls, update }: Theme9SectionsProps) {
                   placeholder="Radionica"
                 />
                 <Text
+                  id={i === 0 ? theme9RequiredFieldId("professionalPath") : undefined}
                   kind="itemTitle"
                   label="Naslov"
                   value={format.title}
@@ -899,6 +938,7 @@ export function ProfessionalPathEditor({ ls, update }: Theme9SectionsProps) {
           );
         })}
         <Add
+          id={formats.length === 0 ? theme9RequiredFieldId("professionalPath") : undefined}
           label="+ Dodaj format"
           onClick={() =>
             update("professionalPath", {
@@ -951,8 +991,8 @@ type CredentialImage = NonNullable<
   NonNullable<Credentials["social"]>["images"]
 >[number];
 
-export function CredentialsEditor({ ls, update }: Theme9SectionsProps) {
-  const block: Credentials = ls.landing.credentials ?? { enabled: true };
+export function CredentialsEditor({ ls, update, validationIssue }: Theme9SectionsProps) {
+  const block = theme9EditorSection(ls.landing, "credentials");
   const pillars = block.pillars ?? [];
   const social = block.social ?? {};
   const images = social.images ?? [];
@@ -962,6 +1002,9 @@ export function CredentialsEditor({ ls, update }: Theme9SectionsProps) {
 
   return (
     <TristateSectionCard
+      id={theme9SectionId("credentials")}
+      invalid={validationIssue?.section === "credentials"}
+      errorMessage={validationIssue?.section === "credentials" ? validationIssue.message : undefined}
       title="Theme-9 / Zašto baš ona"
       badge="theme-9"
       tone="even"
@@ -1012,6 +1055,7 @@ export function CredentialsEditor({ ls, update }: Theme9SectionsProps) {
               }
             >
               <Text
+                id={i === 0 ? theme9RequiredFieldId("credentials") : undefined}
                 kind="itemTitle"
                 label="Naslov"
                 value={pillar.title}
@@ -1027,6 +1071,7 @@ export function CredentialsEditor({ ls, update }: Theme9SectionsProps) {
           );
         })}
         <Add
+          id={pillars.length === 0 ? theme9RequiredFieldId("credentials") : undefined}
           label="+ Dodaj stub"
           onClick={() =>
             update("credentials", {
@@ -1119,8 +1164,8 @@ type FinalCtaSlot = NonNullable<
   NonNullable<FinalCta["calendar"]>["slots"]
 >[number];
 
-export function FinalCtaEditor({ ls, update }: Theme9SectionsProps) {
-  const block: FinalCta = ls.landing.finalCta ?? { enabled: true };
+export function FinalCtaEditor({ ls, update, validationIssue }: Theme9SectionsProps) {
+  const block = theme9EditorSection(ls.landing, "finalCta");
   const calendar = block.calendar ?? {};
   const slots = calendar.slots ?? [];
 
@@ -1129,6 +1174,9 @@ export function FinalCtaEditor({ ls, update }: Theme9SectionsProps) {
 
   return (
     <TristateSectionCard
+      id={theme9SectionId("finalCta")}
+      invalid={validationIssue?.section === "finalCta"}
+      errorMessage={validationIssue?.section === "finalCta" ? validationIssue.message : undefined}
       title="Theme-9 / Završni poziv"
       badge="theme-9"
       tone="odd"
@@ -1148,6 +1196,7 @@ export function FinalCtaEditor({ ls, update }: Theme9SectionsProps) {
           onChange={(v) => update("finalCta", { ...block, eyebrow: v })}
         />
         <Text
+          id={!block.headline?.trim() ? theme9RequiredFieldId("finalCta") : undefined}
           kind="headline"
           label="Naslov"
           value={block.headline}
@@ -1229,6 +1278,7 @@ export function FinalCtaEditor({ ls, update }: Theme9SectionsProps) {
 
       <div className="grid grid-cols-2 gap-3">
         <Text
+          id={block.headline?.trim() ? theme9RequiredFieldId("finalCta") : undefined}
           kind="ctaLabel"
           label="Tekst dugmeta"
           value={block.ctaLabel}

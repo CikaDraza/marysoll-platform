@@ -83,9 +83,11 @@ export function Theme9Credentials({
           {social && (social.title || social.images?.length) && (
             <Reveal delay={pillars.length * 60} className="lg:col-span-1 lg:h-full">
               <div className="bg-ee-accent text-ee-canvas flex h-full flex-col gap-[18px] rounded-[20px] p-6 lg:p-8">
-                <span className="text-ee-accent-contrast text-[11px] tracking-[0.14em] uppercase">
-                  {social.label || "Instagram"}
-                </span>
+                {social.label && (
+                  <span className="text-ee-accent-contrast text-[11px] tracking-[0.14em] uppercase">
+                    {social.label}
+                  </span>
+                )}
                 {social.title && (
                   <p className="font-newsreader text-[22px] leading-[1.3] text-white">
                     {social.title}
@@ -94,14 +96,14 @@ export function Theme9Credentials({
 
                 {social.images && social.images.length > 0 && (
                   <div className="grid grid-cols-2 gap-2">
-                    {social.images.slice(0, 4).map((img, i) => (
+                    {social.images.slice(0, 4).map((img) => (
                       <div
                         key={img.src}
                         className="relative aspect-square overflow-hidden rounded-[12px]"
                       >
                         <Image
                           src={img.src}
-                          alt={img.alt || `Instagram ${i + 1}`}
+                          alt={img.alt ?? ""}
                           fill
                           sizes="(max-width: 768px) 40vw, 12vw"
                           className="object-cover"
@@ -111,14 +113,14 @@ export function Theme9Credentials({
                   </div>
                 )}
 
-                {social.url && (
+                {social.url && social.linkLabel && (
                   <a
                     href={social.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-ee-accent-contrast mt-auto text-[13.5px] font-semibold"
                   >
-                    {social.linkLabel || "Prati na Instagramu"} →
+                    {social.linkLabel} →
                   </a>
                 )}
               </div>

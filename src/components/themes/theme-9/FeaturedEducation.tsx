@@ -16,7 +16,7 @@ export interface Theme9FeaturedEducationProps {
   lead?: string;
   learn: string[];
   details: { label: string; value?: string }[];
-  pendingLabel: string;
+  pendingLabel?: string;
   cta?: { text: string; href: string };
   note?: string;
 }
@@ -33,6 +33,7 @@ export function Theme9FeaturedEducation({
   note,
 }: Theme9FeaturedEducationProps) {
   if (!headline && learn.length === 0) return null;
+  const visibleDetails = details.filter((detail) => detail.value || pendingLabel);
 
   return (
     <section id="online-edukacija" className="bg-ee-canvas">
@@ -78,7 +79,7 @@ export function Theme9FeaturedEducation({
 
             <div className="flex flex-col gap-5 rounded-[22px] bg-white/[0.09] p-6">
               <dl className="flex flex-col">
-                {details.map((d) => (
+                {visibleDetails.map((d) => (
                   <div
                     key={d.label}
                     className="flex items-baseline justify-between gap-4 border-b border-white/10 py-3 last:border-b-0"
@@ -89,7 +90,7 @@ export function Theme9FeaturedEducation({
                     <dd
                       className={`text-[14.5px] ${d.value ? "text-ee-canvas" : "text-ee-canvas/55 italic"}`}
                     >
-                      {d.value || pendingLabel}
+                      {d.value ?? pendingLabel}
                     </dd>
                   </div>
                 ))}

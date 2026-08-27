@@ -28,6 +28,11 @@ import HairIcon from "@/components/assets/icons/services/Hair";
 import HaircutIcon from "@/components/assets/icons/services/HaricutIcon";
 import MakeupFaceIcon from "@/components/assets/icons/services/MakeupFaceIcon";
 import MassageIcon from "@/components/assets/icons/services/MassageIcon";
+import {
+  theme9SectionId,
+  validateTheme9SectionsForTheme,
+  type Theme9ValidationIssue,
+} from "@/lib/theme9/sectionValidation";
 
 const PAGE_PARAGRAPH_MAX = 310;
 
@@ -199,6 +204,8 @@ export function AdminLandingCMS({ sp }: Props) {
     null,
   );
   const [iconSaving, setIconSaving] = useState<string | null>(null);
+  const [theme9ValidationIssue, setTheme9ValidationIssue] =
+    useState<Theme9ValidationIssue>();
 
   const updateServiceIcon = async (serviceId: string, icon: string) => {
     if (!token) return;
@@ -235,6 +242,7 @@ export function AdminLandingCMS({ sp }: Props) {
       section: K,
       value: LandingStructure["landing"][K],
     ) => {
+      setTheme9ValidationIssue(undefined);
       updateLS({
         ...ls,
         landing: { ...ls.landing, [section]: value },
@@ -347,6 +355,25 @@ export function AdminLandingCMS({ sp }: Props) {
   });
 
   const handleSave = () => {
+    const theme9Issues = validateTheme9SectionsForTheme(
+      sp.form.landingTheme,
+      ls.landing,
+    );
+    if (theme9Issues.length > 0) {
+      const first = theme9Issues[0];
+      setTheme9ValidationIssue(first);
+      toast.error(first.message, { duration: 6000 });
+      window.requestAnimationFrame(() => {
+        const section = document.getElementById(theme9SectionId(first.section));
+        section?.scrollIntoView({ behavior: "smooth", block: "center" });
+        window.requestAnimationFrame(() => {
+          const target = document.getElementById(first.focusId) ?? section;
+          target?.focus({ preventScroll: true });
+        });
+      });
+      return;
+    }
+
     if (artists?.enabled) {
       if (!(artists?.headline ?? "").trim()) {
         toast.error("Artists: Naslov sekcije je obavezan.");
@@ -1242,7 +1269,11 @@ export function AdminLandingCMS({ sp }: Props) {
           privremeno pređe na drugu temu.
           ────────────────────────────────────────────────────────────────── */}
       {sp.form.landingTheme === "theme-9" && (
-        <Theme9Sections ls={ls} update={updateLandingSection} />
+        <Theme9Sections
+          ls={ls}
+          update={updateLandingSection}
+          validationIssue={theme9ValidationIssue}
+        />
       )}
 
       {/* ── ABOUT ────────────────────────────────────────────────────────── */}
