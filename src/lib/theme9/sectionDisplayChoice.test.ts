@@ -146,13 +146,13 @@ describe("Marinin scenario — prikaz se menja, sadržaj nikad", () => {
     let section: Record<string, unknown> = { ...AUTHORED };
 
     expect(choiceFromEnabled(section.enabled as undefined)).toBe("default");
-    expect(resolveTheme9Section("audiencePaths", section)).toBe("authored");
+    expect(resolveTheme9Section(section)).toBe("authored");
 
     // ── 2. vlasnica bira Isključeno ────────────────────────────────────────
     section = save(section, "off");
 
     expect(choiceFromEnabled(section.enabled as boolean)).toBe("off");
-    expect(resolveTheme9Section("audiencePaths", section)).toBe("hidden");
+    expect(resolveTheme9Section(section)).toBe("hidden");
     // sadržaj identičan
     expect({ ...section, enabled: undefined }).toEqual({
       ...AUTHORED,
@@ -163,7 +163,7 @@ describe("Marinin scenario — prikaz se menja, sadržaj nikad", () => {
     section = save(section, "default");
 
     expect(choiceFromEnabled(section.enabled as undefined)).toBe("default");
-    expect(resolveTheme9Section("audiencePaths", section)).toBe("authored");
+    expect(resolveTheme9Section(section)).toBe("authored");
     // i dalje isti sadržaj, i `enabled` je nestao
     expect(section).toEqual(AUTHORED);
   });

@@ -140,24 +140,40 @@ export function TristateChoice({
  * čega tema donosi odluku, pa bi sakriven editor bio zamka.
  */
 export function TristateSectionCard({
+  id,
   title,
   badge,
   enabled,
   onChange,
   children,
   tone = "odd",
+  invalid = false,
+  errorMessage,
 }: {
+  id?: string;
   title: string;
   badge?: string;
   enabled: boolean | null | undefined;
   onChange: (next: boolean | null) => void;
   children: React.ReactNode;
   tone?: keyof typeof sectionCardTone;
+  invalid?: boolean;
+  errorMessage?: string;
 }) {
   const choice = choiceFromEnabled(enabled);
 
   return (
-    <div className={`${sectionCardBase} ${sectionCardTone[tone]}`}>
+    <div
+      id={id}
+      tabIndex={-1}
+      aria-invalid={invalid || undefined}
+      aria-describedby={invalid && id ? `${id}-error` : undefined}
+      className={`${sectionCardBase} ${sectionCardTone[tone]} scroll-mt-24 outline-none transition ${
+        invalid
+          ? "border-red-500 ring-2 ring-red-200 dark:border-red-400 dark:ring-red-900/50"
+          : ""
+      }`}
+    >
       <div className="flex items-start justify-between gap-4 mb-5">
         <div className="flex items-center gap-3">
           <h3 className="font-bold text-gray-900 dark:text-white">{title}</h3>
@@ -173,6 +189,16 @@ export function TristateSectionCard({
           label={`Prikaz sekcije: ${title}`}
         />
       </div>
+
+      {invalid && errorMessage && (
+        <p
+          id={id ? `${id}-error` : undefined}
+          role="alert"
+          className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
+        >
+          {errorMessage}
+        </p>
+      )}
 
       {editorVisibleFor(choice) ? (
         <div className="space-y-4">{children}</div>

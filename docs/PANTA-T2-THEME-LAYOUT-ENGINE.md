@@ -1,6 +1,8 @@
 # PANTA T2 — Theme/Layout Engine granica (odluka 2026-08-16, rev. v0.2)
 
-> Grana: `product-engines/theme-engine/layout-contract`.
+> Status 2026-08-27: T2A + Theme-9 2A/2B/2C foundation je na `main`-u;
+> staging Release A/migration rehearsal je završen. Dalji Theme-9 + Edu razvoj
+> i QA vode se staging-only.
 > **v0.2 (Architecture Review):** dodati `LayoutDefinition`/`SectionDefinition`
 > (bez njih slot contract ne postoji), `schemaVersion` po bloku, invarijante
 > immutable published revizija, server-side block loaderi (zabrana waterfall-a) i
@@ -14,6 +16,25 @@
 > **T2A (Theme/Layout boundary)** i **T2B (Tenant verticals + capabilities,
 > vidi [PANTA-TENANT-VERTICALS-CAPABILITIES.md](PANTA-TENANT-VERTICALS-CAPABILITIES.md))**.
 > Okidač: Education vertikala (Marina) — prvi tenant koji nije „salon = usluge + termini".
+
+### Theme-9 content contract closure (2026-08-27)
+
+Theme-9 autorske sekcije imaju jedan fail-closed runtime ugovor:
+
+```text
+enabled === false              → hidden
+meaningful persisted content   → authored
+bez meaningful sadržaja        → hidden
+```
+
+Authoring guidance je CMS-only i ne ulazi u javni sadržaj ili SEO. Expert
+Editorial seed je starter/demo provisioning nad istim persisted poljima koja
+CMS trajno uređuje: default run popunjava missing/prazan top-level blok i čuva
+meaningful tenant-authored sadržaj; force rebuild je eksplicitan.
+
+Demo/prospect sadržaj može ilustrovati pun dizajn, ali nije automatski
+factual/SEO-approved live business copy. Tenant-reviewed live copy i njegova
+indexing odgovornost ostaju zasebna odluka; T2 ne uvodi novi SEO lifecycle.
 
 ## 1. Zašto sada
 

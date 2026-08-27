@@ -1,7 +1,13 @@
 # Theme-9 finalCta — ciljna semantika kalendara
 
 **Status:** ZAKLJUČANA SPECIFIKACIJA, NIJE IMPLEMENTIRANA.
-**Ne izvršava se u 2B.** U 2B `content.final-cta` ima policy `hide`.
+**Ne izvršava se u 2B.** Dok availability integracija ne stigne, prazan
+`content.final-cta` je fail-closed/hidden.
+
+**Content contract cleanup (2026-08-27):** prazan blok ostaje hidden; CMS traži
+persisted headline + CTA label kada je DEFAULT/ON. Runtime ne generiše CTA label,
+naslov kalendara niti slotove. Starter slotovi, ako postoje, jesu ilustrativan
+persisted demo sadržaj, ne availability.
 
 Ovaj dokument postoji da bi se odluka zapisala dok su činjenice sveže, a ne da
 bi se odmah gradila. Implementacija čeka availability read iz Booking Engine-a.

@@ -24,6 +24,7 @@ import { compositionFor } from "@/lib/platform/theme-composition";
 const CMS_DIR = path.join(process.cwd(), "src/components/admin/cms");
 const MAIN_EDITOR = path.join(CMS_DIR, "AdminLandingCMS.tsx");
 const THEME9_EDITOR = path.join(CMS_DIR, "Theme9Sections.tsx");
+const PRIMITIVES = path.join(CMS_DIR, "primitives.tsx");
 
 /**
  * Polja koja se namerno ne izlažu korisniku:
@@ -133,5 +134,18 @@ describe("theme-9 CMS coverage", () => {
       }
     }
     expect(missing, "polja koja se snimaju ali se ne mogu uneti").toEqual([]);
+  });
+
+  it("missing blokovi ne dobijaju synthetic enabled:true", () => {
+    const theme9 = readFileSync(THEME9_EDITOR, "utf8");
+    expect(theme9).not.toMatch(/\?\?\s*\{\s*enabled:\s*true/);
+    expect(theme9.match(/theme9EditorSection\(/g)).toHaveLength(7);
+  });
+
+  it("validation state nije samo boja", () => {
+    const primitives = readFileSync(PRIMITIVES, "utf8");
+    expect(primitives).toContain("aria-invalid");
+    expect(primitives).toContain('role="alert"');
+    expect(primitives).toContain("tabIndex={-1}");
   });
 });
