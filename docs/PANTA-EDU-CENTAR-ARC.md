@@ -1,11 +1,11 @@
 # PANTA — Edu Centar: workspace arhitektura i Education domen
 
-> **Status:** ZAKLJUČANA ARHITEKTURA, IMPLEMENTACIJA NIJE POČELA.
-> Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-27 · `main`
+> **Status:** ZAKLJUČANA ARHITEKTURA, FAZA 0 IMPLEMENTIRANA NA AKTIVNOJ STAGING LINIJI; FAZA 1 NIJE POČELA.
+> Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-27 · `staging/production-engines`
 >
-> **Faza 0 počinje posle završetka Theme-9 contract/rollout foundation-a i kada
-> staging postane aktivna razvojna linija za Edu luk.** 2A/2B/2C su na `main`-u;
-> dalji Theme-9 + Edu razvoj i QA vode se staging-only.
+> **Faza 0 je počela tek pošto je Theme-9 contract/rollout foundation zatvoren i
+> staging postao aktivna razvojna linija za Edu luk; sada je završena.**
+> 2A/2B/2C su na `main`-u; dalji Theme-9 + Edu razvoj i QA vode se staging-only.
 >
 > Product/domenski ulaz je u tri prateća dokumenta:
 > [EDUCATION_CAPABILITY_GATE_AND_ADOPTION.md](EDUCATION_CAPABILITY_GATE_AND_ADOPTION.md) ·
@@ -57,8 +57,8 @@ Uz to je zaključana šira granica: **„Salon + Edukacija" nije treći tip sist
 Poseban, kasniji luk. Theme-9 2A/2B/2C foundation je spojena u `main`, a staging
 Release A/migration rehearsal je završen.
 
-**Faza 0 počinje kada Theme-9 contract/rollout foundation bude zatvoren i staging
-postane aktivna razvojna linija Edu luka.**
+**Ulazni gate za Fazu 0 je zatvoren:** Theme-9 contract/rollout foundation je
+završen i `staging/production-engines` je aktivna razvojna linija Edu luka.
 
 ---
 
@@ -126,6 +126,19 @@ uz **backward-compatible prihvatanje `salonName`** dok se UI ne migrira.
 ⚠️ Dodati `"education"` u `PLATFORM_PATH_SEGMENTS` (`src/lib/platform/host-context.ts:132`). `RESERVED_TOP_SEGMENTS` (`src/lib/proxy/constants.ts:72`) spread-uje taj skup, pa je **jedan unos dovoljan** — nema dupliranja.
 
 **0.6 Salon se NE dira.** Postojećih ~15 dashboard tabova ostaje. Novi Education workspace se pravi po budućem modelu; Salon se migrira kasnije, zasebno.
+
+### Implementacioni status Faze 0
+
+- ✅ preset-aware capability konfiguracija uz identičan legacy salon default
+- ✅ neutralni `businessName` + `preset` registration contract uz `salonName` kompatibilnost
+- ✅ registration UI sa Salon / Edukacija / Salon + Edukacija izborom
+- ✅ idempotentno Edu provisioning jezgro nad istim tenantom; javni CTA ostaje zaključan do Faze 5
+- ✅ zaštićena `/education`, `/education/offerings` i `/education/inquiries` workspace granica
+- ✅ `education` je platformski rezervisana putanja; Salon workspace nije menjan
+
+Faza 0 ne uvodi `tenantType`, ne preimenuje `SalonProfile`, ne dodaje F1 sadržaj i
+ne menja Theme-9. Education tenant privremeno i dalje koristi `SalonProfile` samo
+kao presentation profile.
 
 **Zapisati kao budući put, ne implementirati:** `AuthUser.email` je globalno unique i register vraća 409 ako owner email postoji. „Neka napravi drugi nalog" **nije** dugoročno rešenje za odvojene Salon/Education biznise istog vlasnika. Ispravan put je jedan `AuthUser` → više `Tenant`-a („Kreiraj novi Marysoll workspace"). `TenantUser.authUserId` je već opciona veza sa izričitom napomenom da **ne sme** biti auth authority, pa sadašnja identity arhitektura to ne sprečava.
 

@@ -4,6 +4,15 @@ export const TENANT_VERTICALS = ["beauty", "education"] as const;
 
 export type TenantVertical = (typeof TENANT_VERTICALS)[number];
 
+export const TENANT_REGISTRATION_PRESETS = [
+  "salon",
+  "education",
+  "hybrid",
+] as const;
+
+export type TenantRegistrationPreset =
+  (typeof TENANT_REGISTRATION_PRESETS)[number];
+
 export const TENANT_CAPABILITIES = [
   "services.catalog",
   "booking.services",

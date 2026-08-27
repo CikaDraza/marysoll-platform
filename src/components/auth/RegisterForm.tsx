@@ -8,7 +8,8 @@ import { PasswordVisibilityButton } from "@/components/auth/PasswordVisibilityBu
 type Step = "form" | "check_email";
 
 type FormFields = {
-  salonName: string;
+  businessName: string;
+  preset: "salon" | "education" | "hybrid";
   ownerName: string;
   email: string;
   password: string;
@@ -23,7 +24,8 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function validate(form: FormFields): FieldErrors {
   const e: FieldErrors = {};
-  if (!form.salonName.trim()) e.salonName = "Naziv salona je obavezan";
+  if (!form.businessName.trim())
+    e.businessName = "Naziv biznisa je obavezan";
   if (!form.ownerName.trim()) e.ownerName = "Ime i prezime je obavezno";
   if (!form.email.trim()) {
     e.email = "Email je obavezan";
@@ -46,7 +48,8 @@ export default function RegisterForm() {
   const [registeredEmail, setRegisteredEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState<FormFields>({
-    salonName: "",
+    businessName: "",
+    preset: "salon",
     ownerName: "",
     email: "",
     password: "",
@@ -113,7 +116,7 @@ export default function RegisterForm() {
           {registeredEmail}
         </p>
         <p className="text-gray-400 text-xs mb-8">
-          Kliknite na link u emailu da aktivirate salon i pokrenete 30-dnevni
+          Kliknite na link u emailu da aktivirate workspace i pokrenete 30-dnevni
           probni period. Link važi 24 sata.
         </p>
         <button
@@ -141,22 +144,67 @@ export default function RegisterForm() {
   return (
     <div className="w-full">
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <fieldset>
+          <legend className="block text-sm font-medium text-gray-700 mb-2">
+            Kako koristite Marysoll?
+          </legend>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {(
+              [
+                ["salon", "Salon", "Usluge, termini i klijenti"],
+                ["education", "Edukacija", "Sadržaj i edukativne ponude"],
+                ["hybrid", "Salon + Edukacija", "Oba workspace-a"],
+              ] as const
+            ).map(([value, label, description]) => {
+              const active = form.preset === value;
+              return (
+                <label
+                  key={value}
+                  className={`cursor-pointer rounded-xl border p-3 text-left transition ${
+                    active
+                      ? "border-violet-500 bg-violet-50 ring-1 ring-violet-500"
+                      : "border-gray-200 bg-white hover:border-violet-300"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="preset"
+                    value={value}
+                    checked={active}
+                    onChange={() => set("preset", value)}
+                    className="sr-only"
+                    disabled={loading}
+                  />
+                  <span className="block text-sm font-semibold text-gray-900">
+                    {label}
+                  </span>
+                  <span className="mt-1 block text-[11px] leading-snug text-gray-500">
+                    {description}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Naziv salona
+            Naziv biznisa
           </label>
           <input
             type="text"
-            value={form.salonName}
-            onChange={(e) => set("salonName", e.target.value)}
+            value={form.businessName}
+            onChange={(e) => set("businessName", e.target.value)}
             className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 transition ${
-              errors.salonName ? "border-red-400 bg-red-50" : "border-gray-200"
+              errors.businessName
+                ? "border-red-400 bg-red-50"
+                : "border-gray-200"
             }`}
-            placeholder="Nail Studio Anja"
+            placeholder="Studio, akademija ili naziv biznisa"
             disabled={loading}
           />
-          {errors.salonName && (
-            <p className="text-red-500 text-xs mt-1">{errors.salonName}</p>
+          {errors.businessName && (
+            <p className="text-red-500 text-xs mt-1">{errors.businessName}</p>
           )}
         </div>
 
@@ -293,12 +341,12 @@ export default function RegisterForm() {
           {loading && (
             <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
           )}
-          {loading ? "Kreiranje salona..." : "Kreiraj salon →"}
+          {loading ? "Kreiranje workspace-a..." : "Kreiraj workspace →"}
         </button>
       </form>
 
       <div className="mt-4 p-3 bg-purple-50 rounded-lg text-xs text-purple-700 text-center">
-        🌐 Dobićete subdomen: <strong>naziv-salona.marysoll.com</strong>
+        🌐 Dobićete subdomen: <strong>naziv-biznisa.marysoll.com</strong>
       </div>
     </div>
   );

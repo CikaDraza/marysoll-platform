@@ -13,16 +13,17 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { BASE_DOMAIN } from "@/lib/platform/host-context";
 import { createInitialTenantCapabilityConfiguration } from "@/lib/platform/capabilities";
+import { resolveTenantRegistrationIdentity } from "@/lib/tenant-registration";
 
 /**
  * POST /api/tenants/register
  *
- * Registers a new salon OWNER.
+ * Registers a new tenant OWNER (Salon / Education / Hybrid preset).
  * Creates:
  *   AuthUser  — global platform identity (for marysoll.com platform access)
- *   Tenant    — the salon record (status: pending)
- *   TenantUser — OWNER profile WITH email+password (for salon login)
- *   SalonProfile — empty profile scaffold
+ *   Tenant    — business workspace record (status: pending)
+ *   TenantUser — OWNER profile WITH email+password
+ *   SalonProfile — legacy presentation profile required by Theme system
  *
  * Trial activates only after email verification.
  */
@@ -36,18 +37,19 @@ export async function POST(request: NextRequest) {
   try {
     await connectToDB();
 
+    const body = await request.json();
+    const identity = resolveTenantRegistrationIdentity(body);
     const {
-      salonName,
       ownerName,
       email,
       password,
       phone,
       agreedToPrivacy,
       newsletterOptIn = false,
-    } = await request.json();
+    } = body;
 
     if (
-      !salonName ||
+      !identity ||
       !ownerName ||
       !email ||
       !password ||
@@ -59,6 +61,7 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+    const { businessName, preset } = identity;
     if (password.length < 8) {
       return NextResponse.json(
         { error: "Lozinka mora imati najmanje 8 karaktera" },
@@ -84,7 +87,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate unique slug
-    const baseSlug = salonName
+    const baseSlug = businessName
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
@@ -102,7 +105,8 @@ export async function POST(request: NextRequest) {
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const hashedPassword = await bcrypt.hash(password, 12);
-    const initialCapabilities = createInitialTenantCapabilityConfiguration();
+    const initialCapabilities =
+      createInitialTenantCapabilityConfiguration(preset);
 
     // 1. AuthUser — platform-level identity for OWNER (marysoll.com access)
     const authUser = new AuthUser({
@@ -118,7 +122,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Tenant (pending — trial starts after email verification)
     const tenant = new Tenant({
-      name: salonName.trim(),
+      name: businessName,
       slug,
       subdomain: slug,
       customDomain: null,
@@ -184,10 +188,12 @@ export async function POST(request: NextRequest) {
       cancelAtPeriodEnd: false,
     });
 
-    // 5. Empty salon profile
+    // 5. Legacy presentation profile. Education tenant ga privremeno koristi
+    //    zato što Theme sistem i dalje zavisi od SalonProfile; ovo NE znači da
+    //    Education domen pripada salon domenu i model se sada ne preimenuje.
     const salonProfile = new SalonProfile({
       tenantId: tenant._id,
-      name: salonName.trim(),
+      name: businessName,
       email: normalizedEmail,
       phone: phone?.trim() ?? "",
       description: "",
@@ -218,7 +224,7 @@ export async function POST(request: NextRequest) {
       await sendOwnerVerificationEmail({
         email: normalizedEmail,
         ownerName: ownerName.trim(),
-        salonName: salonName.trim(),
+        salonName: businessName,
         verificationToken,
         subdomain,
       });
@@ -231,7 +237,7 @@ export async function POST(request: NextRequest) {
     //    Funkcija nikad ne baca, pa ne može da obori registraciju.
     await notifySuperAdminsOfTenantRegistration({
       tenantId: tenant._id,
-      salonName: salonName.trim(),
+      salonName: businessName,
       ownerName: ownerName.trim(),
       ownerEmail: normalizedEmail,
       subdomain,
@@ -239,9 +245,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        message: `Salon je registrovan! Proverite email ${normalizedEmail} za potvrdu.`,
+        message: `Biznis je registrovan! Proverite email ${normalizedEmail} za potvrdu.`,
         slug,
         subdomain,
+        preset,
         trialDays: TRIAL_DAYS,
       },
       { status: 201 },

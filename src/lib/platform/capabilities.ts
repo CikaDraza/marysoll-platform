@@ -8,6 +8,7 @@ import {
   type TenantCapability,
   type TenantCapabilityConfiguration,
   type TenantCapabilityOverride,
+  type TenantRegistrationPreset,
   type TenantVertical,
 } from "@/types/tenant-capabilities";
 
@@ -192,17 +193,84 @@ export function resolveKnownCapability(params: {
   });
 }
 
-export function createInitialTenantCapabilityConfiguration(): {
+const EDUCATION_CAPABILITIES = [
+  "education.catalog",
+  "education.inquiries",
+  "booking.education",
+] as const satisfies readonly TenantCapability[];
+
+function enabledOverrides(
+  capabilities: readonly TenantCapability[],
+): TenantCapabilityOverride[] {
+  return capabilities.map((capability) => ({ capability, enabled: true }));
+}
+
+export function createInitialTenantCapabilityConfiguration(
+  preset: TenantRegistrationPreset = "salon",
+): {
   verticals: TenantVertical[];
   capabilityConfiguration: TenantCapabilityConfiguration;
 } {
+  const beautyCapabilities = TENANT_CAPABILITIES.filter(
+    (capability) =>
+      TENANT_CAPABILITY_REGISTRY[capability].legacyBeautyDefault,
+  );
+  const capabilities =
+    preset === "salon"
+      ? beautyCapabilities
+      : preset === "education"
+        ? EDUCATION_CAPABILITIES
+        : [...beautyCapabilities, ...EDUCATION_CAPABILITIES];
+
   return {
-    verticals: ["beauty"],
+    verticals:
+      preset === "salon"
+        ? ["beauty"]
+        : preset === "education"
+          ? ["education"]
+          : ["beauty", "education"],
     capabilityConfiguration: {
-      overrides: TENANT_CAPABILITIES.filter(
-        (capability) =>
-          TENANT_CAPABILITY_REGISTRY[capability].legacyBeautyDefault,
-      ).map((capability) => ({ capability, enabled: true })),
+      overrides: enabledOverrides(capabilities),
+    },
+  };
+}
+
+/**
+ * Idempotentni F0 provisioning za postojeći tenant. Legacy tenant bez
+ * `verticals` prvo materijalizuje današnji beauty preset, da dodavanje Edu
+ * capability-ja ne ugasi postojeće salon funkcije.
+ */
+export function addEducationCapabilityConfiguration(
+  tenant: UnknownTenantCapabilityState,
+): {
+  verticals: TenantVertical[];
+  capabilityConfiguration: TenantCapabilityConfiguration;
+} {
+  const base =
+    tenant.verticals === undefined
+      ? createInitialTenantCapabilityConfiguration("salon")
+      : {
+          verticals: resolveEffectiveVerticals(tenant),
+          capabilityConfiguration:
+            tenantCapabilityConfigurationSchema.safeParse(
+              tenant.capabilityConfiguration,
+            ).data ?? { overrides: [] },
+        };
+  const education = createInitialTenantCapabilityConfiguration("education");
+  const educationSet = new Set<TenantCapability>(
+    EDUCATION_CAPABILITIES,
+  );
+  const preserved = (base.capabilityConfiguration.overrides ?? []).filter(
+    (override) => !educationSet.has(override.capability),
+  );
+
+  return {
+    verticals: [...new Set([...base.verticals, ...education.verticals])],
+    capabilityConfiguration: {
+      overrides: [
+        ...preserved,
+        ...(education.capabilityConfiguration.overrides ?? []),
+      ],
     },
   };
 }

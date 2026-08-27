@@ -7,6 +7,7 @@ import {
 } from "@/lib/plans/planFeatures";
 import {
   TENANT_CAPABILITY_REGISTRY,
+  addEducationCapabilityConfiguration,
   createInitialTenantCapabilityConfiguration,
   resolveCapability,
   resolveEffectiveVerticals,
@@ -233,6 +234,51 @@ describe("T2B registry i provisioning", () => {
       { capability: "audience.contacts", enabled: true },
       { capability: "loyalty.rewards", enabled: true },
     ]);
+    expect(initial).toEqual(
+      createInitialTenantCapabilityConfiguration("salon"),
+    );
+  });
+
+  it("provisionuje education i hybrid preset bez tenantType-a", () => {
+    expect(createInitialTenantCapabilityConfiguration("education")).toEqual({
+      verticals: ["education"],
+      capabilityConfiguration: {
+        overrides: [
+          { capability: "education.catalog", enabled: true },
+          { capability: "education.inquiries", enabled: true },
+          { capability: "booking.education", enabled: true },
+        ],
+      },
+    });
+    expect(createInitialTenantCapabilityConfiguration("hybrid")).toEqual({
+      verticals: ["beauty", "education"],
+      capabilityConfiguration: {
+        overrides: [
+          { capability: "services.catalog", enabled: true },
+          { capability: "booking.services", enabled: true },
+          { capability: "audience.contacts", enabled: true },
+          { capability: "loyalty.rewards", enabled: true },
+          { capability: "education.catalog", enabled: true },
+          { capability: "education.inquiries", enabled: true },
+          { capability: "booking.education", enabled: true },
+        ],
+      },
+    });
+  });
+
+  it("dodaje Edu capability-je istom legacy beauty tenantu idempotentno", () => {
+    const first = addEducationCapabilityConfiguration({});
+    const second = addEducationCapabilityConfiguration(first);
+    expect(second).toEqual(first);
+    expect(first.verticals).toEqual(["beauty", "education"]);
+    expect(first.capabilityConfiguration.overrides).toContainEqual({
+      capability: "services.catalog",
+      enabled: true,
+    });
+    expect(first.capabilityConfiguration.overrides).toContainEqual({
+      capability: "education.catalog",
+      enabled: true,
+    });
   });
 
   it("ne sadrži zasebnu plan matricu ni Theme Engine zavisnost", () => {
