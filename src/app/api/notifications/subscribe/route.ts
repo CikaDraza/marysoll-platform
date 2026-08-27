@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { TenantUser } from "@/models/TenantUser";
 import { getSalonBranding } from "@/lib/notificationService";
+import { DEFAULT_NOTIFICATION_ICON } from "@/lib/branding/rasterLogo";
 import { verifyToken } from "@/lib/auth/auth-server";
 import webpush from "web-push";
 import { getVapidKeys } from "@/lib/vapid";
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
 
     // Ikona = notificationLogo salona (raster) → Marysoll default. Tenant `logo`
     // se NE koristi jer može biti SVG koji web push renderuje kao uzvičnik.
-    let notificationIcon = "/marysoll_elegant_logo.png";
+    let notificationIcon: string = DEFAULT_NOTIFICATION_ICON;
     if (decoded.tenantUserId) {
       try {
         const tenantUser = (await TenantUser.findById(decoded.tenantUserId)

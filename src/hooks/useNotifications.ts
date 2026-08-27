@@ -3,7 +3,9 @@ import { api } from "@/lib/api";
 import { useEffect } from "react";
 import { INotification } from "@/types";
 import { useAuth } from "./useAuth";
-import { useSalonProfile } from "./useSalonProfile";
+import { useSalonProfile, usePublicSalonProfile } from "./useSalonProfile";
+import { useTenant } from "@/contexts/TenantContext";
+import { resolveNotificationIcon } from "@/lib/branding/rasterLogo";
 
 export function useNotifications(unreadOnly: boolean = false) {
   const { user } = useAuth();
@@ -97,13 +99,19 @@ export function useNotificationMutations() {
 }
 
 // Hook za browser notifikacije
-export function useBrowserNotifications(salonLogo?: string | null) {
-  const { data: profile } = useSalonProfile();
-  // SVG se ne renderuje kao notification ikonica (browser prikaže uzvičnik),
-  // pa takav logo odbaci i padni na Marysoll default.
-  const rawLogo = salonLogo ?? profile?.logo ?? null;
-  const resolvedLogo =
-    rawLogo && !/\.svg(\?|#|$)/i.test(rawLogo) ? rawLogo : null;
+export function useBrowserNotifications(notificationLogo?: string | null) {
+  // Ikonica = tenantov "Logo za notifikacije i mejlove" (Dashboard > Profil).
+  // Klijent nema admin token, pa `/salon-profile` njemu vraća null — zato prvo
+  // ide javni profil salona (dostupan svima na tenant sajtu), a admin profil
+  // ostaje fallback za panele van TenantProvider-a.
+  const { tenantSlug } = useTenant();
+  const { data: publicProfile } = usePublicSalonProfile(tenantSlug);
+  const { data: adminProfile } = useSalonProfile();
+  const resolvedLogo = resolveNotificationIcon(
+    notificationLogo ??
+      publicProfile?.notificationLogo ??
+      adminProfile?.notificationLogo,
+  );
   const { data: notifications = [], error } = useNotifications(true);
 
   // ✅ Dodaj error handling
@@ -130,9 +138,9 @@ export function useBrowserNotifications(salonLogo?: string | null) {
     }
 
     new Notification(title, {
-      icon: "/favicon.ico",
-      badge: "/favicon.ico",
       ...options,
+      icon: options?.icon ?? resolvedLogo,
+      badge: options?.badge ?? resolvedLogo,
     });
   };
 
@@ -150,7 +158,7 @@ export function useBrowserNotifications(salonLogo?: string | null) {
             showNotification(notification.title, {
               body: notification.message,
               tag: notification._id,
-              icon: resolvedLogo || "/marysoll_elegant_logo.png",
+              icon: resolvedLogo,
             });
           });
         }
