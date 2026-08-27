@@ -1,9 +1,7 @@
 import {
-  THEME9_FALLBACK_POLICY,
   isTheme9TristateSection,
   resolveSectionPresentation,
   resolveTheme9Section,
-  type SectionFallbackPolicy,
 } from "./presentationResolver";
 import { THEME9_TRISTATE_SECTIONS } from "./sectionNormalization";
 import {
@@ -13,90 +11,49 @@ import {
 } from "@/lib/platform/theme-client";
 import type { LandingStructure } from "@/types";
 
-const authored = { enabled: undefined as boolean | undefined, headline: "Nega po meri" };
-const empty = { enabled: undefined as boolean | undefined };
-
 describe("resolveSectionPresentation — tri pravila, redosled je ugovor", () => {
   it("`false` je apsolutni veto — jači od sadržaja", () => {
     expect(
       resolveSectionPresentation({
         enabled: false,
         hasAuthoredContent: true,
-        policy: "neutral",
       }),
     ).toBe("hidden");
   });
 
-  it("`false` je jači i od `neutral` policy-ja", () => {
+  it("`false` skriva i praznu sekciju", () => {
     expect(
       resolveSectionPresentation({
         enabled: false,
         hasAuthoredContent: false,
-        policy: "neutral",
       }),
     ).toBe("hidden");
   });
 
   it("autorski sadržaj bez veta se uvek prikazuje, i bez odluke", () => {
     for (const enabled of [true, undefined]) {
-      for (const policy of ["hide", "neutral"] as SectionFallbackPolicy[]) {
-        expect(
-          resolveSectionPresentation({
-            enabled,
-            hasAuthoredContent: true,
-            policy,
-          }),
-        ).toBe("authored");
-      }
+      expect(
+        resolveSectionPresentation({ enabled, hasAuthoredContent: true }),
+      ).toBe("authored");
     }
   });
 
-  it("prazna sekcija bez veta pada na policy", () => {
+  it("prazna sekcija bez veta ostaje skrivena", () => {
     expect(
       resolveSectionPresentation({
         enabled: undefined,
         hasAuthoredContent: false,
-        policy: "neutral",
-      }),
-    ).toBe("default");
-    expect(
-      resolveSectionPresentation({
-        enabled: undefined,
-        hasAuthoredContent: false,
-        policy: "hide",
       }),
     ).toBe("hidden");
   });
 
-  it("`true` + prazno takođe pada na policy — uključeno nije isto što i puno", () => {
+  it("`true` + prazno je skriveno — uključeno nije isto što i puno", () => {
     expect(
       resolveSectionPresentation({
         enabled: true,
         hasAuthoredContent: false,
-        policy: "neutral",
-      }),
-    ).toBe("default");
-    expect(
-      resolveSectionPresentation({
-        enabled: true,
-        hasAuthoredContent: false,
-        policy: "hide",
       }),
     ).toBe("hidden");
-  });
-});
-
-describe("policy tabela", () => {
-  it("pokriva tačno svih sedam sekcija", () => {
-    expect(Object.keys(THEME9_FALLBACK_POLICY).sort()).toEqual(
-      [...THEME9_TRISTATE_SECTIONS].sort(),
-    );
-  });
-
-  it("2B.2 lands sve na `hide` — neutralni payload dolazi tek u 2B.3", () => {
-    expect(
-      Object.values(THEME9_FALLBACK_POLICY).every((p) => p === "hide"),
-    ).toBe(true);
   });
 });
 
@@ -122,10 +79,9 @@ describe("isTheme9TristateSection", () => {
  * se razlikuju.
  */
 describe("matrica: staro ponašanje vs 2B.2", () => {
-  const KEY = "audiencePaths" as const;
   const oldVisible = (enabled: boolean | undefined) => enabled ?? false;
   const newVisible = (section: unknown) =>
-    resolveTheme9Section(KEY, section) !== "hidden";
+    resolveTheme9Section(section) !== "hidden";
 
   const cases: {
     enabled: boolean | undefined;
@@ -237,22 +193,10 @@ describe("landingStructureToThemeDocument", () => {
 
 describe("resolveTheme9Section — sirov CMS oblik", () => {
   it("`undefined` sekcija je prazna, ne pada", () => {
-    expect(resolveTheme9Section("finalCta", undefined)).toBe("hidden");
+    expect(resolveTheme9Section(undefined)).toBe("hidden");
   });
 
   it("niz umesto objekta se tretira kao prazno", () => {
-    expect(resolveTheme9Section("finalCta", [])).toBe("hidden");
-  });
-
-  it("prihvata drugačiju policy tabelu", () => {
-    const neutral = Object.fromEntries(
-      THEME9_TRISTATE_SECTIONS.map((k) => [k, "neutral" as const]),
-    ) as Record<(typeof THEME9_TRISTATE_SECTIONS)[number], SectionFallbackPolicy>;
-
-    expect(resolveTheme9Section("finalCta", empty, neutral)).toBe("default");
-    expect(resolveTheme9Section("finalCta", authored, neutral)).toBe("authored");
-    expect(
-      resolveTheme9Section("finalCta", { enabled: false }, neutral),
-    ).toBe("hidden");
+    expect(resolveTheme9Section([])).toBe("hidden");
   });
 });

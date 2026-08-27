@@ -9,8 +9,7 @@
  *     presentation resolver         ← OVDE
  *             ├── enabled=false           → hidden
  *             ├── ima autorski sadržaj    → authored
- *             ├── prazno + neutral policy → default
- *             └── prazno + bez fallback-a → hidden
+ *             └── nema autorskog sadržaja → hidden
  *             ▼
  *     mapper → komponenta
  *
@@ -42,20 +41,13 @@ export type SectionPresentation =
   /** Ništa — blok se ne upisuje u dokument. */
   | "hidden"
   /** Sadržaj koji je vlasnica napisala. */
-  | "authored"
-  /** Neutralan tekst na nivou teme (payload dolazi u 2B.3). */
-  | "default";
-
-/** Šta tema radi kad odluke nema, a sadržaja nema. */
-export type SectionFallbackPolicy = "hide" | "neutral";
+  | "authored";
 
 export interface SectionPresentationInput {
   /** Tri-state iz baze: `undefined` = nema odluke. */
   enabled: boolean | undefined;
   /** Ima li sekcija autorskog sadržaja pored samog `enabled`. */
   hasAuthoredContent: boolean;
-  /** Politika teme za tu sekciju. */
-  policy: SectionFallbackPolicy;
 }
 
 /**
@@ -66,40 +58,16 @@ export interface SectionPresentationInput {
  *   2. Autorski sadržaj bez veta se UVEK prikazuje. Sadržaj koji postoji, a
  *      odluka nije doneta, ne sme da nestane samo zato što niko nije kliknuo
  *      prekidač.
- *   3. Tek prazna sekcija bez veta pada na policy.
+ *   3. Prazna sekcija nema javni sadržaj i zato ostaje skrivena. Starter/demo
+ *      copy mora biti persisted tenant sadržaj, nikada runtime fallback.
  */
 export function resolveSectionPresentation(
   input: SectionPresentationInput,
 ): SectionPresentation {
   if (input.enabled === false) return "hidden";
   if (input.hasAuthoredContent) return "authored";
-  return input.policy === "neutral" ? "default" : "hidden";
+  return "hidden";
 }
-
-/**
- * Politika po sekciji.
- *
- * 2B.2 namerno postavlja SVE na `hide` — time se ponašanje ne menja i resolver
- * se može bezbedno pustiti pre nego što neutralni tekstovi uopšte postoje.
- * 2B.3 prebacuje pojedine sekcije na `neutral` i tek tada donosi payload.
- *
- * Zapisano u `docs/TODO.md` §2B.3: policy coverage 7/7, neutralni payload samo
- * 3 od 7 (`audiencePaths`, `guidedCareProcess`, `finalCta`). Ostale ostaju
- * `hide` iz sadržinskih razloga — teme, reference i buduće Education ponude se
- * ne izmišljaju.
- */
-export const THEME9_FALLBACK_POLICY: Record<
-  Theme9TristateSection,
-  SectionFallbackPolicy
-> = {
-  audiencePaths: "hide",
-  topicHub: "hide",
-  guidedCareProcess: "hide",
-  credentials: "hide",
-  featuredEducation: "hide",
-  professionalPath: "hide",
-  finalCta: "hide",
-};
 
 const TRISTATE_SET: ReadonlySet<string> = new Set(THEME9_TRISTATE_SECTIONS);
 
@@ -116,12 +84,7 @@ export function isTheme9TristateSection(
  * `section` je `landingStructure.landing[key]` — može biti `undefined`.
  */
 export function resolveTheme9Section(
-  key: Theme9TristateSection,
   section: unknown,
-  policy: Record<
-    Theme9TristateSection,
-    SectionFallbackPolicy
-  > = THEME9_FALLBACK_POLICY,
 ): SectionPresentation {
   const raw =
     section && typeof section === "object" && !Array.isArray(section)
@@ -131,6 +94,5 @@ export function resolveTheme9Section(
   return resolveSectionPresentation({
     enabled: typeof raw?.enabled === "boolean" ? raw.enabled : undefined,
     hasAuthoredContent: hasMeaningfulContent(raw),
-    policy: policy[key],
   });
 }

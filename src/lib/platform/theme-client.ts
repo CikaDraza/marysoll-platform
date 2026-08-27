@@ -223,7 +223,7 @@ export function isSectionVisible(
   key: LandingSectionKey,
 ): boolean {
   if (isTheme9TristateSection(key)) {
-    return resolveTheme9Section(key, ls?.landing?.[key]) !== "hidden";
+    return resolveTheme9Section(ls?.landing?.[key]) !== "hidden";
   }
   return isSectionEnabled(ls, key);
 }
