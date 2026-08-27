@@ -16,32 +16,7 @@ import {
 } from "@/lib/platform/diagnostic-client";
 import type { IntegrityReport } from "@/lib/platform/diagnostic-client";
 import { createLoaders } from "./loaders";
-import type { IntegrityCollector } from "./collectors/types";
-import { collectDuplicates } from "./collectors/duplicates";
-import { collectMergedReferences } from "./collectors/mergedReferences";
-import { collectInvalidReferences } from "./collectors/invalidReferences";
-import { collectAccountOrphans } from "./collectors/accountOrphans";
-import { collectAccountDuplicates } from "./collectors/accountDuplicates";
-import { collectLedgerMismatch } from "./collectors/ledgerMismatch";
-import { collectBalanceMismatch } from "./collectors/balanceMismatch";
-import { collectVoucherOwner } from "./collectors/voucherOwner";
-import { collectAppointmentClient } from "./collectors/appointmentClient";
-import { collectPushSubscriptions } from "./collectors/pushSubscriptions";
-import { collectSeoHealth } from "./collectors/seoHealth";
-
-const COLLECTORS: Record<string, IntegrityCollector> = {
-  "client.identity.duplicates": collectDuplicates,
-  "client.identity.mergedReferences": collectMergedReferences,
-  "client.identity.invalidReferences": collectInvalidReferences,
-  "loyalty.account.orphans": collectAccountOrphans,
-  "loyalty.account.duplicates": collectAccountDuplicates,
-  "loyalty.ledger.mismatch": collectLedgerMismatch,
-  "loyalty.balance.mismatch": collectBalanceMismatch,
-  "voucher.owner.invalid": collectVoucherOwner,
-  "appointment.client.invalid": collectAppointmentClient,
-  "seo.tenant.metadata": collectSeoHealth,
-  "notifications.push.subscriptions": collectPushSubscriptions,
-};
+import { TENANT_INTEGRITY_COLLECTORS } from "./collectorRegistry";
 
 export async function runIntegrityChecks(
   tenantId: string,
@@ -50,20 +25,12 @@ export async function runIntegrityChecks(
   const loaders = createLoaders(tenantId);
   const results = [];
 
-  // Redosled iz registry-ja (izvor istine) — i garancija da je svaki ključ pokriven.
+  // Redosled iz registry-ja (izvor istine); platform provere nemaju tenant
+  // subject i zato se nikada ne izvršavaju niti lažno padaju u ovom reportu.
   for (const def of INTEGRITY_CHECKS) {
-    const collector = COLLECTORS[def.key];
+    if (def.scope !== "tenant") continue;
+    const collector = TENANT_INTEGRITY_COLLECTORS[def.key];
     const start = Date.now();
-    if (!collector) {
-      results.push(
-        failedResult({
-          key: def.key,
-          error: "Kolektor nije registrovan za ovu proveru.",
-          ms: 0,
-        }),
-      );
-      continue;
-    }
     try {
       const { findings, scanned } = await collector({ tenantId, loaders });
       results.push(

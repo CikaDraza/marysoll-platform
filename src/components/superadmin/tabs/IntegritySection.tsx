@@ -171,8 +171,9 @@ export function IntegritySection() {
         <p className="text-xs text-slate-400 mt-0.5">
           Server-side provere integriteta podataka po salonu (read-only):
           merge reference, loyalty nalozi/ledger/balansi, vaučeri, termini,
-          push pretplate. Preporuke za popravku su samo tekst — ništa se ne
-          menja automatski.
+          SEO, vlasništvo salona i push pretplate. Platform orphan provera nije
+          deo tenant reporta. Preporuke za popravku su samo tekst — ništa se
+          ne menja automatski.
         </p>
       </div>
 

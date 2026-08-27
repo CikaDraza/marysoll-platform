@@ -3,17 +3,21 @@
 > Zabeleženo 2026-07-09 (Milanova odluka), posle #4 Guest→Registered merge.
 > **Status: ✅ IMPLEMENTIRANO 2026-07-11** (M1–M4, grana
 > `product-engines/diagnostic-engine/identity-loyalty-health` → PR #29/#30 →
-> `staging/production-engines`). Validirano prvim run-om na staging tenantu
-> (2 stvarna ERROR nalaza: invalidReferences + account orphans; 0 neizvršenih).
+> `staging/production-engines`). Istorijski prvi run tadašnjeg skupa provera na
+> staging tenantu dao je 2 stvarna ERROR nalaza (invalidReferences + account
+> orphans) i 0 neizvršenih; to nije tvrdnja o današnjem registry-ju ili run-u.
 >
 > **Gde živi:**
-> - Kontrakt + registry (10 provera kao podaci) + čisti evaluatori:
+> - Kontrakt + registry (13 provera kao podaci: 12 tenant + 1 platform) + čisti evaluatori:
 >   `packages/diagnostic-engine/src/integrity/` (entry
 >   `@panta/diagnostic-engine/integrity` — fizički odvojen od browser porodice)
 > - Mongo kolektori (read-only) + runner: `src/lib/diagnostics/integrity/`
 >   (adapter: `lib/platform/diagnostic-client.ts`)
-> - API: `GET /api/superadmin/diagnostics/integrity[?tenantId=]` (on-demand)
-> - UI: `IntegritySection` u superadmin Dijagnostika tabu
+> - Tenant API: `GET /api/superadmin/diagnostics/integrity[?tenantId=]`
+>   (on-demand; bez parametra ostaje tenant picker)
+> - Tenant UI: `IntegritySection` u superadmin Dijagnostika tabu
+> - Platform runner: `runPlatformIntegrityChecks()`; platform report još nije
+>   izložen kroz API/UI, da se orphan nalog ne bi pripisao proizvoljnom tenantu
 >
 > **Ključno pravilo kontrakta (Milanova dopuna, zaključano):** greška kolektora
 > = `status:"failed"` ("Provera nije izvršena") — NIKAD ne sme da izgleda kao
@@ -22,7 +26,7 @@
 > **Ostaje za kasnije (van ovog reza):** repair AKCIJE (reassign/recompute
 > dugmad — sada su samo tekst preporuke).
 >
-> **Dodato 2026-07-22 (Milanov nalog):** 10. provera
+> **Dodato 2026-07-22 (Milanov nalog):** tadašnja 10. provera
 > `notifications.push.subscriptions` — povod je bio push notifikacija na
 > preview-deploy domenu (relativan `url` u payload-u razrešen u odnosu na
 > stale service-worker origin; fix: `resolvePushUrl` u `lib/webPush.ts` +
@@ -61,7 +65,24 @@ Provere (predlog naziva ključeva):
 | `loyalty.balance.mismatch` | Stored `heartsBalance/pointsBalance` != recompute iz ledgera → `recomputeAccount(accountId)` | **WARNING** |
 | `voucher.owner.invalid` | Vaučer owner ne postoji / merged / suspended / pogrešan tenant | **WARNING** |
 | `appointment.client.invalid` | `Appointment.clientProfileId` → nepostojeći/merged/suspended/wrong-tenant user | **ERROR** |
+| `seo.tenant.metadata` | Kvalitet javnih tenant SEO metapodataka | **INFO** |
+| `tenant.ownership.missing` | Tenant nema dokaziv `Tenant.ownerId = OWNER.authUserId = postojeći AuthUser._id` invariant | **ERROR** |
+| `tenant.ownership.orphanAccount` | Platform OWNER `AuthUser` bez odgovarajućeg Tenant-a / OWNER TenantUser-a | **WARNING** |
 | `notifications.push.subscriptions` | Ko je pretplaćen na push (admin i klijenti): broj uređaja, poslednja registracija; admin/staff sa push uključenim u podešavanjima ali bez ijedne pretplate | **INFO / WARNING** |
+
+### Scope granica
+
+- `scope: "tenant"` — 12 provera koje se legitimno izvršavaju za izabrani
+  tenant. Svaki tenant registry ključ mora imati tenant collector i obrnuto.
+- `scope: "platform"` — trenutno `tenant.ownership.orphanAccount`. Provera
+  skenira OWNER `AuthUser` naloge globalno; nalaz kao subject nosi stvarni
+  `AuthUser`, nikada izmišljeni `tenantId`. Platform collector mapa ima isti
+  dvosmerni parity ugovor.
+
+Tenant runner preskače platform scope. Odsustvo platform collectora u tenant
+reportu zato nije `failed` i ne prikazuje se kao „Provera nije izvršena”.
+Platform API/UI izlaganje ostaje mali eksplicitan follow-up; postojeći API bez
+`tenantId` ostaje lista tenant-a.
 
 ### 1. Merged user references
 Ako je `TenantUser.status="suspended"` + `mergedInto=targetId`, nijedan **aktivan**

@@ -1,6 +1,7 @@
 import { normalizeCampaignSlug } from "@/helpers/slugNormalizer";
 import { connectToDB } from "@/lib/db/mongodb";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
+import { publishedBlogFilter } from "@/lib/tenant/blogPosts";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -19,8 +20,7 @@ export async function GET(
   const blogSlug = fullPath.replace(/^\/blog\/+/i, "");
 
   const campaign = await NewsletterCampaign.findOne({
-    tenantId,
-    campaignType: "email-landing",
+    ...publishedBlogFilter(tenantId),
     $or: [
       { "landingPage.slug": fullPath },
       { "landingPage.slug": blogSlug },

@@ -51,9 +51,17 @@ describe("integrity registry", () => {
     ]);
   });
 
+  it("razdvaja 12 tenant provera od jedne platform provere", () => {
+    expect(INTEGRITY_CHECKS.filter((check) => check.scope === "tenant")).toHaveLength(12);
+    expect(INTEGRITY_CHECKS.filter((check) => check.scope === "platform").map((check) => check.key))
+      .toEqual(["tenant.ownership.orphanAccount"]);
+    expect(getCheckDefinition("tenant.ownership.missing").scope).toBe("tenant");
+  });
+
   it("svaka provera ima naziv, opis, severity i repair preporuku", () => {
     for (const c of INTEGRITY_CHECKS) {
       expect(c.name.length).toBeGreaterThan(0);
+      expect(["tenant", "platform"]).toContain(c.scope);
       expect(c.description.length).toBeGreaterThan(0);
       expect(["error", "warning", "info"]).toContain(c.defaultSeverity);
       expect(c.repair.length).toBeGreaterThan(0);
