@@ -8,6 +8,9 @@
  * ne sme se stvoriti utisak da je termin rezervisan klikom.
  *
  * Kada widget stigne, ova sekcija dobija njegov `slot` i statični blok nestaje.
+ * Ciljna semantika je zaključana u `docs/PANTA-THEME9-FINAL-CTA.md`: četiri
+ * ćelije iz stvarne dostupnosti, klik pamti `preferredDate`/`preferredStartTime`
+ * — nikad `validatedSlot` — i otvara ISTI widget, ne drugi tok.
  */
 import { BookingCta } from "./BookingCta";
 import { Eyebrow } from "./primitives";
@@ -58,14 +61,18 @@ export function Theme9FinalCta({
             </div>
 
             <div className="bg-ee-surface flex flex-col gap-[18px] rounded-[22px] p-6 lg:p-8">
-              <div className="flex items-center justify-between">
-                <span className="text-ee-text-muted text-[12px] tracking-[0.12em] uppercase">
-                  {calendar?.label || "Slobodni termini"}
-                </span>
+              {(calendar?.label || calendar?.month) && (
+                <div className="flex items-center justify-between">
+                  {calendar.label && (
+                    <span className="text-ee-text-muted text-[12px] tracking-[0.12em] uppercase">
+                      {calendar.label}
+                    </span>
+                  )}
                 {calendar?.month && (
                   <span className="text-ee-sage text-[12px]">{calendar.month}</span>
                 )}
-              </div>
+                </div>
+              )}
 
               {calendar && calendar.slots.length > 0 && (
                 /* Statičan prikaz, ne izbor — vidi napomenu na vrhu fajla. */
@@ -90,10 +97,12 @@ export function Theme9FinalCta({
                 </ul>
               )}
 
-              <BookingCta
-                label={ctaLabel || "Otvori zakazivanje"}
-                className="w-full justify-center py-3 pr-6 pl-2 text-[14.5px]"
-              />
+              {ctaLabel && (
+                <BookingCta
+                  label={ctaLabel}
+                  className="w-full justify-center py-3 pr-6 pl-2 text-[14.5px]"
+                />
+              )}
 
               {note && (
                 <p className="text-ee-text-muted text-[12px] leading-[1.5]">

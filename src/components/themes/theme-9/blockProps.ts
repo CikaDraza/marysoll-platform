@@ -203,7 +203,7 @@ export function theme9FinalCtaProps(
   };
 }
 
-/** Redosled redova u kartici detalja; prazna vrednost pada na `pendingLabel`. */
+/** Redosled redova u kartici detalja. */
 const FEATURED_DETAIL_LABELS = [
   ["format", "Format"],
   ["duration", "Trajanje"],
@@ -227,7 +227,7 @@ export function theme9FeaturedEducationProps(
       label,
       value: details?.[key],
     })),
-    pendingLabel: c?.pendingLabel || "Uskoro",
+    pendingLabel: c?.pendingLabel,
     cta: c?.cta ? { text: c.cta.text, href: resolveHref(c.cta.href) } : undefined,
     note: c?.note,
   };

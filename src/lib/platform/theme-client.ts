@@ -19,6 +19,10 @@ import type {
   ThemeDocument,
 } from "@panta/theme-engine";
 import type { LandingStructure } from "@/types";
+import {
+  isTheme9TristateSection,
+  resolveTheme9Section,
+} from "@/lib/theme9/presentationResolver";
 
 /**
  * Podrazumevana vidljivost sekcije kad CMS nema `enabled`.
@@ -203,7 +207,33 @@ export function resolveGalleryVariant(
   );
 }
 
-/** Je li sekcija vidljiva — jedini izvor istine za oba sveta (CMS i blokovi). */
+/**
+ * Vidljivost sekcije — JEDNO mesto, DVA različita ugovora.
+ *
+ * Sedam theme-9 sekcija ide kroz presentation resolver (tri-state + policy);
+ * sve ostale zadržavaju zatečeni `enabled ?? SECTION_DEFAULT_ENABLED`.
+ *
+ * Razdvajanje je namerno i zaključano (`docs/TODO.md`, „Ne generalizovati svih
+ * 10 blokova"): `about` ima svoj tenant-derived fallback, `blog` je runtime-data
+ * policy, `hero` postojeći mapper ugovor. Da svih 10 ide kroz isti resolver,
+ * theme-9 popravka bi menjala ponašanje tema 1–8.
+ */
+export function isSectionVisible(
+  ls: LandingStructure | undefined,
+  key: LandingSectionKey,
+): boolean {
+  if (isTheme9TristateSection(key)) {
+    return resolveTheme9Section(ls?.landing?.[key]) !== "hidden";
+  }
+  return isSectionEnabled(ls, key);
+}
+
+/**
+ * Zatečeni binarni ugovor za sekcije starijih tema.
+ *
+ * Za sedam theme-9 sekcija NE koristiti direktno — one idu kroz
+ * `isSectionVisible()`, koji zna za tri-state i policy.
+ */
 export function isSectionEnabled(
   ls: LandingStructure | undefined,
   key: LandingSectionKey,
@@ -269,7 +299,7 @@ export function landingStructureToThemeDocument(
   const sections: LayoutSection[] = [];
 
   for (const key of SECTION_ORDER) {
-    if (!isSectionEnabled(ls, key)) continue;
+    if (!isSectionVisible(ls, key)) continue;
 
     const { sectionType } = SECTION_BLOCK_MAP[key];
     const block = buildSectionBlock(ls, key, { theme: options.theme });

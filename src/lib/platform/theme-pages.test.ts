@@ -9,7 +9,11 @@ import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { SalonProfileData, TenantThemePage } from "@/types";
-import { resolveThemePage, themeHasPages } from "./theme-pages";
+import {
+  isThemePageAvailable,
+  resolveThemePage,
+  themeHasPages,
+} from "./theme-pages";
 
 function profile(over: Partial<SalonProfileData> = {}): SalonProfileData {
   return { name: "Salon", landingTheme: "theme-9", ...over } as SalonProfileData;
@@ -67,6 +71,31 @@ describe("resolveThemePage", () => {
   it("traži se druga strana od one koju tenant ima → 404", () => {
     const only = profile({ themePages: { "za-klijente": page } });
     expect(resolveThemePage(only, "za-profesionalce")).toBeNull();
+  });
+});
+
+describe("isThemePageAvailable — isto pravilo, kao da/ne", () => {
+  it("prati `resolveThemePage` u svakom slučaju", () => {
+    const cases: (SalonProfileData | null)[] = [
+      profile({ themePages: { "za-klijente": page } }),
+      profile({ themePages: { "za-klijente": { ...page, enabled: false } } }),
+      profile({ landingTheme: "theme-3", themePages: { "za-klijente": page } }),
+      profile(),
+      null,
+    ];
+
+    for (const salon of cases) {
+      expect(isThemePageAvailable(salon, "za-klijente")).toBe(
+        resolveThemePage(salon, "za-klijente") !== null,
+      );
+    }
+  });
+
+  it("navigacija tako ne može da ponudi stranu koja vraća 404", () => {
+    expect(isThemePageAvailable(profile(), "za-klijente")).toBe(false);
+    expect(
+      isThemePageAvailable(profile({ themePages: { "za-klijente": page } }), "za-klijente"),
+    ).toBe(true);
   });
 });
 

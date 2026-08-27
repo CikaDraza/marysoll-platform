@@ -1,11 +1,11 @@
 # PANTA — Edu Centar: workspace arhitektura i Education domen
 
 > **Status:** ZAKLJUČANA ARHITEKTURA, IMPLEMENTACIJA NIJE POČELA.
-> Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-26 · `main`
+> Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-27 · `main`
 >
-> **Faza 0 počinje tek posle završetka i merge-a Slice 2B** (grana
-> `product-engines/theme-engine/layout-contract`). Ovaj dokument namerno ne ulazi
-> u aktivni 2B implementacioni tok.
+> **Faza 0 počinje posle završetka Theme-9 contract/rollout foundation-a i kada
+> staging postane aktivna razvojna linija za Edu luk.** 2A/2B/2C su na `main`-u;
+> dalji Theme-9 + Edu razvoj i QA vode se staging-only.
 >
 > Product/domenski ulaz je u tri prateća dokumenta:
 > [EDUCATION_CAPABILITY_GATE_AND_ADOPTION.md](EDUCATION_CAPABILITY_GATE_AND_ADOPTION.md) ·
@@ -54,9 +54,11 @@ Uz to je zaključana šira granica: **„Salon + Edukacija" nije treći tip sist
 
 ## Gde ovo stoji u odnosu na tekući rad
 
-Poseban, kasniji luk. Tekući aktivni posao je **Slice 2B** na grani `product-engines/theme-engine/layout-contract` (5 commita, nije spojena).
+Poseban, kasniji luk. Theme-9 2A/2B/2C foundation je spojena u `main`, a staging
+Release A/migration rehearsal je završen.
 
-**Dokument sme na `main` odmah. Faza 0 počinje tek posle završetka i merge-a Slice 2B.**
+**Faza 0 počinje kada Theme-9 contract/rollout foundation bude zatvoren i staging
+postane aktivna razvojna linija Edu luka.**
 
 ---
 

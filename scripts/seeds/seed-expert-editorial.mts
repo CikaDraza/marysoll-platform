@@ -1,21 +1,24 @@
 /**
  * Seed: Expert Editorial (theme-9) demo sadržaj.
  *
- * IDEMPOTENTAN — ponovno pokretanje ne menja ništa ako je sadržaj već isti.
- * Privremeni mehanizam AUTORSTVA dok CMS editor ne stigne; kada stigne, piše u
- * ista polja i javno renderovanje se ne menja. Ništa se ne migrira.
+ * STARTER/DEMO PROVISIONING — CMS je trajno mesto tenant autorstva. Default run
+ * dopunjava samo missing/prazne top-level starter blokove i konzervativno čuva
+ * svaki meaningful sadržaj ili eksplicitnu enabled odluku.
  *
  * BEZBEDNOST:
  *   - allowlist tenanta (`SEEDABLE_TENANTS`) — pogrešan slug bi značio prepisan
  *     tuđi sajt;
- *   - podrazumevano piše SAMO nove theme-9 sekcije i `themePages`, što nijedna
- *     zatečena tema ne renderuje → upis ne može da promeni živ sajt;
+ *   - tenant koji još nije theme-9 traži eksplicitni `--provision-theme9`;
+ *   - `--force-reseed` je jedini način da demo sadržaj pregazi izmenjen starter
+ *     blok i svaki takav upis je u reportu označen kao FORCE;
  *   - `hero`/`about`/`blog`/`shortDescription` dele se sa zatečenim temama i
  *     idu samo uz `--overwrite-shared`, uz ispis onoga što se gubi.
  *
  * Pokretanje (Node 24+, čita .env.local):
- *   npm run seed:theme9 -- --tenant=kiki-kiss-beauty --dry-run
- *   npm run seed:theme9 -- --tenant=kiki-kiss-beauty --overwrite-shared
+ *   npm run seed:theme9 -- --tenant=marina-stanisavljevic-skincare-edukacija --dry-run
+ *   npm run seed:theme9 -- --tenant=kiki-kiss-beauty --provision-theme9 --dry-run
+ *   npm run seed:theme9 -- --tenant=marina-stanisavljevic-skincare-edukacija --force-reseed --dry-run
+ *   npm run seed:theme9 -- --tenant=marina-stanisavljevic-skincare-edukacija --overwrite-shared
  *   npm run seed:theme9 -- --tenant=marina-stanisavljevic-skincare-edukacija --hero-eyebrow-only
  */
 import mongoose from "mongoose";
@@ -28,6 +31,11 @@ import {
   bookingPreview,
   type SeedThemePage,
 } from "./data/expert-editorial-content.mts";
+import {
+  planStarterProvisioning,
+  theme9ProvisioningAllowed,
+  type ProvisioningCandidate,
+} from "./expert-editorial-provisioning.ts";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 /**
@@ -41,15 +49,21 @@ const args = process.argv.slice(2);
 const DRY_RUN = args.includes("--dry-run");
 const OVERWRITE_SHARED = args.includes("--overwrite-shared");
 const HERO_EYEBROW_ONLY = args.includes("--hero-eyebrow-only");
+const FORCE_RESEED = args.includes("--force-reseed");
+const EXPLICIT_THEME9_PROVISIONING = args.includes("--provision-theme9");
 const tenantArg = args.find((a) => a.startsWith("--tenant="))?.split("=")[1];
 
-if (HERO_EYEBROW_ONLY && OVERWRITE_SHARED) {
-  console.error("❌ --hero-eyebrow-only i --overwrite-shared ne mogu zajedno.");
+if (HERO_EYEBROW_ONLY && (OVERWRITE_SHARED || FORCE_RESEED)) {
+  console.error(
+    "❌ --hero-eyebrow-only ne može sa --overwrite-shared/--force-reseed.",
+  );
   process.exit(1);
 }
 
 if (!MONGODB_URI) {
-  console.error("❌ MONGODB_URI nije postavljen (koristi: --env-file=.env.local)");
+  console.error(
+    "❌ MONGODB_URI nije postavljen (koristi: --env-file=.env.local)",
+  );
   process.exit(1);
 }
 
@@ -84,7 +98,8 @@ function validate(pages: Record<string, SeedThemePage>): string[] {
       if (!item.title) problems.push(`${key}: korak bez naslova`);
     }
     for (const q of page.faq?.items ?? []) {
-      if (!q.question || !q.answer) problems.push(`${key}: nepotpuno FAQ pitanje`);
+      if (!q.question || !q.answer)
+        problems.push(`${key}: nepotpuno FAQ pitanje`);
     }
   }
 
@@ -115,7 +130,9 @@ async function main() {
 
   const tenant = await db.collection("tenants").findOne({ slug: tenantArg });
   if (!tenant) {
-    console.error(`❌ Tenant "${tenantArg}" nije pronađen — ništa nije upisano.`);
+    console.error(
+      `❌ Tenant "${tenantArg}" nije pronađen — ništa nije upisano.`,
+    );
     await mongoose.disconnect();
     process.exit(1);
   }
@@ -130,73 +147,107 @@ async function main() {
   }
 
   console.log(`  tenant: ${tenantArg} · tema: ${profile.landingTheme ?? "—"}`);
-  if (profile.landingTheme !== "theme-9") {
-    console.log(
-      "  ⚠ Tema još nije theme-9. Sadržaj se svejedno upisuje (nove sekcije\n" +
-        "    nijedna zatečena tema ne renderuje), pa posle prebacivanja teme u\n" +
-        "    admin panelu strana je odmah puna.",
+  if (
+    !theme9ProvisioningAllowed(
+      profile.landingTheme,
+      EXPLICIT_THEME9_PROVISIONING,
+    )
+  ) {
+    console.error(
+      "❌ Tenant nije na theme-9. Za namerno pre-provisioning pokreni ponovo " +
+        "sa --provision-theme9 i zabeleži razlog u rollout evidenciji.",
     );
+    await mongoose.disconnect();
+    process.exit(1);
   }
 
-  // ── Šta se upisuje ────────────────────────────────────────────────────────
-  const set: Record<string, unknown> = HERO_EYEBROW_ONLY
-    ? {
-        "landingStructure.landing.hero.eyebrow":
-          sharedLandingSections.hero.eyebrow,
-      }
-    : { themePages, themeBookingPreview: bookingPreview };
+  const currentAt = (path: string): unknown =>
+    path
+      .split(".")
+      .reduce<unknown>(
+        (value, key) => (value as Record<string, unknown> | undefined)?.[key],
+        profile,
+      );
+  const candidate = (
+    path: string,
+    starter: unknown,
+  ): ProvisioningCandidate => ({
+    path,
+    current: currentAt(path),
+    starter,
+  });
 
-  if (!HERO_EYEBROW_ONLY) {
-    for (const [name, section] of Object.entries(theme9LandingSections)) {
-      set[`landingStructure.landing.${name}`] = section;
-    }
-  }
-
+  const baseCandidates: ProvisioningCandidate[] = [];
   if (HERO_EYEBROW_ONLY) {
-    const currentHero = (profile.landingStructure as {
-      landing?: { hero?: { eyebrow?: string } };
-    } | undefined)?.landing?.hero;
-    console.log("  ✓ --hero-eyebrow-only: menja se samo Hero eyebrow:");
-    console.log(`     pre: ${JSON.stringify(currentHero?.eyebrow ?? "")}`);
-    console.log(
-      `     posle: ${JSON.stringify(sharedLandingSections.hero.eyebrow)}`,
+    baseCandidates.push(
+      candidate(
+        "landingStructure.landing.hero.eyebrow",
+        sharedLandingSections.hero.eyebrow,
+      ),
     );
-  } else if (OVERWRITE_SHARED) {
-    const ls = (profile.landingStructure ?? {}) as {
-      landing?: Record<string, unknown>;
-    };
-    console.log("  ⚠ --overwrite-shared: menja se i sadržaj koji vidi zatečena tema:");
-    console.log(`     shortDescription: ${JSON.stringify(profile.shortDescription ?? "")}`);
-    for (const key of ["hero", "about", "blog"]) {
-      const before = JSON.stringify(ls.landing?.[key] ?? null);
-      console.log(`     ${key}: ${before.slice(0, 90)}${before.length > 90 ? "…" : ""}`);
+  } else {
+    baseCandidates.push(
+      candidate("themePages", themePages),
+      candidate("themeBookingPreview", bookingPreview),
+    );
+    for (const [name, section] of Object.entries(theme9LandingSections)) {
+      baseCandidates.push(
+        candidate(`landingStructure.landing.${name}`, section),
+      );
     }
+  }
 
-    set.shortDescription = salonShortDescription;
+  const plan = planStarterProvisioning(baseCandidates, {
+    forceReseed: FORCE_RESEED || HERO_EYEBROW_ONLY,
+  });
+
+  if (OVERWRITE_SHARED) {
+    const sharedCandidates = [
+      candidate("shortDescription", salonShortDescription),
+    ];
     for (const [name, section] of Object.entries(sharedLandingSections)) {
-      set[`landingStructure.landing.${name}`] = section;
+      sharedCandidates.push(
+        candidate(`landingStructure.landing.${name}`, section),
+      );
     }
+    plan.push(
+      ...planStarterProvisioning(sharedCandidates, { forceReseed: true }),
+    );
   } else {
     console.log(
       "  hero/about/blog/shortDescription NISU dirani (dodaj --overwrite-shared).",
     );
   }
 
-  const alreadySame = Object.entries(set).every(([path, value]) => {
-    const current = path
-      .split(".")
-      .reduce<unknown>((acc, k) => (acc as Record<string, unknown>)?.[k], profile);
-    return JSON.stringify(current ?? null) === JSON.stringify(value);
-  });
+  console.log("  provisioning plan:");
+  for (const decision of plan) {
+    console.log(`   ${decision.action.padEnd(8)} ${decision.path}`);
+    if (decision.action === "FORCE") {
+      const before = JSON.stringify(decision.current ?? null);
+      const after = JSON.stringify(decision.starter ?? null);
+      console.log(
+        `            pre: ${before.slice(0, 100)}${before.length > 100 ? "…" : ""}`,
+      );
+      console.log(
+        `          posle: ${after.slice(0, 100)}${after.length > 100 ? "…" : ""}`,
+      );
+    }
+  }
 
-  if (alreadySame) {
-    console.log("✓ Sadržaj je već identičan — nema izmena (idempotentno).");
+  const set = Object.fromEntries(
+    plan
+      .filter((decision) => decision.writes)
+      .map((decision) => [decision.path, decision.starter]),
+  );
+
+  if (Object.keys(set).length === 0) {
+    console.log("✓ NO-OP — nema polja za upis.");
     await mongoose.disconnect();
     return;
   }
 
   if (DRY_RUN) {
-    console.log("— dry run — upisala bi se ova polja:");
+    console.log("— dry run — upisala bi se samo FILL/FORCE polja:");
     for (const path of Object.keys(set)) console.log("   ·", path);
     await mongoose.disconnect();
     return;

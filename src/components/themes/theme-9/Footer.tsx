@@ -1,8 +1,29 @@
 /**
  * Theme9Footer — forest podloga, četiri kolone, donji red sa copyrightom.
+ *
+ * 2C: kolona „Edukacija" se gradi od RAZREŠENE navigacije, iste one koju dobija
+ * i Header. Ranije je bila hardkodovana, pa je footer nudio `/za-klijente` i
+ * `/za-profesionalce` i tenantu koji te strane nema — a one tada vraćaju 404.
+ * Kad nijedno odredište nije dostupno, kolona se ne prikazuje.
  */
 import Link from "next/link";
+import {
+  findNavItem,
+  type Theme9NavItem,
+  type Theme9NavKey,
+} from "@/lib/theme9/navigationResolver";
 import { AnchorLink } from "../shared/AnchorLink";
+
+/**
+ * Kolona „Edukacija": redosled i natpisi su footerovi, ne header-ovi — ista
+ * stavka se ovde zove „Teme", jer kolona već nosi naslov „Edukacija". Ključevi
+ * su zajednički sa resolverom; „Početna" se u koloni ne ponavlja.
+ */
+const FOOTER_COLUMN: { key: Theme9NavKey; label: string }[] = [
+  { key: "education", label: "Teme" },
+  { key: "za-klijente", label: "Za klijente" },
+  { key: "za-profesionalce", label: "Za profesionalce" },
+];
 
 export interface Theme9FooterProps {
   salonName: string;
@@ -10,6 +31,8 @@ export interface Theme9FooterProps {
   email?: string;
   instagramUrl?: string;
   tenantSlug?: string;
+  /** Razrešene stavke (2C); „Početna" se u footer koloni ne ponavlja. */
+  nav: Theme9NavItem[];
 }
 
 export function Theme9Footer({
@@ -18,6 +41,7 @@ export function Theme9Footer({
   email,
   instagramUrl,
   tenantSlug,
+  nav,
 }: Theme9FooterProps) {
   const base = tenantSlug ? `/${tenantSlug}` : "";
   const year = new Date().getFullYear();
@@ -25,15 +49,15 @@ export function Theme9Footer({
   // Bez `/usluge` i `/termini`: to je salonski Service Booking tok, a ova tema
   // je education-first (vidi Theme9Header). Anchor linkovi su prefiksovani sa
   // `base` + `/` da rade i sa podstranica, ne samo sa početne.
+  const educationLinks = FOOTER_COLUMN.flatMap(({ key, label }) => {
+    const item = findNavItem(nav, key);
+    return item ? [{ label, href: item.href }] : [];
+  });
+
   const columns: { title: string; links: { label: string; href: string }[] }[] = [
-    {
-      title: "Edukacija",
-      links: [
-        { label: "Teme", href: `${base}/blogs` },
-        { label: "Za klijente", href: `${base}/za-klijente` },
-        { label: "Za profesionalce", href: `${base}/za-profesionalce` },
-      ],
-    },
+    ...(educationLinks.length > 0
+      ? [{ title: "Edukacija", links: educationLinks }]
+      : []),
     {
       title: "O meni",
       links: [{ label: "Biografija", href: `${base}/#o-meni` }],

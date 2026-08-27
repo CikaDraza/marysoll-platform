@@ -18,7 +18,11 @@
  * `Theme4NativeData` i `Theme5NativeData` na landing strani.
  */
 import type { IService, SalonProfileData } from "@/types";
-import { instagramOf, type NativeInstagram } from "./theme-native";
+import { buildTheme9Nav, instagramOf, type NativeInstagram } from "./theme-native";
+import type {
+  Theme9EducationFacts,
+  Theme9NavItem,
+} from "@/lib/theme9/navigationResolver";
 import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
 
 /** Footer sa radnim vremenom i Instagramom — dele ga theme-7, -8 i -9. */
@@ -62,6 +66,8 @@ export interface ThemeShellNativeByTheme {
     };
   };
   "theme-9": {
+    /** 2C — ista razrešena navigacija kao na početnoj strani. */
+    nav: Theme9NavItem[];
     /** Launcher zakazivanja i na podstranicama — vidi spec 6.11. */
     bookingPreview?: SalonProfileData["themeBookingPreview"];
     header: { salonName: string; logo?: string; kicker?: string };
@@ -76,6 +82,8 @@ export interface ThemeShellNativeInput {
   services: IService[];
   tenantSlug?: string;
   clientSlug?: string;
+  /** 2C — vidi istoimeno polje u `ThemeNativeInput`; izostavljeno = fail-closed. */
+  educationSurface?: Theme9EducationFacts;
 }
 
 /**
@@ -154,6 +162,7 @@ export function buildThemeShellNative(
     case "theme-9":
       return {
         "theme-9": {
+          nav: buildTheme9Nav(salon, tenantSlug, input.educationSurface),
           bookingPreview: salon.themeBookingPreview?.enabled
             ? salon.themeBookingPreview
             : undefined,

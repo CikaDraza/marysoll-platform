@@ -39,3 +39,18 @@ export function resolveThemePage(
 
   return page;
 }
+
+/**
+ * Postoji li strana — isto pravilo, samo kao odgovor sa da/ne.
+ *
+ * Navigacija (2C) mora da odlučuje po ISTOM pravilu po kome ruta odlučuje da
+ * li da vrati 404. Dok su to bile dve nezavisne odluke, header je vodio na
+ * stranu koje nema: ruta je čitala `resolveThemePage()`, a nav je imao
+ * hardkodovan niz linkova.
+ */
+export function isThemePageAvailable(
+  profile: SalonProfileData | null | undefined,
+  key: ThemePageKey,
+): boolean {
+  return resolveThemePage(profile, key) !== null;
+}

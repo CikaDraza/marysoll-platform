@@ -17,6 +17,7 @@ import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 import type { LandingTheme, SalonProfileData, IService } from "@/types";
 import { buildThemeShellNative } from "@/lib/platform/theme-shell-native";
+import type { Theme9EducationFacts } from "@/lib/theme9/navigationResolver";
 import type { ThemeShellProps } from "./shells/types";
 
 const THEME_SHELLS: Record<LandingTheme, ComponentType<ThemeShellProps>> = {
@@ -43,6 +44,12 @@ interface Props {
    * ostale teme prazan i ne ulazi u shell ugovor, nego u njihov view model.
    */
   services?: IService[];
+  /**
+   * 2C — činjenice o edukativnoj površini; dovlači ih server (`TenantPageShell`)
+   * jer traže upit nad bazom, a shell je klijentska komponenta. Bez njih nav
+   * pada na fail-closed: stavka „Edukacija" se ne prikazuje.
+   */
+  educationSurface?: Theme9EducationFacts;
   children: React.ReactNode;
 }
 
@@ -50,6 +57,7 @@ export function TenantShellClient({
   salon,
   tenantSlug,
   services = [],
+  educationSurface,
   children,
 }: Props) {
   const theme = (salon.landingTheme || "theme-1") as LandingTheme;
@@ -94,6 +102,7 @@ export function TenantShellClient({
     services,
     tenantSlug,
     clientSlug: tenantSlug,
+    educationSurface,
   });
 
   const Shell = THEME_SHELLS[theme] ?? THEME_SHELLS["theme-1"];
