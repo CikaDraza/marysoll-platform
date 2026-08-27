@@ -40,10 +40,21 @@
  */
 import mongoose from "mongoose";
 
-/** Podrazumevani obim: tri tenanta za staging QA. */
+/**
+ * Podrazumevani obim: cetiri tenanta koja pokrivaju sve sto QA treba da vidi.
+ *
+ *   kiki-kiss-beauty            theme-7   zatecen beauty salon
+ *   marysoll-makeup-nails       theme-1   zatecen beauty salon, druga tema
+ *   the-lash-room-by-anja       theme-8   custom prezentacija + booking
+ *   marina-...-skincare-edu     theme-9   nov slucaj, nosi najveci rizik
+ *
+ * Theme-8 je ovde namerno: to je jedina tema sa sopstvenim booking ponasanjem,
+ * pa je najbolji dokaz da theme-9 logika NIJE procurila u stare teme.
+ */
 const DEFAULT_TENANT_IDS = [
   "69dff2da968ed4117e16d6f6",
   "6a05c67fabc69f307bfa9b22",
+  "6a329773f65185c5070c77fa",
   "6a8c2c9cae52db4b3ed0f975",
 ];
 
