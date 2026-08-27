@@ -12,15 +12,3 @@ export function usableRasterLogo(url: unknown): url is string {
     typeof url === "string" && url.trim() !== "" && !/\.svg(\?|#|$)/i.test(url)
   );
 }
-
-export const DEFAULT_NOTIFICATION_ICON = "/marysoll_elegant_logo.png";
-
-/**
- * Jedini fallback contract za push/browser notifikacije: tenantov namenski
- * raster logo kada postoji, inače platformski Marysoll logo.
- */
-export function resolveNotificationIcon(notificationLogo: unknown): string {
-  return usableRasterLogo(notificationLogo)
-    ? notificationLogo
-    : DEFAULT_NOTIFICATION_ICON;
-}

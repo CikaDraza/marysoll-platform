@@ -4,17 +4,12 @@ import webpush from "web-push";
 import { getVapidKeys } from "@/lib/vapid";
 import { TenantUser } from "@/models/TenantUser";
 import { AuthUser } from "@/models/AuthUser";
-import { SalonProfile } from "@/models/SalonProfile";
 import { Types } from "mongoose";
 import {
   currentEnvironmentKey,
   environmentKeyOfOrigin,
 } from "@/lib/platform/host-context";
 import type { UserNotificationSettings } from "@/types";
-import {
-  resolveNotificationIcon,
-  usableRasterLogo,
-} from "@/lib/branding/rasterLogo";
 
 export interface PushPayload {
   title: string;
@@ -68,11 +63,6 @@ function forThisEnvironment(
 /**
  * Core sender — šalje payload na sve prosleđene pretplate i vraća mrtve endpoint-e
  * (HTTP 410/404) koje pozivalac treba da ukloni.
- *
- * Ovo je JEDINO mesto kroz koje push izlazi ka browseru, pa se tvrdo pravilo
- * ikonice sprovodi ovde: SVG se NIKAD ne šalje. Browseri i mobilni telefoni ne
- * renderuju SVG kao notification ikonicu — prikažu uzvičnik. Zato tenant ima dva
- * loga: `logo` (sajt/favicon, sme SVG) i `notificationLogo` (raster, ovo).
  */
 async function sendToSubscriptions(
   allSubscriptions: StoredSubscription[],
@@ -82,10 +72,7 @@ async function sendToSubscriptions(
   const subscriptions = forThisEnvironment(allSubscriptions);
   if (!vapidInitialized || !subscriptions.length) return [];
 
-  const message = JSON.stringify({
-    ...payload,
-    icon: resolveNotificationIcon(payload.icon),
-  });
+  const message = JSON.stringify(payload);
   const deadEndpoints: string[] = [];
 
   await Promise.allSettled(
@@ -121,11 +108,10 @@ export async function sendWebPushToUser(
 ): Promise<void> {
   try {
     const user = (await TenantUser.findById(tenantUserId)
-      .select("pushSubscriptions notificationSettings tenantId")
+      .select("pushSubscriptions notificationSettings")
       .lean()) as {
       pushSubscriptions?: StoredSubscription[];
       notificationSettings?: Partial<UserNotificationSettings>;
-      tenantId?: Types.ObjectId;
     } | null;
 
     if (!user?.pushSubscriptions?.length) return;
@@ -136,24 +122,7 @@ export async function sendWebPushToUser(
     // Dodatni per-feature uslovi (svi moraju biti true / nedefinisani)
     if (opts?.requireSettings?.some((key) => settings?.[key] === false)) return;
 
-    // Tenant push mora da bude brendiran i kad pozivalac zaboravi `icon` (ili
-    // pošalje SVG). Ikonica je `notificationLogo` iz Dashboard > Profil; logo
-    // sajta se namerno NE koristi jer sme biti SVG. Ako ni tenant nema raster
-    // logo, sendToSubscriptions padne na platformski default.
-    let resolvedPayload = payload;
-    if (!usableRasterLogo(payload.icon) && user.tenantId) {
-      const profile = (await SalonProfile.findOne({ tenantId: user.tenantId })
-        .select("notificationLogo")
-        .lean()) as { notificationLogo?: string | null } | null;
-      if (usableRasterLogo(profile?.notificationLogo)) {
-        resolvedPayload = { ...payload, icon: profile.notificationLogo };
-      }
-    }
-
-    const dead = await sendToSubscriptions(
-      user.pushSubscriptions,
-      resolvedPayload,
-    );
+    const dead = await sendToSubscriptions(user.pushSubscriptions, payload);
     if (dead.length) {
       await TenantUser.findByIdAndUpdate(tenantUserId, {
         $pull: { pushSubscriptions: { endpoint: { $in: dead } } },
