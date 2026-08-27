@@ -55,6 +55,8 @@ export type {
   IntegrityReport,
   IntegrityCheckDefinition,
   IntegrityCheckKey,
+  IntegrityCheckKeyForScope,
+  IntegrityCheckScope,
   LedgerAmountRow,
   BalancePair,
   BalanceMismatch,

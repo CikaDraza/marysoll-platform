@@ -221,6 +221,16 @@ export async function deleteTenantPermanently(input: {
     );
   }
 
+  const ownerAccount = (await AuthUser.findById(tenant.ownerId)
+    .select("platformRole")
+    .lean()) as { platformRole?: string } | null;
+  if (!ownerAccount) {
+    throw new TenantDeletionError(
+      "TENANT_OWNERSHIP_INTEGRITY_ERROR",
+      "Vlasnički platformski identitet ne postoji. Potrebna je superadmin intervencija.",
+    );
+  }
+
   // ── Naplata pre brisanja ──────────────────────────────────────────────────
   const paddleCancelled = await stopFutureBilling(tenantId);
 
@@ -239,9 +249,12 @@ export async function deleteTenantPermanently(input: {
   for (const membership of managementMemberships) {
     const authUserId = membership.authUserId;
 
-    const account = (await AuthUser.findById(authUserId)
-      .select("platformRole")
-      .lean()) as { platformRole?: string } | null;
+    const account =
+      String(authUserId) === String(tenant.ownerId)
+        ? ownerAccount
+        : ((await AuthUser.findById(authUserId)
+            .select("platformRole")
+            .lean()) as { platformRole?: string } | null);
     if (!account) continue;
 
     // SUPER_ADMIN nikada nije pogođen brisanjem salona.
