@@ -1030,8 +1030,7 @@ export default function AdminSemanticModal({
           </form>
 
           {/* MANUAL EDITOR — deterministic edits, no AI regeneration */}
-          {form.campaignType === "email-landing" &&
-            !!preview.layout?.layout?.length && (
+          {form.campaignType === "email-landing" && (
               <Disclosure
                 as="div"
                 className="border-t mt-8 border-gray-200 dark:border-gray-700 px-0 py-6"
@@ -1049,7 +1048,7 @@ export default function AdminSemanticModal({
                 </h3>
                 <DisclosurePanel className="pt-4">
                   <LandingBlocksEditor
-                    blocks={preview.layout.layout}
+                    blocks={preview.layout?.layout ?? []}
                     slugOptions={editorSlugOptions}
                     onChange={(blocks) =>
                       preview.setPreviewFromExisting({

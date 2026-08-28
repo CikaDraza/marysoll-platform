@@ -106,6 +106,13 @@ export type LandingBlock =
   | PricingBlock
   | AffiliateCTABlock;
 
+/**
+ * Canonical shared Content Composer name. `LandingBlock` remains the persisted
+ * Newsletter compatibility name; discriminants and stored documents are not
+ * migrated by this alias.
+ */
+export type ContentBlock = LandingBlock;
+
 export interface LandingPageOutput {
   blocks: LandingBlock[];
 }

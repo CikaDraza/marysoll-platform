@@ -1,7 +1,7 @@
 # PANTA — Edu Centar: workspace arhitektura i Education domen
 
-> **Status:** ZAKLJUČANA ARHITEKTURA, FAZE 0 I 1 IMPLEMENTIRANE NA AKTIVNOJ STAGING LINIJI; FAZA 2 NIJE POČELA.
-> Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-27 · `staging/production-engines`
+> **Status:** ZAKLJUČANA ARHITEKTURA, FAZE 0 I 1 IMPLEMENTIRANE NA AKTIVNOJ STAGING LINIJI; FAZA 2 JE U TOKU (F2A ZAVRŠEN).
+> Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-28 · `staging/production-engines`
 >
 > **Faza 0 je počela tek pošto je Theme-9 contract/rollout foundation zatvoren i
 > staging postao aktivna razvojna linija za Edu luk; sada je završena.**
@@ -194,6 +194,26 @@ capability wiring. `AdminSemanticModal`, newsletter hookovi/API rute,
 **2.2 Rupe koje Education mora popuniti:** nema dodavanja bloka, nema brisanja bloka, nema uređivanja slika, nema dodavanja sekcije/stavke cenovnika.
 
 **2.3 Zod validacija na upisu.** `NewsletterCampaign.landingPage.layout` je `Schema.Types.Mixed`; save/publish pišu neprovereno. Deljeni sloj preuzima validaciju — najjeftiniji dobitak na ispravnosti u celom zahvatu.
+
+### Implementacioni status Faze 2
+
+- ✅ **F2A — Content authoring contract + generic editor UX.** Postojećih šest
+  persisted discriminanata ostalo je netaknuto; dodat je canonical
+  `ContentBlock` alias, centralni draft/publish validation contract sa statusima
+  `VALID` / `INCOMPLETE` / `INVALID` / `HIDDEN`, immutable pure operacije i
+  draft factories. Shared controlled editor sada podržava manual empty start,
+  picker, selection/collapse, add, move, hide/show, duplicate i potvrđeni delete.
+  `FeatureBlock.sections` i `PricingBlock.items` podržavaju add/delete, a editor
+  preview bezbedno označava incomplete/invalid draft umesto da obori renderer.
+- ⏳ **F2B — novi blokovi + media UX.** `VideoBlock`, `TableBlock`,
+  `CalloutBlock`, `ChecklistBlock`, `FileDownloadBlock`, `ImageGalleryBlock` i
+  image/file replace/remove/upload ponašanje nisu deo F2A.
+- ⏳ **F2C — persistence/save/publish Zod hardening.** F2A validation helper je
+  spreman za server write-gate, ali Newsletter save/publish API rute i Mongo
+  schema u ovom slice-u namerno nisu menjani.
+
+Faza 2 kao celina nije završena. F2A ne uvodi `EducationContent`, Education
+rute, Theme/Layout blokove, capability wiring niti novi presentation sistem.
 
 ---
 

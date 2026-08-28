@@ -5,6 +5,7 @@ import { ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { BlockList } from "@/components/content-composer/BlockList";
 import { LandingBlock } from "@/lib/content/schemas/landing-blocks";
+import { prepareEditorPreview } from "@/lib/content/render/prepareEditorPreview";
 
 interface PreviewRendererProps {
   blocks: LandingBlock[];
@@ -107,10 +108,12 @@ function MobilePreviewFrame({ children }: { children: ReactNode }) {
 }
 
 export function PreviewRenderer({
-  blocks,
+  blocks: sourceBlocks,
   header,
   metadata,
 }: PreviewRendererProps) {
+  const { blocks, unavailable } = prepareEditorPreview(sourceBlocks);
+
   return (
     <div className="mt-6 space-y-8">
       {header}
@@ -123,6 +126,19 @@ export function PreviewRenderer({
         <div className="max-h-[70vh] overflow-auto rounded-lg border border-gray-200 bg-gray-100 p-4 dark:border-gray-700 dark:bg-gray-800">
           <div className="mx-auto" style={{ width: MOBILE_PREVIEW_WIDTH }}>
             <MobilePreviewFrame>
+              {unavailable.length > 0 && (
+                <div className="m-4 space-y-2" role="status">
+                  {unavailable.map((block, index) => (
+                    <div
+                      key={`${block.blockId}-${index}`}
+                      className="rounded-lg border border-dashed border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
+                    >
+                      <strong>{block.blockType}</strong>
+                      <p>Dopunite blok za prikaz.</p>
+                    </div>
+                  ))}
+                </div>
+              )}
               <BlockList blocks={blocks} />
             </MobilePreviewFrame>
           </div>
