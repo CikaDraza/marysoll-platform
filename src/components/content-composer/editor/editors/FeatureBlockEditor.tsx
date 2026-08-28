@@ -2,10 +2,13 @@ import { useState } from "react";
 import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import type { FeatureBlock } from "@/lib/content/schemas/landing-blocks";
 import { Field } from "../EditorFields";
+import { ImageMediaField } from "../MediaFields";
+import type { ContentMediaAuthoringAdapter } from "@/lib/content/media/authoring";
 
-export function FeatureBlockEditor({ block, onChange }: {
+export function FeatureBlockEditor({ block, mediaAdapter, onChange }: {
   block: FeatureBlock;
   onChange: (block: FeatureBlock) => void;
+  mediaAdapter?: ContentMediaAuthoringAdapter;
 }) {
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
 
@@ -46,6 +49,7 @@ export function FeatureBlockEditor({ block, onChange }: {
               sections: block.sections.map((item, itemIndex) => itemIndex === index ? { ...item, title } : item),
             })}
           />
+          <ImageMediaField image={section.image} adapter={mediaAdapter} onChange={(image) => onChange({ ...block, sections: block.sections.map((item, itemIndex) => itemIndex === index ? { ...item, image } : item) })} />
           <Field
             label="Pasusi (jedan po redu)"
             textarea

@@ -36,7 +36,16 @@ export interface ContentDocumentValidation {
 const draftImageSchema = z.object({
   src: z.string(),
   alt: z.string(),
+  assetId: z.string().optional(),
+  fileName: z.string().optional(),
+  mimeType: z.string().optional(),
+  sizeBytes: z.number().int().nonnegative().optional(),
+  caption: z.string().optional(),
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
 });
+
+const draftAssetSchema = draftImageSchema.omit({ alt: true, caption: true, width: true, height: true });
 
 const draftBaseSchema = z.object({
   id: z.string().min(1),
@@ -119,6 +128,51 @@ const affiliateCtaDraftSchema = draftBaseSchema.extend({
   image: draftImageSchema.optional(),
 });
 
+const videoDraftSchema = draftBaseSchema.extend({
+  type: z.literal("VideoBlock"),
+  source: z.union([
+    z.object({ provider: z.enum(["youtube", "vimeo"]), url: z.string() }),
+    z.object({ provider: z.literal("upload"), media: draftAssetSchema }),
+  ]).optional(),
+  title: z.string().optional(),
+  caption: z.string().optional(),
+});
+
+const tableDraftSchema = draftBaseSchema.extend({
+  type: z.literal("TableBlock"),
+  title: z.string().optional(),
+  caption: z.string().optional(),
+  columns: z.array(z.object({ id: z.string().min(1), label: z.string() })),
+  rows: z.array(z.object({ id: z.string().min(1), cells: z.record(z.string(), z.string()) })),
+});
+
+const calloutDraftSchema = draftBaseSchema.extend({
+  type: z.literal("CalloutBlock"),
+  variant: z.enum(["info", "tip", "warning", "important"]),
+  title: z.string().optional(),
+  content: z.string(),
+});
+
+const checklistDraftSchema = draftBaseSchema.extend({
+  type: z.literal("ChecklistBlock"),
+  title: z.string().optional(),
+  items: z.array(z.object({ id: z.string().min(1), text: z.string() })),
+});
+
+const fileDownloadDraftSchema = draftBaseSchema.extend({
+  type: z.literal("FileDownloadBlock"),
+  title: z.string(),
+  description: z.string().optional(),
+  file: draftAssetSchema.nullable(),
+  ctaLabel: z.string().optional(),
+});
+
+const imageGalleryDraftSchema = draftBaseSchema.extend({
+  type: z.literal("ImageGalleryBlock"),
+  title: z.string().optional(),
+  images: z.array(draftImageSchema.extend({ id: z.string().min(1) })),
+});
+
 /** Draft shape keeps block semantics while allowing required content to be empty. */
 export const contentBlockDraftSchema = z.discriminatedUnion("type", [
   heroDraftSchema,
@@ -127,6 +181,12 @@ export const contentBlockDraftSchema = z.discriminatedUnion("type", [
   contentSplitDraftSchema,
   pricingDraftSchema,
   affiliateCtaDraftSchema,
+  videoDraftSchema,
+  tableDraftSchema,
+  calloutDraftSchema,
+  checklistDraftSchema,
+  fileDownloadDraftSchema,
+  imageGalleryDraftSchema,
 ]);
 
 function identityOf(value: unknown): { blockId: string; blockType: string } {

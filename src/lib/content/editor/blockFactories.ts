@@ -39,6 +39,18 @@ export function createDraftContentBlock(
       return { ...base, type, title: "", items: [{ title: "" }] };
     case "AffiliateCTABlock":
       return { ...base, type, title: "", ctaLabel: "", href: "" };
+    case "VideoBlock":
+      return { ...base, type };
+    case "TableBlock":
+      return { ...base, type, columns: [], rows: [] };
+    case "CalloutBlock":
+      return { ...base, type, variant: "info", content: "" };
+    case "ChecklistBlock":
+      return { ...base, type, items: [] };
+    case "FileDownloadBlock":
+      return { ...base, type, title: "", file: null };
+    case "ImageGalleryBlock":
+      return { ...base, type, images: [] };
     default: {
       const exhaustive: never = type;
       return exhaustive;

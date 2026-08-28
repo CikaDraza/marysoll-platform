@@ -1,9 +1,12 @@
 import type { ArticleBlock } from "@/lib/content/schemas/landing-blocks";
 import { Field } from "../EditorFields";
+import { ImageMediaField } from "../MediaFields";
+import type { ContentMediaAuthoringAdapter } from "@/lib/content/media/authoring";
 
-export function ArticleBlockEditor({ block, onChange }: {
+export function ArticleBlockEditor({ block, mediaAdapter, onChange }: {
   block: ArticleBlock;
   onChange: (block: ArticleBlock) => void;
+  mediaAdapter?: ContentMediaAuthoringAdapter;
 }) {
   return (
     <>
@@ -15,6 +18,7 @@ export function ArticleBlockEditor({ block, onChange }: {
         value={block.paragraphs.join("\n")}
         onChange={(value) => onChange({ ...block, paragraphs: value.split("\n") })}
       />
+      <ImageMediaField image={block.image} adapter={mediaAdapter} onChange={(image) => onChange({ ...block, image })} />
     </>
   );
 }

@@ -5,6 +5,12 @@ import {
   FeatureBlock,
   HeroBlock,
   PricingBlock,
+  VideoBlock,
+  TableBlock,
+  CalloutBlock,
+  ChecklistBlock,
+  FileDownloadBlock,
+  ImageGalleryBlock,
 } from "@/lib/content/schemas/landing-blocks";
 
 export interface BlockLandingTypeMap {
@@ -14,4 +20,10 @@ export interface BlockLandingTypeMap {
   ContentSplitBlock: ContentSplitBlock;
   PricingBlock: PricingBlock;
   AffiliateCTABlock: AffiliateCTABlock;
+  VideoBlock: VideoBlock;
+  TableBlock: TableBlock;
+  CalloutBlock: CalloutBlock;
+  ChecklistBlock: ChecklistBlock;
+  FileDownloadBlock: FileDownloadBlock;
+  ImageGalleryBlock: ImageGalleryBlock;
 }

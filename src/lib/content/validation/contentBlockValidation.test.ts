@@ -52,6 +52,30 @@ const completeBlocks: Record<LandingBlockType, ContentBlock> = {
     ctaLabel: "Saznaj više",
     href: "/kontakt",
   },
+  VideoBlock: {
+    id: "video", type: "VideoBlock", priority: 1,
+    source: { provider: "youtube", url: "https://www.youtube.com/watch?v=abc123" },
+  },
+  TableBlock: {
+    id: "table", type: "TableBlock", priority: 1,
+    columns: [{ id: "name", label: "Naziv" }],
+    rows: [{ id: "row", cells: { name: "Vrednost" } }],
+  },
+  CalloutBlock: {
+    id: "callout", type: "CalloutBlock", priority: 1, variant: "important", content: "Važno",
+  },
+  ChecklistBlock: {
+    id: "checklist", type: "ChecklistBlock", priority: 1,
+    items: [{ id: "step", text: "Korak" }],
+  },
+  FileDownloadBlock: {
+    id: "file", type: "FileDownloadBlock", priority: 1, title: "Materijal",
+    file: { src: "https://cdn.example.com/material.pdf", fileName: "material.pdf" },
+  },
+  ImageGalleryBlock: {
+    id: "gallery", type: "ImageGalleryBlock", priority: 1,
+    images: [{ id: "image", src: "https://cdn.example.com/image.jpg", alt: "Opis" }],
+  },
 };
 
 describe.each(Object.keys(completeBlocks) as LandingBlockType[])(
@@ -65,6 +89,7 @@ describe.each(Object.keys(completeBlocks) as LandingBlockType[])(
       const draft = createDraftContentBlock(type, 1, () => `${type}-draft`);
       const result = validateContentBlock(draft);
 
+      expect(draft).toMatchObject({ id: `${type}-draft`, type, priority: 1 });
       expect(result.status).toBe("INCOMPLETE");
       expect(result.issues.every(({ code }) => code === "required_content")).toBe(
         true,

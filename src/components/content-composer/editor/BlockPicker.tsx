@@ -7,6 +7,12 @@ export const CONTENT_BLOCK_LABELS: Record<LandingBlockType, string> = {
   ContentSplitBlock: "Sadržaj sa slikom",
   PricingBlock: "Cenovnik",
   AffiliateCTABlock: "CTA",
+  VideoBlock: "Video",
+  TableBlock: "Tabela",
+  CalloutBlock: "Istaknuta poruka",
+  ChecklistBlock: "Kontrolna lista",
+  FileDownloadBlock: "Materijal za preuzimanje",
+  ImageGalleryBlock: "Galerija slika",
 };
 
 export function BlockPicker({ onPick }: { onPick: (type: LandingBlockType) => void }) {

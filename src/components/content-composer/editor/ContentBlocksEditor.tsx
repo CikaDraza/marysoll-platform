@@ -18,14 +18,16 @@ import { BlockCard } from "./BlockCard";
 import { BlockPicker } from "./BlockPicker";
 import { InvalidBlockCard } from "./InvalidBlockCard";
 import type { SlugOption } from "./types";
+import type { ContentMediaAuthoringAdapter } from "@/lib/content/media/authoring";
 
 interface Props {
   blocks: ContentBlock[];
   slugOptions?: SlugOption[];
   onChange: (blocks: ContentBlock[]) => void;
+  mediaAdapter?: ContentMediaAuthoringAdapter;
 }
 
-export function ContentBlocksEditor({ blocks, slugOptions = [], onChange }: Props) {
+export function ContentBlocksEditor({ blocks, slugOptions = [], mediaAdapter, onChange }: Props) {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(blocks[0]?.id ?? null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const effectiveSelectedId =
@@ -90,6 +92,7 @@ export function ContentBlocksEditor({ blocks, slugOptions = [], onChange }: Prop
             first={index === 0}
             last={index === blocks.length - 1}
             slugOptions={slugOptions}
+            mediaAdapter={mediaAdapter}
             onSelect={() =>
               setSelectedBlockId(
                 block.id === effectiveSelectedId ? null : block.id,

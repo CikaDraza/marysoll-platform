@@ -39,6 +39,19 @@ export function sanitizeLayout(blocks: LandingBlock[]): LandingBlock[] {
       case "AffiliateCTABlock":
         return hasText(block.title) && hasText(block.ctaLabel) && hasText(block.href);
 
+      case "VideoBlock":
+        return Boolean(block.source);
+      case "TableBlock":
+        return block.columns.length > 0 && block.rows.length > 0;
+      case "CalloutBlock":
+        return hasText(block.content);
+      case "ChecklistBlock":
+        return block.items.some((item) => hasText(item.text));
+      case "FileDownloadBlock":
+        return hasText(block.title) && hasText(block.file?.src);
+      case "ImageGalleryBlock":
+        return block.images.some((image) => hasText(image.src) && hasText(image.alt));
+
       default: {
         const _exhaustive: never = block;
         return _exhaustive;

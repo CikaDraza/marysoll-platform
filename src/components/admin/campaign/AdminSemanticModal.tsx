@@ -53,6 +53,7 @@ import { GeneratedImagesPanel } from "./GeneratedImagesPanel";
 import LoaderButton from "@/components/elements/LoaderButton";
 import type { NewsletterClientScope } from "@/lib/newsletter/clientScope";
 import { slugify as slugifySlug } from "@/helpers/slugify";
+import { useContentMediaAuthoring } from "@/hooks/useContentMediaAuthoring";
 
 interface Props {
   isOpen: boolean;
@@ -227,6 +228,7 @@ export default function AdminSemanticModal({
     getInitialForm(campaign),
   );
   const { user } = useAuth();
+  const mediaAdapter = useContentMediaAuthoring();
   const { data: dbCategories = [] } = useCategories();
   const isPlatformMode =
     scope?.scope === "platform" || campaign.scope === "platform";
@@ -1050,6 +1052,7 @@ export default function AdminSemanticModal({
                   <LandingBlocksEditor
                     blocks={preview.layout?.layout ?? []}
                     slugOptions={editorSlugOptions}
+                    mediaAdapter={mediaAdapter}
                     onChange={(blocks) =>
                       preview.setPreviewFromExisting({
                         layout: blocks,

@@ -1,11 +1,14 @@
 import type { AffiliateCTABlock } from "@/lib/content/schemas/landing-blocks";
 import { CtaField, Field } from "../EditorFields";
 import type { SlugOption } from "../types";
+import { ImageMediaField } from "../MediaFields";
+import type { ContentMediaAuthoringAdapter } from "@/lib/content/media/authoring";
 
-export function AffiliateCTABlockEditor({ block, slugOptions, onChange }: {
+export function AffiliateCTABlockEditor({ block, slugOptions, mediaAdapter, onChange }: {
   block: AffiliateCTABlock;
   slugOptions: SlugOption[];
   onChange: (block: AffiliateCTABlock) => void;
+  mediaAdapter?: ContentMediaAuthoringAdapter;
 }) {
   return (
     <>
@@ -19,6 +22,7 @@ export function AffiliateCTABlockEditor({ block, slugOptions, onChange }: {
         onLabel={(ctaLabel) => onChange({ ...block, ctaLabel })}
         onHref={(href) => onChange({ ...block, href })}
       />
+      <ImageMediaField image={block.image} adapter={mediaAdapter} onChange={(image) => onChange({ ...block, image })} />
     </>
   );
 }

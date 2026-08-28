@@ -124,6 +124,14 @@ function collectImageSources(output: LandingPageOutput) {
         }
         break;
       case "PricingBlock":
+      case "TableBlock":
+      case "CalloutBlock":
+      case "ChecklistBlock":
+      case "FileDownloadBlock":
+      case "VideoBlock":
+        break;
+      case "ImageGalleryBlock":
+        sources.push(...block.images.map((image) => image.src));
         break;
       default: {
         const _exhaustive: never = block;

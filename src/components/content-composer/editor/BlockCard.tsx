@@ -14,6 +14,7 @@ import type { ContentBlockStatus } from "@/lib/content/validation/contentBlockVa
 import { CONTENT_BLOCK_LABELS } from "./BlockPicker";
 import { BlockFields } from "./BlockFields";
 import type { SlugOption } from "./types";
+import type { ContentMediaAuthoringAdapter } from "@/lib/content/media/authoring";
 
 const STATUS_LABEL: Record<ContentBlockStatus, string> = {
   VALID: "Spremno",
@@ -30,7 +31,7 @@ const STATUS_CLASS: Record<ContentBlockStatus, string> = {
 };
 
 function blockSummary(block: ContentBlock): string {
-  return block.title.trim() || "Bez naslova";
+  return block.title?.trim() || "Bez naslova";
 }
 
 export function BlockCard({
@@ -40,6 +41,7 @@ export function BlockCard({
   first,
   last,
   slugOptions,
+  mediaAdapter,
   onSelect,
   onChange,
   onMove,
@@ -53,6 +55,7 @@ export function BlockCard({
   first: boolean;
   last: boolean;
   slugOptions: SlugOption[];
+  mediaAdapter?: ContentMediaAuthoringAdapter;
   onSelect: () => void;
   onChange: (block: ContentBlock) => void;
   onMove: (direction: -1 | 1) => void;
@@ -122,7 +125,7 @@ export function BlockCard({
 
       {selected && (
         <div className="mt-3 space-y-2 border-t border-gray-200 pt-3 dark:border-gray-700">
-          <BlockFields block={block} slugOptions={slugOptions} onChange={onChange} />
+          <BlockFields block={block} slugOptions={slugOptions} mediaAdapter={mediaAdapter} onChange={onChange} />
         </div>
       )}
     </section>

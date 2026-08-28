@@ -14,7 +14,15 @@ export function scoreVisualBalance(layout: LandingBlock[]): number {
       case "FeatureBlock":
         return block.sections.some((section) => Boolean(section.image));
       case "PricingBlock":
+      case "TableBlock":
+      case "CalloutBlock":
+      case "ChecklistBlock":
+      case "FileDownloadBlock":
         return false;
+      case "VideoBlock":
+        return Boolean(block.source);
+      case "ImageGalleryBlock":
+        return block.images.length > 0;
       default: {
         const _exhaustive: never = block;
         return _exhaustive;

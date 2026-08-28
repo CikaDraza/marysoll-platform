@@ -7,6 +7,12 @@ export const landingBlockTypes = [
   "ContentSplitBlock",
   "PricingBlock",
   "AffiliateCTABlock",
+  "VideoBlock",
+  "TableBlock",
+  "CalloutBlock",
+  "ChecklistBlock",
+  "FileDownloadBlock",
+  "ImageGalleryBlock",
 ] as const;
 
 export type LandingBlockType = (typeof landingBlockTypes)[number];
@@ -14,10 +20,23 @@ export type LandingBlockType = (typeof landingBlockTypes)[number];
 export type BlockVisibility = "visible" | "hidden";
 export type BlockAlign = "left" | "center" | "right";
 
-export type LandingImage = {
+export type ContentAssetRef = {
   src: string;
-  alt: string;
+  assetId?: string;
+  fileName?: string;
+  mimeType?: string;
+  sizeBytes?: number;
 };
+
+export type ContentImageRef = ContentAssetRef & {
+  alt: string;
+  caption?: string;
+  width?: number;
+  height?: number;
+};
+
+/** Backwards-compatible name for persisted Newsletter images. */
+export type LandingImage = ContentImageRef;
 
 export interface LandingBlockBase {
   id: string;
@@ -98,13 +117,65 @@ export interface AffiliateCTABlock extends LandingBlockBase {
   image?: LandingImage;
 }
 
+export type VideoSource =
+  | { provider: "youtube" | "vimeo"; url: string }
+  | { provider: "upload"; media: ContentAssetRef };
+
+export interface VideoBlock extends LandingBlockBase {
+  type: "VideoBlock";
+  source?: VideoSource;
+  title?: string;
+  caption?: string;
+}
+
+export interface TableBlock extends LandingBlockBase {
+  type: "TableBlock";
+  title?: string;
+  caption?: string;
+  columns: { id: string; label: string }[];
+  rows: { id: string; cells: Record<string, string> }[];
+}
+
+export interface CalloutBlock extends LandingBlockBase {
+  type: "CalloutBlock";
+  variant: "info" | "tip" | "warning" | "important";
+  title?: string;
+  content: string;
+}
+
+export interface ChecklistBlock extends LandingBlockBase {
+  type: "ChecklistBlock";
+  title?: string;
+  items: { id: string; text: string }[];
+}
+
+export interface FileDownloadBlock extends LandingBlockBase {
+  type: "FileDownloadBlock";
+  title: string;
+  description?: string;
+  file: ContentAssetRef | null;
+  ctaLabel?: string;
+}
+
+export interface ImageGalleryBlock extends LandingBlockBase {
+  type: "ImageGalleryBlock";
+  title?: string;
+  images: ({ id: string } & ContentImageRef)[];
+}
+
 export type LandingBlock =
   | HeroBlock
   | ArticleBlock
   | FeatureBlock
   | ContentSplitBlock
   | PricingBlock
-  | AffiliateCTABlock;
+  | AffiliateCTABlock
+  | VideoBlock
+  | TableBlock
+  | CalloutBlock
+  | ChecklistBlock
+  | FileDownloadBlock
+  | ImageGalleryBlock;
 
 /**
  * Canonical shared Content Composer name. `LandingBlock` remains the persisted
@@ -117,10 +188,34 @@ export interface LandingPageOutput {
   blocks: LandingBlock[];
 }
 
-const imageSchema = z.object({
-  src: z.string().min(1),
-  alt: z.string().min(1),
+const nonBlankStringSchema = z.string().refine((value) => value.trim().length > 0, "Polje ne sme biti prazno");
+
+const persistedUrlSchema = nonBlankStringSchema
+  .refine((value) => {
+    if (value.startsWith("/")) return true;
+    try {
+      return ["http:", "https:"].includes(new URL(value).protocol);
+    } catch {
+      return false;
+    }
+  }, "Media adresa mora biti trajni HTTP(S) ili relativni URL");
+
+export const contentAssetRefSchema = z.object({
+  src: persistedUrlSchema,
+  assetId: z.string().optional(),
+  fileName: z.string().optional(),
+  mimeType: z.string().optional(),
+  sizeBytes: z.number().int().nonnegative().optional(),
 });
+
+export const contentImageRefSchema = contentAssetRefSchema.extend({
+  alt: nonBlankStringSchema,
+  caption: z.string().optional(),
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
+});
+
+const imageSchema = contentImageRefSchema;
 
 const blockBaseSchema = z.object({
   id: z.string().min(1),
@@ -207,13 +302,107 @@ export const affiliateCtaBlockSchema = blockBaseSchema.extend({
   image: imageSchema.optional(),
 });
 
-export const landingBlockSchema = z.discriminatedUnion("type", [
+const externalVideoSourceSchema = z
+  .object({
+    provider: z.enum(["youtube", "vimeo"]),
+    url: persistedUrlSchema,
+  })
+  .superRefine((source, context) => {
+    let host = "";
+    try {
+      const parsed = new URL(source.url);
+      if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("Unsupported protocol");
+      host = parsed.hostname.replace(/^www\./, "");
+    } catch {
+      context.addIssue({ code: "custom", path: ["url"], message: "Unesite ispravan video URL" });
+      return;
+    }
+    const valid = source.provider === "youtube"
+      ? ["youtube.com", "m.youtube.com", "youtu.be"].includes(host)
+      : host === "vimeo.com" || host.endsWith(".vimeo.com");
+    if (!valid) context.addIssue({ code: "custom", path: ["url"], message: `URL ne pripada ${source.provider} provideru` });
+  });
+
+export const videoBlockSchema = blockBaseSchema.extend({
+  type: z.literal("VideoBlock"),
+  source: z.union([
+    externalVideoSourceSchema,
+    z.object({ provider: z.literal("upload"), media: contentAssetRefSchema }),
+  ]),
+  title: z.string().optional(),
+  caption: z.string().optional(),
+});
+
+export const tableBlockSchema = blockBaseSchema.extend({
+  type: z.literal("TableBlock"),
+  title: z.string().optional(),
+  caption: z.string().optional(),
+  columns: z.array(z.object({ id: z.string().min(1), label: nonBlankStringSchema })).min(1),
+  rows: z.array(z.object({ id: z.string().min(1), cells: z.record(z.string(), nonBlankStringSchema) })).min(1),
+}).superRefine((block, context) => {
+  const columnIds = block.columns.map(({ id }) => id);
+  if (new Set(columnIds).size !== columnIds.length) {
+    context.addIssue({ code: "custom", path: ["columns"], message: "ID-jevi kolona moraju biti jedinstveni" });
+  }
+  const rowIds = block.rows.map(({ id }) => id);
+  if (new Set(rowIds).size !== rowIds.length) {
+    context.addIssue({ code: "custom", path: ["rows"], message: "ID-jevi redova moraju biti jedinstveni" });
+  }
+  block.rows.forEach((row, rowIndex) => {
+    if (Object.keys(row.cells).length !== columnIds.length || columnIds.some((id) => !(id in row.cells))) {
+      context.addIssue({ code: "custom", path: ["rows", rowIndex, "cells"], message: "Svaki red mora imati ćeliju za svaku kolonu" });
+    }
+  });
+});
+
+export const calloutBlockSchema = blockBaseSchema.extend({
+  type: z.literal("CalloutBlock"),
+  variant: z.enum(["info", "tip", "warning", "important"]),
+  title: z.string().optional(),
+  content: nonBlankStringSchema,
+});
+
+export const checklistBlockSchema = blockBaseSchema.extend({
+  type: z.literal("ChecklistBlock"),
+  title: z.string().optional(),
+  items: z.array(z.object({ id: z.string().min(1), text: nonBlankStringSchema })).min(1),
+}).superRefine((block, context) => {
+  if (new Set(block.items.map(({ id }) => id)).size !== block.items.length) {
+    context.addIssue({ code: "custom", path: ["items"], message: "ID-jevi stavki moraju biti jedinstveni" });
+  }
+});
+
+export const fileDownloadBlockSchema = blockBaseSchema.extend({
+  type: z.literal("FileDownloadBlock"),
+  title: nonBlankStringSchema,
+  description: z.string().optional(),
+  file: contentAssetRefSchema,
+  ctaLabel: z.string().optional(),
+});
+
+export const imageGalleryBlockSchema = blockBaseSchema.extend({
+  type: z.literal("ImageGalleryBlock"),
+  title: z.string().optional(),
+  images: z.array(contentImageRefSchema.extend({ id: z.string().min(1) })).min(1),
+}).superRefine((block, context) => {
+  if (new Set(block.images.map(({ id }) => id)).size !== block.images.length) {
+    context.addIssue({ code: "custom", path: ["images"], message: "ID-jevi slika moraju biti jedinstveni" });
+  }
+});
+
+export const landingBlockSchema = z.union([
   heroBlockSchema,
   articleBlockSchema,
   featureBlockSchema,
   contentSplitBlockSchema,
   pricingBlockSchema,
   affiliateCtaBlockSchema,
+  videoBlockSchema,
+  tableBlockSchema,
+  calloutBlockSchema,
+  checklistBlockSchema,
+  fileDownloadBlockSchema,
+  imageGalleryBlockSchema,
 ]);
 
 export const landingPageOutputSchema = z.object({

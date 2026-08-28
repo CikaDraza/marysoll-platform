@@ -1,6 +1,6 @@
 # PANTA — Edu Centar: workspace arhitektura i Education domen
 
-> **Status:** ZAKLJUČANA ARHITEKTURA, FAZE 0 I 1 IMPLEMENTIRANE NA AKTIVNOJ STAGING LINIJI; FAZA 2 JE U TOKU (F2A ZAVRŠEN).
+> **Status:** ZAKLJUČANA ARHITEKTURA, FAZE 0 I 1 IMPLEMENTIRANE NA AKTIVNOJ STAGING LINIJI; FAZA 2 JE U TOKU (F2A I F2B ZAVRŠENI).
 > Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-28 · `staging/production-engines`
 >
 > **Faza 0 je počela tek pošto je Theme-9 contract/rollout foundation zatvoren i
@@ -205,15 +205,25 @@ capability wiring. `AdminSemanticModal`, newsletter hookovi/API rute,
   picker, selection/collapse, add, move, hide/show, duplicate i potvrđeni delete.
   `FeatureBlock.sections` i `PricingBlock.items` podržavaju add/delete, a editor
   preview bezbedno označava incomplete/invalid draft umesto da obori renderer.
-- ⏳ **F2B — novi blokovi + media UX.** `VideoBlock`, `TableBlock`,
-  `CalloutBlock`, `ChecklistBlock`, `FileDownloadBlock`, `ImageGalleryBlock` i
-  image/file replace/remove/upload ponašanje nisu deo F2A.
+- ✅ **F2B — šest blokova + shared media UX.** Canonical contract i registry sada
+  imaju ukupno 12 PascalCase discriminanata. `VideoBlock`, `TableBlock`,
+  `CalloutBlock`, `ChecklistBlock`, `FileDownloadBlock` i `ImageGalleryBlock`
+  imaju draft factory, strict validaciju, editor, neutralni semantički renderer,
+  text extraction i graceful preview degradation. Provider-neutral
+  `ContentAssetRef` / `ContentImageRef` i injected media adapter povezuju editor
+  sa postojećim image/video/file upload autoritetima; Content Composer ne zna za
+  Cloudinary, auth ili tenant foldere. Replace neuspeh čuva staru referencu, a
+  remove ne briše remote asset. Ista image kontrola popunjava i image polja šest
+  ranijih blokova. Postojeći `{src, alt}` sadržaj ostaje kompatibilan.
 - ⏳ **F2C — persistence/save/publish Zod hardening.** F2A validation helper je
   spreman za server write-gate, ali Newsletter save/publish API rute i Mongo
   schema u ovom slice-u namerno nisu menjani.
 
-Faza 2 kao celina nije završena. F2A ne uvodi `EducationContent`, Education
+Faza 2 kao celina nije završena. F2A/F2B ne uvode `EducationContent`, Education
 rute, Theme/Layout blokove, capability wiring niti novi presentation sistem.
+F2B takođe ne menja AI schema/prompt: AI i dalje generiše originalnih šest
+blokova. Eksplicitni FULL REGENERATE u Newsletter hostu i dalje zamenjuje ceo
+layout; merge ručnih blokova ostaje zaseban host UX dug.
 
 ---
 
