@@ -1,6 +1,6 @@
 # PANTA — Edu Centar: workspace arhitektura i Education domen
 
-> **Status:** ZAKLJUČANA ARHITEKTURA, FAZE 0 I 1 IMPLEMENTIRANE NA AKTIVNOJ STAGING LINIJI; FAZA 2 JE U TOKU (F2A I F2B ZAVRŠENI).
+> **Status:** ZAKLJUČANA ARHITEKTURA; FAZE 0, 1 I 2 IMPLEMENTIRANE NA AKTIVNOJ STAGING LINIJI.
 > Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-28 · `staging/production-engines`
 >
 > **Faza 0 je počela tek pošto je Theme-9 contract/rollout foundation zatvoren i
@@ -215,12 +215,20 @@ capability wiring. `AdminSemanticModal`, newsletter hookovi/API rute,
   Cloudinary, auth ili tenant foldere. Replace neuspeh čuva staru referencu, a
   remove ne briše remote asset. Ista image kontrola popunjava i image polja šest
   ranijih blokova. Postojeći `{src, alt}` sadržaj ostaje kompatibilan.
-- ⏳ **F2C — persistence/save/publish Zod hardening.** F2A validation helper je
-  spreman za server write-gate, ali Newsletter save/publish API rute i Mongo
-  schema u ovom slice-u namerno nisu menjani.
+- ✅ **F2C — persistence/save/publish Zod hardening.** Postojeći F2A
+  `validateContentDocument` je server write authority nad Newsletter landing
+  layoutom: draft save dozvoljava `VALID` / `INCOMPLETE` / `HIDDEN`, publish
+  samo `VALID` / `HIDDEN`, a validation failure vraća structured HTTP 422 pre
+  bilo kakve mutation. Transient media ref je `INVALID`; nedostajući media
+  ostaje `INCOMPLETE`. Save/publish persistiraju originalni dozvoljeni JSON kroz
+  targeted, lossless update i jedan save; publish više nema pre-validation
+  status mutation i čuva `customCtas`.
 
-Faza 2 kao celina nije završena. F2A/F2B ne uvode `EducationContent`, Education
-rute, Theme/Layout blokove, capability wiring niti novi presentation sistem.
+**FAZA 2 — ZAVRŠENA.** Shared lifecycle je authoring → draft validation → draft
+save → preview → publish validation → host persistence → public render. Content
+Composer poseduje content readiness; host poseduje permissions, lifecycle,
+storage i public exposure. Faza 2 ne uvodi `EducationContent`, Education rute,
+Theme/Layout blokove, capability wiring niti novi presentation sistem.
 F2B takođe ne menja AI schema/prompt: AI i dalje generiše originalnih šest
 blokova. Eksplicitni FULL REGENERATE u Newsletter hostu i dalje zamenjuje ceo
 layout; merge ručnih blokova ostaje zaseban host UX dug.

@@ -437,7 +437,6 @@ export default function AdminSemanticModal({
       toast.success("Kampanja sačuvana!");
     } catch (err) {
       console.error(err);
-      toast.error("Greška pri čuvanju");
     }
   };
 
@@ -478,7 +477,6 @@ export default function AdminSemanticModal({
       handleClose();
     } catch (err) {
       console.error(err);
-      toast.error("Greška pri objavljivanju");
     }
   };
 

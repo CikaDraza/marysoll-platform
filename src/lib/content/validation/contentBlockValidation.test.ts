@@ -139,4 +139,73 @@ describe("document validation modes", () => {
     expect(validateContentDocument([unknown], "draft").valid).toBe(false);
     expect(validateContentDocument([unknown], "publish").valid).toBe(false);
   });
+
+  it.each(["blob:https://app.test/local", "data:image/png;base64,abc"])(
+    "draft persistence odbija transient media source %s",
+    (src) => {
+      const block = {
+        id: "unsafe-image",
+        type: "ImageGalleryBlock",
+        priority: 1,
+        images: [{ id: "image", src, alt: "Opis" }],
+      };
+
+      expect(validateContentBlock(block).status).toBe("INVALID");
+      expect(validateContentDocument([block], "draft").valid).toBe(false);
+    },
+  );
+
+  it.each(["/uploads/material.pdf", "https://cdn.example.com/material.pdf"])(
+    "draft persistence prihvata trajni media source %s",
+    (src) => {
+      const block = {
+        id: "file",
+        type: "FileDownloadBlock",
+        priority: 1,
+        title: "Materijal",
+        file: { src },
+      };
+
+      expect(validateContentBlock(block).status).toBe("VALID");
+      expect(validateContentDocument([block], "draft").valid).toBe(true);
+    },
+  );
+
+  it("nedostajući media ostaje INCOMPLETE, a malformed provider ref je INVALID", () => {
+    const missing = createDraftContentBlock("VideoBlock", 1, () => "missing");
+    const malformed = {
+      id: "bad-video",
+      type: "VideoBlock",
+      priority: 1,
+      source: { provider: "upload", url: "https://cdn.example.com/video.mp4" },
+    };
+
+    expect(validateContentBlock(missing).status).toBe("INCOMPLETE");
+    expect(validateContentBlock(malformed).status).toBe("INVALID");
+  });
+
+  it("non-array HTTP layout je dokument-level INVALID umesto exception-a", () => {
+    const result = validateContentDocument({ blocks: [] }, "draft");
+
+    expect(result.valid).toBe(false);
+    expect(result.blocks[0]).toMatchObject({
+      blockType: "document",
+      status: "INVALID",
+    });
+  });
+
+  it("hidden oznaka ne može da prikrije structurally malformed blok", () => {
+    const malformed = {
+      id: "hidden-bad",
+      type: "CalloutBlock",
+      priority: "first",
+      visibility: "hidden",
+      variant: "info",
+      content: "",
+    };
+    const result = validateContentBlock(malformed);
+
+    expect(result.status).toBe("INVALID");
+    expect(validateContentDocument([malformed], "publish").valid).toBe(false);
+  });
 });

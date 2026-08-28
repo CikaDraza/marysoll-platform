@@ -14,6 +14,7 @@ import {
   getNewsletterScopeKey,
   type NewsletterClientScope,
 } from "@/lib/newsletter/clientScope";
+import { getContentMutationErrorMessage } from "@/lib/newsletter/contentValidationClient";
 
 interface UpdateSemanticArgs {
   campaignId: string;
@@ -70,7 +71,10 @@ export function useCampaignSemantic(
       });
       toast.success("Kampanja sačuvana!");
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) =>
+      toast.error(
+        getContentMutationErrorMessage(err, "Greška pri čuvanju kampanje"),
+      ),
   });
 
   return {

@@ -1,6 +1,7 @@
 import { z, type ZodError } from "zod";
 import {
   landingBlockSchema,
+  isPersistableContentMediaSource,
   type ContentBlock,
 } from "@/lib/content/schemas/landing-blocks";
 
@@ -33,8 +34,13 @@ export interface ContentDocumentValidation {
   issues: ContentValidationIssue[];
 }
 
+const draftMediaSourceSchema = z.string().refine(
+  (value) => value === "" || isPersistableContentMediaSource(value),
+  "Media adresa mora biti trajni HTTP(S) ili relativni URL",
+);
+
 const draftImageSchema = z.object({
-  src: z.string(),
+  src: draftMediaSourceSchema,
   alt: z.string(),
   assetId: z.string().optional(),
   fileName: z.string().optional(),
@@ -131,7 +137,10 @@ const affiliateCtaDraftSchema = draftBaseSchema.extend({
 const videoDraftSchema = draftBaseSchema.extend({
   type: z.literal("VideoBlock"),
   source: z.union([
-    z.object({ provider: z.enum(["youtube", "vimeo"]), url: z.string() }),
+    z.object({
+      provider: z.enum(["youtube", "vimeo"]),
+      url: draftMediaSourceSchema,
+    }),
     z.object({ provider: z.literal("upload"), media: draftAssetSchema }),
   ]).optional(),
   title: z.string().optional(),
@@ -264,9 +273,33 @@ export function validateContentBlock(value: unknown): ContentBlockValidation {
 }
 
 export function validateContentDocument(
-  values: readonly unknown[],
+  values: unknown,
   mode: ContentValidationMode,
 ): ContentDocumentValidation {
+  if (!Array.isArray(values)) {
+    const issue: ContentValidationIssue = {
+      blockId: "unknown",
+      blockType: "document",
+      path: "",
+      code: "invalid_structure",
+      message: "Content layout mora biti niz blokova",
+      severity: "error",
+    };
+    return {
+      mode,
+      valid: false,
+      blocks: [
+        {
+          blockId: "unknown",
+          blockType: "document",
+          status: "INVALID",
+          issues: [issue],
+        },
+      ],
+      issues: [issue],
+    };
+  }
+
   const blocks = values.map(validateContentBlock);
   const acceptable =
     mode === "draft"

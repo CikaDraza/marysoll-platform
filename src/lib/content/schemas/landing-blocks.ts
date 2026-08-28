@@ -190,15 +190,19 @@ export interface LandingPageOutput {
 
 const nonBlankStringSchema = z.string().refine((value) => value.trim().length > 0, "Polje ne sme biti prazno");
 
-const persistedUrlSchema = nonBlankStringSchema
-  .refine((value) => {
-    if (value.startsWith("/")) return true;
-    try {
-      return ["http:", "https:"].includes(new URL(value).protocol);
-    } catch {
-      return false;
-    }
-  }, "Media adresa mora biti trajni HTTP(S) ili relativni URL");
+export function isPersistableContentMediaSource(value: string): boolean {
+  if (value.startsWith("/")) return true;
+  try {
+    return ["http:", "https:"].includes(new URL(value).protocol);
+  } catch {
+    return false;
+  }
+}
+
+const persistedUrlSchema = nonBlankStringSchema.refine(
+  isPersistableContentMediaSource,
+  "Media adresa mora biti trajni HTTP(S) ili relativni URL",
+);
 
 export const contentAssetRefSchema = z.object({
   src: persistedUrlSchema,
