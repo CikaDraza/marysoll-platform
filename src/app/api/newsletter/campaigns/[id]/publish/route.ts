@@ -69,6 +69,23 @@ export async function PATCH(
     if (!validation.valid) {
       return contentValidationFailureResponse(validation);
     }
+    if (!validation.blocks.some(({ status }) => status === "VALID")) {
+      return contentValidationFailureResponse({
+        ...validation,
+        valid: false,
+        issues: [
+          {
+            blockId: "document",
+            blockType: "document",
+            path: "",
+            code: "required_content",
+            message:
+              "Newsletter landing mora imati najmanje jedan vidljiv i kompletan blok",
+            severity: "error",
+          },
+        ],
+      });
+    }
 
     // Update landing page with published status
     const audience = normalizeEditorialAudience(

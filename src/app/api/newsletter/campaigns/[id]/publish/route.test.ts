@@ -104,7 +104,7 @@ describe("PATCH newsletter landing publish content gate", () => {
     expect(campaign.save).toHaveBeenCalledTimes(1);
   });
 
-  it("hidden structurally-safe incomplete blok ne blokira publish", async () => {
+  it("hidden-only layout ne ispunjava Newsletter host minimum", async () => {
     const campaign = fakeCampaign();
     vi.mocked(NewsletterCampaign.findOne).mockResolvedValue(campaign as never);
     const layout = [{ id: "hidden", type: "CalloutBlock", priority: 1, visibility: "hidden", variant: "info", content: "" }];
@@ -113,8 +113,30 @@ describe("PATCH newsletter landing publish content gate", () => {
       params: Promise.resolve({ id: "campaign-1" }),
     });
 
-    expect(response.status).toBe(200);
-    expect(campaign.save).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({
+      code: "CONTENT_VALIDATION_FAILED",
+      validation: {
+        mode: "publish",
+        valid: false,
+        issues: [{ blockType: "document", code: "required_content" }],
+      },
+    });
+    expect(campaign.set).not.toHaveBeenCalled();
+    expect(campaign.save).not.toHaveBeenCalled();
+  });
+
+  it("empty layout ne ispunjava Newsletter host minimum", async () => {
+    const campaign = fakeCampaign();
+    vi.mocked(NewsletterCampaign.findOne).mockResolvedValue(campaign as never);
+
+    const response = await PATCH(requestFor([]), {
+      params: Promise.resolve({ id: "campaign-1" }),
+    });
+
+    expect(response.status).toBe(422);
+    expect(campaign.set).not.toHaveBeenCalled();
+    expect(campaign.save).not.toHaveBeenCalled();
   });
 
   it.each([
