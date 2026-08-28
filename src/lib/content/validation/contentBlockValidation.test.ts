@@ -209,3 +209,94 @@ describe("document validation modes", () => {
     expect(validateContentDocument([malformed], "publish").valid).toBe(false);
   });
 });
+
+describe("hidden structural invariants", () => {
+  it.each([
+    {
+      label: "Table duplicate column ids",
+      block: {
+        id: "table-columns",
+        type: "TableBlock",
+        priority: 1,
+        visibility: "hidden",
+        columns: [{ id: "same", label: "A" }, { id: "same", label: "B" }],
+        rows: [{ id: "row", cells: { same: "Vrednost" } }],
+      },
+    },
+    {
+      label: "Table duplicate row ids",
+      block: {
+        id: "table-rows",
+        type: "TableBlock",
+        priority: 1,
+        visibility: "hidden",
+        columns: [{ id: "column", label: "A" }],
+        rows: [
+          { id: "same", cells: { column: "Prvi" } },
+          { id: "same", cells: { column: "Drugi" } },
+        ],
+      },
+    },
+    {
+      label: "Table cell and column mismatch",
+      block: {
+        id: "table-cells",
+        type: "TableBlock",
+        priority: 1,
+        visibility: "hidden",
+        columns: [{ id: "expected", label: "A" }],
+        rows: [{ id: "row", cells: { wrong: "Vrednost" } }],
+      },
+    },
+    {
+      label: "Checklist duplicate item ids",
+      block: {
+        id: "checklist",
+        type: "ChecklistBlock",
+        priority: 1,
+        visibility: "hidden",
+        items: [{ id: "same", text: "A" }, { id: "same", text: "B" }],
+      },
+    },
+    {
+      label: "Gallery duplicate image ids",
+      block: {
+        id: "gallery",
+        type: "ImageGalleryBlock",
+        priority: 1,
+        visibility: "hidden",
+        images: [
+          { id: "same", src: "/a.jpg", alt: "A" },
+          { id: "same", src: "/b.jpg", alt: "B" },
+        ],
+      },
+    },
+    {
+      label: "Video provider and URL mismatch",
+      block: {
+        id: "video",
+        type: "VideoBlock",
+        priority: 1,
+        visibility: "hidden",
+        source: { provider: "youtube", url: "https://vimeo.com/12345" },
+      },
+    },
+  ])("$label je INVALID i ne prolazi publish", ({ block }) => {
+    expect(validateContentBlock(block).status).toBe("INVALID");
+    expect(validateContentDocument([block], "publish").valid).toBe(false);
+  });
+
+  it("hidden incomplete content ostaje HIDDEN i prolazi publish", () => {
+    const block = {
+      id: "callout",
+      type: "CalloutBlock",
+      priority: 1,
+      visibility: "hidden",
+      variant: "info",
+      content: "",
+    };
+
+    expect(validateContentBlock(block).status).toBe("HIDDEN");
+    expect(validateContentDocument([block], "publish").valid).toBe(true);
+  });
+});

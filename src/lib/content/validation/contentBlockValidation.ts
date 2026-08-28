@@ -2,6 +2,7 @@ import { z, type ZodError } from "zod";
 import {
   landingBlockSchema,
   isPersistableContentMediaSource,
+  isSupportedExternalVideoUrl,
   type ContentBlock,
 } from "@/lib/content/schemas/landing-blocks";
 
@@ -196,7 +197,72 @@ export const contentBlockDraftSchema = z.discriminatedUnion("type", [
   checklistDraftSchema,
   fileDownloadDraftSchema,
   imageGalleryDraftSchema,
-]);
+]).superRefine((block, context) => {
+  switch (block.type) {
+    case "TableBlock": {
+      const columnIds = block.columns.map(({ id }) => id);
+      if (new Set(columnIds).size !== columnIds.length) {
+        context.addIssue({
+          code: "custom",
+          path: ["columns"],
+          message: "ID-jevi kolona moraju biti jedinstveni",
+        });
+      }
+      const rowIds = block.rows.map(({ id }) => id);
+      if (new Set(rowIds).size !== rowIds.length) {
+        context.addIssue({
+          code: "custom",
+          path: ["rows"],
+          message: "ID-jevi redova moraju biti jedinstveni",
+        });
+      }
+      block.rows.forEach((row, rowIndex) => {
+        if (
+          Object.keys(row.cells).length !== columnIds.length ||
+          columnIds.some((id) => !(id in row.cells))
+        ) {
+          context.addIssue({
+            code: "custom",
+            path: ["rows", rowIndex, "cells"],
+            message: "Svaki red mora imati ćeliju za svaku kolonu",
+          });
+        }
+      });
+      break;
+    }
+    case "ChecklistBlock":
+      if (new Set(block.items.map(({ id }) => id)).size !== block.items.length) {
+        context.addIssue({
+          code: "custom",
+          path: ["items"],
+          message: "ID-jevi stavki moraju biti jedinstveni",
+        });
+      }
+      break;
+    case "ImageGalleryBlock":
+      if (new Set(block.images.map(({ id }) => id)).size !== block.images.length) {
+        context.addIssue({
+          code: "custom",
+          path: ["images"],
+          message: "ID-jevi slika moraju biti jedinstveni",
+        });
+      }
+      break;
+    case "VideoBlock":
+      if (
+        block.source?.provider !== "upload" &&
+        block.source?.url &&
+        !isSupportedExternalVideoUrl(block.source.provider, block.source.url)
+      ) {
+        context.addIssue({
+          code: "custom",
+          path: ["source", "url"],
+          message: `URL ne pripada ${block.source.provider} provideru`,
+        });
+      }
+      break;
+  }
+});
 
 function identityOf(value: unknown): { blockId: string; blockType: string } {
   if (!value || typeof value !== "object") {

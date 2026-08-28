@@ -221,6 +221,22 @@ export const contentImageRefSchema = contentAssetRefSchema.extend({
 
 const imageSchema = contentImageRefSchema;
 
+export function isSupportedExternalVideoUrl(
+  provider: "youtube" | "vimeo",
+  value: string,
+): boolean {
+  try {
+    const parsed = new URL(value);
+    if (!["http:", "https:"].includes(parsed.protocol)) return false;
+    const host = parsed.hostname.replace(/^www\./, "");
+    return provider === "youtube"
+      ? ["youtube.com", "m.youtube.com", "youtu.be"].includes(host)
+      : host === "vimeo.com" || host.endsWith(".vimeo.com");
+  } catch {
+    return false;
+  }
+}
+
 const blockBaseSchema = z.object({
   id: z.string().min(1),
   priority: z.number().int().min(1),
@@ -312,19 +328,13 @@ const externalVideoSourceSchema = z
     url: persistedUrlSchema,
   })
   .superRefine((source, context) => {
-    let host = "";
-    try {
-      const parsed = new URL(source.url);
-      if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("Unsupported protocol");
-      host = parsed.hostname.replace(/^www\./, "");
-    } catch {
-      context.addIssue({ code: "custom", path: ["url"], message: "Unesite ispravan video URL" });
-      return;
+    if (!isSupportedExternalVideoUrl(source.provider, source.url)) {
+      context.addIssue({
+        code: "custom",
+        path: ["url"],
+        message: `URL ne pripada ${source.provider} provideru`,
+      });
     }
-    const valid = source.provider === "youtube"
-      ? ["youtube.com", "m.youtube.com", "youtu.be"].includes(host)
-      : host === "vimeo.com" || host.endsWith(".vimeo.com");
-    if (!valid) context.addIssue({ code: "custom", path: ["url"], message: `URL ne pripada ${source.provider} provideru` });
   });
 
 export const videoBlockSchema = blockBaseSchema.extend({
