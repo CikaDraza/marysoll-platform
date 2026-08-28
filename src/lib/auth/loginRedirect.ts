@@ -22,6 +22,8 @@ export interface LoginRedirectParams {
   token: string;
   /** window.location.hostname u trenutku prijave. */
   hostname: string;
+  /** Server-projected initial workspace for tenant admins. */
+  adminDestination?: "/dashboard" | "/education";
 }
 
 /**
@@ -43,11 +45,12 @@ export function loginRedirectUrl(params: LoginRedirectParams): string | null {
   }
 
   if (params.isAdmin) {
+    const destination = params.adminDestination ?? "/dashboard";
     return crossHost
       ? `https://admin.${BASE_DOMAIN}/auth/callback?token=${encodeURIComponent(
           params.token,
-        )}&redirect=/dashboard`
-      : "/dashboard";
+        )}&redirect=${destination}`
+      : destination;
   }
 
   return null;

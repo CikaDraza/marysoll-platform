@@ -10,7 +10,10 @@ import {
   type PlanFeatures,
   type PlanName,
 } from "@/lib/plans/planFeatures";
-import { resolveCapability } from "@/lib/platform/capabilities";
+import {
+  resolveCapability,
+  resolveEffectiveVerticals,
+} from "@/lib/platform/capabilities";
 import {
   TENANT_CAPABILITIES,
   isTenantCapability,
@@ -116,7 +119,10 @@ export async function resolveTenantCapabilitySnapshot(
     });
   }
 
-  return { capabilities };
+  return {
+    verticals: resolveEffectiveVerticals(tenant),
+    capabilities,
+  };
 }
 
 export async function resolveTenantCapability(

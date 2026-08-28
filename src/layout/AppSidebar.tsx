@@ -9,7 +9,11 @@ import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useChatUnread } from "@/hooks/useChatUnread";
 import { usePlanStatus } from "@/hooks/usePlanStatus";
 import { useTenantCapabilities } from "@/hooks/useTenantCapabilities";
-import { isResolvedCapabilityEnabled } from "@/lib/platform/workspace-capabilities";
+import {
+  isResolvedCapabilityEnabled,
+  resolveAdminWorkspaceNavigation,
+  type AdminWorkspace,
+} from "@/lib/platform/workspace-capabilities";
 import type { TenantCapability } from "@/types/tenant-capabilities";
 import Image from "next/image";
 
@@ -62,6 +66,7 @@ type NavItem = {
   name: string;
   icon: React.ReactNode;
   path?: string;
+  exact?: boolean;
   tab?: string; // for dashboard tab navigation
   capability?: TenantCapability;
   subItems?: {
@@ -230,6 +235,22 @@ const AdminNav: NavItem[] = [
   },
 ];
 
+const EducationNav: NavItem[] = [
+  {
+    name: "Pregled",
+    icon: <Icon d={icons.dashboard} />,
+    path: "/education",
+    exact: true,
+  },
+  {
+    name: "Sadržaj",
+    icon: (
+      <Icon d="M6 3h9l3 3v15H6V3zM9 9h6M9 13h6M9 17h4M15 3v4h4" />
+    ),
+    path: "/education/content",
+  },
+];
+
 // ─── Plan badge in sidebar footer ─────────────────────────────────────────────
 
 const PLAN_COLORS: Record<string, string> = {
@@ -280,7 +301,10 @@ const AppSidebar: React.FC = () => {
   // Determine active state
   const isActive = useCallback(
     (item: NavItem) => {
-      if (item.path) return pathname.startsWith(item.path.split("?")[0]);
+      if (item.path) {
+        const itemPath = item.path.split("?")[0];
+        return item.exact ? pathname === itemPath : pathname.startsWith(itemPath);
+      }
       if (item.subItems) {
         return item.subItems.some((s) =>
           s.path ? pathname.startsWith(s.path.split("?")[0]) : false,
@@ -304,7 +328,30 @@ const AppSidebar: React.FC = () => {
 
   const { data: planStatusData } = usePlanStatus();
   const plan = planStatusData?.plan ?? "maria";
-  const visibleAdminNav = AdminNav.flatMap((item) => {
+  const workspaces = resolveAdminWorkspaceNavigation(capabilitySnapshot);
+  const activeWorkspace: AdminWorkspace =
+    pathname.startsWith("/education") ||
+    (!workspaces.salon && workspaces.education)
+      ? "education"
+      : "salon";
+  const hideLoadingSalonOption =
+    !capabilitySnapshot && pathname.startsWith("/education");
+  const workspaceOptions = [
+    ...(workspaces.salon && !hideLoadingSalonOption
+      ? ([{ name: "Salon", path: "/dashboard", workspace: "salon" }] as const)
+      : []),
+    ...(workspaces.education
+      ? ([
+          {
+            name: "Edu Centar",
+            path: "/education",
+            workspace: "education",
+          },
+        ] as const)
+      : []),
+  ];
+  const activeNav = activeWorkspace === "education" ? EducationNav : AdminNav;
+  const visibleAdminNav = activeNav.flatMap((item) => {
     if (!isResolvedCapabilityEnabled(capabilitySnapshot, item.capability)) {
       return [];
     }
@@ -313,6 +360,7 @@ const AppSidebar: React.FC = () => {
     );
     return item.subItems && !subItems?.length ? [] : [{ ...item, subItems }];
   });
+  const homePath = activeWorkspace === "education" ? "/education" : "/dashboard";
 
   return (
     <aside
@@ -326,7 +374,7 @@ const AppSidebar: React.FC = () => {
       <div
         className={`flex items-center h-16 px-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0 ${!isVisible ? "justify-center" : ""}`}
       >
-        <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0">
+        <Link href={homePath} className="flex items-center gap-2.5 min-w-0">
           {/* Monogram icon — always visible */}
           <Image
             src="/marysoll_elegant_logo.png"
@@ -341,7 +389,9 @@ const AppSidebar: React.FC = () => {
                 Marysoll
               </span>
               <span className="block text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
-                Beauty Platform
+                {activeWorkspace === "education"
+                  ? "Education Workspace"
+                  : "Salon Workspace"}
               </span>
             </div>
           )}
@@ -350,9 +400,46 @@ const AppSidebar: React.FC = () => {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5 scrollbar-none">
+        {workspaceOptions.length > 0 && (
+          <div className="mb-4 space-y-1">
+            {isVisible && (
+              <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600">
+                Radni prostor
+              </p>
+            )}
+            {workspaceOptions.map((option) => {
+              const active = option.workspace === activeWorkspace;
+              return (
+                <Link
+                  key={option.workspace}
+                  href={option.path}
+                  onClick={closeMobileSidebar}
+                  aria-label={option.name}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
+                    active
+                      ? "bg-violet-600 text-white shadow-sm"
+                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                  } ${!isVisible ? "justify-center" : ""}`}
+                >
+                  <span className="flex-shrink-0">
+                    <Icon
+                      d={
+                        option.workspace === "education"
+                          ? "M4 19.5A2.5 2.5 0 016.5 17H20V4H6.5A2.5 2.5 0 004 6.5v13zM4 6.5A2.5 2.5 0 016.5 9H20"
+                          : icons.scissors
+                      }
+                    />
+                  </span>
+                  {isVisible && <span>{option.name}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
         {isVisible && (
           <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600">
-            Meni
+            {activeWorkspace === "education" ? "Edu Centar" : "Salon"}
           </p>
         )}
 
@@ -508,7 +595,7 @@ const AppSidebar: React.FC = () => {
               </svg>
             </Link>
             {/* Salon website */}
-            {salonUrl && (
+            {workspaces.salon && salonUrl && (
               <Link
                 href={salonUrl}
                 target="_blank"

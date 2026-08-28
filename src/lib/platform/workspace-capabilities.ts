@@ -3,6 +3,48 @@ import type {
   TenantCapabilitySnapshot,
 } from "@/types/tenant-capabilities";
 
+export type AdminWorkspace = "salon" | "education";
+
+export interface AdminWorkspaceNavigation {
+  salon: boolean;
+  education: boolean;
+  initialWorkspace: AdminWorkspace | null;
+}
+
+/**
+ * Workspace identity comes from server-resolved verticals. Capability remains
+ * an additional availability gate; it is never used to guess the vertical.
+ */
+export function resolveAdminWorkspaceNavigation(
+  snapshot: TenantCapabilitySnapshot | undefined,
+): AdminWorkspaceNavigation {
+  // Preserve existing Salon loading behavior. The new Education link remains
+  // hidden until the server projection is known.
+  if (!snapshot) {
+    return { salon: true, education: false, initialWorkspace: "salon" };
+  }
+
+  const salon = snapshot.verticals.includes("beauty");
+  const education =
+    snapshot.verticals.includes("education") &&
+    snapshot.capabilities["education.catalog"].enabled;
+
+  return {
+    salon,
+    education,
+    initialWorkspace: salon ? "salon" : education ? "education" : null,
+  };
+}
+
+export function initialAdminWorkspacePath(
+  snapshot: TenantCapabilitySnapshot | undefined,
+): "/dashboard" | "/education" {
+  return resolveAdminWorkspaceNavigation(snapshot).initialWorkspace ===
+    "education"
+    ? "/education"
+    : "/dashboard";
+}
+
 /** Workspace je samo projekcija već razrešenog capability-ja. */
 const ADMIN_WORKSPACE_CAPABILITIES = {
   usluge: "services.catalog",

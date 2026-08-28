@@ -2,7 +2,7 @@
 
 > Tracker za tekući luk rada: **T3 Booking Engine + Consultation domen + theme-9 „Skincare Marina"**.
 > Jedan red po slice-u. Detalji su u dokumentu koji je naveden uz slice — ovde stoji samo status i jedna rečenica.
-> Poslednja izmena: 2026-08-28 · `staging/production-engines` + Edu F2 closure
+> Poslednja izmena: 2026-08-28 · `staging/production-engines` + EDU UI-1 code
 >
 > **Aktuelno stanje:** correctness fixes, Theme-9 **2A, ceo 2B i 2C** i
 > migration/staging tooling nalaze se na `main`-u. Staging Release A + migration
@@ -18,6 +18,7 @@
 > Edu F0         ✅ staging
 > Edu F1         ✅ staging
 > Edu F2         ✅ staging
+> Edu UI-1/F3A   🟡 code complete · browser acceptance pending
 > ```
 >
 > Dalji Theme-9 završetak, QA i Edu Centar razvoj nastavljaju se samo na aktivnoj
@@ -38,7 +39,8 @@
 | 2 | theme-9 prezentacija | ✅ 2A · 2B · 2C · content cleanup | Theme-9 foundation je na `main`-u: persistence, tri-state, konzervativna normalizacija, fail-closed presentation resolver, 7/7 CMS authoring + minimum validacija i content-aware page/navigation resolver. Staging Release A/migration rehearsal je završen. Starter seed je provisioning koji defaultno čuva tenant-authored sadržaj. Dalji razvoj/QA je staging-only. | [PANTA-T2-THEME-LAYOUT-ENGINE.md](PANTA-T2-THEME-LAYOUT-ENGINE.md) |
 | Edu F0 | Vertical & workspace foundation | ✅ staging | Preset-aware onboarding, neutralni registration contract/UI, zaključano provisioning jezgro i `/education/{offerings,inquiries}` boundary su implementirani. Salon dashboard i Theme-9 nisu dirani. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#faza-0--vertical--workspace-foundation) |
 | Edu F1 | Content Composer | ✅ staging | Generički editor/render/schema/registry/score/SEO sloj je izdvojen, newsletter je ostao tanak adapter, a oba renderera koriste jedan `BlockList`. Karakterizacioni testovi čuvaju postojeći Newsletter contract. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#faza-1--content-composer-deljeni-sloj) |
-| Edu F2 | Authoring + blocks + persistence | ✅ staging | F2A authoring UX, F2B šest novih blokova i shared media contract, F2C draft-save/strict-publish validation i structural edge audit su završeni. Sledeći je zaključani Newsletter/Blog contract, zatim F3 capability wiring. | [PANTA-NEWSLETTER-BLOG-AUTHORING.md](PANTA-NEWSLETTER-BLOG-AUTHORING.md) |
+| Edu F2 | Authoring + blocks + persistence | ✅ staging | F2A authoring UX, F2B šest novih blokova i shared media contract, F2C draft-save/strict-publish validation i structural edge audit su završeni. Newsletter/Blog lifecycle i preostali write-authority edge su zaključani. | [PANTA-NEWSLETTER-BLOG-AUTHORING.md](PANTA-NEWSLETTER-BLOG-AUTHORING.md) |
+| EDU UI-1 / F3A | Capability-aware Admin Education workspace | 🟡 code complete · browser acceptance pending | Snapshot projektuje server-resolved verticals; `education.catalog` otvara samo provisionovan Education workspace. Beauty/education/hybrid dobijaju odgovarajući switch/sidebar, server-gated `/education` i Content shell. UX nije prihvaćen dok ne prođe ručni staging checklist. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#f3a--admin-workspace-capability-i-navigacija-edu-ui-1) |
 
 ### Booking / Consultation — zadržano
 
@@ -62,7 +64,8 @@ kanonskim dokumentom [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md):
 F0   vertical / workspace foundation      F5   /edukacija → RELEASE GATE
 F1   Content Composer                     F6A  Client Workspace + Moj Prostor
 F2   novi blokovi + rupe u editoru        F6B  assignment + ACL
-F3   capability wiring                    F7   transakciono obaveštenje
+F3A  Admin workspace capability/UI        F7   transakciono obaveštenje
+F3B  Content/API gates uz UI-2
 F4   EducationContent + Edu Studio        F8   SkincareGuide
 F4B  EducationOffering + EducationInquiry F9   GuidedProgram
                                           F10  AI asistencija
@@ -73,9 +76,10 @@ F4B  EducationOffering + EducationInquiry F9   GuidedProgram
 
 ✅ **Faze 0, 1 i 2 su završene na aktivnoj staging razvojnoj liniji.**
 
-**NEXT:** Newsletter / Blog authoring i lifecycle contract je zaključan u
-[PANTA-NEWSLETTER-BLOG-AUTHORING.md](PANTA-NEWSLETTER-BLOG-AUTHORING.md); sledeći
-implementation slice je **F3 capability wiring**.
+**NEXT:** **EDU UI-1 — capability-aware Admin Education workspace** je code
+complete i čeka obavezni manual browser acceptance na stagingu. Posle potvrde
+sledi **EDU UI-2 — EducationContent + pravi CMS CRUD + Content Composer**, sa
+F3B domain/API gate-ovima uz stvarne rute.
 
 ### Završeno
 
@@ -344,23 +348,19 @@ Dodaju se u tabelu tek kad postanu aktivan implementacioni posao. Jedina tačka
 gde već sada obavezuju tekući rad je 2C (vidi gore).
 
 **Ne formulisati kao „samo palimo prekidač".** `education.catalog` i
-`education.inquiries` jesu registrovani u `lib/platform/capabilities.ts`, ali
+`education.inquiries` jesu registrovani u `lib/platform/capabilities.ts`, a
 resolver traži tri uslova odjednom:
 
 ```text
 enabled = platformAvailable && planEntitled && tenantEnabled
 ```
 
-Danas su za `education.catalog` sva tri nepovoljna: `platformAvailable: false`,
-`plan: UNMAPPED` (a `resolveCapabilityPlanEntitlement()` za `unmapped`
-bezuslovno vraća `false`) i `legacyBeautyDefault: false`. Samo
-`platformAvailable: true` ne bi promenilo ništa — `true ∩ false ∩ true = false`.
-
-Tačna formulacija: **infrastruktura i capability ID već postoje**; kada
-Education postane aktivan proizvod, potrebno je otvoriti platform availability,
-definisati entitlement model i uključiti capability odgovarajućim tenantima.
-To je i dalje dobra vest — triple-gate iz 0C se koristi kakav jeste i ne pravi
-se nov sistem dozvola.
+EDU UI-1 otvara samo `education.catalog`: `platformAvailable: true`, postojeći
+plan source `core`, uz obavezni explicit tenant provisioning i Education
+vertical. Beauty zato ostaje isključen. Ovo je najmanji workspace/content
+foundation contract, ne skrivena pricing odluka; poseban Education entitlement
+još ne postoji u plan modelu. `education.inquiries` i `booking.education` ostaju
+platform-unavailable/unmapped dok njihove stvarne površine ne postoje.
 
 ## Demo/starter naspram odobrenog live sadržaja
 

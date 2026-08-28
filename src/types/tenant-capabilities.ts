@@ -51,6 +51,8 @@ export interface ResolvedCapability {
  * Plan, vertikale i tenant override-i se nikada ne računaju u browseru.
  */
 export type TenantCapabilitySnapshot = {
+  /** Server-resolved workspace identity; legacy missing verticals become beauty. */
+  verticals: TenantVertical[];
   capabilities: Record<TenantCapability, ResolvedCapability>;
 };
 

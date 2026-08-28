@@ -7,8 +7,9 @@
 > Capability ugovor je u
 > [PANTA-TENANT-VERTICALS-CAPABILITIES.md](PANTA-TENANT-VERTICALS-CAPABILITIES.md).
 > Capability snapshot i postojeća admin/client navigaciona projekcija su
-> implementirani u T2B-B. Kompletna nova domain IA iz ovog dokumenta ostaje
-> Slice 12; ne treba je mešati sa završenim capability gate-om.
+> implementirani u T2B-B. EDU UI-1/F3A dodatno uvodi server-resolved verticals,
+> zaseban Education sidebar i Salon ↔ Edu Centar switch; EducationContent CRUD
+> i ostatak domain IA i dalje dolaze vertikalno sa stvarnim površinama.
 
 ## 1. Osnovna pravila
 

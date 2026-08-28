@@ -1,21 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { TENANT_CAPABILITIES, type TenantCapabilitySnapshot } from "@/types/tenant-capabilities";
 import {
+  TENANT_CAPABILITIES,
+  type TenantCapabilitySnapshot,
+  type TenantVertical,
+} from "@/types/tenant-capabilities";
+import {
+  initialAdminWorkspacePath,
   isAdminWorkspaceTabAvailable,
   isClientWorkspaceTabAvailable,
+  resolveAdminWorkspaceNavigation,
 } from "./workspace-capabilities";
 
 function snapshot(
   enabled: Partial<Record<(typeof TENANT_CAPABILITIES)[number], boolean>> = {},
+  verticals: TenantVertical[] = ["beauty"],
 ): TenantCapabilitySnapshot {
   return {
+    verticals,
     capabilities: Object.fromEntries(
       TENANT_CAPABILITIES.map((capability) => [
         capability,
         {
           capability,
           enabled: enabled[capability] ?? false,
-          platformAvailable: capability !== "education.catalog",
+          platformAvailable: true,
           planEntitled: true,
           tenantEnabled: enabled[capability] ?? false,
         },
@@ -51,5 +59,46 @@ describe("workspace capability projection", () => {
     expect(isAdminWorkspaceTabAvailable(educationFirst, "profil")).toBe(true);
     expect(isClientWorkspaceTabAvailable(educationFirst, "Moj Profil")).toBe(true);
     expect(isAdminWorkspaceTabAvailable(educationFirst, "education")).toBe(true);
+  });
+
+  it("projektuje beauty, education i hybrid workspace bez capability nagađanja", () => {
+    const beauty = snapshot({}, ["beauty"]);
+    const education = snapshot(
+      { "education.catalog": true },
+      ["education"],
+    );
+    const hybrid = snapshot(
+      { "education.catalog": true },
+      ["beauty", "education"],
+    );
+
+    expect(resolveAdminWorkspaceNavigation(beauty)).toEqual({
+      salon: true,
+      education: false,
+      initialWorkspace: "salon",
+    });
+    expect(resolveAdminWorkspaceNavigation(education)).toEqual({
+      salon: false,
+      education: true,
+      initialWorkspace: "education",
+    });
+    expect(resolveAdminWorkspaceNavigation(hybrid)).toEqual({
+      salon: true,
+      education: true,
+      initialWorkspace: "salon",
+    });
+    expect(initialAdminWorkspacePath(education)).toBe("/education");
+    expect(initialAdminWorkspacePath(hybrid)).toBe("/dashboard");
+  });
+
+  it("ne prikazuje Education link tokom loading-a niti samo na osnovu vertikale", () => {
+    expect(resolveAdminWorkspaceNavigation(undefined)).toEqual({
+      salon: true,
+      education: false,
+      initialWorkspace: "salon",
+    });
+    expect(
+      resolveAdminWorkspaceNavigation(snapshot({}, ["education"])),
+    ).toEqual({ salon: false, education: false, initialWorkspace: null });
   });
 });

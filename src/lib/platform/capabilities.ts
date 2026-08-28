@@ -60,8 +60,11 @@ export const TENANT_CAPABILITY_REGISTRY = {
     legacyBeautyDefault: false,
   },
   "education.catalog": {
-    platformAvailable: false,
-    plan: UNMAPPED,
+    // UI-1 exposes only the authoring workspace shell. Until Education gets a
+    // priced entitlement, tenant provisioning is the explicit gate; this does
+    // not infer a hidden plan matrix.
+    platformAvailable: true,
+    plan: CORE,
     legacyBeautyDefault: false,
   },
   "education.inquiries": {

@@ -134,6 +134,19 @@ describe("staging.marysoll.com", () => {
     ).toBe("/superadmin/dashboard");
   });
 
+  it("1c. education-first owner ide direktno u Edu Centar", async () => {
+    const { auth } = await loadModules(STAGING);
+    expect(
+      auth.loginRedirectUrl({
+        isAdmin: true,
+        isSuperAdmin: false,
+        token: "jwt",
+        hostname: "staging.marysoll.com",
+        adminDestination: "/education",
+      }),
+    ).toBe("/education");
+  });
+
   it("2. Sajt salona u dashboardu vodi na staging.marysoll.com/{slug}, NE na custom domen", async () => {
     const { host } = await loadModules(STAGING);
     browserOn("staging.marysoll.com");
@@ -198,6 +211,21 @@ describe("marysoll.com (produkcija)", () => {
         hostname: "marysoll.com",
       }),
     ).toBe("https://superadmin.marysoll.com/superadmin/dashboard");
+  });
+
+  it("3b.1 education-first handoff čuva Education destinaciju", async () => {
+    const { auth } = await loadModules(PROD);
+    expect(
+      auth.loginRedirectUrl({
+        isAdmin: true,
+        isSuperAdmin: false,
+        token: "jwt",
+        hostname: "marysoll.com",
+        adminDestination: "/education",
+      }),
+    ).toBe(
+      "https://admin.marysoll.com/auth/callback?token=jwt&redirect=/education",
+    );
   });
 
   it("3c. isto važi kad je vlasnik već na admin.marysoll.com", async () => {

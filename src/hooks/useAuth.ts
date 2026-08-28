@@ -28,6 +28,8 @@ import { loginRedirectUrl, logoutRedirectUrl } from "@/lib/auth/loginRedirect";
 import { publicApi, api } from "@/lib/api";
 import { useCallback, useEffect } from "react";
 import type { DecodedUser } from "@/types/auth/types";
+import type { TenantCapabilitySnapshot } from "@/types/tenant-capabilities";
+import { initialAdminWorkspacePath } from "@/lib/platform/workspace-capabilities";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -297,11 +299,29 @@ export function useAuth() {
 
       // Produkcija → admin./superadmin. subdomen (cross-host handoff);
       // dev/preview/staging → relativno na istom hostu. Klijenti: null.
+      let adminDestination: "/dashboard" | "/education" = "/dashboard";
+      if (data.user.isAdmin && !data.user.isSuperAdmin) {
+        try {
+          const response = await api.get<TenantCapabilitySnapshot>(
+            "/tenant/capabilities",
+          );
+          queryClient.setQueryData(
+            ["tenantCapabilities"],
+            response.data,
+          );
+          adminDestination = initialAdminWorkspacePath(response.data);
+        } catch {
+          // Auth still succeeds. The dashboard keeps the legacy-safe fallback,
+          // while its own capability projection can redirect after loading.
+        }
+      }
+
       const target = loginRedirectUrl({
         isAdmin: data.user.isAdmin,
         isSuperAdmin: data.user.isSuperAdmin,
         token: data.token,
         hostname: window.location.hostname,
+        adminDestination,
       });
       if (target) window.location.replace(target);
       // Clients — login page handles redirect

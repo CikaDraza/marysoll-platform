@@ -15,7 +15,10 @@ import Loader from "@/components/elements/Loader";
 import { api } from "@/lib/api";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useTenantCapabilities } from "@/hooks/useTenantCapabilities";
-import { isAdminWorkspaceTabAvailable } from "@/lib/platform/workspace-capabilities";
+import {
+  isAdminWorkspaceTabAvailable,
+  resolveAdminWorkspaceNavigation,
+} from "@/lib/platform/workspace-capabilities";
 import {
   ProfilTab,
   RadnoVremeTab,
@@ -170,9 +173,21 @@ function AdminDashboard() {
   // All hooks before early return
   const { user, token, logout, isLoading: authLoading } = useAuth();
   const { data: capabilitySnapshot } = useTenantCapabilities();
+  const adminWorkspaces = resolveAdminWorkspaceNavigation(capabilitySnapshot);
+  const shouldOpenEducationWorkspace = Boolean(
+    capabilitySnapshot &&
+      !adminWorkspaces.salon &&
+      adminWorkspaces.education,
+  );
   const effectiveTab = isAdminWorkspaceTabAvailable(capabilitySnapshot, tab)
     ? tab
     : "profil";
+
+  useEffect(() => {
+    if (shouldOpenEducationWorkspace) {
+      router.replace("/education");
+    }
+  }, [router, shouldOpenEducationWorkspace]);
 
   // Checkout intent iz marketing/pricing-a: anoniman posetilac je izabrao plaćeni
   // plan pa se u međuvremenu ulogovao/registrovao. Odvedi ga na Pretplatu i

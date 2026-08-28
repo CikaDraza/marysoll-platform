@@ -1,33 +1,41 @@
-"use client";
-
-import { useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import DashboardLayout from "@/layout/DashboardLayout";
+import { verifyToken } from "@/lib/auth/auth-server";
+import { resolveTenantCapabilitySnapshot } from "@/lib/platform/capabilities-server";
+import { resolveAdminWorkspaceNavigation } from "@/lib/platform/workspace-capabilities";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 /**
- * Zaseban Education admin workspace. Ne dodaje tabove u legacy Salon
- * dashboard; capability-aware navigacija i javni activation CTA dolaze tek u
- * kasnijim Edu fazama.
+ * Server authority za zaseban Education admin workspace. Client-side sidebar
+ * projection is UX only; direct URLs still pass auth, tenant and capability
+ * checks here.
  */
-export default function EducationLayout({
+export default async function EducationLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading } = useAuth();
+  const cookieStore = await cookies();
+  const token =
+    cookieStore.get("tenant-access-token")?.value ??
+    cookieStore.get("platform-access-token")?.value;
+  const actor = token ? verifyToken(token) : null;
 
-  useEffect(() => {
-    if (!isLoading && (!user || (!user.isAdmin && !user.isSuperAdmin))) {
-      window.location.replace("/login");
-    }
-  }, [isLoading, user]);
+  if (!actor) redirect("/login");
+  if (!actor.isAdmin && !actor.isSuperAdmin) redirect("/unauthorized");
+  if (!actor.tenantId) redirect("/unauthorized");
 
-  if (isLoading || !user || (!user.isAdmin && !user.isSuperAdmin)) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
-      </div>
-    );
+  const snapshot = await resolveTenantCapabilitySnapshot(actor.tenantId);
+  if (!snapshot) redirect("/unauthorized");
+
+  const workspaces = resolveAdminWorkspaceNavigation(snapshot);
+  if (!workspaces.education) {
+    redirect(workspaces.salon ? "/dashboard" : "/unauthorized");
   }
 
   return <DashboardLayout>{children}</DashboardLayout>;

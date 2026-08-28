@@ -48,8 +48,11 @@ Newsletter integracija radi targeted update i jedan save, pa publish ne briše
 
 Content Composer je authority za content readiness. Host ostaje authority za
 permissions, lifecycle, storage i public exposure. Prazan layout trenutno
-prolazi shared document validator; Newsletter client i dalje zahteva blok pre
-publish-a. Globalno minimum-one-block pravilo ostaje eksplicitna product odluka.
+prolazi shared document validator; Newsletter host dodatno zahteva najmanje
+jedan vidljiv publish-valid blok. `semantic` metadata endpoint eksplicitno
+odbija `landingPage.layout`, pa body do persistence-a stiže samo kroz validirane
+save/publish rute. Globalno minimum-one-block pravilo ne prelazi u shared
+validator: ostaje eksplicitna host product odluka.
 
 ## Media authoring contract
 
@@ -105,5 +108,6 @@ validni.
 Faza 2 ne uvodi Media Library, remote-delete lifecycle, stvarni progress API,
 DOCX backend politiku, download authorization/analytics, theme-specific
 renderere, Education rute, AI generaciju novih blokova ni merge strategiju za
-Newsletter FULL REGENERATE. Newsletter/Blog authoring dokumentacija je sledeći
-task, a capability wiring pripada F3.
+Newsletter FULL REGENERATE. Newsletter/Blog authoring contract je zaključan u
+[PANTA-NEWSLETTER-BLOG-AUTHORING.md](PANTA-NEWSLETTER-BLOG-AUTHORING.md), a prvi
+vidljivi capability slice je EDU UI-1 / F3A.

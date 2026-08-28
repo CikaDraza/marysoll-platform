@@ -81,7 +81,7 @@ describe("T2B pure capability resolver", () => {
       verticals: ["education"] as const,
       capabilityConfiguration: {
         overrides: [
-          { capability: "education.catalog" as const, enabled: true },
+          { capability: "education.inquiries" as const, enabled: true },
           { capability: "loyalty.rewards" as const, enabled: true },
         ],
       },
@@ -90,7 +90,7 @@ describe("T2B pure capability resolver", () => {
     expect(
       resolveCapability({
         tenant,
-        capability: "education.catalog",
+        capability: "education.inquiries",
         planFeatures: CLAUDIA,
       }),
     ).toMatchObject({
@@ -171,12 +171,38 @@ describe("T2B pure capability resolver", () => {
 });
 
 describe("T2B registry i provisioning", () => {
-  it("drži future domene platform-unavailable", () => {
+  it("otključava samo education catalog kao provisioning-gated core workspace", () => {
+    expect(TENANT_CAPABILITY_REGISTRY["education.catalog"]).toMatchObject({
+      platformAvailable: true,
+      plan: { kind: "core" },
+      legacyBeautyDefault: false,
+    });
+    expect(
+      resolveCapability({
+        tenant: {
+          verticals: ["education"],
+          capabilityConfiguration: {
+            overrides: [
+              { capability: "education.catalog", enabled: true },
+            ],
+          },
+        },
+        capability: "education.catalog",
+        planFeatures: MARIA,
+      }),
+    ).toMatchObject({
+      enabled: true,
+      platformAvailable: true,
+      planEntitled: true,
+      tenantEnabled: true,
+    });
+  });
+
+  it("drži ostale future domene platform-unavailable", () => {
     for (const capability of [
       "consultations.catalog",
       "booking.consultations",
       "questionnaires.forms",
-      "education.catalog",
       "education.inquiries",
       "booking.education",
       "distribution.campaigns",

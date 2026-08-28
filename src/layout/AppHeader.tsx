@@ -8,11 +8,20 @@ import { NotificationBell } from "@/components/shared/NotificationBell";
 import { AuthStatusButton } from "@/components/auth/AuthStatusButton";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useTheme } from "@/context/ThemeContext";
+import { usePathname } from "next/navigation";
+import { useTenantCapabilities } from "@/hooks/useTenantCapabilities";
+import { resolveAdminWorkspaceNavigation } from "@/lib/platform/workspace-capabilities";
 
 const AppHeader: React.FC = () => {
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
   const tenant = useTenantAdmin();
   const { theme } = useTheme();
+  const pathname = usePathname();
+  const { data: capabilitySnapshot } = useTenantCapabilities();
+  const workspaces = resolveAdminWorkspaceNavigation(capabilitySnapshot);
+  const isEducationWorkspace =
+    pathname.startsWith("/education") ||
+    (!workspaces.salon && workspaces.education);
 
   const handleToggle = () => {
     if (typeof window !== "undefined" && window.innerWidth >= 1024) {
@@ -54,11 +63,11 @@ const AppHeader: React.FC = () => {
           )}
         </button>
 
-        {/* Salon name breadcrumb */}
+        {/* Active workspace breadcrumb */}
         <div className="hidden sm:flex items-center gap-2 text-sm">
           <span className="text-gray-400 dark:text-gray-600">/</span>
           <span className="font-semibold text-gray-800 dark:text-gray-200">
-            Admin panel
+            {isEducationWorkspace ? "Edu Centar" : "Salon"}
           </span>
         </div>
       </div>
@@ -66,7 +75,7 @@ const AppHeader: React.FC = () => {
       {/* Right: actions */}
       <div className="flex items-center gap-2">
         {/* Salon website */}
-        {salonUrl && (
+        {!isEducationWorkspace && salonUrl && (
           <Link
             href={salonUrl}
             target="_blank"

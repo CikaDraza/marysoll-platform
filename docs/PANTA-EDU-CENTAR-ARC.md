@@ -1,6 +1,6 @@
 # PANTA — Edu Centar: workspace arhitektura i Education domen
 
-> **Status:** ZAKLJUČANA ARHITEKTURA; FAZE 0, 1 I 2 IMPLEMENTIRANE NA AKTIVNOJ STAGING LINIJI.
+> **Status:** ZAKLJUČANA ARHITEKTURA; FAZE 0, 1 I 2 IMPLEMENTIRANE; F3A/EDU UI-1 CODE COMPLETE, BROWSER ACCEPTANCE PENDING.
 > Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-28 · `staging/production-engines`
 >
 > **Faza 0 je počela tek pošto je Theme-9 contract/rollout foundation zatvoren i
@@ -235,21 +235,51 @@ layout; merge ručnih blokova ostaje zaseban host UX dug.
 
 ---
 
-## FAZA 3 — Capability **wiring** (bez aktivacije)
+## FAZA 3 — Vertikalni capability wiring
 
-`CapabilityReadinessProvider` interfejs postoji (`src/lib/platform/blocks/resolve.ts:46`), ali **nijedna implementacija nije nigde priključena** — `ClientHomePage.tsx:310` ne prosleđuje `readiness`, a `resolve.ts` fail-close-uje na `"unconfigured"`. Svaki blok sa `capability !== null` bio bi **uvek preskočen**.
+Faza 3 se više ne implementira horizontalno za površine koje još ne postoje.
+Seče se uz stvarni UI i svaki naredni domen dobija gate tek kada dobije svoj
+route/API boundary.
 
-U ovoj fazi:
+### F3A — Admin workspace capability i navigacija (EDU UI-1)
 
-- ✅ plan entitlement mapiran (`plan: UNMAPPED` bezuslovno vraća `false`)
-- ✅ tenant provisioning
-- ✅ server gate-ovi
-- ✅ **`EducationReadinessProvider`** napisan i priključen u `ClientHomePage`
-- ✅ testovi, uključujući direktan API pristup bez capability-ja → 403
+- `TenantCapabilitySnapshot` additive projektuje server-resolved `verticals`;
+  legacy missing vrednost ostaje `beauty`;
+- `education.catalog` je platformski dostupan kao postojeći-plan `core` samo za
+  ovaj workspace/content foundation; tenant provisioning ostaje obavezni gate;
+- `education.inquiries` i `booking.education` ostaju `platformAvailable: false`
+  i `plan: UNMAPPED`;
+- `/education/*` ima server auth + tenant + `education.catalog` authority;
+- beauty vidi Salon, education-first Edu Centar, a hybrid jasan Salon ↔ Edu
+  Centar switch;
+- Education sidebar prikazuje samo Pregled i Sadržaj;
+- `/education/content` i `/education/content/new` su namerni UI shell-ovi bez
+  persistence-a ili throwaway forme.
 
-⚠️ **`platformAvailable` ostaje `false`.** Capability ne sme otključati poluzavršen proizvod.
+**Status:** code complete; staging browser acceptance je obavezan pre UX
+prihvatanja. Production activation ostaje zasebna release odluka.
 
-⚠️ `src/lib/platform/blocks/registry.test.ts` tvrdi tačan broj/spisak blokova i da **nijedan domenski blok nema `capability: null`** — menja se u istom commitu kao prvi `education.*` blok.
+`core` ovde nije nova pricing odluka: postojeći plan model nema Education
+entitlement. Najmanji eksplicitni contract je platform availability ∩ postojeći
+tenant provisioning. Pravi Education pricing/entitlement može kasnije zameniti
+plan source bez promene workspace identiteta.
+
+### F3B — Domain/API gate uz EducationContent (EDU UI-2)
+
+Tek kada postoje `EducationContent` model i CRUD rute:
+
+- svaki write/read API dobija `requireCapability("education.catalog")`, tenant
+  scope i permission gate;
+- `/education/content` prelazi sa shell-a na stvarni CRUD + Content Composer;
+- readiness se računa iz stvarnog sadržaja, ne iz postojanja workspace-a.
+
+Public `education.*` block wiring, `/edukacija` readiness i client/assignment
+gate-ovi dolaze tek sa odgovarajućim UI-2/UI-3/UI-4 površinama. Ne uvoditi
+capability wiring za nepostojeći UI.
+
+⚠️ `src/lib/platform/blocks/registry.test.ts` tvrdi tačan broj/spisak blokova i
+da **nijedan domenski blok nema `capability: null`** — menja se u istom commitu
+kao prvi stvarni `education.*` blok.
 
 ---
 

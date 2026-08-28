@@ -137,6 +137,7 @@ function capabilitySnapshot(
   enabled: boolean,
 ): TenantCapabilitySnapshot {
   return {
+    verticals: ["beauty"],
     capabilities: Object.fromEntries(
       TENANT_CAPABILITIES.map((capability) => [
         capability,

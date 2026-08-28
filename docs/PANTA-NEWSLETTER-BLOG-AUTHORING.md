@@ -139,8 +139,10 @@ persisted `campaign.campaignType`, pa novi zapis mora prvo da se sačuva; direct
 Publish pre Save može vratiti `400 Campaign is not landing-enabled`.
 
 `PATCH .../semantic` postoji kao opšti semantic update endpoint i hook, ali
-primarni modal save koristi uži `.../save` tok. Semantic endpoint može zameniti
-ceo nested `landingPage` payload i nije Content Composer write authority.
+primarni modal save koristi uži `.../save` tok. Endpoint sada eksplicitno odbija
+`landingPage.layout` (`LANDING_LAYOUT_WRITE_NOT_ALLOWED`) i dozvoljeni semantic,
+slug, audience/category i enabled metadata upisuje ciljanim `$set` poljima.
+Content body authority ostaje isključivo na validiranim save/publish rutama.
 
 ## 6. Manual authoring
 
@@ -278,10 +280,11 @@ Web publish ne menja email campaign `status` i ne šalje email.
 - **SHARED CONTRACT:** `[]` je validan dokument i u draft i publish režimu.
 - **CURRENT NEWSLETTER CLIENT:** Publish dugme je disabled bez layouta, a
   `handlePublish` dodatno zahteva najmanje jedan blok.
-- **CURRENT NEWSLETTER SERVER:** publish ruta nema host minimum i prihvata `[]`.
-- **GAP / TARGET:** server Newsletter host treba da sprovede isti minimum kao
-  client. Ako proizvod zahteva sadržaj, minimum treba precizirati kao najmanje
-  jedan **visible publish-valid** blok, bez menjanja shared validatora.
+- **CURRENT NEWSLETTER SERVER:** posle shared publish validation-a zahteva
+  najmanje jedan `VALID`, odnosno vidljiv i kompletan blok. `[]` i hidden-only
+  layout vraćaju strukturisani HTTP 422.
+- **LOCKED:** minimum je Newsletter host precondition; shared validator i dalje
+  prihvata prazan dokument za hostove koji imaju drugačiji lifecycle.
 
 ## 11. Email send and schedule
 
@@ -559,18 +562,15 @@ tekstom koji navodi tačan scope i recovery mogućnost.
 3. Editor nije dostupan kada email status više nije draft/scheduled, iako je web
    lifecycle konceptualno nezavisan.
 4. Promena na email-landing mora prvo Save pre prvog Publish-a.
-5. Client odbija empty publish, server ga prihvata.
-6. FULL REGENERATE nema destruktivnu labelu, confirmation ni durable recovery.
-7. `/blog/{slug}` i `/blogs/{slug}` koegzistiraju bez canonical redirecta.
-8. SEO nema kompletan manual edit tok; AI je praktično jedini generator.
-9. `regeneratedCount` broji Save operacije, ne samo regeneracije.
-10. Landing delete nema confirmation niti zaseban unpublish.
-11. Validation toast prikazuje samo prvu grešku.
-12. `semantic` endpoint ima širi nested replacement contract od save/publish
-    write authority-ja.
-13. `Pokreni sada` ne zaobilazi budući `scheduledFor` i labela može da zavara.
-14. Blog kartica koristi campaign `createdAt`, ne publication/update datum.
-15. `excludeRecentSubscribers` i `excludeInactive` se persistiraju, ali ih
+5. FULL REGENERATE nema destruktivnu labelu, confirmation ni durable recovery.
+6. `/blog/{slug}` i `/blogs/{slug}` koegzistiraju bez canonical redirecta.
+7. SEO nema kompletan manual edit tok; AI je praktično jedini generator.
+8. `regeneratedCount` broji Save operacije, ne samo regeneracije.
+9. Landing delete nema confirmation niti zaseban unpublish.
+10. Validation toast prikazuje samo prvu grešku.
+11. `Pokreni sada` ne zaobilazi budući `scheduledFor` i labela može da zavara.
+12. Blog kartica koristi campaign `createdAt`, ne publication/update datum.
+13. `excludeRecentSubscribers` i `excludeInactive` se persistiraju, ali ih
     recipient resolver ne primenjuje.
 
 ## 20. Target UX
@@ -610,24 +610,22 @@ terminologije; prvo treba odabrati najmanji backward-compatible host contract.
 - Media Library i orphan cleanup;
 - email/scheduler redesign;
 - theme redesign, homepage i client panel;
-- Education F3 wiring i sve Education content rute;
+- Education F3B domain/API wiring, Content persistence i public rute;
 - Booking i Consultation promene.
 
 ## 22. Implementation priorities
 
 1. **Published-edit safety:** implementirati odvojeni durable draft i
    last-published snapshot (Opcija B), uz migraciju i atomic publish.
-2. **Host publish parity:** server-side Newsletter minimum-one-visible-block
-   precondition i regression test.
-3. **Destructive action clarity:** FULL REGENERATE i landing delete confirmation;
+2. **Destructive action clarity:** FULL REGENERATE i landing delete confirmation;
    zaseban reversible Unpublish.
-4. **Purpose contract:** backward-compatible Blog-only / Newsletter-only / Both
+3. **Purpose contract:** backward-compatible Blog-only / Newsletter-only / Both
    model i tek zatim manual-first create UI.
-5. **Public URL canonicalization:** izabrati `/blog/{slug}` ili `/blogs/{slug}` i
+4. **Public URL canonicalization:** izabrati `/blog/{slug}` ili `/blogs/{slug}` i
    redirectovati alias; uskladiti theme linkove.
-6. **Authoring quality:** full manual SEO, validation summary/focus i editor
+5. **Authoring quality:** full manual SEO, validation summary/focus i editor
    pristup nezavisan od email delivery statusa.
-7. Newsletter/Blog contract je sada dovoljan boundary gate za sledeći Education
-   slice: F3 capability wiring može da nastavi nezavisno, ali ne sme
-   retroaktivno menjati ovaj host lifecycle. Stavke 1–6 ostaju zasebni
+6. Newsletter write authority i host minimum su zatvoreni; Education F3A može
+   da nastavi nezavisno, ali ne sme retroaktivno menjati ovaj host lifecycle.
+   Stavke 1–5 ostaju zasebni
    Newsletter/Blog implementation prioriteti.
