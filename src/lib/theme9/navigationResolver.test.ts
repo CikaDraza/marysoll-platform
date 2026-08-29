@@ -2,7 +2,8 @@
  * 2C — content-aware navigation resolver.
  *
  * Najvažniji testovi ovde su dva: da nijedna stavka ne izađe bez dostupnog
- * odredišta, i da se `/edukacija` ne pojavi dok ruta ne postoji u kodu.
+ * odredišta, i da su Blog i Edukacija dva NEZAVISNA linka — tenant sme dobiti
+ * jedan, oba ili nijedan, i uključivanje Edu Centra ne sme mu oduzeti blog.
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -10,6 +11,7 @@ import {
   NO_EDUCATION_SURFACE,
   THEME9_PAGE_KEYS,
   findNavItem,
+  resolveBlogHref,
   resolveEducationHref,
   resolveTheme9Nav,
   type Theme9EducationFacts,
@@ -46,18 +48,23 @@ describe("resolveTheme9Nav — stavka postoji samo ako odredište ima sadržaj",
     expect(nav.map((i) => i.key)).toEqual(["home", "za-klijente"]);
   });
 
-  it("obe strane + objave — pun nav, u redosledu teme", () => {
+  it("obe strane + oba kanala — pun nav, u redosledu teme", () => {
     const nav = resolveTheme9Nav(
       facts({
         pages: { "za-klijente": true, "za-profesionalce": true },
-        education: education({ hasPublishedArticles: true }),
+        education: education({
+          capabilityEnabled: true,
+          hasPublishedArticles: true,
+          hasPublishedEducation: true,
+        }),
       }),
     );
     expect(nav).toEqual([
       { key: "home", href: "/" },
       { key: "za-klijente", href: "/za-klijente" },
       { key: "za-profesionalce", href: "/za-profesionalce" },
-      { key: "education", href: "/blogs" },
+      { key: "blog", href: "/blogs" },
+      { key: "education", href: "/edukacija" },
     ]);
   });
 
@@ -66,100 +73,106 @@ describe("resolveTheme9Nav — stavka postoji samo ako odredište ima sadržaj",
       facts({
         base: "/marina",
         pages: { "za-klijente": true, "za-profesionalce": true },
-        education: education({ hasPublishedArticles: true }),
+        education: education({
+          capabilityEnabled: true,
+          hasPublishedArticles: true,
+          hasPublishedEducation: true,
+        }),
       }),
     );
     for (const item of nav) expect(item.href.startsWith("/marina/")).toBe(true);
   });
 });
 
-describe("resolveEducationHref — tri ishoda iz ugovora", () => {
-  it("ruta spremna + capability razrešen → /edukacija", () => {
-    expect(
-      resolveEducationHref(
-        education({ routeAvailable: true, capabilityEnabled: true }),
-        "",
-      ),
-    ).toBe("/edukacija");
+describe("Blog i Edukacija su nezavisni linkovi", () => {
+  const bothChannels = education({
+    capabilityEnabled: true,
+    hasPublishedArticles: true,
+    hasPublishedEducation: true,
   });
 
-  it("bez Education Center-a, ali sa objavama → /blogs", () => {
-    expect(
-      resolveEducationHref(education({ hasPublishedArticles: true }), ""),
-    ).toBe("/blogs");
+  it("samo Blog: tenant bez Edu Centra zadržava svoj blog", () => {
+    const nav = resolveTheme9Nav(
+      facts({ education: education({ hasPublishedArticles: true }) }),
+    );
+    expect(nav.map((i) => i.key)).toEqual(["home", "blog"]);
   });
 
-  it("ni jedno ni drugo → link se ne prikazuje", () => {
-    expect(resolveEducationHref(education(), "")).toBeNull();
-  });
-
-  it("capability BEZ rute ne sme da proizvede /edukacija — to je 404", () => {
-    expect(
-      resolveEducationHref(
-        education({ routeAvailable: false, capabilityEnabled: true }),
-        "",
-      ),
-    ).toBeNull();
-  });
-
-  it("ruta BEZ capability-ja ne sme da proizvede /edukacija", () => {
-    expect(
-      resolveEducationHref(
-        education({ routeAvailable: true, capabilityEnabled: false }),
-        "",
-      ),
-    ).toBeNull();
-  });
-
-  it("Education Center ima prednost nad postojećim blog sadržajem", () => {
-    expect(
-      resolveEducationHref(
-        education({
-          routeAvailable: true,
+  it("samo Edukacija: Edu tenant bez blog objava", () => {
+    const nav = resolveTheme9Nav(
+      facts({
+        education: education({
           capabilityEnabled: true,
-          hasPublishedArticles: true,
+          hasPublishedEducation: true,
         }),
-        "",
-      ),
-    ).toBe("/edukacija");
+      }),
+    );
+    expect(nav.map((i) => i.key)).toEqual(["home", "education"]);
   });
 
-  it("kad Education Center otpadne, blog sadržaj je i dalje legitiman izlaz", () => {
+  it("oba kanala: obe stavke, Blog pa Edukacija", () => {
+    const nav = resolveTheme9Nav(facts({ education: bothChannels }));
+    expect(nav).toEqual([
+      { key: "home", href: "/" },
+      { key: "blog", href: "/blogs" },
+      { key: "education", href: "/edukacija" },
+    ]);
+  });
+
+  it("nijedan kanal: nijedna stavka", () => {
+    expect(resolveTheme9Nav(facts()).map((i) => i.key)).toEqual(["home"]);
+  });
+
+  it("uključivanje Edu Centra NE oduzima Blog link", () => {
+    const beforeActivation = resolveTheme9Nav(
+      facts({ education: education({ hasPublishedArticles: true }) }),
+    );
+    const afterActivation = resolveTheme9Nav(facts({ education: bothChannels }));
+
+    expect(findNavItem(beforeActivation, "blog")?.href).toBe("/blogs");
+    expect(findNavItem(afterActivation, "blog")?.href).toBe("/blogs");
+  });
+
+  it("Edukacija više NIKADA ne pada na /blogs", () => {
+    // Prevaziđeni fallback: bez razrešenog Edu sadržaja stavke jednostavno nema.
+    for (const capabilityEnabled of [false, true]) {
+      expect(
+        resolveEducationHref(
+          education({ capabilityEnabled, hasPublishedArticles: true }),
+          "",
+        ),
+      ).toBeNull();
+    }
+  });
+
+  it("Blog ne zna ništa o Education capability-ju", () => {
     expect(
-      resolveEducationHref(
-        education({ capabilityEnabled: true, hasPublishedArticles: true }),
-        "/marina",
-      ),
+      resolveBlogHref(education({ hasPublishedArticles: true }), "/marina"),
     ).toBe("/marina/blogs");
+    expect(resolveBlogHref(bothChannels, "")).toBe("/blogs");
+    expect(resolveBlogHref(education({ capabilityEnabled: true }), "")).toBeNull();
   });
 });
 
 describe("granica prema Education Center-u", () => {
-  it("ruta /edukacija još ne postoji u kodu", () => {
-    // Ovaj test pada NAMERNO kada neko postavi zastavicu na `true`: tada mora
-    // da postoji i `src/app/tenant/edukacija/`, pa se test menja zajedno sa njom.
-    expect(EDUCATION_ROUTE_AVAILABLE).toBe(false);
+  it("ruta /edukacija postoji u kodu", () => {
+    expect(EDUCATION_ROUTE_AVAILABLE).toBe(true);
   });
 
-  it("fail-closed polazište ne prikazuje Edukaciju", () => {
+  it("fail-closed polazište ne prikazuje nijedan kanal", () => {
     expect(resolveEducationHref(NO_EDUCATION_SURFACE, "")).toBeNull();
+    expect(resolveBlogHref(NO_EDUCATION_SURFACE, "")).toBeNull();
   });
 
-  it("dok je zastavica `false`, nijedna kombinacija ne daje /edukacija", () => {
-    for (const capabilityEnabled of [false, true]) {
-      for (const hasPublishedArticles of [false, true]) {
-        const href = resolveEducationHref(
-          {
-            routeAvailable: EDUCATION_ROUTE_AVAILABLE,
-            capabilityEnabled,
-            hasPublishedArticles,
-          },
-          "",
-        );
-        expect(href, `${capabilityEnabled}/${hasPublishedArticles}`).not.toBe(
-          "/edukacija",
-        );
-      }
+  it("nijedan pojedinačan uslov nije dovoljan za /edukacija", () => {
+    const combos: Partial<Theme9EducationFacts>[] = [
+      { capabilityEnabled: true },
+      { hasPublishedEducation: true },
+      { routeAvailable: false, capabilityEnabled: true, hasPublishedEducation: true },
+    ];
+
+    for (const combo of combos) {
+      expect(resolveEducationHref(education(combo), "")).toBeNull();
     }
   });
 });

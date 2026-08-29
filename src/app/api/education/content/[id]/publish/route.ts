@@ -17,6 +17,7 @@ import {
   buildPublishedSnapshot,
   educationPublishHostFailure,
   hasPublishableBlock,
+  nextPublishedSlugHistory,
 } from "@/lib/education/content-document";
 import {
   invalidIdResponse,
@@ -45,7 +46,9 @@ export async function POST(
       _id: id,
       tenantId: authority.tenantId,
     })
-      .select("title slug kind visibility blocks seo")
+      .select(
+        "title slug kind visibility blocks seo publishedSnapshot.slug publishedSnapshot.visibility publishedSlugHistory",
+      )
       .lean();
 
     if (!working) return notFoundResponse();
@@ -66,23 +69,42 @@ export async function POST(
       new Date(),
     );
 
-    // Dva objavljena zapisa istog tenanta ne smeju izložiti isti javni URL.
-    // Radni slug se sme menjati odmah po snimanju, pa root indeks ovo ne
-    // pokriva — partial unique indeks nad snapshot slug-om je stvarna garancija,
-    // a ova provera samo daje razumljivu poruku umesto sirovog 11000.
+    // Dva objavljena zapisa istog tenanta ne smeju izložiti isti javni URL —
+    // ni kao tekuću adresu, ni kao staru adresu koja još preusmerava. Inače bi
+    // drugi tekst preuzeo tuđ link i njegov SEO signal.
     const liveCollision = await EducationContent.findOne({
       tenantId: authority.tenantId,
       _id: { $ne: id },
-      "publishedSnapshot.slug": snapshot.slug,
+      $or: [
+        { "publishedSnapshot.slug": snapshot.slug },
+        { publishedSlugHistory: snapshot.slug },
+      ],
     })
       .select("_id")
       .lean();
 
     if (liveCollision) return publicSlugTakenResponse();
 
+    const previous = (working as {
+      publishedSnapshot?: { slug: string; visibility: "public" | "private" } | null;
+      publishedSlugHistory?: string[];
+    }).publishedSnapshot;
+
+    const publishedSlugHistory = nextPublishedSlugHistory({
+      previous,
+      history: (working as { publishedSlugHistory?: string[] }).publishedSlugHistory,
+      nextSlug: snapshot.slug,
+    });
+
     const item = await EducationContent.findOneAndUpdate(
       { _id: id, tenantId: authority.tenantId },
-      { $set: { status: "published", publishedSnapshot: snapshot } },
+      {
+        $set: {
+          status: "published",
+          publishedSnapshot: snapshot,
+          publishedSlugHistory,
+        },
+      },
       { new: true },
     )
       .select("-publishedSnapshot.blocks")

@@ -223,6 +223,41 @@ export function hasUnpublishedChanges(record: {
   );
 }
 
+/** Koliko starih adresa čuvamo; dovoljno za realnu upotrebu, a rast je ograničen. */
+export const MAX_PUBLISHED_SLUG_HISTORY = 20;
+
+/**
+ * Istorija javnih adresa posle objave.
+ *
+ * U istoriju ulazi SAMO adresa koja je stvarno bila javno otkrivena — slug iz
+ * radne kopije koji nikada nije objavljen nije imao javni URL, pa za njega ne
+ * sme postojati preusmerenje. Nova kanonska adresa se iz istorije uklanja.
+ */
+export function nextPublishedSlugHistory(params: {
+  previous?: {
+    slug: string;
+    visibility: EducationContentVisibility;
+  } | null;
+  history?: readonly string[] | null;
+  nextSlug: string;
+}): string[] {
+  const history = [...(params.history ?? [])];
+  const previous = params.previous;
+
+  if (
+    previous &&
+    previous.visibility === "public" &&
+    previous.slug &&
+    previous.slug !== params.nextSlug
+  ) {
+    history.push(previous.slug);
+  }
+
+  return [...new Set(history)]
+    .filter((slug) => slug && slug !== params.nextSlug)
+    .slice(-MAX_PUBLISHED_SLUG_HISTORY);
+}
+
 /** Snapshot koji Publish upisuje — gradi se isključivo od sačuvane radne kopije. */
 export function buildPublishedSnapshot(
   working: {

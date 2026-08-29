@@ -53,12 +53,13 @@ const NAV_LABELS: Record<Theme9NavKey, string> = {
   home: "Početna",
   "za-klijente": "Za klijente",
   "za-profesionalce": "Za profesionalce",
+  blog: "Blog",
   education: "Edukacija",
 };
 
 /**
  * Aktivna stavka: tačno poklapanje za početnu, prefiks za podstranice — da
- * `/blogs/neki-tekst` i dalje označi „Edukacija".
+ * `/blogs/neki-tekst` označi „Blog", a `/edukacija/neki-tekst` „Edukaciju".
  */
 function isActive(pathname: string | null, href: string, base: string): boolean {
   if (!pathname) return false;

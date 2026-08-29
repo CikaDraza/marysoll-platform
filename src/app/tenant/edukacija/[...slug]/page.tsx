@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { TenantPageShell } from "@/components/themes/TenantPageShell";
 import { EducationArticleView } from "@/components/tenant/EducationArticleView";
-import { getPublicEducationContent } from "@/lib/education/publicContent";
+import {
+  getPublicEducationContent,
+  resolvePublicEducationRoute,
+} from "@/lib/education/publicContent";
 
 interface Props {
   params: Promise<{ slug: string[] }>;
@@ -34,18 +37,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function TenantEducationArticlePage({ params }: Props) {
-  const [article, headerStore] = await Promise.all([
-    loadArticle(params),
-    headers(),
-  ]);
+  const [{ slug }, headerStore] = await Promise.all([params, headers()]);
+  const tenantId = headerStore.get("x-tenant-id");
+  const basePath = headerStore.get("x-tenant-base-path") ?? "";
+
+  const route = await resolvePublicEducationRoute(tenantId, slug.at(-1) ?? "");
+
+  // Stara javna adresa preživljava promenu slug-a: podeljen link i indeksirana
+  // strana nastavljaju da rade umesto da postanu 404.
+  if (route.kind === "redirect") {
+    permanentRedirect(`${basePath}/edukacija/${route.slug}`);
+  }
 
   // Nepostojeće, neobjavljeno i neJavno se ponašaju isto: 404, bez signala
   // da zapis možda postoji.
-  if (!article) notFound();
+  if (route.kind !== "article") notFound();
 
   return (
     <TenantPageShell tenantSlug={headerStore.get("x-tenant-slug") ?? ""}>
-      <EducationArticleView article={article} />
+      <EducationArticleView article={route.article} />
     </TenantPageShell>
   );
 }

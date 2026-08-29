@@ -243,14 +243,42 @@ The current Theme-9 route usage under `/blogs/...` should be treated as transiti
 
 ---
 
-## Navigation contract
+## Navigation contract (updated 2026-08-30 — two independent channels)
 
-For tenants with resolved education capability:
+**Blog and Edukacija are two independent public surfaces.** The Education Center
+does **not** replace the Blog. A tenant may have Blog, Edukacija, or both, and
+each navigation link is resolved **independently** from its own
+capability/readiness state.
 
 ```text
-Header: Edukacija
-  -> /edukacija
+BLOG                                EDUCATION
+/blogs · /blogs/[slug]              /edukacija · /edukacija/[slug]
+→ NewsletterCampaign                → EducationContent
 ```
+
+```text
+Blog surface available
+→ Blog → /blogs
+
+Education Center available
++ education.catalog resolved
++ /edukacija public page ready
+→ Edukacija → /edukacija
+
+both available          → show both links: Blog · Edukacija
+neither available       → show neither
+```
+
+**Superseded:** the earlier fallback `Edukacija → /blogs` (used while
+`/edukacija` did not exist) is no longer product contract and must not be
+reintroduced. `/blogs` is never removed just because a tenant gains Education
+capability, and there is no `/blogs → /edukacija` redirect.
+
+Why both stay: existing beauty/salon tenants already use Blog for marketing,
+SEO, news and promotions; Edukacija is a separate expert domain. Some tenants
+will use one channel, some both. Whether two top-level links remain the right
+IA is a question for real usage across several tenants, not something to decide
+by removing the option now.
 
 For tenants without education capability, the public header must not expose Education Center routes unless a separate product decision explicitly allows a marketing/preview page.
 

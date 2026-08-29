@@ -43,6 +43,7 @@ Uz to je zaključana šira granica: **„Salon + Edukacija" nije treći tip sist
 |---|---|
 | PDF izvoz | **Browser print**, nula zavisnosti; dugme se zove **„Sačuvaj / štampaj PDF"**, ne „Preuzmi PDF" |
 | Izvor za `/edukacija` | **Samo novi `EducationContent`**; `/blogs` nastavlja nad `NewsletterCampaign`, netaknut |
+| Blog i Edukacija | **Dva nezavisna javna kanala**, ne zamena jedan za drugog: `/blogs` → `NewsletterCampaign`, `/edukacija` → `EducationContent`. Tenant sme imati jedan, drugi ili oba; svaki nav link se razrešava nezavisno po svojoj capability/readiness proveri |
 | Pristup sadržaju | **Tri stanja: `public` / `gated` / `private`** — vidi [Pristup sadržaju](#pristup-sadržaju--public--gated--private-zaključano-2026-08-29). Pretplata/kupovina/ručno odobrenje nisu četvrto stanje nego izvori prava pristupa |
 | Capability | **Pun gate**, ali wiring i aktivacija su **razdvojeni** (Faza 3 vs release gate u Fazi 5) |
 | Klijentske rute | `Moj Prostor` tab + pod-rute ispod `/panel`; `Moj Profil` ostaje samo identitet/podešavanja |
@@ -612,6 +613,31 @@ DELETE                          → 404
 301 postoji da sačuva podeljene i indeksirane linkove između dva javno
 otkrivena stanja, ne da otkrije da nešto postoji.
 
+Implementacija (UI-3A.2): `publishedSlugHistory` na zapisu, u koju ulazi samo
+adresa koja je **stvarno bila javno objavljena** — slug iz radne kopije koji
+nikad nije objavljen nema javni URL, pa za njega ne sme postojati preusmerenje.
+Razrešavanje ide tačnim redosledom:
+
+```text
+1. kanonska adresa objavljene verzije   → sadržaj
+2. ranija javna adresa istog zapisa     → trajno preusmerenje na kanonsku
+3. sve ostalo                           → 404
+```
+
+Zabrana se odnosi na **razrešavanje**, ne na čuvanje: zapis sme zadržati svoju
+raniju javnu adresu i dok je privatan, ali je resolver tada ne razrešava — i
+kanonska i stara adresa vraćaju 404. Zahvaljujući tome, povratak iz privatnog u
+javno oživljava ranije podeljene linkove umesto da ih trajno pokida.
+
+Stara adresa je zauzeta i za druge zapise: objava koja bi preuzela tuđ alias
+odbija se sa `EDUCATION_PUBLIC_SLUG_TAKEN`, da drugi tekst ne pokupi tuđ link i
+njegov SEO signal.
+
+Napomena o statusu: Next app router ne može da postavi 301 iz same strane, pa
+se koristi `permanentRedirect()` (**308**). Za pretraživače je ekvivalentno
+trajno preusmerenje; 301 ostaje moguć samo iz proxy sloja, koji za ovo ne bi
+smeo da radi upit u bazu.
+
 ### Javna lista `/edukacija` (odluka: lista je javna, ne personalizovana)
 
 ```text
@@ -837,7 +863,25 @@ pristupa, povraćaji, Paddle integracija.
 - `src/app/tenant/edukacija/page.tsx` i `[...slug]/page.tsx` (catch-all, kao `/blogs`)
 - `"/edukacija"` u `CLIENT_TENANT_PATHS` (`src/lib/proxy/pipeline/routing.ts:35`) — proxy proverava i `startsWith(p + "/")`, pa **jedan unos pokriva i `[slug]`**
 - `src/app/sitemap.ts` — dodati u `tenantRoutes`
-- Preusmeriti hardkodirane linkove: `theme-9/Header.tsx` (`{name:"Edukacija", href: base+"/blogs"}`), `Footer.tsx`, `LatestEducation.tsx`
+- Navigacija (**ispravljeno 2026-08-30**): raniji plan je bio da „Edukacija" samo
+  pređe sa `/blogs` na `/edukacija`. To je prevaziđeno odlukom o **dva nezavisna
+  kanala** — vidi red „Blog i Edukacija" u zaključanim odlukama:
+
+  ```text
+  Blog       → /blogs        kada blog površina ima objavljen sadržaj
+  Edukacija  → /edukacija    kada je education.catalog razrešen
+                             i /edukacija ima objavljen javan sadržaj
+  oba        → obe stavke;   nijedan → nijedna stavka
+  ```
+
+  Fallback `Edukacija → /blogs` se uklanja i ne sme se vraćati.
+
+  ⚠️ `LatestEducation.tsx` je **izuzetak i ostaje na `/blogs`**: taj blok se puni
+  iz `content.blog` loadera, dakle iz `NewsletterCampaign` postova. Preusmeriti
+  ga na `/edukacija/<slug>` značilo bi linkovati blog slugove na Education rutu —
+  404 na svaki klik, i mešanje dva storage-a koje ugovor izričito zabranjuje.
+  Ekvivalentan blok koji se puni iz `EducationContent`-a je poseban posao
+  (UI-3B), ne preusmeravanje ovog.
 - Tenant bez capability-ja → `notFound()`, po uzoru na `resolveThemePage()`
 
 ⚠️ **theme-9 nema svoju prezentaciju za listu/članak.** `/blogs` na theme-9 pada na generički beli `src/components/tenant/BlogsPageClient.tsx` koji nema veze sa Expert Editorial. `/edukacija` traži theme-9-native prikaz — **dizajnerski posao, ne samo ruta**.

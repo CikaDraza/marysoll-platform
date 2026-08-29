@@ -46,8 +46,10 @@ function request(body?: unknown) {
 
 function persisted(blocks: unknown, liveCollision: unknown = null) {
   vi.mocked(EducationContent.findOne).mockImplementation(
+    // Provera kolizije javne adrese gleda i tekuće slugove i istoriju, pa se
+    // prepoznaje po `$or`, ne po jednom polju.
     ((filter: Record<string, unknown>) =>
-      "publishedSnapshot.slug" in filter
+      "$or" in filter
         ? chain(liveCollision)
         : chain({
             _id: ID,
@@ -56,6 +58,8 @@ function persisted(blocks: unknown, liveCollision: unknown = null) {
             kind: "article",
             visibility: "public",
             blocks,
+            publishedSnapshot: null,
+            publishedSlugHistory: [],
           })) as never,
   );
 }

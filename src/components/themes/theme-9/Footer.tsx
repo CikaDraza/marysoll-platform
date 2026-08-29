@@ -15,12 +15,14 @@ import {
 import { AnchorLink } from "../shared/AnchorLink";
 
 /**
- * Kolona „Edukacija": redosled i natpisi su footerovi, ne header-ovi — ista
- * stavka se ovde zove „Teme", jer kolona već nosi naslov „Edukacija". Ključevi
- * su zajednički sa resolverom; „Početna" se u koloni ne ponavlja.
+ * Kolona „Sadržaj": redosled i natpisi su footerovi, ne header-ovi. Blog i
+ * Edukacija su dva nezavisna kanala, pa se i ovde pojavljuju kao dve stavke —
+ * onoliko njih koliko ih resolver stvarno razreši. Ključevi su zajednički sa
+ * resolverom; „Početna" se u koloni ne ponavlja.
  */
 const FOOTER_COLUMN: { key: Theme9NavKey; label: string }[] = [
-  { key: "education", label: "Teme" },
+  { key: "blog", label: "Blog" },
+  { key: "education", label: "Edukacija" },
   { key: "za-klijente", label: "Za klijente" },
   { key: "za-profesionalce", label: "Za profesionalce" },
 ];
@@ -56,7 +58,7 @@ export function Theme9Footer({
 
   const columns: { title: string; links: { label: string; href: string }[] }[] = [
     ...(educationLinks.length > 0
-      ? [{ title: "Edukacija", links: educationLinks }]
+      ? [{ title: "Sadržaj", links: educationLinks }]
       : []),
     {
       title: "O meni",

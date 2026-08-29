@@ -87,6 +87,49 @@ export async function listPublicEducationContent(
   return records.map(toSummary);
 }
 
+export type PublicEducationRoute =
+  | { kind: "article"; article: PublicEducationArticle }
+  /** Stara javna adresa — pozivalac šalje trajno preusmerenje na kanonsku. */
+  | { kind: "redirect"; slug: string }
+  | { kind: "not-found" };
+
+/**
+ * Razrešavanje javne adrese, tačnim redosledom:
+ *
+ *   1. kanonska adresa objavljene verzije  → sadržaj
+ *   2. ranija JAVNA adresa istog zapisa    → trajno preusmerenje na kanonsku
+ *   3. sve ostalo                          → 404
+ *
+ * Istorija adresa nikada nije orakl: alias se razrešava samo dok je tekuća
+ * objavljena verzija javna. Čim zapis pređe u privatan ili bude obrisan, i
+ * kanonska i stara adresa vraćaju 404, bez ijednog signala da je nešto
+ * postojalo.
+ */
+export async function resolvePublicEducationRoute(
+  tenantId: string | null | undefined,
+  slug: string,
+): Promise<PublicEducationRoute> {
+  const article = await getPublicEducationContent(tenantId, slug);
+  if (article) return { kind: "article", article };
+
+  const normalized = normalizeEducationSlug(slug);
+  if (!normalized) return { kind: "not-found" };
+  if (!(await hasPublicEducationSurface(tenantId))) return { kind: "not-found" };
+
+  await connectToDB();
+  const alias = (await EducationContent.findOne({
+    tenantId,
+    publishedSlugHistory: normalized,
+    ...PUBLIC_SNAPSHOT_FILTER,
+  })
+    .select("publishedSnapshot.slug")
+    .lean()) as unknown as SnapshotRecord | null;
+
+  return alias?.publishedSnapshot?.slug
+    ? { kind: "redirect", slug: alias.publishedSnapshot.slug }
+    : { kind: "not-found" };
+}
+
 export async function getPublicEducationContent(
   tenantId: string | null | undefined,
   slug: string,

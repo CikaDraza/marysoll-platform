@@ -17,20 +17,23 @@
  * 2C ne menja rutu (404 je tamo tačan odgovor kad sadržaja nema) nego navodi
  * navigaciju da čita ISTO pravilo: `isThemePageAvailable()` iz `theme-pages.ts`.
  *
- * TRI ISHODA ZA „EDUKACIJU"
- * Ugovor je zaključan u docs/TODO.md §2C i
+ * BLOG I EDUKACIJA SU DVA NEZAVISNA KANALA (odluka 2026-08-30)
+ * Ugovor je u docs/PANTA-EDU-CENTAR-ARC.md („Blog i Edukacija") i
  * docs/MARYSOLL_EDUCATION_CENTER_AND_EDU_STUDIO.md („Navigation contract"):
  *
- *     Education Center dostupan + education.catalog razrešen + ruta spremna
- *             → /edukacija
- *     inače, tenant legitimno koristi postojeći blog sadržaj
- *             → /blogs
- *     inače
- *             → link se NE prikazuje
+ *     /blogs      → NewsletterCampaign     marketing, novosti, SEO
+ *     /edukacija  → EducationContent       stručna edukacija
  *
- * Granica koju dokument izričito traži: `/blogs` se NE sme globalno zameniti sa
- * `/edukacija` dok ta ruta i capability stvarno ne postoje. Zato je
- * `EDUCATION_ROUTE_AVAILABLE` činjenica o kodu, a ne želja — vidi dole.
+ *     blog ima objavljen sadržaj
+ *             → Blog → /blogs
+ *     education.catalog razrešen + ruta postoji + ima objavljen javan sadržaj
+ *             → Edukacija → /edukacija
+ *     oba      → obe stavke
+ *     nijedan  → nijedna stavka
+ *
+ * PREVAZIĐENO: raniji fallback „Edukacija → /blogs" (dok `/edukacija` nije
+ * postojala) više nije ugovor. Education Center NE zamenjuje Blog; tenant sme
+ * imati jedan, drugi ili oba, i svaki link se razrešava nezavisno.
  */
 
 /** Stavke koje theme-9 navigacija uopšte poznaje. */
@@ -38,6 +41,7 @@ export type Theme9NavKey =
   | "home"
   | "za-klijente"
   | "za-profesionalce"
+  | "blog"
   | "education";
 
 /** Ključevi tematskih podstranica — isti kao `ThemePageKey` u `@/types`. */
@@ -60,23 +64,21 @@ export interface Theme9NavItem {
 /**
  * Postoji li ruta `/edukacija` U KODU.
  *
- * Danas ne postoji — `src/app/tenant/` nema `edukacija/`. Dok je ovo `false`,
- * `/edukacija` se ne sme pojaviti ni u jednom linku, bez obzira na capability:
- * link ka nepostojećoj ruti je tačno onaj 404 koji 2C uklanja.
- *
- * Kada Education Center stigne (vidi
- * docs/MARYSOLL_EDUCATION_CENTER_AND_EDU_STUDIO.md, Faza 1), ovde se menja
- * `true` — i resolver, i test koji ga čuva, već znaju šta tada treba da se desi.
+ * Od UI-3A.1 postoji: `src/app/tenant/edukacija/{page,[...slug]}`. Ostaje kao
+ * eksplicitna činjenica o kodu, ne kao želja — link ka nepostojećoj ruti je
+ * tačno onaj 404 koji 2C uklanja.
  */
-export const EDUCATION_ROUTE_AVAILABLE = false;
+export const EDUCATION_ROUTE_AVAILABLE = true;
 
 export interface Theme9EducationFacts {
   /** Ruta `/edukacija` postoji u kodu (`EDUCATION_ROUTE_AVAILABLE`). */
   routeAvailable: boolean;
   /** `education.catalog` razrešen kroz triple-gate za OVOG tenanta. */
   capabilityEnabled: boolean;
-  /** Tenant ima bar jednu objavljenu objavu na postojećem blog putu. */
+  /** Blog kanal: bar jedna objavljena `NewsletterCampaign` objava. */
   hasPublishedArticles: boolean;
+  /** Education kanal: bar jedan objavljen JAVAN `EducationContent`. */
+  hasPublishedEducation: boolean;
 }
 
 /**
@@ -87,6 +89,7 @@ export const NO_EDUCATION_SURFACE: Theme9EducationFacts = {
   routeAvailable: EDUCATION_ROUTE_AVAILABLE,
   capabilityEnabled: false,
   hasPublishedArticles: false,
+  hasPublishedEducation: false,
 };
 
 export interface Theme9NavFacts {
@@ -98,21 +101,35 @@ export interface Theme9NavFacts {
 }
 
 /**
+ * Odredište stavke „Blog", ili `null` kad ga nema.
+ *
+ * Blog ne zna ništa o Education capability-ju — to je poenta razdvajanja: salon
+ * koji uključi Edu Centar ne sme izgubiti svoj blog.
+ */
+export function resolveBlogHref(
+  education: Theme9EducationFacts,
+  base: string,
+): string | null {
+  return education.hasPublishedArticles ? `${base}/blogs` : null;
+}
+
+/**
  * Odredište stavke „Edukacija", ili `null` kad ga nema.
  *
- * Redosled je ugovor: Education Center ima prednost, ali TEK kada su ispunjena
- * oba uslova — ruta u kodu i capability tenanta. Nijedan sam nije dovoljan:
- * capability bez rute vodi u 404, ruta bez capability-ja vodi na tuđ proizvod.
+ * Sva tri uslova su obavezna i nezavisna od bloga: ruta u kodu, capability
+ * tenanta i bar jedan objavljen javan sadržaj. Bez trećeg uslova stavka bi
+ * vodila na praznu listu — isti onaj 404-po-osećaju koji 2C uklanja.
+ * Fallback na `/blogs` ovde više NE postoji.
  */
 export function resolveEducationHref(
   education: Theme9EducationFacts,
   base: string,
 ): string | null {
-  if (education.routeAvailable && education.capabilityEnabled) {
-    return `${base}/edukacija`;
-  }
-  if (education.hasPublishedArticles) return `${base}/blogs`;
-  return null;
+  return education.routeAvailable &&
+    education.capabilityEnabled &&
+    education.hasPublishedEducation
+    ? `${base}/edukacija`
+    : null;
 }
 
 /**
@@ -127,6 +144,11 @@ export function resolveTheme9Nav(facts: Theme9NavFacts): Theme9NavItem[] {
   for (const key of THEME9_PAGE_KEYS) {
     if (facts.pages[key]) items.push({ key, href: `${facts.base}/${key}` });
   }
+
+  // Redosled u meniju: Blog pa Edukacija. Svaki se razrešava nezavisno, pa
+  // tenant sme dobiti jedan, oba ili nijedan.
+  const blog = resolveBlogHref(facts.education, facts.base);
+  if (blog) items.push({ key: "blog", href: blog });
 
   const education = resolveEducationHref(facts.education, facts.base);
   if (education) items.push({ key: "education", href: education });

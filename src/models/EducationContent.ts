@@ -44,6 +44,8 @@ export interface IEducationContentDoc extends Document {
     ogImage?: string;
   };
   publishedSnapshot?: IEducationPublishedSnapshot | null;
+  /** Ranije objavljene JAVNE adrese ovog zapisa — izvor 301 preusmerenja. */
+  publishedSlugHistory?: string[];
   /** Kada je radna kopija poslednji put sačuvana (ne i objavljena). */
   workingSavedAt?: Date | null;
   createdAt: Date;
@@ -127,6 +129,9 @@ const EducationContentSchema = new Schema<IEducationContentDoc>(
       ),
       default: null,
     },
+    // Samo adrese koje su STVARNO bile javno otkrivene. Slug koji je živeo u
+    // radnoj kopiji a nikad objavljen ovde ne ulazi — nije ni imao javni URL.
+    publishedSlugHistory: { type: [String], default: [] },
     workingSavedAt: { type: Date, default: null },
   },
   { timestamps: true },
@@ -143,6 +148,10 @@ EducationContentSchema.index({
   "publishedSnapshot.visibility": 1,
   "publishedSnapshot.publishedAt": -1,
 });
+// Razrešavanje stare javne adrese (301). Nije unique: jedinstvenost alias-a
+// proverava objava, jer bi unique nad nizom srušio i dva zapisa sa praznom
+// istorijom.
+EducationContentSchema.index({ tenantId: 1, publishedSlugHistory: 1 });
 // Dva objavljena zapisa istog tenanta ne smeju izložiti isti javni URL. Root
 // slug se sme menjati odmah po snimanju, pa root indeks ovo ne pokriva.
 EducationContentSchema.index(

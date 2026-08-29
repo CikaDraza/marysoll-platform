@@ -25,6 +25,7 @@ import { POST as publishContent } from "./[id]/publish/route";
 import {
   getPublicEducationContent,
   listPublicEducationContent,
+  resolvePublicEducationRoute,
 } from "@/lib/education/publicContent";
 
 const TENANT = new Types.ObjectId().toString();
@@ -61,6 +62,7 @@ type Item = {
     blocks?: unknown[];
     publishedAt: string;
   } | null;
+  publishedSlugHistory?: string[];
 };
 
 /** V1 radna kopija: naslov, slug, javna, sa svih 12 blokova. */
@@ -534,5 +536,181 @@ describe("J — javno čitanje (UI-3A.1)", () => {
 
     expect(await listPublicEducationContent(TENANT)).toEqual([]);
     expect(await getPublicEducationContent(TENANT, "legacy")).toBeNull();
+  });
+});
+
+describe("K — istorija javnih adresa (UI-3A.2)", () => {
+  /** Objavi V1, pa preimenuj i ponovo objavi. Vraća oba slug-a. */
+  async function renameAndRepublish(id: string, nextSlug: string) {
+    await saveContent(request({ slug: nextSlug }), params(id));
+    const response = await publishContent(request(), params(id));
+    expect(response.status).toBe(200);
+  }
+
+  it("draft promena slug-a ne pravi preusmerenje niti ruši živu adresu", async () => {
+    const id = await createPublishedV1();
+    await saveContent(request({ slug: "proporcije-lica" }), params(id));
+
+    // Sačuvano, ali neobjavljeno: nova adresa ne postoji ni kao sadržaj ni kao
+    // alias, a stara i dalje služi sadržaj.
+    expect(
+      await resolvePublicEducationRoute(TENANT, "proporcije-lica"),
+    ).toEqual({ kind: "not-found" });
+    expect(
+      (await resolvePublicEducationRoute(TENANT, "estetika-lica")).kind,
+    ).toBe("article");
+    expect((await readRaw(id)).publishedSlugHistory ?? []).toEqual([]);
+  });
+
+  it("posle objave novog slug-a stari vraća preusmerenje na kanonski", async () => {
+    const id = await createPublishedV1();
+    await renameAndRepublish(id, "proporcije-lica");
+
+    const canonical = await resolvePublicEducationRoute(TENANT, "proporcije-lica");
+    expect(canonical.kind).toBe("article");
+
+    expect(await resolvePublicEducationRoute(TENANT, "estetika-lica")).toEqual({
+      kind: "redirect",
+      slug: "proporcije-lica",
+    });
+    expect((await readRaw(id)).publishedSlugHistory).toEqual(["estetika-lica"]);
+  });
+
+  it("lanac preimenovanja čuva sve ranije javne adrese", async () => {
+    const id = await createPublishedV1();
+    await renameAndRepublish(id, "proporcije-lica");
+    await renameAndRepublish(id, "analiza-lica");
+
+    for (const old of ["estetika-lica", "proporcije-lica"]) {
+      expect(await resolvePublicEducationRoute(TENANT, old)).toEqual({
+        kind: "redirect",
+        slug: "analiza-lica",
+      });
+    }
+  });
+
+  it("povratak na staru adresu je uklanja iz istorije", async () => {
+    const id = await createPublishedV1();
+    await renameAndRepublish(id, "proporcije-lica");
+    await renameAndRepublish(id, "estetika-lica");
+
+    const record = await readRaw(id);
+    expect(record.publishedSnapshot?.slug).toBe("estetika-lica");
+    expect(record.publishedSlugHistory).toEqual(["proporcije-lica"]);
+    expect(
+      (await resolvePublicEducationRoute(TENANT, "estetika-lica")).kind,
+    ).toBe("article");
+  });
+
+  it("prelazak u privatno gasi i staru adresu — bez preusmerenja i bez signala", async () => {
+    const id = await createPublishedV1();
+    await renameAndRepublish(id, "proporcije-lica");
+
+    await saveContent(request({ visibility: "private" }), params(id));
+    await publishContent(request(), params(id));
+
+    // Ni kanonska ni istorijska adresa ne smeju priznati da zapis postoji.
+    expect(await resolvePublicEducationRoute(TENANT, "proporcije-lica")).toEqual({
+      kind: "not-found",
+    });
+    expect(await resolvePublicEducationRoute(TENANT, "estetika-lica")).toEqual({
+      kind: "not-found",
+    });
+  });
+
+  it("privatan sadržaj se ne može otkriti kroz istoriju adresa", async () => {
+    const id = await createPublishedV1();
+    await saveContent(
+      request({ visibility: "private", slug: "tajni-plan" }),
+      params(id),
+    );
+    await publishContent(request(), params(id));
+
+    // Ugovor zabranjuje OTKRIVANJE kroz istoriju, ne čuvanje: zapis sme držati
+    // svoju raniju javnu adresu, ali je resolver ne sme razrešiti dok je
+    // tekuća objavljena verzija privatna.
+    expect(await resolvePublicEducationRoute(TENANT, "estetika-lica")).toEqual({
+      kind: "not-found",
+    });
+    expect(await resolvePublicEducationRoute(TENANT, "tajni-plan")).toEqual({
+      kind: "not-found",
+    });
+    expect(await getPublicEducationContent(TENANT, "estetika-lica")).toBeNull();
+    expect(await listPublicEducationContent(TENANT)).toEqual([]);
+  });
+
+  it("povratak iz privatnog u javno oživljava i staru adresu", async () => {
+    const id = await createPublishedV1();
+    await saveContent(
+      request({ visibility: "private", slug: "tajni-plan" }),
+      params(id),
+    );
+    await publishContent(request(), params(id));
+    expect(await resolvePublicEducationRoute(TENANT, "estetika-lica")).toEqual({
+      kind: "not-found",
+    });
+
+    await saveContent(request({ visibility: "public" }), params(id));
+    await publishContent(request(), params(id));
+
+    // Zato se istorija i čuva kroz privatan period: ranije podeljeni linkovi
+    // nastavljaju da rade kad se sadržaj vrati u javno.
+    expect(await resolvePublicEducationRoute(TENANT, "estetika-lica")).toEqual({
+      kind: "redirect",
+      slug: "tajni-plan",
+    });
+  });
+
+  it("brisanje ne ostavlja preusmerenje koje otkriva obrisan sadržaj", async () => {
+    const id = await createPublishedV1();
+    await renameAndRepublish(id, "proporcije-lica");
+    await EducationContent.deleteOne({ _id: id });
+
+    expect(await resolvePublicEducationRoute(TENANT, "estetika-lica")).toEqual({
+      kind: "not-found",
+    });
+    expect(await resolvePublicEducationRoute(TENANT, "proporcije-lica")).toEqual({
+      kind: "not-found",
+    });
+  });
+
+  it("alias ne prelazi granicu tenanta", async () => {
+    const id = await createPublishedV1();
+    await renameAndRepublish(id, "proporcije-lica");
+
+    expect(
+      await resolvePublicEducationRoute(OTHER_TENANT, "estetika-lica"),
+    ).toEqual({ kind: "not-found" });
+    expect(
+      await resolvePublicEducationRoute(OTHER_TENANT, "proporcije-lica"),
+    ).toEqual({ kind: "not-found" });
+  });
+
+  it("drugi zapis ne može preuzeti tuđu staru javnu adresu", async () => {
+    const first = await createPublishedV1();
+    await renameAndRepublish(first, "proporcije-lica");
+
+    const second = await json<{ item: Item }>(
+      await createContent(
+        request({
+          title: "Drugi tekst",
+          slug: "estetika-lica",
+          kind: "article",
+          visibility: "public",
+          blocks: ALL_TWELVE_BLOCKS,
+        }),
+      ),
+    );
+    const conflict = await publishContent(
+      request(),
+      params(String(second.item._id)),
+    );
+
+    expect(conflict.status).toBe(409);
+    // Stara adresa i dalje vodi na prvi zapis, ne na uljeza.
+    expect(await resolvePublicEducationRoute(TENANT, "estetika-lica")).toEqual({
+      kind: "redirect",
+      slug: "proporcije-lica",
+    });
   });
 });
