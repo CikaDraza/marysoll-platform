@@ -9,7 +9,7 @@ import {
   type EducationContentKind,
   type EducationContentStatus,
   type EducationContentVisibility,
-} from "@/models/EducationContent";
+} from "@/types/education-content";
 
 export const EDUCATION_KIND_LABELS: Record<EducationContentKind, string> = {
   advice: "Savet",

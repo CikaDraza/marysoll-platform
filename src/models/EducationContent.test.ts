@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { Types } from "mongoose";
 import {
-  EducationContent,
   EDUCATION_CONTENT_KINDS,
   EDUCATION_CONTENT_STATUSES,
   EDUCATION_CONTENT_VISIBILITIES,
-} from "./EducationContent";
+} from "@/types/education-content";
+import { EducationContent } from "./EducationContent";
 
 function draft(overrides: Record<string, unknown> = {}) {
   return new EducationContent({

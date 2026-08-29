@@ -1,21 +1,19 @@
+// Mongoose model NIKADA ne sme u klijentski bundle: `mongoose.models` tamo ne
+// postoji, pa uvoz iz klijentske komponente ruši stranicu. Domenske vrednosti
+// zato žive u `@/types/education-content`, a ovaj marker pretvara budući
+// klijentski uvoz u jasnu build grešku umesto u runtime pad.
+import "server-only";
+
 import { model, models, Schema, Types, type Document } from "mongoose";
 import type { ContentBlock } from "@/lib/content/schemas/landing-blocks";
-
-export const EDUCATION_CONTENT_KINDS = [
-  "advice",
-  "article",
-  "guide",
-  "video",
-  "material",
-] as const;
-
-export const EDUCATION_CONTENT_VISIBILITIES = ["public", "private"] as const;
-export const EDUCATION_CONTENT_STATUSES = ["draft", "published"] as const;
-
-export type EducationContentKind = (typeof EDUCATION_CONTENT_KINDS)[number];
-export type EducationContentVisibility =
-  (typeof EDUCATION_CONTENT_VISIBILITIES)[number];
-export type EducationContentStatus = (typeof EDUCATION_CONTENT_STATUSES)[number];
+import {
+  EDUCATION_CONTENT_KINDS,
+  EDUCATION_CONTENT_VISIBILITIES,
+  EDUCATION_CONTENT_STATUSES,
+  type EducationContentKind,
+  type EducationContentStatus,
+  type EducationContentVisibility,
+} from "@/types/education-content";
 
 /** Poslednja eksplicitno objavljena verzija — javni izvor istine. */
 export interface IEducationPublishedSnapshot {

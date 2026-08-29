@@ -18,7 +18,7 @@ import {
 import {
   EDUCATION_CONTENT_KINDS,
   EDUCATION_CONTENT_VISIBILITIES,
-} from "@/models/EducationContent";
+} from "@/types/education-content";
 import { useEducationContentMutations } from "@/hooks/education/useEducationContent";
 import {
   createPayload,
