@@ -96,13 +96,21 @@ This is transition/navigation compatibility. It explicitly does **not** mean:
 
 ## Rule
 
+> **Content access:** Education content has three access modes — `public`,
+> `gated` (publicly discoverable, body locked) and `private` (not discoverable,
+> unauthorized access returns 404). That contract is canonical in
+> [PANTA-EDU-CENTAR-ARC.md § Pristup sadržaju](PANTA-EDU-CENTAR-ARC.md#pristup-sadržaju--public--gated--private-zaključano-2026-08-29)
+> and is a **different** gate from the tenant capability gate that decides
+> whether the Education Center exists at all. Persistence today still has two
+> states; the third is the UI-3 target.
+
 The two domains stay apart because their purposes differ:
 
 ```text
 BLOG / NEWSLETTER              EDUCATION CONTENT
 marketing                      expert article · advice · guide
 campaigns                      video · downloadable material
-SEO posts                      public or private
+SEO posts                      public / gated / private
 email distribution             assigned to a client
 promotions                     surfaces in Moj Prostor
 salon content                  links to Guide / Program
@@ -245,6 +253,10 @@ Header: Edukacija
 ```
 
 For tenants without education capability, the public header must not expose Education Center routes unless a separate product decision explicitly allows a marketing/preview page.
+
+This is capability-level visibility. Whether an individual article inside an
+available Education Center is readable is decided separately by its access mode
+and, for `gated` content, by the reader's entitlement.
 
 Route existence and nav visibility should eventually use the same capability/page-readiness resolver.
 

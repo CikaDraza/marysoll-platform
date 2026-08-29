@@ -26,7 +26,7 @@ Tri sloja se **ne smeju** spojiti u jedan sistem, i **nijedan ne sme postati vla
 ```
 CONTENT-CENTRIC          CLIENT-CENTRIC              AUTHORING
 EducationContent         TenantUser                  Content Composer
-→ public / assigned      → Client 360 / Moj Prostor  → Newsletter
+→ public/gated/private   → Client 360 / Moj Prostor  → Newsletter
 → /edukacija             → Guide / Program /         → Education
                            Edukacija / Termini       → Guide blokovi
 ```
@@ -43,6 +43,7 @@ Uz to je zaključana šira granica: **„Salon + Edukacija" nije treći tip sist
 |---|---|
 | PDF izvoz | **Browser print**, nula zavisnosti; dugme se zove **„Sačuvaj / štampaj PDF"**, ne „Preuzmi PDF" |
 | Izvor za `/edukacija` | **Samo novi `EducationContent`**; `/blogs` nastavlja nad `NewsletterCampaign`, netaknut |
+| Pristup sadržaju | **Tri stanja: `public` / `gated` / `private`** — vidi [Pristup sadržaju](#pristup-sadržaju--public--gated--private-zaključano-2026-08-29). Pretplata/kupovina/ručno odobrenje nisu četvrto stanje nego izvori prava pristupa |
 | Capability | **Pun gate**, ali wiring i aktivacija su **razdvojeni** (Faza 3 vs release gate u Fazi 5) |
 | Klijentske rute | `Moj Prostor` tab + pod-rute ispod `/panel`; `Moj Profil` ostaje samo identitet/podešavanja |
 | Admin rute | `/education/*` kao zaseban workspace; presedan `src/app/marketing/*` |
@@ -316,7 +317,8 @@ EducationContent {
   tenantId          (required, prvi; tenant-first indeksi)
   title, slug
   kind:       advice | article | guide | video | material
-  visibility: "public" | "private"
+  visibility: "public" | "private"   ← TRENUTNA persistencija;
+                                        cilj je accessMode (public|gated|private)
   status:     draft | published
   blocks:     ContentBlock[]
   seo?        (samo za public)
@@ -380,9 +382,12 @@ EducationContent {
   **isključivo** snapshot. Zapis bez snapshot-a nije javan ni kada mu je
   `status: "published"` — fail-closed, da zatečen zapis pre backfill-a ne
   procuri. UI-3 ne sme koristiti `root.status` + `root.visibility` +
-  `root.blocks`.
-- ✅ Vidljivost prati snapshot: prelazak javno↔privatno stupa na snagu tek
-  objavom, u oba smera.
+  `root.blocks`. Uslov `visibility === "public"` je **prelazan**: zamenjuje ga
+  `accessMode ∈ {public, gated}` uz zaštićeno telo za `gated`.
+- ✅ Režim pristupa prati snapshot: prelazak stupa na snagu tek objavom, u oba
+  smera. Danas su to dva stanja (`public`/`private`); ciljna tri stanja i
+  njihova pravila su u
+  [Pristup sadržaju — PUBLIC / GATED / PRIVATE](#pristup-sadržaju--public--gated--private-zaključano-2026-08-29).
 - ✅ Backfill: `npm run backfill:education-snapshot -- --dry-run|--apply`
   (tenant-scoped opcija, idempotentan, draft se nikada ne objavljuje). Provereno
   nad `staging-marysoll_db`: kolekcija `educationcontents` još ne postoji, dakle
@@ -433,6 +438,344 @@ javnu edukaciju.
 
 ---
 
+## Pristup sadržaju — PUBLIC / GATED / PRIVATE (zaključano 2026-08-29)
+
+> **Ovo je kanonski ugovor pristupa Education sadržaju.** Svaki drugi dokument
+> koji govori o javnom/privatnom Education sadržaju podređen je ovoj sekciji.
+>
+> **Status:** semantika je zaključana, **kod nije menjan**. Persistencija i dalje
+> ima dva stanja (`visibility: "public" | "private"`); treće stanje je cilj za
+> UI-3 i njegova migracija je namerno odložena za implementacioni task.
+
+### Zašto tri stanja, a ne dva
+
+Dva stanja mešaju dva različita pitanja u jedno polje: *da li svet sme da zna da
+ovo postoji* i *da li svet sme da pročita telo*. Čim Marina poželi da naplati
+ili uslovi pristup vrednom članku, ta dva pitanja se razilaze — sadržaj treba da
+bude **otkriven, a zaključan**. To dvostepeno stanje u dvočlanom modelu ne
+postoji.
+
+```text
+PUBLIC          GATED                         PRIVATE
+besplatno       javno otkriveno,              neotkriveno,
+i javno         telo zaključano               samo autorizovan korisnik
+```
+
+**OTKRIVEN ALI ZAKLJUČAN ≠ PRIVATAN.** To je cela poenta razlike.
+
+### PUBLIC
+
+- postojanje je javno; metapodaci su javni; **telo je javno**
+- pojavljuje se u `/edukacija` listi
+- indeksira se po uobičajenoj javnoj SEO politici
+- javna detaljna ruta vraća pun objavljen snapshot
+
+### GATED
+
+- postojanje je **namerno** javno i pretraživo
+- javni pregled je dozvoljen: naslov, kratak opis, opciono cover
+- **telo (blokovi) NIJE javno čitljivo**
+- javna ruta prikazuje pregled + CTA za pristup
+- pojavljuje se u listi ako tako odluči product dizajn
+- neautorizovan čitalac **nikada** ne dobija zaštićene blokove — ni u HTML-u, ni
+  u RSC payload-u, ni u JSON-u
+- SEO: sme biti indeksiran, ali se indeksira **samo javni pregled**
+
+### PRIVATE
+
+- postojanje **nije** javno
+- nema javne liste, teaser-a, naslova ni cover-a
+- neautorizovan direktan URL vraća **404**, ne „nemate pristup"
+- vidljiv je kasnije samo kroz eksplicitnu dodelu / entitlement
+
+### Superseded: „gate samo ako je adresa nekad bila javna"
+
+U razgovoru pre ovog ugovora razmatrano je međurešenje: kada javni sadržaj
+pređe u privatan, njegov URL prikazuje gate umesto 404 — ali samo ako je ta
+adresa nekada bila javna, da gate ne postane orakl za pogađanje privatnih
+adresa.
+
+**To pravilo je prevaziđeno i ne sme se implementirati.** Nikada nije ušlo u
+kod ni u dokumentaciju; ovde se beleži da ne bi bilo iskopano kasnije kao
+„ranije dogovoreno".
+
+Zamenjuje ga jasnija odluka, jer je ionako rešavala pogrešan problem:
+
+```text
+želim da zaključam sadržaj, ali da se i dalje zna da postoji  → GATED
+želim da sadržaj više ne bude javno otkriven                  → PRIVATE (404)
+```
+
+Dakle: **gate pripada GATED stanju, PRIVATE nikada nema javni gate.** Vlasnica
+bira ishod eksplicitno, umesto da ga platforma pogađa iz istorije adrese.
+
+### Trenutno stanje vs cilj
+
+| | Trenutno u kodu | Cilj za UI-3 |
+|---|---|---|
+| Polje | `visibility: "public" \| "private"` | `accessMode: "public" \| "gated" \| "private"` |
+| Javni upit | snapshot postoji + `visibility === "public"` | snapshot postoji + `accessMode ∈ {public, gated}` |
+| Telo | javno kad je public | javno samo za `public`; za `gated` traži entitlement |
+| Lifecycle | radna kopija + `publishedSnapshot` ✅ implementirano | isto, prošireno na `accessMode` i javni pregled |
+
+**Preporučeni naziv je `accessMode`, ne `visibility`.** `visibility` postaje
+netačan čim GATED postoji: takav sadržaj **jeste** vidljiv, ali mu telo nije
+dostupno. Migracija se izvodi u implementacionom tasku, ne ovde.
+
+Zabranjeni nazivi u domenu sadržaja: `isPaid`, `subscriberOnly`, `premium`,
+`vip`, `membersOnly`. To su mehanike naplate, ne semantika pristupa — vidi
+„Entitlement" niže.
+
+### Javni pregled (`publicPreview`) za GATED
+
+GATED sadržaj mora imati **eksplicitan** javni pregled:
+
+```text
+publicPreview {
+  title
+  description?
+  coverImage?
+}
+```
+
+Ovo su javni podaci i tako se tretiraju. Tvrda pravila:
+
+- **nikad** ne izvoditi teaser iz zaštićenog tela u trenutku zahteva
+- **nikad** ne slati `ContentBlock[]` neautorizovanom čitaocu
+- **nikad** ne izlagati imena fajlova, download adrese ni media iz tela
+- pregled je eksplicitno sačuvan i objavljen kao javni metapodatak
+
+Kada **već javan** sadržaj prelazi u GATED, pregled se sme zasejati iz onoga što
+je **ranije već bilo javno**: poslednji javni naslov, javni SEO opis, javni
+cover. Ne prenosi se: blokovi članka, download adrese, interni metapodaci, novi
+privatni naslov, nesačuvana radna kopija.
+
+Sadržaj koji je GATED od prvog dana traži da vlasnica pregled definiše sama.
+
+### Odnos prema objavljenoj verziji (UI-2B ostaje na snazi)
+
+```text
+root EducationContent  → radna kopija (menja je Save)
+publishedSnapshot      → objavljena verzija (menja je samo Publish)
+```
+
+Javni read authority čita **objavljeno** stanje pristupa i objavljeni javni
+pregled, nikada nesačuvanu radnu kopiju. Buduća objavljena verzija zato nosi i
+`accessMode` i `publicPreview`.
+
+Posledica koja se ne sme prekršiti:
+
+```text
+Save     → ne menja živi režim pristupa
+Publish  → promoviše režim pristupa + telo + javni pregled u živo stanje
+```
+
+Svaki prelaz — `PUBLIC → GATED`, `GATED → PRIVATE`, `PRIVATE → PUBLIC` —
+stupa na snagu **isključivo objavom**.
+
+### Ponašanje ruta i istorija adresa
+
+```text
+tekući PUBLIC/GATED slug        → ruta se javno razrešava
+PRIVATE                         → ruta ne sme potvrditi postojanje (404)
+
+PUBLIC slug A → PUBLIC slug B   → A sme 301 na B
+GATED slug A → GATED slug B     → A sme 301 na B
+
+PUBLIC → GATED                  → ista ruta, umesto tela ide javni pregled + CTA
+GATED → PUBLIC                  → ista ruta, telo posle eksplicitne objave
+
+PUBLIC/GATED → PRIVATE          → 404 za neautorizovanog
+                                → BEZ redirekcije na novi slug
+                                → bez ijednog signala da zapis još postoji
+
+PRIVATE → PUBLIC/GATED          → javno se razrešava tek posle objave
+DELETE                          → 404
+```
+
+**Istorija adresa se nikada ne sme koristiti kao orakl za privatan sadržaj.**
+301 postoji da sačuva podeljene i indeksirane linkove između dva javno
+otkrivena stanja, ne da otkrije da nešto postoji.
+
+### Javna lista `/edukacija`
+
+```text
+PUBLIC   → sme se pojaviti
+GATED    → sme se pojaviti, sa javnim pregledom i jasnom oznakom zaključanog pristupa
+PRIVATE  → nikada se ne pojavljuje
+```
+
+Upit **ne sme** biti samo `status=published`. Konceptualno:
+
+```text
+publishedSnapshot postoji
+AND accessMode ∈ ["public", "gated"]
+```
+
+### GATED detaljna strana — verzija 1
+
+Danas ne postoje: pretplata, plaćeni pristup, pojedinačna kupovina, model
+zahteva za pristup, UI za ručno odobrenje, entitlement resolver. Zato prva
+verzija **ne sme** tvrditi da postoje.
+
+```text
+NASLOV    <javni naslov iz pregleda>
+OPIS      <eksplicitan javni teaser>
+PORUKA    „Ovaj sadržaj nije javno dostupan."
+          ili „Ovaj sadržaj je dostupan uz odobrenje."
+CTA       „Zatraži pristup" / „Kontaktirajte nas"
+          → postojeći javni kontakt kanali tenanta
+```
+
+Zabranjeno dok sistemi ne postoje: „Pretplatite se", „Kupite", „Premium",
+„Članovi", „Vaša pretplata".
+
+### Entitlement — ko sme da pročita zaključano telo
+
+Pretplata, pojedinačna kupovina i ručno odobrenje **nisu četvrti tip sadržaja.**
+To su različiti načini da korisnik stekne pravo prolaza kroz GATED (ili
+autorizovan PRIVATE) sadržaj.
+
+```text
+accessMode   = šta javnost sme da otkrije
+entitlement  = sme li OVAJ prijavljeni korisnik da pročita zaštićeno telo
+```
+
+Konceptualno, kasnije:
+
+```text
+canReadProtectedEducationContent =
+  ručno odobrenje
+  OR aktivna pretplata
+  OR pojedinačna kupovina
+```
+
+To je isti obrazac koji Marysoll već koristi prema svojim tenantima: plan
+otključava funkcionalnost automatski, a superadmin sme ručno da odobri pristup
+i bez plaćanja. Marina dobija isti oblik moći nad svojim sadržajem.
+
+**Mehanika naplate se ne kodira u `accessMode`.** Jedan zapis, jedno stanje
+pristupa, više mogućih izvora prava.
+
+### Ručni izuzetak — zašto je razdvajanje neophodno
+
+Marina ima GATED članak visoke vrednosti. Redovna klijentkinja sa konsultacija
+sme da dobije pristup **iako nema pretplatu i nije ga kupila.**
+
+Ishod: `EducationContent` ostaje **jedan zapis**; pristup dolazi iz odobrenja.
+Članak se **ne duplira** u privatnu kopiju. Bez razdvajanja `accessMode` i
+entitlement-a, ovaj scenario neizbežno vodi u duplikate sadržaja.
+
+### Odnos prema F6B (dodela i ACL)
+
+F6B postaje **prvi konkretan sloj zaštićenog pristupa**, ali dva pojma ostaju
+razdvojena i u dokumentaciji i u budućem modelu:
+
+```text
+DODELA (assignment)  = ovaj sadržaj je relevantan/dodeljen ovoj klijentkinji
+ENTITLEMENT          = ova klijentkinja sme da pročita zaštićeno telo
+```
+
+Prva implementacija sme namerno koristiti dodelu kao ručno odobrenje, ali se
+**ne sme pretpostaviti da su ta dva pojma zauvek isto** — pretplata i kupovina
+kasnije daju pravo bez ijedne pojedinačne dodele.
+
+### Odnos prema `EducationInquiry`
+
+`EducationInquiry` je poslovni upit, **nije** ACL, nije pretplata, nije
+entitlement. Za prvu verziju CTA **ne mora** da kreira nikakav zapis — postojeći
+javni kontakt kanali su dovoljni. Da li „Zatraži pristup" kasnije pravi
+`EducationInquiry` ili zaseban access-request zapis, odlučuje kasniji product
+rez.
+
+### Bezbednost: token nije dozvola
+
+Buduće čitanje zaštićenog sadržaja **ne sme** da se oslanja na dugovečnu tvrdnju
+u tokenu tipa „ovaj korisnik sme da čita sadržaj X". Token nosi identitet i
+odnos prema tenantu; **pravo pristupa se proverava na serveru pri svakom
+zahtevu.**
+
+Ukidanje odobrenja ili isteklu pretplatu mora odmah zaustaviti buduća čitanja,
+čak i kada u pregledaču i dalje stoji važeći login token.
+
+### Bezbednost: zaštićena media
+
+Za stvarno zaštićene fajlove (gated/private materijali):
+
+- ne oslanjati se na trajne javne provider adrese
+- zaštićeno preuzimanje kasnije traži autorizaciju + kratkotrajnu/potpisanu
+  isporuku ili ekvivalentan mehanizam
+
+Zatečeno javno Cloudinary ponašanje **nije automatski dovoljno** za plaćene i
+privatne materijale.
+
+Ograničenje koje treba reći naglas: ako je resurs ranije bio javan i neko ga je
+već preuzeo ili kopirao, Marysoll tu kopiju ne može povući. Platforma garantuje
+samo da **budući serverski zahtevi** više ne otkrivaju zaštićeni sadržaj.
+
+### Arhitektonski položaj
+
+```text
+TENANT
+  → WORKSPACE
+      → EducationContent
+              ↓
+          accessMode
+              ↓
+     public / gated / private
+```
+
+`PRESENTATION` (tema) odlučuje **kako** dozvoljena površina izgleda.
+`ENTITLEMENT` odlučuje **ko** sme da pročita zaštićeno telo.
+**Tema nikada nije autoritet pristupa.**
+
+### Terminologija — zaključano
+
+| Pojam | Značenje |
+|---|---|
+| **Workspace activation** | tenant dobija Education capability/workspace |
+| **Capability gate** | sme li tenant uopšte da koristi Education domen |
+| **Content access mode** | `public` / `gated` / `private` — šta javnost sme da otkrije |
+| **Content gate** | sme li posetilac/korisnik da pročita telo ovog zapisa |
+| **Entitlement / odobrenje** | zašto konkretan prijavljen korisnik sme da čita zaštićeno |
+| **Public preview** | namerno javni metapodaci GATED sadržaja |
+
+Reč „gate" se **ne koristi sama** — uvek se kaže koji gate.
+
+### Primeri
+
+**A — besplatan članak.** „Osnove nege kože", `public` → `/edukacija/osnove-nege-koze`,
+pun članak.
+
+**B — GATED članak visoke vrednosti.** „Napredna analiza sastojaka", `gated`, sa
+javnim pregledom (naslov, kratak opis, cover). Javnost ga otkriva, telo je
+skriveno, CTA je „Zatraži pristup". Kasnije isti zapis otključavaju pretplata,
+kupovina ili ručno odobrenje.
+
+**C — privatan klijentski materijal.** „Plan nakon konsultacije", `private` →
+nikad u listi, pogođen URL vraća 404, kasnije ga dodeljena klijentkinja vidi u
+svom autorizovanom prostoru.
+
+**D — javno postaje GATED.** Radna kopija: `accessMode = gated` + eksplicitno
+odobren javni pregled. `Save` → živo ostaje javno. `Publish` → ruta ostaje
+otkrivena, telo postaje zaključano, prikazuju se teaser i CTA.
+
+**E — javno postaje PRIVATE.** Radna kopija: `accessMode = private`. `Save` →
+živo ostaje javno. `Publish` → nestaje iz javne liste, neautorizovana ruta vraća
+404.
+
+### Šta ovaj ugovor NE odlučuje
+
+Model pretplate, model kupovine, tok plaćanja, model ručnog odobrenja, model
+zahteva za pristup, potpisivanje zaštićene media, UI-3 rute, gate komponenta,
+javni loader, ACL, `Moj Prostor` — sve ostaje implementacionim rezovima.
+
+Komercijalna pravila su **potpuno** van ovog dokumenta: koji Marysoll plan
+uključuje plaćenu edukaciju, podela prihoda, cena pretplate, cena pojedinačnog
+pristupa, povraćaji, Paddle integracija.
+
+---
+
 ## FAZA 5 — Javno `/edukacija` → **release gate**
 
 - `src/app/tenant/edukacija/page.tsx` i `[...slug]/page.tsx` (catch-all, kao `/blogs`)
@@ -464,8 +807,8 @@ za **javni** Education surface:
 ```
 ✓ EducationContent postoji     ✓ public loader postoji
 ✓ /edukacija ruta postoji      ✓ readiness provider radi
-✓ theme-9-native prikaz        ✓ javni upit traži tenantId + status=published
-                                  + visibility=public
+✓ theme-9-native prikaz        ✓ javni upit traži tenantId + objavljen snapshot
+                                  + accessMode ∈ {public, gated}
         ↓
 javni /edukacija se pušta
 ```
@@ -546,14 +889,24 @@ Guide i Program kasnije samo **dodaju adaptere** u ovaj workspace.
 
 ## FAZA 6B — Dodela sadržaja i ACL
 
-**Assignment je nezavisan od `visibility`** — Marina mora moći da napiše javnu edukaciju i istovremeno je dodeli Jeleni kao „Preporučeno za vas", bez dupliranja članka:
+**Dodela je nezavisna od režima pristupa** — Marina mora moći da napiše javnu edukaciju i istovremeno je dodeli Jeleni kao „Preporučeno za vas", bez dupliranja članka.
 
-| visibility | assignment | rezultat |
+Matrica prema ciljnom modelu iz
+[Pristup sadržaju](#pristup-sadržaju--public--gated--private-zaključano-2026-08-29)
+(danas u kodu postoje samo redovi `public` i `private`):
+
+| accessMode | dodela / odobrenje | rezultat |
 |---|---|---|
 | `public` | nema | običan javni članak |
 | `public` | ima | javni članak **+** u `Moj Prostor` te klijentkinje |
-| `private` | ima | samo dodeljene klijentkinje |
+| `gated` | nema | javno otkriven, telo zaključano, CTA za pristup |
+| `gated` | ima | javno otkriven **+** telo dostupno toj klijentkinji |
+| `private` | ima | samo dodeljene klijentkinje; za ostale 404 |
 | `private` | nema | niko od klijenata |
+
+Dodela je **jedan od izvora** prava pristupa, ne jedini — pretplata i kupovina
+kasnije daju isto pravo bez pojedinačne dodele. Zato dodela i entitlement
+ostaju odvojeni pojmovi.
 
 ```
 ClientContentAssignment {
@@ -575,7 +928,16 @@ getTokenFromRequest → verifyToken
 → 404 i za nepostojeće i za tuđe (bez ownership orakla)
 ```
 
-**Nikad** id vlasnika iz URL-a, query-ja ili body-ja. Link se može proslediti — druga osoba dobija „Nemate pristup".
+**Nikad** id vlasnika iz URL-a, query-ja ili body-ja.
+
+Prosleđen link se ponaša prema režimu pristupa, i tu se raniji tekst ispravlja —
+`private` nikada ne sme reći „Nemate pristup", jer bi time potvrdio da zapis
+postoji:
+
+```text
+private → 404 (i za nepostojeće i za tuđe, bez ownership orakla)
+gated   → javni pregled + CTA za pristup
+```
 
 ---
 
@@ -675,6 +1037,8 @@ npm run build             # prolazi
 5. `curl` bez tokena → 401; sa tokenom klijenta B → 404
 6. Tenant bez `education.catalog` → 403 na API, `notFound()` na javnoj ruti
 7. `public` + assignment → vidi se i javno i u `Moj Prostor`; `revokedAt` skida iz `Moj Prostor`
+8. `gated` bez odobrenja → javni pregled i CTA, **nikad** blokovi u odgovoru; sa odobrenjem → telo
+9. `private` bez odobrenja → 404 (ne „nemate pristup"), nema ga ni u listi ni u sitemap-u
 
 ---
 

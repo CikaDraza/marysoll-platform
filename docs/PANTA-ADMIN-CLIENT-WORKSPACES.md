@@ -242,7 +242,15 @@ Fotografije nisu javni sadržaj. Ako storage ostane Cloudinary, smer je privatan
 tenant/client-scoped prefix ili folder uz authenticated/signed delivery. Naziv
 foldera sam po sebi nije authorization.
 
-### 4.4 Public Education nije Private Care
+### 4.4 Education pristup nije Private Care
+
+> **Terminološka ispravka (2026-08-29):** Education sadržaj više nije samo
+> „javan ili privatan" — ima tri režima pristupa: `public`, `gated` (javno
+> otkriven, telo zaključano) i `private` (neotkriven, 404 bez autorizacije).
+> Ugovor je u
+> [PANTA-EDU-CENTAR-ARC.md § Pristup sadržaju](PANTA-EDU-CENTAR-ARC.md#pristup-sadržaju--public--gated--private-zaključano-2026-08-29).
+> Care podaci nisu `EducationContent` i ne dele ovu skalu — oni su uvek
+> individualni i uvek autorizovani.
 
 Public Education je opšti stručni sadržaj za širu publiku. Private Care je
 individualna procena, plan, preporuka, dokument, fotografija i istorija

@@ -2,7 +2,7 @@
 
 > Tracker za tekući luk rada: **T3 Booking Engine + Consultation domen + theme-9 „Skincare Marina"**.
 > Jedan red po slice-u. Detalji su u dokumentu koji je naveden uz slice — ovde stoji samo status i jedna rečenica.
-> Poslednja izmena: 2026-08-29 · `staging/production-engines` + EDU UI-2B publication lifecycle
+> Poslednja izmena: 2026-08-29 · `staging/production-engines` + zaključan PUBLIC/GATED/PRIVATE ugovor
 >
 > **Aktuelno stanje:** correctness fixes, Theme-9 **2A, ceo 2B i 2C** i
 > migration/staging tooling nalaze se na `main`-u. Staging Release A + migration
@@ -53,6 +53,7 @@
 | EDU UI-1A / F3A | Capability-aware Admin Education workspace | 🟡 code complete · Marina browser acceptance pending | Snapshot projektuje server-resolved verticals; jedan dropdown prikazuje aktivni workspace. Beauty tenant dobija eksplicitni, potvrđeni i idempotentni „Aktiviraj Edu Centar” tok koji isti tenant pretvara u hybrid; Salon/Theme-9 ostaju netaknuti. Education/hybrid navigacija, server-gated `/education` i Content shell su spremni. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#f3a--admin-workspace-capability-i-navigacija-edu-ui-1) |
 | EDU UI-2 / F4A + F3B | EducationContent + pravi CMS CRUD + Content Composer | ✅ kod · 🟡 Marina CMS browser test pending | `EducationContent` model, tenant-scoped CRUD + strict publish rute iza `requireCapability("education.catalog")`, CMS lista i full-page editor nad deljenim Content Composer-om (svih 12 blokova, shared media, preview). Save Draft ne menja status; publish čita sačuvano stanje. Javno `/edukacija`, assignment i ACL nisu dirani. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#implementacioni-status-f4a--f3b-edu-ui-2--2026-08-29) |
 | EDU UI-2B | Durable working copy + last-published snapshot | ✅ kod | Zatvoren propust iz UI-2: `status` je ostajao `published`, ali je Save menjao baš root polja koja bi javna strana čitala, pa je snimanje bilo implicitna objava. Sada root = radna kopija, `publishedSnapshot` = javna verzija, objava = jedina granica promocije. Javni URL, vidljivost i SEO takođe žive u snapshot-u. Bez istorije verzija. 13 lifecycle testova nad pravim Mongo-om. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#implementacioni-status-f4a--f3b-edu-ui-2--2026-08-29) |
+| DOC-EDU-ACCESS-1 | PUBLIC / GATED / PRIVATE ugovor pristupa | ✅ dokumentacija (bez koda) | Tri režima pristupa umesto dva, javni pregled za `gated`, 404 za `private`, entitlement odvojen od režima pristupa, ponašanje adresa i liste, bezbednost tokena i zaštićene media. Kod nije menjan — persistencija je i dalje `visibility: public\|private`; migracija na `accessMode` je UI-3A. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#pristup-sadržaju--public--gated--private-zaključano-2026-08-29) |
 
 ### Booking / Consultation — zadržano
 
@@ -106,9 +107,15 @@ generičke bele `/edukacija` samo da ruta postoji:
 
 ```text
 EDU UI-3A   public read authority + /edukacija rute + neutralan
-            presentation contract
+            presentation contract + accessMode migracija (public/gated/private)
+            + javni pregled za gated + istorija javnih adresa i 301
 EDU UI-3B   Theme-9 Education prezentacija → listing → članak/detalj → mobile
 ```
+
+UI-3A više nije samo „rute": pre njega je zaključan ugovor pristupa, pa on
+donosi i migraciju `visibility → accessMode`, javni pregled za `gated` i
+ponašanje adresa. Entitlement (pretplata/kupovina/ručno odobrenje) i dalje
+**nije** u UI-3A — CTA za sada vodi na postojeće javne kontakt kanale tenanta.
 
 Pravi hard gate pre `Moj Prostor` nije „testovi su zeleni", nego: Marina napiše
 → Sačuva → zatvori → vrati se → Pregled → Objavi → otvori telefon i vidi tačno
@@ -182,6 +189,15 @@ vodio kao „zatečeno“, a koji su u međuvremenu **stvarno zatvoreni u kodu**
 - **Javni izvor istine je `publishedSnapshot`.** UI-3 čita snapshot, nikada
   `root.status` + `root.visibility` + `root.blocks`. Zapis bez snapshot-a nije
   javan ni kad je `status: "published"` — fail-closed.
+- **Education sadržaj ima tri režima pristupa: `public` / `gated` / `private`.**
+  `gated` je javno otkriven a telo zaključano; `private` nije otkriven i
+  neautorizovan URL vraća **404**, nikad „nemate pristup". Pretplata, kupovina i
+  ručno odobrenje nisu četvrto stanje nego izvori prava pristupa (entitlement),
+  i ne kodiraju se u režim pristupa. Semantika je zaključana, **persistencija je
+  i dalje dvočlana** — migracija na `accessMode` pripada UI-3. Ugovor:
+  [PANTA-EDU-CENTAR-ARC.md § Pristup sadržaju](PANTA-EDU-CENTAR-ARC.md#pristup-sadržaju--public--gated--private-zaključano-2026-08-29).
+- **Tema nikada nije autoritet pristupa.** Neautorizovan odgovor ne sme sadržati
+  zaštićeno telo — ni u HTML-u, ni u RSC payload-u, ni u JSON-u.
 - **Domenski naziv `education.*` uz `capability: null` je zabranjen** — ili domenski blok sa loaderom i capability-jem, ili `content.*` teaser.
 - ✅ **T2B triple-gate je implementiran.** Admin/client projekcija, business API
   i public Feature Block gate koriste isti capability autoritet; kompletna nova

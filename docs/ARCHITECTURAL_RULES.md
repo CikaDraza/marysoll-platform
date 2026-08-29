@@ -78,6 +78,12 @@ Posledice koje su obavezujuće:
   odluka po workspace-u.
 - **Prezentacija je po surface-u, ne po tenantu.** Salon tema i Education tema
   su nezavisne; aktivacija Edu Centra ne sme dirati zatečenu Salon temu.
+- **Tema/prezentacija NIKADA nije autoritet pristupa.** Šta javnost sme da
+  otkrije odlučuje režim pristupa sadržaja, a ko sme da pročita zaštićeno telo
+  odlučuje serverski entitlement — oboje pre nego što prezentacija dobije ijedan
+  podatak. Sakrivanje u UI-ju nije zaštita; neautorizovan odgovor ne sme sadržati
+  zaštićeno telo. Ugovor:
+  [PANTA-EDU-CENTAR-ARC.md § Pristup sadržaju](PANTA-EDU-CENTAR-ARC.md#pristup-sadržaju--public--gated--private-zaključano-2026-08-29).
 
 ### 3.4 Routing & Middleware
 
