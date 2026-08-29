@@ -746,6 +746,12 @@ Ograničenje koje treba reći naglas: ako je resurs ranije bio javan i neko ga j
 već preuzeo ili kopirao, Marysoll tu kopiju ne može povući. Platforma garantuje
 samo da **budući serverski zahtevi** više ne otkrivaju zaštićeni sadržaj.
 
+To nije razlog da se naknadno zaključavanje spreči ili otežava. `PUBLIC → GATED`
+je legitiman i očekivan potez vlasnice, tipično kada članak bitno preradi i
+unapredi — inače zaključavanje ne bi ni imalo svrhu. Platforma obezbeđuje da
+odluka bude moguća, jasna i primenjena od trenutka objave; ne pretvara se u
+DRM.
+
 ### Arhitektonski položaj
 
 ```text
@@ -961,13 +967,50 @@ Praktične posledice:
 Ovo ujedno zatvara veći deo ranije zabeleženog „klijentkinja gleda dva mesta":
 „+" je most sa javne edukacije ka njenom prostoru.
 
-⬜ **Otvoreno pitanje za Fazu 6B, namerno nezaključano:** šta se dešava sa
-**sačuvanim** sadržajem kada Marina kasnije prebaci taj zapis u `private` (a
-klijentkinji nije dodeljen). Dve razumne opcije: tiho ukloniti unos
-(fail-closed, ali izgleda kao da je nestao bez objašnjenja) ili prikazati
-„više nije dostupno" (bolji UX, i nije curenje jer je ona taj sadržaj već
-videla dok je bio javan). Odluka pripada trenutku kada `Moji sadržaji` stvarno
-nastanu.
+### Sačuvan sadržaj koji više nije dostupan (zaključano)
+
+Kada Marina zaključa ili skloni sadržaj koji je klijentkinja ranije sačuvala,
+unos se **ne briše tiho**. Ostaje kao prazna kartica sa jasnim stanjem i
+akcijom, jer je najgore moguće ponašanje da joj sadržaj nestane bez objašnjenja:
+
+```text
+┌──────────────────────────────────────────┐
+│  <naslov koji je ona sačuvala>           │
+│  Ovaj sadržaj više nije dostupan.        │
+│                                          │
+│  [ Zatraži pristup ]   [ Ukloni ]        │
+└──────────────────────────────────────────┘
+```
+
+Akcija zavisi od novog stanja, i tu se `gated` i `private` **ne izjednačavaju**:
+
+```text
+postao GATED     → zaključan pregled + put ka pristupu
+                   (danas: zatraži pristup · kasnije: pretplata/kupovina)
+postao PRIVATE   → samo „Zatraži pristup" (kontakt) — kupovina ne postoji za
+                   private; Marina odlučuje ručnim odobrenjem
+obrisan          → samo „Ukloni"
+```
+
+Uvek postoji **„Ukloni iz Mog prostora"**, da joj sekcija ne ostane zatrpana
+sadržajem koji joj više ništa ne znači.
+
+Dve granice koje ova kartica ne sme da pređe:
+
+- prikazuje **naslov koji je ona sačuvala**, nikada novi, izmenjeni privatni
+  naslov — isto pravilo kao za javni pregled: novouređeni privatni metapodaci se
+  ne iznose;
+- postoji samo u **njenom autorizovanom prostoru**, za sadržaj koji je sama
+  sačuvala. Nikada na javnoj ruti — inače bi to bio upravo onaj orakl koji
+  `private` treba da spreči.
+
+**Zašto ovo nije bezbednosni ustupak.** Ona je taj sadržaj već videla dok je bio
+javan, možda ga i preuzela ili podelila — kartica joj ne otkriva ništa novo.
+Naknadno zaključavanje ionako nije mehanizam za povlačenje već iznetog: kao što
+stoji u ugovoru pristupa, platforma garantuje samo da **budući** zahtevi ne
+otkrivaju zaštićeno. U praksi Marina to i radi kada članak bitno preradi i
+unapredi — inače zaključavanje nema svrhu. Naš posao je da ta odluka bude
+moguća i jasna, ne da je sprečimo.
 
 Guide i Program kasnije samo **dodaju adaptere** u ovaj workspace.
 

@@ -205,7 +205,10 @@ vodio kao „zatečeno“, a koji su u međuvremenu **stvarno zatvoreni u kodu**
   u listi, pa lista ostaje keširana i bez per-viewer grana.
 - **Čuvanje nije pristup.** Dugme „+ dodaj u Moj prostor" pravi samo referencu u
   klijentkinjinom prostoru; sačuvan `gated` sadržaj ostaje zaključan sa istim
-  CTA. Dodela sme biti izvor odobrenja, čuvanje nikada.
+  CTA. Dodela sme biti izvor odobrenja, čuvanje nikada. Sačuvan sadržaj koji je
+  zaključan ili sklonjen ostaje kao prazna kartica „više nije dostupno" sa
+  akcijom (zatraži pristup / ukloni), sa naslovom koji je klijentkinja sačuvala
+  — nikad novim privatnim naslovom.
 - **Domenski naziv `education.*` uz `capability: null` je zabranjen** — ili domenski blok sa loaderom i capability-jem, ili `content.*` teaser.
 - ✅ **T2B triple-gate je implementiran.** Admin/client projekcija, business API
   i public Feature Block gate koriste isti capability autoritet; kompletna nova
