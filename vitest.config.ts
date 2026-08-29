@@ -19,7 +19,9 @@ export default defineConfig({
     // Postojeći testovi (contactRules, loyalty, cityMatch...) pisani su za
     // jest globale (describe/it bez importa) — globals ih pokriva.
     globals: true,
-    include: ["src/**/*.test.ts"],
+    // `.tsx` je namerno uključen: komponentni test napisan kao .tsx inače
+    // nikad ne bi bio pokrenut, tiho.
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
   },
   resolve: {
     alias: {

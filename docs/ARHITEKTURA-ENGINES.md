@@ -49,6 +49,13 @@ pravac rada, ne tvrdnja da je današnji kod već dostigao cilj.
    (Primer: Anja iPhone slučaj → beacon dijagnostika → Diagnostic Engine.)
 6. Posle Faze 4: **nova poslovna logika ne ide u Marysoll — ide u engine**,
    makar engine danas bio samo folder ili package.
+   **Zabeležen izuzetak (2026-08-29, Edu luk):** Content Composer i Edu
+   workspace su namerno napisani u `src/lib/content/` i `src/lib/platform/`, a
+   ne kao `packages/*` engine. Razlog nije previd nego redosled dokazivanja —
+   htelo se da se rad na backendu odmah vidi kao stvaran, klijentu vidljiv
+   rezultat u frontendu (prelazak Salon → Edu Centar, izgled i UX), pre nego
+   što se domen zamrzne u paket. Izdvajanje u Content Engine ostaje dug: čim
+   granica prestane da se pomera, kod se seli u `packages/`.
 7. **Svaki rizičan admin workflow mora imati Diagnostic proveru.** (Usvojeno
    2026-07-11 uz Identity & Loyalty Health.) Rizičan = dira više domenskih
    modela odjednom (merge naloga, reassign, masovne izmene). Kad se takav
@@ -66,10 +73,10 @@ svoje testove. Marysoll ih uvozi kao zavisnosti.
 - **Faza 3:** poseban servis sa sopstvenom bazom, kešom, skaliranjem
 - **Faza 4:** CDN/edge distribucija statičkih delova (theme JSON, CSS, media, preview asseti)
 
-## Gde smo sada (provereno 2026-08-21)
+## Gde smo sada (provereno 2026-08-29)
 
-Platforma se nalazi **posle glavnog T2A Theme/Layout reza, a pre T2B i
-bezbednog T3 jezgra za upis rezervacija**:
+Platforma se nalazi **posle T2A Theme/Layout i T2B capability reza, sa T3 dark
+core-om u kodu ali bez live write authority-ja**:
 
 - ✅ T0/T1 osnova, Diagnostic Engine, Event Bus i Loyalty Engine Phase 0/1 +
   Referral 2b postoje u kodu; referral i dalje čeka live QA/release gate.
@@ -89,11 +96,25 @@ bezbednog T3 jezgra za upis rezervacija**:
 - ✅ **T2B v0.3 i triple-gate su implementirani:** optional tenant vertikale,
   capability resolver, postojeći `PLAN_FEATURES` adapter, server snapshot,
   admin/client projekcija, business API i public readiness gate postoje.
-- ⬜ **T3 write/core nije implementiran:** nema kanonske rezervacije, day-lock
-  serijalizacije, booking idempotencije ni jedne atomic reserve operacije koja
-  važi za sve putanje. Postoji stariji petominutni `Slot` reserve za deo
-  marketplace toka, ali nije vezan za `Appointment`, nema vlasnički token i ne
-  predstavlja planirani `BookingHold` ni centralni autoritet za zauzetost.
+- 🟡 **T3 write/core postoji kao dark core, ali NIJE live authority.** Kanonska
+  rezervacija, **day-lock serijalizacija**, booking idempotencija, durable
+  receipt/outbox i atomic reserve postoje u `src/lib/booking/` (`core.ts`,
+  `reserve.ts`, `locks.ts`, `transaction.ts`, `idempotency.ts`) uz
+  `BookingReservation` / `BookingDayLock` modele i prolazeće integracione
+  testove nad pravim `MongoMemoryReplSet`-om. **Nijedna API ruta ih još ne
+  koristi** — `BookingReservation` se ne importuje iz `app/api/**`; production
+  zauzetost i dalje piše legacy `Appointment` put. Stariji petominutni `Slot`
+  reserve za deo marketplace toka ostaje netaknut i nije `BookingHold`.
+- ⏸ **T3 cutover (Slice 6B/6C) je SVESNO PRESKOČEN, ne zaboravljen.** Prioritet
+  je bio da se tvrdnje o backend radu odmah vide kao stvaran, klijentu vidljiv
+  test u frontendu — prelazak Salon → Edu Centar, izgled i UX. Day-lock nam
+  **jeste neophodan** i ostaje tvrdi preduslov: Marina ne prima stvarne
+  rezervacije dok write authority ne pređe na Booking Engine.
+- 🟡 **Education (Edu Centar) je u kodu do F3A.** Vertical/workspace foundation,
+  Content Composer shared sloj, novi blokovi i capability-aware admin workspace
+  sa eksplicitnom „Aktiviraj Edu Centar“ aktivacijom postoje; `/education/*`
+  je server-gated. Sadržajni CRUD (EDU UI-2), `EducationOffering` i
+  `EducationInquiry` (F4B) tek slede.
 
 ### Sledeći hard gate
 
@@ -263,7 +284,7 @@ dovode nove — prvi engine koji Marysoll-u pravi network effect.
 Operativni detalji po slice-u vode se u [TODO.md](TODO.md). Ova tabela čuva
 širu sliku i sprečava da završena etapa ponovo bude proglašena „sledećom“.
 
-| Inicijativa | Status 2026-08-21 | Stvarno stanje / sledeći korak |
+| Inicijativa | Status 2026-08-29 | Stvarno stanje / sledeći korak |
 |---|---|---|
 | **T0 optimizacija** | ✅ završeno | Preduslov za engines luk je zatvoren. |
 | **T1 monorepo + Diagnostic** | ✅ završeno | Paket, adapter, browser dijagnostika, beacon, superadmin ekran i 10 integrity provera postoje. Tenant-facing dashboard ostaje buduće proširenje. |
@@ -272,8 +293,8 @@ Operativni detalji po slice-u vode se u [TODO.md](TODO.md). Ova tabela čuva
 | **T2A Theme/Layout** | ✅ prihvaćeno | Paket, registry, lifecycle, migracija tema i private Theme8/9 application policy postoje. |
 | **T2B vertikale/capabilities** | ✅ funkcionalno završeno | Optional Tenant ugovor, resolver, `requireCapability()`, admin/client projekcija, business API i public readiness gate postoje bez globalnog backfill-a. |
 | **T3 availability + prikaz toka** | 🟡 delimično završeno | Availability paket i potrošači postoje; theme-9 demo/preview šalje mejl, ali ne rezerviše termin. |
-| **T3 Booking write/core** | 🟡 specifikacija zaključana; kod nije implementiran | [T3 ugovor](PANTA-T3-BOOKING-ENGINE.md) definiše 12 Appointment + 4 Slot write ulaza, kanonsku rezervaciju, day-lock, idempotenciju, outbox i Slice 5/6 gate. |
-| **Consultation / Questionnaire / Education / Care** | ⬜ nije implementirano | Redosled: Consultation + hold + intake + theme-9 E2E; zatim Education, navigacija i Care Workspace. |
+| **T3 Booking write/core** | 🟡 dark core u kodu; cutover ⏸ svesno preskočen | Kanonska rezervacija, **day-lock**, idempotencija, receipt/outbox i atomic reserve postoje u `src/lib/booking/` sa prolazećim ReplSet testovima, ali nijedna ruta ih ne koristi. Cutover je preskočen da bi se backend tvrdnje prvo pokazale kao stvaran frontend test za klijente (Salon → Edu). **Day-lock je neophodan** i ostaje hard gate pre Slice 10. |
+| **Consultation / Questionnaire / Education / Care** | 🟡 Education do F3A; ostatak ⏸ preskočen | **Education:** F0–F2 + F3A workspace/capability/aktivacija postoje; EDU UI-2 CRUD i F4B modeli slede. **Consultation / Questionnaire / Care:** preskočeni istom odlukom — prvo vidljiv frontend dokaz, ali su i dalje **neophodni** i vraćaju se u red posle T3 day-lock cutover-a. |
 | **T4 AI Core/Skills** | ⬜ backlog | Mapirati postojeće agente i njihove granice tek posle aktuelnih release gate-ova. |
 | **T5 Diagnostic proširenje** | 🟡 delimično | Osnova postoji; salon-facing dashboard, performance/console prikaz i eventualne bezbedne repair akcije ostaju. |
 | **T6 Notification** | ⬜ backlog | Konsolidovati email/push/notification logiku iza jednog ugovora. |

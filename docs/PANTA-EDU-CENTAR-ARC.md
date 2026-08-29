@@ -595,7 +595,7 @@ npm run build             # prolazi
 
 | Nalaz | Status |
 |---|---|
-| `getCampaign.ts` ne filtrira `landingPage.status === "published"` — neobjavljena kampanja dostupna na svom URL-u ako znaš slug | Zatečeno. **Zabeležiti, ne popravljati** u ovom luku osim ako ispadne trivijalno |
+| `getCampaign.ts` ne filtrira `landingPage.status === "published"` — neobjavljena kampanja dostupna na svom URL-u ako znaš slug | ✅ **ZATVORENO (2026-08-29).** Ispalo je trivijalno: `getCampaign()` sada koristi `publishedBlogFilter()`, koji traži `landingPage.enabled: true` **i** `landingPage.status: "published"`. Vidi `src/lib/server/getCampaign.ts` + `src/lib/tenant/blogPosts.ts` |
 | `src/app/api/notifications/route.ts` nema `tenantId` u upitu | Zatečeno; ako Faza 7 dira taj kod, dodati |
 | Nulta pokrivenost testovima campaign block sistema | Faza 1.1 postoji upravo zbog toga |
 | `/blogs` linkovi nekonzistentni (`/blog/` vs `/blogs/`) | Radi zbog permisivnog `$or`; ne dirati |

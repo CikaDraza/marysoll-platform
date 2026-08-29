@@ -9,6 +9,14 @@
 > rehearsal je završen nad staging DB-om. Content contract cleanup zatvara
 > runtime/CMS/starter granice; nema neutralnog javnog fallback sadržaja.
 >
+> **Zašto je T3 preskočen (odluka 2026-08-29):** prioritet je bio da se tvrdnje
+> o radu na backendu odmah vide kao **stvaran, klijentu vidljiv test u
+> frontendu** — prelazak Salon → Edu Centar, izgled i UX. Zato su T3 cutover i
+> Consultation / Questionnaire / Care privremeno preskočeni. **To nisu otkazani
+> poslovi:** `day-lock` nam **jeste neophodan**, kao i Consultation,
+> Questionnaire, Education i Care domen. Day-lock ostaje tvrdi preduslov pre
+> nego što Marina primi ijednu stvarnu rezervaciju.
+>
 > ```text
 > 2A            ✅ razvoj
 > 2B            ✅ razvoj
@@ -49,10 +57,10 @@ Novi Edu luk **ništa od ovoga ne zamenjuje** i izričito ne dira Booking Engine
 | # | Slice | Status | Gde smo stali | Dokument |
 |---|---|---|---|---|
 | 4 | Booking UI apstrakcija | 🟡 prikaz gotov | `useBookingFlow` + theme-9 dijalog, **offering-first**: ponuda → datum i vreme → upitnik → pregled → potvrda (redosled nije kozmetika — vidi ugovor `initialOfferingId` niže). Launcher kroz kontekst, terminologija `offering*`, ne `service*`. **Bez ijednog upisa** — slanje samo šalje mejl vlasnici i superadminu, da potvrdi usluge, cene, termine i pitanja. Ostaje: `bookingProductAdapter` i `BookingThemeTokens` za ostale teme. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#33-readavailability-potrošači-nisu-write-authority) + T2 §6.10/6.11 |
-| 6 | ★ Migracija + concurrency gate | ⏸ planski odloženo | **Završeno:** Slice 5 dark core, 6A transition hardening i empirijski gate-ovi (T3 §21.2.4). **Odloženo:** production `Appointment` write migracija i Booking cutover nastavljaju se posle Marysoll platform/marketplace upgrade-a. Trenutno nema aktivnih Booking korisnika, pa nema poslovnog razloga za promenu production write authority-ja. Nijedna od 12 ruta se ne dira; Slot endpoint-i se ne gase samo radi arhitektonske čistoće. `BookingReservation` ostaje dark-core infrastruktura, ne production authority. Pripremljen obim za nastavak: 8 platformskih ulaza (T3 §21.2.6); empiriju iz §21.2.4 pre nastavka premeriti. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#213-slice-6b6c--planski-odloženo-2026-08-23) |
-| 7 | Consultation domen | ⬜ nije počet | `ConsultationOffering` → `ConsultationBooking` → `BookingReservation`. Marinin glavni proizvod; **nije `Service`**. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#142-consultation-i-education-granica) |
+| 6 | ★ Migracija + concurrency gate | ⏸ preskočeno zbog frontend dokaza · **day-lock neophodan** | **Preskočeno, ne otkazano:** prednost je dobio vidljiv frontend test za klijente (Salon → Edu prelaz, izgled i UX) umesto nevidljivog write cutover-a. Kanonska rezervacija, **day-lock**, idempotencija i outbox postoje u `src/lib/booking/` i prolaze ReplSet testove, ali ih nijedna ruta ne koristi. Day-lock je **neophodan** i ostaje hard gate pre Slice 10. **Završeno:** Slice 5 dark core, 6A transition hardening i empirijski gate-ovi (T3 §21.2.4). **Odloženo:** production `Appointment` write migracija i Booking cutover nastavljaju se posle Marysoll platform/marketplace upgrade-a. Trenutno nema aktivnih Booking korisnika, pa nema poslovnog razloga za promenu production write authority-ja. Nijedna od 12 ruta se ne dira; Slot endpoint-i se ne gase samo radi arhitektonske čistoće. `BookingReservation` ostaje dark-core infrastruktura, ne production authority. Pripremljen obim za nastavak: 8 platformskih ulaza (T3 §21.2.6); empiriju iz §21.2.4 pre nastavka premeriti. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#213-slice-6b6c--planski-odloženo-2026-08-23) |
+| 7 | Consultation domen | ⏸ preskočen · neophodan | `ConsultationOffering` → `ConsultationBooking` → `BookingReservation`. Marinin glavni proizvod; **nije `Service`**. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#142-consultation-i-education-granica) |
 | 8 | Hold | ⬜ nije počet | `BookingHold` kroz istu day-lock transakciju; konkretan TTL ostaje product odluka Slice 8. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#20-bookinghold-i-slot-transition) |
-| 9 | Questionnaire + Intake | ⬜ nije počet | Guest-first booking ostaje moguć; generički intake čuva immutable početni snapshot, odvaja stručni Current Assessment od originalnog odgovora i kasnije podržava eksplicitni claim/invite identity handoff. | [PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md#4-product-decision--consultation--skin-care-kutak-lifecycle) |
+| 9 | Questionnaire + Intake | ⏸ preskočen · neophodan | Guest-first booking ostaje moguć; generički intake čuva immutable početni snapshot, odvaja stručni Current Assessment od originalnog odgovora i kasnije podržava eksplicitni claim/invite identity handoff. | [PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md#4-product-decision--consultation--skin-care-kutak-lifecycle) |
 | 10 | ★ theme-9 booking end-to-end | ⬜ nije počet | Hero CTA → widget → modal → intake → preview → hold → atomic booking. **Marina sme primati konsultacije tek odavde.** | PANTA-T3-BOOKING-ENGINE.md |
 
 ### Education → zaseban dokument
@@ -100,11 +108,20 @@ Composer**, sa F3B domain/API gate-ovima uz stvarne rute.
 | Šta | Odakle | Zašto čeka |
 |---|---|---|
 | **Salon workspace migration** | ostatak starog Slice 12 | Edu plan je preuzeo `/education/*`, `Moj Prostor` i Client 360. Ostaje samo prevođenje ~15 salon tabova u workspace strukturu — nije prioritet za Marinu |
-| **Generic Care Domain** | stari Slice 13, preimenovan | `CareJourney` / `CarePlan` / `CareDocument` / `ProgressMedia`. Prvo vidimo šta `SkincareGuide` + `GuidedProgram` + follow-up stvarno traže, pa tek onda generalizujemo — sigurnije od apstrakcije unapred |
+| **Generic Care Domain** ⏸ preskočen · neophodan | stari Slice 13, preimenovan | `CareJourney` / `CarePlan` / `CareDocument` / `ProgressMedia`. Prvo vidimo šta `SkincareGuide` + `GuidedProgram` + follow-up stvarno traže, pa tek onda generalizujemo — sigurnije od apstrakcije unapred |
 | **Jedan `AuthUser` → više `Tenant`-a** | Edu plan, Faza 0 | Jedini ispravan put za potpuno odvojene Salon/Education biznise istog vlasnika. „Neka napravi drugi nalog" ne radi: `AuthUser.email` je globalno unique, register vraća 409 |
 | **Read-model cleanup** | dug iz H0 | Write loss je zatvoren; višestruke ručne read projekcije `SalonProfile` ostaju |
 
-Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran · ⏸ planski odloženo
+Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran · ⏸ preskočeno/odloženo (posao ostaje neophodan)
+
+## Ispravke zatečenih nalaza
+
+Nalazi koje je [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#rizici-i-zatečeni-problemi)
+vodio kao „zatečeno“, a koji su u međuvremenu **stvarno zatvoreni u kodu**:
+
+| Nalaz | Stvarno stanje |
+|---|---|
+| `getCampaign.ts` ne filtrira `landingPage.status === "published"` — neobjavljena kampanja bila je dostupna na svom URL-u ako znaš slug (ARC, red u tabeli rizika) | ✅ **ZATVORENO 2026-08-29.** Više ne stoji „zabeležiti, ne popravljati“ — ispravka je bila trivijalna. `getCampaign()` sada koristi `publishedBlogFilter()` koji traži `landingPage.enabled: true` **i** `landingPage.status: "published"`, pa neobjavljena kampanja vraća „Campaign not found“. Kod: `src/lib/server/getCampaign.ts`, `src/lib/tenant/blogPosts.ts` |
 
 ## Tvrde granice
 
