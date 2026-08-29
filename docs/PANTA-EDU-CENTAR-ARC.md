@@ -597,12 +597,12 @@ DELETE                          → 404
 301 postoji da sačuva podeljene i indeksirane linkove između dva javno
 otkrivena stanja, ne da otkrije da nešto postoji.
 
-### Javna lista `/edukacija`
+### Javna lista `/edukacija` (odluka: lista je javna, ne personalizovana)
 
 ```text
-PUBLIC   → sme se pojaviti
-GATED    → sme se pojaviti, sa javnim pregledom i jasnom oznakom zaključanog pristupa
-PRIVATE  → nikada se ne pojavljuje
+PUBLIC   → pojavljuje se, pun pristup
+GATED    → pojavljuje se, sa javnim pregledom i jasnom oznakom zaključanog pristupa
+PRIVATE  → nikada se ne pojavljuje — ni prijavljenoj klijentkinji koja ima pristup
 ```
 
 Upit **ne sme** biti samo `status=published`. Konceptualno:
@@ -611,6 +611,32 @@ Upit **ne sme** biti samo `status=published`. Konceptualno:
 publishedSnapshot postoji
 AND accessMode ∈ ["public", "gated"]
 ```
+
+**`/edukacija` je čisto javna površina i identična je za svakog posetioca.**
+Razmatrana je i personalizovana lista, u kojoj bi prijavljena klijentkinja u
+istom spisku videla i svoje privatne materijale. Odbijena je namerno:
+
+- lista bi se morala renderovati po posetiocu i **ne bi smela da se keširа**;
+- svaka greška u personalizaciji bi curila privatan sadržaj na javnoj ruti;
+- fail-closed je jači kada javni upit **strukturno ne može** da dohvati
+  `private` zapis, umesto da ga dohvata pa filtrira po posetiocu.
+
+Privatan sadržaj zato živi isključivo u autorizovanom prostoru klijentkinje
+(`Moj Prostor`, Faza 6A/6B):
+
+```text
+/edukacija            javne + gated preview · isto za svakoga · keširano
+/panel/moj-prostor    privatni materijali te klijentkinje + gated koje sme da čita
+```
+
+**Entitlement se ne razrešava u listi, nego na detaljnoj ruti.** Lista prikazuje
+isti `gated` pregled svima, uključujući klijentkinju koja ima odobrenje; telo
+dobija tek kada otvori sadržaj. Time lista ostaje bez ijedne per-viewer grane, a
+provera prava ostaje na jednom mestu.
+
+Poznata posledica za UX, koju treba rešiti u UI-3B/6A: klijentkinja gleda **dva
+mesta**. Navigacija mora da ih premosti (iz `Moj Prostor` ka javnoj edukaciji i
+obrnuto), inače deluje kao da joj sadržaj nedostaje.
 
 ### GATED detaljna strana — verzija 1
 
