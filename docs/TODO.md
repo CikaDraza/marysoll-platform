@@ -2,7 +2,7 @@
 
 > Tracker za tekući luk rada: **T3 Booking Engine + Consultation domen + theme-9 „Skincare Marina"**.
 > Jedan red po slice-u. Detalji su u dokumentu koji je naveden uz slice — ovde stoji samo status i jedna rečenica.
-> Poslednja izmena: 2026-08-29 · `staging/production-engines` + EDU UI-2 EducationContent CMS
+> Poslednja izmena: 2026-08-29 · `staging/production-engines` + EDU UI-2B publication lifecycle
 >
 > **Aktuelno stanje:** correctness fixes, Theme-9 **2A, ceo 2B i 2C** i
 > migration/staging tooling nalaze se na `main`-u. Staging Release A + migration
@@ -28,6 +28,7 @@
 > Edu F2         ✅ staging
 > Edu UI-1A/F3A  🟡 selector + activation code complete · Marina browser acceptance pending
 > Edu UI-2/F4A+F3B ✅ kod · Marina CMS browser test pending
+> Edu UI-2B      ✅ working copy + published snapshot
 > ```
 >
 > Dalji Theme-9 završetak, QA i Edu Centar razvoj nastavljaju se samo na aktivnoj
@@ -51,6 +52,7 @@
 | Edu F2 | Authoring + blocks + persistence | ✅ staging | F2A authoring UX, F2B šest novih blokova i shared media contract, F2C draft-save/strict-publish validation i structural edge audit su završeni. Newsletter/Blog lifecycle i preostali write-authority edge su zaključani. | [PANTA-NEWSLETTER-BLOG-AUTHORING.md](PANTA-NEWSLETTER-BLOG-AUTHORING.md) |
 | EDU UI-1A / F3A | Capability-aware Admin Education workspace | 🟡 code complete · Marina browser acceptance pending | Snapshot projektuje server-resolved verticals; jedan dropdown prikazuje aktivni workspace. Beauty tenant dobija eksplicitni, potvrđeni i idempotentni „Aktiviraj Edu Centar” tok koji isti tenant pretvara u hybrid; Salon/Theme-9 ostaju netaknuti. Education/hybrid navigacija, server-gated `/education` i Content shell su spremni. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#f3a--admin-workspace-capability-i-navigacija-edu-ui-1) |
 | EDU UI-2 / F4A + F3B | EducationContent + pravi CMS CRUD + Content Composer | ✅ kod · 🟡 Marina CMS browser test pending | `EducationContent` model, tenant-scoped CRUD + strict publish rute iza `requireCapability("education.catalog")`, CMS lista i full-page editor nad deljenim Content Composer-om (svih 12 blokova, shared media, preview). Save Draft ne menja status; publish čita sačuvano stanje. Javno `/edukacija`, assignment i ACL nisu dirani. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#implementacioni-status-f4a--f3b-edu-ui-2--2026-08-29) |
+| EDU UI-2B | Durable working copy + last-published snapshot | ✅ kod | Zatvoren propust iz UI-2: `status` je ostajao `published`, ali je Save menjao baš root polja koja bi javna strana čitala, pa je snimanje bilo implicitna objava. Sada root = radna kopija, `publishedSnapshot` = javna verzija, objava = jedina granica promocije. Javni URL, vidljivost i SEO takođe žive u snapshot-u. Bez istorije verzija. 13 lifecycle testova nad pravim Mongo-om. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#implementacioni-status-f4a--f3b-edu-ui-2--2026-08-29) |
 
 ### Booking / Consultation — zadržano
 
@@ -93,12 +95,26 @@ deljenog Content Composer-a; `NewsletterCampaign` se ne koristi kao storage.
 1. **EDU UI-1A** — workspace selector + aktivacija: pre-activation Salon state,
    modal/cancel/confirm, hybrid switch posle aktivacije i nepromenjen Theme-9
    public Salon.
-2. **EDU UI-2** — CMS tok sa stvarnim sadržajem: Novi sadržaj → njen tekst →
-   Sačuvaj → refresh → ponovo otvori → Pregled → Objavi, plus jedan privatan
-   objavljen zapis koji ostaje samo u CMS-u.
+2. **EDU UI-2 / UI-2B** — CMS tok sa stvarnim sadržajem: Novi sadržaj → njen
+   tekst → Sačuvaj → refresh → ponovo otvori → Pregled → Objavi, plus jedan
+   privatan objavljen zapis koji ostaje samo u CMS-u. Posle UI-3 se ista
+   provera dovršava na telefonu: izmeni draft → javna verzija se NE menja dok
+   se ponovo ne klikne Objavi.
 
-Posle toga sledi **EDU UI-3 / F5 — javno `/edukacija`**, gde se tek rešava kako
-Education javna prezentacija stoji u odnosu na Theme-9.
+Posle toga ide **EDU UI-3**, i tu se prvi put spajaju razvoj i dizajn — bez
+generičke bele `/edukacija` samo da ruta postoji:
+
+```text
+EDU UI-3A   public read authority + /edukacija rute + neutralan
+            presentation contract
+EDU UI-3B   Theme-9 Education prezentacija → listing → članak/detalj → mobile
+```
+
+Pravi hard gate pre `Moj Prostor` nije „testovi su zeleni", nego: Marina napiše
+→ Sačuva → zatvori → vrati se → Pregled → Objavi → otvori telefon i vidi tačno
+ono što je objavila; pa izmeni draft i potvrdi da se javna verzija nije
+promenila dok ponovo ne klikne Objavi. Tu spadaju i toast, greške, notifikacije
+i mejl.
 
 ### Završeno
 
@@ -159,8 +175,13 @@ vodio kao „zatečeno“, a koji su u međuvremenu **stvarno zatvoreni u kodu**
 - **`published` nije javno.** `status` je lifecycle, `visibility` je ko sme da
   konzumira. Svaki budući javni upit nad `EducationContent` mora tražiti
   `tenantId` + `status=published` + `visibility=public`; samo status nije dovoljan.
-- **Save Draft ne sme da obori objavljen Education sadržaj u draft.** Status se
-  menja isključivo eksplicitnom objavom — newsletter obrazac se ovde ne ponavlja.
+- **Education ima dve kopije, bez istorije verzija.** Root polja su radna
+  kopija, `publishedSnapshot` je javna verzija, a objava je jedina granica
+  promocije. Save ne sme ni da obori objavljen sadržaj u draft (newsletter
+  obrazac) ni da ga tiho izmeni uživo (suprotan propust, zatvoren u UI-2B).
+- **Javni izvor istine je `publishedSnapshot`.** UI-3 čita snapshot, nikada
+  `root.status` + `root.visibility` + `root.blocks`. Zapis bez snapshot-a nije
+  javan ni kad je `status: "published"` — fail-closed.
 - **Domenski naziv `education.*` uz `capability: null` je zabranjen** — ili domenski blok sa loaderom i capability-jem, ili `content.*` teaser.
 - ✅ **T2B triple-gate je implementiran.** Admin/client projekcija, business API
   i public Feature Block gate koriste isti capability autoritet; kompletna nova

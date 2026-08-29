@@ -17,6 +17,12 @@ vi.mock("@/models/EducationContent", async () => {
   };
 });
 
+/** Publish čita radnu kopiju, pa zasebno proverava koliziju javnog slug-a. */
+function chain(value: unknown) {
+  const node = { select: () => node, lean: async () => value };
+  return node as never;
+}
+
 import { requireTenantAdmin } from "@/lib/auth/auth-server";
 import { requireCapability } from "@/lib/platform/capabilities-server";
 import { EducationContent } from "@/models/EducationContent";
@@ -38,10 +44,20 @@ function request(body?: unknown) {
   );
 }
 
-function persisted(blocks: unknown) {
-  vi.mocked(EducationContent.findOne).mockReturnValue({
-    select: () => ({ lean: async () => ({ _id: ID, blocks }) }),
-  } as never);
+function persisted(blocks: unknown, liveCollision: unknown = null) {
+  vi.mocked(EducationContent.findOne).mockImplementation(
+    ((filter: Record<string, unknown>) =>
+      "publishedSnapshot.slug" in filter
+        ? chain(liveCollision)
+        : chain({
+            _id: ID,
+            title: "Estetika lica",
+            slug: "estetika-lica",
+            kind: "article",
+            visibility: "public",
+            blocks,
+          })) as never,
+  );
 }
 
 beforeEach(() => {
@@ -51,9 +67,9 @@ beforeEach(() => {
     tenantId: TENANT,
   });
   vi.mocked(requireCapability).mockResolvedValue(null);
-  vi.mocked(EducationContent.findOneAndUpdate).mockReturnValue({
-    lean: async () => ({ _id: ID, status: "published" }),
-  } as never);
+  vi.mocked(EducationContent.findOneAndUpdate).mockReturnValue(
+    chain({ _id: ID, status: "published" }),
+  );
   persisted(ALL_TWELVE_BLOCKS);
 });
 
@@ -68,8 +84,32 @@ describe("POST /api/education/content/[id]/publish", () => {
     });
     const [filter, update] = vi.mocked(EducationContent.findOneAndUpdate).mock.calls[0];
     expect(filter).toEqual({ _id: ID, tenantId: TENANT });
-    expect(update).toMatchObject({ $set: { status: "published" } });
+    expect(update).toMatchObject({
+      $set: {
+        status: "published",
+        // Snapshot se gradi isključivo od sačuvane radne kopije.
+        publishedSnapshot: {
+          title: "Estetika lica",
+          slug: "estetika-lica",
+          kind: "article",
+          visibility: "public",
+          blocks: ALL_TWELVE_BLOCKS,
+        },
+      },
+    });
     expect(EducationContent.findOneAndUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it("odbija objavu kada drugi objavljen zapis već drži isti javni URL", async () => {
+    persisted(ALL_TWELVE_BLOCKS, { _id: "drugi-zapis" });
+
+    const response = await POST(request(), params);
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({
+      code: "EDUCATION_PUBLIC_SLUG_TAKEN",
+    });
+    expect(EducationContent.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
   it("ignoriše blokove iz tela zahteva — objavljuje se samo sačuvano stanje", async () => {
@@ -134,9 +174,7 @@ describe("POST /api/education/content/[id]/publish", () => {
   });
 
   it("vraća 404 za tuđi ili nepostojeći zapis", async () => {
-    vi.mocked(EducationContent.findOne).mockReturnValue({
-      select: () => ({ lean: async () => null }),
-    } as never);
+    vi.mocked(EducationContent.findOne).mockReturnValue(chain(null));
 
     expect((await POST(request(), params)).status).toBe(404);
     expect(EducationContent.findOneAndUpdate).not.toHaveBeenCalled();

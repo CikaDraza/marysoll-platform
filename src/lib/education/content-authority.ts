@@ -49,6 +49,17 @@ export function slugTakenResponse() {
   );
 }
 
+export function publicSlugTakenResponse() {
+  return NextResponse.json(
+    {
+      error:
+        "Drugi objavljen sadržaj već koristi ovu web adresu. Promenite je pre objave.",
+      code: "EDUCATION_PUBLIC_SLUG_TAKEN",
+    },
+    { status: 409 },
+  );
+}
+
 export function metadataFailureResponse(message: string) {
   return NextResponse.json(
     { error: message, code: "EDUCATION_CONTENT_INVALID" },

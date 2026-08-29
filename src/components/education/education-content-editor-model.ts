@@ -3,6 +3,7 @@ import {
   EDUCATION_KIND_LABELS,
   EDUCATION_STATUS_LABELS,
   EDUCATION_VISIBILITY_LABELS,
+  hasUnpublishedChanges,
   normalizeEducationSlug,
   type EducationContentRecord,
   type EducationContentSeo,
@@ -109,6 +110,37 @@ export function updatePayload(
     payload.blocks = state.blocks;
   }
   return payload;
+}
+
+/** Stanje objave kakvo editor drži između odgovora servera. */
+export interface EducationPublicationState {
+  status: EducationContentSummary["status"];
+  publishedSnapshot?: { publishedAt: string | Date } | null;
+  workingSavedAt?: string | Date | null;
+}
+
+/**
+ * Badge se računa iz dva servera vremena, ne iz poređenja blokova: Save piše
+ * `workingSavedAt`, Publish piše `publishedSnapshot.publishedAt`.
+ */
+export function publicationLabel(state: EducationPublicationState): string {
+  if (state.status !== "published" || !state.publishedSnapshot) return "Draft";
+  return hasUnpublishedChanges(state)
+    ? "Objavljeno · neobjavljene izmene"
+    : "Objavljeno";
+}
+
+export function educationPublicationStateFromRecord(
+  record: Pick<
+    EducationContentRecord,
+    "status" | "publishedSnapshot" | "workingSavedAt"
+  >,
+): EducationPublicationState {
+  return {
+    status: record.status,
+    publishedSnapshot: record.publishedSnapshot ?? null,
+    workingSavedAt: record.workingSavedAt ?? null,
+  };
 }
 
 export interface EducationContentRow {

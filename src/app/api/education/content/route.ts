@@ -79,6 +79,9 @@ export async function POST(request: Request) {
       // odsecanja polja.
       blocks,
       seo: metadata.data.seo ?? {},
+      // Radna kopija postoji od prvog snimanja; snapshot tek od prve objave.
+      workingSavedAt: new Date(),
+      publishedSnapshot: null,
     });
 
     return NextResponse.json({ item: created.toObject() }, { status: 201 });

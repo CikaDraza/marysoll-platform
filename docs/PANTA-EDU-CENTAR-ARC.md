@@ -1,6 +1,6 @@
 # PANTA — Edu Centar: workspace arhitektura i Education domen
 
-> **Status:** ZAKLJUČANA ARHITEKTURA; FAZE 0, 1 I 2 IMPLEMENTIRANE; F3A/EDU UI-1A SELECTOR + ACTIVATION CODE COMPLETE, MARINA BROWSER ACCEPTANCE PENDING; **EDU UI-2 (F4A EducationContent + CMS CRUD + F3B domain/API gates) IMPLEMENTIRAN, ČEKA MARINA CMS BROWSER TEST.**
+> **Status:** ZAKLJUČANA ARHITEKTURA; FAZE 0, 1 I 2 IMPLEMENTIRANE; F3A/EDU UI-1A SELECTOR + ACTIVATION CODE COMPLETE, MARINA BROWSER ACCEPTANCE PENDING; **EDU UI-2 + UI-2B (EducationContent, CMS CRUD, F3B gate-ovi, durable working copy + published snapshot) IMPLEMENTIRANI, ČEKAJU MARINA CMS BROWSER TEST.**
 > Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-29 · `staging/production-engines`
 >
 > **Faza 0 je počela tek pošto je Theme-9 contract/rollout foundation zatvoren i
@@ -344,19 +344,55 @@ EducationContent {
 - ✅ Publish čita **persisted** zapis, ne telo zahteva: nema puta kojim bi se
   objavilo nešto što nije prošlo Save. Host uslov je bar jedan `VALID` vidljiv
   blok; shared validator nije menjan.
-- ✅ Lifecycle odluka: **Save Draft nikada ne menja `status`.** Objavljen zapis
-  ostaje objavljen; jedini put do `published` je eksplicitna objava. Ovo je
-  namerna razlika u odnosu na newsletter, gde snimanje vraća landing u
-  neobjavljeno stanje i javni sadržaj nestaje.
+- ✅ Lifecycle (**ispravljeno u UI-2B**): jedan zapis nosi **dve kopije**.
+
+  ```text
+  root polja        → tekuća radna kopija (menja je Save)
+  publishedSnapshot → poslednja objavljena verzija (menja je samo Publish)
+  ```
+
+  Ranija formulacija „Save ne menja `status`, dakle nema public downtime-a" je
+  bila nedovoljna: `status` jeste ostajao `published`, ali su se menjala baš
+  ona root polja (`title`, `slug`, `kind`, `visibility`, `seo`, `blocks`) koja
+  bi javna strana čitala — pa bi snimanje bilo **implicitna objava**. Sada
+  Save menja samo radnu kopiju, a objava je jedina granica promocije. Nema
+  istorije verzija: postoje tačno dve kopije, tekuća i poslednja objavljena.
 - ✅ Slug: server normalizuje, izvodi ga iz naslova samo kad nije unet, i
-  **ne prepisuje ručno potvrđen slug pri promeni naslova**; kolizija je
-  409 `EDUCATION_SLUG_TAKEN`.
+  **ne prepisuje ručno potvrđen slug pri promeni naslova**; kolizija radnog
+  slug-a je 409 `EDUCATION_SLUG_TAKEN`. Javni URL je `publishedSnapshot.slug` i
+  ostaje živ dok se ne objavi ponovo; dva objavljena zapisa istog tenanta ne
+  mogu deliti javni URL (partial unique indeks nad
+  `{tenantId, publishedSnapshot.slug}` + provera pri objavi,
+  409 `EDUCATION_PUBLIC_SLUG_TAKEN`). Nikad globalno unique.
 - ✅ UI: CMS lista (naslov/vrsta/vidljivost/status/izmenjeno) + **full-page**
   editor nad deljenim `ContentBlocksEditor`, `PreviewRenderer` i
   `useContentMediaAuthoring`. Nema education-specific blokova; svih 12 shared
   tipova radi round-trip.
-- ⬜ Nije rađeno u UI-2: javno `/edukacija`, public/client read API, Moj
-  Prostor, assignment/ACL, revision engine, AI SEO.
+- ✅ **Javni izvor istine (UI-2B, obavezno za UI-3):**
+
+  ```text
+  AUTHORING SOURCE  → root EducationContent
+  PUBLIC SOURCE     → publishedSnapshot
+  PUBLISH           → jedina granica promocije
+  ```
+
+  `isPubliclyConsumable()` i `resolvePublicEducationContent()` čitaju
+  **isključivo** snapshot. Zapis bez snapshot-a nije javan ni kada mu je
+  `status: "published"` — fail-closed, da zatečen zapis pre backfill-a ne
+  procuri. UI-3 ne sme koristiti `root.status` + `root.visibility` +
+  `root.blocks`.
+- ✅ Vidljivost prati snapshot: prelazak javno↔privatno stupa na snagu tek
+  objavom, u oba smera.
+- ✅ Backfill: `npm run backfill:education-snapshot -- --dry-run|--apply`
+  (tenant-scoped opcija, idempotentan, draft se nikada ne objavljuje). Provereno
+  nad `staging-marysoll_db`: kolekcija `educationcontents` još ne postoji, dakle
+  nema zatečenih zapisa — skripta ipak postoji jer se na „verovatno prazna baza"
+  ne oslanjamo.
+- ✅ Admin oznaka: `Draft` · `Objavljeno` · `Objavljeno · neobjavljene izmene`,
+  računata iz `workingSavedAt` vs `publishedSnapshot.publishedAt` — bez
+  poređenja blokova u renderu.
+- ⬜ Nije rađeno u UI-2/2B: javno `/edukacija`, public/client read API, Moj
+  Prostor, assignment/ACL, Unpublish, istorija verzija, AI SEO.
 
 ---
 

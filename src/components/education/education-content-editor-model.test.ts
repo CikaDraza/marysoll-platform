@@ -3,6 +3,8 @@ import { ALL_TWELVE_BLOCKS } from "@/lib/education/__fixtures__/education-blocks
 import type { EducationContentRecord } from "@/lib/education/content-document";
 import {
   createPayload,
+  educationPublicationStateFromRecord,
+  publicationLabel,
   editorStateFromRecord,
   educationContentRows,
   emptyEducationEditorState,
@@ -134,6 +136,58 @@ describe("lista", () => {
       isPublic: false,
       updatedLabel: "29.08.2026.",
       href: "/education/content/1",
+    });
+  });
+});
+
+describe("oznaka objave", () => {
+  const publishedAt = "2026-08-29T10:00:00.000Z";
+  const live = {
+    title: "Estetika lica",
+    slug: "estetika-lica",
+    kind: "article" as const,
+    visibility: "public" as const,
+    publishedAt,
+  };
+
+  it("nikad objavljen zapis je Draft", () => {
+    expect(
+      publicationLabel({ status: "draft", publishedSnapshot: null, workingSavedAt: null }),
+    ).toBe("Draft");
+  });
+
+  it("odmah po objavi je samo Objavljeno", () => {
+    expect(
+      publicationLabel({
+        status: "published",
+        publishedSnapshot: live,
+        workingSavedAt: "2026-08-29T09:58:00.000Z",
+      }),
+    ).toBe("Objavljeno");
+  });
+
+  it("sačuvana izmena posle objave se vidi kao neobjavljena", () => {
+    expect(
+      publicationLabel({
+        status: "published",
+        publishedSnapshot: live,
+        workingSavedAt: "2026-08-29T10:07:00.000Z",
+      }),
+    ).toBe("Objavljeno · neobjavljene izmene");
+  });
+
+  it("stanje se čita iz zapisa, ne iz poređenja blokova", () => {
+    expect(
+      educationPublicationStateFromRecord({
+        ...record,
+        status: "published",
+        publishedSnapshot: live,
+        workingSavedAt: "2026-08-29T10:07:00.000Z",
+      }),
+    ).toEqual({
+      status: "published",
+      publishedSnapshot: live,
+      workingSavedAt: "2026-08-29T10:07:00.000Z",
     });
   });
 });

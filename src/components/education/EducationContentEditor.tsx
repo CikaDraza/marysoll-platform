@@ -23,11 +23,14 @@ import { useEducationContentMutations } from "@/hooks/education/useEducationCont
 import {
   createPayload,
   editorStateFromRecord,
+  educationPublicationStateFromRecord,
   emptyEducationEditorState,
   isEducationEditorDirty,
   previewSlug,
+  publicationLabel,
   updatePayload,
   type EducationEditorState,
+  type EducationPublicationState,
 } from "./education-content-editor-model";
 
 type Tab = "editor" | "preview";
@@ -49,7 +52,12 @@ export default function EducationContentEditor({ record }: Props) {
   const [state, setState] = useState<EducationEditorState>(
     record ? editorStateFromRecord(record) : emptyEducationEditorState(),
   );
-  const [status, setStatus] = useState(record?.status ?? "draft");
+  // Stanje objave dolazi sa servera; radna kopija se uređuje nezavisno od nje.
+  const [publication, setPublication] = useState<EducationPublicationState>(
+    record
+      ? educationPublicationStateFromRecord(record)
+      : { status: "draft", publishedSnapshot: null, workingSavedAt: null },
+  );
   const [recordId, setRecordId] = useState(record?.id);
   const [tab, setTab] = useState<Tab>("editor");
 
@@ -76,7 +84,7 @@ export default function EducationContentEditor({ record }: Props) {
         const created = await create.mutateAsync(createPayload(state));
         const nextState = editorStateFromRecord(created);
         setRecordId(created.id);
-        setStatus(created.status);
+        setPublication(educationPublicationStateFromRecord(created));
         setState(nextState);
         setBaseline(nextState);
         router.replace(`/education/content/${created.id}`);
@@ -88,7 +96,7 @@ export default function EducationContentEditor({ record }: Props) {
 
       const saved = await update.mutateAsync(changes);
       const nextState = editorStateFromRecord(saved);
-      setStatus(saved.status);
+      setPublication(educationPublicationStateFromRecord(saved));
       setState(nextState);
       setBaseline(nextState);
       return saved.id;
@@ -110,7 +118,7 @@ export default function EducationContentEditor({ record }: Props) {
 
     try {
       const published = await publish.mutateAsync();
-      setStatus(published.status);
+      setPublication(educationPublicationStateFromRecord(published));
       toast.success("Sadržaj je objavljen");
     } catch (error) {
       toast.error(getContentMutationErrorMessage(error, "Objava nije uspela"));
@@ -147,9 +155,7 @@ export default function EducationContentEditor({ record }: Props) {
             {recordId ? "Uredi sadržaj" : "Novi sadržaj"}
           </h1>
           <p className="mt-1 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <span>
-              {status === "published" ? "Objavljeno" : "Draft"}
-            </span>
+            <span>{publicationLabel(publication)}</span>
             {dirty && (
               <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
                 Nesačuvane izmene

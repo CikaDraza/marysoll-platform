@@ -5,9 +5,12 @@ import {
   educationContentCreateSchema,
   educationPublishHostFailure,
   hasPublishableBlock,
+  hasPublishedSnapshot,
+  hasUnpublishedChanges,
   isPubliclyConsumable,
   normalizeEducationSlug,
   resolveEducationSlug,
+  resolvePublicEducationContent,
 } from "./content-document";
 
 const article: ContentBlock = {
@@ -100,11 +103,79 @@ describe("publish host precondition", () => {
   });
 });
 
-describe("visibility nije status", () => {
-  it("javno konzumira samo published + public", () => {
-    expect(isPubliclyConsumable({ status: "published", visibility: "public" })).toBe(true);
-    expect(isPubliclyConsumable({ status: "published", visibility: "private" })).toBe(false);
-    expect(isPubliclyConsumable({ status: "draft", visibility: "public" })).toBe(false);
-    expect(isPubliclyConsumable({ status: "draft", visibility: "private" })).toBe(false);
+describe("javni izvor istine je snapshot, ne radna kopija", () => {
+  const snapshot = (visibility: "public" | "private") => ({
+    title: "Estetika lica",
+    slug: "estetika-lica",
+    kind: "article" as const,
+    visibility,
+    blocks: [article],
+    publishedAt: new Date("2026-08-29T10:00:00.000Z"),
+  });
+
+  it("javno je samo ono što ima objavljen public snapshot", () => {
+    expect(isPubliclyConsumable({ publishedSnapshot: snapshot("public") })).toBe(true);
+    expect(isPubliclyConsumable({ publishedSnapshot: snapshot("private") })).toBe(false);
+    expect(isPubliclyConsumable({ publishedSnapshot: null })).toBe(false);
+    expect(isPubliclyConsumable(undefined)).toBe(false);
+  });
+
+  it("zapis bez snapshot-a nije javan ni kad mu je status published", () => {
+    // Fail-closed: zatečen zapis pre backfill-a ostaje nevidljiv umesto da procuri.
+    const legacy = { status: "published", visibility: "public", blocks: [article] };
+
+    expect(isPubliclyConsumable(legacy as never)).toBe(false);
+    expect(hasPublishedSnapshot(legacy as never)).toBe(false);
+    expect(resolvePublicEducationContent(legacy as never)).toBeNull();
+  });
+
+  it("javni prikaz dobija snapshot, nikad radnu kopiju", () => {
+    const record = {
+      title: "Radna izmena koja još nije objavljena",
+      slug: "proporcije-lica",
+      visibility: "private" as const,
+      publishedSnapshot: snapshot("public"),
+    };
+
+    expect(resolvePublicEducationContent(record)).toBe(record.publishedSnapshot);
+    expect(resolvePublicEducationContent(record)?.slug).toBe("estetika-lica");
+  });
+});
+
+describe("neobjavljene izmene", () => {
+  const publishedAt = "2026-08-29T10:00:00.000Z";
+  const live = {
+    title: "Estetika lica",
+    slug: "estetika-lica",
+    kind: "article" as const,
+    visibility: "public" as const,
+    publishedAt,
+  };
+
+  it("prijavljuje izmene tek kad je Save posle Publish-a", () => {
+    expect(
+      hasUnpublishedChanges({ workingSavedAt: null, publishedSnapshot: live }),
+    ).toBe(false);
+    expect(
+      hasUnpublishedChanges({
+        workingSavedAt: "2026-08-29T09:59:00.000Z",
+        publishedSnapshot: live,
+      }),
+    ).toBe(false);
+    expect(
+      hasUnpublishedChanges({
+        workingSavedAt: "2026-08-29T10:05:00.000Z",
+        publishedSnapshot: live,
+      }),
+    ).toBe(true);
+  });
+
+  it("neobjavljen zapis nema šta da razlikuje", () => {
+    expect(
+      hasUnpublishedChanges({
+        workingSavedAt: "2026-08-29T10:05:00.000Z",
+        publishedSnapshot: null,
+      }),
+    ).toBe(false);
   });
 });

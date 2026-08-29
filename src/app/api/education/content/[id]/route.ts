@@ -37,10 +37,14 @@ export async function GET(
 
     await connectToDB();
 
+    // Editor uređuje radnu kopiju; objavljeni blokovi bi bili duplikat od par
+    // stotina kilobajta bez ijednog čitaoca.
     const item = await EducationContent.findOne({
       _id: id,
       tenantId: authority.tenantId,
-    }).lean();
+    })
+      .select("-publishedSnapshot.blocks")
+      .lean();
 
     if (!item) return notFoundResponse();
     return NextResponse.json({ item });
@@ -98,16 +102,23 @@ export async function PATCH(
       return metadataFailureResponse("Nema izmena za čuvanje");
     }
 
+    // Save piše SAMO radnu kopiju. `status` i `publishedSnapshot` menja
+    // isključivo objava; bez ovoga bi snimanje objavljenog zapisa odmah
+    // promenilo ono što javna strana prikazuje.
+    updates.workingSavedAt = new Date();
+
     await connectToDB();
 
-    // Save Draft NIKADA ne menja `status`. Objavljen zapis ostaje objavljen dok
-    // vlasnica sama ne pokrene Objavi; ovo je namerna razlika u odnosu na
-    // newsletter, gde snimanje vraća landing u neobjavljeno stanje.
+    // Save Draft ne menja ni `status` ni `publishedSnapshot`: objavljena
+    // verzija ostaje netaknuta dok vlasnica sama ne pokrene Objavi. Newsletter
+    // ovde snima preko objavljenog sadržaja; Education namerno ne.
     const item = await EducationContent.findOneAndUpdate(
       { _id: id, tenantId: authority.tenantId },
       { $set: updates },
       { new: true, runValidators: true },
-    ).lean();
+    )
+      .select("-publishedSnapshot.blocks")
+      .lean();
 
     if (!item) return notFoundResponse();
     return NextResponse.json({ item });

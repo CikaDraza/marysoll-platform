@@ -55,8 +55,23 @@ export interface EducationContentSummary {
 export interface EducationContentRecord extends EducationContentSummary {
   blocks: ContentBlock[];
   seo?: EducationContentSeo;
-  publishedAt?: string | null;
+  /**
+   * Poslednja objavljena verzija. Admin detalj je dobija BEZ blokova — editor
+   * uređuje radnu kopiju, a javnu verziju samo prikazuje kao činjenicu.
+   */
+  publishedSnapshot?: EducationPublishedSnapshotMeta | null;
+  workingSavedAt?: string | null;
   createdAt?: string;
+}
+
+/** Snapshot metadata koju admin editor vidi (bez blokova). */
+export interface EducationPublishedSnapshotMeta {
+  title: string;
+  slug: string;
+  kind: EducationContentKind;
+  visibility: EducationContentVisibility;
+  seo?: EducationContentSeo;
+  publishedAt: string;
 }
 
 export interface EducationContentSeo {
@@ -149,14 +164,82 @@ export function educationPublishHostFailure(
 }
 
 /**
- * `published` NIJE javno. Javna konzumacija (UI-3) mora tražiti i status i
- * vidljivost — nikada samo status.
+ * JAVNI IZVOR ISTINE = `publishedSnapshot`.
+ *
+ * Root polja su radna kopija i menjaju se pri svakom čuvanju, pa javna strana
+ * NIKADA ne sme da ih čita — ni `status`, ni `visibility`, ni `blocks`, ni
+ * `slug`. Zapis bez snapshot-a nije javan ni kada mu je `status` „published“
+ * (zatečen zapis pre backfill-a ostaje nevidljiv umesto da procuri).
  */
-export function isPubliclyConsumable(record: {
-  status: EducationContentStatus;
-  visibility: EducationContentVisibility;
+export function hasPublishedSnapshot<T>(
+  record: { publishedSnapshot?: T | null } | null | undefined,
+): record is { publishedSnapshot: T } {
+  return Boolean(record?.publishedSnapshot);
+}
+
+export function isPubliclyConsumable(
+  record:
+    | {
+        publishedSnapshot?: { visibility: EducationContentVisibility } | null;
+      }
+    | null
+    | undefined,
+): boolean {
+  return (
+    hasPublishedSnapshot(record) &&
+    record.publishedSnapshot.visibility === "public"
+  );
+}
+
+/** Vraća objavljenu verziju za javni prikaz ili `null` — nikad radnu kopiju. */
+export function resolvePublicEducationContent<
+  TSnapshot extends { visibility: EducationContentVisibility },
+>(
+  record: { publishedSnapshot?: TSnapshot | null } | null | undefined,
+): TSnapshot | null {
+  return isPubliclyConsumable(record) ? record!.publishedSnapshot! : null;
+}
+
+/**
+ * „Objavljeno · neobjavljene izmene“ — bez poređenja blokova.
+ *
+ * `workingSavedAt` piše samo Save, `publishedAt` samo Publish, pa je poređenje
+ * dva servera vremena dovoljno i deterministično. `updatedAt` za ovo ne valja:
+ * njega menja i sama objava.
+ */
+export function hasUnpublishedChanges(record: {
+  workingSavedAt?: string | Date | null;
+  publishedSnapshot?: { publishedAt: string | Date } | null;
 }): boolean {
-  return record.status === "published" && record.visibility === "public";
+  if (!record.publishedSnapshot) return false;
+  if (!record.workingSavedAt) return false;
+  return (
+    new Date(record.workingSavedAt).getTime() >
+    new Date(record.publishedSnapshot.publishedAt).getTime()
+  );
+}
+
+/** Snapshot koji Publish upisuje — gradi se isključivo od sačuvane radne kopije. */
+export function buildPublishedSnapshot(
+  working: {
+    title: string;
+    slug: string;
+    kind: EducationContentKind;
+    visibility: EducationContentVisibility;
+    blocks: unknown;
+    seo?: EducationContentSeo | null;
+  },
+  publishedAt: Date,
+) {
+  return {
+    title: working.title,
+    slug: working.slug,
+    kind: working.kind,
+    visibility: working.visibility,
+    blocks: Array.isArray(working.blocks) ? working.blocks : [],
+    seo: working.seo ?? undefined,
+    publishedAt,
+  };
 }
 
 export function educationContentStatuses(): readonly EducationContentStatus[] {

@@ -42,7 +42,49 @@ describe("EducationContent model", () => {
     expect(doc.status).toBe("draft");
     expect(doc.visibility).toBe("public");
     expect(doc.kind).toBe("article");
-    expect(doc.publishedAt).toBeNull();
+    expect(doc.publishedSnapshot).toBeNull();
+    expect(doc.workingSavedAt).toBeNull();
+  });
+
+  it("snapshot je opcion, ali kad postoji nosi celu objavljenu verziju", () => {
+    const doc = draft({
+      status: "published",
+      publishedSnapshot: {
+        title: "Estetika lica",
+        slug: "estetika-lica",
+        kind: "article",
+        visibility: "public",
+        blocks: [],
+        publishedAt: new Date(),
+      },
+    });
+
+    expect(doc.validateSync()).toBeUndefined();
+    expect(doc.publishedSnapshot?.slug).toBe("estetika-lica");
+
+    // Nepotpun snapshot ne sme da prođe — javna verzija se piše cela ili nikako.
+    const partial = draft({
+      publishedSnapshot: { title: "Bez slug-a", publishedAt: new Date() },
+    }).validateSync();
+    expect(partial?.errors["publishedSnapshot.slug"]).toBeDefined();
+  });
+
+  it("javni URL je jedinstven po tenantu i posle promene radnog slug-a", () => {
+    const [fields, options] =
+      EducationContent.schema
+        .indexes()
+        .find(
+          ([index]) =>
+            JSON.stringify(index) ===
+            JSON.stringify({ tenantId: 1, "publishedSnapshot.slug": 1 }),
+        ) ?? [];
+
+    expect(fields).toBeDefined();
+    expect(options).toMatchObject({
+      unique: true,
+      // Partial: zapisi bez objavljene verzije se ne takmiče za javni slug.
+      partialFilterExpression: { "publishedSnapshot.slug": { $type: "string" } },
+    });
   });
 
   it("prihvata svaki podržani kind, visibility i status", () => {
@@ -71,6 +113,9 @@ describe("EducationContent model", () => {
     const paths = Object.keys(EducationContent.schema.paths);
 
     for (const forbidden of [
+      "revisions",
+      "drafts",
+      "revisionNumber",
       "clientProfileId",
       "assignments",
       "theme",

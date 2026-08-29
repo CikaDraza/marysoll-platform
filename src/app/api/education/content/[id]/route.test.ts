@@ -40,7 +40,21 @@ function request(method: string, body?: unknown) {
 }
 
 function resolvesTo(value: unknown) {
-  return { lean: async () => value } as never;
+  const chain = {
+    select: () => chain,
+    lean: async () => value,
+  };
+  return chain as never;
+}
+
+/** `$set` bez servisnog `workingSavedAt` pečata — on se proverava posebno. */
+function persistedFields(call: number) {
+  const update = vi.mocked(EducationContent.findOneAndUpdate).mock.calls[call][1] as {
+    $set: Record<string, unknown>;
+  };
+  const { workingSavedAt, ...rest } = update.$set;
+  expect(workingSavedAt).toBeInstanceOf(Date);
+  return rest;
 }
 
 beforeEach(() => {
@@ -125,12 +139,15 @@ describe("tenant scoping", () => {
 });
 
 describe("PATCH — Save Draft", () => {
-  it("čuva sve blokove i ne dira status", async () => {
+  it("čuva sve blokove, ali ne dira ni status ni objavljenu verziju", async () => {
     await PATCH(request("PATCH", { blocks: ALL_TWELVE_BLOCKS }), params());
 
-    const update = vi.mocked(EducationContent.findOneAndUpdate).mock.calls[0][1];
-    expect(update).toEqual({ $set: { blocks: ALL_TWELVE_BLOCKS } });
-    expect(JSON.stringify(update)).not.toContain("status");
+    expect(persistedFields(0)).toEqual({ blocks: ALL_TWELVE_BLOCKS });
+    const update = JSON.stringify(
+      vi.mocked(EducationContent.findOneAndUpdate).mock.calls[0][1],
+    );
+    expect(update).not.toContain("status");
+    expect(update).not.toContain("publishedSnapshot");
   });
 
   it("ne dozvoljava da klijent promeni status ili tenant kroz telo zahteva", async () => {
@@ -143,9 +160,26 @@ describe("PATCH — Save Draft", () => {
       params(),
     );
 
-    expect(vi.mocked(EducationContent.findOneAndUpdate).mock.calls[0][1]).toEqual({
-      $set: { title: "Novi naslov" },
-    });
+    expect(persistedFields(0)).toEqual({ title: "Novi naslov" });
+  });
+
+  it("ignoriše pokušaj da telo zahteva prepiše objavljenu verziju", async () => {
+    await PATCH(
+      request("PATCH", {
+        title: "Novi naslov",
+        publishedSnapshot: {
+          title: "Podmetnuta javna verzija",
+          slug: "podmetnuto",
+          kind: "article",
+          visibility: "public",
+          blocks: [],
+          publishedAt: new Date().toISOString(),
+        },
+      }),
+      params(),
+    );
+
+    expect(persistedFields(0)).toEqual({ title: "Novi naslov" });
   });
 
   it("odbija strukturno neispravan draft bez ijedne DB izmene", async () => {
@@ -163,14 +197,10 @@ describe("PATCH — Save Draft", () => {
 
   it("menja slug samo kada je eksplicitno poslat i normalizuje ga", async () => {
     await PATCH(request("PATCH", { title: "Sasvim drugi naslov" }), params());
-    expect(
-      vi.mocked(EducationContent.findOneAndUpdate).mock.calls[0][1],
-    ).toEqual({ $set: { title: "Sasvim drugi naslov" } });
+    expect(persistedFields(0)).toEqual({ title: "Sasvim drugi naslov" });
 
     await PATCH(request("PATCH", { slug: "Nega Kože Zimi" }), params());
-    expect(
-      vi.mocked(EducationContent.findOneAndUpdate).mock.calls[1][1],
-    ).toEqual({ $set: { slug: "nega-koze-zimi" } });
+    expect(persistedFields(1)).toEqual({ slug: "nega-koze-zimi" });
   });
 
   it("prevodi koliziju slug-a u 409", async () => {
