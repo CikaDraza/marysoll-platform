@@ -38,6 +38,8 @@ const CLIENT_TENANT_PATHS = new Set([
   "/panel",
   "/termini",
   "/usluge",
+  // Javna edukacija; `startsWith(p + "/")` pokriva i `/edukacija/<slug>`.
+  "/edukacija",
   "/forgot-password",
   "/resend-verification",
   "/cookie-policy",

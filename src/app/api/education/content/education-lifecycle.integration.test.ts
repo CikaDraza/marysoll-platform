@@ -7,6 +7,7 @@ vi.mock("@/lib/db/mongodb", () => ({ connectToDB: async () => undefined }));
 vi.mock("@/lib/auth/auth-server", () => ({ requireTenantAdmin: vi.fn() }));
 vi.mock("@/lib/platform/capabilities-server", () => ({
   requireCapability: async () => null,
+  resolveTenantCapability: async () => ({ enabled: true }),
 }));
 
 import { requireTenantAdmin } from "@/lib/auth/auth-server";
@@ -21,6 +22,10 @@ import { EducationContent } from "@/models/EducationContent";
 import { POST as createContent } from "./route";
 import { GET as getContent, PATCH as saveContent } from "./[id]/route";
 import { POST as publishContent } from "./[id]/publish/route";
+import {
+  getPublicEducationContent,
+  listPublicEducationContent,
+} from "@/lib/education/publicContent";
 
 const TENANT = new Types.ObjectId().toString();
 const OTHER_TENANT = new Types.ObjectId().toString();
@@ -438,5 +443,96 @@ describe("I — refresh ne gubi ništa (server → editor)", () => {
     expect(
       publicationLabel(educationPublicationStateFromRecord(afterRepublish)),
     ).toBe("Objavljeno");
+  });
+});
+
+describe("J — javno čitanje (UI-3A.1)", () => {
+  it("objavljen javan sadržaj je u listi i na svom slug-u", async () => {
+    await createPublishedV1();
+
+    const list = await listPublicEducationContent(TENANT);
+    expect(list).toHaveLength(1);
+    expect(list[0]).toMatchObject({
+      slug: "estetika-lica",
+      title: "Estetika lica",
+      kind: "article",
+    });
+
+    const article = await getPublicEducationContent(TENANT, "estetika-lica");
+    expect(article?.blocks).toEqual(ALL_TWELVE_BLOCKS);
+  });
+
+  it("neobjavljen draft nije javan", async () => {
+    await createContent(
+      request({
+        title: "Još nije gotovo",
+        slug: "jos-nije-gotovo",
+        kind: "article",
+        visibility: "public",
+        blocks: ALL_TWELVE_BLOCKS,
+      }),
+    );
+
+    expect(await listPublicEducationContent(TENANT)).toEqual([]);
+    expect(await getPublicEducationContent(TENANT, "jos-nije-gotovo")).toBeNull();
+  });
+
+  it("objavljen privatan sadržaj nije javan ni u listi ni na slug-u", async () => {
+    const id = await createPublishedV1();
+    await saveContent(request({ visibility: "private" }), params(id));
+    await publishContent(request(), params(id));
+
+    expect(await listPublicEducationContent(TENANT)).toEqual([]);
+    expect(await getPublicEducationContent(TENANT, "estetika-lica")).toBeNull();
+  });
+
+  it("javna adresa prati objavljenu verziju, ne radnu kopiju", async () => {
+    const id = await createPublishedV1();
+    await saveContent(
+      request({ slug: "proporcije-lica", title: "Proporcije lica" }),
+      params(id),
+    );
+
+    // Sačuvano ali neobjavljeno: stari URL i dalje radi, novi još ne postoji.
+    expect(await getPublicEducationContent(TENANT, "proporcije-lica")).toBeNull();
+    const live = await getPublicEducationContent(TENANT, "estetika-lica");
+    expect(live?.title).toBe("Estetika lica");
+
+    await publishContent(request(), params(id));
+    expect(await getPublicEducationContent(TENANT, "estetika-lica")).toBeNull();
+    expect(
+      (await getPublicEducationContent(TENANT, "proporcije-lica"))?.title,
+    ).toBe("Proporcije lica");
+  });
+
+  it("ne prelazi granicu tenanta", async () => {
+    await createPublishedV1();
+
+    expect(await listPublicEducationContent(OTHER_TENANT)).toEqual([]);
+    expect(
+      await getPublicEducationContent(OTHER_TENANT, "estetika-lica"),
+    ).toBeNull();
+  });
+
+  it("zatečen zapis bez objavljene verzije nije javan ni kad je status published", async () => {
+    const created = await json<{ item: Item }>(
+      await createContent(
+        request({
+          title: "Legacy",
+          slug: "legacy",
+          kind: "article",
+          visibility: "public",
+          blocks: ALL_TWELVE_BLOCKS,
+        }),
+      ),
+    );
+    // Stanje pre UI-2B: status published, bez snapshot-a.
+    await EducationContent.updateOne(
+      { _id: created.item._id },
+      { $set: { status: "published" } },
+    );
+
+    expect(await listPublicEducationContent(TENANT)).toEqual([]);
+    expect(await getPublicEducationContent(TENANT, "legacy")).toBeNull();
   });
 });
