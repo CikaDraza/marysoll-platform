@@ -16,6 +16,7 @@ import {
 } from "@/lib/platform/workspace-capabilities";
 import type { TenantCapability } from "@/types/tenant-capabilities";
 import Image from "next/image";
+import AdminWorkspaceSelector from "@/components/workspace/AdminWorkspaceSelector";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -334,22 +335,18 @@ const AppSidebar: React.FC = () => {
     (!workspaces.salon && workspaces.education)
       ? "education"
       : "salon";
-  const hideLoadingSalonOption =
-    !capabilitySnapshot && pathname.startsWith("/education");
-  const workspaceOptions = [
-    ...(workspaces.salon && !hideLoadingSalonOption
-      ? ([{ name: "Salon", path: "/dashboard", workspace: "salon" }] as const)
-      : []),
-    ...(workspaces.education
-      ? ([
-          {
-            name: "Edu Centar",
-            path: "/education",
-            workspace: "education",
-          },
-        ] as const)
-      : []),
-  ];
+  const availableWorkspaces: AdminWorkspace[] = capabilitySnapshot
+    ? [
+        ...(workspaces.salon ? (["salon"] as const) : []),
+        ...(workspaces.education ? (["education"] as const) : []),
+      ]
+    : pathname.startsWith("/education")
+      ? []
+      : ["salon"];
+  const canActivateEducation = Boolean(
+    capabilitySnapshot?.verticals.includes("beauty") &&
+      !capabilitySnapshot.verticals.includes("education"),
+  );
   const activeNav = activeWorkspace === "education" ? EducationNav : AdminNav;
   const visibleAdminNav = activeNav.flatMap((item) => {
     if (!isResolvedCapabilityEnabled(capabilitySnapshot, item.capability)) {
@@ -400,42 +397,14 @@ const AppSidebar: React.FC = () => {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5 scrollbar-none">
-        {workspaceOptions.length > 0 && (
-          <div className="mb-4 space-y-1">
-            {isVisible && (
-              <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600">
-                Radni prostor
-              </p>
-            )}
-            {workspaceOptions.map((option) => {
-              const active = option.workspace === activeWorkspace;
-              return (
-                <Link
-                  key={option.workspace}
-                  href={option.path}
-                  onClick={closeMobileSidebar}
-                  aria-label={option.name}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
-                    active
-                      ? "bg-violet-600 text-white shadow-sm"
-                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                  } ${!isVisible ? "justify-center" : ""}`}
-                >
-                  <span className="flex-shrink-0">
-                    <Icon
-                      d={
-                        option.workspace === "education"
-                          ? "M4 19.5A2.5 2.5 0 016.5 17H20V4H6.5A2.5 2.5 0 004 6.5v13zM4 6.5A2.5 2.5 0 016.5 9H20"
-                          : icons.scissors
-                      }
-                    />
-                  </span>
-                  {isVisible && <span>{option.name}</span>}
-                </Link>
-              );
-            })}
-          </div>
-        )}
+        <AdminWorkspaceSelector
+          activeWorkspace={activeWorkspace}
+          availableWorkspaces={availableWorkspaces}
+          snapshotResolved={Boolean(capabilitySnapshot)}
+          canActivateEducation={canActivateEducation}
+          expanded={isVisible}
+          onWorkspaceSelected={closeMobileSidebar}
+        />
 
         {isVisible && (
           <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600">

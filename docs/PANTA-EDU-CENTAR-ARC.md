@@ -1,7 +1,7 @@
 # PANTA — Edu Centar: workspace arhitektura i Education domen
 
-> **Status:** ZAKLJUČANA ARHITEKTURA; FAZE 0, 1 I 2 IMPLEMENTIRANE; F3A/EDU UI-1 CODE COMPLETE, BROWSER ACCEPTANCE PENDING.
-> Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-28 · `staging/production-engines`
+> **Status:** ZAKLJUČANA ARHITEKTURA; FAZE 0, 1 I 2 IMPLEMENTIRANE; F3A/EDU UI-1A SELECTOR + ACTIVATION CODE COMPLETE, MARINA BROWSER ACCEPTANCE PENDING.
+> Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-29 · `staging/production-engines`
 >
 > **Faza 0 je počela tek pošto je Theme-9 contract/rollout foundation zatvoren i
 > staging postao aktivna razvojna linija za Edu luk; sada je završena.**
@@ -255,9 +255,35 @@ route/API boundary.
 - Education sidebar prikazuje samo Pregled i Sadržaj;
 - `/education/content` i `/education/content/new` su namerni UI shell-ovi bez
   persistence-a ili throwaway forme.
+- workspace control je jedan accessible dropdown, ne aktivni link koji vodi na
+  istu rutu; hybrid owner bira Salon ↔ Edu Centar, a URL ostaje authority za
+  trenutno aktivni workspace.
 
 **Status:** code complete; staging browser acceptance je obavezan pre UX
-prihvatanja. Production activation ostaje zasebna release odluka.
+prihvatanja. Production deployment ostaje zasebna release odluka.
+
+#### Workspace availability nije automatski tenant upgrade
+
+Postojeći beauty tenant ostaje beauty-only sve dok owner eksplicitno ne izabere
+**Aktiviraj Edu Centar** i potvrdi mutaciju. Selector pre aktivacije prikazuje
+aktivni Salon i zaseban activation CTA; ne predstavlja Edu Centar kao već
+dostupan workspace.
+
+Aktivacija je tenant-scoped, idempotentna canonical operacija:
+
+```text
+beauty tenant
+  → explicit owner confirmation
+  → addEducationCapabilityConfiguration(existingTenant)
+  → verticals: [beauty, education]
+  → isti tenant postaje hybrid
+```
+
+Ne kreira se drugi tenant i ne menjaju se `SalonProfile`, postojeći sadržaj,
+Salon theme ili Theme-9 konfiguracija. Drugačija buduća Education vizuelna
+prezentacija nije razlog da se zahteva drugi tenant: razdvajanje tenanta ostaje
+business/brand odluka, ne theme workaround. Education theme arhitektura ovde
+nije definisana.
 
 `core` ovde nije nova pricing odluka: postojeći plan model nema Education
 entitlement. Najmanji eksplicitni contract je platform availability ∩ postojeći

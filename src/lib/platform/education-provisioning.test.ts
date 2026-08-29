@@ -64,17 +64,13 @@ describe("provisionEducationWorkspace", () => {
     expect(state.update).not.toHaveBeenCalled();
   });
 
-  it("provisioning postoji bez javnog activation CTA/API call-site-a", () => {
+  it("ostaje server-only authority bez theme ili SalonProfile zavisnosti", () => {
     const source = readFileSync(
       path.join(process.cwd(), "src/lib/platform/education-provisioning.ts"),
       "utf8",
     );
-    expect(source).toContain("UI aktivacija ostaje");
-    const workspace = readFileSync(
-      path.join(process.cwd(), "src/app/education/page.tsx"),
-      "utf8",
-    );
-    expect(workspace).not.toContain("provisionEducationWorkspace");
-    expect(workspace).not.toContain("Aktiviraj Edu Centar");
+    expect(source).toContain("addEducationCapabilityConfiguration");
+    expect(source).not.toMatch(/from ["']@\/models\/SalonProfile["']/);
+    expect(source).not.toMatch(/landingTheme|Theme-9|themeId/);
   });
 });

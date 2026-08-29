@@ -15,11 +15,10 @@ type ProvisionableTenant = {
 };
 
 /**
- * F0 backend ugovor za budući CTA „Aktiviraj Edu Centar”.
+ * Server authority za CTA „Aktiviraj Edu Centar”.
  *
  * Menja samo capability state ISTOG Tenant-a. Ne kreira Tenant, TenantUser ili
- * Subscription i ne dodiruje SalonProfile/branding. UI aktivacija ostaje
- * zaključana do Faze 5.
+ * Subscription i ne dodiruje SalonProfile/branding/theme state.
  */
 export async function provisionEducationWorkspace(
   tenantId: string | Types.ObjectId,
