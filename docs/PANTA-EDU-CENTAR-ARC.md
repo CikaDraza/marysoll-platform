@@ -622,12 +622,19 @@ istom spisku videla i svoje privatne materijale. Odbijena je namerno:
   `private` zapis, umesto da ga dohvata pa filtrira po posetiocu.
 
 Privatan sadržaj zato živi isključivo u autorizovanom prostoru klijentkinje
-(`Moj Prostor`, Faza 6A/6B):
+(`Moj Prostor` → **`Moji sadržaji`**, Faza 6A/6B):
 
 ```text
 /edukacija            javne + gated preview · isto za svakoga · keširano
-/panel/moj-prostor    privatni materijali te klijentkinje + gated koje sme da čita
+/panel/moj-prostor    → Moji sadržaji
+                        · dodeljeno (Marina napravila/odobrila za nju)
+                        · sačuvano (sama dodala sa javne edukacije)
 ```
+
+Postoji i **proizvodni** razlog, ne samo bezbednosni: materijal napravljen baš
+za jednu klijentkinju treba da izgleda kao njen. Da se pojavi u javnom spisku,
+ona bi razumno pretpostavila da ga svi vide — i time bi izgubila ono zbog čega
+takav materijal ima vrednost.
 
 **Entitlement se ne razrešava u listi, nego na detaljnoj ruti.** Lista prikazuje
 isti `gated` pregled svima, uključujući klijentkinju koja ima odobrenje; telo
@@ -763,6 +770,8 @@ TENANT
 | **Capability gate** | sme li tenant uopšte da koristi Education domen |
 | **Content access mode** | `public` / `gated` / `private` — šta javnost sme da otkrije |
 | **Content gate** | sme li posetilac/korisnik da pročita telo ovog zapisa |
+| **Dodela (assignment)** | Marina je taj sadržaj namenila konkretnoj klijentkinji |
+| **Sačuvano (saved)** | klijentkinja je sama dodala sadržaj u svoj prostor |
 | **Entitlement / odobrenje** | zašto konkretan prijavljen korisnik sme da čita zaštićeno |
 | **Public preview** | namerno javni metapodaci GATED sadržaja |
 
@@ -880,6 +889,7 @@ edukacija, vodiči, program, konsultacije. Za hibrid: sve zajedno.
 | `Appointment` | ✅ podaci postoje (`clientProfileId`, tenant-first indeks) |
 | `Testimonial` / Preporuke | ✅ podaci postoje (`clientProfileId`) |
 | **Loyalty** | ✅ **podaci I ekran postoje** — jedan od prvih adaptera |
+| **`Moji sadržaji`** (dodeljeno + sačuvano) | → Faza 6B |
 | Education (assignment) | → Faza 6B |
 | SkincareGuide | → Faza 8 |
 | GuidedProgram | → Faza 9 |
@@ -908,6 +918,56 @@ ISTORIJA
 podatke. Zaseban „Nagrade" ekran u početku ostaje kao detaljna stranica na koju
 vodi CTA; da li uopšte treba da ostane top-level tab odlučuje se kasnije, iz
 upotrebe.
+
+### `Moji sadržaji` — dva različita izvora, jedna sekcija
+
+`Moj Prostor` dobija sekciju **`Moji sadržaji`**, i u nju se stiže na dva
+načina koja se **ne smeju stopiti u jedan pojam**:
+
+```text
+DODELJENO   Marina je materijal namenila baš toj klijentkinji
+            → pravi ga/odobrava Marina · Marina ga i povlači
+            → jedini put kojim `private` sadržaj uopšte stiže do klijenta
+
+SAČUVANO    klijentkinja je sama dodala sadržaj sa javne edukacije
+            → pravi ga i briše klijentkinja
+            → dugme „+" na svakom sadržaju u listi i na detaljnoj strani
+```
+
+**Tvrdo pravilo: čuvanje NIKADA ne daje pristup.** Dugme „+" pravi referencu u
+klijentkinjinom prostoru, ništa više. Sačuvan `gated` sadržaj u `Mojim
+sadržajima` i dalje stoji zaključan, sa istim CTA za pristup — kao obeleživač,
+ne kao otključavanje. Bez ovog pravila „+" postaje rupa u entitlement-u.
+
+Iz toga slede tri odvojena pojma koja se lako pomešaju:
+
+```text
+sačuvano     → gde se sadržaj pojavljuje kod klijentkinje
+dodeljeno    → Marina je odlučila da je materijal za nju
+entitlement  → sme li da pročita zaštićeno telo
+```
+
+Dodela sme biti izvor entitlement-a (ručno odobrenje). Čuvanje nije nikada.
+
+Praktične posledice:
+
+- „+" na sadržaju koji posetilac gleda **neprijavljen** vodi na prijavu, ne pravi
+  tihi zapis;
+- isti sadržaj sme biti i dodeljen i sačuvan — sekcija to prikazuje kao jedan
+  unos, a ne dva;
+- „+" se pojavljuje samo nad sadržajem koji je klijentkinji vidljiv, dakle nad
+  `public` i `gated`; `private` do nje ionako stiže samo dodelom.
+
+Ovo ujedno zatvara veći deo ranije zabeleženog „klijentkinja gleda dva mesta":
+„+" je most sa javne edukacije ka njenom prostoru.
+
+⬜ **Otvoreno pitanje za Fazu 6B, namerno nezaključano:** šta se dešava sa
+**sačuvanim** sadržajem kada Marina kasnije prebaci taj zapis u `private` (a
+klijentkinji nije dodeljen). Dve razumne opcije: tiho ukloniti unos
+(fail-closed, ali izgleda kao da je nestao bez objašnjenja) ili prikazati
+„više nije dostupno" (bolji UX, i nije curenje jer je ona taj sadržaj već
+videla dok je bio javan). Odluka pripada trenutku kada `Moji sadržaji` stvarno
+nastanu.
 
 Guide i Program kasnije samo **dodaju adaptere** u ovaj workspace.
 
@@ -943,6 +1003,13 @@ unique index: { tenantId, educationContentId, clientProfileId }
 ```
 
 Lifecycle polja nisu luksuz — bez njih se kasnije ne može napraviti **Aktuelno / Istorija** u `Moj Prostor`.
+
+**`ClientContentAssignment` pokriva samo dodelu.** Klijentkinjino sopstveno
+čuvanje („+" dugme, vidi Fazu 6A) je zaseban pojam sa drugim vlasnikom i drugim
+lifecycle-om: pravi ga i briše klijentkinja, i **nikada** ne nosi pravo čitanja
+zaštićenog tela. Da li se to tehnički rešava zasebnim zapisom ili poljem izvora
+u istom modelu, odlučuje implementacija Faze 6B — ali pojmovi se u ugovoru ne
+smeju izjednačiti, jer bi tada „+" postao tihi grant.
 
 **ACL obrazac, doslovno kao `src/app/api/appointments/client/[id]/cancel/route.ts`:**
 
