@@ -506,6 +506,21 @@ Zamenjuje ga jasnija odluka, jer je ionako rešavala pogrešan problem:
 želim da sadržaj više ne bude javno otkriven                  → PRIVATE (404)
 ```
 
+**Očekivana upotreba (product zapažanje, ne tehničko ograničenje):** ono što je
+jednom bilo javno u praksi neće postati privatno — postaće **premium**, tj.
+`gated`. Privatan sadržaj tenanti prave **od nule, za konkretnu klijentkinju**.
+
+```text
+PUBLIC → GATED     glavni tok · članak je prerađen i sada ima veću vrednost
+PRIVATE            autorski od nule, za jednu klijentkinju
+PUBLIC → PRIVATE   podržano, ali ivični slučaj
+```
+
+Zato `PUBLIC → PRIVATE` ostaje podržan i ispravno definisan, ali se ne
+optimizuje: CMS ne treba da ga gura kao ravnopravan izbor, a ponašanja koja iz
+njega slede (npr. kartica „više nije dostupno" u `Mojim sadržajima`) su rubna
+zaštita, ne glavni tok.
+
 Dakle: **gate pripada GATED stanju, PRIVATE nikada nema javni gate.** Vlasnica
 bira ishod eksplicitno, umesto da ga platforma pogađa iz istorije adrese.
 
