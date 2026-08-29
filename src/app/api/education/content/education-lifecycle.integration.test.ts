@@ -10,6 +10,13 @@ vi.mock("@/lib/platform/capabilities-server", () => ({
 }));
 
 import { requireTenantAdmin } from "@/lib/auth/auth-server";
+import { normalizeEducationContentRecord } from "@/hooks/education/useEducationContent";
+import {
+  editorStateFromRecord,
+  educationPublicationStateFromRecord,
+  isEducationEditorDirty,
+  publicationLabel,
+} from "@/components/education/education-content-editor-model";
 import { EducationContent } from "@/models/EducationContent";
 import { POST as createContent } from "./route";
 import { GET as getContent, PATCH as saveContent } from "./[id]/route";
@@ -358,5 +365,78 @@ describe("H — tenant scope", () => {
     );
 
     expect(response.status).toBe(200);
+  });
+});
+
+describe("I — refresh ne gubi ništa (server → editor)", () => {
+  /**
+   * Šav koji nijedan serverski test ne pokriva: odgovor rute prolazi kroz
+   * normalizaciju hook-a i punjenje editor stanja. Greška ovde tiho gubi
+   * sadržaj koji je server ispravno sačuvao.
+   */
+  it("stanje editora posle ponovnog učitavanja jednako je onome što je sačuvano", async () => {
+    const sent = {
+      title: "Estetika lica",
+      slug: "estetika-lica",
+      kind: "guide" as const,
+      visibility: "private" as const,
+      blocks: ALL_TWELVE_BLOCKS,
+      seo: { title: "Estetika lica", description: "Šta stvarno pomaže koži" },
+    };
+
+    const created = await json<{ item: Item }>(
+      await createContent(request(sent)),
+    );
+    const id = String(created.item._id);
+
+    // Ovo je doslovno ono što se dogodi na F5: GET → normalizacija → editor.
+    const reloaded = (await json<{ item: Record<string, unknown> }>(
+      await getContent(request(), params(id)),
+    )).item;
+    const state = editorStateFromRecord(
+      normalizeEducationContentRecord(reloaded),
+    );
+
+    expect(state.title).toBe(sent.title);
+    expect(state.slug).toBe(sent.slug);
+    expect(state.kind).toBe(sent.kind);
+    expect(state.visibility).toBe(sent.visibility);
+    expect(state.seo).toEqual(sent.seo);
+    expect(state.blocks).toEqual(ALL_TWELVE_BLOCKS);
+    // Ponovo učitan zapis nije „prljav“ dok ga vlasnica ne dotakne.
+    expect(isEducationEditorDirty(state, state)).toBe(false);
+  });
+
+  it("oznaka objave prati stvarno stanje kroz ceo ciklus", async () => {
+    const id = await createPublishedV1();
+
+    const afterPublish = normalizeEducationContentRecord(
+      (await json<{ item: Record<string, unknown> }>(
+        await getContent(request(), params(id)),
+      )).item,
+    );
+    expect(
+      publicationLabel(educationPublicationStateFromRecord(afterPublish)),
+    ).toBe("Objavljeno");
+
+    await saveContent(request({ title: "Estetika lica — dopuna" }), params(id));
+    const afterSave = normalizeEducationContentRecord(
+      (await json<{ item: Record<string, unknown> }>(
+        await getContent(request(), params(id)),
+      )).item,
+    );
+    expect(
+      publicationLabel(educationPublicationStateFromRecord(afterSave)),
+    ).toBe("Objavljeno · neobjavljene izmene");
+
+    await publishContent(request(), params(id));
+    const afterRepublish = normalizeEducationContentRecord(
+      (await json<{ item: Record<string, unknown> }>(
+        await getContent(request(), params(id)),
+      )).item,
+    );
+    expect(
+      publicationLabel(educationPublicationStateFromRecord(afterRepublish)),
+    ).toBe("Objavljeno");
   });
 });

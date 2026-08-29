@@ -206,6 +206,10 @@ export function resolvePublicEducationContent<
  * `workingSavedAt` piše samo Save, `publishedAt` samo Publish, pa je poređenje
  * dva servera vremena dovoljno i deterministično. `updatedAt` za ovo ne valja:
  * njega menja i sama objava.
+ *
+ * Poznata granica: ako bi se snimanje i objava desili u istoj milisekundi,
+ * oznaka bi propustila izmenu. To je kozmetika (badge), ne gubitak podataka, i
+ * zahteva dva upisa u razmaku manjem od milisekunde.
  */
 export function hasUnpublishedChanges(record: {
   workingSavedAt?: string | Date | null;

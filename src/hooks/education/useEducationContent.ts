@@ -36,7 +36,14 @@ function normalizeSnapshot(
   };
 }
 
-function normalizeRecord(raw: Record<string, unknown>): EducationContentRecord {
+/**
+ * Šav između API odgovora i onoga što editor prikaže posle refresh-a.
+ * Eksportovan zbog testa: greška ovde tiho gubi sadržaj koji je server sačuvao,
+ * a nijedan serverski test to ne bi uhvatio.
+ */
+export function normalizeEducationContentRecord(
+  raw: Record<string, unknown>,
+): EducationContentRecord {
   const id = String(raw._id ?? raw.id ?? "");
   return {
     id,
@@ -61,7 +68,7 @@ export function useEducationContentList() {
       const { data } = await api.get<{ items: Record<string, unknown>[] }>(
         "/education/content",
       );
-      return data.items.map(normalizeRecord);
+      return data.items.map(normalizeEducationContentRecord);
     },
   });
 }
@@ -74,7 +81,7 @@ export function useEducationContentRecord(id: string | undefined) {
       const { data } = await api.get<{ item: Record<string, unknown> }>(
         `/education/content/${id}`,
       );
-      return normalizeRecord(data.item);
+      return normalizeEducationContentRecord(data.item);
     },
   });
 }
@@ -97,7 +104,7 @@ export function useEducationContentMutations(id?: string) {
         "/education/content",
         payload,
       );
-      return normalizeRecord(data.item);
+      return normalizeEducationContentRecord(data.item);
     },
     onSuccess: (record) => invalidate(record.id),
   });
@@ -108,7 +115,7 @@ export function useEducationContentMutations(id?: string) {
         `/education/content/${id}`,
         payload,
       );
-      return normalizeRecord(data.item);
+      return normalizeEducationContentRecord(data.item);
     },
     onSuccess: (record) => invalidate(record.id),
   });
@@ -118,7 +125,7 @@ export function useEducationContentMutations(id?: string) {
       const { data } = await api.post<{ item: Record<string, unknown> }>(
         `/education/content/${id}/publish`,
       );
-      return normalizeRecord(data.item);
+      return normalizeEducationContentRecord(data.item);
     },
     onSuccess: (record) => invalidate(record.id),
   });
