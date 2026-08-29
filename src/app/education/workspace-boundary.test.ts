@@ -11,6 +11,7 @@ describe("Edu admin workspace boundary", () => {
       "inquiries/page.tsx",
       "content/page.tsx",
       "content/new/page.tsx",
+      "content/[id]/page.tsx",
     ]) {
       expect(existsSync(path.join(root, route))).toBe(true);
     }
@@ -39,5 +40,37 @@ describe("Edu admin workspace boundary", () => {
     expect(source).toContain("resolveTenantCapabilitySnapshot(actor.tenantId)");
     expect(source).toContain("resolveAdminWorkspaceNavigation(snapshot)");
     expect(source).not.toContain("useAuth");
+  });
+
+  it("CMS ekrani ne govore roadmap jezikom", () => {
+    const sources = [
+      "src/components/education/EducationContentList.tsx",
+      "src/components/education/EducationContentEditor.tsx",
+      "src/app/education/content/page.tsx",
+      "src/app/education/content/new/page.tsx",
+    ].map((file) => readFileSync(path.join(process.cwd(), file), "utf8"));
+
+    for (const source of sources) {
+      expect(source).not.toMatch(
+        /Faza \d|F3B|F4B|F6B|UI-2|UI-3|workspace shell|dolazi kasnije|rezervisana/i,
+      );
+    }
+  });
+
+  it("editor je pun ekran nad deljenim Content Composer-om, bez sopstvenih blokova", () => {
+    const editor = readFileSync(
+      path.join(process.cwd(), "src/components/education/EducationContentEditor.tsx"),
+      "utf8",
+    );
+
+    expect(editor).toContain(
+      '@/components/content-composer/editor/ContentBlocksEditor',
+    );
+    expect(editor).toContain('@/components/content-composer/PreviewRenderer');
+    expect(editor).toContain('useContentMediaAuthoring');
+    // Modal bi pokvario ugovor punog ekrana; education-specific blok bi pokvario
+    // deljeni registry.
+    expect(editor).not.toMatch(/Dialog|AdminSemanticModal/);
+    expect(editor).not.toMatch(/EducationArticleBlock|EducationCalloutBlock|EducationFileBlock/);
   });
 });

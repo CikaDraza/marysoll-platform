@@ -1,0 +1,147 @@
+/**
+ * GET    /api/education/content/[id] — jedan tenant-scoped zapis
+ * PATCH  /api/education/content/[id] — Save Draft
+ * DELETE /api/education/content/[id] — brisanje sa admin authority-jem
+ *
+ * Nijedna operacija ne koristi samo `_id`; filter je uvek `{ _id, tenantId }`.
+ */
+import { NextResponse } from "next/server";
+import { connectToDB } from "@/lib/db/mongodb";
+import { validateContentDocument } from "@/lib/content/validation/contentBlockValidation";
+import { contentValidationFailureResponse } from "@/lib/content/validation/contentValidationResponse";
+import {
+  educationContentUpdateSchema,
+  normalizeEducationSlug,
+} from "@/lib/education/content-document";
+import {
+  invalidIdResponse,
+  isDuplicateSlugError,
+  isValidObjectId,
+  metadataFailureResponse,
+  notFoundResponse,
+  requireEducationContentAuthority,
+  slugTakenResponse,
+} from "@/lib/education/content-authority";
+import { EducationContent } from "@/models/EducationContent";
+
+export async function GET(
+  request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
+  try {
+    const authority = await requireEducationContentAuthority(request);
+    if (!authority.ok) return authority.response;
+
+    const { id } = await context.params;
+    if (!isValidObjectId(id)) return invalidIdResponse();
+
+    await connectToDB();
+
+    const item = await EducationContent.findOne({
+      _id: id,
+      tenantId: authority.tenantId,
+    }).lean();
+
+    if (!item) return notFoundResponse();
+    return NextResponse.json({ item });
+  } catch (error) {
+    console.error("[GET /api/education/content/[id]]", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
+
+export async function PATCH(
+  request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
+  try {
+    const authority = await requireEducationContentAuthority(request);
+    if (!authority.ok) return authority.response;
+
+    const { id } = await context.params;
+    if (!isValidObjectId(id)) return invalidIdResponse();
+
+    const body = (await request.json()) as Record<string, unknown>;
+    const metadata = educationContentUpdateSchema.safeParse(body);
+    if (!metadata.success) {
+      return metadataFailureResponse(
+        metadata.error.issues[0]?.message ?? "Podaci o sadržaju nisu ispravni",
+      );
+    }
+
+    const updates: Record<string, unknown> = {};
+
+    if (body.blocks !== undefined) {
+      const validation = validateContentDocument(body.blocks, "draft");
+      if (!validation.valid) return contentValidationFailureResponse(validation);
+      updates.blocks = body.blocks;
+    }
+
+    if (metadata.data.title !== undefined) updates.title = metadata.data.title;
+    if (metadata.data.kind !== undefined) updates.kind = metadata.data.kind;
+    if (metadata.data.visibility !== undefined) {
+      updates.visibility = metadata.data.visibility;
+    }
+    if (metadata.data.seo !== undefined) updates.seo = metadata.data.seo;
+
+    // Slug se menja SAMO kad je eksplicitno poslat. Promena naslova ne sme da
+    // prepiše ručno potvrđenu web adresu.
+    if (metadata.data.slug !== undefined) {
+      const slug = normalizeEducationSlug(metadata.data.slug);
+      if (!slug) {
+        return metadataFailureResponse("Web adresa nije ispravna");
+      }
+      updates.slug = slug;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return metadataFailureResponse("Nema izmena za čuvanje");
+    }
+
+    await connectToDB();
+
+    // Save Draft NIKADA ne menja `status`. Objavljen zapis ostaje objavljen dok
+    // vlasnica sama ne pokrene Objavi; ovo je namerna razlika u odnosu na
+    // newsletter, gde snimanje vraća landing u neobjavljeno stanje.
+    const item = await EducationContent.findOneAndUpdate(
+      { _id: id, tenantId: authority.tenantId },
+      { $set: updates },
+      { new: true, runValidators: true },
+    ).lean();
+
+    if (!item) return notFoundResponse();
+    return NextResponse.json({ item });
+  } catch (error) {
+    if (isDuplicateSlugError(error)) return slugTakenResponse();
+    console.error("[PATCH /api/education/content/[id]]", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
+  try {
+    const authority = await requireEducationContentAuthority(request);
+    if (!authority.ok) return authority.response;
+
+    const { id } = await context.params;
+    if (!isValidObjectId(id)) return invalidIdResponse();
+
+    await connectToDB();
+
+    // Media ostaje na provideru: brisanje zapisa ne sme slepo da uništi asset
+    // koji drugi sadržaj možda još koristi.
+    const deleted = await EducationContent.findOneAndDelete({
+      _id: id,
+      tenantId: authority.tenantId,
+    }).lean();
+
+    if (!deleted) return notFoundResponse();
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[DELETE /api/education/content/[id]]", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}

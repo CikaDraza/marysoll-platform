@@ -1,6 +1,6 @@
 # PANTA — Edu Centar: workspace arhitektura i Education domen
 
-> **Status:** ZAKLJUČANA ARHITEKTURA; FAZE 0, 1 I 2 IMPLEMENTIRANE; F3A/EDU UI-1A SELECTOR + ACTIVATION CODE COMPLETE, MARINA BROWSER ACCEPTANCE PENDING.
+> **Status:** ZAKLJUČANA ARHITEKTURA; FAZE 0, 1 I 2 IMPLEMENTIRANE; F3A/EDU UI-1A SELECTOR + ACTIVATION CODE COMPLETE, MARINA BROWSER ACCEPTANCE PENDING; **EDU UI-2 (F4A EducationContent + CMS CRUD + F3B domain/API gates) IMPLEMENTIRAN, ČEKA MARINA CMS BROWSER TEST.**
 > Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-29 · `staging/production-engines`
 >
 > **Faza 0 je počela tek pošto je Theme-9 contract/rollout foundation zatvoren i
@@ -327,6 +327,37 @@ EducationContent {
 
 **Edu Studio** — `src/app/education/content/`. Puna admin stranica, **ne modal**. Marina počinje od praznog naslova i `[+ Dodaj blok]`, ne od AI modala.
 
+### Implementacioni status F4A + F3B (EDU UI-2) — 2026-08-29
+
+- ✅ `EducationContent` model sa tenant-first indeksima, **tenant-scoped unique
+  slug-om** (`{ tenantId, slug }`) i `Mixed` blokovima; nema `clientProfileId`,
+  assignment, theme, booking ni course polja — regresioni test to zaključava.
+- ✅ Model je u `tenantScopedModels()`; canonical cascade contract je zelen.
+- ✅ `/api/education/content` (GET/POST), `/api/education/content/[id]`
+  (GET/PATCH/DELETE) i `/api/education/content/[id]/publish` (POST). Svaka ruta
+  ide kroz jedan ulaz: admin permission → tenant iz auth konteksta →
+  `requireCapability("education.catalog")` → tenant-scoped upit. `tenantId`
+  nikada ne dolazi iz tela zahteva; nijedan upit ne koristi samo `_id`.
+- ✅ Draft-save koristi `validateContentDocument(blocks, "draft")` — INCOMPLETE
+  i HIDDEN prolaze, INVALID daje 422 `CONTENT_VALIDATION_FAILED` bez ijedne DB
+  izmene. Blokovi se persistuju tačno onakvi kakve je validator prihvatio.
+- ✅ Publish čita **persisted** zapis, ne telo zahteva: nema puta kojim bi se
+  objavilo nešto što nije prošlo Save. Host uslov je bar jedan `VALID` vidljiv
+  blok; shared validator nije menjan.
+- ✅ Lifecycle odluka: **Save Draft nikada ne menja `status`.** Objavljen zapis
+  ostaje objavljen; jedini put do `published` je eksplicitna objava. Ovo je
+  namerna razlika u odnosu na newsletter, gde snimanje vraća landing u
+  neobjavljeno stanje i javni sadržaj nestaje.
+- ✅ Slug: server normalizuje, izvodi ga iz naslova samo kad nije unet, i
+  **ne prepisuje ručno potvrđen slug pri promeni naslova**; kolizija je
+  409 `EDUCATION_SLUG_TAKEN`.
+- ✅ UI: CMS lista (naslov/vrsta/vidljivost/status/izmenjeno) + **full-page**
+  editor nad deljenim `ContentBlocksEditor`, `PreviewRenderer` i
+  `useContentMediaAuthoring`. Nema education-specific blokova; svih 12 shared
+  tipova radi round-trip.
+- ⬜ Nije rađeno u UI-2: javno `/edukacija`, public/client read API, Moj
+  Prostor, assignment/ACL, revision engine, AI SEO.
+
 ---
 
 ## FAZA 4B — `EducationOffering` + `EducationInquiry`
@@ -378,18 +409,38 @@ javnu edukaciju.
 
 ⚠️ **`/blogs` ostaje netaknut** — i za Edu centre.
 
-### RELEASE GATE (kraj Faze 5)
+### RELEASE GATE (kraj Faze 5) — ISPRAVLJENO 2026-08-29
 
-Tek kada je sve ispunjeno:
+Ranija formulacija je vezivala „Aktiviraj Edu Centar" za ovaj gate. To više
+nije tačno: EDU UI-1A je aktivaciju svesno pomerio ranije, kao **admin
+workspace activation**. Dve odluke su sada odvojene:
+
+```text
+ADMIN WORKSPACE ACTIVATION            PUBLIC EDUCATION RELEASE
+→ F3A / EDU UI-1A                     → UI-3 / F5
+→ sme postojati PRE javnog surface-a  → traži EducationContent + public
+→ staging/release kontrolisano           loader/rute/readiness
+```
+
+F5 **više ne kontroliše postojanje Edu admin workspace-a.** F5 je release gate
+za **javni** Education surface:
 
 ```
-✓ EducationContent postoji     ✓ loader postoji
+✓ EducationContent postoji     ✓ public loader postoji
 ✓ /edukacija ruta postoji      ✓ readiness provider radi
+✓ theme-9-native prikaz        ✓ javni upit traži tenantId + status=published
+                                  + visibility=public
         ↓
-platformAvailable = true
-+ Marina tenant enabled
-+ „Aktiviraj Edu Centar" dugme se pušta (Faza 0.4)
+javni /edukacija se pušta
 ```
+
+Produkciona izloženost aktivacionog CTA-a i javni `/edukacija` release ostaju
+**zasebne release odluke**; nijedna ne blokira drugu.
+
+Vidi i zaključano platformsko pravilo
+[Tenant → Workspace → Presentation](ARCHITECTURAL_RULES.md#33-tenant--workspace--presentation-zaključano-2026-08-29):
+workspace sme postojati pre nego što taj vertikal ima ijednu javnu
+prezentaciju.
 
 ---
 

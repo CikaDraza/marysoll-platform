@@ -43,7 +43,43 @@ Code must be strictly segregated into designated operational layers:
 - **Parent UI components must be Server-Side Rendered (SSR) / Server Components by default.**
 - Keep the interactive Client Component tree as shallow as possible. Use `"use client"` only at the leaf nodes where user interaction or browser APIs are required.
 
-### 3.3 Routing & Middleware
+### 3.3 Tenant → Workspace → Presentation (zaključano 2026-08-29)
+
+Ovo je glavno pravilo platforme i nadjačava svaku ad-hoc odluku o tome „gde
+novi biznis ide“.
+
+```text
+TENANT
+= jedan biznis / brend / domen / poslovni identitet
+
+        ↓ može imati
+
+WORKSPACES
+├── Salon
+└── Edu Centar
+
+        ↓ svaki public surface kasnije može imati
+
+PRESENTATION
+├── Salon presentation/theme
+└── Education presentation/theme
+```
+
+Posledice koje su obavezujuće:
+
+- **Salon + Edu NIJE novi tenant.** To je jedan tenant sa dva workspace-a;
+  „Aktiviraj Edu Centar“ zato menja capability state istog `Tenant`-a i ne
+  kreira drugi nalog, drugu pretplatu ni drugi `SalonProfile`.
+- **Novi tenant je novi brend, domen ili odvojen biznis** — ništa manje od
+  toga. Zahtev „hoću potpuno odvojen Edu biznis“ vodi u „jedan `AuthUser` →
+  više `Tenant`-a“, ne u drugi nalog sa istim mejlom.
+- **Workspace nije prezentacija.** Admin workspace može postojati pre nego što
+  taj vertikal ima ijedan javni surface; javna prezentacija je zasebna release
+  odluka po workspace-u.
+- **Prezentacija je po surface-u, ne po tenantu.** Salon tema i Education tema
+  su nezavisne; aktivacija Edu Centra ne sme dirati zatečenu Salon temu.
+
+### 3.4 Routing & Middleware
 
 - Following Next.js 16+ conventions, the global interception, rewriting, and middleware logic is handled via `proxy.ts` (replacing the deprecated `middleware.ts`).
 

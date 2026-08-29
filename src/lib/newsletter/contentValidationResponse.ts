@@ -1,24 +1,3 @@
-import { NextResponse } from "next/server";
-import type { ContentDocumentValidation } from "@/lib/content/validation/contentBlockValidation";
-
-export function contentValidationFailureResponse(
-  validation: ContentDocumentValidation,
-) {
-  const safeValidation = {
-    ...validation,
-    blocks: validation.blocks.map(({ blockId, blockType, status, issues }) => ({
-      blockId,
-      blockType,
-      status,
-      issues,
-    })),
-  };
-  return NextResponse.json(
-    {
-      error: "Content validation failed",
-      code: "CONTENT_VALIDATION_FAILED",
-      validation: safeValidation,
-    },
-    { status: 422 },
-  );
-}
+// Content validation je domenski neutralan (F1). Kanonsko mesto je
+// lib/content/validation; ovaj re-export čuva postojeće newsletter importe.
+export { contentValidationFailureResponse } from "@/lib/content/validation/contentValidationResponse";

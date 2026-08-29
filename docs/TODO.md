@@ -2,7 +2,7 @@
 
 > Tracker za tekući luk rada: **T3 Booking Engine + Consultation domen + theme-9 „Skincare Marina"**.
 > Jedan red po slice-u. Detalji su u dokumentu koji je naveden uz slice — ovde stoji samo status i jedna rečenica.
-> Poslednja izmena: 2026-08-29 · `staging/production-engines` + EDU UI-1A selector/activation code
+> Poslednja izmena: 2026-08-29 · `staging/production-engines` + EDU UI-2 EducationContent CMS
 >
 > **Aktuelno stanje:** correctness fixes, Theme-9 **2A, ceo 2B i 2C** i
 > migration/staging tooling nalaze se na `main`-u. Staging Release A + migration
@@ -27,6 +27,7 @@
 > Edu F1         ✅ staging
 > Edu F2         ✅ staging
 > Edu UI-1A/F3A  🟡 selector + activation code complete · Marina browser acceptance pending
+> Edu UI-2/F4A+F3B ✅ kod · Marina CMS browser test pending
 > ```
 >
 > Dalji Theme-9 završetak, QA i Edu Centar razvoj nastavljaju se samo na aktivnoj
@@ -49,6 +50,7 @@
 | Edu F1 | Content Composer | ✅ staging | Generički editor/render/schema/registry/score/SEO sloj je izdvojen, newsletter je ostao tanak adapter, a oba renderera koriste jedan `BlockList`. Karakterizacioni testovi čuvaju postojeći Newsletter contract. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#faza-1--content-composer-deljeni-sloj) |
 | Edu F2 | Authoring + blocks + persistence | ✅ staging | F2A authoring UX, F2B šest novih blokova i shared media contract, F2C draft-save/strict-publish validation i structural edge audit su završeni. Newsletter/Blog lifecycle i preostali write-authority edge su zaključani. | [PANTA-NEWSLETTER-BLOG-AUTHORING.md](PANTA-NEWSLETTER-BLOG-AUTHORING.md) |
 | EDU UI-1A / F3A | Capability-aware Admin Education workspace | 🟡 code complete · Marina browser acceptance pending | Snapshot projektuje server-resolved verticals; jedan dropdown prikazuje aktivni workspace. Beauty tenant dobija eksplicitni, potvrđeni i idempotentni „Aktiviraj Edu Centar” tok koji isti tenant pretvara u hybrid; Salon/Theme-9 ostaju netaknuti. Education/hybrid navigacija, server-gated `/education` i Content shell su spremni. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#f3a--admin-workspace-capability-i-navigacija-edu-ui-1) |
+| EDU UI-2 / F4A + F3B | EducationContent + pravi CMS CRUD + Content Composer | ✅ kod · 🟡 Marina CMS browser test pending | `EducationContent` model, tenant-scoped CRUD + strict publish rute iza `requireCapability("education.catalog")`, CMS lista i full-page editor nad deljenim Content Composer-om (svih 12 blokova, shared media, preview). Save Draft ne menja status; publish čita sačuvano stanje. Javno `/edukacija`, assignment i ACL nisu dirani. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#implementacioni-status-f4a--f3b-edu-ui-2--2026-08-29) |
 
 ### Booking / Consultation — zadržano
 
@@ -83,13 +85,20 @@ F4B  EducationOffering + EducationInquiry F9   GuidedProgram
 žive u **Fazi 4B**.
 
 ✅ **Faze 0, 1 i 2 su završene na aktivnoj staging razvojnoj liniji.**
+✅ **F4A + F3B (EDU UI-2) su u kodu:** `EducationContent` je drugi pravi host
+deljenog Content Composer-a; `NewsletterCampaign` se ne koristi kao storage.
 
-**NEXT:** **EDU UI-1A — workspace selector + explicit Edu Centar activation** je
-code complete i čeka obavezni Marina manual browser acceptance na stagingu.
-Acceptance mora potvrditi pre-activation Salon state, modal/cancel/confirm,
-hybrid switch posle aktivacije i nepromenjen Marina Theme-9 public Salon. Posle
-potvrde sledi **EDU UI-2 — EducationContent + pravi CMS CRUD + Content
-Composer**, sa F3B domain/API gate-ovima uz stvarne rute.
+**NEXT:** dva browser acceptance-a na stagingu, oba obavezna i oba na Marini:
+
+1. **EDU UI-1A** — workspace selector + aktivacija: pre-activation Salon state,
+   modal/cancel/confirm, hybrid switch posle aktivacije i nepromenjen Theme-9
+   public Salon.
+2. **EDU UI-2** — CMS tok sa stvarnim sadržajem: Novi sadržaj → njen tekst →
+   Sačuvaj → refresh → ponovo otvori → Pregled → Objavi, plus jedan privatan
+   objavljen zapis koji ostaje samo u CMS-u.
+
+Posle toga sledi **EDU UI-3 / F5 — javno `/edukacija`**, gde se tek rešava kako
+Education javna prezentacija stoji u odnosu na Theme-9.
 
 ### Završeno
 
@@ -142,6 +151,16 @@ vodio kao „zatečeno“, a koji su u međuvremenu **stvarno zatvoreni u kodu**
   tenant boundary. Ownership transfer je specifikovan i ODLOŽEN — vidi
   [PANTA-TENANT-OWNERSHIP-LIFECYCLE.md](PANTA-TENANT-OWNERSHIP-LIFECYCLE.md).
 - **Consultation nije `Service`** — ne sme deliti `services.catalog` ni `booking.services`.
+- **Tenant → Workspace → Presentation je zaključano platformsko pravilo.**
+  Salon + Edu nije novi tenant nego jedan tenant sa dva workspace-a; novi tenant
+  je novi brend, domen ili odvojen biznis. Admin workspace sme postojati pre
+  javne prezentacije tog vertikala. Vidi
+  [ARCHITECTURAL_RULES.md §3.3](ARCHITECTURAL_RULES.md#33-tenant--workspace--presentation-zaključano-2026-08-29).
+- **`published` nije javno.** `status` je lifecycle, `visibility` je ko sme da
+  konzumira. Svaki budući javni upit nad `EducationContent` mora tražiti
+  `tenantId` + `status=published` + `visibility=public`; samo status nije dovoljan.
+- **Save Draft ne sme da obori objavljen Education sadržaj u draft.** Status se
+  menja isključivo eksplicitnom objavom — newsletter obrazac se ovde ne ponavlja.
 - **Domenski naziv `education.*` uz `capability: null` je zabranjen** — ili domenski blok sa loaderom i capability-jem, ili `content.*` teaser.
 - ✅ **T2B triple-gate je implementiran.** Admin/client projekcija, business API
   i public Feature Block gate koriste isti capability autoritet; kompletna nova
