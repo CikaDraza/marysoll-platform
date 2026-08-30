@@ -3,6 +3,7 @@ import { ALL_TWELVE_BLOCKS } from "@/lib/education/__fixtures__/education-blocks
 import type { EducationContentRecord } from "@/lib/education/content-document";
 import {
   createPayload,
+  educationContentOverview,
   educationPublicationStateFromRecord,
   publicationLabel,
   editorStateFromRecord,
@@ -123,6 +124,10 @@ describe("lista", () => {
           visibility: "private",
           status: "published",
           updatedAt: record.updatedAt,
+          publishedSnapshot: {
+            visibility: "private",
+            publishedAt: record.updatedAt,
+          },
         },
       ],
       () => "29.08.2026.",
@@ -136,7 +141,30 @@ describe("lista", () => {
       isPublic: false,
       updatedLabel: "29.08.2026.",
       href: "/education/content/1",
+      hasUnpublished: false,
     });
+  });
+
+  it("zapis bez objavljene verzije nije „Objavljeno“, ma šta status tvrdio", () => {
+    // Zatečen zapis pre backfill-a nema živu verziju, pa oznaka ne sme da tvrdi
+    // da nešto stoji na sajtu.
+    const [row] = educationContentRows(
+      [
+        {
+          id: "1",
+          title: "Legacy",
+          slug: "legacy",
+          kind: "article",
+          visibility: "public",
+          status: "published",
+          updatedAt: record.updatedAt,
+          publishedSnapshot: null,
+        },
+      ],
+      () => "",
+    );
+
+    expect(row.statusLabel).toBe("Draft");
   });
 });
 
@@ -189,5 +217,80 @@ describe("oznaka objave", () => {
       publishedSnapshot: live,
       workingSavedAt: "2026-08-29T10:07:00.000Z",
     });
+  });
+});
+
+describe("pregled Edu Centra", () => {
+  const summary = (over: Partial<typeof base> = {}) => ({ ...base, ...over });
+  const base = {
+    id: "1",
+    title: "Tekst",
+    slug: "tekst",
+    kind: "article" as const,
+    visibility: "public" as const,
+    status: "draft" as "draft" | "published",
+    updatedAt: "2026-08-29T10:00:00.000Z",
+    workingSavedAt: null as string | null,
+    publishedSnapshot: null as {
+      visibility: "public" | "private";
+      publishedAt: string;
+    } | null,
+  };
+
+  it("prazan Edu Centar nema šta da pokaže", () => {
+    expect(educationContentOverview([])).toEqual({
+      total: 0,
+      published: 0,
+      drafts: 0,
+      unpublishedChanges: 0,
+      hasPublicContent: false,
+    });
+  });
+
+  it("broji objavljeno, u pripremi i neobjavljene izmene", () => {
+    const overview = educationContentOverview([
+      summary({ id: "a" }),
+      summary({
+        id: "b",
+        status: "published",
+        publishedSnapshot: {
+          visibility: "public",
+          publishedAt: "2026-08-29T10:00:00.000Z",
+        },
+      }),
+      summary({
+        id: "c",
+        status: "published",
+        workingSavedAt: "2026-08-29T11:00:00.000Z",
+        publishedSnapshot: {
+          visibility: "private",
+          publishedAt: "2026-08-29T10:00:00.000Z",
+        },
+      }),
+    ]);
+
+    expect(overview).toEqual({
+      total: 3,
+      published: 2,
+      drafts: 1,
+      unpublishedChanges: 1,
+      hasPublicContent: true,
+    });
+  });
+
+  it("javnog sadržaja nema dok objavljena verzija nije javna", () => {
+    const overview = educationContentOverview([
+      summary({
+        status: "published",
+        publishedSnapshot: {
+          visibility: "private",
+          publishedAt: "2026-08-29T10:00:00.000Z",
+        },
+      }),
+    ]);
+
+    // Link „Vidi na sajtu" se ne sme ponuditi za privatan sadržaj.
+    expect(overview.hasPublicContent).toBe(false);
+    expect(overview.published).toBe(1);
   });
 });

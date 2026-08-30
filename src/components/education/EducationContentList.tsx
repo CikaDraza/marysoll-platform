@@ -15,15 +15,25 @@ function formatDate(value: string): string {
   });
 }
 
-function StatusBadge({ label, published }: { label: string; published: boolean }) {
+function StatusBadge({
+  label,
+  published,
+  hasUnpublished,
+}: {
+  label: string;
+  published: boolean;
+  hasUnpublished: boolean;
+}) {
+  // Tri stanja, ne dva: objavljen sadržaj sa sačuvanim izmenama je treće i
+  // vlasnica mora da ga razlikuje od objavljenog bez izmena.
+  const tone = hasUnpublished
+    ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+    : published
+      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+      : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300";
+
   return (
-    <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-        published
-          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
-          : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
-      }`}
-    >
+    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${tone}`}>
       {label}
     </span>
   );
@@ -119,7 +129,11 @@ export default function EducationContentList() {
                     {row.visibilityLabel}
                   </td>
                   <td className="px-5 py-4">
-                    <StatusBadge label={row.statusLabel} published={row.published} />
+                    <StatusBadge
+                      label={row.statusLabel}
+                      published={row.published}
+                      hasUnpublished={row.hasUnpublished}
+                    />
                   </td>
                   <td className="px-5 py-4 text-gray-500 dark:text-gray-400">
                     {row.updatedLabel}

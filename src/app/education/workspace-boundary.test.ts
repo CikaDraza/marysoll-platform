@@ -21,13 +21,18 @@ describe("Edu admin workspace boundary", () => {
   });
 
   it("ne uvodi aktivacioni CTA u workspace", () => {
-    const source = readFileSync(
-      path.join(process.cwd(), "src/app/education/page.tsx"),
-      "utf8",
-    );
-    expect(source).not.toContain("Aktiviraj Edu Centar");
-    expect(source).not.toMatch(/Faza 0|Faza 4B/);
-    expect(source).toContain('href="/education/content"');
+    const sources = [
+      "src/app/education/page.tsx",
+      "src/components/education/EducationOverview.tsx",
+    ].map((file) => readFileSync(path.join(process.cwd(), file), "utf8"));
+
+    for (const source of sources) {
+      expect(source).not.toContain("Aktiviraj Edu Centar");
+      expect(source).not.toMatch(/Faza 0|Faza 4B/);
+    }
+    // Pregled vodi u sadržaj i u kreiranje; aktivacija ostaje u selektoru.
+    expect(sources[1]).toContain('href="/education/content"');
+    expect(sources[1]).toContain('href="/education/content/new"');
   });
 
   it("štiti ceo workspace server-side resolved capability snapshotom", () => {

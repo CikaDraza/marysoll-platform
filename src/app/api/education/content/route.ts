@@ -28,7 +28,12 @@ export async function GET(request: Request) {
     await connectToDB();
 
     const items = await EducationContent.find({ tenantId: authority.tenantId })
-      .select("title slug kind visibility status updatedAt")
+      // Bez blokova: lista je pregled, ne sadržaj. Stanje objave je ovde jer
+      // „Objavljeno · neobjavljene izmene" ne može da se izvede iz root polja.
+      .select(
+        "title slug kind visibility status updatedAt workingSavedAt " +
+          "publishedSnapshot.visibility publishedSnapshot.publishedAt",
+      )
       .sort({ updatedAt: -1 })
       .lean();
 

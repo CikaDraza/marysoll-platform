@@ -50,6 +50,12 @@ export interface EducationContentSummary {
   visibility: EducationContentVisibility;
   status: EducationContentStatus;
   updatedAt: string;
+  /** Stanje objave — bez njega se „neobjavljene izmene" ne može izvesti. */
+  workingSavedAt?: string | null;
+  publishedSnapshot?: {
+    visibility: EducationContentVisibility;
+    publishedAt: string;
+  } | null;
 }
 
 export interface EducationContentRecord extends EducationContentSummary {

@@ -1,37 +1,39 @@
-import Link from "next/link";
+import { cookies, headers } from "next/headers";
+import { verifyToken } from "@/lib/auth/auth-server";
+import { connectToDB } from "@/lib/db/mongodb";
+import { Tenant } from "@/models/Tenant";
+import { tenantUrl } from "@/lib/platform/host-context";
+import EducationOverview from "@/components/education/EducationOverview";
 
-export default function EducationWorkspacePage() {
-  return (
-    <div className="space-y-6">
-      <header>
-        <p className="text-xs font-bold uppercase tracking-widest text-violet-500">
-          Edu Centar
-        </p>
-        <h1 className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
-          Edu Centar
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-          Kreirajte i upravljajte stručnim sadržajem za svoje klijente i javnu
-          edukaciju.
-        </p>
-      </header>
+/**
+ * Javna adresa Edu Centra se gradi serverski, jer admin i sajt salona ne dele
+ * host: na produkciji je subdomen/custom domen, na stagingu path-based.
+ * `host-context` je jedini graditelj apsolutnih URL-ova.
+ */
+async function resolvePublicEducationUrl(): Promise<string | null> {
+  const cookieStore = await cookies();
+  const token =
+    cookieStore.get("tenant-access-token")?.value ??
+    cookieStore.get("platform-access-token")?.value;
+  const actor = token ? verifyToken(token) : null;
+  if (!actor?.tenantId) return null;
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Link
-          href="/education/content"
-          className="rounded-2xl border border-gray-200 bg-white p-5 transition hover:border-violet-300 hover:shadow-sm dark:border-gray-800 dark:bg-gray-900"
-        >
-          <h2 className="font-semibold text-gray-900 dark:text-white">
-            Sadržaj
-          </h2>
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            Kreirajte i objavljujte stručne edukativne materijale.
-          </p>
-          <span className="mt-4 inline-flex text-sm font-semibold text-violet-600 dark:text-violet-400">
-            Otvori sadržaj →
-          </span>
-        </Link>
-      </div>
-    </div>
-  );
+  await connectToDB();
+  const tenant = (await Tenant.findById(actor.tenantId)
+    .select("slug customDomain customDomainVerified")
+    .lean()) as {
+    slug?: string;
+    customDomain?: string | null;
+    customDomainVerified?: boolean | null;
+  } | null;
+  if (!tenant?.slug) return null;
+
+  const headerStore = await headers();
+  return tenantUrl({ ...tenant, slug: tenant.slug }, "/edukacija", {
+    headers: { get: (name: string) => headerStore.get(name) },
+  });
+}
+
+export default async function EducationWorkspacePage() {
+  return <EducationOverview publicUrl={await resolvePublicEducationUrl()} />;
 }

@@ -87,7 +87,12 @@ export default function EducationContentEditor({ record }: Props) {
         setPublication(educationPublicationStateFromRecord(created));
         setState(nextState);
         setBaseline(nextState);
-        router.replace(`/education/content/${created.id}`);
+
+        // `router.replace` bi prešao sa /new na /[id] — drugi segment rute,
+        // dakle demontiranje celog editora i „Učitavanje sadržaja…" usred
+        // pisanja. Adresa se zato menja bez navigacije: editor ostaje na mestu
+        // i prvo snimanje izgleda isto kao svako sledeće.
+        window.history.replaceState(null, "", `/education/content/${created.id}`);
         return created.id;
       }
 
@@ -139,6 +144,12 @@ export default function EducationContentEditor({ record }: Props) {
   };
 
   const slugPreview = previewSlug(state);
+  // Bez ovoga vlasnica ne zna da li SEO uopšte treba da otvara.
+  const hasCustomSeo = Boolean(
+    state.seo.title?.trim() ||
+      state.seo.description?.trim() ||
+      state.seo.ogImage?.trim(),
+  );
 
   return (
     <div className="space-y-6">
@@ -282,8 +293,13 @@ export default function EducationContentEditor({ record }: Props) {
         </fieldset>
 
         <Disclosure as="div" className="sm:col-span-2">
-          <DisclosureButton className="text-sm font-semibold text-violet-600 dark:text-violet-400">
-            SEO
+          <DisclosureButton className="group flex items-center gap-2 text-sm font-semibold text-violet-600 underline-offset-4 hover:underline dark:text-violet-400">
+            Uredi SEO
+            <span className="font-normal text-gray-500 no-underline dark:text-gray-400">
+              {hasCustomSeo
+                ? "· SEO podešen"
+                : "· koristi automatske vrednosti"}
+            </span>
           </DisclosureButton>
           <DisclosurePanel className="mt-3 grid gap-3">
             <input
@@ -327,6 +343,7 @@ export default function EducationContentEditor({ record }: Props) {
         <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
           <PreviewRenderer
             blocks={state.blocks}
+            viewports={["mobile", "desktop"]}
             header={
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">

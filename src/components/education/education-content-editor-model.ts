@@ -1,7 +1,6 @@
 import type { ContentBlock } from "@/lib/content/schemas/landing-blocks";
 import {
   EDUCATION_KIND_LABELS,
-  EDUCATION_STATUS_LABELS,
   EDUCATION_VISIBILITY_LABELS,
   hasUnpublishedChanges,
   normalizeEducationSlug,
@@ -152,8 +151,44 @@ export interface EducationContentRow {
   statusLabel: string;
   published: boolean;
   isPublic: boolean;
+  /** Objavljen, ali je posle objave nešto sačuvano. */
+  hasUnpublished: boolean;
   updatedLabel: string;
   href: string;
+}
+
+/** Zbir za Pregled — jedan prolaz kroz listu, bez dodatnog upita. */
+export interface EducationContentOverview {
+  total: number;
+  published: number;
+  drafts: number;
+  unpublishedChanges: number;
+  /** Ima li ijedan zapis koji je stvarno javan na sajtu. */
+  hasPublicContent: boolean;
+}
+
+export function educationContentOverview(
+  items: readonly EducationContentSummary[],
+): EducationContentOverview {
+  return items.reduce<EducationContentOverview>(
+    (overview, item) => ({
+      total: overview.total + 1,
+      published: overview.published + (item.status === "published" ? 1 : 0),
+      drafts: overview.drafts + (item.status === "published" ? 0 : 1),
+      unpublishedChanges:
+        overview.unpublishedChanges + (hasUnpublishedChanges(item) ? 1 : 0),
+      hasPublicContent:
+        overview.hasPublicContent ||
+        item.publishedSnapshot?.visibility === "public",
+    }),
+    {
+      total: 0,
+      published: 0,
+      drafts: 0,
+      unpublishedChanges: 0,
+      hasPublicContent: false,
+    },
+  );
 }
 
 export function educationContentRows(
@@ -166,9 +201,10 @@ export function educationContentRows(
     slug: item.slug,
     kindLabel: EDUCATION_KIND_LABELS[item.kind] ?? item.kind,
     visibilityLabel: EDUCATION_VISIBILITY_LABELS[item.visibility],
-    statusLabel: EDUCATION_STATUS_LABELS[item.status],
+    statusLabel: publicationLabel(item),
     published: item.status === "published",
     isPublic: item.visibility === "public",
+    hasUnpublished: hasUnpublishedChanges(item),
     updatedLabel: item.updatedAt ? formatDate(item.updatedAt) : "",
     href: `/education/content/${item.id}`,
   }));
