@@ -9,6 +9,7 @@ import { ContentBlocksEditor } from "@/components/content-composer/editor/Conten
 import { PreviewRenderer } from "@/components/content-composer/PreviewRenderer";
 import { useContentMediaAuthoring } from "@/hooks/useContentMediaAuthoring";
 import { getContentMutationErrorMessage } from "@/lib/content/validation/contentValidationClient";
+import { saveEducationDraftOnExit } from "@/lib/education/exitSave";
 import {
   EDUCATION_ACCESS_HELP,
   EDUCATION_ACCESS_LABELS,
@@ -91,14 +92,25 @@ export default function EducationContentEditor({ record }: Props) {
       return null;
     }
 
+    // Stanje se pamti PRE poziva. Sve što vlasnica otkuca dok zahtev traje ne
+    // sme da bude pregaženo odgovorom servera — a upravo bi se to desilo kad
+    // bi se `state` posle uspeha punio iz odgovora.
+    const sent = state;
+
     try {
       if (!recordId || !baseline) {
-        const created = await create.mutateAsync(createPayload(state));
-        const nextState = editorStateFromRecord(created);
+        const created = await create.mutateAsync(createPayload(sent));
         setRecordId(created.id);
         setPublication(educationPublicationStateFromRecord(created));
-        setState(nextState);
-        setBaseline(nextState);
+
+        // Jedino se slug preuzima sa servera, jer ga server normalizuje. Ostala
+        // polja ostaju onakva kakva su u editoru u ovom trenutku.
+        setState((current) =>
+          current.slugTouched
+            ? current
+            : { ...current, slug: created.slug, slugTouched: true },
+        );
+        setBaseline({ ...sent, slug: created.slug, slugTouched: true });
 
         // `router.replace` bi prešao sa /new na /[id] — drugi segment rute,
         // dakle demontiranje celog editora i „Učitavanje sadržaja…" usred
@@ -108,14 +120,14 @@ export default function EducationContentEditor({ record }: Props) {
         return created.id;
       }
 
-      const changes = updatePayload(state, baseline);
+      const changes = updatePayload(sent, baseline);
       if (Object.keys(changes).length === 0) return recordId;
 
       const saved = await update.mutateAsync(changes);
-      const nextState = editorStateFromRecord(saved);
       setPublication(educationPublicationStateFromRecord(saved));
-      setState(nextState);
-      setBaseline(nextState);
+      // Server sada drži tačno ono što je poslato; sve novije kucanje ostaje
+      // „prljavo" i biće poslato sledećim čuvanjem.
+      setBaseline(sent);
       return saved.id;
     } catch (error) {
       if (!silent) {
@@ -174,11 +186,57 @@ export default function EducationContentEditor({ record }: Props) {
     }
   };
 
+  /**
+   * Poslednja odbrana: napuštanje strane, prelazak na drugi ekran i zatvaranje
+   * kartice. Autosave pokriva pauzu u kucanju, ali ne i izlazak u prve dve
+   * sekunde — a upravo tada je izgubljen tekst najskuplji.
+   */
+  const exitStateRef = useRef({ state, baseline, recordId, dirty });
+  useEffect(() => {
+    exitStateRef.current = { state, baseline, recordId, dirty };
+  });
+
+  const deletedRef = useRef(false);
+
+  const flushOnExit = useCallback(() => {
+    const current = exitStateRef.current;
+    if (deletedRef.current || !current.dirty) return;
+    if (!current.recordId || !current.baseline) return;
+    if (!current.state.title.trim()) return;
+
+    saveEducationDraftOnExit(
+      current.recordId,
+      updatePayload(current.state, current.baseline),
+    );
+  }, []);
+
+  useEffect(() => {
+    // `pagehide` hvata i zatvaranje kartice i mobilni prelazak u pozadinu, gde
+    // `beforeunload` na iOS-u ne radi pouzdano.
+    const onHidden = () => flushOnExit();
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flushOnExit();
+    };
+
+    window.addEventListener("pagehide", onHidden);
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      window.removeEventListener("pagehide", onHidden);
+      document.removeEventListener("visibilitychange", onVisibility);
+      // Odlazak na drugi ekran u aplikaciji je demontiranje, ne `pagehide`.
+      flushOnExit();
+    };
+  }, [flushOnExit]);
+
   const handleDelete = async () => {
     if (!recordId) return;
     if (!window.confirm("Trajno obrisati ovaj sadržaj?")) return;
 
     try {
+      // Bez ovoga bi demontiranje posle brisanja poslalo izmenu na zapis koji
+      // više ne postoji.
+      deletedRef.current = true;
       await remove.mutateAsync(recordId);
       toast.success("Sadržaj je obrisan");
       router.push("/education/content");

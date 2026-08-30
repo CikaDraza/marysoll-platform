@@ -319,3 +319,22 @@ describe("tiho čuvanje", () => {
     expect(canAutosave(empty, true)).toBe(false);
   });
 });
+
+describe("kucanje dok traje čuvanje", () => {
+  it("izmene otkucane tokom zahteva ostaju i idu sledećim čuvanjem", () => {
+    // Ovo je ugovor koji sprečava gubitak teksta: posle uspeha se pomera samo
+    // polazište (ono što server sada drži), a ne i tekuće stanje editora.
+    const baseline = editorStateFromRecord(record);
+    const sent = { ...baseline, title: "Prva izmena" };
+    const typedMeanwhile = { ...sent, title: "Prva izmena, pa još malo" };
+
+    expect(updatePayload(sent, baseline)).toEqual({ title: "Prva izmena" });
+
+    // Server je potvrdio `sent`; polazište postaje `sent`.
+    expect(isEducationEditorDirty(typedMeanwhile, sent)).toBe(true);
+    expect(updatePayload(typedMeanwhile, sent)).toEqual({
+      title: "Prva izmena, pa još malo",
+    });
+    expect(isEducationEditorDirty(sent, sent)).toBe(false);
+  });
+});

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowTopRightOnSquareIcon, PlusIcon } from "@heroicons/react/20/solid";
+import { PlusIcon } from "@heroicons/react/20/solid";
 import { useEducationContentList } from "@/hooks/education/useEducationContent";
 import {
   educationContentOverview,
@@ -28,11 +28,7 @@ function Stat({ value, label }: { value: number; label: string }) {
   );
 }
 
-export default function EducationOverview({
-  publicUrl,
-}: {
-  publicUrl: string | null;
-}) {
+export default function EducationOverview() {
   const { data, isLoading } = useEducationContentList();
   const items = data ?? [];
   const overview = educationContentOverview(items);
@@ -53,19 +49,8 @@ export default function EducationOverview({
           </p>
         </div>
 
+        {/* „Sajt Edukacije" stoji u header-u, na istom mestu gde Salon ima svoj. */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Link ka sajtu se nudi tek kad na njemu stvarno nešto stoji. */}
-          {publicUrl && overview.hasPublicContent && (
-            <a
-              href={publicUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-            >
-              Vidi na sajtu
-              <ArrowTopRightOnSquareIcon aria-hidden="true" className="size-4" />
-            </a>
-          )}
           <Link
             href="/education/content/new"
             className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-700"
