@@ -71,7 +71,7 @@ export function EducationListView({ items, basePath, author, intro }: Props) {
             <li className="lg:col-span-2">
               <Link
                 href={`${basePath}/edukacija/${lead.slug}`}
-                className="group border-ee-border bg-ee-surface grid overflow-hidden rounded-[28px] border lg:grid-cols-2"
+                className="group border-ee-border bg-ee-surface-muted grid overflow-hidden rounded-[28px] border lg:grid-cols-2"
               >
                 {lead.coverImage && (
                   <ContentImage
@@ -81,11 +81,11 @@ export function EducationListView({ items, basePath, author, intro }: Props) {
                   />
                 )}
                 <div className="p-7 sm:p-9">
-                  <span className="font-instrument-sans text-ee-accent-contrast flex flex-wrap items-center gap-3 text-[12px] font-semibold uppercase tracking-[0.18em]">
+                  <span className="font-instrument-sans text-ee-text flex flex-wrap items-center gap-3 text-[12px] font-semibold uppercase tracking-[0.18em]">
                     {EDUCATION_KIND_LABELS[lead.kind] ?? "Edukacija"}
                     {lead.accessMode === "gated" && <GatedTag />}
                   </span>
-                  <h2 className="font-newsreader text-ee-accent group-hover:text-ee-accent-contrast mt-3 text-[clamp(24px,2.8vw,34px)] leading-[1.12] transition-colors">
+                  <h2 className="font-newsreader text-ee-accent mt-3 text-[clamp(24px,2.8vw,34px)] leading-[1.12] transition-opacity group-hover:opacity-80">
                     {lead.title}
                   </h2>
                   {lead.description && (
