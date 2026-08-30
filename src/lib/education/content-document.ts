@@ -196,6 +196,7 @@ export function hasPublishableBlock(
 
 export function educationPublishHostFailure(
   validation: ContentDocumentValidation,
+  message = "Sadržaj mora imati najmanje jedan vidljiv i kompletan blok da bi bio objavljen",
 ): ContentDocumentValidation {
   return {
     ...validation,
@@ -206,8 +207,7 @@ export function educationPublishHostFailure(
         blockType: "document",
         path: "",
         code: "required_content",
-        message:
-          "Sadržaj mora imati najmanje jedan vidljiv i kompletan blok da bi bio objavljen",
+        message,
         severity: "error",
       },
     ],

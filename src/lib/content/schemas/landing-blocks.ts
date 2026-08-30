@@ -71,6 +71,14 @@ export interface ArticleBlock extends LandingBlockBase {
   type: "ArticleBlock";
   title: string;
   paragraphs: string[];
+  /**
+   * Prosto nabrajanje ispod pasusa.
+   *
+   * `ChecklistBlock` nije zamena: on crta kvačice i znači „proveri i odštikliraj".
+   * Stručni tekst nabraja činjenice — koštana struktura, jagodične kosti, vilica
+   * — i to je obična lista, ne zadatak.
+   */
+  items?: string[];
   image?: LandingImage;
 }
 
@@ -274,6 +282,7 @@ export const articleBlockSchema = blockBaseSchema.extend({
   type: z.literal("ArticleBlock"),
   title: z.string().min(1),
   paragraphs: z.array(z.string().min(1)).min(1),
+  items: z.array(z.string().min(1)).optional(),
   image: imageSchema.optional(),
 });
 

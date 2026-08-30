@@ -157,6 +157,17 @@ export function educationPublicationStateFromRecord(
 }
 
 /**
+ * Sme li promena vrste da ubaci polazne blokove.
+ *
+ * Samo dok je sadržaj prazan. Preset je pomoć na početku, a ne šablon koji
+ * briše ono što je vlasnica već napisala — a jedan pogrešan klik na „Vrsta"
+ * usred pisanja bio bi tačno to.
+ */
+export function canSeedPreset(state: EducationEditorState): boolean {
+  return state.blocks.length === 0;
+}
+
+/**
  * Sme li tiho čuvanje da napravi zapis koji još ne postoji.
  *
  * Prazan zapis se ne kreira samo zato što je stranica otvorena — ali čim

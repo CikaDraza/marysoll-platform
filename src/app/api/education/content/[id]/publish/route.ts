@@ -19,6 +19,7 @@ import {
   hasPublishableBlock,
   nextPublishedSlugHistory,
 } from "@/lib/education/content-document";
+import { missingRequiredVideoSource } from "@/lib/education/contentPresets";
 import {
   invalidIdResponse,
   isDuplicateSlugError,
@@ -28,6 +29,7 @@ import {
   requireEducationContentAuthority,
 } from "@/lib/education/content-authority";
 import { EducationContent } from "@/models/EducationContent";
+import type { EducationContentKind } from "@/types/education-content";
 
 export async function POST(
   request: Request,
@@ -63,6 +65,23 @@ export async function POST(
     if (!hasPublishableBlock(validation)) {
       return contentValidationFailureResponse(
         educationPublishHostFailure(validation),
+      );
+    }
+
+    // Video sadržaj bez izvora nije video. Naslov i opis video bloka ostaju
+    // opcioni — izvor ne.
+    const workingBlocks = (working as { blocks?: unknown }).blocks;
+    if (
+      missingRequiredVideoSource(
+        (working as unknown as { kind: EducationContentKind }).kind,
+        Array.isArray(workingBlocks) ? workingBlocks : [],
+      )
+    ) {
+      return contentValidationFailureResponse(
+        educationPublishHostFailure(
+          validation,
+          "Video sadržaj mora imati video izvor pre objave",
+        ),
       );
     }
 

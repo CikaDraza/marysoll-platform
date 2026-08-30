@@ -19,6 +19,20 @@ export function ArticleBlockEditor({ block, mediaAdapter, onChange }: {
         value={block.paragraphs.join("\n")}
         onChange={(value) => onChange({ ...block, paragraphs: value.split("\n") })}
       />
+      <Field
+        label="Nabrajanje (jedna stavka po redu, opciono)"
+        textarea
+        rows={3}
+        value={(block.items ?? []).join("\n")}
+        onChange={(value) => {
+          const items = value.split("\n");
+          // Prazno polje znači „nema liste", ne listu sa jednim praznim redom.
+          onChange({
+            ...block,
+            items: items.some((item) => item.trim()) ? items : undefined,
+          });
+        }}
+      />
       <ImageMediaField image={block.image} adapter={mediaAdapter} aspectHint={blockImageAspectHint("ArticleBlock")} onChange={(image) => onChange({ ...block, image })} />
     </>
   );

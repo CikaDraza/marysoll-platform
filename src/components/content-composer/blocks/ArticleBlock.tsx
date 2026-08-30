@@ -7,7 +7,7 @@ interface ArticleBlockProps {
 }
 
 export default function ArticleBlock({ block }: ArticleBlockProps) {
-  const { id, title, paragraphs, image } = block;
+  const { id, title, paragraphs, items, image } = block;
 
   return (
     <article
@@ -55,6 +55,14 @@ export default function ArticleBlock({ block }: ArticleBlockProps) {
             <p key={index}>{paragraph}</p>
           ))}
         </div>
+
+        {items && items.length > 0 && (
+          <ul className="mt-6 list-disc space-y-2 pl-6 text-base leading-8 text-gray-700 dark:text-gray-300">
+            {items.map((item, index) => (
+              <li key={index}>{item}</li>
+            ))}
+          </ul>
+        )}
 
         {image && (
           <figure className="mt-10">

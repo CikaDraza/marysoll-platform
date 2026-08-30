@@ -79,6 +79,7 @@ const articleDraftSchema = draftBaseSchema.extend({
   type: z.literal("ArticleBlock"),
   title: z.string(),
   paragraphs: z.array(z.string()),
+  items: z.array(z.string()).optional(),
   image: draftImageSchema.optional(),
 });
 

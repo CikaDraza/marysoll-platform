@@ -915,3 +915,116 @@ describe("N — redosled čuvanja (C-followup)", () => {
     expect(record.publishedSnapshot?.title).toBe("Estetika lica");
   });
 });
+
+describe("O — video sadržaj traži izvor (E)", () => {
+  const videoBlocks = (source?: unknown) => [
+    {
+      id: "v1",
+      type: "VideoBlock",
+      priority: 1,
+      title: "Demonstracija",
+      ...(source ? { source } : {}),
+    },
+    ALL_TWELVE_BLOCKS[1],
+  ];
+
+  async function createVideo(source?: unknown) {
+    const created = await json<{ item: Item }>(
+      await createContent(
+        request({
+          title: "Kako se čisti koža",
+          slug: "kako-se-cisti-koza",
+          kind: "video",
+          accessMode: "public",
+          blocks: videoBlocks(source),
+        }),
+      ),
+    );
+    return String(created.item._id);
+  }
+
+  it("prazan video blok obara objavu već na deljenoj validaciji", async () => {
+    const id = await createVideo();
+
+    const response = await publishContent(request(), params(id));
+
+    expect(response.status).toBe(422);
+    expect((await readRaw(id)).publishedSnapshot).toBeNull();
+  });
+
+  it("video bez ijednog video bloka ne prolazi objavu, ma koliko teksta imao", async () => {
+    // Ovo je slučaj koji deljeni validator ne vidi: svi blokovi su ispravni,
+    // ali sadržaj proglašen videom nema video.
+    const created = await json<{ item: Item }>(
+      await createContent(
+        request({
+          title: "Video bez videa",
+          slug: "video-bez-videa",
+          kind: "video",
+          accessMode: "public",
+          blocks: [ALL_TWELVE_BLOCKS[1]],
+        }),
+      ),
+    );
+    const id = String(created.item._id);
+
+    const response = await publishContent(request(), params(id));
+    const payload = await json<{ validation: { issues: { message: string }[] } }>(
+      response,
+    );
+
+    expect(response.status).toBe(422);
+    expect(payload.validation.issues[0].message).toMatch(/video izvor/i);
+    expect((await readRaw(id)).publishedSnapshot).toBeNull();
+  });
+
+  it("sakriven video ne zadovoljava uslov", async () => {
+    const created = await json<{ item: Item }>(
+      await createContent(
+        request({
+          title: "Sakriven video",
+          slug: "sakriven-video",
+          kind: "video",
+          accessMode: "public",
+          blocks: [
+            {
+              id: "v1",
+              type: "VideoBlock",
+              priority: 1,
+              visibility: "hidden",
+              source: { provider: "youtube", url: "https://youtu.be/abc123" },
+            },
+            ALL_TWELVE_BLOCKS[1],
+          ],
+        }),
+      ),
+    );
+
+    const response = await publishContent(
+      request(),
+      params(String(created.item._id)),
+    );
+
+    expect(response.status).toBe(422);
+    expect(
+      (await json<{ validation: { issues: { message: string }[] } }>(response))
+        .validation.issues[0].message,
+    ).toMatch(/video izvor/i);
+  });
+
+  it("sa izvorom se objavljuje normalno", async () => {
+    const id = await createVideo({
+      provider: "youtube",
+      url: "https://youtu.be/abc123",
+    });
+
+    expect((await publishContent(request(), params(id))).status).toBe(200);
+    expect((await readRaw(id)).publishedSnapshot?.slug).toBe("kako-se-cisti-koza");
+  });
+
+  it("ostale vrste ne traže video izvor", async () => {
+    const id = await createPublishedV1();
+
+    expect((await readRaw(id)).publishedSnapshot).not.toBeNull();
+  });
+});

@@ -10,6 +10,8 @@ import { PreviewRenderer } from "@/components/content-composer/PreviewRenderer";
 import { useContentMediaAuthoring } from "@/hooks/useContentMediaAuthoring";
 import { getContentMutationErrorMessage } from "@/lib/content/validation/contentValidationClient";
 import { saveEducationDraftOnExit } from "@/lib/education/exitSave";
+import { educationPresetBlocks } from "@/lib/education/contentPresets";
+import { createContentBlockId } from "@/lib/content/editor/blockFactories";
 import {
   clearLocalDraftIfConfirmed,
   putLocalDraft,
@@ -30,6 +32,7 @@ import {
 import { useEducationContentMutations } from "@/hooks/education/useEducationContent";
 import {
   canAutosave,
+  canSeedPreset,
   createPayload,
   editorStateFromRecord,
   educationPublicationStateFromRecord,
@@ -470,9 +473,19 @@ export default function EducationContentEditor({ record }: Props) {
           </span>
           <select
             value={state.kind}
-            onChange={(event) =>
-              patch({ kind: event.target.value as EducationEditorState["kind"] })
-            }
+            onChange={(event) => {
+              const kind = event.target.value as EducationEditorState["kind"];
+              // Polazni blokovi se nude samo dok je sadržaj prazan; postojeći
+              // rad se nikada ne prepisuje promenom vrste.
+              patch(
+                canSeedPreset(state)
+                  ? {
+                      kind,
+                      blocks: educationPresetBlocks(kind, createContentBlockId),
+                    }
+                  : { kind },
+              );
+            }}
             className={FIELD_CLASS}
           >
             {EDUCATION_CONTENT_KINDS.map((kind) => (
@@ -616,7 +629,29 @@ export default function EducationContentEditor({ record }: Props) {
       </section>
 
       {tab === "editor" ? (
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+        <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+          {canSeedPreset(state) && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gray-50 px-4 py-3 text-sm dark:bg-gray-800/60">
+              <span className="text-gray-600 dark:text-gray-300">
+                Počnite od uobičajene strukture za „
+                {EDUCATION_KIND_LABELS[state.kind]}”.
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  patch({
+                    blocks: educationPresetBlocks(
+                      state.kind,
+                      createContentBlockId,
+                    ),
+                  })
+                }
+                className="rounded-xl border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-white dark:border-gray-600 dark:text-gray-200"
+              >
+                Ubaci polazne blokove
+              </button>
+            </div>
+          )}
           <ContentBlocksEditor
             blocks={state.blocks}
             mediaAdapter={mediaAdapter}
