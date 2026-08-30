@@ -35,7 +35,7 @@ function request(body?: unknown) {
 const validPayload = {
   title: "Estetika lica",
   kind: "article",
-  visibility: "public",
+  accessMode: "public",
   blocks: ALL_TWELVE_BLOCKS,
 };
 

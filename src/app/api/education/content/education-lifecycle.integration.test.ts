@@ -51,14 +51,14 @@ type Item = {
   _id: string;
   title: string;
   slug: string;
-  visibility: string;
+  accessMode: string;
   status: string;
   blocks: unknown[];
   publishedSnapshot: {
     title: string;
     slug: string;
     kind: string;
-    visibility: string;
+    accessMode: string;
     blocks?: unknown[];
     publishedAt: string;
   } | null;
@@ -73,7 +73,7 @@ async function createPublishedV1() {
         title: "Estetika lica",
         slug: "estetika-lica",
         kind: "article",
-        visibility: "public",
+        accessMode: "public",
         blocks: ALL_TWELVE_BLOCKS,
       }),
     ),
@@ -116,7 +116,7 @@ describe("A — prva objava", () => {
         request({
           title: "Estetika lica",
           kind: "article",
-          visibility: "public",
+          accessMode: "public",
           blocks: ALL_TWELVE_BLOCKS,
         }),
       ),
@@ -133,7 +133,7 @@ describe("A — prva objava", () => {
     expect(record.publishedSnapshot).toMatchObject({
       title: "Estetika lica",
       slug: "estetika-lica",
-      visibility: "public",
+      accessMode: "public",
     });
     expect(record.publishedSnapshot?.publishedAt).toBeTruthy();
   });
@@ -148,7 +148,7 @@ describe("B — čuvanje posle objave NE menja živu verziju", () => {
         title: "Proporcije lica",
         slug: "proporcije-lica",
         kind: "guide",
-        visibility: "private",
+        accessMode: "private",
         seo: { title: "Novi SEO" },
         blocks: ALL_TWELVE_BLOCKS.slice(0, 3),
       }),
@@ -161,7 +161,7 @@ describe("B — čuvanje posle objave NE menja živu verziju", () => {
     // Radna kopija je V2…
     expect(record.title).toBe("Proporcije lica");
     expect(record.slug).toBe("proporcije-lica");
-    expect(record.visibility).toBe("private");
+    expect(record.accessMode).toBe("private");
     expect(record.blocks).toHaveLength(3);
 
     // …a živa verzija je i dalje V1.
@@ -170,7 +170,7 @@ describe("B — čuvanje posle objave NE menja živu verziju", () => {
       title: "Estetika lica",
       slug: "estetika-lica",
       kind: "article",
-      visibility: "public",
+      accessMode: "public",
     });
     expect(record.publishedSnapshot?.blocks).toHaveLength(12);
   });
@@ -218,23 +218,23 @@ describe("D — vidljivost", () => {
   it("prelazak na privatno stupa na snagu tek objavom", async () => {
     const id = await createPublishedV1();
 
-    await saveContent(request({ visibility: "private" }), params(id));
-    expect((await readRaw(id)).publishedSnapshot?.visibility).toBe("public");
+    await saveContent(request({ accessMode: "private" }), params(id));
+    expect((await readRaw(id)).publishedSnapshot?.accessMode).toBe("public");
 
     await publishContent(request(), params(id));
-    expect((await readRaw(id)).publishedSnapshot?.visibility).toBe("private");
+    expect((await readRaw(id)).publishedSnapshot?.accessMode).toBe("private");
   });
 
   it("prelazak nazad na javno takođe traži objavu", async () => {
     const id = await createPublishedV1();
-    await saveContent(request({ visibility: "private" }), params(id));
+    await saveContent(request({ accessMode: "private" }), params(id));
     await publishContent(request(), params(id));
 
-    await saveContent(request({ visibility: "public" }), params(id));
-    expect((await readRaw(id)).publishedSnapshot?.visibility).toBe("private");
+    await saveContent(request({ accessMode: "public" }), params(id));
+    expect((await readRaw(id)).publishedSnapshot?.accessMode).toBe("private");
 
     await publishContent(request(), params(id));
-    expect((await readRaw(id)).publishedSnapshot?.visibility).toBe("public");
+    expect((await readRaw(id)).publishedSnapshot?.accessMode).toBe("public");
   });
 });
 
@@ -263,7 +263,7 @@ describe("E — slug", () => {
           title: "Drugi tekst",
           slug: "estetika-lica",
           kind: "article",
-          visibility: "public",
+          accessMode: "public",
           blocks: ALL_TWELVE_BLOCKS,
         }),
       ),
@@ -360,7 +360,7 @@ describe("H — tenant scope", () => {
           title: "Estetika lica",
           slug: "estetika-lica",
           kind: "article",
-          visibility: "public",
+          accessMode: "public",
           blocks: ALL_TWELVE_BLOCKS,
         }),
       ),
@@ -386,7 +386,7 @@ describe("I — refresh ne gubi ništa (server → editor)", () => {
       title: "Estetika lica",
       slug: "estetika-lica",
       kind: "guide" as const,
-      visibility: "private" as const,
+      accessMode: "private" as const,
       blocks: ALL_TWELVE_BLOCKS,
       seo: { title: "Estetika lica", description: "Šta stvarno pomaže koži" },
     };
@@ -407,7 +407,7 @@ describe("I — refresh ne gubi ništa (server → editor)", () => {
     expect(state.title).toBe(sent.title);
     expect(state.slug).toBe(sent.slug);
     expect(state.kind).toBe(sent.kind);
-    expect(state.visibility).toBe(sent.visibility);
+    expect(state.accessMode).toBe(sent.accessMode);
     expect(state.seo).toEqual(sent.seo);
     expect(state.blocks).toEqual(ALL_TWELVE_BLOCKS);
     // Ponovo učitan zapis nije „prljav“ dok ga vlasnica ne dotakne.
@@ -470,7 +470,7 @@ describe("J — javno čitanje (UI-3A.1)", () => {
         title: "Još nije gotovo",
         slug: "jos-nije-gotovo",
         kind: "article",
-        visibility: "public",
+        accessMode: "public",
         blocks: ALL_TWELVE_BLOCKS,
       }),
     );
@@ -481,7 +481,7 @@ describe("J — javno čitanje (UI-3A.1)", () => {
 
   it("objavljen privatan sadržaj nije javan ni u listi ni na slug-u", async () => {
     const id = await createPublishedV1();
-    await saveContent(request({ visibility: "private" }), params(id));
+    await saveContent(request({ accessMode: "private" }), params(id));
     await publishContent(request(), params(id));
 
     expect(await listPublicEducationContent(TENANT)).toEqual([]);
@@ -523,7 +523,7 @@ describe("J — javno čitanje (UI-3A.1)", () => {
           title: "Legacy",
           slug: "legacy",
           kind: "article",
-          visibility: "public",
+          accessMode: "public",
           blocks: ALL_TWELVE_BLOCKS,
         }),
       ),
@@ -606,7 +606,7 @@ describe("K — istorija javnih adresa (UI-3A.2)", () => {
     const id = await createPublishedV1();
     await renameAndRepublish(id, "proporcije-lica");
 
-    await saveContent(request({ visibility: "private" }), params(id));
+    await saveContent(request({ accessMode: "private" }), params(id));
     await publishContent(request(), params(id));
 
     // Ni kanonska ni istorijska adresa ne smeju priznati da zapis postoji.
@@ -621,7 +621,7 @@ describe("K — istorija javnih adresa (UI-3A.2)", () => {
   it("privatan sadržaj se ne može otkriti kroz istoriju adresa", async () => {
     const id = await createPublishedV1();
     await saveContent(
-      request({ visibility: "private", slug: "tajni-plan" }),
+      request({ accessMode: "private", slug: "tajni-plan" }),
       params(id),
     );
     await publishContent(request(), params(id));
@@ -642,7 +642,7 @@ describe("K — istorija javnih adresa (UI-3A.2)", () => {
   it("povratak iz privatnog u javno oživljava i staru adresu", async () => {
     const id = await createPublishedV1();
     await saveContent(
-      request({ visibility: "private", slug: "tajni-plan" }),
+      request({ accessMode: "private", slug: "tajni-plan" }),
       params(id),
     );
     await publishContent(request(), params(id));
@@ -650,7 +650,7 @@ describe("K — istorija javnih adresa (UI-3A.2)", () => {
       kind: "not-found",
     });
 
-    await saveContent(request({ visibility: "public" }), params(id));
+    await saveContent(request({ accessMode: "public" }), params(id));
     await publishContent(request(), params(id));
 
     // Zato se istorija i čuva kroz privatan period: ranije podeljeni linkovi
@@ -696,7 +696,7 @@ describe("K — istorija javnih adresa (UI-3A.2)", () => {
           title: "Drugi tekst",
           slug: "estetika-lica",
           kind: "article",
-          visibility: "public",
+          accessMode: "public",
           blocks: ALL_TWELVE_BLOCKS,
         }),
       ),
@@ -712,5 +712,123 @@ describe("K — istorija javnih adresa (UI-3A.2)", () => {
       kind: "redirect",
       slug: "proporcije-lica",
     });
+  });
+});
+
+describe("L — zaključan sadržaj (gated)", () => {
+  async function publishGated(preview?: Record<string, string>) {
+    const created = await json<{ item: Item }>(
+      await createContent(
+        request({
+          title: "Napredna analiza sastojaka",
+          slug: "napredna-analiza",
+          kind: "guide",
+          accessMode: "gated",
+          publicPreview: preview,
+          blocks: ALL_TWELVE_BLOCKS,
+          seo: { description: "SEO opis", ogImage: "https://cdn.example.com/seo.jpg" },
+        }),
+      ),
+    );
+    const id = String(created.item._id);
+    expect((await publishContent(request(), params(id))).status).toBe(200);
+    return id;
+  }
+
+  it("javno je otkriven i stoji u listi", async () => {
+    await publishGated({ description: "Šta ćete naučiti" });
+
+    const list = await listPublicEducationContent(TENANT);
+    expect(list).toHaveLength(1);
+    expect(list[0]).toMatchObject({
+      slug: "napredna-analiza",
+      accessMode: "gated",
+      description: "Šta ćete naučiti",
+    });
+  });
+
+  it("telo NIKADA ne napušta server neautorizovanom čitaocu", async () => {
+    await publishGated();
+
+    const article = await getPublicEducationContent(TENANT, "napredna-analiza");
+    expect(article?.accessMode).toBe("gated");
+    expect(article?.blocks).toEqual([]);
+
+    // Ni jedan jedini fragment teksta iz blokova ne sme biti u odgovoru.
+    expect(JSON.stringify(article)).not.toContain("Koža reaguje sporije");
+    expect(JSON.stringify(article)).not.toContain("cdn.example.com/vodic.pdf");
+  });
+
+  it("javni pregled se izvodi iz naslova i SEO-a kada nije unet", async () => {
+    await publishGated();
+
+    const article = await getPublicEducationContent(TENANT, "napredna-analiza");
+    expect(article).toMatchObject({
+      title: "Napredna analiza sastojaka",
+      description: "SEO opis",
+      coverImage: "https://cdn.example.com/seo.jpg",
+    });
+  });
+
+  it("prelazak javno → zaključano stupa na snagu tek objavom", async () => {
+    const id = await createPublishedV1();
+    await saveContent(request({ accessMode: "gated" }), params(id));
+
+    // Živa verzija je i dalje javna, sa celim telom.
+    expect(
+      (await getPublicEducationContent(TENANT, "estetika-lica"))?.blocks,
+    ).toHaveLength(12);
+
+    await publishContent(request(), params(id));
+    const gated = await getPublicEducationContent(TENANT, "estetika-lica");
+    expect(gated?.accessMode).toBe("gated");
+    expect(gated?.blocks).toEqual([]);
+  });
+
+  it("zaključana adresa preživljava preimenovanje kao i javna", async () => {
+    const id = await publishGated();
+    await saveContent(request({ slug: "analiza-sastojaka" }), params(id));
+    await publishContent(request(), params(id));
+
+    expect(await resolvePublicEducationRoute(TENANT, "napredna-analiza")).toEqual({
+      kind: "redirect",
+      slug: "analiza-sastojaka",
+    });
+  });
+
+  it("prelazak zaključano → privatno gasi i adresu i listu", async () => {
+    const id = await publishGated();
+    await saveContent(request({ accessMode: "private" }), params(id));
+    await publishContent(request(), params(id));
+
+    expect(await listPublicEducationContent(TENANT)).toEqual([]);
+    expect(
+      await resolvePublicEducationRoute(TENANT, "napredna-analiza"),
+    ).toEqual({ kind: "not-found" });
+  });
+});
+
+describe("M — zatečeni zapisi bez accessMode", () => {
+  it("staro `visibility: public` se čita kao javno, sve ostalo kao privatno", async () => {
+    const id = await createPublishedV1();
+    // Simulira zapis upisan pre migracije: bez `accessMode`, sa `visibility`.
+    await EducationContent.updateOne(
+      { _id: id },
+      {
+        $unset: { accessMode: "", "publishedSnapshot.accessMode": "" },
+        $set: { visibility: "public", "publishedSnapshot.visibility": "public" },
+      },
+    );
+
+    const article = await getPublicEducationContent(TENANT, "estetika-lica");
+    expect(article?.accessMode).toBe("public");
+    expect(article?.blocks).toHaveLength(12);
+
+    await EducationContent.updateOne(
+      { _id: id },
+      { $set: { "publishedSnapshot.visibility": "private" } },
+    );
+    expect(await getPublicEducationContent(TENANT, "estetika-lica")).toBeNull();
+    expect(await listPublicEducationContent(TENANT)).toEqual([]);
   });
 });

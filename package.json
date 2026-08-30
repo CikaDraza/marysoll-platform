@@ -20,7 +20,8 @@
     "normalize:theme9": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/normalize-theme9-section-state.mts",
     "push:subscriptions": "node --env-file=.env.local scripts/prune-push-subscriptions.mjs",
     "copy:tenants": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/copy-tenants-to-staging.mts",
-    "backfill:education-snapshot": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/backfill-education-published-snapshot.mts"
+    "backfill:education-snapshot": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/backfill-education-published-snapshot.mts",
+    "backfill:education-access": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/backfill-education-access-mode.mts"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.19",

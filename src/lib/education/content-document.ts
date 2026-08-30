@@ -3,12 +3,15 @@ import { slugify } from "@/helpers/slugify";
 import type { ContentBlock } from "@/lib/content/schemas/landing-blocks";
 import type { ContentDocumentValidation } from "@/lib/content/validation/contentBlockValidation";
 import {
+  EDUCATION_ACCESS_MODES,
   EDUCATION_CONTENT_KINDS,
   EDUCATION_CONTENT_STATUSES,
-  EDUCATION_CONTENT_VISIBILITIES,
+  isBodyPubliclyReadable,
+  isPubliclyDiscoverable,
+  resolveAccessMode,
+  type EducationAccessMode,
   type EducationContentKind,
   type EducationContentStatus,
-  type EducationContentVisibility,
 } from "@/types/education-content";
 
 export const EDUCATION_KIND_LABELS: Record<EducationContentKind, string> = {
@@ -19,21 +22,19 @@ export const EDUCATION_KIND_LABELS: Record<EducationContentKind, string> = {
   material: "Materijal",
 };
 
-export const EDUCATION_VISIBILITY_LABELS: Record<
-  EducationContentVisibility,
-  string
-> = {
+/** Korisnički nazivi; domen ostaje `public` / `gated` / `private`. */
+export const EDUCATION_ACCESS_LABELS: Record<EducationAccessMode, string> = {
   public: "Javno",
+  gated: "Zaključano",
   private: "Privatno",
 };
 
-export const EDUCATION_VISIBILITY_HELP: Record<
-  EducationContentVisibility,
-  string
-> = {
-  public: "Dostupno svima kada je sadržaj objavljen.",
+export const EDUCATION_ACCESS_HELP: Record<EducationAccessMode, string> = {
+  public: "Ceo sadržaj je dostupan svima kada ga objavite.",
+  gated:
+    "Sadržaj se vidi u listi, ali se tekst otvara samo uz vaše odobrenje.",
   private:
-    "Nije javno. Dostupnost konkretnim klijentima određuje se dodelom.",
+    "Nije javno i ne pojavljuje se nigde. Dostupnost pojedinim klijentima određuje se dodelom.",
 };
 
 export const EDUCATION_STATUS_LABELS: Record<EducationContentStatus, string> = {
@@ -47,19 +48,20 @@ export interface EducationContentSummary {
   title: string;
   slug: string;
   kind: EducationContentKind;
-  visibility: EducationContentVisibility;
+  accessMode: EducationAccessMode;
   status: EducationContentStatus;
   updatedAt: string;
   /** Stanje objave — bez njega se „neobjavljene izmene" ne može izvesti. */
   workingSavedAt?: string | null;
   publishedSnapshot?: {
-    visibility: EducationContentVisibility;
+    accessMode: EducationAccessMode;
     publishedAt: string;
   } | null;
 }
 
 export interface EducationContentRecord extends EducationContentSummary {
   blocks: ContentBlock[];
+  publicPreview?: EducationPublicPreview;
   seo?: EducationContentSeo;
   /**
    * Poslednja objavljena verzija. Admin detalj je dobija BEZ blokova — editor
@@ -75,9 +77,17 @@ export interface EducationPublishedSnapshotMeta {
   title: string;
   slug: string;
   kind: EducationContentKind;
-  visibility: EducationContentVisibility;
+  accessMode: EducationAccessMode;
+  publicPreview?: EducationPublicPreview;
   seo?: EducationContentSeo;
   publishedAt: string;
+}
+
+/** Namerno javni metapodaci zaključanog sadržaja. */
+export interface EducationPublicPreview {
+  title?: string;
+  description?: string;
+  coverImage?: string;
 }
 
 export interface EducationContentSeo {
@@ -92,11 +102,18 @@ const seoSchema = z.object({
   ogImage: z.string().trim().max(2048).optional(),
 });
 
+const publicPreviewSchema = z.object({
+  title: z.string().trim().max(200).optional(),
+  description: z.string().trim().max(500).optional(),
+  coverImage: z.string().trim().max(2048).optional(),
+});
+
 const metadataSchema = z.object({
   title: z.string().trim().min(1, "Naslov je obavezan").max(200),
   slug: z.string().trim().max(200).optional(),
   kind: z.enum(EDUCATION_CONTENT_KINDS),
-  visibility: z.enum(EDUCATION_CONTENT_VISIBILITIES),
+  accessMode: z.enum(EDUCATION_ACCESS_MODES),
+  publicPreview: publicPreviewSchema.optional(),
   seo: seoSchema.optional(),
 });
 
@@ -183,24 +200,30 @@ export function hasPublishedSnapshot<T>(
   return Boolean(record?.publishedSnapshot);
 }
 
+type SnapshotAccess = { accessMode?: unknown; visibility?: unknown };
+
+/** Sme li javnost da zna da ovaj zapis postoji (`public` ili `gated`). */
 export function isPubliclyConsumable(
-  record:
-    | {
-        publishedSnapshot?: { visibility: EducationContentVisibility } | null;
-      }
-    | null
-    | undefined,
+  record: { publishedSnapshot?: SnapshotAccess | null } | null | undefined,
 ): boolean {
   return (
     hasPublishedSnapshot(record) &&
-    record.publishedSnapshot.visibility === "public"
+    isPubliclyDiscoverable(resolveAccessMode(record.publishedSnapshot))
+  );
+}
+
+/** Sme li TELO da ide neautorizovanom čitaocu (samo `public`). */
+export function isBodyPubliclyAvailable(
+  record: { publishedSnapshot?: SnapshotAccess | null } | null | undefined,
+): boolean {
+  return (
+    hasPublishedSnapshot(record) &&
+    isBodyPubliclyReadable(resolveAccessMode(record.publishedSnapshot))
   );
 }
 
 /** Vraća objavljenu verziju za javni prikaz ili `null` — nikad radnu kopiju. */
-export function resolvePublicEducationContent<
-  TSnapshot extends { visibility: EducationContentVisibility },
->(
+export function resolvePublicEducationContent<TSnapshot extends SnapshotAccess>(
   record: { publishedSnapshot?: TSnapshot | null } | null | undefined,
 ): TSnapshot | null {
   return isPubliclyConsumable(record) ? record!.publishedSnapshot! : null;
@@ -242,7 +265,8 @@ export const MAX_PUBLISHED_SLUG_HISTORY = 20;
 export function nextPublishedSlugHistory(params: {
   previous?: {
     slug: string;
-    visibility: EducationContentVisibility;
+    accessMode?: unknown;
+    visibility?: unknown;
   } | null;
   history?: readonly string[] | null;
   nextSlug: string;
@@ -250,11 +274,13 @@ export function nextPublishedSlugHistory(params: {
   const history = [...(params.history ?? [])];
   const previous = params.previous;
 
+  // U istoriju ulazi samo adresa koja je bila javno OTKRIVENA — i `public` i
+  // `gated` su to bili; `private` nije nikad imao javni URL.
   if (
     previous &&
-    previous.visibility === "public" &&
     previous.slug &&
-    previous.slug !== params.nextSlug
+    previous.slug !== params.nextSlug &&
+    isPubliclyDiscoverable(resolveAccessMode(previous))
   ) {
     history.push(previous.slug);
   }
@@ -270,17 +296,30 @@ export function buildPublishedSnapshot(
     title: string;
     slug: string;
     kind: EducationContentKind;
-    visibility: EducationContentVisibility;
+    accessMode?: unknown;
+    visibility?: unknown;
+    publicPreview?: EducationPublicPreview | null;
     blocks: unknown;
     seo?: EducationContentSeo | null;
   },
   publishedAt: Date,
 ) {
+  const accessMode = resolveAccessMode(working);
   return {
     title: working.title,
     slug: working.slug,
     kind: working.kind,
-    visibility: working.visibility,
+    accessMode,
+    // Javni pregled ima smisla samo za zaključan sadržaj; za javan je telo
+    // ionako dostupno, a za privatan ne sme postojati ništa javno.
+    publicPreview:
+      accessMode === "gated"
+        ? (working.publicPreview ?? {
+            title: working.title,
+            description: working.seo?.description,
+            coverImage: working.seo?.ogImage,
+          })
+        : undefined,
     blocks: Array.isArray(working.blocks) ? working.blocks : [],
     seo: working.seo ?? undefined,
     publishedAt,

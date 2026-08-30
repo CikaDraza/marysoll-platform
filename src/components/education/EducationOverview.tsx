@@ -132,7 +132,7 @@ export default function EducationOverview({
                         {row.title}
                       </span>
                       <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
-                        {row.kindLabel} · {row.visibilityLabel} ·{" "}
+                        {row.kindLabel} · {row.accessLabel} ·{" "}
                         {row.updatedLabel}
                       </span>
                     </span>

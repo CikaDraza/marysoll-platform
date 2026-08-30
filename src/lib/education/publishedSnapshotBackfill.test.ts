@@ -10,7 +10,7 @@ const legacyPublished = {
   title: "Estetika lica",
   slug: "estetika-lica",
   kind: "article",
-  visibility: "public",
+  accessMode: "public",
   blocks: ALL_TWELVE_BLOCKS,
   seo: { title: "Estetika lica" },
   updatedAt: publishedAt,
@@ -25,7 +25,7 @@ describe("backfill objavljene verzije", () => {
     expect(decision.snapshot).toMatchObject({
       title: "Estetika lica",
       slug: "estetika-lica",
-      visibility: "public",
+      accessMode: "public",
       publishedAt,
     });
     expect(decision.snapshot.blocks).toEqual(ALL_TWELVE_BLOCKS);
@@ -63,21 +63,30 @@ describe("backfill objavljene verzije", () => {
     const decision = classifyEducationRecord(legacyPublished);
     if (decision.kind !== "backfill") throw new Error("očekivan backfill");
 
-    // CLI modul je bez importa, pa oblik mora ostati zaključan testom.
-    expect(Object.keys(decision.snapshot).sort()).toEqual(
-      Object.keys(
-        buildPublishedSnapshot(
-          {
-            title: "Estetika lica",
-            slug: "estetika-lica",
-            kind: "article",
-            visibility: "public",
-            blocks: ALL_TWELVE_BLOCKS,
-            seo: { title: "Estetika lica" },
-          },
-          publishedAt,
-        ),
-      ).sort(),
+    // CLI modul je bez importa, pa oblik mora ostati zaključan testom. Porede
+    // se polja koja stvarno nose vrednost: `publicPreview` postoji samo za
+    // zaključan sadržaj, a `visibility` backfill zadržava radi vernosti
+    // zatečenom zapisu.
+    const defined = (value: object) =>
+      Object.entries(value)
+        .filter(([, entry]) => entry !== undefined)
+        .map(([key]) => key)
+        .sort();
+
+    const published = buildPublishedSnapshot(
+      {
+        title: "Estetika lica",
+        slug: "estetika-lica",
+        kind: "article",
+        accessMode: "public",
+        blocks: ALL_TWELVE_BLOCKS,
+        seo: { title: "Estetika lica" },
+      },
+      publishedAt,
     );
+
+    for (const field of defined(published)) {
+      expect(defined(decision.snapshot)).toContain(field);
+    }
   });
 });

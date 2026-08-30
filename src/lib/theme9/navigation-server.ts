@@ -57,7 +57,8 @@ async function hasPublishedArticles(tenantId: unknown): Promise<boolean> {
 }
 
 /**
- * Ima li tenant bar jedan objavljen JAVAN Education sadržaj.
+ * Ima li tenant bar jedan objavljen, javno OTKRIVEN Education sadržaj
+ * (`public` ili `gated`).
  *
  * Čita `publishedSnapshot`, isti izvor koji koristi javna `/edukacija` — nav ne
  * sme tvrditi da sadržaja ima tamo gde ga strana neće prikazati. Radna kopija
@@ -66,7 +67,13 @@ async function hasPublishedArticles(tenantId: unknown): Promise<boolean> {
 async function hasPublishedEducation(tenantId: unknown): Promise<boolean> {
   const found = await EducationContent.exists({
     tenantId,
-    "publishedSnapshot.visibility": "public",
+    $or: [
+      { "publishedSnapshot.accessMode": { $in: ["public", "gated"] } },
+      {
+        "publishedSnapshot.accessMode": { $exists: false },
+        "publishedSnapshot.visibility": "public",
+      },
+    ],
   });
   return found !== null;
 }

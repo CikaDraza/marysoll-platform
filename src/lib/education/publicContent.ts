@@ -5,9 +5,11 @@ import { resolveTenantCapability } from "@/lib/platform/capabilities-server";
 import { EducationContent } from "@/models/EducationContent";
 import { normalizeEducationSlug } from "@/lib/education/content-document";
 import type { ContentBlock } from "@/lib/content/schemas/landing-blocks";
-import type {
-  EducationContentKind,
-  EducationContentVisibility,
+import {
+  resolveAccessMode,
+  type EducationAccessMode,
+  type EducationContentKind,
+  type EducationContentVisibility,
 } from "@/types/education-content";
 
 /**
@@ -17,22 +19,35 @@ import type {
  * sme ni dodirnuti — ni `status`, ni `visibility`, ni `blocks`, ni `slug`.
  * Zapis bez objavljene verzije nije javan ni kada mu je `status: "published"`.
  *
- * Danas su vidljivosti dve (`public`/`private`); ciljni trostepeni `accessMode`
- * dolazi u 3A.2 i menja SAMO uslov ispod, ne i to odakle se čita.
+ * Javno OTKRIVEN sadržaj: `public` i `gated`. Zatečeni zapisi nemaju
+ * `accessMode`, pa se za njih čita staro `visibility` — i to samo kad novog
+ * polja nema, nikad kao alternativa.
  */
-const PUBLIC_SNAPSHOT_FILTER = {
-  "publishedSnapshot.visibility": "public" as const,
+const DISCOVERABLE_SNAPSHOT_FILTER = {
+  $or: [
+    { "publishedSnapshot.accessMode": { $in: ["public", "gated"] } },
+    {
+      "publishedSnapshot.accessMode": { $exists: false },
+      "publishedSnapshot.visibility": "public",
+    },
+  ],
 };
 
 export interface PublicEducationSummary {
   slug: string;
   title: string;
   kind: EducationContentKind;
+  accessMode: EducationAccessMode;
   publishedAt: string;
   description?: string;
   coverImage?: string;
 }
 
+/**
+ * Telo postoji SAMO za `public`. Za `gated` je `blocks` prazno i nikada se ne
+ * popunjava — zaključan tekst ne sme da napusti server neautorizovanom čitaocu,
+ * ni u HTML-u, ni u RSC payload-u.
+ */
 export interface PublicEducationArticle extends PublicEducationSummary {
   blocks: ContentBlock[];
   seo?: { title?: string; description?: string; ogImage?: string };
@@ -43,7 +58,13 @@ interface SnapshotRecord {
     title: string;
     slug: string;
     kind: EducationContentKind;
-    visibility: EducationContentVisibility;
+    accessMode?: EducationAccessMode;
+    visibility?: EducationContentVisibility;
+    publicPreview?: {
+      title?: string;
+      description?: string;
+      coverImage?: string;
+    };
     blocks?: ContentBlock[];
     seo?: { title?: string; description?: string; ogImage?: string };
     publishedAt: Date;
@@ -60,13 +81,26 @@ export async function hasPublicEducationSurface(
 
 function toSummary(record: SnapshotRecord): PublicEducationSummary {
   const snapshot = record.publishedSnapshot;
+  const accessMode = resolveAccessMode(snapshot);
+  const preview = snapshot.publicPreview;
+
   return {
     slug: snapshot.slug,
-    title: snapshot.title,
+    // Zaključan sadržaj se javno predstavlja SVOJIM pregledom; ako ga nema,
+    // pada na naslov, nikad na telo.
+    title:
+      accessMode === "gated" ? (preview?.title || snapshot.title) : snapshot.title,
     kind: snapshot.kind,
+    accessMode,
     publishedAt: new Date(snapshot.publishedAt).toISOString(),
-    description: snapshot.seo?.description || undefined,
-    coverImage: snapshot.seo?.ogImage || undefined,
+    description:
+      accessMode === "gated"
+        ? preview?.description || undefined
+        : snapshot.seo?.description || undefined,
+    coverImage:
+      accessMode === "gated"
+        ? preview?.coverImage || undefined
+        : snapshot.seo?.ogImage || undefined,
   };
 }
 
@@ -78,9 +112,14 @@ export async function listPublicEducationContent(
   await connectToDB();
   const records = (await EducationContent.find({
     tenantId,
-    ...PUBLIC_SNAPSHOT_FILTER,
+    ...DISCOVERABLE_SNAPSHOT_FILTER,
   })
-    .select("publishedSnapshot.title publishedSnapshot.slug publishedSnapshot.kind publishedSnapshot.seo publishedSnapshot.publishedAt")
+    .select(
+      "publishedSnapshot.title publishedSnapshot.slug publishedSnapshot.kind " +
+        "publishedSnapshot.accessMode publishedSnapshot.visibility " +
+        "publishedSnapshot.publicPreview publishedSnapshot.seo " +
+        "publishedSnapshot.publishedAt",
+    )
     .sort({ "publishedSnapshot.publishedAt": -1 })
     .lean()) as unknown as SnapshotRecord[];
 
@@ -120,7 +159,7 @@ export async function resolvePublicEducationRoute(
   const alias = (await EducationContent.findOne({
     tenantId,
     publishedSlugHistory: normalized,
-    ...PUBLIC_SNAPSHOT_FILTER,
+    ...DISCOVERABLE_SNAPSHOT_FILTER,
   })
     .select("publishedSnapshot.slug")
     .lean()) as unknown as SnapshotRecord | null;
@@ -142,16 +181,28 @@ export async function getPublicEducationContent(
   const record = (await EducationContent.findOne({
     tenantId,
     "publishedSnapshot.slug": normalized,
-    ...PUBLIC_SNAPSHOT_FILTER,
+    ...DISCOVERABLE_SNAPSHOT_FILTER,
   })
     .select("publishedSnapshot")
     .lean()) as unknown as SnapshotRecord | null;
 
   if (!record) return null;
 
+  const summary = toSummary(record);
   return {
-    ...toSummary(record),
-    blocks: record.publishedSnapshot.blocks ?? [],
-    seo: record.publishedSnapshot.seo,
+    ...summary,
+    // Zaključan sadržaj nikada ne nosi telo niti SEO iz zaključanog dela.
+    blocks:
+      summary.accessMode === "public"
+        ? (record.publishedSnapshot.blocks ?? [])
+        : [],
+    seo:
+      summary.accessMode === "public"
+        ? record.publishedSnapshot.seo
+        : {
+            title: summary.title,
+            description: summary.description,
+            ogImage: summary.coverImage,
+          },
   };
 }

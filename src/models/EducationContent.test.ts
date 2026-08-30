@@ -3,7 +3,7 @@ import { Types } from "mongoose";
 import {
   EDUCATION_CONTENT_KINDS,
   EDUCATION_CONTENT_STATUSES,
-  EDUCATION_CONTENT_VISIBILITIES,
+  EDUCATION_ACCESS_MODES,
 } from "@/types/education-content";
 import { EducationContent } from "./EducationContent";
 
@@ -40,7 +40,7 @@ describe("EducationContent model", () => {
 
     expect(doc.validateSync()).toBeUndefined();
     expect(doc.status).toBe("draft");
-    expect(doc.visibility).toBe("public");
+    expect(doc.accessMode).toBe("public");
     expect(doc.kind).toBe("article");
     expect(doc.publishedSnapshot).toBeNull();
     expect(doc.workingSavedAt).toBeNull();
@@ -53,7 +53,7 @@ describe("EducationContent model", () => {
         title: "Estetika lica",
         slug: "estetika-lica",
         kind: "article",
-        visibility: "public",
+        accessMode: "public",
         blocks: [],
         publishedAt: new Date(),
       },
@@ -87,12 +87,12 @@ describe("EducationContent model", () => {
     });
   });
 
-  it("prihvata svaki podržani kind, visibility i status", () => {
+  it("prihvata svaki podržani kind, režim pristupa i status", () => {
     for (const kind of EDUCATION_CONTENT_KINDS) {
       expect(draft({ kind }).validateSync()).toBeUndefined();
     }
-    for (const visibility of EDUCATION_CONTENT_VISIBILITIES) {
-      expect(draft({ visibility }).validateSync()).toBeUndefined();
+    for (const accessMode of EDUCATION_ACCESS_MODES) {
+      expect(draft({ accessMode }).validateSync()).toBeUndefined();
     }
     for (const status of EDUCATION_CONTENT_STATUSES) {
       expect(draft({ status }).validateSync()).toBeUndefined();
@@ -102,7 +102,7 @@ describe("EducationContent model", () => {
   it("odbija vrednosti van enum-a", () => {
     expect(draft({ kind: "course" }).validateSync()?.errors.kind).toBeDefined();
     expect(
-      draft({ visibility: "assigned" }).validateSync()?.errors.visibility,
+      draft({ accessMode: "assigned" }).validateSync()?.errors.accessMode,
     ).toBeDefined();
     expect(
       draft({ status: "archived" }).validateSync()?.errors.status,

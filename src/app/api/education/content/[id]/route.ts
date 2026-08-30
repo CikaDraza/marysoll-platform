@@ -83,8 +83,11 @@ export async function PATCH(
 
     if (metadata.data.title !== undefined) updates.title = metadata.data.title;
     if (metadata.data.kind !== undefined) updates.kind = metadata.data.kind;
-    if (metadata.data.visibility !== undefined) {
-      updates.visibility = metadata.data.visibility;
+    if (metadata.data.accessMode !== undefined) {
+      updates.accessMode = metadata.data.accessMode;
+    }
+    if (metadata.data.publicPreview !== undefined) {
+      updates.publicPreview = metadata.data.publicPreview;
     }
     if (metadata.data.seo !== undefined) updates.seo = metadata.data.seo;
 

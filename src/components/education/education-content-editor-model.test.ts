@@ -20,7 +20,7 @@ const record: EducationContentRecord = {
   title: "Estetika lica",
   slug: "estetika-lica",
   kind: "article",
-  visibility: "public",
+  accessMode: "public",
   status: "draft",
   updatedAt: "2026-08-29T10:00:00.000Z",
   blocks: ALL_TWELVE_BLOCKS,
@@ -46,7 +46,7 @@ describe("dirty state", () => {
       isEducationEditorDirty({ ...baseline, title: "Drugi" }, baseline),
     ).toBe(true);
     expect(
-      isEducationEditorDirty({ ...baseline, visibility: "private" }, baseline),
+      isEducationEditorDirty({ ...baseline, accessMode: "private" }, baseline),
     ).toBe(true);
     expect(
       isEducationEditorDirty(
@@ -75,7 +75,7 @@ describe("payload", () => {
       title: "Nega kože zimi",
       slug: "nega-koze-zimi",
       kind: "article",
-      visibility: "public",
+      accessMode: "public",
     });
   });
 
@@ -122,11 +122,11 @@ describe("lista", () => {
           title: "Estetika lica",
           slug: "estetika-lica",
           kind: "guide",
-          visibility: "private",
+          accessMode: "private",
           status: "published",
           updatedAt: record.updatedAt,
           publishedSnapshot: {
-            visibility: "private",
+            accessMode: "private",
             publishedAt: record.updatedAt,
           },
         },
@@ -136,7 +136,7 @@ describe("lista", () => {
 
     expect(row).toMatchObject({
       kindLabel: "Vodič",
-      visibilityLabel: "Privatno",
+      accessLabel: "Privatno",
       statusLabel: "Objavljeno",
       published: true,
       isPublic: false,
@@ -156,7 +156,7 @@ describe("lista", () => {
           title: "Legacy",
           slug: "legacy",
           kind: "article",
-          visibility: "public",
+          accessMode: "public",
           status: "published",
           updatedAt: record.updatedAt,
           publishedSnapshot: null,
@@ -175,7 +175,7 @@ describe("oznaka objave", () => {
     title: "Estetika lica",
     slug: "estetika-lica",
     kind: "article" as const,
-    visibility: "public" as const,
+    accessMode: "public" as const,
     publishedAt,
   };
 
@@ -228,12 +228,12 @@ describe("pregled Edu Centra", () => {
     title: "Tekst",
     slug: "tekst",
     kind: "article" as const,
-    visibility: "public" as const,
+    accessMode: "public" as const,
     status: "draft" as "draft" | "published",
     updatedAt: "2026-08-29T10:00:00.000Z",
     workingSavedAt: null as string | null,
     publishedSnapshot: null as {
-      visibility: "public" | "private";
+      accessMode: "public" | "private";
       publishedAt: string;
     } | null,
   };
@@ -255,7 +255,7 @@ describe("pregled Edu Centra", () => {
         id: "b",
         status: "published",
         publishedSnapshot: {
-          visibility: "public",
+          accessMode: "public",
           publishedAt: "2026-08-29T10:00:00.000Z",
         },
       }),
@@ -264,7 +264,7 @@ describe("pregled Edu Centra", () => {
         status: "published",
         workingSavedAt: "2026-08-29T11:00:00.000Z",
         publishedSnapshot: {
-          visibility: "private",
+          accessMode: "private",
           publishedAt: "2026-08-29T10:00:00.000Z",
         },
       }),
@@ -284,7 +284,7 @@ describe("pregled Edu Centra", () => {
       summary({
         status: "published",
         publishedSnapshot: {
-          visibility: "private",
+          accessMode: "private",
           publishedAt: "2026-08-29T10:00:00.000Z",
         },
       }),

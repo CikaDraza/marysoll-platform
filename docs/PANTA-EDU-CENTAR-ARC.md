@@ -444,9 +444,12 @@ javnu edukaciju.
 > **Ovo je kanonski ugovor pristupa Education sadržaju.** Svaki drugi dokument
 > koji govori o javnom/privatnom Education sadržaju podređen je ovoj sekciji.
 >
-> **Status:** semantika je zaključana, **kod nije menjan**. Persistencija i dalje
-> ima dva stanja (`visibility: "public" | "private"`); treće stanje je cilj za
-> UI-3 i njegova migracija je namerno odložena za implementacioni task.
+> **Status (ažurirano):** semantika je zaključana **i implementirana**.
+> Persistencija nosi `accessMode: "public" | "gated" | "private"` na radnoj
+> kopiji i na objavljenoj verziji, uz `publicPreview` za zaključan sadržaj.
+> Zatečeno `visibility` ostaje samo kao izvor za čitanje starih zapisa
+> (`resolveAccessMode()`), a `npm run backfill:education-access` ga prevodi.
+> Entitlement (pretplata / kupovina / ručno odobrenje) i dalje **ne postoji**.
 
 ### Zašto tri stanja, a ne dva
 
@@ -527,12 +530,14 @@ bira ishod eksplicitno, umesto da ga platforma pogađa iz istorije adrese.
 
 ### Trenutno stanje vs cilj
 
-| | Trenutno u kodu | Cilj za UI-3 |
+| | Stanje u kodu | Ostaje otvoreno |
 |---|---|---|
-| Polje | `visibility: "public" \| "private"` | `accessMode: "public" \| "gated" \| "private"` |
-| Javni upit | snapshot postoji + `visibility === "public"` | snapshot postoji + `accessMode ∈ {public, gated}` |
-| Telo | javno kad je public | javno samo za `public`; za `gated` traži entitlement |
-| Lifecycle | radna kopija + `publishedSnapshot` ✅ implementirano | isto, prošireno na `accessMode` i javni pregled |
+| Polje | ✅ `accessMode: "public" \| "gated" \| "private"` | — |
+| Javni upit | ✅ snapshot postoji + `accessMode ∈ {public, gated}` | — |
+| Telo | ✅ javno samo za `public`; `gated` ga ne dobija uopšte | pristup uz entitlement |
+| Javni pregled | ✅ `publicPreview` na radnoj kopiji i snapshot-u | — |
+| Gate strana | ✅ pregled + kontakt kanali tenanta | „Zatraži pristup" kao zapis |
+| Lifecycle | ✅ radna kopija + `publishedSnapshot`, prelaz tek objavom | — |
 
 **Preporučeni naziv je `accessMode`, ne `visibility`.** `visibility` postaje
 netačan čim GATED postoji: takav sadržaj **jeste** vidljiv, ali mu telo nije

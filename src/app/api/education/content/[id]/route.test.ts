@@ -171,7 +171,7 @@ describe("PATCH — Save Draft", () => {
           title: "Podmetnuta javna verzija",
           slug: "podmetnuto",
           kind: "article",
-          visibility: "public",
+          accessMode: "public",
           blocks: [],
           publishedAt: new Date().toISOString(),
         },

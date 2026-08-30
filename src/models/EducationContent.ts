@@ -7,20 +7,32 @@ import "server-only";
 import { model, models, Schema, Types, type Document } from "mongoose";
 import type { ContentBlock } from "@/lib/content/schemas/landing-blocks";
 import {
+  EDUCATION_ACCESS_MODES,
   EDUCATION_CONTENT_KINDS,
-  EDUCATION_CONTENT_VISIBILITIES,
   EDUCATION_CONTENT_STATUSES,
+  EDUCATION_CONTENT_VISIBILITIES,
+  type EducationAccessMode,
   type EducationContentKind,
   type EducationContentStatus,
   type EducationContentVisibility,
 } from "@/types/education-content";
 
 /** Poslednja eksplicitno objavljena verzija — javni izvor istine. */
+export interface IEducationPublicPreview {
+  title?: string;
+  description?: string;
+  coverImage?: string;
+}
+
 export interface IEducationPublishedSnapshot {
   title: string;
   slug: string;
   kind: EducationContentKind;
-  visibility: EducationContentVisibility;
+  accessMode?: EducationAccessMode;
+  /** Zatečeno dvočlano polje; čita se samo kad `accessMode` nedostaje. */
+  visibility?: EducationContentVisibility;
+  /** Javni pregled za `gated` — jedini deo koji neautorizovan čitalac vidi. */
+  publicPreview?: IEducationPublicPreview;
   blocks: ContentBlock[];
   seo?: {
     title?: string;
@@ -35,7 +47,10 @@ export interface IEducationContentDoc extends Document {
   title: string;
   slug: string;
   kind: EducationContentKind;
-  visibility: EducationContentVisibility;
+  accessMode?: EducationAccessMode;
+  /** Zatečeno dvočlano polje; čita se samo kad `accessMode` nedostaje. */
+  visibility?: EducationContentVisibility;
+  publicPreview?: IEducationPublicPreview;
   status: EducationContentStatus;
   blocks: ContentBlock[];
   seo?: {
@@ -85,12 +100,21 @@ const EducationContentSchema = new Schema<IEducationContentDoc>(
       required: true,
       default: "article",
     },
-    // Vidljivost je nezavisna od lifecycle-a: `published` ne znači javno.
+    // Režim pristupa je nezavisan od lifecycle-a: `published` ne znači javno.
+    accessMode: {
+      type: String,
+      enum: EDUCATION_ACCESS_MODES,
+      default: "public",
+    },
+    // Zatečeno polje: ostaje opcionо dok backfill ne prevede stare zapise.
     visibility: {
       type: String,
       enum: EDUCATION_CONTENT_VISIBILITIES,
-      required: true,
-      default: "public",
+    },
+    publicPreview: {
+      title: { type: String },
+      description: { type: String },
+      coverImage: { type: String },
     },
     status: {
       type: String,
@@ -112,10 +136,12 @@ const EducationContentSchema = new Schema<IEducationContentDoc>(
           title: { type: String, required: true },
           slug: { type: String, required: true },
           kind: { type: String, enum: EDUCATION_CONTENT_KINDS, required: true },
-          visibility: {
-            type: String,
-            enum: EDUCATION_CONTENT_VISIBILITIES,
-            required: true,
+          accessMode: { type: String, enum: EDUCATION_ACCESS_MODES },
+          visibility: { type: String, enum: EDUCATION_CONTENT_VISIBILITIES },
+          publicPreview: {
+            title: { type: String },
+            description: { type: String },
+            coverImage: { type: String },
           },
           blocks: { type: Schema.Types.Mixed, default: [] },
           seo: {
@@ -145,7 +171,7 @@ EducationContentSchema.index({ tenantId: 1, slug: 1 }, { unique: true });
 // ne root polja.
 EducationContentSchema.index({
   tenantId: 1,
-  "publishedSnapshot.visibility": 1,
+  "publishedSnapshot.accessMode": 1,
   "publishedSnapshot.publishedAt": -1,
 });
 // Razrešavanje stare javne adrese (301). Nije unique: jedinstvenost alias-a

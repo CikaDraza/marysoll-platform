@@ -47,7 +47,9 @@ export async function POST(
       tenantId: authority.tenantId,
     })
       .select(
-        "title slug kind visibility blocks seo publishedSnapshot.slug publishedSnapshot.visibility publishedSlugHistory",
+        "title slug kind accessMode visibility publicPreview blocks seo " +
+          "publishedSnapshot.slug publishedSnapshot.accessMode " +
+          "publishedSnapshot.visibility publishedSlugHistory",
       )
       .lean();
 
@@ -86,8 +88,11 @@ export async function POST(
     if (liveCollision) return publicSlugTakenResponse();
 
     const previous = (working as {
-      publishedSnapshot?: { slug: string; visibility: "public" | "private" } | null;
-      publishedSlugHistory?: string[];
+      publishedSnapshot?: {
+        slug: string;
+        accessMode?: unknown;
+        visibility?: unknown;
+      } | null;
     }).publishedSnapshot;
 
     const publishedSlugHistory = nextPublishedSlugHistory({

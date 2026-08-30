@@ -10,14 +10,14 @@ import { PreviewRenderer } from "@/components/content-composer/PreviewRenderer";
 import { useContentMediaAuthoring } from "@/hooks/useContentMediaAuthoring";
 import { getContentMutationErrorMessage } from "@/lib/content/validation/contentValidationClient";
 import {
+  EDUCATION_ACCESS_HELP,
+  EDUCATION_ACCESS_LABELS,
   EDUCATION_KIND_LABELS,
-  EDUCATION_VISIBILITY_HELP,
-  EDUCATION_VISIBILITY_LABELS,
   type EducationContentRecord,
 } from "@/lib/education/content-document";
 import {
+  EDUCATION_ACCESS_MODES,
   EDUCATION_CONTENT_KINDS,
-  EDUCATION_CONTENT_VISIBILITIES,
 } from "@/types/education-content";
 import { useEducationContentMutations } from "@/hooks/education/useEducationContent";
 import {
@@ -312,31 +312,31 @@ export default function EducationContentEditor({ record }: Props) {
 
         <fieldset className="sm:col-span-2">
           <legend className="mb-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200">
-            Vidljivost
+            Ko može da vidi
           </legend>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {EDUCATION_CONTENT_VISIBILITIES.map((visibility) => (
+          <div className="grid gap-2 sm:grid-cols-3">
+            {EDUCATION_ACCESS_MODES.map((mode) => (
               <label
-                key={visibility}
+                key={mode}
                 className={`flex cursor-pointer gap-3 rounded-xl border p-3 text-sm transition ${
-                  state.visibility === visibility
+                  state.accessMode === mode
                     ? "border-violet-500 bg-violet-50 dark:bg-violet-950/30"
                     : "border-gray-300 dark:border-gray-700"
                 }`}
               >
                 <input
                   type="radio"
-                  name="visibility"
+                  name="accessMode"
                   className="mt-0.5"
-                  checked={state.visibility === visibility}
-                  onChange={() => patch({ visibility })}
+                  checked={state.accessMode === mode}
+                  onChange={() => patch({ accessMode: mode })}
                 />
                 <span>
                   <span className="block font-semibold text-gray-900 dark:text-white">
-                    {EDUCATION_VISIBILITY_LABELS[visibility]}
+                    {EDUCATION_ACCESS_LABELS[mode]}
                   </span>
                   <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
-                    {EDUCATION_VISIBILITY_HELP[visibility]}
+                    {EDUCATION_ACCESS_HELP[mode]}
                   </span>
                 </span>
               </label>
@@ -344,6 +344,64 @@ export default function EducationContentEditor({ record }: Props) {
           </div>
         </fieldset>
 
+        {/* Zaključan sadržaj je javno otkriven, pa mora imati šta da pokaže —
+            i to isključivo ovo, nikada deo teksta. */}
+        {state.accessMode === "gated" && (
+          <fieldset className="sm:col-span-2 rounded-2xl border border-violet-200 bg-violet-50/40 p-4 dark:border-violet-900/50 dark:bg-violet-950/20">
+            <legend className="px-1 text-sm font-semibold text-gray-700 dark:text-gray-200">
+              Javni pregled
+            </legend>
+            <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+              Ovo vide svi. Sam tekst ostaje zaključan dok ne odobrite pristup.
+            </p>
+            <div className="grid gap-3">
+              <input
+                value={state.publicPreview.title ?? ""}
+                onChange={(event) =>
+                  patch({
+                    publicPreview: {
+                      ...state.publicPreview,
+                      title: event.target.value,
+                    },
+                  })
+                }
+                placeholder={state.title || "Naslov u pregledu"}
+                className={FIELD_CLASS}
+              />
+              <textarea
+                value={state.publicPreview.description ?? ""}
+                onChange={(event) =>
+                  patch({
+                    publicPreview: {
+                      ...state.publicPreview,
+                      description: event.target.value,
+                    },
+                  })
+                }
+                rows={2}
+                placeholder="Kratak opis koji nagoveštava sadržaj"
+                className={FIELD_CLASS}
+              />
+              <input
+                value={state.publicPreview.coverImage ?? ""}
+                onChange={(event) =>
+                  patch({
+                    publicPreview: {
+                      ...state.publicPreview,
+                      coverImage: event.target.value,
+                    },
+                  })
+                }
+                placeholder="Adresa naslovne slike"
+                className={FIELD_CLASS}
+              />
+            </div>
+          </fieldset>
+        )}
+
+        {/* SEO postoji za javno i zaključano — oba su javno otkrivena. Privatan
+            sadržaj nema javnu stranu, pa ni SEO. */}
+        {state.accessMode !== "private" && (
         <Disclosure as="div" className="sm:col-span-2">
           <DisclosureButton className="group flex items-center gap-2 text-sm font-semibold text-violet-600 underline-offset-4 hover:underline dark:text-violet-400">
             Uredi SEO
@@ -381,6 +439,7 @@ export default function EducationContentEditor({ record }: Props) {
             />
           </DisclosurePanel>
         </Disclosure>
+        )}
       </section>
 
       {tab === "editor" ? (
@@ -403,7 +462,7 @@ export default function EducationContentEditor({ record }: Props) {
                 </h2>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   {EDUCATION_KIND_LABELS[state.kind]} ·{" "}
-                  {EDUCATION_VISIBILITY_LABELS[state.visibility]}
+                  {EDUCATION_ACCESS_LABELS[state.accessMode]}
                   {slugPreview ? ` · /${slugPreview}` : ""}
                 </p>
               </div>

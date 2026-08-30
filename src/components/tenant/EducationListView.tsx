@@ -40,8 +40,13 @@ export function EducationListView({
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
                   {EDUCATION_KIND_LABELS[item.kind] ?? "Edukacija"}
                 </p>
-                <h2 className="mt-2 text-xl font-semibold text-gray-900">
+                <h2 className="mt-2 flex flex-wrap items-center gap-2 text-xl font-semibold text-gray-900">
                   {item.title}
+                  {item.accessMode === "gated" && (
+                    <span className="rounded-full bg-gray-900 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
+                      Uz odobrenje
+                    </span>
+                  )}
                 </h2>
                 {item.description && (
                   <p className="mt-2 line-clamp-2 text-gray-600">

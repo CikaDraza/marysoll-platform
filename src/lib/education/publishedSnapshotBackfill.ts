@@ -8,6 +8,7 @@ export interface BackfilledSnapshot {
   title: string;
   slug: string;
   kind: string;
+  accessMode: string;
   visibility: string;
   blocks: unknown[];
   seo?: unknown;
@@ -20,6 +21,7 @@ export type BackfillDecision =
 
 interface LegacyEducationRecord {
   status?: unknown;
+  accessMode?: unknown;
   publishedSnapshot?: unknown;
   title?: unknown;
   slug?: unknown;
@@ -59,6 +61,16 @@ export function classifyEducationRecord(
       title: String(record.title ?? ""),
       slug: String(record.slug ?? ""),
       kind: String(record.kind ?? ""),
+      // Dvočlano `visibility` se preslikava fail-closed: samo eksplicitno
+      // „public" postaje javno, sve ostalo ostaje privatno.
+      accessMode:
+        record.accessMode === "public" ||
+        record.accessMode === "gated" ||
+        record.accessMode === "private"
+          ? String(record.accessMode)
+          : record.visibility === "public"
+            ? "public"
+            : "private",
       visibility: String(record.visibility ?? ""),
       blocks: Array.isArray(record.blocks) ? record.blocks : [],
       seo: record.seo ?? undefined,

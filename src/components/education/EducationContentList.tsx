@@ -102,7 +102,7 @@ export default function EducationContentList() {
               <tr>
                 <th className="px-5 py-3 font-semibold">Naslov</th>
                 <th className="px-5 py-3 font-semibold">Vrsta</th>
-                <th className="px-5 py-3 font-semibold">Vidljivost</th>
+                <th className="px-5 py-3 font-semibold">Pristup</th>
                 <th className="px-5 py-3 font-semibold">Status</th>
                 <th className="px-5 py-3 font-semibold">Izmenjeno</th>
                 <th className="px-5 py-3" />
@@ -126,7 +126,7 @@ export default function EducationContentList() {
                     {row.kindLabel}
                   </td>
                   <td className="px-5 py-4 text-gray-600 dark:text-gray-300">
-                    {row.visibilityLabel}
+                    {row.accessLabel}
                   </td>
                   <td className="px-5 py-4">
                     <StatusBadge

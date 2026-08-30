@@ -1,13 +1,15 @@
 import type { ContentBlock } from "@/lib/content/schemas/landing-blocks";
 import {
+  EDUCATION_ACCESS_LABELS,
   EDUCATION_KIND_LABELS,
-  EDUCATION_VISIBILITY_LABELS,
   hasUnpublishedChanges,
   normalizeEducationSlug,
   type EducationContentRecord,
   type EducationContentSeo,
   type EducationContentSummary,
+  type EducationPublicPreview,
 } from "@/lib/education/content-document";
+import { isPubliclyDiscoverable } from "@/types/education-content";
 
 export interface EducationEditorState {
   title: string;
@@ -15,7 +17,8 @@ export interface EducationEditorState {
   /** Ručno potvrđen slug se ne prepisuje kad se naslov promeni. */
   slugTouched: boolean;
   kind: EducationContentSummary["kind"];
-  visibility: EducationContentSummary["visibility"];
+  accessMode: EducationContentSummary["accessMode"];
+  publicPreview: EducationPublicPreview;
   blocks: ContentBlock[];
   seo: EducationContentSeo;
 }
@@ -26,7 +29,8 @@ export function emptyEducationEditorState(): EducationEditorState {
     slug: "",
     slugTouched: false,
     kind: "article",
-    visibility: "public",
+    accessMode: "public",
+    publicPreview: {},
     blocks: [],
     seo: {},
   };
@@ -40,7 +44,8 @@ export function editorStateFromRecord(
     slug: record.slug,
     slugTouched: true,
     kind: record.kind,
-    visibility: record.visibility,
+    accessMode: record.accessMode,
+    publicPreview: record.publicPreview ?? {},
     blocks: record.blocks,
     seo: record.seo ?? {},
   };
@@ -65,7 +70,9 @@ export function isEducationEditorDirty(
     state.title !== baseline.title ||
     normalizeEducationSlug(state.slug) !== normalizeEducationSlug(baseline.slug) ||
     state.kind !== baseline.kind ||
-    state.visibility !== baseline.visibility ||
+    state.accessMode !== baseline.accessMode ||
+    JSON.stringify(state.publicPreview) !==
+      JSON.stringify(baseline.publicPreview) ||
     JSON.stringify(state.seo) !== JSON.stringify(baseline.seo) ||
     JSON.stringify(state.blocks) !== JSON.stringify(baseline.blocks)
   );
@@ -76,7 +83,8 @@ export function createPayload(state: EducationEditorState) {
     title: state.title.trim(),
     slug: previewSlug(state) || undefined,
     kind: state.kind,
-    visibility: state.visibility,
+    accessMode: state.accessMode,
+    publicPreview: state.accessMode === "gated" ? state.publicPreview : undefined,
     blocks: state.blocks,
     seo: state.seo,
   };
@@ -99,8 +107,14 @@ export function updatePayload(
     payload.slug = normalizeEducationSlug(state.slug);
   }
   if (state.kind !== baseline.kind) payload.kind = state.kind;
-  if (state.visibility !== baseline.visibility) {
-    payload.visibility = state.visibility;
+  if (state.accessMode !== baseline.accessMode) {
+    payload.accessMode = state.accessMode;
+  }
+  if (
+    JSON.stringify(state.publicPreview) !==
+    JSON.stringify(baseline.publicPreview)
+  ) {
+    payload.publicPreview = state.publicPreview;
   }
   if (JSON.stringify(state.seo) !== JSON.stringify(baseline.seo)) {
     payload.seo = state.seo;
@@ -162,7 +176,7 @@ export interface EducationContentRow {
   title: string;
   slug: string;
   kindLabel: string;
-  visibilityLabel: string;
+  accessLabel: string;
   statusLabel: string;
   published: boolean;
   isPublic: boolean;
@@ -194,7 +208,7 @@ export function educationContentOverview(
         overview.unpublishedChanges + (hasUnpublishedChanges(item) ? 1 : 0),
       hasPublicContent:
         overview.hasPublicContent ||
-        item.publishedSnapshot?.visibility === "public",
+        isPubliclyDiscoverable(item.publishedSnapshot?.accessMode ?? "private"),
     }),
     {
       total: 0,
@@ -215,10 +229,10 @@ export function educationContentRows(
     title: item.title || "Bez naslova",
     slug: item.slug,
     kindLabel: EDUCATION_KIND_LABELS[item.kind] ?? item.kind,
-    visibilityLabel: EDUCATION_VISIBILITY_LABELS[item.visibility],
+    accessLabel: EDUCATION_ACCESS_LABELS[item.accessMode],
     statusLabel: publicationLabel(item),
     published: item.status === "published",
-    isPublic: item.visibility === "public",
+    isPublic: item.accessMode === "public",
     hasUnpublished: hasUnpublishedChanges(item),
     updatedLabel: item.updatedAt ? formatDate(item.updatedAt) : "",
     href: `/education/content/${item.id}`,

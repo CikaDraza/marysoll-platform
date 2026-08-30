@@ -8,6 +8,7 @@ import type {
   EducationPublishedSnapshotMeta,
 } from "@/lib/education/content-document";
 import type { ContentBlock } from "@/lib/content/schemas/landing-blocks";
+import { resolveAccessMode } from "@/types/education-content";
 
 export const EDUCATION_CONTENT_KEY = ["education", "content"] as const;
 
@@ -15,7 +16,8 @@ export interface EducationContentPayload {
   title: string;
   slug?: string;
   kind: EducationContentSummary["kind"];
-  visibility: EducationContentSummary["visibility"];
+  accessMode: EducationContentSummary["accessMode"];
+  publicPreview?: EducationContentRecord["publicPreview"];
   blocks: ContentBlock[];
   seo?: EducationContentRecord["seo"];
 }
@@ -30,7 +32,10 @@ function normalizeSnapshot(
     title: String(snapshot.title ?? ""),
     slug: String(snapshot.slug ?? ""),
     kind: snapshot.kind as EducationContentSummary["kind"],
-    visibility: snapshot.visibility as EducationContentSummary["visibility"],
+    accessMode: resolveAccessMode(snapshot),
+    publicPreview:
+      (snapshot.publicPreview as EducationPublishedSnapshotMeta["publicPreview"]) ??
+      undefined,
     seo: (snapshot.seo as EducationPublishedSnapshotMeta["seo"]) ?? undefined,
     publishedAt: String(snapshot.publishedAt ?? ""),
   };
@@ -50,7 +55,9 @@ export function normalizeEducationContentRecord(
     title: String(raw.title ?? ""),
     slug: String(raw.slug ?? ""),
     kind: raw.kind as EducationContentSummary["kind"],
-    visibility: raw.visibility as EducationContentSummary["visibility"],
+    accessMode: resolveAccessMode(raw),
+    publicPreview:
+      (raw.publicPreview as EducationContentRecord["publicPreview"]) ?? undefined,
     status: raw.status as EducationContentSummary["status"],
     updatedAt: String(raw.updatedAt ?? ""),
     createdAt: raw.createdAt ? String(raw.createdAt) : undefined,

@@ -7,6 +7,7 @@ import {
   hasPublishableBlock,
   hasPublishedSnapshot,
   hasUnpublishedChanges,
+  isBodyPubliclyAvailable,
   isPubliclyConsumable,
   normalizeEducationSlug,
   resolveEducationSlug,
@@ -54,7 +55,7 @@ describe("education metadata contract", () => {
       educationContentCreateSchema.safeParse({
         title: "",
         kind: "article",
-        visibility: "public",
+        accessMode: "public",
       }).success,
     ).toBe(false);
 
@@ -62,7 +63,7 @@ describe("education metadata contract", () => {
       educationContentCreateSchema.safeParse({
         title: "Estetika lica",
         kind: "course",
-        visibility: "public",
+        accessMode: "public",
       }).success,
     ).toBe(false);
 
@@ -70,7 +71,7 @@ describe("education metadata contract", () => {
       educationContentCreateSchema.safeParse({
         title: "Estetika lica",
         kind: "article",
-        visibility: "private",
+        accessMode: "private",
       }).success,
     ).toBe(true);
   });
@@ -104,16 +105,26 @@ describe("publish host precondition", () => {
 });
 
 describe("javni izvor istine je snapshot, ne radna kopija", () => {
-  const snapshot = (visibility: "public" | "private") => ({
+  const snapshot = (accessMode: "public" | "gated" | "private") => ({
     title: "Estetika lica",
     slug: "estetika-lica",
     kind: "article" as const,
-    visibility,
+    accessMode,
     blocks: [article],
     publishedAt: new Date("2026-08-29T10:00:00.000Z"),
   });
 
-  it("javno je samo ono što ima objavljen public snapshot", () => {
+  it("zaključan sadržaj je javno otkriven, ali mu telo nije javno", () => {
+    const gated = { publishedSnapshot: snapshot("gated") };
+
+    expect(isPubliclyConsumable(gated)).toBe(true);
+    expect(isBodyPubliclyAvailable(gated)).toBe(false);
+    expect(isBodyPubliclyAvailable({ publishedSnapshot: snapshot("public") })).toBe(
+      true,
+    );
+  });
+
+  it("javno je samo ono što ima objavljen public ili gated snapshot", () => {
     expect(isPubliclyConsumable({ publishedSnapshot: snapshot("public") })).toBe(true);
     expect(isPubliclyConsumable({ publishedSnapshot: snapshot("private") })).toBe(false);
     expect(isPubliclyConsumable({ publishedSnapshot: null })).toBe(false);
@@ -122,7 +133,7 @@ describe("javni izvor istine je snapshot, ne radna kopija", () => {
 
   it("zapis bez snapshot-a nije javan ni kad mu je status published", () => {
     // Fail-closed: zatečen zapis pre backfill-a ostaje nevidljiv umesto da procuri.
-    const legacy = { status: "published", visibility: "public", blocks: [article] };
+    const legacy = { status: "published", accessMode: "public", blocks: [article] };
 
     expect(isPubliclyConsumable(legacy as never)).toBe(false);
     expect(hasPublishedSnapshot(legacy as never)).toBe(false);
@@ -133,7 +144,7 @@ describe("javni izvor istine je snapshot, ne radna kopija", () => {
     const record = {
       title: "Radna izmena koja još nije objavljena",
       slug: "proporcije-lica",
-      visibility: "private" as const,
+      accessMode: "private" as const,
       publishedSnapshot: snapshot("public"),
     };
 
@@ -148,7 +159,7 @@ describe("neobjavljene izmene", () => {
     title: "Estetika lica",
     slug: "estetika-lica",
     kind: "article" as const,
-    visibility: "public" as const,
+    accessMode: "public" as const,
     publishedAt,
   };
 
