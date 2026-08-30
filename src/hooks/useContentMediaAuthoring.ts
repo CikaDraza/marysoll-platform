@@ -8,7 +8,8 @@ import type { ContentMediaAuthoringAdapter, ContentMediaKind } from "@/lib/conte
 const AUTHORITY: Record<ContentMediaKind, { endpoint: string; field: string }> = {
   image: { endpoint: "/api/cloudinary/images", field: "image" },
   video: { endpoint: "/api/cloudinary/videos", field: "video" },
-  file: { endpoint: "/api/admin/chat/upload", field: "file" },
+  // Materijali idu u `{tenant}/dokumenti`, ne u chat folder.
+  file: { endpoint: "/api/cloudinary/files", field: "file" },
 };
 
 export function useContentMediaAuthoring(): ContentMediaAuthoringAdapter | undefined {

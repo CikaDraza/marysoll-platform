@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { focalObjectPosition } from "./ContentImage";
 import { ArticleBlock as ArticleBlockType } from "@/lib/content/schemas/landing-blocks";
 
 interface ArticleBlockProps {
@@ -61,6 +62,7 @@ export default function ArticleBlock({ block }: ArticleBlockProps) {
               src={image.src}
               alt={image.alt}
               className="aspect-[16/9] w-full rounded-3xl object-cover shadow-md"
+              style={{ objectPosition: focalObjectPosition(image.focalPoint) }}
               width={1200}
               height={800}
               loading="lazy"

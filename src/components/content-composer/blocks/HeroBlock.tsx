@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { HeroBlock as HeroBlockType } from "@/lib/content/schemas/landing-blocks";
+import { focalObjectPosition } from "./ContentImage";
 
 interface HeroBlockProps {
   block: HeroBlockType;
@@ -59,6 +60,7 @@ export default function HeroBlock({ block }: HeroBlockProps) {
                 alt={image.alt}
                 src={image.src}
                 className="size-full object-cover sm:rounded-lg"
+                style={{ objectPosition: focalObjectPosition(image.focalPoint) }}
               />
             </figure>
           ))}

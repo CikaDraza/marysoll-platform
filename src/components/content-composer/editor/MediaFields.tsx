@@ -5,7 +5,8 @@ import type { ContentAssetRef, ContentImageRef } from "@/lib/content/schemas/lan
 import type { ContentMediaAuthoringAdapter, ContentMediaKind } from "@/lib/content/media/authoring";
 import { uploadContentMedia } from "@/lib/content/media/authoring";
 import { Field, inputClassName, labelClassName } from "./EditorFields";
-import { ContentImage } from "@/components/content-composer/blocks/ContentImage";
+import { MediaGallery } from "./MediaGallery";
+import { FocalPointPicker } from "./FocalPointPicker";
 
 const ACCEPT: Record<ContentMediaKind, string> = {
   image: "image/jpeg,image/png,image/webp",
@@ -14,6 +15,14 @@ const ACCEPT: Record<ContentMediaKind, string> = {
 };
 
 export type MediaFieldStatus = "IDLE" | "UPLOADING" | "READY" | "ERROR";
+
+type MediaSource = "gallery" | "upload" | "url";
+
+const SOURCE_LABEL: Record<MediaSource, string> = {
+  gallery: "Galerija",
+  upload: "Otpremi",
+  url: "URL",
+};
 
 export function AssetMediaField({ kind, label, asset, adapter, onChange }: {
   kind: ContentMediaKind;
@@ -24,15 +33,46 @@ export function AssetMediaField({ kind, label, asset, adapter, onChange }: {
 }) {
   const [state, setState] = useState<"idle" | "uploading" | "error">("idle");
   const [error, setError] = useState("");
+  // Dokumenti nemaju galeriju, pa za njih „Otpremi" ostaje prvi izbor.
+  const [source, setSource] = useState<MediaSource>(kind === "file" ? "upload" : "gallery");
   const status: MediaFieldStatus = state === "uploading" ? "UPLOADING" : state === "error" ? "ERROR" : asset?.src ? "READY" : "IDLE";
   return <fieldset className="space-y-2 rounded-md border border-gray-200 p-2 dark:border-gray-700">
     <legend className="px-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500">{label}</legend>
-    <div>
-      <label className={labelClassName}>Trajna URL adresa</label>
-      <input className={inputClassName} type="url" value={asset?.src ?? ""} placeholder="https://…" onChange={(event) => onChange(event.target.value ? { ...asset, src: event.target.value } : undefined)} />
+
+    <div className="flex gap-1 rounded-lg bg-gray-100 p-0.5 dark:bg-gray-800">
+      {(Object.keys(SOURCE_LABEL) as MediaSource[]).map((option) => (
+        <button
+          key={option}
+          type="button"
+          onClick={() => setSource(option)}
+          className={`flex-1 rounded-md px-2 py-1 text-[11px] font-semibold transition ${
+            option === source
+              ? "bg-white text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white"
+              : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+          }`}
+        >
+          {SOURCE_LABEL[option]}
+        </button>
+      ))}
     </div>
+
+    {source === "gallery" && (
+      <MediaGallery
+        kind={kind}
+        onSelect={(src, fileName) => onChange({ ...asset, src, fileName: fileName ?? asset?.fileName })}
+      />
+    )}
+
+    {source === "url" && (
+      <div>
+        <label className={labelClassName}>Trajna URL adresa</label>
+        <input className={inputClassName} type="url" value={asset?.src ?? ""} placeholder="https://…" onChange={(event) => onChange(event.target.value ? { ...asset, src: event.target.value } : undefined)} />
+      </div>
+    )}
+
     {asset?.fileName && <p className="text-xs text-gray-500">{asset.fileName}{asset.mimeType ? ` · ${asset.mimeType}` : ""}{asset.sizeBytes != null ? ` · ${(asset.sizeBytes / 1024 / 1024).toFixed(1)} MB` : ""}</p>}
     <span className="sr-only" role="status">Media status: {status}</span>
+    {source === "upload" && (
     <div className="flex flex-wrap items-center gap-2">
       <label className={`cursor-pointer rounded-md border border-gray-300 px-3 py-2 text-xs font-semibold ${!adapter || state === "uploading" ? "pointer-events-none opacity-50" : ""}`}>
         {state === "uploading" ? "Otpremanje…" : asset ? "Zameni fajl" : "Otpremi fajl"}
@@ -46,21 +86,34 @@ export function AssetMediaField({ kind, label, asset, adapter, onChange }: {
           else { setError(result.message); setState("error"); }
         }} />
       </label>
-      {asset && <button type="button" className="text-xs font-semibold text-red-600" onClick={() => { onChange(undefined); setError(""); setState("idle"); }}>Ukloni referencu</button>}
     </div>
-    {!adapter && <p className="text-xs text-gray-500">Upload nije dostupan u ovom hostu; unesite trajni URL.</p>}
+    )}
+    {asset && <button type="button" className="text-xs font-semibold text-red-600" onClick={() => { onChange(undefined); setError(""); setState("idle"); }}>Ukloni referencu</button>}
+    {source === "upload" && !adapter && <p className="text-xs text-gray-500">Upload nije dostupan u ovom hostu; unesite trajni URL.</p>}
     {error && <p role="alert" className="text-xs text-red-600">{error} Postojeća referenca je sačuvana.</p>}
   </fieldset>;
 }
 
-export function ImageMediaField({ label = "Slika", image, adapter, onChange }: {
+export function ImageMediaField({ label = "Slika", image, adapter, onChange, aspectHint }: {
   label?: string;
   image?: ContentImageRef;
   adapter?: ContentMediaAuthoringAdapter;
   onChange: (image?: ContentImageRef) => void;
+  /** Odnos kadra u kome će se slika stvarno prikazati, iz same teme. */
+  aspectHint?: string;
 }) {
   return <div className="space-y-2">
-    {image?.src && <ContentImage src={image.src} alt={image.alt || "Pregled izabrane slike"} className="h-32 w-full rounded-md object-cover" />}
+    {image?.src ? (
+      <FocalPointPicker
+        src={image.src}
+        alt={image.alt || "Pregled izabrane slike"}
+        focalPoint={image.focalPoint}
+        aspectHint={aspectHint}
+        onChange={(focalPoint) => onChange({ ...image, focalPoint })}
+      />
+    ) : (
+      aspectHint && <p className="text-xs text-gray-500">Preporučeni kadar: {aspectHint}</p>
+    )}
     <AssetMediaField kind="image" label={label} asset={image} adapter={adapter} onChange={(asset) => onChange(asset ? { ...asset, alt: image?.alt ?? "", caption: image?.caption } : undefined)} />
     {image && <><Field label="Alt tekst" value={image.alt} onChange={(alt) => onChange({ ...image, alt })} /><Field label="Opis slike (opciono)" value={image.caption ?? ""} onChange={(caption) => onChange({ ...image, caption })} /></>}
   </div>;

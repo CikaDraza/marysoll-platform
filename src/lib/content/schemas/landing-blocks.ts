@@ -28,11 +28,20 @@ export type ContentAssetRef = {
   sizeBytes?: number;
 };
 
+/**
+ * Tačka kadra koju treba zadržati pri isecanju, u odnosu 0–1.
+ *
+ * Isti hero se na mobilnom seče kao 4/5 a na desktopu kao 3/1, pa bez ovoga
+ * jedan od ta dva kadra uvek ispadne loše. `undefined` znači centar.
+ */
+export type ContentFocalPoint = { x: number; y: number };
+
 export type ContentImageRef = ContentAssetRef & {
   alt: string;
   caption?: string;
   width?: number;
   height?: number;
+  focalPoint?: ContentFocalPoint;
 };
 
 /** Backwards-compatible name for persisted Newsletter images. */
@@ -212,11 +221,17 @@ export const contentAssetRefSchema = z.object({
   sizeBytes: z.number().int().nonnegative().optional(),
 });
 
+export const contentFocalPointSchema = z.object({
+  x: z.number().min(0).max(1),
+  y: z.number().min(0).max(1),
+});
+
 export const contentImageRefSchema = contentAssetRefSchema.extend({
   alt: nonBlankStringSchema,
   caption: z.string().optional(),
   width: z.number().int().positive().optional(),
   height: z.number().int().positive().optional(),
+  focalPoint: contentFocalPointSchema.optional(),
 });
 
 const imageSchema = contentImageRefSchema;

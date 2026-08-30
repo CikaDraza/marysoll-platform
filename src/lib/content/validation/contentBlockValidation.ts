@@ -43,6 +43,9 @@ const draftMediaSourceSchema = z.string().refine(
 const draftImageSchema = z.object({
   src: draftMediaSourceSchema,
   alt: z.string(),
+  focalPoint: z
+    .object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) })
+    .optional(),
   assetId: z.string().optional(),
   fileName: z.string().optional(),
   mimeType: z.string().optional(),

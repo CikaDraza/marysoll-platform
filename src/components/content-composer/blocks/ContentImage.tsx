@@ -2,12 +2,23 @@
 
 import { useState } from "react";
 
-export function ContentImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
+import type { ContentFocalPoint } from "@/lib/content/schemas/landing-blocks";
+
+/** `object-position` iz fokusa; bez fokusa ostaje podrazumevani centar. */
+export function focalObjectPosition(
+  focalPoint?: ContentFocalPoint,
+): string | undefined {
+  return focalPoint
+    ? `${Math.round(focalPoint.x * 100)}% ${Math.round(focalPoint.y * 100)}%`
+    : undefined;
+}
+
+export function ContentImage({ src, alt, className, focalPoint }: { src: string; alt: string; className?: string; focalPoint?: ContentFocalPoint }) {
   const [failed, setFailed] = useState(false);
   if (failed || !src) {
     return <div role="img" aria-label={alt || "Slika nije dostupna"} className={`${className ?? ""} flex items-center justify-center bg-gray-100 p-4 text-center text-sm text-gray-500`}>Slika trenutno nije dostupna.</div>;
   }
   // Provider-neutral content URLs cannot be exhaustively listed in next/image remotePatterns.
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt={alt} className={className} loading="lazy" onError={() => setFailed(true)} />;
+  return <img src={src} alt={alt} className={className} style={{ objectPosition: focalObjectPosition(focalPoint) }} loading="lazy" onError={() => setFailed(true)} />;
 }

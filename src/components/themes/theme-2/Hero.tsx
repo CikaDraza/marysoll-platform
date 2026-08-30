@@ -38,7 +38,7 @@ export function Theme2Hero({
         <motion.img
           src={
             imageUrl ||
-            "https://res.cloudinary.com/dufo1t5li/image/upload/v1776466072/hero-shi-sham_ixxrrj.png"
+            "https://res.cloudinary.com/dufo1t5li/image/upload/v1788120014/hero-shi-sham_ixxrrj_isdbpg.webp"
           }
           alt={`${salonName || "Salon"} luksuzni tretmani`}
           className="w-full h-full object-contain lg:object-cover"
