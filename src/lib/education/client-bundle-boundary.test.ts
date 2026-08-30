@@ -20,6 +20,16 @@ function walk(dir: string): string[] {
   });
 }
 
+/**
+ * `"use client"` sme da stoji posle uvodnog komentara, pa se traži u delu
+ * datoteke PRE prvog `import`-a. Provera samo prvog znaka propušta svaku
+ * klijentsku komponentu koja počinje docblock-om.
+ */
+function isClientModule(source: string): boolean {
+  const head = source.slice(0, source.search(/^import\s/m) + 1 || 2000);
+  return /["']use client["']/.test(head);
+}
+
 function resolveImport(fromFile: string, specifier: string): string | null {
   const base = specifier.startsWith("@/")
     ? path.join(SRC, specifier.slice(2))
@@ -80,7 +90,7 @@ function modelEdgesReachableFromClient(): Set<string> {
   const edges = new Set<string>();
 
   for (const entry of walk(SRC)) {
-    if (!/^\s*["']use client["']/.test(readFileSync(entry, "utf8"))) continue;
+    if (!isClientModule(readFileSync(entry, "utf8"))) continue;
 
     const seen = new Set<string>();
     const queue = [entry];
@@ -129,5 +139,55 @@ describe("granica klijentskog bundle-a", () => {
     );
 
     expect(unexpected).toEqual([]);
+  });
+
+  it("server-renderovana javna površina ne poziva funkcije iz klijentskih modula", () => {
+    /**
+     * Suprotan smer od gornje granice, i jednako nevidljiv: `next build` prođe,
+     * testovi prođu, a strana pukne tek kad je čovek otvori — „Attempted to
+     * call X() from the server but X is on the client".
+     *
+     * Gleda se površina koju RSC stvarno renderuje na serveru: blok rendereri i
+     * javne tenant strane. Komponente su izuzete jer server SME da renderuje
+     * klijentsku komponentu — problem je samo POZIV klijentske funkcije, pa se
+     * proveravaju uvozi koji ne počinju velikim slovom.
+     *
+     * Šire pravilo bi lažno prijavljivalo hookove bez sopstvene direktive, koji
+     * granicu legalno nasleđuju od pozivaoca.
+     */
+    const SERVER_RENDERED = [
+      "components/content-composer/blocks",
+      "components/tenant",
+      "app/tenant",
+    ];
+
+    const offenders: string[] = [];
+
+    for (const file of walk(SRC)) {
+      const relative = path.relative(SRC, file);
+      if (!SERVER_RENDERED.some((dir) => relative.startsWith(dir))) continue;
+
+      const source = readFileSync(file, "utf8");
+      if (isClientModule(source)) continue;
+
+      for (const [, names, specifier] of source.matchAll(
+        /import\s+\{([^}]+)\}\s+from\s+["']([^"']+)["']/g,
+      )) {
+        const resolved = resolveImport(file, specifier);
+        if (!resolved || !isClientModule(readFileSync(resolved, "utf8"))) continue;
+
+        names
+          .split(",")
+          .map((name) => name.trim().split(/\s+as\s+/).pop()!.trim())
+          .filter((name) => name && !name.startsWith("type ") && /^[a-z]/.test(name))
+          .forEach((value) =>
+            offenders.push(
+              `${relative} → ${value}() iz ${path.relative(SRC, resolved)}`,
+            ),
+          );
+      }
+    }
+
+    expect(offenders).toEqual([]);
   });
 });

@@ -3,10 +3,10 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { contentImageRefSchema } from "@/lib/content/schemas/landing-blocks";
 import { validateContentBlock } from "@/lib/content/validation/contentBlockValidation";
-import { focalObjectPosition } from "@/components/content-composer/blocks/ContentImage";
 import {
   HERO_MAX_IMAGES,
   blockImageAspectHint,
+  focalObjectPosition,
   heroImageAspectHint,
 } from "./imageFraming";
 

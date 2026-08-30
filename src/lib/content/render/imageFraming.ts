@@ -1,4 +1,22 @@
-import type { LandingBlockType } from "@/lib/content/schemas/landing-blocks";
+import type {
+  ContentFocalPoint,
+  LandingBlockType,
+} from "@/lib/content/schemas/landing-blocks";
+
+/**
+ * `object-position` iz fokusa; bez fokusa ostaje podrazumevani centar.
+ *
+ * Namerno NIJE u `ContentImage`: taj modul je `"use client"`, a ovu funkciju
+ * pozivaju i serverske blok komponente (hero, članak). Poziv klijentske
+ * funkcije iz servera je RSC greška koja se vidi tek u pregledaču.
+ */
+export function focalObjectPosition(
+  focalPoint?: ContentFocalPoint,
+): string | undefined {
+  return focalPoint
+    ? `${Math.round(focalPoint.x * 100)}% ${Math.round(focalPoint.y * 100)}%`
+    : undefined;
+}
 
 /**
  * Preporučeni kadar dolazi iz STVARNOG renderera, ne iz proizvoljne dimenzije.

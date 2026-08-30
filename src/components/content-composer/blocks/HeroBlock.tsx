@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { HeroBlock as HeroBlockType } from "@/lib/content/schemas/landing-blocks";
-import { focalObjectPosition } from "./ContentImage";
+import { focalObjectPosition } from "@/lib/content/render/imageFraming";
 import type { BlockHeadingScope } from "@/components/content-composer/BlockList";
 
 interface HeroBlockProps {

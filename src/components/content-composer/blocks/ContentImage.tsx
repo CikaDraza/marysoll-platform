@@ -3,15 +3,7 @@
 import { useState } from "react";
 
 import type { ContentFocalPoint } from "@/lib/content/schemas/landing-blocks";
-
-/** `object-position` iz fokusa; bez fokusa ostaje podrazumevani centar. */
-export function focalObjectPosition(
-  focalPoint?: ContentFocalPoint,
-): string | undefined {
-  return focalPoint
-    ? `${Math.round(focalPoint.x * 100)}% ${Math.round(focalPoint.y * 100)}%`
-    : undefined;
-}
+import { focalObjectPosition } from "@/lib/content/render/imageFraming";
 
 export function ContentImage({ src, alt, className, focalPoint }: { src: string; alt: string; className?: string; focalPoint?: ContentFocalPoint }) {
   const [failed, setFailed] = useState(false);

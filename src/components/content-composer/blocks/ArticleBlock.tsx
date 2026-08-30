@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { focalObjectPosition } from "./ContentImage";
+import { focalObjectPosition } from "@/lib/content/render/imageFraming";
 import { ArticleBlock as ArticleBlockType } from "@/lib/content/schemas/landing-blocks";
 
 interface ArticleBlockProps {
