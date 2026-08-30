@@ -117,6 +117,34 @@ const metadataSchema = z.object({
   seo: seoSchema.optional(),
 });
 
+/**
+ * Redosled čuvanja unutar jedne editor sesije.
+ *
+ * Autosave i čuvanje pri izlasku mogu biti u letu istovremeno. Bez ovoga bi
+ * ishod odlučivao redosled kojim ih server obradi, pa bi stariji tekst mogao
+ * da pregazi noviji. Sesija se poredi zato što novo otvaranje editora uvek sme
+ * da piše — njegovo stanje je po definiciji svežije od svega zatečenog.
+ */
+export const educationSaveOrderSchema = z.object({
+  sessionId: z.string().trim().min(1).max(64),
+  revision: z.number().int().positive(),
+});
+
+export type EducationSaveOrder = z.infer<typeof educationSaveOrderSchema>;
+
+/** Filter koji propušta samo čuvanje koje NIJE preteklo novije. */
+export function saveOrderGuard(order: EducationSaveOrder | null) {
+  if (!order) return {};
+  return {
+    $or: [
+      { workingSessionId: { $ne: order.sessionId } },
+      { workingRevision: { $lt: order.revision } },
+      { workingRevision: null },
+      { workingRevision: { $exists: false } },
+    ],
+  };
+}
+
 export const educationContentCreateSchema = metadataSchema;
 export const educationContentUpdateSchema = metadataSchema.partial();
 

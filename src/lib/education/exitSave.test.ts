@@ -59,4 +59,15 @@ describe("čuvanje pri napuštanju strane", () => {
 
     expect(() => saveEducationDraftOnExit("abc", { title: "X" })).not.toThrow();
   });
+
+  it("nosi podatke o redosledu, da ne pregazi novije čuvanje", () => {
+    saveEducationDraftOnExit("abc", {
+      title: "Poslednji pasus",
+      saveOrder: { sessionId: "s1", revision: 7 },
+    });
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({
+      saveOrder: { sessionId: "s1", revision: 7 },
+    });
+  });
 });

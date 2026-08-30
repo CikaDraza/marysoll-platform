@@ -63,6 +63,9 @@ export interface IEducationContentDoc extends Document {
   publishedSlugHistory?: string[];
   /** Kada je radna kopija poslednji put sačuvana (ne i objavljena). */
   workingSavedAt?: Date | null;
+  /** Editor sesija i redni broj poslednjeg prihvaćenog čuvanja. */
+  workingSessionId?: string | null;
+  workingRevision?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -159,6 +162,10 @@ const EducationContentSchema = new Schema<IEducationContentDoc>(
     // radnoj kopiji a nikad objavljen ovde ne ulazi — nije ni imao javni URL.
     publishedSlugHistory: { type: [String], default: [] },
     workingSavedAt: { type: Date, default: null },
+    // Zaštita od preticanja: dva paralelna čuvanja iste sesije mogu stići
+    // obrnutim redom, a `$set` bi tada upisao stariji tekst preko novijeg.
+    workingSessionId: { type: String, default: null },
+    workingRevision: { type: Number, default: null },
   },
   { timestamps: true },
 );

@@ -11,7 +11,9 @@ import { validateContentDocument } from "@/lib/content/validation/contentBlockVa
 import { contentValidationFailureResponse } from "@/lib/content/validation/contentValidationResponse";
 import {
   educationContentUpdateSchema,
+  educationSaveOrderSchema,
   normalizeEducationSlug,
+  saveOrderGuard,
 } from "@/lib/education/content-document";
 import {
   invalidIdResponse,
@@ -110,20 +112,46 @@ export async function PATCH(
     // promenilo ono što javna strana prikazuje.
     updates.workingSavedAt = new Date();
 
+    // Redosled čuvanja: autosave i čuvanje pri izlasku mogu biti u letu
+    // istovremeno, a `$set` sam po sebi nema pojma koji je noviji.
+    const order = educationSaveOrderSchema.safeParse(body.saveOrder);
+    if (order.success) {
+      updates.workingSessionId = order.data.sessionId;
+      updates.workingRevision = order.data.revision;
+    }
+
     await connectToDB();
 
     // Save Draft ne menja ni `status` ni `publishedSnapshot`: objavljena
     // verzija ostaje netaknuta dok vlasnica sama ne pokrene Objavi. Newsletter
     // ovde snima preko objavljenog sadržaja; Education namerno ne.
     const item = await EducationContent.findOneAndUpdate(
-      { _id: id, tenantId: authority.tenantId },
+      {
+        _id: id,
+        tenantId: authority.tenantId,
+        ...saveOrderGuard(order.success ? order.data : null),
+      },
       { $set: updates },
       { new: true, runValidators: true },
     )
       .select("-publishedSnapshot.blocks")
       .lean();
 
-    if (!item) return notFoundResponse();
+    if (!item) {
+      // Ili zapis ne postoji, ili je ovo čuvanje preteklo novije iz iste
+      // sesije. Drugo nije greška: noviji tekst je već upisan i ovaj zahtev
+      // sme samo da se odbaci.
+      const current = await EducationContent.findOne({
+        _id: id,
+        tenantId: authority.tenantId,
+      })
+        .select("-publishedSnapshot.blocks")
+        .lean();
+
+      if (!current) return notFoundResponse();
+      return NextResponse.json({ item: current, stale: true });
+    }
+
     return NextResponse.json({ item });
   } catch (error) {
     if (isDuplicateSlugError(error)) return slugTakenResponse();

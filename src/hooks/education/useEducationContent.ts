@@ -12,6 +12,11 @@ import { resolveAccessMode } from "@/types/education-content";
 
 export const EDUCATION_CONTENT_KEY = ["education", "content"] as const;
 
+export interface EducationSaveOrderPayload {
+  sessionId: string;
+  revision: number;
+}
+
 export interface EducationContentPayload {
   title: string;
   slug?: string;
@@ -117,14 +122,24 @@ export function useEducationContentMutations(id?: string) {
   });
 
   const update = useMutation({
-    mutationFn: async (payload: Partial<EducationContentPayload>) => {
-      const { data } = await api.patch<{ item: Record<string, unknown> }>(
-        `/education/content/${id}`,
-        payload,
-      );
-      return normalizeEducationContentRecord(data.item);
+    mutationFn: async (
+      payload: Partial<EducationContentPayload> & {
+        saveOrder?: EducationSaveOrderPayload;
+      },
+    ) => {
+      const { data } = await api.patch<{
+        item: Record<string, unknown>;
+        stale?: boolean;
+      }>(`/education/content/${id}`, payload);
+
+      // `stale: true` znači da je ovo čuvanje preteklo novije iz iste sesije i
+      // da NIJE upisano. To nije greška — noviji tekst je već na serveru.
+      return {
+        record: normalizeEducationContentRecord(data.item),
+        stale: Boolean(data.stale),
+      };
     },
-    onSuccess: (record) => invalidate(record.id),
+    onSuccess: ({ record }) => invalidate(record.id),
   });
 
   const publish = useMutation({

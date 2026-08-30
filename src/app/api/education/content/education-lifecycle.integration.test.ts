@@ -832,3 +832,86 @@ describe("M — zatečeni zapisi bez accessMode", () => {
     expect(await listPublicEducationContent(TENANT)).toEqual([]);
   });
 });
+
+describe("N — redosled čuvanja (C-followup)", () => {
+  const order = (sessionId: string, revision: number) => ({
+    sessionId,
+    revision,
+  });
+
+  it("starije čuvanje ne može da pregazi novije iz iste sesije", async () => {
+    const id = await createPublishedV1();
+
+    // A2 stigne pre A1 — tačno ono što se dešava kad autosave i čuvanje pri
+    // izlasku budu u letu istovremeno.
+    const a2 = await saveContent(
+      request({ title: "A2 — noviji tekst", saveOrder: order("s1", 2) }),
+      params(id),
+    );
+    expect(a2.status).toBe(200);
+
+    const a1 = await saveContent(
+      request({ title: "A1 — stariji tekst", saveOrder: order("s1", 1) }),
+      params(id),
+    );
+
+    expect(a1.status).toBe(200);
+    expect(await json<{ stale?: boolean }>(a1)).toMatchObject({ stale: true });
+    expect((await readRaw(id)).title).toBe("A2 — noviji tekst");
+  });
+
+  it("novo otvaranje editora uvek sme da piše", async () => {
+    const id = await createPublishedV1();
+    await saveContent(
+      request({ title: "Iz prve sesije", saveOrder: order("s1", 9) }),
+      params(id),
+    );
+
+    // Druga sesija počinje od 1, ali njeno stanje je po definiciji svežije.
+    const second = await saveContent(
+      request({ title: "Iz druge sesije", saveOrder: order("s2", 1) }),
+      params(id),
+    );
+
+    expect(await json<{ stale?: boolean }>(second)).not.toMatchObject({
+      stale: true,
+    });
+    expect((await readRaw(id)).title).toBe("Iz druge sesije");
+  });
+
+  it("čuvanje bez podataka o redosledu radi kao i pre", async () => {
+    const id = await createPublishedV1();
+
+    const response = await saveContent(
+      request({ title: "Bez redosleda" }),
+      params(id),
+    );
+
+    expect(response.status).toBe(200);
+    expect((await readRaw(id)).title).toBe("Bez redosleda");
+  });
+
+  it("odbačeno čuvanje ne dira ni objavljenu verziju ni ostala polja", async () => {
+    const id = await createPublishedV1();
+    await saveContent(
+      request({ title: "Novije", saveOrder: order("s1", 5) }),
+      params(id),
+    );
+
+    await saveContent(
+      request({
+        title: "Starije",
+        accessMode: "private",
+        blocks: [],
+        saveOrder: order("s1", 4),
+      }),
+      params(id),
+    );
+
+    const record = await readRaw(id);
+    expect(record.title).toBe("Novije");
+    expect(record.accessMode).toBe("public");
+    expect(record.blocks).toHaveLength(12);
+    expect(record.publishedSnapshot?.title).toBe("Estetika lica");
+  });
+});

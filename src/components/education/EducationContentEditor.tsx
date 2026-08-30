@@ -11,6 +11,13 @@ import { useContentMediaAuthoring } from "@/hooks/useContentMediaAuthoring";
 import { getContentMutationErrorMessage } from "@/lib/content/validation/contentValidationClient";
 import { saveEducationDraftOnExit } from "@/lib/education/exitSave";
 import {
+  clearLocalDraftIfConfirmed,
+  putLocalDraft,
+  readLocalDraft,
+  shouldOfferRecovery,
+} from "@/lib/education/localDraft";
+import { useAuth } from "@/hooks/useAuth";
+import {
   EDUCATION_ACCESS_HELP,
   EDUCATION_ACCESS_LABELS,
   EDUCATION_KIND_LABELS,
@@ -36,10 +43,20 @@ import {
 } from "./education-content-editor-model";
 
 type Tab = "editor" | "preview";
+
+/**
+ * Identifikator jedne editor sesije. `useState` sa inicijalizatorom ga pravi
+ * tačno jednom, i to izvan rendera — vidi pravila čistote React komponenti.
+ */
+function newEditorSessionId(): string {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
 type AutosaveState = "idle" | "saving" | "saved" | "error";
 
 /** Koliko mirovanja pre tihog čuvanja — dovoljno da ne šalje na svako slovo. */
 const AUTOSAVE_DELAY_MS = 2000;
+/** Lokalna kopija se piše češće: upis je jeftin i ne ide preko mreže. */
+const LOCAL_DRAFT_DELAY_MS = 600;
 
 interface Props {
   record?: EducationContentRecord;
@@ -51,6 +68,7 @@ const FIELD_CLASS =
 export default function EducationContentEditor({ record }: Props) {
   const router = useRouter();
   const mediaAdapter = useContentMediaAuthoring();
+  const { tenantId } = useAuth();
 
   const [baseline, setBaseline] = useState<EducationEditorState | null>(
     record ? editorStateFromRecord(record) : null,
@@ -67,6 +85,21 @@ export default function EducationContentEditor({ record }: Props) {
   const [recordId, setRecordId] = useState(record?.id);
   const [tab, setTab] = useState<Tab>("editor");
   const [autosave, setAutosave] = useState<AutosaveState>("idle");
+  const [recovery, setRecovery] = useState<EducationEditorState | null>(null);
+
+  /**
+   * Jedna editor sesija = jedan `sessionId` i rastući `revision`. Server tako
+   * može da odbaci čuvanje koje je preteklo novije, umesto da poslednji
+   * pristigli zahtev pobedi bez obzira na to koliko je star.
+   */
+  const [sessionId] = useState(newEditorSessionId);
+  const revisionRef = useRef(0);
+  /** Vreme poslednjeg LOKALNOG upisa; po njemu se zna šta je server potvrdio. */
+  const localStampRef = useRef(0);
+  const nextSaveOrder = useCallback(
+    () => ({ sessionId, revision: (revisionRef.current += 1) }),
+    [sessionId],
+  );
 
   const { create, update, publish, remove } = useEducationContentMutations(recordId);
   const dirty = useMemo(
@@ -123,11 +156,24 @@ export default function EducationContentEditor({ record }: Props) {
       const changes = updatePayload(sent, baseline);
       if (Object.keys(changes).length === 0) return recordId;
 
-      const saved = await update.mutateAsync(changes);
+      const { record: saved, stale } = await update.mutateAsync({
+        ...changes,
+        saveOrder: nextSaveOrder(),
+      });
+
+      // Odbačeno čuvanje ne sme da pomeri polazište unazad: server drži noviji
+      // tekst, a ovaj zahtev je stigao prekasno.
+      if (stale) return recordId;
+
       setPublication(educationPublicationStateFromRecord(saved));
       // Server sada drži tačno ono što je poslato; sve novije kucanje ostaje
       // „prljavo" i biće poslato sledećim čuvanjem.
       setBaseline(sent);
+      void clearLocalDraftIfConfirmed(
+        tenantId ?? "",
+        saved.id,
+        localStampRef.current,
+      );
       return saved.id;
     } catch (error) {
       if (!silent) {
@@ -187,6 +233,45 @@ export default function EducationContentEditor({ record }: Props) {
   };
 
   /**
+   * Lokalna kopija se piše nezavisno od mreže — ona je jedina koja preživi pad
+   * pregledača, prekid veze i dokument prevelik za `keepalive`.
+   */
+  useEffect(() => {
+    if (!recordId || !tenantId || !dirty) return;
+
+    const timer = setTimeout(() => {
+      localStampRef.current = Date.now();
+      void putLocalDraft({
+        key: `${tenantId}:${recordId}`,
+        tenantId,
+        contentId: recordId,
+        savedAt: localStampRef.current,
+        state,
+      });
+    }, LOCAL_DRAFT_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [state, dirty, recordId, tenantId]);
+
+  /** Pri otvaranju: ako lokalna kopija nije novija od serverske, ćuti. */
+  useEffect(() => {
+    if (!record?.id || !tenantId) return;
+
+    let cancelled = false;
+    void readLocalDraft(tenantId, record.id).then((draft) => {
+      if (cancelled || !draft) return;
+      if (!shouldOfferRecovery({ draft, serverWorkingSavedAt: record.workingSavedAt })) {
+        return;
+      }
+      setRecovery(draft.state);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [record?.id, record?.workingSavedAt, tenantId]);
+
+  /**
    * Poslednja odbrana: napuštanje strane, prelazak na drugi ekran i zatvaranje
    * kartice. Autosave pokriva pauzu u kucanju, ali ne i izlazak u prve dve
    * sekunde — a upravo tada je izgubljen tekst najskuplji.
@@ -204,11 +289,11 @@ export default function EducationContentEditor({ record }: Props) {
     if (!current.recordId || !current.baseline) return;
     if (!current.state.title.trim()) return;
 
-    saveEducationDraftOnExit(
-      current.recordId,
-      updatePayload(current.state, current.baseline),
-    );
-  }, []);
+    saveEducationDraftOnExit(current.recordId, {
+      ...updatePayload(current.state, current.baseline),
+      saveOrder: nextSaveOrder(),
+    });
+  }, [nextSaveOrder]);
 
   useEffect(() => {
     // `pagehide` hvata i zatvaranje kartice i mobilni prelazak u pozadinu, gde
@@ -261,6 +346,36 @@ export default function EducationContentEditor({ record }: Props) {
       >
         ← Sadržaj
       </Link>
+
+      {recovery && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm dark:border-amber-900/50 dark:bg-amber-950/30"
+        >
+          <span className="text-amber-900 dark:text-amber-200">
+            Pronađene su novije nesačuvane izmene sa ovog uređaja.
+          </span>
+          <span className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setState(recovery);
+                setRecovery(null);
+              }}
+              className="rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-700"
+            >
+              Vrati izmene
+            </button>
+            <button
+              type="button"
+              onClick={() => setRecovery(null)}
+              className="rounded-xl px-3 py-1.5 text-xs font-semibold text-amber-900 transition hover:bg-amber-100 dark:text-amber-200"
+            >
+              Odbaci
+            </button>
+          </span>
+        </div>
+      )}
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
