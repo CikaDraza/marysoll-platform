@@ -142,6 +142,21 @@ export function educationPublicationStateFromRecord(
   };
 }
 
+/**
+ * Sme li tiho čuvanje da napravi zapis koji još ne postoji.
+ *
+ * Prazan zapis se ne kreira samo zato što je stranica otvorena — ali čim
+ * postoji naslov I bar jedan blok, to je stvaran rad koji ne sme da se izgubi
+ * zato što vlasnica nije stigla da klikne Sačuvaj.
+ */
+export function canAutosave(
+  state: EducationEditorState,
+  hasRecord: boolean,
+): boolean {
+  if (!state.title.trim()) return false;
+  return hasRecord || state.blocks.length > 0;
+}
+
 export interface EducationContentRow {
   id: string;
   title: string;

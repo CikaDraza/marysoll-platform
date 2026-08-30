@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ALL_TWELVE_BLOCKS } from "@/lib/education/__fixtures__/education-blocks";
 import type { EducationContentRecord } from "@/lib/education/content-document";
 import {
+  canAutosave,
   createPayload,
   educationContentOverview,
   educationPublicationStateFromRecord,
@@ -292,5 +293,29 @@ describe("pregled Edu Centra", () => {
     // Link „Vidi na sajtu" se ne sme ponuditi za privatan sadržaj.
     expect(overview.hasPublicContent).toBe(false);
     expect(overview.published).toBe(1);
+  });
+});
+
+describe("tiho čuvanje", () => {
+  const empty = emptyEducationEditorState();
+
+  it("ne pravi zapis dok nema stvarnog rada", () => {
+    expect(canAutosave(empty, false)).toBe(false);
+    expect(canAutosave({ ...empty, title: "Estetika lica" }, false)).toBe(false);
+    expect(canAutosave({ ...empty, blocks: ALL_TWELVE_BLOCKS }, false)).toBe(false);
+  });
+
+  it("pravi zapis čim postoji naslov i bar jedan blok", () => {
+    expect(
+      canAutosave(
+        { ...empty, title: "Estetika lica", blocks: ALL_TWELVE_BLOCKS },
+        false,
+      ),
+    ).toBe(true);
+  });
+
+  it("postojeći zapis se čuva i bez ijednog bloka — brisanje sadržaja je izmena", () => {
+    expect(canAutosave({ ...empty, title: "Estetika lica" }, true)).toBe(true);
+    expect(canAutosave(empty, true)).toBe(false);
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/react";
@@ -21,6 +21,7 @@ import {
 } from "@/types/education-content";
 import { useEducationContentMutations } from "@/hooks/education/useEducationContent";
 import {
+  canAutosave,
   createPayload,
   editorStateFromRecord,
   educationPublicationStateFromRecord,
@@ -34,6 +35,10 @@ import {
 } from "./education-content-editor-model";
 
 type Tab = "editor" | "preview";
+type AutosaveState = "idle" | "saving" | "saved" | "error";
+
+/** Koliko mirovanja pre tihog čuvanja — dovoljno da ne šalje na svako slovo. */
+const AUTOSAVE_DELAY_MS = 2000;
 
 interface Props {
   record?: EducationContentRecord;
@@ -60,6 +65,7 @@ export default function EducationContentEditor({ record }: Props) {
   );
   const [recordId, setRecordId] = useState(record?.id);
   const [tab, setTab] = useState<Tab>("editor");
+  const [autosave, setAutosave] = useState<AutosaveState>("idle");
 
   const { create, update, publish, remove } = useEducationContentMutations(recordId);
   const dirty = useMemo(
@@ -72,10 +78,16 @@ export default function EducationContentEditor({ record }: Props) {
   const patch = (changes: Partial<EducationEditorState>) =>
     setState((current) => ({ ...current, ...changes }));
 
-  /** Vraća id sačuvanog zapisa ili null kada čuvanje nije uspelo. */
-  const persist = async (): Promise<string | null> => {
+  /**
+   * Vraća id sačuvanog zapisa ili null kada čuvanje nije uspelo.
+   *
+   * `silent` je tiho čuvanje: ono ne sme da bombarduje vlasnicu porukama dok
+   * piše — greška se pokazuje kao stanje pored dugmeta, a sledeća izmena
+   * pokušava ponovo.
+   */
+  const persist = async (silent = false): Promise<string | null> => {
     if (!state.title.trim()) {
-      toast.error("Unesite naslov pre čuvanja.");
+      if (!silent) toast.error("Unesite naslov pre čuvanja.");
       return null;
     }
 
@@ -106,14 +118,46 @@ export default function EducationContentEditor({ record }: Props) {
       setBaseline(nextState);
       return saved.id;
     } catch (error) {
-      toast.error(getContentMutationErrorMessage(error, "Čuvanje nije uspelo"));
+      if (!silent) {
+        toast.error(getContentMutationErrorMessage(error, "Čuvanje nije uspelo"));
+      }
       return null;
     }
   };
 
+  // Efekat ne sme da zavisi od `persist`, koji se pravi iznova pri svakom
+  // renderu — inače bi se tajmer resetovao u krug. Ref se upisuje u efektu, ne
+  // tokom rendera.
+  const persistRef = useRef(persist);
+  useEffect(() => {
+    persistRef.current = persist;
+  });
+
+  const runAutosave = useCallback(async () => {
+    setAutosave("saving");
+    const saved = await persistRef.current(true);
+    setAutosave(saved ? "saved" : "error");
+  }, []);
+
+  /**
+   * Tiho čuvanje radne kopije. Sigurno je tek od UI-2B: Save dira isključivo
+   * radnu kopiju, pa autosave ne može ništa da objavi niti da promeni ono što
+   * je živo na sajtu.
+   */
+  useEffect(() => {
+    if (!dirty || busy) return;
+    if (!canAutosave(state, Boolean(recordId))) return;
+
+    const timer = setTimeout(runAutosave, AUTOSAVE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [state, dirty, busy, recordId, runAutosave]);
+
   const handleSave = async () => {
     const saved = await persist();
-    if (saved) toast.success("Sačuvano");
+    if (saved) {
+      setAutosave("saved");
+      toast.success("Sačuvano");
+    }
   };
 
   const handlePublish = async () => {
@@ -167,11 +211,19 @@ export default function EducationContentEditor({ record }: Props) {
           </h1>
           <p className="mt-1 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <span>{publicationLabel(publication)}</span>
-            {dirty && (
+            {autosave === "saving" ? (
+              <span className="text-xs text-gray-400">Čuvanje…</span>
+            ) : autosave === "error" ? (
+              <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-950/40 dark:text-red-300">
+                Nije sačuvano — pokušajte „Sačuvaj&rdquo;
+              </span>
+            ) : dirty ? (
               <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
                 Nesačuvane izmene
               </span>
-            )}
+            ) : autosave === "saved" ? (
+              <span className="text-xs text-gray-400">Sačuvano</span>
+            ) : null}
           </p>
         </div>
 

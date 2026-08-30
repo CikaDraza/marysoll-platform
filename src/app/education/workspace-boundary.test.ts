@@ -48,12 +48,20 @@ describe("Edu admin workspace boundary", () => {
   });
 
   it("CMS ekrani ne govore roadmap jezikom", () => {
+    // Pravilo se tiče onoga što vlasnica VIDI. Komentari smeju da imenuju
+    // rezove — bez toga bi objašnjenje „zašto" moralo da se izbaci iz koda.
+    const stripComments = (source: string) =>
+      source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\/\/.*$/gm, "");
+
     const sources = [
       "src/components/education/EducationContentList.tsx",
       "src/components/education/EducationContentEditor.tsx",
+      "src/components/education/EducationOverview.tsx",
       "src/app/education/content/page.tsx",
       "src/app/education/content/new/page.tsx",
-    ].map((file) => readFileSync(path.join(process.cwd(), file), "utf8"));
+    ].map((file) =>
+      stripComments(readFileSync(path.join(process.cwd(), file), "utf8")),
+    );
 
     for (const source of sources) {
       expect(source).not.toMatch(
