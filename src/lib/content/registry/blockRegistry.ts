@@ -1,5 +1,6 @@
 import { BlockLandingTypeMap } from "@/lib/content/registry/block-landing-map";
 import { ComponentType } from "react";
+import type { BlockHeadingScope } from "@/components/content-composer/BlockList";
 import HeroBlockView from "@/components/content-composer/blocks/HeroBlock";
 import ArticleBlockView from "@/components/content-composer/blocks/ArticleBlock";
 import FeatureBlockView from "@/components/content-composer/blocks/FeatureBlock";
@@ -16,6 +17,7 @@ import ImageGalleryBlockView from "@/components/content-composer/blocks/ImageGal
 type BlockComponentMap = {
   [K in keyof BlockLandingTypeMap]: ComponentType<{
     block: BlockLandingTypeMap[K];
+    headingScope?: BlockHeadingScope;
   }>;
 };
 

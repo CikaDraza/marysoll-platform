@@ -2,9 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { HeroBlock as HeroBlockType } from "@/lib/content/schemas/landing-blocks";
 import { focalObjectPosition } from "./ContentImage";
+import type { BlockHeadingScope } from "@/components/content-composer/BlockList";
 
 interface HeroBlockProps {
   block: HeroBlockType;
+  headingScope?: BlockHeadingScope;
 }
 
 const galleryLayouts = {
@@ -36,7 +38,9 @@ const galleryLayouts = {
   },
 };
 
-export default function HeroBlock({ block }: HeroBlockProps) {
+export default function HeroBlock({ block, headingScope = "page" }: HeroBlockProps) {
+  // Jedini blok koji uopšte sme da nosi `h1` — i to samo kada je on sam strana.
+  const Heading = headingScope === "page" ? "h1" : "h2";
   const { id, title, subtitle, ctaLabel, href, images = [] } = block;
   const galleryImages = images.slice(0, 4);
   const galleryLayout =
@@ -68,9 +72,9 @@ export default function HeroBlock({ block }: HeroBlockProps) {
       )}
       <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1fr_0.9fr] lg:items-center mt-16 lg:mt-24">
         <div className="max-w-3xl">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+          <Heading className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
             {title}
-          </h1>
+          </Heading>
 
           {subtitle && (
             <p className="mt-6 text-lg leading-8 text-gray-600 dark:text-gray-300">

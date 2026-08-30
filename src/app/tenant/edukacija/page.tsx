@@ -7,6 +7,8 @@ import {
   hasPublicEducationSurface,
   listPublicEducationContent,
 } from "@/lib/education/publicContent";
+import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
+import { educationAuthorFromSalon } from "@/lib/education/presentation";
 
 export const metadata: Metadata = {
   title: "Edukacija",
@@ -23,11 +25,19 @@ export default async function TenantEducationPage() {
   // je nema.
   if (!tenantId || !(await hasPublicEducationSurface(tenantId))) notFound();
 
-  const items = await listPublicEducationContent(tenantId);
+  const [items, salon] = await Promise.all([
+    listPublicEducationContent(tenantId),
+    fetchPublicSalonProfile(tenantSlug),
+  ]);
 
   return (
     <TenantPageShell tenantSlug={tenantSlug}>
-      <EducationListView items={items} basePath={basePath} />
+      <EducationListView
+        items={items}
+        basePath={basePath}
+        author={educationAuthorFromSalon(salon)}
+        intro={salon?.shortDescription}
+      />
     </TenantPageShell>
   );
 }

@@ -5,6 +5,7 @@ import { TenantPageShell } from "@/components/themes/TenantPageShell";
 import { EducationArticleView } from "@/components/tenant/EducationArticleView";
 import { EducationGateView } from "@/components/tenant/EducationGateView";
 import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
+import { educationAuthorFromSalon } from "@/lib/education/presentation";
 import {
   getPublicEducationContent,
   resolvePublicEducationRoute,
@@ -56,16 +57,18 @@ export default async function TenantEducationArticlePage({ params }: Props) {
   if (route.kind !== "article") notFound();
 
   const tenantSlug = headerStore.get("x-tenant-slug") ?? "";
+  const salon = await fetchPublicSalonProfile(tenantSlug);
+  const author = educationAuthorFromSalon(salon);
 
-  // Zaključan sadržaj: telo je već na serveru odsečeno, ovde se samo bira
-  // prikaz. Kontakt kanali dolaze iz javnog profila — bez novog modela.
+  // Zaključan sadržaj: telo je već na serveru odsečeno, pa deli isto zaglavlje
+  // i dobija gate umesto članka. Kontakt kanali dolaze iz javnog profila.
   if (route.article.accessMode === "gated") {
-    const salon = await fetchPublicSalonProfile(tenantSlug);
     return (
       <TenantPageShell tenantSlug={tenantSlug}>
         <EducationGateView
           article={route.article}
           basePath={basePath}
+          author={author}
           contact={{
             instagram: salon?.social?.instagram || undefined,
             whatsapp: salon?.social?.whatsapp || undefined,
@@ -79,7 +82,11 @@ export default async function TenantEducationArticlePage({ params }: Props) {
 
   return (
     <TenantPageShell tenantSlug={tenantSlug}>
-      <EducationArticleView article={route.article} />
+      <EducationArticleView
+        article={route.article}
+        basePath={basePath}
+        author={author}
+      />
     </TenantPageShell>
   );
 }
