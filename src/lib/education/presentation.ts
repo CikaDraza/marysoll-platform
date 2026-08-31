@@ -1,5 +1,8 @@
 import { extractTextFromBlocks } from "@/lib/content/blocks/extractTextFromBlocks";
-import type { ContentBlock } from "@/lib/content/schemas/landing-blocks";
+import type {
+  ContentBlock,
+  ContentFocalPoint,
+} from "@/lib/content/schemas/landing-blocks";
 
 /** Prosečno tempo čitanja stručnog teksta na srpskom. */
 const WORDS_PER_MINUTE = 200;
@@ -53,18 +56,23 @@ export function formatPublishedDate(value: string): string {
  */
 export function resolveArticlePresentation(article: {
   description?: string;
-  coverImage?: string;
+  cover?: { src: string; focalPoint?: ContentFocalPoint };
   blocks: readonly ContentBlock[];
 }): {
   description?: string;
-  coverImage?: string;
+  cover?: { src: string; focalPoint?: ContentFocalPoint };
   blocks: ContentBlock[];
 } {
   const hero = article.blocks.find((block) => block.type === "HeroBlock");
+  const heroImage = hero?.images?.[0];
 
   return {
     description: hero?.subtitle || article.description || undefined,
-    coverImage: hero?.images?.[0]?.src || article.coverImage || undefined,
+    // Fokus kadra ide zajedno sa slikom; bez njega se naslovna slika seče
+    // mimo onoga što je autor izabrao.
+    cover: heroImage?.src
+      ? { src: heroImage.src, focalPoint: heroImage.focalPoint }
+      : article.cover,
     blocks: article.blocks.filter((block) => block.type !== "HeroBlock"),
   };
 }

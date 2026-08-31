@@ -46,7 +46,7 @@ export function FocalPointPicker({
         aria-label="Izaberite tačku koja mora ostati u kadru"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} className="h-32 w-full object-cover" style={{ objectPosition: `${point.x * 100}% ${point.y * 100}%` }} />
+        <img src={src} alt={alt} className="h-96 w-full object-cover" style={{ objectPosition: `${point.x * 100}% ${point.y * 100}%` }} />
         <span
           aria-hidden="true"
           className="pointer-events-none absolute size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_2px_rgba(0,0,0,0.35)]"

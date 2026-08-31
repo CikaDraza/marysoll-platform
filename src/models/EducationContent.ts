@@ -33,6 +33,8 @@ export interface IEducationPublishedSnapshot {
   visibility?: EducationContentVisibility;
   /** Javni pregled za `gated` — jedini deo koji neautorizovan čitalac vidi. */
   publicPreview?: IEducationPublicPreview;
+  /** Naslovna slika sa fokusom kadra; računa se pri objavi. */
+  cover?: { src: string; focalPoint?: { x: number; y: number } };
   blocks: ContentBlock[];
   seo?: {
     title?: string;
@@ -145,6 +147,10 @@ const EducationContentSchema = new Schema<IEducationContentDoc>(
             title: { type: String },
             description: { type: String },
             coverImage: { type: String },
+          },
+          cover: {
+            src: { type: String },
+            focalPoint: { x: { type: Number }, y: { type: Number } },
           },
           blocks: { type: Schema.Types.Mixed, default: [] },
           seo: {

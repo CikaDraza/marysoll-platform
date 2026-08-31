@@ -766,8 +766,10 @@ describe("L — zaključan sadržaj (gated)", () => {
     expect(article).toMatchObject({
       title: "Napredna analiza sastojaka",
       description: "SEO opis",
-      coverImage: "https://cdn.example.com/seo.jpg",
     });
+    // Naslovna slika se računa pri objavi: hero slika ako postoji, inače
+    // pregled ili SEO. Ovaj sadržaj ima hero blok, pa vodi njegova slika.
+    expect(article?.cover?.src).toBe("https://cdn.example.com/hero.jpg");
   });
 
   it("prelazak javno → zaključano stupa na snagu tek objavom", async () => {
@@ -1026,5 +1028,70 @@ describe("O — video sadržaj traži izvor (E)", () => {
     const id = await createPublishedV1();
 
     expect((await readRaw(id)).publishedSnapshot).not.toBeNull();
+  });
+});
+
+describe("P — naslovna slika i fokus kadra", () => {
+  const heroWithFocus = {
+    id: "hero",
+    type: "HeroBlock",
+    priority: 1,
+    title: "Estetika lica",
+    subtitle: "Anatomija i proporcije",
+    images: [
+      {
+        src: "https://cdn.example.com/hero.jpg",
+        alt: "Lice",
+        focalPoint: { x: 0.25, y: 0.15 },
+      },
+    ],
+  };
+
+  it("objava pamti naslovnu sliku sa fokusom, pa je lista ne mora tražiti u blokovima", async () => {
+    const created = await json<{ item: Item }>(
+      await createContent(
+        request({
+          title: "Estetika lica",
+          slug: "estetika-lica-hero",
+          kind: "article",
+          accessMode: "public",
+          blocks: [heroWithFocus, ...ALL_TWELVE_BLOCKS.slice(1)],
+        }),
+      ),
+    );
+    const id = String(created.item._id);
+    expect((await publishContent(request(), params(id))).status).toBe(200);
+
+    const article = await getPublicEducationContent(TENANT, "estetika-lica-hero");
+    expect(article?.cover).toEqual({
+      src: "https://cdn.example.com/hero.jpg",
+      focalPoint: { x: 0.25, y: 0.15 },
+    });
+
+    // Isti kadar mora stići i do kartice u listi, koja blokove ne učitava.
+    const [card] = await listPublicEducationContent(TENANT);
+    expect(card.cover).toEqual({
+      src: "https://cdn.example.com/hero.jpg",
+      focalPoint: { x: 0.25, y: 0.15 },
+    });
+  });
+
+  it("zapis bez hero bloka pada na SEO sliku, samo bez fokusa", async () => {
+    const created = await json<{ item: Item }>(
+      await createContent(
+        request({
+          title: "Bez heroja",
+          slug: "bez-heroja",
+          kind: "article",
+          accessMode: "public",
+          blocks: ALL_TWELVE_BLOCKS.slice(1),
+          seo: { ogImage: "https://cdn.example.com/seo.jpg" },
+        }),
+      ),
+    );
+    await publishContent(request(), params(String(created.item._id)));
+
+    const article = await getPublicEducationContent(TENANT, "bez-heroja");
+    expect(article?.cover).toEqual({ src: "https://cdn.example.com/seo.jpg" });
   });
 });

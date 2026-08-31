@@ -318,6 +318,32 @@ export function nextPublishedSlugHistory(params: {
     .slice(-MAX_PUBLISHED_SLUG_HISTORY);
 }
 
+/**
+ * Naslovna slika objavljene verzije, sa fokusom kadra.
+ *
+ * Računa se pri objavi i pamti, jer je lista čita bez blokova — inače bi
+ * kartice morale da učitaju ceo sadržaj samo da bi znale koju sliku i koji
+ * kadar da prikažu.
+ */
+export function resolvePublishedCover(working: {
+  publicPreview?: EducationPublicPreview | null;
+  seo?: EducationContentSeo | null;
+  blocks: unknown;
+}): { src: string; focalPoint?: { x: number; y: number } } | undefined {
+  const blocks = Array.isArray(working.blocks) ? working.blocks : [];
+  const hero = blocks.find(
+    (block) => (block as { type?: string })?.type === "HeroBlock",
+  ) as { images?: { src?: string; focalPoint?: { x: number; y: number } }[] } | undefined;
+
+  const heroImage = hero?.images?.[0];
+  if (heroImage?.src) {
+    return { src: heroImage.src, focalPoint: heroImage.focalPoint };
+  }
+
+  const fallback = working.publicPreview?.coverImage || working.seo?.ogImage;
+  return fallback ? { src: fallback } : undefined;
+}
+
 /** Snapshot koji Publish upisuje — gradi se isključivo od sačuvane radne kopije. */
 export function buildPublishedSnapshot(
   working: {
@@ -335,6 +361,7 @@ export function buildPublishedSnapshot(
   const accessMode = resolveAccessMode(working);
   return {
     title: working.title,
+    cover: resolvePublishedCover(working),
     slug: working.slug,
     kind: working.kind,
     accessMode,

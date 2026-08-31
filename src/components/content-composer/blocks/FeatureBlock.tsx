@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { focalObjectPosition } from "@/lib/content/render/imageFraming";
 import { FeatureBlock as FeatureBlockType } from "@/lib/content/schemas/landing-blocks";
 
 interface FeatureBlockProps {
@@ -60,6 +61,7 @@ export default function FeatureBlock({ block }: FeatureBlockProps) {
                     src={section.image.src}
                     alt={section.image.alt}
                     className="aspect-[4/3] w-full rounded-2xl object-cover shadow-sm"
+                    style={{ objectPosition: focalObjectPosition(section.image.focalPoint) }}
                     loading="lazy"
                   />
                 )}

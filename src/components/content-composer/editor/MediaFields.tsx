@@ -59,6 +59,7 @@ export function AssetMediaField({ kind, label, asset, adapter, onChange }: {
     {source === "gallery" && (
       <MediaGallery
         kind={kind}
+        selectedSrc={asset?.src}
         onSelect={(src, fileName) => onChange({ ...asset, src, fileName: fileName ?? asset?.fileName })}
       />
     )}

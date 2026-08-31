@@ -10,6 +10,8 @@ export interface BackfilledSnapshot {
   kind: string;
   accessMode: string;
   visibility: string;
+  /** Naslovna slika se ne izvodi u backfill-u — puni je prva sledeća objava. */
+  cover?: { src: string };
   blocks: unknown[];
   seo?: unknown;
   publishedAt: Date;

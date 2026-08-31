@@ -73,10 +73,11 @@ export function EducationListView({ items, basePath, author, intro }: Props) {
                 href={`${basePath}/edukacija/${lead.slug}`}
                 className="group border-ee-border bg-ee-surface-muted grid overflow-hidden rounded-[28px] border lg:grid-cols-2"
               >
-                {lead.coverImage && (
+                {lead.cover && (
                   <ContentImage
-                    src={lead.coverImage}
+                    src={lead.cover.src}
                     alt={lead.title}
+                    focalPoint={lead.cover.focalPoint}
                     className="aspect-[16/10] w-full object-cover lg:h-full"
                   />
                 )}
@@ -104,10 +105,11 @@ export function EducationListView({ items, basePath, author, intro }: Props) {
                   href={`${basePath}/edukacija/${item.slug}`}
                   className="group border-ee-border bg-ee-surface flex h-full flex-col overflow-hidden rounded-[28px] border"
                 >
-                  {item.coverImage && (
+                  {item.cover && (
                     <ContentImage
-                      src={item.coverImage}
+                      src={item.cover.src}
                       alt={item.title}
+                      focalPoint={item.cover.focalPoint}
                       className="aspect-[16/10] w-full object-cover"
                     />
                   )}

@@ -5,6 +5,7 @@ import { resolveTenantCapability } from "@/lib/platform/capabilities-server";
 import { EducationContent } from "@/models/EducationContent";
 import { normalizeEducationSlug } from "@/lib/education/content-document";
 import type { ContentBlock } from "@/lib/content/schemas/landing-blocks";
+import type { ContentFocalPoint } from "@/lib/content/schemas/landing-blocks";
 import {
   resolveAccessMode,
   type EducationAccessMode,
@@ -33,6 +34,12 @@ const DISCOVERABLE_SNAPSHOT_FILTER = {
   ],
 };
 
+export interface PublicEducationCover {
+  src: string;
+  /** Bez ovoga bi kartica i naslovna slika sekle mimo izabranog kadra. */
+  focalPoint?: ContentFocalPoint;
+}
+
 export interface PublicEducationSummary {
   slug: string;
   title: string;
@@ -40,7 +47,7 @@ export interface PublicEducationSummary {
   accessMode: EducationAccessMode;
   publishedAt: string;
   description?: string;
-  coverImage?: string;
+  cover?: PublicEducationCover;
 }
 
 /**
@@ -65,6 +72,7 @@ interface SnapshotRecord {
       description?: string;
       coverImage?: string;
     };
+    cover?: PublicEducationCover;
     blocks?: ContentBlock[];
     seo?: { title?: string; description?: string; ogImage?: string };
     publishedAt: Date;
@@ -97,10 +105,18 @@ function toSummary(record: SnapshotRecord): PublicEducationSummary {
       accessMode === "gated"
         ? preview?.description || undefined
         : snapshot.seo?.description || undefined,
-    coverImage:
-      accessMode === "gated"
-        ? preview?.coverImage || undefined
-        : snapshot.seo?.ogImage || undefined,
+    // Naslovna slika je izračunata pri objavi i nosi fokus kadra; zatečeni
+    // zapisi bez nje padaju na URL iz pregleda/SEO-a, samo bez fokusa.
+    cover:
+      snapshot.cover?.src
+        ? snapshot.cover
+        : (accessMode === "gated" ? preview?.coverImage : snapshot.seo?.ogImage)
+          ? {
+              src: (accessMode === "gated"
+                ? preview?.coverImage
+                : snapshot.seo?.ogImage) as string,
+            }
+          : undefined,
   };
 }
 
@@ -117,7 +133,8 @@ export async function listPublicEducationContent(
     .select(
       "publishedSnapshot.title publishedSnapshot.slug publishedSnapshot.kind " +
         "publishedSnapshot.accessMode publishedSnapshot.visibility " +
-        "publishedSnapshot.publicPreview publishedSnapshot.seo " +
+        "publishedSnapshot.publicPreview publishedSnapshot.cover " +
+        "publishedSnapshot.seo " +
         "publishedSnapshot.publishedAt",
     )
     .sort({ "publishedSnapshot.publishedAt": -1 })
@@ -202,7 +219,7 @@ export async function getPublicEducationContent(
         : {
             title: summary.title,
             description: summary.description,
-            ogImage: summary.coverImage,
+            ogImage: summary.cover?.src,
           },
   };
 }

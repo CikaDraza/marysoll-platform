@@ -152,7 +152,13 @@ describe("hero blok se ne prikazuje dvaput", () => {
     priority: 1,
     title: "ESTETIKA LICA",
     subtitle: "Anatomija, proporcije, prirodnost i granica prenaglašenosti",
-    images: [{ src: "https://cdn.example.com/hero.jpg", alt: "Lice" }],
+    images: [
+      {
+        src: "https://cdn.example.com/hero.jpg",
+        alt: "Lice",
+        focalPoint: { x: 0.3, y: 0.2 },
+      },
+    ],
   };
   const body = ALL_TWELVE_BLOCKS.filter((block) => block.type !== "HeroBlock");
 
@@ -169,29 +175,37 @@ describe("hero blok se ne prikazuje dvaput", () => {
     const presentation = resolveArticlePresentation({ blocks: [hero, ...body] });
 
     expect(presentation.description).toBe(hero.subtitle);
-    expect(presentation.coverImage).toBe(hero.images[0].src);
+    expect(presentation.cover?.src).toBe(hero.images[0].src);
+  });
+
+  it("naslovna slika nosi izabrani fokus kadra", () => {
+    // Bez ovoga se hero slika u zaglavlju i na kartici seče po centru, bez
+    // obzira na to šta je autor izabrao klikom.
+    const presentation = resolveArticlePresentation({ blocks: [hero, ...body] });
+
+    expect(presentation.cover?.focalPoint).toEqual({ x: 0.3, y: 0.2 });
   });
 
   it("hero ima prednost nad SEO poljima, jer je pisan za čitaoca", () => {
     const presentation = resolveArticlePresentation({
       description: "SEO opis za pretragu",
-      coverImage: "https://cdn.example.com/og.jpg",
+      cover: { src: "https://cdn.example.com/og.jpg" },
       blocks: [hero, ...body],
     });
 
     expect(presentation.description).toBe(hero.subtitle);
-    expect(presentation.coverImage).toBe(hero.images[0].src);
+    expect(presentation.cover?.src).toBe(hero.images[0].src);
   });
 
   it("bez hero bloka zaglavlje pada na SEO", () => {
     const presentation = resolveArticlePresentation({
       description: "SEO opis za pretragu",
-      coverImage: "https://cdn.example.com/og.jpg",
+      cover: { src: "https://cdn.example.com/og.jpg" },
       blocks: body,
     });
 
     expect(presentation.description).toBe("SEO opis za pretragu");
-    expect(presentation.coverImage).toBe("https://cdn.example.com/og.jpg");
+    expect(presentation.cover?.src).toBe("https://cdn.example.com/og.jpg");
   });
 
   it("sadržaj bez hero bloka prolazi netaknut", () => {
@@ -199,7 +213,7 @@ describe("hero blok se ne prikazuje dvaput", () => {
 
     expect(presentation.blocks).toEqual(body);
     expect(presentation.description).toBeUndefined();
-    expect(presentation.coverImage).toBeUndefined();
+    expect(presentation.cover).toBeUndefined();
   });
 
   it("vreme čitanja se računa bez hero bloka", () => {

@@ -85,7 +85,9 @@ describe("backfill objavljene verzije", () => {
       publishedAt,
     );
 
-    for (const field of defined(published)) {
+    // `cover` se računa iz blokova pri objavi; backfill zatečenih zapisa ga ne
+    // izvodi, nego ga puni prva sledeća objava.
+    for (const field of defined(published).filter((name) => name !== "cover")) {
       expect(defined(decision.snapshot)).toContain(field);
     }
   });

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { focalObjectPosition } from "@/lib/content/render/imageFraming";
 import clsx from "clsx";
 import { ContentSplitBlock as ContentSplitBlockType } from "@/lib/content/schemas/landing-blocks";
 
@@ -32,6 +33,7 @@ export function ContentSplitBlockView({
               src={block.image.src}
               alt={block.image.alt}
               className="aspect-[4/3] w-full rounded-2xl object-cover shadow-sm"
+              style={{ objectPosition: focalObjectPosition(block.image.focalPoint) }}
               loading="lazy"
             />
           </figure>

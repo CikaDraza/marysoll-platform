@@ -34,7 +34,7 @@ interface Props {
  */
 export function EducationArticleView({ article, basePath, author, children }: Props) {
   // Hero blok se upija u zaglavlje umesto da se prikaže drugi put.
-  const { description, coverImage, blocks } = resolveArticlePresentation(article);
+  const { description, cover, blocks } = resolveArticlePresentation(article);
   const readingTime = formatReadingTime(readingTimeMinutes(blocks));
   const publishedLabel = formatPublishedDate(article.publishedAt);
 
@@ -76,11 +76,12 @@ export function EducationArticleView({ article, basePath, author, children }: Pr
           </p>
         </header>
 
-        {coverImage && (
+        {cover && (
           <figure className="mt-10">
             <ContentImage
-              src={coverImage}
+              src={cover.src}
               alt={article.title}
+              focalPoint={cover.focalPoint}
               className="aspect-[16/9] w-full rounded-[28px] object-cover"
             />
           </figure>

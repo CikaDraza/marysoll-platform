@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { focalObjectPosition } from "@/lib/content/render/imageFraming";
 import { AffiliateCTABlock as AffiliateCTABlockType } from "@/lib/content/schemas/landing-blocks";
 
 interface AffiliateCTABlockProps {
@@ -20,6 +21,7 @@ export default function AffiliateCTABlock({ block }: AffiliateCTABlockProps) {
           alt={image.alt}
           src={image.src}
           className="absolute inset-0 -z-10 size-full max-h-150 min-h-120 object-cover object-right md:object-center"
+          style={{ objectPosition: focalObjectPosition(image.focalPoint) }}
         />
       )}
       <div
