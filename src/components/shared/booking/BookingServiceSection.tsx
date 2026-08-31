@@ -1,7 +1,11 @@
 "use client";
-/** BookingServiceSection — izbor usluge + varijante + dodaci + zbir cene/trajanja.
+/** BookingServiceSection — izbor usluge + varijante/stavki paketa + dodaci
+ *  + zbir cene/trajanja.
  *  Stanje čita iz BookingProvider konteksta — bez prop drilling-a. */
-import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
+import {
+  formatServicePrice,
+  PRICE_ON_REQUEST_LABEL,
+} from "@/helpers/formatPrice";
 import { useBookingContext } from "./BookingProvider";
 
 export function BookingServiceSection() {
@@ -14,8 +18,8 @@ export function BookingServiceSection() {
     selectedExtras,
     setSelectedExtras,
     selectedService,
-    totalPrice,
     totalDuration,
+    totalPriceLabel,
   } = useBookingContext();
 
   return (
@@ -102,6 +106,40 @@ export function BookingServiceSection() {
         </div>
       )}
 
+    {/* Paket: `services[]` je spisak onoga što je uključeno — sadržaj, ne
+        cenovnik. Cena i trajanje stoje na korenu usluge, pa se ovde ništa ne
+        bira; klijentkinja samo vidi šta paket obuhvata. */}
+    {selectedService?.type === "group" &&
+      selectedService.services &&
+      selectedService.services.length > 0 && (
+        <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+          <div className="text-xs font-semibold text-gray-600 mb-2">
+            Uključeno u paket
+          </div>
+          <ul className="space-y-1">
+            {selectedService.services.map((item, idx) => (
+              <li
+                key={idx}
+                className="flex items-start gap-2 text-sm text-gray-800"
+              >
+                <span
+                  aria-hidden
+                  className="mt-1.5 w-1.5 h-1.5 rounded-full bg-(--primary-color) flex-shrink-0"
+                />
+                <span>
+                  {item.name}
+                  {item.description && (
+                    <span className="block text-xs text-gray-400">
+                      {item.description}
+                    </span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
     {/* Extras */}
     {selectedService?.extras && selectedService.extras.length > 0 && (
       <div className="mt-3">
@@ -132,7 +170,11 @@ export function BookingServiceSection() {
                 </span>
               </div>
               <span className="text-xs font-semibold text-(--primary-color)">
-                +{formatServicePrice(extra.price || 0, extra.priceMode)}
+                {extra.priceMode === "on_request"
+                  ? PRICE_ON_REQUEST_LABEL
+                  : extra.priceMode === "from"
+                    ? formatServicePrice(extra.price || 0, extra.priceMode)
+                    : `+${formatServicePrice(extra.price || 0, extra.priceMode)}`}
               </span>
             </label>
           ))}
@@ -149,8 +191,8 @@ export function BookingServiceSection() {
             {totalDuration} min
           </div>
         </div>
-        <div className="text-xl font-bold text-(--primary-color)">
-          {formatPriceToString(totalPrice)} RSD
+        <div className="text-xl font-bold text-(--primary-color) text-right">
+          {totalPriceLabel || "—"}
         </div>
       </div>
     )}

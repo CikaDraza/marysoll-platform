@@ -2,22 +2,8 @@
 import Link from "next/link";
 import { CheckIcon } from "@heroicons/react/20/solid";
 import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
+import { minServicePrice as minPrice } from "@/helpers/servicePrice";
 import type { IService } from "@/types";
-
-function minPrice(s: IService): number | null {
-  if (s.type === "single") return s.basePrice ?? null;
-  if (s.type === "variant") {
-    const p = (s.variants ?? []).map((v) => v.price);
-    return p.length ? Math.min(...p) : null;
-  }
-  if (s.type === "group") {
-    const p = (s.services ?? [])
-      .map((sv) => sv.price)
-      .filter((x): x is number => x != null);
-    return p.length ? Math.min(...p) : null;
-  }
-  return null;
-}
 
 interface Props {
   services: IService[];

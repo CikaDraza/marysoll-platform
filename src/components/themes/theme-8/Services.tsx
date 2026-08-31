@@ -8,6 +8,10 @@ import {
   formatServicePrice,
   PRICE_ON_REQUEST_LABEL,
 } from "@/helpers/formatPrice";
+import {
+  minServicePrice as minPrice,
+  isPriceFrom,
+} from "@/helpers/servicePrice";
 import type { IService } from "@/types";
 import { FadeUp } from "./FadeUp";
 
@@ -20,21 +24,6 @@ interface Props {
 
 const MAX_ROWS = 8;
 
-function minPrice(s: IService): number | null {
-  if (s.type === "single") return s.basePrice ?? null;
-  if (s.type === "variant") {
-    const p = (s.variants ?? []).map((v) => v.price);
-    return p.length ? Math.min(...p) : null;
-  }
-  if (s.type === "group") {
-    const p = (s.services ?? [])
-      .map((sv) => sv.price)
-      .filter((x): x is number => x != null);
-    return p.length ? Math.min(...p) : null;
-  }
-  return null;
-}
-
 /** Display price string for a "menu" row. Varijante se prikazuju kao razbijena
  *  lista (svaka cena posebno), pa za njih ovde ne vraćamo "od X". */
 function priceLabel(s: IService): string {
@@ -43,7 +32,8 @@ function priceLabel(s: IService): string {
     return formatServicePrice(s.basePrice, s.priceMode, "") || "—";
   if (s.type === "variant") return "";
   const mp = minPrice(s);
-  return mp != null ? `od ${formatPriceToString(mp)}` : "—";
+  if (mp == null) return "—";
+  return isPriceFrom(s) ? `od ${formatPriceToString(mp)}` : formatPriceToString(mp);
 }
 
 /** Lista svih varijanti sa cenom (i opcionim opisom) — standardni termin i

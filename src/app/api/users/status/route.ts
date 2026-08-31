@@ -26,7 +26,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true });
     }
 
-    const { isOnline } = await req.json();
+    // `beforeunload` beacon stiže dok se stranica ruši, pa browser ume da
+    // prekine telo zahteva u letu (ECONNRESET). Tada nema šta da se upiše —
+    // to je normalan kraj sesije, ne greška servera, pa ne sme da bude 500.
+    let payload: unknown;
+    try {
+      payload = await req.json();
+    } catch {
+      return NextResponse.json({ success: true, skipped: "empty_body" });
+    }
+
+    const { isOnline } = (payload ?? {}) as { isOnline?: unknown };
+    if (typeof isOnline !== "boolean") {
+      return NextResponse.json(
+        { error: "isOnline mora biti boolean" },
+        { status: 400 },
+      );
+    }
 
     const updatedUser = await TenantUser.findByIdAndUpdate(
       decoded.tenantUserId,

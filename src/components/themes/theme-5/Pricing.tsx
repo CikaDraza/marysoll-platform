@@ -1,22 +1,11 @@
 import Link from "next/link";
 import { IService } from "@/types";
+import {
+  minServicePrice as minPrice,
+  isPriceFrom,
+} from "@/helpers/servicePrice";
 import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import FlowerIcon from "@/components/assets/icons/services/FlowerIcon";
-
-function minPrice(s: IService): number | null {
-  if (s.type === "single") return s.basePrice ?? null;
-  if (s.type === "variant") {
-    const p = (s.variants ?? []).map((v) => v.price);
-    return p.length ? Math.min(...p) : null;
-  }
-  if (s.type === "group") {
-    const p = (s.services ?? [])
-      .map((sv) => sv.price)
-      .filter((x): x is number => x != null);
-    return p.length ? Math.min(...p) : null;
-  }
-  return null;
-}
 
 export function Theme5Pricing({
   services,
@@ -134,7 +123,7 @@ export function Theme5Pricing({
                     <div className="mt-auto flex items-center justify-between">
                       {mp != null && (
                         <p className="text-sm font-semibold text-[#FFB633]">
-                          {s.type !== "single" ? "od " : ""}
+                          {isPriceFrom(s) ? "od " : ""}
                           {formatPriceToString(mp)} RSD
                         </p>
                       )}

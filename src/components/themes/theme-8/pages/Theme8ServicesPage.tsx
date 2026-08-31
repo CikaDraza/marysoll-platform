@@ -16,6 +16,10 @@ import {
   formatServicePrice,
   PRICE_ON_REQUEST_LABEL,
 } from "@/helpers/formatPrice";
+import {
+  minServicePrice as minPrice,
+  isPriceFrom,
+} from "@/helpers/servicePrice";
 import type { IService } from "@/types";
 
 interface Props {
@@ -29,21 +33,6 @@ interface Props {
   ctaSubheadline?: string;
 }
 
-function minPrice(s: IService): number | null {
-  if (s.type === "single") return s.basePrice ?? null;
-  if (s.type === "variant") {
-    const p = (s.variants ?? []).map((v) => v.price);
-    return p.length ? Math.min(...p) : null;
-  }
-  if (s.type === "group") {
-    const p = (s.services ?? [])
-      .map((sv) => sv.price)
-      .filter((x): x is number => x != null);
-    return p.length ? Math.min(...p) : null;
-  }
-  return null;
-}
-
 function priceLabel(s: IService): string {
   if (s.priceMode === "on_request") return PRICE_ON_REQUEST_LABEL;
   if (s.type === "single")
@@ -51,7 +40,8 @@ function priceLabel(s: IService): string {
   // Varijante se prikazuju kao razbijena lista (svaka cena posebno).
   if (s.type === "variant") return "";
   const mp = minPrice(s);
-  return mp != null ? `od ${formatPriceToString(mp)}` : "—";
+  if (mp == null) return "—";
+  return isPriceFrom(s) ? `od ${formatPriceToString(mp)}` : formatPriceToString(mp);
 }
 
 /** Malo Y2K srce kao bullet za "šta usluga sadrži" (umesto check ikone). */

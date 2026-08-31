@@ -1,4 +1,8 @@
 import { IService } from "@/types";
+import {
+  minServicePrice as minPrice,
+  isPriceFrom,
+} from "@/helpers/servicePrice";
 import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import Image from "next/image";
 import BlowDryingIcon from "@/components/assets/icons/services/BlowDryingIcon";
@@ -28,21 +32,6 @@ interface Props {
   tenantSlug?: string;
   imageUrl?: string;
   showIcons?: boolean;
-}
-
-function minPrice(s: IService): number | null {
-  if (s.type === "single") return s.basePrice ?? null;
-  if (s.type === "variant") {
-    const p = (s.variants ?? []).map((v) => v.price);
-    return p.length ? Math.min(...p) : null;
-  }
-  if (s.type === "group") {
-    const p = (s.services ?? [])
-      .map((sv) => sv.price)
-      .filter((x): x is number => x != null);
-    return p.length ? Math.min(...p) : null;
-  }
-  return null;
 }
 
 type ServiceIconProps = {
@@ -134,7 +123,7 @@ export function Theme4ServicesSoft({
                             <hr className="flex-1 border-dashed border-[#E8D4AD]" />
                             {mp != null && (
                               <span className="text-[#E8D4AD] pl-4 text-sm">
-                                {s.type !== "single" ? "od " : ""}
+                                {isPriceFrom(s) ? "od " : ""}
                                 {formatPriceToString(mp)} RSD
                               </span>
                             )}
@@ -249,7 +238,7 @@ export function Theme4ServicesSoft({
                     <p
                       className={`text-sm font-semibold ${isOddCard ? "text-white" : "text-[#2b1e26]"}`}
                     >
-                      {s.type !== "single" ? "od " : ""}
+                      {isPriceFrom(s) ? "od " : ""}
                       {formatPriceToString(mp)} RSD
                     </p>
                   )}

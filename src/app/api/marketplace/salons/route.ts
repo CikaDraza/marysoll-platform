@@ -9,6 +9,7 @@ import { checkRateLimit } from "@/lib/middleware/rateLimiter";
 import { getDistanceKm } from "@/lib/utils/distance";
 import { buildCityRegex } from "@/lib/utils/cityMatch";
 import { resolveSalonLimit } from "@/lib/utils/marketplaceParams";
+import { normalizePriceMode } from "@/helpers/formatPrice";
 
 export async function GET(req: NextRequest) {
   const verify = verifySignature(req, "");
@@ -170,7 +171,7 @@ export async function GET(req: NextRequest) {
           category: String(sv.category ?? ""),
           duration: sv.duration != null ? Number(sv.duration) : null,
           price: sv.basePrice != null ? Number(sv.basePrice) : null,
-          priceMode: sv.priceMode === "on_request" ? "on_request" : "fixed",
+          priceMode: normalizePriceMode(sv.priceMode),
         })),
       };
     });

@@ -26,7 +26,11 @@ import {
   timeToMin,
 } from "@/helpers/manualSlots";
 import { availableTimesForDate } from "@/lib/booking/availabilityAdapter";
-import type { IService, IAppointment } from "@/types";
+import {
+  formatPriceToString,
+  PRICE_ON_REQUEST_LABEL,
+} from "@/helpers/formatPrice";
+import type { IService, IAppointment, PriceMode } from "@/types";
 import type {
   BookingAuthDestination,
   BookingModalProps,
@@ -78,6 +82,9 @@ export interface BookingContextValue {
   availableClassicTimes: string[] | null;
   totalPrice: number;
   totalDuration: number;
+  /** Prikaz ukupne cene: "1.500,00 RSD", "od 1.500,00 RSD" (deo je na upit),
+   *  "Cena na upit" (sve je na upit) ili "" (ništa još nije izabrano). */
+  totalPriceLabel: string;
   // ── akcije ──
   handleClose: () => void;
   handleSubmitLoggedIn: (e: React.FormEvent) => Promise<void>;
@@ -242,43 +249,108 @@ export function BookingProvider({
     return true;
   }
 
-  const { price: totalPrice, duration: totalDuration } = useMemo(() => {
-    if (!selectedService) return { price: 0, duration: 0 };
-    let price = 0;
-    let duration = selectedService.duration || 0;
+  // Zbir cene/trajanja po delovima izbora. Svaki deo (osnovna usluga, varijanta,
+  // stavka paketa, dodatak) je ILI brojiv ("fixed") ILI na upit — pa ukupan
+  // prikaz zna razliku između "1.500,00 RSD", "od 1.500,00 RSD" (deo je na upit)
+  // i "Cena na upit" (sve je na upit), umesto da na upit tiho računa 0.
+  const {
+    price: totalPrice,
+    duration: totalDuration,
+    pricedParts,
+    approxParts,
+  } = useMemo(() => {
+    const empty = { price: 0, duration: 0, pricedParts: 0, approxParts: 0 };
+    if (!selectedService) return empty;
 
-    if (
-      selectedService.type === "variant" &&
-      selectedVariant &&
-      selectedService.variants
-    ) {
-      const variant = selectedService.variants.find(
+    let price = 0;
+    let duration = 0;
+    let pricedParts = 0;
+    // Delovi zbog kojih ukupna cena nije konačna: "on_request" (nepoznata) i
+    // "from" (poznata je samo donja granica). Oba vode na prikaz "od X".
+    let approxParts = 0;
+
+    function addPart(part: {
+      price?: number | null;
+      priceMode?: PriceMode;
+      duration?: number | null;
+    }) {
+      if (part.priceMode === "on_request") approxParts += 1;
+      else {
+        if (part.priceMode === "from") approxParts += 1;
+        price += part.price || 0;
+        pricedParts += 1;
+      }
+      if (part.duration) duration += part.duration;
+    }
+
+    // Sama usluga — pre dodataka, da bi provera zatečenih paketa ispod gledala
+    // samo ono što usluga nosi, a ne ono što je klijentkinja dodala.
+    if (selectedService.type === "variant") {
+      const variant = selectedService.variants?.find(
         (v) => v.name === selectedVariant,
       );
-      if (variant) {
-        price = variant.price;
-        if (variant.duration) duration = variant.duration;
+      if (variant) addPart(variant);
+      // Varijanta bez sopstvene cene ("Veličina 2 — cena na upit") pada na
+      // donju granicu sa korena, koju je vlasnik uneo uz tip cene „Od“.
+      if (
+        selectedService.priceMode === "from" &&
+        (!variant || variant.priceMode === "on_request")
+      ) {
+        addPart({
+          price: selectedService.basePrice,
+          priceMode: "from",
+          duration: variant?.duration ? null : selectedService.duration,
+        });
       }
-    } else if (selectedService.type === "single") {
-      price = selectedService.basePrice || 0;
-      duration = selectedService.duration || 0;
     } else {
-      price = selectedService.basePrice || 0;
-      duration = selectedService.duration || 0;
-    }
-
-    if (selectedService.extras && selectedExtras.length > 0) {
-      selectedExtras.forEach((extraName) => {
-        const extra = selectedService.extras?.find((e) => e.name === extraName);
-        if (extra) {
-          price += extra.price || 0;
-          if (extra.duration) duration += extra.duration;
-        }
+      // single I group: jedna cena i jedno trajanje na korenu usluge. Kod
+      // paketa `services[]` je spisak onoga što je uključeno — sadržaj, ne
+      // cenovnik — pa se ne bira i ne sabira.
+      addPart({
+        price: selectedService.basePrice,
+        priceMode: selectedService.priceMode,
+        duration: selectedService.duration,
       });
+
+      // Zatečeni paketi upisani po starom modelu (cena/trajanje po stavci, bez
+      // vrednosti na korenu) — dok ih vlasnik ne prepiše, izvedi zbir iz stavki
+      // da booking ne bi ponudio termin od 0 RSD / 0 min.
+      if (selectedService.type === "group" && !duration && !price) {
+        pricedParts = 0;
+        approxParts = 0;
+        for (const item of selectedService.services ?? []) {
+          if (item.price || item.duration) addPart(item);
+        }
+      }
     }
 
-    return { price, duration };
+    for (const extraName of selectedExtras) {
+      const extra = selectedService.extras?.find((e) => e.name === extraName);
+      if (extra) addPart(extra);
+    }
+
+    return { price, duration, pricedParts, approxParts };
   }, [selectedService, selectedVariant, selectedExtras]);
+
+  const totalPriceLabel = useMemo(() => {
+    if (pricedParts === 0) return approxParts > 0 ? PRICE_ON_REQUEST_LABEL : "";
+    const formatted = `${formatPriceToString(totalPrice)} RSD`;
+    return approxParts > 0 ? `od ${formatted}` : formatted;
+  }, [totalPrice, pricedParts, approxParts]);
+
+  // Ime izbora koje ide u termin. Paket i jedna usluga nemaju izbor — samo
+  // varijanta uz ime usluge ("Izlivanje noktiju - Veličina 2").
+  const selectionLabel =
+    selectedService?.type === "variant" ? selectedVariant : "";
+
+  /** Jedini obavezan izbor u katalogu je varijanta. */
+  function validateSelection(service: IService): boolean {
+    if (service.type === "variant" && !selectedVariant) {
+      toast.error("Molimo izaberite varijantu usluge.");
+      return false;
+    }
+    return true;
+  }
 
   // Klasičan režim: dropdown nudi SAMO dostupna vremena za izabrani datum
   // (radno vreme − zauzeto − prošlost), uračunato trajanje izabrane usluge.
@@ -311,8 +383,7 @@ export function BookingProvider({
       return toast.error("Molimo izaberite datum i vreme.");
     if (!validateManualSlot()) return;
     if (!selectedService) return toast.error("Izabrana usluga nije pronađena.");
-    if (selectedService.type === "variant" && !selectedVariant)
-      return toast.error("Molimo izaberite varijantu usluge.");
+    if (!validateSelection(selectedService)) return;
 
     const extrasForStorage = selectedExtras.map((extraName) => {
       const extra = selectedService.extras?.find((e) => e.name === extraName);
@@ -328,14 +399,11 @@ export function BookingProvider({
       clientProfileId: user.tenantUserId ?? undefined,
       clientName: user.name,
       clientEmail: user.email,
-      serviceName: `${selectedService.name}${selectedVariant ? ` - ${selectedVariant}` : ""}`,
+      serviceName: `${selectedService.name}${selectionLabel ? ` - ${selectionLabel}` : ""}`,
       services: [
         {
           serviceId: selectedServiceId || "",
-          serviceName:
-            selectedService.type === "variant"
-              ? selectedVariant
-              : selectedService.name,
+          serviceName: selectionLabel || selectedService.name,
           extras: extrasForStorage.length > 0 ? extrasForStorage : undefined,
           quantity: 1,
           price: totalPrice,
@@ -368,8 +436,7 @@ export function BookingProvider({
       return toast.error("Molimo izaberite datum i vreme.");
     if (!validateManualSlot()) return;
     if (!selectedService) return toast.error("Izabrana usluga nije pronađena.");
-    if (selectedService.type === "variant" && !selectedVariant)
-      return toast.error("Molimo izaberite varijantu usluge.");
+    if (!validateSelection(selectedService)) return;
 
     onConfirmedByGuest({
       date: selectedDate,
@@ -400,8 +467,7 @@ export function BookingProvider({
       return toast.error("Molimo izaberite datum i vreme.");
     if (!validateManualSlot()) return;
     if (!selectedService) return toast.error("Izabrana usluga nije pronađena.");
-    if (selectedService.type === "variant" && !selectedVariant)
-      return toast.error("Molimo izaberite varijantu usluge.");
+    if (!validateSelection(selectedService)) return;
     if (!guestData.name.trim()) return toast.error("Unesite ime i prezime.");
     if (
       !guestData.phone.trim() &&
@@ -446,14 +512,11 @@ export function BookingProvider({
               ? "instagram"
               : "email",
           serviceId: selectedServiceId,
-          serviceName: `${selectedService.name}${selectedVariant ? ` - ${selectedVariant}` : ""}`,
+          serviceName: `${selectedService.name}${selectionLabel ? ` - ${selectionLabel}` : ""}`,
           services: [
             {
               serviceId: selectedServiceId,
-              serviceName:
-                selectedService.type === "variant"
-                  ? selectedVariant
-                  : selectedService.name,
+              serviceName: selectionLabel || selectedService.name,
               extras:
                 extrasForStorage.length > 0 ? extrasForStorage : undefined,
               quantity: 1,
@@ -519,6 +582,7 @@ export function BookingProvider({
     availableClassicTimes,
     totalPrice,
     totalDuration,
+    totalPriceLabel,
     handleClose,
     // toast.error vraća string pa originalni handleri nisu striktno Promise<void>;
     // wrap čuva ugovor konteksta bez promene ponašanja.

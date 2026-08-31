@@ -75,7 +75,11 @@ export interface IServiceSubscription {
     | "expired";
 }
 
-export type PriceMode = "fixed" | "on_request";
+/** Način cene — nezavisan od `type` (single/variant/group):
+ *   fixed      → cena je poznata i konačna
+ *   from       → poznata je najniža cena, konačna zavisi od zahteva ("od 2.000")
+ *   on_request → cena se uopšte ne zna unapred */
+export type PriceMode = "fixed" | "on_request" | "from";
 
 export interface IServiceVariant {
   name: string;
@@ -95,12 +99,19 @@ export interface IServiceExtra {
   perItem: boolean;
 }
 
+/** Stavka paketa (`type: "group"`) — opis onoga što je uključeno.
+ *  Cena i trajanje paketa stoje na korenu usluge (`basePrice`/`duration`);
+ *  `price`/`priceMode`/`duration` ovde su zatečena polja iz starijeg modela,
+ *  koja se više ne unose i drže se samo da postojeći paketi ne izgube podatke. */
 export interface IServiceGroupItem {
   name: string;
-  price: number;
-  priceMode?: PriceMode;
-  duration: number;
   description: string;
+  /** @deprecated cena je na korenu paketa */
+  price?: number;
+  /** @deprecated cena je na korenu paketa */
+  priceMode?: PriceMode;
+  /** @deprecated trajanje je na korenu paketa */
+  duration?: number;
 }
 
 export interface IServiceInput {

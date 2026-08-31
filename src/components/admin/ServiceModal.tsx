@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useCategories } from "@/hooks/useCategories";
 import { useAdminServices } from "@/hooks/useAdminServices";
+import type { PriceMode } from "@/types";
 
 const i2 = [
   "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
@@ -15,6 +16,7 @@ const l2 =
   "block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5";
 const priceModeOptions = [
   { value: "fixed", label: "Fiksna cena" },
+  { value: "from", label: "Od (najniža cena)" },
   { value: "on_request", label: "Cena na upit" },
 ] as const;
 
@@ -32,6 +34,8 @@ export function ServiceModal({ s }: Props) {
   );
 
   const subType = form.subscription.subscriptionType ?? "monthly";
+  /** Jedna usluga i paket nose cenu i trajanje na korenu usluge. */
+  const rootPricing = form.type === "single" || form.type === "group";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -145,7 +149,11 @@ export function ServiceModal({ s }: Props) {
             </div>
           </div>
 
-          {form.type === "single" && (
+          {/* Cena na korenu usluge. Paket ima jednu cenu i jedno trajanje, isto
+              kao jedna usluga. Kod varijanti cene stoje na varijantama — osim
+              kad je tip cene „Od“, gde koren nosi donju granicu i najkraće
+              trajanje, da bi usluga mogla u cenovnik i u kalendar. */}
+          {(rootPricing || form.type === "variant") && (
             <div className="grid grid-cols-2 gap-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4">
               <div className="col-span-2">
                 <label className={l2}>Tip cene</label>
@@ -153,9 +161,7 @@ export function ServiceModal({ s }: Props) {
                   className={i2}
                   value={form.priceMode ?? "fixed"}
                   onChange={(e) => {
-                    const priceMode = e.target.value as
-                      | "fixed"
-                      | "on_request";
+                    const priceMode = e.target.value as PriceMode;
                     s.setField("priceMode", priceMode);
                     if (priceMode === "on_request") {
                       s.setField("basePrice", null);
@@ -168,9 +174,22 @@ export function ServiceModal({ s }: Props) {
                     </option>
                   ))}
                 </select>
+                {form.type === "variant" && form.priceMode !== "from" && (
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1.5">
+                    Cene se unose po varijanti, ispod. Izaberite „Od“ ako želite
+                    da se u cenovniku prikaže najniža cena.
+                  </p>
+                )}
               </div>
+              {(rootPricing || form.priceMode === "from") && (
               <div>
-                <label className={l2}>Cena (RSD) *</label>
+                <label className={l2}>
+                  {form.priceMode === "from"
+                    ? "Najniža cena (RSD) *"
+                    : form.type === "group"
+                      ? "Cena paketa (RSD) *"
+                      : "Cena (RSD) *"}
+                </label>
                 <input
                   type="number"
                   className={i2}
@@ -186,8 +205,16 @@ export function ServiceModal({ s }: Props) {
                   min={0}
                 />
               </div>
+              )}
+              {(rootPricing || form.priceMode === "from") && (
               <div>
-                <label className={l2}>Trajanje (min) *</label>
+                <label className={l2}>
+                  {form.priceMode === "from"
+                    ? "Najkraće trajanje (min) *"
+                    : form.type === "group"
+                      ? "Ukupno trajanje (min) *"
+                      : "Trajanje (min) *"}
+                </label>
                 <input
                   type="number"
                   className={i2}
@@ -202,6 +229,7 @@ export function ServiceModal({ s }: Props) {
                   min={5}
                 />
               </div>
+              )}
             </div>
           )}
 
@@ -246,9 +274,7 @@ export function ServiceModal({ s }: Props) {
                       className={i2}
                       value={v.priceMode ?? "fixed"}
                       onChange={(e) => {
-                        const priceMode = e.target.value as
-                          | "fixed"
-                          | "on_request";
+                        const priceMode = e.target.value as PriceMode;
                         s.updateVariant(i, "priceMode", priceMode);
                         if (priceMode === "on_request") {
                           s.updateVariant(i, "price", 0);
@@ -297,10 +323,16 @@ export function ServiceModal({ s }: Props) {
           {form.type === "group" && (
             <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className={l2 + " mb-0"}>Usluge u paketu</span>
+                <div>
+                  <span className={l2 + " mb-0"}>Šta paket sadrži</span>
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
+                    Spisak uključenih usluga. Cena i trajanje se unose gore, za
+                    ceo paket — pojedinačne stavke se ne naplaćuju posebno.
+                  </p>
+                </div>
                 <button
                   onClick={s.addGroupService}
-                  className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 px-3 py-1.5 rounded-lg transition"
+                  className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 px-3 py-1.5 rounded-lg transition flex-shrink-0"
                 >
                   + Dodaj
                 </button>
@@ -313,55 +345,19 @@ export function ServiceModal({ s }: Props) {
                     onChange={(e) =>
                       s.updateGroupService(i, "name", e.target.value)
                     }
-                    placeholder="Naziv"
+                    placeholder="Naziv usluge"
                   />
                   <input
-                    type="number"
                     className={i2 + " flex-1"}
-                    value={sv.price || ""}
-                    disabled={sv.priceMode === "on_request"}
+                    value={sv.description ?? ""}
                     onChange={(e) =>
-                      s.updateGroupService(i, "price", Number(e.target.value))
+                      s.updateGroupService(i, "description", e.target.value)
                     }
-                    placeholder="RSD"
-                    min={0}
-                  />
-                  <select
-                    className={i2 + " flex-1"}
-                    value={sv.priceMode ?? "fixed"}
-                    onChange={(e) => {
-                      const priceMode = e.target.value as
-                        | "fixed"
-                        | "on_request";
-                      s.updateGroupService(i, "priceMode", priceMode);
-                      if (priceMode === "on_request") {
-                        s.updateGroupService(i, "price", 0);
-                      }
-                    }}
-                  >
-                    {priceModeOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    className={i2 + " flex-0 min-w-26"}
-                    value={sv.duration || ""}
-                    onChange={(e) =>
-                      s.updateGroupService(
-                        i,
-                        "duration",
-                        Number(e.target.value),
-                      )
-                    }
-                    placeholder="Min"
-                    min={1}
+                    placeholder="Kratak opis (opciono)"
                   />
                   <button
                     onClick={() => s.removeGroupService(i)}
-                    className="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition text-xl"
+                    className="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition text-xl flex-shrink-0"
                   >
                     ×
                   </button>
@@ -409,9 +405,7 @@ export function ServiceModal({ s }: Props) {
                       className={i2}
                       value={ex.priceMode ?? "fixed"}
                       onChange={(e) => {
-                        const priceMode = e.target.value as
-                          | "fixed"
-                          | "on_request";
+                        const priceMode = e.target.value as PriceMode;
                         s.updateExtra(i, "priceMode", priceMode);
                         if (priceMode === "on_request") {
                           s.updateExtra(i, "price", 0);

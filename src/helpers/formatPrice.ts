@@ -24,10 +24,23 @@ export function formatServicePrice(
 ): string {
   if (priceMode === "on_request") return PRICE_ON_REQUEST_LABEL;
   const formatted = formatPriceToString(value);
-  return formatted ? `${formatted}${suffix ? ` ${suffix}` : ""}` : "";
+  if (!formatted) return "";
+  const withSuffix = `${formatted}${suffix ? ` ${suffix}` : ""}`;
+  // "from" znači da je poznata donja granica, a ne konačna cena.
+  return priceMode === "from" ? `od ${withSuffix}` : withSuffix;
 }
 
 export function isPriceOnRequest(priceMode?: PriceMode | null): boolean {
   return priceMode === "on_request";
+}
+
+/**
+ * Svodi vrednost iz baze/API-ja na validan `PriceMode`.
+ *
+ * Serijalizeri su ranije pisali `x === "on_request" ? "on_request" : "fixed"`,
+ * što svaki novi režim tiho pretvara u "fixed" — zato ide kroz jedno mesto.
+ */
+export function normalizePriceMode(value: unknown): PriceMode {
+  return value === "on_request" || value === "from" ? value : "fixed";
 }
 

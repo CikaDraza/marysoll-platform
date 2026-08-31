@@ -8,21 +8,21 @@ interface IServiceDoc extends Document {
   subcategory?: string;
   type: "single" | "group" | "variant";
   basePrice?: number;
-  priceMode?: "fixed" | "on_request";
+  priceMode?: "fixed" | "on_request" | "from";
   duration?: number;
   description?: string;
   icon?: string;
   services?: {
     name: string;
     price?: number;
-    priceMode?: "fixed" | "on_request";
+    priceMode?: "fixed" | "on_request" | "from";
     duration: number;
     description?: string;
   }[];
   variants?: {
     name: string;
     price: number;
-    priceMode?: "fixed" | "on_request";
+    priceMode?: "fixed" | "on_request" | "from";
     duration: number;
     perItem: boolean;
     description?: string;
@@ -30,7 +30,7 @@ interface IServiceDoc extends Document {
   extras?: {
     name: string;
     price: number;
-    priceMode?: "fixed" | "on_request";
+    priceMode?: "fixed" | "on_request" | "from";
     duration: number;
     perItem: boolean;
   }[];
@@ -67,7 +67,7 @@ const ServiceSchema = new Schema<IServiceDoc>(
     basePrice: Number,
     priceMode: {
       type: String,
-      enum: ["fixed", "on_request"],
+      enum: ["fixed", "on_request", "from"],
       default: "fixed",
     },
     duration: Number,
@@ -78,7 +78,7 @@ const ServiceSchema = new Schema<IServiceDoc>(
         price: Number,
         priceMode: {
           type: String,
-          enum: ["fixed", "on_request"],
+          enum: ["fixed", "on_request", "from"],
           default: "fixed",
         },
         duration: Number,
@@ -91,7 +91,7 @@ const ServiceSchema = new Schema<IServiceDoc>(
         price: Number,
         priceMode: {
           type: String,
-          enum: ["fixed", "on_request"],
+          enum: ["fixed", "on_request", "from"],
           default: "fixed",
         },
         duration: Number,
@@ -105,7 +105,7 @@ const ServiceSchema = new Schema<IServiceDoc>(
         price: Number,
         priceMode: {
           type: String,
-          enum: ["fixed", "on_request"],
+          enum: ["fixed", "on_request", "from"],
           default: "fixed",
         },
         duration: Number,

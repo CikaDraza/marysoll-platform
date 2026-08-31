@@ -1,22 +1,11 @@
 "use client";
 import Link from "next/link";
 import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
+import {
+  minServicePrice as minPrice,
+  isPriceFrom,
+} from "@/helpers/servicePrice";
 import type { IService } from "@/types";
-
-function minPrice(s: IService): number | null {
-  if (s.type === "single") return s.basePrice ?? null;
-  if (s.type === "variant") {
-    const p = (s.variants ?? []).map((v) => v.price);
-    return p.length ? Math.min(...p) : null;
-  }
-  if (s.type === "group") {
-    const p = (s.services ?? [])
-      .map((sv) => sv.price)
-      .filter((x): x is number => x != null);
-    return p.length ? Math.min(...p) : null;
-  }
-  return null;
-}
 
 interface Props {
   services: IService[];
@@ -82,7 +71,9 @@ export function Theme2PricingSection({ services, tenantSlug }: Props) {
                       <>
                         {mp != null && (
                           <p className="mb-3 flex items-baseline gap-1">
-                            <span className="text-gray-200 text-sm">od</span>
+                            {isPriceFrom(srv) && (
+                              <span className="text-gray-200 text-sm">od</span>
+                            )}
                             <span
                               className={`text-3xl font-black ${gold ? "text-gray-950" : "text-white"}`}
                             >
@@ -114,33 +105,25 @@ export function Theme2PricingSection({ services, tenantSlug }: Props) {
                               </span>
                             </div>
                           ))}
+                        {/* Paket ima jednu cenu — stavke su spisak onoga što
+                            je uključeno, pa se ne cenkaju pojedinačno. */}
                         {srv.type === "group" &&
-                          (srv.services ?? []).map((sv, i) => (
-                            <div
-                              key={i}
-                              className="flex justify-between items-center gap-x-4 text-sm mb-1"
-                            >
-                              <span
-                                className={
-                                  gold ? "text-gray-950" : "text-white"
-                                }
-                              >
-                                {sv.name}
-                              </span>
-                              {sv.price != null && (
-                                <>
-                                  <hr
-                                    className={`flex-1 border-dashed ${gold ? "border-gray-900" : "border-gray-600"}`}
-                                  />
-                                  <span
-                                    className={`${gold ? "text-gray-950" : "text-white"} font-bold`}
-                                  >
-                                    {formatServicePrice(sv.price, sv.priceMode)}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          ))}
+                          (srv.services ?? []).length > 0 && (
+                            <>
+                              <p className="text-gray-200 text-xs font-semibold uppercase tracking-wider mb-1">
+                                Uključeno
+                              </p>
+                              {(srv.services ?? []).map((sv, i) => (
+                                <div
+                                  key={i}
+                                  className={`flex gap-x-2 text-sm mb-1 ${gold ? "text-gray-950" : "text-white"}`}
+                                >
+                                  <span aria-hidden>·</span>
+                                  <span>{sv.name}</span>
+                                </div>
+                              ))}
+                            </>
+                          )}
                       </>
                     );
                   })()}

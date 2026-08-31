@@ -79,10 +79,10 @@ function resolveSelection(
     durationMinutes: number;
   }> = [];
   if (service.type === "group") {
-    if (!selection.itemRefs?.length) {
-      throw new BookingError("BOOKING_PRODUCT_NOT_AVAILABLE", "Izaberite stavke grupne usluge");
-    }
-    for (const item of selection.itemRefs) {
+    // Paket ima jedno trajanje na korenu usluge; `services[]` je spisak onoga
+    // što je uključeno, bez sopstvenog trajanja i bez izbora. `itemRefs` se i
+    // dalje prihvata zbog zatečenih paketa upisanih po starom modelu.
+    for (const item of selection.itemRefs ?? []) {
       const part = selectedPart(service.services, item.ref);
       resolved.push({
         ref: item.ref,
@@ -135,10 +135,12 @@ export async function resolveServiceBookingProduct(input: {
     (sum, item) => sum + item.durationMinutes * item.quantity,
     0,
   );
+  // Varijanta nosi trajanje u izboru; jedna usluga i paket na korenu. Dodaci
+  // se u svakom slučaju dodaju povrh.
   const durationMinutes =
-    service.type === "single"
-      ? (service.duration ?? 0) + selectedDuration
-      : selectedDuration;
+    service.type === "variant"
+      ? selectedDuration
+      : (service.duration ?? 0) + selectedDuration;
   if (!Number.isFinite(durationMinutes) || !durationMinutes || durationMinutes <= 0) {
     throw new BookingError("BOOKING_PRODUCT_NOT_AVAILABLE", "Usluga nema validno trajanje");
   }
