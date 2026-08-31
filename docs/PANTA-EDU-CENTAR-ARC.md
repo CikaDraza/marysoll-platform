@@ -1,7 +1,14 @@
 # PANTA — Edu Centar: workspace arhitektura i Education domen
 
-> **Status: EDU CENTAR v1 — FEATURE FREEZE, MARINA PILOT.**
+> **Status: EDU CENTAR v1 — PILOT READY / FEATURE FREEZE.**
+> Marina acceptance + stvarna upotreba u toku.
 > Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-31 · `staging/production-engines`
+>
+> **Freeze je proglašen na `c3039a4`** (PDF/DOCX importer — poslednji rez pre
+> pilota). Posle njega su išle **samo ispravke onoga što je pilot odmah pokazao**
+> — multipart uvoz, verzalni naslovi u njenim materijalima, podnaslov koji je
+> gutao prvi pasus, polazni alt teksta i mobilni raspored značke — nijedna nova
+> funkcija.
 >
 > Jezgro je dovoljno kompletno da sledeći razvoj vodi **stvarna upotreba**, a ne
 > naša pretpostavka šta bi još moglo koristiti. Do kraja pilota se ne dodaju
@@ -918,6 +925,12 @@ se ne dodaje bez signala iz pilota.
   za kasnije.
 - **Staging je `noindex`**, pa se ništa iz pilota ne rangira.
 
+### Odluke donete tokom freeze-a
+
+- **Limit uvoza ostaje 10 MB.** Diže se na 20 MB tek ako Marina stvarno naiđe
+  na dokument sa slikama koji ga prelazi, i tada uz jasnu poruku u UI-ju da
+  fotografije treba prethodno smanjiti. Ne diže se unapred, bez potrebe.
+
 ### Šta pilot treba da izmeri
 
 Ne broj grešaka nego navike: koji blok nedostaje, da li preseti stvarno
@@ -989,6 +1002,44 @@ Vidi i zaključano platformsko pravilo
 [Tenant → Workspace → Presentation](ARCHITECTURAL_RULES.md#33-tenant--workspace--presentation-zaključano-2026-08-29):
 workspace sme postojati pre nego što taj vertikal ima ijednu javnu
 prezentaciju.
+
+### Posle pilota — dva dijagnostička reza
+
+Ne rade se sada; zapisani su da se obim ne izmišlja iznova kad dođu na red.
+
+**DIAG-EDU-1 — Education integrity provere.** Registry integrity provera već
+pokriva Identity, Loyalty, Appointment, tenant ownership, SEO i push pretplate;
+Education nema nijednu. Kandidati proizlaze direktno iz granica koje smo
+zaključali, pa svaka provera brani već napisano pravilo:
+
+```text
+orphan ClientContentAssignment
+assignment ka drugom tenantu
+assignment ka nepostojećem client profilu
+assignment ka neobjavljenom ili nepostojećem sadržaju
+radna kopija ≠ publishedSnapshot — invarijanta
+public / gated / private granice otkrivanja
+gated nikada ne isporučuje zaštićeno telo
+private ne ostavlja javni signal da postoji
+```
+
+Poslednje tri su posebno vredne: to su tvrdnje koje danas drže testovi nad
+izmišljenim podacima, a ova provera bi ih merila nad **stvarnim** stanjem baze.
+
+**DIAG-SUPPORT-1 — „Pošaljite problem podršci".** Prirodan sledeći korak
+postojećeg Diagnostic Engine-a. Korisnik klikne, engine prikupi ono što već
+ume (uređaj, mreža, push, storage, permissions, crash), aplikacija doda
+tenant/user/rutu/greška kontekst, incident se **sačuva**, i tek onda se
+best-effort šalju obaveštenje, mejl i push uz direktan link ka reportu.
+
+> **Ako slanje zakaže, report mora ostati sačuvan.** Prijava koja je nestala
+> zato što mejl nije prošao je gora od nikakve, jer korisnik veruje da je
+> javio.
+
+**Privacy granica, zaključana unapred:** dijagnostički report **nikada**
+automatski ne šalje privatan ni zaključan Education tekst, sadržaj formi,
+poruke, fajlove, fotografije, auth tokene ni sirove query parametre. Tehnički
+metapodaci — da; sadržaj korisnika — ne. Ovo je pravilo, ne podešavanje.
 
 ---
 

@@ -186,3 +186,29 @@ ranije završene posete. Share link nosi `?voucher=CODE`; pending booking čuva 
 kroz register/verify/login round-trip. Običan guest booking ostaje dozvoljen, ali
 gift/referral kontekst ne prikazuje niti prihvata guest tok. Nagrada je
 idempotentna po completion ciklusu i povlači se ako se completion revertuje.
+
+---
+
+## Planirano proširenje: Education integrity (DIAG-EDU-1)
+
+Registry danas pokriva Identity, Loyalty, Appointment, tenant ownership, SEO i
+push pretplate. Education nema nijednu proveru, iako je posle Edu Centra v1
+dobio sopstvene invarijante — i to takve koje se tiču **pristupa**, ne samo
+konzistentnosti podataka.
+
+Nije deo pilota; zapisano da se obim ne izmišlja iznova.
+
+| Provera | Šta brani |
+|---|---|
+| orphan `ClientContentAssignment` | dodela ka obrisanom sadržaju ili profilu ostaje kao mrtav zapis |
+| assignment ka drugom tenantu | tenant granica; ovo bi bio stvaran proboj, ne nered |
+| assignment ka nepostojećem client profilu | „Moji sadržaji" bi tiho ćutali umesto da prijave grešku |
+| assignment ka neobjavljenom sadržaju | klijentkinja ima pravo na nešto što nema objavljenu verziju |
+| radna kopija ≠ `publishedSnapshot` | invarijanta UI-2B: Save ne sme menjati živo |
+| `public` / `gated` / `private` granice otkrivanja | ugovor pristupa, meren nad stvarnim podacima |
+| `gated` ne isporučuje zaštićeno telo | danas to drže testovi nad izmišljenim podacima |
+| `private` ne ostavlja javni signal da postoji | isto — i najskuplje ako pukne |
+
+Poslednje tri su razlog zbog koga ovo uopšte vredi: te tvrdnje sada postoje
+samo u testovima, a test dokazuje kod — ne i stanje baze posle godinu dana
+stvarnog rada, migracija i ručnih ispravki.

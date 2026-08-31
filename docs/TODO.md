@@ -2,7 +2,7 @@
 
 > Tracker za tekući luk rada: **T3 Booking Engine + Consultation domen + theme-9 „Skincare Marina"**.
 > Jedan red po slice-u. Detalji su u dokumentu koji je naveden uz slice — ovde stoji samo status i jedna rečenica.
-> Poslednja izmena: 2026-08-31 · `staging/production-engines` · **Edu Centar v1 — feature freeze**
+> Poslednja izmena: 2026-08-31 · `staging/production-engines` · **Edu Centar v1 — pilot ready / feature freeze**
 >
 > **Aktuelno stanje:** correctness fixes, Theme-9 **2A, ceo 2B i 2C** i
 > migration/staging tooling nalaze se na `main`-u. Staging Release A + migration
@@ -139,6 +139,8 @@ od grešaka stoje u
 | **Salon workspace migration** | ostatak starog Slice 12 | Edu plan je preuzeo `/education/*`, `Moj Prostor` i Client 360. Ostaje samo prevođenje ~15 salon tabova u workspace strukturu — nije prioritet za Marinu |
 | **Generic Care Domain** ⏸ preskočen · neophodan | stari Slice 13, preimenovan | `CareJourney` / `CarePlan` / `CareDocument` / `ProgressMedia`. Prvo vidimo šta `SkincareGuide` + `GuidedProgram` + follow-up stvarno traže, pa tek onda generalizujemo — sigurnije od apstrakcije unapred |
 | **Jedan `AuthUser` → više `Tenant`-a** | Edu plan, Faza 0 | Jedini ispravan put za potpuno odvojene Salon/Education biznise istog vlasnika. „Neka napravi drugi nalog" ne radi: `AuthUser.email` je globalno unique, register vraća 409 |
+| **DIAG-EDU-1** — Education integrity provere | posle Marina pilota | Registry pokriva Identity, Loyalty, Appointment, ownership, SEO i push; Education nema nijednu. Tri najvrednije provere mere granice pristupa nad **stvarnim** podacima, a ne nad izmišljenim iz testova |
+| **DIAG-SUPPORT-1** — „Pošaljite problem podršci" | posle Marina pilota | Snapshot iz postojećeg Diagnostic Engine-a + kontekst aplikacije → **sačuvan incident**, pa tek onda obaveštenje/mejl/push. Ako slanje zakaže, report ostaje. Privacy granica: metapodaci da, sadržaj korisnika ne |
 | **Read-model cleanup** | dug iz H0 | Write loss je zatvoren; višestruke ručne read projekcije `SalonProfile` ostaju |
 
 Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran · ⏸ preskočeno/odloženo (posao ostaje neophodan)
