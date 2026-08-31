@@ -582,6 +582,7 @@ export default function EducationContentEditor({ record }: Props) {
             <ImageMediaField
               label="Naslovna slika"
               adapter={mediaAdapter}
+              defaultAlt={state.title}
               aspectHint="16:9"
               image={
                 state.hero.image

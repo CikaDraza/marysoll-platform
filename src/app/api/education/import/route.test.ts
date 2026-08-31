@@ -75,7 +75,7 @@ beforeEach(() => {
   });
 });
 
-describe("POST /api/education/import", () => {
+describe("POST /api/education/import", async () => {
   it("čita svaki Marinin PDF kroz pravi multipart zahtev", async () => {
     const files = (await readdir(FIXTURES)).filter((file) => file.endsWith(".pdf"));
 
@@ -111,27 +111,29 @@ describe("POST /api/education/import", () => {
     expect(section.paragraphs).toContain("prva stavka");
   }, 60_000);
 
-  it("čita njen stvarni DOCX materijal", async () => {
-    const name =
-      "Iza svake zavisnosti postoji priča koja je počela mnogo prije same zavisnosti.docx";
-    const buffer = await readFile(path.join(FIXTURES, name));
-    const file = new File([new Uint8Array(buffer).buffer], name, {
+  /**
+   * Njen stvarni DOCX je bio ovde privremeno, radi provere; to je autorski
+   * tekst i ne mora da živi u repou. Test se zato vezuje za bilo koji `.docx`
+   * u fixture folderu i preskače se kada ga nema — sintetički DOCX iznad ionako
+   * prolazi kroz isti mammoth put.
+   */
+  const realDocx = (await readdir(FIXTURES)).find((file) =>
+    file.endsWith(".docx"),
+  );
+
+  it.skipIf(!realDocx)("čita stvarni DOCX materijal", async () => {
+    const buffer = await readFile(path.join(FIXTURES, realDocx!));
+    const file = new File([new Uint8Array(buffer).buffer], realDocx!, {
       type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     });
 
     const payload = await (await POST(upload(file))).json();
 
     expect(payload.format).toBe("docx");
-    expect(payload.draft.title).toContain("Iza svake zavisnosti");
-    expect(payload.summary.sections).toBe(5);
-
-    // Dokument odmah otvara tekst, pa nema podnaslov — prvi pasus je sadržaj,
-    // ne naslovna sekcija.
-    expect(payload.draft.hero.subtitle).toBeUndefined();
-    const [intro] = payload.draft.blocks;
-    expect(intro.paragraphs[0]).toContain("Kada čujemo riječ zavisnost");
+    expect(payload.draft.title).toBeTruthy();
+    expect(payload.draft.blocks.length).toBeGreaterThan(0);
     // Inline oznake ne smeju ostaviti razmak pred zarezom.
-    expect(intro.paragraphs[0]).not.toContain(" ,");
+    expect(JSON.stringify(payload.draft.blocks)).not.toContain(" ,");
   }, 60_000);
 
   it("odbija zahtev bez fajla i nepodržan format", async () => {
