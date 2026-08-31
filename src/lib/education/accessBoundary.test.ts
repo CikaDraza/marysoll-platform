@@ -56,6 +56,23 @@ describe("javna ruta nikada ne služi zaštićeno telo", () => {
     expect(reader).not.toContain('"use client"');
   });
 
+  it("serverske strane čitaju sesiju iz istog kolačića", () => {
+    // Klijentska sesija je u `tenant-access-token`; ime `token` postoji samo u
+    // localStorage-u, pa bi ga serverska strana pročitala kao „nema sesije" i
+    // vratila 404 svakome — bug koji izgleda kao odbijen pristup.
+    const reader = read(
+      "src/app/tenant/panel/moj-prostor/sadrzaji/[id]/page.tsx",
+    );
+
+    expect(reader).toContain('cookieStore.get("tenant-access-token")');
+    expect(reader).not.toMatch(/cookieStore\.get\("token"\)/);
+
+    // Isti kolačić koji već koristi zaštićeni Education admin workspace.
+    expect(read("src/app/education/layout.tsx")).toContain(
+      'cookieStore.get("tenant-access-token")',
+    );
+  });
+
   it("klijentska lista ne dobija telo sadržaja", () => {
     const api = read("src/app/api/education/my-content/route.ts");
 
