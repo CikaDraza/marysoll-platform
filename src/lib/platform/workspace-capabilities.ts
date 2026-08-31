@@ -55,6 +55,7 @@ const ADMIN_WORKSPACE_CAPABILITIES = {
 } as const satisfies Record<string, TenantCapability>;
 
 const CLIENT_WORKSPACE_CAPABILITIES = {
+  "Moj Prostor": "education.catalog",
   "Moji Termini": "booking.services",
   Zakazivanja: "booking.services",
   Nagrade: "loyalty.rewards",

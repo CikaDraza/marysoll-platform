@@ -28,6 +28,7 @@ import { Referral } from "@/models/Referral";
 import { SalonInternalChat } from "@/models/SalonInternalChat";
 import { SuperAdminChat } from "@/models/SuperAdminChat";
 import { EducationContent } from "@/models/EducationContent";
+import { ClientContentAssignment } from "@/models/ClientContentAssignment";
 import { deleteTenantBookingData } from "@/lib/tenant/bookingCascade";
 import { cancelPaddleSubscription } from "@/lib/paddle";
 
@@ -89,6 +90,7 @@ function tenantScopedModels() {
     ["SalonInternalChat", SalonInternalChat],
     ["SuperAdminChat", SuperAdminChat],
     ["EducationContent", EducationContent],
+    ["ClientContentAssignment", ClientContentAssignment],
   ] as const;
 }
 

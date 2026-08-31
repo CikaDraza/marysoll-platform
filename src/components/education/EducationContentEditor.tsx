@@ -12,6 +12,7 @@ import { useContentMediaAuthoring } from "@/hooks/useContentMediaAuthoring";
 import { getContentMutationErrorMessage } from "@/lib/content/validation/contentValidationClient";
 import { saveEducationDraftOnExit } from "@/lib/education/exitSave";
 import { educationPresetBlocks } from "@/lib/education/contentPresets";
+import EducationClientAccess from "./EducationClientAccess";
 import { createContentBlockId } from "@/lib/content/editor/blockFactories";
 import {
   clearLocalDraftIfConfirmed,
@@ -636,6 +637,14 @@ export default function EducationContentEditor({ record }: Props) {
         </Disclosure>
         )}
       </section>
+
+      {/* Dodela ima smisla tek kad zapis postoji i kad nije javan svima. */}
+      {recordId && state.accessMode !== "public" && (
+        <EducationClientAccess
+          contentId={recordId}
+          accessMode={state.accessMode}
+        />
+      )}
 
       {tab === "editor" ? (
         <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
