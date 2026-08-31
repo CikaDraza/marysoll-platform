@@ -45,11 +45,9 @@ export function BookingServiceSection() {
             name="service"
             value={s._id}
             checked={selectedServiceId === s._id}
-            onChange={() => {
-              setSelectedServiceId(s._id);
-              setSelectedVariant("");
-              setSelectedExtras([]);
-            }}
+            // Varijantu i dodatke čisti BookingProvider, na svaku promenu
+            // usluge — ne samo na klik ovde.
+            onChange={() => setSelectedServiceId(s._id)}
             className="sr-only"
           />
           <span

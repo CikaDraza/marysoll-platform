@@ -12,6 +12,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type Dispatch,
   type ReactNode,
@@ -164,6 +165,12 @@ export function BookingProvider({
     isRegistered: boolean;
   } | null>(null);
 
+  // Usluga kojoj trenutni izbor varijante/dodataka PRIPADA. Reset je ranije
+  // stajao samo u `onChange` radio dugmeta, pa ga je svaka druga promena usluge
+  // zaobilazila (restore pending termina, promena liste usluga, podrazumevani
+  // `services[0]`) i stari izbor je ostajao prikačen na novu uslugu.
+  const selectionOwnerRef = useRef(selectedServiceId);
+
   const checkExistingClient = useCallback(async () => {
     const email = guestData.email.trim();
     const phone = guestData.phone.trim();
@@ -213,7 +220,11 @@ export function BookingProvider({
         }
       }
       if (pendingDefaults) {
-        setSelectedServiceId(pendingDefaults.serviceId || services[0]?._id || "");
+        const restoredId = pendingDefaults.serviceId || services[0]?._id || "";
+        // Vraćen izbor PRIPADA toj usluzi — obeleži ga pre nego što se
+        // `selectedServiceId` promeni, da ga čistač ispod ne obriše.
+        selectionOwnerRef.current = restoredId;
+        setSelectedServiceId(restoredId);
         setSelectedVariant(pendingDefaults.variantName || "");
         setSelectedExtras(pendingDefaults.extras || []);
         setNote(pendingDefaults.note || "");
@@ -223,6 +234,14 @@ export function BookingProvider({
   }, [defaultDate, defaultTime, pendingDefaults, services, tenantSlug]);
 
   const selectedService = services.find((s) => s._id === selectedServiceId);
+
+  // Promenjena usluga → stari izbor pada, bez obzira odakle je promena došla.
+  useEffect(() => {
+    if (selectionOwnerRef.current === selectedServiceId) return;
+    selectionOwnerRef.current = selectedServiceId;
+    setSelectedVariant("");
+    setSelectedExtras([]);
+  }, [selectedServiceId]);
 
   // manualSlots režim: nudi se SAMO slobodan budući termin koji je vlasnik
   // definisao — datum/vreme van te liste ne sme proći.

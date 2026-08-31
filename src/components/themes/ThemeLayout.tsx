@@ -22,6 +22,7 @@ import type { ResolvedBlockMap } from "@/lib/platform/blocks/render-types";
 import type { ThemeNativeData } from "@/lib/platform/theme-native";
 import { makeResolveHref } from "@/helpers/tenantHref";
 import type { LandingTheme } from "@/types";
+import { BookingLauncherProvider } from "./shared/BookingLauncher";
 import type {
   ThemeFooterShared,
   ThemeHeaderShared,
@@ -86,5 +87,10 @@ export function ThemeLayout({
   };
 
   const Landing = THEME_LANDINGS[theme];
-  return <Landing {...landingProps} />;
+  // Hero CTA i widget su u različitim blokovima; launcher ih spaja bez propa.
+  return (
+    <BookingLauncherProvider>
+      <Landing {...landingProps} />
+    </BookingLauncherProvider>
+  );
 }

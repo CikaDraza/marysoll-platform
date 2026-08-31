@@ -52,6 +52,7 @@ import type {
   ManualSlotsMap,
 } from "@/types";
 import { firstAvailableDate, widgetDay } from "@/lib/booking/widgetDay";
+import { useBookingLauncher } from "./BookingLauncher";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -457,6 +458,27 @@ export default function HomepageAppointmentWidget({
       /* ignore */
     }
   }, [isLoggedIn, clientSlug]);
+
+  // ── Hero CTA „Zakaži odmah" ───────────────────────────────────────────────
+  // Klasičan režim: otvori modal odmah — datum i vreme se biraju u njemu.
+  // Ručni režim (`manualSlots`): modal bez izabranog termina je ćorsokak
+  // ("Zatvorite prozor i izaberite slobodan termin"), pa CTA umesto toga
+  // skroluje do kalendara gde su ponuđeni termini.
+  const { register } = useBookingLauncher();
+  useEffect(() => {
+    return register(() => {
+      if (salon.availabilityMode === "manualSlots") {
+        document
+          .getElementById("booking")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      setPendingDefaults(null);
+      setModalDate("");
+      setModalTime("");
+      setModalOpen(true);
+    });
+  }, [register, salon.availabilityMode]);
 
   // ── Slot click handler ─────────────────────────────────────────────────────
   const handleSlotClick = useCallback((date: string, time: string) => {

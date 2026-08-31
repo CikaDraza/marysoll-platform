@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import { BookingCtaLink } from "../shared/BookingCtaLink";
 
 interface Props {
   salonName?: string;
@@ -19,12 +19,12 @@ export function Theme1CTABookingSection({ salonName, tenantSlug }: Props) {
             Jednostavno i brzo online zakazivanje. Izaberite uslugu, datum i
             vreme koji vam odgovara. {salonName ?? ""}
           </p>
-          <Link
+          <BookingCtaLink
             href={servicesHref}
             className="inline-block px-10 py-4 bg-white text-(--secondary-color) font-bold rounded-full hover:bg-gray-100 transition shadow-xl text-sm"
           >
             Zakaži odmah →
-          </Link>
+          </BookingCtaLink>
         </div>
         <div className="w-full max-w-lg rounded-lg overflow-hidden">
           <Image
