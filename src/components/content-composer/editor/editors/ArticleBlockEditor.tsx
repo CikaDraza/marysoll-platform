@@ -33,7 +33,7 @@ export function ArticleBlockEditor({ block, mediaAdapter, onChange }: {
           });
         }}
       />
-      <ImageMediaField image={block.image} adapter={mediaAdapter} aspectHint={blockImageAspectHint("ArticleBlock")} onChange={(image) => onChange({ ...block, image })} />
+      <ImageMediaField image={block.image} adapter={mediaAdapter} defaultAlt={block.title} aspectHint={blockImageAspectHint("ArticleBlock")} onChange={(image) => onChange({ ...block, image })} />
     </>
   );
 }

@@ -95,13 +95,21 @@ export function AssetMediaField({ kind, label, asset, adapter, onChange }: {
   </fieldset>;
 }
 
-export function ImageMediaField({ label = "Slika", image, adapter, onChange, aspectHint }: {
+export function ImageMediaField({ label = "Slika", image, adapter, onChange, aspectHint, defaultAlt }: {
   label?: string;
   image?: ContentImageRef;
   adapter?: ContentMediaAuthoringAdapter;
   onChange: (image?: ContentImageRef) => void;
   /** Odnos kadra u kome će se slika stvarno prikazati, iz same teme. */
   aspectHint?: string;
+  /**
+   * Polazni alt — naslov bloka ili sadržaja.
+   *
+   * Objava traži alt za svaku sliku, pa bi bez ovoga autor posle pisanja
+   * morao da obilazi svaku sliku i traži gde nedostaje. Bolji opis se piše
+   * kad ima smisla; prazan alt ne sme da bude prepreka.
+   */
+  defaultAlt?: string;
 }) {
   return <div className="space-y-2">
     {image?.src ? (
@@ -115,7 +123,7 @@ export function ImageMediaField({ label = "Slika", image, adapter, onChange, asp
     ) : (
       aspectHint && <p className="text-xs text-gray-500">Preporučeni kadar: {aspectHint}</p>
     )}
-    <AssetMediaField kind="image" label={label} asset={image} adapter={adapter} onChange={(asset) => onChange(asset ? { ...asset, alt: image?.alt ?? "", caption: image?.caption } : undefined)} />
+    <AssetMediaField kind="image" label={label} asset={image} adapter={adapter} onChange={(asset) => onChange(asset ? { ...asset, alt: image?.alt || defaultAlt?.trim() || "", caption: image?.caption } : undefined)} />
     {image && <><Field label="Alt tekst" value={image.alt} onChange={(alt) => onChange({ ...image, alt })} /><Field label="Opis slike (opciono)" value={image.caption ?? ""} onChange={(caption) => onChange({ ...image, caption })} /></>}
   </div>;
 }

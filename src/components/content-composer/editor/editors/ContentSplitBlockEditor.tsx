@@ -12,7 +12,7 @@ export function ContentSplitBlockEditor({ block, mediaAdapter, onChange }: {
     <>
       <Field label="Naslov" value={block.title} onChange={(title) => onChange({ ...block, title })} />
       <Field label="Sadržaj" textarea rows={4} value={block.content} onChange={(content) => onChange({ ...block, content })} />
-      <ImageMediaField image={block.image} adapter={mediaAdapter} onChange={(image) => onChange({ ...block, image })} />
+      <ImageMediaField image={block.image} adapter={mediaAdapter} defaultAlt={block.title} onChange={(image) => onChange({ ...block, image })} />
       <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
         <input type="checkbox" checked={Boolean(block.reverse)} onChange={(event) => onChange({ ...block, reverse: event.target.checked })} />
         Obrnuti raspored

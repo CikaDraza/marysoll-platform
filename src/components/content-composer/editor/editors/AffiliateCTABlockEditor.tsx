@@ -22,7 +22,7 @@ export function AffiliateCTABlockEditor({ block, slugOptions, mediaAdapter, onCh
         onLabel={(ctaLabel) => onChange({ ...block, ctaLabel })}
         onHref={(href) => onChange({ ...block, href })}
       />
-      <ImageMediaField image={block.image} adapter={mediaAdapter} onChange={(image) => onChange({ ...block, image })} />
+      <ImageMediaField image={block.image} adapter={mediaAdapter} defaultAlt={block.title} onChange={(image) => onChange({ ...block, image })} />
     </>
   );
 }

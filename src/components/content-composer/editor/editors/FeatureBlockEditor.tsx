@@ -49,7 +49,7 @@ export function FeatureBlockEditor({ block, mediaAdapter, onChange }: {
               sections: block.sections.map((item, itemIndex) => itemIndex === index ? { ...item, title } : item),
             })}
           />
-          <ImageMediaField image={section.image} adapter={mediaAdapter} onChange={(image) => onChange({ ...block, sections: block.sections.map((item, itemIndex) => itemIndex === index ? { ...item, image } : item) })} />
+          <ImageMediaField image={section.image} adapter={mediaAdapter} defaultAlt={section.title || block.title} onChange={(image) => onChange({ ...block, sections: block.sections.map((item, itemIndex) => itemIndex === index ? { ...item, image } : item) })} />
           <Field
             label="Pasusi (jedan po redu)"
             textarea
