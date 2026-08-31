@@ -186,26 +186,26 @@ describe("hero blok se ne prikazuje dvaput", () => {
     expect(presentation.cover?.focalPoint).toEqual({ x: 0.3, y: 0.2 });
   });
 
-  it("hero ima prednost nad SEO poljima, jer je pisan za čitaoca", () => {
+  it("naslovna sekcija sa servera pobeđuje zatečeni blok", () => {
+    // Server već razrešava jedan izvor istine; blok je samo legacy dopuna.
     const presentation = resolveArticlePresentation({
-      description: "SEO opis za pretragu",
-      cover: { src: "https://cdn.example.com/og.jpg" },
+      description: "Iz naslovne sekcije",
+      cover: { src: "https://cdn.example.com/sekcija.jpg" },
       blocks: [hero, ...body],
     });
 
-    expect(presentation.description).toBe(hero.subtitle);
-    expect(presentation.cover?.src).toBe(hero.images[0].src);
+    expect(presentation.description).toBe("Iz naslovne sekcije");
+    expect(presentation.cover?.src).toBe("https://cdn.example.com/sekcija.jpg");
+    expect(presentation.blocks.map((block) => block.type)).not.toContain(
+      "HeroBlock",
+    );
   });
 
-  it("bez hero bloka zaglavlje pada na SEO", () => {
-    const presentation = resolveArticlePresentation({
-      description: "SEO opis za pretragu",
-      cover: { src: "https://cdn.example.com/og.jpg" },
-      blocks: body,
-    });
+  it("bez naslovne sekcije zaglavlje pada na zatečeni blok", () => {
+    const presentation = resolveArticlePresentation({ blocks: [hero, ...body] });
 
-    expect(presentation.description).toBe("SEO opis za pretragu");
-    expect(presentation.cover?.src).toBe("https://cdn.example.com/og.jpg");
+    expect(presentation.description).toBe(hero.subtitle);
+    expect(presentation.cover?.src).toBe(hero.images[0].src);
   });
 
   it("obe strane koje prikazuju sadržaj koriste isto pravilo", () => {

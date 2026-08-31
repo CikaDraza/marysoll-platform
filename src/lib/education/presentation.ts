@@ -44,15 +44,14 @@ export function formatPublishedDate(value: string): string {
  * podnaslov, datum i naslovna slika. Hero blok u telu je zato duplikat: isti
  * naslov drugi put, u drugom kadru i drugoj tipografiji.
  *
- * Ne briše se nego se upija: njegov podnaslov i slika POSTAJU zaglavlje.
- *
- * Hero ima prednost nad SEO poljima namerno. SEO opis i OG slika su napisani
- * za pretragu i deljenje; hero je ono što je autor napisao za čitaoca i sme da
- * se razlikuje. Kada hero ne postoji, zaglavlje pada na SEO.
+ * Od uvođenja naslovne sekcije, opis i naslovna slika stižu SPREMNI sa servera
+ * — iz jednog izvora koji hrani i karticu i zaglavlje. Ovde ostaje samo
+ * apsorpcija zatečenog hero BLOKA, za sadržaj pisan pre te sekcije: takav blok
+ * se ne renderuje u telu, a njegov podnaslov i slika popunjavaju zaglavlje ako
+ * ga sekcija još nije popunila. Prva sledeća objava ga trajno preseli.
  *
  * Naslov je izuzetak i uvek dolazi iz `EducationContent.title`: on je identitet
- * dokumenta — isti u listi, breadcrumb-u i deljenom linku — pa ne sme da zavisi
- * od toga da li u telu postoji blok.
+ * dokumenta — isti u listi, breadcrumb-u i deljenom linku.
  */
 export function resolveArticlePresentation(article: {
   description?: string;
@@ -67,12 +66,14 @@ export function resolveArticlePresentation(article: {
   const heroImage = hero?.images?.[0];
 
   return {
-    description: hero?.subtitle || article.description || undefined,
+    description: article.description || hero?.subtitle || undefined,
     // Fokus kadra ide zajedno sa slikom; bez njega se naslovna slika seče
     // mimo onoga što je autor izabrao.
-    cover: heroImage?.src
-      ? { src: heroImage.src, focalPoint: heroImage.focalPoint }
-      : article.cover,
+    cover:
+      article.cover ??
+      (heroImage?.src
+        ? { src: heroImage.src, focalPoint: heroImage.focalPoint }
+        : undefined),
     blocks: article.blocks.filter((block) => block.type !== "HeroBlock"),
   };
 }

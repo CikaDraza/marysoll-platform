@@ -88,6 +88,7 @@ export async function PATCH(
     if (metadata.data.accessMode !== undefined) {
       updates.accessMode = metadata.data.accessMode;
     }
+    if (metadata.data.hero !== undefined) updates.hero = metadata.data.hero;
     if (metadata.data.publicPreview !== undefined) {
       updates.publicPreview = metadata.data.publicPreview;
     }

@@ -18,6 +18,15 @@ import {
 } from "@/types/education-content";
 
 /** Poslednja eksplicitno objavljena verzija — javni izvor istine. */
+export interface IEducationHero {
+  subtitle?: string;
+  image?: {
+    src: string;
+    alt?: string;
+    focalPoint?: { x: number; y: number };
+  };
+}
+
 export interface IEducationPublicPreview {
   title?: string;
   description?: string;
@@ -31,6 +40,8 @@ export interface IEducationPublishedSnapshot {
   accessMode?: EducationAccessMode;
   /** Zatečeno dvočlano polje; čita se samo kad `accessMode` nedostaje. */
   visibility?: EducationContentVisibility;
+  /** Naslovna sekcija zamrznuta pri objavi. */
+  hero?: IEducationHero;
   /** Javni pregled za `gated` — jedini deo koji neautorizovan čitalac vidi. */
   publicPreview?: IEducationPublicPreview;
   /** Naslovna slika sa fokusom kadra; računa se pri objavi. */
@@ -52,6 +63,7 @@ export interface IEducationContentDoc extends Document {
   accessMode?: EducationAccessMode;
   /** Zatečeno dvočlano polje; čita se samo kad `accessMode` nedostaje. */
   visibility?: EducationContentVisibility;
+  hero?: IEducationHero;
   publicPreview?: IEducationPublicPreview;
   status: EducationContentStatus;
   blocks: ContentBlock[];
@@ -116,6 +128,15 @@ const EducationContentSchema = new Schema<IEducationContentDoc>(
       type: String,
       enum: EDUCATION_CONTENT_VISIBILITIES,
     },
+    // Naslovna sekcija — jedan izvor istine za karticu i za zaglavlje strane.
+    hero: {
+      subtitle: { type: String },
+      image: {
+        src: { type: String },
+        alt: { type: String },
+        focalPoint: { x: { type: Number }, y: { type: Number } },
+      },
+    },
     publicPreview: {
       title: { type: String },
       description: { type: String },
@@ -143,6 +164,14 @@ const EducationContentSchema = new Schema<IEducationContentDoc>(
           kind: { type: String, enum: EDUCATION_CONTENT_KINDS, required: true },
           accessMode: { type: String, enum: EDUCATION_ACCESS_MODES },
           visibility: { type: String, enum: EDUCATION_CONTENT_VISIBILITIES },
+          hero: {
+            subtitle: { type: String },
+            image: {
+              src: { type: String },
+              alt: { type: String },
+              focalPoint: { x: { type: Number }, y: { type: Number } },
+            },
+          },
           publicPreview: {
             title: { type: String },
             description: { type: String },

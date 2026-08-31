@@ -1095,3 +1095,88 @@ describe("P — naslovna slika i fokus kadra", () => {
     expect(article?.cover).toEqual({ src: "https://cdn.example.com/seo.jpg" });
   });
 });
+
+describe("R — naslovna sekcija je jedan izvor istine", () => {
+  const heroSection = {
+    subtitle: "Anatomija, proporcije i granica prenaglašenosti",
+    image: {
+      src: "https://cdn.example.com/naslovna.jpg",
+      alt: "Lice",
+      focalPoint: { x: 0.4, y: 0.3 },
+    },
+  };
+
+  async function publishWithHero(over: Record<string, unknown> = {}) {
+    const created = await json<{ item: Item }>(
+      await createContent(
+        request({
+          title: "Estetika lica",
+          slug: `estetika-${Math.random().toString(36).slice(2, 8)}`,
+          kind: "article",
+          accessMode: "public",
+          hero: heroSection,
+          blocks: ALL_TWELVE_BLOCKS.slice(1),
+          ...over,
+        }),
+      ),
+    );
+    const id = String(created.item._id);
+    expect((await publishContent(request(), params(id))).status).toBe(200);
+    return id;
+  }
+
+  it("ista sekcija hrani i karticu i stranu", async () => {
+    const id = await publishWithHero();
+    const record = await readRaw(id);
+    const slug = record.publishedSnapshot!.slug;
+
+    const article = await getPublicEducationContent(TENANT, slug);
+    const [card] = await listPublicEducationContent(TENANT);
+
+    for (const view of [article, card]) {
+      expect(view?.description).toBe(heroSection.subtitle);
+      expect(view?.cover).toEqual({
+        src: heroSection.image.src,
+        focalPoint: heroSection.image.focalPoint,
+      });
+    }
+  });
+
+  it("SEO ostaje rezerva, ne konkurencija", async () => {
+    const id = await publishWithHero({
+      seo: {
+        description: "Drugi opis za pretragu",
+        ogImage: "https://cdn.example.com/og.jpg",
+      },
+    });
+    const slug = (await readRaw(id)).publishedSnapshot!.slug;
+
+    const article = await getPublicEducationContent(TENANT, slug);
+    expect(article?.description).toBe(heroSection.subtitle);
+    expect(article?.cover?.src).toBe(heroSection.image.src);
+  });
+
+  it("zatečeni hero blok se sam preseli u sekciju pri objavi", async () => {
+    // Sadržaj pisan pre naslovne sekcije ne traži migraciju.
+    const created = await json<{ item: Item }>(
+      await createContent(
+        request({
+          title: "Stari članak",
+          slug: "stari-clanak",
+          kind: "article",
+          accessMode: "public",
+          blocks: ALL_TWELVE_BLOCKS,
+        }),
+      ),
+    );
+    const id = String(created.item._id);
+    await publishContent(request(), params(id));
+
+    const snapshot = (await readRaw(id)).publishedSnapshot as unknown as {
+      hero?: { subtitle?: string; image?: { src: string } };
+    };
+
+    expect(snapshot.hero?.subtitle).toBe("Šta stvarno pomaže koži");
+    expect(snapshot.hero?.image?.src).toBe("https://cdn.example.com/hero.jpg");
+  });
+});

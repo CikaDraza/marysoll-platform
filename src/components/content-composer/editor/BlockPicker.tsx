@@ -15,10 +15,21 @@ export const CONTENT_BLOCK_LABELS: Record<LandingBlockType, string> = {
   ImageGalleryBlock: "Galerija slika",
 };
 
-export function BlockPicker({ onPick }: { onPick: (type: LandingBlockType) => void }) {
+export function BlockPicker({
+  onPick,
+  excludeTypes,
+}: {
+  onPick: (type: LandingBlockType) => void;
+  /** Host koji naslovnu sekciju već ima ne nudi hero — vidi Education editor. */
+  excludeTypes?: readonly LandingBlockType[];
+}) {
+  const available = excludeTypes
+    ? landingBlockTypes.filter((type) => !excludeTypes.includes(type))
+    : landingBlockTypes;
+
   return (
     <div className="grid gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 sm:grid-cols-2 dark:border-gray-700 dark:bg-gray-900" aria-label="Izbor tipa bloka">
-      {landingBlockTypes.map((type) => (
+      {available.map((type) => (
         <button
           key={type}
           type="button"

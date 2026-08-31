@@ -25,9 +25,11 @@ interface Props {
   slugOptions?: SlugOption[];
   onChange: (blocks: ContentBlock[]) => void;
   mediaAdapter?: ContentMediaAuthoringAdapter;
+  /** Tipovi koje ovaj host ne nudi — npr. hero tamo gde ga strana već ima. */
+  excludeTypes?: readonly LandingBlockType[];
 }
 
-export function ContentBlocksEditor({ blocks, slugOptions = [], mediaAdapter, onChange }: Props) {
+export function ContentBlocksEditor({ blocks, slugOptions = [], mediaAdapter, excludeTypes, onChange }: Props) {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(blocks[0]?.id ?? null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const effectiveSelectedId =
@@ -122,7 +124,9 @@ export function ContentBlocksEditor({ blocks, slugOptions = [], mediaAdapter, on
         <PlusIcon className="h-4 w-4" /> Dodaj blok
       </button>
 
-      {pickerOpen && <BlockPicker onPick={handleAdd} />}
+      {pickerOpen && (
+        <BlockPicker onPick={handleAdd} excludeTypes={excludeTypes} />
+      )}
     </div>
   );
 }

@@ -67,6 +67,7 @@ interface SnapshotRecord {
     kind: EducationContentKind;
     accessMode?: EducationAccessMode;
     visibility?: EducationContentVisibility;
+    hero?: { subtitle?: string };
     publicPreview?: {
       title?: string;
       description?: string;
@@ -101,10 +102,16 @@ function toSummary(record: SnapshotRecord): PublicEducationSummary {
     kind: snapshot.kind,
     accessMode,
     publishedAt: new Date(snapshot.publishedAt).toISOString(),
+    // Naslovna sekcija je izvor istine — osim za zaključan sadržaj, gde
+    // eksplicitno unet javni pregled ima prednost: on i postoji zato da bi
+    // vlasnica tačno odredila šta javnost vidi.
     description:
-      accessMode === "gated"
-        ? preview?.description || undefined
-        : snapshot.seo?.description || undefined,
+      (accessMode === "gated" ? preview?.description : undefined) ||
+      snapshot.hero?.subtitle ||
+      (accessMode === "gated"
+        ? preview?.description
+        : snapshot.seo?.description) ||
+      undefined,
     // Naslovna slika je izračunata pri objavi i nosi fokus kadra; zatečeni
     // zapisi bez nje padaju na URL iz pregleda/SEO-a, samo bez fokusa.
     cover:
@@ -133,8 +140,8 @@ export async function listPublicEducationContent(
     .select(
       "publishedSnapshot.title publishedSnapshot.slug publishedSnapshot.kind " +
         "publishedSnapshot.accessMode publishedSnapshot.visibility " +
-        "publishedSnapshot.publicPreview publishedSnapshot.cover " +
-        "publishedSnapshot.seo " +
+        "publishedSnapshot.hero publishedSnapshot.publicPreview " +
+        "publishedSnapshot.cover publishedSnapshot.seo " +
         "publishedSnapshot.publishedAt",
     )
     .sort({ "publishedSnapshot.publishedAt": -1 })

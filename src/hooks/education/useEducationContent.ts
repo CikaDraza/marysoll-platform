@@ -22,6 +22,7 @@ export interface EducationContentPayload {
   slug?: string;
   kind: EducationContentSummary["kind"];
   accessMode: EducationContentSummary["accessMode"];
+  hero?: EducationContentRecord["hero"];
   publicPreview?: EducationContentRecord["publicPreview"];
   blocks: ContentBlock[];
   seo?: EducationContentRecord["seo"];
@@ -61,6 +62,7 @@ export function normalizeEducationContentRecord(
     slug: String(raw.slug ?? ""),
     kind: raw.kind as EducationContentSummary["kind"],
     accessMode: resolveAccessMode(raw),
+    hero: (raw.hero as EducationContentRecord["hero"]) ?? undefined,
     publicPreview:
       (raw.publicPreview as EducationContentRecord["publicPreview"]) ?? undefined,
     status: raw.status as EducationContentSummary["status"],

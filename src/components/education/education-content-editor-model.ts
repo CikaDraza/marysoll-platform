@@ -7,6 +7,7 @@ import {
   type EducationContentRecord,
   type EducationContentSeo,
   type EducationContentSummary,
+  type EducationHero,
   type EducationPublicPreview,
 } from "@/lib/education/content-document";
 import { isPubliclyDiscoverable } from "@/types/education-content";
@@ -18,6 +19,8 @@ export interface EducationEditorState {
   slugTouched: boolean;
   kind: EducationContentSummary["kind"];
   accessMode: EducationContentSummary["accessMode"];
+  /** Naslovna sekcija — jedan izvor za karticu i za zaglavlje strane. */
+  hero: EducationHero;
   publicPreview: EducationPublicPreview;
   blocks: ContentBlock[];
   seo: EducationContentSeo;
@@ -30,6 +33,7 @@ export function emptyEducationEditorState(): EducationEditorState {
     slugTouched: false,
     kind: "article",
     accessMode: "public",
+    hero: {},
     publicPreview: {},
     blocks: [],
     seo: {},
@@ -45,6 +49,7 @@ export function editorStateFromRecord(
     slugTouched: true,
     kind: record.kind,
     accessMode: record.accessMode,
+    hero: record.hero ?? {},
     publicPreview: record.publicPreview ?? {},
     blocks: record.blocks,
     seo: record.seo ?? {},
@@ -71,6 +76,7 @@ export function isEducationEditorDirty(
     normalizeEducationSlug(state.slug) !== normalizeEducationSlug(baseline.slug) ||
     state.kind !== baseline.kind ||
     state.accessMode !== baseline.accessMode ||
+    JSON.stringify(state.hero) !== JSON.stringify(baseline.hero) ||
     JSON.stringify(state.publicPreview) !==
       JSON.stringify(baseline.publicPreview) ||
     JSON.stringify(state.seo) !== JSON.stringify(baseline.seo) ||
@@ -84,6 +90,7 @@ export function createPayload(state: EducationEditorState) {
     slug: previewSlug(state) || undefined,
     kind: state.kind,
     accessMode: state.accessMode,
+    hero: state.hero,
     publicPreview: state.accessMode === "gated" ? state.publicPreview : undefined,
     blocks: state.blocks,
     seo: state.seo,
@@ -109,6 +116,9 @@ export function updatePayload(
   if (state.kind !== baseline.kind) payload.kind = state.kind;
   if (state.accessMode !== baseline.accessMode) {
     payload.accessMode = state.accessMode;
+  }
+  if (JSON.stringify(state.hero) !== JSON.stringify(baseline.hero)) {
+    payload.hero = state.hero;
   }
   if (
     JSON.stringify(state.publicPreview) !==

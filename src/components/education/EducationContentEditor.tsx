@@ -6,7 +6,10 @@ import { useRouter } from "next/navigation";
 import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/react";
 import toast from "react-hot-toast";
 import { ContentBlocksEditor } from "@/components/content-composer/editor/ContentBlocksEditor";
-import { AssetMediaField } from "@/components/content-composer/editor/MediaFields";
+import {
+  AssetMediaField,
+  ImageMediaField,
+} from "@/components/content-composer/editor/MediaFields";
 import { PreviewRenderer } from "@/components/content-composer/PreviewRenderer";
 import { useContentMediaAuthoring } from "@/hooks/useContentMediaAuthoring";
 import { getContentMutationErrorMessage } from "@/lib/content/validation/contentValidationClient";
@@ -498,6 +501,51 @@ export default function EducationContentEditor({ record }: Props) {
           </select>
         </label>
 
+        <fieldset className="sm:col-span-2 rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
+          <legend className="px-1 text-sm font-semibold text-gray-700 dark:text-gray-200">
+            Naslovna sekcija
+          </legend>
+          <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+            Ovo se prikazuje i na kartici u listi i na vrhu strane. Naslov je
+            gore; ovde idu podnaslov i naslovna slika.
+          </p>
+          <div className="grid gap-3">
+            <textarea
+              value={state.hero.subtitle ?? ""}
+              onChange={(event) =>
+                patch({ hero: { ...state.hero, subtitle: event.target.value } })
+              }
+              rows={2}
+              placeholder="Podnaslov — jedna rečenica o čemu je sadržaj"
+              className={FIELD_CLASS}
+            />
+            <ImageMediaField
+              label="Naslovna slika"
+              adapter={mediaAdapter}
+              aspectHint="16:9"
+              image={
+                state.hero.image
+                  ? { ...state.hero.image, alt: state.hero.image.alt ?? "" }
+                  : undefined
+              }
+              onChange={(image) =>
+                patch({
+                  hero: {
+                    ...state.hero,
+                    image: image?.src
+                      ? {
+                          src: image.src,
+                          alt: image.alt || undefined,
+                          focalPoint: image.focalPoint,
+                        }
+                      : undefined,
+                  },
+                })
+              }
+            />
+          </div>
+        </fieldset>
+
         <fieldset className="sm:col-span-2">
           <legend className="mb-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200">
             Ko može da vidi
@@ -567,7 +615,7 @@ export default function EducationContentEditor({ record }: Props) {
                   })
                 }
                 rows={2}
-                placeholder="Kratak opis koji nagoveštava sadržaj"
+                placeholder={state.hero.subtitle || "Kratak opis koji nagoveštava sadržaj"}
                 className={FIELD_CLASS}
               />
               {/* Isti izbor slike kao u blokovima: galerija, otpremanje ili
@@ -621,7 +669,9 @@ export default function EducationContentEditor({ record }: Props) {
                 patch({ seo: { ...state.seo, description: event.target.value } })
               }
               rows={3}
-              placeholder="Kratak opis za pretragu i deljenje"
+              placeholder={
+                state.hero.subtitle || "Kratak opis za pretragu i deljenje"
+              }
               className={FIELD_CLASS}
             />
             <AssetMediaField
@@ -673,6 +723,9 @@ export default function EducationContentEditor({ record }: Props) {
           <ContentBlocksEditor
             blocks={state.blocks}
             mediaAdapter={mediaAdapter}
+            /* Naslovnu sekciju nosi polje iznad; hero blok bi bio drugi izvor
+               istine i druga naslovna sekcija na strani. */
+            excludeTypes={["HeroBlock"]}
             onChange={(blocks) => patch({ blocks })}
           />
         </section>

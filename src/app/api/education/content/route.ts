@@ -31,7 +31,7 @@ export async function GET(request: Request) {
       // Bez blokova: lista je pregled, ne sadržaj. Stanje objave je ovde jer
       // „Objavljeno · neobjavljene izmene" ne može da se izvede iz root polja.
       .select(
-        "title slug kind accessMode visibility status updatedAt workingSavedAt " +
+        "title slug kind accessMode visibility hero status updatedAt workingSavedAt " +
           "publishedSnapshot.accessMode publishedSnapshot.visibility " +
           "publishedSnapshot.publishedAt",
       )
@@ -80,6 +80,7 @@ export async function POST(request: Request) {
       slug,
       kind: metadata.data.kind,
       accessMode: metadata.data.accessMode,
+      hero: metadata.data.hero,
       publicPreview: metadata.data.publicPreview,
       status: "draft",
       // Persist tačno one blokove koje je validator prihvatio, bez tihog

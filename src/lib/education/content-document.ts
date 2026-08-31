@@ -61,6 +61,7 @@ export interface EducationContentSummary {
 
 export interface EducationContentRecord extends EducationContentSummary {
   blocks: ContentBlock[];
+  hero?: EducationHero;
   publicPreview?: EducationPublicPreview;
   seo?: EducationContentSeo;
   /**
@@ -81,6 +82,28 @@ export interface EducationPublishedSnapshotMeta {
   publicPreview?: EducationPublicPreview;
   seo?: EducationContentSeo;
   publishedAt: string;
+}
+
+/**
+ * NASLOVNA SEKCIJA — jedan izvor istine.
+ *
+ * Isti podatak je do sada mogao doći sa tri mesta: hero blok u telu, SEO polja
+ * i javni pregled. Zato su se naslovne sekcije duplirale i razilazile.
+ *
+ * Sada postoji jedna sekcija koja hrani i karticu u listi i zaglavlje strane.
+ * Naslov namerno NIJE deo nje: on je `EducationContent.title`, isti u listi, u
+ * linku i u SEO-u — drugi naslov bi bio drugi izvor istine.
+ *
+ * SEO i javni pregled od nje uzimaju podrazumevane vrednosti; popunjavaju se
+ * samo kada za pretragu ili za zaključan teaser treba nešto drugo.
+ */
+export interface EducationHero {
+  subtitle?: string;
+  image?: {
+    src: string;
+    alt?: string;
+    focalPoint?: { x: number; y: number };
+  };
 }
 
 /** Namerno javni metapodaci zaključanog sadržaja. */
@@ -108,11 +131,25 @@ const publicPreviewSchema = z.object({
   coverImage: z.string().trim().max(2048).optional(),
 });
 
+const heroSchema = z.object({
+  subtitle: z.string().trim().max(500).optional(),
+  image: z
+    .object({
+      src: z.string().trim().max(2048),
+      alt: z.string().trim().max(200).optional(),
+      focalPoint: z
+        .object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) })
+        .optional(),
+    })
+    .optional(),
+});
+
 const metadataSchema = z.object({
   title: z.string().trim().min(1, "Naslov je obavezan").max(200),
   slug: z.string().trim().max(200).optional(),
   kind: z.enum(EDUCATION_CONTENT_KINDS),
   accessMode: z.enum(EDUCATION_ACCESS_MODES),
+  hero: heroSchema.optional(),
   publicPreview: publicPreviewSchema.optional(),
   seo: seoSchema.optional(),
 });
@@ -325,17 +362,56 @@ export function nextPublishedSlugHistory(params: {
  * kartice morale da učitaju ceo sadržaj samo da bi znale koju sliku i koji
  * kadar da prikažu.
  */
+/**
+ * Naslovna sekcija za objavu: eksplicitna ako postoji, inače izvedena iz
+ * zatečenog hero bloka. Sadržaj pisan pre ove sekcije se tako sam preseli pri
+ * prvoj sledećoj objavi, bez migracije.
+ */
+export function resolvePublishedHero(working: {
+  hero?: EducationHero | null;
+  blocks: unknown;
+}): EducationHero | undefined {
+  if (working.hero?.subtitle || working.hero?.image?.src) return working.hero;
+
+  const blocks = Array.isArray(working.blocks) ? working.blocks : [];
+  const legacy = blocks.find(
+    (block) => (block as { type?: string })?.type === "HeroBlock",
+  ) as
+    | {
+        subtitle?: string;
+        images?: { src?: string; alt?: string; focalPoint?: { x: number; y: number } }[];
+      }
+    | undefined;
+
+  if (!legacy) return undefined;
+
+  const image = legacy.images?.[0];
+  return {
+    subtitle: legacy.subtitle,
+    image: image?.src
+      ? { src: image.src, alt: image.alt, focalPoint: image.focalPoint }
+      : undefined,
+  };
+}
+
 export function resolvePublishedCover(working: {
+  accessMode?: unknown;
+  hero?: EducationHero | null;
   publicPreview?: EducationPublicPreview | null;
   seo?: EducationContentSeo | null;
   blocks: unknown;
 }): { src: string; focalPoint?: { x: number; y: number } } | undefined {
-  const blocks = Array.isArray(working.blocks) ? working.blocks : [];
-  const hero = blocks.find(
-    (block) => (block as { type?: string })?.type === "HeroBlock",
-  ) as { images?: { src?: string; focalPoint?: { x: number; y: number } }[] } | undefined;
+  // Kod zaključanog sadržaja javni pregled je jedino što javnost sme da vidi,
+  // pa eksplicitno unet pregled pobeđuje naslovnu sekciju. Svuda drugde je
+  // naslovna sekcija izvor istine.
+  if (
+    resolveAccessMode(working) === "gated" &&
+    working.publicPreview?.coverImage
+  ) {
+    return { src: working.publicPreview.coverImage };
+  }
 
-  const heroImage = hero?.images?.[0];
+  const heroImage = resolvePublishedHero(working)?.image;
   if (heroImage?.src) {
     return { src: heroImage.src, focalPoint: heroImage.focalPoint };
   }
@@ -352,6 +428,7 @@ export function buildPublishedSnapshot(
     kind: EducationContentKind;
     accessMode?: unknown;
     visibility?: unknown;
+    hero?: EducationHero | null;
     publicPreview?: EducationPublicPreview | null;
     blocks: unknown;
     seo?: EducationContentSeo | null;
@@ -359,8 +436,10 @@ export function buildPublishedSnapshot(
   publishedAt: Date,
 ) {
   const accessMode = resolveAccessMode(working);
+  const hero = resolvePublishedHero(working);
   return {
     title: working.title,
+    hero,
     cover: resolvePublishedCover(working),
     slug: working.slug,
     kind: working.kind,

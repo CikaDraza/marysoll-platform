@@ -49,7 +49,7 @@ export async function POST(
       tenantId: authority.tenantId,
     })
       .select(
-        "title slug kind accessMode visibility publicPreview blocks seo " +
+        "title slug kind accessMode visibility hero publicPreview blocks seo " +
           "publishedSnapshot.slug publishedSnapshot.accessMode " +
           "publishedSnapshot.visibility publishedSlugHistory",
       )
