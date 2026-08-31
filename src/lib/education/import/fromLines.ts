@@ -8,6 +8,7 @@ import { cleanText, type DocumentOutline, type OutlineNode } from "./outline";
  * malo signala što ostane:
  *
  *   „3. Naslov"       numerisan naslov sekcije
+ *   „TIP KOŽE"        verzalni naslov sekcije — drugi njen obrazac
  *   „…nešto:"         najava nabrajanja — ono što sledi su stavke
  *   red bez tačke     nastavak prelomljenog pasusa
  *   „STRUČNA OGRADA"  poseban blok do kraja dokumenta
@@ -15,7 +16,11 @@ import { cleanText, type DocumentOutline, type OutlineNode } from "./outline";
  * Rezultat je NAMERNO draft: pogađanje sme da promaši, pa vlasnica pregleda i
  * ispravlja. Iz istog razloga uvoz nikada ne objavljuje.
  */
-const HEADING = /^\d+\.\s+\S/;
+const NUMBERED_HEADING = /^\d+\.\s+\S/;
+/** Verzalni naslov je kratak; ceo pasus verzalom nije naslov. */
+const MAX_HEADING_LENGTH = 60;
+/** Metak bez teksta ostane kao siroče kada je stavka nacrtana, ne napisana. */
+const ORPHAN_MARKER = /^[•▪◦·\-–—*]+$/;
 const CALLOUT_TITLE = /^(STRU[ČC]NA OGRADA|VAŽNO|NAPOMENA)\s*$/i;
 /** Stavke nabrajanja se prepoznaju po najavi dve tačke u prethodnom redu. */
 const LIST_INTRO = /:\s*$/;
@@ -42,11 +47,23 @@ function isFrontMatterLabel(line: string): boolean {
   return line.length <= 80 && !/[.!?]\s*$/.test(line);
 }
 
+/**
+ * Naslov sekcije — dva obrasca koja se javljaju u stvarnim materijalima:
+ * numerisan („3. Uvod") i verzalni („TIP KOŽE").
+ */
+function isHeadingLine(line: string): boolean {
+  if (NUMBERED_HEADING.test(line)) return true;
+  return isTitleCase(line) && line.length <= MAX_HEADING_LENGTH;
+}
+
 export function outlineFromLines(raw: string): DocumentOutline {
   const lines = raw
     .split("\n")
     .map(cleanText)
-    .filter((line) => line.length > 0 && !/^\d+$/.test(line));
+    .filter(
+      (line) =>
+        line.length > 0 && !/^\d+$/.test(line) && !ORPHAN_MARKER.test(line),
+    );
 
   const counts = new Map<string, number>();
   for (const line of lines) counts.set(line, (counts.get(line) ?? 0) + 1);
@@ -60,7 +77,7 @@ export function outlineFromLines(raw: string): DocumentOutline {
   while (
     cursor < body.length &&
     (cursor === 0 || isTitleCase(body[cursor])) &&
-    !HEADING.test(body[cursor])
+    !NUMBERED_HEADING.test(body[cursor])
   ) {
     titleLines.push(body[cursor]);
     cursor += 1;
@@ -70,14 +87,18 @@ export function outlineFromLines(raw: string): DocumentOutline {
 
   const subtitle =
     body[cursor] &&
-    !HEADING.test(body[cursor]) &&
+    !isHeadingLine(body[cursor]) &&
     !CALLOUT_TITLE.test(body[cursor])
       ? body[cursor]
       : undefined;
   if (subtitle) cursor += 1;
 
   // Ostatak naslovne strane pre prve sekcije su oznake, ne tekst.
-  const firstHeading = body.findIndex((line) => HEADING.test(line));
+  // Traži se TEK posle naslova: i sam naslov je verzalan, pa bi inače on bio
+  // „prva sekcija" i oznake sa naslovne strane ne bi bile odbačene.
+  const firstHeading = body.findIndex(
+    (line, position) => position >= cursor && isHeadingLine(line),
+  );
   while (
     firstHeading > cursor &&
     cursor < firstHeading &&
@@ -111,7 +132,7 @@ export function outlineFromLines(raw: string): DocumentOutline {
       break;
     }
 
-    if (HEADING.test(line)) {
+    if (isHeadingLine(line)) {
       nodes.push({ kind: "heading", text: line.replace(/^\d+\.\s+/, "") });
       expectingList = false;
       index += 1;

@@ -13,7 +13,6 @@ import {
 import { PreviewRenderer } from "@/components/content-composer/PreviewRenderer";
 import { useContentMediaAuthoring } from "@/hooks/useContentMediaAuthoring";
 import { getContentMutationErrorMessage } from "@/lib/content/validation/contentValidationClient";
-import { api } from "@/lib/api";
 import { saveEducationDraftOnExit } from "@/lib/education/exitSave";
 import { educationPresetBlocks } from "@/lib/education/contentPresets";
 import EducationClientAccess from "./EducationClientAccess";
@@ -86,7 +85,7 @@ const FIELD_CLASS =
 export default function EducationContentEditor({ record }: Props) {
   const router = useRouter();
   const mediaAdapter = useContentMediaAuthoring();
-  const { tenantId } = useAuth();
+  const { tenantId, token } = useAuth();
 
   const [baseline, setBaseline] = useState<EducationEditorState | null>(
     record ? editorStateFromRecord(record) : null,
@@ -239,7 +238,17 @@ export default function EducationContentEditor({ record }: Props) {
     try {
       const body = new FormData();
       body.append("file", file);
-      const { data } = await api.post<ImportResponse>("/education/import", body);
+
+      // Ne kroz `api`: taj instance nosi `Content-Type: application/json`, pa
+      // telo nikada ne postane multipart i granica se ne postavi. Isti razlog
+      // zbog koga i upload slika ide direktnim `fetch`-om.
+      const response = await fetch("/api/education/import", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body,
+      });
+      const data = (await response.json()) as ImportResponse & { error?: string };
+      if (!response.ok) throw new Error(data.error || "Uvoz nije uspeo");
 
       patch({
         title: state.title.trim() || data.draft.title,
