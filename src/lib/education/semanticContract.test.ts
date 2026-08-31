@@ -208,6 +208,22 @@ describe("hero blok se ne prikazuje dvaput", () => {
     expect(presentation.cover?.src).toBe("https://cdn.example.com/og.jpg");
   });
 
+  it("obe strane koje prikazuju sadržaj koriste isto pravilo", () => {
+    // Javni članak i zaštićeni čitač u „Mom Prostoru" imaju svoje zaglavlje.
+    // Ako jedan zaboravi da upije hero, naslovna sekcija se pojavi dvaput —
+    // greška koja se ne vidi u tipovima nego tek na strani.
+    for (const file of [
+      "components/tenant/EducationArticleView.tsx",
+      "app/tenant/panel/moj-prostor/sadrzaji/[id]/page.tsx",
+    ]) {
+      const source = read(file);
+
+      expect(source).toContain("resolveArticlePresentation");
+      // Telo se renderuje iz razrešenih blokova, ne iz sirovog zapisa.
+      expect(source).not.toMatch(/BlockList\s+blocks=\{article\.blocks\}/);
+    }
+  });
+
   it("sadržaj bez hero bloka prolazi netaknut", () => {
     const presentation = resolveArticlePresentation({ blocks: body });
 

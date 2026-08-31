@@ -8,7 +8,12 @@ import { ContentImage } from "@/components/content-composer/blocks/ContentImage"
 import { verifyToken } from "@/lib/auth/auth-server";
 import { EDUCATION_KIND_LABELS } from "@/lib/education/content-document";
 import { readAssignedEducationContent } from "@/lib/education/entitlement";
-import { formatPublishedDate } from "@/lib/education/presentation";
+import {
+  formatPublishedDate,
+  formatReadingTime,
+  readingTimeMinutes,
+  resolveArticlePresentation,
+} from "@/lib/education/presentation";
 
 /** Lični prostor se nikada ne indeksira. */
 export const metadata: Metadata = {
@@ -53,6 +58,11 @@ export default async function AssignedEducationContentPage({ params }: Props) {
   // Nepostojeće, tuđe, nedodeljeno i povučeno izgledaju isto — bez orakla.
   if (!article) notFound();
 
+  // Isto pravilo kao na javnoj strani: naslovnu sekciju nosi zaglavlje, a hero
+  // blok se upija u njega umesto da se prikaže drugi put.
+  const { description, cover, blocks } = resolveArticlePresentation(article);
+  const readingTime = formatReadingTime(readingTimeMinutes(blocks));
+
   return (
     <ClientPanelChrome activeTab="Moj Prostor">
       <div className="mx-auto w-full max-w-[860px]">
@@ -90,7 +100,7 @@ export default async function AssignedEducationContentPage({ params }: Props) {
       )}
 
         <article className="edu-prose mt-10 space-y-10">
-          <BlockList blocks={article.blocks} headingScope="section" />
+          <BlockList blocks={blocks} headingScope="section" />
       </article>
       </div>
     </ClientPanelChrome>
