@@ -67,7 +67,7 @@ export function BlockCard({
 
   return (
     <section
-      className={`rounded-lg border p-3 ${
+      className={`relative rounded-lg border p-3 ${
         selected
           ? "border-gray-400 ring-1 ring-gray-300 dark:border-gray-500 dark:ring-gray-700"
           : "border-gray-200 dark:border-gray-700"
@@ -89,10 +89,16 @@ export function BlockCard({
               {blockSummary(block)}
             </span>
           </span>
-          <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-bold uppercase ${STATUS_CLASS[status]}`}>
-            {STATUS_LABEL[status]}
-          </span>
         </button>
+
+        {/* Na uskom ekranu naslov, značka i pet ikona ne staju u jedan red, pa
+            je naslov ostajao ispod značke. Značka se zato podiže iznad kartice
+            i lako prelazi njenu ivicu; od `sm` naviše vraća se u red. */}
+        <span
+          className={`absolute -top-2 left-3 z-10 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase shadow-sm sm:static sm:z-auto sm:py-1 sm:shadow-none ${STATUS_CLASS[status]}`}
+        >
+          {STATUS_LABEL[status]}
+        </span>
 
         <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
           <button type="button" onClick={() => onMove(-1)} disabled={first} className="rounded p-1 hover:bg-gray-100 disabled:opacity-30 dark:hover:bg-gray-800" aria-label="Pomeri gore">
