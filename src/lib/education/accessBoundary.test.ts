@@ -80,6 +80,19 @@ describe("javna ruta nikada ne služi zaštićeno telo", () => {
     expect(api).not.toContain("readAssignedEducationContent");
   });
 
+  it("sitemap i metapodaci ne mogu izneti privatan sadržaj", () => {
+    // Oba koriste isti javni upit, pa `private` ne može da procuri ni u
+    // sitemap, ni u OG karticu, ni u kanonsku adresu.
+    const sitemap = read("src/app/sitemap.ts");
+
+    expect(sitemap).toContain("listPublicEducationContent");
+    expect(sitemap).not.toContain("EducationContent.find");
+
+    const seo = read("src/lib/education/seo.ts");
+    expect(seo).not.toContain("blocks");
+    expect(seo).toContain("alternates: { canonical: url }");
+  });
+
   it("pristup se ne čuva u samom sadržaju nego kao zaseban odnos", () => {
     const model = read("src/models/EducationContent.ts");
 

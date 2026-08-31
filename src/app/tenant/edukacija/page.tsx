@@ -9,11 +9,29 @@ import {
 } from "@/lib/education/publicContent";
 import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
 import { educationAuthorFromSalon } from "@/lib/education/presentation";
+import {
+  getPublicSiteContext,
+  tenantPageMetadata,
+} from "@/lib/seo/public-site";
 
-export const metadata: Metadata = {
-  title: "Edukacija",
-  description: "Stručni tekstovi, saveti i materijali.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const headerStore = await headers();
+  const tenantSlug = headerStore.get("x-tenant-slug") ?? "";
+  const profile = await fetchPublicSalonProfile(tenantSlug);
+
+  return tenantPageMetadata(
+    profile,
+    getPublicSiteContext({
+      domainType: headerStore.get("x-domain-type") ?? "marketing",
+      tenantSlug,
+      tenantCustomDomain: headerStore.get("x-tenant-custom-domain") ?? "",
+      publicHost: headerStore.get("x-public-host") ?? "",
+    }),
+    "/edukacija",
+    profile?.name ? `Edukacija · ${profile.name}` : "Edukacija",
+    profile?.shortDescription || "Stručni tekstovi, vodiči i materijali.",
+  );
+}
 
 export default async function TenantEducationPage() {
   const headerStore = await headers();

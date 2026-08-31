@@ -10,6 +10,8 @@ import {
   getPublicEducationContent,
   resolvePublicEducationRoute,
 } from "@/lib/education/publicContent";
+import { educationArticleMetadata } from "@/lib/education/seo";
+import { getPublicSiteContext } from "@/lib/seo/public-site";
 
 interface Props {
   params: Promise<{ slug: string[] }>;
@@ -25,18 +27,23 @@ async function loadArticle(params: Props["params"]) {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const article = await loadArticle(params);
+  const [article, headerStore] = await Promise.all([
+    loadArticle(params),
+    headers(),
+  ]);
   if (!article) return { title: "Edukacija" };
 
-  return {
-    title: article.seo?.title || article.title,
-    description: article.seo?.description || article.description,
-    openGraph: {
-      title: article.seo?.title || article.title,
-      description: article.seo?.description || article.description,
-      images: article.seo?.ogImage ? [article.seo.ogImage] : [],
-    },
-  };
+  const tenantSlug = headerStore.get("x-tenant-slug") ?? "";
+  return educationArticleMetadata({
+    profile: await fetchPublicSalonProfile(tenantSlug),
+    context: getPublicSiteContext({
+      domainType: headerStore.get("x-domain-type") ?? "marketing",
+      tenantSlug,
+      tenantCustomDomain: headerStore.get("x-tenant-custom-domain") ?? "",
+      publicHost: headerStore.get("x-public-host") ?? "",
+    }),
+    article,
+  });
 }
 
 export default async function TenantEducationArticlePage({ params }: Props) {
