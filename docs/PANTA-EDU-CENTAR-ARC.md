@@ -902,6 +902,15 @@ se ne dodaje bez signala iz pilota.
 - **Uvoz iz PDF-a je približan.** Metak nabrajanja u PDF-u je crtež, ne znak,
   pa se liste pogađaju po najavi dve tačke. DOCX se čita verno. Zato uvoz uvek
   otvara draft za pregled.
+- **DOCX se čita onoliko koliko je dokument pripremljen.** Verno se čita samo
+  ono što je u Word-u zaista označeno kao naslov ili lista. Dokument u kome je
+  „naslov" samo krupniji podebljan pasus — tipično posle konverzije iz PDF-a —
+  stiže kao jedan neprekinut tekst, i to nije greška uvoza nego izvora. Ovo
+  vredi reći autoru pre nego što pošalje materijal: uređen dokument štedi mu
+  najviše vremena.
+- **Podebljano, kurziv i linkovi unutar pasusa se gube.** Blokovi čuvaju čist
+  tekst, pa se oblikovanje unutar rečenice ne prenosi. Ako materijal nosi važne
+  linkove, dodaju se ručno posle uvoza.
 - **Fokus kadra i naslovna slika na kartici** postoje od prve sledeće objave;
   zatečeni zapisi ih dobijaju kad se ponovo objave.
 - **`accessMode` backfill nije primenjen** — čitanje radi i bez njega
