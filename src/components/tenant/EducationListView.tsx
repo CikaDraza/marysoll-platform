@@ -51,7 +51,7 @@ export function EducationListView({ items, basePath, author, intro }: Props) {
 
   return (
     <div className="bg-ee-canvas">
-      <div className="mx-auto w-full max-w-[1140px] px-5 py-14 sm:py-20">
+      <div className="mx-auto w-full max-w-[1240px] px-5 py-14 md:px-8 sm:py-20 lg:px-14">
         <header className="max-w-[46ch]">
           <h1 className="font-newsreader text-ee-accent text-[clamp(34px,4.6vw,58px)] leading-[1.04] tracking-[-0.024em]">
             Edukacija

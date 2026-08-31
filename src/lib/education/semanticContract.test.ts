@@ -34,6 +34,38 @@ describe("semantički ugovor javne Education strane", () => {
     expect(view).toContain('headingScope="section"');
   });
 
+  it("telo članka i lista dele kontejner sa theme-9 header-om", () => {
+    // Bez ovoga sadržaj ne stoji u istoj liniji sa navigacijom iznad njega.
+    const header = read("components/themes/theme-9/Header.tsx");
+    expect(header).toContain("max-w-[1240px]");
+
+    for (const file of [
+      "components/tenant/EducationArticleView.tsx",
+      "components/tenant/EducationListView.tsx",
+    ]) {
+      expect(read(file)).toContain("max-w-[1240px]");
+    }
+  });
+
+  it("telo članka nosi tipografiju teme, ne neutralnu iz blokova", () => {
+    // Blokovi su deljeni sa newsletterom, pa se stil daje omotačem umesto
+    // račvanjem dvanaest blokova po temi.
+    expect(read("components/tenant/EducationArticleView.tsx")).toContain(
+      "edu-prose",
+    );
+
+    // Komentari se skidaju: objašnjenje pravila pominje `!important` upravo
+    // zato što se ne koristi.
+    const css = read("app/globals.css").replace(/\/\*[\s\S]*?\*\//g, "");
+    const eduProse = css.slice(css.indexOf(".edu-prose"));
+
+    expect(eduProse).toContain("--font-newsreader");
+    expect(eduProse).toContain("--color-ee-accent");
+    // Selektor tipa `.edu-prose h2` je specifičniji od utility klase, pa
+    // nadjačava blok bez `!important`. Ako se ovo pojavi, pravilo je pukло.
+    expect(eduProse).not.toContain("!important");
+  });
+
   it("koristi prave elemente umesto div-ova", () => {
     const view = read("components/tenant/EducationArticleView.tsx");
 
@@ -133,23 +165,33 @@ describe("hero blok se ne prikazuje dvaput", () => {
     expect(blocks).toHaveLength(body.length);
   });
 
-  it("njegova slika i podnaslov popunjavaju prazno zaglavlje", () => {
+  it("njegov podnaslov i slika postaju zaglavlje", () => {
     const presentation = resolveArticlePresentation({ blocks: [hero, ...body] });
 
-    // Sadržaj pisan pre ovog pravila ne sme ništa da izgubi.
     expect(presentation.description).toBe(hero.subtitle);
     expect(presentation.coverImage).toBe(hero.images[0].src);
   });
 
-  it("ne pregazi ono što zaglavlje već ima", () => {
+  it("hero ima prednost nad SEO poljima, jer je pisan za čitaoca", () => {
     const presentation = resolveArticlePresentation({
-      description: "Svoj opis",
-      coverImage: "https://cdn.example.com/svoja.jpg",
+      description: "SEO opis za pretragu",
+      coverImage: "https://cdn.example.com/og.jpg",
       blocks: [hero, ...body],
     });
 
-    expect(presentation.description).toBe("Svoj opis");
-    expect(presentation.coverImage).toBe("https://cdn.example.com/svoja.jpg");
+    expect(presentation.description).toBe(hero.subtitle);
+    expect(presentation.coverImage).toBe(hero.images[0].src);
+  });
+
+  it("bez hero bloka zaglavlje pada na SEO", () => {
+    const presentation = resolveArticlePresentation({
+      description: "SEO opis za pretragu",
+      coverImage: "https://cdn.example.com/og.jpg",
+      blocks: body,
+    });
+
+    expect(presentation.description).toBe("SEO opis za pretragu");
+    expect(presentation.coverImage).toBe("https://cdn.example.com/og.jpg");
   });
 
   it("sadržaj bez hero bloka prolazi netaknut", () => {

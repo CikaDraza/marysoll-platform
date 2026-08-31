@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/react";
 import toast from "react-hot-toast";
 import { ContentBlocksEditor } from "@/components/content-composer/editor/ContentBlocksEditor";
+import { AssetMediaField } from "@/components/content-composer/editor/MediaFields";
 import { PreviewRenderer } from "@/components/content-composer/PreviewRenderer";
 import { useContentMediaAuthoring } from "@/hooks/useContentMediaAuthoring";
 import { getContentMutationErrorMessage } from "@/lib/content/validation/contentValidationClient";
@@ -568,18 +569,25 @@ export default function EducationContentEditor({ record }: Props) {
                 placeholder="Kratak opis koji nagoveštava sadržaj"
                 className={FIELD_CLASS}
               />
-              <input
-                value={state.publicPreview.coverImage ?? ""}
-                onChange={(event) =>
+              {/* Isti izbor slike kao u blokovima: galerija, otpremanje ili
+                  adresa — umesto ručnog kopiranja URL-a. */}
+              <AssetMediaField
+                kind="image"
+                label="Naslovna slika"
+                adapter={mediaAdapter}
+                asset={
+                  state.publicPreview.coverImage
+                    ? { src: state.publicPreview.coverImage }
+                    : undefined
+                }
+                onChange={(asset) =>
                   patch({
                     publicPreview: {
                       ...state.publicPreview,
-                      coverImage: event.target.value,
+                      coverImage: asset?.src,
                     },
                   })
                 }
-                placeholder="Adresa naslovne slike"
-                className={FIELD_CLASS}
               />
             </div>
           </fieldset>
@@ -615,13 +623,14 @@ export default function EducationContentEditor({ record }: Props) {
               placeholder="Kratak opis za pretragu i deljenje"
               className={FIELD_CLASS}
             />
-            <input
-              value={state.seo.ogImage ?? ""}
-              onChange={(event) =>
-                patch({ seo: { ...state.seo, ogImage: event.target.value } })
+            <AssetMediaField
+              kind="image"
+              label="Slika za deljenje"
+              adapter={mediaAdapter}
+              asset={state.seo.ogImage ? { src: state.seo.ogImage } : undefined}
+              onChange={(asset) =>
+                patch({ seo: { ...state.seo, ogImage: asset?.src } })
               }
-              placeholder="Adresa slike za deljenje"
-              className={FIELD_CLASS}
             />
           </DisclosurePanel>
         </Disclosure>

@@ -40,7 +40,8 @@ export function EducationArticleView({ article, basePath, author, children }: Pr
 
   return (
     <div className="bg-ee-canvas">
-      <div className="mx-auto w-full max-w-[760px] px-5 py-14 sm:py-20">
+      {/* Isti kontejner kao theme-9 header, da članak stoji u istoj liniji. */}
+      <div className="mx-auto w-full max-w-[1240px] px-5 py-14 md:px-8 sm:py-20 lg:px-14">
         <EducationBreadcrumb basePath={basePath} current={article.title} />
 
         <header className="mt-8">
@@ -48,7 +49,7 @@ export function EducationArticleView({ article, basePath, author, children }: Pr
             {EDUCATION_KIND_LABELS[article.kind] ?? "Edukacija"}
           </p>
 
-          <h1 className="font-newsreader text-ee-accent mt-3 text-[clamp(32px,4.4vw,54px)] leading-[1.06] tracking-[-0.022em]">
+          <h1 className="font-newsreader text-ee-accent mt-3 max-w-[20ch] text-[clamp(32px,4.4vw,54px)] leading-[1.06] tracking-[-0.022em]">
             {article.title}
           </h1>
 
@@ -86,7 +87,7 @@ export function EducationArticleView({ article, basePath, author, children }: Pr
         )}
 
         {children ?? (
-          <article className="mt-12 space-y-10">
+          <article className="edu-prose mt-12 space-y-12">
             {/* Strana već nosi `h1`, pa blokovi počinju od `h2`. */}
             <BlockList blocks={blocks} headingScope="section" />
           </article>

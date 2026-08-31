@@ -41,9 +41,15 @@ export function formatPublishedDate(value: string): string {
  * podnaslov, datum i naslovna slika. Hero blok u telu je zato duplikat: isti
  * naslov drugi put, u drugom kadru i drugoj tipografiji.
  *
- * Ne briše se nego se upija: njegova slika i podnaslov popunjavaju zaglavlje
- * kada ono nema svoje. Tako sadržaj pisan pre ovog pravila i dalje prikazuje
- * sve što je autor uneo, samo na jednom mestu.
+ * Ne briše se nego se upija: njegov podnaslov i slika POSTAJU zaglavlje.
+ *
+ * Hero ima prednost nad SEO poljima namerno. SEO opis i OG slika su napisani
+ * za pretragu i deljenje; hero je ono što je autor napisao za čitaoca i sme da
+ * se razlikuje. Kada hero ne postoji, zaglavlje pada na SEO.
+ *
+ * Naslov je izuzetak i uvek dolazi iz `EducationContent.title`: on je identitet
+ * dokumenta — isti u listi, breadcrumb-u i deljenom linku — pa ne sme da zavisi
+ * od toga da li u telu postoji blok.
  */
 export function resolveArticlePresentation(article: {
   description?: string;
@@ -57,8 +63,8 @@ export function resolveArticlePresentation(article: {
   const hero = article.blocks.find((block) => block.type === "HeroBlock");
 
   return {
-    description: article.description || hero?.subtitle || undefined,
-    coverImage: article.coverImage || hero?.images?.[0]?.src || undefined,
+    description: hero?.subtitle || article.description || undefined,
+    coverImage: hero?.images?.[0]?.src || article.coverImage || undefined,
     blocks: article.blocks.filter((block) => block.type !== "HeroBlock"),
   };
 }
