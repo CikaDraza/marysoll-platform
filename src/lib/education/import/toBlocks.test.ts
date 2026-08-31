@@ -152,6 +152,26 @@ describe("čitanje DOCX strukture", () => {
     "<ul><li>prva</li><li>druga</li></ul>",
   ].join("");
 
+  it("pun pasus na vrhu nije podnaslov nego sadržaj", () => {
+    // Dve rečenice su već pasus, ma koliko bile kratke.
+    const outline = outlineFromHtml(
+      "<h1>Naslov</h1><p>Prva rečenica. Druga rečenica.</p><h2>Sekcija</h2>",
+    );
+
+    expect(outline.subtitle).toBeUndefined();
+    expect(outline.nodes[0]).toMatchObject({ kind: "paragraph" });
+  });
+
+  it("inline oznake ne ostavljaju razmak pred interpunkcijom", () => {
+    const outline = outlineFromHtml(
+      "<h1>Naslov</h1><h2>S</h2><p>Reč <em>zavisnost</em>, pa dalje.</p>",
+    );
+
+    expect(outline.nodes.at(-1)).toMatchObject({
+      text: "Reč zavisnost, pa dalje.",
+    });
+  });
+
   it("čita prave naslove i liste, bez pogađanja", () => {
     const outline = outlineFromHtml(html);
 

@@ -111,6 +111,29 @@ describe("POST /api/education/import", () => {
     expect(section.paragraphs).toContain("prva stavka");
   }, 60_000);
 
+  it("čita njen stvarni DOCX materijal", async () => {
+    const name =
+      "Iza svake zavisnosti postoji priča koja je počela mnogo prije same zavisnosti.docx";
+    const buffer = await readFile(path.join(FIXTURES, name));
+    const file = new File([new Uint8Array(buffer).buffer], name, {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+
+    const payload = await (await POST(upload(file))).json();
+
+    expect(payload.format).toBe("docx");
+    expect(payload.draft.title).toContain("Iza svake zavisnosti");
+    expect(payload.summary.sections).toBe(5);
+
+    // Dokument odmah otvara tekst, pa nema podnaslov — prvi pasus je sadržaj,
+    // ne naslovna sekcija.
+    expect(payload.draft.hero.subtitle).toBeUndefined();
+    const [intro] = payload.draft.blocks;
+    expect(intro.paragraphs[0]).toContain("Kada čujemo riječ zavisnost");
+    // Inline oznake ne smeju ostaviti razmak pred zarezom.
+    expect(intro.paragraphs[0]).not.toContain(" ,");
+  }, 60_000);
+
   it("odbija zahtev bez fajla i nepodržan format", async () => {
     const empty = await POST(upload(new File([], "prazno.pdf", { type: "application/pdf" })));
     expect(empty.status).toBe(400);

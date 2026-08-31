@@ -228,6 +228,9 @@ export default function EducationContentEditor({ record }: Props) {
   }, [state, dirty, busy, recordId, runAutosave]);
 
   const [isImporting, setImporting] = useState(false);
+  /** Šta je uvoz pročitao — ostaje na ekranu, za razliku od toasta. */
+  const [importSummary, setImportSummary] = useState<string | null>(null);
+  const blocksRef = useRef<HTMLElement | null>(null);
 
   /**
    * Uvoz puni editor, ali ništa ne čuva i ne objavljuje: vlasnica vidi šta je
@@ -257,8 +260,14 @@ export default function EducationContentEditor({ record }: Props) {
       });
 
       const { sections, lists, callouts } = data.summary;
-      toast.success(
-        `Pročitano: ${sections} sekcija, ${lists} nabrajanja, ${callouts} napomena. Pregledajte pre čuvanja.`,
+      const summary = `Pročitano: ${sections} sekcija, ${lists} nabrajanja, ${callouts} napomena.`;
+      setImportSummary(summary);
+      toast.success(summary);
+
+      // Rezultat je niže na strani; bez ovoga vlasnica ostaje na dugmetu i ne
+      // vidi da se nešto uopšte dogodilo.
+      requestAnimationFrame(() =>
+        blocksRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
       );
     } catch (error) {
       toast.error(
@@ -748,7 +757,28 @@ export default function EducationContentEditor({ record }: Props) {
       )}
 
       {tab === "editor" ? (
-        <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+        <section
+          ref={blocksRef}
+          className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900"
+        >
+          {importSummary && (
+            <div
+              role="status"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm dark:border-emerald-900/50 dark:bg-emerald-950/30"
+            >
+              <span className="text-emerald-900 dark:text-emerald-200">
+                {importSummary} Pregledajte i ispravite pre čuvanja.
+              </span>
+              <button
+                type="button"
+                onClick={() => setImportSummary(null)}
+                className="text-xs font-semibold text-emerald-800 underline-offset-4 hover:underline dark:text-emerald-300"
+              >
+                U redu
+              </button>
+            </div>
+          )}
+
           {canSeedPreset(state) && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gray-50 px-4 py-3 text-sm dark:bg-gray-800/60">
               <span className="text-gray-600 dark:text-gray-300">

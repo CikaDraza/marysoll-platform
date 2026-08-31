@@ -13,8 +13,20 @@ import { cleanText, type DocumentOutline, type OutlineNode } from "./outline";
  */
 const TAG = /<(h[1-6]|p|li)\b[^>]*>([\s\S]*?)<\/\1>/gi;
 
+/** Podnaslov je kratak; pun pasus koji odmah otvara tekst nije podnaslov. */
+const MAX_SUBTITLE_LENGTH = 160;
+/** Dve rečenice su već pasus, ma koliko bile kratke. */
+const SENTENCE_BREAK = /[.!?]\s+\p{Lu}/u;
+
+function looksLikeSubtitle(text: string): boolean {
+  return text.length <= MAX_SUBTITLE_LENGTH && !SENTENCE_BREAK.test(text);
+}
+
 function stripTags(html: string): string {
-  return cleanText(html.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " "));
+  return cleanText(html.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " "))
+    // Inline oznake (`em`, `strong`) ostavljaju razmak pred interpunkcijom.
+    .replace(/\s+([,.;:!?])/g, "$1")
+    .replace(/([„“"(])\s+/g, "$1");
 }
 
 export function outlineFromHtml(html: string): DocumentOutline {
@@ -43,8 +55,10 @@ export function outlineFromHtml(html: string): DocumentOutline {
       continue;
     }
 
-    // Prvi pasus pre ijedne sekcije služi kao podnaslov.
-    if (title && !subtitle && nodes.length === 0) {
+    // Prvi pasus pre ijedne sekcije služi kao podnaslov — ali samo ako je
+    // kratak. Dokumenti koji odmah otvaraju tekst nemaju podnaslov, i njihov
+    // prvi pasus mora ostati sadržaj.
+    if (title && !subtitle && nodes.length === 0 && looksLikeSubtitle(text)) {
       subtitle = text;
       continue;
     }
