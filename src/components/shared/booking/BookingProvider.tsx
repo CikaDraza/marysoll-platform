@@ -27,10 +27,14 @@ import {
 } from "@/helpers/manualSlots";
 import { availableTimesForDate } from "@/lib/booking/availabilityAdapter";
 import {
+  estimateServicePrice,
+  type PriceLine,
+} from "@/helpers/servicePrice";
+import {
   formatPriceToString,
   PRICE_ON_REQUEST_LABEL,
 } from "@/helpers/formatPrice";
-import type { IService, IAppointment, PriceMode } from "@/types";
+import type { IService, IAppointment } from "@/types";
 import type {
   BookingAuthDestination,
   BookingModalProps,
@@ -82,6 +86,8 @@ export interface BookingContextValue {
   availableClassicTimes: string[] | null;
   totalPrice: number;
   totalDuration: number;
+  /** Razložena procena — osnovna cena, doplata varijante, dodaci. */
+  priceLines: PriceLine[];
   /** Prikaz ukupne cene: "1.500,00 RSD", "od 1.500,00 RSD" (deo je na upit),
    *  "Cena na upit" (sve je na upit) ili "" (ništa još nije izabrano). */
   totalPriceLabel: string;
@@ -249,94 +255,31 @@ export function BookingProvider({
     return true;
   }
 
-  // Zbir cene/trajanja po delovima izbora. Svaki deo (osnovna usluga, varijanta,
-  // stavka paketa, dodatak) je ILI brojiv ("fixed") ILI na upit — pa ukupan
-  // prikaz zna razliku između "1.500,00 RSD", "od 1.500,00 RSD" (deo je na upit)
-  // i "Cena na upit" (sve je na upit), umesto da na upit tiho računa 0.
-  const {
-    price: totalPrice,
-    duration: totalDuration,
-    pricedParts,
-    approxParts,
-  } = useMemo(() => {
-    const empty = { price: 0, duration: 0, pricedParts: 0, approxParts: 0 };
-    if (!selectedService) return empty;
+  // Procena cene i trajanja živi u `estimateServicePrice` — istom helperu koji
+  // koriste admin lista i javni cenovnik, da tri površine ne bi imale tri
+  // tumačenja iste usluge.
+  const estimate = useMemo(
+    () =>
+      selectedService
+        ? estimateServicePrice({
+            service: selectedService,
+            variantName: selectedVariant,
+            extraNames: selectedExtras,
+          })
+        : null,
+    [selectedService, selectedVariant, selectedExtras],
+  );
 
-    let price = 0;
-    let duration = 0;
-    let pricedParts = 0;
-    // Delovi zbog kojih ukupna cena nije konačna: "on_request" (nepoznata) i
-    // "from" (poznata je samo donja granica). Oba vode na prikaz "od X".
-    let approxParts = 0;
-
-    function addPart(part: {
-      price?: number | null;
-      priceMode?: PriceMode;
-      duration?: number | null;
-    }) {
-      if (part.priceMode === "on_request") approxParts += 1;
-      else {
-        if (part.priceMode === "from") approxParts += 1;
-        price += part.price || 0;
-        pricedParts += 1;
-      }
-      if (part.duration) duration += part.duration;
-    }
-
-    // Sama usluga — pre dodataka, da bi provera zatečenih paketa ispod gledala
-    // samo ono što usluga nosi, a ne ono što je klijentkinja dodala.
-    if (selectedService.type === "variant") {
-      const variant = selectedService.variants?.find(
-        (v) => v.name === selectedVariant,
-      );
-      if (variant) addPart(variant);
-      // Varijanta bez sopstvene cene ("Veličina 2 — cena na upit") pada na
-      // donju granicu sa korena, koju je vlasnik uneo uz tip cene „Od“.
-      if (
-        selectedService.priceMode === "from" &&
-        (!variant || variant.priceMode === "on_request")
-      ) {
-        addPart({
-          price: selectedService.basePrice,
-          priceMode: "from",
-          duration: variant?.duration ? null : selectedService.duration,
-        });
-      }
-    } else {
-      // single I group: jedna cena i jedno trajanje na korenu usluge. Kod
-      // paketa `services[]` je spisak onoga što je uključeno — sadržaj, ne
-      // cenovnik — pa se ne bira i ne sabira.
-      addPart({
-        price: selectedService.basePrice,
-        priceMode: selectedService.priceMode,
-        duration: selectedService.duration,
-      });
-
-      // Zatečeni paketi upisani po starom modelu (cena/trajanje po stavci, bez
-      // vrednosti na korenu) — dok ih vlasnik ne prepiše, izvedi zbir iz stavki
-      // da booking ne bi ponudio termin od 0 RSD / 0 min.
-      if (selectedService.type === "group" && !duration && !price) {
-        pricedParts = 0;
-        approxParts = 0;
-        for (const item of selectedService.services ?? []) {
-          if (item.price || item.duration) addPart(item);
-        }
-      }
-    }
-
-    for (const extraName of selectedExtras) {
-      const extra = selectedService.extras?.find((e) => e.name === extraName);
-      if (extra) addPart(extra);
-    }
-
-    return { price, duration, pricedParts, approxParts };
-  }, [selectedService, selectedVariant, selectedExtras]);
+  const totalPrice = estimate?.total ?? 0;
+  const totalDuration = estimate?.durationMinutes ?? 0;
+  const priceLines = estimate?.lines ?? [];
 
   const totalPriceLabel = useMemo(() => {
-    if (pricedParts === 0) return approxParts > 0 ? PRICE_ON_REQUEST_LABEL : "";
-    const formatted = `${formatPriceToString(totalPrice)} RSD`;
-    return approxParts > 0 ? `od ${formatted}` : formatted;
-  }, [totalPrice, pricedParts, approxParts]);
+    if (!estimate || estimate.unknown)
+      return estimate ? PRICE_ON_REQUEST_LABEL : "";
+    const formatted = `${formatPriceToString(estimate.total)} RSD`;
+    return estimate.isEstimate ? `od ${formatted}` : formatted;
+  }, [estimate]);
 
   // Ime izbora koje ide u termin. Paket i jedna usluga nemaju izbor — samo
   // varijanta uz ime usluge ("Izlivanje noktiju - Veličina 2").
@@ -582,6 +525,7 @@ export function BookingProvider({
     availableClassicTimes,
     totalPrice,
     totalDuration,
+    priceLines,
     totalPriceLabel,
     handleClose,
     // toast.error vraća string pa originalni handleri nisu striktno Promise<void>;

@@ -109,6 +109,13 @@ function validateService(f: IServiceInput): string | null {
         return "Unesite najnižu cenu — ona se prikazuje kao „od“.";
       if (!f.duration || f.duration <= 0)
         return "Unesite najkraće trajanje — ono rezerviše termin u kalendaru.";
+      // Kod „Od“ varijanta nosi DOPLATU na osnovnu cenu, pa negativan iznos
+      // ne bi bio doplata nego popust — to model ne podržava.
+      const negative = f.variants.find(
+        (v) => typeof v.additionalPrice === "number" && v.additionalPrice < 0,
+      );
+      if (negative)
+        return `Doplata za „${negative.name || "varijantu"}“ ne može biti negativna.`;
     }
   }
   if (f.type === "group" && !f.services?.some((sv) => sv.name.trim()))
@@ -244,7 +251,12 @@ export function useAdminServices() {
     }));
   }, []);
   const updateVariant = useCallback(
-    (i: number, k: keyof IServiceVariant, v: string | number | boolean) => {
+    (
+      i: number,
+      k: keyof IServiceVariant,
+      // `undefined` briše doplatu kad varijanta pređe na "cena na upit".
+      v: string | number | boolean | undefined,
+    ) => {
       setFormState((p) => {
         const a = [...(p.variants ?? [])];
         a[i] = { ...a[i], [k]: v };

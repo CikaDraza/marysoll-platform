@@ -22,6 +22,7 @@ interface IServiceDoc extends Document {
   variants?: {
     name: string;
     price: number;
+    additionalPrice?: number;
     priceMode?: "fixed" | "on_request" | "from";
     duration: number;
     perItem: boolean;
@@ -88,7 +89,10 @@ const ServiceSchema = new Schema<IServiceDoc>(
     variants: [
       {
         name: String,
+        // Puna cena varijante (fixed) — značenje se ne menja.
         price: Number,
+        // Doplata na basePrice korena, samo kada je koren "from".
+        additionalPrice: Number,
         priceMode: {
           type: String,
           enum: ["fixed", "on_request", "from"],

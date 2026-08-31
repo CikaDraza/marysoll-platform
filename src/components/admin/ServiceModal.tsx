@@ -14,11 +14,18 @@ const i2 = [
 
 const l2 =
   "block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5";
+/** Koren usluge — tu se bira i „Od“, jer donja granica važi za celu uslugu. */
 const priceModeOptions = [
   { value: "fixed", label: "Fiksna cena" },
   { value: "from", label: "Od (najniža cena)" },
   { value: "on_request", label: "Cena na upit" },
 ] as const;
+
+/** Varijante i dodaci: „Od“ nema smisla na pojedinačnoj stavci — ona ili ima
+ *  iznos ili je na upit. Donju granicu nosi koren usluge. */
+const partPriceModeOptions = priceModeOptions.filter(
+  (option) => option.value !== "from",
+);
 
 interface Props {
   s: ReturnType<typeof useAdminServices>;
@@ -259,17 +266,35 @@ export function ServiceModal({ s }: Props) {
                       }
                       placeholder="Naziv termina"
                     />
-                    <input
-                      type="number"
-                      className={i2}
-                      value={v.price || ""}
-                      disabled={v.priceMode === "on_request"}
-                      onChange={(e) =>
-                        s.updateVariant(i, "price", Number(e.target.value))
-                      }
-                      placeholder="Cena (RSD)"
-                      min={0}
-                    />
+                    {form.priceMode === "from" ? (
+                      <input
+                        type="number"
+                        className={i2}
+                        value={v.additionalPrice ?? ""}
+                        disabled={v.priceMode === "on_request"}
+                        onChange={(e) =>
+                          s.updateVariant(
+                            i,
+                            "additionalPrice",
+                            e.target.value ? Number(e.target.value) : undefined,
+                          )
+                        }
+                        placeholder="Doplata (RSD)"
+                        min={0}
+                      />
+                    ) : (
+                      <input
+                        type="number"
+                        className={i2}
+                        value={v.price || ""}
+                        disabled={v.priceMode === "on_request"}
+                        onChange={(e) =>
+                          s.updateVariant(i, "price", Number(e.target.value))
+                        }
+                        placeholder="Cena (RSD)"
+                        min={0}
+                      />
+                    )}
                     <select
                       className={i2}
                       value={v.priceMode ?? "fixed"}
@@ -278,10 +303,11 @@ export function ServiceModal({ s }: Props) {
                         s.updateVariant(i, "priceMode", priceMode);
                         if (priceMode === "on_request") {
                           s.updateVariant(i, "price", 0);
+                          s.updateVariant(i, "additionalPrice", undefined);
                         }
                       }}
                     >
-                      {priceModeOptions.map((option) => (
+                      {partPriceModeOptions.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
                         </option>
@@ -412,7 +438,7 @@ export function ServiceModal({ s }: Props) {
                         }
                       }}
                     >
-                      {priceModeOptions.map((option) => (
+                      {partPriceModeOptions.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
                         </option>

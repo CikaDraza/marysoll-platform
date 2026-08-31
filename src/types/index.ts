@@ -83,7 +83,12 @@ export type PriceMode = "fixed" | "on_request" | "from";
 
 export interface IServiceVariant {
   name: string;
+  /** PUNA cena varijante. Značenje se nikad ne menja — kod `priceMode: "from"`
+   *  na korenu se ne koristi, doplata ide u `additionalPrice`. */
   price: number;
+  /** Doplata na `basePrice` korena, SAMO kada je koren `priceMode: "from"`.
+   *  Nepoznata doplata = varijanta na upit; procena tada nema ovu stavku. */
+  additionalPrice?: number;
   priceMode?: PriceMode;
   duration: number;
   perItem: boolean;

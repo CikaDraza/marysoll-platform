@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { minServicePrice, isPriceFrom } from "./servicePrice";
+import {
+  minServicePrice,
+  isPriceFrom,
+  estimateServicePrice,
+} from "./servicePrice";
 import {
   formatServicePrice,
   normalizePriceMode,
@@ -66,6 +70,20 @@ describe("minServicePrice", () => {
     expect(minServicePrice(s)).toBe(1800);
   });
 
+  it("REGRESIJA: „od“ NE računa minimum iz varijanti", () => {
+    // Kod "from" varijanta nosi DOPLATU, ne punu cenu. Da minimum ide iz
+    // `variants[]`, cenovnik bi prikazao doplatu kao da je cena usluge.
+    const s = svc({
+      type: "variant",
+      priceMode: "from",
+      basePrice: 2000,
+      variants: [
+        { name: "Veličina 1", price: 0, additionalPrice: 300, duration: 120, perItem: false },
+      ],
+    });
+    expect(minServicePrice(s)).toBe(2000);
+  });
+
   it("sve varijante na upit: donja granica dolazi sa korena", () => {
     const s = svc({
       type: "variant",
@@ -113,9 +131,9 @@ describe("minServicePrice", () => {
     expect(minServicePrice(s)).toBe(6000);
   });
 
-  it("zatečeni paket bez cene na korenu: zbir stavki, ne najniža", () => {
-    // Stari model je cenu držao po stavci. Paket košta zbir, pa se prikazuje
-    // zbir — "od najniže stavke" bi obmanulo, jer paket nije alternativa.
+  it("paket bez cene na korenu nema cenu — stavke se NE sabiraju", () => {
+    // Stavke paketa opisuju šta je uključeno; one nisu cenovnik. Zatečeni
+    // paketi po starom modelu se migriraju, ne pogađaju.
     const s = svc({
       type: "group",
       services: [
@@ -123,7 +141,7 @@ describe("minServicePrice", () => {
         { name: "Trepavice", price: 2000, duration: 60, description: "" },
       ],
     });
-    expect(minServicePrice(s)).toBe(6000);
+    expect(minServicePrice(s)).toBeNull();
   });
 });
 
@@ -219,5 +237,132 @@ describe("normalizePriceMode", () => {
   it("nepoznata vrednost pada na fiksnu cenu", () => {
     expect(normalizePriceMode(undefined)).toBe("fixed");
     expect(normalizePriceMode("besplatno")).toBe("fixed");
+  });
+});
+
+describe("estimateServicePrice", () => {
+  const stiker = { name: "Stiker", price: 500, duration: 5, perItem: true };
+  const sirena = {
+    name: "Morska sirena",
+    price: 0,
+    priceMode: "on_request" as const,
+    duration: 10,
+    perItem: true,
+  };
+
+  it("REGRESIJA: fiksna varijanta zadržava PUNU cenu", () => {
+    // theme-8 zavisi od ovoga: `variants[].price` je apsolutna cena, nikad
+    // doplata. Da se značenje promeni, sve postojeće variant usluge bi pale.
+    const s = svc({
+      type: "variant",
+      basePrice: 9999,
+      variants: [
+        { name: "Novi set", price: 3500, duration: 120, perItem: false },
+        { name: "Korekcija", price: 2500, duration: 90, perItem: false },
+      ],
+      extras: [stiker],
+    });
+    const e = estimateServicePrice({
+      service: s,
+      variantName: "Korekcija",
+      extraNames: ["Stiker"],
+    });
+    expect(e.total).toBe(3000); // 2500 + 500 — basePrice se NE dodaje
+    expect(e.isEstimate).toBe(false);
+    expect(e.durationMinutes).toBe(95);
+  });
+
+  it("„od“: osnovna cena + doplata varijante + dodaci", () => {
+    const s = svc({
+      type: "variant",
+      priceMode: "from",
+      basePrice: 2000,
+      duration: 120,
+      variants: [
+        { name: "Veličina 1", price: 0, additionalPrice: 0, duration: 120, perItem: false },
+        { name: "Veličina 5", price: 0, additionalPrice: 800, duration: 150, perItem: false },
+      ],
+      extras: [stiker],
+    });
+    const e = estimateServicePrice({
+      service: s,
+      variantName: "Veličina 5",
+      extraNames: ["Stiker"],
+    });
+    expect(e.total).toBe(3300); // 2000 + 800 + 500
+    expect(e.isEstimate).toBe(true);
+    expect(e.durationMinutes).toBe(155); // varijanta 150 + dodatak 5
+  });
+
+  it("„od“ sa varijantom na upit: procena drži poznate delove", () => {
+    // Marijin slučaj: Veličina 3 bez poznate doplate, plus poznat dodatak.
+    const s = svc({
+      type: "variant",
+      priceMode: "from",
+      basePrice: 2000,
+      duration: 120,
+      variants: [
+        {
+          name: "Veličina 3",
+          price: 0,
+          priceMode: "on_request",
+          duration: 0,
+          perItem: false,
+        },
+      ],
+      extras: [{ ...stiker, price: 1000 }],
+    });
+    const e = estimateServicePrice({
+      service: s,
+      variantName: "Veličina 3",
+      extraNames: ["Stiker"],
+    });
+    expect(e.total).toBe(3000); // 2000 + 1000; nepoznata doplata ne ulazi
+    expect(e.isEstimate).toBe(true);
+    expect(e.unknown).toBe(false);
+    expect(e.lines.map((l) => [l.label, l.amount])).toEqual([
+      ["Osnovna cena", 2000],
+      ["Veličina 3", null],
+      ["Stiker", 1000],
+    ]);
+  });
+
+  it("paket: jedna cena sa korena plus dodaci", () => {
+    const s = svc({
+      type: "group",
+      basePrice: 6000,
+      duration: 120,
+      services: [{ name: "Šminkanje", description: "" }],
+      extras: [stiker],
+    });
+    const e = estimateServicePrice({ service: s, extraNames: ["Stiker"] });
+    expect(e.total).toBe(6500);
+    expect(e.isEstimate).toBe(false);
+    expect(e.durationMinutes).toBe(125);
+  });
+
+  it("sve na upit: nema iznosa, ne prikazuje se 0", () => {
+    const s = svc({
+      type: "single",
+      priceMode: "on_request",
+      duration: 60,
+      extras: [sirena],
+    });
+    const e = estimateServicePrice({ service: s, extraNames: ["Morska sirena"] });
+    expect(e.unknown).toBe(true);
+    expect(e.total).toBe(0);
+  });
+
+  it("dodatak na upit pretvara fiksnu cenu u procenu", () => {
+    const s = svc({
+      type: "single",
+      basePrice: 2000,
+      duration: 60,
+      extras: [sirena],
+    });
+    const e = estimateServicePrice({ service: s, extraNames: ["Morska sirena"] });
+    expect(e.total).toBe(2000);
+    expect(e.isEstimate).toBe(true);
+    expect(e.unknown).toBe(false);
   });
 });

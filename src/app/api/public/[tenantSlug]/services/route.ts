@@ -31,6 +31,10 @@ function serializeService(s: Record<string, unknown>) {
           return {
             name: String(vv.name ?? ""),
             price: Number(vv.price ?? 0),
+            // Doplata na basePrice korena kod "from" — bez nje BookingWidget
+            // ne može da izračuna procenu.
+            additionalPrice:
+              vv.additionalPrice != null ? Number(vv.additionalPrice) : undefined,
             priceMode: normalizePriceMode(vv.priceMode),
             duration: Number(vv.duration ?? 0),
             perItem: Boolean(vv.perItem),

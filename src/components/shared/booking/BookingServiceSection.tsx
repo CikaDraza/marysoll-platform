@@ -19,6 +19,7 @@ export function BookingServiceSection() {
     setSelectedExtras,
     selectedService,
     totalDuration,
+    priceLines,
     totalPriceLabel,
   } = useBookingContext();
 
@@ -182,17 +183,47 @@ export function BookingServiceSection() {
       </div>
     )}
 
-    {/* Price summary */}
+    {/* Razložena procena. Kod usluga sa donjom granicom klijentkinja mora da
+        vidi ŠTA se zna a šta ne — "od 3.000" bez razloga deluje proizvoljno. */}
     {selectedService && (
-      <div className="mt-3 flex items-center justify-between bg-gray-50 rounded-xl border border-gray-200 px-4 py-3">
-        <div>
-          <div className="text-xs text-gray-500">Ukupno</div>
-          <div className="text-xs text-gray-400">
-            {totalDuration} min
+      <div className="mt-3 bg-gray-50 rounded-xl border border-gray-200 px-4 py-3">
+        {priceLines.length > 1 && (
+          <ul className="space-y-1 pb-2 mb-2 border-b border-gray-200">
+            {priceLines.map((line, idx) => (
+              <li
+                key={idx}
+                className="flex items-baseline justify-between gap-x-3 text-xs"
+              >
+                <span className="text-gray-600">
+                  {line.kind === "extra" ? `+ ${line.label}` : line.label}
+                </span>
+                <span
+                  className={
+                    line.amount == null
+                      ? "text-gray-400 italic"
+                      : "text-gray-700 font-medium"
+                  }
+                >
+                  {line.amount == null
+                    ? PRICE_ON_REQUEST_LABEL
+                    : formatServicePrice(line.amount)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs text-gray-500">
+              {totalPriceLabel.startsWith("od ")
+                ? "Trenutna procena"
+                : "Ukupno"}
+            </div>
+            <div className="text-xs text-gray-400">{totalDuration} min</div>
           </div>
-        </div>
-        <div className="text-xl font-bold text-(--primary-color) text-right">
-          {totalPriceLabel || "—"}
+          <div className="text-xl font-bold text-(--primary-color) text-right">
+            {totalPriceLabel || "—"}
+          </div>
         </div>
       </div>
     )}
