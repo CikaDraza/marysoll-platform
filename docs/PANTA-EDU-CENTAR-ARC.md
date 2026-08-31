@@ -1,7 +1,13 @@
 # PANTA — Edu Centar: workspace arhitektura i Education domen
 
-> **Status:** ZAKLJUČANA ARHITEKTURA; FAZE 0, 1 I 2 IMPLEMENTIRANE; F3A/EDU UI-1A SELECTOR + ACTIVATION CODE COMPLETE, MARINA BROWSER ACCEPTANCE PENDING; **EDU UI-2 + UI-2B (EducationContent, CMS CRUD, F3B gate-ovi, durable working copy + published snapshot) IMPLEMENTIRANI, ČEKAJU MARINA CMS BROWSER TEST.**
-> Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-29 · `staging/production-engines`
+> **Status: EDU CENTAR v1 — FEATURE FREEZE, MARINA PILOT.**
+> Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-31 · `staging/production-engines`
+>
+> Jezgro je dovoljno kompletno da sledeći razvoj vodi **stvarna upotreba**, a ne
+> naša pretpostavka šta bi još moglo koristiti. Do kraja pilota se ne dodaju
+> nove funkcije i ne dira se domenski model; menja se samo ono što pilot pokaže
+> kao stvarnu prepreku. Vidi
+> [Edu Centar v1 — feature freeze](#edu-centar-v1--feature-freeze-2026-08-31).
 >
 > **Faza 0 je počela tek pošto je Theme-9 contract/rollout foundation zatvoren i
 > staging postao aktivna razvojna linija za Edu luk; sada je završena.**
@@ -860,6 +866,55 @@ javni loader, ACL, `Moj Prostor` — sve ostaje implementacionim rezovima.
 Komercijalna pravila su **potpuno** van ovog dokumenta: koji Marysoll plan
 uključuje plaćenu edukaciju, podela prihoda, cena pretplate, cena pojedinačnog
 pristupa, povraćaji, Paddle integracija.
+
+---
+
+## Edu Centar v1 — feature freeze (2026-08-31)
+
+Importer je bio poslednji rez pre pilota. Od ovog trenutka Marina ne testira
+pojedinačne funkcije nego **ceo tok**:
+
+```text
+napravi sadržaj → uvezi postojeći materijal → doradi blokove → dodaj slike
+→ pregled mobile/desktop → sačuvaj → objavi → proveri javni/gated/private prikaz
+```
+
+### Šta v1 sadrži
+
+| | |
+|---|---|
+| Workspace | Salon ↔ Edu Centar, eksplicitna aktivacija, capability gate |
+| Autorstvo | CMS lista + full-page editor nad deljenim Content Composer-om, 12 blokova, preseti po vrsti |
+| Trajnost | radna kopija ≠ objavljena verzija, autosave, čuvanje pri izlasku, lokalni oporavak, redosled čuvanja |
+| Pristup | `public` / `gated` / `private`, dodela klijentkinjama, serverski ACL |
+| Javna strana | `/edukacija` lista i članak u Theme-9, semantički HTML, SEO i sitemap po članku, istorija adresa |
+| Klijent | `Moj Prostor` → `Moji sadržaji` + zaštićeni čitač |
+| Uvoz | PDF i DOCX → draft; nikada objava |
+
+### Šta v1 svesno NEMA
+
+Entitlement (pretplata, kupovina, naplata), revision history, „Skini PDF",
+theme-aware varijante blokova, Guide i Program, AI asistencija. Nijedno od toga
+se ne dodaje bez signala iz pilota.
+
+### Poznata ograničenja koja pilot treba da razlikuje od grešaka
+
+- **Uvoz iz PDF-a je približan.** Metak nabrajanja u PDF-u je crtež, ne znak,
+  pa se liste pogađaju po najavi dve tačke. DOCX se čita verno. Zato uvoz uvek
+  otvara draft za pregled.
+- **Fokus kadra i naslovna slika na kartici** postoje od prve sledeće objave;
+  zatečeni zapisi ih dobijaju kad se ponovo objave.
+- **`accessMode` backfill nije primenjen** — čitanje radi i bez njega
+  (`resolveAccessMode` prevodi staro `visibility` fail-closed), skripta postoji
+  za kasnije.
+- **Staging je `noindex`**, pa se ništa iz pilota ne rangira.
+
+### Šta pilot treba da izmeri
+
+Ne broj grešaka nego navike: koji blok nedostaje, da li preseti stvarno
+ubrzavaju, koliko često menja raspored, treba li posebna mobilna slika, kako
+razmišlja o zaključanom i privatnom sadržaju, i — najvrednije — **svaki trenutak
+u kome nije jasno šta sledeće da klikne**.
 
 ---
 

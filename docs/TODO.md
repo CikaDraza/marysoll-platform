@@ -2,7 +2,7 @@
 
 > Tracker za tekući luk rada: **T3 Booking Engine + Consultation domen + theme-9 „Skincare Marina"**.
 > Jedan red po slice-u. Detalji su u dokumentu koji je naveden uz slice — ovde stoji samo status i jedna rečenica.
-> Poslednja izmena: 2026-08-29 · `staging/production-engines` + zaključan PUBLIC/GATED/PRIVATE ugovor
+> Poslednja izmena: 2026-08-31 · `staging/production-engines` · **Edu Centar v1 — feature freeze**
 >
 > **Aktuelno stanje:** correctness fixes, Theme-9 **2A, ceo 2B i 2C** i
 > migration/staging tooling nalaze se na `main`-u. Staging Release A + migration
@@ -54,6 +54,10 @@
 | EDU UI-2 / F4A + F3B | EducationContent + pravi CMS CRUD + Content Composer | ✅ kod · 🟡 Marina CMS browser test pending | `EducationContent` model, tenant-scoped CRUD + strict publish rute iza `requireCapability("education.catalog")`, CMS lista i full-page editor nad deljenim Content Composer-om (svih 12 blokova, shared media, preview). Save Draft ne menja status; publish čita sačuvano stanje. Javno `/edukacija`, assignment i ACL nisu dirani. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#implementacioni-status-f4a--f3b-edu-ui-2--2026-08-29) |
 | EDU UI-2B | Durable working copy + last-published snapshot | ✅ kod | Zatvoren propust iz UI-2: `status` je ostajao `published`, ali je Save menjao baš root polja koja bi javna strana čitala, pa je snimanje bilo implicitna objava. Sada root = radna kopija, `publishedSnapshot` = javna verzija, objava = jedina granica promocije. Javni URL, vidljivost i SEO takođe žive u snapshot-u. Bez istorije verzija. 13 lifecycle testova nad pravim Mongo-om. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#implementacioni-status-f4a--f3b-edu-ui-2--2026-08-29) |
 | DOC-EDU-ACCESS-1 | PUBLIC / GATED / PRIVATE ugovor pristupa | ✅ dokumentacija (bez koda) | Tri režima pristupa umesto dva, javni pregled za `gated`, 404 za `private`, entitlement odvojen od režima pristupa, ponašanje adresa i liste, bezbednost tokena i zaštićene media. Kod nije menjan — persistencija je i dalje `visibility: public\|private`; migracija na `accessMode` je UI-3A. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#pristup-sadržaju--public--gated--private-zaključano-2026-08-29) |
+| EDU UI-3A/3B | Javna Education prezentacija | ✅ kod | `/edukacija` lista i članak u Theme-9, semantički HTML ugovor, istorija javnih adresa sa preusmerenjem, SEO i sitemap po članku. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#faza-5--javno-edukacija--release-gate) |
+| EDU F6A/F6B | Moj Prostor + dodela i ACL | ✅ kod | `ClientContentAssignment` kao zaseban odnos; zaštićeno telo služi samo `/panel/moj-prostor/sadrzaji/{id}`, i to uz sva četiri uslova. Javna ruta nikada ne služi zaštićeno telo. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#faza-6b--dodela-sadržaja-i-acl) |
+| EDU F | PDF/DOCX → draft | ✅ kod | DOCX se čita verno, PDF heuristikom; rezultat je uvek draft za pregled, nikada objava. Acceptance nad Marinina četiri prava materijala. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#edu-centar-v1--feature-freeze-2026-08-31) |
+| **Edu Centar v1** | **Feature freeze · Marina pilot** | 🟡 **pilot u toku** | Nove funkcije čekaju signal iz stvarne upotrebe. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#edu-centar-v1--feature-freeze-2026-08-31) |
 
 ### Booking / Consultation — zadržano
 
@@ -91,37 +95,30 @@ F4B  EducationOffering + EducationInquiry F9   GuidedProgram
 ✅ **F4A + F3B (EDU UI-2) su u kodu:** `EducationContent` je drugi pravi host
 deljenog Content Composer-a; `NewsletterCampaign` se ne koristi kao storage.
 
-**NEXT:** dva browser acceptance-a na stagingu, oba obavezna i oba na Marini:
+**NEXT: Edu Centar v1 je u FEATURE FREEZE-u — Marina pilot.**
 
-1. **EDU UI-1A** — workspace selector + aktivacija: pre-activation Salon state,
-   modal/cancel/confirm, hybrid switch posle aktivacije i nepromenjen Theme-9
-   public Salon.
-2. **EDU UI-2 / UI-2B** — CMS tok sa stvarnim sadržajem: Novi sadržaj → njen
-   tekst → Sačuvaj → refresh → ponovo otvori → Pregled → Objavi, plus jedan
-   privatan objavljen zapis koji ostaje samo u CMS-u. Posle UI-3 se ista
-   provera dovršava na telefonu: izmeni draft → javna verzija se NE menja dok
-   se ponovo ne klikne Objavi.
+Importer je bio poslednji rez pre pilota. Jezgro je dovoljno kompletno da
+sledeći razvoj vodi stvarna upotreba, a ne pretpostavka. Do kraja pilota se
+**ne dodaju nove funkcije i ne dira se domenski model**; menja se samo ono što
+pilot pokaže kao stvarnu prepreku.
 
-Posle toga ide **EDU UI-3**, i tu se prvi put spajaju razvoj i dizajn — bez
-generičke bele `/edukacija` samo da ruta postoji:
+Pilot checklist za Marinu (bez tehničkih detalja):
 
 ```text
-EDU UI-3A   public read authority + /edukacija rute + neutralan
-            presentation contract + accessMode migracija (public/gated/private)
-            + javni pregled za gated + istorija javnih adresa i 301
-EDU UI-3B   Theme-9 Education prezentacija → listing → članak/detalj → mobile
+1. napravi jedan nov članak ručno
+2. napravi jedan sadržaj iz PDF/DOCX
+3. promeni nešto posle objave i ponovo objavi
+4. napravi jedan zaključan sadržaj
+5. probaj slike iz galerije i upload
+6. pogledaj Mobile i Desktop pregled
+7. zapiši svaki trenutak gde nije jasno šta sledeće da klikneš
 ```
 
-UI-3A više nije samo „rute": pre njega je zaključan ugovor pristupa, pa on
-donosi i migraciju `visibility → accessMode`, javni pregled za `gated` i
-ponašanje adresa. Entitlement (pretplata/kupovina/ručno odobrenje) i dalje
-**nije** u UI-3A — CTA za sada vodi na postojeće javne kontakt kanale tenanta.
+Sedma stavka nosi najveću vrednost — više od još dvadeset funkcija.
 
-Pravi hard gate pre `Moj Prostor` nije „testovi su zeleni", nego: Marina napiše
-→ Sačuva → zatvori → vrati se → Pregled → Objavi → otvori telefon i vidi tačno
-ono što je objavila; pa izmeni draft i potvrdi da se javna verzija nije
-promenila dok ponovo ne klikne Objavi. Tu spadaju i toast, greške, notifikacije
-i mejl.
+Obim v1, ono što svesno nedostaje i poznata ograničenja koja treba razlikovati
+od grešaka stoje u
+[Edu Centar v1 — feature freeze](PANTA-EDU-CENTAR-ARC.md#edu-centar-v1--feature-freeze-2026-08-31).
 
 ### Završeno
 
