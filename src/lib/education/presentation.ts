@@ -36,6 +36,33 @@ export function formatPublishedDate(value: string): string {
       });
 }
 
+/**
+ * Kod Education članka naslovnu sekciju nosi ZAGLAVLJE STRANE — vrsta, naslov,
+ * podnaslov, datum i naslovna slika. Hero blok u telu je zato duplikat: isti
+ * naslov drugi put, u drugom kadru i drugoj tipografiji.
+ *
+ * Ne briše se nego se upija: njegova slika i podnaslov popunjavaju zaglavlje
+ * kada ono nema svoje. Tako sadržaj pisan pre ovog pravila i dalje prikazuje
+ * sve što je autor uneo, samo na jednom mestu.
+ */
+export function resolveArticlePresentation(article: {
+  description?: string;
+  coverImage?: string;
+  blocks: readonly ContentBlock[];
+}): {
+  description?: string;
+  coverImage?: string;
+  blocks: ContentBlock[];
+} {
+  const hero = article.blocks.find((block) => block.type === "HeroBlock");
+
+  return {
+    description: article.description || hero?.subtitle || undefined,
+    coverImage: article.coverImage || hero?.images?.[0]?.src || undefined,
+    blocks: article.blocks.filter((block) => block.type !== "HeroBlock"),
+  };
+}
+
 export interface EducationAuthor {
   name: string;
   role?: string;

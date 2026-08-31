@@ -7,6 +7,7 @@ import {
   formatReadingTime,
   readingTimeMinutes,
   educationAuthorFromSalon,
+  resolveArticlePresentation,
 } from "./presentation";
 
 const SRC = process.cwd() + "/src";
@@ -108,5 +109,61 @@ describe("metapodaci članka", () => {
 
     expect(educationAuthorFromSalon(null)).toBeNull();
     expect(educationAuthorFromSalon({ name: "" })).toBeNull();
+  });
+
+});
+
+describe("hero blok se ne prikazuje dvaput", () => {
+  const hero = {
+    id: "hero",
+    type: "HeroBlock" as const,
+    priority: 1,
+    title: "ESTETIKA LICA",
+    subtitle: "Anatomija, proporcije, prirodnost i granica prenaglašenosti",
+    images: [{ src: "https://cdn.example.com/hero.jpg", alt: "Lice" }],
+  };
+  const body = ALL_TWELVE_BLOCKS.filter((block) => block.type !== "HeroBlock");
+
+  it("izbacuje se iz tela, jer zaglavlje strane već nosi naslovnu sekciju", () => {
+    const { blocks } = resolveArticlePresentation({
+      blocks: [hero, ...body],
+    });
+
+    expect(blocks.map((block) => block.type)).not.toContain("HeroBlock");
+    expect(blocks).toHaveLength(body.length);
+  });
+
+  it("njegova slika i podnaslov popunjavaju prazno zaglavlje", () => {
+    const presentation = resolveArticlePresentation({ blocks: [hero, ...body] });
+
+    // Sadržaj pisan pre ovog pravila ne sme ništa da izgubi.
+    expect(presentation.description).toBe(hero.subtitle);
+    expect(presentation.coverImage).toBe(hero.images[0].src);
+  });
+
+  it("ne pregazi ono što zaglavlje već ima", () => {
+    const presentation = resolveArticlePresentation({
+      description: "Svoj opis",
+      coverImage: "https://cdn.example.com/svoja.jpg",
+      blocks: [hero, ...body],
+    });
+
+    expect(presentation.description).toBe("Svoj opis");
+    expect(presentation.coverImage).toBe("https://cdn.example.com/svoja.jpg");
+  });
+
+  it("sadržaj bez hero bloka prolazi netaknut", () => {
+    const presentation = resolveArticlePresentation({ blocks: body });
+
+    expect(presentation.blocks).toEqual(body);
+    expect(presentation.description).toBeUndefined();
+    expect(presentation.coverImage).toBeUndefined();
+  });
+
+  it("vreme čitanja se računa bez hero bloka", () => {
+    // Hero više nije u telu, pa ne sme ni da ulazi u procenu čitanja.
+    const withHero = resolveArticlePresentation({ blocks: [hero, ...body] });
+
+    expect(readingTimeMinutes(withHero.blocks)).toBe(readingTimeMinutes(body));
   });
 });

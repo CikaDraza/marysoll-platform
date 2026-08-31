@@ -7,6 +7,7 @@ import {
   formatPublishedDate,
   formatReadingTime,
   readingTimeMinutes,
+  resolveArticlePresentation,
   type EducationAuthor,
 } from "@/lib/education/presentation";
 import { EducationAuthorBox } from "./EducationAuthorBox";
@@ -32,8 +33,9 @@ interface Props {
  *   `aside`         callout i autor
  */
 export function EducationArticleView({ article, basePath, author, children }: Props) {
-  const minutes = readingTimeMinutes(article.blocks);
-  const readingTime = formatReadingTime(minutes);
+  // Hero blok se upija u zaglavlje umesto da se prikaže drugi put.
+  const { description, coverImage, blocks } = resolveArticlePresentation(article);
+  const readingTime = formatReadingTime(readingTimeMinutes(blocks));
   const publishedLabel = formatPublishedDate(article.publishedAt);
 
   return (
@@ -50,9 +52,9 @@ export function EducationArticleView({ article, basePath, author, children }: Pr
             {article.title}
           </h1>
 
-          {article.description && (
+          {description && (
             <p className="font-instrument-sans text-ee-text-muted mt-5 max-w-[54ch] text-[18px] leading-[1.7]">
-              {article.description}
+              {description}
             </p>
           )}
 
@@ -73,10 +75,10 @@ export function EducationArticleView({ article, basePath, author, children }: Pr
           </p>
         </header>
 
-        {article.coverImage && (
+        {coverImage && (
           <figure className="mt-10">
             <ContentImage
-              src={article.coverImage}
+              src={coverImage}
               alt={article.title}
               className="aspect-[16/9] w-full rounded-[28px] object-cover"
             />
@@ -86,7 +88,7 @@ export function EducationArticleView({ article, basePath, author, children }: Pr
         {children ?? (
           <article className="mt-12 space-y-10">
             {/* Strana već nosi `h1`, pa blokovi počinju od `h2`. */}
-            <BlockList blocks={article.blocks} headingScope="section" />
+            <BlockList blocks={blocks} headingScope="section" />
           </article>
         )}
 
