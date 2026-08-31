@@ -13,6 +13,7 @@ import {
 import { PreviewRenderer } from "@/components/content-composer/PreviewRenderer";
 import { useContentMediaAuthoring } from "@/hooks/useContentMediaAuthoring";
 import { getContentMutationErrorMessage } from "@/lib/content/validation/contentValidationClient";
+import { api } from "@/lib/api";
 import { saveEducationDraftOnExit } from "@/lib/education/exitSave";
 import { educationPresetBlocks } from "@/lib/education/contentPresets";
 import EducationClientAccess from "./EducationClientAccess";
@@ -51,6 +52,15 @@ import {
 } from "./education-content-editor-model";
 
 type Tab = "editor" | "preview";
+
+interface ImportResponse {
+  draft: {
+    title: string;
+    hero: { subtitle?: string };
+    blocks: EducationEditorState["blocks"];
+  };
+  summary: { sections: number; lists: number; callouts: number };
+}
 
 /**
  * Identifikator jedne editor sesije. `useState` sa inicijalizatorom ga pravi
@@ -217,6 +227,38 @@ export default function EducationContentEditor({ record }: Props) {
     const timer = setTimeout(runAutosave, AUTOSAVE_DELAY_MS);
     return () => clearTimeout(timer);
   }, [state, dirty, busy, recordId, runAutosave]);
+
+  const [isImporting, setImporting] = useState(false);
+
+  /**
+   * Uvoz puni editor, ali ništa ne čuva i ne objavljuje: vlasnica vidi šta je
+   * pročitano, ispravlja i sama snima. Zato uvoz sme da bude približan.
+   */
+  const importDocument = async (file: File) => {
+    setImporting(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const { data } = await api.post<ImportResponse>("/education/import", body);
+
+      patch({
+        title: state.title.trim() || data.draft.title,
+        hero: { ...state.hero, ...data.draft.hero },
+        blocks: data.draft.blocks,
+      });
+
+      const { sections, lists, callouts } = data.summary;
+      toast.success(
+        `Pročitano: ${sections} sekcija, ${lists} nabrajanja, ${callouts} napomena. Pregledajte pre čuvanja.`,
+      );
+    } catch (error) {
+      toast.error(
+        getContentMutationErrorMessage(error, "Dokument nije moguće pročitati"),
+      );
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const handleSave = async () => {
     const saved = await persist();
@@ -702,22 +744,38 @@ export default function EducationContentEditor({ record }: Props) {
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gray-50 px-4 py-3 text-sm dark:bg-gray-800/60">
               <span className="text-gray-600 dark:text-gray-300">
                 Počnite od uobičajene strukture za „
-                {EDUCATION_KIND_LABELS[state.kind]}”.
+                {EDUCATION_KIND_LABELS[state.kind]}”, ili uvezite dokument.
               </span>
-              <button
-                type="button"
-                onClick={() =>
-                  patch({
-                    blocks: educationPresetBlocks(
-                      state.kind,
-                      createContentBlockId,
-                    ),
-                  })
-                }
-                className="rounded-xl border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-white dark:border-gray-600 dark:text-gray-200"
-              >
-                Ubaci polazne blokove
-              </button>
+              <span className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    patch({
+                      blocks: educationPresetBlocks(
+                        state.kind,
+                        createContentBlockId,
+                      ),
+                    })
+                  }
+                  className="rounded-xl border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-white dark:border-gray-600 dark:text-gray-200"
+                >
+                  Ubaci polazne blokove
+                </button>
+                <label className="cursor-pointer rounded-xl border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-white dark:border-gray-600 dark:text-gray-200">
+                  {isImporting ? "Čitanje…" : "Uvezi PDF ili DOCX"}
+                  <input
+                    type="file"
+                    className="sr-only"
+                    accept=".pdf,.docx,application/pdf"
+                    disabled={isImporting}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+                      if (file) void importDocument(file);
+                    }}
+                  />
+                </label>
+              </span>
             </div>
           )}
           <ContentBlocksEditor

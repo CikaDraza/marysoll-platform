@@ -45,6 +45,7 @@
     "jose": "^6.2.2",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
+    "mammoth": "^1.12.2",
     "mongoose": "^8.19.3",
     "next": "^16.1.6",
     "openai": "^6.33.0",
@@ -55,6 +56,7 @@
     "recharts": "^3.4.1",
     "resend": "^6.6.0",
     "ts-node": "^10.9.2",
+    "unpdf": "^1.8.1",
     "web-push": "^3.6.7",
     "zod": "^4.3.5"
   },
