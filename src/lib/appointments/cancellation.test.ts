@@ -97,9 +97,21 @@ describe("clientAppointmentPhase", () => {
     expect(canClientCancelLate(appt, now)).toBe(false);
   });
 
-  it("nečitljivo vreme ne zaključava termin (fail-open)", () => {
-    const broken = { date: "", time: "", cancellationWindowHours: 24 };
-    expect(clientAppointmentPhase(broken, new Date())).toBe("open");
+  it("FAIL-SAFE: nečitljivo vreme ne autorizuje nijednu akciju", () => {
+    // Rok je autorizaciona odluka. Bez pouzdanog početka termina ne sme se
+    // pisati u bazu na osnovu pretpostavke — ni otkazivanje ni pomeranje.
+    for (const broken of [
+      { date: "", time: "", cancellationWindowHours: 24 },
+      { date: "2026-09-12", time: "", cancellationWindowHours: 24 },
+      { date: "", time: "14:00", cancellationWindowHours: 24 },
+      { date: "2026-09-12", time: "ne-vreme", cancellationWindowHours: 24 },
+    ]) {
+      const now = new Date();
+      expect(clientAppointmentPhase(broken, now)).toBe("unknown");
+      expect(canClientEditAppointment(broken, now)).toBe(false);
+      expect(canClientCancelAppointment(broken, now)).toBe(false);
+      expect(canClientCancelLate(broken, now)).toBe(false);
+    }
   });
 });
 

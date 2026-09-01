@@ -17,7 +17,10 @@ import { useServices } from "@/hooks/useServices";
 import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import { motion } from "framer-motion";
 import AlertModal from "../modals/AlertModal";
-import { canClientEditAppointment } from "@/lib/appointments/cancellation";
+import {
+  clientAppointmentPhase,
+  isClientActionableStatus,
+} from "@/lib/appointments/cancellation";
 import { statusMeta } from "@/lib/appointmentColors";
 import { useTenant } from "@/contexts/TenantContext";
 
@@ -48,10 +51,6 @@ const inp = [
 
 const lbl =
   "block text-[11px] font-bold text-gray-400 dark:text-gray-300 uppercase tracking-widest mb-1.5";
-
-function isWithinEditWindow(appt: IAppointment): boolean {
-  return canClientEditAppointment(appt);
-}
 
 export default function ClientEditModal({
   isOpen,
@@ -123,7 +122,17 @@ export default function ClientEditModal({
 
   if (!appointment) return null;
 
-  const canEdit = isWithinEditWindow(appointment);
+  // Izmena i otkazivanje više nisu isto pravo:
+  //   open    → i izmena i otkazivanje
+  //   late    → SAMO otkazivanje, uz upozorenje (postaje kasno otkazivanje)
+  //   started → ništa; status termina rešava salon
+  //   unknown → ništa; vreme termina se ne može pouzdano pročitati
+  const phase = isClientActionableStatus(appointment.status)
+    ? clientAppointmentPhase(appointment)
+    : "started";
+  const canEdit = phase === "open";
+  const isLateCancel = phase === "late";
+  const canCancel = phase === "open" || phase === "late";
   const selectedService = services.find((s) => s._id === selectedServiceId);
 
   const calculateTotal = () => {
@@ -296,11 +305,18 @@ export default function ClientEditModal({
               </button>
             </div>
 
-            {/* Edit window warning */}
-            {!canEdit && (
-              <div className="mb-4 flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
-                <ClockIcon className="w-4 h-4 shrink-0" />
-                Vreme za otkazivanje termina je isteklo. Kontaktirajte salon.
+            {/* Upozorenje po fazi — „rok je prošao" i „termin je počeo" nisu
+                ista poruka, a nečitljivo vreme nije ni jedno ni drugo. */}
+            {phase !== "open" && (
+              <div className="mb-4 flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
+                <ClockIcon className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  {phase === "late"
+                    ? "Rok za izmenu termina je prošao. Termin i dalje možete otkazati, ali će biti evidentirano kao kasno otkazivanje."
+                    : phase === "started"
+                      ? "Termin je već započeo. Za izmenu statusa kontaktirajte salon."
+                      : "Nije moguće izmeniti termin. Kontaktirajte salon."}
+                </span>
               </div>
             )}
 
@@ -533,13 +549,17 @@ export default function ClientEditModal({
 
                 {/* Actions */}
                 <div className="flex flex-col lg:flex-row justify-between items-center gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsAlertOpen(true)}
-                    className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded bg-red-100 text-red-600 hover:bg-red-600 hover:text-white transition"
-                  >
-                    <TrashIcon className="w-4 h-4" /> Otkaži termin
-                  </button>
+                  {canCancel ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsAlertOpen(true)}
+                      className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded bg-red-100 text-red-600 hover:bg-red-600 hover:text-white transition"
+                    >
+                      <TrashIcon className="w-4 h-4" /> Otkaži termin
+                    </button>
+                  ) : (
+                    <span />
+                  )}
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -599,7 +619,20 @@ export default function ClientEditModal({
                     </div>
                   </div>
                 )}
-                <div className="flex justify-end">
+                <div className="flex justify-between items-center gap-3">
+                  {/* Posle roka izmena više nije moguća, ali otkazivanje jeste —
+                      bolje da se klijentkinja javi nego da salon čeka. */}
+                  {canCancel ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsAlertOpen(true)}
+                      className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded bg-red-100 text-red-600 hover:bg-red-600 hover:text-white transition text-sm"
+                    >
+                      <TrashIcon className="w-4 h-4" /> Otkaži termin
+                    </button>
+                  ) : (
+                    <span />
+                  )}
                   <button
                     onClick={onClose}
                     className="cursor-pointer px-4 py-2 bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 rounded text-sm text-gray-700 dark:text-gray-300"
@@ -617,8 +650,18 @@ export default function ClientEditModal({
         open={isAlertOpen}
         setOpen={setIsAlertOpen}
         onConfirm={handleDelete}
-        title="Otkaži termin"
-        message="Da li ste sigurni da želite da otkažete ovaj termin?"
+        title={
+          isLateCancel
+            ? "Rok za regularno otkazivanje je prošao"
+            : "Otkaži termin"
+        }
+        message={
+          isLateCancel
+            ? "Ako sada otkažete termin, otkazivanje će biti evidentirano kao kasno i mogu se primeniti pravila salona za nedolazak."
+            : "Da li želite da otkažete termin?"
+        }
+        confirmLabel={isLateCancel ? "Otkaži ipak" : "Otkaži termin"}
+        cancelLabel="Odustani"
       />
     </>
   );

@@ -19,9 +19,14 @@
  *   open    now <= cutoff                      izmena i regularno otkazivanje
  *   late    cutoff < now < početak             SAMO otkazivanje → no_show/late_cancel
  *   started now >= početak                     klijent ne radi ništa; status rešava salon
+ *   unknown početak se ne može izračunati      klijent ne radi ništa
  *
- * Treća faza postoji da klijentkinja ne bi dva sata POSLE termina kliknula
+ * `started` postoji da klijentkinja ne bi dva sata POSLE termina kliknula
  * „Otkaži ipak" — to više nije otkazivanje nego nedolazak.
+ *
+ * `unknown` je fail-SAFE, ne fail-open: ako sistem ne ume pouzdano da odredi
+ * početak termina, ne sme da autorizuje ni otkazivanje ni pomeranje nad tim
+ * zapisom. UI to prikazuje kao „kontaktirajte salon", a mutacija odbija.
  */
 import { timeToMinutes, zonedTimeToUtc } from "@panta/booking-engine";
 import { SALON_TIMEZONE } from "@/lib/booking/availabilityAdapter";
@@ -79,12 +84,18 @@ export function getCancellationCutoff(
   return new Date(start.getTime() - hours * 60 * 60 * 1000);
 }
 
-export type ClientAppointmentPhase = "open" | "late" | "started";
+export type ClientAppointmentPhase =
+  | "open"
+  | "late"
+  | "started"
+  | "unknown";
 
 /**
- * Faza termina iz ugla klijenta. Kad se vreme ne može pročitati, vraća se
- * `open` — bez validnog početka nema osnova da se klijentu oduzme pravo
- * (fail-open je ovde blaži ishod od tihog zaključavanja termina).
+ * Faza termina iz ugla klijenta.
+ *
+ * Nečitljiv datum/vreme daje `unknown`, ne `open`. Rok je autorizaciona
+ * odluka: pustiti otkazivanje ili pomeranje nad zapisom čiji se početak ne
+ * može izračunati znači pisati u bazu na osnovu pretpostavke.
  */
 export function clientAppointmentPhase(
   appointment: TimingFields,
@@ -92,10 +103,10 @@ export function clientAppointmentPhase(
   timezone: string = SALON_TIMEZONE,
 ): ClientAppointmentPhase {
   const start = getAppointmentStart(appointment, timezone);
-  if (!start) return "open";
+  if (!start) return "unknown";
   if (now.getTime() >= start.getTime()) return "started";
   const cutoff = getCancellationCutoff(appointment, timezone);
-  if (!cutoff) return "open";
+  if (!cutoff) return "unknown";
   return now.getTime() <= cutoff.getTime() ? "open" : "late";
 }
 

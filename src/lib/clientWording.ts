@@ -22,6 +22,20 @@ export function noShowLabel(g?: ClientGender | null): string {
 }
 
 /**
+ * Prikaz statusa `no_show` po razlogu.
+ *
+ * Domen ostaje isti — status je uvek `no_show`, pa statistika i loyalty ne
+ * znaju za razliku. Ali salonu nije isto da li se klijentkinja javila pola
+ * sata ranije ili se prosto nije pojavila, pa se kasno otkazivanje imenuje.
+ */
+export function noShowStatusLabel(
+  noShowReason?: string | null,
+  g?: ClientGender | null,
+): string {
+  return noShowReason === "late_cancel" ? "Kasno otkazano" : noShowLabel(g);
+}
+
+/**
  * Vrati ženski oblik za žensku klijentelu, inače dati default (obično dual
  * oblik, npr. "zakazao/la"). Za slobodne fraze u obaveštenjima.
  */

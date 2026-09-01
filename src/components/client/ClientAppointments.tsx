@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/contexts/TenantContext";
 import {
   noShowLabel,
+  noShowStatusLabel,
   clientNoun,
   clientNounCap,
   genderPast,
@@ -81,7 +82,7 @@ function ClientAppointmentListItem({
                 "Otkazano"}
               {currentAppointment.status === "completed" && "Završeno"}
               {currentAppointment.status === "no_show" &&
-                noShowLabel(clientGender)}
+                noShowStatusLabel(currentAppointment.noShowReason, clientGender)}
             </span>
             {unreadClient !== 0 && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-(--secondary-color) text-white animate-pulse">

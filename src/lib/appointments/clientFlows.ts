@@ -109,8 +109,16 @@ export async function cancelAppointmentAsClient(
   if (phase === "started") {
     return {
       ok: false,
+      error: "Termin je već započeo. Za izmenu statusa kontaktirajte salon.",
+    };
+  }
+
+  // Fail-safe: bez pouzdanog početka termina nema autorizacije za upis.
+  if (phase === "unknown") {
+    return {
+      ok: false,
       error:
-        "Termin je već započeo. Za izmenu statusa kontaktirajte salon.",
+        "Termin nema ispravno vreme pa se ne može otkazati. Kontaktirajte salon.",
     };
   }
 

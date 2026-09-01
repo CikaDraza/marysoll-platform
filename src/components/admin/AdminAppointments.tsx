@@ -26,6 +26,7 @@ import { useSalonProfile } from "@/hooks/useSalonProfile";
 import {
   arrivedLabel,
   noShowLabel,
+  noShowStatusLabel,
   clientNoun,
   clientNounCap,
   genderPast,
@@ -148,7 +149,7 @@ function AppointmentListItem({
                 "Otkazano"}
               {currentAppointment.status === "completed" && "Završeno"}
               {currentAppointment.status === "no_show" &&
-                noShowLabel(clientGender)}
+                noShowStatusLabel(currentAppointment.noShowReason, clientGender)}
             </span>
             {hasRequest(currentAppointment) &&
               (currentAppointment.status === "pending" ? (
