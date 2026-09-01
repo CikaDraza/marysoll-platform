@@ -44,6 +44,37 @@ const appointmentSchema = new Schema(
     contactNote: { type: String, default: "" },
     serviceName: { type: String, required: true },
     services: [servicesSchema],
+    // Canonical cena termina — server je jedini upisuje. Vidi
+    // `IAppointmentPricing`: 0 je stvarna nula, `null` je nepoznata cena.
+    // NAMERNO odvojeno od `originalPrice`/`discountAmount`/`finalPrice`, koji
+    // su vaučerska aritmetika i imaju drugu semantiku.
+    pricing: {
+      type: {
+        mode: { type: String, enum: ["fixed", "on_request", "from"] },
+        currency: { type: String, default: "RSD" },
+        baseAmount: { type: Number, default: null },
+        minimumTotal: { type: Number, default: null },
+        knownAddonsTotal: { type: Number, default: 0 },
+        quotedBaseAmount: { type: Number, default: null },
+        quotedTotal: { type: Number, default: null },
+        quotedAt: { type: Date, default: null },
+        quotedBy: { type: String, default: null },
+        chargedAmount: { type: Number, default: null },
+        chargedAt: { type: Date, default: null },
+        chargedBy: { type: String, default: null },
+        lines: [
+          {
+            kind: { type: String, enum: ["base", "variant", "extra"] },
+            label: String,
+            amount: { type: Number, default: null },
+            ref: String,
+            quantity: Number,
+            _id: false,
+          },
+        ],
+      },
+      default: undefined,
+    },
     // Zahtev klijentkinje uz termin ("intake"): opis, referentni link i prilozi.
     // Namerno generično (`request`/`attachments`), ne `nailImage` — sutra je
     // ovo referenca za frizuru, šminku ili tetovažu.

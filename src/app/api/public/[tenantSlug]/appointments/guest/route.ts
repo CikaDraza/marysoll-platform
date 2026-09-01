@@ -31,6 +31,7 @@ import { requireCapability } from "@/lib/platform/capabilities-server";
 import { sanitizeAppointmentRequest } from "@/lib/appointments/intake";
 import { getTenantFolder } from "@/lib/cloudinary";
 import { resolveBookingRequest } from "@/lib/booking/resolveBookingRequest";
+import { buildPricingSnapshot } from "@/lib/appointments/pricingSnapshot";
 import { BookingError } from "@/lib/booking/errors";
 
 type Params = { params: Promise<{ tenantSlug: string }> };
@@ -210,6 +211,8 @@ export async function POST(request: NextRequest, { params }: Params) {
         intakeRequest,
         await getTenantFolder(String(tenant._id)),
       ),
+      // Canonical cena — server-generated i za gostinski tok.
+      pricing: buildPricingSnapshot(resolved.pricing),
       status: "pending",
       messages: [],
       adminNotified: true,

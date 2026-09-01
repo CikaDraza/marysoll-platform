@@ -196,3 +196,28 @@ describe.sequential("resolveBookingRequest — server authority", () => {
     expect(resolved.pricing.mode).toBe("on_request");
   });
 });
+
+describe.sequential("2B — vaučer čeka numeričku osnovicu", () => {
+  it("dokumentovano ponašanje: on_request nema osnovicu za popust", async () => {
+    // Vaučer je PRAVILO popusta i ne mora znati cenu pri rezervaciji.
+    // Dok je `pricing.total` null, `discountAmount` i `finalPrice` ostaju null —
+    // 0 bi značilo „obračunato nad cenom nula", što nije isto što i
+    // „još nije obračunato".
+    const { estimateServicePrice } = await import("@/helpers/servicePrice");
+    const { buildPricingSnapshot } = await import(
+      "@/lib/appointments/pricingSnapshot"
+    );
+    const estimate = estimateServicePrice({
+      service: {
+        _id: "s", name: "Izlivanje", category: "Nokti", type: "single",
+        priceMode: "on_request", duration: 120, description: "", items: [],
+        subscription: { enabled: false }, createdAt: "", updatedAt: "",
+        extras: [{ name: "Stiker", price: 700, duration: 10, perItem: true }],
+      } as never,
+      extras: [{ name: "Stiker", quantity: 1 }],
+    });
+    const snapshot = buildPricingSnapshot(estimate);
+    expect(snapshot.minimumTotal).toBeNull();
+    expect(snapshot.knownAddonsTotal).toBe(700);
+  });
+});

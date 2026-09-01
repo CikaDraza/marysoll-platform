@@ -18,6 +18,8 @@ import {
   unRedeemForAppointment,
 } from "./vouchers/service";
 import { publishReferralCompletionForAppointment } from "./referrals";
+import { getAppointmentRealizedValue } from "@/lib/appointments/pricingSnapshot";
+import type { IAppointmentPricing } from "@/types";
 
 interface AppointmentLean {
   _id: Types.ObjectId;
@@ -25,6 +27,7 @@ interface AppointmentLean {
   clientProfileId?: Types.ObjectId;
   serviceName?: string;
   finalPrice?: number;
+  pricing?: IAppointmentPricing;
   services?: Array<{ price?: number; quantity?: number }>;
   appliedVoucherId?: Types.ObjectId;
   loyaltyProcessed?: {
@@ -34,12 +37,20 @@ interface AppointmentLean {
   };
 }
 
+/**
+ * Potrošnja na kojoj se dodeljuju bodovi.
+ *
+ * Redosled je namerno ovakav:
+ *   1. `finalPrice` — cena posle vaučera, kad je obračun izvršen;
+ *   2. `chargedAmount` — stvarno naplaćeno, kad vaučera nema;
+ *   3. legacy numerička cena za zatečene termine.
+ *
+ * Nepoznata cena daje 0 potrošnje, ne 0 dinara prihoda — bodovi se prosto ne
+ * dodeljuju dok se cena ne sazna.
+ */
 function appointmentSpend(appt: AppointmentLean): number {
   if (typeof appt.finalPrice === "number") return appt.finalPrice;
-  return (appt.services ?? []).reduce(
-    (sum, s) => sum + (Number(s.price) || 0) * (Number(s.quantity) || 1),
-    0,
-  );
+  return getAppointmentRealizedValue(appt as never) ?? 0;
 }
 
 export async function loyaltyOnAppointmentStatusChange(
@@ -54,7 +65,7 @@ export async function loyaltyOnAppointmentStatusChange(
 
     const appt = (await Appointment.findById(appointmentId)
       .select(
-        "tenantId clientProfileId serviceName finalPrice services appliedVoucherId loyaltyProcessed",
+        "tenantId clientProfileId serviceName finalPrice pricing services appliedVoucherId loyaltyProcessed",
       )
       .lean()) as AppointmentLean | null;
     if (!appt?.clientProfileId) return;

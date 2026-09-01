@@ -210,6 +210,59 @@ export interface IAppointmentRequest {
   attachments?: IAppointmentAttachment[];
 }
 
+/**
+ * Jedna stavka računa u trenutku rezervacije.
+ * `amount: null` = iznos se ne zna (na upit) i ne ulazi ni u kakav zbir.
+ */
+export interface IPricingLine {
+  kind: "base" | "variant" | "extra";
+  label: string;
+  amount: number | null;
+  /** Opaque adresa dela usluge, kad postoji. */
+  ref?: string;
+  quantity?: number;
+}
+
+/**
+ * Canonical cena termina — server-generated, nikad iz browsera.
+ *
+ * Ključno pravilo:
+ *   0    = poznata cena od nula dinara
+ *   null = cena NIJE poznata / nije potvrđena
+ *
+ * Životni ciklus je četvorostepen i svaki stepen je zasebna činjenica:
+ *   katalog → snapshot pri rezervaciji → quote salona → stvarno naplaćeno
+ */
+export interface IAppointmentPricing {
+  mode: PriceMode;
+  currency: string;
+
+  /** Osnovna cena pri rezervaciji; `null` kod `on_request`. */
+  baseAmount: number | null;
+  /** Najmanji mogući ukupan iznos; `null` kada osnovna cena nije poznata. */
+  minimumTotal: number | null;
+  /** Poznate doplate i dodaci. NIKAD sam za sebe nije cena termina. */
+  knownAddonsTotal: number;
+
+  /** Salon je naknadno potvrdio osnovnu cenu (npr. posle fotografije). */
+  quotedBaseAmount?: number | null;
+  /** Server-izvedeno: `quotedBaseAmount + knownAddonsTotal`. */
+  quotedTotal?: number | null;
+  quotedAt?: string | Date | null;
+  quotedBy?: string | null;
+
+  /**
+   * Stvarno naplaćen UKUPAN iznos posle tretmana.
+   * Namerno NIJE `finalPrice` — to je cena posle vaučera, druga stvar.
+   */
+  chargedAmount?: number | null;
+  chargedAt?: string | Date | null;
+  chargedBy?: string | null;
+
+  /** Odakle je cena došla — da kasnije znamo zašto je minimum bio baš toliki. */
+  lines: IPricingLine[];
+}
+
 export interface IAppointmentService {
   serviceId: string;
   serviceName?: string;
@@ -243,6 +296,8 @@ export interface IAppointment {
   services: IAppointmentService[];
   /** Zahtev klijentkinje (slika / link / opis), ako ga je poslala. */
   request?: IAppointmentRequest;
+  /** Canonical cena — server-generated. Stari termini je nemaju. */
+  pricing?: IAppointmentPricing;
   duration: number;
   date: string;
   time: string;

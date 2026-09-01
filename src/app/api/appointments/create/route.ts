@@ -30,6 +30,7 @@ import { requireCapability } from "@/lib/platform/capabilities-server";
 import { sanitizeAppointmentRequest } from "@/lib/appointments/intake";
 import { getTenantFolder } from "@/lib/cloudinary";
 import { resolveBookingRequest } from "@/lib/booking/resolveBookingRequest";
+import { buildPricingSnapshot } from "@/lib/appointments/pricingSnapshot";
 import { BookingError } from "@/lib/booking/errors";
 
 export async function POST(request: NextRequest) {
@@ -194,10 +195,9 @@ export async function POST(request: NextRequest) {
     // ── Growth Studio: vaučer pri bookingu ──
     // CAS rezervacija (active → reserved): od dva konkurentna bookinga istim
     // kodom tačno jedan prolazi. Popust se računa server-side.
-    const originalPrice = (data.services as IAppointmentService[]).reduce(
-      (sum, s) => sum + (Number(s.price) || 0) * (Number(s.quantity) || 1),
-      0,
-    );
+    // Osnovica je CANONICAL iznos iz kataloga, ne zbir onoga što je browser
+    // poslao. Kod `on_request` je `null` — cena još ne postoji.
+    const canonicalTotal = resolved.pricing.total;
     let reservedVoucher = null;
     if (typeof data.voucherCode === "string" && data.voucherCode.trim()) {
       reservedVoucher = await reserveVoucherForBooking({
@@ -212,9 +212,29 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-    const discountAmount = reservedVoucher
-      ? computeVoucherDiscount(reservedVoucher, data.services)
-      : 0;
+    // Vaučer je PRAVILO popusta i ne mora da zna cenu pri rezervaciji. Dok je
+    // osnovica nepoznata, dinarski iznos se ne obračunava: `discountAmount: 0`
+    // i `finalPrice: 0` bi značili „obračunato nad cenom nula", što nije isto
+    // što i „još nije obračunato". Vaučer ostaje rezervisan i čeka quote.
+    const voucherPricing =
+      canonicalTotal == null
+        ? { originalPrice: null, discountAmount: null, finalPrice: null }
+        : (() => {
+            const discountAmount = reservedVoucher
+              ? computeVoucherDiscount(reservedVoucher, [
+                  {
+                    serviceId: String(data.services[0].serviceId),
+                    price: canonicalTotal,
+                    quantity: 1,
+                  },
+                ])
+              : 0;
+            return {
+              originalPrice: canonicalTotal,
+              discountAmount,
+              finalPrice: Math.max(0, canonicalTotal - discountAmount),
+            };
+          })();
 
     const appointment = new Appointment({
       ...data,
@@ -241,12 +261,12 @@ export async function POST(request: NextRequest) {
         duration: i === 0 ? resolved.durationMinutes : s.duration,
       })),
       unreadCount: { client: 0, admin: 0 },
+      // Canonical cena — server-generated, browser je ne može podmetnuti.
+      pricing: buildPricingSnapshot(resolved.pricing),
       ...(reservedVoucher
         ? {
             appliedVoucherId: reservedVoucher._id,
-            originalPrice,
-            discountAmount,
-            finalPrice: Math.max(0, originalPrice - discountAmount),
+            ...voucherPricing,
           }
         : {}),
     });
