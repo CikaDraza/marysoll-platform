@@ -36,6 +36,8 @@ interface AppointmentListItemProps {
   onOpenChat: (appointment: IAppointment) => void;
   /** Termin na koji je admin došao deep-linkom iz notifikacije. */
   isHighlighted?: boolean;
+  /** Deep-link vodi PRAVO na zahtev: otvori ga bez dodatnog klika. */
+  autoOpenRequest?: boolean;
 }
 
 // components/admin/AdminAppointments.tsx - AppointmentListItem deo
@@ -43,6 +45,7 @@ function AppointmentListItem({
   appointment,
   onOpenChat,
   isHighlighted = false,
+  autoOpenRequest = false,
 }: AppointmentListItemProps) {
   const { updateAppointmentStatus } = useAppointmentMutations();
   const { data: salon } = useSalonProfile();
@@ -67,8 +70,23 @@ function AppointmentListItem({
     );
   }, [appointment, appointments]);
 
-  const [requestOpen, setRequestOpen] = useState(false);
+  const [manualRequestOpen, setManualRequestOpen] = useState(false);
+  // Deep-link otvara zahtev sam, ali samo dok ga admin ne zatvori — inače bi
+  // se modal vraćao pri svakom osvežavanju liste.
+  const [autoOpenDismissed, setAutoOpenDismissed] = useState(false);
   const getStatusColor = (status: string) => statusMeta(status).chip;
+
+  // Izvedeno, ne kroz efekat: postavljanje state-a u efektu lanča rendere.
+  const requestOpen =
+    manualRequestOpen ||
+    (autoOpenRequest &&
+      !autoOpenDismissed &&
+      hasRequest(currentAppointment));
+
+  const closeRequest = () => {
+    setManualRequestOpen(false);
+    setAutoOpenDismissed(true);
+  };
 
   const handleStatusUpdate = (status: IAppointment["status"]) => {
     updateAppointmentStatus.mutate({
@@ -82,7 +100,7 @@ function AppointmentListItem({
     {requestOpen && (
       <AppointmentRequestModal
         appointment={currentAppointment}
-        onClose={() => setRequestOpen(false)}
+        onClose={closeRequest}
       />
     )}
     <li
@@ -138,7 +156,7 @@ function AppointmentListItem({
                 // pa mora da se vidi pre nego što ga salon potvrdi.
                 <button
                   type="button"
-                  onClick={() => setRequestOpen(true)}
+                  onClick={() => setManualRequestOpen(true)}
                   className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 hover:bg-amber-200 transition"
                 >
                   {hasRequestImage(currentAppointment)
@@ -148,7 +166,7 @@ function AppointmentListItem({
               ) : (
                 <button
                   type="button"
-                  onClick={() => setRequestOpen(true)}
+                  onClick={() => setManualRequestOpen(true)}
                   aria-label="Zahtev klijentkinje"
                   title="Zahtev klijentkinje"
                   className="text-base leading-none hover:opacity-70 transition"
@@ -785,6 +803,7 @@ export default function AdminAppointments() {
                   appointment={appointment}
                   onOpenChat={handleOpenChat}
                   isHighlighted={appointment._id === highlightId}
+                  autoOpenRequest={appointment._id === highlightId}
                 />
               ))}
             </ul>

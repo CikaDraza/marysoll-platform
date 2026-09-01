@@ -236,8 +236,30 @@ export async function appointmentCreatedAdminTemplate(data: {
   preferredContact?: "phone" | "instagram" | "email" | "platform";
   contactNote?: string;
   tenantId?: string | null;
+  /** Id termina — CTA vodi PRAVO na njega, ne na spisak. */
+  appointmentId?: string | null;
+  /** Zahtev klijentkinje uz termin (slika / link / opis). */
+  request?: {
+    note?: string;
+    referenceUrl?: string;
+    attachments?: { url: string }[];
+  } | null;
 }): Promise<string> {
   const gender = await getSalonClientGender(data.tenantId);
+
+  // Mejl je SIGNAL, ne skladište: fotografija se ne kači, nego se kaže da
+  // postoji i vodi na termin. Inače bi salon posle par meseci imao stotine
+  // slika razbacanih po inboxu, a Marysoll prestao da bude izvor istine.
+  const hasImage = Boolean(data.request?.attachments?.length);
+  const hasText = Boolean(data.request?.note || data.request?.referenceUrl);
+  const requestSignal = hasImage
+    ? hasText
+      ? `${clientNounCap(gender)} je dodala fotografiju i opis zahteva.`
+      : `${clientNounCap(gender)} je dodala fotografiju zahteva.`
+    : hasText
+      ? `${clientNounCap(gender)} je dodala opis zahteva.`
+      : "";
+
   const content = `
     <p style="margin:0 0 16px 0;">Novi termin čeka odobrenje.</p>
     <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 16px 0;">
@@ -260,7 +282,26 @@ export async function appointmentCreatedAdminTemplate(data: {
     </table>
     ${appointmentDetailTable(data)}
     ${data.note ? `<p style="margin:0 0 16px 0;font-size:14px;color:#6b5b7e;font-style:italic;">Napomena ${clientNoun(gender, "gen")}: ${data.note}</p>` : ""}
-    ${ctaButton("Otvori termine", `${appUrl()}/dashboard?tab=termini`)}
+    ${
+      requestSignal
+        ? `<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
+      style="background:#fff8e6;border-left:4px solid #f5a623;border-radius:0 8px 8px 0;margin:0 0 20px 0;">
+      <tr>
+        <td style="padding:14px 20px;">
+          <p style="margin:0;font-family:'Georgia',serif;font-size:14px;color:#7a5b12;">
+            📷 ${requestSignal} Pogledajte je pre nego što potvrdite termin — može promeniti procenu trajanja.
+          </p>
+        </td>
+      </tr>
+    </table>`
+        : ""
+    }
+    ${ctaButton(
+      requestSignal ? "Pogledaj rezervaciju" : "Otvori termine",
+      data.appointmentId
+        ? `${appUrl()}/dashboard?tab=termini&appointmentId=${encodeURIComponent(data.appointmentId)}`
+        : `${appUrl()}/dashboard?tab=termini`,
+    )}
   `;
   return wrapEmailLayout({
     title: "Novi termin čeka odobrenje",

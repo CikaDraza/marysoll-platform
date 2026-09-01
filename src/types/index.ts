@@ -722,6 +722,8 @@ export interface AppointmentNotificationData {
   proposedDate?: string;
   proposedTime?: string;
   lastUpdatedBy?: "client" | "admin";
+  /** Zahtev klijentkinje — mejl ga NE prilaže, samo najavljuje. */
+  request?: IAppointmentRequest | null;
 }
 
 export interface TestimonialNotificationData {

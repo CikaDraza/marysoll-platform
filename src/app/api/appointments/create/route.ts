@@ -270,6 +270,7 @@ export async function POST(request: NextRequest) {
         clientInstagram: appointment.clientInstagram,
         preferredContact: appointment.preferredContact,
         contactNote: appointment.contactNote,
+        request: appointment.request ?? null,
       },
       "created",
     );
