@@ -50,7 +50,7 @@ export function RadnoVremeTab(props: DashboardTabProps) {
       </div>
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-300">
-          <span>Otkazivanje najkasnije do</span>
+          <span>Izmena i otkazivanje najkasnije</span>
           <input
             type="number"
             min={0}
@@ -64,8 +64,13 @@ export function RadnoVremeTab(props: DashboardTabProps) {
             }
             className="w-16 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1.5 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-400"
           />
-          <span>sat</span>
+          <span>sati pre početka termina</span>
         </label>
+        <p className="text-[11px] text-gray-400 dark:text-gray-500 sm:max-w-xs">
+          Klijent može regularno da izmeni ili otkaže termin najkasnije toliko
+          sati pre početka. Posle toga izmena više nije moguća, a otkazivanje se
+          evidentira kao kasno.
+        </p>
         <button
           onClick={() => sp.save()}
           disabled={sp.isSaving}

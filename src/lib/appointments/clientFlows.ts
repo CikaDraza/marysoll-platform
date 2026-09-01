@@ -15,7 +15,11 @@ import "server-only";
  */
 import { Appointment } from "@/models/Appointment";
 import { Service } from "@/models/Service";
-import { canClientCancelAppointment } from "@/lib/appointments/cancellation";
+import {
+  canClientEditAppointment,
+  clientAppointmentPhase,
+  isClientActionableStatus,
+} from "@/lib/appointments/cancellation";
 import { loadBookingProfile } from "@/lib/appointments/booking";
 import { createAppointmentNotification } from "@/lib/notificationService";
 import { loyaltyOnAppointmentStatusChange } from "@/lib/loyalty/hooks";
@@ -29,9 +33,6 @@ import {
 } from "@/helpers/parseWorkingHours";
 import type { IAppointmentService } from "@/types";
 import type { PreferredContact } from "@/lib/contactRules";
-
-/** Statusi u kojima klijent više ne može ništa da menja. */
-const FINAL_STATUSES = ["appointment_cancelled", "completed", "no_show"];
 
 /* Mongoose Appointment model nije generički tipovan, pa dokument opisujemo
    strukturno — samo polja koja tokovi čitaju/menjaju. */
@@ -96,12 +97,24 @@ export type ClientCancelResult =
 export async function cancelAppointmentAsClient(
   appointment: AppointmentDoc,
 ): Promise<ClientCancelResult> {
-  if (FINAL_STATUSES.includes(appointment.status)) {
+  if (!isClientActionableStatus(appointment.status)) {
     return { ok: false, error: "Termin se više ne može otkazati." };
   }
 
   const now = new Date();
-  const canCancel = canClientCancelAppointment(appointment, now);
+  const phase = clientAppointmentPhase(appointment, now);
+
+  // Termin koji je već počeo klijent ne otkazuje — dva sata posle termina
+  // „Otkaži ipak" nije otkazivanje nego nedolazak, a to procenjuje salon.
+  if (phase === "started") {
+    return {
+      ok: false,
+      error:
+        "Termin je već započeo. Za izmenu statusa kontaktirajte salon.",
+    };
+  }
+
+  const canCancel = phase === "open";
   const previousStatus = appointment.status;
 
   appointment.lastUpdatedBy = "client";
@@ -174,7 +187,13 @@ export async function rescheduleAppointmentAsClient(
   input: RescheduleInput,
   opts?: { expiredMessage?: string },
 ): Promise<ClientRescheduleResult> {
-  if (!canClientCancelAppointment(appointment)) {
+  // Status pre roka: završen/otkazan termin ne treba ni da dobije oznaku
+  // `late_cancel` samo zato što je neko pokušao izmenu.
+  if (!isClientActionableStatus(appointment.status)) {
+    return { ok: false, kind: "final", error: "Termin se više ne može izmeniti." };
+  }
+
+  if (!canClientEditAppointment(appointment)) {
     appointment.cancellationStatus = "late_cancel";
     await appointment.save();
     return {
@@ -182,10 +201,6 @@ export async function rescheduleAppointmentAsClient(
       kind: "expired",
       error: opts?.expiredMessage ?? "Vreme za izmenu termina je isteklo.",
     };
-  }
-
-  if (FINAL_STATUSES.includes(appointment.status)) {
-    return { ok: false, kind: "final", error: "Termin se više ne može izmeniti." };
   }
 
   const serviceId = input.services[0]?.serviceId;

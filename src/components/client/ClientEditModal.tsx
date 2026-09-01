@@ -17,7 +17,7 @@ import { useServices } from "@/hooks/useServices";
 import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import { motion } from "framer-motion";
 import AlertModal from "../modals/AlertModal";
-import { canClientCancelAppointment } from "@/lib/appointments/cancellation";
+import { canClientEditAppointment } from "@/lib/appointments/cancellation";
 import { statusMeta } from "@/lib/appointmentColors";
 import { useTenant } from "@/contexts/TenantContext";
 
@@ -50,7 +50,7 @@ const lbl =
   "block text-[11px] font-bold text-gray-400 dark:text-gray-300 uppercase tracking-widest mb-1.5";
 
 function isWithinEditWindow(appt: IAppointment): boolean {
-  return canClientCancelAppointment(appt);
+  return canClientEditAppointment(appt);
 }
 
 export default function ClientEditModal({
