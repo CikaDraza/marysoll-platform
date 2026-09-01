@@ -1,6 +1,9 @@
 # PANTA T3 — Booking Engine write authority (v1 architecture lock)
 
-> Status: **Slice 5 dark core implementiran; nije live booking authority**.
+> Status: **Slice 5 dark core implementiran.** Od 2026-09-01 `serviceAdapter`
+> (`resolveServiceBookingProduct`) JESTE produkcijski autoritet za selekciju i
+> trajanje, kroz `resolveBookingRequest`. `BookingReservation`, `reserve()` i
+> lifecycle komande ostaju dark — nijedna ruta ih ne poziva.
 > Datum pregleda stvarnog koda: 2026-08-22.
 > Preduslovi: završeni `availability-core` i T2B capability authority.
 >
@@ -369,11 +372,57 @@ i `no_show` su terminalni/history statusi i ne blokiraju novi budući interval.
 `completed` i pravi `no_show` smeju nastati tek po vremenskoj lifecycle politici,
 ne proizvoljnim browser payloadom.
 
-Pravovremeni cancel i reject prelaze u `released`; zapis se ne briše. Kasni
-client cancel danas odmah upisuje Appointment `no_show` i time, preko legacy
-adaptera, zadržava interval. Tokom migracije se to čuva ovako: BookingReservation
-ostaje blocking do planiranog kraja, beleži `lateCancellationAt`, a nakon kraja
-prelazi u `no_show`. Time se termin ne prodaje ponovo, a istorija ostaje tačna.
+Pravovremeni cancel i reject prelaze u `released`; zapis se ne briše.
+
+**Ispravljeno 2026-09-01.** Raniji tekst je tvrdio da kasni client cancel
+zadržava interval „da se termin ne prodaje ponovo". Ta odluka je povučena:
+kažnjavala je salon, ne klijenta. Kasno otkazivanje sada oslobađa termin, a
+posledica za klijenta ide kroz `no_show` i loyalty politiku — ne kroz
+zaključan slot.
+
+Canonical ponašanje (vidi §8.1a) je da NIJEDAN završen termin ne drži vreme,
+a nijedan se ne briše.
+
+### 8.1a Occupancy — koji status drži vreme
+
+Jedina istina je `src/lib/appointments/occupancy.ts`. Pravilo je ranije bilo
+prepisano na sedam mesta kao `$nin: ["appointment_rejected",
+"appointment_cancelled"]`, pa `no_show` NIJE bio isključen — kasno otkazan
+termin je i dalje držao slot i salon ga nije mogao prodati.
+
+| status | drži vreme |
+|---|---|
+| `pending`, `appointment_approved`, `appointment_rescheduled` | **da** |
+| `appointment_rejected`, `appointment_cancelled` | ne |
+| `no_show` (uključujući `noShowReason: "late_cancel"`) | ne |
+| `completed` | ne — istorijski zapis, ne rezervacija |
+
+Dva izvedena oblika, oba iz istog pravila:
+
+- `ACTIVE_APPOINTMENT_STATUS_FILTER` — `$nin` za server upite;
+- `BLOCKING_APPOINTMENT_STATUSES` — **allow-lista** za javni feed zauzeća, da
+  status dodat sutra ne procuri na javni endpoint.
+
+**Nema soft ni hard delete-a radi oslobađanja termina.** Zapis ostaje zbog
+statistike, loyalty-ja, istorije nedolazaka, budućeg Restriction Engine-a i
+audita — samo prestaje da drži vreme.
+
+Klijentski tok:
+
+    regular cancel → `appointment_cancelled`               → slot slobodan
+    late cancel    → `no_show` + `late_cancel`             → slot slobodan
+    admin no-show  → `no_show` + `missed_appointment`      → slot slobodan
+
+### 8.1b OPEN PRODUCT QUESTION — grace period za kratkoročne rezervacije
+
+`cancellationWindowHours` meri vreme **pre početka termina**. Posledica: salon
+sa rokom od 24h, klijent rezerviše termin koji počinje za 6h — i odmah je van
+regularnog prozora za izmenu i otkazivanje.
+
+**Ponašanje se NE menja bez nove poslovne odluke.** Otvoreno pitanje za
+testiranje sa salonima: da li rezervacija napravljena unutar cutoff-a treba
+dodatni grace period od trenutka bookinga (15/30/60 min). Značenje
+`cancellationWindowHours` ostaje nepromenjeno dok se to ne odluči.
 
 ### 8.2 Legacy mapa
 
