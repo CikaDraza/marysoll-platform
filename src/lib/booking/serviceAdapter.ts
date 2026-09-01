@@ -119,11 +119,16 @@ export async function resolveServiceBookingProduct(input: {
   tenantId: string;
   serviceId: string;
   selection?: ServiceProductSelection;
+  /** Već učitana usluga — orkestrator je čita i za cenu, pa se ne učitava dvaput.
+   *  MORA biti učitana tenant-scoped; ovde se ne proverava ponovo. */
+  service?: ServiceRecord | null;
 }): Promise<ResolvedServiceBookingProduct> {
-  const service = await Service.findOne({
-    _id: input.serviceId,
-    tenantId: input.tenantId,
-  }).lean<ServiceRecord>();
+  const service =
+    input.service ??
+    (await Service.findOne({
+      _id: input.serviceId,
+      tenantId: input.tenantId,
+    }).lean<ServiceRecord>());
   if (!service) {
     throw new BookingError(
       "BOOKING_PRODUCT_NOT_AVAILABLE",

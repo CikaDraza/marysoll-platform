@@ -30,6 +30,8 @@ import type { ITenant } from "@/models/Tenant";
 import { requireCapability } from "@/lib/platform/capabilities-server";
 import { sanitizeAppointmentRequest } from "@/lib/appointments/intake";
 import { getTenantFolder } from "@/lib/cloudinary";
+import { resolveBookingRequest } from "@/lib/booking/resolveBookingRequest";
+import { BookingError } from "@/lib/booking/errors";
 
 type Params = { params: Promise<{ tenantSlug: string }> };
 
@@ -125,8 +127,36 @@ export async function POST(request: NextRequest, { params }: Params) {
     const { profile: salonProfile, cancellationWindowHours } =
       await loadBookingProfile(tenantId!);
 
+    // Trajanje dolazi iz kataloga, NIKAD iz zahteva — gost je nepouzdan izvor.
+    let resolved;
+    try {
+      resolved = await resolveBookingRequest({
+        tenantId: tenantId!,
+        serviceId: String(services[0].serviceId),
+        selection: {
+          variantName: services[0].serviceName,
+          extras: (services[0].extras ?? []).map(
+            (e: { name: string; quantity?: number }) => ({
+              name: e.name,
+              quantity: e.quantity,
+            }),
+          ),
+        },
+      });
+    } catch (err) {
+      return NextResponse.json(
+        {
+          error:
+            err instanceof BookingError
+              ? err.message
+              : "Izbor usluge nije validan.",
+        },
+        { status: 400 },
+      );
+    }
+
     // ── Check slot availability ───────────────────────────────────────────────
-    const requestedDuration = Number(duration) || service.duration || 60;
+    const requestedDuration = resolved.durationMinutes;
     const slotError = await checkSlotAvailability({
       tenantId: tenantId!,
       date,
@@ -166,14 +196,14 @@ export async function POST(request: NextRequest, { params }: Params) {
       cancellationWindowHours,
       cancellationStatus: "can_cancel",
       serviceName: resolvedServiceName,
-      services: (services as IAppointmentService[]).map((s) => ({
+      services: (services as IAppointmentService[]).map((s, i) => ({
         ...s,
         serviceName: s.serviceName,
-        duration: s.duration,
+        duration: i === 0 ? resolved.durationMinutes : s.duration,
       })),
       date,
       time,
-      duration: duration || service.duration || 60,
+      duration: resolved.durationMinutes,
       note: note || undefined,
       // Zahtev iz browsera — nikad se ne upisuje sirov.
       request: sanitizeAppointmentRequest(

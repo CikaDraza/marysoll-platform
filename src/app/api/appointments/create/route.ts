@@ -29,6 +29,8 @@ import type { ITenant } from "@/models/Tenant"; // Uveri se da imaš ovaj import
 import { requireCapability } from "@/lib/platform/capabilities-server";
 import { sanitizeAppointmentRequest } from "@/lib/appointments/intake";
 import { getTenantFolder } from "@/lib/cloudinary";
+import { resolveBookingRequest } from "@/lib/booking/resolveBookingRequest";
+import { BookingError } from "@/lib/booking/errors";
 
 export async function POST(request: NextRequest) {
   try {
@@ -146,7 +148,36 @@ export async function POST(request: NextRequest) {
     const { profile: salonProfile, cancellationWindowHours } =
       await loadBookingProfile(tenantId);
 
-    const requestedDuration = Number(data.duration) || service.duration || 60;
+    // Trajanje i cena dolaze iz kataloga, NIKAD iz zahteva. Klijent koji
+    // pošalje `{ duration: 5, price: 1 }` dobija canonical vrednosti.
+    let resolved;
+    try {
+      resolved = await resolveBookingRequest({
+        tenantId,
+        serviceId: String(data.services[0].serviceId),
+        selection: {
+          variantName: data.services[0].serviceName,
+          extras: (data.services[0].extras ?? []).map(
+            (e: { name: string; quantity?: number }) => ({
+              name: e.name,
+              quantity: e.quantity,
+            }),
+          ),
+        },
+      });
+    } catch (err) {
+      return NextResponse.json(
+        {
+          error:
+            err instanceof BookingError
+              ? err.message
+              : "Izbor usluge nije validan.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const requestedDuration = resolved.durationMinutes;
     const slotError = await checkSlotAvailability({
       tenantId,
       date,
@@ -200,11 +231,14 @@ export async function POST(request: NextRequest) {
         data.request,
         await getTenantFolder(tenantId),
       ),
-      duration: data.duration,
-      services: data.services.map((s: IAppointmentService) => ({
+      // Canonical trajanje termina — isto ono kojim je provereno zauzeće.
+      duration: resolved.durationMinutes,
+      services: data.services.map((s: IAppointmentService, i: number) => ({
         ...s,
         serviceName: s.serviceName,
-        duration: s.duration,
+        // Prva (i jedina) stavka nosi canonical trajanje; klijentska vrednost
+        // se ne upisuje da se termin i stavka ne bi razišli.
+        duration: i === 0 ? resolved.durationMinutes : s.duration,
       })),
       unreadCount: { client: 0, admin: 0 },
       ...(reservedVoucher
