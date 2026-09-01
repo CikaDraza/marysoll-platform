@@ -14,6 +14,7 @@ import {
   getCancellationCutoff,
   hasAppointmentStarted,
   isClientActionableStatus,
+  BOOKING_GRACE_PERIOD_MINUTES,
 } from "./cancellation";
 
 /** Termin 12.09.2026 u 14:00 po Beogradu (leto, UTC+2 → 12:00Z). */
@@ -133,5 +134,92 @@ describe("isClientActionableStatus", () => {
     for (const s of ["pending", "appointment_approved", "appointment_rescheduled"]) {
       expect(isClientActionableStatus(s)).toBe(true);
     }
+  });
+});
+
+describe("grace period — 30 minuta za ispravku greške", () => {
+  /**
+   * Salon ima rok od 24h, klijentkinja danas u 10:00 zakazuje za 15:00 —
+   * dakle ODMAH je van salonovog roka. Grace period joj daje pola sata da
+   * ispravi pogrešan klik bez `late_cancel` zapisa.
+   */
+  const CREATED = new Date("2026-09-12T08:00:00Z"); // 10:00 po Beogradu
+  const shortNotice = {
+    date: "2026-09-12",
+    time: "15:00", // 13:00Z
+    cancellationWindowHours: 24,
+    createdAt: CREATED.toISOString(),
+  };
+  const START = new Date("2026-09-12T13:00:00Z");
+
+  it("termin zakazan unutar roka je ODMAH van salonovog prozora", () => {
+    // Dokaz da grace zaista nešto rešava: bez njega bi ovo bilo `late`.
+    expect(getCancellationCutoff(shortNotice)!.getTime()).toBeLessThan(
+      CREATED.getTime(),
+    );
+  });
+
+  it("10:00–10:30 → open, puno pravo na izmenu i otkazivanje", () => {
+    for (const minutes of [0, 1, 15, 29]) {
+      const now = new Date(CREATED.getTime() + minutes * 60_000);
+      expect(clientAppointmentPhase(shortNotice, now)).toBe("open");
+      expect(canClientEditAppointment(shortNotice, now)).toBe(true);
+      expect(canClientCancelAppointment(shortNotice, now)).toBe(true);
+    }
+  });
+
+  it("TAČNO na 30. minutu je još uvek open (granica uključiva)", () => {
+    const now = new Date(CREATED.getTime() + 30 * 60_000);
+    expect(clientAppointmentPhase(shortNotice, now)).toBe("open");
+  });
+
+  it("posle 30 minuta važe pravila salona → late", () => {
+    const now = new Date(CREATED.getTime() + 30 * 60_000 + 1000);
+    expect(clientAppointmentPhase(shortNotice, now)).toBe("late");
+    expect(canClientEditAppointment(shortNotice, now)).toBe(false);
+    expect(canClientCancelLate(shortNotice, now)).toBe(true);
+  });
+
+  it("započet termin nema grace — ni u prvih 30 minuta", () => {
+    // Rezervacija napravljena 10 minuta pre početka: grace bi trajao još 20,
+    // ali termin je počeo i klijent ga više ne dira.
+    const lastMinute = {
+      ...shortNotice,
+      createdAt: new Date(START.getTime() - 10 * 60_000).toISOString(),
+    };
+    expect(clientAppointmentPhase(lastMinute, START)).toBe("started");
+    expect(canClientCancelLate(lastMinute, START)).toBe(false);
+  });
+
+  it("grace NE skraćuje salonov rok kad je on duži", () => {
+    // Termin za tri dana: klijent ima pravo sve do 24h pre početka, mnogo
+    // posle isteka grace perioda.
+    const farAway = {
+      date: "2026-09-15",
+      time: "15:00",
+      cancellationWindowHours: 24,
+      createdAt: CREATED.toISOString(),
+    };
+    const dayAfter = new Date(CREATED.getTime() + 24 * 60 * 60_000);
+    expect(clientAppointmentPhase(farAway, dayAfter)).toBe("open");
+  });
+
+  it("bez createdAt grace ne postoji, ali salonov rok i dalje važi", () => {
+    const noCreatedAt = { ...shortNotice, createdAt: undefined };
+    const now = new Date(CREATED.getTime() + 60_000);
+    expect(clientAppointmentPhase(noCreatedAt, now)).toBe("late");
+
+    const inWindow = { date: "2026-09-15", time: "15:00", cancellationWindowHours: 24 };
+    expect(clientAppointmentPhase(inWindow, now)).toBe("open");
+  });
+
+  it("nevalidan createdAt ne ruši fazu", () => {
+    const broken = { ...shortNotice, createdAt: "ne-datum" };
+    const now = new Date(CREATED.getTime() + 60_000);
+    expect(clientAppointmentPhase(broken, now)).toBe("late");
+  });
+
+  it("BOOKING_GRACE_PERIOD_MINUTES je 30", () => {
+    expect(BOOKING_GRACE_PERIOD_MINUTES).toBe(30);
   });
 });

@@ -16,10 +16,21 @@
  *
  * Tri faze, i van njih nema četvrte:
  *
- *   open    now <= cutoff                      izmena i regularno otkazivanje
- *   late    cutoff < now < početak             SAMO otkazivanje → no_show/late_cancel
+ *   open    u roku salona ILI u grace periodu  izmena i regularno otkazivanje
+ *   late    van oba, a termin nije počeo       SAMO otkazivanje → no_show/late_cancel
  *   started now >= početak                     klijent ne radi ništa; status rešava salon
  *   unknown početak se ne može izračunati      klijent ne radi ništa
+ *
+ * GRACE PERIOD je sistemsko pravilo Marysoll-a, ne podešavanje salona.
+ * Klijentkinja koja je htela 12h a kliknula 11h ne sme zbog pogrešnog klika
+ * da dobije `late_cancel` zapis. Prvih 30 minuta od rezervacije važi puno
+ * pravo na izmenu i otkazivanje — čak i kada je termin zakazan UNUTAR
+ * salonovog roka.
+ *
+ * Posle tih 30 minuta važe pravila salona i izmena više nije dozvoljena.
+ * Namerno: pomeranje termina u poslednji čas ostavlja salonu jednako prazan
+ * slot kao otkazivanje, a klijent bi inače mogao da izbegne `late_cancel`
+ * tako što prvo pomeri termin pa ga kasnije „regularno" otkaže.
  *
  * `started` postoji da klijentkinja ne bi dva sata POSLE termina kliknula
  * „Otkaži ipak" — to više nije otkazivanje nego nedolazak.
@@ -33,6 +44,13 @@ import { SALON_TIMEZONE } from "@/lib/booking/availabilityAdapter";
 import type { IAppointment } from "@/types";
 
 const DEFAULT_CANCELLATION_WINDOW_HOURS = 1;
+
+/**
+ * Koliko dugo posle rezervacije klijent sme da ispravi grešku, bez obzira na
+ * rok salona. Sistemsko pravilo platforme — namerno NIJE tenant podešavanje,
+ * da vlasnica salona ne mora da razume još jedan broj.
+ */
+export const BOOKING_GRACE_PERIOD_MINUTES = 30;
 
 /** Statusi u kojima termin više ne prolazi kroz klijentske akcije. */
 export const CLIENT_FINAL_STATUSES = [
@@ -50,7 +68,7 @@ export function isClientActionableStatus(status: string | undefined): boolean {
 /** Polja koja rok stvarno čita — namerno uže od celog termina. */
 type TimingFields = Pick<
   IAppointment,
-  "date" | "time" | "cancellationWindowHours"
+  "date" | "time" | "cancellationWindowHours" | "createdAt"
 >;
 
 function normalizeWindowHours(value: unknown): number {
@@ -104,10 +122,35 @@ export function clientAppointmentPhase(
 ): ClientAppointmentPhase {
   const start = getAppointmentStart(appointment, timezone);
   if (!start) return "unknown";
+
+  // Započet termin nema ni grace period: klijent ga više ne otkazuje.
   if (now.getTime() >= start.getTime()) return "started";
+
   const cutoff = getCancellationCutoff(appointment, timezone);
   if (!cutoff) return "unknown";
-  return now.getTime() <= cutoff.getTime() ? "open" : "late";
+
+  const withinSalonWindow = now.getTime() <= cutoff.getTime();
+  const graceEnd = getGracePeriodEnd(appointment);
+  const withinGrace = graceEnd !== null && now.getTime() <= graceEnd.getTime();
+
+  return withinSalonWindow || withinGrace ? "open" : "late";
+}
+
+/**
+ * Kraj grace perioda; `null` kada termin nema upotrebljiv `createdAt`.
+ *
+ * Bez vremena rezervacije nema grace-a — ali to ne oduzima ništa, jer se
+ * pravo iz salonovog roka računa nezavisno.
+ */
+export function getGracePeriodEnd(
+  appointment: Pick<IAppointment, "createdAt">,
+): Date | null {
+  if (!appointment.createdAt) return null;
+  const createdAt = new Date(appointment.createdAt);
+  if (Number.isNaN(createdAt.getTime())) return null;
+  return new Date(
+    createdAt.getTime() + BOOKING_GRACE_PERIOD_MINUTES * 60 * 1000,
+  );
 }
 
 /**

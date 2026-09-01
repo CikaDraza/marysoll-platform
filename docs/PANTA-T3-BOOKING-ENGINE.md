@@ -413,16 +413,28 @@ Klijentski tok:
     late cancel    → `no_show` + `late_cancel`             → slot slobodan
     admin no-show  → `no_show` + `missed_appointment`      → slot slobodan
 
-### 8.1b OPEN PRODUCT QUESTION — grace period za kratkoročne rezervacije
+### 8.1b Grace period — 30 minuta za ispravku rezervacije
 
-`cancellationWindowHours` meri vreme **pre početka termina**. Posledica: salon
-sa rokom od 24h, klijent rezerviše termin koji počinje za 6h — i odmah je van
-regularnog prozora za izmenu i otkazivanje.
+`cancellationWindowHours` meri vreme **pre početka termina**. Bez dodatnog
+pravila to znači: salon sa rokom od 24h, klijent rezerviše termin za 5 sati —
+i odmah je van regularnog prozora, pa bi za pogrešan klik dobio `late_cancel`.
 
-**Ponašanje se NE menja bez nove poslovne odluke.** Otvoreno pitanje za
-testiranje sa salonima: da li rezervacija napravljena unutar cutoff-a treba
-dodatni grace period od trenutka bookinga (15/30/60 min). Značenje
-`cancellationWindowHours` ostaje nepromenjeno dok se to ne odluči.
+**Odlučeno 2026-09-01:** platforma daje fiksnih **30 minuta** od kreiranja
+termina. To je SISTEMSKO pravilo Marysoll-a, ne podešavanje salona — vlasnica
+ga vidi kao informativnu napomenu u „Radno vreme", bez inputa.
+
+    open = (u salonovom roku ILI unutar 30 min od rezervacije)
+           I termin još nije počeo
+
+Posle grace perioda važe pravila salona i **izmena više nije dozvoljena**, samo
+otkazivanje uz `late_cancel`. Namerno: pomeranje termina u poslednji čas
+ostavlja salonu jednako prazan slot kao otkazivanje, a klijent bi inače mogao
+da izbegne `late_cancel` tako što prvo pomeri termin pa ga kasnije „regularno"
+otkaže.
+
+Započet termin nema grace: `started` se proverava prvi.
+
+Konstanta: `BOOKING_GRACE_PERIOD_MINUTES` u `lib/appointments/cancellation.ts`.
 
 ### 8.2 Legacy mapa
 

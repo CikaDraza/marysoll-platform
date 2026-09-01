@@ -21,12 +21,37 @@ Jedan `cancellationWindowHours` važi i za izmenu i za otkazivanje.
 `canClientEditAppointment` je odvojen ulaz, pa se `editBeforeHours` kasnije
 uvodi bez diranja pozivalaca.
 
+## 1a. Grace period — 30 minuta
+
+Sistemsko pravilo platforme, **ne** podešavanje salona:
+
+    open = (now <= cutoff  ILI  now <= createdAt + 30min)
+           I  now < početakTermina
+
+Klijentkinja koja je htela 12h a kliknula 11h ne sme zbog pogrešnog klika da
+dobije `late_cancel` zapis. Primer — salon sa rokom 24h, rezervacija u 10:00
+za isti dan u 15:00:
+
+    10:00–10:30   Promeni ✓  Otkaži ✓   bez posledica
+    10:30–15:00   Promeni ✗  Otkaži ✓ → late_cancel
+    od 15:00      ni jedno
+
+Posle grace perioda **izmena nije dozvoljena** kad otkazivanje više nije
+regularno. Pomeranje u poslednji čas ostavlja salonu jednako prazan slot kao
+otkazivanje, a klijent bi inače mogao da izbegne `late_cancel` tako što prvo
+pomeri termin pa ga posle „regularno" otkaže.
+
+Započet termin nema grace. Termin bez upotrebljivog `createdAt` nema grace, ali
+pravo iz salonovog roka i dalje važi.
+
+Konstanta: `BOOKING_GRACE_PERIOD_MINUTES = 30`.
+
 ## 2. Četiri faze
 
 | faza | uslov | izmena | otkazivanje |
 |---|---|---|---|
-| `open` | `now <= cutoff` | ✓ | ✓ regularno |
-| `late` | `cutoff < now < početak` | ✗ | ✓ → `no_show` + `late_cancel` |
+| `open` | u roku salona **ili** u grace periodu | ✓ | ✓ regularno |
+| `late` | van oba, a termin nije počeo | ✗ | ✓ → `no_show` + `late_cancel` |
 | `started` | `now >= početak` | ✗ | ✗ — status rešava salon |
 | `unknown` | početak se ne može izračunati | ✗ | ✗ |
 
@@ -93,7 +118,8 @@ kasnije: razlog se već čuva.
 loyalty događaji ostavljaju činjenice; odluku donosi zaseban Restriction
 Engine kada bude napravljen.
 
-## 8. Otvoreno pitanje
+## 8. Otvoreno
 
-Grace period za rezervacije napravljene unutar cutoff-a — vidi
-`PANTA-T3-BOOKING-ENGINE.md` §8.1b. Ponašanje se ne menja bez poslovne odluke.
+Trajanje grace perioda (30 min) je fiksno i namerno nije tenant podešavanje.
+Ako se u praksi pokaže da salonima treba drugačije, to je poslovna odluka —
+konstanta je na jednom mestu.
