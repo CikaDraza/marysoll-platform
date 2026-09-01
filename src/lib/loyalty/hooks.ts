@@ -48,9 +48,12 @@ interface AppointmentLean {
  * Nepoznata cena daje 0 potrošnje, ne 0 dinara prihoda — bodovi se prosto ne
  * dodeljuju dok se cena ne sazna.
  */
-function appointmentSpend(appt: AppointmentLean): number {
+function appointmentSpend(appt: AppointmentLean, status: string): number {
   if (typeof appt.finalPrice === "number") return appt.finalPrice;
-  return getAppointmentRealizedValue(appt as never) ?? 0;
+  // Status se prosleđuje izričito: projekcija ga ne učitava, a `realized`
+  // fallback traži dokaz da je usluga izvršena. Kod reverta merodavan je
+  // PRETHODNI status — bodovi koji se poništavaju zarađeni su na completed.
+  return getAppointmentRealizedValue({ ...appt, status } as never) ?? 0;
 }
 
 export async function loyaltyOnAppointmentStatusChange(
@@ -71,7 +74,6 @@ export async function loyaltyOnAppointmentStatusChange(
     if (!appt?.clientProfileId) return;
 
     const id = String(appointmentId);
-    const spend = appointmentSpend(appt);
 
     // ── Revert: completed → bilo šta drugo ──
     if (previousStatus === "completed" && newStatus !== "completed") {
@@ -97,7 +99,11 @@ export async function loyaltyOnAppointmentStatusChange(
           sourceType: "appointment",
           sourceId: `${id}:r${revertCount}`,
           subjectTenantUserId: appt.clientProfileId,
-          payload: { appointmentId: id, revertCount, spend },
+          payload: {
+          appointmentId: id,
+          revertCount,
+          spend: appointmentSpend(appt, previousStatus),
+        },
         });
       }
     }
@@ -126,7 +132,11 @@ export async function loyaltyOnAppointmentStatusChange(
         sourceType: "appointment",
         sourceId: `${id}:c${cycle}`,
         subjectTenantUserId: appt.clientProfileId,
-        payload: { appointmentId: id, spend, serviceName: appt.serviceName },
+        payload: {
+          appointmentId: id,
+          spend: appointmentSpend(appt, newStatus),
+          serviceName: appt.serviceName,
+        },
       });
       await publishReferralCompletionForAppointment({
         tenantId: appt.tenantId,

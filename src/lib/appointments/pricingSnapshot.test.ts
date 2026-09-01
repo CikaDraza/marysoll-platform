@@ -123,7 +123,7 @@ describe("analytics accessori", () => {
       },
     }) as never;
 
-  it("FIXED: potencijal i realizacija su tačan iznos", () => {
+  it("FIXED + completed: potencijal i realizacija su tačan iznos", () => {
     const a = withPricing({ mode: "fixed", baseAmount: 2000, minimumTotal: 2700 });
     expect(getAppointmentPotentialValue(a)).toBe(2700);
     expect(getAppointmentRealizedValue(a)).toBe(2700);
@@ -178,5 +178,92 @@ describe("analytics accessori", () => {
       status: "completed",
     } as never;
     expect(getAppointmentRealizedValue(legacy)).toBeNull();
+  });
+});
+
+describe("realized traži dokaz da je usluga izvršena", () => {
+  const fixedWith = (status: string, extra = {}) =>
+    ({
+      services: [],
+      status,
+      pricing: {
+        mode: "fixed", currency: "RSD", baseAmount: 2000,
+        minimumTotal: 2700, knownAddonsTotal: 700, lines: [], ...extra,
+      },
+    }) as never;
+
+  it("fixed + completed bez naplaćenog → katalogška cena", () => {
+    expect(getAppointmentRealizedValue(fixedWith("completed"))).toBe(2700);
+  });
+
+  it("REGRESIJA: fixed + pending NIJE prihod", () => {
+    // Bez provere statusa accessor je vraćao 2700 za svaki fiksni termin —
+    // uključujući one koji se tek čekaju ili su otkazani.
+    expect(getAppointmentRealizedValue(fixedWith("pending"))).toBeNull();
+  });
+
+  it("REGRESIJA: fixed + cancelled / rejected / no_show NIJE prihod", () => {
+    for (const status of [
+      "appointment_cancelled",
+      "appointment_rejected",
+      "no_show",
+      "appointment_approved",
+      "appointment_rescheduled",
+    ]) {
+      expect(getAppointmentRealizedValue(fixedWith(status))).toBeNull();
+    }
+  });
+
+  it("from + completed bez naplaćenog → null (minimum nije prihod)", () => {
+    const a = {
+      services: [],
+      status: "completed",
+      pricing: {
+        mode: "from", currency: "RSD", baseAmount: 2000,
+        minimumTotal: 2700, knownAddonsTotal: 700, lines: [],
+      },
+    } as never;
+    expect(getAppointmentRealizedValue(a)).toBeNull();
+  });
+
+  it("on_request + completed bez naplaćenog → null", () => {
+    const a = {
+      services: [],
+      status: "completed",
+      pricing: {
+        mode: "on_request", currency: "RSD", baseAmount: null,
+        minimumTotal: null, knownAddonsTotal: 700, quotedTotal: 3700, lines: [],
+      },
+    } as never;
+    expect(getAppointmentRealizedValue(a)).toBeNull();
+  });
+
+  it("chargedAmount + completed → naplaćeni iznos", () => {
+    expect(
+      getAppointmentRealizedValue(fixedWith("completed", { chargedAmount: 3900 })),
+    ).toBe(3900);
+  });
+
+  it("chargedAmount važi i van completed — eksplicitan unos se ne pogađa", () => {
+    // Nema payment engine-a i refund semantika se ne izmišlja. Ako je salon
+    // izričito upisao naplaćeni iznos (npr. nadoknada za kasno otkazivanje),
+    // to jeste prihod.
+    expect(
+      getAppointmentRealizedValue(fixedWith("no_show", { chargedAmount: 1500 })),
+    ).toBe(1500);
+  });
+
+  it("LEGACY fixed je isto zaštićen statusom", () => {
+    const legacy = (status: string) =>
+      ({ services: [{ price: 2500, quantity: 1 }], status }) as never;
+    expect(getAppointmentRealizedValue(legacy("completed"))).toBe(2500);
+    expect(getAppointmentRealizedValue(legacy("pending"))).toBeNull();
+    expect(getAppointmentRealizedValue(legacy("appointment_cancelled"))).toBeNull();
+  });
+
+  it("potencijal NIJE zaštićen statusom — to je druga činjenica", () => {
+    // Potencijal odgovara na „koliko bi ovaj termin doneo", pa važi i pre
+    // izvršenja. Samo realizacija traži dokaz.
+    expect(getAppointmentPotentialValue(fixedWith("pending"))).toBe(2700);
   });
 });

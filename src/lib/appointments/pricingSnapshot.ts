@@ -102,20 +102,42 @@ export function getAppointmentQuotedValue(
 }
 
 /**
+ * Statusi koji dokazuju da je usluga stvarno izvršena.
+ *
+ * Bez ovog dokaza katalogška cena je samo očekivanje, ne prihod.
+ */
+const REALIZED_STATUSES = ["completed"] as const;
+
+function isRealizedStatus(status: string | undefined): boolean {
+  return REALIZED_STATUSES.includes(status as (typeof REALIZED_STATUSES)[number]);
+}
+
+/**
  * Stvarno realizovan prihod.
  *
- * Samo `chargedAmount` je realizacija. Minimum, quote i poznati dodaci NISU
- * prihod samo zato što termin postoji.
+ * Dva izvora, sa različitim pravilima:
  *
- * Legacy izuzetak: zatečeni `fixed` termini bez snapshot-a nemaju
- * `chargedAmount`, pa se njihova numerička cena i dalje računa — inače bi
- * istorijski prihod starih salona pao na nulu preko noći.
+ *   1. `chargedAmount` — čovek je izričito upisao koliko je naplaćeno. Važi
+ *      uvek, i na otkazanom terminu: ako je salon naplatio nadoknadu za kasno
+ *      otkazivanje, to JESTE prihod. Eksplicitan unos se ne pogađa statusom.
+ *
+ *   2. katalogška cena kao fallback — ovo je ZAKLJUČAK, ne činjenica, pa traži
+ *      dokaz da je usluga izvršena. Bez provere statusa bi `pending`,
+ *      `cancelled` i `appointment_rejected` fiksni termin davali „prihod" od
+ *      2.700 RSD samo zato što pozivalac nije filtrirao status.
+ *
+ * `from` i `on_request` bez naplaćenog iznosa nikad nisu prihod: minimum je
+ * donja granica, a quote je procena.
+ *
+ * Refund semantika ne postoji — nema payment engine-a i ne izmišlja se ovde.
  */
 export function getAppointmentRealizedValue(
   appointment: Pick<IAppointment, "pricing" | "services" | "status">,
 ): number | null {
   const charged = appointment.pricing?.chargedAmount;
   if (typeof charged === "number") return charged;
+
+  if (!isRealizedStatus(appointment.status)) return null;
 
   // Termin sa canonical snapshot-om, a bez naplaćenog iznosa: prihod je
   // poznat samo ako je cena bila fiksna od početka.
