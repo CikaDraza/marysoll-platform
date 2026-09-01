@@ -120,6 +120,10 @@ Engine kada bude napravljen.
 
 ## 8. Otvoreno
 
+> Pun spisak dugova i otvorenih odluka:
+> [PANTA-BOOKING-CRM-ARC.md](PANTA-BOOKING-CRM-ARC.md)
+
+
 Trajanje grace perioda (30 min) je fiksno i namerno nije tenant podešavanje.
 Ako se u praksi pokaže da salonima treba drugačije, to je poslovna odluka —
 konstanta je na jednom mestu.

@@ -2,7 +2,7 @@
 
 > Tracker za tekući luk rada: **T3 Booking Engine + Consultation domen + theme-9 „Skincare Marina"**.
 > Jedan red po slice-u. Detalji su u dokumentu koji je naveden uz slice — ovde stoji samo status i jedna rečenica.
-> Poslednja izmena: 2026-08-31 · `staging/production-engines` · **Edu Centar v1 — pilot ready / feature freeze**
+> Poslednja izmena: 2026-09-02 · `staging/production-engines` · **Edu Centar v1 pilot** + **Beauty Booking/CRM luk u toku**
 >
 > **Aktuelno stanje:** correctness fixes, Theme-9 **2A, ceo 2B i 2C** i
 > migration/staging tooling nalaze se na `main`-u. Staging Release A + migration
@@ -58,6 +58,37 @@
 | EDU F6A/F6B | Moj Prostor + dodela i ACL | ✅ kod | `ClientContentAssignment` kao zaseban odnos; zaštićeno telo služi samo `/panel/moj-prostor/sadrzaji/{id}`, i to uz sva četiri uslova. Javna ruta nikada ne služi zaštićeno telo. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#faza-6b--dodela-sadržaja-i-acl) |
 | EDU F | PDF/DOCX → draft | ✅ kod | DOCX se čita verno, PDF heuristikom; rezultat je uvek draft za pregled, nikada objava. Acceptance nad Marinina četiri prava materijala. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#edu-centar-v1--feature-freeze-2026-08-31) |
 | **Edu Centar v1** | **Feature freeze · Marina pilot** | 🟡 **pilot u toku** | Nove funkcije čekaju signal iz stvarne upotrebe. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#edu-centar-v1--feature-freeze-2026-08-31) |
+
+### Beauty Booking / CRM luk — aktivno
+
+> Tracker: [PANTA-BOOKING-CRM-ARC.md](PANTA-BOOKING-CRM-ARC.md) · staging
+> tenant **theme-1 / Marysoll**. Ništa iz ovog luka nije prošlo kroz pregledač.
+
+| # | Slice | Status | Gde smo stali | Dokument |
+|---|---|---|---|---|
+| B-P0 | Semantika cene: `0` ≠ `null` | ✅ kod | Tri režima: `fixed` tačan, `from` minimum, `on_request` bez ukupne cene. Nepoznata osnovna cena truje ceo zbir — „na upit + stiker 700" više nije „od 700 RSD". | [PANTA-BOOKING-PRICING.md](PANTA-BOOKING-PRICING.md) |
+| B-P1 | Opaque `ref` u javnom ugovoru | ✅ kod | Varijante, dodaci i stavke paketa nose `ref` uz `name`; `_id` se ne izlaže. Aditivno. Ovo je bila mehanička prepreka zbog koje se engine nije mogao priključiti. | [PANTA-BOOKING-PRICING.md](PANTA-BOOKING-PRICING.md#6-server-je-autoritet) |
+| B-2A | Server authority | ✅ kod | `resolveBookingRequest` — tenant-scoped Service → canonical selekcija/trajanje/cena → availability. `resolveServiceBookingProduct` prvi put izlazi iz testova. Priključeno na `create` i javnu gost rutu. | [PANTA-BOOKING-PRICING.md](PANTA-BOOKING-PRICING.md#6-server-je-autoritet) |
+| B-2B | `Appointment.pricing` snapshot | ✅ kod | Server-generated. `chargedAmount` je NOVO polje — `finalPrice` je vaučerska aritmetika i ostaje netaknut. Vaučer čeka numeričku osnovicu. Tri analitička accessora; realizacija traži `completed`. | [PANTA-BOOKING-PRICING.md](PANTA-BOOKING-PRICING.md#3-četiri-različite-činjenice) |
+| B-1A/1B | Rok, faze i klijentske akcije | ✅ kod | Rok = početak termina − prozor, u zoni salona (ranije `createdAt + N`). Četiri faze uz fail-safe `unknown`. Promeni/Otkaži na kartici u „Moji termini". Grace 30 min kao sistemsko pravilo. | [PANTA-CANCELLATION-NOSHOW-POLICY.md](PANTA-CANCELLATION-NOSHOW-POLICY.md) |
+| B-OCC | Occupancy | ✅ kod | `no_show` je na sedam mesta i dalje držao vreme — kasno otkazan termin salon nije mogao da proda. Jedno pravilo, dva izvedena oblika. | [T3 §8.1a](PANTA-T3-BOOKING-ENGINE.md) |
+| B-INT | Zahtev za uslugu (intake) v1 | ✅ kod | `Appointment.request`, `requiresIntake` na KATEGORIJI, tenant-scoped Cloudinary upload sa sanitizacijom, badge i detalj u adminu, mejl kao signal. | [PANTA-SERVICE-INTAKE.md](PANTA-SERVICE-INTAKE.md) |
+| B-PRICE-IN | Unos cene i statistika | ✅ kod | Salon unosi cenu pri Odobri i Došla, oba opciona. Mejl više ne predstavlja cenu dodatka kao cenu termina. „Termini bez cene" i „Cena nije definisana" umesto tihe nule. | [PANTA-BOOKING-CRM-ARC.md §4](PANTA-BOOKING-CRM-ARC.md) |
+| B-SEC | ★ Izolacija klijenta | ✅ kod · **staging provera obavezna** | `/api/appointments` je klijentu vraćao PUNE termine celog salona — imena, telefoni, poruke, intake fotografije, cene. Filter sada dolazi iz tokena. | [PANTA-BOOKING-CRM-ARC.md §5](PANTA-BOOKING-CRM-ARC.md) |
+| B-2C-1 | Client reschedule → canonical | ⬜ nije počet | `Service.findById` bez tenant scope-a; trajanje još iz browsera; `late_cancel` se upisuje zbog NEUSPELE izmene. | [PANTA-BOOKING-CRM-ARC.md §7](PANTA-BOOKING-CRM-ARC.md) |
+| B-2C-2 | Proposal lifecycle | ⬜ nije počet | Prihvatanje predloga radi `date = proposedDate` bez provere dostupnosti → tihi double booking. Klijent nema Odobri/Odbij. | [PANTA-BOOKING-CRM-ARC.md §7](PANTA-BOOKING-CRM-ARC.md) |
+| B-2C-3 | ★ Admin create/edit, HMAC, marketplace | ⬜ nije počet | **Admin edit nema nikakvu proveru dostupnosti** — jedini put koji može pregaziti tuđi termin. Cenu računa u React komponenti. | [PANTA-BOOKING-CRM-ARC.md §7](PANTA-BOOKING-CRM-ARC.md) |
+| B-2C-4 | Vaučer recompute | ⬜ nije počet | Polja za unos postoje; ostaje obračun kad quote postane numerički. | [PANTA-BOOKING-PRICING.md §4](PANTA-BOOKING-PRICING.md) |
+| B-DEBT | `extras` se odbacuju pri upisu | ⚠️ nedokazano | `IAppointmentService` ima `variants?`/`extras?`, Mongoose `servicesSchema` nema nijedno. Dokazati integracionim testom pre menjanja modela. | [PANTA-BOOKING-CRM-ARC.md §7](PANTA-BOOKING-CRM-ARC.md) |
+| B-360 | Klijent 360° | ⬜ odloženo | Istorija termina po klijentu, isti detalj zahteva. Podaci već postoje. | [PANTA-BOOKING-CRM-ARC.md §8](PANTA-BOOKING-CRM-ARC.md) |
+| B-INT2 | Intake v2 | ⬜ odloženo | Per-service `inherit\|enabled\|disabled`, wizard, intake na SVIM ulazima za rezervaciju. | [PANTA-SERVICE-INTAKE.md §7](PANTA-SERVICE-INTAKE.md) |
+| B-THEMES | Brisanje theme-3/4/6 | ⬜ odloženo | ~7.300 linija, 66 fajlova; baza potvrđena prazna. Preduslov: `Theme3GalleryMasonry` u `shared/`. | [PANTA-BOOKING-CRM-ARC.md §8](PANTA-BOOKING-CRM-ARC.md) |
+
+**Sedam otvorenih odluka bez presude** — grace period kao tenant podešavanje,
+razlika kazne `late_cancel` vs `missed_appointment`, `chargedAmount` na
+otkazanom, vaučer na `on_request`, značenje `appointment_rescheduled`,
+konvergencija quote snapshot-a i Marijina konfiguracija „Izlivanja":
+[PANTA-BOOKING-CRM-ARC.md §9](PANTA-BOOKING-CRM-ARC.md).
 
 ### Booking / Consultation — zadržano
 

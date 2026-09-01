@@ -139,6 +139,10 @@ ostaje za Slice kad `BookingReservation` postane write authority.
 
 ## 9. Nedovršeno
 
+> Pun spisak dugova i otvorenih odluka:
+> [PANTA-BOOKING-CRM-ARC.md](PANTA-BOOKING-CRM-ARC.md)
+
+
 - unos `quotedBaseAmount` i `chargedAmount` u adminu (2C);
 - statistika i mejlovi još ne koriste accessore (2D/2E);
 - admin create/edit, `/api/booking` i marketplace još ne prolaze kroz
