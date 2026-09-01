@@ -341,7 +341,7 @@ describe("estimateServicePrice", () => {
     expect(e.durationMinutes).toBe(125);
   });
 
-  it("sve na upit: nema iznosa, ne prikazuje se 0", () => {
+  it("sve na upit: nema iznosa, total je null (ne 0)", () => {
     const s = svc({
       type: "single",
       priceMode: "on_request",
@@ -350,7 +350,8 @@ describe("estimateServicePrice", () => {
     });
     const e = estimateServicePrice({ service: s, extras: [{ name: "Morska sirena", quantity: 1 }] });
     expect(e.unknown).toBe(true);
-    expect(e.total).toBe(0);
+    expect(e.total).toBeNull();
+    expect(e.knownAddonsTotal).toBe(0);
   });
 
   it("dodatak na upit pretvara fiksnu cenu u procenu", () => {
@@ -418,5 +419,229 @@ describe("estimateServicePrice — količina dodatka", () => {
     expect(e.total).toBe(2000);
     expect(e.isEstimate).toBe(true);
     expect(e.durationMinutes).toBe(80); // trajanje se množi i kad cena nije poznata
+  });
+});
+
+describe("tri canonical režima cene", () => {
+  const stiker3d = { name: "Stiker 3D", price: 700, duration: 10, perItem: true };
+  const cirkoni = { name: "Cirkoni", price: 200, duration: 5, perItem: true };
+  const sirenaNaUpit = {
+    name: "Morska sirena",
+    price: 0,
+    priceMode: "on_request" as const,
+    duration: 10,
+    perItem: true,
+  };
+
+  describe("ON_REQUEST — nepoznata baza truje ceo zbir", () => {
+    it("REGRESIJA: usluga na upit + dodatak 700 NIJE 700", () => {
+      // `UNKNOWN + 700 = UNKNOWN`. Prikaz „od 700 RSD" je izgledao kao da
+      // termin košta 700, a znamo samo jedan deo računa.
+      const e = estimateServicePrice({
+        service: svc({
+          type: "single",
+          priceMode: "on_request",
+          duration: 120,
+          extras: [stiker3d],
+        }),
+        extras: [{ name: "Stiker 3D", quantity: 1 }],
+      });
+      expect(e.total).toBeNull();
+      expect(e.unknown).toBe(true);
+      expect(e.knownAddonsTotal).toBe(700);
+      expect(e.mode).toBe("on_request");
+    });
+
+    it("REGRESIJA: Marijin slučaj — varijanta na upit + dodatak 700", () => {
+      const e = estimateServicePrice({
+        service: svc({
+          type: "variant",
+          duration: 120,
+          variants: [
+            {
+              name: "Veličina 3",
+              price: 0,
+              priceMode: "on_request",
+              duration: 120,
+              perItem: false,
+            },
+          ],
+          extras: [stiker3d],
+        }),
+        variantName: "Veličina 3",
+        extras: [{ name: "Stiker 3D", quantity: 1 }],
+      });
+      expect(e.total).toBeNull();
+      expect(e.unknown).toBe(true);
+      expect(e.knownAddonsTotal).toBe(700);
+    });
+
+    it("više poznatih dodataka i dalje ne daje cenu termina", () => {
+      const e = estimateServicePrice({
+        service: svc({
+          type: "single",
+          priceMode: "on_request",
+          duration: 120,
+          extras: [stiker3d, cirkoni],
+        }),
+        extras: [
+          { name: "Stiker 3D", quantity: 1 },
+          { name: "Cirkoni", quantity: 1 },
+        ],
+      });
+      expect(e.total).toBeNull();
+      expect(e.knownAddonsTotal).toBe(900);
+    });
+
+    it("dodatak na upit pored baze na upit ne menja ishod", () => {
+      const e = estimateServicePrice({
+        service: svc({
+          type: "single",
+          priceMode: "on_request",
+          duration: 120,
+          extras: [sirenaNaUpit, stiker3d],
+        }),
+        extras: [
+          { name: "Morska sirena", quantity: 1 },
+          { name: "Stiker 3D", quantity: 1 },
+        ],
+      });
+      expect(e.total).toBeNull();
+      expect(e.knownAddonsTotal).toBe(700);
+    });
+  });
+
+  describe("FROM — minimum ostaje brojiv", () => {
+    it("REGRESIJA: 2000 + 700 = minimum 2700", () => {
+      const e = estimateServicePrice({
+        service: svc({
+          type: "single",
+          priceMode: "from",
+          basePrice: 2000,
+          duration: 120,
+          extras: [stiker3d],
+        }),
+        extras: [{ name: "Stiker 3D", quantity: 1 }],
+      });
+      expect(e.total).toBe(2700);
+      expect(e.isEstimate).toBe(true);
+      expect(e.unknown).toBe(false);
+      expect(e.knownAddonsTotal).toBe(700);
+      expect(e.mode).toBe("from");
+    });
+
+    it("varijanta na upit ne ruši minimum sa korena", () => {
+      const e = estimateServicePrice({
+        service: svc({
+          type: "variant",
+          priceMode: "from",
+          basePrice: 2000,
+          duration: 120,
+          variants: [
+            {
+              name: "Veličina 3",
+              price: 0,
+              priceMode: "on_request",
+              duration: 120,
+              perItem: false,
+            },
+          ],
+          extras: [stiker3d],
+        }),
+        variantName: "Veličina 3",
+        extras: [{ name: "Stiker 3D", quantity: 1 }],
+      });
+      expect(e.total).toBe(2700);
+      expect(e.unknown).toBe(false);
+      expect(e.isEstimate).toBe(true);
+    });
+  });
+
+  describe("FIXED — ponašanje nepromenjeno", () => {
+    it("tačan zbir, bez „od“", () => {
+      const e = estimateServicePrice({
+        service: svc({
+          type: "single",
+          basePrice: 2000,
+          duration: 120,
+          extras: [stiker3d],
+        }),
+        extras: [{ name: "Stiker 3D", quantity: 1 }],
+      });
+      expect(e.total).toBe(2700);
+      expect(e.isEstimate).toBe(false);
+      expect(e.unknown).toBe(false);
+      expect(e.mode).toBe("fixed");
+    });
+
+    it("više fiksnih dodataka se sabira tačno", () => {
+      const e = estimateServicePrice({
+        service: svc({
+          type: "single",
+          basePrice: 2000,
+          duration: 120,
+          extras: [stiker3d, cirkoni],
+        }),
+        extras: [
+          { name: "Stiker 3D", quantity: 1 },
+          { name: "Cirkoni", quantity: 1 },
+        ],
+      });
+      expect(e.knownAddonsTotal).toBe(900);
+      expect(e.total).toBe(2900);
+      expect(e.isEstimate).toBe(false);
+    });
+
+    it("količina se poštuje samo kod dodataka sa `allowQuantity`", () => {
+      const e = estimateServicePrice({
+        service: svc({
+          type: "single",
+          basePrice: 2000,
+          duration: 120,
+          extras: [
+            { ...stiker3d, allowQuantity: true },
+            cirkoni, // bez allowQuantity → uvek 1
+          ],
+        }),
+        extras: [
+          { name: "Stiker 3D", quantity: 2 },
+          { name: "Cirkoni", quantity: 3 },
+        ],
+      });
+      expect(e.knownAddonsTotal).toBe(1600); // 2×700 + 1×200
+      expect(e.total).toBe(3600);
+    });
+
+    it("dodatak na upit pretvara tačnu cenu u donju granicu", () => {
+      const e = estimateServicePrice({
+        service: svc({
+          type: "single",
+          basePrice: 2000,
+          duration: 120,
+          extras: [sirenaNaUpit],
+        }),
+        extras: [{ name: "Morska sirena", quantity: 1 }],
+      });
+      expect(e.total).toBe(2000);
+      expect(e.isEstimate).toBe(true);
+      expect(e.unknown).toBe(false);
+    });
+
+    it("fiksna varijanta zadržava punu cenu", () => {
+      const e = estimateServicePrice({
+        service: svc({
+          type: "variant",
+          basePrice: 9999,
+          variants: [
+            { name: "Korekcija", price: 2500, duration: 90, perItem: false },
+          ],
+          extras: [stiker3d],
+        }),
+        variantName: "Korekcija",
+        extras: [{ name: "Stiker 3D", quantity: 1 }],
+      });
+      expect(e.total).toBe(3200);
+      expect(e.mode).toBe("fixed");
+    });
   });
 });

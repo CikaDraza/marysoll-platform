@@ -114,6 +114,8 @@ export interface BookingContextValue {
   totalDuration: number;
   /** Razložena procena — osnovna cena, doplata varijante, dodaci. */
   priceLines: PriceLine[];
+  /** Objašnjenje kada cena termina nije poznata; prazno inače. */
+  priceNote: string;
   /** Prikaz ukupne cene: "1.500,00 RSD", "od 1.500,00 RSD" (deo je na upit),
    *  "Cena na upit" (sve je na upit) ili "" (ništa još nije izabrano). */
   totalPriceLabel: string;
@@ -391,16 +393,25 @@ export function BookingProvider({
     [selectedService, selectedVariant, selectedExtras],
   );
 
+  // `null` = cena termina se ne zna. U legacy payload ide 0, isto kao i do
+  // sada za usluge na upit — poznati dodaci se NE upisuju kao cena termina.
   const totalPrice = estimate?.total ?? 0;
   const totalDuration = estimate?.durationMinutes ?? 0;
   const priceLines = estimate?.lines ?? [];
 
   const totalPriceLabel = useMemo(() => {
-    if (!estimate || estimate.unknown)
-      return estimate ? PRICE_ON_REQUEST_LABEL : "";
+    if (!estimate) return "";
+    // Nepoznata osnovna cena: nikad ne prikazuj poznate dodatke kao cenu
+    // termina — „od 700" bi izgledalo kao da termin košta 700.
+    if (estimate.total == null) return PRICE_ON_REQUEST_LABEL;
     const formatted = `${formatPriceToString(estimate.total)} RSD`;
     return estimate.isEstimate ? `od ${formatted}` : formatted;
   }, [estimate]);
+
+  /** Poruka ispod ukupnog kada konačna cena tek treba da se odredi. */
+  const priceNote = estimate?.unknown
+    ? "Konačna cena biće potvrđena naknadno."
+    : "";
 
   // Ime izbora koje ide u termin. Paket i jedna usluga nemaju izbor — samo
   // varijanta uz ime usluge ("Izlivanje noktiju - Veličina 2").
@@ -679,6 +690,7 @@ export function BookingProvider({
     totalPrice,
     totalDuration,
     priceLines,
+    priceNote,
     totalPriceLabel,
     handleClose,
     // toast.error vraća string pa originalni handleri nisu striktno Promise<void>;

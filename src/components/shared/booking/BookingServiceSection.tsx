@@ -20,6 +20,7 @@ export function BookingServiceSection() {
     selectedService,
     totalDuration,
     priceLines,
+    priceNote,
     totalPriceLabel,
   } = useBookingContext();
 
@@ -252,17 +253,26 @@ export function BookingServiceSection() {
             ))}
           </ul>
         )}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-xs text-gray-500">
-              {totalPriceLabel.startsWith("od ")
-                ? "Trenutna procena"
-                : "Ukupno"}
+              {priceNote
+                ? "Konačna cena"
+                : totalPriceLabel.startsWith("od ")
+                  ? "Trenutna procena"
+                  : "Ukupno"}
             </div>
             <div className="text-xs text-gray-400">{totalDuration} min</div>
           </div>
-          <div className="text-xl font-bold text-(--primary-color) text-right">
-            {totalPriceLabel || "—"}
+          <div className="text-right">
+            <div className="text-xl font-bold text-(--primary-color)">
+              {totalPriceLabel || "—"}
+            </div>
+            {priceNote && (
+              <div className="text-[11px] text-gray-500 mt-0.5 max-w-[16rem]">
+                {priceNote}
+              </div>
+            )}
           </div>
         </div>
       </div>

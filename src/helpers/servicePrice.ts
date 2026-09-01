@@ -23,7 +23,7 @@
 // `variants[].price` uvek znači punu cenu i to se nikad ne menja — postojeće
 // `variant + fixed` usluge zavise od toga.
 
-import type { IService, IServiceVariant } from "@/types";
+import type { IService, IServiceVariant, PriceMode } from "@/types";
 
 function knownPrices(
   parts: ReadonlyArray<{ price?: number | null; priceMode?: string }>,
@@ -82,11 +82,25 @@ export interface SelectedExtra {
 export interface ServicePriceEstimate {
   /** Stavke procene, redom kojim se prikazuju klijentkinji. */
   lines: PriceLine[];
-  /** Zbir SAMO poznatih iznosa. */
-  total: number;
-  /** true → zbir je donja granica, prikazuje se kao "od X". */
+  /** Režim OSNOVNE cene — dodaci ga ne menjaju. */
+  mode: PriceMode;
+  /**
+   * Zbir poznatih doplata i dodataka (bez osnovne cene).
+   *
+   * NIKAD nije cena termina sam za sebe. Kod `on_request` znamo samo ovaj
+   * deo računa, pa se prikazuje kao stavka — ne kao ukupno.
+   */
+  knownAddonsTotal: number;
+  /**
+   * Cena termina, ili `null` kada se OSNOVNA cena ne zna.
+   *
+   * `UNKNOWN + 700 = UNKNOWN`. Nepoznata baza truje ceo zbir bez obzira
+   * koliko poznatih dodataka stoji pored nje.
+   */
+  total: number | null;
+  /** true → prikazani iznos je donja granica ("od X"), ne konačna cena. */
   isEstimate: boolean;
-  /** true → nijedan deo nema poznat iznos; prikazuje se "Cena na upit". */
+  /** true → cena termina se ne zna; `total` je `null`. */
   unknown: boolean;
   durationMinutes: number;
 }
@@ -119,44 +133,50 @@ export function estimateServicePrice(input: {
   const lines: PriceLine[] = [];
   let duration = 0;
 
+  /** Osnovna cena. `null` = ne zna se, i tada nema ukupne cene termina. */
+  let baseAmount: number | null = null;
+  let mode: PriceMode = "fixed";
+  /** Poznate doplate i dodaci — sve OSIM osnovne cene. */
+  let knownAddonsTotal = 0;
+  /** Neki poznat deo nedostaje → prikazani iznos je donja granica. */
+  let hasUnknownPart = false;
+
   const variant =
     service.type === "variant"
       ? service.variants?.find((v) => v.name === input.variantName)
       : undefined;
 
   if (service.priceMode === "from") {
-    lines.push({
-      kind: "base",
-      label: "Osnovna cena",
-      amount: service.basePrice ?? null,
-    });
+    mode = "from";
+    baseAmount = service.basePrice ?? null;
+    lines.push({ kind: "base", label: "Osnovna cena", amount: baseAmount });
     duration += service.duration ?? 0;
+
     if (variant) {
-      lines.push({
-        kind: "variant",
-        label: variant.name,
-        amount: variantAdjustment(variant),
-      });
+      const adjustment = variantAdjustment(variant);
+      lines.push({ kind: "variant", label: variant.name, amount: adjustment });
+      if (adjustment == null) hasUnknownPart = true;
+      else knownAddonsTotal += adjustment;
       // Kod "from" je `duration` korena najkraće trajanje; varijanta ga
       // zamenjuje samo ako nosi svoje.
       if (variant.duration) duration = variant.duration;
     }
   } else if (service.type === "variant") {
+    // Bez izabrane varijante osnovna cena još ne postoji — nije "na upit",
+    // nego "nije izabrano", pa se ne prikazuje nikakav iznos.
     if (variant) {
-      lines.push({
-        kind: "variant",
-        label: variant.name,
-        amount: variant.priceMode === "on_request" ? null : variant.price,
-      });
+      const known = variant.priceMode !== "on_request";
+      baseAmount = known ? variant.price : null;
+      if (!known) mode = "on_request";
+      lines.push({ kind: "variant", label: variant.name, amount: baseAmount });
       duration += variant.duration ?? 0;
     }
   } else {
     // single i group: jedna cena i jedno trajanje na korenu.
-    lines.push({
-      kind: "base",
-      label: service.name,
-      amount: service.priceMode === "on_request" ? null : (service.basePrice ?? 0),
-    });
+    const known = service.priceMode !== "on_request";
+    baseAmount = known ? (service.basePrice ?? 0) : null;
+    if (!known) mode = "on_request";
+    lines.push({ kind: "base", label: service.name, amount: baseAmount });
     duration += service.duration ?? 0;
   }
 
@@ -165,25 +185,26 @@ export function estimateServicePrice(input: {
     if (!extra) continue;
     // Količina množi i cenu i trajanje: 3 × stiker je i 3 × cena i 3 × minuta.
     const quantity = extra.allowQuantity ? Math.max(1, selected.quantity) : 1;
-    lines.push({
-      kind: "extra",
-      label: extra.name,
-      amount:
-        extra.priceMode === "on_request" ? null : (extra.price ?? 0) * quantity,
-      quantity,
-    });
+    const amount =
+      extra.priceMode === "on_request" ? null : (extra.price ?? 0) * quantity;
+    lines.push({ kind: "extra", label: extra.name, amount, quantity });
+    if (amount == null) hasUnknownPart = true;
+    else knownAddonsTotal += amount;
     if (extra.duration) duration += extra.duration * quantity;
   }
 
-  const known = lines.filter((l) => l.amount != null);
-  const total = known.reduce((sum, l) => sum + (l.amount ?? 0), 0);
+  // Osnovna cena je nepoznata → nema ukupne cene, ma koliko dodataka znali.
+  const total = baseAmount == null ? null : baseAmount + knownAddonsTotal;
+  const unknown = total == null;
 
   return {
     lines,
+    mode,
+    knownAddonsTotal,
     total,
-    isEstimate:
-      service.priceMode === "from" || lines.some((l) => l.amount == null),
-    unknown: known.length === 0,
+    // "od X" kad je baza minimum ili kad neki poznat deo nedostaje.
+    isEstimate: !unknown && (mode === "from" || hasUnknownPart),
+    unknown,
     durationMinutes: duration,
   };
 }
