@@ -47,6 +47,7 @@ import {
 } from "@/lib/theme9/navigation-server";
 import { normalizePriceMode } from "@/helpers/formatPrice";
 import { getCategories } from "@/lib/categoryService";
+import { subdocRef } from "@/lib/booking/subdocRef";
 
 interface Props {
   tenantSlug: string;
@@ -238,6 +239,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
       ? sv.variants.map((v: unknown) => {
           const vv = v as Record<string, unknown>;
           return {
+            ref: subdocRef(vv),
             name: String(vv.name ?? ""),
             price: Number(vv.price ?? 0),
             // Doplata na basePrice korena kod "from" — bez nje BookingWidget
@@ -255,6 +257,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
       ? sv.extras.map((e: unknown) => {
           const ee = e as Record<string, unknown>;
           return {
+            ref: subdocRef(ee),
             name: String(ee.name ?? ""),
             price: Number(ee.price ?? 0),
             priceMode: normalizePriceMode(ee.priceMode),
@@ -269,6 +272,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
       ? sv.services.map((s: unknown) => {
           const ss = s as Record<string, unknown>;
           return {
+            ref: subdocRef(ss),
             name: String(ss.name ?? ""),
             price: Number(ss.price ?? 0),
             priceMode: normalizePriceMode(ss.priceMode),

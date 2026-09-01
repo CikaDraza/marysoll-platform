@@ -10,6 +10,7 @@ import { Tenant } from "@/models/Tenant";
 import { Service } from "@/models/Service";
 import { requireCapability } from "@/lib/platform/capabilities-server";
 import { getCategories } from "@/lib/categoryService";
+import { subdocRef } from "@/lib/booking/subdocRef";
 import { normalizePriceMode } from "@/helpers/formatPrice";
 
 function serializeService(
@@ -31,11 +32,14 @@ function serializeService(
     description: String(s.description ?? ""),
     items: Array.isArray(s.items) ? s.items.map(String) : [],
     featured: s.featured ? String(s.featured) : null,
-    // Serialize nested arrays — strip _id from subdocs
+    // Ugnežđeni delovi: `_id` se NE izlaže pod tim imenom, ali svaki deo nosi
+    // `ref` — opaque adresu koju Booking Engine očekuje kao `variantRef`,
+    // `extraRefs` i `itemRefs`. Klijent je ne tumači, samo vraća serveru.
     variants: Array.isArray(s.variants)
       ? s.variants.map((v: unknown) => {
           const vv = v as Record<string, unknown>;
           return {
+            ref: subdocRef(vv),
             name: String(vv.name ?? ""),
             price: Number(vv.price ?? 0),
             // Doplata na basePrice korena kod "from" — bez nje BookingWidget
@@ -53,6 +57,7 @@ function serializeService(
       ? s.extras.map((e: unknown) => {
           const ee = e as Record<string, unknown>;
           return {
+            ref: subdocRef(ee),
             name: String(ee.name ?? ""),
             price: Number(ee.price ?? 0),
             priceMode: normalizePriceMode(ee.priceMode),
@@ -67,6 +72,7 @@ function serializeService(
       ? s.services.map((sv: unknown) => {
           const ss = sv as Record<string, unknown>;
           return {
+            ref: subdocRef(ss),
             name: String(ss.name ?? ""),
             price: Number(ss.price ?? 0),
             priceMode: normalizePriceMode(ss.priceMode),

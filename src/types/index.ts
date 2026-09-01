@@ -82,6 +82,9 @@ export interface IServiceSubscription {
 export type PriceMode = "fixed" | "on_request" | "from";
 
 export interface IServiceVariant {
+  /** Opaque adresa dela usluge za Booking Engine (`variantRef`).
+   *  Opciono: zatečeni klijenti i dalje adresiraju po imenu. */
+  ref?: string;
   name: string;
   /** PUNA cena varijante. Značenje se nikad ne menja — kod `priceMode: "from"`
    *  na korenu se ne koristi, doplata ide u `additionalPrice`. */
@@ -97,6 +100,8 @@ export interface IServiceVariant {
 }
 
 export interface IServiceExtra {
+  /** Opaque adresa dela usluge za Booking Engine (`extraRefs`). */
+  ref?: string;
   name: string;
   price: number;
   priceMode?: PriceMode;
@@ -113,6 +118,8 @@ export interface IServiceExtra {
  *  `price`/`priceMode`/`duration` ovde su zatečena polja iz starijeg modela,
  *  koja se više ne unose i drže se samo da postojeći paketi ne izgube podatke. */
 export interface IServiceGroupItem {
+  /** Opaque adresa dela usluge za Booking Engine (`itemRefs`). */
+  ref?: string;
   name: string;
   description: string;
   /** @deprecated cena je na korenu paketa */
