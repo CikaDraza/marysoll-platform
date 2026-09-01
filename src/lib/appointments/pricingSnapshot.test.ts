@@ -11,6 +11,8 @@ import { describe, it, expect } from "vitest";
 import {
   buildPricingSnapshot,
   applyQuote,
+  applyChargedAmount,
+  emptyPricingSnapshot,
   getAppointmentPotentialValue,
   getAppointmentQuotedValue,
   getAppointmentRealizedValue,
@@ -265,5 +267,37 @@ describe("realized traži dokaz da je usluga izvršena", () => {
     // Potencijal odgovara na „koliko bi ovaj termin doneo", pa važi i pre
     // izvršenja. Samo realizacija traži dokaz.
     expect(getAppointmentPotentialValue(fixedWith("pending"))).toBe(2700);
+  });
+});
+
+describe("naplaćeni iznos i prazan snapshot", () => {
+  it("applyChargedAmount ne dira snapshot rezervacije ni quote", () => {
+    const base = buildPricingSnapshot(
+      estimateServicePrice({
+        service: svc({ priceMode: "on_request", duration: 120, extras: [stiker] }),
+        extras: pick,
+      }),
+    );
+    const quoted = applyQuote(base, 3000);
+    const charged = applyChargedAmount(quoted, 3900, "admin-1");
+
+    expect(charged.chargedAmount).toBe(3900);
+    expect(charged.chargedBy).toBe("admin-1");
+    // Ranija stanja ostaju netaknuta — snapshot pamti šta se znalo kada.
+    expect(charged.quotedTotal).toBe(3700);
+    expect(charged.minimumTotal).toBeNull();
+    expect(charged.knownAddonsTotal).toBe(700);
+  });
+
+  it("naplaćeno 0 je stvarna nula", () => {
+    const base = emptyPricingSnapshot();
+    expect(applyChargedAmount(base, 0).chargedAmount).toBe(0);
+  });
+
+  it("prazan snapshot omogućava cenu i na zatečenom terminu", () => {
+    const p = emptyPricingSnapshot();
+    expect(p.mode).toBe("on_request");
+    expect(p.minimumTotal).toBeNull();
+    expect(applyQuote(p, 2500).quotedTotal).toBe(2500);
   });
 });

@@ -121,16 +121,23 @@ export function useAppointmentMutations(token?: string) {
       proposedDate,
       proposedTime,
       note,
+      pricingAmount,
     }: {
       id: string;
       status: IAppointment["status"];
       proposedDate?: string;
       proposedTime?: string;
       note?: string;
+      /** Opcioni unos cene uz promenu statusa; server odlučuje šta je to. */
+      pricingAmount?: number;
     }) => {
-      const updateData: Partial<IAppointment> & { lastUpdatedBy: string } = {
+      const updateData: Partial<IAppointment> & {
+        lastUpdatedBy: string;
+        pricingAmount?: number;
+      } = {
         status,
         lastUpdatedBy: "admin",
+        ...(pricingAmount != null ? { pricingAmount } : {}),
       };
 
       if (proposedDate) updateData.proposedDate = proposedDate;

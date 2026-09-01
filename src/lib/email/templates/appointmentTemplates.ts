@@ -8,7 +8,11 @@ import "server-only";
 
 import { wrapEmailLayout } from "@/lib/email/wrapEmailLayout";
 import { translateAdminNote } from "@/lib/email/helpers";
-import { formatServicePrice } from "@/helpers/formatPrice";
+import {
+  formatServicePrice,
+  PRICE_ON_REQUEST_LABEL,
+} from "@/helpers/formatPrice";
+import type { IAppointmentPricing } from "@/types";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { Types } from "mongoose";
@@ -66,9 +70,59 @@ async function resolveClientPanelUrl(
 }
 
 // ── Shared: appointment detail table ──────────────────────────────────────────
+/**
+ * Red sa cenom u mejlu.
+ *
+ * Nikad ne prikazuje poznate dodatke kao cenu termina: usluga na upit sa
+ * stikerom od 700 nije termin od 700 dinara. Bez potvrđene cene mejl to i
+ * kaže, umesto da ćuti ili izmisli broj.
+ */
+function priceRowHtml(data: {
+  price?: number | null;
+  pricing?: IAppointmentPricing | null;
+}): string {
+  const line = (text: string, muted = false) =>
+    `<p style="margin:6px 0 0 0;font-family:'Georgia',serif;font-size:${muted ? 13 : 15}px;font-weight:${muted ? 400 : 700};color:${muted ? "#8a7a95" : "#9089fc"};">${text}</p>`;
+
+  const p = data.pricing;
+  if (p) {
+    // Poslednja poznata reč o ceni: naplaćeno → potvrđeno → snapshot.
+    if (typeof p.chargedAmount === "number")
+      return line(formatServicePrice(p.chargedAmount));
+    if (typeof p.quotedTotal === "number")
+      return line(formatServicePrice(p.quotedTotal));
+
+    if (p.mode === "on_request" || p.minimumTotal == null) {
+      return (
+        line(PRICE_ON_REQUEST_LABEL) +
+        (p.knownAddonsTotal > 0
+          ? line(
+              `Poznati dodaci: ${formatServicePrice(p.knownAddonsTotal)}`,
+              true,
+            )
+          : "") +
+        line("Konačna cena biće potvrđena naknadno.", true)
+      );
+    }
+    if (p.mode === "from") {
+      return (
+        line(`od ${formatServicePrice(p.minimumTotal)}`) +
+        line("Konačna cena može zavisiti od izvršene usluge.", true)
+      );
+    }
+    return line(formatServicePrice(p.minimumTotal));
+  }
+
+  // Zatečeni termini bez snapshot-a.
+  return data.price != null && data.price > 0
+    ? line(formatServicePrice(data.price))
+    : "";
+}
+
 function appointmentDetailTable(data: {
   serviceName: string;
   price?: number | null;
+  pricing?: IAppointmentPricing | null;
   date: string;
   time: string;
   note?: string;
@@ -115,11 +169,7 @@ function appointmentDetailTable(data: {
             <td style="padding-bottom:10px;border-bottom:1px solid #f0e0f0;">
               <p style="margin:0;font-family:'Georgia',serif;font-size:11px;color:#b08db5;letter-spacing:1.5px;text-transform:uppercase;">Usluga</p>
               <p style="margin:4px 0 0 0;font-family:'Georgia',serif;font-size:16px;font-weight:700;color:#2d1b40;">${data.serviceName}</p>
-              ${
-                data.price != null && data.price > 0
-                  ? `<p style="margin:6px 0 0 0;font-family:'Georgia',serif;font-size:15px;font-weight:700;color:#9089fc;">${formatServicePrice(data.price)}</p>`
-                  : ""
-              }
+              ${priceRowHtml(data)}
             </td>
           </tr>
           <tr>
@@ -190,6 +240,7 @@ export async function appointmentCreatedTemplate(data: {
   clientName: string;
   serviceName: string;
   price?: number | null;
+  pricing?: IAppointmentPricing | null;
   date: string;
   time: string;
   note?: string;
@@ -227,6 +278,7 @@ export async function appointmentCreatedAdminTemplate(data: {
   clientName: string;
   serviceName: string;
   price?: number | null;
+  pricing?: IAppointmentPricing | null;
   date: string;
   time: string;
   note?: string;
@@ -315,6 +367,7 @@ export async function appointmentClientChangedAdminTemplate(
     clientName: string;
     serviceName: string;
     price?: number | null;
+  pricing?: IAppointmentPricing | null;
     date: string;
     time: string;
     note?: string;
@@ -376,6 +429,7 @@ export async function appointmentApprovedTemplate(data: {
   clientName: string;
   serviceName: string;
   price?: number | null;
+  pricing?: IAppointmentPricing | null;
   date: string;
   time: string;
   note?: string;

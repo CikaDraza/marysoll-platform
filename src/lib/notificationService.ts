@@ -25,7 +25,7 @@ import {
   ADMIN_TESTIMONIALS_PATH,
   clientPanelPath,
 } from "@/lib/notifications/pushTargets";
-import type { IAppointmentRequest } from "@/types";
+import type { IAppointmentRequest, IAppointmentPricing } from "@/types";
 
 // ── Salon branding for push payloads ─────────────────────────────────────────
 // Exportovano i za loyalty notifikacije (lib/loyalty/notifications.ts).
@@ -173,6 +173,7 @@ interface AppointmentForNotification {
   contactNote?: string;
   /** Zahtev klijentkinje — mejl ga najavljuje, ne prilaže. */
   request?: IAppointmentRequest | null;
+  pricing?: IAppointmentPricing | null;
 }
 
 interface TestimonialForNotification {
@@ -700,6 +701,7 @@ async function sendAppointmentEmailNotifications(
       preferredContact: appointment.preferredContact,
       contactNote: appointment.contactNote,
       request: appointment.request ?? null,
+      pricing: appointment.pricing ?? null,
     };
 
     const settingKey = getAppointmentSettingKey(type);

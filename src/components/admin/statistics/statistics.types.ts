@@ -26,12 +26,22 @@ export interface RevenueStats {
   noShow: number;
   completedCount: number;
   cancelledCount: number;
+  /**
+   * Termini koji ulaze u statistiku, ali kojima cena NIJE poznata.
+   * Ne ulaze ni u `potential` ni u `completed` — bez ovog broja bi salon
+   * video manje termina nego što ih zaista ima.
+   */
+  withoutPriceCount: number;
 }
 
 export interface ServiceBreakdown {
   name: string;
   count: number;
-  revenue: number;
+  /** `null` = nijedan termin te usluge nema poznatu cenu; UI to prikazuje
+   *  kao „Cena nije definisana", nikad kao 0 RSD. */
+  revenue: number | null;
+  /** Koliko termina te usluge nema poznatu cenu. */
+  withoutPrice: number;
 }
 
 export interface TopClient {

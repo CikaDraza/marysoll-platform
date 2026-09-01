@@ -37,6 +37,7 @@ export function useStatistics({ month, year }: UseStatisticsParams) {
       noShow: 0,
       completedCount: 0,
       cancelledCount: 0,
+      withoutPriceCount: 0,
     },
     avgTimeGap: data?.avgTimeGap ?? 0,
     clients: data?.clients ?? {

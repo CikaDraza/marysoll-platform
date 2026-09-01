@@ -97,13 +97,15 @@ export const StatsPieChart: React.FC<StatsPieChartProps> = ({
   const chartData: PieData[] = [...services]
     .sort((a: { count: number }, b: { count: number }) => b.count - a.count)
     .slice(0, 5)
-    .map((service: { name: string; count: number; revenue: number }) => ({
+    .map((service: { name: string; count: number; revenue: number | null }) => ({
       name:
         service.name.length > 20
           ? `${service.name.substring(0, 20)}...`
           : service.name,
       value: service.count,
-      revenue: service.revenue,
+      // Grafikon crta UDEO PO BROJU termina; nepoznata cena ne menja krišku,
+      // pa se za prikaz iznosa uzima 0 umesto da se usluga izgubi.
+      revenue: service.revenue ?? 0,
       fullName: service.name,
     }));
 
@@ -123,7 +125,8 @@ export const StatsPieChart: React.FC<StatsPieChartProps> = ({
       revenue: services
         .slice(5)
         .reduce(
-          (sum: number, service: { revenue: number }) => sum + service.revenue,
+          (sum: number, service: { revenue: number | null }) =>
+      sum + (service.revenue ?? 0),
           0,
         ),
       fullName: "Ostale usluge",

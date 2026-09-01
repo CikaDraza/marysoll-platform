@@ -163,6 +163,22 @@ export const StatisticsPage: React.FC = () => {
                   {formatCurrency(revenue.cancelled)}
                 </span>
               </div>
+              {/* Termini bez cene — prikazuje se SAMO ako ih ima. Ne ulaze ni u
+                  potencijalni ni u ostvaren prihod, pa bi bez ovog reda salon
+                  video manje termina nego što ih zaista ima. */}
+              {revenue.withoutPriceCount > 0 && (
+                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-1 p-3 bg-amber-50 dark:bg-gray-950 rounded-lg">
+                  <span className="text-sm font-medium text-amber-700">
+                    Termini bez cene
+                    <span className="block text-[11px] font-normal text-amber-600/70">
+                      Cena nije uneta — ne ulaze u prihod
+                    </span>
+                  </span>
+                  <span className="text-lg font-bold text-amber-900 dark:text-amber-300">
+                    {revenue.withoutPriceCount}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between items-center p-3 bg-purple-50 dark:bg-gray-950 rounded-lg">
                 <span className="text-sm font-medium text-purple-700">
                   Aktivni klijenti

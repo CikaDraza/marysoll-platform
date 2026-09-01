@@ -786,6 +786,8 @@ export interface AppointmentNotificationData {
   lastUpdatedBy?: "client" | "admin";
   /** Zahtev klijentkinje — mejl ga NE prilaže, samo najavljuje. */
   request?: IAppointmentRequest | null;
+  /** Canonical cena — mejl iz nje izvodi šta sme da tvrdi. */
+  pricing?: IAppointmentPricing | null;
 }
 
 export interface TestimonialNotificationData {

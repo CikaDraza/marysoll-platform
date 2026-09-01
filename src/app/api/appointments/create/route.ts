@@ -325,6 +325,7 @@ export async function POST(request: NextRequest) {
         preferredContact: appointment.preferredContact,
         contactNote: appointment.contactNote,
         request: appointment.request ?? null,
+        pricing: appointment.pricing ?? null,
       },
       "created",
     );

@@ -7,6 +7,10 @@ import { requireFeature } from "@/lib/plans/planEnforcement";
 import { Types } from "mongoose";
 import "@/models/Appointment";
 import "@/models/Service";
+import {
+  getAppointmentPotentialValue,
+  getAppointmentRealizedValue,
+} from "@/lib/appointments/pricingSnapshot";
 
 // ---------------------------
 // TypeScript Interfaces
@@ -49,11 +53,17 @@ interface IAppointment {
 }
 
 /** Prihod jednog termina = zbir stavki (cena × količina). */
-function appointmentRevenue(a: IAppointment): number {
-  return (a.services ?? []).reduce(
-    (sum, s) => sum + (s.price * s.quantity || 0),
-    0,
-  );
+/**
+ * Vrednost termina za prihod — `null` kada cena NIJE poznata.
+ *
+ * `s.price * quantity || 0` je pretvarao svaki termin na upit u prihod od
+ * nula dinara. Nula je poslovna činjenica („besplatno"), a nepoznata cena
+ * nije — takvi termini se broje odvojeno i ne ulaze ni u jedan zbir.
+ */
+function appointmentRevenue(a: IAppointment): number | null {
+  return a.status === "completed"
+    ? getAppointmentRealizedValue(a)
+    : getAppointmentPotentialValue(a);
 }
 
 interface IUser {
@@ -124,6 +134,8 @@ export async function GET(req: NextRequest) {
     // -------------------------
     const serviceDistribution: Record<string, number> = {};
     const revenueByService: Record<string, number> = {};
+    /** Broj termina po usluzi kojima cena nije poznata. */
+    const servicesWithoutPrice: Record<string, number> = {};
 
     appointments.forEach((a) => {
       a.services.forEach((s) => {
@@ -137,8 +149,15 @@ export async function GET(req: NextRequest) {
         serviceDistribution[serviceName] =
           (serviceDistribution[serviceName] || 0) + 1;
 
-        revenueByService[serviceName] =
-          (revenueByService[serviceName] || 0) + (s.price * s.quantity || 0);
+          // Termin bez poznate cene ne doprinosi prihodu usluge, ali se broji.
+        const value = appointmentRevenue(a);
+        if (value == null) {
+          servicesWithoutPrice[serviceName] =
+            (servicesWithoutPrice[serviceName] || 0) + 1;
+        } else {
+          revenueByService[serviceName] =
+            (revenueByService[serviceName] || 0) + value;
+        }
       });
     });
 
@@ -180,20 +199,24 @@ export async function GET(req: NextRequest) {
     let noShowRevenue = 0;
     let completedCount = 0;
     let cancelledCount = 0;
+    /** Termini koji ulaze u statistiku, ali kojima cena nije poznata. */
+    let withoutPriceCount = 0;
 
     appointments.forEach((a) => {
       const revenue = appointmentRevenue(a);
+      if (revenue == null) withoutPriceCount++;
+
       if (a.status === "completed") {
-        completedRevenue += revenue;
+        completedRevenue += revenue ?? 0;
         completedCount++;
       } else if (
         a.status === "appointment_cancelled" ||
         a.status === "appointment_rejected"
       ) {
-        cancelledRevenue += revenue;
+        cancelledRevenue += revenue ?? 0;
         cancelledCount++;
       } else if (a.status === "no_show") {
-        noShowRevenue += revenue;
+        noShowRevenue += revenue ?? 0;
       }
     });
 
@@ -263,11 +286,18 @@ export async function GET(req: NextRequest) {
     // 7. DETALJNA RASPODELA USLUGA
     // -------------------------
     const serviceBreakdown = Object.entries(serviceDistribution).map(
-      ([name, count]) => ({
-        name,
-        count,
-        revenue: revenueByService[name] || 0,
-      })
+      ([name, count]) => {
+        const withoutPrice = servicesWithoutPrice[name] ?? 0;
+        const revenue = revenueByService[name];
+        return {
+          name,
+          count,
+          /** `null` = nijedan termin te usluge nema poznatu cenu. UI to
+           *  prikazuje kao „Cena nije definisana", ne kao 0 RSD. */
+          revenue: revenue == null && withoutPrice > 0 ? null : (revenue ?? 0),
+          withoutPrice,
+        };
+      },
     );
 
     // -------------------------
@@ -293,6 +323,9 @@ export async function GET(req: NextRequest) {
         noShow: noShowRevenue,
         completedCount,
         cancelledCount,
+        /** Termini koji ulaze u statistiku, ali kojima cena nije poznata.
+         *  NE ulaze ni u potencijalni ni u ostvaren prihod. */
+        withoutPriceCount,
       },
       avgTimeGap,
 

@@ -15,11 +15,22 @@
  * `price || 0` je zabranjen obrazac — nula bi postala poslovna činjenica i
  * termin na upit izgledao kao besplatan u statistici i loyalty-ju.
  */
-import type {
-  IAppointmentPricing,
-  IPricingLine,
-  IAppointment,
-} from "@/types";
+import type { IAppointmentPricing, IPricingLine } from "@/types";
+
+/**
+ * Strukturni minimum koji accessori stvarno čitaju.
+ *
+ * Namerno nije `IAppointment`: statistika i loyalty imaju svoje lokalne
+ * oblike termina, a accessorima trebaju samo cena, količina i status.
+ */
+export interface PricedAppointment {
+  pricing?: IAppointmentPricing | null;
+  services?: ReadonlyArray<{
+    price?: number | null;
+    quantity?: number | null;
+  }>;
+  status?: string;
+}
 import type { ServicePriceEstimate } from "@/helpers/servicePrice";
 
 export const DEFAULT_CURRENCY = "RSD";
@@ -56,6 +67,49 @@ export function buildPricingSnapshot(
 }
 
 /**
+ * Prazan snapshot za zatečene termine bez njega — da salon i njima može da
+ * upiše cenu, bez migracije istorije.
+ */
+export function emptyPricingSnapshot(
+  currency = DEFAULT_CURRENCY,
+): IAppointmentPricing {
+  return {
+    mode: "on_request",
+    currency,
+    baseAmount: null,
+    minimumTotal: null,
+    knownAddonsTotal: 0,
+    quotedBaseAmount: null,
+    quotedTotal: null,
+    quotedAt: null,
+    quotedBy: null,
+    chargedAmount: null,
+    chargedAt: null,
+    chargedBy: null,
+    lines: [],
+  };
+}
+
+/**
+ * Stvarno naplaćeno posle tretmana — UKUPAN iznos, ne osnovica.
+ *
+ * Snapshot rezervacije i quote ostaju netaknuti: oni beleže šta se znalo
+ * ranije, a ovo je poslednja reč.
+ */
+export function applyChargedAmount(
+  pricing: IAppointmentPricing,
+  chargedAmount: number,
+  by?: string | null,
+): IAppointmentPricing {
+  return {
+    ...pricing,
+    chargedAmount,
+    chargedAt: new Date(),
+    chargedBy: by ?? null,
+  };
+}
+
+/**
  * Quote: salon unosi OSNOVNU cenu, server izvodi ukupno.
  * Browser ne sme da pošalje `quotedTotal` — inače bi mogao da tvrdi bilo šta.
  */
@@ -86,7 +140,7 @@ export function applyQuote(
  *   on_request  quote ako postoji, inače `null` — nikad zbir poznatih dodataka
  */
 export function getAppointmentPotentialValue(
-  appointment: Pick<IAppointment, "pricing" | "services">,
+  appointment: PricedAppointment,
 ): number | null {
   const p = appointment.pricing;
   if (!p) return legacyNumericValue(appointment);
@@ -96,7 +150,7 @@ export function getAppointmentPotentialValue(
 
 /** Iznos koji je salon potvrdio, ako jeste. */
 export function getAppointmentQuotedValue(
-  appointment: Pick<IAppointment, "pricing">,
+  appointment: PricedAppointment,
 ): number | null {
   return appointment.pricing?.quotedTotal ?? null;
 }
@@ -132,7 +186,7 @@ function isRealizedStatus(status: string | undefined): boolean {
  * Refund semantika ne postoji — nema payment engine-a i ne izmišlja se ovde.
  */
 export function getAppointmentRealizedValue(
-  appointment: Pick<IAppointment, "pricing" | "services" | "status">,
+  appointment: PricedAppointment,
 ): number | null {
   const charged = appointment.pricing?.chargedAmount;
   if (typeof charged === "number") return charged;
@@ -158,7 +212,7 @@ export function getAppointmentRealizedValue(
  * Razlika se ne može dokazati iz samog termina, pa se 0 vraća kao `null`.
  */
 function legacyNumericValue(
-  appointment: Pick<IAppointment, "services">,
+  appointment: PricedAppointment,
 ): number | null {
   const total = (appointment.services ?? []).reduce(
     (sum, s) => sum + (Number(s.price) || 0) * (Number(s.quantity) || 1),

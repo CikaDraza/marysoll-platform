@@ -240,6 +240,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         preferredContact: appointment.preferredContact,
         contactNote: appointment.contactNote,
         request: appointment.request ?? null,
+        pricing: appointment.pricing ?? null,
       },
       "created",
     );

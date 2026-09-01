@@ -1,5 +1,10 @@
 // src/app/api/appointments/update/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import {
+  applyQuote,
+  applyChargedAmount,
+  emptyPricingSnapshot,
+} from "@/lib/appointments/pricingSnapshot";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { resolveTenant, verifyToken } from "@/lib/auth/auth-server";
@@ -105,6 +110,10 @@ export async function PUT(
     delete raw.completionSource;
     delete raw.completionPromptSentAt;
     delete raw.loyaltyProcessed;
+    // Cena se menja isključivo kroz `pricingAmount` ispod — sirov `pricing`
+    // iz browsera se nikad ne upisuje, inače bi klijent mogao da podmetne
+    // ceo snapshot (uključujući `chargedAmount`).
+    delete raw.pricing;
 
     const appointment = await Appointment.findOne({ _id: id, ...scope.filter });
 
@@ -138,6 +147,32 @@ export async function PUT(
       updatedData.cancelledBy = "admin";
       updatedData.cancellationType = "legitimate";
     }
+    // ── Salon unosi cenu ──────────────────────────────────────────────────
+    // Dva trenutka: pri odobravanju (procena po fotografiji) i pri označavanju
+    // dolaska (stvarno naplaćeno). Oba su OPCIONA — ako salon preskoči,
+    // termin ostaje bez cene i ulazi u „Termini bez cene", ne u prihod.
+    const pricingAmount = (updatedData as { pricingAmount?: unknown })
+      .pricingAmount;
+    delete (updatedData as { pricingAmount?: unknown }).pricingAmount;
+
+    if (isAdmin && pricingAmount != null) {
+      const amount = Number(pricingAmount);
+      if (!Number.isFinite(amount) || amount < 0) {
+        return NextResponse.json(
+          { error: "Cena mora biti broj veći ili jednak nuli." },
+          { status: 400 },
+        );
+      }
+      const base = appointment.pricing ?? emptyPricingSnapshot();
+      // Kod „Došla" iznos je UKUPNO stvarno naplaćeno; pri odobravanju je
+      // OSNOVNA cena, pa server sam dodaje poznate doplate.
+      appointment.pricing =
+        updatedData.status === "completed"
+          ? applyChargedAmount(base, amount, decoded.tenantUserId ?? null)
+          : applyQuote(base, amount, decoded.tenantUserId ?? null);
+      appointment.markModified("pricing");
+    }
+
     if (isAdmin && updatedData.status === "no_show") {
       updatedData.noShowMarkedAt = new Date();
       updatedData.noShowReason = "admin_marked";
@@ -289,6 +324,9 @@ async function handleStatusChangeNotification(
         date: appointment.date,
         time: appointment.time,
         note: appointment.note,
+        // Odobrenje sa unetom cenom — klijentkinja odmah dobija mejl u kojem
+        // cena više nije „na upit".
+        pricing: appointment.pricing ?? null,
       },
       notificationType,
       {

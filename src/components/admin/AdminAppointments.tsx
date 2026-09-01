@@ -6,6 +6,7 @@ import {
   hasRequest,
   hasRequestImage,
 } from "./AppointmentRequestModal";
+import { AppointmentPriceModal } from "./AppointmentPriceModal";
 import { api } from "@/lib/api";
 import { formatISODate } from "@/helpers/formatISODate";
 import { statusMeta } from "@/lib/appointmentColors";
@@ -72,6 +73,7 @@ function AppointmentListItem({
   }, [appointment, appointments]);
 
   const [manualRequestOpen, setManualRequestOpen] = useState(false);
+  const [priceModal, setPriceModal] = useState<"quote" | "charged" | null>(null);
   // Deep-link otvara zahtev sam, ali samo dok ga admin ne zatvori — inače bi
   // se modal vraćao pri svakom osvežavanju liste.
   const [autoOpenDismissed, setAutoOpenDismissed] = useState(false);
@@ -89,15 +91,56 @@ function AppointmentListItem({
     setAutoOpenDismissed(true);
   };
 
-  const handleStatusUpdate = (status: IAppointment["status"]) => {
+  const handleStatusUpdate = (
+    status: IAppointment["status"],
+    pricingAmount?: number,
+  ) => {
     updateAppointmentStatus.mutate({
       id: appointment._id || "",
       status,
+      ...(pricingAmount != null ? { pricingAmount } : {}),
     });
+  };
+
+  // Cena se traži samo kad je stvarno nema: usluga sa fiksnom cenom ne treba
+  // da prekida salon dijalogom na svaki klik.
+  const needsPrice =
+    currentAppointment.pricing == null ||
+    currentAppointment.pricing.mode !== "fixed";
+
+  const askPrice = (kind: "quote" | "charged") => {
+    const status: IAppointment["status"] =
+      kind === "quote" ? "appointment_approved" : "completed";
+    if (!needsPrice) {
+      handleStatusUpdate(status);
+      return;
+    }
+    setPriceModal(kind);
   };
 
   return (
     <>
+    {priceModal && (
+      <AppointmentPriceModal
+        appointment={currentAppointment}
+        kind={priceModal}
+        isSaving={updateAppointmentStatus.isPending}
+        onClose={() => setPriceModal(null)}
+        onSkip={() => {
+          handleStatusUpdate(
+            priceModal === "quote" ? "appointment_approved" : "completed",
+          );
+          setPriceModal(null);
+        }}
+        onConfirm={(amount) => {
+          handleStatusUpdate(
+            priceModal === "quote" ? "appointment_approved" : "completed",
+            amount,
+          );
+          setPriceModal(null);
+        }}
+      />
+    )}
     {requestOpen && (
       <AppointmentRequestModal
         appointment={currentAppointment}
@@ -239,7 +282,7 @@ function AppointmentListItem({
             currentAppointment.status === "appointment_rescheduled") && (
             <>
               <button
-                onClick={() => handleStatusUpdate("appointment_approved")}
+                onClick={() => askPrice("quote")}
                 className="cursor-pointer px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
               >
                 {isLoading || isFetching ? (
@@ -272,7 +315,7 @@ function AppointmentListItem({
             hasAppointmentStarted(currentAppointment) && (
               <>
                 <button
-                  onClick={() => handleStatusUpdate("completed")}
+                  onClick={() => askPrice("charged")}
                   className="cursor-pointer px-3 py-1 bg-teal-600 text-white text-xs rounded hover:bg-teal-700 transition-colors"
                 >
                   {arrivedLabel(clientGender)}
