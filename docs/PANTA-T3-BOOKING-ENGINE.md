@@ -445,8 +445,8 @@ Konstanta: `BOOKING_GRACE_PERIOD_MINUTES` u `lib/appointments/cancellation.ts`.
 | `appointment_rejected` | ne blokira | `released` + rejection fact | domain status ostaje na Appointment-u |
 | `appointment_cancelled` | ne blokira | `released` + cancellation fact | nema hard-delete-a radi oslobađanja |
 | `appointment_rescheduled` | blokira | nema istoimeni reservation status | vidi dve semantike ispod |
-| `completed` | adapter ga prosleđuje kao occupancy; istorijski interval praktično više ne seče budućnost | `completed`, history | transition mora biti vremenski validna |
-| `no_show` | blokira; bitno za pre-start late cancel | `no_show` posle kraja; pre kraja ostaje active sa late-cancel fact-om | čuva zatečeno ponašanje bez preopterećenog statusa |
+| `completed` | **ne blokira** (vidi §8.1a) | `completed`, history | transition mora biti vremenski validna |
+| `no_show` | **ne blokira** (vidi §8.1a) — uključujući `late_cancel` pre početka | `no_show` posle kraja | slot se oslobađa odmah; istorija ostaje |
 
 `appointment_rescheduled` danas znači dve različite stvari:
 
