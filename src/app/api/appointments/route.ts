@@ -74,7 +74,25 @@ export async function GET(req: Request) {
       filter.tenantId = new Types.ObjectId(decoded.tenantId);
     }
 
-    if (clientId) {
+    // ── Izolacija klijenta ────────────────────────────────────────────────
+    // KLIJENT sme da vidi ISKLJUČIVO svoje termine, bez obzira šta pošalje kao
+    // `clientId`. Ranije je `clientProfileId` dolazio samo iz query parametra,
+    // pa je klijent koji ga izostavi dobijao pune termine celog salona — ime,
+    // email, telefon, poruke, intake fotografije i cene drugih klijenata.
+    // `requireCapability` proverava mogućnosti TENANTA, ne prava korisnika.
+    const isClientActor = !isSuperAdmin && !decoded.isAdmin;
+    if (isClientActor) {
+      if (
+        !decoded.tenantUserId ||
+        !Types.ObjectId.isValid(decoded.tenantUserId)
+      ) {
+        return NextResponse.json(
+          { error: "Forbidden: no client context" },
+          { status: 403 },
+        );
+      }
+      filter.clientProfileId = new Types.ObjectId(decoded.tenantUserId);
+    } else if (clientId) {
       if (Types.ObjectId.isValid(clientId)) {
         filter.clientProfileId = new Types.ObjectId(clientId);
       } else {

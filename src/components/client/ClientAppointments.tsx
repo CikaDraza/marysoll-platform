@@ -14,6 +14,7 @@ import Paginator from "../elements/Paginator";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuth } from "@/hooks/useAuth";
 import { usePublicSalonProfile } from "@/hooks/useSalonProfile";
+import { usePublicOccupancy } from "@/hooks/usePublicOccupancy";
 import ClientEditModal from "./ClientEditModal";
 import { useCancelAppointment } from "./useCancelAppointment";
 import type { ManualSlotsMap } from "@/types";
@@ -477,14 +478,12 @@ export default function ClientAppointments() {
   const { user } = useAuth();
   const { tenantSlug } = useTenant();
 
-  // Edit modal traži dostupnost, pa mu trebaju profil salona i SVI termini —
-  // ne samo klijentkinjini. Isti izvor koji koristi klijentski kalendar, da
-  // ponuda slobodnih vremena bude ista na obe površine.
+  // Edit modal traži dostupnost. Zauzeće ide iz SANITIZOVANOG javnog feeda —
+  // samo datum, vreme i trajanje. Puni termini salona (`/api/appointments`)
+  // nose imena, telefone, poruke i intake fotografije drugih klijenata i
+  // klijentski UI ih nikad ne sme tražiti radi dostupnosti.
   const { data: salonProfile } = usePublicSalonProfile(tenantSlug);
-  const { data: allAppointmentsResponse } = useAppointments({
-    page: 1,
-    limit: 100,
-  });
+  const { data: occupancy = [] } = usePublicOccupancy(tenantSlug);
 
   const [editTarget, setEditTarget] = useState<IAppointment | null>(null);
   const { requestCancel, dialog: cancelDialog } = useCancelAppointment({
@@ -681,7 +680,7 @@ export default function ClientAppointments() {
             | undefined
         }
         manualSlots={salonProfile?.manualSlots as ManualSlotsMap | undefined}
-        bookedAppointments={allAppointmentsResponse?.appointments ?? []}
+        bookedAppointments={occupancy}
       />
 
       {cancelDialog}
