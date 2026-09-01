@@ -46,6 +46,7 @@ import {
   theme9NavNeedsFacts,
 } from "@/lib/theme9/navigation-server";
 import { normalizePriceMode } from "@/helpers/formatPrice";
+import { getCategories } from "@/lib/categoryService";
 
 interface Props {
   tenantSlug: string;
@@ -214,11 +215,19 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     showWorkingHours: s?.showWorkingHours !== false,
   };
 
+  // Zahtev klijentkinje nosi KATEGORIJA (nokti), pa se izvodi ovde — ista
+  // pravila kao u javnoj `/services` ruti, da homepage i /termini ne bi
+  // pokazivali različit tok za istu uslugu.
+  const intakeCategories = new Set(
+    (await getCategories()).filter((c) => c.requiresIntake).map((c) => c.key),
+  );
+
   const serviceList = (services as Record<string, unknown>[]).map((sv) => ({
     _id: String(sv._id),
     name: String(sv.name ?? ""),
     category: String(sv.category ?? ""),
     subcategory: sv.subcategory ? String(sv.subcategory) : undefined,
+    intakeEnabled: intakeCategories.has(String(sv.categorySlug ?? "")),
     type: (sv.type as "single" | "group" | "variant") ?? "single",
     basePrice: sv.basePrice != null ? Number(sv.basePrice) : undefined,
     priceMode: normalizePriceMode(sv.priceMode),
@@ -251,6 +260,8 @@ export async function ClientHomePage({ tenantSlug }: Props) {
             priceMode: normalizePriceMode(ee.priceMode),
             duration: Number(ee.duration ?? 0),
             perItem: Boolean(ee.perItem),
+            unitLabel: ee.unitLabel ? String(ee.unitLabel) : undefined,
+            allowQuantity: Boolean(ee.allowQuantity),
           };
         })
       : [],

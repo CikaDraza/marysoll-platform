@@ -13,11 +13,7 @@ import {
   useBookingContext,
 } from "@/components/shared/booking/BookingProvider";
 import { BookingAuthInfo } from "@/components/shared/booking/BookingAuthInfo";
-import { GuestContactForm } from "@/components/shared/booking/GuestContactForm";
-import { BookingDateTimeSection } from "@/components/shared/booking/BookingDateTimeSection";
-import { BookingServiceSection } from "@/components/shared/booking/BookingServiceSection";
-import { BookingNoteField } from "@/components/shared/booking/BookingNoteField";
-import { BookingActions } from "@/components/shared/booking/BookingActions";
+import { BookingModalBody } from "@/components/shared/booking/BookingModalBody";
 import type { BookingModalProps } from "@/components/shared/booking/types";
 
 export type { PendingAppointment } from "@/components/shared/booking/types";
@@ -75,11 +71,7 @@ function BookingModalShell({
             }
             className="flex-1 flex flex-col gap-4"
           >
-            <GuestContactForm />
-            <BookingDateTimeSection />
-            <BookingServiceSection />
-            <BookingNoteField />
-            <BookingActions />
+            <BookingModalBody />
           </form>
         </DialogPanel>
       </div>

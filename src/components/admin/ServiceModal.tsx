@@ -445,6 +445,25 @@ export function ServiceModal({ s }: Props) {
                       ))}
                     </select>
                     <input
+                      className={i2}
+                      value={ex.unitLabel ?? ""}
+                      onChange={(e) =>
+                        s.updateExtra(i, "unitLabel", e.target.value)
+                      }
+                      placeholder="Jedinica (kom, nokat…)"
+                    />
+                    <label className="flex items-center gap-2 px-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(ex.allowQuantity)}
+                        onChange={(e) =>
+                          s.updateExtra(i, "allowQuantity", e.target.checked)
+                        }
+                        className="rounded text-violet-600"
+                      />
+                      Bira se količina
+                    </label>
+                    <input
                       type="number"
                       className={i2}
                       value={ex.duration || ""}

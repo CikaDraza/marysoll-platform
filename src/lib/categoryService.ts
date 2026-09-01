@@ -1,90 +1,8 @@
 import { connectToDB } from "@/lib/db/mongodb";
 import { Category, ICategoryDoc } from "@/models/Category";
+import { CATEGORY_MAP } from "@/lib/categoryMap";
 
-// ─── Static seed / fallback ───────────────────────────────────────────────────
-// Used when DB is empty (first deploy) or unreachable.
-// Structure: { [key]: { label, synonyms, subcategories: { [subKey]: { label, synonyms[] } } } }
-
-export const CATEGORY_MAP: Record<
-  string,
-  {
-    label: string;
-    synonyms: string[];
-    subcategories: Record<string, { label: string; synonyms: string[] }>;
-  }
-> = {
-  nails: {
-    label: "Nokti",
-    synonyms: ["nokti", "manikir", "pedikir", "nails"],
-    subcategories: {
-      manicure: { label: "Manikir", synonyms: ["manikir", "klasični manikir"] },
-      gel: { label: "Gel lak", synonyms: ["gel lak", "gel"] },
-      extension: { label: "Nadogradnja", synonyms: ["izlivanje", "nadogradnja", "tipse"] },
-      pedicure: { label: "Pedikir", synonyms: ["pedikir"] },
-    },
-  },
-  massage: {
-    label: "Masaža",
-    synonyms: ["masaža", "masaza", "massage"],
-    subcategories: {
-      relax: { label: "Relaks masaža", synonyms: ["relax", "opuštajuća", "klasična"] },
-      sport: { label: "Sportska masaža", synonyms: ["sportska"] },
-      anti: { label: "Anticelulitna", synonyms: ["anticelulit", "anticelulitna"] },
-      hot_stone: { label: "Masaža vrućim kamenjem", synonyms: ["hot stone", "kamenje"] },
-    },
-  },
-  hair: {
-    label: "Kosa",
-    synonyms: ["frizer", "šišanje", "kosa", "hair", "frizura"],
-    subcategories: {
-      cut: { label: "Šišanje", synonyms: ["šišanje", "sisanje"] },
-      styling: { label: "Feniranje", synonyms: ["feniranje", "blow dry"] },
-      color: { label: "Farbanje", synonyms: ["farbanje", "bojenje", "pramenovi", "balayage"] },
-      treatment: { label: "Tretman kose", synonyms: ["keratin", "maska"] },
-    },
-  },
-  facial: {
-    label: "Lice",
-    synonyms: ["lice", "kozmetika", "facial"],
-    subcategories: {
-      cleaning: { label: "Čišćenje lica", synonyms: ["čišćenje", "dubinsko čišćenje"] },
-      treatment: { label: "Tretman lica", synonyms: ["tretman", "hydrafacial"] },
-      peeling: { label: "Peeling", synonyms: ["piling", "peeling"] },
-    },
-  },
-  makeup: {
-    label: "Šminka",
-    synonyms: ["sminka", "šminka", "makeup", "make-up"],
-    subcategories: {
-      daily: { label: "Dnevna šminka", synonyms: ["dnevna"] },
-      event: { label: "Svečana šminka", synonyms: ["svečana", "prom", "matatura"] },
-      bridal: { label: "Venčana šminka", synonyms: ["venčana", "bridal"] },
-    },
-  },
-  waxing: {
-    label: "Depilacija",
-    synonyms: ["depilacija", "vosak", "waxing", "laser"],
-    subcategories: {
-      wax: { label: "Voštana depilacija", synonyms: ["vosak", "wax"] },
-      laser: { label: "Laser depilacija", synonyms: ["laser"] },
-      sugar: { label: "Šećerna pasta", synonyms: ["šećerna", "sugaring"] },
-    },
-  },
-  eyelashes: {
-    label: "Trepavice",
-    synonyms: ["trepavice", "lashes", "ekstenzije"],
-    subcategories: {
-      classic: { label: "Klasične trepavice", synonyms: ["klasične", "1:1"] },
-      volume: { label: "Volume trepavice", synonyms: ["volume", "russian volume"] },
-      lifting: { label: "Lifting trepavica", synonyms: ["lifting", "lash lift"] },
-    },
-  },
-  other: {
-    label: "Ostalo",
-    synonyms: [],
-    subcategories: {},
-  },
-};
+export { CATEGORY_MAP };
 
 // ─── Cache ────────────────────────────────────────────────────────────────────
 
@@ -94,6 +12,7 @@ export interface CategoryData {
   synonyms: string[];
   subcategories: { key: string; label: string; synonyms: string[] }[];
   isActive: boolean;
+  requiresIntake: boolean;
   popularityScore: number;
 }
 
@@ -114,6 +33,11 @@ function transformDocs(docs: ICategoryDoc[]): CategoryData[] {
       synonyms: s.synonyms ?? [],
     })),
     isActive: d.isActive,
+    // Zatečeni dokumenti nemaju ovo polje (seed se pokreće samo na praznu
+    // kolekciju), pa se pada na platformski podrazumevani iz `CATEGORY_MAP` —
+    // bez migracije. Superadmin koji ga izričito postavi na false dobija false.
+    requiresIntake:
+      d.requiresIntake ?? CATEGORY_MAP[d.key]?.requiresIntake ?? false,
     popularityScore: d.popularityScore ?? 0,
   }));
 }
@@ -131,6 +55,7 @@ async function seedFromStaticMap(): Promise<CategoryData[]> {
       synonyms: sub.synonyms,
     })),
     isActive: true,
+    requiresIntake: Boolean(cat.requiresIntake),
     popularityScore: 0,
   }));
 
@@ -180,6 +105,7 @@ export async function getCategories(): Promise<CategoryData[]> {
         synonyms: sub.synonyms,
       })),
       isActive: true,
+      requiresIntake: Boolean(cat.requiresIntake),
       popularityScore: 0,
     }));
   }

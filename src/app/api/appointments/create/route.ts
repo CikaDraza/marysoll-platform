@@ -27,6 +27,8 @@ import {
 import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant"; // Uveri se da imaš ovaj import
 import { requireCapability } from "@/lib/platform/capabilities-server";
+import { sanitizeAppointmentRequest } from "@/lib/appointments/intake";
+import { getTenantFolder } from "@/lib/cloudinary";
 
 export async function POST(request: NextRequest) {
   try {
@@ -193,6 +195,11 @@ export async function POST(request: NextRequest) {
       contactNote,
       cancellationWindowHours,
       cancellationStatus: "can_cancel",
+      // `...data` bi ubacio sirov `request` iz browsera — prepiši ga očišćenim.
+      request: sanitizeAppointmentRequest(
+        data.request,
+        await getTenantFolder(tenantId),
+      ),
       duration: data.duration,
       services: data.services.map((s: IAppointmentService) => ({
         ...s,

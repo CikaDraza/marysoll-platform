@@ -9,15 +9,22 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { Service } from "@/models/Service";
 import { requireCapability } from "@/lib/platform/capabilities-server";
+import { getCategories } from "@/lib/categoryService";
 import { normalizePriceMode } from "@/helpers/formatPrice";
 
-function serializeService(s: Record<string, unknown>) {
+function serializeService(
+  s: Record<string, unknown>,
+  intakeCategories: ReadonlySet<string>,
+) {
   return {
     _id: String(s._id ?? ""),
     name: String(s.name ?? ""),
     category: String(s.category ?? ""),
     subcategory: s.subcategory ? String(s.subcategory) : undefined,
     type: String(s.type ?? "single"),
+    // Zahtev nosi KATEGORIJA (nokti), ne pojedinačna usluga — tako ne može da
+    // se raziđe između usluga iste kategorije.
+    intakeEnabled: intakeCategories.has(String(s.categorySlug ?? "")),
     basePrice: s.basePrice != null ? Number(s.basePrice) : null,
     priceMode: normalizePriceMode(s.priceMode),
     duration: s.duration != null ? Number(s.duration) : null,
@@ -51,6 +58,8 @@ function serializeService(s: Record<string, unknown>) {
             priceMode: normalizePriceMode(ee.priceMode),
             duration: Number(ee.duration ?? 0),
             perItem: Boolean(ee.perItem),
+            unitLabel: ee.unitLabel ? String(ee.unitLabel) : undefined,
+            allowQuantity: Boolean(ee.allowQuantity),
           };
         })
       : [],
@@ -102,8 +111,16 @@ export async function GET(_req: NextRequest, { params }: Params) {
       .sort({ category: 1, name: 1 })
       .lean();
 
+    const intakeCategories = new Set(
+      (await getCategories())
+        .filter((c) => c.requiresIntake)
+        .map((c) => c.key),
+    );
+
     return NextResponse.json(
-      services.map((s) => serializeService(s as Record<string, unknown>))
+      services.map((s) =>
+        serializeService(s as Record<string, unknown>, intakeCategories),
+      ),
     );
   } catch (err) {
     console.error("GET /api/public/[tenantSlug]/services:", err);

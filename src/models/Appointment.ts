@@ -44,6 +44,27 @@ const appointmentSchema = new Schema(
     contactNote: { type: String, default: "" },
     serviceName: { type: String, required: true },
     services: [servicesSchema],
+    // Zahtev klijentkinje uz termin ("intake"): opis, referentni link i prilozi.
+    // Namerno generično (`request`/`attachments`), ne `nailImage` — sutra je
+    // ovo referenca za frizuru, šminku ili tetovažu.
+    request: {
+      type: {
+        note: String,
+        referenceUrl: String,
+        attachments: [
+          {
+            publicId: { type: String, required: true },
+            url: { type: String, required: true },
+            width: Number,
+            height: Number,
+            bytes: Number,
+            format: String,
+            _id: false,
+          },
+        ],
+      },
+      default: undefined,
+    },
     date: { type: String, required: true },
     time: { type: String, required: true },
     duration: { type: Number, required: true },

@@ -13,6 +13,8 @@ export type PendingAppointment = {
   serviceId: string;
   variantName: string;
   extras: string[];
+  /** Količina po dodatku. Stariji zapisi je nemaju → podrazumeva se 1. */
+  extraQuantities?: Record<string, number>;
   note: string;
   totalPrice: number;
   totalDuration: number;

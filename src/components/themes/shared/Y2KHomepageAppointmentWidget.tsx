@@ -315,6 +315,8 @@ interface Props {
   clientSlug?: string;
   salon: SalonProfileData;
   services: IService[];
+  /** true → ova instanca je već u launcher modalu; ne registruje se ponovo. */
+  inLauncherModal?: boolean;
 }
 
 type ViewMode = "week" | "day";
@@ -324,6 +326,7 @@ export default function Y2KHomepageAppointmentWidget({
   clientSlug,
   salon,
   services,
+  inLauncherModal = false,
 }: Props) {
   const { user, token } = useAuth();
   const isLoggedIn = !!user;
@@ -451,25 +454,26 @@ export default function Y2KHomepageAppointmentWidget({
 
 
   // ── Hero CTA „Zakaži odmah" ───────────────────────────────────────────────
-  // Klasičan režim: otvori modal odmah — datum i vreme se biraju u njemu.
-  // Ručni režim (`manualSlots`): modal bez izabranog termina je ćorsokak
-  // ("Zatvorite prozor i izaberite slobodan termin"), pa CTA umesto toga
-  // skroluje do kalendara gde su ponuđeni termini.
+  // Registruje SAM kalendar da bi ga launcher podigao u modalu. Instanca koja
+  // se već renderuje UNUTAR tog modala (`inLauncherModal`) se ne prijavljuje —
+  // inače bi prepisala registraciju, pa bi je zatvaranje modala obrisalo.
+  //
+  // `salon` i `services` stižu iz server komponente, pa im je identitet
+  // stabilan kroz klijentske rendere; kad bi se ipak promenili, ponovna
+  // registracija je i tačno ponašanje — kalendar bi nosio nove podatke.
   const { register } = useBookingLauncher();
   useEffect(() => {
-    return register(() => {
-      if (salon.availabilityMode === "manualSlots") {
-        document
-          .getElementById("booking")
-          ?.scrollIntoView({ behavior: "smooth", block: "start" });
-        return;
-      }
-      setPendingDefaults(null);
-      setModalDate("");
-      setModalTime("");
-      setModalOpen(true);
-    });
-  }, [register, salon.availabilityMode]);
+    if (inLauncherModal) return;
+    return register(() => (
+      <Y2KHomepageAppointmentWidget
+        tenantSlug={tenantSlug}
+        clientSlug={clientSlug}
+        salon={salon}
+        services={services}
+        inLauncherModal
+      />
+    ));
+  }, [register, inLauncherModal, tenantSlug, clientSlug, salon, services]);
 
   // ── Slot click handler ─────────────────────────────────────────────────────
   const handleSlotClick = useCallback((date: string, time: string) => {

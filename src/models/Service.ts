@@ -34,6 +34,8 @@ interface IServiceDoc extends Document {
     priceMode?: "fixed" | "on_request" | "from";
     duration: number;
     perItem: boolean;
+    unitLabel?: string;
+    allowQuantity?: boolean;
   }[];
   subscription?: {
     enabled: boolean;
@@ -114,6 +116,9 @@ const ServiceSchema = new Schema<IServiceDoc>(
         },
         duration: Number,
         perItem: { type: Boolean, default: false },
+        // Jedinica mere ("kom", "nokat", "set") i da li se bira količina.
+        unitLabel: String,
+        allowQuantity: { type: Boolean, default: false },
       },
     ],
     subscription: {

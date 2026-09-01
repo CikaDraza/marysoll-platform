@@ -102,6 +102,10 @@ export interface IServiceExtra {
   priceMode?: PriceMode;
   duration: number;
   perItem: boolean;
+  /** Jedinica mere uz cenu: "kom", "nokat", "set". Samo prikaz. */
+  unitLabel?: string;
+  /** true → klijentkinja bira količinu (− 0 +); false → obično čekiranje. */
+  allowQuantity?: boolean;
 }
 
 /** Stavka paketa (`type: "group"`) — opis onoga što je uključeno.
@@ -153,6 +157,9 @@ export interface IService {
   extras?: IServiceExtra[];
   services?: IServiceGroupItem[];
   type: "single" | "group" | "variant";
+  /** Izvedeno na serveru iz kategorije usluge — BookingWidget na osnovu ovoga
+   *  nudi korak „Kako želite da izgleda?". Ne podešava se po usluzi. */
+  intakeEnabled?: boolean;
   description: string;
   items: string[];
   featured?: HomePagePosition;
@@ -176,6 +183,24 @@ export interface IAppointmentExtra {
   price: number;
   duration: number;
   perItem: boolean;
+}
+
+/** Prilog uz zahtev klijentkinje. `publicId` je obavezan — bez njega nema
+ *  brisanja, transformacija ni čišćenja na Cloudinary-ju. */
+export interface IAppointmentAttachment {
+  publicId: string;
+  url: string;
+  width?: number;
+  height?: number;
+  bytes?: number;
+  format?: string;
+}
+
+/** „Kako želite da izgleda" — opcioni zahtev koji klijentkinja šalje uz termin. */
+export interface IAppointmentRequest {
+  note?: string;
+  referenceUrl?: string;
+  attachments?: IAppointmentAttachment[];
 }
 
 export interface IAppointmentService {
@@ -209,6 +234,8 @@ export interface IAppointment {
   contactNote?: string;
   serviceName: string;
   services: IAppointmentService[];
+  /** Zahtev klijentkinje (slika / link / opis), ako ga je poslala. */
+  request?: IAppointmentRequest;
   duration: number;
   date: string;
   time: string;

@@ -28,6 +28,8 @@ import {
 import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant";
 import { requireCapability } from "@/lib/platform/capabilities-server";
+import { sanitizeAppointmentRequest } from "@/lib/appointments/intake";
+import { getTenantFolder } from "@/lib/cloudinary";
 
 type Params = { params: Promise<{ tenantSlug: string }> };
 
@@ -78,6 +80,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       time,
       duration,
       note,
+      request: intakeRequest,
       preferredContact,
       contactNote,
     } = data;
@@ -172,6 +175,11 @@ export async function POST(request: NextRequest, { params }: Params) {
       time,
       duration: duration || service.duration || 60,
       note: note || undefined,
+      // Zahtev iz browsera — nikad se ne upisuje sirov.
+      request: sanitizeAppointmentRequest(
+        intakeRequest,
+        await getTenantFolder(String(tenant._id)),
+      ),
       status: "pending",
       messages: [],
       adminNotified: true,

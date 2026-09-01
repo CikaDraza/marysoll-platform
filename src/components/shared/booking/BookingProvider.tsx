@@ -30,12 +30,18 @@ import { availableTimesForDate } from "@/lib/booking/availabilityAdapter";
 import {
   estimateServicePrice,
   type PriceLine,
+  type SelectedExtra,
 } from "@/helpers/servicePrice";
 import {
   formatPriceToString,
   PRICE_ON_REQUEST_LABEL,
 } from "@/helpers/formatPrice";
-import type { IService, IAppointment } from "@/types";
+import type {
+  IService,
+  IAppointment,
+  IAppointmentAttachment,
+  IAppointmentRequest,
+} from "@/types";
 import type {
   BookingAuthDestination,
   BookingModalProps,
@@ -61,10 +67,29 @@ export interface BookingContextValue {
   setSelectedServiceId: Dispatch<SetStateAction<string>>;
   selectedVariant: string;
   setSelectedVariant: Dispatch<SetStateAction<string>>;
-  selectedExtras: string[];
-  setSelectedExtras: Dispatch<SetStateAction<string[]>>;
+  /** Izabrani dodaci sa količinom. Dodatak bez `allowQuantity` uvek nosi 1. */
+  selectedExtras: SelectedExtra[];
+  setSelectedExtras: Dispatch<SetStateAction<SelectedExtra[]>>;
+  /** Postavi količinu dodatka; 0 ga uklanja iz izbora. */
+  setExtraQuantity: (name: string, quantity: number) => void;
   note: string;
   setNote: Dispatch<SetStateAction<string>>;
+  // ── intake („kako želite da izgleda") ──
+  intakeNote: string;
+  setIntakeNote: Dispatch<SetStateAction<string>>;
+  intakeReferenceUrl: string;
+  setIntakeReferenceUrl: Dispatch<SetStateAction<string>>;
+  intakeImage: IAppointmentAttachment | null;
+  uploadIntakeImage: (file: File) => Promise<void>;
+  removeIntakeImage: () => void;
+  intakeUploading: boolean;
+  intakeError: string | null;
+  /** Usluga traži zahtev, pa modal ima drugi korak. */
+  intakeRequired: boolean;
+  /** true → prikazan je korak sa zahtevom umesto izbora usluge/termina. */
+  onIntakeStep: boolean;
+  goToIntakeStep: () => void;
+  backFromIntakeStep: () => void;
   // ── gost tok ──
   showGuestForm: boolean;
   setShowGuestForm: Dispatch<SetStateAction<boolean>>;
@@ -142,10 +167,80 @@ export function BookingProvider({
   const [selectedVariant, setSelectedVariant] = useState(
     pendingDefaults?.variantName || "",
   );
-  const [selectedExtras, setSelectedExtras] = useState<string[]>(
-    pendingDefaults?.extras || [],
+  const [selectedExtras, setSelectedExtras] = useState<SelectedExtra[]>(() =>
+    (pendingDefaults?.extras ?? []).map((name) => ({
+      name,
+      quantity: pendingDefaults?.extraQuantities?.[name] ?? 1,
+    })),
   );
+
+  const setExtraQuantity = useCallback((name: string, quantity: number) => {
+    setSelectedExtras((prev) => {
+      if (quantity <= 0) return prev.filter((e) => e.name !== name);
+      const existing = prev.find((e) => e.name === name);
+      if (!existing) return [...prev, { name, quantity }];
+      return prev.map((e) => (e.name === name ? { ...e, quantity } : e));
+    });
+  }, []);
   const [note, setNote] = useState(pendingDefaults?.note || "");
+
+  // Intake živi samo dok modal traje. Namerno NIJE u `PendingAppointment`:
+  // fotografija je već na Cloudinary-ju, a guranje URL-a kroz sessionStorage
+  // bi je izložilo svakome ko čita storage. Posle prijave se unosi ponovo.
+  const [intakeNote, setIntakeNote] = useState("");
+  const [intakeReferenceUrl, setIntakeReferenceUrl] = useState("");
+  const [intakeImage, setIntakeImage] =
+    useState<IAppointmentAttachment | null>(null);
+  const [intakeUploading, setIntakeUploading] = useState(false);
+  const [intakeError, setIntakeError] = useState<string | null>(null);
+  const [onIntakeStep, setOnIntakeStep] = useState(false);
+
+  const uploadIntakeImage = useCallback(
+    async (file: File) => {
+      if (!tenantSlug) {
+        setIntakeError("Otpremanje trenutno nije dostupno.");
+        return;
+      }
+      setIntakeError(null);
+      setIntakeUploading(true);
+      try {
+        const body = new FormData();
+        body.append("file", file);
+        const res = await fetch(
+          `/api/public/${tenantSlug}/appointments/intake-upload`,
+          { method: "POST", body },
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setIntakeError(data?.error ?? "Otpremanje nije uspelo.");
+          return;
+        }
+        setIntakeImage(data as IAppointmentAttachment);
+      } catch {
+        setIntakeError("Otpremanje nije uspelo. Proverite internet vezu.");
+      } finally {
+        setIntakeUploading(false);
+      }
+    },
+    [tenantSlug],
+  );
+
+  const removeIntakeImage = useCallback(() => {
+    setIntakeImage(null);
+    setIntakeError(null);
+  }, []);
+
+  /** Zahtev za payload — `undefined` kad klijentkinja nije ništa unela. */
+  const buildRequest = useCallback((): IAppointmentRequest | undefined => {
+    const noteText = intakeNote.trim();
+    const ref = intakeReferenceUrl.trim();
+    if (!noteText && !ref && !intakeImage) return undefined;
+    return {
+      ...(noteText ? { note: noteText } : {}),
+      ...(ref ? { referenceUrl: ref } : {}),
+      ...(intakeImage ? { attachments: [intakeImage] } : {}),
+    };
+  }, [intakeNote, intakeReferenceUrl, intakeImage]);
   const [showGuestForm, setShowGuestForm] = useState(false);
   const [guestData, setGuestData] = useState({
     name: "",
@@ -226,7 +321,12 @@ export function BookingProvider({
         selectionOwnerRef.current = restoredId;
         setSelectedServiceId(restoredId);
         setSelectedVariant(pendingDefaults.variantName || "");
-        setSelectedExtras(pendingDefaults.extras || []);
+        setSelectedExtras(
+          (pendingDefaults.extras ?? []).map((name) => ({
+            name,
+            quantity: pendingDefaults.extraQuantities?.[name] ?? 1,
+          })),
+        );
         setNote(pendingDefaults.note || "");
       }
     }
@@ -241,6 +341,8 @@ export function BookingProvider({
     selectionOwnerRef.current = selectedServiceId;
     setSelectedVariant("");
     setSelectedExtras([]);
+    // Druga usluga → drugi zahtev; korak se vraća na početak.
+    setOnIntakeStep(false);
   }, [selectedServiceId]);
 
   // manualSlots režim: nudi se SAMO slobodan budući termin koji je vlasnik
@@ -283,7 +385,7 @@ export function BookingProvider({
         ? estimateServicePrice({
             service: selectedService,
             variantName: selectedVariant,
-            extraNames: selectedExtras,
+            extras: selectedExtras,
           })
         : null,
     [selectedService, selectedVariant, selectedExtras],
@@ -333,6 +435,11 @@ export function BookingProvider({
     setSelectedVariant("");
     setSelectedExtras([]);
     setNote("");
+    setIntakeNote("");
+    setIntakeReferenceUrl("");
+    setIntakeImage(null);
+    setIntakeError(null);
+    setOnIntakeStep(false);
     setShowGuestForm(false);
     setGuestData({ name: "", phone: "", email: "", instagram: "", tiktok: "" });
     onClose();
@@ -347,13 +454,17 @@ export function BookingProvider({
     if (!selectedService) return toast.error("Izabrana usluga nije pronađena.");
     if (!validateSelection(selectedService)) return;
 
-    const extrasForStorage = selectedExtras.map((extraName) => {
-      const extra = selectedService.extras?.find((e) => e.name === extraName);
+    const extrasForStorage = selectedExtras.map(({ name, quantity }) => {
+      const extra = selectedService.extras?.find((e) => e.name === name);
+      const qty = extra?.allowQuantity ? Math.max(1, quantity) : 1;
       return {
-        name: extraName,
-        price: extra?.price || 0,
-        duration: extra?.duration || 0,
+        name,
+        // Zapisuje se UKUPNO za taj dodatak, ne jedinična cena — termin mora
+        // da stoji sam za sebe i kad se cenovnik kasnije promeni.
+        price: (extra?.price || 0) * qty,
+        duration: (extra?.duration || 0) * qty,
         perItem: extra?.perItem || false,
+        quantity: qty,
       };
     });
 
@@ -376,6 +487,7 @@ export function BookingProvider({
       time: selectedTime,
       duration: totalDuration,
       note: note || undefined,
+      request: buildRequest(),
       status: "pending",
       ...(referralVoucherCode ? { voucherCode: referralVoucherCode } : {}),
       messages: [],
@@ -405,7 +517,10 @@ export function BookingProvider({
       time: selectedTime,
       serviceId: selectedServiceId,
       variantName: selectedVariant,
-      extras: selectedExtras,
+      extras: selectedExtras.map((e) => e.name),
+      extraQuantities: Object.fromEntries(
+        selectedExtras.map((e) => [e.name, e.quantity]),
+      ),
       note,
       totalPrice,
       totalDuration,
@@ -441,13 +556,17 @@ export function BookingProvider({
     if (!tenantSlug)
       return toast.error("Greška: nedostaje identifikator salona.");
 
-    const extrasForStorage = selectedExtras.map((extraName) => {
-      const extra = selectedService.extras?.find((e) => e.name === extraName);
+    const extrasForStorage = selectedExtras.map(({ name, quantity }) => {
+      const extra = selectedService.extras?.find((e) => e.name === name);
+      const qty = extra?.allowQuantity ? Math.max(1, quantity) : 1;
       return {
-        name: extraName,
-        price: extra?.price || 0,
-        duration: extra?.duration || 0,
+        name,
+        // Zapisuje se UKUPNO za taj dodatak, ne jedinična cena — termin mora
+        // da stoji sam za sebe i kad se cenovnik kasnije promeni.
+        price: (extra?.price || 0) * qty,
+        duration: (extra?.duration || 0) * qty,
         perItem: extra?.perItem || false,
+        quantity: qty,
       };
     });
 
@@ -490,6 +609,7 @@ export function BookingProvider({
           time: selectedTime,
           duration: totalDuration,
           note: noteWithInstagram,
+          request: buildRequest(),
         }),
       });
 
@@ -527,8 +647,22 @@ export function BookingProvider({
     setSelectedVariant,
     selectedExtras,
     setSelectedExtras,
+    setExtraQuantity,
     note,
     setNote,
+    intakeNote,
+    setIntakeNote,
+    intakeReferenceUrl,
+    setIntakeReferenceUrl,
+    intakeImage,
+    uploadIntakeImage,
+    removeIntakeImage,
+    intakeUploading,
+    intakeError,
+    intakeRequired: Boolean(selectedService?.intakeEnabled),
+    onIntakeStep,
+    goToIntakeStep: () => setOnIntakeStep(true),
+    backFromIntakeStep: () => setOnIntakeStep(false),
     showGuestForm,
     setShowGuestForm,
     guestData,

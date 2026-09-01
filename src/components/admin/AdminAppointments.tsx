@@ -1,6 +1,11 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import {
+  AppointmentRequestModal,
+  hasRequest,
+  hasRequestImage,
+} from "./AppointmentRequestModal";
 import { api } from "@/lib/api";
 import { formatISODate } from "@/helpers/formatISODate";
 import { statusMeta } from "@/lib/appointmentColors";
@@ -62,6 +67,7 @@ function AppointmentListItem({
     );
   }, [appointment, appointments]);
 
+  const [requestOpen, setRequestOpen] = useState(false);
   const getStatusColor = (status: string) => statusMeta(status).chip;
 
   const handleStatusUpdate = (status: IAppointment["status"]) => {
@@ -72,6 +78,13 @@ function AppointmentListItem({
   };
 
   return (
+    <>
+    {requestOpen && (
+      <AppointmentRequestModal
+        appointment={currentAppointment}
+        onClose={() => setRequestOpen(false)}
+      />
+    )}
     <li
       id={`appointment-${appointment._id}`}
       className={`flex flex-col lg:flex-row justify-between gap-x-6 py-5 border-b dark:last:border-gray-900 last:border-gray-50 border-gray-200 dark:border-slate-800 transition-colors duration-500 ${
@@ -119,6 +132,30 @@ function AppointmentListItem({
               {currentAppointment.status === "no_show" &&
                 noShowLabel(clientGender)}
             </span>
+            {hasRequest(currentAppointment) &&
+              (currentAppointment.status === "pending" ? (
+                // Dok čeka odobrenje, zahtev je informacija za PROCENU termina,
+                // pa mora da se vidi pre nego što ga salon potvrdi.
+                <button
+                  type="button"
+                  onClick={() => setRequestOpen(true)}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 hover:bg-amber-200 transition"
+                >
+                  {hasRequestImage(currentAppointment)
+                    ? "📷 Zahtev sa fotografijom"
+                    : "📝 Detalji zahteva"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setRequestOpen(true)}
+                  aria-label="Zahtev klijentkinje"
+                  title="Zahtev klijentkinje"
+                  className="text-base leading-none hover:opacity-70 transition"
+                >
+                  {hasRequestImage(currentAppointment) ? "🖼️" : "📝"}
+                </button>
+              ))}
             {unreadAdmin !== 0 && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-(--secondary-color) text-white animate-pulse">
                 {unreadAdmin === 1
@@ -244,6 +281,7 @@ function AppointmentListItem({
         </div>
       </div>
     </li>
+    </>
   );
 }
 

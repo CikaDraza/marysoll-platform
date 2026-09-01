@@ -265,7 +265,7 @@ describe("estimateServicePrice", () => {
     const e = estimateServicePrice({
       service: s,
       variantName: "Korekcija",
-      extraNames: ["Stiker"],
+      extras: [{ name: "Stiker", quantity: 1 }],
     });
     expect(e.total).toBe(3000); // 2500 + 500 — basePrice se NE dodaje
     expect(e.isEstimate).toBe(false);
@@ -287,7 +287,7 @@ describe("estimateServicePrice", () => {
     const e = estimateServicePrice({
       service: s,
       variantName: "Veličina 5",
-      extraNames: ["Stiker"],
+      extras: [{ name: "Stiker", quantity: 1 }],
     });
     expect(e.total).toBe(3300); // 2000 + 800 + 500
     expect(e.isEstimate).toBe(true);
@@ -315,7 +315,7 @@ describe("estimateServicePrice", () => {
     const e = estimateServicePrice({
       service: s,
       variantName: "Veličina 3",
-      extraNames: ["Stiker"],
+      extras: [{ name: "Stiker", quantity: 1 }],
     });
     expect(e.total).toBe(3000); // 2000 + 1000; nepoznata doplata ne ulazi
     expect(e.isEstimate).toBe(true);
@@ -335,7 +335,7 @@ describe("estimateServicePrice", () => {
       services: [{ name: "Šminkanje", description: "" }],
       extras: [stiker],
     });
-    const e = estimateServicePrice({ service: s, extraNames: ["Stiker"] });
+    const e = estimateServicePrice({ service: s, extras: [{ name: "Stiker", quantity: 1 }] });
     expect(e.total).toBe(6500);
     expect(e.isEstimate).toBe(false);
     expect(e.durationMinutes).toBe(125);
@@ -348,7 +348,7 @@ describe("estimateServicePrice", () => {
       duration: 60,
       extras: [sirena],
     });
-    const e = estimateServicePrice({ service: s, extraNames: ["Morska sirena"] });
+    const e = estimateServicePrice({ service: s, extras: [{ name: "Morska sirena", quantity: 1 }] });
     expect(e.unknown).toBe(true);
     expect(e.total).toBe(0);
   });
@@ -360,9 +360,63 @@ describe("estimateServicePrice", () => {
       duration: 60,
       extras: [sirena],
     });
-    const e = estimateServicePrice({ service: s, extraNames: ["Morska sirena"] });
+    const e = estimateServicePrice({ service: s, extras: [{ name: "Morska sirena", quantity: 1 }] });
     expect(e.total).toBe(2000);
     expect(e.isEstimate).toBe(true);
     expect(e.unknown).toBe(false);
+  });
+});
+
+describe("estimateServicePrice — količina dodatka", () => {
+  const stiker = {
+    name: "Stiker",
+    price: 500,
+    duration: 5,
+    perItem: true,
+    unitLabel: "kom",
+    allowQuantity: true,
+  };
+  const french = { name: "French", price: 500, duration: 10, perItem: false };
+
+  it("količina množi i cenu i trajanje", () => {
+    const s = svc({ type: "single", basePrice: 2000, duration: 60, extras: [stiker] });
+    const e = estimateServicePrice({
+      service: s,
+      extras: [{ name: "Stiker", quantity: 3 }],
+    });
+    expect(e.total).toBe(3500); // 2000 + 3 × 500
+    expect(e.durationMinutes).toBe(75); // 60 + 3 × 5
+    expect(e.lines[1]).toMatchObject({ label: "Stiker", amount: 1500, quantity: 3 });
+  });
+
+  it("dodatak bez količine se naplaćuje jednom, ma šta stiglo", () => {
+    // Zaštita od pokvarenog klijenta: `allowQuantity: false` znači čekiranje,
+    // pa količina 5 ne sme da napravi peterostruku cenu.
+    const s = svc({ type: "single", basePrice: 2000, duration: 60, extras: [french] });
+    const e = estimateServicePrice({
+      service: s,
+      extras: [{ name: "French", quantity: 5 }],
+    });
+    expect(e.total).toBe(2500);
+    expect(e.durationMinutes).toBe(70);
+  });
+
+  it("dodatak na upit sa količinom ostaje bez iznosa", () => {
+    const sirena = {
+      name: "Morska sirena",
+      price: 0,
+      priceMode: "on_request" as const,
+      duration: 10,
+      perItem: true,
+      allowQuantity: true,
+    };
+    const s = svc({ type: "single", basePrice: 2000, duration: 60, extras: [sirena] });
+    const e = estimateServicePrice({
+      service: s,
+      extras: [{ name: "Morska sirena", quantity: 2 }],
+    });
+    expect(e.total).toBe(2000);
+    expect(e.isEstimate).toBe(true);
+    expect(e.durationMinutes).toBe(80); // trajanje se množi i kad cena nije poznata
   });
 });

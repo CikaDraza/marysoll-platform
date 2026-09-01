@@ -69,6 +69,14 @@ export interface PriceLine {
   /** null = iznos se ne zna (na upit) i ne ulazi u zbir. */
   amount: number | null;
   kind: "base" | "variant" | "extra";
+  /** Količina dodatka (>1 se prikazuje kao "2 × Stiker"). */
+  quantity?: number;
+}
+
+/** Izabran dodatak sa količinom. Dodatak bez `allowQuantity` uvek ima 1. */
+export interface SelectedExtra {
+  name: string;
+  quantity: number;
 }
 
 export interface ServicePriceEstimate {
@@ -105,7 +113,7 @@ function variantAdjustment(variant: IServiceVariant): number | null {
 export function estimateServicePrice(input: {
   service: IService;
   variantName?: string;
-  extraNames?: readonly string[];
+  extras?: readonly SelectedExtra[];
 }): ServicePriceEstimate {
   const { service } = input;
   const lines: PriceLine[] = [];
@@ -152,15 +160,19 @@ export function estimateServicePrice(input: {
     duration += service.duration ?? 0;
   }
 
-  for (const name of input.extraNames ?? []) {
-    const extra = service.extras?.find((e) => e.name === name);
+  for (const selected of input.extras ?? []) {
+    const extra = service.extras?.find((e) => e.name === selected.name);
     if (!extra) continue;
+    // Količina množi i cenu i trajanje: 3 × stiker je i 3 × cena i 3 × minuta.
+    const quantity = extra.allowQuantity ? Math.max(1, selected.quantity) : 1;
     lines.push({
       kind: "extra",
       label: extra.name,
-      amount: extra.priceMode === "on_request" ? null : (extra.price ?? 0),
+      amount:
+        extra.priceMode === "on_request" ? null : (extra.price ?? 0) * quantity,
+      quantity,
     });
-    if (extra.duration) duration += extra.duration;
+    if (extra.duration) duration += extra.duration * quantity;
   }
 
   const known = lines.filter((l) => l.amount != null);
