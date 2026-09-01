@@ -14,6 +14,7 @@ import { describe, it, expect } from "vitest";
 import {
   blocksSlot,
   ACTIVE_APPOINTMENT_STATUS_FILTER,
+  BLOCKING_APPOINTMENT_STATUSES,
   NON_BLOCKING_APPOINTMENT_STATUSES,
 } from "./occupancy";
 import { overlapsAppointments } from "@/helpers/manualSlots";
@@ -126,5 +127,59 @@ describe("kasno otkazivanje oslobađa slot", () => {
     expect(overlapsAppointments(activeOnly([other]), DAY, "14:00", 60)).toBe(
       true,
     );
+  });
+});
+
+describe("javni feed zauzeća prati canonical pravilo", () => {
+  const DAY = "2026-09-12";
+  const workingHours = { Subota: [{ from: "09:00", to: "20:00" }] };
+  const NOW = new Date("2026-09-01T08:00:00Z");
+
+  it("REGRESIJA: appointment_rescheduled JE zauzeće", () => {
+    // Javni feed je ranije imao ručnu listu ["appointment_approved","pending"],
+    // pa je pomeren termin izgledao slobodno u UI-ju iako ga server blokira —
+    // klijent bi popunio formu i tek na potvrdi dobio „Termin je zauzet".
+    expect(BLOCKING_APPOINTMENT_STATUSES).toContain("appointment_rescheduled");
+    expect(blocksSlot("appointment_rescheduled")).toBe(true);
+  });
+
+  it("allow-lista sadrži tačno aktivne statuse", () => {
+    expect([...BLOCKING_APPOINTMENT_STATUSES].sort()).toEqual(
+      ["appointment_approved", "appointment_rescheduled", "pending"].sort(),
+    );
+  });
+
+  it("otkazani, propušteni i završeni NISU u javnom feedu", () => {
+    for (const status of [
+      "appointment_cancelled",
+      "appointment_rejected",
+      "no_show",
+      "completed",
+    ]) {
+      expect(BLOCKING_APPOINTMENT_STATUSES).not.toContain(status);
+    }
+  });
+
+  it("pomeren termin u 14:00 ne nudi 14:00 klijentu", () => {
+    const rescheduled = {
+      date: DAY,
+      time: "14:00",
+      duration: 60,
+      status: "appointment_rescheduled",
+    };
+    const active = [rescheduled].filter((a) => blocksSlot(a.status));
+    expect(active).toHaveLength(1);
+    expect(
+      availableTimesForDate({
+        tenantId: "t",
+        localDate: DAY,
+        durationMinutes: 60,
+        profile: { workingHours },
+        appointments: active,
+        now: NOW,
+      }),
+    ).not.toContain("14:00");
+    // Server bi ga odbio i da zahtev stigne mimo UI-ja.
+    expect(overlapsAppointments(active, DAY, "14:00", 60)).toBe(true);
   });
 });

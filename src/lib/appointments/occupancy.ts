@@ -16,6 +16,17 @@
  *   no_show (uklj. late_cancel)       → ne blokira
  *   completed                         → ne blokira (istorija, ne rezervacija)
  */
+/** Svi statusi termina — izvor za izvođenje allow/deny lista. */
+export const APPOINTMENT_STATUSES = [
+  "pending",
+  "appointment_approved",
+  "appointment_rejected",
+  "appointment_rescheduled",
+  "appointment_cancelled",
+  "completed",
+  "no_show",
+] as const;
+
 export const NON_BLOCKING_APPOINTMENT_STATUSES = [
   "appointment_rejected",
   "appointment_cancelled",
@@ -34,3 +45,14 @@ export function blocksSlot(status: string | undefined): boolean {
     status as (typeof NON_BLOCKING_APPOINTMENT_STATUSES)[number],
   );
 }
+
+/**
+ * Statusi koji DRŽE vreme — izvedeni iz istog pravila, ne prepisani.
+ *
+ * Javni feed zauzeća koristi allow-listu umesto `$nin`: novi status dodat
+ * sutra neće slučajno procuriti na javni endpoint, a ostaje usklađen sa
+ * canonical pravilom jer se izvodi iz njega.
+ */
+export const BLOCKING_APPOINTMENT_STATUSES = APPOINTMENT_STATUSES.filter(
+  (status) => blocksSlot(status),
+);
