@@ -416,7 +416,12 @@ async function getAdminTenantUsersWithEmails(
 export async function createAppointmentNotification(
   appointment: AppointmentForNotification,
   type: AppointmentType,
-  additionalData?: { sender?: "client" | "admin"; message?: string },
+  additionalData?: {
+    sender?: "client" | "admin";
+    message?: string;
+    /** Klijent je otkazao POSLE dozvoljenog roka — salon to mora videti. */
+    late?: boolean;
+  },
 ) {
   await sendAppointmentEmailNotifications(appointment, type, additionalData);
 
@@ -461,8 +466,14 @@ export async function createAppointmentNotification(
       clientMessage: `Admin je predložio novi termin za ${appointment.serviceName}`,
     },
     cancelled: {
-      adminTitle: "Termin otkazan",
-      adminMessage: `Otkazali ste termin za ${appointment.serviceName} ${clientNoun(clientGender, "dat")} ${appointment.clientName}`,
+      // Kasno otkazivanje nije isto što i regularno: salon gubi termin bez
+      // vremena da ga popuni, pa mu poruka mora to i reći.
+      adminTitle: additionalData?.late
+        ? "Kasno otkazan termin"
+        : "Termin otkazan",
+      adminMessage: additionalData?.late
+        ? `${clientNounCap(clientGender)} ${appointment.clientName} je ${genderPast(clientGender, "otkazala", "otkazao/la")} termin za ${appointment.serviceName}${appointment.date ? ` (${appointment.date} u ${appointment.time})` : ""} NAKON dozvoljenog roka.`
+        : `Otkazali ste termin za ${appointment.serviceName} ${clientNoun(clientGender, "dat")} ${appointment.clientName}`,
       clientTitle: "Termin otkazan",
       clientMessage: `Vaš termin za ${appointment.serviceName} je otkazan`,
     },
@@ -596,7 +607,7 @@ export async function createAppointmentNotification(
       title: salonName,
       body:
         type === "cancelled"
-          ? `🚫 ${appointment.clientName} je ${genderPast(clientGender, "otkazala", "otkazao/la")} ${appointment.serviceName}`
+          ? `${additionalData?.late ? "⚠️ KASNO otkazivanje" : "🚫"} — ${appointment.clientName}, ${appointment.serviceName}`
           : `🔄 ${appointment.clientName} je ${genderPast(clientGender, "izmenila", "izmenio/la")} termin za ${appointment.serviceName}${appointment.date ? " — " + appointment.date : ""}`,
       icon,
       tag: `appt-client-${type}-${appointment._id}`,
@@ -665,7 +676,12 @@ async function resolveAppointmentPrice(
 async function sendAppointmentEmailNotifications(
   appointment: AppointmentForNotification,
   type: AppointmentType,
-  additionalData?: { sender?: "client" | "admin"; message?: string },
+  additionalData?: {
+    sender?: "client" | "admin";
+    message?: string;
+    /** Klijent je otkazao POSLE dozvoljenog roka — salon to mora videti. */
+    late?: boolean;
+  },
 ): Promise<void> {
   try {
     const appointmentData = {

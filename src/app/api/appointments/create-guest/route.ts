@@ -24,6 +24,7 @@ import { findOrCreateGuestUser } from "@/lib/appointments/booking";
 import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant";
 import { requireCapability } from "@/lib/platform/capabilities-server";
+import { ACTIVE_APPOINTMENT_STATUS_FILTER } from "@/lib/appointments/occupancy";
 
 export async function POST(request: NextRequest) {
   const auth = requireAdmin(request);
@@ -96,7 +97,7 @@ export async function POST(request: NextRequest) {
     tenantId,
     date,
     time,
-    status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
+    status: ACTIVE_APPOINTMENT_STATUS_FILTER,
   });
   if (existing) return NextResponse.json({ error: "Termin je zauzet." }, { status: 400 });
 

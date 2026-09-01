@@ -13,9 +13,16 @@ import { useMarkMessagesSeen } from "@/hooks/useMarkMessagesSeen";
 import Paginator from "../elements/Paginator";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuth } from "@/hooks/useAuth";
+import { usePublicSalonProfile } from "@/hooks/useSalonProfile";
+import ClientEditModal from "./ClientEditModal";
+import { useCancelAppointment } from "./useCancelAppointment";
+import type { ManualSlotsMap } from "@/types";
 import { useTenant } from "@/contexts/TenantContext";
 import {
-  noShowLabel,
+  clientAppointmentPhase,
+  isClientActionableStatus,
+} from "@/lib/appointments/cancellation";
+import {
   noShowStatusLabel,
   clientNoun,
   clientNounCap,
@@ -25,11 +32,15 @@ import {
 interface ClientAppointmentListItemProps {
   appointment: IAppointment;
   onOpenChat: (appointment: IAppointment) => void;
+  onEdit: (appointment: IAppointment) => void;
+  onCancel: (appointment: IAppointment) => void;
 }
 
 function ClientAppointmentListItem({
   appointment,
   onOpenChat,
+  onEdit,
+  onCancel,
 }: ClientAppointmentListItemProps) {
   const { isOnline } = useUsers().data?.find(
     (u: IUser) => u._id === appointment.clientProfileId,
@@ -40,6 +51,17 @@ function ClientAppointmentListItem({
 
   // Uzmi ažurirani appointment sa najnovijim porukama
   const currentAppointment = appointment;
+
+  // Vreme se NE računa ponovo u komponenti — faza je canonical domenska odluka.
+  //   open    → Promeni + Otkaži
+  //   late    → samo Otkaži (postaje kasno otkazivanje)
+  //   started → ništa; termin je počeo
+  //   unknown → ništa; vreme se ne može pouzdano pročitati
+  const phase = isClientActionableStatus(currentAppointment.status)
+    ? clientAppointmentPhase(currentAppointment)
+    : "started";
+  const canEdit = phase === "open";
+  const canCancel = phase === "open" || phase === "late";
 
   const getStatusColor = (status: string) => statusMeta(status).chip;
 
@@ -141,7 +163,23 @@ function ClientAppointmentListItem({
         </div>
 
         {/* Akcije */}
-        <div className="flex gap-2 mt-2">
+        <div className="flex flex-wrap justify-end gap-2 mt-2">
+          {canEdit && (
+            <button
+              onClick={() => onEdit(currentAppointment)}
+              className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              Promeni
+            </button>
+          )}
+          {canCancel && (
+            <button
+              onClick={() => onCancel(currentAppointment)}
+              className="px-3 py-1 bg-red-100 text-red-600 text-xs rounded hover:bg-red-600 hover:text-white transition-colors"
+            >
+              Otkaži
+            </button>
+          )}
           <button
             onClick={() => onOpenChat(currentAppointment)}
             className="px-3 py-1 relative bg-(--primary-color)/80 text-white text-xs rounded hover:bg-(--primary-color) transition-colors"
@@ -437,6 +475,21 @@ export default function ClientAppointments() {
   const markMessagesSeen = useMarkMessagesSeen();
 
   const { user } = useAuth();
+  const { tenantSlug } = useTenant();
+
+  // Edit modal traži dostupnost, pa mu trebaju profil salona i SVI termini —
+  // ne samo klijentkinjini. Isti izvor koji koristi klijentski kalendar, da
+  // ponuda slobodnih vremena bude ista na obe površine.
+  const { data: salonProfile } = usePublicSalonProfile(tenantSlug);
+  const { data: allAppointmentsResponse } = useAppointments({
+    page: 1,
+    limit: 100,
+  });
+
+  const [editTarget, setEditTarget] = useState<IAppointment | null>(null);
+  const { requestCancel, dialog: cancelDialog } = useCancelAppointment({
+    token: user?.token,
+  });
 
   const {
     data: response,
@@ -592,6 +645,8 @@ export default function ClientAppointments() {
                 key={appointment._id}
                 appointment={appointment}
                 onOpenChat={handleOpenChat}
+                onEdit={setEditTarget}
+                onCancel={requestCancel}
               />
             ))}
           </ul>
@@ -611,6 +666,25 @@ export default function ClientAppointments() {
           onClose={() => setSelectedAppointment(null)}
         />
       )}
+
+      {/* Isti modal koji koristi klijentski kalendar — bez druge implementacije. */}
+      <ClientEditModal
+        key={editTarget?._id ?? "edit"}
+        isOpen={editTarget !== null}
+        onClose={() => setEditTarget(null)}
+        appointment={editTarget}
+        token={user?.token}
+        availabilityMode={salonProfile?.availabilityMode}
+        workingHours={
+          salonProfile?.workingHours as
+            | Parameters<typeof ClientEditModal>[0]["workingHours"]
+            | undefined
+        }
+        manualSlots={salonProfile?.manualSlots as ManualSlotsMap | undefined}
+        bookedAppointments={allAppointmentsResponse?.appointments ?? []}
+      />
+
+      {cancelDialog}
     </div>
   );
 }

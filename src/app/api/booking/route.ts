@@ -21,6 +21,7 @@ import {
 import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant";
 import { requireCapability } from "@/lib/platform/capabilities-server";
+import { ACTIVE_APPOINTMENT_STATUS_FILTER } from "@/lib/appointments/occupancy";
 
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
@@ -123,7 +124,7 @@ export async function POST(req: NextRequest) {
       tenantId,
       date,
       time,
-      status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
+      status: ACTIVE_APPOINTMENT_STATUS_FILTER,
     });
     if (existing) {
       return NextResponse.json({ error: "Termin je zauzet." }, { status: 400 });

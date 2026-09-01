@@ -25,6 +25,7 @@ import {
   workingSlotsForDate,
 } from "@/helpers/parseWorkingHours";
 import type { ManualSlotsMap } from "@/types";
+import { ACTIVE_APPOINTMENT_STATUS_FILTER } from "@/lib/appointments/occupancy";
 
 /** Trial/paid gate — sme li salon trenutno da prima zakazivanja. */
 export function canAcceptBookings(tenant: {
@@ -108,7 +109,7 @@ export async function checkSlotAvailability(args: {
   const dayAppointments = await Appointment.find({
     tenantId,
     date,
-    status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
+    status: ACTIVE_APPOINTMENT_STATUS_FILTER,
   })
     .select("date time duration")
     .lean<{ date: string; time: string; duration?: number }[]>();

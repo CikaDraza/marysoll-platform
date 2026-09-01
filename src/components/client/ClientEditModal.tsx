@@ -13,10 +13,10 @@ import {
 } from "@/helpers/manualSlots";
 import { IAppointment, ManualSlotsMap } from "@/types";
 import { useAppointmentMutations } from "@/hooks/useAppointmentMutations";
+import { useCancelAppointment } from "./useCancelAppointment";
 import { useServices } from "@/hooks/useServices";
 import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
 import { motion } from "framer-motion";
-import AlertModal from "../modals/AlertModal";
 import {
   clientAppointmentPhase,
   isClientActionableStatus,
@@ -62,11 +62,15 @@ export default function ClientEditModal({
   manualSlots,
   bookedAppointments,
 }: Props) {
-  const { updateClientAppointment, cancelClientAppointment } =
-    useAppointmentMutations(token);
+  const { updateClientAppointment } = useAppointmentMutations(token);
   const { data: services = [] } = useServices();
   const { clientGender } = useTenant();
-  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  // Otkazivanje deli implementaciju sa listom „Moji termini" — jedan potvrdni
+  // dijalog, jedna mutacija, ista poruka po fazi.
+  const { requestCancel, dialog: cancelDialog } = useCancelAppointment({
+    token,
+    onCancelled: onClose,
+  });
 
   const [selectedDate, setSelectedDate] = useState<string>(
     appointment?.date ?? "",
@@ -131,7 +135,6 @@ export default function ClientEditModal({
     ? clientAppointmentPhase(appointment)
     : "started";
   const canEdit = phase === "open";
-  const isLateCancel = phase === "late";
   const canCancel = phase === "open" || phase === "late";
   const selectedService = services.find((s) => s._id === selectedServiceId);
 
@@ -260,16 +263,6 @@ export default function ClientEditModal({
     }
   };
 
-  const handleDelete = async () => {
-    try {
-      await cancelClientAppointment.mutateAsync(appointment._id!);
-      onClose();
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Greška pri otkazivanju termina.",
-      );
-    }
-  };
 
   const handleExtraToggle = (extraName: string) => {
     setSelectedExtras((prev) =>
@@ -552,7 +545,7 @@ export default function ClientEditModal({
                   {canCancel ? (
                     <button
                       type="button"
-                      onClick={() => setIsAlertOpen(true)}
+                      onClick={() => appointment && requestCancel(appointment)}
                       className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded bg-red-100 text-red-600 hover:bg-red-600 hover:text-white transition"
                     >
                       <TrashIcon className="w-4 h-4" /> Otkaži termin
@@ -625,7 +618,7 @@ export default function ClientEditModal({
                   {canCancel ? (
                     <button
                       type="button"
-                      onClick={() => setIsAlertOpen(true)}
+                      onClick={() => appointment && requestCancel(appointment)}
                       className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded bg-red-100 text-red-600 hover:bg-red-600 hover:text-white transition text-sm"
                     >
                       <TrashIcon className="w-4 h-4" /> Otkaži termin
@@ -646,23 +639,7 @@ export default function ClientEditModal({
         </div>
       </Dialog>
 
-      <AlertModal
-        open={isAlertOpen}
-        setOpen={setIsAlertOpen}
-        onConfirm={handleDelete}
-        title={
-          isLateCancel
-            ? "Rok za regularno otkazivanje je prošao"
-            : "Otkaži termin"
-        }
-        message={
-          isLateCancel
-            ? "Ako sada otkažete termin, otkazivanje će biti evidentirano kao kasno i mogu se primeniti pravila salona za nedolazak."
-            : "Da li želite da otkažete termin?"
-        }
-        confirmLabel={isLateCancel ? "Otkaži ipak" : "Otkaži termin"}
-        cancelLabel="Odustani"
-      />
+      {cancelDialog}
     </>
   );
 }

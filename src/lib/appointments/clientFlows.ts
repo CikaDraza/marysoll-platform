@@ -33,6 +33,7 @@ import {
 } from "@/helpers/parseWorkingHours";
 import type { IAppointmentService } from "@/types";
 import type { PreferredContact } from "@/lib/contactRules";
+import { ACTIVE_APPOINTMENT_STATUS_FILTER } from "@/lib/appointments/occupancy";
 
 /* Mongoose Appointment model nije generički tipovan, pa dokument opisujemo
    strukturno — samo polja koja tokovi čitaju/menjaju. */
@@ -150,12 +151,19 @@ export async function cancelAppointmentAsClient(
     appointment.status,
   );
 
-  if (canCancel) {
-    await createAppointmentNotification(notificationPayload(appointment), "cancelled", {
+  // Salon mora znati i za kasno otkazivanje — cilj funkcije je da ne čeka
+  // klijentkinju koja neće doći. Ranije se slalo samo za regularan otkaz.
+  await createAppointmentNotification(
+    notificationPayload(appointment),
+    "cancelled",
+    {
       sender: "client",
-      message: "Klijent je otkazao termin u dozvoljenom roku.",
-    });
-  }
+      late: !canCancel,
+      message: canCancel
+        ? "Klijent je otkazao termin u dozvoljenom roku."
+        : "Klijent je otkazao nakon dozvoljenog roka.",
+    },
+  );
 
   return {
     ok: true,
@@ -226,7 +234,7 @@ export async function rescheduleAppointmentAsClient(
     tenantId,
     date: input.date,
     time: input.time,
-    status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
+    status: ACTIVE_APPOINTMENT_STATUS_FILTER,
   });
   if (conflict) {
     return { ok: false, kind: "conflict", error: "Termin je zauzet." };
@@ -248,7 +256,7 @@ export async function rescheduleAppointmentAsClient(
       _id: { $ne: appointment._id },
       tenantId,
       date: input.date,
-      status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
+      status: ACTIVE_APPOINTMENT_STATUS_FILTER,
     })
       .select("date time duration")
       .lean<{ date: string; time: string; duration?: number }[]>();
