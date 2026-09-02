@@ -26,7 +26,7 @@ ostaje neophodan)
 
 | # | Rez | Status | Šta obuhvata | Dokument |
 |---|---|---|---|---|
-| **T1-4** | **Loyalty Redemption & Appointment Checkout** | ⬜ **nije počet** | Trošenje poena kroz konfigurisanu points-shop nagradu → vaučer → primena na termin → `redeemed` na završenoj poseti. Uz to: izbor sopstvenog vaučera pri zakazivanju, pravila stackovanja, admin potvrda, trenutak skidanja balansa i povratak na otkazivanje/nedolazak. | [PANTA-LOYALTY-ENGINE.md §14](PANTA-LOYALTY-ENGINE.md) |
+| **T1-4** | **Loyalty Redemption & Appointment Checkout** | ⬜ **nije počet** | Trošenje poena kroz konfigurisanu points-shop nagradu → vaučer → primena na termin → `redeemed` na završenoj poseti. Uz to: izbor sopstvenog vaučera pri zakazivanju, pravila stackovanja, admin potvrda, trenutak skidanja balansa, povratak na otkazivanje/nedolazak i **vaučer recompute kad quote postane numerički** (polja za unos već postoje). | [PANTA-LOYALTY-ENGINE.md §14](PANTA-LOYALTY-ENGINE.md) · [cene §4](PANTA-BOOKING-PRICING.md) |
 
 **Šta T1-4 NIJE.** Srca, poeni, ledger, milestone→vaučer, voucher lifecycle
 (`active → reserved → redeemed`), admin korekcija balansa sa obaveznim razlogom i
@@ -83,19 +83,6 @@ samo redemption koju klijentkinja sama bira — vidi
 | 🟡 Jedan booking widget — sajt, `/termini`, panel, izmena | Marysoll |
 | 🟡 Izolacija klijenta — klijent vidi isključivo svoje termine | Marysoll |
 
-### Otvoreno u ovom luku — nije odloženo, samo nije urađeno
-
-| # | Šta | Zašto je važno | Dokument |
-|---|---|---|---|
-| B-LEGACY-1 | **`POST /api/booking` (HMAC gost) kroz canonical seam** | Jedini preostali write ulaz bez ijedne canonical provere: `duration` iz zahteva, cena `basePrice ?? 0`, bez pricing snapshot-a. | [ARC §3](PANTA-BOOKING-CRM-ARC.md) |
-| B-LEGACY-2 | **`POST /api/marketplace/appointments` kroz canonical seam** | Isti problem, druga površina; `Number(data.duration)` i termin bez snapshot-a. Vodi se odvojeno od HMAC rute jer je stepen migracije različit. | [ARC §3](PANTA-BOOKING-CRM-ARC.md) |
-| B-VOUCHER | Vaučer recompute kad quote postane numerički | Polja za unos postoje; ostaje obračun popusta nad potvrđenom osnovicom. | [cene §4](PANTA-BOOKING-PRICING.md) |
-| B-360-1 | `testimonials` capability gate u Client 360 | Sekcija se prikazuje i salonu koji nema tu funkciju. Podaci su tenant-scoped, pa nije bezbednosni problem. | [Client 360 §G](PANTA-CLIENT-360.md) |
-| B-360-2 | Uklanjanje mrtvog `clientInsights` flag-a | Polje postoji u `PLAN_FEATURES`, `FeatureGate` i `FeaturesList`, ali ga nijedan runtime gate ne koristi — uključivanje ne radi ništa. Canonical gate je `statistics`. | [Client 360 §B](PANTA-CLIENT-360.md) |
-| B-INT-1 | Intake na admin ulazu za zakazivanje | Admin create ga ne nudi i ne prikazuje. | [intake §8](PANTA-SERVICE-INTAKE.md) |
-| B-MIG-1 | Pokrenuti `cleanup:stale-group-items` | 2 usluge (marysoll, anja) nose mrtav `services[]` niz. Skripta je idempotentna i napisana. | [ARC §11](PANTA-BOOKING-CRM-ARC.md) |
-| B-TEST-1 | Nestabilan `bookingCore.integration` race test | Pada pod opterećenjem, nikad izolovano. Produkcijska logika nije menjana zbog njega. | [ARC §12](PANTA-BOOKING-CRM-ARC.md) |
-
 ## DEFERRED / LATER — ima odluku, nema termin
 
 Ovo se **ne** premešta u NEXT bez nove product odluke.
@@ -104,12 +91,26 @@ Ovo se **ne** premešta u NEXT bez nove product odluke.
 |---|---|---|
 | **T1-5** | Salonski paketi / entitlement / plaćanje klijentkinje (`ClientPackage`) | Nije tenant Subscription i ne uvodi se payment provider dok ne postoji stvarna potreba. `Service.subscription` opisuje ponudu, ne kupovinu. [Client 360 §K](PANTA-CLIENT-360.md) |
 | **T3 cutover** | `BookingReservation` / day-lock kao production write authority | Preduslov je occupancy blocker iz [T3 §4.1](PANTA-T3-BOOKING-ENGINE.md); dark core nije live authority pa ne blokira beauty rezove |
+| **Legacy write ulazi** | `POST /api/booking` (HMAC gost) i `POST /api/marketplace/appointments` kroz canonical seam | Jedini ulazi koji uzimaju `duration` iz zahteva i cenu `basePrice ?? 0`, bez pricing snapshot-a. Nema aktivnih korisnika tih putanja koji bi to učinili hitnim; ide uz marketplace/platform luk. [ARC §3](PANTA-BOOKING-CRM-ARC.md) |
+| **`cleanup:stale-group-items`** | Mrtav `services[]` niz na 2 usluge (marysoll, anja) | Eksplicitno odloženo. Skripta je napisana i idempotentna; pokreće se kad za to bude prilika, ne kao zaseban rez |
 | Restriction Engine | Automatska posledica za `noShows` / `late_cancel` | Danas se čuvaju samo činjenice; nema automatskog blacklist-a i neće ga biti dok saloni ne pokažu potrebu |
 | Reschedule mejl sa starim i novim terminom | Notifikacija radi, nedostaje stari snapshot u telu | Ne uvode se nova `previousDate/Time` polja zbog kozmetike |
 | Intake v1.1 — izbor polja po usluzi | v1 ima samo `enabled` | Uvodi se tek ako upotreba pokaže potrebu; wizard se ne pravi |
 | Brisanje theme-3/4/6 | ~7.300 linija, 66 fajlova; baza potvrđena prazna | Preduslov: `Theme3GalleryMasonry` mora u `shared/` jer ga theme-1 i theme-2 uvoze |
 | `chargedAmount` na otkazanom, naknada, refund | Nema payment/refund lifecycle-a | Bez engine-a nema smisla projektovati hipotetičku finansijsku politiku |
 | Loyalty Phase 3 (tiers, rođendan, AI nagrade) | Referral live QA i redemption idu pre toga | [Loyalty](PANTA-LOYALTY-ENGINE.md) |
+
+## Poznat dug — ne menja redosled
+
+Ovo su zabeležene činjenice o zatečenom stanju, ne otvoreni poslovi. Nijedna
+stavka ne ulazi u NEXT bez posebne odluke.
+
+| Šta | Priroda | Beleška |
+|---|---|---|
+| Mrtav `clientInsights` flag | code cleanup | Postoji u `PLAN_FEATURES`, `FeatureGate` i `FeaturesList`, ali ga nijedan runtime gate ne koristi — uključivanje ne radi ništa. Canonical gate je `statistics`. [Client 360 §B](PANTA-CLIENT-360.md) |
+| Preporuke u Client 360 bez `testimonials` capability provere | architecture cleanup | Podaci su tenant-scoped, pa nije bezbednosni problem; salon bez te funkcije vidi praznu sekciju. Client 360 UI se sada ne redizajnira. [Client 360 §G](PANTA-CLIENT-360.md) |
+| `bookingCore.integration` race test pada pod opterećenjem | technical debt / T3 hardening | Nikad izolovano; produkcijska logika nije menjana zbog njega. Rešava se uz T3 hardening. [ARC §12](PANTA-BOOKING-CRM-ARC.md) |
+| Admin create ne nudi intake | current limitation | Klijentske površine nude zahtev kad ga usluga traži. Nije odlučeno da salon mora unositi zahtev klijentkinje kada ručno pravi termin — uvodi se samo ako upotreba pokaže potrebu. [intake §8](PANTA-SERVICE-INTAKE.md) |
 
 ## Booking / Consultation — odloženo, ali neophodno
 

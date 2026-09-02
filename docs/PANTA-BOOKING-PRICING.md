@@ -158,11 +158,13 @@ Postoji i:
 **Nije završeno:**
 
 - **vaučer recompute** kad quote postane numerički — polja za unos postoje,
-  ostaje obračun ([§4](#4-vaučer-čeka-osnovicu));
+  ostaje obračun ([§4](#4-vaučer-čeka-osnovicu)). **Ulazi u obim T1-4**, nije
+  zaseban rez;
 - **legacy `POST /api/booking` (HMAC) i `POST /api/marketplace/appointments`** ne
   prolaze kroz `resolveBookingRequest`: uzimaju `duration` iz zahteva i cenu iz
   `basePrice ?? 0`, pa na njima `on_request + dodatak` i dalje može izgledati kao
-  poznata cena, a njihovi termini nemaju pricing snapshot.
+  poznata cena, a njihovi termini nemaju pricing snapshot. **Odloženo** —
+  [TODO.md](TODO.md) DEFERRED.
 
 > Redosled rada: [TODO.md](TODO.md) · pun ugovor luka:
 > [PANTA-BOOKING-CRM-ARC.md](PANTA-BOOKING-CRM-ARC.md)

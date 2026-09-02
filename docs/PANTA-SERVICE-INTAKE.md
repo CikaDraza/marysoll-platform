@@ -167,8 +167,10 @@ sačuvano.
   [PANTA-BOOKING-CRM-ARC.md §9](PANTA-BOOKING-CRM-ARC.md)).
   **Wizard za kreiranje usluge se NE pravi** — konačni v1 UX je jedan checkbox u
   postojećem obrascu usluge.
-- **Intake na admin ulazu za zakazivanje.** Klijentske površine (početna,
-  `/termini`, klijentski panel i klijentska izmena termina) dele isti
-  `BookingModal → BookingProvider` i sve nude zahtev kad ga usluga traži. Admin
-  create ga i dalje ne nudi i ne prikazuje pri zakazivanju.
+- **Intake na admin ulazu za zakazivanje — current limitation, ne obavezan
+  posao.** Klijentske površine (početna, `/termini`, klijentski panel i
+  klijentska izmena termina) dele isti `BookingModal → BookingProvider` i sve
+  nude zahtev kad ga usluga traži. Admin create ga ne nudi. Nije doneta odluka da
+  salon mora unositi zahtev klijentkinje kada ručno pravi termin; uvodi se samo
+  ako upotreba pokaže potrebu.
 - **Izmena `request`-a iz admina** — salon ga vidi, ali ne može da dopuni.

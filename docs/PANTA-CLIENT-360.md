@@ -87,7 +87,7 @@ Pravila koja se ne pregovaraju:
 | termini, status, datum/vreme, zahtev | `Appointment` + Booking pravila |
 | prikaz cene termina | `Appointment.pricing` accessori i formatter |
 | potencijalni i realizovani prihod | Statistics engine nad pricing accessorima |
-| status counts, poslednja poseta, sledeći termin | Statistics engine |
+| status counts, poslednja poseta, sledeći termin (ceo odnos, bez perioda) | Statistics engine |
 | Top 3 za izabrani month/year period | isti Statistics engine kao Salon Statistics |
 | broj i sadržaj preporuka | tenant-scoped `Testimonial.clientProfileId` |
 | balans, posete, potrošnja, no-show | `LoyaltyAccount` |
@@ -112,10 +112,25 @@ nije zaštita podataka: kad gate ne prolazi, napredna polja ne izlaze iz rute.
 Postoji samo kada capability `loyalty.rewards` prolazi **i** tenant ima aktivnu
 Loyalty konfiguraciju. Salonu bez programa se ne prikazuje lažni zero-state.
 
-Prikaz: srca, poeni, lifetime vrednosti, završene posete, canonical ukupna
-potrošnja, nedolasci, poslednja poseta, poslednjih 10 ledger događaja i vaučeri
-(`active` / `reserved` / `redeemed`) sa kodom, nagradom, vrednošću, istekom i
-vezanim terminom.
+Razdvojiti dve stvari:
+
+**Šta read model nosi** (`ClientOverview.loyalty`): stanje naloga uključujući
+`lifetimeHearts`, `lifetimePoints` i `lastVisitAt`, poslednjih 10 ledger
+događaja i vaučere. Ta polja postoje jer ih troši i admin adjust modal, koji
+očekuje pun `LoyaltyAdminAccount` oblik.
+
+**Šta sekcija danas prikazuje:**
+
+```text
+metrike      Hearts · Points · Završene posete · Ukupna potrošnja · Nedolasci
+akcija       „Koriguj balans"
+vaučeri      kod · status · nagrada · isticanje · vezani termin
+ledger       poslednjih 10 događaja: datum · opis · promena
+```
+
+`lifetimeHearts`, `lifetimePoints` i `lastVisitAt` **se ne renderuju** u dosijeu
+— nose ih DTO i modal. Nema zero-state praznog naloga: bez loyalty naloga
+sekcija kaže samo da nalog još ne postoji.
 
 Ručna korekcija srca/poena ide isključivo kroz postojeću admin adjust komandu
 (obavezan razlog, audit ledger) — bez drugog endpointa i bez checkboxa
@@ -145,15 +160,22 @@ Statistika je namerno **iznad** termina: dosije prvo odgovara „kakva je ova
 klijentkinja", pa tek onda „šta joj je zakazano". Odluka je doneta nad stvarnim
 ekranom i **zamenjuje** raniju dokumentacionu tvrdnju da termini idu prvi.
 
-Sekcije su ravne kartice sa naslovom (`ClientOverviewSection`), ne accordion.
-Raniji zahtev za accordion sa ARIA/keyboard ugovorom **više nije target** i nije
-acceptance kriterijum.
+Sve četiri operativne sekcije koriste jedan shared surface —
+`ClientOverviewSection` — koji je **collapsible disclosure preko native
+`<details>` / `<summary>`**. Otvaranje i zatvaranje, fokus i tastatura dolaze iz
+platforme; dark/light stilizacija je na omotaču. Nije uveden custom accordion i
+ne uvodi se.
+
+Sekcija je otvorena po defaultu kada je potrošač prosledi `open`: danas su to
+**Statistika** i **Termini**. Loyalty i Preporuke počinju sklopljene.
 
 Termini koriste canonical prikaz cene: quote kad postoji, `from` kao „od X RSD",
 `on_request` bez quote-a kao „Cena na upit", naplaćen iznos gde je relevantan.
 Zahtev za uslugu (intake) ima read-only indikator i detalj.
 
-Tačno devet Client Insights činjenica:
+Tačno devet Client Insights činjenica. Sve opisuju **celokupan odnos** sa
+klijentkinjom i **ne zavise od izabranog meseca** — `month/year` filter iznad
+njih menja isključivo Top 3 poređenje:
 
 ```text
 1 potencijalni prihod (budući aktivni termini)   6 no-show (uklj. late-cancel posledicu)
@@ -164,8 +186,13 @@ Tačno devet Client Insights činjenica:
 ```
 
 Zbir poznatih iznosa nosi zaseban broj termina sa nepoznatom cenom. Kada nijedan
-iznos nije poznat, prikaz je „Cena nije definisana", nikada 0. Top 3 koristi isti
-period i iste primitive kao Salon Statistics; van Top 3 se rank ne izmišlja.
+iznos nije poznat, prikaz je „Cena nije definisana", nikada 0.
+
+**Period pripada samo Top 3.** Salon Statistics i Client 360 dele Statistics
+engine primitive i iste semantičke definicije tamo gde se činjenice preklapaju
+(šta je otkazano, šta je realizovano, kako se čita cena), ali devet relationship
+KPI-ja nije month/year isečak. Jedino Top 3 mora koristiti isti period i isti
+rang kao Salon Statistics; van Top 3 se rank ne izmišlja.
 
 ## I. Acceptance kriterijumi (browser provera koja čeka)
 
@@ -175,8 +202,10 @@ period i iste primitive kao Salon Statistics; van Top 3 se rank ne izmišlja.
 - osnovni dosije radi na sva četiri plana uz `appointments`;
 - statistika: Maria bez, Claudia/Kiki/Enterprise sa; oba smera Superadmin
   override-a rade i server ne vraća napredna polja kad je gate zatvoren;
-- svih devet KPI činjenica dolazi iz Statistics engine-a i poklapa se sa Salon
-  Statistics za isti period;
+- svih devet KPI činjenica dolazi iz Statistics engine-a i opisuje **ceo odnos**
+  sa klijentkinjom, ne izabrani mesec;
+- Top 3 poređenje koristi month/year i mora imati isti period i istu semantiku
+  kao Salon Statistics;
 - nepoznata cena i `on_request + dodatak` nikada ne postaju lažan iznos;
 - Loyalty ne curi između tenanta i ne postoji bez capability/konfiguracije;
 - preporuke su tenant/clientProfileId scoped i read-only;

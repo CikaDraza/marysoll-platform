@@ -80,9 +80,9 @@ Isti mapper projektuje persistence `service.bookingIntake.enabled` u presentatio
 Poslednja dva reda su jedini preostali write ulazi koji zaobilaze canonical
 seam: uzimaju `duration` iz zahteva i cenu iz `basePrice ?? 0`, pa na njima
 `on_request + dodatak` i dalje može izgledati kao poznata cena, a svi njihovi
-termini padaju u „Termini bez cene". Vode se kao otvoren posao u
-[TODO.md](TODO.md); nisu isto što i admin putanje i ne smeju se više voditi kao
-jedna stavka.
+termini padaju u „Termini bez cene". **Migracija je odložena** i vodi se u
+[TODO.md](TODO.md) pod DEFERRED — ali odvojeno od admin putanja, jer je stepen
+migracije različit i ne smeju se voditi kao jedna stavka.
 
 **Admin sloboda je odluka, ne propust** (2026-07-04): admin sme svesno da preklopi
 termine i izađe iz radnog vremena. Zato admin putanje imaju samo zaštitu od
@@ -210,7 +210,7 @@ je. Bez registrovanog widgeta CTA ostaje običan link na `/termini`.
   uvoze.
 - **`cleanup:stale-group-items`** — 2 usluge (marysoll, anja) nose mrtav
   `services[]` niz iz vremena kad su bile paketi. Skripta je idempotentna i
-  **nije pokrenuta**.
+  **nije pokrenuta**; pokretanje je svesno odloženo, nije zaseban rez.
 - **`chargedAmount` na otkazanom terminu, naknada za otkazivanje, refund** —
   rešava se kada postoji stvarni payment/refund lifecycle. Bez engine-a nema
   smisla projektovati hipotetičku finansijsku politiku.

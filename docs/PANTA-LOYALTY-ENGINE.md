@@ -145,13 +145,21 @@ Dva odvojena streak-a, namerno:
 
 Check-in je aditivan i ne dira zatečeno ponašanje salona.
 
+> **`streak.windowDays` (default 45) pripada ISKLJUČIVO check-in streak-u.**
+> „🔥 vatrica" se resetuje kad prođe toliko dana bez QR check-ina.
+> Completion-driven `currentStreak` je zaseban brojač koji raste uz svaku
+> završenu posetu i ne koristi taj prozor. Ne spajati ih u jednu tvrdnju.
+
 `noShowPolicy.mode`:
 
 ```text
 none            beleži se činjenica, bez posledice
-streak_reset    streak pada na nulu
-hearts_penalty  streak reset + oduzimanje `heartsPenalty` srca (ledger unos)
+streak_reset    completion-driven `currentStreak` pada na nulu
+hearts_penalty  isti reset + oduzimanje `heartsPenalty` srca (`revoke` ledger unos)
 ```
+
+Nedolazak uvek uvećava `noShows`. Politika dira **`currentStreak`**, ne
+check-in streak.
 
 `late_cancel` i stvarni nedolazak imaju **istu posledicu**; razlog se čuva
 odvojeno (`noShowReason`) da bi politika kasnije mogla da se razdvoji bez gubitka
