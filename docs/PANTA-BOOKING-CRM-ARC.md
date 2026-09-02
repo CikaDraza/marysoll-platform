@@ -236,15 +236,102 @@ Provereno pre izmene: theme-1 koristi **samo** `marysoll-makeup-nails`, pa
 nijedan tenant nije zaključan iz svog profila. Server proverava pristup na
 `salon-profile/create` i `/update`, a picker projektuje istu politiku.
 
-## 13. Čeka potvrdu — migracije koje nisu pokrenute
+## 13. Migracije — stanje
 
-| skripta | obim | zašto čeka |
-|---|---|---|
-| `backfill:service-intake` | 6 usluga u **2 salona** (kiki-kiss 3, marysoll 3) | dodiruje više tenanta |
-| `cleanup:stale-group-items` | 2 usluge (marysoll, anja) | mrtav niz, nije hitno |
-| `backfill:group-price` | nepoznato | nije pokretan dry-run od uvođenja snapshot-a |
+| skripta | ishod |
+|---|---|
+| `backfill:service-intake` | **pokrenuta 2026-09-02.** 4 usluge u 2 salona; verifikacioni dry-run = 0 |
+| `backfill:group-price` | **dry-run 2026-09-02: 0 paketa na celoj platformi.** Nema šta da migrira |
+| `cleanup:stale-group-items` | 2 usluge (marysoll, anja) — mrtav niz, odloženo |
 
-## 14. Poznati nestabilan test
+Odobreno je bilo 6 usluga, migrirane su 4. Razlika nije greška: vlasnica je u
+međuvremenu sama uključila checkbox na dve usluge (`Izlivanje nokta`,
+`Korekcija nokta`), a ispravljeni selektor `{ $exists: false }` eksplicitnu
+odluku admina namerno preskače. Preostale 4 su strogi podskup odobrenog skupa.
+
+**Bug u selektoru** (ispravljen pre pokretanja): `{ $ne: true }` hvata i
+eksplicitno `false`, pa bi migracija vratila `true` preko odluke da zahtev
+NIJE potreban. Zaključano sa 6 testova u `intakeBackfill.test.ts`.
+
+## 14. T1-1 — canonical booking/edit/reschedule lifecycle (2026-09-02)
+
+Cilj nije bio četiri odvojena feature-a nego **jedan put** kojim prolaze sve
+površine. Do sada je zakazivanje išlo kroz canonical resolver, a izmena je
+bila tiši ulaz u istu bazu.
+
+### 14.1 Dokaz pre izmene modela
+
+`IAppointmentService` je deklarisao `variants` i `extras`, ali ih
+`servicesSchema` nije imao — Mongoose ih je u strict režimu **tiho odbacivao**.
+UI ih je slao, rute prosleđivale, u bazi ih nije bilo.
+
+`pricing.lines` tu ne pomaže: on čuva IZNOSE. Iz „Stiker 3D · 700" se ne zna
+koliko je komada izabrano, pa „Promeni termin" nije mogao da ponudi zatečeni
+izbor — svaka izmena datuma je nečujno brisala dodatke iz termina.
+
+Dokazano testom PRE izmene modela (`appointmentSelection.integration.test.ts`),
+pa je test okrenut u regresiju.
+
+### 14.2 Jedan seam
+
+`lib/appointments/canonicalSelection.ts` je jedini izlaz iz canonical
+razrešavanja u ono što se upisuje:
+
+    tenant + serviceId + izbor
+             ↓  resolveBookingRequest  (tenant-scoped, ref nije autoritet)
+    trajanje · cena · intake
+             ↓  canonicalSelectionFrom
+    Appointment.services[0] + pricing snapshot
+
+Kroz njega sada idu: javni widget, klijentsko zakazivanje, klijentska izmena,
+admin zakazivanje i admin izmena.
+
+### 14.3 Šta je bilo pokvareno
+
+| nalaz | posledica |
+|---|---|
+| klijentska izmena je zvala `Service.findById` **bez tenant scope-a** | usluga drugog salona se mogla zakačiti na termin |
+| izmena je verovala `duration` iz browsera | `{"duration": 5}` je davao termin od pet minuta |
+| izmena nije dirala `pricing` | promena usluge je ostavljala staru cenu |
+| neuspeo pokušaj izmene je upisivao `cancellationStatus = "late_cancel"` | termin na koji klijentkinja dolazi obeležen kao kasno otkazan |
+| admin izmena nije imala **nijednu** proveru zauzeća | izmena je mogla da sleti tačno na tuđi termin |
+| admin zakazivanje nije pravilo `pricing` snapshot | svi termini salona su padali u „Termini bez cene" |
+| prihvatanje predloga nije proveravalo dostupnost | dvostruko zakazivanje ako se slot popuni između predloga i odgovora |
+| `{ proposedDate: undefined }` u `findOneAndUpdate` | Mongoose izbacuje `undefined` — predlog je preživljavao odluku zauvek |
+| odluku o predlogu dobijala je klijentkinja | salon nikad nije saznao da je predlog prihvaćen |
+| klijent je mogao da pošalje `status: "appointment_approved"` | samo-odobravanje termina mimo salona |
+
+### 14.4 Cena prati izbor, ne sat
+
+Otisak izbora (`selectionSignature`) namerno gleda **ime i količinu**, ne
+iznos:
+
+- pomeranje termina za sat vremena **čuva** potvrđenu cenu (`quotedTotal`);
+- promena usluge/varijante/dodatka **poništava** je i pravi nov snapshot;
+- poskupljenje u cenovniku **nije** nov izbor.
+
+### 14.5 Predlog ne rezerviše slot
+
+Odluka: predloženo vreme ostaje slobodno za sve dok ga klijentkinja ne
+prihvati — inače bi salon slanjem predloga sam sebi blokirao termin. Zato je
+provera dostupnosti u trenutku **prihvatanja**, uz izuzimanje sopstvenog
+termina. Odbijen predlog nije otkazan termin: termin ostaje na starom vremenu
+i tako se i javlja salonu.
+
+### 14.6 Admin sloboda ostaje
+
+Odluka 2026-07-04 (admin sme svesno da preklopi termine i izađe iz radnog
+vremena) **nije menjana**. Dodata je samo ista provera koju admin zakazivanje
+već ima: izmena na tačno isti datum i vreme drugog aktivnog termina vraća
+**409**. Svesno preklapanje po trajanju i dalje prolazi.
+
+### 14.7 Rupa koju je otvorila izmena modela
+
+Čim je model počeo da čuva `extras`, `services: data.services.map(s => ({...s}))`
+u create rutama je postao put u bazu za cenu dodatka iz browsera. Obe create
+rute sada upisuju **server-generated stavku**, ne spread zahteva.
+
+## 15. Poznati nestabilan test
 
 `bookingCore.integration > resolves a concurrent same-idempotency race as commit
 plus replay` pada pod opterećenjem (tipično odmah posle `next build`), nikad

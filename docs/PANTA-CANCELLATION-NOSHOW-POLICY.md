@@ -57,6 +57,12 @@ Konstanta: `BOOKING_GRACE_PERIOD_MINUTES = 30`.
 
 Granica na roku je **uključiva**: tačno na `cutoff` je još uvek `open`.
 
+**Odbijena izmena nije otkazivanje** (T1-1, 2026-09-02). Pokušaj izmene posle
+roka vraća grešku i ostavlja termin netaknutim. Ranije je upisivao
+`cancellationStatus = "late_cancel"` na termin koji i dalje važi i na koji
+klijentkinja dolazi — kazna za pogrešan klik, ne za nedolazak. `late_cancel`
+nastaje isključivo iz stvarnog otkazivanja van roka.
+
 `unknown` je **fail-safe**, ne fail-open. Rok je autorizaciona odluka; bez
 pouzdanog početka termina server ne sme da upiše ni otkazivanje ni pomeranje.
 UI kaže „kontaktirajte salon", mutacija odbija.

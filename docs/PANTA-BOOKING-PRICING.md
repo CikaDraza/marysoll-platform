@@ -164,3 +164,22 @@ ostaje za Slice kad `BookingReservation` postane write authority.
 - statistika i mejlovi još ne koriste accessore (2D/2E);
 - admin create/edit, `/api/booking` i marketplace još ne prolaze kroz
   `resolveBookingRequest` (2C).
+
+## Izmena termina i cena (T1-1, 2026-09-02)
+
+Cena prati **izbor**, ne sat:
+
+| izmena | snapshot |
+|---|---|
+| samo datum/vreme | ostaje — uključujući `quotedTotal` koji je salon potvrdio |
+| usluga, varijanta ili dodatak | nov snapshot; stara ponuda se poništava |
+| poskupljenje u cenovniku bez promene izbora | ostaje — to nije nov izbor |
+
+Odluku donosi `selectionSignature` iz `lib/appointments/canonicalSelection.ts`,
+koji namerno gleda **ime i količinu**, ne iznos. Da gleda iznos, svako
+poskupljenje u cenovniku bi obrisalo dogovorenu cenu klijentkinji koja je samo
+pomerila termin.
+
+Do T1-1 izmena termina uopšte nije dirala `pricing`: promena usluge je
+ostavljala cenu prethodne. Admin zakazivanje nije pravilo snapshot uopšte, pa
+su svi termini koje salon sam unese padali u „Termini bez cene".
