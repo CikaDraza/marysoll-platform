@@ -35,6 +35,11 @@ interface ClientAppointmentListItemProps {
   onOpenChat: (appointment: IAppointment) => void;
   onEdit: (appointment: IAppointment) => void;
   onCancel: (appointment: IAppointment) => void;
+  onRespondToProposal: (
+    appointment: IAppointment,
+    decision: "accept" | "decline",
+  ) => void;
+  proposalPending: boolean;
 }
 
 function ClientAppointmentListItem({
@@ -42,6 +47,8 @@ function ClientAppointmentListItem({
   onOpenChat,
   onEdit,
   onCancel,
+  onRespondToProposal,
+  proposalPending,
 }: ClientAppointmentListItemProps) {
   const { isOnline } = useUsers().data?.find(
     (u: IUser) => u._id === appointment.clientProfileId,
@@ -63,6 +70,15 @@ function ClientAppointmentListItem({
     : "started";
   const canEdit = phase === "open";
   const canCancel = phase === "open" || phase === "late";
+
+  // Predlog salona čeka odgovor. Do sada je klijentkinja predlog samo VIDELA —
+  // prihvatanje se odvijalo dogovorom van sistema, a termin je ostajao na
+  // starom vremenu.
+  const hasProposal = Boolean(
+    currentAppointment.proposedDate &&
+      currentAppointment.proposedTime &&
+      isClientActionableStatus(currentAppointment.status),
+  );
 
   const getStatusColor = (status: string) => statusMeta(status).chip;
 
@@ -128,17 +144,16 @@ function ClientAppointmentListItem({
               {currentAppointment.note}
             </p>
           )}
-          {currentAppointment.proposedDate &&
-            currentAppointment.proposedTime && (
-              <p className="mt-1 text-xs text-blue-600">
-                <strong>Predloženi termin:</strong>{" "}
-                {formatISODate(
-                  currentAppointment.proposedDate +
-                    "T" +
-                    currentAppointment.proposedTime,
-                )}
-              </p>
-            )}
+          {hasProposal && (
+            <p className="mt-1 text-xs text-blue-600">
+              <strong>Salon predlaže:</strong>{" "}
+              {formatISODate(
+                currentAppointment.proposedDate +
+                  "T" +
+                  currentAppointment.proposedTime,
+              )}
+            </p>
+          )}
         </div>
       </div>
 
@@ -165,6 +180,24 @@ function ClientAppointmentListItem({
 
         {/* Akcije */}
         <div className="flex flex-wrap justify-end gap-2 mt-2">
+          {hasProposal && (
+            <>
+              <button
+                onClick={() => onRespondToProposal(currentAppointment, "accept")}
+                disabled={proposalPending}
+                className="px-3 py-1 bg-emerald-600 text-white text-xs rounded hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+              >
+                Prihvati novi termin
+              </button>
+              <button
+                onClick={() => onRespondToProposal(currentAppointment, "decline")}
+                disabled={proposalPending}
+                className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
+              >
+                Odbij
+              </button>
+            </>
+          )}
           {canEdit && (
             <button
               onClick={() => onEdit(currentAppointment)}
@@ -489,6 +522,15 @@ export default function ClientAppointments() {
   const { requestCancel, dialog: cancelDialog } = useCancelAppointment({
     token: user?.token,
   });
+  const { respondToProposal } = useAppointmentMutations(user?.token);
+
+  const handleProposalResponse = (
+    appointment: IAppointment,
+    decision: "accept" | "decline",
+  ) => {
+    if (!appointment._id) return;
+    respondToProposal.mutate({ id: appointment._id, decision });
+  };
 
   const {
     data: response,
@@ -646,6 +688,8 @@ export default function ClientAppointments() {
                 onOpenChat={handleOpenChat}
                 onEdit={setEditTarget}
                 onCancel={requestCancel}
+                onRespondToProposal={handleProposalResponse}
+                proposalPending={respondToProposal.isPending}
               />
             ))}
           </ul>

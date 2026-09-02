@@ -15,7 +15,12 @@ import { IAppointment, ManualSlotsMap } from "@/types";
 import { useAppointmentMutations } from "@/hooks/useAppointmentMutations";
 import { useCancelAppointment } from "./useCancelAppointment";
 import { useServices } from "@/hooks/useServices";
-import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
+import {
+  formatPriceToString,
+  formatServicePrice,
+  PRICE_ON_REQUEST_LABEL,
+} from "@/helpers/formatPrice";
+import { estimateServicePrice } from "@/helpers/servicePrice";
 import { motion } from "framer-motion";
 import {
   clientAppointmentPhase,
@@ -138,44 +143,32 @@ export default function ClientEditModal({
   const canCancel = phase === "open" || phase === "late";
   const selectedService = services.find((s) => s._id === selectedServiceId);
 
-  const calculateTotal = () => {
-    if (!selectedService) return { price: 0, duration: 0 };
-    let price = 0;
-    let duration = selectedService.duration || 0;
+  /**
+   * Ista procena koju vidi javni widget i koju server upisuje.
+   *
+   * Ovde je stajala lokalna kopija računa (`price += extra.price || 0`). Kod
+   * usluge „na upit" ona je nepoznatu osnovu tretirala kao nulu, pa je termin
+   * sa dodatkom od 700 din izgledao kao termin od 700 din. Nepoznata osnova
+   * truje ceo zbir — `estimateServicePrice` je jedini koji to zna.
+   */
+  // Bez useMemo: komponenta ima raniji `return null`, pa bi hook ovde bio
+  // uslovan. Procena je jeftina.
+  const estimate = selectedService
+    ? estimateServicePrice({
+        service: selectedService,
+        ...(selectedVariant ? { variantName: selectedVariant } : {}),
+        extras: selectedExtras.map((name) => ({ name, quantity: 1 })),
+      })
+    : null;
 
-    if (
-      selectedService.type === "variant" &&
-      selectedVariant &&
-      selectedService.variants
-    ) {
-      const variant = selectedService.variants.find(
-        (v) => v.name === selectedVariant,
-      );
-      if (variant) {
-        price = variant.price;
-        if (variant.duration) duration = variant.duration;
-      }
-    } else if (selectedService.type === "single") {
-      price = selectedService.basePrice || 0;
-      duration = selectedService.duration || 0;
-    } else if (selectedService.type === "group") {
-      price = selectedService.basePrice || 0;
-      duration = selectedService.duration || 0;
-    }
-
-    if (selectedService.extras && selectedExtras.length > 0) {
-      selectedExtras.forEach((extraName) => {
-        const extra = selectedService.extras?.find((e) => e.name === extraName);
-        if (extra) {
-          price += extra.price || 0;
-          if (extra.duration) duration += extra.duration;
-        }
-      });
-    }
-    return { price, duration };
-  };
-
-  const { price: totalPrice, duration: totalDuration } = calculateTotal();
+  const totalDuration = estimate?.durationMinutes ?? 0;
+  const totalPriceLabel = !estimate
+    ? ""
+    : estimate.total == null
+      ? PRICE_ON_REQUEST_LABEL
+      : estimate.isEstimate
+        ? `od ${formatPriceToString(estimate.total)} RSD`
+        : `${formatPriceToString(estimate.total)} RSD`;
 
   // Klasičan režim: ponuda vremena = radno vreme − zauzeto − prošlost;
   // sopstveni postojeći termin se NE računa kao zauzet (izmena bez pomeranja).
@@ -211,13 +204,16 @@ export default function ClientEditModal({
     if (selectedService.type === "variant" && !selectedVariant)
       return toast.error("Molimo izaberite varijantu.");
 
+    // Payload nosi IZBOR. Cenu i trajanje server čita iz kataloga i prepisuje
+    // — vrednosti ispod su procena za prikaz, ne poslovna činjenica.
     const extrasForStorage = selectedExtras.map((extraName) => {
       const extra = selectedService.extras?.find((e) => e.name === extraName);
       return {
         name: extraName,
-        price: extra?.price || 0,
+        price: extra?.priceMode === "on_request" ? null : (extra?.price ?? null),
         duration: extra?.duration || 0,
         perItem: extra?.perItem || false,
+        quantity: 1,
       };
     });
 
@@ -240,7 +236,7 @@ export default function ClientEditModal({
           extras:
             extrasForStorage.length > 0 ? extrasForStorage : undefined,
           quantity: 1,
-          price: totalPrice,
+          price: estimate?.total ?? null,
           duration: totalDuration,
         },
       ],
@@ -520,7 +516,7 @@ export default function ClientEditModal({
                             )}
                           </div>
                           <div className="text-lg font-bold text-(--secondary-color)">
-                            {formatPriceToString(totalPrice)} RSD
+                            {totalPriceLabel || "—"}
                           </div>
                         </div>
                       </div>

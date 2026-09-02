@@ -10,7 +10,12 @@ import { useUsers } from "@/hooks/useUsers";
 import { generateTimes } from "@/helpers/generateTimes";
 import { IAppointment, IUser } from "@/types";
 import { useServices } from "@/hooks/useServices";
-import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
+import {
+  formatPriceToString,
+  formatServicePrice,
+  PRICE_ON_REQUEST_LABEL,
+} from "@/helpers/formatPrice";
+import { estimateServicePrice } from "@/helpers/servicePrice";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSalonProfile } from "@/hooks/useSalonProfile";
 import { clientNoun, clientNounCap, genderPast } from "@/lib/clientWording";
@@ -103,40 +108,31 @@ export default function AdminCreateModal({
   const selectedService = services.find((s) => s._id === selectedServiceId);
   const selectedClient = users.find((u) => u._id === clientId);
 
-  const calculateTotal = () => {
-    if (!selectedService) return { price: 0, duration: 0 };
+  /**
+   * Ista procena koju vidi klijentkinja i koju server upisuje. Lokalna kopija
+   * računa koja je ovde stajala nije znala za cenu „na upit" — nepoznatu
+   * osnovu je sabirala kao nulu.
+   */
+  const estimate = useMemo(
+    () =>
+      selectedService
+        ? estimateServicePrice({
+            service: selectedService,
+            ...(selectedVariant ? { variantName: selectedVariant } : {}),
+            extras: selectedExtras.map((name) => ({ name, quantity: 1 })),
+          })
+        : null,
+    [selectedService, selectedVariant, selectedExtras],
+  );
 
-    let price = 0;
-    let duration = selectedService.duration || 0;
-
-    if (selectedService.type === "variant" && selectedVariant && selectedService.variants) {
-      const variant = selectedService.variants.find((v) => v.name === selectedVariant);
-      if (variant) {
-        price = variant.price;
-        if (variant.duration) duration = variant.duration;
-      }
-    } else if (selectedService.type === "single") {
-      price = selectedService.basePrice || 0;
-      duration = selectedService.duration || 0;
-    } else if (selectedService.type === "group" && selectedService.services) {
-      price = selectedService.basePrice || 0;
-      duration = selectedService.duration || 0;
-    }
-
-    if (selectedService.extras && selectedExtras.length > 0) {
-      selectedExtras.forEach((extraName) => {
-        const extra = selectedService.extras?.find((e) => e.name === extraName);
-        if (extra) {
-          price += extra.price || 0;
-          if (extra.duration) duration += extra.duration;
-        }
-      });
-    }
-
-    return { price, duration };
-  };
-
-  const { price: totalPrice, duration: totalDuration } = calculateTotal();
+  const totalDuration = estimate?.durationMinutes ?? 0;
+  const totalPriceLabel = !estimate
+    ? ""
+    : estimate.total == null
+      ? PRICE_ON_REQUEST_LABEL
+      : estimate.isEstimate
+        ? `od ${formatPriceToString(estimate.total)} RSD`
+        : `${formatPriceToString(estimate.total)} RSD`;
 
   const handleSubmitExisting = async () => {
     if (!clientId)
@@ -154,13 +150,15 @@ export default function AdminCreateModal({
       return toast.error("Molimo izaberite varijantu usluge.");
     }
 
+    // Payload nosi IZBOR; cenu i trajanje server čita iz kataloga.
     const extrasForStorage = selectedExtras.map((extraName) => {
       const extra = selectedService.extras?.find((e) => e.name === extraName);
       return {
         name: extraName,
-        price: extra?.price || 0,
+        price: extra?.priceMode === "on_request" ? null : (extra?.price ?? null),
         duration: extra?.duration || 0,
         perItem: extra?.perItem || false,
+        quantity: 1,
       };
     });
 
@@ -176,7 +174,7 @@ export default function AdminCreateModal({
           serviceName: selectedService.type === "variant" ? selectedVariant : selectedService.name,
           extras: extrasForStorage.length > 0 ? extrasForStorage : undefined,
           quantity: 1,
-          price: totalPrice,
+          price: estimate?.total ?? null,
           duration: totalDuration,
         },
       ],
@@ -210,13 +208,15 @@ export default function AdminCreateModal({
       return toast.error("Molimo izaberite varijantu usluge.");
     }
 
+    // Payload nosi IZBOR; cenu i trajanje server čita iz kataloga.
     const extrasForStorage = selectedExtras.map((extraName) => {
       const extra = selectedService.extras?.find((e) => e.name === extraName);
       return {
         name: extraName,
-        price: extra?.price || 0,
+        price: extra?.priceMode === "on_request" ? null : (extra?.price ?? null),
         duration: extra?.duration || 0,
         perItem: extra?.perItem || false,
+        quantity: 1,
       };
     });
 
@@ -247,7 +247,7 @@ export default function AdminCreateModal({
               serviceName: selectedService.type === "variant" ? selectedVariant : selectedService.name,
               extras: extrasForStorage.length > 0 ? extrasForStorage : undefined,
               quantity: 1,
-              price: totalPrice,
+              price: estimate?.total ?? null,
               duration: totalDuration,
             },
           ],
@@ -617,7 +617,7 @@ export default function AdminCreateModal({
                         )}
                       </div>
                       <div className="text-lg font-bold text-(--secondary-color)">
-                        {formatPriceToString(totalPrice)} RSD
+                        {totalPriceLabel || "—"}
                       </div>
                     </div>
                   </div>

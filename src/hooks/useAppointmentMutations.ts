@@ -64,6 +64,51 @@ export function useAppointmentMutations(token?: string) {
     },
   });
 
+  /**
+   * Odgovor klijentkinje na predlog salona.
+   *
+   * Namerno NE deli `updateAppointment`: taj gubi poruku servera
+   * (`throw new Error("Greška pri ažuriranju termina")`), a ovde je poruka
+   * sama suština — predloženi termin je mogao biti popunjen u međuvremenu i
+   * klijentkinja mora saznati zašto prihvatanje nije prošlo.
+   */
+  const respondToProposal = useMutation({
+    mutationFn: async ({
+      id,
+      decision,
+    }: {
+      id: string;
+      decision: "accept" | "decline";
+    }) => {
+      const res = await fetch(`/api/appointments/update/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token ?? localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          status: decision === "accept" ? "appointment_approved" : "pending",
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || "Greška pri odgovoru na predlog.");
+      }
+      return { ...json, decision };
+    },
+    onSuccess: (data: { decision: "accept" | "decline" }) => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      toast.success(
+        data.decision === "accept"
+          ? "Novi termin je prihvaćen."
+          : "Predlog je odbijen. Termin ostaje na starom vremenu.",
+      );
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
   const updateClientAppointment = useMutation({
     mutationFn: async ({
       id,
@@ -207,6 +252,7 @@ export function useAppointmentMutations(token?: string) {
   return {
     createAppointment,
     updateAppointment,
+    respondToProposal,
     updateClientAppointment,
     cancelClientAppointment,
     deleteAppointment,

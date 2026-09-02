@@ -8,7 +8,12 @@ import { generateTimes } from "@/helpers/generateTimes";
 import { IAppointment } from "@/types";
 import { useAppointmentMutations } from "@/hooks/useAppointmentMutations";
 import { useServices } from "@/hooks/useServices";
-import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
+import {
+  formatPriceToString,
+  formatServicePrice,
+  PRICE_ON_REQUEST_LABEL,
+} from "@/helpers/formatPrice";
+import { estimateServicePrice } from "@/helpers/servicePrice";
 import { motion } from "framer-motion";
 import AlertModal from "../modals/AlertModal";
 import { useSalonProfile } from "@/hooks/useSalonProfile";
@@ -55,53 +60,32 @@ export default function AdminEditModal({
 
   const selectedService = services.find((s) => s._id === selectedServiceId);
 
-  // Izračunavanje ukupne cene i trajanja
-  const calculateTotal = () => {
-    if (!selectedService) return { price: 0, duration: 0 };
+  /**
+   * Ista procena koju vidi klijentkinja i koju server upisuje.
+   *
+   * Ovde je stajala lokalna kopija računa: kod usluge „na upit" je nepoznatu
+   * osnovu tretirala kao nulu, pa je salon u modalu video cenu koja nije
+   * postojala. `estimateServicePrice` je jedini koji zna da nepoznata osnova
+   * truje ceo zbir.
+   */
+  // Bez useMemo: komponenta ima raniji `return null`, pa bi hook ovde bio
+  // uslovan. Procena je jeftina.
+  const estimate = selectedService
+    ? estimateServicePrice({
+        service: selectedService,
+        ...(selectedVariant ? { variantName: selectedVariant } : {}),
+        extras: selectedExtras.map((name) => ({ name, quantity: 1 })),
+      })
+    : null;
 
-    let price = 0;
-    let duration = selectedService.duration || 0;
-
-    // Za varijante
-    if (
-      selectedService.type === "variant" &&
-      selectedVariant &&
-      selectedService.variants
-    ) {
-      const variant = selectedService.variants.find(
-        (v) => v.name === selectedVariant,
-      );
-      if (variant) {
-        price = variant.price;
-        if (variant.duration) duration = variant.duration;
-      }
-    }
-    // Za single usluge
-    else if (selectedService.type === "single") {
-      price = selectedService.basePrice || 0;
-      duration = selectedService.duration || 0;
-    }
-    // Za grupne usluge
-    else if (selectedService.type === "group" && selectedService.services) {
-      price = selectedService.basePrice || 0;
-      duration = selectedService.duration || 0;
-    }
-
-    // Dodavanje extra usluga
-    if (selectedService.extras && selectedExtras.length > 0) {
-      selectedExtras.forEach((extraName) => {
-        const extra = selectedService.extras?.find((e) => e.name === extraName);
-        if (extra) {
-          price += extra.price || 0;
-          if (extra.duration) duration += extra.duration;
-        }
-      });
-    }
-
-    return { price, duration };
-  };
-
-  const { price: totalPrice, duration: totalDuration } = calculateTotal();
+  const totalDuration = estimate?.durationMinutes ?? 0;
+  const totalPriceLabel = !estimate
+    ? ""
+    : estimate.total == null
+      ? PRICE_ON_REQUEST_LABEL
+      : estimate.isEstimate
+        ? `od ${formatPriceToString(estimate.total)} RSD`
+        : `${formatPriceToString(estimate.total)} RSD`;
 
   const handleUpdate = async (e?: React.SubmitEvent) => {
     e?.preventDefault();
@@ -117,13 +101,16 @@ export default function AdminEditModal({
 
     try {
       // Priprema extras objekta za čuvanje
+      // Payload nosi IZBOR. Cenu i trajanje server čita iz kataloga i
+      // prepisuje — vrednosti ispod su procena za prikaz.
       const extrasForStorage = selectedExtras.map((extraName) => {
         const extra = selectedService.extras?.find((e) => e.name === extraName);
         return {
           name: extraName,
-          price: extra?.price || 0,
+          price: extra?.priceMode === "on_request" ? null : (extra?.price ?? null),
           duration: extra?.duration || 0,
           perItem: extra?.perItem || false,
+          quantity: 1,
         };
       });
 
@@ -144,7 +131,7 @@ export default function AdminEditModal({
                 : selectedService.name,
             extras: extrasForStorage.length > 0 ? extrasForStorage : undefined,
             quantity: 1,
-            price: totalPrice,
+            price: estimate?.total ?? null,
             duration: totalDuration,
           },
         ],
@@ -393,7 +380,7 @@ export default function AdminEditModal({
                           )}
                         </div>
                         <div className="text-lg font-bold text-(--secondary-color)">
-                          {formatPriceToString(totalPrice)} RSD
+                          {totalPriceLabel || "—"}
                         </div>
                       </div>
                     </div>
