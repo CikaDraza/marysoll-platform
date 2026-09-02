@@ -83,10 +83,38 @@ export async function GET(req: NextRequest) {
   try {
     await connectToDB();
 
-    // Extract tenant context from token
+    // ── Autorizacija ──────────────────────────────────────────────────────
+    // Ruta je ranije radila `if (tenantId)` na obe provere. Bez tokena je
+    // `tenantId` bio `null`, pa se PRESKAKAO i plan gate I tenant filter —
+    // neautentifikovan poziv vraćao je statistiku SVIH salona na platformi.
     const token = getTokenFromRequest(req);
     const decoded = token ? verifyToken(token) : null;
-    const tenantId = decoded?.tenantId ?? null;
+    if (!decoded) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const isSuperAdmin = decoded.isSuperAdmin ?? false;
+    if (isSuperAdmin) {
+      // Superadmin sme preko svih salona — svaki takav pristup se beleži.
+      console.error(
+        JSON.stringify({
+          event: "SUPERADMIN_UNSCOPED_STATISTICS_ACCESS",
+          userId: decoded.id,
+          path: req.url,
+          timestamp: new Date().toISOString(),
+        }),
+      );
+    } else if (!decoded.isAdmin) {
+      // Statistika je poslovni podatak salona; klijent joj ne pristupa.
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    } else if (!decoded.tenantId) {
+      return NextResponse.json(
+        { error: "Forbidden: no tenant context" },
+        { status: 403 },
+      );
+    }
+
+    const tenantId = isSuperAdmin ? null : (decoded.tenantId ?? null);
 
     // Plan gate — statistics requires claudia+
     if (tenantId) {

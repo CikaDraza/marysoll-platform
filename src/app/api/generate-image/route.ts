@@ -1,4 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
+import { requireFeature } from "@/lib/plans/planEnforcement";
 import { headers } from "next/headers";
 import OpenAI from "openai";
 import { rateLimit } from "@/lib/imageGeneration/rateLimit";
@@ -9,6 +11,26 @@ const openai = new OpenAI({
 
 export async function POST(req: Request) {
   try {
+    // ── Autorizacija ──────────────────────────────────────────────────────
+    // Ruta je bila potpuno otvorena: bez tokena, bez tenanta, bez plan gate-a,
+    // a troši OpenAI API. Renderovala se i na JAVNOJ landing strani, pa je
+    // bilo ko mogao da generiše slike o trošku platforme.
+    //
+    // Jedini legitimni potrošač je admin CMS. Plan se čita SA SERVERA — ne
+    // veruje se browser feature flag-u.
+    const token = getTokenFromRequest(req as NextRequest);
+    const decoded = token ? verifyToken(token) : null;
+    if (!decoded) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (!decoded.isSuperAdmin) {
+      if (!decoded.isAdmin || !decoded.tenantId) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      const denied = await requireFeature(decoded.tenantId, "aiImageGeneration");
+      if (denied) return denied;
+    }
+
     const ip = (await headers()).get("x-forwarded-for") || "unknown";
 
     const rl = rateLimit(ip);
