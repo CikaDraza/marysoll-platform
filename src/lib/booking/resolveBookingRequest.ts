@@ -38,6 +38,10 @@ import {
   type ServicePriceEstimate,
   type SelectedExtra,
 } from "@/helpers/servicePrice";
+import {
+  resolveServiceBookingIntake,
+  type ResolvedServiceIntake,
+} from "@/lib/appointments/serviceIntake";
 import type { IService } from "@/types";
 
 /**
@@ -59,6 +63,8 @@ export interface BookingSelectionInput {
 
 export interface ResolvedBookingRequest {
   service: IService;
+  /** Da li usluga traži zahtev klijentkinje — rešeno na jednom mestu. */
+  intake: ResolvedServiceIntake;
   /** Trajanje iz kataloga — nikad iz zahteva. */
   durationMinutes: number;
   /** Cena iz kataloga — nikad iz zahteva. */
@@ -201,6 +207,7 @@ export async function resolveBookingRequest(input: {
 
   return {
     service: service as IService,
+    intake: resolveServiceBookingIntake(service as IService),
     durationMinutes: product.snapshot.durationMinutes,
     pricing,
     variantName,

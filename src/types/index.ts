@@ -130,6 +130,16 @@ export interface IServiceGroupItem {
   duration?: number;
 }
 
+/**
+ * Zahtev klijentkinje uz uslugu.
+ *
+ * v1.1 ima samo `enabled`. Struktura je objekat da bi kasnije mogla da primi
+ * izbor polja bez lomljenja ugovora — ali danas se ništa drugo ne prihvata.
+ */
+export interface IServiceBookingIntake {
+  enabled: boolean;
+}
+
 export interface IServiceInput {
   name: string;
   category: string;
@@ -144,6 +154,7 @@ export interface IServiceInput {
   extras?: IServiceExtra[];
   services?: IServiceGroupItem[];
   type: "single" | "group" | "variant";
+  bookingIntake?: IServiceBookingIntake;
   items: string[];
   featured?: HomePagePosition;
   icon?: string;
@@ -164,8 +175,10 @@ export interface IService {
   extras?: IServiceExtra[];
   services?: IServiceGroupItem[];
   type: "single" | "group" | "variant";
-  /** Izvedeno na serveru iz kategorije usluge — BookingWidget na osnovu ovoga
-   *  nudi korak „Kako želite da izgleda?". Ne podešava se po usluzi. */
+  /** Poslovna konfiguracija usluge — vlasnik odluke o zahtevu klijentkinje. */
+  bookingIntake?: IServiceBookingIntake;
+  /** VEĆ REŠENA činjenica za prikaz, izvedena iz `bookingIntake` na serveru.
+   *  BookingWidget čita samo ovo i ne donosi odluku sam. */
   intakeEnabled?: boolean;
   description: string;
   items: string[];

@@ -9,23 +9,20 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { Service } from "@/models/Service";
 import { requireCapability } from "@/lib/platform/capabilities-server";
-import { getCategories } from "@/lib/categoryService";
 import { subdocRef } from "@/lib/booking/subdocRef";
+import { serviceRequiresIntake } from "@/lib/appointments/serviceIntake";
 import { normalizePriceMode } from "@/helpers/formatPrice";
 
-function serializeService(
-  s: Record<string, unknown>,
-  intakeCategories: ReadonlySet<string>,
-) {
+function serializeService(s: Record<string, unknown>) {
   return {
     _id: String(s._id ?? ""),
     name: String(s.name ?? ""),
     category: String(s.category ?? ""),
     subcategory: s.subcategory ? String(s.subcategory) : undefined,
     type: String(s.type ?? "single"),
-    // Zahtev nosi KATEGORIJA (nokti), ne pojedinačna usluga — tako ne može da
-    // se raziđe između usluga iste kategorije.
-    intakeEnabled: intakeCategories.has(String(s.categorySlug ?? "")),
+    // Već REŠENA činjenica za prikaz. Vlasnik odluke je usluga; kategorija
+    // više nije authority (PANTA-SERVICE-INTAKE.md).
+    intakeEnabled: serviceRequiresIntake(s as never),
     basePrice: s.basePrice != null ? Number(s.basePrice) : null,
     priceMode: normalizePriceMode(s.priceMode),
     duration: s.duration != null ? Number(s.duration) : null,
@@ -117,16 +114,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
       .sort({ category: 1, name: 1 })
       .lean();
 
-    const intakeCategories = new Set(
-      (await getCategories())
-        .filter((c) => c.requiresIntake)
-        .map((c) => c.key),
-    );
-
     return NextResponse.json(
-      services.map((s) =>
-        serializeService(s as Record<string, unknown>, intakeCategories),
-      ),
+      services.map((s) => serializeService(s as Record<string, unknown>)),
     );
   } catch (err) {
     console.error("GET /api/public/[tenantSlug]/services:", err);

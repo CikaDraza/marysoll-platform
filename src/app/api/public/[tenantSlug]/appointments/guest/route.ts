@@ -184,6 +184,16 @@ export async function POST(request: NextRequest, { params }: Params) {
     // ── Create appointment ────────────────────────────────────────────────────
     const resolvedServiceName = serviceName || service.name;
 
+    // Zahtev se prihvata SAMO ako usluga to traži. UI ne sme biti jedini
+    // autoritet — bez ove provere bi podmetnut payload upisao fotografiju i
+    // opis na uslugu koja ih uopšte ne nudi.
+    if (intakeRequest != null && !resolved.intake.enabled) {
+      return NextResponse.json(
+        { error: "Ova usluga ne prima zahtev uz zakazivanje." },
+        { status: 400 },
+      );
+    }
+
     const appointment = new Appointment({
       tenantId,
       clientProfileId: guestUser._id.toString(),

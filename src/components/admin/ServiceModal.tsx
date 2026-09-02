@@ -2,6 +2,8 @@
 
 import { useMemo } from "react";
 import { useCategories } from "@/hooks/useCategories";
+import { useSalonProfile } from "@/hooks/useSalonProfile";
+import { clientNoun } from "@/lib/clientWording";
 import { useAdminServices } from "@/hooks/useAdminServices";
 import type { PriceMode } from "@/types";
 
@@ -41,6 +43,10 @@ export function ServiceModal({ s }: Props) {
   );
 
   const subType = form.subscription.subscriptionType ?? "monthly";
+  // Rod obraćanja je per-tenant podešavanje; helper već postoji, pa se koristi
+  // umesto neutralnog teksta.
+  const { data: salonProfile } = useSalonProfile();
+  const clientGender = salonProfile?.clientGender;
   /** Jedna usluga i paket nose cenu i trajanje na korenu usluge. */
   const rootPricing = form.type === "single" || form.type === "group";
 
@@ -155,6 +161,28 @@ export function ServiceModal({ s }: Props) {
               </select>
             </div>
           </div>
+
+          {/* Poslovna konfiguracija usluge — vlasnik odluke o zahtevu je
+              USLUGA, ne kategorija. Bez inherit-a i bez biranja polja. */}
+          <label className="flex items-start gap-2 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.bookingIntake?.enabled === true}
+              onChange={(e) =>
+                s.setField("bookingIntake", { enabled: e.target.checked })
+              }
+              className="mt-0.5 rounded text-violet-600"
+            />
+            <span>
+              <span className="block text-sm font-semibold text-gray-800 dark:text-gray-200">
+                Traži da {clientNoun(clientGender)} pošalje šta želi
+              </span>
+              <span className="block text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                Pri zakazivanju može da pošalje fotografiju, link ili kratak
+                opis.
+              </span>
+            </span>
+          </label>
 
           {/* Cena na korenu usluge. Paket ima jednu cenu i jedno trajanje, isto
               kao jedna usluga. Kod varijanti cene stoje na varijantama — osim

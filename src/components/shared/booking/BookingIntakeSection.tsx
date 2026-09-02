@@ -2,9 +2,10 @@
 /**
  * BookingIntakeSection — „Kako želite da izgleda?"
  *
- * Prikazuje se samo za usluge sa `intakeEnabled` (nokti da, šminka ne). Sve je
- * opciono i booking se nikad ne blokira — ali „Preskoči" stoji diskretno dole,
- * jer je cilj da klijentkinja ipak odgovori.
+ * Prikazuje se samo kada je usluga tako podešena (`bookingIntake.enabled`,
+ * rešeno na serveru u `intakeEnabled`). Widget NE donosi odluku sam i ne gleda
+ * kategoriju. Sve je opciono i booking se nikad ne blokira — ali „Preskoči"
+ * stoji diskretno dole, jer je cilj da klijentkinja ipak odgovori.
  *
  * Zašto je ovo važnije od galerije: Marija vidi zahtev PRE nego što potvrdi
  * termin, pa fotografija može da joj kaže „ovo nije dva sata, ovo je tri".

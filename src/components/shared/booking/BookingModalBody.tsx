@@ -2,10 +2,10 @@
 /**
  * BookingModalBody — sadržaj modala, u jednom ili dva koraka.
  *
- * Usluge bez zahteva (šminka) ostaju kao i do sada: sve na jednom ekranu.
- * Usluge sa `intakeEnabled` (nokti) dobijaju drugi korak — „Kako želite da
- * izgleda?" — do kojeg se stiže dugmetom „Sledeće". Zahtev se tako ne gura
- * pred klijentkinju pre nego što uopšte izabere šta radi.
+ * Usluga bez zahteva ostaje na jednom ekranu. Usluga koju je salon podesio da
+ * traži zahtev dobija drugi korak — „Kako želite da izgleda?" — do kojeg se
+ * stiže dugmetom „Sledeće". Zahtev se tako ne gura pred klijentkinju pre nego
+ * što uopšte izabere šta radi.
  */
 import { GuestContactForm } from "./GuestContactForm";
 import { BookingDateTimeSection } from "./BookingDateTimeSection";

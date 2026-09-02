@@ -13,7 +13,14 @@ export const CATEGORY_MAP: Record<
   {
     label: string;
     synonyms: string[];
-    /** Usluge iz kategorije traže zahtev klijentkinje (slika/link/opis). */
+    /**
+     * @deprecated LEGACY — više NIJE runtime authority.
+     *
+     * Do 2026-09-02 je ova zastavica odlučivala da li usluga traži zahtev
+     * klijentkinje. Vlasnik odluke je sada USLUGA
+     * (`service.bookingIntake.enabled`); ovo polje ostaje samo kao ulaz za
+     * jednokratnu migraciju `backfill:service-intake` i ne utiče na booking.
+     */
     requiresIntake?: boolean;
     subcategories: Record<string, { label: string; synonyms: string[] }>;
   }
@@ -21,7 +28,7 @@ export const CATEGORY_MAP: Record<
   nails: {
     label: "Nokti",
     synonyms: ["nokti", "manikir", "pedikir", "nails"],
-    // Cena noktiju zavisi od dizajna, pa je referenca deo zahteva, ne dodatak.
+    // LEGACY ulaz za migraciju; ne utiče na booking. Vidi tip iznad.
     requiresIntake: true,
     subcategories: {
       manicure: { label: "Manikir", synonyms: ["manikir", "klasični manikir"] },

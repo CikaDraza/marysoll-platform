@@ -236,6 +236,16 @@ export async function POST(request: NextRequest) {
             };
           })();
 
+    // Zahtev se prihvata SAMO ako usluga to traži. UI ne sme biti jedini
+    // autoritet — bez ove provere bi podmetnut payload upisao fotografiju i
+    // opis na uslugu koja ih uopšte ne nudi.
+    if (data.request != null && !resolved.intake.enabled) {
+      return NextResponse.json(
+        { error: "Ova usluga ne prima zahtev uz zakazivanje." },
+        { status: 400 },
+      );
+    }
+
     const appointment = new Appointment({
       ...data,
       tenantId, // Sada je ovo string

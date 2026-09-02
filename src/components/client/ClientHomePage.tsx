@@ -46,8 +46,8 @@ import {
   theme9NavNeedsFacts,
 } from "@/lib/theme9/navigation-server";
 import { normalizePriceMode } from "@/helpers/formatPrice";
-import { getCategories } from "@/lib/categoryService";
 import { subdocRef } from "@/lib/booking/subdocRef";
+import { serviceRequiresIntake } from "@/lib/appointments/serviceIntake";
 
 interface Props {
   tenantSlug: string;
@@ -216,19 +216,13 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     showWorkingHours: s?.showWorkingHours !== false,
   };
 
-  // Zahtev klijentkinje nosi KATEGORIJA (nokti), pa se izvodi ovde — ista
-  // pravila kao u javnoj `/services` ruti, da homepage i /termini ne bi
-  // pokazivali različit tok za istu uslugu.
-  const intakeCategories = new Set(
-    (await getCategories()).filter((c) => c.requiresIntake).map((c) => c.key),
-  );
-
   const serviceList = (services as Record<string, unknown>[]).map((sv) => ({
     _id: String(sv._id),
     name: String(sv.name ?? ""),
     category: String(sv.category ?? ""),
     subcategory: sv.subcategory ? String(sv.subcategory) : undefined,
-    intakeEnabled: intakeCategories.has(String(sv.categorySlug ?? "")),
+    // Ista rešena činjenica kao u javnoj ruti — vlasnik je usluga.
+    intakeEnabled: serviceRequiresIntake(sv as never),
     type: (sv.type as "single" | "group" | "variant") ?? "single",
     basePrice: sv.basePrice != null ? Number(sv.basePrice) : undefined,
     priceMode: normalizePriceMode(sv.priceMode),

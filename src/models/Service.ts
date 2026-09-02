@@ -45,6 +45,7 @@ interface IServiceDoc extends Document {
     startDate?: Date;
     endDate?: Date;
   };
+  bookingIntake?: { enabled: boolean };
   items: string[];
   featured?: "main" | "second" | "third" | "none";
   createdAt: Date;
@@ -134,6 +135,11 @@ const ServiceSchema = new Schema<IServiceDoc>(
       endDate: Date,
     },
     icon: { type: String },
+    // Traži li usluga da klijentkinja pošalje šta želi (fotografija/link/opis).
+    // VLASNIK odluke je usluga, ne kategorija — vidi PANTA-SERVICE-INTAKE.md.
+    bookingIntake: {
+      enabled: { type: Boolean, default: false },
+    },
     items: [{ type: String }],
     featured: {
       type: String,
