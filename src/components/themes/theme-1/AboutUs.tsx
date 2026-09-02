@@ -2,10 +2,13 @@ import type { AboutTextLink } from "@/types";
 import { renderLinkedText } from "@/helpers/renderLinkedText";
 import Image from "next/image";
 
-const DEFAULT_PARAGRAPHS = [
-  "Kiki Kiss Beauty salon predstavlja krunu trogodišnjeg uspešnog rada i posvećenosti Kristine, čija je strast prema lepoti oblikovana kroz vrhunsku edukaciju i praksu. Osnovu našeg rada čine prestižni sertifikati sa zvaničnih kurseva za šminkanje i negu noktiju, koji garantuju stručnost u svakom pokretu. Svaki tretman u salonu osmišljen je tako da naglasi vašu prirodnu lepotu, koristeći samo najkvalitetnije materijale i tehnike koje su se dokazale kroz stotine zadovoljnih klijentkinja.",
-  "Konstantno usavršavanje je srž našeg poslovanja, o čemu svedoči aktivno učešće na najvećim sajmovima kozmetike i prestižnim svetskim konferencijama. Kristina redovno uči od globalno poznatih šminkera, donoseći svetske trendove i inovativne metode direktno u naš salon. Spoj bogatog iskustva, edukacije kod najboljih stručnjaka i neprestane želje za napretkom čini Kiki Kiss Beauty mestom gde se vrhunska estetika susreće sa profesionalnom uslugom po najvišim standardima.",
-];
+/**
+ * Bez tenant sadržaja sekcija se NE prikazuje.
+ *
+ * Ovde su ranije stajala dva pasusa o drugom salonu — ime vlasnice, njihovi
+ * sertifikati i sajmovi — koje je svaki salon bez unetog teksta prikazivao
+ * kao svoju priču.
+ */
 
 interface Props {
   about: {
@@ -20,10 +23,8 @@ interface Props {
 }
 
 export function Theme1AboutUs({ about }: Props) {
-  const paragraphs =
-    about.paragraphs && about.paragraphs.filter(Boolean).length > 0
-      ? about.paragraphs
-      : DEFAULT_PARAGRAPHS;
+  const paragraphs = (about.paragraphs ?? []).filter(Boolean);
+  if (paragraphs.length === 0) return null;
 
   return (
     <section className="relative isolate overflow-hidden bg-white px-6 py-24 sm:py-32 lg:px-8">

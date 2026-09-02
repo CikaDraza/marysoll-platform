@@ -19,44 +19,14 @@ interface Props {
   treatments?: Treatment[];
 }
 
-const DEFAULT_TREATMENTS: Treatment[] = [
-  {
-    id: "makeup-day",
-    category: "Makeup",
-    title: "Dnevna šminka",
-    description:
-      "Profesionalna šminka za dnevne svakodnevnice. Koristim profesionalnu kozmetiku renomiranih svetskih brendova.",
-    images: [
-      {
-        src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1776608764/salons/salon-shi-sham-frizerski-salon/drjn82yvrwhjzbyargei.png",
-        alt: "Dnevna šminka",
-      },
-      {
-        src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1768705206/marysoll-ai-look-1768705168082_xyfogh.jpg",
-        alt: "Dnevna azijska šminka",
-      },
-    ],
-    href: "/termini",
-  },
-  {
-    id: "makeup-night",
-    category: "Makeup",
-    title: "Večernja šminka",
-    description:
-      "Postojan izgled koji traje celu noć, uz naglašavanje tvojih najlepših crta lica.",
-    images: [
-      {
-        src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1768704883/marysoll-ai-look-1766951292797_plupol.jpg",
-        alt: "Večernja šminka",
-      },
-      {
-        src: "https://res.cloudinary.com/dufo1t5li/image/upload/v1768705190/marysoll-ai-look-1768704967165_zwkwim.jpg",
-        alt: "Večernja šminka 2",
-      },
-    ],
-    href: "/termini",
-  },
-];
+/**
+ * Bez tenant galerije sekcija se NE prikazuje.
+ *
+ * Ovde su ranije stajale fotografije DRUGOG salona (`salons/salon-shi-sham-…`)
+ * i AI generisane slike, pa je salon bez svoje galerije prikazivao tuđe
+ * radove kao svoje.
+ */
+
 
 interface GalleryImageProps {
   img: { src: string; alt: string };
@@ -104,7 +74,9 @@ export function Theme1GallerySection({
   subheadline,
 }: Props) {
   const finalTreatments =
-    treatments && treatments.length > 0 ? treatments : DEFAULT_TREATMENTS;
+    treatments && treatments.length > 0 ? treatments : [];
+
+  if (finalTreatments.length === 0) return null;
 
   return (
     <section id="gallery" className="relative py-28">

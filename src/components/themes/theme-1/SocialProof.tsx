@@ -13,10 +13,11 @@ export function Theme1SocialProof({ tenantStats, yearsOfExperience }: Props) {
         { id: 2, name: "Urađenih tretmana", value: formatStatValue(tenantStats.completedAppointmentCount) },
         ...(yearsOfExperience ? [{ id: 3, name: "Godina iskustva", value: `${yearsOfExperience}+` }] : []),
       ]
-    : [
-        { id: 1, name: "Zadovoljnih klijenata", value: "120+" },
-        { id: 2, name: "Urađenih tretmana", value: "800+" },
-      ];
+    : [];
+
+  // Bez stvarne statistike sekcija se ne prikazuje. Ovde su ranije stajali
+  // izmišljeni „120+" i „800+" — brojevi koje salon nikad nije potvrdio.
+  if (stats.length === 0) return null;
 
   return (
     <div className="relative py-24 sm:py-32">

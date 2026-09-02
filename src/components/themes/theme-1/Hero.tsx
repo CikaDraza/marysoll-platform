@@ -31,16 +31,14 @@ interface Props {
   };
 }
 
-const defaultHeroData = {
-  headline: "Kiki Kiss Beauty",
-  subheadline: "Kiki Kiss Beauty salon za makeup and nails",
-  whereWhatForWhom:
-    "Kiki Kiss Beauty je salon lepote u Beogradu specijalizovan za profesionalno šminkanje, oblikovanje obrva i dugotrajan manikir za sve prilike.",
-  CTA: {
-    text: "Zakaži termin",
-    href: "/termini",
-  },
-};
+/**
+ * Fallback SME biti samo neutralan ili iz podataka OVOG salona.
+ *
+ * Ovde je ranije stajao sadržaj drugog tenanta („Kiki Kiss Beauty", Beograd,
+ * njihove usluge). Salon bez unetog naslova prikazivao je tuđe ime kao svoje.
+ * Nedostatak sadržaja se rešava izostavljanjem sekcije, ne tuđim podatkom.
+ */
+const defaultCta = { text: "Zakaži termin", href: "/termini" };
 
 export function Theme1Hero({ salon, heroData, cta }: Props) {
   // WhatsApp: use explicit social link if set, otherwise derive from phone
@@ -69,11 +67,7 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
             <div className="relative text-center">
               <div className="py-32 lg:w-7xl mx-auto">
                 <h1 className="text-5xl lg:text-7xl text-center text-black font-bold">
-                  {heroData.headline
-                    ? heroData.headline
-                    : salon.name
-                      ? salon.name
-                      : defaultHeroData.headline}
+                  {heroData.headline || salon.name || ""}
                 </h1>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-8">
                   {/* first column on desktop, on mobile second column */}
@@ -110,10 +104,10 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                       {/* Primarni CTA otvara BookingWidget na mestu; `href`
                           ostaje fallback kad widget nije na strani. */}
                       <BookingCtaLink
-                        href={cta?.primary?.href || defaultHeroData.CTA.href}
+                        href={cta?.primary?.href || defaultCta.href}
                         className="cursor-pointer flex-1 px-7 py-3 bg-(--primary-color) text-white font-semibold rounded-full hover:bg-(--primary-color)/90 transition text-sm"
                       >
-                        {cta?.primary?.text || defaultHeroData.CTA.text}
+                        {cta?.primary?.text || defaultCta.text}
                       </BookingCtaLink>
                       <AnchorLink
                         href={cta?.secondary?.href || "/usluge"}
@@ -133,18 +127,16 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                   />
                   {/* third column on desktop, on mobile third column */}
                   <div className="lg:-mt-16 order-1 lg:order-3 flex flex-col items-center justify-center lg:items-end">
-                    <p className="ml-4 mt-0 mb-4 lg:mb-8 lg:-mt-6 text-center lg:text-end text-gray-900">
-                      {heroData.subheadline
-                        ? heroData.subheadline
-                        : salon.description
-                          ? salon.description
-                          : defaultHeroData.subheadline}
-                    </p>
-                    <p className="ml-4 mt-0 mb-4 lg:mb-8 lg:-mt-6 text-center lg:text-end text-gray-900">
-                      {heroData.whereWhatForWhom
-                        ? heroData.whereWhatForWhom
-                        : defaultHeroData.whereWhatForWhom}
-                    </p>
+                    {(heroData.subheadline || salon.description) && (
+                      <p className="ml-4 mt-0 mb-4 lg:mb-8 lg:-mt-6 text-center lg:text-end text-gray-900">
+                        {heroData.subheadline || salon.description}
+                      </p>
+                    )}
+                    {heroData.whereWhatForWhom && (
+                      <p className="ml-4 mt-0 mb-4 lg:mb-8 lg:-mt-6 text-center lg:text-end text-gray-900">
+                        {heroData.whereWhatForWhom}
+                      </p>
+                    )}
                     <dt className="w-auto h-auto border rounded-2xl px-4 py-2 text-base/7 font-light border-black font-main-font text-left flex">
                       {salon.social?.instagram ? (
                         <Link
