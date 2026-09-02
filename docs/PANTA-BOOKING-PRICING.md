@@ -137,7 +137,24 @@ dupliran:** on je čisto numerički, bez `mode` i bez `null`, i opisuje novac
 rezervacije — dok `Appointment.pricing` opisuje **stanje cene**. Konvergencija
 ostaje za Slice kad `BookingReservation` postane write authority.
 
-## 9. Nedovršeno
+## 9. Stanje implementacije
+
+**Postoji:**
+
+- unos cene u adminu — `quotedBaseAmount` pri „Odobri", `chargedAmount` pri
+  „Došla", oba opciona; snapshot ide u isti atomic upis kao status;
+- mejl razlikuje naplaćeno / potvrđeno / na upit / „od X" i nikad ne
+  predstavlja poznate dodatke kao cenu termina;
+- „Termini bez cene" u Brzom pregledu i „Cena nije definisana" u raspodeli
+  usluga, umesto tihe nule.
+
+**Nije završeno:**
+
+- puna `potential / quoted / realized` separacija u statistici — ruta koristi
+  accessore, ali kartice još ne razdvajaju te tri činjenice u prikazu;
+- vaučer recompute kad quote postane numerički;
+- admin create/edit, `/api/booking` i marketplace još ne prolaze kroz
+  `resolveBookingRequest`.
 
 > Pun spisak dugova i otvorenih odluka:
 > [PANTA-BOOKING-CRM-ARC.md](PANTA-BOOKING-CRM-ARC.md)

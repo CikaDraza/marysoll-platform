@@ -84,7 +84,12 @@
 | B-INT2 | Intake v2 | ⬜ odloženo | Per-service `inherit\|enabled\|disabled`, wizard, intake na SVIM ulazima za rezervaciju. | [PANTA-SERVICE-INTAKE.md §7](PANTA-SERVICE-INTAKE.md) |
 | B-THEMES | Brisanje theme-3/4/6 | ⬜ odloženo | ~7.300 linija, 66 fajlova; baza potvrđena prazna. Preduslov: `Theme3GalleryMasonry` u `shared/`. | [PANTA-BOOKING-CRM-ARC.md §8](PANTA-BOOKING-CRM-ARC.md) |
 
-**Sedam otvorenih odluka bez presude** — grace period kao tenant podešavanje,
+| B-T1-0 | ★ Stop-the-line hardening | ✅ kod | Cena nije stizala u bazu; `/api/statistics` i `/api/generate-image` bili otvoreni; Theme-1 prikazivao sadržaj drugog tenanta; tooltip tvrdio 0 RSD. Dve stavke vraćene kao odluka, ne popravka. | [PANTA-BOOKING-CRM-ARC.md §11](PANTA-BOOKING-CRM-ARC.md) |
+
+**Četiri odluke donete 2026-09-02** — grace 30 min ostaje sistemski, vaučer na
+`on_request` čeka quote, admin predlog dobija Prihvati/Odbij, Marijino
+„Izlivanje" na `variant + from`.
+**Četiri odluke bez presude** — grace period kao tenant podešavanje,
 razlika kazne `late_cancel` vs `missed_appointment`, `chargedAmount` na
 otkazanom, vaučer na `on_request`, značenje `appointment_rescheduled`,
 konvergencija quote snapshot-a i Marijina konfiguracija „Izlivanja":

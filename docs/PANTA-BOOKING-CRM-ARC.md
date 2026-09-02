@@ -132,17 +132,44 @@ Bez registrovanog widgeta CTA ostaje običan link na `/termini`.
 - **Brisanje theme-3/4/6** — procenjeno na ~7.300 linija, 66 fajlova. Baza potvrđena prazna. **Preduslov:** `Theme3GalleryMasonry` mora u `shared/` jer ga theme-1 i theme-2 uvoze.
 - **Backfill zatečenih paketa** — `npm run backfill:group-price` napisan, idempotentan, **nije pokrenut**.
 
-## 9. Nema odluku
+## 9. Odlučeno 2026-09-02
 
-1. **Trajanje grace perioda** je fiksnih 30 min i nije tenant podešavanje. Ako se pokaže da salonima treba drugačije — poslovna odluka.
-2. **Različita kazna za `late_cancel` i pravi `missed_appointment`.** Razlog se već čuva; `noShowPolicy` ih danas ne razlikuje.
-3. **`chargedAmount` na otkazanom terminu** se računa kao prihod (npr. nadoknada za kasno otkazivanje). Payment/refund engine ne postoji i semantika nije izmišljana.
-4. **Vaučer na `on_request` terminu** ostaje rezervisan i čeka quote. Alternativa — odbiti ga pri rezervaciji — nije razmatrana do kraja.
-5. **`appointment_rescheduled` znači dve stvari:** „admin predložio, stvarni termin još star" i „klijent stvarno pomerio". Treba li eksplicitna klijentska odluka — poslovno pitanje pre menjanja lifecycle-a.
-6. **Konvergencija `ServerResolvedQuoteSnapshot` i `Appointment.pricing`** — prvi je novac rezervacije, drugi stanje cene. Ostaje za Slice kad `BookingReservation` postane write authority.
-7. **Marijino „Izlivanje" je i dalje `group`** sa zaostalim `variants[]` nizom. Treba `variant` + `from` — konfiguraciona odluka, ne kod.
+- **Grace period ostaje sistemskih 30 minuta.** Nije tenant podešavanje.
+- **Vaučer na `on_request` terminu ostaje rezervisan** i čeka quote.
+- **Admin predlog termina dobija eksplicitno Prihvati / Odbij** (T1-1).
+  Predlog NE zauzima slot; provera dostupnosti se radi u trenutku prihvatanja.
+- **Marijino „Izlivanje" ide na `variant` + `from`** kroz tenant-scoped data
+  migraciju, bez runtime izuzetka po slug-u.
 
-## 10. Poznati nestabilan test
+**Zatečeno stanje je proverom ispravljeno:** „Izlivanje nokta" (marysoll) je
+VEĆ `type: variant`, `priceMode: from`, `basePrice: 2000`, `duration: 120`.
+Migracija tipa nije potrebna — Marija je uslugu prekonfigurisala. Ostao je
+samo mrtav `services[]` niz iz vremena kad je bila paket; njega uklanja
+`npm run cleanup:stale-group-items` (idempotentno, **nije pokrenuto**).
+
+## 10. Nema odluku
+
+1. **Različita kazna za `late_cancel` i pravi `missed_appointment`.** Razlog se već čuva; `noShowPolicy` ih danas ne razlikuje.
+2. **`chargedAmount` na otkazanom terminu** se računa kao prihod (npr. nadoknada za kasno otkazivanje). Payment/refund engine ne postoji i semantika nije izmišljana.
+3. **Konvergencija `ServerResolvedQuoteSnapshot` i `Appointment.pricing`** — prvi je novac rezervacije, drugi stanje cene. Ostaje za Slice kad `BookingReservation` postane write authority.
+4. **Blog u navigaciji** — Header i Footer ga nude bezuslovno, ali **ne postoji** canonical signal „blog je uključen": ni capability, ni plan feature, ni gate na `/blogs` strani. Nije izmišljan.
+5. **Feature Block capability** — `services.catalog` i `booking.services` stoje kao `capability: null`. Postoji test koji izričito tvrdi da su **svi** blokovi capability-neutralni („T2B non-goal"). Povezivanje je pokušano i **vraćeno**: rušilo je taj test i četiri tenant fixture testa. Traži odluku, ne popravku.
+
+## 11. T1-0 — stop-the-line hardening (2026-09-02)
+
+| # | Nalaz | Ishod |
+|---|---|---|
+| 1 | Unesena cena nije stizala u bazu — snapshot je menjan u memoriji bez `save()`, a `findOneAndUpdate` je nije nosio. Mejl je tvrdio cenu koja nije upisana. | ✅ |
+| — | Dublji uzrok: `appointment.pricing` bez `.lean()` je PODOKUMENT; `{ ...pricing }` ne kopira polja, pa je `quotedTotal` ispadao `NaN`. Tiho, jer spread ne baca. | ✅ |
+| 2 | `/api/statistics` bez tokena vraćao statistiku SVIH salona — `if (tenantId)` je preskakao i plan gate i tenant filter. | ✅ |
+| 3 | Pita tooltip prikazivao nepoznatu cenu kao 0 RSD. | ✅ |
+| 4 | Theme-1 prikazivao sadržaj drugog tenanta kao svoj — Hero, About, Gallery, FAQ, SocialProof. | ✅ |
+| 5 | `/api/generate-image` bez auth/tenant/plan gate-a, renderovan na JAVNOJ strani, troši OpenAI. | ✅ |
+| 6 | Feature Block capability | ⛔ vraćeno — vidi §10.4 |
+| 7 | Footer CTA vodio na `/panel?tab=Zakazivanja`. Blog u navigaciji. | ✅ CTA · ⛔ Blog (§10.4) |
+| 8 | Marijino „Izlivanje" | ✅ već ispravno; ostao mrtav niz |
+
+## 12. Poznati nestabilan test
 
 `bookingCore.integration > resolves a concurrent same-idempotency race as commit
 plus replay` pada pod opterećenjem (tipično odmah posle `next build`), nikad
