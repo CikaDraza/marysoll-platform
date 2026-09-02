@@ -96,13 +96,21 @@ This is transition/navigation compatibility. It explicitly does **not** mean:
 
 ## Rule
 
+> **Content access:** Education content has three access modes — `public`,
+> `gated` (publicly discoverable, body locked) and `private` (not discoverable,
+> unauthorized access returns 404). That contract is canonical in
+> [PANTA-EDU-CENTAR-ARC.md § Pristup sadržaju](PANTA-EDU-CENTAR-ARC.md#pristup-sadržaju--public--gated--private-zaključano-2026-08-29)
+> and is a **different** gate from the tenant capability gate that decides
+> whether the Education Center exists at all. Persistence today still has two
+> states; the third is the UI-3 target.
+
 The two domains stay apart because their purposes differ:
 
 ```text
 BLOG / NEWSLETTER              EDUCATION CONTENT
 marketing                      expert article · advice · guide
 campaigns                      video · downloadable material
-SEO posts                      public or private
+SEO posts                      public / gated / private
 email distribution             assigned to a client
 promotions                     surfaces in Moj Prostor
 salon content                  links to Guide / Program
@@ -235,16 +243,48 @@ The current Theme-9 route usage under `/blogs/...` should be treated as transiti
 
 ---
 
-## Navigation contract
+## Navigation contract (updated 2026-08-30 — two independent channels)
 
-For tenants with resolved education capability:
+**Blog and Edukacija are two independent public surfaces.** The Education Center
+does **not** replace the Blog. A tenant may have Blog, Edukacija, or both, and
+each navigation link is resolved **independently** from its own
+capability/readiness state.
 
 ```text
-Header: Edukacija
-  -> /edukacija
+BLOG                                EDUCATION
+/blogs · /blogs/[slug]              /edukacija · /edukacija/[slug]
+→ NewsletterCampaign                → EducationContent
 ```
 
+```text
+Blog surface available
+→ Blog → /blogs
+
+Education Center available
++ education.catalog resolved
++ /edukacija public page ready
+→ Edukacija → /edukacija
+
+both available          → show both links: Blog · Edukacija
+neither available       → show neither
+```
+
+**Superseded:** the earlier fallback `Edukacija → /blogs` (used while
+`/edukacija` did not exist) is no longer product contract and must not be
+reintroduced. `/blogs` is never removed just because a tenant gains Education
+capability, and there is no `/blogs → /edukacija` redirect.
+
+Why both stay: existing beauty/salon tenants already use Blog for marketing,
+SEO, news and promotions; Edukacija is a separate expert domain. Some tenants
+will use one channel, some both. Whether two top-level links remain the right
+IA is a question for real usage across several tenants, not something to decide
+by removing the option now.
+
 For tenants without education capability, the public header must not expose Education Center routes unless a separate product decision explicitly allows a marketing/preview page.
+
+This is capability-level visibility. Whether an individual article inside an
+available Education Center is readable is decided separately by its access mode
+and, for `gated` content, by the reader's entitlement.
 
 Route existence and nav visibility should eventually use the same capability/page-readiness resolver.
 

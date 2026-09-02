@@ -7,8 +7,9 @@
 > Capability ugovor je u
 > [PANTA-TENANT-VERTICALS-CAPABILITIES.md](PANTA-TENANT-VERTICALS-CAPABILITIES.md).
 > Capability snapshot i postojeća admin/client navigaciona projekcija su
-> implementirani u T2B-B. Kompletna nova domain IA iz ovog dokumenta ostaje
-> Slice 12; ne treba je mešati sa završenim capability gate-om.
+> implementirani u T2B-B. EDU UI-1/F3A dodatno uvodi server-resolved verticals,
+> zaseban Education sidebar i Salon ↔ Edu Centar switch; EducationContent CRUD
+> i ostatak domain IA i dalje dolaze vertikalno sa stvarnim površinama.
 
 ## 1. Osnovna pravila
 
@@ -241,7 +242,15 @@ Fotografije nisu javni sadržaj. Ako storage ostane Cloudinary, smer je privatan
 tenant/client-scoped prefix ili folder uz authenticated/signed delivery. Naziv
 foldera sam po sebi nije authorization.
 
-### 4.4 Public Education nije Private Care
+### 4.4 Education pristup nije Private Care
+
+> **Terminološka ispravka (2026-08-29):** Education sadržaj više nije samo
+> „javan ili privatan" — ima tri režima pristupa: `public`, `gated` (javno
+> otkriven, telo zaključano) i `private` (neotkriven, 404 bez autorizacije).
+> Ugovor je u
+> [PANTA-EDU-CENTAR-ARC.md § Pristup sadržaju](PANTA-EDU-CENTAR-ARC.md#pristup-sadržaju--public--gated--private-zaključano-2026-08-29).
+> Care podaci nisu `EducationContent` i ne dele ovu skalu — oni su uvek
+> individualni i uvek autorizovani.
 
 Public Education je opšti stručni sadržaj za širu publiku. Private Care je
 individualna procena, plan, preporuka, dokument, fotografija i istorija

@@ -1,53 +1,147 @@
 # TODO — gde smo stali
 
-> Tracker za tekući luk rada: **T3 Booking Engine + Consultation domen + theme-9 „Skincare Marina"**.
-> Jedan red po slice-u. Detalji su u dokumentu koji je naveden uz slice — ovde stoji samo status i jedna rečenica.
-> Poslednja izmena: 2026-08-27 · `main` + Theme-9 content contract cleanup
+> **Jedini operativni tracker.** Ovde se vidi redosled: šta je u kodu, šta je
+> sledeće i šta je namerno odloženo. Detalji po domenu žive u canonical
+> dokumentima i ne prepisuju se ovde.
 >
-> **Aktuelno stanje:** correctness fixes, Theme-9 **2A, ceo 2B i 2C** i
-> migration/staging tooling nalaze se na `main`-u. Staging Release A + migration
-> rehearsal je završen nad staging DB-om. Content contract cleanup zatvara
-> runtime/CMS/starter granice; nema neutralnog javnog fallback sadržaja.
->
-> ```text
-> 2A            ✅ razvoj
-> 2B            ✅ razvoj
-> 2C            ✅ razvoj
-> Release A     ✅ staging rehearsal
-> content cleanup ✅
-> ```
->
-> Dalji Theme-9 završetak, QA i Edu Centar razvoj nastavljaju se samo na aktivnoj
-> staging razvojnoj liniji; produkcijski rollout ostaje zasebna release odluka.
+> **CURRENT implementation reference:** `staging/production-engines`
+> ([pravilo](PANTA-BRANCHING-STRATEGY.md#canonical-implementation-grana)) · provereno nad kodom **2026-09-03**.
+> Zdravlje grane na dan usklađivanja: `tsc` prolazi, 158 test fajlova /
+> 1867 testova prolazi (19 preskočeno). Brojevi važe za taj datum i nisu obećanje.
 
-## Status
+## Redosled
 
-> Roadmap je usklađen sa novim Edu lukom. Stari Slice 11 je **razložen** u
-> [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md), stari Slice 12 je time
-> **većim delom preuzet**, a stari Slice 13 je **odložen** dok ne vidimo šta
-> Guide i Program stvarno traže u praksi. Booking/Consultation luk **ostaje
-> netaknut**.
+```text
+EDUCATION    🟡  Edu Centar v1 — feature freeze, Marina pilot
+BEAUTY       ✅  T1-0 → T1-3.1 u kodu
+             🟡  Marysoll browser acceptance čeka
+NEXT         →   T1-4 Loyalty Redemption & Appointment Checkout
+DEFERRED     →   T1-5 · T3 cutover · legacy HMAC/marketplace write ·
+                 Consultation / Questionnaire / Care
+```
 
-### Aktivno
+Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran · ⏸ odloženo (posao
+ostaje neophodan)
+
+### Neposredan redosled (odluka 2026-09-03)
+
+```text
+1  Marysoll / theme-1   browser acceptance (4 stavke niže) i potvrda da je
+                        theme-1 zaključana za Marysoll
+2  Edu Centar           Marina pilot feedback: prvo analiza šta ju je zbunilo,
+                        pa popravka SAMO onoga što je stvarna prepreka u radu
+3  odluka               da li Edu v1 ostaje UX korekcija ili traži novu
+                        funkcionalnost / promenu domena
+```
+
+T1-4 ostaje sledeći Beauty slice, ali se ne mora započeti odmah — pilot feedback
+ima prednost. Rad se nastavlja na `staging/production-engines`; nema domena koji
+se razvija na drugoj grani.
+
+## NEXT — sledeći rez
+
+| # | Rez | Status | Šta obuhvata | Dokument |
+|---|---|---|---|---|
+| **T1-4** | **Loyalty Redemption & Appointment Checkout** | ⬜ **nije počet** | Trošenje poena kroz konfigurisanu points-shop nagradu → vaučer → primena na termin → `redeemed` na završenoj poseti. Uz to: izbor sopstvenog vaučera pri zakazivanju, pravila stackovanja, admin potvrda, trenutak skidanja balansa, povratak na otkazivanje/nedolazak i **vaučer recompute kad quote postane numerički** (polja za unos već postoje). | [PANTA-LOYALTY-ENGINE.md §14](PANTA-LOYALTY-ENGINE.md) · [cene §4](PANTA-BOOKING-PRICING.md) |
+
+**Šta T1-4 NIJE.** Srca, poeni, ledger, milestone→vaučer, voucher lifecycle
+(`active → reserved → redeemed`), admin korekcija balansa sa obaveznim razlogom i
+celebration animacija posle završene posete **već postoje i rade**. T1-4 dodaje
+samo redemption koju klijentkinja sama bira — vidi
+[PANTA-LOYALTY-ENGINE.md §1](PANTA-LOYALTY-ENGINE.md).
+
+## Education i Theme-9 — u kodu
 
 | # | Slice | Status | Gde smo stali | Dokument |
 |---|---|---|---|---|
 | 2 | theme-9 prezentacija | ✅ 2A · 2B · 2C · content cleanup | Theme-9 foundation je na `main`-u: persistence, tri-state, konzervativna normalizacija, fail-closed presentation resolver, 7/7 CMS authoring + minimum validacija i content-aware page/navigation resolver. Staging Release A/migration rehearsal je završen. Starter seed je provisioning koji defaultno čuva tenant-authored sadržaj. Dalji razvoj/QA je staging-only. | [PANTA-T2-THEME-LAYOUT-ENGINE.md](PANTA-T2-THEME-LAYOUT-ENGINE.md) |
+| Edu F0 | Vertical & workspace foundation | ✅ staging | Preset-aware onboarding, neutralni registration contract/UI, zaključano provisioning jezgro i `/education/{offerings,inquiries}` boundary su implementirani. Salon dashboard i Theme-9 nisu dirani. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#faza-0--vertical--workspace-foundation) |
+| Edu F1 | Content Composer | ✅ staging | Generički editor/render/schema/registry/score/SEO sloj je izdvojen, newsletter je ostao tanak adapter, a oba renderera koriste jedan `BlockList`. Karakterizacioni testovi čuvaju postojeći Newsletter contract. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#faza-1--content-composer-deljeni-sloj) |
+| Edu F2 | Authoring + blocks + persistence | ✅ staging | F2A authoring UX, F2B šest novih blokova i shared media contract, F2C draft-save/strict-publish validation i structural edge audit su završeni. Newsletter/Blog lifecycle i preostali write-authority edge su zaključani. | [PANTA-NEWSLETTER-BLOG-AUTHORING.md](PANTA-NEWSLETTER-BLOG-AUTHORING.md) |
+| EDU UI-1A / F3A | Capability-aware Admin Education workspace | 🟡 code complete · Marina browser acceptance pending | Snapshot projektuje server-resolved verticals; jedan dropdown prikazuje aktivni workspace. Beauty tenant dobija eksplicitni, potvrđeni i idempotentni „Aktiviraj Edu Centar” tok koji isti tenant pretvara u hybrid; Salon/Theme-9 ostaju netaknuti. Education/hybrid navigacija, server-gated `/education` i Content shell su spremni. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#f3a--admin-workspace-capability-i-navigacija-edu-ui-1) |
+| EDU UI-2 / F4A + F3B | EducationContent + pravi CMS CRUD + Content Composer | ✅ kod · 🟡 Marina CMS browser test pending | `EducationContent` model, tenant-scoped CRUD + strict publish rute iza `requireCapability("education.catalog")`, CMS lista i full-page editor nad deljenim Content Composer-om (svih 12 blokova, shared media, preview). Save Draft ne menja status; publish čita sačuvano stanje. Javno `/edukacija`, assignment i ACL nisu dirani. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#implementacioni-status-f4a--f3b-edu-ui-2--2026-08-29) |
+| EDU UI-2B | Durable working copy + last-published snapshot | ✅ kod | Zatvoren propust iz UI-2: `status` je ostajao `published`, ali je Save menjao baš root polja koja bi javna strana čitala, pa je snimanje bilo implicitna objava. Sada root = radna kopija, `publishedSnapshot` = javna verzija, objava = jedina granica promocije. Javni URL, vidljivost i SEO takođe žive u snapshot-u. Bez istorije verzija. 13 lifecycle testova nad pravim Mongo-om. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#implementacioni-status-f4a--f3b-edu-ui-2--2026-08-29) |
+| DOC-EDU-ACCESS-1 | PUBLIC / GATED / PRIVATE ugovor pristupa | ✅ dokumentacija (bez koda) | Tri režima pristupa umesto dva, javni pregled za `gated`, 404 za `private`, entitlement odvojen od režima pristupa, ponašanje adresa i liste, bezbednost tokena i zaštićene media. Kod nije menjan — persistencija je i dalje `visibility: public\|private`; migracija na `accessMode` je UI-3A. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#pristup-sadržaju--public--gated--private-zaključano-2026-08-29) |
+| EDU UI-3A/3B | Javna Education prezentacija | ✅ kod | `/edukacija` lista i članak u Theme-9, semantički HTML ugovor, istorija javnih adresa sa preusmerenjem, SEO i sitemap po članku. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#faza-5--javno-edukacija--release-gate) |
+| EDU F6A/F6B | Moj Prostor + dodela i ACL | ✅ kod | `ClientContentAssignment` kao zaseban odnos; zaštićeno telo služi samo `/panel/moj-prostor/sadrzaji/{id}`, i to uz sva četiri uslova. Javna ruta nikada ne služi zaštićeno telo. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#faza-6b--dodela-sadržaja-i-acl) |
+| EDU F | PDF/DOCX → draft | ✅ kod | DOCX se čita verno, PDF heuristikom; rezultat je uvek draft za pregled, nikada objava. Acceptance nad Marinina četiri prava materijala. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#edu-centar-v1--feature-freeze-2026-08-31) |
+| **Edu Centar v1** | **Feature freeze · Marina pilot** | 🟡 **pilot u toku** | Nove funkcije čekaju signal iz stvarne upotrebe. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#edu-centar-v1--feature-freeze-2026-08-31) |
 
-### Booking / Consultation — zadržano
+## Beauty Booking / CRM — u kodu
+
+> Ugovor luka: [PANTA-BOOKING-CRM-ARC.md](PANTA-BOOKING-CRM-ARC.md) · staging
+> tenant **theme-1 / Marysoll**. Verifikacija je do sada mašinska (typecheck,
+> lint, testovi, build); browser acceptance je zaseban red niže.
+
+| # | Rez | Status | Šta je zaključano | Dokument |
+|---|---|---|---|---|
+| B-P0 | Semantika cene `0 ≠ null` | ✅ kod | Tri režima: `fixed` tačan, `from` minimum, `on_request` bez ukupne cene. Nepoznata osnovna cena truje ceo zbir — „na upit + stiker 700" nije „od 700 RSD". | [cene](PANTA-BOOKING-PRICING.md) |
+| B-P1 | Opaque `ref` u javnom ugovoru | ✅ kod | Varijante, dodaci i stavke paketa nose `ref` uz `name`; `_id` se ne izlaže. `ref` nije autoritet — proverava se da pripada toj usluzi. | [cene §6](PANTA-BOOKING-PRICING.md) |
+| B-2A/2B | Server authority + pricing snapshot | ✅ kod | `resolveBookingRequest` razrešava selekciju, trajanje i cenu iz kataloga; `Appointment.pricing` je server-generisan snapshot sa `chargedAmount` odvojenim od vaučerske aritmetike. | [cene](PANTA-BOOKING-PRICING.md) |
+| B-1A/1B | Rok, faze i klijentske akcije | ✅ kod | Rok = početak termina − prozor, u zoni salona. Četiri faze uz fail-safe `unknown`. Promeni/Otkaži na kartici. Grace 30 min kao sistemsko pravilo. | [otkazivanje](PANTA-CANCELLATION-NOSHOW-POLICY.md) |
+| B-OCC | Occupancy | ✅ kod | Završen ili nedošao termin ne drži vreme; kasno otkazan slot salon može da proda. Jedno pravilo, dva izvedena oblika. | [T3 §8.1a](PANTA-T3-BOOKING-ENGINE.md) |
+| B-SEC | ★ Izolacija klijenta | ✅ kod · **browser provera** | `/api/appointments` je klijentu vraćao pune termine celog salona. Filter sada dolazi iz tokena; javni feed nosi četiri polja i nikad cenu. | [ARC §5](PANTA-BOOKING-CRM-ARC.md) |
+| B-T1-0 | ★ Stop-the-line hardening | ✅ kod | Unesena cena nije stizala u bazu; `/api/statistics` i `/api/generate-image` bili otvoreni; theme-1 prikazivao sadržaj drugog tenanta; tooltip tvrdio 0 RSD. | [ARC §4](PANTA-BOOKING-CRM-ARC.md) |
+| B-T1-0.5 | ★ Service-owned intake | ✅ kod · ✅ migracija | Odluka o zahtevu preseljena sa platformske kategorije na uslugu; jedan checkbox. Server odbija zahtev na usluzi koja ga ne prima. Backfill pokrenut 2026-09-02 (4 usluge, 2 salona). | [intake](PANTA-SERVICE-INTAKE.md) |
+| B-T1-1 | ★ Canonical booking/edit/reschedule | ✅ kod · **browser provera** | Jedan seam za sve beauty ulaze osim legacy: klijentska i admin izmena, prihvatanje predloga sa proverom dostupnosti, `variants`/`extras` se više ne odbacuju pri upisu, klijent ne može sam sebi da odobri termin. | [ARC §2–4](PANTA-BOOKING-CRM-ARC.md) |
+| B-T1-2 | ★ Jedan booking presentation ugovor | ✅ kod · **browser provera** | Sajt, `/termini`, klijentsko zakazivanje i klijentska izmena dele `BookingModal → BookingProvider` nad `servicePresentation` / `widgetPresentation` DTO-om. Stari `ClientCreateModal` je obrisan. | [ARC §2.2](PANTA-BOOKING-CRM-ARC.md) |
+| B-T1-3 | ★ Client 360 CRM dosije | ✅ kod · **browser provera** | Tenant-scoped read model: identitet, termini sa zahtevom i canonical cenom, devet KPI činjenica, loyalty ledger/vaučeri, preporuke. Deep-link `/dashboard?tab=klijenti&clientId=…`. | [Client 360](PANTA-CLIENT-360.md) |
+| B-T1-3.1 | ★ Statistics/CRM hardening | ✅ kod | Statistika izdvojena u `lib/statistics/engine.ts` i deljena sa Client 360; prikaz razdvaja potencijalni, završeni i otkazani prihod uz zaseban broj termina bez cene. Loyalty admin hook razložen na četiri hook-a. | [ARC §6](PANTA-BOOKING-CRM-ARC.md) |
+| B-THEME1 | Theme-1 privatna za Marysoll | ✅ kod | Kroz postojeći `THEME_ACCESS` seam, isti kao za theme-8 (Anja) i theme-9 (Marina). Bez `if (tenantSlug)` u komponentama. | [ARC §9](PANTA-BOOKING-CRM-ARC.md) |
+| B-AI | AI generisanje slika | ✅ isključeno · odluka | Ne nudi se javno; endpoint je admin + plan gated. Uključuje se kroz plan ako salon zatraži, bez izmene koda. | [AI slike](PANTA-AI-IMAGE-GENERATION.md) |
+
+### Browser acceptance koji čeka
+
+| Šta | Nad čim |
+|---|---|
+| 🟡 Client 360 — osnovni dosije, statistički gate (Maria bez / Claudia sa), Loyalty prisustvo i odsustvo, link ka preporukama | Marysoll Makeup & Nails |
+| 🟡 Canonical izmena termina — klijentska i admin, predlog Prihvati/Odbij | Marysoll |
+| 🟡 Jedan booking widget — sajt, `/termini`, panel, izmena | Marysoll |
+| 🟡 Izolacija klijenta — klijent vidi isključivo svoje termine | Marysoll |
+
+## DEFERRED / LATER — ima odluku, nema termin
+
+Ovo se **ne** premešta u NEXT bez nove product odluke.
+
+| # | Šta | Zašto čeka |
+|---|---|---|
+| **T1-5** | Salonski paketi / entitlement / plaćanje klijentkinje (`ClientPackage`) | Nije tenant Subscription i ne uvodi se payment provider dok ne postoji stvarna potreba. `Service.subscription` opisuje ponudu, ne kupovinu. [Client 360 §K](PANTA-CLIENT-360.md) |
+| **T3 cutover** | `BookingReservation` / day-lock kao production write authority | Preduslov je occupancy blocker iz [T3 §4.1](PANTA-T3-BOOKING-ENGINE.md); dark core nije live authority pa ne blokira beauty rezove |
+| **Legacy write ulazi** | `POST /api/booking` (HMAC gost) i `POST /api/marketplace/appointments` kroz canonical seam | Jedini ulazi koji uzimaju `duration` iz zahteva i cenu `basePrice ?? 0`, bez pricing snapshot-a. Nema aktivnih korisnika tih putanja koji bi to učinili hitnim; ide uz marketplace/platform luk. [ARC §3](PANTA-BOOKING-CRM-ARC.md) |
+| **`cleanup:stale-group-items`** | Mrtav `services[]` niz na 2 usluge (marysoll, anja) | Eksplicitno odloženo. Skripta je napisana i idempotentna; pokreće se kad za to bude prilika, ne kao zaseban rez |
+| Restriction Engine | Automatska posledica za `noShows` / `late_cancel` | Danas se čuvaju samo činjenice; nema automatskog blacklist-a i neće ga biti dok saloni ne pokažu potrebu |
+| Reschedule mejl sa starim i novim terminom | Notifikacija radi, nedostaje stari snapshot u telu | Ne uvode se nova `previousDate/Time` polja zbog kozmetike |
+| Intake v1.1 — izbor polja po usluzi | v1 ima samo `enabled` | Uvodi se tek ako upotreba pokaže potrebu; wizard se ne pravi |
+| Brisanje theme-3/4/6 | ~7.300 linija, 66 fajlova; baza potvrđena prazna | Preduslov: `Theme3GalleryMasonry` mora u `shared/` jer ga theme-1 i theme-2 uvoze |
+| `chargedAmount` na otkazanom, naknada, refund | Nema payment/refund lifecycle-a | Bez engine-a nema smisla projektovati hipotetičku finansijsku politiku |
+| Loyalty Phase 3 (tiers, rođendan, AI nagrade) | Referral live QA i redemption idu pre toga | [Loyalty](PANTA-LOYALTY-ENGINE.md) |
+
+## Poznat dug — ne menja redosled
+
+Ovo su zabeležene činjenice o zatečenom stanju, ne otvoreni poslovi. Nijedna
+stavka ne ulazi u NEXT bez posebne odluke.
+
+| Šta | Priroda | Beleška |
+|---|---|---|
+| Mrtav `clientInsights` flag | code cleanup | Postoji u `PLAN_FEATURES`, `FeatureGate` i `FeaturesList`, ali ga nijedan runtime gate ne koristi — uključivanje ne radi ništa. Canonical gate je `statistics`. [Client 360 §B](PANTA-CLIENT-360.md) |
+| Preporuke u Client 360 bez `testimonials` capability provere | architecture cleanup | Podaci su tenant-scoped, pa nije bezbednosni problem; salon bez te funkcije vidi praznu sekciju. Client 360 UI se sada ne redizajnira. [Client 360 §G](PANTA-CLIENT-360.md) |
+| `bookingCore.integration` race test pada pod opterećenjem | technical debt / T3 hardening | Nikad izolovano; produkcijska logika nije menjana zbog njega. Rešava se uz T3 hardening. [ARC §12](PANTA-BOOKING-CRM-ARC.md) |
+| Admin create ne nudi intake | current limitation | Klijentske površine nude zahtev kad ga usluga traži. Nije odlučeno da salon mora unositi zahtev klijentkinje kada ručno pravi termin — uvodi se samo ako upotreba pokaže potrebu. [intake §8](PANTA-SERVICE-INTAKE.md) |
+
+## Booking / Consultation — odloženo, ali neophodno
 
 Novi Edu luk **ništa od ovoga ne zamenjuje** i izričito ne dira Booking Engine.
 
 | # | Slice | Status | Gde smo stali | Dokument |
 |---|---|---|---|---|
 | 4 | Booking UI apstrakcija | 🟡 prikaz gotov | `useBookingFlow` + theme-9 dijalog, **offering-first**: ponuda → datum i vreme → upitnik → pregled → potvrda (redosled nije kozmetika — vidi ugovor `initialOfferingId` niže). Launcher kroz kontekst, terminologija `offering*`, ne `service*`. **Bez ijednog upisa** — slanje samo šalje mejl vlasnici i superadminu, da potvrdi usluge, cene, termine i pitanja. Ostaje: `bookingProductAdapter` i `BookingThemeTokens` za ostale teme. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#33-readavailability-potrošači-nisu-write-authority) + T2 §6.10/6.11 |
-| 6 | ★ Migracija + concurrency gate | ⏸ planski odloženo | **Završeno:** Slice 5 dark core, 6A transition hardening i empirijski gate-ovi (T3 §21.2.4). **Odloženo:** production `Appointment` write migracija i Booking cutover nastavljaju se posle Marysoll platform/marketplace upgrade-a. Trenutno nema aktivnih Booking korisnika, pa nema poslovnog razloga za promenu production write authority-ja. Nijedna od 12 ruta se ne dira; Slot endpoint-i se ne gase samo radi arhitektonske čistoće. `BookingReservation` ostaje dark-core infrastruktura, ne production authority. Pripremljen obim za nastavak: 8 platformskih ulaza (T3 §21.2.6); empiriju iz §21.2.4 pre nastavka premeriti. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#213-slice-6b6c--planski-odloženo-2026-08-23) |
-| 7 | Consultation domen | ⬜ nije počet | `ConsultationOffering` → `ConsultationBooking` → `BookingReservation`. Marinin glavni proizvod; **nije `Service`**. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#142-consultation-i-education-granica) |
+| 6 | ★ T3 cutover — migracija + concurrency gate | ⏸ odloženo · **day-lock neophodan** | Dark core (kanonska rezervacija, day-lock, idempotencija, receipt/outbox) postoji i prolazi ReplSet testove; nijedna ruta ga ne poziva. Cutover je odložen jer trenutno nema aktivnih Booking korisnika na novom putu, a prednost je dobio vidljiv frontend dokaz. **Preduslov pre cutover-a:** occupancy blocker — produkcija oslobađa slot na `completed`/`no_show` odmah, dark core ga drži do kraja termina. Day-lock ostaje hard gate pre reda 10. | [T3 §4.1](PANTA-T3-BOOKING-ENGINE.md) |
+| 7 | Consultation domen | ⏸ preskočen · neophodan | `ConsultationOffering` → `ConsultationBooking` → `BookingReservation`. Marinin glavni proizvod; **nije `Service`**. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#142-consultation-i-education-granica) |
 | 8 | Hold | ⬜ nije počet | `BookingHold` kroz istu day-lock transakciju; konkretan TTL ostaje product odluka Slice 8. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#20-bookinghold-i-slot-transition) |
-| 9 | Questionnaire + Intake | ⬜ nije počet | Guest-first booking ostaje moguć; generički intake čuva immutable početni snapshot, odvaja stručni Current Assessment od originalnog odgovora i kasnije podržava eksplicitni claim/invite identity handoff. | [PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md#4-product-decision--consultation--skin-care-kutak-lifecycle) |
+| 9 | Questionnaire + Intake | ⏸ preskočen · neophodan | Guest-first booking ostaje moguć; generički intake čuva immutable početni snapshot, odvaja stručni Current Assessment od originalnog odgovora i kasnije podržava eksplicitni claim/invite identity handoff. | [PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md#4-product-decision--consultation--skin-care-kutak-lifecycle) |
 | 10 | ★ theme-9 booking end-to-end | ⬜ nije počet | Hero CTA → widget → modal → intake → preview → hold → atomic booking. **Marina sme primati konsultacije tek odavde.** | PANTA-T3-BOOKING-ENGINE.md |
 
-### Education → zaseban dokument
+## Education → zaseban dokument
 
 Stari red „11 Education domen" **više ne postoji kao jedan slice**. Zamenjen je
 kanonskim dokumentom [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md):
@@ -56,7 +150,8 @@ kanonskim dokumentom [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md):
 F0   vertical / workspace foundation      F5   /edukacija → RELEASE GATE
 F1   Content Composer                     F6A  Client Workspace + Moj Prostor
 F2   novi blokovi + rupe u editoru        F6B  assignment + ACL
-F3   capability wiring                    F7   transakciono obaveštenje
+F3A  Admin workspace capability/UI        F7   transakciono obaveštenje
+F3B  Content/API gates uz UI-2
 F4   EducationContent + Edu Studio        F8   SkincareGuide
 F4B  EducationOffering + EducationInquiry F9   GuidedProgram
                                           F10  AI asistencija
@@ -65,10 +160,37 @@ F4B  EducationOffering + EducationInquiry F9   GuidedProgram
 `EducationOffering` i `EducationInquiry` iz starog Slice 11 nisu izgubljeni —
 žive u **Fazi 4B**.
 
-⚠️ **Faza 0 počinje posle završetka Theme-9 contract/rollout foundation-a i
-kada staging postane aktivna razvojna linija za Edu luk.**
+✅ **Faze 0, 1 i 2 su završene na aktivnoj staging razvojnoj liniji.**
+✅ **F4A + F3B (EDU UI-2) su u kodu:** `EducationContent` je drugi pravi host
+deljenog Content Composer-a; `NewsletterCampaign` se ne koristi kao storage.
 
-### Završeno
+**STANJE: Edu Centar v1 je u FEATURE FREEZE-u — Marina pilot.** (Sledeći
+razvojni rez platforme je T1-4; Edu čeka signal iz pilota.)
+
+Importer je bio poslednji rez pre pilota. Jezgro je dovoljno kompletno da
+sledeći razvoj vodi stvarna upotreba, a ne pretpostavka. Do kraja pilota se
+**ne dodaju nove funkcije i ne dira se domenski model**; menja se samo ono što
+pilot pokaže kao stvarnu prepreku.
+
+Pilot checklist za Marinu (bez tehničkih detalja):
+
+```text
+1. napravi jedan nov članak ručno
+2. napravi jedan sadržaj iz PDF/DOCX
+3. promeni nešto posle objave i ponovo objavi
+4. napravi jedan zaključan sadržaj
+5. probaj slike iz galerije i upload
+6. pogledaj Mobile i Desktop pregled
+7. zapiši svaki trenutak gde nije jasno šta sledeće da klikneš
+```
+
+Sedma stavka nosi najveću vrednost — više od još dvadeset funkcija.
+
+Obim v1, ono što svesno nedostaje i poznata ograničenja koja treba razlikovati
+od grešaka stoje u
+[Edu Centar v1 — feature freeze](PANTA-EDU-CENTAR-ARC.md#edu-centar-v1--feature-freeze-2026-08-31).
+
+## Završeno ranije — platformski rezovi
 
 | # | Slice | Status | Gde smo stali | Dokument |
 |---|---|---|---|---|
@@ -77,19 +199,29 @@ kada staging postane aktivna razvojna linija za Edu luk.**
 | 0B | T2B-A capability foundation | ✅ gotovo | Implementirani su optional Tenant persistence ugovor sa očuvanom `undefined` legacy semantikom, registry, pure/server resolver, postojeći plan adapter, `requireCapability()` i eksplicitni beauty provisioning za svaki novi Tenant. | [PANTA-TENANT-VERTICALS-CAPABILITIES.md](PANTA-TENANT-VERTICALS-CAPABILITIES.md#9-implementacioni-status) |
 | 0C | T2B-B triple-gate integration | ✅ gotovo | Implementirani su server capability snapshot, admin/client workspace projekcija, business API gate-ovi, public Feature Block gate i readiness politika; permission i ownership ostaju zasebne granice. | [PANTA-TENANT-VERTICALS-CAPABILITIES.md](PANTA-TENANT-VERTICALS-CAPABILITIES.md#5-jedan-resolver-tri-obavezna-gate-a) |
 | 1 | Workspace IA dokument | ✅ gotovo | Zaključane su BEAUTY, EDUCATION-FIRST i HYBRID admin/client matrice, permission i resource-ownership granice. JSX i capability-aware navigacija su preuzeti Edu lukom (Faza 0 i 6A); ostatak je „Salon workspace migration" u Kasnije. | [PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md) |
-| 3 | `availability-core` | ✅ gotovo | **Urađeno:** `@panta/booking-engine` — `AvailabilityQuery → AvailabilityResult`, čist TS bez React/Next/DB i bez I/O; `[start, end)`, eksplicitna zona, DST, pauze i odmori kao rez intervala, ručni termini pod istim overlap ugovorom, `availabilityClass` + `outsidePreferredHours` kao ULAZ za Slice 5. Domen ostaje u `lib/booking/availabilityAdapter.ts`. Ponovljena provera: **33 paket testa + 48 adapter/widget testa = 81 fokusirani test**; svi prolaze. Migrirane su obe `slots` rute, oba javna widgeta, `BookingProvider`, `ClientCreateModal`, `ClientEditModal`; stare kopije su uklonjene ili zadržane samo kao zamrznuta regresiona referenca. **Van Slice 3:** serverski upis još ne koristi novi core i ne učitava `vacations`, a modalni tok još ne prima `vacations` kroz ceo lanac propova. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#21-coexistence-i-migracija) |
+| 3 | `availability-core` | ✅ gotovo | **Urađeno:** `@panta/booking-engine` — `AvailabilityQuery → AvailabilityResult`, čist TS bez React/Next/DB i bez I/O; `[start, end)`, eksplicitna zona, DST, pauze i odmori kao rez intervala, ručni termini pod istim overlap ugovorom, `availabilityClass` + `outsidePreferredHours` kao ULAZ za Slice 5. Domen ostaje u `lib/booking/availabilityAdapter.ts`. Ponovljena provera: **33 paket testa + 48 adapter/widget testa = 81 fokusirani test**; svi prolaze. Migrirane su obe `slots` rute, oba javna widgeta, `BookingProvider` i tadašnji klijentski modali (`ClientCreateModal`/`ClientEditModal`, koje je T1-2 kasnije zamenio deljenim `BookingModal`-om); stare kopije su uklonjene ili zadržane samo kao zamrznuta regresiona referenca. **Van Slice 3:** serverski upis još ne koristi novi core i ne učitava `vacations`, a modalni tok još ne prima `vacations` kroz ceo lanac propova. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#21-coexistence-i-migracija) |
 | 5 | ★ T3 Booking Engine CORE | ✅ dark core implementiran | Additive `BookingReservation`, `BookingDayLock`, durable receipt/outbox, neutralne lifecycle komande, write-time availability, legacy reader i Service/Appointment transaction adapter postoje; 35 novih fokusiranih testova (21 pravi MongoMemoryReplSet) prolaze. **Nije live authority:** production rute nisu migrirane, deployment transaction smoke ostaje hard release gate, a outbox worker/reconciliation i cutover pripadaju Slice 6. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#211-slice-5--dark-core) |
 
-### Kasnije — bez datuma
+## Kasnije — bez datuma
 
 | Šta | Odakle | Zašto čeka |
 |---|---|---|
 | **Salon workspace migration** | ostatak starog Slice 12 | Edu plan je preuzeo `/education/*`, `Moj Prostor` i Client 360. Ostaje samo prevođenje ~15 salon tabova u workspace strukturu — nije prioritet za Marinu |
-| **Generic Care Domain** | stari Slice 13, preimenovan | `CareJourney` / `CarePlan` / `CareDocument` / `ProgressMedia`. Prvo vidimo šta `SkincareGuide` + `GuidedProgram` + follow-up stvarno traže, pa tek onda generalizujemo — sigurnije od apstrakcije unapred |
+| **Generic Care Domain** ⏸ preskočen · neophodan | stari Slice 13, preimenovan | `CareJourney` / `CarePlan` / `CareDocument` / `ProgressMedia`. Prvo vidimo šta `SkincareGuide` + `GuidedProgram` + follow-up stvarno traže, pa tek onda generalizujemo — sigurnije od apstrakcije unapred |
 | **Jedan `AuthUser` → više `Tenant`-a** | Edu plan, Faza 0 | Jedini ispravan put za potpuno odvojene Salon/Education biznise istog vlasnika. „Neka napravi drugi nalog" ne radi: `AuthUser.email` je globalno unique, register vraća 409 |
+| **DIAG-EDU-1** — Education integrity provere | posle Marina pilota | Registry pokriva Identity, Loyalty, Appointment, ownership, SEO i push; Education nema nijednu. Tri najvrednije provere mere granice pristupa nad **stvarnim** podacima, a ne nad izmišljenim iz testova |
+| **DIAG-SUPPORT-1** — „Pošaljite problem podršci" | posle Marina pilota | Snapshot iz postojećeg Diagnostic Engine-a + kontekst aplikacije → **sačuvan incident**, pa tek onda obaveštenje/mejl/push. Ako slanje zakaže, report ostaje. Privacy granica: metapodaci da, sadržaj korisnika ne |
 | **Read-model cleanup** | dug iz H0 | Write loss je zatvoren; višestruke ručne read projekcije `SalonProfile` ostaju |
 
-Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran · ⏸ planski odloženo
+
+## Ispravke zatečenih nalaza
+
+Nalazi koje je [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#rizici-i-zatečeni-problemi)
+vodio kao „zatečeno“, a koji su u međuvremenu **stvarno zatvoreni u kodu**:
+
+| Nalaz | Stvarno stanje |
+|---|---|
+| `getCampaign.ts` ne filtrira `landingPage.status === "published"` — neobjavljena kampanja bila je dostupna na svom URL-u ako znaš slug (ARC, red u tabeli rizika) | ✅ **ZATVORENO 2026-08-29.** Više ne stoji „zabeležiti, ne popravljati“ — ispravka je bila trivijalna. `getCampaign()` sada koristi `publishedBlogFilter()` koji traži `landingPage.enabled: true` **i** `landingPage.status: "published"`, pa neobjavljena kampanja vraća „Campaign not found“. Kod: `src/lib/server/getCampaign.ts`, `src/lib/tenant/blogPosts.ts` |
 
 ## Tvrde granice
 
@@ -101,15 +233,55 @@ Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran · ⏸ pla
   dozvoljeni prečac za Theme-9.
 - **Slice 6 concurrency gate mora proći pre Slice 10.** Marina ne prima stvarne rezervacije pre toga.
   Slice 6B/6C su planski odloženi (vidi red 6), pa je i Slice 10 time odložen.
-- **Nijedan legacy zapis ne sme prestati da blokira u odnosu na zatečeno ponašanje.**
-  Legacy `no_show` nastaje i pri kasnom otkazu, dakle pre kraja termina — zato je
-  `blocking_until_end`, ne `released`. Vidi T3 §21.2.1.
+- **⚠️ Dve occupancy semantike koje se moraju spojiti pre T3 cutover-a.**
+  Produkcija (`lib/appointments/occupancy.ts`) oslobađa slot na `completed` i
+  `no_show` **odmah** — to je namerno, jer kasno otkazan termin salon mora moći da
+  proda. Dark core (`lib/booking/occupancyStatus.ts`) za legacy zapise koristi
+  `blocking_until_end`, jer legacy `no_show` nastaje već pri kasnom otkazu. Danas
+  se ne sudaraju samo zato što produkcijski upiti unapred filtriraju statuse.
+  **Ne blokira T1-4** (dark core nije live authority), ali jeste hard preduslov
+  cutover-a — [T3 §4.1](PANTA-T3-BOOKING-ENGINE.md).
 - **Nijedna API ruta ne sme kreirati ni menjati occupancy mimo Booking Engine-a.**
 - **Salon nikada ne postoji bez vlasnika, ni vlasnički nalog bez salona.**
   Jedina destruktivna owner akcija je „Trajno obriši salon", koja briše ceo
   tenant boundary. Ownership transfer je specifikovan i ODLOŽEN — vidi
   [PANTA-TENANT-OWNERSHIP-LIFECYCLE.md](PANTA-TENANT-OWNERSHIP-LIFECYCLE.md).
 - **Consultation nije `Service`** — ne sme deliti `services.catalog` ni `booking.services`.
+- **Tenant → Workspace → Presentation je zaključano platformsko pravilo.**
+  Salon + Edu nije novi tenant nego jedan tenant sa dva workspace-a; novi tenant
+  je novi brend, domen ili odvojen biznis. Admin workspace sme postojati pre
+  javne prezentacije tog vertikala. Vidi
+  [ARCHITECTURAL_RULES.md §3.3](ARCHITECTURAL_RULES.md#33-tenant--workspace--presentation-zaključano-2026-08-29).
+- **`published` nije javno.** `status` je lifecycle, `visibility` je ko sme da
+  konzumira. Svaki budući javni upit nad `EducationContent` mora tražiti
+  `tenantId` + `status=published` + `visibility=public`; samo status nije dovoljan.
+- **Education ima dve kopije, bez istorije verzija.** Root polja su radna
+  kopija, `publishedSnapshot` je javna verzija, a objava je jedina granica
+  promocije. Save ne sme ni da obori objavljen sadržaj u draft (newsletter
+  obrazac) ni da ga tiho izmeni uživo (suprotan propust, zatvoren u UI-2B).
+- **Javni izvor istine je `publishedSnapshot`.** UI-3 čita snapshot, nikada
+  `root.status` + `root.visibility` + `root.blocks`. Zapis bez snapshot-a nije
+  javan ni kad je `status: "published"` — fail-closed.
+- **Education sadržaj ima tri režima pristupa: `public` / `gated` / `private`.**
+  `gated` je javno otkriven a telo zaključano; `private` nije otkriven i
+  neautorizovan URL vraća **404**, nikad „nemate pristup". Pretplata, kupovina i
+  ručno odobrenje nisu četvrto stanje nego izvori prava pristupa (entitlement),
+  i ne kodiraju se u režim pristupa. Semantika je zaključana, **persistencija je
+  i dalje dvočlana** — migracija na `accessMode` pripada UI-3. Ugovor:
+  [PANTA-EDU-CENTAR-ARC.md § Pristup sadržaju](PANTA-EDU-CENTAR-ARC.md#pristup-sadržaju--public--gated--private-zaključano-2026-08-29).
+- **Tema nikada nije autoritet pristupa.** Neautorizovan odgovor ne sme sadržati
+  zaštićeno telo — ni u HTML-u, ni u RSC payload-u, ni u JSON-u.
+- **`/edukacija` lista je javna i nepersonalizovana.** Ista je za svakog
+  posetioca: javne + `gated` pregled. `private` se u njoj ne pojavljuje ni
+  prijavljenoj klijentkinji koja ima pristup — privatan sadržaj živi u
+  `Moj Prostor` → `Moji sadržaji`. Entitlement se razrešava na detaljnoj ruti, ne
+  u listi, pa lista ostaje keširana i bez per-viewer grana.
+- **Čuvanje nije pristup.** Dugme „+ dodaj u Moj prostor" pravi samo referencu u
+  klijentkinjinom prostoru; sačuvan `gated` sadržaj ostaje zaključan sa istim
+  CTA. Dodela sme biti izvor odobrenja, čuvanje nikada. Sačuvan sadržaj koji je
+  zaključan ili sklonjen ostaje kao prazna kartica „više nije dostupno" sa
+  akcijom (zatraži pristup / ukloni), sa naslovom koji je klijentkinja sačuvala
+  — nikad novim privatnim naslovom.
 - **Domenski naziv `education.*` uz `capability: null` je zabranjen** — ili domenski blok sa loaderom i capability-jem, ili `content.*` teaser.
 - ✅ **T2B triple-gate je implementiran.** Admin/client projekcija, business API
   i public Feature Block gate koriste isti capability autoritet; kompletna nova
@@ -118,9 +290,10 @@ Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran · ⏸ pla
   message rute koriste `actorScopeFrom()` i tenant/client ownership filter;
   capability i Booking write authority ostaju zasebni otvoreni poslovi.
 
-## Hitno: admin save ne sme da izgubi theme-9 sadržaj
+## H0 — lossless admin save (zatvoreno)
 
-✅ **Zatvoreno u H0.** `useSalonProfileAdmin` koristi deljeni lossless write
+✅ **Zatvoreno.** Zadržano jer objašnjava invariant koji čuvaju regresioni
+testovi, ne kao dnevnik. `useSalonProfileAdmin` koristi deljeni lossless write
 mapper koji normalizuje samo polja koja editor poseduje i prenosi ostatak
 dokumenta. API više ne zamenjuje sadržaj slepo: nepotpun stariji payload spaja
 sa postojećim sadržajem po imenovanim sekcijama, bez vraćanja namerno poslatih
@@ -335,23 +508,19 @@ Dodaju se u tabelu tek kad postanu aktivan implementacioni posao. Jedina tačka
 gde već sada obavezuju tekući rad je 2C (vidi gore).
 
 **Ne formulisati kao „samo palimo prekidač".** `education.catalog` i
-`education.inquiries` jesu registrovani u `lib/platform/capabilities.ts`, ali
+`education.inquiries` jesu registrovani u `lib/platform/capabilities.ts`, a
 resolver traži tri uslova odjednom:
 
 ```text
 enabled = platformAvailable && planEntitled && tenantEnabled
 ```
 
-Danas su za `education.catalog` sva tri nepovoljna: `platformAvailable: false`,
-`plan: UNMAPPED` (a `resolveCapabilityPlanEntitlement()` za `unmapped`
-bezuslovno vraća `false`) i `legacyBeautyDefault: false`. Samo
-`platformAvailable: true` ne bi promenilo ništa — `true ∩ false ∩ true = false`.
-
-Tačna formulacija: **infrastruktura i capability ID već postoje**; kada
-Education postane aktivan proizvod, potrebno je otvoriti platform availability,
-definisati entitlement model i uključiti capability odgovarajućim tenantima.
-To je i dalje dobra vest — triple-gate iz 0C se koristi kakav jeste i ne pravi
-se nov sistem dozvola.
+EDU UI-1 otvara samo `education.catalog`: `platformAvailable: true`, postojeći
+plan source `core`, uz obavezni explicit tenant provisioning i Education
+vertical. Beauty zato ostaje isključen. Ovo je najmanji workspace/content
+foundation contract, ne skrivena pricing odluka; poseban Education entitlement
+još ne postoji u plan modelu. `education.inquiries` i `booking.education` ostaju
+platform-unavailable/unmapped dok njihove stvarne površine ne postoje.
 
 ## Demo/starter naspram odobrenog live sadržaja
 
@@ -440,31 +609,25 @@ nagradi. T3 je prilika da to preraste u čist ugovor
 > poena ili surcharge direktno u Booking Engine.
 
 
-## Zatečeni dugovi koje ovaj luk zatvara
+## Zatečeni dugovi — otvoreni
+
+Zatvoreni dugovi iz T2/T3 rada (kopije kalendarske logike, `getWorkingRange`,
+overlap samo po početku, `vacations`, theme whitelist, engleski ključevi dana,
+`ThemeShellProps`, theme-9 schema/CMS polja, H0 lossless save, scope po golom
+`_id`-ju) **više se ne vode ovde** — žive kao invarianti u svojim ugovorima i
+kao regresioni testovi.
 
 | Dug | Gde | Zatvara ga |
 |---|---|---|
-| TOCTOU trka pri zakazivanju (nema jedinstvenog occupancy autoriteta, transakcije ni booking idempotencije) | pet create putanja postoje, ali puni inventory ima 12 Appointment occupancy/lifecycle + 4 Slot write ulaza | Slice 5–6; [potpun inventory](PANTA-T3-BOOKING-ENGINE.md#3-potpun-inventar-write-putanja) |
-| Reschedule nije centralizovan: opšti update menja datum/vreme bez availability provere, a i dva bolja toka rade odvojeni check + save | `api/appointments/update/[id]` + dva `clientFlows` ulaza | Slice 6; [atomic contract](PANTA-T3-BOOKING-ENGINE.md#13-atomic-reschedule-cancel-i-lifecycle) |
-| Legacy marketplace `Slot.reserve` jeste atomski petominutni reserve, ali nema vlasnički token, nije vezan za `Appointment` i ne štiti ostale tokove | `models/Slot.ts`, `api/marketplace/slots/{reserve,book}` | Slice 5/8 — integrisati kao izvedeni prikaz ili ukloniti kao drugi izvor istine |
-| ~~Kopije kalendarske logike (bilo ih je PET, ne četiri)~~ ✅ | sve svedeno na `@panta/booking-engine` + `lib/booking/availabilityAdapter.ts` | Slice 3 |
-| ~~`getWorkingRange()` briše pauzu — widget i modal se ne slažu~~ ✅ | obrisan zajedno sa `helpers/widgetAvailability.ts` | Slice 3 — rez intervala umesto min/max |
-| ~~Widget proverava zauzetost samo nad POČETKOM kandidata — 60-min termin u 11:30 prolazi pored zauzetog u 12:00~~ ✅ | isto | Slice 3 |
-| ~~`salon.vacations` se ne gleda pri dostupnosti — može se zakazati usred odmora~~ ✅ | jezgro, obe rute i oba widgeta | Slice 3 — modalni tok još ne prosleđuje `vacations` (lanac propova), zabeleženo uz Slice 3 |
-| ~~Theme whitelist pri kreiranju salona ide samo do `theme-6`~~ ✅ | `api/salon-profile/create/route.ts:76` | Slice 2 — popravljeno, sada do `theme-9` |
-| ~~`/api/slots` koristi engleske ključeve dana → uvek prazno~~ ✅ (isto i `api/marketplace/slots`) | `api/slots/route.ts`, `api/marketplace/slots/route.ts` | rešeno — obe rute idu kroz `availabilityAdapter` |
-| ~~`design/` handoff bundle ulazi u `fallow` analizu~~ ✅ | `.fallowrc.jsonc` | ignore konfiguracija postoji; trenutni workspace nema instaliran `fallow` executable, pa nova health/dead-code analiza nije mogla biti pokrenuta bez instalacije |
-| ~~`ThemeShellProps` nosi `salon: SalonProfileData` + `services: IService[]`~~ ✅ | `shells/types.ts` + novi `lib/platform/theme-shell-native.ts` | rešeno — ugovor neutralan, guard test `shells/types.test.ts` |
-| ~~Kredencijali se prelazno mapiraju iz `authoredStats` u About~~ ✅ | `about.credentials` | rešeno — About tabela ima svoje polje; blok `content.credentials` nosi stubove i to su dve različite stvari u dizajnu |
+| TOCTOU trka pri zakazivanju — nema jedinstvenog occupancy autoriteta ni booking idempotencije na produkcijskom putu | 12 Appointment occupancy/lifecycle + 4 Slot write ulaza | T3 cutover; [potpun inventory](PANTA-T3-BOOKING-ENGINE.md#3-potpun-inventar-write-putanja) |
+| Reschedule je centralizovan kroz `clientFlows`/canonical seam, ali i dalje radi „check → save" bez serijalizacije | `api/appointments/update/[id]`, `clientFlows` | T3 cutover; [atomic contract](PANTA-T3-BOOKING-ENGINE.md#13-atomic-reschedule-cancel-i-lifecycle) |
+| Legacy marketplace `Slot.reserve` je atomski petominutni reserve, ali nema vlasnički token, nije vezan za `Appointment` i ne štiti ostale tokove | `models/Slot.ts`, `api/marketplace/slots/{reserve,book}` | Slice 5/8 — integrisati kao izveden prikaz ili ukloniti kao drugi izvor istine |
 | `themeBookingPreview` je PRIVREMENO polje — briše se kad stignu Consultation domen i Booking Engine | `models/SalonProfile.ts` | Slice 5/7 |
-| Preview tekst obećava potvrdu/pomeranje termina, a završni ekran tačno kaže da termin nije zakazan | theme-9 seed sadržaj + `Theme9BookingDialog` | pre javnog QA uskladiti poruku tako da korisnica ne pomisli da je zahtev rezervacija |
-| ~~7 theme-9 landing sekcija nema urednička polja~~ ✅ | `Theme9Sections.tsx` + `primitives.tsx` | **2A.2 zatvoren na `main`-u** — editor postoji za svih 7, uz coverage i minimum-content testove. |
-| `themePages` i dalje nema urednička polja — sadržaj se autoriše kroz `npm run seed:theme9 -- --tenant=<slug>` | `AdminLandingCMS.tsx` | otvoreno; polja postoje u bazi, ali editor ih ne prikazuje |
-| ~~Admin save gubi theme-9 polja iz forme i može njima da prepiše ceo profil~~ ✅ | `useSalonProfileAdmin` → `content-preservation` → `api/salon-profile/update` | **H0 zatvoren — lossless mapper + serverski section merge + regresioni testovi** |
-| `theme-3/BlogSection` i dalje dovlači objave klijentskim `useBlogPosts` iako `content.blog` loader sada isporučuje `posts` — isti waterfall koji je theme-9 upravo izgubila | `theme-3/BlogSection.tsx` | otvoreno, sada trivijalno |
-| ~~7 theme-9 sekcija nije bilo u mongoose shemi (`strict` bi ih tiho odbacio pri snimanju)~~ ✅ | `models/SalonProfile.ts` | rešeno u ovom slice-u |
-| ~~Rute termina su ranije dohvatale/menjale zapis po golom `_id`-ju~~ ✅ | `api/appointments/update/[id]`, `api/appointments/message` | rešeno na aktivnoj grani: `actorScopeFrom()` uvodi tenant i client ownership scope (`ae936af`) |
-| **Više ručnih read projekcija istog `SalonProfile` dokumenta** — novo polje može tiho nestati jer su polja opciona | mongoose schema · javni profile API · `ClientHomePage` | otvoren read-model dug; H0 write rizik je zatvoren odvojenim lossless ugovorom |
+| Preview tekst obećava potvrdu/pomeranje termina, a završni ekran tačno kaže da termin nije zakazan | theme-9 seed sadržaj + `Theme9BookingDialog` | pre javnog QA uskladiti poruku da korisnica ne pomisli da je zahtev rezervacija |
+| `themePages` nema urednička polja — sadržaj se autoriše kroz `npm run seed:theme9 -- --tenant=<slug>` | `AdminLandingCMS.tsx` | otvoreno; polja postoje u bazi, editor ih ne prikazuje |
+| `theme-3/BlogSection` dovlači objave klijentskim `useBlogPosts` iako `content.blog` loader isporučuje `posts` | `theme-3/BlogSection.tsx` | otvoreno, trivijalno |
+| Više ručnih read projekcija istog `SalonProfile` dokumenta — novo polje može tiho nestati jer su polja opciona | mongoose schema · javni profile API · `ClientHomePage` | otvoren read-model dug; H0 write rizik je zatvoren |
+| `design/` handoff bundle je izuzet iz analize, ali workspace nema instaliran `fallow` executable | `.fallowrc.jsonc` | otvoreno; nova health/dead-code analiza traži instalaciju |
 
 ### Dug: jedan mapper umesto ručnih projekcija
 

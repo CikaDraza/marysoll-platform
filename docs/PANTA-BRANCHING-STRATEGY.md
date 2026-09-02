@@ -1,7 +1,49 @@
 # PANTA — Branching, QA i staging strategija
 
 > Prvobitna odluka: 2026-07-09. Usklađeno sa stvarnim granama i proxy kodom:
-> **2026-08-09**. Ovo je jedini autoritativni branch→domen dokument.
+> **2026-08-09**. Branch topologija i pravilo o canonical grani provereni
+> **2026-09-03**. Ovo je jedini autoritativni branch→domen dokument.
+
+## Canonical implementation grana
+
+> **CURRENT implementation reference: `staging/production-engines`.**
+
+Dokumentacija u `docs/` sme (i treba) da bude **identična na svim granama**.
+Razlikuje se samo jedna stvar: koja grana je referenca za CURRENT stanje. Dok ta
+napomena kaže `staging/production-engines`, svaki opis „šta danas radi" opisuje
+tu granu.
+
+Kada neki domen stvarno pređe na razvoj na drugoj grani i ta grana postane izvor
+istine za taj rad, menja se **samo ta referenca** i CURRENT sekcije tog domena.
+Poslovne odluke i arhitektonski ugovori se pri tome ne brišu — briše se ili
+zamenjuje samo zastarelo CURRENT stanje.
+
+### Topologija (provereno 2026-09-03)
+
+```text
+main                                        0 ahead · 146 behind
+staging/production-fixes        c34e71e     0 ahead · 114 behind
+product-engines/theme-engine/
+  layout-contract               9448fea     0 ahead · 128 behind
+                                    ↓
+                        staging/production-engines   ← CURRENT
+```
+
+Sve tri su **strogi ancestori** aktuelne staging razvojne linije: merge-base sa
+`staging/production-engines` jednak je njihovom HEAD-u. Nijedna nema commit koji
+staging već nema.
+
+Praktične posledice:
+
+- **Nema rada „sakrivenog" na drugoj grani.** Ceo Edu Centar razvoj i ceo Beauty
+  Booking/CRM luk žive na `staging/production-engines`.
+- **`product-engines/theme-engine/layout-contract` je istorijska grana** iz
+  perioda pre Edu rada. Ne nastavljati razvoj na njoj i ne vraćati se na nju
+  zbog Marine; sve što je na njoj završeno već je u staging liniji. Kada docs
+  poravnanje bude gotovo, sme da ide u `archive/…` ili da se obriše.
+- **Docs se ne cherry-pick-uju unatrag** na ancestor grane. Grana koja je 0
+  ahead dobija dokumentaciju fast-forward-om kad se staging linija spoji
+  napred; zaseban cherry-pick samo pravi divergenciju koju posle treba mirati.
 
 ## Stalne grane i domeni
 

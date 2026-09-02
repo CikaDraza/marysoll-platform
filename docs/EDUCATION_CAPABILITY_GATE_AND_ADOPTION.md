@@ -1,7 +1,20 @@
 # Education Capability Gate and Salon -> Salon + Edu Adoption
 
-**Status:** Planned product / capability specification  
-**Implementation status:** Not scheduled in `TODO.md` yet
+**Status:** Capability specification — **largely implemented** (superseded in parts)  
+**Implementation status (2026-08-29):** capability resolution, sidebar discovery
+state, entitled full-feature state, server/API authorization and the activation
+flow now exist in code (T2B + Edu F0/F3A + EDU UI-2). The remaining unimplemented
+items are the public `/edukacija` route gating and the adoption/analytics ideas.
+The earlier "Not scheduled in `TODO.md` yet" line is obsolete — see
+[TODO.md](TODO.md) and [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md).
+
+> ⚠️ **This document is about the CAPABILITY gate: may this tenant use the
+> Education domain at all.** It is not about the CONTENT gate — whether a given
+> visitor may read one `EducationContent` body. Those are different gates with
+> different authorities; the content access contract (`public` / `gated` /
+> `private`) is canonical in
+> [PANTA-EDU-CENTAR-ARC.md § Pristup sadržaju](PANTA-EDU-CENTAR-ARC.md#pristup-sadržaju--public--gated--private-zaključano-2026-08-29).
+> Never use the bare word "gate" here without saying which one.
 
 ## Goal
 
@@ -75,7 +88,9 @@ This allows a tenant to publish education before it has inquiry or booking funct
 
 When `education.catalog` is resolved:
 
-- public `/edukacija` routes are available;
+- public `/edukacija` routes are available (still unimplemented — UI-3; and the
+  capability only decides whether the surface exists, never whether an individual
+  content body may be read);
 - Theme-9 can expose the **Edukacija** navigation item;
 - workspace shows the full Education feature;
 - Edu Studio is available;
@@ -265,14 +280,15 @@ This will show whether salons actually want the feature before investing in deep
 
 ## TODO relationship
 
-Keep this document as a planned product/capability contract.
+Implementation status of the original checklist (2026-08-29):
 
-When implementation begins, add a concrete `TODO.md` slice referencing this file and include:
+1. capability resolution — ✅ implemented (`resolveTenantCapabilitySnapshot`);
+2. sidebar discovery state — ✅ implemented (workspace selector + activation CTA);
+3. entitled full-feature state — ✅ implemented for the admin workspace;
+4. server/API authorization — ✅ implemented (`requireCapability`);
+5. public route gating — ⬜ UI-3, together with the content access contract;
+6. activation/upgrade flow — ✅ implemented (explicit, confirmed, idempotent);
+7. analytics — ⬜ not started.
 
-1. capability resolution;
-2. sidebar discovery state;
-3. entitled full-feature state;
-4. server/API authorization;
-5. public route gating;
-6. activation/upgrade flow;
-7. analytics, if included in scope.
+Active tracking lives in [TODO.md](TODO.md); this file stays the capability
+rationale, not a status board.
