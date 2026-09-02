@@ -2,11 +2,35 @@ import { Schema, model, models, Types } from "mongoose";
 
 // ─── Appointment ──────────────────────────────────────────────────────────────
 
+/**
+ * Izbor unutar usluge (varijanta i dodaci).
+ *
+ * `pricing.lines` čuva IZNOSE i služi računu; iz njega se ne može
+ * rekonstruisati ŠTA je izabrano ni u kojoj količini. „Promeni termin" mora da
+ * ponudi zatečeni izbor, pa izbor mora da preživi upis.
+ *
+ * Do sada su `variants` i `extras` postojali samo u TypeScript tipu
+ * `IAppointmentService`, a Mongoose ih je (strict mode) tiho odbacivao.
+ */
+const selectedPartSchema = new Schema(
+  {
+    name: { type: String, required: true },
+    price: { type: Number, default: null },
+    duration: { type: Number, default: 0 },
+    perItem: { type: Boolean, default: false },
+    /** Količina dodatka (npr. 3 nokta sa 3D stikerom). Varijanta je uvek 1. */
+    quantity: { type: Number, default: 1 },
+  },
+  { _id: false },
+);
+
 const servicesSchema = new Schema(
   {
     serviceId: { type: Types.ObjectId, ref: "Service", required: true },
     quantity: { type: Number, default: 1 },
     serviceName: { type: String, required: true },
+    variants: { type: [selectedPartSchema], default: undefined },
+    extras: { type: [selectedPartSchema], default: undefined },
     price: Number,
     duration: { type: Number, required: true },
   },

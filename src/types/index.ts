@@ -193,16 +193,20 @@ export interface IService {
 
 export interface IAppointmentVariant {
   name: string;
-  price: number;
+  /** `null` = cena nije poznata (usluga na upit). 0 je stvarna nula. */
+  price: number | null;
   duration: number;
   perItem: boolean;
 }
 
 export interface IAppointmentExtra {
   name: string;
-  price: number;
+  /** `null` = cena nije poznata (usluga na upit). 0 je stvarna nula. */
+  price: number | null;
   duration: number;
   perItem: boolean;
+  /** Koliko puta je dodatak izabran. Podrazumevano 1. */
+  quantity?: number;
 }
 
 /** Prilog uz zahtev klijentkinje. `publicId` je obavezan — bez njega nema
@@ -282,7 +286,13 @@ export interface IAppointmentService {
   variants?: IAppointmentVariant[];
   extras?: IAppointmentExtra[];
   quantity: number;
-  price: number;
+  /**
+   * Cena stavke, ili `null` kada se ne zna (usluga „na upit").
+   *
+   * Bio je `number`, pa je svaki tok koji je hteo da bude iskren morao da
+   * castuje ili da nepoznato prijavi kao 0 — a 0 je stvarna nula dinara.
+   */
+  price: number | null;
   duration: number;
 }
 
