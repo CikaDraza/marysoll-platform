@@ -1,5 +1,6 @@
 // src/app/api/appointments/update/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import type { IAppointmentPricing } from "@/types";
 import {
   applyQuote,
   applyChargedAmount,
@@ -31,6 +32,8 @@ interface UpdateAppointmentData {
   time?: string;
   note?: string;
   lastUpdatedBy?: "client" | "admin";
+  /** Canonical snapshot cene — SERVER ga postavlja, browser nikad. */
+  pricing?: IAppointmentPricing;
   cancelledAt?: Date;
   cancelledBy?: "client" | "admin";
   cancellationType?: "legitimate" | "late";
@@ -166,11 +169,14 @@ export async function PUT(
       const base = appointment.pricing ?? emptyPricingSnapshot();
       // Kod „Došla" iznos je UKUPNO stvarno naplaćeno; pri odobravanju je
       // OSNOVNA cena, pa server sam dodaje poznate doplate.
-      appointment.pricing =
+      //
+      // Snapshot ide u `updatedData`, dakle u ISTI atomic upis kao status.
+      // Ranije se menjao samo učitani dokument bez `save()`, pa je cena
+      // stizala u mejl a nikad u bazu.
+      updatedData.pricing =
         updatedData.status === "completed"
           ? applyChargedAmount(base, amount, decoded.tenantUserId ?? null)
           : applyQuote(base, amount, decoded.tenantUserId ?? null);
-      appointment.markModified("pricing");
     }
 
     if (isAdmin && updatedData.status === "no_show") {
@@ -260,8 +266,10 @@ export async function PUT(
     if (updatedData.status && updatedData.status !== appointment.status) {
       // Tenant se uzima IZ TERMINA: host-resolved tenant je null na admin
       // hostu (nema `x-tenant-slug`), pa je notifikacija nastajala bez tenanta.
+      // `updated` je ono što je stvarno u bazi — mejl ne sme da tvrdi cenu
+      // koja nije upisana.
       await handleStatusChangeNotification(
-        appointment,
+        updated ?? appointment,
         updatedData.status,
         appointment.tenantId,
       );
@@ -325,7 +333,7 @@ async function handleStatusChangeNotification(
         time: appointment.time,
         note: appointment.note,
         // Odobrenje sa unetom cenom — klijentkinja odmah dobija mejl u kojem
-        // cena više nije „na upit".
+        // cena više nije „na upit". Čita se iz PERSISTOVANOG dokumenta.
         pricing: appointment.pricing ?? null,
       },
       notificationType,

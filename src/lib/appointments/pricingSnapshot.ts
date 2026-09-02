@@ -102,11 +102,26 @@ export function applyChargedAmount(
   by?: string | null,
 ): IAppointmentPricing {
   return {
-    ...pricing,
+    ...toPlainPricing(pricing),
     chargedAmount,
     chargedAt: new Date(),
     chargedBy: by ?? null,
   };
+}
+
+/**
+ * Mongoose podokument u običan objekat.
+ *
+ * `appointment.pricing` iz `findOne()` bez `.lean()` je podokument čija polja
+ * žive na prototipu, pa ih `{ ...pricing }` NE kopira: quote bi se računao nad
+ * praznim objektom i `quotedTotal` bi ispao `NaN`. Zamka je tiha jer spread
+ * ne baca.
+ */
+function toPlainPricing(pricing: IAppointmentPricing): IAppointmentPricing {
+  const maybeDoc = pricing as unknown as { toObject?: () => IAppointmentPricing };
+  return typeof maybeDoc.toObject === "function"
+    ? maybeDoc.toObject()
+    : pricing;
 }
 
 /**
@@ -118,10 +133,11 @@ export function applyQuote(
   quotedBaseAmount: number,
   by?: string | null,
 ): IAppointmentPricing {
+  const base = toPlainPricing(pricing);
   return {
-    ...pricing,
+    ...base,
     quotedBaseAmount,
-    quotedTotal: quotedBaseAmount + pricing.knownAddonsTotal,
+    quotedTotal: quotedBaseAmount + base.knownAddonsTotal,
     quotedAt: new Date(),
     quotedBy: by ?? null,
   };
