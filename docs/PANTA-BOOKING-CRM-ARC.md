@@ -344,7 +344,7 @@ logika zbog njega.**
 
 - **T1-2 ✅** — klijentske booking presentation površine koriste jedan widget i
   jedan resolved service DTO; server ostaje booking authority.
-- **T1-3 🟡 aktivno** — Client 360 / CRM dossier kao tenant-scoped read model
+- **T1-3 ✅ kod / 🟡 Marysoll browser acceptance** — Client 360 / CRM dossier kao tenant-scoped read model
   nad Appointment, Statistics, Testimonials i Loyalty engine-ima. Operativni
   ugovor: [PANTA-CLIENT-360.md](PANTA-CLIENT-360.md).
 - **T1-4 ⬜ buduće** — posle uspešnog booking-a poseban Loyalty redemption tok;

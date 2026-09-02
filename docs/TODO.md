@@ -80,7 +80,7 @@
 | B-2C-3 | ★ Admin create/edit, HMAC, marketplace | ⬜ nije počet | **Admin edit nema nikakvu proveru dostupnosti** — jedini put koji može pregaziti tuđi termin. Cenu računa u React komponenti. | [PANTA-BOOKING-CRM-ARC.md §7](PANTA-BOOKING-CRM-ARC.md) |
 | B-2C-4 | Vaučer recompute | ⬜ nije počet | Polja za unos postoje; ostaje obračun kad quote postane numerički. | [PANTA-BOOKING-PRICING.md §4](PANTA-BOOKING-PRICING.md) |
 | B-DEBT | `extras` se odbacuju pri upisu | ⚠️ nedokazano | `IAppointmentService` ima `variants?`/`extras?`, Mongoose `servicesSchema` nema nijedno. Dokazati integracionim testom pre menjanja modela. | [PANTA-BOOKING-CRM-ARC.md §7](PANTA-BOOKING-CRM-ARC.md) |
-| B-360 | Klijent 360° | ⬜ odloženo | Istorija termina po klijentu, isti detalj zahteva. Podaci već postoje. | [PANTA-BOOKING-CRM-ARC.md §8](PANTA-BOOKING-CRM-ARC.md) |
+| B-360 / T1-3 | ★ Client 360 CRM dossier | ✅ kod · **Marysoll browser provera obavezna** | Tenant-scoped read model objedinjuje identitet, kontakte, termine sa zahtevom i canonical cenom, Kiki+ devet KPI-ja, loyalty ledger/vaučere i preporuke. Deep-link je `/dashboard?tab=klijenti&clientId=…`; Maria/Claudia nemaju advanced insights. | [PANTA-CLIENT-360.md](PANTA-CLIENT-360.md) |
 | B-INT2 | Intake v2 | ⬜ odloženo | Per-service `inherit\|enabled\|disabled`, wizard, intake na SVIM ulazima za rezervaciju. | [PANTA-SERVICE-INTAKE.md §7](PANTA-SERVICE-INTAKE.md) |
 | B-THEMES | Brisanje theme-3/4/6 | ⬜ odloženo | ~7.300 linija, 66 fajlova; baza potvrđena prazna. Preduslov: `Theme3GalleryMasonry` u `shared/`. | [PANTA-BOOKING-CRM-ARC.md §8](PANTA-BOOKING-CRM-ARC.md) |
 

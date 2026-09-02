@@ -1,6 +1,6 @@
 # Client 360 — operativni product/architecture ugovor
 
-> Slice: **T1-3** · status: aktivno · tenant pilot: Marysoll Makeup & Nails
+> Slice: **T1-3** · status: kod završen, Marysoll browser acceptance čeka · tenant pilot: Marysoll Makeup & Nails
 
 ## A. Svrha
 
