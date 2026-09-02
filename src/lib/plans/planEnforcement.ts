@@ -95,6 +95,7 @@ export async function requireFeature(
 }
 
 const UPGRADE_MESSAGES: Partial<Record<keyof PlanFeatures, string>> = {
+  clientInsights: "Nadogradite na Kiki plan za napredni Client 360 uvid",
   newsletterCampaigns: "Nadogradite na Claudia plan za kreiranje kampanja",
   newsletterLanding: "Nadogradite na Claudia plan za landing stranice",
   aiEmailTemplates: "Nadogradite na Kiki plan za AI generisanje email templejta",

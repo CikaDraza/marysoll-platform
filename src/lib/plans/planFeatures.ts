@@ -49,6 +49,8 @@ export interface PlanFeatures {
 
   // ── Statistika ────────────────────────────────────────────────────────────
   statistics: boolean;
+  /** Napredni KPI u Client 360 dosijeu (nezavisno od salonske statistike). */
+  clientInsights: boolean;
   newsletterStats: boolean;
 
   // ── AI funkcionalnosti ────────────────────────────────────────────────────
@@ -136,6 +138,7 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
 
     // Statistika
     statistics: false,
+    clientInsights: false,
     newsletterStats: false,
 
     // AI
@@ -194,6 +197,7 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     newsletterLanding: true,
 
     statistics: true,
+    clientInsights: false,
     newsletterStats: true,
 
     aiAssistant: false,
@@ -249,6 +253,7 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     newsletterLanding: true,
 
     statistics: true,
+    clientInsights: true,
     newsletterStats: true,
 
     aiAssistant: true,
@@ -304,6 +309,7 @@ export const PLAN_FEATURES: Record<PlanName, PlanFeatures> = {
     newsletterLanding: true,
 
     statistics: true,
+    clientInsights: true,
     newsletterStats: true,
 
     aiAssistant: true,

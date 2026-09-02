@@ -23,6 +23,7 @@ const FEATURE_LABELS: Partial<Record<keyof PlanFeatures, string>> = {
   newsletterCampaigns: "Newsletter kampanje",
   newsletterLanding: "Landing stranice za kampanje",
   newsletterStats: "Newsletter statistika",
+  clientInsights: "Napredni Client 360 uvid",
   // AI
   aiAssistant: "AI asistent za zakazivanje",
   aiImageGeneration: "AI generisanje slika",
