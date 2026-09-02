@@ -24,13 +24,13 @@ import {
   checkSlotAvailability,
   loadBookingProfile,
 } from "@/lib/appointments/booking";
-import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant"; // Uveri se da imaš ovaj import
 import { requireCapability } from "@/lib/platform/capabilities-server";
 import { sanitizeAppointmentRequest } from "@/lib/appointments/intake";
 import { getTenantFolder } from "@/lib/cloudinary";
 import { resolveBookingRequest } from "@/lib/booking/resolveBookingRequest";
 import { buildPricingSnapshot } from "@/lib/appointments/pricingSnapshot";
+import { canonicalSelectionFrom } from "@/lib/appointments/canonicalSelection";
 import { BookingError } from "@/lib/booking/errors";
 
 export async function POST(request: NextRequest) {
@@ -263,13 +263,14 @@ export async function POST(request: NextRequest) {
       ),
       // Canonical trajanje termina — isto ono kojim je provereno zauzeće.
       duration: resolved.durationMinutes,
-      services: data.services.map((s: IAppointmentService, i: number) => ({
-        ...s,
-        serviceName: s.serviceName,
-        // Prva (i jedina) stavka nosi canonical trajanje; klijentska vrednost
-        // se ne upisuje da se termin i stavka ne bi razišli.
-        duration: i === 0 ? resolved.durationMinutes : s.duration,
-      })),
+      // Cela stavka je server-generated. Ranije se ovde spread-ovao `...s` iz
+      // browsera: dok je Mongoose tiho odbacivao `extras`/`variants` to je
+      // prolazilo, ali čim je model počeo da ih čuva, podmetnuta cena dodatka
+      // bi se upisala pored canonical `pricing` snapshot-a.
+      services: [canonicalSelectionFrom(resolved, {
+        serviceId: String(data.services[0].serviceId),
+        displayName: data.serviceName,
+      }).item],
       unreadCount: { client: 0, admin: 0 },
       // Canonical cena — server-generated, browser je ne može podmetnuti.
       pricing: buildPricingSnapshot(resolved.pricing),

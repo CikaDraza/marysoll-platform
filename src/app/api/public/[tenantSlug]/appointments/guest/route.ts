@@ -31,6 +31,7 @@ import { requireCapability } from "@/lib/platform/capabilities-server";
 import { sanitizeAppointmentRequest } from "@/lib/appointments/intake";
 import { getTenantFolder } from "@/lib/cloudinary";
 import { resolveBookingRequest } from "@/lib/booking/resolveBookingRequest";
+import { canonicalSelectionFrom } from "@/lib/appointments/canonicalSelection";
 import { buildPricingSnapshot } from "@/lib/appointments/pricingSnapshot";
 import { BookingError } from "@/lib/booking/errors";
 
@@ -81,7 +82,6 @@ export async function POST(request: NextRequest, { params }: Params) {
       services,
       date,
       time,
-      duration,
       note,
       request: intakeRequest,
       preferredContact,
@@ -207,11 +207,11 @@ export async function POST(request: NextRequest, { params }: Params) {
       cancellationWindowHours,
       cancellationStatus: "can_cancel",
       serviceName: resolvedServiceName,
-      services: (services as IAppointmentService[]).map((s, i) => ({
-        ...s,
-        serviceName: s.serviceName,
-        duration: i === 0 ? resolved.durationMinutes : s.duration,
-      })),
+      // Server-generated stavka — vidi isti komentar u `/api/appointments/create`.
+      services: [canonicalSelectionFrom(resolved, {
+        serviceId: String((services as IAppointmentService[])[0].serviceId),
+        displayName: serviceName,
+      }).item],
       date,
       time,
       duration: resolved.durationMinutes,
