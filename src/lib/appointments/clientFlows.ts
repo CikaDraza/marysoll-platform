@@ -14,7 +14,12 @@ import "server-only";
  * Ovaj modul je sada jedina istina za oba toka.
  */
 import { Appointment } from "@/models/Appointment";
-import { Service } from "@/models/Service";
+import {
+  resolveCanonicalSelection,
+  selectionFromAppointmentItem,
+  signatureOfAppointmentItem,
+} from "@/lib/appointments/canonicalSelection";
+import { BookingError } from "@/lib/booking/errors";
 import {
   canClientEditAppointment,
   clientAppointmentPhase,
@@ -31,7 +36,7 @@ import {
   isWithinWorkingHours,
   workingSlotsForDate,
 } from "@/helpers/parseWorkingHours";
-import type { IAppointmentService } from "@/types";
+import type { IAppointmentPricing, IAppointmentService } from "@/types";
 import type { PreferredContact } from "@/lib/contactRules";
 import { ACTIVE_APPOINTMENT_STATUS_FILTER } from "@/lib/appointments/occupancy";
 
@@ -49,6 +54,7 @@ interface AppointmentDoc {
   contactNote?: string;
   serviceName: string;
   services: IAppointmentService[];
+  pricing?: IAppointmentPricing | null;
   date: string;
   time: string;
   duration: number;
@@ -63,6 +69,7 @@ interface AppointmentDoc {
   noShowMarkedAt?: Date;
   noShowReason?: string;
   lastUpdatedBy?: string;
+  markModified(path: string): void;
   save(): Promise<unknown>;
 }
 
@@ -209,9 +216,11 @@ export async function rescheduleAppointmentAsClient(
     return { ok: false, kind: "final", error: "Termin se više ne može izmeniti." };
   }
 
+  // Odbijena izmena NIJE otkazivanje. Ovde se ranije upisivalo
+  // `cancellationStatus = "late_cancel"` — pokušaj da se termin pomeri posle
+  // roka trajno je obeležavao termin kao kasno otkazan, iako je termin ostao
+  // nepromenjen i klijentkinja dolazi. Odbijanje se sada samo vraća pozivaocu.
   if (!canClientEditAppointment(appointment)) {
-    appointment.cancellationStatus = "late_cancel";
-    await appointment.save();
     return {
       ok: false,
       kind: "expired",
@@ -219,13 +228,27 @@ export async function rescheduleAppointmentAsClient(
     };
   }
 
-  const serviceId = input.services[0]?.serviceId;
-  const service = await Service.findById(serviceId);
-  if (!service) {
-    return { ok: false, kind: "service_not_found", error: "Usluga nije pronađena." };
-  }
-
   const tenantId = appointment.tenantId;
+  const serviceId = input.services[0]?.serviceId;
+
+  // Izmena prolazi kroz ISTU kapiju kao zakazivanje. Ranije je stajalo
+  // `Service.findById(serviceId)` — BEZ tenant scope-a, pa je klijentkinja
+  // mogla da na svoj termin veže uslugu drugog salona, i BEZ canonical
+  // trajanja/cene, pa je `input.duration` iz browsera bio poslovna činjenica.
+  let canonical;
+  try {
+    canonical = await resolveCanonicalSelection({
+      tenantId: String(tenantId),
+      serviceId: String(serviceId ?? ""),
+      selection: selectionFromAppointmentItem(input.services[0]),
+      displayName: input.serviceName,
+    });
+  } catch (err) {
+    if (err instanceof BookingError) {
+      return { ok: false, kind: "service_not_found", error: err.message };
+    }
+    throw err;
+  }
 
   // Exact-match konflikt (istorijsko ponašanje obe rute — hvata i slučaj
   // nepromenjenog vremena).
@@ -243,8 +266,8 @@ export async function rescheduleAppointmentAsClient(
   // Provere se rade samo kad se menja datum/vreme/trajanje — izmena
   // usluge/napomene mora proći i kada zatečeno stanje (npr. admin upis)
   // ne bi prošlo validaciju.
-  const newDuration =
-    Number(input.duration) || service.duration || appointment.duration;
+  // `input.duration` se namerno IGNORIŠE — trajanje određuje katalog.
+  const newDuration = canonical.durationMinutes;
   const dateOrTimeChanged =
     input.date !== appointment.date || input.time !== appointment.time;
   const timingChanged = dateOrTimeChanged || newDuration !== appointment.duration;
@@ -321,16 +344,22 @@ export async function rescheduleAppointmentAsClient(
   const dateChanged = input.date !== appointment.date;
   const timeChanged = input.time !== appointment.time;
 
+  // Cena prati IZBOR, ne sat. Pomeranje termina za sat vremena ne sme da
+  // obriše cenu koju je salon već potvrdio; promena usluge/varijante/dodataka
+  // mora, jer se stara ponuda odnosila na nešto drugo.
+  const selectionChanged =
+    signatureOfAppointmentItem(appointment.services?.[0]) !== canonical.signature;
+
   appointment.date = input.date;
   appointment.time = input.time;
-  appointment.serviceName = input.serviceName || service.name;
+  appointment.serviceName = canonical.serviceName;
   appointment.note = input.note || undefined;
   appointment.duration = newDuration;
-  appointment.services = input.services.map((s) => ({
-    ...s,
-    serviceName: s.serviceName,
-    duration: s.duration,
-  }));
+  appointment.services = [canonical.item];
+  if (selectionChanged || !appointment.pricing) {
+    appointment.pricing = canonical.pricing;
+    appointment.markModified("pricing");
+  }
   appointment.lastUpdatedBy = "client";
   if (dateChanged || timeChanged) {
     appointment.status = "appointment_rescheduled";
