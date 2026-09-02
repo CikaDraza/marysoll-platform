@@ -28,6 +28,8 @@ export async function GET(
 ) {
   const auth = requireTenantAdmin(req);
   if (!auth.success) return auth.response;
+  const appointmentsDenied = await requireFeature(auth.tenantId, "appointments");
+  if (appointmentsDenied) return appointmentsDenied;
 
   const { id } = await context.params;
   if (!Types.ObjectId.isValid(id)) {
@@ -89,7 +91,8 @@ export async function GET(
 
   const insightsAllowed = (await requireFeature(auth.tenantId, "clientInsights")) === null;
   const periodStats = computeClientPeriodInsights(clientPeriod);
-  const rank = topClientsForPeriod(periodAppointments as unknown as StatisticsAppointment[])
+  const topClients = topClientsForPeriod(periodAppointments as unknown as StatisticsAppointment[]);
+  const rank = topClients
     .findIndex((entry) => entry.clientId === id);
 
   const loyaltyCapability = await resolveTenantCapability(auth.tenantId, "loyalty.rewards");
@@ -130,6 +133,7 @@ export async function GET(
         lastVisit: lastVisit ? { date: lastVisit.date, time: lastVisit.time } : null,
         nextAppointment: nextAppointment ? { date: nextAppointment.date, time: nextAppointment.time } : null,
         topThree: rank >= 0 && rank < 3,
+        topClients,
         withoutPrice: periodStats.withoutPrice,
       } : {}),
     },

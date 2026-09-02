@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { useClientOverview } from "@/hooks/useClientOverview";
 import { StatisticsMetricCard } from "./statistics/StatisticsMetricCard";
+import { AdjustModal } from "./loyalty/LoyaltyClients";
+import type { LoyaltyAdminAccount } from "@/hooks/useLoyaltyAdmin";
 
 function Section({ title, children, open = false }: { title: string; children: React.ReactNode; open?: boolean }) {
   return (
@@ -22,6 +25,7 @@ export default function Client360({ clientId, onBack }: { clientId: string; onBa
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
+  const [adjustOpen, setAdjustOpen] = useState(false);
   const { data, isLoading, isError } = useClientOverview(clientId, month, year);
 
   if (isLoading) return <p className="py-10 text-center text-sm text-gray-500">Učitavanje Client 360 dosijea…</p>;
@@ -56,6 +60,7 @@ export default function Client360({ clientId, onBack }: { clientId: string; onBa
               <p className="mt-1 text-gray-500">{a.status === "completed" ? money(a.realizedValue) : money(a.potentialValue)}</p>
               {a.request?.note && <p className="mt-2 rounded-lg bg-gray-50 dark:bg-gray-950 p-2">Zahtev: {a.request.note}</p>}
               {a.request?.referenceUrl && <a className="text-violet-600 hover:underline" href={a.request.referenceUrl} target="_blank" rel="noreferrer">Referenca klijenta</a>}
+              {!!a.request?.attachments?.length && <div className="mt-2 flex flex-wrap gap-2">{a.request.attachments.map((attachment, index) => <a key={`${attachment.url}-${index}`} href={attachment.url} target="_blank" rel="noreferrer"><Image src={attachment.url} alt="Prilog uz zahtev" width={64} height={64} className="h-16 w-16 rounded-lg object-cover" /></a>)}</div>}
             </article>
           ))}</div>
         )}
@@ -74,6 +79,7 @@ export default function Client360({ clientId, onBack }: { clientId: string; onBa
           ))}</div>
           {Number(i.withoutPrice) > 0 && <p className="mt-3 text-xs text-amber-600">{String(i.withoutPrice)} termina nema definisanu cenu i ne ulazi u novčane zbirove.</p>}
           {i.topThree === true && <p className="mt-2 text-sm font-bold text-emerald-600">Klijent je u Top 3 za izabrani period.</p>}
+          {Array.isArray(i.topClients) && i.topClients.length > 0 && <div className="mt-4 overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="text-gray-500"><th className="py-2">Top 3 klijenta</th><th className="py-2 text-right">Termini</th></tr></thead><tbody>{(i.topClients as Array<{ clientId: string | null; name: string; count: number }>).map((entry) => <tr key={entry.clientId ?? entry.name} className="border-t border-gray-100 dark:border-gray-800"><td className="py-2">{entry.name}</td><td className="py-2 text-right font-bold">{entry.count}</td></tr>)}</tbody></table></div>}
         </>}
       </Section>
 
@@ -81,6 +87,7 @@ export default function Client360({ clientId, onBack }: { clientId: string; onBa
         {!data.loyalty.account ? <p className="text-sm text-gray-500">Klijent još nema loyalty nalog.</p> : <>
           <div className="flex gap-5 text-sm"><strong>{String(data.loyalty.account.heartsBalance ?? 0)} ❤️</strong><strong>{String(data.loyalty.account.pointsBalance ?? 0)} ⭐</strong></div>
           <p className="mt-2 text-xs text-gray-500">Ledger: {data.loyalty.ledger?.length ?? 0} stavki · Vaučeri: {data.loyalty.vouchers?.length ?? 0}</p>
+          <button onClick={() => setAdjustOpen(true)} className="mt-3 mr-4 text-sm font-bold text-violet-600 hover:underline">Koriguj balans</button>
           <Link href="/dashboard?tab=growth" className="mt-3 inline-block text-sm font-bold text-violet-600 hover:underline">Otvori Growth Studio za korekcije i vaučere →</Link>
         </>}
       </Section>}
@@ -89,6 +96,7 @@ export default function Client360({ clientId, onBack }: { clientId: string; onBa
         {!data.testimonials.length ? <p className="text-sm text-gray-500">Nema preporuka.</p> : <div className="space-y-3">{data.testimonials.map((t) => <article key={t._id} className="rounded-xl border p-3 text-sm"><strong>{"★".repeat(t.rating)}</strong><p>{t.comment}</p>{t.adminReply && <p className="mt-1 text-gray-500">Odgovor: {t.adminReply}</p>}</article>)}</div>}
         <Link href="/dashboard?tab=preporuke" className="mt-3 inline-block text-sm font-bold text-violet-600 hover:underline">Upravljaj preporukama →</Link>
       </Section>
+      {adjustOpen && data.loyalty.account && <AdjustModal account={{ ...(data.loyalty.account as unknown as LoyaltyAdminAccount), client: { _id: c._id, name: c.name, email: c.email } }} onClose={() => setAdjustOpen(false)} />}
     </div>
   );
 }

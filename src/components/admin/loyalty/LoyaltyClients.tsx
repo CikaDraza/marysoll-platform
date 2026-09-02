@@ -22,7 +22,7 @@ const inp =
 const lbl =
   "block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5";
 
-function AdjustModal({
+export function AdjustModal({
   account,
   onClose,
 }: {

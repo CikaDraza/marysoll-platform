@@ -111,6 +111,7 @@ export function useSaveLoyaltyConfig() {
       (await api.put("/loyalty/admin/config", config)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["loyaltyAdmin"] });
+      queryClient.invalidateQueries({ queryKey: ["clientOverview"] });
     },
   });
 }
