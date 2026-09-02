@@ -18,7 +18,10 @@ interface ThemeAccessDefinition {
  * persistent tenant data, only this backing policy should need to change.
  */
 const THEME_ACCESS = {
-  "theme-1": { visibility: "public" },
+  "theme-1": {
+    visibility: "private",
+    allowedTenantSlugs: ["marysoll-makeup-nails"],
+  },
   "theme-2": { visibility: "public" },
   "theme-3": { visibility: "public" },
   "theme-4": { visibility: "public" },

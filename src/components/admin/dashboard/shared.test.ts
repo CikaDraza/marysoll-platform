@@ -11,7 +11,14 @@ describe("theme picker access projection", () => {
 
     expect(themes).not.toContain("theme-8");
     expect(themes).not.toContain("theme-9");
-    expect(themes).toHaveLength(7);
+    // theme-1 je od 2026-09-02 privatna za Marysoll.
+    expect(themes).not.toContain("theme-1");
+    expect(themes).toHaveLength(6);
+  });
+
+  it("shows Theme 1 only to Marysoll", () => {
+    expect(idsFor("marysoll-makeup-nails")).toContain("theme-1");
+    expect(idsFor("ordinary-beauty-studio")).not.toContain("theme-1");
   });
 
   it("shows Theme 8 only to The Lash Room", () => {
