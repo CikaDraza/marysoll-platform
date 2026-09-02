@@ -1,7 +1,7 @@
 import Image from "next/image";
 import type { ClientOverview } from "@/types/client-overview";
 import { ClientOverviewSection } from "./ClientOverviewSection";
-import { formatClientMoney } from "./formatters";
+import { splitClientAppointments } from "./presentation";
 
 type AppointmentItem = ClientOverview["appointments"]["items"][number];
 
@@ -11,8 +11,7 @@ function AppointmentRequest({ request }: { request: AppointmentItem["request"] }
 }
 
 function AppointmentCard({ appointment }: { appointment: AppointmentItem }) {
-  const value = appointment.status === "completed" ? appointment.realizedValue : appointment.potentialValue;
-  return <article className="rounded-xl border border-gray-100 p-4 text-sm dark:border-gray-800"><div className="flex flex-wrap justify-between gap-2"><strong>{appointment.serviceName}</strong><span>{appointment.date} · {appointment.time} · {appointment.status}</span></div><p className="mt-1 text-gray-500">{formatClientMoney(value)}</p><AppointmentRequest request={appointment.request} /></article>;
+  return <article className="rounded-xl border border-gray-100 p-4 text-sm dark:border-gray-800"><div className="flex flex-wrap justify-between gap-2"><strong>{appointment.serviceName}</strong><span>{appointment.date} · {appointment.time} · {appointment.status}</span></div><p className="mt-1 text-gray-700 dark:text-gray-300">{appointment.price.label}</p>{appointment.price.detail && <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">{appointment.price.detail}</p>}<AppointmentRequest request={appointment.request} /></article>;
 }
 
 function AppointmentPagination({ pagination, onPageChange }: { pagination: ClientOverview["appointments"]["pagination"]; onPageChange: (page: number) => void }) {
@@ -22,7 +21,12 @@ function AppointmentPagination({ pagination, onPageChange }: { pagination: Clien
 
 function AppointmentList({ appointments, onPageChange }: { appointments: ClientOverview["appointments"]; onPageChange: (page: number) => void }) {
   if (!appointments.items.length) return <p className="text-sm text-gray-500">Nema termina.</p>;
-  return <div className="space-y-3">{appointments.items.map((appointment) => <AppointmentCard key={appointment.id} appointment={appointment} />)}<AppointmentPagination pagination={appointments.pagination} onPageChange={onPageChange} /></div>;
+  const groups = splitClientAppointments(appointments.items);
+  return <div className="space-y-5">{groups.next.length > 0 && <AppointmentGroup title="Sledeći termini" items={groups.next} />}{groups.previous.length > 0 && <AppointmentGroup title="Prethodni termini" items={groups.previous} />}<AppointmentPagination pagination={appointments.pagination} onPageChange={onPageChange} /></div>;
+}
+
+function AppointmentGroup({ title, items }: { title: string; items: readonly AppointmentItem[] }) {
+  return <section className="space-y-3"><h4 className="text-sm font-bold text-gray-900 dark:text-gray-100">{title}</h4>{items.map((appointment) => <AppointmentCard key={appointment.id} appointment={appointment} />)}</section>;
 }
 
 export function ClientAppointmentsSection({ appointments, onPageChange }: { appointments: ClientOverview["appointments"]; onPageChange: (page: number) => void }) {

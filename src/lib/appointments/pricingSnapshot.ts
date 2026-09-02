@@ -16,6 +16,7 @@
  * termin na upit izgledao kao besplatan u statistici i loyalty-ju.
  */
 import type { IAppointmentPricing, IPricingLine } from "@/types";
+import { formatServicePrice, PRICE_ON_REQUEST_LABEL } from "@/helpers/formatPrice";
 
 /**
  * Strukturni minimum koji accessori stvarno čitaju.
@@ -30,6 +31,58 @@ export interface PricedAppointment {
     quantity?: number | null;
   }>;
   status?: string;
+}
+
+export interface AppointmentPricePresentation {
+  mode: IAppointmentPricing["mode"] | "legacy";
+  amount: number | null;
+  label: string;
+  detail: "Stvarno naplaćeno" | "Potvrđena cena" | null;
+}
+
+const undefinedPriceLabel = "Cena nije definisana";
+
+/** Canonical read-only prikaz cene termina za admin/client UI. */
+export function presentAppointmentPrice(
+  appointment: PricedAppointment,
+): AppointmentPricePresentation {
+  const pricing = appointment.pricing;
+  const charged = pricing?.chargedAmount;
+  if (pricing && typeof charged === "number") {
+    return {
+      mode: pricing.mode,
+      amount: charged,
+      label: formatServicePrice(charged, "fixed", pricing.currency),
+      detail: "Stvarno naplaćeno",
+    };
+  }
+  if (!pricing) {
+    const amount = legacyNumericValue(appointment);
+    return {
+      mode: "legacy",
+      amount,
+      label: formatServicePrice(amount, "fixed") || undefinedPriceLabel,
+      detail: null,
+    };
+  }
+  if (pricing.mode === "on_request") {
+    const amount = pricing.quotedTotal ?? null;
+    return {
+      mode: pricing.mode,
+      amount,
+      label: amount == null
+        ? PRICE_ON_REQUEST_LABEL
+        : formatServicePrice(amount, "fixed", pricing.currency),
+      detail: amount == null ? null : "Potvrđena cena",
+    };
+  }
+  const amount = pricing.minimumTotal ?? null;
+  return {
+    mode: pricing.mode,
+    amount,
+    label: formatServicePrice(amount, pricing.mode, pricing.currency) || undefinedPriceLabel,
+    detail: null,
+  };
 }
 import type { ServicePriceEstimate } from "@/helpers/servicePrice";
 

@@ -38,6 +38,12 @@ export const clientOverviewSchema = z.object({
       status: z.string(),
       potentialValue: z.number().nullable(),
       realizedValue: z.number().nullable(),
+      price: z.object({
+        mode: z.enum(["fixed", "from", "on_request", "legacy"]),
+        amount: z.number().nullable(),
+        label: z.string(),
+        detail: z.enum(["Stvarno naplaćeno", "Potvrđena cena"]).nullable(),
+      }),
       request: z.object({
         note: z.string().optional(),
         referenceUrl: z.string().optional(),
@@ -86,6 +92,9 @@ export const clientOverviewSchema = z.object({
     vouchers: z.array(z.object({
       id: objectIdSchema, code: z.string(), type: z.string(), value: z.number(),
       serviceName: z.string(), status: z.string(), expiresAt: isoDateSchema.nullable(),
+      reservedAppointmentId: objectIdSchema.nullable(),
+      redeemedAppointmentId: objectIdSchema.nullable(),
+      redeemedAt: isoDateSchema.nullable(),
     })).optional(),
   }),
   testimonials: z.object({

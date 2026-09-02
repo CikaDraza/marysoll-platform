@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ClientOverview } from "@/types/client-overview";
 import { ClientOverviewSection } from "./ClientOverviewSection";
+import { testimonialApprovalLabel } from "./presentation";
 
 export function ClientTestimonialsTable({
   testimonials,
@@ -13,7 +14,7 @@ export function ClientTestimonialsTable({
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-700">
             <thead className="bg-gray-50 text-left text-xs uppercase tracking-wider text-gray-500 dark:bg-gray-900 dark:text-gray-400">
-              <tr><th className="px-4 py-3">Datum</th><th className="px-4 py-3">Odgovor klijenta</th><th className="px-4 py-3">Odgovor salona</th><th className="px-4 py-3 text-right">Ocena</th></tr>
+              <tr><th className="px-4 py-3">Datum</th><th className="px-4 py-3">Odgovor klijenta</th><th className="px-4 py-3">Odgovor salona</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Ocena</th></tr>
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-900">
               {testimonials.items.map((testimonial) => (
@@ -21,6 +22,7 @@ export function ClientTestimonialsTable({
                   <td className="whitespace-nowrap px-4 py-3 text-gray-500 dark:text-gray-400">{new Date(testimonial.createdAt).toLocaleDateString("sr-RS")}</td>
                   <td className="min-w-60 px-4 py-3 text-gray-800 dark:text-gray-200">{testimonial.comment}</td>
                   <td className="min-w-60 px-4 py-3 text-gray-600 dark:text-gray-300">{testimonial.adminReply || "—"}</td>
+                  <td className="whitespace-nowrap px-4 py-3"><span className={`rounded-full px-2 py-1 text-xs font-semibold ${testimonial.isApproved ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"}`}>{testimonialApprovalLabel(testimonial.isApproved)}</span></td>
                   <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-amber-500">{testimonial.rating} / 5</td>
                 </tr>
               ))}

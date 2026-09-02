@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   computeClientPeriodInsights,
   computeSalonStatistics,
+  futureActivePotential,
+  relationshipRealizedRevenue,
   statisticsPeriod,
   topClientsForPeriod,
   type StatisticsAppointment,
@@ -57,6 +59,26 @@ describe("shared Statistics Engine", () => {
     ]);
     expect(top[0]).toMatchObject({ clientId: "client-1", count: 2 });
     expect(top[1]).toMatchObject({ clientId: "client-2", count: 1 });
+  });
+
+  it("counts only future active appointments as relationship potential", () => {
+    const now = new Date(2026, 8, 2, 9, 0);
+    const future = { date: "2026-09-03", time: "10:00" };
+    const appointments = [
+      appointment({ ...future, status: "pending" }),
+      appointment({ ...future, status: "completed" }),
+      appointment({ ...future, status: "appointment_cancelled" }),
+      appointment({ ...future, status: "appointment_rejected" }),
+      appointment({ ...future, status: "no_show" }),
+    ];
+    expect(futureActivePotential(appointments, now)).toBe(2000);
+  });
+
+  it("sums canonical realized revenue across history", () => {
+    expect(relationshipRealizedRevenue([
+      appointment({ date: "2025-01-01", status: "completed" }),
+      appointment({ date: "2025-02-01", status: "pending" }),
+    ])).toBe(2000);
   });
 
   it("builds the salon response from projected appointments and aggregate client counts", () => {

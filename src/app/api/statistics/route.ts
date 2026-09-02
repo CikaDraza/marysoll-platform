@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
     const [appointments, totalClients, registeredThisMonth] = await Promise.all([
       Appointment.find({ ...tenantFilter, createdAt: { $gte: start, $lt: end } })
-        .select("clientProfileId clientName clientEmail services serviceName date time status createdAt pricingSnapshot totalPrice")
+        .select("clientProfileId clientName clientEmail services serviceName date time status createdAt pricing")
         .populate({ path: "services.serviceId", select: "name" })
         .lean(),
       TenantUser.countDocuments({ ...tenantFilter, ...clientRoleFilter }),

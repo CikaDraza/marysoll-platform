@@ -7,6 +7,7 @@ import { ClientInsightsSection } from "./ClientInsightsSection";
 import { ClientAppointmentsSection } from "./ClientAppointmentsSection";
 import { ClientLoyaltySection } from "./ClientLoyaltySection";
 import { ClientTestimonialsTable } from "./ClientTestimonialsTable";
+import { isClientInsightsVisible } from "./presentation";
 
 export default function Client360({
   clientId,
@@ -34,14 +35,16 @@ export default function Client360({
     <div className="space-y-4">
       <button onClick={onBack} className="text-sm font-bold text-violet-600 hover:underline">← Svi klijenti</button>
       <ClientIdentity client={data.client} />
-      <ClientInsightsSection
-        insights={data.insights}
-        month={month}
-        year={year}
-        isFetching={isFetching}
-        onMonthChange={setMonth}
-        onYearChange={setYear}
-      />
+      {isClientInsightsVisible(data.insights.available) && (
+        <ClientInsightsSection
+          insights={data.insights}
+          month={month}
+          year={year}
+          isFetching={isFetching}
+          onMonthChange={setMonth}
+          onYearChange={setYear}
+        />
+      )}
       <ClientAppointmentsSection appointments={data.appointments} onPageChange={setAppointmentPage} />
       <ClientLoyaltySection
         loyalty={data.loyalty}

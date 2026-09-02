@@ -23,7 +23,7 @@ function InsightCards({ insights }: { insights: ClientOverviewInsights }) {
 }
 
 function InsightsWarnings({ insights }: { insights: ClientOverviewInsights }) {
-  return <>{valueOrZero(insights.withoutPrice) > 0 && <p className="text-xs text-amber-600">{insights.withoutPrice} termina nema definisanu cenu i ne ulazi u novčane zbirove.</p>}{insights.topThree && <p className="text-sm font-bold text-emerald-600">Klijent je u Top 3 za izabrani period.</p>}</>;
+  return <>{valueOrZero(insights.withoutPrice) > 0 && <p className="text-xs text-amber-600">{insights.withoutPrice} termina nema definisanu cenu i ne ulazi u novčane zbirove.</p>}</>;
 }
 
 function TopClientsTable({ insights }: { insights: ClientOverviewInsights }) {
@@ -32,8 +32,18 @@ function TopClientsTable({ insights }: { insights: ClientOverviewInsights }) {
 }
 
 function InsightContent({ insights }: { insights: ClientOverviewInsights }) {
-  if (!insights.available) return <p className="rounded-xl bg-violet-50 p-4 text-sm text-violet-700 dark:bg-violet-950/30 dark:text-violet-300">Client 360 statistika dostupna je kada je omogućena Statistika salona ili kroz Superadmin feature override.</p>;
-  return <><InsightCards insights={insights} /><InsightsWarnings insights={insights} /><TopClientsTable insights={insights} /></>;
+  return <><InsightCards insights={insights} /><InsightsWarnings insights={insights} /></>;
+}
+
+function PeriodComparison({ insights, month, year, isFetching, onMonthChange, onYearChange }: {
+  insights: ClientOverviewInsights;
+  month: number;
+  year: number;
+  isFetching: boolean;
+  onMonthChange: (month: number) => void;
+  onYearChange: (year: number) => void;
+}) {
+  return <div className="space-y-3 rounded-xl border border-gray-100 p-4 dark:border-gray-800"><h4 className="font-bold text-gray-900 dark:text-gray-100">Top 3 poređenje po periodu</h4><StatisticsPeriodFilter month={month} year={year} onMonthChange={onMonthChange} onYearChange={onYearChange} idPrefix="client-insights" />{isFetching && <p role="status" className="text-xs font-medium text-violet-600">Osvežavanje poređenja…</p>}{insights.topThree && <p className="text-sm font-bold text-emerald-600">Klijent je u Top 3 za izabrani period.</p>}<TopClientsTable insights={insights} /></div>;
 }
 
 export function ClientInsightsSection({ insights, month, year, isFetching, onMonthChange, onYearChange }: {
@@ -44,5 +54,5 @@ export function ClientInsightsSection({ insights, month, year, isFetching, onMon
   onMonthChange: (month: number) => void;
   onYearChange: (year: number) => void;
 }) {
-  return <ClientOverviewSection title="Statistika i CRM uvidi" open><div className="space-y-4"><StatisticsPeriodFilter month={month} year={year} onMonthChange={onMonthChange} onYearChange={onYearChange} idPrefix="client-insights" />{isFetching && <p role="status" className="text-xs font-medium text-violet-600">Osvežavanje statistike…</p>}<InsightContent insights={insights} /></div></ClientOverviewSection>;
+  return <ClientOverviewSection title="Statistika i CRM uvidi" open><div className="space-y-4"><InsightContent insights={insights} /><PeriodComparison insights={insights} month={month} year={year} isFetching={isFetching} onMonthChange={onMonthChange} onYearChange={onYearChange} /></div></ClientOverviewSection>;
 }

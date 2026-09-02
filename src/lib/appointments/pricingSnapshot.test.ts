@@ -16,6 +16,7 @@ import {
   getAppointmentPotentialValue,
   getAppointmentQuotedValue,
   getAppointmentRealizedValue,
+  presentAppointmentPrice,
 } from "./pricingSnapshot";
 import { estimateServicePrice } from "@/helpers/servicePrice";
 import type { IService, IAppointmentPricing } from "@/types";
@@ -299,5 +300,39 @@ describe("naplaćeni iznos i prazan snapshot", () => {
     expect(p.mode).toBe("on_request");
     expect(p.minimumTotal).toBeNull();
     expect(applyQuote(p, 2500).quotedTotal).toBe(2500);
+  });
+});
+
+describe("canonical appointment price presentation", () => {
+  const appointment = (pricing: Partial<IAppointmentPricing>, status = "pending") => ({
+    status,
+    services: [],
+    pricing: {
+      mode: "fixed", currency: "RSD", baseAmount: 2000, minimumTotal: 2000,
+      knownAddonsTotal: 0, quotedTotal: null, chargedAmount: null, lines: [],
+      ...pricing,
+    },
+  }) as never;
+
+  it("on_request bez quote-a prikazuje Cena na upit", () => {
+    expect(presentAppointmentPrice(appointment({ mode: "on_request", minimumTotal: null })).label).toBe("Cena na upit");
+  });
+
+  it("from čuva semantiku donje granice", () => {
+    expect(presentAppointmentPrice(appointment({ mode: "from" })).label).toBe("od 2.000,00 RSD");
+  });
+
+  it("on_request sa quote-om prikazuje potvrđenu cenu", () => {
+    expect(presentAppointmentPrice(appointment({ mode: "on_request", minimumTotal: null, quotedTotal: 3500 }))).toMatchObject({
+      label: "3.500,00 RSD",
+      detail: "Potvrđena cena",
+    });
+  });
+
+  it("completed sa chargedAmount prikazuje stvarno naplaćeno", () => {
+    expect(presentAppointmentPrice(appointment({ chargedAmount: 3900 }, "completed"))).toMatchObject({
+      label: "3.900,00 RSD",
+      detail: "Stvarno naplaćeno",
+    });
   });
 });

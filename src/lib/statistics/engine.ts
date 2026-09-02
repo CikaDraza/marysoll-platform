@@ -3,6 +3,7 @@ import {
   getAppointmentRealizedValue,
   type PricedAppointment,
 } from "@/lib/appointments/pricingSnapshot";
+import { blocksSlot } from "@/lib/appointments/occupancy";
 import type { StatisticsResponse } from "@/types/statistics";
 
 export interface StatisticsAppointment extends PricedAppointment {
@@ -59,6 +60,47 @@ export interface ClientPeriodInsights {
   withoutPrice: number;
 }
 
+export interface DatedAppointment extends PricedAppointment {
+  date: string;
+  time: string;
+}
+
+function appointmentDateTimeKey(appointment: Pick<DatedAppointment, "date" | "time">) {
+  return `${appointment.date}T${appointment.time}`;
+}
+
+function currentDateTimeKey(now: Date) {
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+
+export function isFutureActiveAppointment(
+  appointment: DatedAppointment,
+  now = new Date(),
+) {
+  return blocksSlot(appointment.status) &&
+    appointmentDateTimeKey(appointment) >= currentDateTimeKey(now);
+}
+
+export function futureActivePotential(
+  appointments: readonly StatisticsAppointment[],
+  now = new Date(),
+) {
+  return appointments.reduce((sum, appointment) => {
+    if (!isFutureActiveAppointment(appointment, now)) return sum;
+    return sum + (getAppointmentPotentialValue(appointment) ?? 0);
+  }, 0);
+}
+
+export function relationshipRealizedRevenue(
+  appointments: readonly StatisticsAppointment[],
+) {
+  return appointments.reduce(
+    (sum, appointment) => sum + (getAppointmentRealizedValue(appointment) ?? 0),
+    0,
+  );
+}
+
 export function computeClientPeriodInsights(
   appointments: readonly StatisticsAppointment[],
 ): ClientPeriodInsights {
@@ -105,7 +147,22 @@ export function topClientsForPeriod(
       count: 1,
     });
   }
-  return [...clients.values()].sort((a, b) => b.count - a.count).slice(0, limit);
+  return rankTopClients([...clients.values()], limit);
+}
+
+export interface RankedClientPeriod {
+  clientId: string | null;
+  name: string;
+  email: string;
+  count: number;
+}
+
+/** Shared Top-N ordering for raw salon rows and aggregated Client 360 rows. */
+export function rankTopClients(
+  clients: readonly RankedClientPeriod[],
+  limit = 3,
+) {
+  return [...clients].sort((left, right) => right.count - left.count).slice(0, limit);
 }
 
 interface SalonStatisticsInput {
