@@ -8,7 +8,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
-import { Service } from "@/models/Service";
 import { Tenant } from "@/models/Tenant";
 import { SalonProfile } from "@/models/SalonProfile";
 import { requireAdmin } from "@/lib/auth/auth-server";
@@ -25,6 +24,11 @@ import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant";
 import { requireCapability } from "@/lib/platform/capabilities-server";
 import { ACTIVE_APPOINTMENT_STATUS_FILTER } from "@/lib/appointments/occupancy";
+import {
+  resolveCanonicalSelection,
+  selectionFromAppointmentItem,
+} from "@/lib/appointments/canonicalSelection";
+import { BookingError } from "@/lib/booking/errors";
 
 export async function POST(request: NextRequest) {
   const auth = requireAdmin(request);
@@ -60,7 +64,6 @@ export async function POST(request: NextRequest) {
     services,
     date,
     time,
-    duration,
     note,
     preferredContact,
     contactNote,
@@ -79,8 +82,32 @@ export async function POST(request: NextRequest) {
   if (!serviceId) return NextResponse.json({ error: "Nedostaje ID usluge." }, { status: 400 });
   if (!date || !time) return NextResponse.json({ error: "Datum i vreme su obavezni." }, { status: 400 });
 
-  const service = await Service.findById(serviceId);
-  if (!service) return NextResponse.json({ error: "Usluga nije pronađena." }, { status: 404 });
+  // Katalog je autoritet i za salon: trajanje i cena se ne uzimaju iz forme,
+  // a usluga se traži TENANT-SCOPED (`Service.findById` je ovde nalazio i
+  // usluge drugih salona). Bez ovoga admin zakazani termini nisu imali
+  // `pricing` snapshot pa su svi padali u „Termini bez cene".
+  let canonical;
+  try {
+    canonical = await resolveCanonicalSelection({
+      tenantId,
+      serviceId: String(serviceId),
+      selection: selectionFromAppointmentItem(
+        (services as IAppointmentService[] | undefined)?.[0],
+      ),
+      displayName: serviceName,
+    });
+  } catch (err) {
+    return NextResponse.json(
+      {
+        error:
+          err instanceof BookingError
+            ? err.message
+            : "Izbor usluge nije validan.",
+      },
+      { status: 400 },
+    );
+  }
+
   const salonProfile = await SalonProfile.findOne({ tenantId })
     .select("cancellationWindowHours")
     .lean<{ cancellationWindowHours?: number }>();
@@ -111,7 +138,7 @@ export async function POST(request: NextRequest) {
     tiktok,
   });
 
-  const resolvedServiceName = serviceName || service.name;
+  const resolvedServiceName = canonical.serviceName;
 
   const appointment = new Appointment({
     tenantId,
@@ -127,14 +154,12 @@ export async function POST(request: NextRequest) {
     cancellationWindowHours,
     cancellationStatus: "can_cancel",
     serviceName: resolvedServiceName,
-    services: (services as IAppointmentService[]).map((s) => ({
-      ...s,
-      serviceName: s.serviceName,
-      duration: s.duration,
-    })),
+    services: [canonical.item],
+    pricing: canonical.pricing,
     date,
     time,
-    duration: duration || service.duration || 60,
+    // `duration` iz forme se namerno ignoriše — trajanje određuje katalog.
+    duration: canonical.durationMinutes,
     note: note || undefined,
     status: "pending",
     messages: [],

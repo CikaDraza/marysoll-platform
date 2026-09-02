@@ -12,10 +12,20 @@ import { resolveTenant, verifyToken } from "@/lib/auth/auth-server";
 import { actorScopeFrom, logSuperAdminAccess } from "@/lib/auth/tenantScope";
 import { createAppointmentNotification } from "@/lib/notificationService";
 import { loyaltyOnAppointmentStatusChange } from "@/lib/loyalty/hooks";
-import { IAppointment } from "@/types";
-import { Notification } from "@/models/Notification";
+import { IAppointment, IAppointmentService } from "@/types";
 import { Types } from "mongoose";
 import { requireCapability } from "@/lib/platform/capabilities-server";
+import {
+  resolveCanonicalSelection,
+  selectionFromAppointmentItem,
+  signatureOfAppointmentItem,
+} from "@/lib/appointments/canonicalSelection";
+import { BookingError } from "@/lib/booking/errors";
+import { ACTIVE_APPOINTMENT_STATUS_FILTER } from "@/lib/appointments/occupancy";
+import {
+  CLEAR_PROPOSAL_UNSET,
+  evaluateProposalDecision,
+} from "@/lib/appointments/proposal";
 
 interface UpdateAppointmentData {
   status?:
@@ -39,6 +49,10 @@ interface UpdateAppointmentData {
   cancellationType?: "legitimate" | "late";
   noShowMarkedAt?: Date;
   noShowReason?: "late_cancel" | "missed_appointment" | "admin_marked";
+  /** Canonical stavke — SERVER ih prepisuje iz kataloga, browser ih ne bira. */
+  services?: IAppointmentService[];
+  serviceName?: string;
+  duration?: number;
 }
 
 export async function PUT(
@@ -184,86 +198,158 @@ export async function PUT(
       updatedData.noShowReason = "admin_marked";
     }
 
-    // Ako admin predlaže novi termin
+    // ── Izmena izbora usluge ─────────────────────────────────────────────
+    // Ruta je do sada `services`, `duration` i `price` upisivala tačno onako
+    // kako ih je poslao browser — AdminEditModal je sam računao cenu i
+    // trajanje. Sada ide kroz istu kapiju kao zakazivanje: usluga se učitava
+    // TENANT-SCOPED, a trajanje i cena dolaze iz kataloga.
+    const incomingItem = updatedData.services?.[0];
+    if (incomingItem?.serviceId) {
+      let canonical;
+      try {
+        canonical = await resolveCanonicalSelection({
+          tenantId: String(appointment.tenantId),
+          serviceId: String(incomingItem.serviceId),
+          selection: selectionFromAppointmentItem(incomingItem),
+          displayName: updatedData.serviceName,
+        });
+      } catch (err) {
+        return NextResponse.json(
+          {
+            error:
+              err instanceof BookingError
+                ? err.message
+                : "Izbor usluge nije validan.",
+          },
+          { status: 400 },
+        );
+      }
+
+      // Cena prati IZBOR: promena termina u kalendaru ne sme da obriše cenu
+      // koju je salon već potvrdio, promena usluge mora.
+      const selectionChanged =
+        signatureOfAppointmentItem(appointment.services?.[0]) !==
+        canonical.signature;
+
+      updatedData.services = [canonical.item];
+      updatedData.serviceName = canonical.serviceName;
+      updatedData.duration = canonical.durationMinutes;
+      if (
+        (selectionChanged || !appointment.pricing) &&
+        updatedData.pricing == null
+      ) {
+        updatedData.pricing = canonical.pricing;
+      }
+    }
+
+    // ── Zauzeće pri admin izmeni ─────────────────────────────────────────
+    // Admin sme SVESNO da preklopi termine (odluka 2026-07-04, ista sloboda
+    // kao pri zakazivanju), ali ne sme da NESVESNO prepiše tuđi: izmena na
+    // tačno isti datum i vreme drugog aktivnog termina se odbija — do sada
+    // ova ruta nije imala nijednu proveru.
+    const movingTo = {
+      date: updatedData.date ?? appointment.date,
+      time: updatedData.time ?? appointment.time,
+    };
+    const movesInCalendar =
+      movingTo.date !== appointment.date || movingTo.time !== appointment.time;
+    if (isAdmin && movesInCalendar) {
+      const taken = await Appointment.findOne({
+        _id: { $ne: appointment._id },
+        tenantId: appointment.tenantId,
+        date: movingTo.date,
+        time: movingTo.time,
+        status: ACTIVE_APPOINTMENT_STATUS_FILTER,
+      })
+        .select("_id")
+        .lean();
+      if (taken) {
+        return NextResponse.json(
+          { error: "U tom terminu već postoji zakazan termin." },
+          { status: 409 },
+        );
+      }
+    }
+
+    // ── Predlog novog termina ────────────────────────────────────────────
+    // Predlog NE rezervišе slot: `date`/`time` ostaju stari sve dok
+    // klijentkinja ne prihvati. Zato se ovde ništa ne proverava — provera je
+    // u trenutku prihvatanja, kada se zna da li je slot još slobodan.
+    let clearProposal = false;
     if (updatedData.proposedDate && updatedData.proposedTime && isAdmin) {
       updatedData.status = "appointment_rescheduled";
-
-      // Kreiraj notifikaciju za predlog novog termina
-      await Notification.create({
-        recipientProfileId: appointment.clientProfileId,
-        tenantId: appointment.tenantId,
-        appointmentId: appointment._id,
-        type: "appointment_rescheduled",
-        title: "Novi termin predložen",
-        message: `Salon je predložio novi termin za ${appointment.serviceName}.`,
-        metadata: {
-          oldDate: appointment.date,
-          oldTime: appointment.time,
-          newDate: updatedData.proposedDate,
-          newTime: updatedData.proposedTime,
-          serviceName: appointment.serviceName,
-        },
-        isRead: false,
-      });
     }
 
-    // Ako se prihvata predlog (od strane klijenta)
-    if (
-      updatedData.status === "appointment_approved" &&
-      appointment.proposedDate
-    ) {
-      // Postavi stvarni termin na predloženi
-      updatedData.date = appointment.proposedDate;
-      updatedData.time = appointment.proposedTime;
-      updatedData.proposedDate = undefined;
-      updatedData.proposedTime = undefined;
+    // ── Odluka o predlogu ────────────────────────────────────────────────
+    // Prihvatanje je JEDINI trenutak u kojem predlog postaje zauzeće, pa je
+    // ovo i jedino mesto gde se proverava dostupnost. Ranije je prihvatanje
+    // slepo prepisivalo `date`/`time` — dva termina su mogla da završe u
+    // istom slotu ako je slot popunjen između predloga i odgovora.
+    const decidesProposal =
+      Boolean(appointment.proposedDate && appointment.proposedTime) &&
+      (updatedData.status === "appointment_approved" ||
+        updatedData.status === "pending");
 
-      // Notifikacija za admina da je klijent prihvatio termin
-      await Notification.create({
-        recipientProfileId: appointment.clientProfileId,
-        tenantId: appointment.tenantId,
-        appointmentId: appointment._id,
-        type: "appointment_approved",
-        title: "Termin prihvaćen",
-        message: `Klijent je prihvatio predloženi termin za ${appointment.serviceName}.`,
-        metadata: {
-          date: updatedData.date,
-          time: updatedData.time,
-          serviceName: appointment.serviceName,
-          clientName: appointment.clientName,
-        },
-        isRead: false,
-      });
+    // Klijentkinja sme da menja status SAMO kao odgovor na predlog salona.
+    // Bez ovoga je `{"status":"appointment_approved"}` nad sopstvenim terminom
+    // bio samo-odobravanje: zakazan termin bi zaobišao potvrdu salona.
+    if (!isAdmin && updatedData.status && !decidesProposal) {
+      return NextResponse.json(
+        { error: "Status termina menja salon." },
+        { status: 403 },
+      );
     }
 
-    // Ako se odbija predlog
-    if (updatedData.status === "pending" && appointment.proposedDate) {
-      updatedData.proposedDate = undefined;
-      updatedData.proposedTime = undefined;
+    if (decidesProposal) {
+      const decision =
+        updatedData.status === "appointment_approved" ? "accept" : "reject";
+      const outcome = await evaluateProposalDecision(appointment, decision);
 
-      await Notification.create({
-        recipientProfileId: appointment.clientProfileId,
-        tenantId: appointment.tenantId,
-        appointmentId: appointment._id,
-        type: "appointment_rejected",
-        title: "Predlog odbijen",
-        message: `Klijent je odbio predloženi termin za ${appointment.serviceName}.`,
-        metadata: {
-          serviceName: appointment.serviceName,
-          clientName: appointment.clientName,
-        },
-        isRead: false,
-      });
+      if (!outcome.ok) {
+        return NextResponse.json(
+          { error: outcome.error },
+          { status: outcome.kind === "conflict" ? 409 : 400 },
+        );
+      }
+
+      clearProposal = true;
+      if (outcome.kind === "accepted") {
+        updatedData.date = outcome.date;
+        updatedData.time = outcome.time;
+      }
+
+      // Odluku javljamo SALONU — on je poslao predlog i on čeka odgovor.
+      // Ovde je ranije stajalo `recipientProfileId: clientProfileId`: poruka
+      // „Klijent je prihvatio termin" stizala je samoj klijentkinji, a salon
+      // nije saznao ništa.
+      await notifyProposalDecision(
+        appointment,
+        outcome.kind === "accepted"
+          ? { decision: "approved", date: outcome.date, time: outcome.time }
+          : { decision: "rejected" },
+      );
     }
 
     const updated = await Appointment.findOneAndUpdate(
       { _id: id, ...scope.filter },
-      updatedData,
+      {
+        ...updatedData,
+        // `{ proposedDate: undefined }` Mongoose izbacuje iz update-a, pa je
+        // predlog preživljavao odluku i klijentkinja je i dalje gledala
+        // „Prihvati / Odbij". Brisanje mora biti eksplicitan `$unset`.
+        ...(clearProposal ? { $unset: CLEAR_PROPOSAL_UNSET } : {}),
+      },
       { new: true },
     );
 
-    // Notifikacija za promenu statusa
-    if (updatedData.status && updatedData.status !== appointment.status) {
+    // Notifikacija za promenu statusa. Odluka o predlogu je već poslala svoju
+    // (i to SALONU) — bez ovog izuzetka bi klijentkinja povrh sopstvene akcije
+    // dobila još i „Vaš termin je odobren".
+    if (
+      !decidesProposal &&
+      updatedData.status &&
+      updatedData.status !== appointment.status
+    ) {
       // Tenant se uzima IZ TERMINA: host-resolved tenant je null na admin
       // hostu (nema `x-tenant-slug`), pa je notifikacija nastajala bez tenanta.
       // `updated` je ono što je stvarno u bazi — mejl ne sme da tvrdi cenu
@@ -291,6 +377,52 @@ export async function PUT(
       { error: "Greška pri ažuriranju termina" },
       { status: 500 },
     );
+  }
+}
+
+/**
+ * Odluka klijentkinje o predlogu → notifikacija SALONU (zvonce + push + mejl).
+ *
+ * Ide kroz `createAppointmentNotification` sa `sender: "client"`, jer je to
+ * jedina putanja koja zna da adresira sve admine salona. Ručni
+ * `Notification.create` koji je ovde stajao pisao je samo red u bazi, i to
+ * pogrešnom primaocu.
+ */
+async function notifyProposalDecision(
+  appointment: IAppointment,
+  outcome:
+    | { decision: "approved"; date: string; time: string }
+    | { decision: "rejected" },
+) {
+  try {
+    await createAppointmentNotification(
+      {
+        _id: appointment._id?.toString() || "",
+        tenantId: appointment.tenantId!,
+        clientProfileId: appointment.clientProfileId?.toString() || "",
+        clientName: appointment.clientName || "Klijent",
+        clientEmail: appointment.clientEmail,
+        serviceName: appointment.serviceName,
+        // Kod prihvatanja termin je NOVI — salon mora videti dogovoreno vreme.
+        date: outcome.decision === "approved" ? outcome.date : appointment.date,
+        time: outcome.decision === "approved" ? outcome.time : appointment.time,
+        note: appointment.note,
+      },
+      // Oba ishoda idu kao "rescheduled": odbijen predlog NIJE otkazan termin
+      // — termin ostaje na starom vremenu i klijentkinja i dalje dolazi.
+      "rescheduled",
+      {
+        sender: "client",
+        proposalDecision:
+          outcome.decision === "approved" ? "accepted" : "declined",
+        message:
+          outcome.decision === "approved"
+            ? "Klijent je prihvatio predloženi termin."
+            : "Klijent je odbio predloženi termin. Termin ostaje na starom vremenu.",
+      },
+    );
+  } catch (error) {
+    console.error("❌ Error notifying proposal decision:", error);
   }
 }
 
