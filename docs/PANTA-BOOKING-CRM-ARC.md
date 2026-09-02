@@ -140,6 +140,9 @@ Bez registrovanog widgeta CTA ostaje običan link na `/termini`.
   Predlog NE zauzima slot; provera dostupnosti se radi u trenutku prihvatanja.
 - **Marijino „Izlivanje" ide na `variant` + `from`** kroz tenant-scoped data
   migraciju, bez runtime izuzetka po slug-u.
+- **AI generisanje slika se više ne nudi javno.** Uključuje se tek ako salon
+  zatraži, i to kroz plan — endpoint je već gated, pa povratak ne traži izmenu
+  koda. Vidi [PANTA-AI-IMAGE-GENERATION.md](PANTA-AI-IMAGE-GENERATION.md).
 
 **Zatečeno stanje je proverom ispravljeno:** „Izlivanje nokta" (marysoll) je
 VEĆ `type: variant`, `priceMode: from`, `basePrice: 2000`, `duration: 120`.
@@ -164,7 +167,7 @@ samo mrtav `services[]` niz iz vremena kad je bila paket; njega uklanja
 | 2 | `/api/statistics` bez tokena vraćao statistiku SVIH salona — `if (tenantId)` je preskakao i plan gate i tenant filter. | ✅ |
 | 3 | Pita tooltip prikazivao nepoznatu cenu kao 0 RSD. | ✅ |
 | 4 | Theme-1 prikazivao sadržaj drugog tenanta kao svoj — Hero, About, Gallery, FAQ, SocialProof. | ✅ |
-| 5 | `/api/generate-image` bez auth/tenant/plan gate-a, renderovan na JAVNOJ strani, troši OpenAI. | ✅ |
+| 5 | `/api/generate-image` bez auth/tenant/plan gate-a, renderovan na JAVNOJ strani, troši OpenAI — i za salone čiji plan ima `aiImageGeneration: false`. | ✅ + [odluka](PANTA-AI-IMAGE-GENERATION.md) |
 | 6 | Feature Block capability | ⛔ vraćeno — vidi §10.4 |
 | 7 | Footer CTA vodio na `/panel?tab=Zakazivanja`. Blog u navigaciji. | ✅ CTA · ⛔ Blog (§10.4) |
 | 8 | Marijino „Izlivanje" | ✅ već ispravno; ostao mrtav niz |

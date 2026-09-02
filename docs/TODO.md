@@ -86,9 +86,12 @@
 
 | B-T1-0 | ★ Stop-the-line hardening | ✅ kod | Cena nije stizala u bazu; `/api/statistics` i `/api/generate-image` bili otvoreni; Theme-1 prikazivao sadržaj drugog tenanta; tooltip tvrdio 0 RSD. Dve stavke vraćene kao odluka, ne popravka. | [PANTA-BOOKING-CRM-ARC.md §11](PANTA-BOOKING-CRM-ARC.md) |
 
-**Četiri odluke donete 2026-09-02** — grace 30 min ostaje sistemski, vaučer na
+| B-AI | AI generisanje slika | ✅ isključeno · odluka | Više se ne nudi javno; endpoint je admin + plan gated, admin CMS radi dalje. Uključuje se kroz plan ako salon zatraži — bez izmene koda. | [PANTA-AI-IMAGE-GENERATION.md](PANTA-AI-IMAGE-GENERATION.md) |
+
+**Pet odluka doneto 2026-09-02** — grace 30 min ostaje sistemski, vaučer na
 `on_request` čeka quote, admin predlog dobija Prihvati/Odbij, Marijino
-„Izlivanje" na `variant + from`.
+„Izlivanje" na `variant + from`, i AI generisanje slika ostaje isključeno dok
+se ne zatraži.
 **Četiri odluke bez presude** — grace period kao tenant podešavanje,
 razlika kazne `late_cancel` vs `missed_appointment`, `chargedAmount` na
 otkazanom, vaučer na `on_request`, značenje `appointment_rescheduled`,
