@@ -36,21 +36,51 @@ istoriju termina; posebna galerija klijenta nije koncept.
 
 `publicId` se čuva uvek — bez njega nema brisanja, thumbnail-a ni čišćenja.
 
-## 3. Kada se traži — kategorija, ne usluga
+## 3. Kada se traži — odlučuje USLUGA
 
-`requiresIntake` stoji na **kategoriji** (`lib/categoryMap.ts`), ne na usluzi.
-Danas ga ima samo `nails`, i test to izričito tvrdi
-(`expect(withIntake).toEqual(["nails"])`), pa dodavanje ne može proći tiho.
+> **Promenjeno 2026-09-02.** Do tada je odluku nosila platformska kategorija
+> (`CATEGORY_MAP.nails.requiresIntake`). To je značilo da salon ne može ni da
+> uključi zahtev za uslugu izvan noktiju, ni da ga isključi za uslugu noktiju
+> kojoj ne treba — odluku je nosio kod, ne vlasnica salona.
 
-Usluga nosi `categorySlug`, pa sve podkategorije noktiju — izlivanje,
-korekcija, manikir — nasleđuju pravilo bez ijednog podešavanja.
+Canonical ugovor na usluzi:
 
-Zatečeni dokumenti u bazi nemaju to polje; `getCategories` pada na platformski
-podrazumevani iz `CATEGORY_MAP`, pa migracija nije potrebna.
+```ts
+service.bookingIntake = { enabled: boolean }   // default false
+```
 
-**Izvodi se na dva mesta** i oba moraju ostati usklađena: javna `/services`
-ruta i `ClientHomePage`, koji čita iz baze mimo rute. Da je izvedeno samo u
-ruti, početna strana ne bi nudila intake a `/termini` bi.
+Jedini authority je `resolveServiceBookingIntake(service)` u
+`lib/appointments/serviceIntake.ts`. Ni UI ni server flow ne smeju gledati
+`categorySlug`, `CATEGORY_MAP`, temu ni tenant slug.
+
+Poređenje je strogo (`=== true`), pa `"da"` ili `1` iz pokvarenog payloada ne
+uključuju poslovnu funkciju.
+
+### Admin
+
+Jedan checkbox u obrascu usluge — bez `inherit`, bez podešavanja po
+kategoriji, bez biranja polja:
+
+```
+[✓] Traži da klijentkinja pošalje šta želi
+    Pri zakazivanju može da pošalje fotografiju, link ili kratak opis.
+```
+
+Rod obraćanja prati `clientGender` salona.
+
+### Legacy
+
+`CATEGORY_MAP.nails.requiresIntake` je označen `@deprecated` i **više ne
+utiče na booking**. Ostaje samo kao ulaz za jednokratnu migraciju
+`npm run backfill:service-intake`, koja staru implicitnu odluku pretvara u
+eksplicitnu konfiguraciju usluge. Bez te migracije bi prelazak na novi
+authority tiho ugasio zahtev postojećim uslugama noktiju.
+
+### Dva mesta koja izvode činjenicu
+
+Javna `/services` ruta i `ClientHomePage` (čita iz baze mimo rute). Oba zovu
+isti resolver — da je izvedeno samo u ruti, početna strana i `/termini` bi
+pokazivale različit tok za istu uslugu.
 
 ## 4. Booking tok
 
@@ -116,12 +146,21 @@ stranu, osvetli red i **odmah otvara zahtev**.
 opis zahteva" i vodi na termin. Fotografija se ne kači — salon bi posle par
 meseci imao stotine slika po inboxu, a Marysoll prestao da bude izvor istine.
 
-## 7. Nije urađeno
+## 7. Server ne veruje UI-ju
 
-- **Per-service override** (`inherit | enabled | disabled`) i izbor polja
-  (`image` / `referenceUrl` / `note`) po usluzi;
-- **Wizard za kreiranje usluge** (korak 1 usluga → korak 2 zahtevi → „Kreiraj
-  uslugu"), bez pravljenja usluge pre završnog submit-a;
+Zahtev se prihvata SAMO ako usluga to traži. Obe rute za kreiranje termina
+odbijaju payload sa **400** kada je `bookingIntake.enabled` netačan — bez toga
+bi podmetnut zahtev upisao fotografiju i opis na uslugu koja ih ne nudi.
+
+Fail-closed je izabran namerno: tiho odbacivanje bi izgledalo kao da je
+sačuvano.
+
+## 8. Nije urađeno
+
+- **Izbor polja po usluzi** (`image` / `referenceUrl` / `note`) — v1.1 ima samo
+  `enabled`; struktura je objekat da bi to kasnije stalo bez lomljenja ugovora;
+- **Wizard za kreiranje usluge** (korak 1 usluga → korak 2 zahtevi), bez
+  pravljenja usluge pre završnog submit-a;
 - **Intake na svim ulazima za rezervaciju** — danas ga ima samo deljeni
   `BookingModal`. Admin create ga ne nudi i ne prikazuje;
 - **Izmena `request`-a iz admina** — salon ga vidi, ali ne može da dopuni.

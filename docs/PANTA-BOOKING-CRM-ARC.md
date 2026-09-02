@@ -172,7 +172,47 @@ samo mrtav `services[]` niz iz vremena kad je bila paket; njega uklanja
 | 7 | Footer CTA vodio na `/panel?tab=Zakazivanja`. Blog u navigaciji. | ✅ CTA · ⛔ Blog (§10.4) |
 | 8 | Marijino „Izlivanje" | ✅ već ispravno; ostao mrtav niz |
 
-## 12. Poznati nestabilan test
+## 12. T1-0.5 — Service-owned Intake (2026-09-02)
+
+Poslovna odluka o zahtevu klijentkinje preseljena je sa **platformske
+kategorije** na **uslugu**:
+
+    pre    CATEGORY_MAP.nails.requiresIntake  → kod odlučuje
+    posle  service.bookingIntake.enabled      → salon odlučuje
+
+Admin dobija JEDAN checkbox u obrascu usluge; bez `inherit`, bez podešavanja
+po kategoriji, bez biranja polja. Vidi
+[PANTA-SERVICE-INTAKE.md §3](PANTA-SERVICE-INTAKE.md).
+
+Server ne veruje UI-ju: obe create rute odbijaju zahtev sa **400** kada usluga
+nije podešena da ga prima.
+
+**Migracija je napisana, NIJE pokrenuta.** `backfill:service-intake` dodiruje
+2 salona (6 usluga), pa čeka potvrdu — vidi §13.
+
+`CATEGORY_MAP.requiresIntake` je `@deprecated` i više nije runtime authority;
+ostaje samo kao ulaz za tu migraciju.
+
+### Theme-1 je privatna
+
+Postojeći canonical seam (`THEME_ACCESS` u `lib/platform/theme-access.ts`) je
+iskorišćen — isti mehanizam koji već drži theme-8 (Anja) i theme-9 (Marina).
+Nije pravljena paralelna arhitektura i nema nijednog `if (tenantSlug === …)` u
+komponentama teme.
+
+Provereno pre izmene: theme-1 koristi **samo** `marysoll-makeup-nails`, pa
+nijedan tenant nije zaključan iz svog profila. Server proverava pristup na
+`salon-profile/create` i `/update`, a picker projektuje istu politiku.
+
+## 13. Čeka potvrdu — migracije koje nisu pokrenute
+
+| skripta | obim | zašto čeka |
+|---|---|---|
+| `backfill:service-intake` | 6 usluga u **2 salona** (kiki-kiss 3, marysoll 3) | dodiruje više tenanta |
+| `cleanup:stale-group-items` | 2 usluge (marysoll, anja) | mrtav niz, nije hitno |
+| `backfill:group-price` | nepoznato | nije pokretan dry-run od uvođenja snapshot-a |
+
+## 14. Poznati nestabilan test
 
 `bookingCore.integration > resolves a concurrent same-idempotency race as commit
 plus replay` pada pod opterećenjem (tipično odmah posle `next build`), nikad
