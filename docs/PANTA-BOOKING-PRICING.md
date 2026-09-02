@@ -139,33 +139,35 @@ ostaje za Slice kad `BookingReservation` postane write authority.
 
 ## 9. Stanje implementacije
 
-**Postoji:**
+**Canonical put radi na svim današnjim beauty ulazima:** klijentsko zakazivanje,
+javni gost, admin zakazivanje, klijentska izmena i admin izmena prolaze kroz
+`resolveBookingRequest` i upisuju server-generisan `Appointment.pricing`
+snapshot. Puna tabela write putanja je u
+[PANTA-BOOKING-CRM-ARC.md §3](PANTA-BOOKING-CRM-ARC.md).
+
+Postoji i:
 
 - unos cene u adminu — `quotedBaseAmount` pri „Odobri", `chargedAmount` pri
   „Došla", oba opciona; snapshot ide u isti atomic upis kao status;
-- mejl razlikuje naplaćeno / potvrđeno / na upit / „od X" i nikad ne
-  predstavlja poznate dodatke kao cenu termina;
-- „Termini bez cene" u Brzom pregledu i „Cena nije definisana" u raspodeli
-  usluga, umesto tihe nule.
+- mejl razlikuje naplaćeno / potvrđeno / na upit / „od X" i nikad ne predstavlja
+  poznate dodatke kao cenu termina;
+- statistika koristi accessore iz §5 i razdvaja potencijalni, završeni i otkazani
+  prihod; „Termini bez cene" se broje odvojeno, a usluga bez ijedne poznate cene
+  prikazuje „Cena nije definisana" umesto tihe nule.
 
 **Nije završeno:**
 
-- puna `potential / quoted / realized` separacija u statistici — ruta koristi
-  accessore, ali kartice još ne razdvajaju te tri činjenice u prikazu;
-- vaučer recompute kad quote postane numerički;
-- admin create/edit, `/api/booking` i marketplace još ne prolaze kroz
-  `resolveBookingRequest`.
+- **vaučer recompute** kad quote postane numerički — polja za unos postoje,
+  ostaje obračun ([§4](#4-vaučer-čeka-osnovicu));
+- **legacy `POST /api/booking` (HMAC) i `POST /api/marketplace/appointments`** ne
+  prolaze kroz `resolveBookingRequest`: uzimaju `duration` iz zahteva i cenu iz
+  `basePrice ?? 0`, pa na njima `on_request + dodatak` i dalje može izgledati kao
+  poznata cena, a njihovi termini nemaju pricing snapshot.
 
-> Pun spisak dugova i otvorenih odluka:
+> Redosled rada: [TODO.md](TODO.md) · pun ugovor luka:
 > [PANTA-BOOKING-CRM-ARC.md](PANTA-BOOKING-CRM-ARC.md)
 
-
-- unos `quotedBaseAmount` i `chargedAmount` u adminu (2C);
-- statistika i mejlovi još ne koriste accessore (2D/2E);
-- admin create/edit, `/api/booking` i marketplace još ne prolaze kroz
-  `resolveBookingRequest` (2C).
-
-## Izmena termina i cena (T1-1, 2026-09-02)
+## 10. Izmena termina i cena
 
 Cena prati **izbor**, ne sat:
 
@@ -180,6 +182,6 @@ koji namerno gleda **ime i količinu**, ne iznos. Da gleda iznos, svako
 poskupljenje u cenovniku bi obrisalo dogovorenu cenu klijentkinji koja je samo
 pomerila termin.
 
-Do T1-1 izmena termina uopšte nije dirala `pricing`: promena usluge je
-ostavljala cenu prethodne. Admin zakazivanje nije pravilo snapshot uopšte, pa
-su svi termini koje salon sam unese padali u „Termini bez cene".
+Invariant iza pravila: izmena mora dirati `pricing`. Dok nije, promena usluge je
+ostavljala cenu prethodne, a admin zakazivanje bez snapshot-a je sve svoje
+termine slalo u „Termini bez cene".

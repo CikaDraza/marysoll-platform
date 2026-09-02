@@ -1,7 +1,9 @@
 # Zahtev za uslugu (intake) — beauty vertikala
 
-> Status: **v1 na staging-u.** Kod: `models/Appointment.ts` (`request`),
-> `lib/categoryMap.ts` (`requiresIntake`), `lib/appointments/intake.ts`,
+> Status: **v1 u kodu**, browser acceptance čeka. Authority je
+> `service.bookingIntake.enabled`, razrešen kroz
+> `lib/appointments/serviceIntake.ts`. Ostali kod: `models/Appointment.ts`
+> (`request`), `lib/appointments/intake.ts` (sanitizacija),
 > `api/public/[tenantSlug]/appointments/intake-upload`.
 >
 > Ovo NIJE Consultation/Questionnaire intake iz
@@ -78,9 +80,11 @@ authority tiho ugasio zahtev postojećim uslugama noktiju.
 
 ### Dva mesta koja izvode činjenicu
 
-Javna `/services` ruta i `ClientHomePage` (čita iz baze mimo rute). Oba zovu
-isti resolver — da je izvedeno samo u ruti, početna strana i `/termini` bi
-pokazivale različit tok za istu uslugu.
+Javna `/services` ruta (kroz deljeni `lib/booking/servicePresentation.ts`) i
+`ClientHomePage`, koja čita iz baze mimo rute. Oba zovu isti resolver — da je
+izvedeno samo u ruti, početna strana i `/termini` bi pokazivale različit tok za
+istu uslugu. Presentation projektuje persistence `bookingIntake.enabled` u
+`intakeEnabled`; sam prikaz nikada nije authority.
 
 ## 4. Booking tok
 
@@ -157,14 +161,14 @@ sačuvano.
 
 ## 8. Nije urađeno
 
-- **Izbor polja po usluzi** (`image` / `referenceUrl` / `note`) — v1.1 ima samo
+- **Izbor polja po usluzi** (`image` / `referenceUrl` / `note`) — v1 ima samo
   `enabled`; struktura je objekat da bi to kasnije stalo bez lomljenja ugovora.
-  Uvodi se tek ako upotreba pokaže potrebu (vidi product princip u
-  [PANTA-BOOKING-CRM-ARC.md §10](PANTA-BOOKING-CRM-ARC.md));
-
-**Wizard za kreiranje usluge se NE pravi.** Konačni v1 UX je jedan checkbox u
-postojećem obrascu usluge.
-- **Intake na svim ulazima za rezervaciju** — danas ga imaju deljeni
-  `BookingModal` (početna i `/termini`) i `ClientCreateModal` (klijentski
-  panel). Admin create ga ne nudi i ne prikazuje;
+  Uvodi se tek ako upotreba pokaže potrebu (product princip u
+  [PANTA-BOOKING-CRM-ARC.md §9](PANTA-BOOKING-CRM-ARC.md)).
+  **Wizard za kreiranje usluge se NE pravi** — konačni v1 UX je jedan checkbox u
+  postojećem obrascu usluge.
+- **Intake na admin ulazu za zakazivanje.** Klijentske površine (početna,
+  `/termini`, klijentski panel i klijentska izmena termina) dele isti
+  `BookingModal → BookingProvider` i sve nude zahtev kad ga usluga traži. Admin
+  create ga i dalje ne nudi i ne prikazuje pri zakazivanju.
 - **Izmena `request`-a iz admina** — salon ga vidi, ali ne može da dopuni.

@@ -1,48 +1,40 @@
 # TODO — gde smo stali
 
-> Tracker za tekući luk rada: **T3 Booking Engine + Consultation domen + theme-9 „Skincare Marina"**.
-> Jedan red po slice-u. Detalji su u dokumentu koji je naveden uz slice — ovde stoji samo status i jedna rečenica.
-> Poslednja izmena: 2026-09-02 · `staging/production-engines` · **Edu Centar v1 pilot** + **Beauty Booking/CRM luk u toku**
+> **Jedini operativni tracker.** Ovde se vidi redosled: šta je u kodu, šta je
+> sledeće i šta je namerno odloženo. Detalji po domenu žive u canonical
+> dokumentima i ne prepisuju se ovde.
 >
-> **Aktuelno stanje:** correctness fixes, Theme-9 **2A, ceo 2B i 2C** i
-> migration/staging tooling nalaze se na `main`-u. Staging Release A + migration
-> rehearsal je završen nad staging DB-om. Content contract cleanup zatvara
-> runtime/CMS/starter granice; nema neutralnog javnog fallback sadržaja.
->
-> **Zašto je T3 preskočen (odluka 2026-08-29):** prioritet je bio da se tvrdnje
-> o radu na backendu odmah vide kao **stvaran, klijentu vidljiv test u
-> frontendu** — prelazak Salon → Edu Centar, izgled i UX. Zato su T3 cutover i
-> Consultation / Questionnaire / Care privremeno preskočeni. **To nisu otkazani
-> poslovi:** `day-lock` nam **jeste neophodan**, kao i Consultation,
-> Questionnaire, Education i Care domen. Day-lock ostaje tvrdi preduslov pre
-> nego što Marina primi ijednu stvarnu rezervaciju.
->
-> ```text
-> 2A            ✅ razvoj
-> 2B            ✅ razvoj
-> 2C            ✅ razvoj
-> Release A     ✅ staging rehearsal
-> content cleanup ✅
-> Edu F0         ✅ staging
-> Edu F1         ✅ staging
-> Edu F2         ✅ staging
-> Edu UI-1A/F3A  🟡 selector + activation code complete · Marina browser acceptance pending
-> Edu UI-2/F4A+F3B ✅ kod · Marina CMS browser test pending
-> Edu UI-2B      ✅ working copy + published snapshot
-> ```
->
-> Dalji Theme-9 završetak, QA i Edu Centar razvoj nastavljaju se samo na aktivnoj
-> staging razvojnoj liniji; produkcijski rollout ostaje zasebna release odluka.
+> Grana: `staging/production-engines` · usklađeno sa kodom **2026-09-03**.
+> Zdravlje grane na dan usklađivanja: `tsc` prolazi, 158 test fajlova /
+> 1867 testova prolazi (19 preskočeno). Brojevi važe za taj datum i nisu obećanje.
 
-## Status
+## Redosled
 
-> Roadmap je usklađen sa novim Edu lukom. Stari Slice 11 je **razložen** u
-> [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md), stari Slice 12 je time
-> **većim delom preuzet**, a stari Slice 13 je **odložen** dok ne vidimo šta
-> Guide i Program stvarno traže u praksi. Booking/Consultation luk **ostaje
-> netaknut**.
+```text
+EDUCATION    🟡  Edu Centar v1 — feature freeze, Marina pilot
+BEAUTY       ✅  T1-0 → T1-3.1 u kodu
+             🟡  Marysoll browser acceptance čeka
+NEXT         →   T1-4 Loyalty Redemption & Appointment Checkout
+DEFERRED     →   T1-5 · T3 cutover · legacy HMAC/marketplace write ·
+                 Consultation / Questionnaire / Care
+```
 
-### Aktivno
+Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran · ⏸ odloženo (posao
+ostaje neophodan)
+
+## NEXT — sledeći rez
+
+| # | Rez | Status | Šta obuhvata | Dokument |
+|---|---|---|---|---|
+| **T1-4** | **Loyalty Redemption & Appointment Checkout** | ⬜ **nije počet** | Trošenje poena kroz konfigurisanu points-shop nagradu → vaučer → primena na termin → `redeemed` na završenoj poseti. Uz to: izbor sopstvenog vaučera pri zakazivanju, pravila stackovanja, admin potvrda, trenutak skidanja balansa i povratak na otkazivanje/nedolazak. | [PANTA-LOYALTY-ENGINE.md §14](PANTA-LOYALTY-ENGINE.md) |
+
+**Šta T1-4 NIJE.** Srca, poeni, ledger, milestone→vaučer, voucher lifecycle
+(`active → reserved → redeemed`), admin korekcija balansa sa obaveznim razlogom i
+celebration animacija posle završene posete **već postoje i rade**. T1-4 dodaje
+samo redemption koju klijentkinja sama bira — vidi
+[PANTA-LOYALTY-ENGINE.md §1](PANTA-LOYALTY-ENGINE.md).
+
+## Education i Theme-9 — u kodu
 
 | # | Slice | Status | Gde smo stali | Dokument |
 |---|---|---|---|---|
@@ -59,69 +51,80 @@
 | EDU F | PDF/DOCX → draft | ✅ kod | DOCX se čita verno, PDF heuristikom; rezultat je uvek draft za pregled, nikada objava. Acceptance nad Marinina četiri prava materijala. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#edu-centar-v1--feature-freeze-2026-08-31) |
 | **Edu Centar v1** | **Feature freeze · Marina pilot** | 🟡 **pilot u toku** | Nove funkcije čekaju signal iz stvarne upotrebe. | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#edu-centar-v1--feature-freeze-2026-08-31) |
 
-### Beauty Booking / CRM luk — aktivno
+## Beauty Booking / CRM — u kodu
 
-> Tracker: [PANTA-BOOKING-CRM-ARC.md](PANTA-BOOKING-CRM-ARC.md) · staging
-> tenant **theme-1 / Marysoll**. Ništa iz ovog luka nije prošlo kroz pregledač.
+> Ugovor luka: [PANTA-BOOKING-CRM-ARC.md](PANTA-BOOKING-CRM-ARC.md) · staging
+> tenant **theme-1 / Marysoll**. Verifikacija je do sada mašinska (typecheck,
+> lint, testovi, build); browser acceptance je zaseban red niže.
 
-| # | Slice | Status | Gde smo stali | Dokument |
+| # | Rez | Status | Šta je zaključano | Dokument |
 |---|---|---|---|---|
-| B-P0 | Semantika cene: `0` ≠ `null` | ✅ kod | Tri režima: `fixed` tačan, `from` minimum, `on_request` bez ukupne cene. Nepoznata osnovna cena truje ceo zbir — „na upit + stiker 700" više nije „od 700 RSD". | [PANTA-BOOKING-PRICING.md](PANTA-BOOKING-PRICING.md) |
-| B-P1 | Opaque `ref` u javnom ugovoru | ✅ kod | Varijante, dodaci i stavke paketa nose `ref` uz `name`; `_id` se ne izlaže. Aditivno. Ovo je bila mehanička prepreka zbog koje se engine nije mogao priključiti. | [PANTA-BOOKING-PRICING.md](PANTA-BOOKING-PRICING.md#6-server-je-autoritet) |
-| B-2A | Server authority | ✅ kod | `resolveBookingRequest` — tenant-scoped Service → canonical selekcija/trajanje/cena → availability. `resolveServiceBookingProduct` prvi put izlazi iz testova. Priključeno na `create` i javnu gost rutu. | [PANTA-BOOKING-PRICING.md](PANTA-BOOKING-PRICING.md#6-server-je-autoritet) |
-| B-2B | `Appointment.pricing` snapshot | ✅ kod | Server-generated. `chargedAmount` je NOVO polje — `finalPrice` je vaučerska aritmetika i ostaje netaknut. Vaučer čeka numeričku osnovicu. Tri analitička accessora; realizacija traži `completed`. | [PANTA-BOOKING-PRICING.md](PANTA-BOOKING-PRICING.md#3-četiri-različite-činjenice) |
-| B-1A/1B | Rok, faze i klijentske akcije | ✅ kod | Rok = početak termina − prozor, u zoni salona (ranije `createdAt + N`). Četiri faze uz fail-safe `unknown`. Promeni/Otkaži na kartici u „Moji termini". Grace 30 min kao sistemsko pravilo. | [PANTA-CANCELLATION-NOSHOW-POLICY.md](PANTA-CANCELLATION-NOSHOW-POLICY.md) |
-| B-OCC | Occupancy | ✅ kod | `no_show` je na sedam mesta i dalje držao vreme — kasno otkazan termin salon nije mogao da proda. Jedno pravilo, dva izvedena oblika. | [T3 §8.1a](PANTA-T3-BOOKING-ENGINE.md) |
-| B-INT | Zahtev za uslugu (intake) v1 | ✅ kod | `Appointment.request`, `requiresIntake` na KATEGORIJI, tenant-scoped Cloudinary upload sa sanitizacijom, badge i detalj u adminu, mejl kao signal. | [PANTA-SERVICE-INTAKE.md](PANTA-SERVICE-INTAKE.md) |
-| B-PRICE-IN | Unos cene i statistika | ✅ kod | Salon unosi cenu pri Odobri i Došla, oba opciona. Mejl više ne predstavlja cenu dodatka kao cenu termina. „Termini bez cene" i „Cena nije definisana" umesto tihe nule. | [PANTA-BOOKING-CRM-ARC.md §4](PANTA-BOOKING-CRM-ARC.md) |
-| B-SEC | ★ Izolacija klijenta | ✅ kod · **staging provera obavezna** | `/api/appointments` je klijentu vraćao PUNE termine celog salona — imena, telefoni, poruke, intake fotografije, cene. Filter sada dolazi iz tokena. | [PANTA-BOOKING-CRM-ARC.md §5](PANTA-BOOKING-CRM-ARC.md) |
-| B-2C-1 | Client reschedule → canonical | ⬜ nije počet | `Service.findById` bez tenant scope-a; trajanje još iz browsera; `late_cancel` se upisuje zbog NEUSPELE izmene. | [PANTA-BOOKING-CRM-ARC.md §7](PANTA-BOOKING-CRM-ARC.md) |
-| B-2C-2 | Proposal lifecycle | ⬜ nije počet | Prihvatanje predloga radi `date = proposedDate` bez provere dostupnosti → tihi double booking. Klijent nema Odobri/Odbij. | [PANTA-BOOKING-CRM-ARC.md §7](PANTA-BOOKING-CRM-ARC.md) |
-| B-2C-3 | ★ Admin create/edit, HMAC, marketplace | ⬜ nije počet | **Admin edit nema nikakvu proveru dostupnosti** — jedini put koji može pregaziti tuđi termin. Cenu računa u React komponenti. | [PANTA-BOOKING-CRM-ARC.md §7](PANTA-BOOKING-CRM-ARC.md) |
-| B-2C-4 | Vaučer recompute | ⬜ nije počet | Polja za unos postoje; ostaje obračun kad quote postane numerički. | [PANTA-BOOKING-PRICING.md §4](PANTA-BOOKING-PRICING.md) |
-| B-DEBT | `extras` se odbacuju pri upisu | ⚠️ nedokazano | `IAppointmentService` ima `variants?`/`extras?`, Mongoose `servicesSchema` nema nijedno. Dokazati integracionim testom pre menjanja modela. | [PANTA-BOOKING-CRM-ARC.md §7](PANTA-BOOKING-CRM-ARC.md) |
-| B-360 / T1-3 | ★ Client 360 CRM dossier | ✅ kod · **Marysoll browser provera obavezna** | Tenant-scoped read model objedinjuje identitet, kontakte, termine sa zahtevom i canonical cenom, Kiki+ devet KPI-ja, loyalty ledger/vaučere i preporuke. Deep-link je `/dashboard?tab=klijenti&clientId=…`; Maria/Claudia nemaju advanced insights. | [PANTA-CLIENT-360.md](PANTA-CLIENT-360.md) |
-| B-INT2 | Intake v2 | ⬜ odloženo | Per-service `inherit\|enabled\|disabled`, wizard, intake na SVIM ulazima za rezervaciju. | [PANTA-SERVICE-INTAKE.md §7](PANTA-SERVICE-INTAKE.md) |
-| B-THEMES | Brisanje theme-3/4/6 | ⬜ odloženo | ~7.300 linija, 66 fajlova; baza potvrđena prazna. Preduslov: `Theme3GalleryMasonry` u `shared/`. | [PANTA-BOOKING-CRM-ARC.md §8](PANTA-BOOKING-CRM-ARC.md) |
+| B-P0 | Semantika cene `0 ≠ null` | ✅ kod | Tri režima: `fixed` tačan, `from` minimum, `on_request` bez ukupne cene. Nepoznata osnovna cena truje ceo zbir — „na upit + stiker 700" nije „od 700 RSD". | [cene](PANTA-BOOKING-PRICING.md) |
+| B-P1 | Opaque `ref` u javnom ugovoru | ✅ kod | Varijante, dodaci i stavke paketa nose `ref` uz `name`; `_id` se ne izlaže. `ref` nije autoritet — proverava se da pripada toj usluzi. | [cene §6](PANTA-BOOKING-PRICING.md) |
+| B-2A/2B | Server authority + pricing snapshot | ✅ kod | `resolveBookingRequest` razrešava selekciju, trajanje i cenu iz kataloga; `Appointment.pricing` je server-generisan snapshot sa `chargedAmount` odvojenim od vaučerske aritmetike. | [cene](PANTA-BOOKING-PRICING.md) |
+| B-1A/1B | Rok, faze i klijentske akcije | ✅ kod | Rok = početak termina − prozor, u zoni salona. Četiri faze uz fail-safe `unknown`. Promeni/Otkaži na kartici. Grace 30 min kao sistemsko pravilo. | [otkazivanje](PANTA-CANCELLATION-NOSHOW-POLICY.md) |
+| B-OCC | Occupancy | ✅ kod | Završen ili nedošao termin ne drži vreme; kasno otkazan slot salon može da proda. Jedno pravilo, dva izvedena oblika. | [T3 §8.1a](PANTA-T3-BOOKING-ENGINE.md) |
+| B-SEC | ★ Izolacija klijenta | ✅ kod · **browser provera** | `/api/appointments` je klijentu vraćao pune termine celog salona. Filter sada dolazi iz tokena; javni feed nosi četiri polja i nikad cenu. | [ARC §5](PANTA-BOOKING-CRM-ARC.md) |
+| B-T1-0 | ★ Stop-the-line hardening | ✅ kod | Unesena cena nije stizala u bazu; `/api/statistics` i `/api/generate-image` bili otvoreni; theme-1 prikazivao sadržaj drugog tenanta; tooltip tvrdio 0 RSD. | [ARC §4](PANTA-BOOKING-CRM-ARC.md) |
+| B-T1-0.5 | ★ Service-owned intake | ✅ kod · ✅ migracija | Odluka o zahtevu preseljena sa platformske kategorije na uslugu; jedan checkbox. Server odbija zahtev na usluzi koja ga ne prima. Backfill pokrenut 2026-09-02 (4 usluge, 2 salona). | [intake](PANTA-SERVICE-INTAKE.md) |
+| B-T1-1 | ★ Canonical booking/edit/reschedule | ✅ kod · **browser provera** | Jedan seam za sve beauty ulaze osim legacy: klijentska i admin izmena, prihvatanje predloga sa proverom dostupnosti, `variants`/`extras` se više ne odbacuju pri upisu, klijent ne može sam sebi da odobri termin. | [ARC §2–4](PANTA-BOOKING-CRM-ARC.md) |
+| B-T1-2 | ★ Jedan booking presentation ugovor | ✅ kod · **browser provera** | Sajt, `/termini`, klijentsko zakazivanje i klijentska izmena dele `BookingModal → BookingProvider` nad `servicePresentation` / `widgetPresentation` DTO-om. Stari `ClientCreateModal` je obrisan. | [ARC §2.2](PANTA-BOOKING-CRM-ARC.md) |
+| B-T1-3 | ★ Client 360 CRM dosije | ✅ kod · **browser provera** | Tenant-scoped read model: identitet, termini sa zahtevom i canonical cenom, devet KPI činjenica, loyalty ledger/vaučeri, preporuke. Deep-link `/dashboard?tab=klijenti&clientId=…`. | [Client 360](PANTA-CLIENT-360.md) |
+| B-T1-3.1 | ★ Statistics/CRM hardening | ✅ kod | Statistika izdvojena u `lib/statistics/engine.ts` i deljena sa Client 360; prikaz razdvaja potencijalni, završeni i otkazani prihod uz zaseban broj termina bez cene. Loyalty admin hook razložen na četiri hook-a. | [ARC §6](PANTA-BOOKING-CRM-ARC.md) |
+| B-THEME1 | Theme-1 privatna za Marysoll | ✅ kod | Kroz postojeći `THEME_ACCESS` seam, isti kao za theme-8 (Anja) i theme-9 (Marina). Bez `if (tenantSlug)` u komponentama. | [ARC §9](PANTA-BOOKING-CRM-ARC.md) |
+| B-AI | AI generisanje slika | ✅ isključeno · odluka | Ne nudi se javno; endpoint je admin + plan gated. Uključuje se kroz plan ako salon zatraži, bez izmene koda. | [AI slike](PANTA-AI-IMAGE-GENERATION.md) |
 
-| B-T1-0 | ★ Stop-the-line hardening | ✅ kod | Cena nije stizala u bazu; `/api/statistics` i `/api/generate-image` bili otvoreni; Theme-1 prikazivao sadržaj drugog tenanta; tooltip tvrdio 0 RSD. Dve stavke vraćene kao odluka, ne popravka. | [PANTA-BOOKING-CRM-ARC.md §11](PANTA-BOOKING-CRM-ARC.md) |
+### Browser acceptance koji čeka
 
-| B-T1-0.5 | ★ Service-owned Intake | ✅ kod · ✅ migracija | Odluka o zahtevu preseljena sa platformske kategorije na uslugu; jedan checkbox u obrascu. Server odbija zahtev na usluzi koja ga ne prima. `CATEGORY_MAP.requiresIntake` više nije authority. Backfill pokrenut 2026-09-02 (4 usluge, 2 salona); verifikacioni dry-run = 0. | [PANTA-SERVICE-INTAKE.md](PANTA-SERVICE-INTAKE.md) |
-| B-T1-1 | ★ Canonical booking/edit/reschedule lifecycle | ✅ kod · **staging provera obavezna** | Izbor usluge se do sada tiho odbacivao pri upisu (dokazano testom). Klijentska izmena je tražila uslugu bez tenant scope-a i verovala `duration` iz browsera; admin izmena nije imala nijednu proveru zauzeća; prihvatanje predloga nije proveravalo dostupnost, a predlog se nikad nije brisao; klijent je mogao sam sebi da odobri termin. | [PANTA-BOOKING-CRM-ARC.md §14](PANTA-BOOKING-CRM-ARC.md) |
-| B-T1-2 | ★ One BookingWidget / one presentation contract | ✅ kod · **Marysoll browser provera obavezna** | Sajt, `/termini`, client create i client edit koriste isti `BookingModal → BookingProvider`; jedan mapper projektuje `bookingIntake.enabled` u `intakeEnabled`. Stari `ClientCreateModal` je obrisan. | [PANTA-SERVICE-INTAKE.md](PANTA-SERVICE-INTAKE.md) |
-| B-THEME1 | Theme-1 privatna za Marysoll | ✅ kod | Kroz postojeći `THEME_ACCESS` seam, isti kao za theme-8/9. Bez `if (tenantSlug)` u komponentama. Provereno da nijedan drugi tenant nije na theme-1. | [PANTA-BOOKING-CRM-ARC.md §12](PANTA-BOOKING-CRM-ARC.md) |
-| B-AI | AI generisanje slika | ✅ isključeno · odluka | Više se ne nudi javno; endpoint je admin + plan gated, admin CMS radi dalje. Uključuje se kroz plan ako salon zatraži — bez izmene koda. | [PANTA-AI-IMAGE-GENERATION.md](PANTA-AI-IMAGE-GENERATION.md) |
+| Šta | Nad čim |
+|---|---|
+| 🟡 Client 360 — osnovni dosije, statistički gate (Maria bez / Claudia sa), Loyalty prisustvo i odsustvo, link ka preporukama | Marysoll Makeup & Nails |
+| 🟡 Canonical izmena termina — klijentska i admin, predlog Prihvati/Odbij | Marysoll |
+| 🟡 Jedan booking widget — sajt, `/termini`, panel, izmena | Marysoll |
+| 🟡 Izolacija klijenta — klijent vidi isključivo svoje termine | Marysoll |
 
-**Pet odluka doneto 2026-09-02** — grace 30 min ostaje sistemski, vaučer na
-`on_request` čeka quote, admin predlog dobija Prihvati/Odbij, Marijino
-„Izlivanje" na `variant + from`, i AI generisanje slika ostaje isključeno dok
-se ne zatraži.
-**Product princip:** Marysoll bira dobar default; opcija se uvodi tek kad
-stvarna upotreba pokaže da saloni imaju različite potrebe, a događaji se beleže
-dovoljno precizno da politika može kasnije da se promeni bez gubitka istorije.
+### Otvoreno u ovom luku — nije odloženo, samo nije urađeno
 
-**Odlučeno 2026-09-02** — blog ostaje u navigaciji; `late_cancel` i pravi
-nedolazak imaju istu posledicu uz sačuvan razlog. Ostaje samo **odložena
-arhitektura i semantika** — grace period kao tenant podešavanje,
-razlika kazne `late_cancel` vs `missed_appointment`, `chargedAmount` na
-otkazanom, vaučer na `on_request`, značenje `appointment_rescheduled`,
-konvergencija quote snapshot-a i Marijina konfiguracija „Izlivanja":
-[PANTA-BOOKING-CRM-ARC.md §9](PANTA-BOOKING-CRM-ARC.md).
+| # | Šta | Zašto je važno | Dokument |
+|---|---|---|---|
+| B-LEGACY-1 | **`POST /api/booking` (HMAC gost) kroz canonical seam** | Jedini preostali write ulaz bez ijedne canonical provere: `duration` iz zahteva, cena `basePrice ?? 0`, bez pricing snapshot-a. | [ARC §3](PANTA-BOOKING-CRM-ARC.md) |
+| B-LEGACY-2 | **`POST /api/marketplace/appointments` kroz canonical seam** | Isti problem, druga površina; `Number(data.duration)` i termin bez snapshot-a. Vodi se odvojeno od HMAC rute jer je stepen migracije različit. | [ARC §3](PANTA-BOOKING-CRM-ARC.md) |
+| B-VOUCHER | Vaučer recompute kad quote postane numerički | Polja za unos postoje; ostaje obračun popusta nad potvrđenom osnovicom. | [cene §4](PANTA-BOOKING-PRICING.md) |
+| B-360-1 | `testimonials` capability gate u Client 360 | Sekcija se prikazuje i salonu koji nema tu funkciju. Podaci su tenant-scoped, pa nije bezbednosni problem. | [Client 360 §G](PANTA-CLIENT-360.md) |
+| B-360-2 | Uklanjanje mrtvog `clientInsights` flag-a | Polje postoji u `PLAN_FEATURES`, `FeatureGate` i `FeaturesList`, ali ga nijedan runtime gate ne koristi — uključivanje ne radi ništa. Canonical gate je `statistics`. | [Client 360 §B](PANTA-CLIENT-360.md) |
+| B-INT-1 | Intake na admin ulazu za zakazivanje | Admin create ga ne nudi i ne prikazuje. | [intake §8](PANTA-SERVICE-INTAKE.md) |
+| B-MIG-1 | Pokrenuti `cleanup:stale-group-items` | 2 usluge (marysoll, anja) nose mrtav `services[]` niz. Skripta je idempotentna i napisana. | [ARC §11](PANTA-BOOKING-CRM-ARC.md) |
+| B-TEST-1 | Nestabilan `bookingCore.integration` race test | Pada pod opterećenjem, nikad izolovano. Produkcijska logika nije menjana zbog njega. | [ARC §12](PANTA-BOOKING-CRM-ARC.md) |
 
-### Booking / Consultation — zadržano
+## DEFERRED / LATER — ima odluku, nema termin
+
+Ovo se **ne** premešta u NEXT bez nove product odluke.
+
+| # | Šta | Zašto čeka |
+|---|---|---|
+| **T1-5** | Salonski paketi / entitlement / plaćanje klijentkinje (`ClientPackage`) | Nije tenant Subscription i ne uvodi se payment provider dok ne postoji stvarna potreba. `Service.subscription` opisuje ponudu, ne kupovinu. [Client 360 §K](PANTA-CLIENT-360.md) |
+| **T3 cutover** | `BookingReservation` / day-lock kao production write authority | Preduslov je occupancy blocker iz [T3 §4.1](PANTA-T3-BOOKING-ENGINE.md); dark core nije live authority pa ne blokira beauty rezove |
+| Restriction Engine | Automatska posledica za `noShows` / `late_cancel` | Danas se čuvaju samo činjenice; nema automatskog blacklist-a i neće ga biti dok saloni ne pokažu potrebu |
+| Reschedule mejl sa starim i novim terminom | Notifikacija radi, nedostaje stari snapshot u telu | Ne uvode se nova `previousDate/Time` polja zbog kozmetike |
+| Intake v1.1 — izbor polja po usluzi | v1 ima samo `enabled` | Uvodi se tek ako upotreba pokaže potrebu; wizard se ne pravi |
+| Brisanje theme-3/4/6 | ~7.300 linija, 66 fajlova; baza potvrđena prazna | Preduslov: `Theme3GalleryMasonry` mora u `shared/` jer ga theme-1 i theme-2 uvoze |
+| `chargedAmount` na otkazanom, naknada, refund | Nema payment/refund lifecycle-a | Bez engine-a nema smisla projektovati hipotetičku finansijsku politiku |
+| Loyalty Phase 3 (tiers, rođendan, AI nagrade) | Referral live QA i redemption idu pre toga | [Loyalty](PANTA-LOYALTY-ENGINE.md) |
+
+## Booking / Consultation — odloženo, ali neophodno
 
 Novi Edu luk **ništa od ovoga ne zamenjuje** i izričito ne dira Booking Engine.
 
 | # | Slice | Status | Gde smo stali | Dokument |
 |---|---|---|---|---|
 | 4 | Booking UI apstrakcija | 🟡 prikaz gotov | `useBookingFlow` + theme-9 dijalog, **offering-first**: ponuda → datum i vreme → upitnik → pregled → potvrda (redosled nije kozmetika — vidi ugovor `initialOfferingId` niže). Launcher kroz kontekst, terminologija `offering*`, ne `service*`. **Bez ijednog upisa** — slanje samo šalje mejl vlasnici i superadminu, da potvrdi usluge, cene, termine i pitanja. Ostaje: `bookingProductAdapter` i `BookingThemeTokens` za ostale teme. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#33-readavailability-potrošači-nisu-write-authority) + T2 §6.10/6.11 |
-| 6 | ★ Migracija + concurrency gate | ⏸ preskočeno zbog frontend dokaza · **day-lock neophodan** | **Preskočeno, ne otkazano:** prednost je dobio vidljiv frontend test za klijente (Salon → Edu prelaz, izgled i UX) umesto nevidljivog write cutover-a. Kanonska rezervacija, **day-lock**, idempotencija i outbox postoje u `src/lib/booking/` i prolaze ReplSet testove. **Ažurirano 2026-09-01:** `resolveServiceBookingProduct` je izašao iz testova — `/api/appointments/create` i javna gost ruta dobijaju canonical selekciju, trajanje i cenu kroz `resolveBookingRequest`. `BookingReservation`/`reserve()` i dalje niko ne poziva. Day-lock je **neophodan** i ostaje hard gate pre Slice 10. **Završeno:** Slice 5 dark core, 6A transition hardening i empirijski gate-ovi (T3 §21.2.4). **Odloženo:** production `Appointment` write migracija i Booking cutover nastavljaju se posle Marysoll platform/marketplace upgrade-a. Trenutno nema aktivnih Booking korisnika, pa nema poslovnog razloga za promenu production write authority-ja. Nijedna od 12 ruta se ne dira; Slot endpoint-i se ne gase samo radi arhitektonske čistoće. `BookingReservation` ostaje dark-core infrastruktura, ne production authority. Pripremljen obim za nastavak: 8 platformskih ulaza (T3 §21.2.6); empiriju iz §21.2.4 pre nastavka premeriti. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#213-slice-6b6c--planski-odloženo-2026-08-23) |
+| 6 | ★ T3 cutover — migracija + concurrency gate | ⏸ odloženo · **day-lock neophodan** | Dark core (kanonska rezervacija, day-lock, idempotencija, receipt/outbox) postoji i prolazi ReplSet testove; nijedna ruta ga ne poziva. Cutover je odložen jer trenutno nema aktivnih Booking korisnika na novom putu, a prednost je dobio vidljiv frontend dokaz. **Preduslov pre cutover-a:** occupancy blocker — produkcija oslobađa slot na `completed`/`no_show` odmah, dark core ga drži do kraja termina. Day-lock ostaje hard gate pre reda 10. | [T3 §4.1](PANTA-T3-BOOKING-ENGINE.md) |
 | 7 | Consultation domen | ⏸ preskočen · neophodan | `ConsultationOffering` → `ConsultationBooking` → `BookingReservation`. Marinin glavni proizvod; **nije `Service`**. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#142-consultation-i-education-granica) |
 | 8 | Hold | ⬜ nije počet | `BookingHold` kroz istu day-lock transakciju; konkretan TTL ostaje product odluka Slice 8. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#20-bookinghold-i-slot-transition) |
 | 9 | Questionnaire + Intake | ⏸ preskočen · neophodan | Guest-first booking ostaje moguć; generički intake čuva immutable početni snapshot, odvaja stručni Current Assessment od originalnog odgovora i kasnije podržava eksplicitni claim/invite identity handoff. | [PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md#4-product-decision--consultation--skin-care-kutak-lifecycle) |
 | 10 | ★ theme-9 booking end-to-end | ⬜ nije počet | Hero CTA → widget → modal → intake → preview → hold → atomic booking. **Marina sme primati konsultacije tek odavde.** | PANTA-T3-BOOKING-ENGINE.md |
 
-### Education → zaseban dokument
+## Education → zaseban dokument
 
 Stari red „11 Education domen" **više ne postoji kao jedan slice**. Zamenjen je
 kanonskim dokumentom [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md):
@@ -144,7 +147,8 @@ F4B  EducationOffering + EducationInquiry F9   GuidedProgram
 ✅ **F4A + F3B (EDU UI-2) su u kodu:** `EducationContent` je drugi pravi host
 deljenog Content Composer-a; `NewsletterCampaign` se ne koristi kao storage.
 
-**NEXT: Edu Centar v1 je u FEATURE FREEZE-u — Marina pilot.**
+**STANJE: Edu Centar v1 je u FEATURE FREEZE-u — Marina pilot.** (Sledeći
+razvojni rez platforme je T1-4; Edu čeka signal iz pilota.)
 
 Importer je bio poslednji rez pre pilota. Jezgro je dovoljno kompletno da
 sledeći razvoj vodi stvarna upotreba, a ne pretpostavka. Do kraja pilota se
@@ -169,7 +173,7 @@ Obim v1, ono što svesno nedostaje i poznata ograničenja koja treba razlikovati
 od grešaka stoje u
 [Edu Centar v1 — feature freeze](PANTA-EDU-CENTAR-ARC.md#edu-centar-v1--feature-freeze-2026-08-31).
 
-### Završeno
+## Završeno ranije — platformski rezovi
 
 | # | Slice | Status | Gde smo stali | Dokument |
 |---|---|---|---|---|
@@ -178,10 +182,10 @@ od grešaka stoje u
 | 0B | T2B-A capability foundation | ✅ gotovo | Implementirani su optional Tenant persistence ugovor sa očuvanom `undefined` legacy semantikom, registry, pure/server resolver, postojeći plan adapter, `requireCapability()` i eksplicitni beauty provisioning za svaki novi Tenant. | [PANTA-TENANT-VERTICALS-CAPABILITIES.md](PANTA-TENANT-VERTICALS-CAPABILITIES.md#9-implementacioni-status) |
 | 0C | T2B-B triple-gate integration | ✅ gotovo | Implementirani su server capability snapshot, admin/client workspace projekcija, business API gate-ovi, public Feature Block gate i readiness politika; permission i ownership ostaju zasebne granice. | [PANTA-TENANT-VERTICALS-CAPABILITIES.md](PANTA-TENANT-VERTICALS-CAPABILITIES.md#5-jedan-resolver-tri-obavezna-gate-a) |
 | 1 | Workspace IA dokument | ✅ gotovo | Zaključane su BEAUTY, EDUCATION-FIRST i HYBRID admin/client matrice, permission i resource-ownership granice. JSX i capability-aware navigacija su preuzeti Edu lukom (Faza 0 i 6A); ostatak je „Salon workspace migration" u Kasnije. | [PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md) |
-| 3 | `availability-core` | ✅ gotovo | **Urađeno:** `@panta/booking-engine` — `AvailabilityQuery → AvailabilityResult`, čist TS bez React/Next/DB i bez I/O; `[start, end)`, eksplicitna zona, DST, pauze i odmori kao rez intervala, ručni termini pod istim overlap ugovorom, `availabilityClass` + `outsidePreferredHours` kao ULAZ za Slice 5. Domen ostaje u `lib/booking/availabilityAdapter.ts`. Ponovljena provera: **33 paket testa + 48 adapter/widget testa = 81 fokusirani test**; svi prolaze. Migrirane su obe `slots` rute, oba javna widgeta, `BookingProvider`, `ClientCreateModal`, `ClientEditModal`; stare kopije su uklonjene ili zadržane samo kao zamrznuta regresiona referenca. **Van Slice 3:** serverski upis još ne koristi novi core i ne učitava `vacations`, a modalni tok još ne prima `vacations` kroz ceo lanac propova. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#21-coexistence-i-migracija) |
+| 3 | `availability-core` | ✅ gotovo | **Urađeno:** `@panta/booking-engine` — `AvailabilityQuery → AvailabilityResult`, čist TS bez React/Next/DB i bez I/O; `[start, end)`, eksplicitna zona, DST, pauze i odmori kao rez intervala, ručni termini pod istim overlap ugovorom, `availabilityClass` + `outsidePreferredHours` kao ULAZ za Slice 5. Domen ostaje u `lib/booking/availabilityAdapter.ts`. Ponovljena provera: **33 paket testa + 48 adapter/widget testa = 81 fokusirani test**; svi prolaze. Migrirane su obe `slots` rute, oba javna widgeta, `BookingProvider` i tadašnji klijentski modali (`ClientCreateModal`/`ClientEditModal`, koje je T1-2 kasnije zamenio deljenim `BookingModal`-om); stare kopije su uklonjene ili zadržane samo kao zamrznuta regresiona referenca. **Van Slice 3:** serverski upis još ne koristi novi core i ne učitava `vacations`, a modalni tok još ne prima `vacations` kroz ceo lanac propova. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#21-coexistence-i-migracija) |
 | 5 | ★ T3 Booking Engine CORE | ✅ dark core implementiran | Additive `BookingReservation`, `BookingDayLock`, durable receipt/outbox, neutralne lifecycle komande, write-time availability, legacy reader i Service/Appointment transaction adapter postoje; 35 novih fokusiranih testova (21 pravi MongoMemoryReplSet) prolaze. **Nije live authority:** production rute nisu migrirane, deployment transaction smoke ostaje hard release gate, a outbox worker/reconciliation i cutover pripadaju Slice 6. | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md#211-slice-5--dark-core) |
 
-### Kasnije — bez datuma
+## Kasnije — bez datuma
 
 | Šta | Odakle | Zašto čeka |
 |---|---|---|
@@ -192,7 +196,6 @@ od grešaka stoje u
 | **DIAG-SUPPORT-1** — „Pošaljite problem podršci" | posle Marina pilota | Snapshot iz postojećeg Diagnostic Engine-a + kontekst aplikacije → **sačuvan incident**, pa tek onda obaveštenje/mejl/push. Ako slanje zakaže, report ostaje. Privacy granica: metapodaci da, sadržaj korisnika ne |
 | **Read-model cleanup** | dug iz H0 | Write loss je zatvoren; višestruke ručne read projekcije `SalonProfile` ostaju |
 
-Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran · ⏸ preskočeno/odloženo (posao ostaje neophodan)
 
 ## Ispravke zatečenih nalaza
 
@@ -213,9 +216,14 @@ vodio kao „zatečeno“, a koji su u međuvremenu **stvarno zatvoreni u kodu**
   dozvoljeni prečac za Theme-9.
 - **Slice 6 concurrency gate mora proći pre Slice 10.** Marina ne prima stvarne rezervacije pre toga.
   Slice 6B/6C su planski odloženi (vidi red 6), pa je i Slice 10 time odložen.
-- **Nijedan legacy zapis ne sme prestati da blokira u odnosu na zatečeno ponašanje.**
-  Legacy `no_show` nastaje i pri kasnom otkazu, dakle pre kraja termina — zato je
-  `blocking_until_end`, ne `released`. Vidi T3 §21.2.1.
+- **⚠️ Dve occupancy semantike koje se moraju spojiti pre T3 cutover-a.**
+  Produkcija (`lib/appointments/occupancy.ts`) oslobađa slot na `completed` i
+  `no_show` **odmah** — to je namerno, jer kasno otkazan termin salon mora moći da
+  proda. Dark core (`lib/booking/occupancyStatus.ts`) za legacy zapise koristi
+  `blocking_until_end`, jer legacy `no_show` nastaje već pri kasnom otkazu. Danas
+  se ne sudaraju samo zato što produkcijski upiti unapred filtriraju statuse.
+  **Ne blokira T1-4** (dark core nije live authority), ali jeste hard preduslov
+  cutover-a — [T3 §4.1](PANTA-T3-BOOKING-ENGINE.md).
 - **Nijedna API ruta ne sme kreirati ni menjati occupancy mimo Booking Engine-a.**
 - **Salon nikada ne postoji bez vlasnika, ni vlasnički nalog bez salona.**
   Jedina destruktivna owner akcija je „Trajno obriši salon", koja briše ceo
@@ -265,9 +273,10 @@ vodio kao „zatečeno“, a koji su u međuvremenu **stvarno zatvoreni u kodu**
   message rute koriste `actorScopeFrom()` i tenant/client ownership filter;
   capability i Booking write authority ostaju zasebni otvoreni poslovi.
 
-## Hitno: admin save ne sme da izgubi theme-9 sadržaj
+## H0 — lossless admin save (zatvoreno)
 
-✅ **Zatvoreno u H0.** `useSalonProfileAdmin` koristi deljeni lossless write
+✅ **Zatvoreno.** Zadržano jer objašnjava invariant koji čuvaju regresioni
+testovi, ne kao dnevnik. `useSalonProfileAdmin` koristi deljeni lossless write
 mapper koji normalizuje samo polja koja editor poseduje i prenosi ostatak
 dokumenta. API više ne zamenjuje sadržaj slepo: nepotpun stariji payload spaja
 sa postojećim sadržajem po imenovanim sekcijama, bez vraćanja namerno poslatih
@@ -583,31 +592,25 @@ nagradi. T3 je prilika da to preraste u čist ugovor
 > poena ili surcharge direktno u Booking Engine.
 
 
-## Zatečeni dugovi koje ovaj luk zatvara
+## Zatečeni dugovi — otvoreni
+
+Zatvoreni dugovi iz T2/T3 rada (kopije kalendarske logike, `getWorkingRange`,
+overlap samo po početku, `vacations`, theme whitelist, engleski ključevi dana,
+`ThemeShellProps`, theme-9 schema/CMS polja, H0 lossless save, scope po golom
+`_id`-ju) **više se ne vode ovde** — žive kao invarianti u svojim ugovorima i
+kao regresioni testovi.
 
 | Dug | Gde | Zatvara ga |
 |---|---|---|
-| TOCTOU trka pri zakazivanju (nema jedinstvenog occupancy autoriteta, transakcije ni booking idempotencije) | pet create putanja postoje, ali puni inventory ima 12 Appointment occupancy/lifecycle + 4 Slot write ulaza | Slice 5–6; [potpun inventory](PANTA-T3-BOOKING-ENGINE.md#3-potpun-inventar-write-putanja) |
-| Reschedule nije centralizovan: opšti update menja datum/vreme bez availability provere, a i dva bolja toka rade odvojeni check + save | `api/appointments/update/[id]` + dva `clientFlows` ulaza | Slice 6; [atomic contract](PANTA-T3-BOOKING-ENGINE.md#13-atomic-reschedule-cancel-i-lifecycle) |
-| Legacy marketplace `Slot.reserve` jeste atomski petominutni reserve, ali nema vlasnički token, nije vezan za `Appointment` i ne štiti ostale tokove | `models/Slot.ts`, `api/marketplace/slots/{reserve,book}` | Slice 5/8 — integrisati kao izvedeni prikaz ili ukloniti kao drugi izvor istine |
-| ~~Kopije kalendarske logike (bilo ih je PET, ne četiri)~~ ✅ | sve svedeno na `@panta/booking-engine` + `lib/booking/availabilityAdapter.ts` | Slice 3 |
-| ~~`getWorkingRange()` briše pauzu — widget i modal se ne slažu~~ ✅ | obrisan zajedno sa `helpers/widgetAvailability.ts` | Slice 3 — rez intervala umesto min/max |
-| ~~Widget proverava zauzetost samo nad POČETKOM kandidata — 60-min termin u 11:30 prolazi pored zauzetog u 12:00~~ ✅ | isto | Slice 3 |
-| ~~`salon.vacations` se ne gleda pri dostupnosti — može se zakazati usred odmora~~ ✅ | jezgro, obe rute i oba widgeta | Slice 3 — modalni tok još ne prosleđuje `vacations` (lanac propova), zabeleženo uz Slice 3 |
-| ~~Theme whitelist pri kreiranju salona ide samo do `theme-6`~~ ✅ | `api/salon-profile/create/route.ts:76` | Slice 2 — popravljeno, sada do `theme-9` |
-| ~~`/api/slots` koristi engleske ključeve dana → uvek prazno~~ ✅ (isto i `api/marketplace/slots`) | `api/slots/route.ts`, `api/marketplace/slots/route.ts` | rešeno — obe rute idu kroz `availabilityAdapter` |
-| ~~`design/` handoff bundle ulazi u `fallow` analizu~~ ✅ | `.fallowrc.jsonc` | ignore konfiguracija postoji; trenutni workspace nema instaliran `fallow` executable, pa nova health/dead-code analiza nije mogla biti pokrenuta bez instalacije |
-| ~~`ThemeShellProps` nosi `salon: SalonProfileData` + `services: IService[]`~~ ✅ | `shells/types.ts` + novi `lib/platform/theme-shell-native.ts` | rešeno — ugovor neutralan, guard test `shells/types.test.ts` |
-| ~~Kredencijali se prelazno mapiraju iz `authoredStats` u About~~ ✅ | `about.credentials` | rešeno — About tabela ima svoje polje; blok `content.credentials` nosi stubove i to su dve različite stvari u dizajnu |
+| TOCTOU trka pri zakazivanju — nema jedinstvenog occupancy autoriteta ni booking idempotencije na produkcijskom putu | 12 Appointment occupancy/lifecycle + 4 Slot write ulaza | T3 cutover; [potpun inventory](PANTA-T3-BOOKING-ENGINE.md#3-potpun-inventar-write-putanja) |
+| Reschedule je centralizovan kroz `clientFlows`/canonical seam, ali i dalje radi „check → save" bez serijalizacije | `api/appointments/update/[id]`, `clientFlows` | T3 cutover; [atomic contract](PANTA-T3-BOOKING-ENGINE.md#13-atomic-reschedule-cancel-i-lifecycle) |
+| Legacy marketplace `Slot.reserve` je atomski petominutni reserve, ali nema vlasnički token, nije vezan za `Appointment` i ne štiti ostale tokove | `models/Slot.ts`, `api/marketplace/slots/{reserve,book}` | Slice 5/8 — integrisati kao izveden prikaz ili ukloniti kao drugi izvor istine |
 | `themeBookingPreview` je PRIVREMENO polje — briše se kad stignu Consultation domen i Booking Engine | `models/SalonProfile.ts` | Slice 5/7 |
-| Preview tekst obećava potvrdu/pomeranje termina, a završni ekran tačno kaže da termin nije zakazan | theme-9 seed sadržaj + `Theme9BookingDialog` | pre javnog QA uskladiti poruku tako da korisnica ne pomisli da je zahtev rezervacija |
-| ~~7 theme-9 landing sekcija nema urednička polja~~ ✅ | `Theme9Sections.tsx` + `primitives.tsx` | **2A.2 zatvoren na `main`-u** — editor postoji za svih 7, uz coverage i minimum-content testove. |
-| `themePages` i dalje nema urednička polja — sadržaj se autoriše kroz `npm run seed:theme9 -- --tenant=<slug>` | `AdminLandingCMS.tsx` | otvoreno; polja postoje u bazi, ali editor ih ne prikazuje |
-| ~~Admin save gubi theme-9 polja iz forme i može njima da prepiše ceo profil~~ ✅ | `useSalonProfileAdmin` → `content-preservation` → `api/salon-profile/update` | **H0 zatvoren — lossless mapper + serverski section merge + regresioni testovi** |
-| `theme-3/BlogSection` i dalje dovlači objave klijentskim `useBlogPosts` iako `content.blog` loader sada isporučuje `posts` — isti waterfall koji je theme-9 upravo izgubila | `theme-3/BlogSection.tsx` | otvoreno, sada trivijalno |
-| ~~7 theme-9 sekcija nije bilo u mongoose shemi (`strict` bi ih tiho odbacio pri snimanju)~~ ✅ | `models/SalonProfile.ts` | rešeno u ovom slice-u |
-| ~~Rute termina su ranije dohvatale/menjale zapis po golom `_id`-ju~~ ✅ | `api/appointments/update/[id]`, `api/appointments/message` | rešeno na aktivnoj grani: `actorScopeFrom()` uvodi tenant i client ownership scope (`ae936af`) |
-| **Više ručnih read projekcija istog `SalonProfile` dokumenta** — novo polje može tiho nestati jer su polja opciona | mongoose schema · javni profile API · `ClientHomePage` | otvoren read-model dug; H0 write rizik je zatvoren odvojenim lossless ugovorom |
+| Preview tekst obećava potvrdu/pomeranje termina, a završni ekran tačno kaže da termin nije zakazan | theme-9 seed sadržaj + `Theme9BookingDialog` | pre javnog QA uskladiti poruku da korisnica ne pomisli da je zahtev rezervacija |
+| `themePages` nema urednička polja — sadržaj se autoriše kroz `npm run seed:theme9 -- --tenant=<slug>` | `AdminLandingCMS.tsx` | otvoreno; polja postoje u bazi, editor ih ne prikazuje |
+| `theme-3/BlogSection` dovlači objave klijentskim `useBlogPosts` iako `content.blog` loader isporučuje `posts` | `theme-3/BlogSection.tsx` | otvoreno, trivijalno |
+| Više ručnih read projekcija istog `SalonProfile` dokumenta — novo polje može tiho nestati jer su polja opciona | mongoose schema · javni profile API · `ClientHomePage` | otvoren read-model dug; H0 write rizik je zatvoren |
+| `design/` handoff bundle je izuzet iz analize, ali workspace nema instaliran `fallow` executable | `.fallowrc.jsonc` | otvoreno; nova health/dead-code analiza traži instalaciju |
 
 ### Dug: jedan mapper umesto ručnih projekcija
 
