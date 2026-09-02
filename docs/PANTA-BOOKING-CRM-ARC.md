@@ -4,9 +4,11 @@
 > Staging tenant za vizuelnu proveru: **theme-1 / Marysoll Makeup & Nails**
 >
 > Ovaj dokument je tracker JEDNOG luka: otkazivanje, cene, zahtev za uslugu i
-> centralizacija booking domena. Politike su u zasebnim dokumentima:
+> centralizacija booking domena i Client 360 read model. Politike su u zasebnim
+> dokumentima:
 > [otkazivanje](PANTA-CANCELLATION-NOSHOW-POLICY.md) ·
-> [cene](PANTA-BOOKING-PRICING.md) · [zahtev za uslugu](PANTA-SERVICE-INTAKE.md)
+> [cene](PANTA-BOOKING-PRICING.md) · [zahtev za uslugu](PANTA-SERVICE-INTAKE.md) ·
+> [Client 360](PANTA-CLIENT-360.md)
 >
 > **Ništa od ovoga nije prošlo kroz pregledač.** Verifikacija je typecheck,
 > lint, 1756 testova i produkcijski build.
@@ -18,9 +20,9 @@ widgetu, `on_request` postaje 0, trajanje iz jednog pa iz drugog izvora — dok
 audit nije pokazao uzrok: **Booking Engine postoji, ali produkcijski tokovi ga
 zaobilaze.** Svaka površina je imala svoju poslovnu logiku.
 
-Cilj nije jedan `BookingWidget`. `BookingModal`, `ClientEditModal`,
-`AdminCreateModal` i FullCalendar smeju izgledati različito — ali moraju
-pitati isti **server**.
+Cilj nije jedan izgled za svaku ulogu. Klijentske presentation površine sada
+dele jedan `BookingModal → BookingProvider`, dok admin operativni UI sme
+izgledati drugačije — ali svi moraju pitati isti **server**.
 
 ## 2. Urađeno
 
@@ -42,6 +44,7 @@ pitati isti **server**.
 | — | **Zahtev za uslugu (intake)** v1 — kategorija, upload, admin prikaz. | [intake](PANTA-SERVICE-INTAKE.md) |
 | — | **Hero CTA → BookingWidget u modalu** za theme-1/2/5/7. | §6 ovde |
 | SEC | **Izolacija klijenta** — `/api/appointments` je klijentu vraćao pune termine celog salona. | §5 ovde |
+| T1-2 | **One BookingWidget / one presentation contract.** Sajt, `/termini`, client create i client edit dele `BookingModal → BookingProvider`; jedan mapper projektuje persistence `bookingIntake.enabled` u presentation `intakeEnabled`. Stari `ClientCreateModal` je obrisan. | [intake](PANTA-SERVICE-INTAKE.md) |
 
 ## 3. Urađeno, a nije bilo u planu
 
@@ -125,7 +128,6 @@ Bez registrovanog widgeta CTA ostaje običan link na `/termini`.
 
 ## 8. Odloženo (ima odluku, nema termin)
 
-- **Klijent 360°** — istorija termina po klijentu, isti detalj zahteva; podaci postoje.
 - **Intake — dalji rollout.** Per-service override je **gotov**; wizard za
   kreiranje usluge se **ne pravi** (konačni v1 UX je jedan checkbox). Ostaje
   samo prikaz kroz buduće BookingWidget ulaze i, eventualno kasnije, izbor
@@ -337,3 +339,15 @@ rute sada upisuju **server-generated stavku**, ne spread zahteva.
 plus replay` pada pod opterećenjem (tipično odmah posle `next build`), nikad
 izolovano. Test trke nad pravim replica set-om. **Nije dirana produkcijska
 logika zbog njega.**
+
+## 16. T1-2 → T1-3 → T1-4 → T1-5 CRM redosled
+
+- **T1-2 ✅** — klijentske booking presentation površine koriste jedan widget i
+  jedan resolved service DTO; server ostaje booking authority.
+- **T1-3 🟡 aktivno** — Client 360 / CRM dossier kao tenant-scoped read model
+  nad Appointment, Statistics, Testimonials i Loyalty engine-ima. Operativni
+  ugovor: [PANTA-CLIENT-360.md](PANTA-CLIENT-360.md).
+- **T1-4 ⬜ buduće** — posle uspešnog booking-a poseban Loyalty redemption tok;
+  ne ulazi u BookingWidget i ne implementira se u T1-3.
+- **T1-5 ⬜ buduće** — salonski Client Package / Entitlement domen; nije tenant
+  Subscription i ne uvodi payment/provider tok u T1-3.
