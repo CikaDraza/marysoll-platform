@@ -126,7 +126,10 @@ Bez registrovanog widgeta CTA ostaje običan link na `/termini`.
 ## 8. Odloženo (ima odluku, nema termin)
 
 - **Klijent 360°** — istorija termina po klijentu, isti detalj zahteva; podaci postoje.
-- **Intake v2** — per-service override i wizard ([intake §7](PANTA-SERVICE-INTAKE.md)).
+- **Intake — dalji rollout.** Per-service override je **gotov**; wizard za
+  kreiranje usluge se **ne pravi** (konačni v1 UX je jedan checkbox). Ostaje
+  samo prikaz kroz buduće BookingWidget ulaze i, eventualno kasnije, izbor
+  polja ako upotreba pokaže potrebu.
 - **Reschedule mejl** sa starim i novim terminom. Notifikacija radi; nedostaje samo stari snapshot u telu. Bez novih `previousDate/Time` polja.
 - **Restriction Engine** — `noShows`, `late_cancel` i loyalty događaji ostavljaju činjenice; **nema automatskog blacklist-a**.
 - **Brisanje theme-3/4/6** — procenjeno na ~7.300 linija, 66 fajlova. Baza potvrđena prazna. **Preduslov:** `Theme3GalleryMasonry` mora u `shared/` jer ga theme-1 i theme-2 uvoze.
@@ -150,13 +153,42 @@ Migracija tipa nije potrebna — Marija je uslugu prekonfigurisala. Ostao je
 samo mrtav `services[]` niz iz vremena kad je bila paket; njega uklanja
 `npm run cleanup:stale-group-items` (idempotentno, **nije pokrenuto**).
 
-## 10. Nema odluku
+## 10. Product princip
 
-1. **Različita kazna za `late_cancel` i pravi `missed_appointment`.** Razlog se već čuva; `noShowPolicy` ih danas ne razlikuje.
-2. **`chargedAmount` na otkazanom terminu** se računa kao prihod (npr. nadoknada za kasno otkazivanje). Payment/refund engine ne postoji i semantika nije izmišljana.
-3. **Konvergencija `ServerResolvedQuoteSnapshot` i `Appointment.pricing`** — prvi je novac rezervacije, drugi stanje cene. Ostaje za Slice kad `BookingReservation` postane write authority.
-4. **Blog u navigaciji** — Header i Footer ga nude bezuslovno, ali **ne postoji** canonical signal „blog je uključen": ni capability, ni plan feature, ni gate na `/blogs` strani. Nije izmišljan.
-5. **Feature Block capability** — `services.catalog` i `booking.services` stoje kao `capability: null`. Postoji test koji izričito tvrdi da su **svi** blokovi capability-neutralni („T2B non-goal"). Povezivanje je pokušano i **vraćeno**: rušilo je taj test i četiri tenant fixture testa. Traži odluku, ne popravku.
+> **Marysoll daje preporučene poslovne postavke koje rade bez konfiguracije.**
+> Dodatna podešavanja uvode se tek kada stvarna upotreba pokaže da različiti
+> saloni imaju različite potrebe. Događaji se beleže dovoljno precizno da se
+> pravila kasnije mogu unaprediti **bez gubitka istorije**.
+
+Pre svake nove opcije u adminu pita se: *mora li vlasnica salona zaista da
+donese ovu odluku?* Ako ne mora — Marysoll bira dobar default.
+
+Intake je suprotan slučaj i zato ima checkbox: samo salon zna da li usluga
+traži referencu. Grace period nema slider iz istog razloga — vlasnica ne bi
+znala zašto postoji.
+
+### Odlučeno
+
+- **Blog ostaje u navigaciji.** Ne pravi se capability samo zbog toga; salon
+  bez sadržaja dobija empty state, a navigaciona stavka sama po sebi nije
+  problem.
+- **`late_cancel` i `missed_appointment` imaju ISTU posledicu.** Razlog se
+  čuva odvojeno u `noShowReason`, pa se politika kasnije može razdvojiti bez
+  diranja istorije — ali se ne uvode težine, bodovi ni podešavanja dok saloni
+  ne pokažu potrebu.
+
+### Odložena arhitektura
+
+- **Feature Block capability povezivanje** — T2B granica, nije Theme-1 blocker.
+  Postoji test koji tvrdi da su svi blokovi capability-neutralni.
+- **`ServerResolvedQuoteSnapshot` / `Appointment.pricing` konvergencija** — tek
+  uz `BookingReservation` write-authority cutover.
+
+### Odložena poslovna semantika
+
+- **`chargedAmount` na otkazanom terminu, cancellation fee, refund** — rešava se
+  kada postoji stvarni payment/refund lifecycle. Bez engine-a nema smisla
+  projektovati hipotetičku finansijsku politiku.
 
 ## 11. T1-0 — stop-the-line hardening (2026-09-02)
 

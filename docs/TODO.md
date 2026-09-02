@@ -94,7 +94,13 @@
 `on_request` čeka quote, admin predlog dobija Prihvati/Odbij, Marijino
 „Izlivanje" na `variant + from`, i AI generisanje slika ostaje isključeno dok
 se ne zatraži.
-**Četiri odluke bez presude** — grace period kao tenant podešavanje,
+**Product princip:** Marysoll bira dobar default; opcija se uvodi tek kad
+stvarna upotreba pokaže da saloni imaju različite potrebe, a događaji se beleže
+dovoljno precizno da politika može kasnije da se promeni bez gubitka istorije.
+
+**Odlučeno 2026-09-02** — blog ostaje u navigaciji; `late_cancel` i pravi
+nedolazak imaju istu posledicu uz sačuvan razlog. Ostaje samo **odložena
+arhitektura i semantika** — grace period kao tenant podešavanje,
 razlika kazne `late_cancel` vs `missed_appointment`, `chargedAmount` na
 otkazanom, vaučer na `on_request`, značenje `appointment_rescheduled`,
 konvergencija quote snapshot-a i Marijina konfiguracija „Izlivanja":

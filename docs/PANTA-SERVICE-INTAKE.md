@@ -158,9 +158,13 @@ sačuvano.
 ## 8. Nije urađeno
 
 - **Izbor polja po usluzi** (`image` / `referenceUrl` / `note`) — v1.1 ima samo
-  `enabled`; struktura je objekat da bi to kasnije stalo bez lomljenja ugovora;
-- **Wizard za kreiranje usluge** (korak 1 usluga → korak 2 zahtevi), bez
-  pravljenja usluge pre završnog submit-a;
-- **Intake na svim ulazima za rezervaciju** — danas ga ima samo deljeni
-  `BookingModal`. Admin create ga ne nudi i ne prikazuje;
+  `enabled`; struktura je objekat da bi to kasnije stalo bez lomljenja ugovora.
+  Uvodi se tek ako upotreba pokaže potrebu (vidi product princip u
+  [PANTA-BOOKING-CRM-ARC.md §10](PANTA-BOOKING-CRM-ARC.md));
+
+**Wizard za kreiranje usluge se NE pravi.** Konačni v1 UX je jedan checkbox u
+postojećem obrascu usluge.
+- **Intake na svim ulazima za rezervaciju** — danas ga imaju deljeni
+  `BookingModal` (početna i `/termini`) i `ClientCreateModal` (klijentski
+  panel). Admin create ga ne nudi i ne prikazuje;
 - **Izmena `request`-a iz admina** — salon ga vidi, ali ne može da dopuni.
