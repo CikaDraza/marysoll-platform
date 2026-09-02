@@ -864,7 +864,8 @@ matricu:
 
 | Tema | Vidljivost | Dozvoljen tenant |
 |---|---|---|
-| theme-1 … theme-7 | javna | svi tenanti, bez promene zatečenog ponašanja |
+| theme-1 | **privatna** (od 2026-09-02) | `marysoll-makeup-nails` |
+| theme-2 … theme-7 | javna | svi tenanti, bez promene zatečenog ponašanja |
 | theme-8 | privatna | `the-lash-room-by-anja` |
 | theme-9 | privatna | `marina-stanisavljevic-skincare-edukacija` |
 
