@@ -9,8 +9,8 @@ import {
   useLoyaltyAdminVouchers,
   useIssueLoyaltyVoucher,
   useRevokeLoyaltyVoucher,
-  useLoyaltyAdminAccounts,
-} from "@/hooks/useLoyaltyAdmin";
+} from "@/hooks/loyalty/useLoyaltyAdminVouchers";
+import { useLoyaltyAdminAccounts } from "@/hooks/loyalty/useLoyaltyAdminAccounts";
 import { useSalonProfile } from "@/hooks/useSalonProfile";
 import { clientNoun, clientNounCap, genderPast } from "@/lib/clientWording";
 

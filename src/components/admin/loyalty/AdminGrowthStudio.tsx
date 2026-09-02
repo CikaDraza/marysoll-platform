@@ -12,8 +12,8 @@ import toast from "react-hot-toast";
 import {
   useLoyaltyAdminConfig,
   useSaveLoyaltyConfig,
-  type LoyaltyAdminConfig,
-} from "@/hooks/useLoyaltyAdmin";
+} from "@/hooks/loyalty/useLoyaltyAdminConfig";
+import type { LoyaltyAdminConfig } from "@/types/loyalty-admin";
 import { LoyaltyClients } from "./LoyaltyClients";
 import { LoyaltyVouchers } from "./LoyaltyVouchers";
 import { LoyaltyDuplicates } from "./LoyaltyDuplicates";

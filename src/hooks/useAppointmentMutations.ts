@@ -205,6 +205,9 @@ export function useAppointmentMutations(token?: string) {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       toast.success("Status termina ažuriran.");
     },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
   });
 
   const deleteAppointment = useMutation({

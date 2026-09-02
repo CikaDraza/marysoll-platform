@@ -3,6 +3,7 @@ import {
   getAppointmentRealizedValue,
   type PricedAppointment,
 } from "@/lib/appointments/pricingSnapshot";
+import type { StatisticsResponse } from "@/types/statistics";
 
 export interface StatisticsAppointment extends PricedAppointment {
   _id?: unknown;
@@ -29,7 +30,7 @@ export function statisticsPeriod(month: number, year: number) {
 }
 
 /** Canonical monetary value used by salon and Client 360 statistics. */
-export function appointmentStatisticsValue(
+function appointmentStatisticsValue(
   appointment: StatisticsAppointment,
 ): number | null {
   return appointment.status === "completed"
@@ -37,7 +38,7 @@ export function appointmentStatisticsValue(
     : getAppointmentPotentialValue(appointment);
 }
 
-export function clientIdentity(appointment: StatisticsAppointment): string {
+function clientIdentity(appointment: StatisticsAppointment): string {
   const profile = appointment.clientProfileId as
     | { _id?: unknown; toString?: () => string }
     | string
@@ -105,4 +106,124 @@ export function topClientsForPeriod(
     });
   }
   return [...clients.values()].sort((a, b) => b.count - a.count).slice(0, limit);
+}
+
+interface SalonStatisticsInput {
+  appointments: readonly StatisticsAppointment[];
+  month: number;
+  year: number;
+  totalClients: number;
+  registeredThisMonth: number;
+  firstEverByEmail: ReadonlyArray<{ email: string; firstCreatedAt: Date }>;
+}
+
+interface StatisticsAccumulator {
+  serviceDistribution: Record<string, number>;
+  revenueByService: Record<string, number>;
+  servicesWithoutPrice: Record<string, number>;
+  completedRevenue: number;
+  cancelledRevenue: number;
+  noShowRevenue: number;
+  completedCount: number;
+  cancelledCount: number;
+  withoutPriceCount: number;
+}
+
+function createAccumulator(): StatisticsAccumulator {
+  return {
+    serviceDistribution: {}, revenueByService: {}, servicesWithoutPrice: {},
+    completedRevenue: 0, cancelledRevenue: 0, noShowRevenue: 0,
+    completedCount: 0, cancelledCount: 0, withoutPriceCount: 0,
+  };
+}
+
+function accumulateOutcome(result: StatisticsAccumulator, appointment: StatisticsAppointment, value: number | null) {
+  if (value == null) result.withoutPriceCount += 1;
+  if (appointment.status === "completed") {
+    result.completedRevenue += value ?? 0;
+    result.completedCount += 1;
+    return;
+  }
+  if (appointment.status === "appointment_cancelled" || appointment.status === "appointment_rejected") {
+    result.cancelledRevenue += value ?? 0;
+    result.cancelledCount += 1;
+    return;
+  }
+  if (appointment.status === "no_show") result.noShowRevenue += value ?? 0;
+}
+
+function serviceNameOf(service: NonNullable<StatisticsAppointment["services"]>[number], appointment: StatisticsAppointment) {
+  const document = typeof service.serviceId === "object" ? service.serviceId : null;
+  return document?.name || appointment.serviceName || "Nepoznato";
+}
+
+function accumulateServices(result: StatisticsAccumulator, appointment: StatisticsAppointment, value: number | null) {
+  for (const service of appointment.services ?? []) {
+    const name = serviceNameOf(service, appointment);
+    result.serviceDistribution[name] = (result.serviceDistribution[name] ?? 0) + 1;
+    const target = value == null ? result.servicesWithoutPrice : result.revenueByService;
+    target[name] = (target[name] ?? 0) + (value ?? 1);
+  }
+}
+
+function averageAppointmentGap(appointments: readonly StatisticsAppointment[]) {
+  const timestamps = appointments.map(({ date, time }) => new Date(`${date} ${time}`).getTime()).sort((left, right) => left - right);
+  const validGaps = timestamps.slice(1).map((timestamp, index) => (timestamp - timestamps[index]) / 60_000).filter((gap) => gap > 0 && gap < 480);
+  return validGaps.length ? Math.round(validGaps.reduce((sum, gap) => sum + gap, 0) / validGaps.length) : 0;
+}
+
+function serviceBreakdown(result: StatisticsAccumulator) {
+  return Object.entries(result.serviceDistribution).map(([name, count]) => {
+    const withoutPrice = result.servicesWithoutPrice[name] ?? 0;
+    const revenue = result.revenueByService[name];
+    return { name, count, revenue: revenue == null && withoutPrice > 0 ? null : (revenue ?? 0), withoutPrice };
+  });
+}
+
+function countNewClients(activeEmails: ReadonlySet<string>, firstEverByEmail: SalonStatisticsInput["firstEverByEmail"], start: Date, end: Date) {
+  return firstEverByEmail.filter(({ email, firstCreatedAt }) =>
+    activeEmails.has(email.trim().toLowerCase()) && firstCreatedAt >= start && firstCreatedAt < end,
+  ).length;
+}
+
+export function computeSalonStatistics({
+  appointments,
+  month,
+  year,
+  totalClients,
+  registeredThisMonth,
+  firstEverByEmail,
+}: SalonStatisticsInput): StatisticsResponse {
+  const { start, end } = statisticsPeriod(month, year);
+  const result = createAccumulator();
+  for (const appointment of appointments) {
+    const value = appointmentStatisticsValue(appointment);
+    accumulateOutcome(result, appointment, value);
+    accumulateServices(result, appointment, value);
+  }
+  const totalRevenue = Object.values(result.revenueByService).reduce((sum, value) => sum + value, 0);
+  const activeEmails = new Set(appointments.map((appointment) => appointment.clientEmail.trim().toLowerCase()));
+  const newClients = countNewClients(activeEmails, firstEverByEmail, start, end);
+
+  return {
+    month: String(month),
+    year: String(year),
+    pieChart: result.serviceDistribution,
+    revenueByService: result.revenueByService,
+    serviceBreakdown: serviceBreakdown(result),
+    topClients: topClientsForPeriod(appointments),
+    topServices: Object.entries(result.serviceDistribution).sort((left, right) => right[1] - left[1]).slice(0, 5).map(([service, count]) => ({ service, count })),
+    totalAppointments: appointments.length,
+    totalRevenue,
+    revenue: { potential: totalRevenue, completed: result.completedRevenue, cancelled: result.cancelledRevenue, noShow: result.noShowRevenue, completedCount: result.completedCount, cancelledCount: result.cancelledCount, withoutPriceCount: result.withoutPriceCount },
+    avgTimeGap: averageAppointmentGap(appointments),
+    clients: {
+      total: totalClients,
+      active: activeEmails.size,
+      inactive: Math.max(0, totalClients - activeEmails.size),
+      new: newClients,
+      returning: Math.max(0, activeEmails.size - newClients),
+      registeredThisMonth,
+    },
+  };
 }

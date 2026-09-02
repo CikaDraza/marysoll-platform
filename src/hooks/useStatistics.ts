@@ -1,6 +1,6 @@
 // hooks/useStatistics.ts
 import { useQuery } from "@tanstack/react-query";
-import { StatisticsResponse } from "@/components/admin/statistics/statistics.types";
+import type { StatisticsResponse } from "@/types/statistics";
 import { api } from "@/lib/api";
 
 interface UseStatisticsParams {

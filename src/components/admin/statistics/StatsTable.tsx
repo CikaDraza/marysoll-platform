@@ -1,5 +1,6 @@
 import React from "react";
 import { useStatistics } from "@/hooks/useStatistics";
+import { formatStatisticsCurrency } from "./statisticsFormatters";
 
 interface StatsTableProps {
   month: number;
@@ -42,7 +43,7 @@ export const StatsTable: React.FC<StatsTableProps> = ({ month, year }) => {
     );
   }
 
-  if (!global || !services) {
+  if (!services.length && !topClients.length && !topServices.length) {
     return (
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6">
         <div className="text-gray-500 dark:text-gray-200 text-center py-4">
@@ -51,13 +52,6 @@ export const StatsTable: React.FC<StatsTableProps> = ({ month, year }) => {
       </div>
     );
   }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("sr-RS", {
-      style: "currency",
-      currency: "RSD",
-    }).format(amount);
-  };
 
   const sortedServices = [...services].sort(
     (a: { count: number }, b: { count: number }) => b.count - a.count,
@@ -239,7 +233,7 @@ export const StatsTable: React.FC<StatsTableProps> = ({ month, year }) => {
                           Cena nije definisana
                         </span>
                       ) : (
-                        formatCurrency(service.revenue)
+                        formatStatisticsCurrency(service.revenue)
                       )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">

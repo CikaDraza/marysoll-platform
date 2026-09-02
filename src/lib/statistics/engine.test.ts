@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   computeClientPeriodInsights,
+  computeSalonStatistics,
   statisticsPeriod,
   topClientsForPeriod,
   type StatisticsAppointment,
@@ -56,5 +57,27 @@ describe("shared Statistics Engine", () => {
     ]);
     expect(top[0]).toMatchObject({ clientId: "client-1", count: 2 });
     expect(top[1]).toMatchObject({ clientId: "client-2", count: 1 });
+  });
+
+  it("builds the salon response from projected appointments and aggregate client counts", () => {
+    const appointments = [
+      appointment({ services: [{ serviceId: { name: "Nokti" }, price: 2000, quantity: 1 }] }),
+      appointment({ status: "completed", services: [{ serviceId: { name: "Nokti" }, price: 2000, quantity: 1 }] }),
+    ];
+    const stats = computeSalonStatistics({
+      appointments,
+      month: 9,
+      year: 2026,
+      totalClients: 4,
+      registeredThisMonth: 1,
+      firstEverByEmail: [{ email: "m@example.com", firstCreatedAt: new Date(2026, 8, 2) }],
+    });
+    expect(stats).toMatchObject({
+      totalAppointments: 2,
+      totalRevenue: 4000,
+      revenue: { potential: 4000, completed: 2000, completedCount: 1 },
+      clients: { total: 4, active: 1, inactive: 3, new: 1, returning: 0, registeredThisMonth: 1 },
+      topServices: [{ service: "Nokti", count: 2 }],
+    });
   });
 });
