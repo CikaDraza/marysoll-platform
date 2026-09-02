@@ -1,4 +1,10 @@
-import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
+import {
+  formatPriceToString,
+  formatServicePrice,
+  PRICE_ON_REQUEST_LABEL,
+} from "@/helpers/formatPrice";
+import { estimateServicePrice } from "@/helpers/servicePrice";
+import { serviceRequiresIntake } from "@/lib/appointments/serviceIntake";
 import type { WorkingHoursInput } from "@/helpers/parseWorkingHours";
 import { availableTimesForDate } from "@/lib/booking/availabilityAdapter";
 import {
@@ -9,10 +15,16 @@ import {
 import { useAppointmentMutations } from "@/hooks/useAppointmentMutations";
 import { useAuth } from "@/hooks/useAuth";
 import { useServices } from "@/hooks/useServices";
-import { IAppointment, ManualSlotsMap } from "@/types";
+import type {
+  IAppointment,
+  IAppointmentAttachment,
+  IAppointmentRequest,
+  ManualSlotsMap,
+} from "@/types";
+import { useTenant } from "@/contexts/TenantContext";
 import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 interface Props {
@@ -45,6 +57,7 @@ export default function ClientCreateModal({
   const { createAppointment } = useAppointmentMutations(token);
 
 
+  const { tenantSlug } = useTenant();
   const [selectedDate, setSelectedDate] = useState<string>(defaultDate ?? "");
   const [selectedTime, setSelectedTime] = useState<string>(defaultTime ?? "");
   const [selectedServiceId, setSelectedServiceId] = useState(
@@ -53,6 +66,17 @@ export default function ClientCreateModal({
   const [selectedVariant, setSelectedVariant] = useState<string>(""); // Promenjeno u string
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [note, setNote] = useState("");
+
+  // Zahtev klijentkinje — isti ugovor kao u javnom widgetu
+  // (`Appointment.request`), samo drugi UI. Sve opciono.
+  const [intakeNote, setIntakeNote] = useState("");
+  const [intakeReferenceUrl, setIntakeReferenceUrl] = useState("");
+  const [intakeImage, setIntakeImage] =
+    useState<IAppointmentAttachment | null>(null);
+  const [intakeUploading, setIntakeUploading] = useState(false);
+  const [intakeError, setIntakeError] = useState<string | null>(null);
+  const [intakeSkipped, setIntakeSkipped] = useState(false);
+  const intakeFileRef = useRef<HTMLInputElement>(null);
 
   const selectedService = services.find((s) => s._id === selectedServiceId);
 
@@ -76,54 +100,74 @@ export default function ClientCreateModal({
   const manualSlotInvalid =
     isManualMode && !availableManualTimes.some((s) => s.time === selectedTime);
 
-  // Izračunavanje ukupne cene i trajanja
-  const calculateTotal = () => {
-    if (!selectedService) return { price: 0, duration: 0 };
+  // Cena i trajanje idu kroz CANONICAL procenu — ista koju vidi javni
+  // BookingWidget. Ovde je ranije stajala lokalna kopija koja je sabirala
+  // `price += extra.price`, pa je usluga na upit sa dodatkom od 700 izgledala
+  // kao termin od 700 dinara.
+  const estimate = useMemo(
+    () =>
+      selectedService
+        ? estimateServicePrice({
+            service: selectedService,
+            variantName: selectedVariant,
+            extras: selectedExtras.map((name) => ({ name, quantity: 1 })),
+          })
+        : null,
+    [selectedService, selectedVariant, selectedExtras],
+  );
 
-    let price = 0;
-    let duration = selectedService.duration || 0;
-
-    // Za varijante
-    if (
-      selectedService.type === "variant" &&
-      selectedVariant &&
-      selectedService.variants
-    ) {
-      const variant = selectedService.variants.find(
-        (v) => v.name === selectedVariant,
+  const totalPrice = estimate?.total ?? 0;
+  const totalDuration = estimate?.durationMinutes ?? 0;
+  const uploadIntakeImage = async (file: File) => {
+    if (!tenantSlug) {
+      setIntakeError("Otpremanje trenutno nije dostupno.");
+      return;
+    }
+    setIntakeError(null);
+    setIntakeUploading(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch(
+        `/api/public/${tenantSlug}/appointments/intake-upload`,
+        { method: "POST", body },
       );
-      if (variant) {
-        price = variant.price;
-        if (variant.duration) duration = variant.duration;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setIntakeError(data?.error ?? "Otpremanje nije uspelo.");
+        return;
       }
+      setIntakeImage(data as IAppointmentAttachment);
+    } catch {
+      setIntakeError("Otpremanje nije uspelo. Proverite internet vezu.");
+    } finally {
+      setIntakeUploading(false);
     }
-    // Za single usluge
-    else if (selectedService.type === "single") {
-      price = selectedService.basePrice || 0;
-      duration = selectedService.duration || 0;
-    }
-    // Za grupne usluge
-    else if (selectedService.type === "group" && selectedService.services) {
-      // Ovde možete dodati logiku za grupe ako je potrebno
-      price = selectedService.basePrice || 0;
-      duration = selectedService.duration || 0;
-    }
-
-    // Dodavanje extra usluga
-    if (selectedService.extras && selectedExtras.length > 0) {
-      selectedExtras.forEach((extraName) => {
-        const extra = selectedService.extras?.find((e) => e.name === extraName);
-        if (extra) {
-          price += extra.price || 0;
-          if (extra.duration) duration += extra.duration;
-        }
-      });
-    }
-
-    return { price, duration };
   };
 
-  const { price: totalPrice, duration: totalDuration } = calculateTotal();
+  /** `undefined` kad klijentkinja nije ništa unela — server ga tada ne upisuje. */
+  const buildRequest = (): IAppointmentRequest | undefined => {
+    if (!intakeEnabled) return undefined;
+    const noteText = intakeNote.trim();
+    const ref = intakeReferenceUrl.trim();
+    if (!noteText && !ref && !intakeImage) return undefined;
+    return {
+      ...(noteText ? { note: noteText } : {}),
+      ...(ref ? { referenceUrl: ref } : {}),
+      ...(intakeImage ? { attachments: [intakeImage] } : {}),
+    };
+  };
+
+  const totalPriceLabel = !estimate
+    ? ""
+    : estimate.total == null
+      ? PRICE_ON_REQUEST_LABEL
+      : estimate.isEstimate
+        ? `od ${formatPriceToString(estimate.total)} RSD`
+        : `${formatPriceToString(estimate.total)} RSD`;
+
+  // Zahtev klijentkinje — usluga odlučuje, isto kao u javnom widgetu.
+  const intakeEnabled = serviceRequiresIntake(selectedService);
 
   // Klasičan režim: ponuda vremena = radno vreme − zauzeto − prošlost,
   // uračunato trajanje izabrane usluge (UX odluka 2026-07-05).
@@ -192,6 +236,7 @@ export default function ClientCreateModal({
       time: selectedTime,
       duration: totalDuration,
       note: note || undefined,
+      request: buildRequest(),
       status: "pending",
       messages: [],
       adminNotified: true,
@@ -365,6 +410,11 @@ export default function ClientCreateModal({
                         onChange={() => {
                           setSelectedServiceId(s._id);
                           setSelectedVariant("");
+    setIntakeNote("");
+    setIntakeReferenceUrl("");
+    setIntakeImage(null);
+    setIntakeError(null);
+    setIntakeSkipped(false);
                           setSelectedExtras([]);
                         }}
                         className="relative size-4 appearance-none rounded-full border border-gray-300 bg-white before:absolute before:inset-1 before:rounded-full before:bg-white not-checked:before:hidden checked:border-(--primary-color) checked:bg-(--primary-color) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--primary-color) disabled:border-gray-300 disabled:bg-gray-100 disabled:before:bg-gray-400 forced-colors:appearance-auto forced-colors:before:hidden"
@@ -491,8 +541,15 @@ export default function ClientCreateModal({
                             </div>
                           )}
                         </div>
-                        <div className="text-xl font-bold text-(--secondary-color)">
-                          {formatPriceToString(totalPrice)} RSD
+                        <div className="text-right">
+                          <div className="text-xl font-bold text-(--secondary-color)">
+                            {totalPriceLabel || "—"}
+                          </div>
+                          {estimate?.unknown && (
+                            <div className="text-[11px] text-gray-500 mt-0.5">
+                              Konačna cena biće potvrđena naknadno.
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -507,6 +564,109 @@ export default function ClientCreateModal({
               </div>
             </div>
             <div className="flex flex-col gap-4 mt-4">
+              {/* Zahtev klijentkinje — prikazuje se samo kada je usluga tako
+                  podešena (`bookingIntake.enabled`). Isti ugovor kao u javnom
+                  widgetu; drugačiji UI jer je ovo panel, ne landing. */}
+              {intakeEnabled && !intakeSkipped && (
+                <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4">
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                    Kako želite da izgleda?
+                  </p>
+                  <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    Pošaljite fotografiju ili nam ukratko opišite šta želite.
+                  </p>
+
+                  <div className="mt-3">
+                    {intakeImage ? (
+                      <div className="flex items-center gap-3">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={intakeImage.url}
+                          alt="Vaša referentna fotografija"
+                          className="h-20 w-20 rounded-lg object-cover border border-gray-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setIntakeImage(null)}
+                          className="text-xs text-gray-500 underline hover:text-red-600"
+                        >
+                          Ukloni fotografiju
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          disabled={intakeUploading}
+                          onClick={() => intakeFileRef.current?.click()}
+                          className="w-full rounded-md border border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:border-(--secondary-color) disabled:opacity-60 transition"
+                        >
+                          {intakeUploading ? "Otpremanje…" : "Dodaj fotografiju"}
+                        </button>
+                        <p className="mt-1 text-[11px] text-gray-400">
+                          JPG / PNG / WEBP · do 5 MB
+                        </p>
+                      </>
+                    )}
+                    <input
+                      ref={intakeFileRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = "";
+                        if (file) uploadIntakeImage(file);
+                      }}
+                    />
+                    {intakeError && (
+                      <p className="mt-1 text-xs font-semibold text-red-600">
+                        {intakeError}
+                      </p>
+                    )}
+                  </div>
+
+                  <input
+                    type="url"
+                    inputMode="url"
+                    value={intakeReferenceUrl}
+                    onChange={(e) => setIntakeReferenceUrl(e.target.value)}
+                    placeholder="Link ka inspiraciji (https://...)"
+                    className="mt-3 block w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-2 text-sm"
+                  />
+                  <textarea
+                    rows={3}
+                    value={intakeNote}
+                    onChange={(e) => setIntakeNote(e.target.value)}
+                    placeholder="Opišite dizajn, boju ili druge želje..."
+                    className="mt-2 block w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-2 text-sm"
+                  />
+
+                  {!intakeImage && !intakeNote && !intakeReferenceUrl && (
+                    <div className="mt-2 text-right">
+                      <button
+                        type="button"
+                        onClick={() => setIntakeSkipped(true)}
+                        className="text-xs text-gray-400 underline hover:text-gray-600"
+                      >
+                        Preskoči
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+              {intakeEnabled && intakeSkipped && (
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => setIntakeSkipped(false)}
+                    className="text-xs text-gray-400 underline hover:text-gray-600"
+                  >
+                    Ipak dodaj fotografiju ili opis
+                  </button>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Napomena (opciono)
