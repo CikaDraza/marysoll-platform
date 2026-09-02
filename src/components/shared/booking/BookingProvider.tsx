@@ -48,6 +48,11 @@ import type {
   GuestData,
   PendingAppointment,
 } from "./types";
+import {
+  bookingDefaultsFromAppointment,
+  bookingIntakeChanged,
+  bookingPresentationRequiresIntake,
+} from "@/lib/booking/widgetPresentation";
 
 export interface BookingContextValue {
   // ── props koje podkomponente čitaju ──
@@ -56,6 +61,8 @@ export interface BookingContextValue {
   userName?: string;
   userEmail?: string;
   isPendingMode: boolean;
+  isEditMode: boolean;
+  onCancelAppointment?: () => void;
   /** Validan format referral koda iz share URL-a/pending booking-a. */
   referralVoucherCode: string;
   // ── stanje izbora ──
@@ -157,23 +164,33 @@ export function BookingProvider({
   workingHours,
   manualSlots,
   bookedAppointments,
+  mode = "create",
+  appointment,
+  onCancelAppointment,
 }: BookingModalProps & { children: ReactNode }) {
   const { user } = useAuth();
-  const { createAppointment } = useAppointmentMutations(token);
+  const { createAppointment, updateClientAppointment } =
+    useAppointmentMutations(token);
+  const editDefaults = bookingDefaultsFromAppointment(appointment, services);
 
-  const [selectedDate, setSelectedDate] = useState(defaultDate);
-  const [selectedTime, setSelectedTime] = useState(defaultTime);
+  const [selectedDate, setSelectedDate] = useState(
+    editDefaults?.date ?? defaultDate,
+  );
+  const [selectedTime, setSelectedTime] = useState(
+    editDefaults?.time ?? defaultTime,
+  );
   const [selectedServiceId, setSelectedServiceId] = useState(
-    pendingDefaults?.serviceId || services[0]?._id || "",
+    editDefaults?.serviceId || pendingDefaults?.serviceId || services[0]?._id || "",
   );
   const [selectedVariant, setSelectedVariant] = useState(
-    pendingDefaults?.variantName || "",
+    editDefaults?.variantName || pendingDefaults?.variantName || "",
   );
   const [selectedExtras, setSelectedExtras] = useState<SelectedExtra[]>(() =>
-    (pendingDefaults?.extras ?? []).map((name) => ({
-      name,
-      quantity: pendingDefaults?.extraQuantities?.[name] ?? 1,
-    })),
+    editDefaults?.extras ??
+      (pendingDefaults?.extras ?? []).map((name) => ({
+        name,
+        quantity: pendingDefaults?.extraQuantities?.[name] ?? 1,
+      })),
   );
 
   const setExtraQuantity = useCallback((name: string, quantity: number) => {
@@ -184,15 +201,19 @@ export function BookingProvider({
       return prev.map((e) => (e.name === name ? { ...e, quantity } : e));
     });
   }, []);
-  const [note, setNote] = useState(pendingDefaults?.note || "");
+  const [note, setNote] = useState(
+    editDefaults?.note || pendingDefaults?.note || "",
+  );
 
   // Intake živi samo dok modal traje. Namerno NIJE u `PendingAppointment`:
   // fotografija je već na Cloudinary-ju, a guranje URL-a kroz sessionStorage
   // bi je izložilo svakome ko čita storage. Posle prijave se unosi ponovo.
-  const [intakeNote, setIntakeNote] = useState("");
-  const [intakeReferenceUrl, setIntakeReferenceUrl] = useState("");
+  const [intakeNote, setIntakeNote] = useState(editDefaults?.intakeNote ?? "");
+  const [intakeReferenceUrl, setIntakeReferenceUrl] = useState(
+    editDefaults?.intakeReferenceUrl ?? "",
+  );
   const [intakeImage, setIntakeImage] =
-    useState<IAppointmentAttachment | null>(null);
+    useState<IAppointmentAttachment | null>(editDefaults?.intakeImage ?? null);
   const [intakeUploading, setIntakeUploading] = useState(false);
   const [intakeError, setIntakeError] = useState<string | null>(null);
   const [onIntakeStep, setOnIntakeStep] = useState(false);
@@ -295,8 +316,12 @@ export function BookingProvider({
 
   useEffect(() => {
     async function init() {
-      setSelectedDate(defaultDate);
-      setSelectedTime(defaultTime);
+      const currentEditDefaults = bookingDefaultsFromAppointment(
+        appointment,
+        services,
+      );
+      setSelectedDate(currentEditDefaults?.date ?? defaultDate);
+      setSelectedTime(currentEditDefaults?.time ?? defaultTime);
       const queryVoucher =
         typeof window !== "undefined"
           ? new URLSearchParams(window.location.search).get("voucher")
@@ -316,7 +341,16 @@ export function BookingProvider({
           // Fail closed za guest booking: server booking svakako ponovo validira.
         }
       }
-      if (pendingDefaults) {
+      if (currentEditDefaults) {
+        selectionOwnerRef.current = currentEditDefaults.serviceId;
+        setSelectedServiceId(currentEditDefaults.serviceId);
+        setSelectedVariant(currentEditDefaults.variantName);
+        setSelectedExtras(currentEditDefaults.extras);
+        setNote(currentEditDefaults.note);
+        setIntakeNote(currentEditDefaults.intakeNote);
+        setIntakeReferenceUrl(currentEditDefaults.intakeReferenceUrl);
+        setIntakeImage(currentEditDefaults.intakeImage);
+      } else if (pendingDefaults) {
         const restoredId = pendingDefaults.serviceId || services[0]?._id || "";
         // Vraćen izbor PRIPADA toj usluzi — obeleži ga pre nego što se
         // `selectedServiceId` promeni, da ga čistač ispod ne obriše.
@@ -333,7 +367,14 @@ export function BookingProvider({
       }
     }
     init();
-  }, [defaultDate, defaultTime, pendingDefaults, services, tenantSlug]);
+  }, [
+    appointment,
+    defaultDate,
+    defaultTime,
+    pendingDefaults,
+    services,
+    tenantSlug,
+  ]);
 
   const selectedService = services.find((s) => s._id === selectedServiceId);
 
@@ -350,20 +391,48 @@ export function BookingProvider({
   // manualSlots režim: nudi se SAMO slobodan budući termin koji je vlasnik
   // definisao — datum/vreme van te liste ne sme proći.
   const isManualMode = availabilityMode === "manualSlots";
+  const editedAppointmentId = appointment?._id;
+  const availabilityAppointments = useMemo(
+    () =>
+      (bookedAppointments ?? []).filter(
+        (slot) => !editedAppointmentId || slot._id !== editedAppointmentId,
+      ),
+    [editedAppointmentId, bookedAppointments],
+  );
   const availableManualTimes = useMemo(() => {
     if (!isManualMode || !selectedDate) return [];
     const now = new Date();
-    return manualTimesForDate(manualSlots, selectedDate).filter(
+    const options = manualTimesForDate(manualSlots, selectedDate).filter(
       (s) =>
         new Date(`${selectedDate}T${s.time}`) >= now &&
         !isManualSlotTaken(
-          bookedAppointments ?? [],
+          availabilityAppointments,
           selectedDate,
           timeToMin(s.time),
           s.duration,
         ),
     );
-  }, [isManualMode, manualSlots, bookedAppointments, selectedDate]);
+    if (
+      mode === "edit" &&
+      appointment &&
+      selectedDate === appointment.date &&
+      !options.some((slot) => slot.time === appointment.time)
+    ) {
+      options.push({
+        time: appointment.time,
+        duration: appointment.duration || 60,
+      });
+      options.sort((a, b) => timeToMin(a.time) - timeToMin(b.time));
+    }
+    return options;
+  }, [
+    appointment,
+    isManualMode,
+    manualSlots,
+    mode,
+    availabilityAppointments,
+    selectedDate,
+  ]);
 
   const manualSlotInvalid =
     isManualMode && !availableManualTimes.some((s) => s.time === selectedTime);
@@ -436,10 +505,16 @@ export function BookingProvider({
       localDate: selectedDate,
       durationMinutes: totalDuration || 60,
       profile: { workingHours },
-      appointments: bookedAppointments ?? [],
+      appointments: availabilityAppointments,
       now: new Date(),
     });
-  }, [isManualMode, workingHours, selectedDate, totalDuration, bookedAppointments]);
+  }, [
+    isManualMode,
+    workingHours,
+    selectedDate,
+    totalDuration,
+    availabilityAppointments,
+  ]);
 
   function handleClose() {
     setSelectedServiceId(services[0]?._id || "");
@@ -498,7 +573,16 @@ export function BookingProvider({
       time: selectedTime,
       duration: totalDuration,
       note: note || undefined,
-      request: buildRequest(),
+      request:
+        bookingPresentationRequiresIntake(selectedService) &&
+        (mode === "create" ||
+          bookingIntakeChanged(appointment?.request, {
+            note: intakeNote,
+            referenceUrl: intakeReferenceUrl,
+            image: intakeImage,
+          }))
+          ? buildRequest()
+          : undefined,
       status: "pending",
       ...(referralVoucherCode ? { voucherCode: referralVoucherCode } : {}),
       messages: [],
@@ -508,7 +592,15 @@ export function BookingProvider({
     };
 
     try {
-      await createAppointment.mutateAsync(payload);
+      if (mode === "edit") {
+        if (!appointment?._id) throw new Error("Termin nije pronađen.");
+        await updateClientAppointment.mutateAsync({
+          id: appointment._id,
+          updatedData: payload,
+        });
+      } else {
+        await createAppointment.mutateAsync(payload);
+      }
       onBooked?.();
       handleClose();
     } catch (err: unknown) {
@@ -523,7 +615,7 @@ export function BookingProvider({
     if (!selectedService) return toast.error("Izabrana usluga nije pronađena.");
     if (!validateSelection(selectedService)) return;
 
-    onConfirmedByGuest({
+    onConfirmedByGuest?.({
       date: selectedDate,
       time: selectedTime,
       serviceId: selectedServiceId,
@@ -640,6 +732,7 @@ export function BookingProvider({
   }
 
   const isPendingMode = !!pendingDefaults;
+  const isEditMode = mode === "edit";
 
   const value: BookingContextValue = {
     services,
@@ -647,6 +740,8 @@ export function BookingProvider({
     userName,
     userEmail,
     isPendingMode,
+    isEditMode,
+    onCancelAppointment,
     referralVoucherCode,
     selectedDate,
     setSelectedDate,
@@ -670,7 +765,7 @@ export function BookingProvider({
     removeIntakeImage,
     intakeUploading,
     intakeError,
-    intakeRequired: Boolean(selectedService?.intakeEnabled),
+    intakeRequired: bookingPresentationRequiresIntake(selectedService),
     onIntakeStep,
     goToIntakeStep: () => setOnIntakeStep(true),
     backFromIntakeStep: () => setOnIntakeStep(false),
@@ -681,7 +776,8 @@ export function BookingProvider({
     guestLoading,
     existingAccount,
     checkExistingClient,
-    isSubmitting: createAppointment.isPending,
+    isSubmitting:
+      createAppointment.isPending || updateClientAppointment.isPending,
     selectedService,
     isManualMode,
     availableManualTimes,

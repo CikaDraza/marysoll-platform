@@ -32,6 +32,7 @@ function BookingModalShell({
     handleSubmitLoggedIn,
     handleGuestSubmit,
     handleGuestReserve,
+    isEditMode,
   } = useBookingContext();
 
   return (
@@ -43,7 +44,7 @@ function BookingModalShell({
           <div className="flex justify-between items-start mb-4">
             <div>
               <h3 className="text-xl font-bold text-gray-900">
-                Zakazivanje termina
+                {isEditMode ? "Izmena termina" : "Zakazivanje termina"}
               </h3>
               {isPendingMode && (
                 <p className="text-sm text-(--primary-color) font-medium mt-1">

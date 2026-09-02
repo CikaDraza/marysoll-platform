@@ -7,8 +7,8 @@ import "server-only";
  * poslovnu činjenicu. Klijent koji pošalje `{ price: 1, duration: 5 }` dobijao
  * je termin od pet minuta za jedan dinar.
  *
- * Ovo je jedini seam kroz koji svi tokovi (BookingModal, ClientCreateModal,
- * ClientEditModal, AdminCreateModal, marketplace) dobijaju istu istinu:
+ * Ovo je jedini seam kroz koji svi tokovi (BookingModal create/edit,
+ * AdminCreateModal, marketplace) dobijaju istu istinu:
  *
  *     tenantId + serviceId + selection
  *              ↓

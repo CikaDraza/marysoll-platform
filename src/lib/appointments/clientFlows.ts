@@ -39,6 +39,8 @@ import {
 import type { IAppointmentPricing, IAppointmentService } from "@/types";
 import type { PreferredContact } from "@/lib/contactRules";
 import { ACTIVE_APPOINTMENT_STATUS_FILTER } from "@/lib/appointments/occupancy";
+import { sanitizeAppointmentRequest } from "@/lib/appointments/intake";
+import type { IAppointmentRequest } from "@/types";
 
 /* Mongoose Appointment model nije generički tipovan, pa dokument opisujemo
    strukturno — samo polja koja tokovi čitaju/menjaju. */
@@ -59,6 +61,7 @@ interface AppointmentDoc {
   time: string;
   duration: number;
   note?: string;
+  request?: IAppointmentRequest;
   status: string;
   createdAt?: string | Date;
   cancellationWindowHours?: number;
@@ -190,12 +193,22 @@ export interface RescheduleInput {
   serviceName?: string;
   note?: string;
   duration?: number;
+  /** Prisutan samo kada edit widget stvarno menja intake. Odsustvo ga čuva. */
+  request?: unknown;
+  /** Ruta ga rešava iz tenant konfiguracije; nije browser input. */
+  requestTenantFolder?: string;
 }
 
 export type ClientRescheduleResult =
   | {
       ok: false;
-      kind: "expired" | "final" | "service_not_found" | "conflict" | "unavailable";
+      kind:
+        | "expired"
+        | "final"
+        | "service_not_found"
+        | "conflict"
+        | "unavailable"
+        | "invalid_request";
       error: string;
     }
   | { ok: true };
@@ -248,6 +261,21 @@ export async function rescheduleAppointmentAsClient(
       return { ok: false, kind: "service_not_found", error: err.message };
     }
     throw err;
+  }
+
+  let sanitizedRequest: IAppointmentRequest | undefined;
+  if (input.request !== undefined) {
+    if (!canonical.resolved.intake.enabled) {
+      return {
+        ok: false,
+        kind: "invalid_request",
+        error: "Ova usluga ne prima zahtev uz zakazivanje.",
+      };
+    }
+    sanitizedRequest = sanitizeAppointmentRequest(
+      input.request,
+      input.requestTenantFolder ?? `salons/tenant-${String(tenantId)}`,
+    );
   }
 
   // Exact-match konflikt (istorijsko ponašanje obe rute — hvata i slučaj
@@ -356,6 +384,10 @@ export async function rescheduleAppointmentAsClient(
   appointment.note = input.note || undefined;
   appointment.duration = newDuration;
   appointment.services = [canonical.item];
+  if (input.request !== undefined) {
+    appointment.request = sanitizedRequest;
+    appointment.markModified("request");
+  }
   if (selectionChanged || !appointment.pricing) {
     appointment.pricing = canonical.pricing;
     appointment.markModified("pricing");

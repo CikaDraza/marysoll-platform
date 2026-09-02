@@ -394,4 +394,43 @@ describe.sequential("izmena termina — canonical lifecycle", () => {
     expect(item.extras?.[0]?.duration).toBe(10);
     expect(item.price).toBe(2700); // 2000 osnovna + 700 dodatak
   });
+
+  it("REGRESIJA: podmetnut request se odbija kada usluga nema intake", async () => {
+    const svc = await seedService();
+    const appt = await seedAppointment(svc._id.toString());
+
+    const result = await rescheduleAppointmentAsClient(appt as never, {
+      date: appt.date,
+      time: appt.time,
+      services: appt.services as IAppointmentService[],
+      request: { note: "Ovo UI ne bi ponudio" },
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.kind).toBe("invalid_request");
+    const stored = await Appointment.findById(appt._id).lean();
+    expect(stored).not.toHaveProperty("request");
+  });
+
+  it("intake-enabled izmena čuva autentifikovan request", async () => {
+    const svc = await seedService();
+    await Service.updateOne(
+      { _id: svc._id },
+      { $set: { bookingIntake: { enabled: true } } },
+    );
+    const appt = await seedAppointment(svc._id.toString());
+
+    const result = await rescheduleAppointmentAsClient(appt as never, {
+      date: appt.date,
+      time: appt.time,
+      services: appt.services as IAppointmentService[],
+      request: { note: "Badem oblik sa tankim frenchom" },
+    });
+
+    expect(result.ok).toBe(true);
+    const stored = await Appointment.findById(appt._id).lean<never>();
+    expect(
+      (stored as never as { request?: { note?: string } }).request?.note,
+    ).toBe("Badem oblik sa tankim frenchom");
+  });
 });

@@ -21,6 +21,8 @@ export function BookingActions() {
     backFromIntakeStep,
     selectedDate,
     selectedTime,
+    isEditMode,
+    onCancelAppointment,
   } = useBookingContext();
 
   /** Isti uslov koji koče sva dugmad potvrde. */
@@ -32,6 +34,15 @@ export function BookingActions() {
   if (intakeRequired && !onIntakeStep) {
     return (
       <div className="flex justify-end gap-2 pt-2">
+        {isEditMode && onCancelAppointment && (
+          <button
+            type="button"
+            onClick={onCancelAppointment}
+            className="mr-auto px-4 py-2 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition cursor-pointer"
+          >
+            Otkaži termin
+          </button>
+        )}
         <button
           type="button"
           onClick={handleClose}
@@ -69,7 +80,13 @@ export function BookingActions() {
             disabled={isSubmitting || selectionIncomplete}
             className="px-5 py-2 text-sm font-semibold text-white bg-(--primary-color)/90 hover:bg-(--primary-color) rounded-xl transition disabled:opacity-50 cursor-pointer"
           >
-            {isSubmitting ? "Zakazivanje..." : "Zakaži termin"}
+            {isSubmitting
+              ? isEditMode
+                ? "Čuvanje..."
+                : "Zakazivanje..."
+              : isEditMode
+                ? "Sačuvaj izmene"
+                : "Zakaži termin"}
           </button>
         ) : referralVoucherCode ? (
           <button

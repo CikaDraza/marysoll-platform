@@ -6,18 +6,7 @@
  * stabilnu adresu, a da nijedan zatečeni klijent ne pukne.
  */
 import { describe, it, expect } from "vitest";
-import { subdocRef } from "@/lib/booking/subdocRef";
-
-/** Isti oblik koji ruta pravi za ugnežđene delove. */
-function serializeVariant(vv: Record<string, unknown>) {
-  return {
-    ref: subdocRef(vv),
-    name: String(vv.name ?? ""),
-    price: Number(vv.price ?? 0),
-    duration: Number(vv.duration ?? 0),
-    perItem: Boolean(vv.perItem),
-  };
-}
+import { toBookingServicePresentation } from "@/lib/booking/servicePresentation";
 
 const rawVariant = {
   _id: "69dffbf13ec6da0633f1c865",
@@ -36,6 +25,15 @@ const rawExtra = {
 };
 
 describe("javni ugovor — ref uz postojeća polja", () => {
+  const serializeVariant = (value: Record<string, unknown>) =>
+    toBookingServicePresentation({
+      _id: "service-1",
+      name: "Izlivanje",
+      category: "Nokti",
+      type: "variant",
+      variants: [value],
+    }).variants![0];
+
   it("varijanta dobija ref", () => {
     expect(serializeVariant(rawVariant).ref).toBe("69dffbf13ec6da0633f1c865");
   });
@@ -49,8 +47,27 @@ describe("javni ugovor — ref uz postojeća polja", () => {
   });
 
   it("dodatak dobija svoj, različit ref", () => {
-    expect(subdocRef(rawExtra)).toBe("69dffbf13ec6da0633f1c866");
-    expect(subdocRef(rawExtra)).not.toBe(subdocRef(rawVariant));
+    const service = toBookingServicePresentation({
+      _id: "service-1",
+      name: "Izlivanje",
+      category: "Nokti",
+      variants: [rawVariant],
+      extras: [rawExtra],
+    });
+    expect(service.extras?.[0].ref).toBe("69dffbf13ec6da0633f1c866");
+    expect(service.extras?.[0].ref).not.toBe(service.variants?.[0].ref);
+  });
+
+  it("REGRESIJA: widget DTO rešava intake i ne izlaže persistence oblik", () => {
+    const service = toBookingServicePresentation({
+      _id: "service-1",
+      name: "Izlivanje",
+      category: "Nokti",
+      bookingIntake: { enabled: true },
+    });
+
+    expect(service).toMatchObject({ intakeEnabled: true });
+    expect(service).not.toHaveProperty("bookingIntake");
   });
 
   it("REGRESIJA: `_id` se NE izlaže kao javno polje", () => {

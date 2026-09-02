@@ -9,89 +9,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { Service } from "@/models/Service";
 import { requireCapability } from "@/lib/platform/capabilities-server";
-import { subdocRef } from "@/lib/booking/subdocRef";
-import { serviceRequiresIntake } from "@/lib/appointments/serviceIntake";
-import { normalizePriceMode } from "@/helpers/formatPrice";
-
-function serializeService(s: Record<string, unknown>) {
-  return {
-    _id: String(s._id ?? ""),
-    name: String(s.name ?? ""),
-    category: String(s.category ?? ""),
-    subcategory: s.subcategory ? String(s.subcategory) : undefined,
-    type: String(s.type ?? "single"),
-    // Već REŠENA činjenica za prikaz. Vlasnik odluke je usluga; kategorija
-    // više nije authority (PANTA-SERVICE-INTAKE.md).
-    intakeEnabled: serviceRequiresIntake(s as never),
-    basePrice: s.basePrice != null ? Number(s.basePrice) : null,
-    priceMode: normalizePriceMode(s.priceMode),
-    duration: s.duration != null ? Number(s.duration) : null,
-    description: String(s.description ?? ""),
-    items: Array.isArray(s.items) ? s.items.map(String) : [],
-    featured: s.featured ? String(s.featured) : null,
-    // Ugnežđeni delovi: `_id` se NE izlaže pod tim imenom, ali svaki deo nosi
-    // `ref` — opaque adresu koju Booking Engine očekuje kao `variantRef`,
-    // `extraRefs` i `itemRefs`. Klijent je ne tumači, samo vraća serveru.
-    variants: Array.isArray(s.variants)
-      ? s.variants.map((v: unknown) => {
-          const vv = v as Record<string, unknown>;
-          return {
-            ref: subdocRef(vv),
-            name: String(vv.name ?? ""),
-            price: Number(vv.price ?? 0),
-            // Doplata na basePrice korena kod "from" — bez nje BookingWidget
-            // ne može da izračuna procenu.
-            additionalPrice:
-              vv.additionalPrice != null ? Number(vv.additionalPrice) : undefined,
-            priceMode: normalizePriceMode(vv.priceMode),
-            duration: Number(vv.duration ?? 0),
-            perItem: Boolean(vv.perItem),
-            description: vv.description ? String(vv.description) : undefined,
-          };
-        })
-      : [],
-    extras: Array.isArray(s.extras)
-      ? s.extras.map((e: unknown) => {
-          const ee = e as Record<string, unknown>;
-          return {
-            ref: subdocRef(ee),
-            name: String(ee.name ?? ""),
-            price: Number(ee.price ?? 0),
-            priceMode: normalizePriceMode(ee.priceMode),
-            duration: Number(ee.duration ?? 0),
-            perItem: Boolean(ee.perItem),
-            unitLabel: ee.unitLabel ? String(ee.unitLabel) : undefined,
-            allowQuantity: Boolean(ee.allowQuantity),
-          };
-        })
-      : [],
-    services: Array.isArray(s.services)
-      ? s.services.map((sv: unknown) => {
-          const ss = sv as Record<string, unknown>;
-          return {
-            ref: subdocRef(ss),
-            name: String(ss.name ?? ""),
-            price: Number(ss.price ?? 0),
-            priceMode: normalizePriceMode(ss.priceMode),
-            duration: Number(ss.duration ?? 0),
-            description: String(ss.description ?? ""),
-          };
-        })
-      : [],
-    subscription: {
-      enabled: Boolean((s.subscription as Record<string, unknown>)?.enabled ?? false),
-      priceMonthly: (s.subscription as Record<string, unknown>)?.priceMonthly != null
-        ? Number((s.subscription as Record<string, unknown>).priceMonthly)
-        : null,
-      startDate: (s.subscription as Record<string, unknown>)?.startDate
-        ? String((s.subscription as Record<string, unknown>).startDate)
-        : null,
-      endDate: (s.subscription as Record<string, unknown>)?.endDate
-        ? String((s.subscription as Record<string, unknown>).endDate)
-        : null,
-    },
-  };
-}
+import { toBookingServicePresentation } from "@/lib/booking/servicePresentation";
 
 type Params = { params: Promise<{ tenantSlug: string }> };
 
@@ -115,7 +33,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
       .lean();
 
     return NextResponse.json(
-      services.map((s) => serializeService(s as Record<string, unknown>)),
+      services.map((s) =>
+        toBookingServicePresentation(s as Record<string, unknown>),
+      ),
     );
   } catch (err) {
     console.error("GET /api/public/[tenantSlug]/services:", err);

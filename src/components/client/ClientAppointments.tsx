@@ -481,15 +481,6 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
   );
 }
 
-const inp = [
-  "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
-  "text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800",
-  "focus:outline-none focus:ring-2 focus:ring-violet-400 transition",
-  "placeholder:text-gray-400 dark:placeholder:text-gray-500",
-].join(" ");
-
-const lbl =
-  "block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5";
 const card =
   "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
 
@@ -516,7 +507,8 @@ export default function ClientAppointments() {
   // nose imena, telefone, poruke i intake fotografije drugih klijenata i
   // klijentski UI ih nikad ne sme tražiti radi dostupnosti.
   const { data: salonProfile } = usePublicSalonProfile(tenantSlug);
-  const { data: occupancy = [] } = usePublicOccupancy(tenantSlug);
+  const { data: occupancy = [], refetch: refetchOccupancy } =
+    usePublicOccupancy(tenantSlug);
 
   const [editTarget, setEditTarget] = useState<IAppointment | null>(null);
   const { requestCancel, dialog: cancelDialog } = useCancelAppointment({
@@ -537,6 +529,7 @@ export default function ClientAppointments() {
     isLoading,
     isError,
     isFetching,
+    refetch: refetchAppointments,
   } = useAppointments({
     page,
     limit: 10,
@@ -725,6 +718,10 @@ export default function ClientAppointments() {
         }
         manualSlots={salonProfile?.manualSlots as ManualSlotsMap | undefined}
         bookedAppointments={occupancy}
+        onChanged={() => {
+          void refetchAppointments();
+          void refetchOccupancy();
+        }}
       />
 
       {cancelDialog}

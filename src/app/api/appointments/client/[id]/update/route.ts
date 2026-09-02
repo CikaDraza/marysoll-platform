@@ -5,6 +5,7 @@ import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
 import { rescheduleAppointmentAsClient } from "@/lib/appointments/clientFlows";
 import type { IAppointmentService } from "@/types";
 import { requireCapability } from "@/lib/platform/capabilities-server";
+import { getTenantFolder } from "@/lib/cloudinary";
 
 export async function PUT(
   req: NextRequest,
@@ -32,6 +33,10 @@ export async function PUT(
   }
 
   const data = await req.json();
+  const hasRequest = Object.prototype.hasOwnProperty.call(data, "request");
+  const requestTenantFolder = hasRequest
+    ? await getTenantFolder(decoded.tenantId)
+    : undefined;
   const services = Array.isArray(data.services)
     ? (data.services as IAppointmentService[])
     : [];
@@ -52,6 +57,9 @@ export async function PUT(
       serviceName: data.serviceName,
       note: data.note,
       duration: data.duration,
+      ...(hasRequest
+        ? { request: data.request, requestTenantFolder }
+        : {}),
     },
     // Istorijska poruka ove rute (klijentski panel je prikazuje direktno)
     { expiredMessage: "Vreme za otkazivanje termina je isteklo." },
