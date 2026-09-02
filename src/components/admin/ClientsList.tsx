@@ -8,6 +8,8 @@ import {
   normalizeInstagram,
 } from "@/lib/contactRules";
 import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Client360 from "./Client360";
 import { useDebounce } from "@/hooks/useDebounce";
 import { IUser } from "@/types";
 import ClientModalActionButtons from "./ClientModalActionButtons";
@@ -21,6 +23,9 @@ interface DupInfo {
 }
 
 export default function ClientsList() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedClientId = searchParams.get("clientId");
   const [query, setQuery] = useState("");
   const [date, setDate] = useState("");
   const [page, setPage] = useState(1);
@@ -72,6 +77,10 @@ export default function ClientsList() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  if (selectedClientId) {
+    return <Client360 clientId={selectedClientId} onBack={() => router.push("/dashboard?tab=klijenti")} />;
+  }
+
   if (loadingAll) return <Loader />;
   if (errorAll) return <p>Greška pri učitavanju klijenata.</p>;
 
@@ -122,7 +131,7 @@ export default function ClientsList() {
               <div className="flex flex-col min-w-0 gap-x-4">
                 <div className="min-w-0 flex-auto">
                   <p className="text-sm/6 font-semibold text-gray-900 dark:text-gray-300 flex items-center gap-2 flex-wrap">
-                    {user.name}
+                    <button className="text-left hover:text-violet-600 hover:underline" onClick={() => router.push(`/dashboard?tab=klijenti&clientId=${user._id}`)}>{user.name}</button>
                     {dupMap.has(user._id) && (
                       <span className="inline-block rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
                         Mogući duplikat
