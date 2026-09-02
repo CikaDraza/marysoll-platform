@@ -56,9 +56,21 @@ const tenants = Object.fromEntries(
     .map((t) => [String(t._id), String(t.slug ?? "?")]),
 );
 
+/**
+ * Bira SAMO dokumente kod kojih nova odluka još ne postoji.
+ *
+ * `$ne: true` bi hvatao i `enabled: false`, pa bi salon koji je NAMERNO
+ * odštiklirao „Traži da klijentkinja pošalje šta želi" sledećim backfillom
+ * dobio `true` nazad. Legacy migracija sme da materijalizuje samo nepostojeću
+ * odluku, nikad da pregazi donetu.
+ *
+ *   nema polja → backfill sme da postavi true
+ *   false      → eksplicitna odluka admina, NE DIRA SE
+ *   true       → već uključeno, NE DIRA SE
+ */
 const query: Record<string, unknown> = {
   categorySlug: { $in: legacyIntakeSlugs },
-  "bookingIntake.enabled": { $ne: true },
+  "bookingIntake.enabled": { $exists: false },
 };
 if (TENANT) query.tenantId = new mongoose.Types.ObjectId(TENANT);
 
