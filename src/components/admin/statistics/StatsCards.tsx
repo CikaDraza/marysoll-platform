@@ -1,5 +1,6 @@
 import React from "react";
 import { useStatistics } from "@/hooks/useStatistics";
+import { StatisticsMetricCard } from "./StatisticsMetricCard";
 
 interface StatsCardsProps {
   month: number;
@@ -73,7 +74,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ month, year }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       {/* Ukupan potencijalni prihod — svi zakazani termini, bez obzira na ishod */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-4 border-l-4 border-green-500">
+      <StatisticsMetricCard accent="border-green-500">
         <div className="flex justify-between items-start">
           <div className="pr-2">
             <p className="text-sm font-medium text-gray-600 dark:text-zinc-300">
@@ -102,10 +103,10 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ month, year }) => {
         <p className="text-xl font-semibold mt-3">
           {formatCurrency(totalRevenue)}
         </p>
-      </div>
+      </StatisticsMetricCard>
 
       {/* Ukupno termina */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-4 border-l-4 border-blue-500">
+      <StatisticsMetricCard accent="border-blue-500">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-sm font-medium text-gray-600 dark:text-zinc-300">
@@ -134,10 +135,10 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ month, year }) => {
         <p className="text-xs text-gray-500 dark:text-zinc-300 mt-2">
           Zakazani termini
         </p>
-      </div>
+      </StatisticsMetricCard>
 
       {/* Klijenti koji su zakazali u mesecu — sa podelom novi / povratni */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-4 border-l-4 border-purple-500">
+      <StatisticsMetricCard accent="border-purple-500">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-sm font-medium text-gray-600 dark:text-zinc-300">
@@ -185,10 +186,10 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ month, year }) => {
             </span>
           )}
         </p>
-      </div>
+      </StatisticsMetricCard>
 
       {/* Prosečan razmak */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-4 border-l-4 border-orange-500">
+      <StatisticsMetricCard accent="border-orange-500">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-sm font-medium text-gray-600 dark:text-zinc-300">
@@ -217,7 +218,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ month, year }) => {
         <p className="text-xs text-gray-500 dark:text-zinc-300 mt-2">
           Između termina
         </p>
-      </div>
+      </StatisticsMetricCard>
     </div>
   );
 };

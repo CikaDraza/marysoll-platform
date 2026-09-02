@@ -8,9 +8,9 @@ import { Types } from "mongoose";
 import "@/models/Appointment";
 import "@/models/Service";
 import {
-  getAppointmentPotentialValue,
-  getAppointmentRealizedValue,
-} from "@/lib/appointments/pricingSnapshot";
+  appointmentStatisticsValue,
+  topClientsForPeriod,
+} from "@/lib/statistics/engine";
 
 // ---------------------------
 // TypeScript Interfaces
@@ -61,9 +61,7 @@ interface IAppointment {
  * nije — takvi termini se broje odvojeno i ne ulaze ni u jedan zbir.
  */
 function appointmentRevenue(a: IAppointment): number | null {
-  return a.status === "completed"
-    ? getAppointmentRealizedValue(a)
-    : getAppointmentPotentialValue(a);
+  return appointmentStatisticsValue(a);
 }
 
 interface IUser {
@@ -192,16 +190,7 @@ export async function GET(req: NextRequest) {
     // -------------------------
     // 2. TOP 3 KLIJENTA
     // -------------------------
-    const clientCounts: Record<string, number> = {};
-
-    appointments.forEach((a) => {
-      clientCounts[a.clientEmail] = (clientCounts[a.clientEmail] || 0) + 1;
-    });
-
-    const topClients = Object.entries(clientCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([email, count]) => ({ email, count }));
+    const topClients = topClientsForPeriod(appointments);
 
     // -------------------------
     // 3. TOP USLUGE
