@@ -84,6 +84,8 @@ export async function checkSlotAvailability(args: {
   requestedDuration: number;
   profile: BookingSalonProfile | null;
   enforceWorkingHours?: boolean;
+  /** Termin koji se pomera ne sme da bude sam sebi prepreka. */
+  excludeAppointmentId?: string | { toString(): string } | null;
 }): Promise<string | null> {
   const {
     tenantId,
@@ -92,6 +94,7 @@ export async function checkSlotAvailability(args: {
     requestedDuration,
     profile,
     enforceWorkingHours,
+    excludeAppointmentId,
   } = args;
 
   if (enforceWorkingHours && profile?.availabilityMode !== "manualSlots") {
@@ -110,6 +113,9 @@ export async function checkSlotAvailability(args: {
     tenantId,
     date,
     status: ACTIVE_APPOINTMENT_STATUS_FILTER,
+    ...(excludeAppointmentId
+      ? { _id: { $ne: String(excludeAppointmentId) } }
+      : {}),
   })
     .select("date time duration")
     .lean<{ date: string; time: string; duration?: number }[]>();
