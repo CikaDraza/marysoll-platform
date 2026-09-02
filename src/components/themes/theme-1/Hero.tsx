@@ -58,7 +58,7 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
             width={1920}
             height={1080}
             alt={salon.description}
-            className="min-w-[1920px] h-full object-cover object-center"
+            className="min-w-[1920px] h-auto object-cover object-center"
             preload={true}
           />
         </div>

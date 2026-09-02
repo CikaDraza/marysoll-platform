@@ -26,7 +26,7 @@ function AttachmentBubble({ att }: { att: SAAttachment }) {
           alt={att.name}
           width={200}
           height={200}
-          className="rounded-xl max-h-48 object-cover border border-white/20"
+          className="rounded-xl max-h-48 w-auto object-cover border border-white/20"
         />
       </Link>
     );

@@ -38,7 +38,7 @@ export function Theme1AboutUs({ about }: Props) {
               alt={about.image?.alt || "O nama"}
               width={500}
               height={500}
-              className="rounded-lg h-130 object-cover object-top"
+              className="rounded-lg h-130 w-auto object-cover object-top"
             />
           ) : (
             <h2 className="text-4xl lg:text-6xl text-left font-semibold tracking-tight text-balance text-gray-900 sm:text-6xl">

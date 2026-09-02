@@ -95,7 +95,7 @@ export function Theme1ImageGenerationSection() {
                   height={400}
                   src={generatedImage}
                   alt="Generated look"
-                  className="rounded-lg max-h-100 shadow-2xl"
+                  className="rounded-lg max-h-100 w-auto shadow-2xl"
                 />
                 <button
                   onClick={() => {

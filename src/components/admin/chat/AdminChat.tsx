@@ -76,7 +76,7 @@ function AttachmentBubble({ att }: { att: ChatAttachment }) {
           alt={att.name}
           width={200}
           height={200}
-          className="rounded-xl max-h-48 object-cover border border-gray-200 dark:border-gray-700"
+          className="rounded-xl max-h-48 w-auto object-cover border border-gray-200 dark:border-gray-700"
         />
       </Link>
     );
