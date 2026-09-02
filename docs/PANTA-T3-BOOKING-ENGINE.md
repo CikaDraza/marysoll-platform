@@ -1,15 +1,19 @@
 # PANTA T3 — Booking Engine write authority (v1 architecture lock)
 
-> Status: **Slice 5 dark core implementiran.** Od 2026-09-01 `serviceAdapter`
-> (`resolveServiceBookingProduct`) JESTE produkcijski autoritet za selekciju i
-> trajanje, kroz `resolveBookingRequest`. `BookingReservation`, `reserve()` i
-> lifecycle komande ostaju dark — nijedna ruta ih ne poziva.
-> Datum pregleda stvarnog koda: 2026-08-22.
+> Status: **Slice 5 dark core implementiran; NIJE live authority.**
+> `serviceAdapter` (`resolveServiceBookingProduct`) JESTE produkcijski autoritet
+> za selekciju, trajanje i cenu, kroz `resolveBookingRequest` — koriste ga svi
+> beauty create/edit ulazi osim legacy HMAC i marketplace rute
+> ([pregled putanja](PANTA-BOOKING-CRM-ARC.md#3-write-putanje--stvarni-status)).
+> `BookingReservation`, `reserve()`, day-lock i lifecycle komande ostaju dark:
+> `BookingReservation` se ne importuje ni iz jedne `app/api/**` rute.
+> Datum pregleda stvarnog koda: **2026-09-03**.
 > Preduslovi: završeni `availability-core` i T2B capability authority.
 >
-> Ovaj dokument je operativni ugovor za Slice 5 i Slice 6. Slice 5 sada uvodi
+> Ovaj dokument je operativni ugovor za Slice 5 i Slice 6. Slice 5 je uveo
 > `BookingReservation`, `BookingDayLock`, durable idempotency receipt i booking
-> outbox, ali nijedna postojeća production booking ruta još nije migrirana.
+> outbox; **nijedna production booking ruta nije migrirana na njih** i migracija
+> je svesno odložena, ne zaboravljena. Pre cutover-a mora biti rešen §4.1.
 
 ## 1. Svrha, granice i glavni invariant
 
@@ -105,13 +109,14 @@ Njegova sudbina je migration odluka u §20–21.
 
 ### 2.4 Write-time availability danas nije jedinstvena
 
-| Tok | Današnja provera pre write-a |
+| Tok | Današnja provera pre write-a (stanje 2026-09-03) |
 |---|---|
-| Ulogovani klijent, public guest i marketplace Appointment | `checkSlotAvailability`: legacy working-hours/manual-slot helper + duration overlap; ne koristi novi core i ne učitava vacations |
-| Admin create-guest | samo isti početni `date + time`; namerno dopušta overlap i vreme van rasporeda |
-| Legacy `/api/booking` | samo isti `date + time`; sopstvena UTC konverzija; nema schedule/manual/vacation/duration-overlap proveru |
-| Client reschedule (2 rute, 1 helper) | legacy exact + duration overlap + manual/working-hours; bez vacations i bez novog core-a |
-| Opšti update | datum/vreme/trajanje može promeniti bez availability provere |
+| Ulogovani klijent i public guest | `checkSlotAvailability`: legacy working-hours/manual-slot helper + duration overlap; ne koristi novi core i ne učitava vacations |
+| Admin create-guest | samo isti `date + time` → 409; namerno dopušta overlap po trajanju i vreme van rasporeda (odluka 2026-07-04) |
+| Client reschedule | canonical selekcija + duration overlap + manual/working-hours; bez vacations i bez novog core-a |
+| Admin update (uklj. prihvatanje predloga) | isti `date + time` → 409; predlog se proverava u trenutku prihvatanja, uz izuzimanje sopstvenog termina |
+| Legacy `/api/booking` (HMAC) | samo isti `date + time`; sopstvena UTC konverzija; nema schedule/manual/vacation/duration-overlap proveru |
+| Marketplace Appointment write | legacy provera; `duration` iz zahteva; bez canonical resolvera |
 | Slot reserve/book | CAS samo nad Slot dokumentom; ne vidi Appointment occupancy |
 
 UI izbor slobodnog termina zato nije dokaz da je termin i dalje slobodan. Čak i
@@ -142,8 +147,8 @@ point-a = 16 putanja koje Slice 6 mora eksplicitno razrešiti**. Ranija skraćen
 | `POST /api/public/[tenantSlug]/appointments/guest` | javni gost | nema credential auth | server razrešava slug | `Service.findById`; request snapshot/duration | `Appointment` | legacy full check, bez vacations/core-a | `new Appointment().save()` | guest upsert, notification | slug→tenant; Service tenant ownership nije dokazan | `ServiceBookingAdapter.reserveGuest` | Slice 6; **visok** |
 | `POST /api/booking` | signed marketplace/legacy guest | HMAC + rate limit | `salonId → SalonProfile.tenantId` | `Service.findById` | `Appointment` | samo exact start; posebna UTC date/time konverzija | `new Appointment().save()` | custom guest create/reuse, notification | salon→tenant; Service tenant ownership nije dokazan | isti signed Service reserve adapter | Slice 6; **kritičan** |
 | `POST /api/marketplace/appointments` | signed marketplace guest | HMAC + rate limit | `salonId → SalonProfile.tenantId` | `Service.findById`; request snapshot/duration | `Appointment` | legacy full check, bez vacations/core-a | `new Appointment().save()` | guest upsert, notification | salon→tenant; Service tenant ownership nije dokazan | signed `ServiceBookingAdapter.reserveGuest` | Slice 6; **visok** |
-| `PUT /api/appointments/update/[id]` | admin, client ili superadmin | JWT + `actorScopeFrom` | scoped Appointment; superadmin audit | slobodan partial payload; proposal koristi postojeći Appointment | `Appointment` | nema autoritativne provere | `findOneAndUpdate` | deo notifikacija nastaje pre write-a; status notification i loyalty posle | tenant/client scope postoji; superadmin unscoped i logovan | razdvojeni `reschedule`, `propose`, `acceptProposal`, `transition` | Slice 6; **kritičan** |
-| `PUT /api/appointments/client/[id]/update` | klijent | tenant JWT | JWT + Appointment tenant/client | `Service.findById`; request services/duration | `Appointment` | shared legacy reschedule helper; bez vacations/core-a | `appointment.save()` u `clientFlows` | reschedule notification | tenant + sopstveni client id; Service tenant ownership nije dokazan | `ServiceBookingAdapter.reschedule` | Slice 6; **visok** |
+| `PUT /api/appointments/update/[id]` | admin, client ili superadmin | JWT + `actorScopeFrom` | scoped Appointment; superadmin audit | canonical selekcija kroz `resolveBookingRequest`; proposal koristi postojeći Appointment | `Appointment` | isti `date+time` drugog aktivnog termina → 409; preklapanje po trajanju namerno dozvoljeno adminu; predlog se proverava pri prihvatanju | `findOneAndUpdate` | deo notifikacija nastaje pre write-a; status notification i loyalty posle | tenant/client scope postoji; superadmin unscoped i logovan | razdvojeni `reschedule`, `propose`, `acceptProposal`, `transition` | Slice 6; **kritičan** |
+| `PUT /api/appointments/client/[id]/update` | klijent | tenant JWT | JWT + Appointment tenant/client | tenant-scoped canonical resolver; `duration` iz zahteva se ignoriše | `Appointment` | shared reschedule helper: duration overlap + radno vreme; bez vacations/novog core-a | `appointment.save()` u `clientFlows` | reschedule notification | tenant + sopstveni client id; Service tenant ownership nije dokazan | `ServiceBookingAdapter.reschedule` | Slice 6; **visok** |
 | `PUT /api/marketplace/appointments/[id]/update` | signed marketplace klijent | HMAC; email iz pozivajućeg backend-a | Appointment pronađen po id + email | isto kao shared client helper | `Appointment` | isti shared legacy helper | `appointment.save()` u `clientFlows` | reschedule notification | email je jedini subject filter nakon HMAC-a | signed `ServiceBookingAdapter.reschedule` | Slice 6; **visok** |
 | `POST /api/appointments/client/[id]/cancel` | klijent | tenant JWT | JWT + Appointment tenant/client | postojeći Appointment | `Appointment` | cancellation window, bez occupancy command-a | `appointment.save()` u `clientFlows` | loyalty/voucher; notification samo za pravovremen cancel | tenant + sopstveni client id | `ServiceBookingAdapter.cancel` | Slice 6; srednje-visok |
 | `POST /api/marketplace/appointments/[id]/cancel` | signed marketplace klijent | HMAC + email | Appointment po id + email | postojeći Appointment | `Appointment` | isti shared cancellation helper | `appointment.save()` u `clientFlows` | loyalty/voucher; notification | email subject posle HMAC-a | signed `ServiceBookingAdapter.cancel` | Slice 6; srednje-visok |
@@ -178,7 +183,7 @@ današnji dokument. Moraju ipak biti sačuvani pri razdvajanju modela.
 | `GET /api/marketplace/availability` | vraća profile config, ne računa occupancy | ostaje read/config endpoint |
 | Homepage i Y2K widget | koriste adapter/widget-day sa schedule/manual/vacations | UI ostaje read-only; server reserve uvek ponavlja račun |
 | `BookingProvider` | koristi core za classic prikaz; manual deo još ima lokalni helper | UI orkestracija ostaje; modalni prop lanac mora dobiti vacations pre live gate-a |
-| `ClientCreateModal` / `ClientEditModal` | koriste core za classic listu; manual lokalno | isto; browser rezultat nije dokaz dostupnosti |
+| Klijentski `BookingModal` / `BookingProvider` (zamenili `ClientCreateModal`/`ClientEditModal`) | koriste core za classic listu; manual lokalno | isto; browser rezultat nije dokaz dostupnosti |
 | `AdminCreateModal` / `AdminEditModal` | slobodan unos, bez core ponude | prelaze na komande; izuzetak se beleži kao override, nikad kao silent double-booking |
 | `useBookingFlow` / Theme-9 dialog | offering-first preview state | ostaje UI sloj; ne postaje engine |
 | `POST .../booking-preview` | šalje mejl; ne piše booking kolekcije | ostaje preview do Slice 10; nema occupancy write pre Slice 6 gate-a |
@@ -212,6 +217,40 @@ permission ∩ capability ∩ resource ownership
 - Browser tenant ID nikada nije trusted. Public slug se server-side prevodi u
   tenant ID. Signed marketplace subject se server-side prevodi u tenant,
   resource i client odnos.
+
+### 4.1 T3 CUTOVER BLOCKER — dve occupancy semantike za isti red
+
+U kodu danas postoje **dva različita pravila** o tome da li završen/nedošao
+termin drži svoje vreme:
+
+| izvor | `completed` / `no_show` (uklj. `late_cancel`) |
+|---|---|
+| **produkcija** — `lib/appointments/occupancy.ts` | `released` — slot se oslobađa **odmah**, i pre kraja termina |
+| **dark core** — `lib/booking/occupancyStatus.ts`, legacy tabela | `blocking_until_end` — drži interval do `endsAt`, pa se oslobađa |
+
+Obe strane su namerne. Produkcijsko pravilo postoji zato što kasno otkazan termin
+salon mora moći da proda: `no_show` je na sedam mesta držao vreme koje je salon
+izgubio. Dark-core pravilo postoji zato što legacy putanja postavlja `no_show` u
+TRENUTKU otkaza, a admin sme i `completed` pre kraja termina — pa bi
+`released` tamo oslobodio interval koji stvarno traje.
+
+**Danas se ne sudaraju** samo zato što produkcijski upiti unapred filtriraju
+zauzeće kroz `ACTIVE_APPOINTMENT_STATUS_FILTER`: redovi sa `completed`/`no_show`
+nikad ne stignu do adaptera koji bi na njih primenio `blocking_until_end`.
+`BookingReservation` canonical tabela je treća semantika (`released` za oba
+statusa).
+
+Posledice, redom:
+
+- **ne blokira T1-4** ni bilo koji drugi beauty rez — dark core nije live
+  authority i nijedna ruta ga ne poziva;
+- **jeste hard preduslov za cutover:** u trenutku kada `BookingReservation` i
+  day-lock postanu write authority, mora postojati JEDNO pravilo, inače isti
+  termin dobija dva odgovora na pitanje „da li je slobodno";
+- **produkcijsko ponašanje se ne menja unazad** samo da bi se uklopilo u stariju
+  T3 specifikaciju. Ako se pravila spajaju, spajaju se u smeru koji salon već
+  koristi, a legacy asimetrija (`no_show` postavljen pre kraja termina) rešava se
+  na strani koja je postavlja.
 
 ## 5. `BookingReservation` v1 contract
 
@@ -941,6 +980,13 @@ dolazi odmah bi se oslobodio.
 
 Treća vrednost politike (`blocking_until_end`) postoji samo zbog toga i nestaje
 kada legacy zapisi budu migrirani.
+
+> **Ovo NIJE današnje produkcijsko ponašanje.** Produkcijski put
+> (`lib/appointments/occupancy.ts`) tretira `completed` i `no_show` kao
+> **oslobođene odmah** i unapred ih filtrira iz upita zauzeća, pa gornja tabela
+> danas nikad ne dođe do reči. Razlika je zabeležena kao cutover blocker u
+> [§4.1](#41-t3-cutover-blocker--dve-occupancy-semantike-za-isti-red); ne menjati
+> produkcijsko ponašanje da bi se uklopilo u ovu tabelu bez te odluke.
 
 #### 21.2.2 `appointment_rescheduled` ima dva značenja
 

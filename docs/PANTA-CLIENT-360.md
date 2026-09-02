@@ -1,187 +1,229 @@
-# Client 360 — operativni product/architecture ugovor
+# Client 360 — CRM dossier (operativni ugovor)
 
-> Slice: **T1-3** · status: kod završen, Marysoll browser acceptance čeka · tenant pilot: Marysoll Makeup & Nails
+> Slice: **T1-3 + T1-3.1** · status: **u kodu**, Marysoll browser acceptance
+> čeka · tenant pilot: Marysoll Makeup & Nails.
+> Provereno nad kodom 2026-09-03, grana `staging/production-engines`.
 
 ## A. Svrha
 
-Client 360 pretvara „Listu klijenata” u CRM dossier jedne klijentkinje. To
-nije novi sistem evidencije: Client 360 je tenant-scoped **read model** koji
-sastavlja činjenice postojećih Appointment/Booking, Statistics, Pricing,
-Testimonials i Loyalty engine-a. Engine odlučuje činjenicu; Client 360 je samo
-projektuje i prikazuje.
+Client 360 pretvara „Listu klijenata" u CRM dosije jedne klijentkinje. To nije
+novi sistem evidencije: Client 360 je tenant-scoped **read model** koji sastavlja
+činjenice postojećih Appointment/Booking, Statistics, Pricing, Testimonials i
+Loyalty domena. Domen odlučuje činjenicu; Client 360 je samo projektuje i
+prikazuje.
 
 Identitet je `TenantUser._id`. Email i ime su presentation/contact podaci, ne
 ključ za spajanje kada postoji `clientProfileId`.
 
-## B–C. Planovi i sadržaj
+## B. Gate — jedan jedini
+
+**Canonical business gate je `statistics`.** Isti feature kontroliše salonsku
+statistiku i statistiku u dosijeu klijentkinje.
+
+```text
+statistics    maria=false · claudia=true · kiki=true · enterprise=true
+```
+
+Server ga primenjuje u `/api/clients/[id]/overview` (`insightsAllowed:
+features.statistics`); osnovni dosije traži `appointments`.
+
+Superadmin feature override ima prednost nad podrazumevanim planom: ako
+Superadmin uključi `statistics` Free/Maria tenantu, effective capability je
+uključena i statistika se vidi. Namerna poslovna odluka — ne izvodi se iz
+evidentirane uplate.
+
+> **ZASTARELO do 2026-09-02 — zamenjeno gore navedenim pravilom.** Ranija verzija
+> ovog dokumenta uvodila je zaseban gate `clientInsights` (Kiki+). Odluka je
+> povučena: salon koji plaća statistiku dobija je i na nivou klijentkinje.
+>
+> **Poznat code cleanup dug:** `clientInsights` polje i dalje fizički postoji u
+> `PLAN_FEATURES`, `FeatureGate` i `FeaturesList`, ali ga **nijedan runtime gate
+> ne koristi**. Uključivanje tog polja danas ne radi ništa. Uklanjanje je code
+> task, ne dokumentaciona odluka — vodi se u [TODO.md](TODO.md).
 
 | Sadržaj | Maria/Free | Claudia | Kiki | Enterprise |
 |---|---:|---:|---:|---:|
 | Identitet i kontakt | da | da | da | da |
-| Osnovni pregled termina | da | da | da | da |
-| Sledeći termini | da | da | da | da |
-| Kratka istorija termina | da | da | da | da |
-| Client Statistics / CRM Insights | ne | ne | da | da |
+| Termini (sledeći, istorija, zahtev, cena) | da | da | da | da |
+| Client Statistics / CRM Insights | ne | da | da | da |
+| Loyalty sekcija | uz `loyalty.rewards` + aktivnu konfiguraciju | | | |
 
-Osnovni dossier traži `appointments`. Advanced deo koristi poseban feature
-`clientInsights`; postojeći `statistics` nije gate jer Claudia ima salonsku
-statistiku, ali nema Client Insights. Canonical matrica je:
+Tenant-specific uključivanje/isključivanje ostaje kroz postojeći
+`Subscription.featureOverrides`. Ne uvodi se `tenant.client360Enabled` i ne rade
+se direktne `plan === "kiki"` provere po komponentama.
+
+## C. Read model — stvarni seam
 
 ```text
-maria=false · claudia=false · kiki=true · enterprise=true
+GET /api/clients/[id]/overview?month&year&appointmentPage&appointmentLimit
+        ↓  requireTenantAdmin  →  tenantId iz tokena, nikad iz query-ja
+        ↓  resolveTenantPlanFeatures  →  appointments gate + insightsAllowed
+   lib/clients/clientOverview.ts   ← JEDINI sastavljač dosijea
+        ↓  paralelni tenant-scoped upiti
+   Appointment · Statistics engine · Testimonial · LoyaltyAccount/Ledger/Voucher
+        ↓  clientOverviewSchema (zod)   ← stabilan DTO, validiran pri izlasku
+   useClientOverview  →  components/admin/Client360/*
 ```
 
-Tenant-specific uključivanje/isključivanje ostaje moguće kroz postojeći
-`Subscription.featureOverrides`. Ne dodaje se `tenant.client360Enabled` i ne
-rade se direktne `plan === "kiki"` provere po komponentama.
+Pravila koja se ne pregovaraju:
+
+- **React ne računa** cenu, prihod, rank ni status semantiku. Komponente u
+  `Client360/` primaju gotove brojeve; jedini dozvoljeni izlaz je formatiranje
+  (`presentation.ts`, `formatters.ts`);
+- svaki upit je tenant-scoped na nivou baze — nikad „učitaj salon pa filtriraj";
+- KPI činjenice dolaze iz `lib/statistics/engine.ts`, istog koji koristi salonska
+  statistika. Client 360 nema svoju kopiju računice;
+- cena termina se čita kroz canonical accessore iz
+  `lib/appointments/pricingSnapshot.ts` — nikad iz trenutnog cenovnika i nikad
+  `null → 0`;
+- termini su paginirani na serveru (`appointmentPage` / `appointmentLimit`,
+  5–50).
 
 ## D. Authority po činjenici
 
 | Činjenica | Authority |
 |---|---|
 | identitet, kontakt, datum članstva | `TenantUser` |
-| termini, status, datum/vreme, intake | `Appointment` + Booking pravila |
-| prikaz cene termina | `Appointment.pricing` accessori/formatter |
-| potencijalni i realizovani prihod | Statistics Engine nad pricing accessorima |
-| status counts, poslednja poseta, sledeći termin | Statistics Engine |
-| Top 3 za postojeći month/year period | isti Statistics Engine koji koristi Salon Statistics |
+| termini, status, datum/vreme, zahtev | `Appointment` + Booking pravila |
+| prikaz cene termina | `Appointment.pricing` accessori i formatter |
+| potencijalni i realizovani prihod | Statistics engine nad pricing accessorima |
+| status counts, poslednja poseta, sledeći termin (ceo odnos, bez perioda) | Statistics engine |
+| Top 3 za izabrani month/year period | isti Statistics engine kao Salon Statistics |
 | broj i sadržaj preporuka | tenant-scoped `Testimonial.clientProfileId` |
 | balans, posete, potrošnja, no-show | `LoyaltyAccount` |
 | audit korekcija | `LoyaltyLedger` |
-| lifecycle vaučera | Voucher engine (`active → reserved → redeemed`) |
+| lifecycle vaučera | Voucher servis (`active → reserved → redeemed`) |
 
-React ne računa cenu, prihod, rank ili status semantiku. Istorijska cena se
-nikada ne uzima iz trenutnog `Service` cenovnika i `null` nikada ne postaje 0.
+## E. Bezbednosna granica
 
-## E. Gate i API granica
-
-URL mora biti deep-linkable i koristiti postojeći admin routing pattern.
-Requested client id je `TenantUser._id`; server uvek traži:
+URL je deep-linkable: `/dashboard?tab=klijenti&clientId=<TenantUser._id>`.
+Server uvek traži:
 
 ```text
-client._id = requestedId
-AND client.tenantId = authenticatedAdmin.tenantId
+client._id = requestedId  AND  client.tenantId = authenticatedAdmin.tenantId
 ```
 
-Tenant iz browser query/body nije authority. Client token nema pristup admin
-dossier-u. Advanced insights i Loyalty se gate-uju na serveru; sakriven UI
-nikada nije zaštita podataka.
+Tenant iz browser query/body nije authority. Klijentski token nema pristup admin
+dosijeu. Statistika i Loyalty se gate-uju **na serveru** — sakriven UI nikada
+nije zaštita podataka: kad gate ne prolazi, napredna polja ne izlaze iz rute.
 
-Preferirani modularni read model:
+## F. Loyalty sekcija
 
-```ts
-{
-  client,
-  appointments,
-  insights: null | ClientInsights,
-  loyalty: null | ClientLoyaltyOverview,
-  testimonials
-}
+Postoji samo kada capability `loyalty.rewards` prolazi **i** tenant ima aktivnu
+Loyalty konfiguraciju. Salonu bez programa se ne prikazuje lažni zero-state.
+
+Razdvojiti dve stvari:
+
+**Šta read model nosi** (`ClientOverview.loyalty`): stanje naloga uključujući
+`lifetimeHearts`, `lifetimePoints` i `lastVisitAt`, poslednjih 10 ledger
+događaja i vaučere. Ta polja postoje jer ih troši i admin adjust modal, koji
+očekuje pun `LoyaltyAdminAccount` oblik.
+
+**Šta sekcija danas prikazuje:**
+
+```text
+metrike      Hearts · Points · Završene posete · Ukupna potrošnja · Nedolasci
+akcija       „Koriguj balans"
+vaučeri      kod · status · nagrada · isticanje · vezani termin
+ledger       poslednjih 10 događaja: datum · opis · promena
 ```
 
-Razdvojene rute su dozvoljene kada capability granice i caching time ostaju
-čistiji. Svaki Appointment/Testimonial/Loyalty query mora biti tenant-scoped i
-ne sme učitavati ceo salon pa filtrirati u browseru.
+`lifetimeHearts`, `lifetimePoints` i `lastVisitAt` **se ne renderuju** u dosijeu
+— nose ih DTO i modal. Nema zero-state praznog naloga: bez loyalty naloga
+sekcija kaže samo da nalog još ne postoji.
 
-## F. Loyalty prikaz
+Ručna korekcija srca/poena ide isključivo kroz postojeću admin adjust komandu
+(obavezan razlog, audit ledger) — bez drugog endpointa i bez checkboxa
+„iskorišćeno". Detalji: [PANTA-LOYALTY-ENGINE.md §10](PANTA-LOYALTY-ENGINE.md).
 
-Loyalty accordion postoji samo kada plan/capability dozvoljava Loyalty **i**
-tenant ima Loyalty program/config. Ne prikazuje se lažni zero-state salonu bez
-programa.
+## G. Preporuke su read-only
 
-Read prikaz: srca, poeni, completed visits, canonical total spend, no-shows,
-smislen postojeći streak, poslednjih 5–10 ledger događaja i vaučeri `active`,
-`reserved`, `redeemed` sa kodom, nagradom, vrednošću, istekom i vezanim
-terminom/datumom kada postoji.
+Broje se i čitaju po `tenantId + clientProfileId`. Dosije prikazuje ocenu, tekst,
+status i postojeći odgovor salona kao read-only; Odobri/Odbij/Izmeni/Odgovori
+ostaju na postojećem ekranu preporuka, do kog vodi link iz sekcije.
 
-Ručna korekcija hearts/points sme biti dostupna samo reuse-om postojećeg admin
-adjust command-a/modala: obavezan razlog i audit ledger. Ne pravi se drugi
-endpoint niti checkbox „iskorišćeno”.
+> **Poznat dug:** sekcija se danas prikazuje bez provere `testimonials` feature-a.
+> Podaci su tenant-scoped, pa nije bezbednosni problem, ali salon bez te funkcije
+> vidi praznu sekciju. Vodi se u [TODO.md](TODO.md).
 
-## G. Testimonials su read-only
+## H. Layout — zaključan redosled
 
-Preporuke se broje i čitaju po `tenantId + clientProfileId`. Client 360
-prikazuje ocenu, tekst, status i postojeći admin reply kao read-only. Approve,
-reject, edit i reply ostaju isključivo na postojećem Testimonials management
-ekranu; dossier ima samo link „Otvori preporuke →”. Sekcija ne postoji kada
-`testimonials` feature nije dostupan.
+```text
+1  identitet i kontakt
+2  STATISTIKA        ← kada gate prolazi; prva operativna sekcija
+3  termini
+4  Loyalty
+5  preporuke
+```
 
-## Layout i Client Insights
+Statistika je namerno **iznad** termina: dosije prvo odgovara „kakva je ova
+klijentkinja", pa tek onda „šta joj je zakazano". Odluka je doneta nad stvarnim
+ekranom i **zamenjuje** raniju dokumentacionu tvrdnju da termini idu prvi.
 
-Identitet/kontakt su iznad accordiona. Redosled sekcija je zaključan:
+Sve četiri operativne sekcije koriste jedan shared surface —
+`ClientOverviewSection` — koji je **collapsible disclosure preko native
+`<details>` / `<summary>`**. Otvaranje i zatvaranje, fokus i tastatura dolaze iz
+platforme; dark/light stilizacija je na omotaču. Nije uveden custom accordion i
+ne uvodi se.
 
-1. Termini
-2. Statistika (`clientInsights`, Kiki+ ili override)
-3. Loyalty (feature + aktivna config)
-4. Preporuke
+Sekcija je otvorena po defaultu kada je potrošač prosledi `open`: danas su to
+**Statistika** i **Termini**. Loyalty i Preporuke počinju sklopljene.
 
-Termini koriste canonical pricing prikaz: quote kada postoji, `from` kao „od
-X RSD”, `on_request` bez quote-a kao „Cena na upit”, charged iznos gde je
-relevantan. Intake dobija mali read-only indikator i postojeći detalj.
+Termini koriste canonical prikaz cene: quote kad postoji, `from` kao „od X RSD",
+`on_request` bez quote-a kao „Cena na upit", naplaćen iznos gde je relevantan.
+Zahtev za uslugu (intake) ima read-only indikator i detalj.
 
-Tačno devet Client Insights činjenica:
+Tačno devet Client Insights činjenica. Sve opisuju **celokupan odnos** sa
+klijentkinjom i **ne zavise od izabranog meseca** — `month/year` filter iznad
+njih menja isključivo Top 3 poređenje:
 
-1. potencijalni prihod — budući aktivni termini;
-2. realizovan prihod — completed/canonical realized value;
-3. ukupno termina;
-4. realizovano — completed count;
-5. otkazano — ista definicija kao Salon Statistics;
-6. no-show — `no_show`, uključujući postojeću late-cancel poslovnu posledicu;
-7. preporuka ostavila — Testimonial count po tenant/clientProfileId;
-8. poslednja poseta — poslednji completed po stvarnom date/time;
-9. sledeći termin — najraniji budući aktivni termin.
+```text
+1 potencijalni prihod (budući aktivni termini)   6 no-show (uklj. late-cancel posledicu)
+2 realizovan prihod (canonical realized)          7 ostavljene preporuke
+3 ukupno termina                                  8 poslednja poseta
+4 realizovano (completed)                         9 sledeći termin
+5 otkazano (ista definicija kao Salon Statistics)
+```
 
 Zbir poznatih iznosa nosi zaseban broj termina sa nepoznatom cenom. Kada nijedan
-iznos nije poznat prikaz je „Cena nije definisana”, nikada 0. Client Top 3
-koristi isti month/year period i primitive kao Salon Statistics; van Top 3 se
-ne izmišlja rank.
+iznos nije poznat, prikaz je „Cena nije definisana", nikada 0.
 
-## H. T1-4 — Loyalty redemption, buduće
+**Period pripada samo Top 3.** Salon Statistics i Client 360 dele Statistics
+engine primitive i iste semantičke definicije tamo gde se činjenice preklapaju
+(šta je otkazano, šta je realizovano, kako se čita cena), ali devet relationship
+KPI-ja nije month/year isečak. Jedino Top 3 mora koristiti isti period i isti
+rang kao Salon Statistics; van Top 3 se rank ne izmišlja.
 
-T1-3 ne implementira Points Shop redemption, direktno trošenje srca, stacking
-ni novu voucher komandu. Budući tok dolazi **posle uspešno kreiranog termina**
-u posebnom Loyalty modalu, ne u service/variant/extras/date/time BookingWidget
-toku.
-
-T1-4 mora odlučiti i implementirati:
-
-```text
-points → configured points-shop reward → voucher
-       → appointment reservation → redeemed na completed
-```
-
-Ne postoji proizvoljan kurs „30 points = X RSD”. T1-4 posebno odlučuje više
-nagrada, voucher/points stacking, admin confirmation, trenutak skidanja balansa
-i povrat na cancellation/no-show. Hearts milestone se ne pretvara u direktnu
-potrošnju bez nove product odluke.
-
-## I. T1-5 — paketi/pretplate, buduće
-
-T1-3 ne implementira pakete, salonske client subscriptions, Paddle,
-LemonSqueezy, entitlement ni payment tok. `Service.subscription` samo opisuje
-šta salon nudi; nije dokaz da je klijent nešto kupio. Tenant Subscription model
-se ne koristi za odnos salon–klijent.
-
-Budući `ClientPackage` / entitlement mora eksplicitno nositi: client, service,
-purchased/used/remaining treatments, paid amount, valid-from/to, status i
-appointment consumption history. Payment/provider integracija je zaseban
-kasniji slice. U T1-3 nema placeholder kartice koja glumi ovaj feature.
-
-## J. Acceptance kriterijumi
+## I. Acceptance kriterijumi (browser provera koja čeka)
 
 - ime u listi klijenata otvara stabilan deep link; Back i refresh rade;
-- unauthenticated je 401, client token 403, cross-tenant id ne vraća podatke;
-- basic dossier radi na Maria/Claudia/Kiki/Enterprise uz `appointments`;
-- `clientInsights`: Maria/Claudia false, Kiki/Enterprise true, oba smera
-  feature override-a rade i server ne vraća advanced podatke kada su ugašeni;
-- svih devet KPI činjenica dolazi iz Statistics Engine-a;
-- Salon Statistics i Client 360 dele iste računice i UI card/table primitive;
-- future unknown i `on_request + addon` nikada ne postaju lažni iznos;
-- Loyalty ne curi između tenanta i ne postoji bez capability/config;
-- Testimonials su tenant/clientProfileId scoped i read-only;
-- accordion je shared admin komponenta sa keyboard, ARIA, fokusom, kratkom
-  animacijom, chevronom, dark/light i mobile ponašanjem;
-- desktop/mobile nemaju horizontalni overflow;
-- postojeći Salon Statistics nastavlja da koristi istu month/year semantiku;
-- `tsc`, lint, testovi i production build prolaze; Marysoll browser acceptance
-  pokriva basic/Kiki gate, Loyalty prisustvo/odsustvo i Testimonials link.
+- neautentifikovan zahtev je 401, klijentski token 403, tuđi tenant ne vraća
+  podatke;
+- osnovni dosije radi na sva četiri plana uz `appointments`;
+- statistika: Maria bez, Claudia/Kiki/Enterprise sa; oba smera Superadmin
+  override-a rade i server ne vraća napredna polja kad je gate zatvoren;
+- svih devet KPI činjenica dolazi iz Statistics engine-a i opisuje **ceo odnos**
+  sa klijentkinjom, ne izabrani mesec;
+- Top 3 poređenje koristi month/year i mora imati isti period i istu semantiku
+  kao Salon Statistics;
+- nepoznata cena i `on_request + dodatak` nikada ne postaju lažan iznos;
+- Loyalty ne curi između tenanta i ne postoji bez capability/konfiguracije;
+- preporuke su tenant/clientProfileId scoped i read-only;
+- desktop i mobile nemaju horizontalni overflow; tabele skroluju u svom okviru;
+- `tsc`, lint, testovi i produkcijski build prolaze.
+
+## J. T1-4 — Loyalty redemption, buduće
+
+Client 360 ne implementira points-shop redemption, trošenje srca ni novu voucher
+komandu. Budući tok i njegova granica: [PANTA-LOYALTY-ENGINE.md §14](PANTA-LOYALTY-ENGINE.md).
+
+## K. T1-5 — paketi/pretplate, odloženo
+
+Client 360 ne implementira pakete, salonske client subscriptions, entitlement ni
+payment tok, i nema placeholder karticu koja ih glumi. `Service.subscription`
+samo opisuje šta salon nudi; nije dokaz da je klijentkinja nešto kupila. Tenant
+`Subscription` model se ne koristi za odnos salon–klijentkinja.
+
+Budući `ClientPackage` mora eksplicitno nositi: klijentkinju, uslugu,
+kupljene/iskorišćene/preostale tretmane, plaćen iznos, važenje, status i istoriju
+potrošnje kroz termine.
