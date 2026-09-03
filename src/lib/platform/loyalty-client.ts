@@ -15,6 +15,11 @@ export {
   VOUCHER_PREFIX_BY_ORIGIN,
   computeStreakUpdate,
   evaluateReferralCompletion,
+  isVoucherApplicableToService,
+  computeBenefitPricing,
+  evaluatePointsShopOffer,
+  pointsShopIdempotencyKey,
+  UNKNOWN_BENEFIT_PRICING,
 } from "@panta/loyalty-engine";
 
 export type {
@@ -28,4 +33,7 @@ export type {
   ReferralCompletionGateInput,
   ReferralCompletionGateReason,
   ReferralCompletionGateResult,
+  PointsShopOfferInput,
+  BenefitPricing,
+  PointsShopEligibility,
 } from "@panta/loyalty-engine";

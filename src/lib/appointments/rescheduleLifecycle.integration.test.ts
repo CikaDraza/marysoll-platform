@@ -15,6 +15,8 @@ import { SalonProfile } from "@/models/SalonProfile";
 import { rescheduleAppointmentAsClient } from "./clientFlows";
 import type { IAppointmentService } from "@/types";
 
+// Konekciju drži sam test; app-ov connect (kroz loyalty recompute) je no-op.
+vi.mock("@/lib/db/mongodb", () => ({ connectToDB: async () => undefined }));
 vi.mock("@/lib/notificationService", () => ({
   createAppointmentNotification: vi.fn(async () => null),
 }));

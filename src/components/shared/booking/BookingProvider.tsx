@@ -53,6 +53,7 @@ import {
   bookingIntakeChanged,
   bookingPresentationRequiresIntake,
 } from "@/lib/booking/widgetPresentation";
+import { LoyaltyBenefitPrompt } from "@/components/loyalty/LoyaltyBenefitPrompt";
 
 export interface BookingContextValue {
   // ── props koje podkomponente čitaju ──
@@ -273,6 +274,10 @@ export function BookingProvider({
     tiktok: "",
   });
   const [guestLoading, setGuestLoading] = useState(false);
+  /** Termin koji je upravo zakazan — ulaz za post-booking loyalty ponudu. */
+  const [benefitAppointmentId, setBenefitAppointmentId] = useState<string | null>(
+    null,
+  );
   const [referralVoucherCode, setReferralVoucherCode] = useState(
     pendingDefaults?.voucherCode?.trim().toUpperCase() ?? "",
   );
@@ -599,7 +604,13 @@ export function BookingProvider({
           updatedData: payload,
         });
       } else {
-        await createAppointment.mutateAsync(payload);
+        const created = await createAppointment.mutateAsync(payload);
+        // Loyalty se nudi TEK posle uspešnog zakazivanja i samo ako server
+        // kaže da ima šta da se ponudi. Neuspeh ovog koraka ne dodiruje
+        // potvrdu termina — vidi `LoyaltyBenefitPrompt`.
+        const createdId = (created as { appointment?: { _id?: string } })
+          ?.appointment?._id;
+        if (createdId) setBenefitAppointmentId(String(createdId));
       }
       onBooked?.();
       handleClose();
@@ -802,7 +813,15 @@ export function BookingProvider({
   };
 
   return (
-    <BookingContext.Provider value={value}>{children}</BookingContext.Provider>
+    <BookingContext.Provider value={value}>
+      {children}
+      {/* Zaseban ekran POSLE zakazivanja, u loyalty prezentacionom sloju —
+          booking widget ne zna za nagrade. */}
+      <LoyaltyBenefitPrompt
+        appointmentId={benefitAppointmentId}
+        onDismiss={() => setBenefitAppointmentId(null)}
+      />
+    </BookingContext.Provider>
   );
 }
 

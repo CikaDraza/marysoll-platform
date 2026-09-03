@@ -24,6 +24,7 @@
     "backfill:education-access": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/backfill-education-access-mode.mts",
     "backfill:group-price": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/backfill-group-package-price.mts",
     "backfill:service-intake": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/backfill-service-booking-intake.mts",
+    "backfill:points-shop-ids": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/backfill-points-shop-ids.mts",
     "cleanup:stale-group-items": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/cleanup-stale-group-items.mts"
   },
   "dependencies": {

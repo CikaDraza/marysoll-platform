@@ -96,9 +96,19 @@ const loyaltyConfigSchema = new Schema(
     ],
 
     // ── Points shop (mali katalog nagrada koje klijent kupuje poenima)
+    //
+    // `id` je STABILAN identitet ponude i jedini autoritet u redemption toku
+    // (T1-4). Indeks u nizu se NE sme koristiti: izmena cene ili promena
+    // redosleda pomerila bi indekse, pa bi klijentkinja platila jednu nagradu
+    // a dobila drugu. Id nastaje jednom, na serveru, i preživljava svaku
+    // kasniju izmenu ponude.
     pointsShop: [
       new Schema(
-        { costPoints: { type: Number, required: true, min: 1 }, reward: rewardSchema },
+        {
+          id: { type: String, required: true },
+          costPoints: { type: Number, required: true, min: 1 },
+          reward: rewardSchema,
+        },
         { _id: false },
       ),
     ],

@@ -1,17 +1,20 @@
 // src/app/api/appointments/update/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import type { IAppointmentPricing } from "@/types";
-import {
-  applyQuote,
-  applyChargedAmount,
-  emptyPricingSnapshot,
-} from "@/lib/appointments/pricingSnapshot";
+import { applyQuote, emptyPricingSnapshot } from "@/lib/appointments/pricingSnapshot";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { resolveTenant, verifyToken } from "@/lib/auth/auth-server";
 import { actorScopeFrom, logSuperAdminAccess } from "@/lib/auth/tenantScope";
 import { createAppointmentNotification } from "@/lib/notificationService";
 import { loyaltyOnAppointmentStatusChange } from "@/lib/loyalty/hooks";
+import {
+  BENEFIT_CLEAR_UNSET,
+  commitBenefitRecompute,
+  planBenefitRecompute,
+} from "@/lib/loyalty/redemption";
+import { completeAppointmentCheckout } from "@/lib/appointments/checkout";
+import { LoyaltyRedemptionError, loyaltyErrorStatus } from "@/lib/loyalty/errors";
 import { IAppointment, IAppointmentService } from "@/types";
 import { Types } from "mongoose";
 import { requireCapability } from "@/lib/platform/capabilities-server";
@@ -181,16 +184,50 @@ export async function PUT(
         );
       }
       const base = appointment.pricing ?? emptyPricingSnapshot();
-      // Kod „Došla" iznos je UKUPNO stvarno naplaćeno; pri odobravanju je
-      // OSNOVNA cena, pa server sam dodaje poznate doplate.
+      // Pri odobravanju vlasnica unosi OSNOVNU cenu, pa server sam dodaje
+      // poznate doplate. Slučaj „Došla" (stvarno naplaćeno) više ne prolazi
+      // ovuda — ide kroz checkout seam ispod, koji uz cenu radi i recompute
+      // pogodnosti i atomic prelaz statusa.
       //
       // Snapshot ide u `updatedData`, dakle u ISTI atomic upis kao status.
       // Ranije se menjao samo učitani dokument bez `save()`, pa je cena
       // stizala u mejl a nikad u bazu.
-      updatedData.pricing =
-        updatedData.status === "completed"
-          ? applyChargedAmount(base, amount, decoded.tenantUserId ?? null)
-          : applyQuote(base, amount, decoded.tenantUserId ?? null);
+      updatedData.pricing = applyQuote(base, amount, decoded.tenantUserId ?? null);
+    }
+
+    // ── Završetak ide kroz JEDAN canonical checkout seam ─────────────────
+    // Ne sme da postoji „aritmetika rute A" i „aritmetika rute B": i ova ruta
+    // i novi Checkout ekran i auto-complete cron dele isti obračun pogodnosti,
+    // isto pravilo o stvarno naplaćenom i isti atomic prelaz statusa.
+    //
+    // Ulaz je namerno nepromenjen: `AdminAppointments` i dalje šalje
+    // `{ status: "completed", pricingAmount }`, gde je `pricingAmount` ukupno
+    // naplaćeno.
+    if (isAdmin && updatedData.status === "completed") {
+      try {
+        await completeAppointmentCheckout({
+          appointmentId: id,
+          actor: {
+            tenantId: String(appointment.tenantId),
+            adminTenantUserId: decoded.tenantUserId ?? null,
+          },
+          amounts:
+            typeof pricingAmount === "number" || typeof pricingAmount === "string"
+              ? { chargedAmount: Number(pricingAmount) }
+              : undefined,
+          source: "admin",
+        });
+      } catch (error) {
+        if (error instanceof LoyaltyRedemptionError) {
+          return NextResponse.json(
+            { error: error.message },
+            { status: loyaltyErrorStatus(error) },
+          );
+        }
+        throw error;
+      }
+      const completed = await Appointment.findOne({ _id: id, ...scope.filter });
+      return NextResponse.json(completed);
     }
 
     if (isAdmin && updatedData.status === "no_show") {
@@ -330,16 +367,46 @@ export async function PUT(
       );
     }
 
-    const updated = await Appointment.findOneAndUpdate(
-      { _id: id, ...scope.filter },
-      {
-        ...updatedData,
-        // `{ proposedDate: undefined }` Mongoose izbacuje iz update-a, pa je
-        // predlog preživljavao odluku i klijentkinja je i dalje gledala
-        // „Prihvati / Odbij". Brisanje mora biti eksplicitan `$unset`.
-        ...(clearProposal ? { $unset: CLEAR_PROPOSAL_UNSET } : {}),
-      },
-      { new: true },
+    // ── Pogodnost prati cenu i uslugu ────────────────────────────────────
+    // Vaučer je PRAVILO popusta i pri rezervaciji ne mora znati cenu. Čim
+    // osnovica postane poznata (salon potvrdio cenu) ili se promeni (druga
+    // usluga), dinarski iznos mora ponovo da se izračuna NA SERVERU — do sada
+    // je vaučer na terminu „na upit" ostajao sa `null` iznosima zauvek.
+    //
+    // Recompute gleda PROJEKTOVANO stanje: cenu i uslugu koje termin dobija
+    // ovim upisom, ne one koje je imao.
+    const benefitPlan = await planBenefitRecompute({
+      appliedVoucherId: appointment.appliedVoucherId,
+      pricing: updatedData.pricing ?? appointment.pricing,
+      services: updatedData.services ?? appointment.services,
+    });
+
+    const benefitUnset =
+      benefitPlan.kind === "released" ? BENEFIT_CLEAR_UNSET : undefined;
+
+    // Upis termina i oslobađanje vaučera su ISTA transakcija kada pogodnost
+    // pada: inače bi pad između njih ostavio termin bez pogodnosti, a vaučer
+    // zaključan (`reserved`) na tom istom terminu.
+    const updated = await commitBenefitRecompute(benefitPlan, (session) =>
+      Appointment.findOneAndUpdate(
+        { _id: id, ...scope.filter },
+        {
+          ...updatedData,
+          ...(benefitPlan.set ?? {}),
+          // `{ proposedDate: undefined }` Mongoose izbacuje iz update-a, pa je
+          // predlog preživljavao odluku i klijentkinja je i dalje gledala
+          // „Prihvati / Odbij". Brisanje mora biti eksplicitan `$unset`.
+          ...(clearProposal || benefitUnset
+            ? {
+                $unset: {
+                  ...(clearProposal ? CLEAR_PROPOSAL_UNSET : {}),
+                  ...(benefitUnset ?? {}),
+                },
+              }
+            : {}),
+        },
+        { new: true, ...(session ? { session } : {}) },
+      ),
     );
 
     // Notifikacija za promenu statusa. Odluka o predlogu je već poslala svoju

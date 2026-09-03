@@ -274,6 +274,56 @@ export function getAppointmentRealizedValue(
 }
 
 /**
+ * Osnovica na koju se primenjuje loyalty pogodnost — cena PRE popusta.
+ *
+ * Redosled je poslovni, ne tehnički:
+ *
+ *   1. `quotedTotal` — salon je izričito potvrdio cenu. To je najbolja
+ *      poznata pre-discount osnovica i nadjačava katalog, jer je nastala
+ *      posle uvida u konkretan zahtev (fotografija, dužina nokta...).
+ *   2. `fixed` / `from` → `minimumTotal`. Kod `from` je to trenutno poznat
+ *      minimum: popust nad njim je donja granica, ne konačna reč.
+ *   3. `on_request` bez quote-a → `null`. Cena NE postoji, pa ni popust.
+ *
+ * Zatečeni termini bez snapshot-a padaju na zbir stavki (0 → `null`, isto
+ * pravilo kao svuda: nula nije „besplatno" nego „ne zna se").
+ *
+ * `null` je jedini tačan odgovor kada osnovica nije poznata — vidi
+ * `computeBenefitPricing` u @panta/loyalty-engine.
+ */
+export function getAppointmentPreBenefitBasis(
+  appointment: PricedAppointment,
+): number | null {
+  const pricing = appointment.pricing;
+  if (!pricing) return legacyNumericValue(appointment);
+  if (typeof pricing.quotedTotal === "number") return pricing.quotedTotal;
+  if (pricing.mode === "on_request") return null;
+  return pricing.minimumTotal ?? null;
+}
+
+/**
+ * Quote unet kao UKUPNA dogovorena cena (Appointment Checkout).
+ *
+ * `applyQuote` prima OSNOVNU cenu i sam dodaje poznate doplate — to je tačno
+ * kod odobravanja, gde vlasnica gleda cenovnik. Na checkout-u ona gleda
+ * račun i zna ukupno, pa bi isti ulaz dvaput dodao doplate.
+ */
+export function applyQuotedTotal(
+  pricing: IAppointmentPricing,
+  quotedTotal: number,
+  by?: string | null,
+): IAppointmentPricing {
+  const base = toPlainPricing(pricing);
+  return {
+    ...base,
+    quotedBaseAmount: quotedTotal - (base.knownAddonsTotal ?? 0),
+    quotedTotal,
+    quotedAt: new Date(),
+    quotedBy: by ?? null,
+  };
+}
+
+/**
  * Zatečeni termini bez snapshot-a.
  *
  * Nula se NE tretira kao prihod: stari termini za usluge na upit upisivali su

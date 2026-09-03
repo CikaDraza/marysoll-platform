@@ -48,7 +48,10 @@ describe("odluka o predlogu", () => {
   });
 
   it("predlog se briše `$unset`-om, ne dodelom `undefined`", () => {
-    expect(source).toMatch(/\$unset: CLEAR_PROPOSAL_UNSET/);
+    // `$unset` sada nosi i brisanje pogodnosti (T1-4), pa se poziva kao
+    // spread — invariant je da CLEAR_PROPOSAL_UNSET ide u `$unset`, ne da
+    // stoji baš u tom obliku.
+    expect(source).toMatch(/\$unset:[\s\S]{0,200}CLEAR_PROPOSAL_UNSET/);
     expect(source).not.toMatch(/updatedData\.proposedDate = undefined/);
   });
 

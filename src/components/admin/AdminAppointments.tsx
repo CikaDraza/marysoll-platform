@@ -7,6 +7,8 @@ import {
   hasRequestImage,
 } from "./AppointmentRequestModal";
 import { AppointmentPriceModal } from "./AppointmentPriceModal";
+import { AppointmentCheckoutModal } from "./AppointmentCheckoutModal";
+import { LoyaltyBenefitPicker } from "@/components/loyalty/LoyaltyBenefitPicker";
 import { api } from "@/lib/api";
 import { formatISODate } from "@/helpers/formatISODate";
 import { statusMeta } from "@/lib/appointmentColors";
@@ -60,7 +62,9 @@ function AppointmentListItem({
   const currentAppointment = appointment;
 
   const [manualRequestOpen, setManualRequestOpen] = useState(false);
-  const [priceModal, setPriceModal] = useState<"quote" | "charged" | null>(null);
+  const [priceModal, setPriceModal] = useState<"quote" | null>(null);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [benefitOpen, setBenefitOpen] = useState(false);
   // Deep-link otvara zahtev sam, ali samo dok ga admin ne zatvori — inače bi
   // se modal vraćao pri svakom osvežavanju liste.
   const [autoOpenDismissed, setAutoOpenDismissed] = useState(false);
@@ -96,14 +100,12 @@ function AppointmentListItem({
     currentAppointment.pricing.mode !== "fixed";
   const actionPending = updateAppointmentStatus.isPending;
 
-  const askPrice = (kind: "quote" | "charged") => {
-    const status: IAppointment["status"] =
-      kind === "quote" ? "appointment_approved" : "completed";
+  const askPrice = () => {
     if (!needsPrice) {
-      handleStatusUpdate(status);
+      handleStatusUpdate("appointment_approved");
       return;
     }
-    setPriceModal(kind);
+    setPriceModal("quote");
   };
 
   return (
@@ -115,18 +117,30 @@ function AppointmentListItem({
         isSaving={updateAppointmentStatus.isPending}
         onClose={() => setPriceModal(null)}
         onSkip={() => {
-          handleStatusUpdate(
-            priceModal === "quote" ? "appointment_approved" : "completed",
-          );
+          handleStatusUpdate("appointment_approved");
           setPriceModal(null);
         }}
         onConfirm={(amount) => {
-          handleStatusUpdate(
-            priceModal === "quote" ? "appointment_approved" : "completed",
-            amount,
-          );
+          handleStatusUpdate("appointment_approved", amount);
           setPriceModal(null);
         }}
+      />
+    )}
+    {/* „Došla" je sada RAČUN: cena pre pogodnosti, popust, za naplatu i
+        stvarno naplaćeno — sve server-računato (T1-4). */}
+    {checkoutOpen && (
+      <AppointmentCheckoutModal
+        appointment={currentAppointment}
+        onClose={() => setCheckoutOpen(false)}
+      />
+    )}
+    {/* Salon primenjuje pogodnost u ime klijentkinje kada ona to kaže uživo.
+        Isti server seam kao klijentski picker — nema drugog redemption toka. */}
+    {benefitOpen && currentAppointment._id && (
+      <LoyaltyBenefitPicker
+        appointmentId={currentAppointment._id}
+        audience="admin"
+        onClose={() => setBenefitOpen(false)}
       />
     )}
     {requestOpen && (
@@ -270,7 +284,7 @@ function AppointmentListItem({
             currentAppointment.status === "appointment_rescheduled") && (
             <>
               <button
-                onClick={() => askPrice("quote")}
+                onClick={askPrice}
                 disabled={actionPending}
                 className="cursor-pointer px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors disabled:cursor-wait disabled:opacity-60"
               >
@@ -289,7 +303,14 @@ function AppointmentListItem({
             hasAppointmentStarted(currentAppointment) && (
               <>
                 <button
-                  onClick={() => askPrice("charged")}
+                  onClick={() => setBenefitOpen(true)}
+                  disabled={actionPending}
+                  className="cursor-pointer px-3 py-1 bg-violet-600 text-white text-xs rounded hover:bg-violet-700 transition-colors disabled:cursor-wait disabled:opacity-60"
+                >
+                  Pogodnost
+                </button>
+                <button
+                  onClick={() => setCheckoutOpen(true)}
                   disabled={actionPending}
                   className="cursor-pointer px-3 py-1 bg-teal-600 text-white text-xs rounded hover:bg-teal-700 transition-colors disabled:cursor-wait disabled:opacity-60"
                 >

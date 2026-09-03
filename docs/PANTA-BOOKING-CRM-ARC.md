@@ -76,6 +76,8 @@ Isti mapper projektuje persistence `service.bookingIntake.enabled` u presentatio
 | Predlog termina | ista ruta, admin → klijent | ✅ | ✅ u trenutku **prihvatanja** | ✅ |
 | **Legacy HMAC gost** | `POST /api/booking` | ❌ | ❌ samo `date+time` | ❌ |
 | **Marketplace** | `POST /api/marketplace/appointments` | ❌ | 🟡 legacy provera | ❌ |
+| Završetak termina | `POST /api/appointments/[id]/checkout` | — | — | ✅ quote + `chargedAmount` |
+| Auto-complete | loyalty cron | — | — | ✅ isti seam, bez izmišljene cene |
 
 Poslednja dva reda su jedini preostali write ulazi koji zaobilaze canonical
 seam: uzimaju `duration` iz zahteva i cenu iz `basePrice ?? 0`, pa na njima
@@ -88,6 +90,47 @@ migracije različit i ne smeju se voditi kao jedna stavka.
 termine i izađe iz radnog vremena. Zato admin putanje imaju samo zaštitu od
 tačnog duplikata (isti datum i vreme drugog aktivnog termina → 409), a ne punu
 proveru preklapanja.
+
+### 3.1 Završetak termina ima JEDAN seam (T1-4)
+
+Do T1-4 su postojala dva puta do `status: "completed"` — admin update ruta i
+auto-complete cron — svaki sa svojom aritmetikom cene. Sada oba prolaze kroz
+`lib/appointments/checkout.ts`, pa dele isti obračun pogodnosti, isto pravilo
+o stvarno naplaćenom iznosu i isti atomic prelaz statusa.
+
+```text
+completeAppointmentCheckout
+   dogovorena pre-benefit cena → recompute popusta → stvarno naplaćeno
+   → atomic status → voucher reserved→redeemed → durable loyalty event
+```
+
+Cron prosleđuje `source: "auto"` i **nijedan iznos**: mašina ne izmišlja cenu
+koju čovek nije rekao, pa termin bez cene i dalje završava u „Termini bez
+cene", ne u prihodu. Termin sa pogodnošću a bez potvrđene pre-benefit cene seam
+odbija (`400`), pa ga cron **preskače** i ostavlja vlasnici — vidi
+[cene §4](PANTA-BOOKING-PRICING.md).
+
+Finalizacija posle prelaza statusa (vaučer `reserved → redeemed`, durable
+`appointment_completed`) je idempotentna i popravljiva: `loyaltyProcessed.completed`
+se postavlja tek kada su ti preduslovi durabilno uspostavljeni, pa ponovni
+checkout nad već završenim terminom dovršava ono što je ostalo nedovršeno.
+
+### 3.2 Granica prema Loyalty-ju
+
+Booking je autoritet za činjenice o terminu; Loyalty za nagrade. Ta granica se
+u T1-4 nije pomerila:
+
+- `Appointment` poznaje **samo** `appliedVoucherId` + vaučersku aritmetiku
+  (`originalPrice` / `discountAmount` / `finalPrice`). Nema `appliedPoints`,
+  `pointsDiscount` ni poreklo nagrade na terminu — to živi u Voucher/Loyalty
+  audit sloju;
+- nijedna booking ruta ne knjiži poene ni srca; knjiži ih engine iz durable
+  `appointment_completed` događaja;
+- `POST /api/appointments/[id]/benefits` je loyalty ulaz, ne booking write
+  path: ne dira datum, vreme ni zauzeće.
+
+Ugovor: [PANTA-LOYALTY-ENGINE.md §14](PANTA-LOYALTY-ENGINE.md) ·
+[cene §4](PANTA-BOOKING-PRICING.md).
 
 ## 4. Invarianti sa regresionim pokrićem
 
@@ -227,6 +270,7 @@ je. Bez registrovanog widgeta CTA ostaje običan link na `/termini`.
 | `backfill:service-intake` | **pokrenuta 2026-09-02.** 4 usluge u 2 salona; verifikacioni dry-run = 0 |
 | `backfill:group-price` | **dry-run 2026-09-02: 0 paketa na celoj platformi.** Nema šta da migrira |
 | `cleanup:stale-group-items` | 2 usluge (marysoll, anja) — mrtav niz, nije pokrenuta |
+| `backfill:points-shop-ids` | **nije pokrenuta.** Alat postoji (idempotentan, dry-run po defaultu); očekuje se 0 kandidata — dokaz ispod |
 
 Odobreno je bilo 6 usluga, migrirane 4. Razlika nije greška: vlasnica je u
 međuvremenu sama uključila checkbox na dve usluge, a selektor
@@ -235,6 +279,28 @@ međuvremenu sama uključila checkbox na dve usluge, a selektor
 > **Invariant iz te migracije:** `{ $ne: true }` hvata i eksplicitno `false`, pa
 > bi backfill vratio `true` preko odluke da zahtev NIJE potreban. Zaključano sa
 > testovima u `intakeBackfill.test.ts`.
+
+### `backfill:points-shop-ids` — zašto se očekuje prazan rezultat
+
+T1-4 uvodi stabilan `id` na `LoyaltyConfig.pointsShop[]`. Pitanje je da li
+ijedan zatečen dokument nosi ponudu bez identiteta. Dokaz iz koda, ne
+pretpostavka:
+
+- jedini upisivač `pointsShop` polja je `PUT /api/loyalty/admin/config`;
+- `AdminGrowthStudio` **nikada** nije renderovao ni menjao `pointsShop` pre
+  T1-4 (provereno nad `41ebdc3`) — forma je samo vraćala ono što je GET dao;
+- `DEFAULT_LOYALTY_CONFIG.pointsShop` je `[]`;
+- nijedna seed skripta ne piše ponude.
+
+Dakle svaki sačuvan `pointsShop` je prazan niz. Alat ipak postoji, jer se
+odsustvo podataka **dokazuje nad bazom**, a ne pretpostavlja — i jer bi ručno
+uneta stavka inače tiho ispala iz ponude (`usableOffers` fail-closed preskače
+ponudu bez id-a). Pokretanje traži eksplicitnu naredbu vlasnika:
+
+```bash
+npm run backfill:points-shop-ids -- --dry-run   # očekivano: 0 kandidata
+npm run backfill:points-shop-ids -- --apply     # samo ako dry-run nađe stavke
+```
 
 ## 12. Poznat nestabilan test
 

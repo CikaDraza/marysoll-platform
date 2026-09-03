@@ -29,6 +29,10 @@ import { loadBookingProfile } from "@/lib/appointments/booking";
 import { createAppointmentNotification } from "@/lib/notificationService";
 import { loyaltyOnAppointmentStatusChange } from "@/lib/loyalty/hooks";
 import {
+  commitBenefitRecompute,
+  planBenefitRecompute,
+} from "@/lib/loyalty/redemption";
+import {
   checkManualSlotAvailability,
   overlapsAppointments,
 } from "@/helpers/manualSlots";
@@ -63,6 +67,11 @@ interface AppointmentDoc {
   note?: string;
   request?: IAppointmentRequest;
   status: string;
+  appliedVoucherId?: { toString(): string } | null;
+  originalPrice?: number;
+  discountAmount?: number;
+  finalPrice?: number;
+  set(path: string, value: unknown): void;
   createdAt?: string | Date;
   cancellationWindowHours?: number;
   cancellationStatus?: string;
@@ -73,7 +82,7 @@ interface AppointmentDoc {
   noShowReason?: string;
   lastUpdatedBy?: string;
   markModified(path: string): void;
-  save(): Promise<unknown>;
+  save(options?: { session?: import("mongoose").ClientSession }): Promise<unknown>;
 }
 
 function notificationPayload(appointment: AppointmentDoc) {
@@ -397,7 +406,32 @@ export async function rescheduleAppointmentAsClient(
     appointment.status = "appointment_rescheduled";
   }
 
-  await appointment.save();
+  // ── Pogodnost prati IZBOR, kao i cena ────────────────────────────────
+  // Pomeranje sata ne dira vaučer. Promena usluge mora: service-scoped popust
+  // ne sme da ostane na usluzi za koju ne važi, a ako i dalje važi, iznos se
+  // ponovo računa nad novom canonical osnovicom.
+  const benefitPlan = await planBenefitRecompute({
+    appliedVoucherId: appointment.appliedVoucherId,
+    pricing: appointment.pricing,
+    services: appointment.services,
+  });
+  if (benefitPlan.kind === "released") {
+    appointment.set("appliedVoucherId", undefined);
+    appointment.set("originalPrice", undefined);
+    appointment.set("discountAmount", undefined);
+    appointment.set("finalPrice", undefined);
+  } else if (benefitPlan.set) {
+    appointment.originalPrice = benefitPlan.set.originalPrice ?? undefined;
+    appointment.discountAmount = benefitPlan.set.discountAmount ?? undefined;
+    appointment.finalPrice = benefitPlan.set.finalPrice ?? undefined;
+  }
+
+  // Snimanje termina i oslobađanje vaučera su ISTA transakcija kada pogodnost
+  // pada — bez toga bi pad između njih ostavio vaučer zaključan na terminu na
+  // kome pogodnosti više nema.
+  await commitBenefitRecompute(benefitPlan, (session) =>
+    appointment.save(session ? { session } : undefined),
+  );
 
   if (dateChanged || timeChanged) {
     await createAppointmentNotification(notificationPayload(appointment), "rescheduled", {
