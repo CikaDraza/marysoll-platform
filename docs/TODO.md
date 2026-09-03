@@ -5,7 +5,7 @@
 > dokumentima i ne prepisuju se ovde.
 >
 > Grana: `staging/production-engines` · usklađeno sa kodom **2026-09-03**.
-> T1-4 živi na `feature/t1-4-loyalty-redemption-checkout` i čeka merge.
+> T1-4 je merge-ovan u `staging/production-engines` 2026-09-03.
 > Zdravlje te grane: `tsc` prolazi, lint bez novih upozorenja, build prolazi,
 > 166 test fajlova / 1980 testova prolazi (19 preskočeno). Brojevi važe za taj
 > datum i nisu obećanje.
@@ -14,9 +14,9 @@
 
 ```text
 EDUCATION    🟡  Edu Centar v1 — feature freeze, Marina pilot
-BEAUTY       ✅  T1-0 → T1-4 u kodu
-             🟡  Marysoll browser acceptance čeka (uklj. T1-4)
-NEXT         →   bira vlasnik proizvoda posle T1-4 acceptance-a
+BEAUTY       ✅  T1-0 → T1-4 prihvaćeno
+             🟡  Marysoll browser acceptance čeka za T1-1 → T1-3 rezove
+NEXT         →   bira vlasnik proizvoda
 DEFERRED     →   T1-5 · T3 cutover · legacy HMAC/marketplace write ·
                  Consultation / Questionnaire / Care
 ```
@@ -26,15 +26,15 @@ ostaje neophodan)
 
 ## NEXT — sledeći rez
 
-**Nije određen.** T1-4 je bio poslednji zakazan rez; sledeći product slice bira
-vlasnik proizvoda kada Marysoll browser acceptance potvrdi T1-4. Ništa iz
-DEFERRED liste ne ulazi ovde automatski — posebno **ne** T1-5.
+**Nije određen.** T1-4 je bio poslednji zakazan rez i prihvaćen je; sledeći
+product slice bira vlasnik proizvoda. Ništa iz DEFERRED liste ne ulazi ovde
+automatski — posebno **ne** T1-5.
 
 ## T1-4 — Loyalty Redemption & Appointment Checkout
 
 | # | Rez | Status | Šta je zaključano | Dokument |
 |---|---|---|---|---|
-| **T1-4** | **Loyalty Redemption & Appointment Checkout** | ✅ **kod** · 🟡 **browser acceptance** | Trošenje poena kroz konfigurisanu points-shop nagradu → vaučer → primena na termin → `redeemed` na završenoj poseti. Klijentkinja bira pogodnost posle zakazivanja, salon je primenjuje u njeno ime; jedna pogodnost po terminu; atomsko skidanje poena; vaučer recompute kad quote postane numerički; Appointment Checkout kao račun. | [PANTA-LOYALTY-ENGINE.md §14](PANTA-LOYALTY-ENGINE.md) · [cene §4](PANTA-BOOKING-PRICING.md) |
+| **T1-4** | **Loyalty Redemption & Appointment Checkout** | ✅ **prihvaćeno** | Trošenje poena kroz konfigurisanu points-shop nagradu → vaučer → primena na termin → `redeemed` na završenoj poseti. Klijentkinja bira pogodnost posle zakazivanja, salon je primenjuje u njeno ime; jedna pogodnost po terminu; atomsko skidanje poena; vaučer recompute kad quote postane numerički; Appointment Checkout kao račun. | [PANTA-LOYALTY-ENGINE.md §14](PANTA-LOYALTY-ENGINE.md) · [cene §4](PANTA-BOOKING-PRICING.md) |
 
 Rezovi su isporučeni kao A–E:
 
@@ -112,7 +112,7 @@ service-scoped `fixed` vaučer više ne prolazi na uslugu van svog scope-a.
 | B-T1-2 | ★ Jedan booking presentation ugovor | ✅ kod · **browser provera** | Sajt, `/termini`, klijentsko zakazivanje i klijentska izmena dele `BookingModal → BookingProvider` nad `servicePresentation` / `widgetPresentation` DTO-om. Stari `ClientCreateModal` je obrisan. | [ARC §2.2](PANTA-BOOKING-CRM-ARC.md) |
 | B-T1-3 | ★ Client 360 CRM dosije | ✅ kod · **browser provera** | Tenant-scoped read model: identitet, termini sa zahtevom i canonical cenom, devet KPI činjenica, loyalty ledger/vaučeri, preporuke. Deep-link `/dashboard?tab=klijenti&clientId=…`. | [Client 360](PANTA-CLIENT-360.md) |
 | B-T1-3.1 | ★ Statistics/CRM hardening | ✅ kod | Statistika izdvojena u `lib/statistics/engine.ts` i deljena sa Client 360; prikaz razdvaja potencijalni, završeni i otkazani prihod uz zaseban broj termina bez cene. Loyalty admin hook razložen na četiri hook-a. | [ARC §6](PANTA-BOOKING-CRM-ARC.md) |
-| B-T1-4 | ★ Loyalty Redemption & Checkout | ✅ kod · **browser provera** | Points-shop nagrada sa stabilnim identitetom, atomsko skidanje poena u transakciji, jedna pogodnost po terminu, klijentski i admin picker nad istim seam-om, vaučer recompute i Appointment Checkout kao jedini put do `completed`. | [Loyalty §14](PANTA-LOYALTY-ENGINE.md) |
+| B-T1-4 | ★ Loyalty Redemption & Checkout | ✅ prihvaćeno 2026-09-03 | Points-shop nagrada sa stabilnim identitetom, atomsko skidanje poena u transakciji, jedna pogodnost po terminu, klijentski i admin picker nad istim seam-om, vaučer recompute i Appointment Checkout kao jedini put do `completed`. | [Loyalty §14](PANTA-LOYALTY-ENGINE.md) |
 | B-THEME1 | Theme-1 privatna za Marysoll | ✅ kod | Kroz postojeći `THEME_ACCESS` seam, isti kao za theme-8 (Anja) i theme-9 (Marina). Bez `if (tenantSlug)` u komponentama. | [ARC §9](PANTA-BOOKING-CRM-ARC.md) |
 | B-AI | AI generisanje slika | ✅ isključeno · odluka | Ne nudi se javno; endpoint je admin + plan gated. Uključuje se kroz plan ako salon zatraži, bez izmene koda. | [AI slike](PANTA-AI-IMAGE-GENERATION.md) |
 
@@ -124,7 +124,13 @@ service-scoped `fixed` vaučer više ne prolazi na uslugu van svog scope-a.
 | 🟡 Canonical izmena termina — klijentska i admin, predlog Prihvati/Odbij | Marysoll |
 | 🟡 Jedan booking widget — sajt, `/termini`, panel, izmena | Marysoll |
 | 🟡 Izolacija klijenta — klijent vidi isključivo svoje termine | Marysoll |
-| 🟡 **T1-4** — points-shop editor, post-booking ponuda pogodnosti, admin „Primeni pogodnost", Checkout račun, saldo posle kupovine | Marysoll |
+
+> **T1-4 je prihvaćen 2026-09-03.** Vlasnik proizvoda je potvrdio ključni
+> pricing/checkout tok u aplikaciji; mašinska verifikacija (tsc, lint, 1980
+> testova, build) stoji uz to. Preostale T1-4 površine — points-shop editor,
+> post-booking ponuda pogodnosti i admin „Primeni pogodnost" — nisu prošle
+> zaseban formalni prolaz i, ako se na njima nešto pokaže, tretiraju se kao
+> obična greška, ne kao otvoren rez.
 
 ## DEFERRED / LATER — ima odluku, nema termin
 
