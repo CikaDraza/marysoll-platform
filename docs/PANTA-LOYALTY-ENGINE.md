@@ -403,6 +403,15 @@ T1-4 su postojala dva (admin update ruta i auto-complete cron), svaki sa svojom
 aritmetikom; sada dele isti seam. Cron prosleđuje `source: "auto"` i nijedan
 iznos — mašina ne izmišlja cenu koju čovek nije rekao.
 
+**Račun se zaključava nad pogodnošću nad kojom je izračunat.** Checkout čita
+termin, izračuna račun, pa tek onda upisuje `completed`. Između ta dva koraka
+neko drugi sme da primeni ili skine pogodnost, pa upis nosi compare-and-set na
+`appliedVoucherId`: prolazi samo ako je pogodnost i dalje ona iz računa (ili je
+i dalje nema). Neslaganje je `409` i termin ostaje nezavršen — pozivalac mora
+da povuče svež pregled, jer se promenila osnovica po kojoj je vlasnica donela
+odluku. Isti uslov štiti i granu u kojoj pogodnost otpada: plan napravljen za
+vaučer V1 ne sme da oslobodi vaučer V2.
+
 **Potvrđena cena je server invariant, ne UI pravilo.** Termin sa pogodnošću
 koja ostaje ne sme da se završi dok pre-benefit cena nije potvrđena:
 
@@ -447,6 +456,40 @@ Svi koraci finalizacije su idempotentni (CAS na vaučeru, unique `sourceId` na
 događaju, idempotency ključ u ledgeru), pa ponovni checkout nad već završenim
 terminom **popravlja** nedovršenu finalizaciju umesto da odustane. Dvostruka
 zarada time nije moguća.
+
+### 14.12 Ciklusi završetka i vraćanja
+
+Termin sme da bude završen, vraćen i ponovo završen. Svaki prolaz je CIKLUS, a
+`loyaltyProcessed.revertCount` je njegov redni broj; identiteti događaja se
+izvode isključivo iz njega:
+
+```text
+ciklus N  →  completion `{id}:c{N}`  ↔  revert `{id}:r{N+1}`
+```
+
+**Revert se oslanja na dokaze, ne na zastavicu.** Otkad zastavica znači
+„finalizacija je durabilno uspostavljena", postoji prozor u kome je završetak
+već ostavio trag a zastavica još nije postavljena. Revert zato gleda tri
+nezavisna dokaza: vaučer je bio iskorišćen za taj termin, durable
+`appointment_completed` postoji za tekući ciklus, ili je zastavica postavljena.
+Vaučer se pri tome ispravlja **uvek i bezuslovno** — `unRedeemForAppointment`
+je CAS i nad nikad iskorišćenim vaučerom je no-op, a uslovljavanje zastavicom
+je i bilo uzrok zaglavljenog `redeemed` vaučera na terminu koji više nije
+završen.
+
+**`revertCount` napreduje POSLEDNJI.** Iz njega nastaje identitet revert
+događaja, pa bi uvećanje pre upisa značilo da posle neuspelog upisa sledeći
+pokušaj računa drugi ciklus i ista kompenzacija više nikada ne može da nastane
+pod istim imenom. Redosled je: vaučer → durable revert događaj → CAS na
+`revertCount` i zastavicu.
+
+**Zastareo završetak ne nagrađuje vraćen termin.** `LoyaltyEvent` je durabilan
+red; `pending`/`failed` završetak sme da bude obrađen mnogo kasnije, kad je
+termin već vraćen. Zato `handleCompleted` ponovo čita termin i knjiži samo ako
+termin i dalje postoji, pripada istom tenantu i klijentu, stoji na `completed`
+i nalazi se na **tom istom ciklusu**. U suprotnom se ne dodeljuju ni srca ni
+poeni, ne pomeraju se brojači, ne izdaje se milestone vaučer i nema
+celebration-a — a događaj se razrešava umesto da zauvek kruži kroz sweeper.
 
 ### 14.10 Gate
 

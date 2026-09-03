@@ -148,6 +148,11 @@ vraća `400` i ostavlja termin netaknut:
 Auto-complete termin koji traži ljudsku cenu **preskače**: niti izmišlja cenu,
 niti skida pogodnost — ostavlja ga vlasnici.
 
+Ako se pogodnost promeni POSLE pregleda a pre potvrde (klijentkinja je primeni
+iz panela, salon je skine iz liste), završetak vraća `409` i termin ostaje
+nezavršen. Račun se ne preračunava u okviru tog zahteva — pozivalac povlači
+svež pregled, jer se promenila osnovica po kojoj je odluka doneta.
+
 Bez vaučera nepoznata cena **sme** da ostane nepoznata: termin ide u „Termini
 bez cene", ne u prihod. Nijedan iznos se ne izmišlja.
 

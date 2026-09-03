@@ -11,6 +11,7 @@ import "server-only";
 import { Types } from "mongoose";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
+import { LoyaltyEvent } from "@/models/LoyaltyEvent";
 import { emitLoyaltyEvent, emitLoyaltyEventDurable } from "./events";
 import {
   redeemForAppointment,
@@ -66,6 +67,50 @@ function appointmentSpend(appt: AppointmentLean, status: string): number {
   return getAppointmentRealizedValue({ ...appt, status } as never) ?? 0;
 }
 
+// ─── Identitet ciklusa završetka ─────────────────────────────────────────────
+//
+// Jedan termin sme da bude završen, vraćen i ponovo završen. Svaki takav
+// prolaz je CIKLUS, a `loyaltyProcessed.revertCount` je njegov redni broj.
+// Identiteti događaja se izvode ISKLJUČIVO iz njega:
+//
+//   ciklus N  →  completion `${id}:c${N}`  ↔  revert `${id}:r${N+1}`
+//
+// Zašto je to važno: identitet revert događaja mora da se može izračunati PRE
+// nego što se `revertCount` uveća. Da se prvo uvećava, a upis događaja padne,
+// sledeći pokušaj bi računao drugi ciklus i isti revert više nikada ne bi mogao
+// da nastane pod istim imenom — kompenzacija bi se tiho izgubila.
+
+/** Redni broj tekućeg ciklusa završetka. */
+function completionCycleOf(appointment: AppointmentLean): number {
+  return Math.max(0, Math.trunc(appointment.loyaltyProcessed?.revertCount ?? 0));
+}
+
+function completionSourceId(appointmentId: string, cycle: number): string {
+  return `${appointmentId}:c${cycle}`;
+}
+
+/** Revert ciklusa N nosi redni broj N+1 — isti broj koji dobija `revertCount`. */
+function revertSourceId(appointmentId: string, cycle: number): string {
+  return `${appointmentId}:r${cycle + 1}`;
+}
+
+/**
+ * Filter koji pogađa tačno određen ciklus.
+ *
+ * Zatečeni dokumenti mogu biti bez `revertCount` polja, a `{ field: 0 }` u
+ * Mongu NE pogađa nepostojeće polje — pa bi CAS na nultom ciklusu tiho
+ * promašio baš na najstarijim terminima.
+ */
+function cycleFilter(cycle: number): Record<string, unknown> {
+  if (cycle > 0) return { "loyaltyProcessed.revertCount": cycle };
+  return {
+    $or: [
+      { "loyaltyProcessed.revertCount": 0 },
+      { "loyaltyProcessed.revertCount": { $exists: false } },
+    ],
+  };
+}
+
 /**
  * Završetak posete — retry-safe finalizacija loyalty lifecycle-a.
  *
@@ -115,7 +160,7 @@ export async function finalizeAppointmentCompletion(
     return { finalized: true, alreadyFinalized: true };
   }
 
-  const cycle = appt.loyaltyProcessed?.revertCount ?? 0;
+  const cycle = completionCycleOf(appt);
 
   // Opisna polja se smeju upisati odmah: ona nisu claim i ne odlučuju ništa.
   await Appointment.updateOne(
@@ -138,10 +183,13 @@ export async function finalizeAppointmentCompletion(
     tenantId: appt.tenantId,
     type: "appointment_completed",
     sourceType: "appointment",
-    sourceId: `${id}:c${cycle}`,
+    sourceId: completionSourceId(id, cycle),
     subjectTenantUserId: appt.clientProfileId,
     payload: {
       appointmentId: id,
+      // Ciklus putuje uz događaj da bi obrada mogla da proveri da li termin i
+      // dalje predstavlja BAŠ taj završetak (vidi `handleCompleted`).
+      cycle,
       spend: appointmentSpend(appt, "completed"),
       serviceName: appt.serviceName,
     },
@@ -156,13 +204,119 @@ export async function finalizeAppointmentCompletion(
     cycle,
   });
 
-  // 4. Tek sada je finalizacija durabilna.
+  // 4. Tek sada je finalizacija durabilna — i to samo ako je termin i dalje
+  //    završen U ISTOM ciklusu. Revert koji je stigao u međuvremenu ne sme da
+  //    dobije zastavicu koja tvrdi da je završetak obrađen.
   await Appointment.updateOne(
-    { _id: appointmentId, status: "completed" },
+    { _id: appointmentId, status: "completed", ...cycleFilter(cycle) },
     { $set: { "loyaltyProcessed.completed": true } },
   );
 
   return { finalized: true, alreadyFinalized: false };
+}
+
+/**
+ * Vraćanje završetka — kompenzacija koja se oslanja na DOKAZE, ne na zastavicu.
+ *
+ * Ranije je ceo revert visio o uslovu `loyaltyProcessed.completed === true`.
+ * Otkad zastavica znači „finalizacija je durabilno uspostavljena" (a ne „počeli
+ * smo"), postoji prozor u kome je završetak već ostavio trag — vaučer je
+ * iskorišćen, durable `appointment_completed` postoji, možda je i obrađen — a
+ * zastavica još nije postavljena. Revert u tom trenutku ne bi uradio ništa:
+ * vaučer bi ostao `redeemed` na terminu koji više nije završen, a zarađeno bi
+ * ostalo neponišteno.
+ *
+ * Zato se ovde gleda tri nezavisna dokaza da je ciklus ostavio posledicu:
+ *   1. vaučer je bio iskorišćen za ovaj termin (CAS vraćanje ga i otkriva);
+ *   2. durable `appointment_completed` postoji za TEKUĆI ciklus;
+ *   3. zastavica je postavljena.
+ *
+ * REDOSLED je bitan i namerno je ovakav:
+ *
+ *   vaučer → durable revert događaj → tek onda `revertCount` i zastavica
+ *
+ * `revertCount` se uvećava POSLEDNJI zato što iz njega nastaje identitet revert
+ * događaja (`r{N+1}`). Da se uvećava prvo, a upis događaja padne, sledeći
+ * pokušaj bi računao drugi ciklus i ta kompenzacija se više nikada ne bi mogla
+ * napraviti pod istim imenom. Ovako neuspeh ostavlja stanje iz kog retry
+ * generiše ISTI događaj, a duplikat je uspeh.
+ */
+export async function finalizeAppointmentRevert(
+  appointmentId: Types.ObjectId | string,
+  newStatus: string,
+): Promise<{ compensated: boolean }> {
+  await connectToDB();
+  const id = String(appointmentId);
+
+  const appt = (await Appointment.findById(appointmentId)
+    .select(
+      "tenantId clientProfileId serviceName status finalPrice pricing services appliedVoucherId loyaltyProcessed",
+    )
+    .lean()) as AppointmentLean | null;
+  if (!appt?.clientProfileId) return { compensated: false };
+  // Termin je u međuvremenu vraćen na `completed` — nema šta da se poništava.
+  if (appt.status === "completed") return { compensated: false };
+
+  const cycle = completionCycleOf(appt);
+
+  // 1. Vaučer se ispravlja UVEK i bezuslovno: `unRedeemForAppointment` je CAS
+  //    i nad nikad iskorišćenim vaučerom je no-op. Uslovljavanje zastavicom
+  //    je i bilo uzrok zaglavljenog `redeemed` vaučera.
+  const backTo =
+    newStatus === "appointment_approved" || newStatus === "pending"
+      ? "reserved"
+      : "active";
+  const unRedeemed = await unRedeemForAppointment(id, backTo);
+
+  const completionEventExists = await LoyaltyEvent.exists({
+    tenantId: appt.tenantId,
+    type: "appointment_completed",
+    sourceId: completionSourceId(id, cycle),
+  });
+
+  const hadCompletionEffect =
+    Boolean(unRedeemed) ||
+    Boolean(completionEventExists) ||
+    appt.loyaltyProcessed?.completed === true;
+
+  if (!hadCompletionEffect) {
+    // Ciklus nije ostavio nijedan trag; nema šta da se kompenzuje. Zastavica se
+    // ipak spušta ako je nekim putem ostala postavljena.
+    await Appointment.updateOne(
+      { _id: appointmentId, "loyaltyProcessed.completed": true },
+      { $set: { "loyaltyProcessed.completed": false } },
+    );
+    return { compensated: false };
+  }
+
+  // 2. Durable kompenzacioni događaj sa determinističkim identitetom r(N+1).
+  //    Baca ako upis padne — `revertCount` tada NE sme da se pomeri.
+  await emitLoyaltyEventDurable({
+    tenantId: appt.tenantId,
+    type: "appointment_completion_reverted",
+    sourceType: "appointment",
+    sourceId: revertSourceId(id, cycle),
+    subjectTenantUserId: appt.clientProfileId,
+    payload: {
+      appointmentId: id,
+      revertCount: cycle + 1,
+      spend: appointmentSpend(appt, "completed"),
+    },
+  });
+
+  // 3. Ciklus napreduje TAČNO jednom: CAS na ciklus iz kog je identitet izveden.
+  //    Paralelni ili ponovljeni revert vidi već uvećan brojač i ne radi ništa.
+  await Appointment.updateOne(
+    { _id: appointmentId, ...cycleFilter(cycle) },
+    {
+      $set: {
+        "loyaltyProcessed.completed": false,
+        "loyaltyProcessed.revertCount": cycle + 1,
+      },
+    },
+  );
+
+  return { compensated: true };
 }
 
 export async function loyaltyOnAppointmentStatusChange(
@@ -186,35 +340,7 @@ export async function loyaltyOnAppointmentStatusChange(
 
     // ── Revert: completed → bilo šta drugo ──
     if (previousStatus === "completed" && newStatus !== "completed") {
-      const claimed = (await Appointment.findOneAndUpdate(
-        { _id: appointmentId, "loyaltyProcessed.completed": true },
-        {
-          $set: { "loyaltyProcessed.completed": false },
-          $inc: { "loyaltyProcessed.revertCount": 1 },
-        },
-        { new: true },
-      ).lean()) as AppointmentLean | null;
-
-      if (claimed) {
-        const revertCount = claimed.loyaltyProcessed?.revertCount ?? 1;
-        const backTo =
-          newStatus === "appointment_approved" || newStatus === "pending"
-            ? "reserved"
-            : "active";
-        await unRedeemForAppointment(id, backTo);
-        await emitLoyaltyEvent({
-          tenantId: appt.tenantId,
-          type: "appointment_completion_reverted",
-          sourceType: "appointment",
-          sourceId: `${id}:r${revertCount}`,
-          subjectTenantUserId: appt.clientProfileId,
-          payload: {
-          appointmentId: id,
-          revertCount,
-          spend: appointmentSpend(appt, previousStatus),
-        },
-        });
-      }
+      await finalizeAppointmentRevert(appointmentId, newStatus);
     }
 
     // ── Completion ──

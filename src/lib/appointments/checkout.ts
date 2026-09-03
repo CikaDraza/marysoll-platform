@@ -165,6 +165,27 @@ function hasConfirmedPreBenefitPrice(pricing: IAppointmentPricing | null | undef
  *
  * Fiksna poznata cena ne traži potvrdu — ona JESTE dogovor.
  */
+/**
+ * Uslov koji pogađa TAČNO ono stanje pogodnosti nad kojim je račun izračunat.
+ *
+ * Checkout čita termin, izračuna račun, pa tek onda upisuje `completed`. Između
+ * ta dva koraka neko drugi (klijentkinja iz panela, salon iz liste) sme da
+ * primeni ili skine pogodnost — i termin bi se zatvorio po zastarelom računu:
+ * naplaćeno 4.000 na terminu koji je u međuvremenu dobio popust, ili popust
+ * primenjen na vaučer koji je upravo uklonjen.
+ *
+ * Zato upis nosi compare-and-set na `appliedVoucherId`. Odsustvo pogodnosti se
+ * mora izraziti kao „nema polja ILI je null" — `$unset` u `removeBenefit`
+ * ostavlja polje nepostojeće, a nikad kreirano polje takođe.
+ */
+function benefitCasFilter(
+  expectedVoucherId: Types.ObjectId | null | undefined,
+): Record<string, unknown> {
+  return expectedVoucherId
+    ? { appliedVoucherId: expectedVoucherId }
+    : { appliedVoucherId: { $in: [null, undefined] } };
+}
+
 function needsAgreedPriceForCompletion(input: {
   hasBenefit: boolean;
   pricing: IAppointmentPricing | null | undefined;
@@ -494,6 +515,11 @@ export async function completeAppointmentCheckout(input: {
     ? { status: input.expectedFromStatus }
     : { status: { $ne: "completed" } };
 
+  // Račun je izračunat nad OVOM pogodnošću; upis sme da prođe samo ako je i
+  // dalje ta. Isti uslov štiti i `released` granu: plan napravljen za vaučer V1
+  // ne sme da obriše pogodnost koja je u međuvremenu postala V2.
+  const benefitGuard = benefitCasFilter(appointment.appliedVoucherId);
+
   // Upis statusa i oslobađanje otpale pogodnosti su ista transakcija.
   const updated = await commitBenefitRecompute(plan, (session) =>
     Appointment.findOneAndUpdate(
@@ -501,6 +527,7 @@ export async function completeAppointmentCheckout(input: {
         _id: appointment._id,
         tenantId: appointment.tenantId,
         ...statusGuard,
+        ...benefitGuard,
       },
       {
         $set: {
@@ -515,9 +542,12 @@ export async function completeAppointmentCheckout(input: {
   );
 
   if (!updated) {
+    // Namerno se NE preračunava u okviru ovog zahteva: pozivalac mora da
+    // povuče svež pregled računa, jer se promenila osnovica po kojoj je
+    // vlasnica donela odluku.
     throw new LoyaltyRedemptionError(
       "CONFLICT",
-      "Termin je u međuvremenu promenjen. Osvežite listu.",
+      "Termin ili pogodnost su u međuvremenu promenjeni. Osvežite račun.",
     );
   }
 
