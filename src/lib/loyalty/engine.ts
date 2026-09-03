@@ -18,18 +18,15 @@ import { postLedgerEntry } from "./ledger";
 import { issueVoucher, revokeVouchersIssuedForAppointment } from "./vouchers/service";
 import { createLoyaltyNotification } from "./notifications";
 import { computeStreakUpdate } from "@/lib/platform/loyalty-client";
+import { describeReward } from "./descriptions";
 import {
   formatCurrencyAmount,
   type LoyaltyConfigLean,
   type LoyaltyEventLean,
-  type RewardSpec,
 } from "./types";
 
-export function describeReward(reward: RewardSpec): string {
-  if (reward.type === "percent") return `${reward.value}% popusta`;
-  if (reward.type === "fixed") return `${reward.value} RSD popusta`;
-  return `Gratis: ${reward.serviceName || "usluga"}`;
-}
+// Opis nagrade živi u `./descriptions` — dele ga engine i redemption seam.
+export { describeReward } from "./descriptions";
 
 // Registry: tip događaja → handler. Novi moduli dodaju svoje unose ovde.
 const EVENT_HANDLERS: Record<
