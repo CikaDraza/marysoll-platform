@@ -7,7 +7,7 @@
 > Grana: `staging/production-engines` · usklađeno sa kodom **2026-09-03**.
 > T1-4 živi na `feature/t1-4-loyalty-redemption-checkout` i čeka merge.
 > Zdravlje te grane: `tsc` prolazi, lint bez novih upozorenja, build prolazi,
-> 164 test fajla / 1944 testa prolazi (19 preskočeno). Brojevi važe za taj
+> 165 test fajlova / 1968 testova prolazi (19 preskočeno). Brojevi važe za taj
 > datum i nisu obećanje.
 
 ## Redosled
@@ -44,7 +44,18 @@ T1-4B  pogodnost prati cenu i uslugu + jedan računar popusta
 T1-4C  Appointment Checkout — završetak termina kao račun
 T1-4D  klijentski i admin izbor pogodnosti + points shop editor
 T1-4E  dokumentacija + regresija
+T1-4H  hardening: 4 concurrency/durability rupe (review nalaz)
 ```
+
+**Hardening pass (T1-4H)** je zatvorio četiri ivice koje prvi prolaz testova
+nije hvatao, bez promene arhitekture:
+
+| # | rupa | zatvoreno |
+|---|---|---|
+| 1 | potvrđena pre-benefit cena bila je UI pravilo, ne server invariant | završetak sa pogodnošću bez potvrđene cene je `400`; auto-complete preskače |
+| 2 | kupovina je koristila termin i ponudu učitane PRE transakcije | termin, konfiguracija i ponuda se ponovo čitaju u sesiji; status je deo upisa |
+| 3 | oslobađanje vaučera išlo je posle commit-a i gutalo grešku | upis termina i `reserved → active` su ista transakcija |
+| 4 | `loyaltyProcessed.completed` značilo je „počeli smo", ne „gotovo je" | zastavica tek posle vaučera i durabilnog događaja; ponovni checkout popravlja |
 
 **Zaključane granice koje T1-4 NIJE prešao.** Srca se i dalje ne troše ručno
 (nema heart shopa ni konverzije u dinare), nema kursa poen→RSD ni slobodnog

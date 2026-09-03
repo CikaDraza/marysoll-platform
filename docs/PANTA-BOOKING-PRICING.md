@@ -111,6 +111,12 @@ klijentska izmena i checkout. Pravila:
   active`) i pogodnost pada sa termina. Service-scoped popust nikad ne sme da
   ostane na pogrešnoj usluzi.
 
+Kada pogodnost pada, **upis termina i oslobađanje vaučera su ista
+transakcija**. Odvojeni pozivi bi na padu između njih ostavili termin bez
+pogodnosti, a vaučer i dalje `reserved` na tom istom terminu — zaključanu
+vrednost koju niko ne bi primetio dok se klijentkinja ne požali. Kada pogodnost
+ostaje (samo nov obračun), transakcija se ne otvara: to je običan `$set`.
+
 Obračun je jedan helper (`computeAppointmentBenefitPricing`) koji dele booking
 create, naknadna primena vaučera, points-shop kupovina i recompute. Uz njega
 ide zasebna kapija primenljivosti: čist `computeVoucherDiscount` za tip `fixed`
@@ -124,6 +130,23 @@ smeju** tiho da primene popust na minimum: minimum je donja granica, ne
 dogovor. Checkout u tom slučaju traži **ukupnu dogovorenu cenu** (vlasnica ne
 razmišlja „osnovica + doplate" — server izvodi canonical quote polja iz
 ukupnog iznosa).
+
+Ovo je **server invariant**, ne UI pravilo. Zaključano dugme u modalu je samo
+prikaz istog pravila; ruta se sme pozvati direktno, a auto-complete je i zove
+bez ijednog iznosa. Završetak koji bi obračunao popust nad nepotvrđenom cenom
+vraća `400` i ostavlja termin netaknut:
+
+| stanje | ishod završetka |
+|---|---|
+| `fixed` sa poznatom cenom + vaučer | prolazi, potvrda se ne traži |
+| `from` sa samo `minimumTotal` + vaučer | **400** — minimum nije dogovor |
+| `on_request` bez quote-a + vaučer | **400** |
+| bilo koji + `agreedPrice` u zahtevu | prolazi, popust se obračuna |
+| vaučer koji u istom koraku otpada | prolazi — nema šta da se obračuna |
+| bez pogodnosti | prolazi; nepoznata cena ostaje nepoznata |
+
+Auto-complete termin koji traži ljudsku cenu **preskače**: niti izmišlja cenu,
+niti skida pogodnost — ostavlja ga vlasnici.
 
 Bez vaučera nepoznata cena **sme** da ostane nepoznata: termin ide u „Termini
 bez cene", ne u prihod. Nijedan iznos se ne izmišlja.

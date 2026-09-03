@@ -307,23 +307,40 @@ paralelna zahteva prošla bi istu proveru salda.
 Zato points-shop kupovina ide kroz `runLoyaltyTransaction`, ovim redom:
 
 ```text
-1. ledger unos                idempotency ograda PRE naplate
+── u transakciji ─────────────────────────────────────────────────────────
+1. PONOVO učitaj termin       u sesiji, u opsegu pozivaoca
+2. još otvoren? bez pogodnosti?
+3. PONOVO učitaj konfiguraciju i ponudu po stabilnom offerId
+4. poeni uključeni? nagrada važi za TRENUTNU uslugu?
+5. ledger unos                idempotency ograda PRE naplate
    (unique {tenantId, points-shop:{appointmentId}:{offerId}})
-2. USLOVNO skidanje poena     findOneAndUpdate({ pointsBalance: { $gte: cost } })
-3. Voucher + snapshot uslova
-4. upis na termin             uslov: pogodnost još ne postoji
+6. USLOVNO skidanje poena     findOneAndUpdate({ pointsBalance: { $gte: cost } })
+7. Voucher + snapshot uslova
+8. upis na termin             uslov: još otvoren I još bez pogodnosti
 ```
 
-Dve garancije koje iz toga slede:
+Tri garancije koje iz toga slede:
 
 ```text
 pointsBalance nikad < 0
 dva paralelna zahteva ne mogu potrošiti isti saldo
+kupovina se izvršava nad STANJEM IZ TRANSAKCIJE, ne nad pročitanim ranije
 ```
 
-Ledger je namerno **prvi**: da je posle skidanja, retry bi prvo skinuo poene pa
-tek onda otkrio da je duplikat. Bilo koji neuspeh ruši celu transakciju — ne
-postoji stanje „poeni skinuti, vaučera nema" ni obrnuto.
+**Zašto se sve mutable čita ponovo (koraci 1–4).** Uslovni debit rešava trku
+oko salda, ali ne i oko poslovnog stanja. Vlasnica sme da promeni cenu ponude,
+a termin da promeni uslugu, dok je zahtev u letu — bez ponovnog čitanja bi se
+prodala stara ponuda po staroj ceni ili proverio scope nad starom uslugom. Pre
+transakcije se namerno rešava samo ono što ne može da se promeni pod nogama:
+plan/capability.
+
+Ledger je namerno **pre naplate**: da je posle skidanja, retry bi prvo skinuo
+poene pa tek onda otkrio da je duplikat. Bilo koji neuspeh ruši celu
+transakciju — ne postoji stanje „poeni skinuti, vaučera nema" ni obrnuto.
+
+Isto transakciono ponovno čitanje važi za primenu postojećeg vaučera i za
+uklanjanje pogodnosti: paralelan završetak termina mora da SPREČI izmenu
+pogodnosti, pa je status deo samog upisa, ne provera pre njega.
 
 ### 14.6 Idempotencija i povratak
 
@@ -386,6 +403,20 @@ T1-4 su postojala dva (admin update ruta i auto-complete cron), svaki sa svojom
 aritmetikom; sada dele isti seam. Cron prosleđuje `source: "auto"` i nijedan
 iznos — mašina ne izmišlja cenu koju čovek nije rekao.
 
+**Potvrđena cena je server invariant, ne UI pravilo.** Termin sa pogodnošću
+koja ostaje ne sme da se završi dok pre-benefit cena nije potvrđena:
+
+```text
+on_request + vaučer bez dogovorene cene  → 400, termin netaknut
+from + vaučer sa samo minimumTotal       → 400 (minimum nije dogovor)
+fiksna poznata cena + vaučer             → prolazi, potvrda se ne traži
+bez pogodnosti                           → nepoznata cena sme da ostane nepoznata
+```
+
+Disabled dugme u modalu je samo prikaz istog pravila; ruta se sme pozvati i
+direktno, a auto-complete je i zove bez iznosa. Auto-complete takav termin
+**preskače** — niti izmišlja cenu, niti skida pogodnost.
+
 Redosled završetka:
 
 ```text
@@ -403,6 +434,19 @@ Redosled završetka:
 
 Redemption sam po sebi nikad ne glumi `appointment_completed`: kupovina i
 zarada su dva različita događaja.
+
+**Finalizacija je durabilna i popravljiva.** `loyaltyProcessed.completed` znači
+„finalizacija je durabilno uspostavljena", a ne „počeli smo da pokušavamo":
+zastavica se postavlja TEK posle vaučera i durabilnog događaja. Ranije je bila
+prva, pa bi pad posle nje trajno ostavio rezervisan vaučer na završenom terminu
+ili posetu bez `appointment_completed` događaja — dakle bez zarade — dok bi
+svaki sledeći pokušaj video `completed` i odustao. Sweeper tu ne pomaže: on
+retry-uje događaje koji POSTOJE.
+
+Svi koraci finalizacije su idempotentni (CAS na vaučeru, unique `sourceId` na
+događaju, idempotency ključ u ledgeru), pa ponovni checkout nad već završenim
+terminom **popravlja** nedovršenu finalizaciju umesto da odustane. Dvostruka
+zarada time nije moguća.
 
 ### 14.10 Gate
 

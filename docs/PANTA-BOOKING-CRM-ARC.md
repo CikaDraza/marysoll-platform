@@ -106,7 +106,14 @@ completeAppointmentCheckout
 
 Cron prosleđuje `source: "auto"` i **nijedan iznos**: mašina ne izmišlja cenu
 koju čovek nije rekao, pa termin bez cene i dalje završava u „Termini bez
-cene", ne u prihodu.
+cene", ne u prihodu. Termin sa pogodnošću a bez potvrđene pre-benefit cene seam
+odbija (`400`), pa ga cron **preskače** i ostavlja vlasnici — vidi
+[cene §4](PANTA-BOOKING-PRICING.md).
+
+Finalizacija posle prelaza statusa (vaučer `reserved → redeemed`, durable
+`appointment_completed`) je idempotentna i popravljiva: `loyaltyProcessed.completed`
+se postavlja tek kada su ti preduslovi durabilno uspostavljeni, pa ponovni
+checkout nad već završenim terminom dovršava ono što je ostalo nedovršeno.
 
 ### 3.2 Granica prema Loyalty-ju
 
