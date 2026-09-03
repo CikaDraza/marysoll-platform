@@ -11,7 +11,7 @@ import "server-only";
 import { Types } from "mongoose";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
-import { emitLoyaltyEvent } from "./events";
+import { emitLoyaltyEvent, emitLoyaltyEventDurable } from "./events";
 import {
   redeemForAppointment,
   releaseForAppointment,
@@ -24,6 +24,7 @@ import type { IAppointmentPricing } from "@/types";
 interface AppointmentLean {
   _id: Types.ObjectId;
   tenantId: Types.ObjectId;
+  status?: string;
   clientProfileId?: Types.ObjectId;
   serviceName?: string;
   finalPrice?: number;
@@ -63,6 +64,105 @@ function appointmentSpend(appt: AppointmentLean, status: string): number {
   // fallback traži dokaz da je usluga izvršena. Kod reverta merodavan je
   // PRETHODNI status — bodovi koji se poništavaju zarađeni su na completed.
   return getAppointmentRealizedValue({ ...appt, status } as never) ?? 0;
+}
+
+/**
+ * Završetak posete — retry-safe finalizacija loyalty lifecycle-a.
+ *
+ * ZAŠTO POSTOJI ODVOJENO. Ranije je prvo postavljan `loyaltyProcessed.completed
+ * = true` (kao claim protiv dvostruke obrade), pa su TEK ONDA rađeni vaučer i
+ * durable događaj — a hook je svaku grešku gutao. Pad posle claim-a ostavljao
+ * je trajno neispravno stanje koje niko ne bi popravio:
+ *
+ *   rezervisan vaučer na završenom terminu, ili
+ *   završena poseta bez `appointment_completed` događaja (dakle bez zarade),
+ *
+ * dok bi svaki sledeći pokušaj video `completed: true` i odustao. Sweeper tu
+ * ne pomaže: on retry-uje događaje koji POSTOJE, a ovde događaj nije ni nastao.
+ *
+ * Sada zastavica znači „finalizacija je durabilno uspostavljena", a ne „počeli
+ * smo da pokušavamo". Redosled:
+ *
+ *   1. vaučer `reserved → redeemed`   (CAS — idempotentno)
+ *   2. durable `appointment_completed` (unique sourceId — tačno jednom)
+ *   3. referral publish                (idempotentno)
+ *   4. TEK ONDA `loyaltyProcessed.completed = true`
+ *
+ * Svaki korak sme da se ponovi bez posledice, pa ponovni poziv nad već
+ * završenim terminom popravlja nedovršenu finalizaciju umesto da je preskoči.
+ * Dvostruka zarada nije moguća: nju čuva unique `{tenantId, type, sourceId}`
+ * na događaju i idempotency ključ u ledgeru.
+ */
+export async function finalizeAppointmentCompletion(
+  appointmentId: Types.ObjectId | string,
+  opts?: { source?: "admin" | "auto" },
+): Promise<{ finalized: boolean; alreadyFinalized: boolean }> {
+  await connectToDB();
+  const id = String(appointmentId);
+
+  const appt = (await Appointment.findById(appointmentId)
+    .select(
+      "tenantId clientProfileId serviceName status finalPrice pricing services appliedVoucherId loyaltyProcessed",
+    )
+    .lean()) as AppointmentLean | null;
+
+  // Termin koji nije završen (ili je u međuvremenu vraćen) nema šta da
+  // finalizuje — revert putanja ima svoju logiku.
+  if (!appt?.clientProfileId || appt.status !== "completed") {
+    return { finalized: false, alreadyFinalized: false };
+  }
+  if (appt.loyaltyProcessed?.completed === true) {
+    return { finalized: true, alreadyFinalized: true };
+  }
+
+  const cycle = appt.loyaltyProcessed?.revertCount ?? 0;
+
+  // Opisna polja se smeju upisati odmah: ona nisu claim i ne odlučuju ništa.
+  await Appointment.updateOne(
+    { _id: appointmentId, completedAt: { $in: [null, undefined] } },
+    {
+      $set: {
+        completedAt: new Date(),
+        completionSource: opts?.source ?? "admin",
+      },
+    },
+  );
+
+  // 1. Vaučer. CAS na `{reservedAppointmentId, status: "reserved"}` — ponovni
+  //    poziv nad već iskorišćenim vaučerom ne radi ništa.
+  await redeemForAppointment(id);
+
+  // 2. Durable događaj. Baca ako upis padne — bez njega finalizacija NIJE
+  //    gotova i zastavica ne sme da se postavi.
+  await emitLoyaltyEventDurable({
+    tenantId: appt.tenantId,
+    type: "appointment_completed",
+    sourceType: "appointment",
+    sourceId: `${id}:c${cycle}`,
+    subjectTenantUserId: appt.clientProfileId,
+    payload: {
+      appointmentId: id,
+      spend: appointmentSpend(appt, "completed"),
+      serviceName: appt.serviceName,
+    },
+  });
+
+  // 3. Referral (idempotentan, sa sopstvenim gate-om).
+  await publishReferralCompletionForAppointment({
+    tenantId: appt.tenantId,
+    appointmentId: id,
+    referredTenantUserId: appt.clientProfileId,
+    appliedVoucherId: appt.appliedVoucherId,
+    cycle,
+  });
+
+  // 4. Tek sada je finalizacija durabilna.
+  await Appointment.updateOne(
+    { _id: appointmentId, status: "completed" },
+    { $set: { "loyaltyProcessed.completed": true } },
+  );
+
+  return { finalized: true, alreadyFinalized: false };
 }
 
 export async function loyaltyOnAppointmentStatusChange(
@@ -119,41 +219,7 @@ export async function loyaltyOnAppointmentStatusChange(
 
     // ── Completion ──
     if (newStatus === "completed") {
-      const claimed = (await Appointment.findOneAndUpdate(
-        { _id: appointmentId, "loyaltyProcessed.completed": { $ne: true } },
-        {
-          $set: {
-            "loyaltyProcessed.completed": true,
-            completedAt: new Date(),
-            completionSource: opts?.source ?? "admin",
-          },
-        },
-        { new: true },
-      ).lean()) as AppointmentLean | null;
-      if (!claimed) return;
-
-      await redeemForAppointment(id);
-
-      const cycle = claimed.loyaltyProcessed?.revertCount ?? 0;
-      await emitLoyaltyEvent({
-        tenantId: appt.tenantId,
-        type: "appointment_completed",
-        sourceType: "appointment",
-        sourceId: `${id}:c${cycle}`,
-        subjectTenantUserId: appt.clientProfileId,
-        payload: {
-          appointmentId: id,
-          spend: appointmentSpend(appt, newStatus),
-          serviceName: appt.serviceName,
-        },
-      });
-      await publishReferralCompletionForAppointment({
-        tenantId: appt.tenantId,
-        appointmentId: id,
-        referredTenantUserId: appt.clientProfileId,
-        appliedVoucherId: appt.appliedVoucherId,
-        cycle,
-      });
+      await finalizeAppointmentCompletion(appointmentId, opts);
       return;
     }
 

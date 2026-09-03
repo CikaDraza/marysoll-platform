@@ -29,8 +29,8 @@ import { loadBookingProfile } from "@/lib/appointments/booking";
 import { createAppointmentNotification } from "@/lib/notificationService";
 import { loyaltyOnAppointmentStatusChange } from "@/lib/loyalty/hooks";
 import {
+  commitBenefitRecompute,
   planBenefitRecompute,
-  releaseRecomputedVoucher,
 } from "@/lib/loyalty/redemption";
 import {
   checkManualSlotAvailability,
@@ -82,7 +82,7 @@ interface AppointmentDoc {
   noShowReason?: string;
   lastUpdatedBy?: string;
   markModified(path: string): void;
-  save(): Promise<unknown>;
+  save(options?: { session?: import("mongoose").ClientSession }): Promise<unknown>;
 }
 
 function notificationPayload(appointment: AppointmentDoc) {
@@ -426,8 +426,12 @@ export async function rescheduleAppointmentAsClient(
     appointment.finalPrice = benefitPlan.set.finalPrice ?? undefined;
   }
 
-  await appointment.save();
-  await releaseRecomputedVoucher(benefitPlan);
+  // Snimanje termina i oslobađanje vaučera su ISTA transakcija kada pogodnost
+  // pada — bez toga bi pad između njih ostavio vaučer zaključan na terminu na
+  // kome pogodnosti više nema.
+  await commitBenefitRecompute(benefitPlan, (session) =>
+    appointment.save(session ? { session } : undefined),
+  );
 
   if (dateChanged || timeChanged) {
     await createAppointmentNotification(notificationPayload(appointment), "rescheduled", {

@@ -29,11 +29,11 @@ import { Voucher } from "@/models/Voucher";
 import { isLoyaltyActive } from "@/lib/loyalty/events";
 import { describeReward } from "@/lib/loyalty/descriptions";
 import { LoyaltyRedemptionError } from "@/lib/loyalty/errors";
-import { loyaltyOnAppointmentStatusChange } from "@/lib/loyalty/hooks";
+import { finalizeAppointmentCompletion } from "@/lib/loyalty/hooks";
 import {
   BENEFIT_CLEAR_UNSET,
+  commitBenefitRecompute,
   planBenefitRecompute,
-  releaseRecomputedVoucher,
   type BenefitPricedAppointment,
 } from "@/lib/loyalty/redemption";
 import {
@@ -149,6 +149,30 @@ function hasConfirmedPreBenefitPrice(pricing: IAppointmentPricing | null | undef
   if (!pricing) return false;
   if (typeof pricing.quotedTotal === "number") return true;
   return pricing.mode === "fixed" && typeof pricing.minimumTotal === "number";
+}
+
+/**
+ * Sme li se termin završiti bez dodatnog unosa cene.
+ *
+ * Ovo je SERVER invariant, ne UI pravilo. Preview vraća `requiresAgreedPrice`
+ * i dugme se zaključa, ali ruta se sme pozvati i direktno, a auto-complete je
+ * poziva bez ijednog iznosa. Bez ove provere bi termin sa vaučerom mogao da
+ * bude završen nad cenom koju niko nije dogovorio:
+ *
+ *   `on_request` → popust se nikad ne bi ni izračunao (sve ostaje `null`);
+ *   `from`       → popust bi pao na MINIMUM, a minimum nije dogovor nego
+ *                  donja granica.
+ *
+ * Fiksna poznata cena ne traži potvrdu — ona JESTE dogovor.
+ */
+function needsAgreedPriceForCompletion(input: {
+  hasBenefit: boolean;
+  pricing: IAppointmentPricing | null | undefined;
+  agreedPrice: number | null;
+}): boolean {
+  if (!input.hasBenefit) return false;
+  if (input.agreedPrice != null) return false;
+  return !hasConfirmedPreBenefitPrice(input.pricing);
 }
 
 function basisSource(
@@ -384,6 +408,13 @@ export async function completeAppointmentCheckout(input: {
   const appointment = await loadForCheckout(input.appointmentId, input.actor);
 
   if (appointment.status === "completed") {
+    // Ponovni poziv nad već završenim terminom NE sme da samo odustane:
+    // finalizacija je mogla ostati nedovršena (vaučer još `reserved`, događaj
+    // neupisan). `finalizeAppointmentCompletion` je idempotentna i popravlja
+    // tačno to; ako je sve već gotovo, ne radi ništa.
+    await finalizeAppointmentCompletion(appointment._id, {
+      source: input.source ?? "admin",
+    });
     return {
       appointmentId: String(appointment._id),
       status: "completed",
@@ -423,6 +454,23 @@ export async function completeAppointmentCheckout(input: {
   });
   const benefit = plan.set ?? null;
 
+  // Pogodnost koja OSTAJE na terminu ne sme da se obračuna nad neodgovorenom
+  // cenom. Ako je vaučer u istom koraku otpao (`released`), potvrda cene se ne
+  // traži — nema šta da se obračuna.
+  if (
+    plan.kind === "recomputed" &&
+    needsAgreedPriceForCompletion({
+      hasBenefit: true,
+      pricing: appointment.pricing,
+      agreedPrice: agreed,
+    })
+  ) {
+    throw new LoyaltyRedemptionError(
+      "INVALID",
+      "Termin ima pogodnost, a cena pre pogodnosti nije potvrđena. Unesite ukupnu dogovorenu cenu.",
+    );
+  }
+
   // 3. Stvarno naplaćeno. Bez unosa se NE izmišlja: termin bez cene ostaje bez
   //    cene i ulazi u „Termini bez cene", ne u prihod.
   const chargedInput =
@@ -446,22 +494,25 @@ export async function completeAppointmentCheckout(input: {
     ? { status: input.expectedFromStatus }
     : { status: { $ne: "completed" } };
 
-  const updated = await Appointment.findOneAndUpdate(
-    {
-      _id: appointment._id,
-      tenantId: appointment.tenantId,
-      ...statusGuard,
-    },
-    {
-      $set: {
-        status: "completed",
-        ...(pricing ? { pricing } : {}),
-        ...(benefit ?? {}),
+  // Upis statusa i oslobađanje otpale pogodnosti su ista transakcija.
+  const updated = await commitBenefitRecompute(plan, (session) =>
+    Appointment.findOneAndUpdate(
+      {
+        _id: appointment._id,
+        tenantId: appointment.tenantId,
+        ...statusGuard,
       },
-      ...(benefitUnset ? { $unset: benefitUnset } : {}),
-    },
-    { new: true },
-  ).lean<CheckoutAppointment>();
+      {
+        $set: {
+          status: "completed",
+          ...(pricing ? { pricing } : {}),
+          ...(benefit ?? {}),
+        },
+        ...(benefitUnset ? { $unset: benefitUnset } : {}),
+      },
+      { new: true, ...(session ? { session } : {}) },
+    ).lean<CheckoutAppointment>(),
+  );
 
   if (!updated) {
     throw new LoyaltyRedemptionError(
@@ -470,16 +521,19 @@ export async function completeAppointmentCheckout(input: {
     );
   }
 
-  await releaseRecomputedVoucher(plan);
-
-  // 5. Vaučer `reserved → redeemed` + durable event. Hook nikad ne baca:
-  //    loyalty ne sme da sruši završetak termina.
-  await loyaltyOnAppointmentStatusChange(
-    String(appointment._id),
-    appointment.status,
-    "completed",
-    { source: input.source ?? "admin" },
-  );
+  // 5. Durable finalizacija: vaučer `reserved → redeemed` + `appointment_completed`
+  //    događaj, pa TEK ONDA `loyaltyProcessed.completed`. Neuspeh ostavlja
+  //    termin završenim ali nefinalizovanim, i sledeći poziv ga popravlja —
+  //    nikad tiho izgubljenu zaradu.
+  try {
+    await finalizeAppointmentCompletion(appointment._id, {
+      source: input.source ?? "admin",
+    });
+  } catch (err) {
+    // Termin JESTE završen; loyalty ne sme da sruši taj ishod. Stanje je
+    // popravljivo ponovnim checkout-om nad istim terminom.
+    console.error("[checkout] loyalty finalization incomplete:", err);
+  }
 
   return {
     appointmentId: String(appointment._id),

@@ -83,6 +83,11 @@ export async function runAutoComplete(): Promise<{
           // Isti canonical seam kao ručni checkout — ista pravila obračuna i
           // isti atomic prelaz. Bez iznosa: mašina ne izmišlja cenu koju
           // čovek nije rekao, pa termin bez cene ostaje bez cene.
+          //
+          // Termin sa pogodnošću a bez potvrđene pre-benefit cene seam ODBIJA
+          // (`INVALID`). To je namerno: auto-complete ne sme ni da izmisli
+          // cenu ni da skine pogodnost, pa takav termin ostaje vlasnici da ga
+          // sama zatvori kroz Checkout.
           try {
             const result = await completeAppointmentCheckout({
               appointmentId: appt._id.toString(),
@@ -92,10 +97,10 @@ export async function runAutoComplete(): Promise<{
             });
             if (!result.alreadyCompleted) completed++;
           } catch (err) {
-            // Trka sa adminom (termin je u međuvremenu promenjen) nije greška
+            // Ni trka sa adminom ni „traži se dogovorena cena" nisu greške
             // crona — sledeći prolaz vidi novo stanje.
-            console.error(
-              `[loyalty] auto-complete skipped ${appt._id}:`,
+            console.warn(
+              `[loyalty] auto-complete preskočen ${appt._id}:`,
               err instanceof Error ? err.message : err,
             );
           }

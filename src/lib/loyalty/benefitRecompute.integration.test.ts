@@ -13,9 +13,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import { Appointment } from "@/models/Appointment";
 import { Voucher } from "@/models/Voucher";
 import {
+  commitBenefitRecompute,
   computeAppointmentBenefitPricing,
   planBenefitRecompute,
-  releaseRecomputedVoucher,
 } from "./redemption";
 import type { IAppointmentPricing } from "@/types";
 
@@ -226,7 +226,7 @@ describe("promena termina", () => {
     expect(String(plan.releaseVoucherId)).toBe(String(voucher._id));
     expect(plan.set).toBeUndefined();
 
-    await releaseRecomputedVoucher(plan);
+    await commitBenefitRecompute(plan, async () => undefined);
     const after = await Voucher.findById(voucher._id).lean<{
       status: string;
       reservedAppointmentId?: unknown;
@@ -252,6 +252,8 @@ describe("promena termina", () => {
     });
     expect(plan.kind).toBe("released");
     // Nema šta da se vrati u novčanik — poziv sme da prođe bez greške.
-    await expect(releaseRecomputedVoucher(plan)).resolves.toBeUndefined();
+    await expect(
+      commitBenefitRecompute(plan, async () => "ok"),
+    ).resolves.toBe("ok");
   });
 });

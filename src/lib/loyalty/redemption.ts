@@ -29,6 +29,7 @@ import { Types, type ClientSession } from "mongoose";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { LoyaltyAccount } from "@/models/LoyaltyAccount";
+import { LoyaltyConfig } from "@/models/LoyaltyConfig";
 import { LoyaltyLedger } from "@/models/LoyaltyLedger";
 import { Voucher } from "@/models/Voucher";
 import { isLoyaltyActive } from "./events";
@@ -169,6 +170,44 @@ function assertOpenForBenefit(appointment: AppointmentScopeLean): void {
       "Termin je zatvoren — pogodnost se više ne može menjati.",
     );
   }
+}
+
+/**
+ * Filter koji uz vlasništvo traži i da je termin JOŠ UVEK otvoren.
+ *
+ * Provera pre transakcije nije dovoljna: termin sme da bude završen između
+ * čitanja i upisa. Uslov mora da bude deo samog upisa, inače bi se pogodnost
+ * menjala na već zatvorenom terminu.
+ */
+function openAppointmentFilter(actor: RedemptionActor): Record<string, unknown> {
+  return {
+    ...scopeFilter(actor),
+    status: { $nin: [...CLOSED_STATUSES] },
+  };
+}
+
+/**
+ * Trenutna tenant konfiguracija, pročitana U TRANSAKCIJI.
+ *
+ * Cena i nagrada ponude su mutable podaci: vlasnica sme da ih promeni dok je
+ * zahtev u letu. Ako bi kupovina koristila konfiguraciju učitanu pre
+ * transakcije, prodala bi staru ponudu po staroj ceni — zato se ovde čita
+ * ponovo, u istoj sesiji u kojoj se skidaju poeni.
+ */
+async function loadConfigInSession(
+  tenantId: Types.ObjectId,
+  session: ClientSession,
+): Promise<LoyaltyConfigLean> {
+  const config = await LoyaltyConfig.findOne({ tenantId })
+    .session(session)
+    .lean<LoyaltyConfigLean>();
+  if (!config?.enabled) {
+    throw new LoyaltyRedemptionError(
+      "FORBIDDEN",
+      "Program nagrađivanja trenutno nije aktivan.",
+    );
+  }
+  return config;
 }
 
 // ─── Pricing pogodnosti — jedan helper za sve ulaze ───────────────────────────
@@ -491,69 +530,88 @@ export async function applyExistingVoucher(input: {
   actor: RedemptionActor;
 }): Promise<BenefitApplied> {
   await connectToDB();
-  const appointment = await loadAppointment(input.appointmentId, input.actor);
-  assertOpenForBenefit(appointment);
-  const clientId = appointmentClientId(appointment);
+  if (!Types.ObjectId.isValid(input.voucherId)) {
+    throw new LoyaltyRedemptionError("NOT_FOUND", "Vaučer nije pronađen.");
+  }
 
-  const { active, config } = await isLoyaltyActive(input.actor.tenantId);
-  if (!active || !config) {
+  // Pre transakcije samo plan/capability — sve ostalo je mutable i čita se
+  // ponovo u sesiji.
+  const preview = await loadAppointment(input.appointmentId, input.actor);
+  assertOpenForBenefit(preview);
+  const { active } = await isLoyaltyActive(input.actor.tenantId);
+  if (!active) {
     throw new LoyaltyRedemptionError(
       "FORBIDDEN",
       "Program nagrađivanja trenutno nije aktivan.",
     );
   }
 
-  if (appointment.appliedVoucherId) {
-    throw new LoyaltyRedemptionError(
-      "CONFLICT",
-      "Termin već ima pogodnost. Uklonite postojeću pa dodajte drugu.",
-    );
-  }
-  if (!Types.ObjectId.isValid(input.voucherId)) {
-    throw new LoyaltyRedemptionError("NOT_FOUND", "Vaučer nije pronađen.");
-  }
-
-  const voucher = await Voucher.findOne({
-    _id: new Types.ObjectId(input.voucherId),
-    tenantId: appointment.tenantId,
-    ownerTenantUserId: clientId,
-  })
-    .select(VOUCHER_FIELDS)
-    .lean<VoucherLeanFull>();
-  if (!voucher) {
-    throw new LoyaltyRedemptionError("NOT_FOUND", "Vaučer nije pronađen.");
-  }
-  if (voucher.status === "reserved" && String(voucher.reservedAppointmentId) === input.appointmentId) {
-    // Retry: vaučer je već na ovom terminu.
-    return {
-      voucherId: String(voucher._id),
-      code: voucher.code,
-      label: voucherLabel(voucher),
-      origin: voucher.origin,
-      pricing: {
-        originalPrice: appointment.originalPrice ?? null,
-        discountAmount: appointment.discountAmount ?? null,
-        finalPrice: appointment.finalPrice ?? null,
-      },
-      idempotentReplay: true,
-    };
-  }
-  if (!voucherIsUsable(voucher, new Date())) {
-    throw new LoyaltyRedemptionError(
-      "INVALID",
-      "Vaučer nije važeći ili je već iskorišćen.",
-    );
-  }
-  if (!isVoucherApplicableToAppointment(voucher, appointment)) {
-    throw new LoyaltyRedemptionError(
-      "INVALID",
-      "Vaučer ne važi za izabranu uslugu.",
-    );
-  }
-
-  const pricing = computeAppointmentBenefitPricing({ appointment, voucher });
-
   return runLoyaltyTransaction(async (session) => {
+    // Termin: ponovo, u sesiji, u opsegu pozivaoca.
+    const appointment = await loadAppointment(
+      input.appointmentId,
+      input.actor,
+      session,
+    );
+    assertOpenForBenefit(appointment);
+    const clientId = appointmentClientId(appointment);
+
+    // Vaučer: ponovo, u sesiji — vlasništvo, status, rok i scope se od
+    // prvog čitanja mogu promeniti.
+    const voucher = await Voucher.findOne({
+      _id: new Types.ObjectId(input.voucherId),
+      tenantId: appointment.tenantId,
+      ownerTenantUserId: clientId,
+    })
+      .select(VOUCHER_FIELDS)
+      .session(session)
+      .lean<VoucherLeanFull>();
+    if (!voucher) {
+      throw new LoyaltyRedemptionError("NOT_FOUND", "Vaučer nije pronađen.");
+    }
+
+    // Retry: vaučer je već na ovom terminu.
+    if (
+      voucher.status === "reserved" &&
+      String(voucher.reservedAppointmentId) === String(appointment._id) &&
+      String(appointment.appliedVoucherId) === String(voucher._id)
+    ) {
+      return {
+        voucherId: String(voucher._id),
+        code: voucher.code,
+        label: voucherLabel(voucher),
+        origin: voucher.origin,
+        pricing: {
+          originalPrice: appointment.originalPrice ?? null,
+          discountAmount: appointment.discountAmount ?? null,
+          finalPrice: appointment.finalPrice ?? null,
+        },
+        idempotentReplay: true,
+      };
+    }
+
+    if (appointment.appliedVoucherId) {
+      throw new LoyaltyRedemptionError(
+        "CONFLICT",
+        "Termin već ima pogodnost. Uklonite postojeću pa dodajte drugu.",
+      );
+    }
+    if (!voucherIsUsable(voucher, new Date())) {
+      throw new LoyaltyRedemptionError(
+        "INVALID",
+        "Vaučer nije važeći ili je već iskorišćen.",
+      );
+    }
+    // Scope se proverava nad uslugom OVOG, transakcionog termina.
+    if (!isVoucherApplicableToAppointment(voucher, appointment)) {
+      throw new LoyaltyRedemptionError(
+        "INVALID",
+        "Vaučer ne važi za izabranu uslugu.",
+      );
+    }
+
+    const pricing = computeAppointmentBenefitPricing({ appointment, voucher });
+
     const reserved = await Voucher.findOneAndUpdate(
       { _id: voucher._id, status: "active" },
       { $set: { status: "reserved", reservedAppointmentId: appointment._id } },
@@ -569,7 +627,7 @@ export async function applyExistingVoucher(input: {
     const updated = await Appointment.findOneAndUpdate(
       {
         _id: appointment._id,
-        ...scopeFilter(input.actor),
+        ...openAppointmentFilter(input.actor),
         appliedVoucherId: { $in: [null, undefined] },
       },
       { $set: { appliedVoucherId: reserved._id, ...pricing } },
@@ -578,7 +636,7 @@ export async function applyExistingVoucher(input: {
     if (!updated) {
       throw new LoyaltyRedemptionError(
         "CONFLICT",
-        "Termin je u međuvremenu dobio drugu pogodnost.",
+        "Termin je u međuvremenu promenjen. Osvežite i pokušajte ponovo.",
       );
     }
 
@@ -618,40 +676,27 @@ export async function redeemPointsReward(input: {
   actor: RedemptionActor;
 }): Promise<BenefitApplied> {
   await connectToDB();
-  const appointment = await loadAppointment(input.appointmentId, input.actor);
-  assertOpenForBenefit(appointment);
-  const clientId = appointmentClientId(appointment);
 
-  const { active, config } = await isLoyaltyActive(input.actor.tenantId);
-  if (!active || !config) {
+  // Pre transakcije se rešava SAMO ono što ne može da se promeni pod nogama:
+  // plan/capability (`tenantHasFeature`) i pitanje da li je ova kupovina već
+  // naplaćena. Sve mutable poslovne činjenice — termin, ponuda, cena, usluga —
+  // čitaju se ponovo UNUTAR transakcije.
+  const preview = await loadAppointment(input.appointmentId, input.actor);
+  assertOpenForBenefit(preview);
+  const { active } = await isLoyaltyActive(input.actor.tenantId);
+  if (!active) {
     throw new LoyaltyRedemptionError(
       "FORBIDDEN",
       "Program nagrađivanja trenutno nije aktivan.",
     );
   }
-  if (!config.currencies.points.enabled) {
-    throw new LoyaltyRedemptionError(
-      "FORBIDDEN",
-      "Poeni nisu uključeni u ovom salonu.",
-    );
-  }
 
-  // Uslovi se UVEK čitaju iz trenutne konfiguracije po stabilnom id-ju.
-  // Cena i nagrada iz browsera se ne gledaju čak i ako ih pošalje.
-  const offer = usableOffers(config).find((item) => item.id === input.offerId);
-  if (!offer) {
-    throw new LoyaltyRedemptionError(
-      "INVALID",
-      "Nagrada više nije dostupna.",
-    );
-  }
-
-  const idempotencyKey = pointsShopIdempotencyKey(input.appointmentId, offer.id);
+  const idempotencyKey = pointsShopIdempotencyKey(input.appointmentId, input.offerId);
 
   // Retry posle uspešne kupovine mora da vrati postojeće stanje, ne grešku:
   // poeni su već naplaćeni i drugi put se ne naplaćuju.
   const existingEntry = await LoyaltyLedger.findOne({
-    tenantId: appointment.tenantId,
+    tenantId: preview.tenantId,
     idempotencyKey,
   })
     .select("source")
@@ -667,52 +712,77 @@ export async function redeemPointsReward(input: {
         label: voucherLabel(existingVoucher),
         origin: existingVoucher.origin,
         pricing: {
-          originalPrice: appointment.originalPrice ?? null,
-          discountAmount: appointment.discountAmount ?? null,
-          finalPrice: appointment.finalPrice ?? null,
+          originalPrice: preview.originalPrice ?? null,
+          discountAmount: preview.discountAmount ?? null,
+          finalPrice: preview.finalPrice ?? null,
         },
         idempotentReplay: true,
       };
     }
   }
 
-  if (appointment.appliedVoucherId) {
-    throw new LoyaltyRedemptionError(
-      "CONFLICT",
-      "Termin već ima pogodnost. Uklonite postojeću pa dodajte drugu.",
-    );
-  }
-
-  const serviceId = appointmentServiceId(appointment);
-  const eligibility = evaluatePointsShopOffer({
-    offer,
-    pointsBalance: 0,
-    serviceId: serviceId ? String(serviceId) : null,
-  });
-  if (!eligibility.applicable) {
-    throw new LoyaltyRedemptionError(
-      "INVALID",
-      "Nagrada ne važi za izabranu uslugu.",
-    );
-  }
-
-  const voucherTerms: BenefitVoucherTerms = {
-    type: offer.reward.type,
-    value: offer.reward.value,
-    serviceScope: offer.reward.serviceId ? [String(offer.reward.serviceId)] : [],
-    serviceName: offer.reward.serviceName,
-  };
-  const pricing = computeAppointmentBenefitPricing({
-    appointment,
-    voucher: voucherTerms,
-  });
-  const expiresDays = offer.reward.expiresDays || 90;
-  const rewardLabel = describeReward(offer.reward);
-  const voucherCode = generateVoucherCode(VOUCHER_PREFIX_BY_ORIGIN.points_shop);
-
   return runLoyaltyTransaction(async (session) => {
-    // Nalog mora postojati pre uslovnog skidanja; `upsert` u sesiji je
-    // bezbedan jer je jedinstven po {tenantId, tenantUserId}.
+    // 1. Termin se čita PONOVO, u sesiji i u opsegu pozivaoca.
+    const appointment = await loadAppointment(
+      input.appointmentId,
+      input.actor,
+      session,
+    );
+    // 2. i 3. Još uvek otvoren i još uvek bez pogodnosti.
+    assertOpenForBenefit(appointment);
+    if (appointment.appliedVoucherId) {
+      throw new LoyaltyRedemptionError(
+        "CONFLICT",
+        "Termin već ima pogodnost. Uklonite postojeću pa dodajte drugu.",
+      );
+    }
+    const clientId = appointmentClientId(appointment);
+    // 4. Usluga dolazi iz OVOG, transakcionog termina — ne iz onog pročitanog
+    //    pre transakcije, koji je u međuvremenu mogao biti promenjen.
+    const serviceId = appointmentServiceId(appointment);
+
+    // 5. i 6. Trenutna konfiguracija i trenutna ponuda po stabilnom id-ju.
+    const config = await loadConfigInSession(appointment.tenantId, session);
+    if (!config.currencies.points.enabled) {
+      throw new LoyaltyRedemptionError(
+        "FORBIDDEN",
+        "Poeni nisu uključeni u ovom salonu.",
+      );
+    }
+    const offer = usableOffers(config).find((item) => item.id === input.offerId);
+    if (!offer) {
+      throw new LoyaltyRedemptionError("INVALID", "Nagrada više nije dostupna.");
+    }
+
+    // 7. Primenljivost se proverava nad TRENUTNOM uslugom i TRENUTNOM ponudom.
+    const eligibility = evaluatePointsShopOffer({
+      offer,
+      pointsBalance: 0,
+      serviceId: serviceId ? String(serviceId) : null,
+    });
+    if (!eligibility.applicable) {
+      throw new LoyaltyRedemptionError(
+        "INVALID",
+        "Nagrada ne važi za izabranu uslugu.",
+      );
+    }
+
+    const voucherTerms: BenefitVoucherTerms = {
+      type: offer.reward.type,
+      value: offer.reward.value,
+      serviceScope: offer.reward.serviceId ? [String(offer.reward.serviceId)] : [],
+      serviceName: offer.reward.serviceName,
+    };
+    const pricing = computeAppointmentBenefitPricing({
+      appointment,
+      voucher: voucherTerms,
+    });
+    const expiresDays = offer.reward.expiresDays || 90;
+    const rewardLabel = describeReward(offer.reward);
+    const voucherCode = generateVoucherCode(VOUCHER_PREFIX_BY_ORIGIN.points_shop);
+
+    // 8. Nalog mora postojati pre uslovnog skidanja; `upsert` u sesiji je
+    //    bezbedan jer je jedinstven po {tenantId, tenantUserId}.
     const account = await LoyaltyAccount.findOneAndUpdate(
       { tenantId: appointment.tenantId, tenantUserId: clientId },
       { $setOnInsert: { tenantId: appointment.tenantId, tenantUserId: clientId } },
@@ -727,7 +797,8 @@ export async function redeemPointsReward(input: {
 
     const voucherId = new Types.ObjectId();
 
-    // 1. Idempotency ograda.
+    // Idempotency ograda PRE naplate: da je posle skidanja, retry bi prvo
+    // skinuo poene pa tek onda otkrio da je duplikat.
     try {
       await insertLedgerEntry(
         {
@@ -760,7 +831,7 @@ export async function redeemPointsReward(input: {
       throw err;
     }
 
-    // 2. Uslovno skidanje: jedini trenutak u kojem saldo može pasti.
+    // Uslovno skidanje: jedini trenutak u kojem saldo može pasti.
     const debited = await LoyaltyAccount.findOneAndUpdate(
       { _id: account._id, pointsBalance: { $gte: offer.costPoints } },
       { $inc: { pointsBalance: -offer.costPoints } },
@@ -773,7 +844,7 @@ export async function redeemPointsReward(input: {
       );
     }
 
-    // 3. Vaučer sa snapshotom uslova koji su važili U TRENUTKU kupovine.
+    // Vaučer sa snapshotom uslova koji su važili U TRENUTKU kupovine.
     await Voucher.create(
       [
         {
@@ -809,11 +880,12 @@ export async function redeemPointsReward(input: {
       { session },
     );
 
-    // 4. Jedna pogodnost po terminu — uslov je deo upisa, ne provera pre njega.
+    // Jedna pogodnost po terminu I dalje otvoren termin — oba uslova su deo
+    // upisa, ne provera pre njega.
     const updated = await Appointment.findOneAndUpdate(
       {
         _id: appointment._id,
-        ...scopeFilter(input.actor),
+        ...openAppointmentFilter(input.actor),
         appliedVoucherId: { $in: [null, undefined] },
       },
       { $set: { appliedVoucherId: voucherId, ...pricing } },
@@ -822,7 +894,7 @@ export async function redeemPointsReward(input: {
     if (!updated) {
       throw new LoyaltyRedemptionError(
         "CONFLICT",
-        "Termin je u međuvremenu dobio drugu pogodnost.",
+        "Termin je u međuvremenu promenjen. Osvežite i pokušajte ponovo.",
       );
     }
 
@@ -858,37 +930,43 @@ export async function removeBenefit(input: {
   actor: RedemptionActor;
 }): Promise<BenefitRemoved> {
   await connectToDB();
-  const appointment = await loadAppointment(input.appointmentId, input.actor);
-  assertOpenForBenefit(appointment);
-
-  if (!appointment.appliedVoucherId) {
+  const preview = await loadAppointment(input.appointmentId, input.actor);
+  assertOpenForBenefit(preview);
+  if (!preview.appliedVoucherId) {
     return { removed: false, voucherId: null, pointsRefunded: false };
   }
 
   return runLoyaltyTransaction(async (session) => {
+    // Termin se čita ponovo: paralelan završetak mora da SPREČI uklanjanje
+    // pogodnosti — inače bi vaučer nestao sa termina koji je već naplaćen.
+    const appointment = await loadAppointment(
+      input.appointmentId,
+      input.actor,
+      session,
+    );
+    assertOpenForBenefit(appointment);
+    if (!appointment.appliedVoucherId) {
+      return { removed: false, voucherId: null, pointsRefunded: false as const };
+    }
+
     const cleared = await Appointment.findOneAndUpdate(
       {
         _id: appointment._id,
-        ...scopeFilter(input.actor),
+        ...openAppointmentFilter(input.actor),
         appliedVoucherId: appointment.appliedVoucherId,
       },
-      {
-        $unset: {
-          appliedVoucherId: 1,
-          originalPrice: 1,
-          discountAmount: 1,
-          finalPrice: 1,
-        },
-      },
+      { $unset: { ...BENEFIT_CLEAR_UNSET } },
       { new: true, session },
     ).lean<AppointmentScopeLean>();
     if (!cleared) {
       throw new LoyaltyRedemptionError(
         "CONFLICT",
-        "Pogodnost je u međuvremenu već promenjena.",
+        "Termin je u međuvremenu promenjen. Osvežite i pokušajte ponovo.",
       );
     }
 
+    // Ista transakcija: nema stanja u kojem termin nema pogodnost, a vaučer
+    // je i dalje zaključan na njemu.
     await Voucher.findOneAndUpdate(
       { _id: appointment.appliedVoucherId, status: "reserved" },
       { $set: { status: "active", reservedAppointmentId: null } },
@@ -975,20 +1053,38 @@ export const BENEFIT_CLEAR_UNSET = {
 } as const;
 
 /**
- * Vrati vaučer u novčanik posle upisa termina.
+ * Upis termina i oslobađanje vaučera — ATOMSKI kad plan kaže `released`.
+ *
+ * Ranije su to bila dva odvojena poziva, s tim da je oslobađanje išlo POSLE
+ * commit-a i gutalo grešku. Pad između njih ostavljao je stanje koje niko ne
+ * bi primetio dok se klijentkinja ne požali:
+ *
+ *   Appointment:  pogodnost uklonjena
+ *   Voucher:      i dalje `reserved` na tom terminu  ← zaključana vrednost
+ *
+ * Zato oba upisa idu u istu transakciju. `write` prima sesiju i mora je
+ * proslediti svom upisu; kada nema šta da se oslobodi (`none` /
+ * `recomputed`), transakcija se ne otvara — recompute je običan `$set` i ne
+ * traži je.
  *
  * Poeni se NE refundiraju ni ovde: points-shop vaučer je i dalje kod
  * klijentkinje i sme da ode na drugi termin.
  */
-export async function releaseRecomputedVoucher(
+export async function commitBenefitRecompute<T>(
   plan: BenefitRecomputePlan,
-): Promise<void> {
-  if (plan.kind !== "released" || !plan.releaseVoucherId) return;
-  await Voucher.findOneAndUpdate(
-    { _id: plan.releaseVoucherId, status: "reserved" },
-    { $set: { status: "active", reservedAppointmentId: null } },
-  ).catch((err) => {
-    console.error("[loyalty] release after recompute failed:", err);
-    return null;
+  write: (session?: ClientSession) => Promise<T>,
+): Promise<T> {
+  if (plan.kind !== "released") return write(undefined);
+
+  return runLoyaltyTransaction(async (session) => {
+    const result = await write(session);
+    if (plan.releaseVoucherId) {
+      await Voucher.findOneAndUpdate(
+        { _id: plan.releaseVoucherId, status: "reserved" },
+        { $set: { status: "active", reservedAppointmentId: null } },
+        { session },
+      );
+    }
+    return result;
   });
 }

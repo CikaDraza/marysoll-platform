@@ -10,8 +10,8 @@ import { createAppointmentNotification } from "@/lib/notificationService";
 import { loyaltyOnAppointmentStatusChange } from "@/lib/loyalty/hooks";
 import {
   BENEFIT_CLEAR_UNSET,
+  commitBenefitRecompute,
   planBenefitRecompute,
-  releaseRecomputedVoucher,
 } from "@/lib/loyalty/redemption";
 import { completeAppointmentCheckout } from "@/lib/appointments/checkout";
 import { LoyaltyRedemptionError, loyaltyErrorStatus } from "@/lib/loyalty/errors";
@@ -384,29 +384,30 @@ export async function PUT(
     const benefitUnset =
       benefitPlan.kind === "released" ? BENEFIT_CLEAR_UNSET : undefined;
 
-    const updated = await Appointment.findOneAndUpdate(
-      { _id: id, ...scope.filter },
-      {
-        ...updatedData,
-        ...(benefitPlan.set ?? {}),
-        // `{ proposedDate: undefined }` Mongoose izbacuje iz update-a, pa je
-        // predlog preživljavao odluku i klijentkinja je i dalje gledala
-        // „Prihvati / Odbij". Brisanje mora biti eksplicitan `$unset`.
-        ...(clearProposal || benefitUnset
-          ? {
-              $unset: {
-                ...(clearProposal ? CLEAR_PROPOSAL_UNSET : {}),
-                ...(benefitUnset ?? {}),
-              },
-            }
-          : {}),
-      },
-      { new: true },
+    // Upis termina i oslobađanje vaučera su ISTA transakcija kada pogodnost
+    // pada: inače bi pad između njih ostavio termin bez pogodnosti, a vaučer
+    // zaključan (`reserved`) na tom istom terminu.
+    const updated = await commitBenefitRecompute(benefitPlan, (session) =>
+      Appointment.findOneAndUpdate(
+        { _id: id, ...scope.filter },
+        {
+          ...updatedData,
+          ...(benefitPlan.set ?? {}),
+          // `{ proposedDate: undefined }` Mongoose izbacuje iz update-a, pa je
+          // predlog preživljavao odluku i klijentkinja je i dalje gledala
+          // „Prihvati / Odbij". Brisanje mora biti eksplicitan `$unset`.
+          ...(clearProposal || benefitUnset
+            ? {
+                $unset: {
+                  ...(clearProposal ? CLEAR_PROPOSAL_UNSET : {}),
+                  ...(benefitUnset ?? {}),
+                },
+              }
+            : {}),
+        },
+        { new: true, ...(session ? { session } : {}) },
+      ),
     );
-
-    // Vaučer se oslobađa TEK pošto je termin upisan: obrnut redosled bi na
-    // padu upisa ostavio termin koji pokazuje na vaučer u tuđem novčaniku.
-    await releaseRecomputedVoucher(benefitPlan);
 
     // Notifikacija za promenu statusa. Odluka o predlogu je već poslala svoju
     // (i to SALONU) — bez ovog izuzetka bi klijentkinja povrh sopstvene akcije
