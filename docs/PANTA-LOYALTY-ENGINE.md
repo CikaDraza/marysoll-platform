@@ -2,7 +2,8 @@
 
 > Status: **u produkcijskom kodu i u upotrebi.** Ovo NIJE roadmap dokument.
 > Opisuje šta danas radi, ko je authority i gde je granica prema sledećem
-> rezu. Provereno nad kodom 2026-09-03, grana `staging/production-engines`.
+> rezu. Provereno nad kodom 2026-09-03; redemption sloj (T1-4) je verifikovan
+> na grani `feature/t1-4-loyalty-redemption-checkout`.
 >
 > Roadmap i vizija: [ARHITEKTURA-ENGINES.md](ARHITEKTURA-ENGINES.md#loyalty-engine--v2-vizija-i-stvarno-stanje) ·
 > redosled rada: [TODO.md](TODO.md) ·
@@ -10,8 +11,9 @@
 
 ## 1. Jedna rečenica
 
-**EARNING i CORRECTION postoje i rade. REDEMPTION koju klijentkinja sama bira
-ne postoji — to je T1-4.**
+**EARNING, CORRECTION i REDEMPTION postoje i rade.** Klijentkinja sada sama
+bira pogodnost za svoj termin — svoj vaučer ili konfigurisanu points-shop
+nagradu — a završetak termina je račun, ne gola promena statusa (T1-4, §14).
 
 ## 2. Granica koda
 
@@ -23,9 +25,17 @@ src/lib/loyalty/              application sloj: config, events, engine (pravila)
 src/models/                   LoyaltyConfig · LoyaltyAccount · LoyaltyLedger ·
                               LoyaltyEvent · Voucher · Referral
 src/app/api/loyalty/**        admin i client rute
-src/components/admin/loyalty/ admin UI (danas nosi ime AdminGrowthStudio — §12)
-src/components/loyalty/       klijentski celebration/moments UI
+src/app/api/appointments/[id]/benefits    izbor pogodnosti (klijent + admin)
+src/app/api/appointments/[id]/checkout    pregled računa i završetak termina
+src/components/admin/loyalty/ admin UI (danas nosi ime AdminGrowthStudio — §16)
+src/components/loyalty/       klijentski celebration/moments UI + benefit picker
 ```
+
+Redemption ima **jedan** server autoritet: `src/lib/loyalty/redemption.ts`
+(izbor, primena, kupovina, uklanjanje, recompute) i
+`src/lib/appointments/checkout.ts` (račun i završetak). Klijentski i admin UI
+zovu isti seam; da su se razišli, dva panela bi vremenom dobila dva različita
+skupa pravila.
 
 Poslovna pravila ne žive u React komponentama. Balans se ne računa u browseru.
 
@@ -59,10 +69,17 @@ Salon bez programa ne dobija lažni zero-state — sekcija se ne prikazuje.
 
 Nazivi, emoji i uključenost svake valute su per-tenant (`currencies`).
 
-**Potrošnja** (`hooks.ts`) ima namerni redosled: `finalPrice` (posle vaučera) →
-`chargedAmount` (stvarno naplaćeno) → legacy numerička cena. Nepoznata cena daje
-**0 potrošnje, ne 0 dinara prihoda** — bodovi se ne dodeljuju dok se cena ne
-sazna. Vidi [cene §1](PANTA-BOOKING-PRICING.md).
+**Potrošnja** (`hooks.ts`) ima namerni redosled: `pricing.chargedAmount`
+(stvarno naplaćeno) → `finalPrice` (za naplatu posle vaučera) → canonical
+realized fallback. Nepoznata cena daje **0 potrošnje, ne 0 dinara prihoda** —
+bodovi se ne dodeljuju dok se cena ne sazna. Vidi
+[cene §1](PANTA-BOOKING-PRICING.md).
+
+> **Zašto je `chargedAmount` prvi (T1-4).** Do tada je `finalPrice` imao
+> prednost, pa je uneto „stvarno naplaćeno" gubilo od vaučerske aritmetike:
+> dogovoreno 3.200, naplaćeno 3.000, a poeni išli na 3.200. Appointment
+> Checkout sada eksplicitno razlikuje „za naplatu" i „stvarno naplaćeno", pa i
+> knjiženje mora — poeni se zarađuju na STVARNOJ potrošnji posle pogodnosti.
 
 ## 5. Ledger je jedini authority za balans
 
@@ -70,7 +87,8 @@ sazna. Vidi [cene §1](PANTA-BOOKING-PRICING.md).
 projekcija koju ledger unos pomera.
 
 - idempotencija: `evt:{eventId}:{ruleId}` — jedan događaj × jedno pravilo =
-  najviše jedan unos, pa je ponovna obrada no-op;
+  najviše jedan unos, pa je ponovna obrada no-op; points-shop kupovina koristi
+  `points-shop:{appointmentId}:{offerId}` (§14);
 - anti-abuse: `antiAbuse.maxHeartsPerDay` / `maxPointsPerDay` ograničavaju
   dnevni priliv;
 - tipovi unosa: `earn`, `redeem`, `adjust`, `revoke`, `expire`.
@@ -108,8 +126,9 @@ Kad broj srca dostigne `milestones[0].heartsRequired`, engine u istom toku:
 2. izdaje vaučer (`origin: "auto_rule"`, idempotentno po događaju),
 3. šalje celebration notifikaciju sa kodom vaučera.
 
-Ovo je **zarada koja se sama pretvara u nagradu** i deo je postojećeg sistema.
-T1-4 ne pravi ovo.
+Ovo je **zarada koja se sama pretvara u nagradu**: srca troši pravilo, ne
+klijentkinja. Redemption iz §14 je odvojen tok — tamo se troše poeni, i to
+samo kroz konfigurisanu ponudu.
 
 ## 8. Voucher lifecycle
 
@@ -120,19 +139,22 @@ active ──(booking sa kodom)──▶ reserved ──(termin completed)──
 active ──(istekao, cron)──▶ expired        revert termina: active/reserved → revoked
 ```
 
-- sve tranzicije su CAS (`findOneAndUpdate` sa uslovom nad statusom), bez
-  multi-doc transakcija: od dva konkurentna bookinga istim kodom prolazi tačno
-  jedan;
-- primena pri zakazivanju postoji na `POST /api/appointments/create` kroz polje
-  `voucherCode`; popust se računa **server-side** nad canonical iznosom iz
-  kataloga, ne nad zbirom koji je poslao browser;
-- kod `on_request` cene vaučer ostaje **rezervisan** i čeka quote — vidi
+- sve tranzicije su CAS (`findOneAndUpdate` sa uslovom nad statusom): od dva
+  konkurentna pokušaja istim vaučerom prolazi tačno jedan;
+- **tri ulaza** vode do `reserved`, svi kroz isti server obračun:
+  `voucherCode` pri zakazivanju (`POST /api/appointments/create`), izbor
+  sopstvenog vaučera na već zakazanom terminu i points-shop kupovina
+  (`POST /api/appointments/[id]/benefits`);
+- kod `on_request` cene vaučer ostaje **rezervisan** i čeka quote; čim cena
+  postane poznata, iznos se **ponovo računa na serveru** — vidi
   [cene §4](PANTA-BOOKING-PRICING.md);
 - `expireDueVouchers` ističe vaučere kroz loyalty cron.
 
-**Ograničenje današnjeg toka:** kod stiže iz deep-linka (referral/share vaučer u
-`?voucher=` ili `PendingAppointment`), a ne iz izbora klijentkinje. Ne postoji
-ekran na kome ona bira jedan od svojih aktivnih vaučera. To je T1-4.
+**Otkazivanje, odbijanje i nedolazak** vraćaju vaučer u `active` — uključujući
+points-shop vaučer. Poeni se pri tome **ne refundiraju**: klijentkinja ih je
+zamenila za stvarnu vrednost koju i dalje poseduje i sme da odnese na drugi
+termin. Refund bi značio da isti poeni postoje dvaput — i kao saldo i kao
+vaučer.
 
 ## 9. Streak, no-show i check-in
 
@@ -182,7 +204,9 @@ checkbox „iskorišćeno".
 ## 11. Šta klijentkinja već vidi
 
 - `/api/loyalty/client/me` — stanje, valute, milestone napredak, `pointsShop`
-  konfiguracija (prikaz, ne kupovina);
+  konfiguracija;
+- `GET /api/appointments/[id]/benefits` — šta sme da iskoristi na konkretnom
+  terminu; posle uspešnog zakazivanja to postaje zaseban ekran (§14);
 - `/api/loyalty/client/vouchers` i `/ledger` — njeni vaučeri i istorija;
 - `/api/loyalty/client/moments` + `LoyaltyMoments` / `LoyaltyCelebrationOverlay`
   — **celebration animacija posle završene posete**: šta je zaradila, koliko još
@@ -190,7 +214,8 @@ checkbox „iskorišćeno".
   panela/sajta jer klijentkinja nije prisutna u trenutku kad salon označi dolazak;
   push notifikacija stiže odmah. Jačina je per-tenant (`celebration.intensity`).
 
-Ovo je **postojeće ponašanje** i ne planira se ponovo u T1-4.
+Celebration sloj je **postojeće ponašanje**; T1-4 ga koristi takav kakav je i
+ne uvodi drugi animation/event sistem.
 
 ## 12. Referral
 
@@ -206,24 +231,194 @@ stanje naloga, poslednjih 10 ledger događaja, vaučeri sa lifecycle-om i vezani
 terminom, plus ista admin adjust komanda iz §10. Ugovor:
 [PANTA-CLIENT-360.md](PANTA-CLIENT-360.md).
 
-## 14. T1-4 — NEXT, nije implementirano
+## 14. Redemption i Appointment Checkout (T1-4) — u kodu
 
-**T1-4 Loyalty Redemption & Appointment Checkout.**
+> Status: **kod je gotov i verifikovan mašinski** (typecheck, lint, testovi,
+> build). Browser acceptance nad Marysoll salonom je zaseban red u
+> [TODO.md](TODO.md) i nije zatvoren.
 
-Zaključan smer (odluka stoji, implementacija ne postoji):
+### 14.1 Šta se troši, a šta ne
 
 ```text
-poeni → konfigurisana points-shop nagrada → vaučer
-      → primena na termin → redeemed na completed
+❤️ srca    punch-card napredak. NE troše se ručno — troši ih milestone
+           pravilo (§7). Nema heart shopa i nema konverzije u dinare.
+⭐ poeni    JEDINA valuta koju klijentkinja troši, i to isključivo kroz
+           konfigurisanu points-shop ponudu.
+🔥 streak   nije valuta i nema veze sa redemption-om.
 ```
 
-Ne postoji u kodu: komanda/ruta koja troši poene, ekran na kome klijentkinja
-bira nagradu ili svoj vaučer pri zakazivanju, pravila stackovanja vaučera i
-poena, admin potvrda i trenutak skidanja balansa kod otkazivanja.
+Ne postoji kurs „30 poena = X RSD", slobodan unos („potroši 327 poena") ni
+slider. Ponuda je jedina jedinica kupovine:
 
-Ne postoji proizvoljan kurs „30 poena = X RSD"; `pointsShop` u konfiguraciji je
-lista nagrada, ne kurs. Milestone iz §7 se **ne pretvara** u direktnu potrošnju
-srca bez nove product odluke.
+```text
+500 ⭐ → 500 RSD popusta        800 ⭐ → 20% popusta
+```
+
+### 14.2 Vaučer je jedini monetarni benefit koji termin poznaje
+
+```text
+points-shop ponuda ──▶ skidanje poena ──▶ Voucher(origin: "points_shop")
+                                      ──▶ reserved na terminu
+```
+
+`Appointment` i dalje zna samo `appliedVoucherId`, `originalPrice`,
+`discountAmount`, `finalPrice`. Nema `appliedPoints`, `pointsDiscount` ni
+`rewardOrigin` poslovne logike na terminu — poreklo živi u Voucher/Loyalty
+audit sloju. Time se i invariant „jedna pogodnost" svodi na jedno polje.
+
+### 14.3 Jedna pogodnost po terminu — tvrdo pravilo
+
+```text
+Appointment.appliedVoucherId = najviše jedan
+```
+
+Zabranjeno je svako slaganje: vaučer + vaučer, vaučer + points nagrada, dve
+points nagrade. Zamena NIJE „dodaj drugu" — postojeća se prvo eksplicitno
+ukloni. Uslov je deo samog upisa (`appliedVoucherId: { $in: [null, undefined] }`),
+ne provera pre njega, pa ga ni trka ne može zaobići.
+
+Ne postoji tenant podešavanje „dozvoli stackovanje" ni globalni „maksimalni
+popust". Konfigurisana nagrada je već granica popusta.
+
+### 14.4 Stabilan identitet ponude
+
+`LoyaltyConfig.pointsShop[].id` je persisted identitet i jedini autoritet u
+redemption toku. Indeks u nizu to nije: promena redosleda ili cene pomerila bi
+značenje svakog zahteva u letu, pa bi klijentkinja platila jednu nagradu a
+dobila drugu.
+
+- id nastaje na serveru; id iz forme se prihvata samo ako već pripada tom
+  salonu (`assignPointsShopIds`);
+- izmena cene/nagrade i reorder **ne menjaju** id;
+- browser šalje samo id — cena u poenima i vrednost nagrade se uvek ponovo
+  čitaju iz trenutne tenant konfiguracije;
+- ponuda bez id-a se **ne nudi** za kupovinu (fail-closed za zatečene zapise);
+- `Voucher.pointsShopSnapshot` čuva uslove u trenutku kupovine (ponuda, cena,
+  tip i vrednost nagrade, usluga, rok), pa kasnija izmena ponude ne menja već
+  izdat vaučer.
+
+### 14.5 Atomsko skidanje poena — najvažnija tehnička granica
+
+Redemption je prvi **konkurentni negativni tok**: do njega su poene skidali
+samo admin i no-show putanja. `postLedgerEntry` za negativne iznose radi
+read→clamp, što je za takav tok bilo dovoljno, a za trošenje nije — dva
+paralelna zahteva prošla bi istu proveru salda.
+
+Zato points-shop kupovina ide kroz `runLoyaltyTransaction`, ovim redom:
+
+```text
+1. ledger unos                idempotency ograda PRE naplate
+   (unique {tenantId, points-shop:{appointmentId}:{offerId}})
+2. USLOVNO skidanje poena     findOneAndUpdate({ pointsBalance: { $gte: cost } })
+3. Voucher + snapshot uslova
+4. upis na termin             uslov: pogodnost još ne postoji
+```
+
+Dve garancije koje iz toga slede:
+
+```text
+pointsBalance nikad < 0
+dva paralelna zahteva ne mogu potrošiti isti saldo
+```
+
+Ledger je namerno **prvi**: da je posle skidanja, retry bi prvo skinuo poene pa
+tek onda otkrio da je duplikat. Bilo koji neuspeh ruši celu transakciju — ne
+postoji stanje „poeni skinuti, vaučera nema" ni obrnuto.
+
+### 14.6 Idempotencija i povratak
+
+Retry istog zahteva vraća **postojeće uspešno stanje**, ne grešku posle
+naplate. Ako se points-shop vaučer kasnije skine sa termina:
+
+```text
+poeni se NE vraćaju · Voucher → active · klijentkinja ga i dalje poseduje
+```
+
+Vrednost nije izgubljena, samo je premeštena iz salda u vaučer. Isti zahtev ne
+može drugi put „kupiti" istu nagradu za isti termin.
+
+### 14.7 Audit
+
+Kupovina proizvodi ledger unos `entryType: "redeem"`, `currency: "points"`,
+`amount: -costPoints`, sa `source` koji nosi termin, vaučer i stabilan
+`points_shop:{offerId}`; kod admin primene i `adminUserId`.
+
+`Koriguj balans` (§10) ostaje **potpuno odvojen** alat: normalna kupovina
+nagrade se nikad ne knjiži kao `manual_adjustment` i za nju se ne traži razlog.
+
+### 14.8 Ko bira i kada
+
+**Klijentkinja — posle zakazivanja, ne u widget-u.** Loyalty nije korak u
+booking toku. Prvo termin mora u potpunosti da uspe; tek onda, i samo ako
+server kaže da ima nešto upotrebljivo, otvara se zaseban ekran. Ako loyalty
+zakaže, termin je i dalje zakazan i potvrda je normalna. „Ne sada" ne menja
+ništa.
+
+**Salon — „Primeni pogodnost".** Isti picker i isti server seam, iz liste
+termina i iz Client 360 dosijea, za trenutak kada klijentkinja uživo kaže da
+želi da iskoristi nagradu. Klik admina JESTE izvršenje: konfigurisana nagrada
+je već salonova poslovna odluka, pa nema `requested → pending → approved`
+lifecycle-a.
+
+Oba UI-ja šalju samo id izbora; ne računaju popust, ne proveravaju saldo i ne
+odlučuju eligibility.
+
+### 14.9 Appointment Checkout
+
+„Došla" više nije gola promena statusa nego račun:
+
+```text
+Cena / dogovorena cena       3.500 RSD
+Pogodnost                     -500 RSD
+Za naplatu                    3.000 RSD
+Stvarno naplaćeno            [ 3.000 ]
+Nakon završetka: očekivano +1 ❤️  +30 ⭐
+```
+
+Svaka brojka dolazi iz `previewAppointmentCheckout`. Modal ne radi
+`3500 - 500` i ne računa poene — prikazan iznos koji se razlikuje od
+proknjiženog gori je od nikakvog iznosa. Očekivana zarada poštuje dnevne
+anti-abuse limite i prikazuje se kao **„očekivano"**, jer ledger ostaje
+autoritet.
+
+`completeAppointmentCheckout` je **jedini** canonical put do `completed`. Do
+T1-4 su postojala dva (admin update ruta i auto-complete cron), svaki sa svojom
+aritmetikom; sada dele isti seam. Cron prosleđuje `source: "auto"` i nijedan
+iznos — mašina ne izmišlja cenu koju čovek nije rekao.
+
+Redosled završetka:
+
+```text
+1. pogodnost je izabrana PRE completion-a
+2. pre-benefit cena poznata ili potvrđena gde treba
+3. server recompute popusta
+4. salon potvrdi stvarno naplaćeno
+5. status → completed  (atomic, uslov na prethodni status)
+6. reserved Voucher → redeemed
+7. durable appointment_completed događaj
+8. srca/poeni na STVARNU potrošnju
+9. milestone može proizvesti NOV vaučer
+10. celebration pokazuje stvarno proknjižen rezultat
+```
+
+Redemption sam po sebi nikad ne glumi `appointment_completed`: kupovina i
+zarada su dva različita događaja.
+
+### 14.10 Gate
+
+T1-4 ne uvodi nijedan nov plan feature. Važe postojeći uslovi iz §3
+(capability `loyalty.rewards` + `LoyaltyConfig.enabled`), a points-shop
+dodatno traži `currencies.points.enabled`. Superadmin override i dalje
+nadjačava plan: Maria/Free sa uključenim loyalty-jem radi isto kao plaćen
+tenant.
+
+### 14.11 Greške
+
+Odbijanje nije 500. `400` nevalidan izbor (nagrada ne postoji, ne važi za
+uslugu, termin nije eligible) · `403` tuđi termin, pogrešan tenant, capability
+· `404` nepostojeći ili tuđi resurs (postojanje tuđeg zapisa se ne odaje)
+· `409` pogodnost već postoji, nedovoljno poena, vaučer upravo rezervisan
+drugde.
 
 Kontrolni tracker: [TODO.md](TODO.md).
 
@@ -232,6 +427,10 @@ Kontrolni tracker: [TODO.md](TODO.md).
 Salonski paketi/pretplate klijentkinje (`ClientPackage`, entitlement, payment
 provider) nisu deo Loyalty domena i ostaju odloženi. `Service.subscription` samo
 opisuje šta salon nudi i nije dokaz da je klijentkinja nešto kupila.
+
+Završetak T1-4 **ne** promoviše T1-5. Points-shop nagrada je vaučer, ne kupljen
+paket: nema entitlement-a, nema iskorišćenih termina i nema plaćanja. Sledeći
+product rez bira vlasnik proizvoda.
 
 ## 16. Naziv „Growth Studio"
 

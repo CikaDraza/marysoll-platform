@@ -23,6 +23,7 @@ import {
   type RedemptionActor,
 } from "./redemption";
 import { LoyaltyRedemptionError } from "./errors";
+import { tenantHasFeature } from "@/lib/plans/subscriptionService";
 
 // Konekciju drži sam test (ReplSet), pa app-ov connect mora biti no-op.
 vi.mock("@/lib/db/mongodb", () => ({ connectToDB: async () => undefined }));
@@ -191,6 +192,7 @@ beforeEach(async () => {
     Voucher.deleteMany({}),
   ]);
   await seedConfig();
+  vi.mocked(tenantHasFeature).mockResolvedValue(true);
 });
 
 // ─── POINTS ───────────────────────────────────────────────────────────────────
@@ -555,6 +557,44 @@ describe("granice pristupa i gate-ovi", () => {
         actor: { kind: "admin", tenantId: String(OTHER_TENANT) },
       }),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("32. plan/capability ne dozvoljava loyalty → nema pogodnosti ni kupovine", async () => {
+    // `loyaltyCore` je isti autoritet koji koristi i `requireCapability` na
+    // ruti; kada padne, redemption ne sme da radi ni na servisnom sloju.
+    vi.mocked(tenantHasFeature).mockResolvedValue(false);
+    await seedAccount(5000);
+    const appt = await seedAppointment();
+
+    const benefits = await listAvailableBenefits({
+      appointmentId: String(appt._id),
+      actor: clientActor,
+    });
+    expect(benefits.enabled).toBe(false);
+
+    await expect(
+      redeemPointsReward({
+        appointmentId: String(appt._id),
+        offerId: OFFER_500,
+        actor: clientActor,
+      }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(await LoyaltyLedger.countDocuments({})).toBe(0);
+  });
+
+  it("35. superadmin override na Free planu radi isto kao plaćen tenant", async () => {
+    // Override se razrešava u `tenantHasFeature` (resolveActiveFeatureOverrides),
+    // pa T1-4 ne uvodi nikakav nov plan gate — dovoljno je da feature prođe.
+    vi.mocked(tenantHasFeature).mockResolvedValue(true);
+    await seedAccount(500);
+    const appt = await seedAppointment();
+
+    const result = await redeemPointsReward({
+      appointmentId: String(appt._id),
+      offerId: OFFER_500,
+      actor: clientActor,
+    });
+    expect(result.pricing.finalPrice).toBe(3500);
   });
 
   it("33. LoyaltyConfig.enabled=false → nema pogodnosti", async () => {

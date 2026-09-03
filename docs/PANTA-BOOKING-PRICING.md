@@ -2,7 +2,8 @@
 
 > Status: **na snazi.** Kod: `src/helpers/servicePrice.ts`,
 > `src/lib/appointments/pricingSnapshot.ts`,
-> `src/lib/booking/resolveBookingRequest.ts`.
+> `src/lib/booking/resolveBookingRequest.ts`,
+> `src/lib/appointments/checkout.ts`.
 
 ## 1. Pravilo brojeva
 
@@ -53,9 +54,22 @@ Browser ga ne sme poslati.
 ### `chargedAmount` ≠ `finalPrice`
 
 `finalPrice` je zauzet: to je Growth Studio trio
-(`originalPrice − discountAmount = finalPrice`), cena **posle vaučera**,
-računata pri kreiranju. Loyalty iz njega dodeljuje bodove po potrošnji.
+(`originalPrice − discountAmount = finalPrice`), cena **posle vaučera**.
 Upisivanje naplaćenog iznosa tamo pokvarilo bi vaučerske termine.
+
+Appointment Checkout (T1-4) razdvaja četiri koraka jednog računa i nijedan
+nije drugi:
+
+```text
+A. pre-benefit dogovorena cena   pricing.quotedTotal
+B. pogodnost                     discountAmount
+C. za naplatu                    finalPrice
+D. stvarno naplaćeno             pricing.chargedAmount
+```
+
+Loyalty bodove nosi **D, pa tek onda C** — vidi
+[loyalty §4](PANTA-LOYALTY-ENGINE.md). Do T1-4 je red bio obrnut, pa je uneto
+„stvarno naplaćeno" gubilo od vaučerske aritmetike.
 
 ## 4. Vaučer čeka osnovicu
 
@@ -66,8 +80,53 @@ canonical iznos `null`:
     discountAmount = null      ← ne 0; 0 znači „obračunato nad cenom nula"
     finalPrice     = null
 
-Vaučer ostaje **rezervisan** i čeka quote. Kad se pojavi numerička osnovica,
-postojeća `computeVoucherDiscount` matematika radi kao i do sada.
+Vaučer ostaje **rezervisan** i čeka quote.
+
+### Recompute — ZATVORENO (T1-4)
+
+Čim potvrđena pre-benefit osnovica postane poznata ili se promeni, iznosi se
+**ponovo računaju na serveru**. Ranije se to nije dešavalo nigde, pa je vaučer
+na terminu „na upit" ostajao sa `null` iznosima zauvek.
+
+```text
+Voucher 20% · quote 4.000  →  originalPrice 4000 · discount 800 · final 3200
+quote 4.000 → 4.500        →  originalPrice 4500 · discount 900 · final 3600
+```
+
+Osnovica se bira ovim redom (`getAppointmentPreBenefitBasis`):
+
+| stanje | osnovica |
+|---|---|
+| `quotedTotal` postoji | quote — salon ga je potvrdio posle uvida u zahtev |
+| `fixed` / `from` bez quote-a | `minimumTotal` |
+| `on_request` bez quote-a | `null` — cena ne postoji, pa ni popust |
+
+Recompute pokreću sve putanje koje menjaju cenu ili izbor: admin izmena,
+klijentska izmena i checkout. Pravila:
+
+- **pomeranje datuma/vremena** ne dira pogodnost — osnovica se nije promenila;
+- **promena usluge uz vaučer koji i dalje važi** → nov obračun nad novom
+  canonical osnovicom;
+- **promena usluge van `serviceScope`-a** → vaučer se oslobađa (`reserved →
+  active`) i pogodnost pada sa termina. Service-scoped popust nikad ne sme da
+  ostane na pogrešnoj usluzi.
+
+Obračun je jedan helper (`computeAppointmentBenefitPricing`) koji dele booking
+create, naknadna primena vaučera, points-shop kupovina i recompute. Uz njega
+ide zasebna kapija primenljivosti: čist `computeVoucherDiscount` za tip `fixed`
+skida iznos bez obzira na `serviceScope`, pa bi bez nje vaučer vezan za jednu
+uslugu prolazio na bilo kojoj.
+
+### Checkout traži dogovorenu cenu kad je nema
+
+`from` i `on_request` sa vaučerom, a bez potvrđene pre-benefit cene, **ne
+smeju** tiho da primene popust na minimum: minimum je donja granica, ne
+dogovor. Checkout u tom slučaju traži **ukupnu dogovorenu cenu** (vlasnica ne
+razmišlja „osnovica + doplate" — server izvodi canonical quote polja iz
+ukupnog iznosa).
+
+Bez vaučera nepoznata cena **sme** da ostane nepoznata: termin ide u „Termini
+bez cene", ne u prihod. Nijedan iznos se ne izmišlja.
 
 ## 5. Analitika — tri accessora
 
@@ -147,19 +206,22 @@ snapshot. Puna tabela write putanja je u
 
 Postoji i:
 
-- unos cene u adminu — `quotedBaseAmount` pri „Odobri", `chargedAmount` pri
-  „Došla", oba opciona; snapshot ide u isti atomic upis kao status;
+- unos cene u adminu — `quotedBaseAmount` pri „Odobri"; „Došla" vodi
+  Appointment Checkout, koji uz `chargedAmount` radi i recompute pogodnosti.
+  Oba unosa su opciona; snapshot ide u isti atomic upis kao status;
 - mejl razlikuje naplaćeno / potvrđeno / na upit / „od X" i nikad ne predstavlja
   poznate dodatke kao cenu termina;
 - statistika koristi accessore iz §5 i razdvaja potencijalni, završeni i otkazani
   prihod; „Termini bez cene" se broje odvojeno, a usluga bez ijedne poznate cene
   prikazuje „Cena nije definisana" umesto tihe nule.
 
+**Zatvoreno u T1-4:**
+
+- **vaučer recompute** kad quote postane numerički — obračun postoji i pokreću
+  ga sve putanje koje menjaju cenu ili izbor ([§4](#4-vaučer-čeka-osnovicu)).
+
 **Nije završeno:**
 
-- **vaučer recompute** kad quote postane numerički — polja za unos postoje,
-  ostaje obračun ([§4](#4-vaučer-čeka-osnovicu)). **Ulazi u obim T1-4**, nije
-  zaseban rez;
 - **legacy `POST /api/booking` (HMAC) i `POST /api/marketplace/appointments`** ne
   prolaze kroz `resolveBookingRequest`: uzimaju `duration` iz zahteva i cenu iz
   `basePrice ?? 0`, pa na njima `on_request + dodatak` i dalje može izgledati kao
@@ -173,11 +235,11 @@ Postoji i:
 
 Cena prati **izbor**, ne sat:
 
-| izmena | snapshot |
-|---|---|
-| samo datum/vreme | ostaje — uključujući `quotedTotal` koji je salon potvrdio |
-| usluga, varijanta ili dodatak | nov snapshot; stara ponuda se poništava |
-| poskupljenje u cenovniku bez promene izbora | ostaje — to nije nov izbor |
+| izmena | snapshot | pogodnost |
+|---|---|---|
+| samo datum/vreme | ostaje — uključujući `quotedTotal` koji je salon potvrdio | ostaje |
+| usluga, varijanta ili dodatak | nov snapshot; stara ponuda se poništava | recompute; oslobađa se ako vaučer više ne važi za uslugu |
+| poskupljenje u cenovniku bez promene izbora | ostaje — to nije nov izbor | ostaje |
 
 Odluku donosi `selectionSignature` iz `lib/appointments/canonicalSelection.ts`,
 koji namerno gleda **ime i količinu**, ne iznos. Da gleda iznos, svako
