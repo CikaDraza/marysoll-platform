@@ -63,6 +63,31 @@ export type RedemptionActor =
   | { kind: "client"; tenantId: string; tenantUserId: string }
   | { kind: "admin"; tenantId: string; adminTenantUserId?: string | null };
 
+/**
+ * Minimalan oblik termina koji obračun pogodnosti stvarno čita.
+ *
+ * Namerno tolerantan prema id-jevima: pozivaoci su i `lean()` objekti
+ * (ObjectId), i mongoose dokumenti, i DTO-i iz drugih slojeva (string). Uži
+ * tip bi terao svaku putanju na svoj cast.
+ */
+export interface BenefitPricedAppointment {
+  pricing?: IAppointmentPricing | null;
+  services?: ReadonlyArray<{
+    serviceId?: unknown;
+    price?: number | null;
+    quantity?: number | null;
+  }>;
+}
+
+/** Id iz baze, dokumenta ili DTO-a — sve se svodi na string. */
+type MaybeId = { toString(): string } | string | null | undefined;
+
+function idToString(value: MaybeId): string | null {
+  if (value == null) return null;
+  const text = String(value);
+  return text.length > 0 ? text : null;
+}
+
 interface AppointmentScopeLean {
   _id: Types.ObjectId;
   tenantId: Types.ObjectId;
@@ -164,7 +189,7 @@ export interface BenefitVoucherTerms {
  * pravila „0 nije null".
  */
 export function computeAppointmentBenefitPricing(input: {
-  appointment: Pick<AppointmentScopeLean, "pricing" | "services">;
+  appointment: BenefitPricedAppointment;
   voucher: BenefitVoucherTerms | null;
 }): BenefitPricing {
   const basis = getAppointmentPreBenefitBasis({
@@ -173,9 +198,7 @@ export function computeAppointmentBenefitPricing(input: {
   });
   return computeBenefitPricing({
     basis,
-    serviceId: input.appointment.services?.[0]?.serviceId
-      ? String(input.appointment.services[0].serviceId)
-      : null,
+    serviceId: idToString(input.appointment.services?.[0]?.serviceId as MaybeId),
     voucher: input.voucher
       ? {
           type: input.voucher.type,
@@ -190,12 +213,11 @@ export function computeAppointmentBenefitPricing(input: {
 /** Da li vaučer sme da stoji na OVOM terminu (scope usluge). */
 export function isVoucherApplicableToAppointment(
   voucher: BenefitVoucherTerms,
-  appointment: Pick<AppointmentScopeLean, "services">,
+  appointment: BenefitPricedAppointment,
 ): boolean {
-  const serviceId = appointment.services?.[0]?.serviceId;
   return isVoucherApplicableToService(
     { serviceScope: (voucher.serviceScope ?? []).map(String) },
-    serviceId ? String(serviceId) : null,
+    idToString(appointment.services?.[0]?.serviceId as MaybeId),
   );
 }
 
@@ -878,5 +900,95 @@ export async function removeBenefit(input: {
       voucherId: String(appointment.appliedVoucherId),
       pointsRefunded: false as const,
     };
+  });
+}
+
+// ─── Recompute posle promene cene ili usluge ──────────────────────────────────
+
+export interface BenefitRecomputePlan {
+  /** `none` = termin nema pogodnost, ništa se ne menja. */
+  kind: "none" | "recomputed" | "released";
+  /** Nova vrednost `originalPrice`/`discountAmount`/`finalPrice`. */
+  set?: BenefitPricing;
+  /** Vaučer koji treba vratiti u `active` (posle upisa termina). */
+  releaseVoucherId?: Types.ObjectId;
+}
+
+/**
+ * Šta se dešava sa pogodnošću kada se termin promeni.
+ *
+ * Zatvara dve zatečene rupe:
+ *
+ *   1. Vaučer na terminu „na upit" ostajao je sa `null` iznosima ZAUVEK.
+ *      Kada salon kasnije potvrdi cenu (4.000), popust od 20% mora da postane
+ *      800 RSD. Do sada nijedna putanja to nije radila, pa je vaučer bio
+ *      rezervisan a nikad obračunat.
+ *
+ *   2. Promena usluge ostavljala je popust na POGREŠNOJ usluzi. Vaučer vezan
+ *      za tretman lica ostajao bi na terminu prebačenom na manikir.
+ *
+ * Pomeranje datuma/vremena NIJE promena osnovice — pogodnost ostaje ista, a
+ * `computeAppointmentBenefitPricing` nad nepromenjenom cenom vrati iste
+ * brojeve, pa je upis bezopasan.
+ *
+ * Ulaz je PROJEKTOVANO stanje termina (posle primene izmene), ne sačuvano:
+ * recompute mora da vidi novu cenu i novu uslugu, inače računa nad prošlošću.
+ */
+export async function planBenefitRecompute(
+  projected: BenefitPricedAppointment & { appliedVoucherId?: MaybeId },
+): Promise<BenefitRecomputePlan> {
+  const voucherId = idToString(projected.appliedVoucherId);
+  if (!voucherId || !Types.ObjectId.isValid(voucherId)) return { kind: "none" };
+  await connectToDB();
+
+  const voucher = await Voucher.findById(voucherId)
+    .select(VOUCHER_FIELDS)
+    .lean<VoucherLeanFull>();
+  // Vaučer koji je nestao ne sme da zaključa termin u stanju „ima pogodnost".
+  if (!voucher) {
+    return {
+      kind: "released",
+      releaseVoucherId: undefined,
+    };
+  }
+
+  const appointment: BenefitPricedAppointment = {
+    pricing: projected.pricing,
+    services: projected.services,
+  };
+  if (!isVoucherApplicableToAppointment(voucher, appointment)) {
+    return { kind: "released", releaseVoucherId: voucher._id };
+  }
+
+  return {
+    kind: "recomputed",
+    set: computeAppointmentBenefitPricing({ appointment, voucher }),
+  };
+}
+
+/** Polja koja se brišu kada pogodnost odlazi sa termina. */
+export const BENEFIT_CLEAR_UNSET = {
+  appliedVoucherId: 1,
+  originalPrice: 1,
+  discountAmount: 1,
+  finalPrice: 1,
+} as const;
+
+/**
+ * Vrati vaučer u novčanik posle upisa termina.
+ *
+ * Poeni se NE refundiraju ni ovde: points-shop vaučer je i dalje kod
+ * klijentkinje i sme da ode na drugi termin.
+ */
+export async function releaseRecomputedVoucher(
+  plan: BenefitRecomputePlan,
+): Promise<void> {
+  if (plan.kind !== "released" || !plan.releaseVoucherId) return;
+  await Voucher.findOneAndUpdate(
+    { _id: plan.releaseVoucherId, status: "reserved" },
+    { $set: { status: "active", reservedAppointmentId: null } },
+  ).catch((err) => {
+    console.error("[loyalty] release after recompute failed:", err);
+    return null;
   });
 }

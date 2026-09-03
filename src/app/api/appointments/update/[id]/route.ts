@@ -12,6 +12,11 @@ import { resolveTenant, verifyToken } from "@/lib/auth/auth-server";
 import { actorScopeFrom, logSuperAdminAccess } from "@/lib/auth/tenantScope";
 import { createAppointmentNotification } from "@/lib/notificationService";
 import { loyaltyOnAppointmentStatusChange } from "@/lib/loyalty/hooks";
+import {
+  BENEFIT_CLEAR_UNSET,
+  planBenefitRecompute,
+  releaseRecomputedVoucher,
+} from "@/lib/loyalty/redemption";
 import { IAppointment, IAppointmentService } from "@/types";
 import { Types } from "mongoose";
 import { requireCapability } from "@/lib/platform/capabilities-server";
@@ -330,17 +335,46 @@ export async function PUT(
       );
     }
 
+    // ── Pogodnost prati cenu i uslugu ────────────────────────────────────
+    // Vaučer je PRAVILO popusta i pri rezervaciji ne mora znati cenu. Čim
+    // osnovica postane poznata (salon potvrdio cenu) ili se promeni (druga
+    // usluga), dinarski iznos mora ponovo da se izračuna NA SERVERU — do sada
+    // je vaučer na terminu „na upit" ostajao sa `null` iznosima zauvek.
+    //
+    // Recompute gleda PROJEKTOVANO stanje: cenu i uslugu koje termin dobija
+    // ovim upisom, ne one koje je imao.
+    const benefitPlan = await planBenefitRecompute({
+      appliedVoucherId: appointment.appliedVoucherId,
+      pricing: updatedData.pricing ?? appointment.pricing,
+      services: updatedData.services ?? appointment.services,
+    });
+
+    const benefitUnset =
+      benefitPlan.kind === "released" ? BENEFIT_CLEAR_UNSET : undefined;
+
     const updated = await Appointment.findOneAndUpdate(
       { _id: id, ...scope.filter },
       {
         ...updatedData,
+        ...(benefitPlan.set ?? {}),
         // `{ proposedDate: undefined }` Mongoose izbacuje iz update-a, pa je
         // predlog preživljavao odluku i klijentkinja je i dalje gledala
         // „Prihvati / Odbij". Brisanje mora biti eksplicitan `$unset`.
-        ...(clearProposal ? { $unset: CLEAR_PROPOSAL_UNSET } : {}),
+        ...(clearProposal || benefitUnset
+          ? {
+              $unset: {
+                ...(clearProposal ? CLEAR_PROPOSAL_UNSET : {}),
+                ...(benefitUnset ?? {}),
+              },
+            }
+          : {}),
       },
       { new: true },
     );
+
+    // Vaučer se oslobađa TEK pošto je termin upisan: obrnut redosled bi na
+    // padu upisa ostavio termin koji pokazuje na vaučer u tuđem novčaniku.
+    await releaseRecomputedVoucher(benefitPlan);
 
     // Notifikacija za promenu statusa. Odluka o predlogu je već poslala svoju
     // (i to SALONU) — bez ovog izuzetka bi klijentkinja povrh sopstvene akcije

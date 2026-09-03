@@ -10,8 +10,11 @@ import { createAppointmentNotification } from "@/lib/notificationService";
 import {
   reserveVoucherForBooking,
   attachReservationToAppointment,
-  computeVoucherDiscount,
 } from "@/lib/loyalty/vouchers/service";
+import {
+  computeAppointmentBenefitPricing,
+  isVoucherApplicableToAppointment,
+} from "@/lib/loyalty/redemption";
 import { Voucher } from "@/models/Voucher";
 import { trackReferralBooking } from "@/lib/loyalty/referrals";
 import {
@@ -197,7 +200,10 @@ export async function POST(request: NextRequest) {
     // kodom tačno jedan prolazi. Popust se računa server-side.
     // Osnovica je CANONICAL iznos iz kataloga, ne zbir onoga što je browser
     // poslao. Kod `on_request` je `null` — cena još ne postoji.
-    const canonicalTotal = resolved.pricing.total;
+    const bookedSelection = {
+      pricing: buildPricingSnapshot(resolved.pricing),
+      services: [{ serviceId: String(data.services[0].serviceId) }],
+    };
     let reservedVoucher = null;
     if (typeof data.voucherCode === "string" && data.voucherCode.trim()) {
       reservedVoucher = await reserveVoucherForBooking({
@@ -211,30 +217,29 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         );
       }
+      // Scope usluge je zasebna kapija od obračuna: `computeVoucherDiscount`
+      // za tip `fixed` skida iznos sa ukupnog računa bez obzira na scope, pa
+      // bi bez ove provere vaučer vezan za jednu uslugu prošao na bilo kojoj.
+      if (!isVoucherApplicableToAppointment(reservedVoucher, bookedSelection)) {
+        await Voucher.findOneAndUpdate(
+          { _id: reservedVoucher._id, status: "reserved" },
+          { $set: { status: "active", reservedAppointmentId: null } },
+        ).catch(() => null);
+        return NextResponse.json(
+          { error: "Vaučer ne važi za izabranu uslugu." },
+          { status: 400 },
+        );
+      }
     }
     // Vaučer je PRAVILO popusta i ne mora da zna cenu pri rezervaciji. Dok je
     // osnovica nepoznata, dinarski iznos se ne obračunava: `discountAmount: 0`
     // i `finalPrice: 0` bi značili „obračunato nad cenom nula", što nije isto
-    // što i „još nije obračunato". Vaučer ostaje rezervisan i čeka quote.
-    const voucherPricing =
-      canonicalTotal == null
-        ? { originalPrice: null, discountAmount: null, finalPrice: null }
-        : (() => {
-            const discountAmount = reservedVoucher
-              ? computeVoucherDiscount(reservedVoucher, [
-                  {
-                    serviceId: String(data.services[0].serviceId),
-                    price: canonicalTotal,
-                    quantity: 1,
-                  },
-                ])
-              : 0;
-            return {
-              originalPrice: canonicalTotal,
-              discountAmount,
-              finalPrice: Math.max(0, canonicalTotal - discountAmount),
-            };
-          })();
+    // što i „još nije obračunato". Vaučer ostaje rezervisan i čeka quote —
+    // recompute ga hvata čim salon potvrdi cenu.
+    const voucherPricing = computeAppointmentBenefitPricing({
+      appointment: bookedSelection,
+      voucher: reservedVoucher,
+    });
 
     // Zahtev se prihvata SAMO ako usluga to traži. UI ne sme biti jedini
     // autoritet — bez ove provere bi podmetnut payload upisao fotografiju i
@@ -273,7 +278,7 @@ export async function POST(request: NextRequest) {
       }).item],
       unreadCount: { client: 0, admin: 0 },
       // Canonical cena — server-generated, browser je ne može podmetnuti.
-      pricing: buildPricingSnapshot(resolved.pricing),
+      pricing: bookedSelection.pricing,
       ...(reservedVoucher
         ? {
             appliedVoucherId: reservedVoucher._id,
