@@ -172,6 +172,79 @@ async function fetchUser(): Promise<UserWithToken | null> {
 
 // ─── useAuth ──────────────────────────────────────────────────────────────────
 
+// ─── Online status: jedan prijavni kanal za sve instance hook-a ──────────────
+
+/** Jedan upis „na vezi / nije na vezi". Deljen između upita i mutacije. */
+async function postOnlineStatus(isOnline: boolean, token: string): Promise<void> {
+  await publicApi.post(
+    "/users/status",
+    { isOnline },
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+}
+
+/**
+ * `beforeunload` beacon — registrovan JEDNOM, ma koliko komponenti koristilo
+ * hook.
+ *
+ * Isti razlog kao kod automatskog pinga: bez brojanja pretplata svih ~60
+ * instanci hook-a dodavalo je svoj listener, pa je zatvaranje taba slalo ~60
+ * beacon-a umesto jednog. Brojač skida listener tek kad se odjavi poslednja
+ * instanca, pa fast-refresh i unmount u testovima ne ostavljaju viseći
+ * listener.
+ */
+let unloadSubscribers = 0;
+let unloadHandler: (() => void) | null = null;
+
+function sendOfflineBeacon(): void {
+  const token = getRawToken();
+  if (!token) return;
+  const body = JSON.stringify({ isOnline: false });
+  const url = "/api/users/status";
+  if (navigator.sendBeacon) {
+    const sent = navigator.sendBeacon(
+      url,
+      new Blob([body], { type: "application/json" }),
+    );
+    if (sent) return;
+    fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body,
+      keepalive: true,
+    }).catch(() => {});
+    return;
+  }
+  try {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", url, false);
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.send(body);
+  } catch {
+    /* silent */
+  }
+}
+
+function subscribeUnloadBeacon(): () => void {
+  if (typeof window === "undefined") return () => {};
+  unloadSubscribers += 1;
+  if (unloadSubscribers === 1) {
+    unloadHandler = sendOfflineBeacon;
+    window.addEventListener("beforeunload", unloadHandler);
+  }
+  return () => {
+    unloadSubscribers -= 1;
+    if (unloadSubscribers === 0 && unloadHandler) {
+      window.removeEventListener("beforeunload", unloadHandler);
+      unloadHandler = null;
+    }
+  };
+}
+
 export function useAuth() {
   const queryClient = useQueryClient();
 
@@ -215,71 +288,61 @@ export function useAuth() {
     mutationFn: async (isOnline: boolean) => {
       const token = getRawToken();
       if (!token) throw new Error("Missing token");
-      await publicApi.post(
-        "/users/status",
-        { isOnline },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      await postOnlineStatus(isOnline, token);
       return isOnline;
     },
   });
   const { mutateAsync: postStatus } = statusMutation;
 
+  /** Imperativna prijava statusa (npr. ručna akcija). Automatski ping ide kroz
+   *  deljeni upit ispod — ne kroz ovo. */
   const updateOnlineStatus = useCallback(
     (isOnline: boolean) => postStatus(isOnline).catch(() => {}),
     [postStatus],
   );
 
-  // Wait for auth data to resolve before sending status.
-  useEffect(() => {
-    if (!isLoading && user?.token) updateOnlineStatus(true);
-  }, [isLoading, user?.token, updateOnlineStatus]);
+  /**
+   * Automatska prijava „na vezi" — JEDNOM po sesiji, za sve instance hook-a.
+   *
+   * `useAuth()` NIJE context nego običan hook i zove ga ~60 komponenti. Dok je
+   * ovaj ping bio `useMutation` + `useEffect`, svaka montirana komponenta
+   * slala je svoj `POST /api/users/status`: jedno učitavanje dashboard-a davalo
+   * je ~24 identična zahteva, u rafalima kako se komponente montiraju.
+   * `useQuery` je ovde ispravan alat jer React Query dedupuje po KLJUČU — sve
+   * instance dele jedan zahtev i jedan rezultat, pa i `onlineStatus` ostaje
+   * konzistentan svuda.
+   *
+   * Ključ nosi token: nova sesija = nov ključ = tačno jedna nova prijava.
+   * `staleTime: Infinity` + isključeni refetch-evi znače da montiranje još
+   * jedne komponente ne pravi nov zahtev.
+   */
+  const statusQuery = useQuery<boolean>({
+    queryKey: ["onlineStatus", user?.token ?? null],
+    queryFn: async () => {
+      const token = getRawToken();
+      if (!token) throw new Error("Missing token");
+      await postOnlineStatus(true, token);
+      return true;
+    },
+    enabled: !isLoading && Boolean(user?.token),
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: false,
+  });
 
   const onlineStatus: "pending" | "online" | "offline" = isLoading
     ? "pending"
     : !user?.token
       ? "offline"
-      : statusMutation.isSuccess && statusMutation.data === true
+      : statusQuery.isSuccess && statusQuery.data === true
         ? "online"
         : "pending";
 
-  useEffect(() => {
-    const handleUnload = () => {
-      const token = getRawToken();
-      if (!token) return;
-      const body = JSON.stringify({ isOnline: false });
-      const url = "/api/users/status";
-      if (navigator.sendBeacon) {
-        const sent = navigator.sendBeacon(
-          url,
-          new Blob([body], { type: "application/json" }),
-        );
-        if (!sent) {
-          fetch(url, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body,
-            keepalive: true,
-          }).catch(() => {});
-        }
-      } else {
-        try {
-          const xhr = new XMLHttpRequest();
-          xhr.open("POST", url, false);
-          xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-          xhr.setRequestHeader("Content-Type", "application/json");
-          xhr.send(body);
-        } catch {
-          /* silent */
-        }
-      }
-    };
-    window.addEventListener("beforeunload", handleUnload);
-    return () => window.removeEventListener("beforeunload", handleUnload);
-  }, []);
+  // Registruje se jednom za ceo tab (vidi `subscribeUnloadBeacon`).
+  useEffect(() => subscribeUnloadBeacon(), []);
 
   // ── Login ─────────────────────────────────────────────────────────────────
   const loginMutation = useMutation<LoginApiResponse, unknown, LoginPayload>({
@@ -295,7 +358,12 @@ export function useAuth() {
       localStorage.setItem("token", data.token);
       await queryClient.invalidateQueries({ queryKey: ["authUser"] });
       await queryClient.refetchQueries({ queryKey: ["authUser"] });
-      setTimeout(() => updateOnlineStatus(true), 100);
+      // Status se NE šalje odavde. Ovaj `setTimeout` je pucao u trenutku kada
+      // `window.location.replace()` već ruši stranicu, pa je dev server
+      // prijavljivao `Error: aborted (ECONNRESET)` za prekinut zahtev. Nova
+      // stranica ionako sama prijavi status kroz deljeni `onlineStatus` upit,
+      // a kada redirekcije nema (klijentski tok), upit se okine čim
+      // `authUser` dobije token.
 
       // Produkcija → admin./superadmin. subdomen (cross-host handoff);
       // dev/preview/staging → relativno na istom hostu. Klijenti: null.
