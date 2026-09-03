@@ -1,11 +1,7 @@
 // src/app/api/appointments/update/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import type { IAppointmentPricing } from "@/types";
-import {
-  applyQuote,
-  applyChargedAmount,
-  emptyPricingSnapshot,
-} from "@/lib/appointments/pricingSnapshot";
+import { applyQuote, emptyPricingSnapshot } from "@/lib/appointments/pricingSnapshot";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { resolveTenant, verifyToken } from "@/lib/auth/auth-server";
@@ -17,6 +13,8 @@ import {
   planBenefitRecompute,
   releaseRecomputedVoucher,
 } from "@/lib/loyalty/redemption";
+import { completeAppointmentCheckout } from "@/lib/appointments/checkout";
+import { LoyaltyRedemptionError, loyaltyErrorStatus } from "@/lib/loyalty/errors";
 import { IAppointment, IAppointmentService } from "@/types";
 import { Types } from "mongoose";
 import { requireCapability } from "@/lib/platform/capabilities-server";
@@ -186,16 +184,50 @@ export async function PUT(
         );
       }
       const base = appointment.pricing ?? emptyPricingSnapshot();
-      // Kod „Došla" iznos je UKUPNO stvarno naplaćeno; pri odobravanju je
-      // OSNOVNA cena, pa server sam dodaje poznate doplate.
+      // Pri odobravanju vlasnica unosi OSNOVNU cenu, pa server sam dodaje
+      // poznate doplate. Slučaj „Došla" (stvarno naplaćeno) više ne prolazi
+      // ovuda — ide kroz checkout seam ispod, koji uz cenu radi i recompute
+      // pogodnosti i atomic prelaz statusa.
       //
       // Snapshot ide u `updatedData`, dakle u ISTI atomic upis kao status.
       // Ranije se menjao samo učitani dokument bez `save()`, pa je cena
       // stizala u mejl a nikad u bazu.
-      updatedData.pricing =
-        updatedData.status === "completed"
-          ? applyChargedAmount(base, amount, decoded.tenantUserId ?? null)
-          : applyQuote(base, amount, decoded.tenantUserId ?? null);
+      updatedData.pricing = applyQuote(base, amount, decoded.tenantUserId ?? null);
+    }
+
+    // ── Završetak ide kroz JEDAN canonical checkout seam ─────────────────
+    // Ne sme da postoji „aritmetika rute A" i „aritmetika rute B": i ova ruta
+    // i novi Checkout ekran i auto-complete cron dele isti obračun pogodnosti,
+    // isto pravilo o stvarno naplaćenom i isti atomic prelaz statusa.
+    //
+    // Ulaz je namerno nepromenjen: `AdminAppointments` i dalje šalje
+    // `{ status: "completed", pricingAmount }`, gde je `pricingAmount` ukupno
+    // naplaćeno.
+    if (isAdmin && updatedData.status === "completed") {
+      try {
+        await completeAppointmentCheckout({
+          appointmentId: id,
+          actor: {
+            tenantId: String(appointment.tenantId),
+            adminTenantUserId: decoded.tenantUserId ?? null,
+          },
+          amounts:
+            typeof pricingAmount === "number" || typeof pricingAmount === "string"
+              ? { chargedAmount: Number(pricingAmount) }
+              : undefined,
+          source: "admin",
+        });
+      } catch (error) {
+        if (error instanceof LoyaltyRedemptionError) {
+          return NextResponse.json(
+            { error: error.message },
+            { status: loyaltyErrorStatus(error) },
+          );
+        }
+        throw error;
+      }
+      const completed = await Appointment.findOne({ _id: id, ...scope.filter });
+      return NextResponse.json(completed);
     }
 
     if (isAdmin && updatedData.status === "no_show") {

@@ -13,7 +13,7 @@ import { Appointment } from "@/models/Appointment";
 import { LoyaltyConfig } from "@/models/LoyaltyConfig";
 import { tenantHasFeature } from "@/lib/plans/subscriptionService";
 import { appointmentEndUTC, belgradeDateStr } from "@/lib/utils/belgradeTime";
-import { loyaltyOnAppointmentStatusChange } from "../hooks";
+import { completeAppointmentCheckout } from "@/lib/appointments/checkout";
 import { notifyAdminsCompletionPrompt } from "../notifications";
 
 interface AutoCompleteConfig {
@@ -80,18 +80,25 @@ export async function runAutoComplete(): Promise<{
           appt.completionPromptSentAt &&
           hoursSinceEnd >= cfg.autoComplete.autoAfterHours
         ) {
-          const claimed = await Appointment.findOneAndUpdate(
-            { _id: appt._id, status: "appointment_approved" },
-            { $set: { status: "completed" } },
-          ).lean();
-          if (!claimed) continue;
-          await loyaltyOnAppointmentStatusChange(
-            appt._id.toString(),
-            "appointment_approved",
-            "completed",
-            { source: "auto" },
-          );
-          completed++;
+          // Isti canonical seam kao ručni checkout — ista pravila obračuna i
+          // isti atomic prelaz. Bez iznosa: mašina ne izmišlja cenu koju
+          // čovek nije rekao, pa termin bez cene ostaje bez cene.
+          try {
+            const result = await completeAppointmentCheckout({
+              appointmentId: appt._id.toString(),
+              actor: { tenantId: cfg.tenantId.toString() },
+              source: "auto",
+              expectedFromStatus: "appointment_approved",
+            });
+            if (!result.alreadyCompleted) completed++;
+          } catch (err) {
+            // Trka sa adminom (termin je u međuvremenu promenjen) nije greška
+            // crona — sledeći prolaz vidi novo stanje.
+            console.error(
+              `[loyalty] auto-complete skipped ${appt._id}:`,
+              err instanceof Error ? err.message : err,
+            );
+          }
           continue;
         }
 

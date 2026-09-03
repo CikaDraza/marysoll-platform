@@ -38,17 +38,26 @@ interface AppointmentLean {
 }
 
 /**
- * Potrošnja na kojoj se dodeljuju bodovi.
+ * Potrošnja na kojoj se dodeljuju bodovi — STVARNA, posle pogodnosti.
  *
- * Redosled je namerno ovakav:
- *   1. `finalPrice` — cena posle vaučera, kad je obračun izvršen;
- *   2. `chargedAmount` — stvarno naplaćeno, kad vaučera nema;
- *   3. legacy numerička cena za zatečene termine.
+ * Redosled (T1-4, Appointment Checkout):
+ *   1. `pricing.chargedAmount` — vlasnica je IZRIČITO upisala koliko je
+ *      naplatila. To je poslednja reč i nadjačava svaki obračun: ako je
+ *      dogovoreno 3.200 a naplaćeno 3.000, poeni idu na 3.000.
+ *   2. `finalPrice` — iznos za naplatu posle vaučera, kad stvarno naplaćeno
+ *      nije posebno uneto.
+ *   3. canonical realized fallback za zatečene termine.
+ *
+ * Do T1-4 je `finalPrice` bio prvi, pa je uneto „stvarno naplaćeno" gubilo od
+ * vaučerske aritmetike. Checkout sada eksplicitno razlikuje „za naplatu" i
+ * „stvarno naplaćeno", pa i knjiženje mora.
  *
  * Nepoznata cena daje 0 potrošnje, ne 0 dinara prihoda — bodovi se prosto ne
  * dodeljuju dok se cena ne sazna.
  */
 function appointmentSpend(appt: AppointmentLean, status: string): number {
+  const charged = appt.pricing?.chargedAmount;
+  if (typeof charged === "number") return charged;
   if (typeof appt.finalPrice === "number") return appt.finalPrice;
   // Status se prosleđuje izričito: projekcija ga ne učitava, a `realized`
   // fallback traži dokaz da je usluga izvršena. Kod reverta merodavan je
