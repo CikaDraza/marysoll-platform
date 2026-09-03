@@ -53,11 +53,17 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
           aria-hidden="true"
           className="absolute inset-x-0 -lg:top-46 transform-gpu overflow-hidden"
         >
+          {/* `width`/`height` su INTRINSIC dimenzije fajla (odnos stranica),
+              ne željena veličina na ekranu — veličinu vodi CSS. Ovde je
+              stajalo 1920×1080, a sam SVG je 1440×1024: uz `h-auto` visina se
+              računala iz stvarnog odnosa (1365px) i nije se poklapala sa
+              deklarisanih 1080, pa je Next prijavljivao da je promenjena samo
+              jedna dimenzija. */}
           <Image
             src={"/assets/theme-1/bg-theme-hero-1.svg"}
-            width={1920}
-            height={1080}
-            alt={salon.description}
+            width={1440}
+            height={1024}
+            alt=""
             className="min-w-[1920px] h-auto object-cover object-center"
             preload={true}
           />
@@ -118,11 +124,19 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                     </div>
                   </dl>
                   {/* second column on desktop, on mobile first column */}
+                  {/* Intrinsic 514×938 (ranije deklarisano 350×600 = veličina
+                      prikaza). Na mobilnom je CSS menjao samo širinu
+                      (280 ≠ 350), dok je visina ostajala 600 — tačno slučaj
+                      koji Next prijavljuje. Prikaz i dalje vodi CSS.
+
+                      `preload`: ovo je LCP element hero sekcije, dakle iznad
+                      preloma — bez njega se učitava lenjo i usporava LCP. */}
                   <Image
                     src={"/assets/theme-1/statue-makeup.png"}
-                    width={350}
-                    height={600}
+                    width={514}
+                    height={938}
                     alt={salon.description}
+                    preload={true}
                     className="order-2 lg:order-2 w-[280px] lg:w-[350px] h-[600px] object-contain mx-auto -mt-12"
                   />
                   {/* third column on desktop, on mobile third column */}
