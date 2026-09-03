@@ -1,8 +1,8 @@
 # PANTA — Edu Centar: workspace arhitektura i Education domen
 
-> **Status: EDU CENTAR v1 — PILOT READY / FEATURE FREEZE.**
-> Marina acceptance + stvarna upotreba u toku.
-> Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-31 · `staging/production-engines`
+> **Status: EDU CENTAR v1 — PILOT CLOSURE.**
+> Stvarni feedback je prikupljen; završnica je zaključana kroz E1–E5.
+> Kanonski dokument za Edu luk. Poslednja izmena: 2026-09-04 · `staging/production-engines`
 >
 > **Freeze je proglašen na `c3039a4`** (PDF/DOCX importer — poslednji rez pre
 > pilota). Posle njega su išle **samo ispravke onoga što je pilot odmah pokazao**
@@ -10,11 +10,10 @@
 > gutao prvi pasus, polazni alt teksta i mobilni raspored značke — nijedna nova
 > funkcija.
 >
-> Jezgro je dovoljno kompletno da sledeći razvoj vodi **stvarna upotreba**, a ne
-> naša pretpostavka šta bi još moglo koristiti. Do kraja pilota se ne dodaju
-> nove funkcije i ne dira se domenski model; menja se samo ono što pilot pokaže
-> kao stvarnu prepreku. Vidi
-> [Edu Centar v1 — feature freeze](#edu-centar-v1--feature-freeze-2026-08-31).
+> Jezgro je dovoljno kompletno, a stvarna upotreba je sada odredila mali završni
+> rez: javno povezivanje sadržaja, jasniji ulazi i klasifikacija, pouzdan editor
+> i zaseban Blog ulaz. Vidi
+> [Edu Centar v1 — pilot closure](#edu-centar-v1--pilot-closure-revised-target-2026-09-04).
 >
 > **Faza 0 je počela tek pošto je Theme-9 contract/rollout foundation zatvoren i
 > staging postao aktivna razvojna linija za Edu luk; sada je završena.**
@@ -44,7 +43,12 @@ EducationContent         TenantUser                  Content Composer
                            Edukacija / Termini       → Guide blokovi
 ```
 
-Uz to je zaključana šira granica: **„Salon + Edukacija" nije treći tip sistema**, nego kombinacija dva capability seta nad istim tenantom. Bez te odluke Edu Centar postaje „još nekoliko tabova u salon dashboard-u", pa se za šest meseci rastura admin navigacija, klijentski profil i modeli.
+Uz to je zaključana šira granica: **„Salon + Edukacija" nije treći tip
+proizvoda.** Postojeća kombinacija dva capability seta nad istim tenantom ostaje
+samo CURRENT/legacy prelazna arhitektura dok pilot radi. TARGET je jedan
+vlasnički nalog sa više odvojenih business workspace-a/tenant-a: Salon i Edu
+imaju zaseban javni proizvod, sajt, brending i domen. `verticals[]` može ostati
+interni capability/migration mehanizam, ali nije budući product UX model.
 
 **Ishod:** Marina piše sadržaj, dodeljuje ga klijentima, pravi Guide i program — pre nego što Booking Engine bude gotov. Zakazivanje se do tada dogovara ručno.
 
@@ -62,7 +66,8 @@ Uz to je zaključana šira granica: **„Salon + Edukacija" nije treći tip sist
 | Klijentske rute | `Moj Prostor` tab + pod-rute ispod `/panel`; `Moj Profil` ostaje samo identitet/podešavanja |
 | Admin rute | `/education/*` kao zaseban workspace; presedan `src/app/marketing/*` |
 | Klijenti | **Horizontalni modul**, ne unutar Edu Centra — klijent pripada tenantu, ne modulu |
-| „Salon + Edu" u bazi | **NE kao `tenantType`**; postojeće `verticals: ["beauty","education"]` |
+| „Salon + Edu" danas | **CURRENT/legacy transition:** isti tenant može imati `verticals: ["beauty","education"]` dok pilot i migracija ne budu završeni |
+| „Salon + Edu" target | **Jedan `AuthUser` → odvojeni Salon i Edu tenant/workspace**; svaki ima svoj sajt/domen. Nema javnog `hybrid` izbora niti prebacivanja vertikale unutar jednog biznisa |
 | Vlasničko polje | **`clientProfileId`** na svim client-owned modelima |
 
 ---
@@ -106,7 +111,12 @@ SkincareGuide · GuidedProgram
 
 ---
 
-## FAZA 0 — Vertical & workspace foundation
+## FAZA 0 — Vertical & workspace foundation (CURRENT/legacy transition)
+
+> Ova faza dokumentuje već implementirano stanje, ne budući product target.
+> `hybrid` preset, „Aktiviraj Edu Centar" nad istim tenantom i jedan tenant sa
+> dva capability seta ostaju kompatibilnost dok H1–H4 ne omoguće bezbednu
+> migraciju. Ne proširivati ovaj obrazac na novi UX.
 
 **0.1 Registration preset.** `createInitialTenantCapabilityConfiguration()` (`src/lib/platform/capabilities.ts:195`) hardkodira `verticals: ["beauty"]`. Postaje preset-svesna:
 
@@ -130,9 +140,14 @@ uz **backward-compatible prihvatanje `salonName`** dok se UI ne migrira.
 
 ⚠️ **Ne raditi preimenovanje `SalonProfile` → `SiteProfile`** — Theme sistem zavisi od njega. Education tenant privremeno dobija `SalonProfile` kao **legacy presentation profile**; to mora biti zapisano u kodu da kasnije niko ne zaključi da je Education domen zapravo Salon domen.
 
-**0.3 Ekran izbora pri registraciji** — tri kartice (Salon / Edukacija / oba). Izbor bira preset, **ne** piše `tenantType`.
+**0.3 CURRENT ekran izbora pri registraciji** — tri kartice (Salon / Edukacija /
+oba). Izbor bira preset, **ne** piše `tenantType`. TARGET uklanja „oba": korisnik
+bira „Kreiraj Salon" ili „Kreiraj Edu Centar", a postojeći vlasnik kasnije može
+da izabere „+ Kreiraj novi Edu workspace".
 
-**0.4 Module provisioning ugovor** — „Aktiviraj Edu Centar" dodaje capability set **istom** tenantu; ne pravi novi tenant, ne dira klijente, brending ni pretplatu.
+**0.4 CURRENT module provisioning ugovor** — „Aktiviraj Edu Centar" dodaje
+capability set **istom** tenantu; ne pravi novi tenant, ne dira klijente,
+brending ni pretplatu. Ovo je prelazno ponašanje, ne TARGET registracija.
 
 ⚠️ **Implementirati provisioning, ali NE puštati dugme** dok proizvod ne postoji (Faza 5).
 
@@ -155,7 +170,14 @@ Faza 0 ne uvodi `tenantType`, ne preimenuje `SalonProfile`, ne dodaje F1 sadrža
 ne menja Theme-9. Education tenant privremeno i dalje koristi `SalonProfile` samo
 kao presentation profile.
 
-**Zapisati kao budući put, ne implementirati:** `AuthUser.email` je globalno unique i register vraća 409 ako owner email postoji. „Neka napravi drugi nalog" **nije** dugoročno rešenje za odvojene Salon/Education biznise istog vlasnika. Ispravan put je jedan `AuthUser` → više `Tenant`-a („Kreiraj novi Marysoll workspace"). `TenantUser.authUserId` je već opciona veza sa izričitom napomenom da **ne sme** biti auth authority, pa sadašnja identity arhitektura to ne sprečava.
+**TARGET, ne implementirati u pilot closure rezu:** `AuthUser.email` je globalno
+unique i register vraća 409 ako owner email postoji. „Neka napravi drugi nalog"
+nije rešenje. Ispravan put je jedan `AuthUser` → više `Tenant`-a/business
+workspace-a („Kreiraj novi Marysoll workspace"). Salon i Edu su odvojeni
+tenant-i sa odvojenim sajtovima i domenima. `TenantUser.authUserId` je već
+opciona veza sa izričitom napomenom da **ne sme** biti auth authority, pa
+sadašnja identity arhitektura to ne sprečava. Detaljan redosled H1–H4 je u
+[Future pravcu](#future--posle-pilot-closure-a-ne-implementirati-u-ovom-rezu).
 
 ---
 
@@ -258,6 +280,9 @@ route/API boundary.
 
 ### F3A — Admin workspace capability i navigacija (EDU UI-1)
 
+> Sledeće tačke opisuju CURRENT implementaciju za pilot. H1–H4 TARGET ih
+> kasnije zamenjuje business-workspace switcherom između odvojenih tenant-a.
+
 - `TenantCapabilitySnapshot` additive projektuje server-resolved `verticals`;
   legacy missing vrednost ostaje `beauty`;
 - `education.catalog` je platformski dostupan kao postojeći-plan `core` samo za
@@ -294,11 +319,11 @@ beauty tenant
   → isti tenant postaje hybrid
 ```
 
-Ne kreira se drugi tenant i ne menjaju se `SalonProfile`, postojeći sadržaj,
-Salon theme ili Theme-9 konfiguracija. Drugačija buduća Education vizuelna
-prezentacija nije razlog da se zahteva drugi tenant: razdvajanje tenanta ostaje
-business/brand odluka, ne theme workaround. Education theme arhitektura ovde
-nije definisana.
+U CURRENT toku ne kreira se drugi tenant i ne menjaju se `SalonProfile`,
+postojeći sadržaj, Salon theme ili Theme-9 konfiguracija. Ovo više nije ciljna
+arhitektura: TARGET namerno razdvaja Salon i Education kao različite
+business/brand i javne site granice pod istim vlasničkim nalogom. H1–H4 definišu
+put bez lomljenja pilota; ovo poglavlje ne definiše Education theme migraciju.
 
 `core` ovde nije nova pricing odluka: postojeći plan model nema Education
 entitlement. Najmanji eksplicitni contract je platform availability ∩ postojeći
@@ -876,23 +901,129 @@ pristupa, povraćaji, Paddle integracija.
 
 ---
 
-## Edu Centar v1 — feature freeze (2026-08-31)
+## Edu Centar v1 — pilot closure / revised target (2026-09-04)
 
-Importer je bio poslednji rez pre pilota. Od ovog trenutka Marina ne testira
-pojedinačne funkcije nego **ceo tok**:
+Stvarni feedback je završio feature freeze. Ne pravi se novi plan i ne
+redizajniraju se površine koje već rade. Pilot se zatvara kroz pet uzastopnih
+rezova E1–E5; AI/Content Coach, Marketing Center i multi-workspace migracija su
+odvojen budući pravac.
+
+### E1 — Public Education discovery
+
+- `/education` pregled ostaje vizuelno isti: „Edu Centar / Pregled / Vaši
+  edukativni materijali i njihovo stanje" i statistike Ukupno / Objavljeno / U
+  pripremi / Neobjavljene izmene.
+- Theme-9 sekcija Teme i `/edukacija` koriste isti public resolver i **isključivo
+  `EducationContent.publishedSnapshot`**. Draft izmene se nigde javno ne vide.
+- Demo sadržaj ostaje samo u demo režimu. Real tenant prikazuje stvarne podatke.
+- Landing presentation contract: 0–3 objavljena zapisa → sekcija se ne prikazuje;
+  4 → četiri kartice; 5 → pet; 6+ → najnovijih šest. Nikada 1–3 ili 7+; bez
+  ručnog featured/pin izbora u ovom rezu.
+- `/edukacija` zadržava postojeći dizajn kartice. Menja se samo filter:
+  **Sve | Procena kože | Rutina i sastojci | Promene i stanja kože | Zaštita
+  kože**. Nema dodatnih javnih filtera. Kartica prikazuje „Video" kada je video
+  glavni format, inače „Članak".
+- `shortDescription`, `topicKey` i `intentKey` ulaze u publication contract;
+  landing oznake nastaju iz `topicKey + intentKey`. Broj 01–06, URL, datum
+  objave, autor, redosled, link i reading time određuje sistem.
+
+### E2 — Authoring clarity
+
+`/education` dobija tri velike, neposredne action kartice:
 
 ```text
-napravi sadržaj → uvezi postojeći materijal → doradi blokove → dodaj slike
-→ pregled mobile/desktop → sačuvaj → objavi → proveri javni/gated/private prikaz
+Napiši članak       Počni od praznog sadržaja.
+Uvezi PDF / DOCX    Pretvori postojeći materijal u web sadržaj.
+Dodaj video         Video edukacija sa opisom i izvorima.
 ```
 
-### Šta v1 sadrži
+AI nije četvrti ulaz. PDF/DOCX nisu vrste sadržaja nego import izvori, a
+download dokument je zaseban opcioni prilog.
+
+Canonical klasifikacija razdvaja tri ose:
+
+| Osa | Vrednosti | Vidljivost |
+|---|---|---|
+| `format` | `article`, `video` | javna oznaka |
+| `topicKey` | `skin-assessment`, `routine-ingredients`, `skin-changes-conditions`, `skin-protection` | četiri javna filtera |
+| `intentKey` | `how-to-recognize`, `why-it-happens`, `how-to-care`, `step-by-step` | uredničko vođenje i oznaka, ne novi filter |
+
+Postojeći `advice/article/guide/video/material` ne migriraju se brutalno. Uvodi
+se backward-compatible mapiranje, pa se model čisti postepeno. Jedan video u
+tekstualnom radu ne menja format: ako sadržaj ima smisla bez videa, to je
+Članak; ako je video glavni sadržaj, to je Video.
+
+Article editor ima hijerarhiju:
+
+1. veliki Naslov i pravi `shortDescription` za karticu — ne SEO description i
+   ne `publicPreview.description` kao semantički hack;
+2. velike selectable kartice za jednu temu i jedan editorial intent;
+3. najveću površinu za Content Composer;
+4. odvojenu, sekundarnu naslovnu sliku;
+5. opcionu sekciju „Materijal za preuzimanje", jasno različitu od import fajla;
+6. collapsed „Napredno" za slug/web adresu, SEO naslov/opis, OG sliku i slično.
+   Slug je automatski i ne smeta normalnom radu.
+
+Video editor odmah sadrži glavni video blok: Naslov, Kratak opis, Tema, Pristup,
+„Dodaj / nalepi video", opciono dodatno objašnjenje, izvore/korisne linkove i
+thumbnail. Ne pita koji blok korisnik želi prvo da doda.
+
+Generičko „Nepotpuno" zamenjuju konkretne poruke uz polje/blok, npr.
+„Nedostaje naslov", „Video nije dodat", „Lista nema nijednu stavku" i „Ovaj
+blok nema sadržaj". Importer se ne rekonstruiše: dozvoljeni su samo sigurni
+header/footer cleanup, spajanje prelomljenih bullet-a, pouzdana rekonstrukcija
+praznih numerisanih stavki i whitespace/HTML entity normalizacija.
+
+### E3 — Draft safety
+
+Ciljni ugovor je: **upiši → izađi → vrati se → tekst je tamo**.
+
+```text
+svaka promena             → lokalni durable draft
+kratak debounce           → revision-safe server autosave
+periodično                → server checkpoint
+navigacija                → flush autosave, zatim prelazak
+ponovno otvaranje         → vrati/ponudi noviji lokalni draft
+```
+
+Backend već ima `workingSavedAt`, `workingSessionId` i `workingRevision` za
+zaštitu od obrnutog redosleda zahteva; E3 taj ugovor završava kroz UI i lokalni
+oporavak. Statusi su „Čuvanje...", „Sačuvano upravo sada", „Bez interneta —
+izmene su sačuvane na ovom uređaju" i posle povratka veze „Sinhronizovano".
+Eksplicitni Save Draft može ostati kao potvrda, ali nije jedina zaštita.
+
+### E4 — poseban Blog tab
+
+Korisnički model je `Blog → Svi tekstovi | Novi blog`. Novi blog nudi „Napiši
+tekst" i „Uvezi PDF / DOCX", pa otvara postojeći Content Composer. „Doradi uz
+AI" može kasnije biti opciona pomoć nad početnim sadržajem, ne obavezan ulaz.
+
+CURRENT implementacija sme koristiti tanak adapter ka postojećem
+`NewsletterCampaign` landing persistence-u. Ne pravi se drugi Content Composer.
+Newsletter ostaje Newsletter, Blog ostaje Blog; korisnik ne vidi istorijsku
+putanju Kampanja → Email + Landing → Blog.
+
+### E5 — pilot acceptance
+
+Marina dobija samo četiri zadatka, bez objašnjavanja procedura:
+
+```text
+1. napiši novi članak od nule
+2. napravi jedan članak iz PDF-a ili DOCX-a
+3. napravi jedan Video
+4. napravi jedan Blog
+```
+
+Pilot je završen kada ih obavi bez pitanja „gde ovo ide?". To je acceptance
+signal za informatičku arhitekturu i tok, ne zahtev da joj se nauči procedura.
+
+### Polazna osnova koju pilot closure već ima
 
 | | |
 |---|---|
-| Workspace | Salon ↔ Edu Centar, eksplicitna aktivacija, capability gate |
+| Workspace | CURRENT Salon ↔ Edu Centar aktivacija/capability gate; TARGET H1–H4 je odvojeni business workspace/tenant |
 | Autorstvo | CMS lista + full-page editor nad deljenim Content Composer-om, 12 blokova, preseti po vrsti |
-| Trajnost | radna kopija ≠ objavljena verzija, autosave, čuvanje pri izlasku, lokalni oporavak, redosled čuvanja |
+| Trajnost | radna kopija ≠ objavljena verzija i revision-safe backend osnova; potpuni lokalni/autosave UX završava E3 |
 | Pristup | `public` / `gated` / `private`, dodela klijentkinjama, serverski ACL |
 | Javna strana | `/edukacija` lista i članak u Theme-9, semantički HTML, SEO i sitemap po članku, istorija adresa |
 | Klijent | `Moj Prostor` → `Moji sadržaji` + zaštićeni čitač |
@@ -931,12 +1062,54 @@ se ne dodaje bez signala iz pilota.
   na dokument sa slikama koji ga prelazi, i tada uz jasnu poruku u UI-ju da
   fotografije treba prethodno smanjiti. Ne diže se unapred, bez potrebe.
 
-### Šta pilot treba da izmeri
+### Šta je pilot izmerio
 
-Ne broj grešaka nego navike: koji blok nedostaje, da li preseti stvarno
-ubrzavaju, koliko često menja raspored, treba li posebna mobilna slika, kako
-razmišlja o zaključanom i privatnom sadržaju, i — najvrednije — **svaki trenutak
-u kome nije jasno šta sledeće da klikne**.
+Najvredniji signal nije broj grešaka nego svaki trenutak u kome autoru nije
+jasno šta sledeće da klikne. Iz toga direktno slede tri ulaza, odvojeni format /
+tema / namera, konkretnije validation poruke, jednostavniji Video editor,
+durable autosave i poseban Blog ulaz. Ostali UI koji je prošao proveru ostaje
+zamrznut.
+
+### FUTURE — posle pilot closure-a, ne implementirati u ovom rezu
+
+**H1 — Multi-workspace identity.** Jedan `AuthUser` poseduje/pripada većem broju
+`Tenant`-a. Workspace switcher bira biznis, ne capability unutar biznisa.
+
+```text
+AuthUser
+├── Salon workspace → salon sajt/domen, booking, usluge, Salon CMS/Blog
+└── Edu workspace   → Edu sajt/domen, edukacije, materijali, Edu CMS/Blog
+```
+
+**H2 — Registration.** Ukloniti javni izbor „Salon + Edu". Ostaju „Kreiraj
+Salon" i „Kreiraj Edu Centar"; vlasnik postojećeg Salona može dodati novi Edu
+workspace pod istim loginom.
+
+**H3 — Existing hybrid migration.** Tek posle H1/H2 postojeći hybrid tenant se
+deli na Salon tenant + Education tenant. Education strana dobija
+`EducationContent`, education site settings, education blogove, branding,
+domain binding i buduće education clients/assignments po unapred definisanim
+pravilima; Beauty podaci ostaju Salonu. Migracija mora biti eksplicitna i
+rehearsed, ne implicitna promena `verticals[]`.
+
+**H4 — `verticals[]`.** Ne mora odmah nestati. Može ostati interni capability i
+migration mehanizam, ali više nije proizvodni UX model niti opravdanje da Salon
+i Edu dele jedan javni sajt.
+
+Ostali budući rezovi, ovim redom posle stvarne validacije potrebe:
+
+- **F4 Growth Content Coach** — savetuje o širini teme, search intent-u,
+  konkretnom problemu, naslovu i CTA-u; nije generator generičkih tekstova.
+- **F5 Marketing Center** — od objavljenog sadržaja pravi brand-aware cover,
+  carousel, Story, Reel cover/script, newsletter teaser i CTA kroz tenant design
+  system.
+- **F6 Superadmin trend & marketing knowledge** — održava prompt/knowledge sloj,
+  SEO obrasce, title/social pattern-e, smernice i industry primere.
+- **F7 consultation/intake za procenu kože** — zaseban domenski rez, ne dodatak
+  CMS editoru.
+
+AI/Content Coach i Marketing Center ne ulaze u E1–E5. Prvo se zatvara pouzdano
+ručno autorstvo i objavljivanje.
 
 ---
 

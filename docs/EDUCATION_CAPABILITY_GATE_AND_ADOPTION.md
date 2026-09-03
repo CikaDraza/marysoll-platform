@@ -193,6 +193,11 @@ Server/API checks remain authoritative.
 
 ## What Salon + Edu means
 
+> **CURRENT/legacy transition only (revised 2026-09-04).** This section
+> documents the already implemented same-tenant adoption flow used by the
+> pilot. The product TARGET is one `AuthUser` with separate Salon and Education
+> tenant/workspaces, sites, and domains. See `PANTA-EDU-CENTAR-ARC.md` H1–H4.
+
 A salon that activates education does not stop being a beauty tenant.
 
 It gains education capabilities in addition to its existing capabilities.

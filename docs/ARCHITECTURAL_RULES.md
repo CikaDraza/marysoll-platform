@@ -65,19 +65,23 @@ PRESENTATION
 └── Education presentation/theme
 ```
 
-Posledice koje su obavezujuće:
+Posledice koje su obavezujuće (revidirano 2026-09-04):
 
-- **Salon + Edu NIJE novi tenant.** To je jedan tenant sa dva workspace-a;
-  „Aktiviraj Edu Centar“ zato menja capability state istog `Tenant`-a i ne
-  kreira drugi nalog, drugu pretplatu ni drugi `SalonProfile`.
-- **Novi tenant je novi brend, domen ili odvojen biznis** — ništa manje od
-  toga. Zahtev „hoću potpuno odvojen Edu biznis“ vodi u „jedan `AuthUser` →
-  više `Tenant`-a“, ne u drugi nalog sa istim mejlom.
+- **CURRENT/legacy transition:** Salon + Edu može biti jedan tenant sa dva
+  capability workspace-a; postojeće „Aktiviraj Edu Centar“ zato i dalje menja
+  capability state istog `Tenant`-a. Ovo čuva pilot i nije obrazac za novi UX.
+- **TARGET:** Salon i Edu su odvojeni business workspace/tenant-i, jer
+  predstavljaju odvojene javne proizvode, sajtove i domene. Jedan `AuthUser`
+  poseduje/pripada oba; ne pravi se drugi login sa istim mejlom.
+- **Novi business workspace je tenant boundary.** H1–H4 iz canonical Edu plana
+  uvode multi-workspace identity, registraciju bez hybrid izbora i eksplicitnu
+  migraciju postojećih hybrid podataka.
 - **Workspace nije prezentacija.** Admin workspace može postojati pre nego što
   taj vertikal ima ijedan javni surface; javna prezentacija je zasebna release
   odluka po workspace-u.
-- **Prezentacija je po surface-u, ne po tenantu.** Salon tema i Education tema
-  su nezavisne; aktivacija Edu Centra ne sme dirati zatečenu Salon temu.
+- **Prezentacija prati business workspace.** U CURRENT transition-u površine su
+  odvojene unutar tenant-a; u TARGET-u Salon i Education imaju zasebne tenant,
+  site, theme/branding i domain granice.
 - **Tema/prezentacija NIKADA nije autoritet pristupa.** Šta javnost sme da
   otkrije odlučuje režim pristupa sadržaja, a ko sme da pročita zaštićeno telo
   odlučuje serverski entitlement — oboje pre nego što prezentacija dobije ijedan

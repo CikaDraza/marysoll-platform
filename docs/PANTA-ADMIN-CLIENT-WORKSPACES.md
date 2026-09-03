@@ -109,13 +109,16 @@ Consultation ili Education domen postoji.
 | Nagrađivanje | `loyalty.rewards` | loyalty permission | tenant + korisnik | feature-specific | postoji bez capability gate-a |
 | Podešavanja | core + plan feature-i | OWNER/ovlašćeni ADMIN | Tenant/Subscription | nije capability readiness | postoji |
 
-Hybrid ne dobija poseban paralelni panel. Dobija uniju dozvoljenih domenskih
-stavki, grupisanih tako da isti poslovni pojam nije dupliran.
+U CURRENT/legacy transition-u hybrid ne dobija poseban paralelni panel. Dobija
+uniju dozvoljenih domenskih stavki, grupisanih tako da isti poslovni pojam nije
+dupliran. TARGET (revidiran 2026-09-04) više ne koristi hybrid kao product UX:
+isti `AuthUser` bira odvojeni Salon ili Edu business workspace/tenant.
 
 ## 3. Client workspace po osobi
 
-Client panel je personalizovan po odnosu prijavljene osobe sa tenantom. Tenant
-može biti hybrid, ali osoba ne mora imati svaki odnos.
+Client panel je personalizovan po odnosu prijavljene osobe sa tenantom. U
+CURRENT transition-u tenant može biti hybrid, ali osoba ne mora imati svaki
+odnos; TARGET razdvaja Salon i Edu tenant granice.
 
 ### 3.1 Beauty client
 
