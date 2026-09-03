@@ -17,6 +17,7 @@ import type { LoyaltyAdminConfig } from "@/types/loyalty-admin";
 import { LoyaltyClients } from "./LoyaltyClients";
 import { LoyaltyVouchers } from "./LoyaltyVouchers";
 import { LoyaltyDuplicates } from "./LoyaltyDuplicates";
+import { PointsShopEditor } from "./PointsShopEditor";
 
 type Section = "podesavanja" | "klijenti" | "duplikati" | "vauceri";
 
@@ -405,6 +406,17 @@ function ConfigFormInner({ initial }: { initial: LoyaltyAdminConfig }) {
                 }
               />
             </div>
+          </div>
+        )}
+        {/* Katalog nagrada je vidljiv samo dok poeni rade; isključivanje poena
+            NE briše konfiguraciju — samo je čini neaktivnom. */}
+        {form.currencies.points.enabled && (
+          <div className="mt-5 border-t border-gray-100 pt-5 dark:border-gray-800">
+            <PointsShopEditor
+              offers={form.pointsShop ?? []}
+              pointsEmoji={form.currencies.points.emoji || "⭐"}
+              onChange={(offers) => set((d) => void (d.pointsShop = offers))}
+            />
           </div>
         )}
       </div>

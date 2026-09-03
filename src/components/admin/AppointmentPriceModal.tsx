@@ -1,17 +1,16 @@
 "use client";
 /**
- * Unos cene uz promenu statusa termina.
- *
- * Dva trenutka, oba OPCIONA:
+ * Unos cene pri ODOBRAVANJU termina.
  *
  *   Odobri → salon je video zahtev/fotografiju i zna procenu
  *            → `quotedBaseAmount`; klijentkinja odmah dobija mejl sa cenom
  *
- *   Došla  → posle tretmana zna stvarno naplaćeno
- *            → `chargedAmount`
+ * Trenutak „Došla" više ne prolazi ovuda: sa pogodnostima završetak nije jedan
+ * broj nego račun (cena pre pogodnosti → popust → za naplatu → stvarno
+ * naplaćeno), pa ga vodi `AppointmentCheckoutModal` (T1-4).
  *
- * Ako salon preskoči oba, termin ostaje bez cene i ulazi u „Termini bez cene",
- * ne u prihod. Nijedan iznos se ne izmišlja.
+ * Ako salon preskoči unos, termin ostaje bez cene i ulazi u „Termini bez
+ * cene", ne u prihod. Nijedan iznos se ne izmišlja.
  */
 import { useState } from "react";
 import { formatPriceToString } from "@/helpers/formatPrice";
@@ -19,8 +18,8 @@ import type { IAppointment } from "@/types";
 
 interface Props {
   appointment: IAppointment;
-  /** "quote" = pri odobravanju, "charged" = pri označavanju dolaska. */
-  kind: "quote" | "charged";
+  /** Zadržano radi eksplicitnosti poziva; danas je uvek "quote". */
+  kind: "quote";
   isSaving?: boolean;
   onSkip: () => void;
   onConfirm: (amount: number) => void;

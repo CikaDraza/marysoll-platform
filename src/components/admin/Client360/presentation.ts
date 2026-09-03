@@ -39,3 +39,21 @@ export function splitClientAppointments(items: readonly AppointmentItem[], now =
     previous: [...previous].sort((left, right) => key(right).localeCompare(key(left))),
   };
 }
+
+/**
+ * Da li se na termin uopšte sme dodati pogodnost (T1-4).
+ *
+ * Zatvoren termin je zatvoren: završen, propušten, otkazan ili odbijen termin
+ * više ne prima nagradu. Ista lista važi na serveru — ovde je samo zato da
+ * dugme ne obećava radnju koja bi vratila grešku.
+ */
+const BENEFIT_CLOSED_STATUSES = new Set([
+  "completed",
+  "no_show",
+  "appointment_cancelled",
+  "appointment_rejected",
+]);
+
+export function canApplyBenefitToAppointment(status: string): boolean {
+  return !BENEFIT_CLOSED_STATUSES.has(status);
+}
