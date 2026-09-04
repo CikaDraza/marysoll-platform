@@ -354,7 +354,7 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
       cms("hero", "content.hero", "heroEnabled"),
       cms("audiencePaths", "content.audience-paths", "section-enabled"),
       cms("about", "content.about", "aboutEnabled"),
-      cms("topicHub", "content.topic-hub", "section-enabled"),
+      cms("topicHub", "education.topic-hub", "section-enabled"),
       cms(
         "featuredEducation",
         "content.featured-education",

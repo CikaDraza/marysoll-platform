@@ -12,6 +12,12 @@ import {
   type EducationContentKind,
   type EducationContentVisibility,
 } from "@/types/education-content";
+import {
+  resolveEducationPublicFormat,
+  type EducationIntentKey,
+  type EducationPublicFormat,
+  type EducationTopicKey,
+} from "@/lib/education/taxonomy";
 
 /**
  * JAVNI IZVOR ISTINE = `publishedSnapshot`.
@@ -44,6 +50,9 @@ export interface PublicEducationSummary {
   slug: string;
   title: string;
   kind: EducationContentKind;
+  format: EducationPublicFormat;
+  topicKey?: EducationTopicKey;
+  intentKey?: EducationIntentKey;
   accessMode: EducationAccessMode;
   publishedAt: string;
   description?: string;
@@ -65,6 +74,8 @@ interface SnapshotRecord {
     title: string;
     slug: string;
     kind: EducationContentKind;
+    topicKey?: EducationTopicKey;
+    intentKey?: EducationIntentKey;
     accessMode?: EducationAccessMode;
     visibility?: EducationContentVisibility;
     hero?: { subtitle?: string };
@@ -100,6 +111,9 @@ function toSummary(record: SnapshotRecord): PublicEducationSummary {
     title:
       accessMode === "gated" ? (preview?.title || snapshot.title) : snapshot.title,
     kind: snapshot.kind,
+    format: resolveEducationPublicFormat(snapshot.kind),
+    ...(snapshot.topicKey ? { topicKey: snapshot.topicKey } : {}),
+    ...(snapshot.intentKey ? { intentKey: snapshot.intentKey } : {}),
     accessMode,
     publishedAt: new Date(snapshot.publishedAt).toISOString(),
     // Naslovna sekcija je izvor istine — osim za zaključan sadržaj, gde
@@ -139,6 +153,7 @@ export async function listPublicEducationContent(
   })
     .select(
       "publishedSnapshot.title publishedSnapshot.slug publishedSnapshot.kind " +
+        "publishedSnapshot.topicKey publishedSnapshot.intentKey " +
         "publishedSnapshot.accessMode publishedSnapshot.visibility " +
         "publishedSnapshot.hero publishedSnapshot.publicPreview " +
         "publishedSnapshot.cover publishedSnapshot.seo " +

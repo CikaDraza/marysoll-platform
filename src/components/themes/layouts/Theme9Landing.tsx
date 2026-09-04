@@ -75,7 +75,7 @@ export function Theme9Landing(props: ThemeLandingProps) {
           <ThemeBlock document={document} type="content.hero" />
           <ThemeBlock document={document} type="content.audience-paths" />
           <ThemeBlock document={document} type="content.about" />
-          <ThemeBlock document={document} type="content.topic-hub" />
+          <ThemeBlock document={document} type="education.topic-hub" />
           <ThemeBlock document={document} type="content.featured-education" />
           <ThemeBlock document={document} type="content.guided-care-process" />
           <ThemeBlock document={document} type="content.professional-path" />

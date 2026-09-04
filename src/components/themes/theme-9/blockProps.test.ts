@@ -14,6 +14,7 @@ import type { SalonProfileData } from "@/types";
 import type {
   ContentAboutData,
   ContentHeroData,
+  EducationTopicHubData,
 } from "@/lib/platform/blocks/types";
 import type { MappedBlogPost } from "@/lib/tenant/blogPosts";
 import {
@@ -26,7 +27,9 @@ import {
   theme9LatestEducationProps,
   theme9ProfessionalPathProps,
   theme9TopicHubProps,
+  theme9EducationTopicHubProps,
 } from "./blockProps";
+import { resolveEducationTaxonomy } from "@/lib/education/taxonomy";
 
 const identity = (href: string) => href;
 const prefixed = (href: string) => `/marina${href}`;
@@ -435,5 +438,108 @@ describe("theme9LatestEducationProps", () => {
         undefined,
       ).posts,
     ).toEqual([]);
+  });
+});
+
+describe("theme9EducationTopicHubProps", () => {
+  const summary = (
+    slug: string,
+    topicKey?: "assessment" | "conditions",
+  ): EducationTopicHubData["items"][number] => ({
+    slug,
+    title: `Naslov ${slug}`,
+    kind: "article",
+    format: "article",
+    accessMode: "public",
+    publishedAt: "2026-09-04T10:00:00.000Z",
+    description: `Opis ${slug}`,
+    topicKey,
+    intentKey: topicKey ? "recognize" : undefined,
+  });
+
+  it("maps live snapshots to the accepted visual contract and /edukacija links", () => {
+    const data: EducationTopicHubData = {
+      mode: "live",
+      content: {
+        enabled: true,
+        eyebrow: "Teme",
+        headline: "Znanje koje možete primeniti",
+        filters: [{ id: "fake", label: "CMS filter" }],
+        topics: [{ id: "fake", title: "CMS članak", tags: [] }],
+      },
+      items: [
+        summary("prvi", "conditions"),
+        summary("drugi", "assessment"),
+        summary("treci"),
+        summary("cetvrti", "conditions"),
+      ],
+      taxonomy: resolveEducationTaxonomy("skincare"),
+    };
+
+    const props = theme9EducationTopicHubProps(data, prefixed);
+    expect(props.eyebrow).toBe("Teme");
+    expect(props.filters.map(({ id }) => id)).toEqual([
+      "assessment",
+      "conditions",
+    ]);
+    expect(props.topics[0]).toMatchObject({
+      id: "prvi",
+      title: "Naslov prvi",
+      lead: "Opis prvi",
+      group: "conditions",
+      tags: ["Promene i stanja kože", "Kako prepoznati"],
+      href: "/marina/edukacija/prvi",
+    });
+    expect(JSON.stringify(props)).not.toContain("CMS članak");
+    expect(JSON.stringify(props)).not.toContain("/blogs");
+    expect(props.minItems).toBe(4);
+    expect(props.maxItems).toBe(6);
+  });
+
+  it("keeps an explicit demo fixture but never mixes it with live items", () => {
+    const props = theme9EducationTopicHubProps(
+      {
+        mode: "demo",
+        content: {
+          enabled: true,
+          filters: [{ id: "demo", label: "Demo" }],
+          topics: [{ id: "fixture", title: "Fixture", tags: [] }],
+        },
+        items: [summary("live", "assessment")],
+        taxonomy: resolveEducationTaxonomy("skincare"),
+      },
+      identity,
+    );
+
+    expect(props.topics.map(({ id }) => id)).toEqual(["fixture"]);
+    expect(props.minItems).toBeUndefined();
+    expect(props.maxItems).toBeUndefined();
+  });
+
+  it("keeps legacy and unknown-taxonomy records under Sve without invented badges", () => {
+    const props = theme9EducationTopicHubProps(
+      {
+        mode: "live",
+        content: { enabled: true },
+        items: [summary("legacy"), summary("2"), summary("3"), summary("4")],
+        taxonomy: null,
+      },
+      identity,
+    );
+    expect(props.filters).toEqual([]);
+    expect(props.topics[0]).toMatchObject({ id: "legacy", tags: [] });
+  });
+
+  it.each([0, 1, 2, 3])("hides live topic data when only %i items exist", (count) => {
+    const props = theme9EducationTopicHubProps(
+      {
+        mode: "live",
+        content: { enabled: true, headline: "Teme" },
+        items: Array.from({ length: count }, (_, index) => summary(String(index))),
+        taxonomy: resolveEducationTaxonomy("skincare"),
+      },
+      identity,
+    );
+    expect(props.topics).toEqual([]);
   });
 });

@@ -46,6 +46,8 @@ import {
   theme9NavNeedsFacts,
 } from "@/lib/theme9/navigation-server";
 import { toBookingServicePresentation } from "@/lib/booking/servicePresentation";
+import { listPublicEducationContent } from "@/lib/education/publicContent";
+import { resolveEducationTaxonomy } from "@/lib/education/taxonomy";
 
 interface Props {
   tenantSlug: string;
@@ -212,6 +214,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
         ? (JSON.parse(JSON.stringify(s.manualSlots)) as ManualSlotsMap)
         : undefined,
     showWorkingHours: s?.showWorkingHours !== false,
+    isDemo: s?.isDemo === true,
   };
 
   const serviceList = (services as Record<string, unknown>[]).map(
@@ -243,6 +246,10 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     theme: landingTheme,
     tenantSlug: themeSlug,
     ...(capabilitySnapshot ? { capabilities: capabilitySnapshot } : {}),
+    readiness: {
+      resolve: ({ capability }) =>
+        capability === "education.catalog" ? "ready" : "unconfigured",
+    },
     deps: preloadedBlockDataSource({
       salon: salonData,
       services: serviceList,
@@ -260,6 +267,13 @@ export async function ClientHomePage({ tenantSlug }: Props) {
           .lean();
         return JSON.parse(JSON.stringify(campaigns)).map(mapBlogPost);
       },
+      educationDiscovery: async () => ({
+        items: await listPublicEducationContent(String(data.tenantId)),
+        taxonomy: resolveEducationTaxonomy(
+          (data.tenant as { educationTaxonomyPreset?: unknown })
+            .educationTaxonomyPreset,
+        ),
+      }),
     }),
   });
 

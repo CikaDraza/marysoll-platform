@@ -14,6 +14,8 @@ import type { IService, LandingStructure, SalonProfileData } from "@/types";
 import type { PublicTestimonial } from "@/types/public-testimonials";
 import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import type { MappedBlogPost } from "@/lib/tenant/blogPosts";
+import type { PublicEducationSummary } from "@/lib/education/publicContent";
+import type { EducationTaxonomy } from "@/lib/education/taxonomy";
 import type { BlockDataSource } from "./types";
 
 /** Memoizacija promise-a: drugi pozivalac dobija prvi promise, ne novi posao. */
@@ -33,6 +35,10 @@ export interface BlockDataFetchers {
   tenantStats: () => Promise<TenantStats | undefined>;
   /** Lenj i po `limit`-u memoizovan; podrazumevano prazno (tema bez bloga). */
   blogPosts?: (limit: number) => Promise<MappedBlogPost[]>;
+  educationDiscovery?: () => Promise<{
+    items: PublicEducationSummary[];
+    taxonomy: EducationTaxonomy | null;
+  } | null>;
 }
 
 /** `once()` po argumentu — dva bloka sa istim `limit`-om dele isti promise. */
@@ -65,6 +71,7 @@ export function createBlockDataSource(
     testimonials: once(fetchers.testimonials),
     tenantStats: once(fetchers.tenantStats),
     blogPosts: onceByLimit(fetchers.blogPosts ?? (async () => [])),
+    educationDiscovery: once(fetchers.educationDiscovery ?? (async () => null)),
   };
 }
 
@@ -81,6 +88,10 @@ export interface PreloadedTenantSnapshot {
    * njega ne plaćaju upit.
    */
   blogPosts?: (limit: number) => Promise<MappedBlogPost[]>;
+  educationDiscovery?: () => Promise<{
+    items: PublicEducationSummary[];
+    taxonomy: EducationTaxonomy | null;
+  } | null>;
 }
 
 /**
@@ -99,5 +110,6 @@ export function preloadedBlockDataSource(
     testimonials: async () => snapshot.testimonials,
     tenantStats: async () => snapshot.tenantStats,
     blogPosts: snapshot.blogPosts,
+    educationDiscovery: snapshot.educationDiscovery,
   });
 }
