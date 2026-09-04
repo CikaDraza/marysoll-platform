@@ -34,72 +34,76 @@ export function Theme9ContentPage({
   return (
     <>
       {hero && (
-        <section className="mx-auto max-w-[1536px] px-5 pt-6 md:px-8">
-          <Reveal>
-            <div
-              className={`grid grid-cols-[repeat(auto-fit,minmax(min(100%,320px),1fr))] items-center gap-8 rounded-3xl px-6 pt-16 pb-10 md:rounded-[32px] md:px-16 md:pt-24 md:pb-14 ${
-                darkHero
-                  ? "bg-ee-accent text-ee-canvas"
-                  : "bg-ee-surface-muted text-ee-text"
-              }`}
-            >
-              <div className="flex flex-col gap-5">
-                <div className="flex flex-col gap-4">
-                  {hero.eyebrow && (
-                    <Eyebrow tone={darkHero ? "meadow" : "coffee"}>
-                      {hero.eyebrow}
-                    </Eyebrow>
-                  )}
-                  {hero.headline && (
-                    <h1
-                      className={`font-newsreader text-[clamp(34px,4.6vw,64px)] leading-[1.02] tracking-[-0.026em] ${darkHero ? "" : "text-ee-accent"}`}
+        <section className="bg-ee-canvas">
+          {/* Isti kontejner kao Header, Footer i sve sekcije ispod: panel se
+              poravnava sa ostatkom strane umesto da bude širi od nje. */}
+          <div className="mx-auto max-w-[1240px] px-5 pt-6 md:px-8 lg:px-14">
+            <Reveal>
+              <div
+                className={`grid grid-cols-[repeat(auto-fit,minmax(min(100%,320px),1fr))] items-center gap-8 rounded-3xl px-6 pt-16 pb-10 md:rounded-[32px] md:px-16 md:pt-24 md:pb-14 ${
+                  darkHero
+                    ? "bg-ee-accent text-ee-canvas"
+                    : "bg-ee-surface-muted text-ee-text"
+                }`}
+              >
+                <div className="flex flex-col gap-5">
+                  <div className="flex flex-col gap-4">
+                    {hero.eyebrow && (
+                      <Eyebrow tone={darkHero ? "meadow" : "coffee"}>
+                        {hero.eyebrow}
+                      </Eyebrow>
+                    )}
+                    {hero.headline && (
+                      <h1
+                        className={`font-newsreader text-[clamp(34px,4.6vw,64px)] leading-[1.02] tracking-[-0.026em] ${darkHero ? "" : "text-ee-accent"}`}
+                      >
+                        {hero.headline}
+                      </h1>
+                    )}
+                  </div>
+                  {hero.lead && (
+                    <p
+                      className={`font-instrument-sans max-w-[52ch] text-[16.5px] leading-[1.72] ${darkHero ? "text-ee-canvas/80" : "text-ee-text-muted"}`}
                     >
-                      {hero.headline}
-                    </h1>
+                      {hero.lead}
+                    </p>
+                  )}
+                  {hero.cta && (
+                    <AnchorLink
+                      href={hero.cta.href}
+                      className={`inline-flex w-fit items-center justify-center rounded-full px-8 py-4 text-[15.5px] font-semibold transition-colors ${
+                        darkHero
+                          ? "bg-ee-accent-contrast text-ee-accent hover:bg-ee-meadow-hover"
+                          : "bg-ee-accent text-ee-canvas hover:bg-ee-accent-lift"
+                      }`}
+                    >
+                      {hero.cta.text}
+                    </AnchorLink>
+                  )}
+                  {hero.note && (
+                    <p
+                      className={`text-[13px] ${darkHero ? "text-ee-canvas/60" : "text-ee-text-muted"}`}
+                    >
+                      {hero.note}
+                    </p>
                   )}
                 </div>
-                {hero.lead && (
-                  <p
-                    className={`font-instrument-sans max-w-[52ch] text-[16.5px] leading-[1.72] ${darkHero ? "text-ee-canvas/80" : "text-ee-text-muted"}`}
-                  >
-                    {hero.lead}
-                  </p>
-                )}
-                {hero.cta && (
-                  <AnchorLink
-                    href={hero.cta.href}
-                    className={`inline-flex w-fit items-center justify-center rounded-full px-8 py-4 text-[15.5px] font-semibold transition-colors ${
-                      darkHero
-                        ? "bg-ee-accent-contrast text-ee-accent hover:bg-ee-meadow-hover"
-                        : "bg-ee-accent text-ee-canvas hover:bg-ee-accent-lift"
-                    }`}
-                  >
-                    {hero.cta.text}
-                  </AnchorLink>
-                )}
-                {hero.note && (
-                  <p
-                    className={`text-[13px] ${darkHero ? "text-ee-canvas/60" : "text-ee-text-muted"}`}
-                  >
-                    {hero.note}
-                  </p>
+
+                {hero.image?.src && (
+                  <div className="relative aspect-square overflow-hidden rounded-3xl">
+                    <Image
+                      src={hero.image.src}
+                      alt={hero.image.alt || hero.headline || ""}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 45vw"
+                      className="object-cover"
+                      priority
+                    />
+                  </div>
                 )}
               </div>
-
-              {hero.image?.src && (
-                <div className="relative aspect-square overflow-hidden rounded-3xl">
-                  <Image
-                    src={hero.image.src}
-                    alt={hero.image.alt || hero.headline || ""}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 45vw"
-                    className="object-cover"
-                    priority
-                  />
-                </div>
-              )}
-            </div>
-          </Reveal>
+            </Reveal>
+          </div>
         </section>
       )}
 

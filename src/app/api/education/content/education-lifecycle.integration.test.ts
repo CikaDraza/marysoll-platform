@@ -2,6 +2,7 @@ import mongoose, { Types } from "mongoose";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { ALL_TWELVE_BLOCKS } from "@/lib/education/__fixtures__/education-blocks";
+import { resolveArticlePresentation } from "@/lib/education/presentation";
 
 vi.mock("@/lib/db/mongodb", () => ({ connectToDB: async () => undefined }));
 vi.mock("@/lib/auth/auth-server", () => ({ requireTenantAdmin: vi.fn() }));
@@ -1147,6 +1148,43 @@ describe("R — naslovna sekcija je jedan izvor istine", () => {
     expect((await publishContent(request(), params(id))).status).toBe(200);
     return id;
   }
+
+  /**
+   * Naslovna slika ima dva mesta i jedan prekidač: kartica je koristi uvek,
+   * strana sadržaja samo kada je vlasnica tako izabrala. Zatečeni zapisi nemaju
+   * zastavicu, pa je za njih odgovor „samo kartica" — slika se ne pojavljuje na
+   * strani zato što je nekad tamo bila po automatizmu.
+   */
+  it("prekidač za sliku na strani preživljava objavu i ne dira karticu", async () => {
+    const id = await publishWithHero({
+      hero: { ...heroSection, coverOnPage: true },
+    });
+    const slug = (await readRaw(id)).publishedSnapshot!.slug;
+
+    const article = await getPublicEducationContent(TENANT, slug);
+    expect(article?.coverOnPage).toBe(true);
+    expect(article?.cover?.src).toBe(heroSection.image.src);
+    expect(resolveArticlePresentation(article!).cover?.src).toBe(
+      heroSection.image.src,
+    );
+  });
+
+  it("bez prekidača slika ostaje na kartici, a strana je ne prikazuje", async () => {
+    const id = await publishWithHero();
+    const slug = (await readRaw(id)).publishedSnapshot!.slug;
+
+    const article = await getPublicEducationContent(TENANT, slug);
+    const card = (await listPublicEducationContent(TENANT)).find(
+      (item) => item.slug === slug,
+    );
+
+    // Kartica je nepromenjena…
+    expect(card?.cover?.src).toBe(heroSection.image.src);
+    expect(article?.cover?.src).toBe(heroSection.image.src);
+    // …ali strana sadržaja sliku ne renderuje.
+    expect(article?.coverOnPage).toBe(false);
+    expect(resolveArticlePresentation(article!).cover).toBeUndefined();
+  });
 
   it("ista sekcija hrani i karticu i stranu", async () => {
     const id = await publishWithHero();

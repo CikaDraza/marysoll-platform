@@ -57,6 +57,11 @@ export interface PublicEducationSummary {
   publishedAt: string;
   description?: string;
   cover?: PublicEducationCover;
+  /**
+   * Sme li `cover` i na vrh strane sadržaja. Kartica ga koristi bez obzira na
+   * ovu zastavicu — ona odlučuje samo o strani.
+   */
+  coverOnPage: boolean;
 }
 
 /**
@@ -78,7 +83,7 @@ interface SnapshotRecord {
     intentKey?: EducationIntentKey;
     accessMode?: EducationAccessMode;
     visibility?: EducationContentVisibility;
-    hero?: { subtitle?: string };
+    hero?: { subtitle?: string; coverOnPage?: boolean };
     publicPreview?: {
       title?: string;
       description?: string;
@@ -136,6 +141,8 @@ function toSummary(record: SnapshotRecord): PublicEducationSummary {
         : accessMode === "gated" && preview?.coverImage
           ? { src: preview.coverImage }
           : undefined,
+    // Odsutna vrednost = „samo kartica"; strana sadržaja traži svestan izbor.
+    coverOnPage: snapshot.hero?.coverOnPage === true,
   };
 }
 

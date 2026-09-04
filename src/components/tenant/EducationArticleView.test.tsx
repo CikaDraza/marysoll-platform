@@ -47,6 +47,7 @@ function videoArticle(
     accessMode: "public",
     publishedAt: "2026-09-04T10:00:00.000Z",
     description: AUTHOR_LEAD,
+    coverOnPage: false,
     blocks: [primaryVideo, supportingArticle],
     seo: { title: SEO_TITLE, description: SEO_DESCRIPTION },
     ...overrides,
@@ -143,6 +144,42 @@ describe("javno Education zaglavlje", () => {
 
     expect(metadata.title).toBe(AUTHOR_TITLE);
     expect(metadata.description).toBe(AUTHOR_LEAD);
+  });
+
+  /**
+   * Naslovna slika ima dva mesta: kartica u listi je koristi uvek, strana
+   * sadržaja samo uz svestan izbor. Kod videa bi slika iznad snimka bila ista
+   * poruka dva puta, jedna ispod druge.
+   */
+  describe("naslovna slika na strani sadržaja", () => {
+    const cover = { src: "https://cdn.example.test/naslovna.jpg" };
+
+    it("bez izbora se ne renderuje na strani", () => {
+      const html = render(videoArticle({ cover, coverOnPage: false }));
+
+      expect(html).not.toContain(cover.src);
+      expect(html).not.toContain("<figure");
+    });
+
+    it("uz izbor stoji između zaglavlja i prvog bloka", () => {
+      const html = render(videoArticle({ cover, coverOnPage: true }));
+
+      expect(html).toContain(cover.src);
+      expect(html.indexOf("<h1")).toBeLessThan(html.indexOf("<figure"));
+      expect(html.indexOf("<figure")).toBeLessThan(
+        html.indexOf('id="primary-video"'),
+      );
+    });
+
+    it("izbor ne dira opis ni ostatak zaglavlja", () => {
+      const off = render(videoArticle({ cover, coverOnPage: false }));
+      const on = render(videoArticle({ cover, coverOnPage: true }));
+
+      for (const html of [off, on]) {
+        expect(heading(html, "h1")).toBe(AUTHOR_TITLE);
+        expect(html).toContain(AUTHOR_LEAD);
+      }
+    });
   });
 
   it("kind=video: h1 i uvod stoje pre video bloka", () => {

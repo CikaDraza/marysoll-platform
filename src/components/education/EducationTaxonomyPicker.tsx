@@ -19,7 +19,8 @@ function ChoiceCards<T extends string>({
       <legend className="text-sm font-semibold text-gray-900 dark:text-white">
         {label}
       </legend>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      {/* Puna širina reda: sve ponude jedne grupe stoje jedna pored druge. */}
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {options.map((option) => {
           const selected = value === option.key;
           return (
@@ -71,7 +72,9 @@ export function EducationTaxonomyPicker({
   onIntentChange: (value: NonNullable<EducationEditorState["intentKey"]>) => void;
 }) {
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    // Tema i cilj su dva odvojena izbora, pa svaki dobija svoj red — i na
+    // desktopu. U dve kolone su se čitali kao jedan spisak od osam ponuda.
+    <div className="grid gap-8">
       <ChoiceCards
         name="education-topic"
         label="Tema"

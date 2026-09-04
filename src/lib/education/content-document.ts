@@ -114,6 +114,17 @@ export interface EducationHero {
     alt?: string;
     focalPoint?: { x: number; y: number };
   };
+  /**
+   * Sme li naslovna slika i na sam vrh strane sadržaja.
+   *
+   * Kartica u listi Edukacije je koristi UVEK — ona je tamo prepoznavanje.
+   * Na strani sadržaja je opciona: kada tekst već počinje videom ili slikom iz
+   * prvog bloka, naslovna slika iznad njega je ista poruka dva puta.
+   *
+   * Odsutna vrednost znači „samo kartica": zatečeni zapisi tako ne dobijaju
+   * sliku koju vlasnica nije svesno stavila na stranu.
+   */
+  coverOnPage?: boolean;
 }
 
 /** Namerno javni metapodaci zaključanog sadržaja. */
@@ -152,6 +163,7 @@ const heroSchema = z.object({
         .optional(),
     })
     .optional(),
+  coverOnPage: z.boolean().optional(),
 });
 
 const metadataSchema = z.object({

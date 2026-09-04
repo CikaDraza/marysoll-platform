@@ -995,7 +995,9 @@ praznih numerisanih stavki i whitespace/HTML entity normalizacija.
   `hero.subtitle` ostaje jedini normalni opis kartice i zaglavlja.
 - Taxonomy radio kartice koriste E1 Education resolver i njegove stabilne
   ključeve. Authoring help je prezentacioni metadata istog preseta, ne nova
-  taxonomy niti Content Coach.
+  taxonomy niti Content Coach. Tema i cilj su dva odvojena izbora, pa svaki ima
+  svoj red i svoj red kartica — u dve kolone su se čitali kao jedan spisak od
+  osam ponuda.
 - Import i download su odvojeni: importer i dalje vraća uređiv article draft,
   dok visitor download ostaje isključivo canonical `FileDownloadBlock` u istom
   `blocks` nizu. Generički Composer presentation filter ne kopira blokove,
@@ -1061,6 +1063,52 @@ izvedeni `publicPreview` u `buildPublishedSnapshot` (upis snapshot-a).
 Kada autor nije napisao opis, zaglavlje ostaje bez uvodnog pasusa. To je
 namerno: prazno mesto je signal autoru, a SEO tekst na tom mestu je pogrešan
 sadržaj koji izgleda ispravno.
+
+**Telo članka: `.edu-prose` je jedini vlasnik rasporeda (2026-09-05):**
+
+Blokovi Content Composer-a dele se sa newsletterom i nose svoje landing omotače
+(`max-w-4xl`/`max-w-7xl`, `mx-auto`, `px-6 lg:px-8`, sopstvene margine). U
+članku ih poništava `.edu-prose`, pa svaki blok počinje i završava na ivici
+kontejnera strane. Dva pravila koja su se lomila:
+
+1. **Koren bloka nije uvek `section`.** `ArticleBlock` se renderuje kao
+   `<article>`, `CalloutBlock` i `AffiliateCTABlock` kao `<aside>`. Selektor je
+   hvatao samo `section, aside`, pa je `ArticleBlock` jedini zadržavao dvostruki
+   `px-6 lg:px-8`, a callout — koji NEMA unutrašnji omotač — ostajao bez svog
+   razmaka, sa tekstom na ivici okvira. Zato `aside` razmak DOBIJA, a
+   `article`/`section` ga gube.
+
+2. **`globals.css` piše van `@layer`, Tailwind utility klase u sloju.**
+   Nenaslojeno pravilo pobeđuje `space-y-*`, `my-*` i `max-w-*` bez obzira na
+   specifičnost. `margin-block: 0` je tako ugasio `space-y-12` na omotaču tela i
+   blokovi su se slepili. Vertikalni ritam zato mora da stoji uz to isto
+   pravilo, kao susedni selektor, a ne kao klasa na omotaču.
+
+Oba pravila drži `edu-prose-block-container.test.tsx`: renderuje svih dvanaest
+tipova blokova, čita listu tagova iz `globals.css` i pada ako ijedan korenski
+element nije pokriven.
+
+**Naslovna slika ima dva mesta i jedan prekidač (2026-09-05):**
+
+`hero.image` je uvek slika KARTICE u listi Edukacije i u Theme-9 hub-u — tamo je
+prepoznavanje i ne isključuje se. Na samoj strani sadržaja je opciona i vodi je
+`hero.coverOnPage`:
+
+```text
+hero.coverOnPage !== true   kartica: slika · strana: bez slike   (podrazumevano)
+hero.coverOnPage === true   kartica: slika · strana: slika iznad prvog bloka
+```
+
+Razlog je konkretan: kod `kind === "video"` i kod članka koji počinje slikom iz
+prvog bloka, naslovna slika iznad njega je ista poruka dva puta, jedna ispod
+druge. Odsutna vrednost namerno znači „samo kartica" — zatečeni zapisi tako ne
+zadržavaju sliku na strani koju vlasnica nije svesno tamo stavila.
+
+Zastavica je deo naslovne sekcije, pa putuje istim putem kao i ostatak: radna
+kopija → `publishedSnapshot.hero` → javno čitanje. Menja se u editoru (sekcija
+„4 · Naslovna slika") i, kao svaka izmena javne strane, stupa na snagu tek
+objavom. Filtriranje radi `resolveArticlePresentation`, pa i javni članak i
+zaštićeni čitač koriste isto pravilo.
 
 Redosled javne video strane je time zaključan testom:
 

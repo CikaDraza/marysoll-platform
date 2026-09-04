@@ -455,6 +455,7 @@ describe("theme9EducationTopicHubProps", () => {
     description: `Opis ${slug}`,
     topicKey,
     intentKey: topicKey ? "recognize" : undefined,
+    coverOnPage: false,
   });
 
   it("maps live snapshots to the accepted visual contract and /edukacija links", () => {

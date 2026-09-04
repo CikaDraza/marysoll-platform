@@ -31,6 +31,8 @@ export interface IEducationHero {
     alt?: string;
     focalPoint?: { x: number; y: number };
   };
+  /** Sme li naslovna slika i na vrh strane; kartica je koristi uvek. */
+  coverOnPage?: boolean;
 }
 
 export interface IEducationPublicPreview {
@@ -148,6 +150,9 @@ const EducationContentSchema = new Schema<IEducationContentDoc>(
         alt: { type: String },
         focalPoint: { x: { type: Number }, y: { type: Number } },
       },
+      // Bez default-a: odsutna vrednost je „samo kartica", pa zatečeni zapisi
+      // ne dobijaju sliku na strani koju vlasnica nije birala.
+      coverOnPage: { type: Boolean },
     },
     publicPreview: {
       title: { type: String },
@@ -185,6 +190,7 @@ const EducationContentSchema = new Schema<IEducationContentDoc>(
               alt: { type: String },
               focalPoint: { x: { type: Number }, y: { type: Number } },
             },
+            coverOnPage: { type: Boolean },
           },
           publicPreview: {
             title: { type: String },

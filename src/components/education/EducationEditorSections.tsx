@@ -198,7 +198,7 @@ export function EducationCoverSection({
     <EducationEditorSection
       number="4 · Naslovna slika"
       title="Slika sadržaja"
-      description="Prikazuje se na kartici i na vrhu objavljenog sadržaja."
+      description="Uvek se prikazuje na kartici u listi Edukacije. Da li stoji i na vrhu same strane, birate prekidačem ispod."
     >
       <ImageMediaField
         label="Naslovna slika"
@@ -221,6 +221,32 @@ export function EducationCoverSection({
           })
         }
       />
+
+      {/* Prekidač ima smisla tek kad slika postoji. */}
+      {state.hero.image?.src && (
+        <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+          <input
+            type="checkbox"
+            checked={state.hero.coverOnPage === true}
+            onChange={(event) =>
+              onChange({
+                hero: { ...state.hero, coverOnPage: event.target.checked },
+              })
+            }
+            className="mt-0.5 size-4 accent-violet-600"
+          />
+          <span>
+            <span className="block font-semibold text-gray-900 dark:text-white">
+              Prikaži sliku i na strani sadržaja
+            </span>
+            <span className="mt-1 block text-xs leading-5 text-gray-500 dark:text-gray-400">
+              Isključeno, slika ostaje samo na kartici. Uključite je kada strana
+              ne počinje videom ili slikom iz prvog bloka — inače se ista slika
+              vidi dva puta, jedna ispod druge.
+            </span>
+          </span>
+        </label>
+      )}
     </EducationEditorSection>
   );
 }
