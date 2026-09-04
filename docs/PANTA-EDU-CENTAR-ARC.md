@@ -981,6 +981,31 @@ blok nema sadržaj". Importer se ne rekonstruiše: dozvoljeni su samo sigurni
 header/footer cleanup, spajanje prelomljenih bullet-a, pouzdana rekonstrukcija
 praznih numerisanih stavki i whitespace/HTML entity normalizacija.
 
+**Implementirano E2 (2026-09-04) — code complete, browser acceptance pending:**
+
+- `/education` i direktni `/education/content/new` nude `article`, `import` i
+  `video` kao whitelisted početne prezentacione režime. Režim se ne persistira;
+  postojeći zapis i njegov legacy `kind` uvek pobeđuju query parametar.
+- Novi članak automatski dobija postojeći article preset, import počinje bez
+  konkurentskih blokova, a video odmah dobija primarni `VideoBlock`. Sam izbor
+  kartice ne kreira DB zapis.
+- Editor je podeljen na Osnovno, Tema/cilj, dominantni Composer, Naslovnu sliku,
+  opcioni Materijal za preuzimanje, Pristup i collapsed Napredna podešavanja.
+  `hero.subtitle` ostaje jedini normalni opis kartice i zaglavlja.
+- Taxonomy radio kartice koriste E1 Education resolver i njegove stabilne
+  ključeve. Authoring help je prezentacioni metadata istog preseta, ne nova
+  taxonomy niti Content Coach.
+- Import i download su odvojeni: importer i dalje vraća uređiv article draft,
+  dok visitor download ostaje isključivo canonical `FileDownloadBlock` u istom
+  `blocks` nizu. Generički Composer presentation filter ne kopira blokove,
+  ID-jeve niti menja redosled pri otvaranju.
+- `ContentBlockValidation.issues` ostaje jedini validator; kartica sada uz
+  „Potrebno je dopuniti" prikazuje prvu konkretnu radnju. Strict publish,
+  INVALID i HIDDEN semantike nisu oslabljene.
+- Autosave, local durable draft, revision ordering, recovery, exit flush i
+  publish-after-save nisu refaktorisani. Browser acceptance pripada narednom
+  E3 rezu i nije proglašen završenim testovima.
+
 ### E3 — Draft safety
 
 Ciljni ugovor je: **upiši → izađi → vrati se → tekst je tamo**.
