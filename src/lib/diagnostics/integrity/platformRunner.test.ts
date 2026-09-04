@@ -7,6 +7,10 @@ vi.mock("./collectorRegistry", () => ({
       findings: [],
       scanned: 3,
     })),
+    "payments.webhook.stuck": vi.fn(async () => ({
+      findings: [],
+      scanned: 0,
+    })),
   },
 }));
 
@@ -21,11 +25,18 @@ describe("runPlatformIntegrityChecks", () => {
 
     expect(run.scope).toBe("platform");
     expect(run).not.toHaveProperty("tenantId");
-    expect(run.results).toHaveLength(1);
+    // Runner pokreće SVE platform provere iz registra; mock mora da ih pokrije
+    // sve, inače nedostajući kolektor ispravno prijavljuje `failed`
+    // („provera nije izvršena" ≠ „0 nalaza", pravilo 5.3).
+    expect(run.results).toHaveLength(2);
     expect(run.results[0]).toMatchObject({
       key: "tenant.ownership.orphanAccount",
       status: "completed",
       scanned: 3,
+    });
+    expect(run.results[1]).toMatchObject({
+      key: "payments.webhook.stuck",
+      status: "completed",
     });
     expect(PLATFORM_INTEGRITY_COLLECTORS["tenant.ownership.orphanAccount"])
       .toHaveBeenCalledTimes(1);

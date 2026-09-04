@@ -154,6 +154,16 @@ export const INTEGRITY_CHECKS = [
     repair:
       "WARNING: korisnik treba ponovo da omogući push u browseru/telefonu (podešavanja su uključena, ali pretplata nedostaje ili je istekla).",
   },
+  {
+    key: "payments.webhook.stuck",
+    scope: "platform",
+    name: "Nerazrešeni webhook događaji",
+    description:
+      "Dolazni webhook događaji koji su ostali `failed` ili `received` bez razrešenja. Prijem je zaštićen unique ključem {provider, providerEventId}, ali obrada sme da pukne — a pretplata salona tada može ostati neusaglašena sa provajderom (plaćanje prošlo, plan nije podignut, ili obrnuto). Provera je platformska jer se događaj upisuje PRE razrešavanja tenanta, pa zaglavljen zapis često i nema tenant.",
+    defaultSeverity: "error",
+    repair:
+      "Pogledati `lastError` na zapisu. Ponovna obrada je bezbedna: svi upisi su apsolutni `$set`, a ponovljenu isporuku hvata unique ključ. Ako je događaj prestignut novijim, označiti ga kao `skipped`.",
+  },
 ] as const satisfies readonly IntegrityCheckDefinition[];
 
 export type IntegrityCheckKey = (typeof INTEGRITY_CHECKS)[number]["key"];

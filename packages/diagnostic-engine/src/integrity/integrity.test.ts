@@ -30,10 +30,10 @@ function finding(
 }
 
 describe("integrity registry", () => {
-  it("sadrži tačno 13 provera iz spec-a, jedinstvene ključeve", () => {
-    expect(INTEGRITY_CHECKS).toHaveLength(13);
+  it("sadrži tačno 14 provera iz spec-a, jedinstvene ključeve", () => {
+    expect(INTEGRITY_CHECKS).toHaveLength(14);
     const keys = INTEGRITY_CHECKS.map((c) => c.key);
-    expect(new Set(keys).size).toBe(13);
+    expect(new Set(keys).size).toBe(14);
     expect(keys).toEqual([
       "client.identity.duplicates",
       "client.identity.mergedReferences",
@@ -48,14 +48,18 @@ describe("integrity registry", () => {
       "tenant.ownership.missing",
       "tenant.ownership.orphanAccount",
       "notifications.push.subscriptions",
+      "payments.webhook.stuck",
     ]);
   });
 
-  it("razdvaja 12 tenant provera od jedne platform provere", () => {
+  it("razdvaja 12 tenant provera od dve platform provere", () => {
     expect(INTEGRITY_CHECKS.filter((check) => check.scope === "tenant")).toHaveLength(12);
     expect(INTEGRITY_CHECKS.filter((check) => check.scope === "platform").map((check) => check.key))
-      .toEqual(["tenant.ownership.orphanAccount"]);
+      .toEqual(["tenant.ownership.orphanAccount", "payments.webhook.stuck"]);
     expect(getCheckDefinition("tenant.ownership.missing").scope).toBe("tenant");
+    // Webhook događaj se upisuje PRE razrešavanja tenanta, pa zaglavljen zapis
+    // često nema tenant — tenant-scoped provera ne bi videla najvažnije redove.
+    expect(getCheckDefinition("payments.webhook.stuck").scope).toBe("platform");
   });
 
   it("svaka provera ima naziv, opis, severity i repair preporuku", () => {

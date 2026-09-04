@@ -29,6 +29,7 @@ import { SalonInternalChat } from "@/models/SalonInternalChat";
 import { SuperAdminChat } from "@/models/SuperAdminChat";
 import { EducationContent } from "@/models/EducationContent";
 import { ClientContentAssignment } from "@/models/ClientContentAssignment";
+import { WebhookEvent } from "@/models/WebhookEvent";
 import { deleteTenantBookingData } from "@/lib/tenant/bookingCascade";
 import { cancelPaddleSubscription } from "@/lib/paddle";
 
@@ -91,6 +92,11 @@ function tenantScopedModels() {
     ["SuperAdminChat", SuperAdminChat],
     ["EducationContent", EducationContent],
     ["ClientContentAssignment", ClientContentAssignment],
+    // Webhook događaji nose `tenantId` i sirov payload provajdera (u kome ume
+    // biti i lično ime/mejl vlasnika). Trajno obrisan salon ne sme da ostavi
+    // te zapise — isto pravilo kao za `Subscription`. Događaji kojima tenant
+    // nikad nije razrešen (`tenantId: null`) ostaju: nisu ničiji podatak.
+    ["WebhookEvent", WebhookEvent],
   ] as const;
 }
 
