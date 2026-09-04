@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { ALL_TWELVE_BLOCKS } from "@/lib/education/__fixtures__/education-blocks";
+import { moveBlockRelativeToVisible } from "@/lib/content/editor/blockOperations";
+import {
+  educationPresetBlocks,
+  primaryVideoBlockId,
+} from "@/lib/education/contentPresets";
 import type { EducationContentRecord } from "@/lib/education/content-document";
 import {
   canAutosave,
@@ -398,5 +403,69 @@ describe("kucanje dok traje čuvanje", () => {
       title: "Prva izmena, pa još malo",
     });
     expect(isEducationEditorDirty(sent, sent)).toBe(false);
+  });
+});
+
+/**
+ * Strelica koja u filtriranom prikazu nema vidljivog partnera ne sme da napravi
+ * izmenu: nevidljiva promena `blocks[]` bi pokrenula autosave i novu reviziju
+ * bez ijedne promene koju je vlasnica videla.
+ */
+describe("pomeranje bez vidljivog partnera ne prlja dokument", () => {
+  let sequence = 0;
+  const videoBlocks = educationPresetBlocks("video", () => `move-${++sequence}`);
+  const baseline = { ...emptyEducationEditorState(), kind: "video" as const, blocks: videoBlocks };
+  const anchoredId = primaryVideoBlockId("video", videoBlocks);
+
+  it("usidren video nema partnera ni u jednom smeru", () => {
+    const movableIds = videoBlocks
+      .filter(({ type }) => type === "VideoBlock")
+      .filter(({ id }) => id !== anchoredId)
+      .map(({ id }) => id);
+
+    for (const direction of [-1, 1] as const) {
+      const blocks = moveBlockRelativeToVisible(
+        videoBlocks,
+        movableIds,
+        anchoredId ?? "",
+        direction,
+      );
+
+      expect(blocks.map(({ id }) => id)).toEqual(
+        videoBlocks.map(({ id }) => id),
+      );
+      expect(isEducationEditorDirty({ ...baseline, blocks }, baseline)).toBe(false);
+      expect(updatePayload({ ...baseline, blocks }, baseline)).toEqual({});
+    }
+  });
+
+  it("prvi prateći blok nema šta da zameni iznad sebe", () => {
+    const supportingIds = videoBlocks
+      .filter(({ type }) => type !== "VideoBlock")
+      .map(({ id }) => id);
+    const blocks = moveBlockRelativeToVisible(
+      videoBlocks,
+      supportingIds,
+      supportingIds[0],
+      -1,
+    );
+
+    expect(isEducationEditorDirty({ ...baseline, blocks }, baseline)).toBe(false);
+    expect(updatePayload({ ...baseline, blocks }, baseline)).toEqual({});
+  });
+
+  it("stvarna zamena dva vidljiva bloka jeste izmena", () => {
+    const supportingIds = videoBlocks
+      .filter(({ type }) => type !== "VideoBlock")
+      .map(({ id }) => id);
+    const blocks = moveBlockRelativeToVisible(
+      videoBlocks,
+      supportingIds,
+      supportingIds[0],
+      1,
+    );
+
+    expect(isEducationEditorDirty({ ...baseline, blocks }, baseline)).toBe(true);
+    expect(blocks[0].id).toBe(anchoredId);
   });
 });

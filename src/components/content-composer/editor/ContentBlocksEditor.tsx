@@ -9,7 +9,7 @@ import {
   addBlock,
   deleteBlock,
   duplicateBlock,
-  moveBlock,
+  moveBlockRelativeToVisible,
   replaceBlock,
   toggleVisibility,
   normalizePriorities,
@@ -34,18 +34,30 @@ interface Props {
   includeTypes?: readonly LandingBlockType[];
   excludeRenderTypes?: readonly LandingBlockType[];
   quickAddType?: LandingBlockType;
+  /** Novi blok ide na početak `blocks`, a ne iza izabranog. */
+  addAtStart?: boolean;
+  /**
+   * Blok koji host drži na mestu: bez pomeranja, dupliranja, sakrivanja i
+   * brisanja. Ostali blokovi ne mogu da zamene mesto s njim.
+   */
+  anchoredBlockId?: string | null;
   addButtonLabel?: string;
   emptyTitle?: string;
   emptyHelp?: string;
   hideAddWhenVisible?: boolean;
 }
 
-export function ContentBlocksEditor({ blocks, slugOptions = [], mediaAdapter, excludeTypes, allowedTypes, includeTypes, excludeRenderTypes, quickAddType, addButtonLabel = "Dodaj blok", emptyTitle = "Prazan sadržaj", emptyHelp = "Dodajte prvi blok da započnete ručno uređivanje.", hideAddWhenVisible = false, onChange }: Props) {
+export function ContentBlocksEditor({ blocks, slugOptions = [], mediaAdapter, excludeTypes, allowedTypes, includeTypes, excludeRenderTypes, quickAddType, addAtStart = false, anchoredBlockId = null, addButtonLabel = "Dodaj blok", emptyTitle = "Prazan sadržaj", emptyHelp = "Dodajte prvi blok da započnete ručno uređivanje.", hideAddWhenVisible = false, onChange }: Props) {
   const visibleBlocks = visibleContentBlocks(
     blocks,
     includeTypes,
     excludeRenderTypes,
   );
+  // Strelice predstavljaju ovaj spisak, ne canonical `blocks`: usidreni blok
+  // nije partner ni u jednoj zameni, pa ostaje na svom mestu.
+  const movableBlockIds = visibleBlocks
+    .filter(({ id }) => id !== anchoredBlockId)
+    .map(({ id }) => id);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(visibleBlocks[0]?.id ?? null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const effectiveSelectedId =
@@ -55,7 +67,13 @@ export function ContentBlocksEditor({ blocks, slugOptions = [], mediaAdapter, ex
 
   const handleAdd = (type: LandingBlockType) => {
     const id = createContentBlockId();
-    onChange(addBlock(blocks, type, { afterBlockId: effectiveSelectedId, idFactory: () => id }));
+    onChange(
+      addBlock(blocks, type, {
+        afterBlockId: effectiveSelectedId,
+        atStart: addAtStart,
+        idFactory: () => id,
+      }),
+    );
     setSelectedBlockId(id);
     setPickerOpen(false);
   };
@@ -82,13 +100,15 @@ export function ContentBlocksEditor({ blocks, slugOptions = [], mediaAdapter, ex
         </div>
       )}
 
-      {visibleBlocks.map((rawBlock) => {
+      {visibleBlocks.map((rawBlock, visibleIndex) => {
         const index = blocks.findIndex(({ id }) => id === rawBlock.id);
+        const anchored = rawBlock.id === anchoredBlockId;
+        const movableIndex = movableBlockIds.indexOf(rawBlock.id);
         const validation = validateContentBlock(rawBlock);
         if (!validation.block) {
           return (
             <InvalidBlockCard
-              key={`${validation.blockId}-${index}`}
+              key={`${validation.blockId}-${visibleIndex}`}
               validation={validation}
               onDelete={() =>
                 onChange(
@@ -108,9 +128,10 @@ export function ContentBlocksEditor({ blocks, slugOptions = [], mediaAdapter, ex
             block={block}
             status={validation.status}
             issues={validation.issues}
+            anchored={anchored}
             selected={block.id === effectiveSelectedId}
-            first={index === 0}
-            last={index === blocks.length - 1}
+            first={anchored || movableIndex <= 0}
+            last={anchored || movableIndex === movableBlockIds.length - 1}
             slugOptions={slugOptions}
             mediaAdapter={mediaAdapter}
             onSelect={() =>
@@ -122,7 +143,14 @@ export function ContentBlocksEditor({ blocks, slugOptions = [], mediaAdapter, ex
               onChange(replaceBlock(blocks, block.id, replacement))
             }
             onMove={(direction) =>
-              onChange(moveBlock(blocks, block.id, direction))
+              onChange(
+                moveBlockRelativeToVisible(
+                  blocks,
+                  movableBlockIds,
+                  block.id,
+                  direction,
+                ),
+              )
             }
             onToggleVisibility={() =>
               onChange(toggleVisibility(blocks, block.id))

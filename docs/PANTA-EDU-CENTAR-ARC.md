@@ -1006,6 +1006,39 @@ praznih numerisanih stavki i whitespace/HTML entity normalizacija.
   publish-after-save nisu refaktorisani. Browser acceptance pripada narednom
   E3 rezu i nije proglašen završenim testovima.
 
+**E2 audit (2026-09-04) — jedan potvrđen defekt, ispravljen:**
+
+Strelice u filtriranom Composer prikazu računale su `first`/`last` iz canonical
+`blocks`, a pomeranje je išlo na neposrednog canonical suseda. Autor je time
+mogao da klikne aktivnu strelicu bez vidljivog partnera: `blocks[]` redosled i
+`priority` bi se promenili bez ijedne vidljive promene, a tiha izmena bi
+pokrenula autosave i novu reviziju.
+
+Kontrole sada predstavljaju VIDLJIVI spisak: `first`/`last` se računaju iz
+vidljivih blokova, a `moveBlockRelativeToVisible` menja mesto sa prethodnim ili
+sledećim VIDLJIVIM blokom. Preskočeni blokovi zadržavaju svoj canonical slot,
+ID-jevi ostaju isti, a prioriteti se normalizuju tačno jednom. Nefiltriran
+prikaz (salon landing composer) zadržava zatečeno ponašanje.
+
+**Video invariant — primarni video je usidren (`kind === "video"`):**
+
+Prvi `VideoBlock` u canonical redosledu nije prateći blok nego nosilac zapisa.
+Hijerarhija je: PRIMARNI VIDEO → naslov i metapodaci → opciono objašnjenje →
+opcioni izvori → opcioni materijal za preuzimanje. Tačan vizuelni položaj
+naslova prati prihvaćeni Theme-9 video dizajn, ali prateći sadržaj ne sme da
+stoji ispred primarnog videa.
+
+U editoru primarni video nema Pomeri gore, Pomeri dole, Dupliraj, Sakrij ni
+Obriši — menja se samo njegov izvor i njegova video polja. Prateći blokovi
+ostaju obični canonical `ContentBlock`-ovi i pomeraju se ispod videa, a ni jedan
+od njih ne može da zameni mesto sa usidrenim blokom. Kada video blok ne postoji,
+„Dodaj video" ga ubacuje na početak `blocks` niza.
+
+Nema paralelnog video state-a i nema novog dokumenta: kanonski izvor ostaje isti
+`VideoBlock` unutar `blocks[]`, a objava i dalje traži vidljiv primarni video
+izvor (`missingRequiredVideoSource`). Isti `VideoBlock` u članku nema nijedno od
+ovih ograničenja.
+
 ### E3 — Draft safety
 
 Ciljni ugovor je: **upiši → izađi → vrati se → tekst je tamo**.

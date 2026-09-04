@@ -7,7 +7,7 @@
 > Stanje koda provereno **2026-09-04**; Edu pilot closure redosled revidiran
 > **2026-09-04**.
 > Zdravlje tog preseka: `tsc` prolazi, lint bez novih upozorenja, build prolazi,
-> 178 test fajlova / 2068 testova prolazi (19 preskočeno). Brojevi važe za taj
+> 179 test fajlova / 2091 test prolazi (19 preskočeno). Brojevi važe za taj
 > datum i nisu obećanje.
 
 ## Redosled
@@ -27,11 +27,12 @@ ostaje neophodan)
 
 ## NEXT — sledeći rez
 
-**E3 — Draft safety acceptance / hardening.** E2 authoring hierarchy je u kodu;
-browser acceptance ostaje otvoren i ne računa se kao završen samo na osnovu
-testova. E3 proverava postojeći autosave/recovery tok u realnom browseru, bez
-automatskog uvlačenja T1-5, multi-workspace migracije, Content Coach-a ili
-Marketing Center-a.
+**E3 — Draft safety acceptance / hardening.** E2 authoring hierarchy je u kodu i
+audit je zatvoren: jedini potvrđeni defekt (strelice u filtriranom prikazu) je
+ispravljen, a primarni video je usidren. Browser acceptance ostaje otvoren i ne
+računa se kao završen samo na osnovu testova. E3 proverava postojeći
+autosave/recovery tok u realnom browseru, bez automatskog uvlačenja T1-5,
+multi-workspace migracije, Content Coach-a ili Marketing Center-a.
 
 ## T1-4 — Loyalty Redemption & Appointment Checkout
 
@@ -214,7 +215,7 @@ redosled se više ne izmišlja unapred i ne pravi se novi plan dokument.
 | Red | Rez | Status | Acceptance / granica |
 |---|---|---|---|
 | **E1** | Public Education discovery | ✅ **kod** | Theme-9 Teme čita pravi `publishedSnapshot` kroz `education.topic-hub`; eksplicitni `isDemo` je jedini fixture seam; landing prikazuje 0 ili 4–6; `/edukacija` zadržava kartice i dobija Sve + četiri non-empty `topicKey` filtera. `topicKey`/`intentKey` su snapshot metadata, a `hero.subtitle` ostaje opis. |
-| **E2** | Authoring clarity | ✅ **kod · browser acceptance pending** | Pregled i direktni `/new` nude tri jasna ulaza: Članak / Import PDF-DOCX / Video. Novi članak i video dobijaju canonical preset bez praznog DB zapisa; import ostaje article draft. Editor prati Osnovno → Tema/cilj → dominantan sadržaj → slika → opcioni canonical `FileDownloadBlock` → pristup → Napredno. Taxonomy je radio-card prikaz E1 resolvera; incomplete blok pokazuje konkretan razlog. Importer i autosave nisu prepisani. |
+| **E2** | Authoring clarity | ✅ **kod · audit zatvoren · browser acceptance pending** | Pregled i direktni `/new` nude tri jasna ulaza: Članak / Import PDF-DOCX / Video. Novi članak i video dobijaju canonical preset bez praznog DB zapisa; import ostaje article draft. Editor prati Osnovno → Tema/cilj → dominantan sadržaj → slika → opcioni canonical `FileDownloadBlock` → pristup → Napredno. Taxonomy je radio-card prikaz E1 resolvera; incomplete blok pokazuje konkretan razlog. Strelice u filtriranom prikazu rade nad vidljivim spiskom, a primarni video (`kind === "video"`) je usidren: bez pomeranja, dupliranja, sakrivanja i brisanja. Importer i autosave nisu prepisani. |
 | **E3** | Draft safety acceptance/hardening | **NEXT** | Editor već ima lokalni durable draft, debounced revision-safe autosave, recovery i exit flush; E2 ih nije menjao. E3 proverava realni browser tok i završava potpuni online/offline/saved status, bez rewrite-a postojećeg sistema. |
 | **E4** | Blog | ⬜ posle E3 | Poseban Blog tab: Svi tekstovi / Novi blog; manual/import first nad postojećim Content Composer-om. `NewsletterCampaign` landing persistence ostaje privremeni backend adapter; Newsletter i Blog su odvojeni u UX-u. |
 | **E5** | Pilot acceptance | ⬜ posle E4 | Marina bez procedure pravi: članak od nule, članak iz PDF/DOCX, Video i Blog. Pilot je zatvoren kada ne pita „gde ovo ide?". |

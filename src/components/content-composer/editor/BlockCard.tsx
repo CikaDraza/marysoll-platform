@@ -32,6 +32,7 @@ export function BlockCard({
   block,
   status,
   issues,
+  anchored = false,
   selected,
   first,
   last,
@@ -47,6 +48,8 @@ export function BlockCard({
   block: ContentBlock;
   status: ContentBlockStatus;
   issues: ContentValidationIssue[];
+  /** Blok koji host drži na mestu: menja se samo njegov sadržaj. */
+  anchored?: boolean;
   selected: boolean;
   first: boolean;
   last: boolean;
@@ -104,15 +107,21 @@ export function BlockCard({
           <button type="button" onClick={() => onMove(1)} disabled={last} className="rounded p-1 hover:bg-gray-100 disabled:opacity-30 dark:hover:bg-gray-800" aria-label="Pomeri dole">
             <ArrowDownIcon className="h-4 w-4" />
           </button>
-          <button type="button" onClick={onToggleVisibility} className="rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label={status === "HIDDEN" ? "Prikaži" : "Sakrij"}>
-            {status === "HIDDEN" ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
-          </button>
-          <button type="button" onClick={onDuplicate} className="rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Dupliraj">
-            <Square2StackIcon className="h-4 w-4" />
-          </button>
-          <button type="button" onClick={() => setConfirmDelete(true)} className="rounded p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-950" aria-label="Obriši blok">
-            <TrashIcon className="h-4 w-4" />
-          </button>
+          {/* Usidren blok nema sakrivanje, dupliranje ni brisanje: on je
+              nosilac zapisa, a ne jedan od pratećih blokova. */}
+          {!anchored && (
+            <>
+              <button type="button" onClick={onToggleVisibility} className="rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label={status === "HIDDEN" ? "Prikaži" : "Sakrij"}>
+                {status === "HIDDEN" ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+              </button>
+              <button type="button" onClick={onDuplicate} className="rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Dupliraj">
+                <Square2StackIcon className="h-4 w-4" />
+              </button>
+              <button type="button" onClick={() => setConfirmDelete(true)} className="rounded p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-950" aria-label="Obriši blok">
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            </>
+          )}
         </div>
       </div>
 

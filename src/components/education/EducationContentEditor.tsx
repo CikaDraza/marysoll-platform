@@ -9,6 +9,7 @@ import { PreviewRenderer } from "@/components/content-composer/PreviewRenderer";
 import { useContentMediaAuthoring } from "@/hooks/useContentMediaAuthoring";
 import { getContentMutationErrorMessage } from "@/lib/content/validation/contentValidationClient";
 import { saveEducationDraftOnExit } from "@/lib/education/exitSave";
+import { primaryVideoBlockId } from "@/lib/education/contentPresets";
 import EducationClientAccess from "./EducationClientAccess";
 import { createContentBlockId } from "@/lib/content/editor/blockFactories";
 import {
@@ -401,6 +402,9 @@ export default function EducationContentEditor({
     }
   };
 
+  /** Nosilac video zapisa; `null` za članak i dok video blok ne postoji. */
+  const anchoredVideoId = primaryVideoBlockId(state.kind, state.blocks);
+
   const slugPreview = previewSlug(state);
   // Bez ovoga vlasnica ne zna da li SEO uopšte treba da otvara.
   const hasCustomSeo = Boolean(
@@ -548,12 +552,16 @@ export default function EducationContentEditor({
             <div ref={blocksRef} className="space-y-6">
               {authoringMode === "video" ? (
                 <>
+                  {/* Primarni video je usidren: menja se samo izvor i njegova
+                      polja, a prateći sadržaj ne može ispred njega. */}
                   <ContentBlocksEditor
                     blocks={state.blocks}
                     mediaAdapter={mediaAdapter}
                     includeTypes={["VideoBlock"]}
                     allowedTypes={["VideoBlock"]}
                     quickAddType="VideoBlock"
+                    addAtStart
+                    anchoredBlockId={anchoredVideoId}
                     hideAddWhenVisible
                     addButtonLabel="Dodaj video"
                     emptyTitle="Video još nije dodat"
