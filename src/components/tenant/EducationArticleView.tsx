@@ -87,8 +87,10 @@ export function EducationArticleView({ article, basePath, author, children }: Pr
           </figure>
         )}
 
+        {/* Razmak između blokova daje `.edu-prose`: `space-y-*` je Tailwind
+            utility u sloju, pa ga nenaslojeno pravilo tela ionako nadjača. */}
         {children ?? (
-          <article className="edu-prose mt-12 space-y-12">
+          <article className="edu-prose mt-12">
             {/* Strana već nosi `h1`, pa blokovi počinju od `h2`. */}
             <BlockList blocks={blocks} headingScope="section" />
           </article>

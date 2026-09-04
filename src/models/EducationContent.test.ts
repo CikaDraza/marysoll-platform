@@ -107,6 +107,12 @@ describe("EducationContent model", () => {
     expect(
       draft({ status: "archived" }).validateSync()?.errors.status,
     ).toBeDefined();
+    expect(
+      draft({ topicKey: "marketing" }).validateSync()?.errors.topicKey,
+    ).toBeDefined();
+    expect(
+      draft({ intentKey: "sell" }).validateSync()?.errors.intentKey,
+    ).toBeDefined();
   });
 
   it("nema polja koja pripadaju kasnijim fazama", () => {

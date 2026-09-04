@@ -22,6 +22,7 @@ import {
   theme9LatestEducationProps,
   theme9ProfessionalPathProps,
   theme9TopicHubProps,
+  theme9EducationTopicHubProps,
 } from "./blockProps";
 import { Theme9About } from "./AboutSection";
 import { Theme9AudiencePaths } from "./AudiencePaths";
@@ -53,6 +54,15 @@ function AudiencePathsBlock({
 function TopicHubBlock({ data }: BlockRenderProps<"content.topic-hub">) {
   const { resolveHref } = useThemeRouting();
   return <Theme9TopicHub {...theme9TopicHubProps(data, resolveHref)} />;
+}
+
+function EducationTopicHubBlock({
+  data,
+}: BlockRenderProps<"education.topic-hub">) {
+  const { resolveHref } = useThemeRouting();
+  return (
+    <Theme9TopicHub {...theme9EducationTopicHubProps(data, resolveHref)} />
+  );
 }
 
 function GuidedCareProcessBlock({
@@ -99,6 +109,7 @@ export const THEME9_BLOCK_RENDERERS: ThemeBlockRenderers = {
   "content.audience-paths": AudiencePathsBlock,
   "content.about": AboutBlock,
   "content.topic-hub": TopicHubBlock,
+  "education.topic-hub": EducationTopicHubBlock,
   "content.featured-education": FeaturedEducationBlock,
   "content.guided-care-process": GuidedCareProcessBlock,
   "content.professional-path": ProfessionalPathBlock,

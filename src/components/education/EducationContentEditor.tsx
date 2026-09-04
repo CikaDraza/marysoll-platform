@@ -3,20 +3,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/react";
 import toast from "react-hot-toast";
 import { ContentBlocksEditor } from "@/components/content-composer/editor/ContentBlocksEditor";
-import {
-  AssetMediaField,
-  ImageMediaField,
-} from "@/components/content-composer/editor/MediaFields";
 import { PreviewRenderer } from "@/components/content-composer/PreviewRenderer";
 import { useContentMediaAuthoring } from "@/hooks/useContentMediaAuthoring";
 import { getContentMutationErrorMessage } from "@/lib/content/validation/contentValidationClient";
 import { saveEducationDraftOnExit } from "@/lib/education/exitSave";
-import { educationPresetBlocks } from "@/lib/education/contentPresets";
+import { primaryVideoBlockId } from "@/lib/education/contentPresets";
 import EducationClientAccess from "./EducationClientAccess";
 import { createContentBlockId } from "@/lib/content/editor/blockFactories";
+import {
+  educationAuthoringMode,
+  type EducationStartMode,
+} from "@/lib/education/authoringStart";
 import {
   clearLocalDraftIfConfirmed,
   putLocalDraft,
@@ -25,23 +24,20 @@ import {
 } from "@/lib/education/localDraft";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  EDUCATION_ACCESS_HELP,
   EDUCATION_ACCESS_LABELS,
   EDUCATION_KIND_LABELS,
   type EducationContentRecord,
 } from "@/lib/education/content-document";
 import {
-  EDUCATION_ACCESS_MODES,
-  EDUCATION_CONTENT_KINDS,
-} from "@/types/education-content";
-import { useEducationContentMutations } from "@/hooks/education/useEducationContent";
+  useEducationContentMutations,
+  useEducationTaxonomy,
+} from "@/hooks/education/useEducationContent";
 import {
   canAutosave,
-  canSeedPreset,
+  applyEducationImportDraft,
   createPayload,
-  editorStateFromRecord,
   educationPublicationStateFromRecord,
-  emptyEducationEditorState,
+  initializeEducationEditorState,
   isEducationEditorDirty,
   previewSlug,
   publicationLabel,
@@ -49,6 +45,16 @@ import {
   type EducationEditorState,
   type EducationPublicationState,
 } from "./education-content-editor-model";
+import {
+  EducationAccessSection,
+  EducationLinkAndSeoSection,
+  EducationBasicSection,
+  EducationCoverSection,
+  EducationDownloadSection,
+  EducationEditorSection,
+  EducationImportPanel,
+  EducationTaxonomySection,
+} from "./EducationEditorSections";
 
 type Tab = "editor" | "preview";
 
@@ -77,22 +83,23 @@ const LOCAL_DRAFT_DELAY_MS = 600;
 
 interface Props {
   record?: EducationContentRecord;
+  startMode?: EducationStartMode;
 }
 
-const FIELD_CLASS =
-  "w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-violet-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white";
-
-export default function EducationContentEditor({ record }: Props) {
+export default function EducationContentEditor({
+  record,
+  startMode = "article",
+}: Props) {
   const router = useRouter();
   const mediaAdapter = useContentMediaAuthoring();
   const { tenantId, token } = useAuth();
 
-  const [baseline, setBaseline] = useState<EducationEditorState | null>(
-    record ? editorStateFromRecord(record) : null,
+  const [initialState] = useState(() =>
+    initializeEducationEditorState(record, startMode, createContentBlockId),
   );
-  const [state, setState] = useState<EducationEditorState>(
-    record ? editorStateFromRecord(record) : emptyEducationEditorState(),
-  );
+  const [baseline, setBaseline] = useState<EducationEditorState>(initialState);
+  const [state, setState] = useState<EducationEditorState>(initialState);
+  const authoringMode = educationAuthoringMode(record, startMode);
   // Stanje objave dolazi sa servera; radna kopija se uređuje nezavisno od nje.
   const [publication, setPublication] = useState<EducationPublicationState>(
     record
@@ -119,6 +126,7 @@ export default function EducationContentEditor({ record }: Props) {
   );
 
   const { create, update, publish, remove } = useEducationContentMutations(recordId);
+  const { data: taxonomy } = useEducationTaxonomy();
   const dirty = useMemo(
     () => isEducationEditorDirty(state, baseline),
     [state, baseline],
@@ -230,7 +238,7 @@ export default function EducationContentEditor({ record }: Props) {
   const [isImporting, setImporting] = useState(false);
   /** Šta je uvoz pročitao — ostaje na ekranu, za razliku od toasta. */
   const [importSummary, setImportSummary] = useState<string | null>(null);
-  const blocksRef = useRef<HTMLElement | null>(null);
+  const blocksRef = useRef<HTMLDivElement | null>(null);
 
   /**
    * Uvoz puni editor, ali ništa ne čuva i ne objavljuje: vlasnica vidi šta je
@@ -253,11 +261,7 @@ export default function EducationContentEditor({ record }: Props) {
       const data = (await response.json()) as ImportResponse & { error?: string };
       if (!response.ok) throw new Error(data.error || "Uvoz nije uspeo");
 
-      patch({
-        title: state.title.trim() || data.draft.title,
-        hero: { ...state.hero, ...data.draft.hero },
-        blocks: data.draft.blocks,
-      });
+      setState((current) => applyEducationImportDraft(current, data.draft));
 
       const { sections, lists, callouts } = data.summary;
       const summary = `Pročitano: ${sections} sekcija, ${lists} nabrajanja, ${callouts} napomena.`;
@@ -398,6 +402,9 @@ export default function EducationContentEditor({ record }: Props) {
     }
   };
 
+  /** Nosilac video zapisa; `null` za članak i dok video blok ne postoji. */
+  const anchoredVideoId = primaryVideoBlockId(state.kind, state.blocks);
+
   const slugPreview = previewSlug(state);
   // Bez ovoga vlasnica ne zna da li SEO uopšte treba da otvara.
   const hasCustomSeo = Boolean(
@@ -409,10 +416,10 @@ export default function EducationContentEditor({ record }: Props) {
   return (
     <div className="space-y-6">
       <Link
-        href="/education/content"
+        href={recordId ? "/education/content" : "/education/content/new"}
         className="text-sm font-medium text-violet-600 hover:underline dark:text-violet-400"
       >
-        ← Sadržaj
+        {recordId ? "← Sadržaj" : "← Izaberi drugi početak"}
       </Link>
 
       {recovery && (
@@ -448,7 +455,13 @@ export default function EducationContentEditor({ record }: Props) {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {recordId ? "Uredi sadržaj" : "Novi sadržaj"}
+            {recordId
+              ? authoringMode === "video"
+                ? "Uredi video"
+                : "Uredi članak"
+              : authoringMode === "video"
+                ? "Novi video"
+                : "Novi članak"}
           </h1>
           <p className="mt-1 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <span>{publicationLabel(publication)}</span>
@@ -505,328 +518,129 @@ export default function EducationContentEditor({ record }: Props) {
         </div>
       </header>
 
-      <section className="grid gap-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 sm:grid-cols-2">
-        <label className="sm:col-span-2">
-          <span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">
-            Naslov
-          </span>
-          <input
-            value={state.title}
-            onChange={(event) => patch({ title: event.target.value })}
-            placeholder="Npr. Estetika lica"
-            className={FIELD_CLASS}
-          />
-        </label>
-
-        <label>
-          <span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">
-            Web adresa
-          </span>
-          <input
-            value={state.slugTouched ? state.slug : slugPreview}
-            onChange={(event) =>
-              patch({ slug: event.target.value, slugTouched: true })
-            }
-            placeholder="estetika-lica"
-            className={FIELD_CLASS}
-          />
-        </label>
-
-        <label>
-          <span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">
-            Vrsta
-          </span>
-          <select
-            value={state.kind}
-            onChange={(event) => {
-              const kind = event.target.value as EducationEditorState["kind"];
-              // Polazni blokovi se nude samo dok je sadržaj prazan; postojeći
-              // rad se nikada ne prepisuje promenom vrste.
-              patch(
-                canSeedPreset(state)
-                  ? {
-                      kind,
-                      blocks: educationPresetBlocks(kind, createContentBlockId),
-                    }
-                  : { kind },
-              );
-            }}
-            className={FIELD_CLASS}
-          >
-            {EDUCATION_CONTENT_KINDS.map((kind) => (
-              <option key={kind} value={kind}>
-                {EDUCATION_KIND_LABELS[kind]}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <fieldset className="sm:col-span-2 rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
-          <legend className="px-1 text-sm font-semibold text-gray-700 dark:text-gray-200">
-            Naslovna sekcija
-          </legend>
-          <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
-            Ovo se prikazuje i na kartici u listi i na vrhu strane. Naslov je
-            gore; ovde idu podnaslov i naslovna slika.
-          </p>
-          <div className="grid gap-3">
-            <textarea
-              value={state.hero.subtitle ?? ""}
-              onChange={(event) =>
-                patch({ hero: { ...state.hero, subtitle: event.target.value } })
-              }
-              rows={2}
-              placeholder="Podnaslov — jedna rečenica o čemu je sadržaj"
-              className={FIELD_CLASS}
-            />
-            <ImageMediaField
-              label="Naslovna slika"
-              adapter={mediaAdapter}
-              defaultAlt={state.title}
-              aspectHint="16:9"
-              image={
-                state.hero.image
-                  ? { ...state.hero.image, alt: state.hero.image.alt ?? "" }
-                  : undefined
-              }
-              onChange={(image) =>
-                patch({
-                  hero: {
-                    ...state.hero,
-                    image: image?.src
-                      ? {
-                          src: image.src,
-                          alt: image.alt || undefined,
-                          focalPoint: image.focalPoint,
-                        }
-                      : undefined,
-                  },
-                })
-              }
-            />
-          </div>
-        </fieldset>
-
-        <fieldset className="sm:col-span-2">
-          <legend className="mb-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200">
-            Ko može da vidi
-          </legend>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {EDUCATION_ACCESS_MODES.map((mode) => (
-              <label
-                key={mode}
-                className={`flex cursor-pointer gap-3 rounded-xl border p-3 text-sm transition ${
-                  state.accessMode === mode
-                    ? "border-violet-500 bg-violet-50 dark:bg-violet-950/30"
-                    : "border-gray-300 dark:border-gray-700"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="accessMode"
-                  className="mt-0.5"
-                  checked={state.accessMode === mode}
-                  onChange={() => patch({ accessMode: mode })}
-                />
-                <span>
-                  <span className="block font-semibold text-gray-900 dark:text-white">
-                    {EDUCATION_ACCESS_LABELS[mode]}
-                  </span>
-                  <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
-                    {EDUCATION_ACCESS_HELP[mode]}
-                  </span>
-                </span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
-        {/* Zaključan sadržaj je javno otkriven, pa mora imati šta da pokaže —
-            i to isključivo ovo, nikada deo teksta. */}
-        {state.accessMode === "gated" && (
-          <fieldset className="sm:col-span-2 rounded-2xl border border-violet-200 bg-violet-50/40 p-4 dark:border-violet-900/50 dark:bg-violet-950/20">
-            <legend className="px-1 text-sm font-semibold text-gray-700 dark:text-gray-200">
-              Javni pregled
-            </legend>
-            <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
-              Ovo vide svi. Sam tekst ostaje zaključan dok ne odobrite pristup.
-            </p>
-            <div className="grid gap-3">
-              <input
-                value={state.publicPreview.title ?? ""}
-                onChange={(event) =>
-                  patch({
-                    publicPreview: {
-                      ...state.publicPreview,
-                      title: event.target.value,
-                    },
-                  })
-                }
-                placeholder={state.title || "Naslov u pregledu"}
-                className={FIELD_CLASS}
-              />
-              <textarea
-                value={state.publicPreview.description ?? ""}
-                onChange={(event) =>
-                  patch({
-                    publicPreview: {
-                      ...state.publicPreview,
-                      description: event.target.value,
-                    },
-                  })
-                }
-                rows={2}
-                placeholder={state.hero.subtitle || "Kratak opis koji nagoveštava sadržaj"}
-                className={FIELD_CLASS}
-              />
-              {/* Isti izbor slike kao u blokovima: galerija, otpremanje ili
-                  adresa — umesto ručnog kopiranja URL-a. */}
-              <AssetMediaField
-                kind="image"
-                label="Naslovna slika"
-                adapter={mediaAdapter}
-                asset={
-                  state.publicPreview.coverImage
-                    ? { src: state.publicPreview.coverImage }
-                    : undefined
-                }
-                onChange={(asset) =>
-                  patch({
-                    publicPreview: {
-                      ...state.publicPreview,
-                      coverImage: asset?.src,
-                    },
-                  })
-                }
-              />
-            </div>
-          </fieldset>
-        )}
-
-        {/* SEO postoji za javno i zaključano — oba su javno otkrivena. Privatan
-            sadržaj nema javnu stranu, pa ni SEO. */}
-        {state.accessMode !== "private" && (
-        <Disclosure as="div" className="sm:col-span-2">
-          <DisclosureButton className="group flex items-center gap-2 text-sm font-semibold text-violet-600 underline-offset-4 hover:underline dark:text-violet-400">
-            Uredi SEO
-            <span className="font-normal text-gray-500 no-underline dark:text-gray-400">
-              {hasCustomSeo
-                ? "· SEO podešen"
-                : "· koristi automatske vrednosti"}
-            </span>
-          </DisclosureButton>
-          <DisclosurePanel className="mt-3 grid gap-3">
-            <input
-              value={state.seo.title ?? ""}
-              onChange={(event) =>
-                patch({ seo: { ...state.seo, title: event.target.value } })
-              }
-              placeholder={state.title || "SEO naslov"}
-              className={FIELD_CLASS}
-            />
-            <textarea
-              value={state.seo.description ?? ""}
-              onChange={(event) =>
-                patch({ seo: { ...state.seo, description: event.target.value } })
-              }
-              rows={3}
-              placeholder={
-                state.hero.subtitle || "Kratak opis za pretragu i deljenje"
-              }
-              className={FIELD_CLASS}
-            />
-            <AssetMediaField
-              kind="image"
-              label="Slika za deljenje"
-              adapter={mediaAdapter}
-              asset={state.seo.ogImage ? { src: state.seo.ogImage } : undefined}
-              onChange={(asset) =>
-                patch({ seo: { ...state.seo, ogImage: asset?.src } })
-              }
-            />
-          </DisclosurePanel>
-        </Disclosure>
-        )}
-      </section>
-
-      {/* Dodela ima smisla tek kad zapis postoji i kad nije javan svima. */}
-      {recordId && state.accessMode !== "public" && (
-        <EducationClientAccess
-          contentId={recordId}
-          accessMode={state.accessMode}
+      {authoringMode === "import" && tab === "editor" && (
+        <EducationImportPanel
+          importing={isImporting}
+          summary={importSummary}
+          onImport={(file) => void importDocument(file)}
+          onDismissSummary={() => setImportSummary(null)}
         />
       )}
 
       {tab === "editor" ? (
-        <section
-          ref={blocksRef}
-          className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900"
-        >
-          {importSummary && (
-            <div
-              role="status"
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm dark:border-emerald-900/50 dark:bg-emerald-950/30"
-            >
-              <span className="text-emerald-900 dark:text-emerald-200">
-                {importSummary} Pregledajte i ispravite pre čuvanja.
-              </span>
-              <button
-                type="button"
-                onClick={() => setImportSummary(null)}
-                className="text-xs font-semibold text-emerald-800 underline-offset-4 hover:underline dark:text-emerald-300"
-              >
-                U redu
-              </button>
-            </div>
+        <>
+          <EducationBasicSection state={state} onChange={patch} />
+
+          {taxonomy && (
+            <EducationTaxonomySection
+              taxonomy={taxonomy}
+              state={state}
+              onChange={patch}
+            />
           )}
 
-          {canSeedPreset(state) && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gray-50 px-4 py-3 text-sm dark:bg-gray-800/60">
-              <span className="text-gray-600 dark:text-gray-300">
-                Počnite od uobičajene strukture za „
-                {EDUCATION_KIND_LABELS[state.kind]}”, ili uvezite dokument.
-              </span>
-              <span className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    patch({
-                      blocks: educationPresetBlocks(
-                        state.kind,
-                        createContentBlockId,
-                      ),
-                    })
-                  }
-                  className="rounded-xl border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-white dark:border-gray-600 dark:text-gray-200"
-                >
-                  Ubaci polazne blokove
-                </button>
-                <label className="cursor-pointer rounded-xl border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-white dark:border-gray-600 dark:text-gray-200">
-                  {isImporting ? "Čitanje…" : "Uvezi PDF ili DOCX"}
-                  <input
-                    type="file"
-                    className="sr-only"
-                    accept=".pdf,.docx,application/pdf"
-                    disabled={isImporting}
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      event.target.value = "";
-                      if (file) void importDocument(file);
-                    }}
+          <EducationEditorSection
+            number="3 · Sadržaj"
+            title={authoringMode === "video" ? "Video" : "Sadržaj članka"}
+            description={
+              authoringMode === "video"
+                ? "Video je glavni sadržaj. Izvor unesite ovde; dodatna objašnjenja ostaju opciona."
+                : "Uredite tekst po sekcijama. Možete dodavati, pomerati, sakrivati i duplirati blokove."
+            }
+            prominent
+          >
+            <div ref={blocksRef} className="space-y-6">
+              {authoringMode === "video" ? (
+                <>
+                  {/* Primarni video je usidren: menja se samo izvor i njegova
+                      polja, a prateći sadržaj ne može ispred njega. */}
+                  <ContentBlocksEditor
+                    blocks={state.blocks}
+                    mediaAdapter={mediaAdapter}
+                    includeTypes={["VideoBlock"]}
+                    allowedTypes={["VideoBlock"]}
+                    quickAddType="VideoBlock"
+                    addAtStart
+                    anchoredBlockId={anchoredVideoId}
+                    hideAddWhenVisible
+                    addButtonLabel="Dodaj video"
+                    emptyTitle="Video još nije dodat"
+                    emptyHelp="Dodajte glavni video izvor."
+                    onChange={(blocks) => patch({ blocks })}
                   />
-                </label>
-              </span>
+                  <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                      Dodatno objašnjenje
+                      <span className="ml-2 text-xs font-normal text-gray-500">
+                        opciono
+                      </span>
+                    </h3>
+                    <p className="mt-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
+                      Dodajte tekst, korisne napomene ili slike koje prate video.
+                    </p>
+                    <ContentBlocksEditor
+                      blocks={state.blocks}
+                      mediaAdapter={mediaAdapter}
+                      excludeRenderTypes={["VideoBlock", "FileDownloadBlock"]}
+                      allowedTypes={[
+                        "ArticleBlock",
+                        "CalloutBlock",
+                        "ChecklistBlock",
+                        "ImageGalleryBlock",
+                      ]}
+                      addButtonLabel="Dodaj objašnjenje"
+                      emptyTitle="Nema dodatnog objašnjenja"
+                      emptyHelp="Video može biti objavljen i bez ovog opcionog dela."
+                      onChange={(blocks) => patch({ blocks })}
+                    />
+                  </div>
+                </>
+              ) : (
+                <ContentBlocksEditor
+                  blocks={state.blocks}
+                  mediaAdapter={mediaAdapter}
+                  excludeTypes={["HeroBlock", "FileDownloadBlock"]}
+                  excludeRenderTypes={["FileDownloadBlock"]}
+                  onChange={(blocks) => patch({ blocks })}
+                />
+              )}
             </div>
-          )}
-          <ContentBlocksEditor
+          </EducationEditorSection>
+
+          <EducationCoverSection
+            state={state}
+            mediaAdapter={mediaAdapter}
+            onChange={patch}
+          />
+
+          <EducationDownloadSection
             blocks={state.blocks}
             mediaAdapter={mediaAdapter}
-            /* Naslovnu sekciju nosi polje iznad; hero blok bi bio drugi izvor
-               istine i druga naslovna sekcija na strani. */
-            excludeTypes={["HeroBlock"]}
             onChange={(blocks) => patch({ blocks })}
           />
-        </section>
+
+          <EducationAccessSection
+            state={state}
+            mediaAdapter={mediaAdapter}
+            onChange={patch}
+          />
+
+          {/* Dodela ima smisla tek kad zapis postoji i kad nije javan svima. */}
+          {recordId && state.accessMode !== "public" && (
+            <EducationClientAccess
+              contentId={recordId}
+              accessMode={state.accessMode}
+            />
+          )}
+
+          <EducationLinkAndSeoSection
+            state={state}
+            slugPreview={slugPreview}
+            hasCustomSeo={hasCustomSeo}
+            mediaAdapter={mediaAdapter}
+            onChange={patch}
+          />
+        </>
       ) : (
         <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
           <PreviewRenderer
@@ -847,6 +661,7 @@ export default function EducationContentEditor({ record }: Props) {
           />
         </section>
       )}
+
     </div>
   );
 }

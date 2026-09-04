@@ -87,6 +87,12 @@ describe("POST /api/education/import", async () => {
       expect(payload.format, name).toBe("pdf");
       expect(payload.draft.title, name).toBeTruthy();
       expect(payload.draft.blocks.length, name).toBeGreaterThan(0);
+      expect(
+        payload.draft.blocks.some(
+          (block: { type: string }) => block.type === "FileDownloadBlock",
+        ),
+        name,
+      ).toBe(false);
       // Broj sekcija se ne tvrdi: njeni materijali imaju i numerisane i
       // verzalne naslove, a jedan ih nema uopšte i tada je sve jedan uvod.
       expect(payload.summary.sections, name).toBeGreaterThanOrEqual(0);
@@ -109,6 +115,11 @@ describe("POST /api/education/import", async () => {
     // pa mammoth ne zna da je reč o listi. Pravi Word dokument ga ima, a
     // mapiranje `li` → lista pokriveno je jediničnim testom nad HTML-om.
     expect(section.paragraphs).toContain("prva stavka");
+    expect(
+      payload.draft.blocks.some(
+        (block: { type: string }) => block.type === "FileDownloadBlock",
+      ),
+    ).toBe(false);
   }, 60_000);
 
   /**

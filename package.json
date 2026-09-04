@@ -1,6 +1,6 @@
 {
   "name": "marysoll-platform",
-  "version": "16.1.33",
+  "version": "16.1.36",
   "private": true,
   "workspaces": [
     "packages/*"
@@ -22,6 +22,7 @@
     "copy:tenants": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/copy-tenants-to-staging.mts",
     "backfill:education-snapshot": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/backfill-education-published-snapshot.mts",
     "backfill:education-access": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/backfill-education-access-mode.mts",
+    "configure:education-taxonomy": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/configure-education-taxonomy.mts",
     "backfill:group-price": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/backfill-group-package-price.mts",
     "backfill:service-intake": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/backfill-service-booking-intake.mts",
     "backfill:points-shop-ids": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/backfill-points-shop-ids.mts",

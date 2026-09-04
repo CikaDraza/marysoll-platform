@@ -247,6 +247,38 @@ const contentTopicHub: FeatureBlockDefinition<"content.topic-hub"> = {
   },
 };
 
+const educationTopicHub: FeatureBlockDefinition<"education.topic-hub"> = {
+  type: "education.topic-hub",
+  schemaVersions: [1],
+  capability: "education.catalog",
+  parseConfig: parseWith<"education.topic-hub">(sourceSchema("topicHub")),
+  async load({ deps }) {
+    const [ls, salon] = await Promise.all([
+      deps.landingStructure(),
+      deps.salon(),
+    ]);
+
+    // `isDemo` is an explicit admin-managed fixture seam. Theme, slug and an
+    // empty Education collection never activate authored fake cards.
+    if (salon.isDemo === true) {
+      return {
+        content: ls?.landing?.topicHub,
+        mode: "demo",
+        items: [],
+        taxonomy: null,
+      };
+    }
+
+    const discovery = await deps.educationDiscovery();
+    return {
+      content: ls?.landing?.topicHub,
+      mode: "live",
+      items: discovery?.items ?? [],
+      taxonomy: discovery?.taxonomy ?? null,
+    };
+  },
+};
+
 const contentGuidedCareProcess: FeatureBlockDefinition<"content.guided-care-process"> =
   {
     type: "content.guided-care-process",
@@ -324,6 +356,7 @@ export const FEATURE_BLOCK_DEFINITIONS = [
   contentPerks,
   contentAudiencePaths,
   contentTopicHub,
+  educationTopicHub,
   contentGuidedCareProcess,
   contentCredentials,
   contentFeaturedEducation,

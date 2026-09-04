@@ -10,6 +10,10 @@ import {
   type TenantCapabilityConfiguration,
   type TenantVertical,
 } from "@/types/tenant-capabilities";
+import {
+  EDUCATION_TAXONOMY_PRESETS,
+  type EducationTaxonomyPreset,
+} from "@/lib/education/taxonomy";
 
 export interface ITenant extends Document {
   name: string;
@@ -24,6 +28,8 @@ export interface ITenant extends Document {
   /** Missing means legacy pre-T2B tenant; never add a persistence default. */
   verticals?: TenantVertical[];
   capabilityConfiguration?: TenantCapabilityConfiguration;
+  /** Optional Education-domain selector. Missing/unknown never means skincare. */
+  educationTaxonomyPreset?: EducationTaxonomyPreset;
   trialEndsAt: Date | null;
   isTrialActive: boolean;
   trialMode: "maria" | "card_required"; // how this tenant's trial was initiated
@@ -137,6 +143,11 @@ const TenantSchema = new Schema<ITenant>(
         configuration === undefined
           ? undefined
           : { overrides: configuration.overrides ?? [] },
+    },
+    educationTaxonomyPreset: {
+      type: String,
+      enum: EDUCATION_TAXONOMY_PRESETS,
+      default: undefined,
     },
     planExpiresAt: { type: Date, default: null },
     trialEndsAt: { type: Date, default: null },

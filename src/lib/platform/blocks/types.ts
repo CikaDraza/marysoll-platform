@@ -20,6 +20,8 @@ import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import type { MappedBlogPost } from "@/lib/tenant/blogPosts";
 import type { LandingSectionKey } from "../theme-client";
 import type { TenantCapability } from "@/types/tenant-capabilities";
+import type { PublicEducationSummary } from "@/lib/education/publicContent";
+import type { EducationTaxonomy } from "@/lib/education/taxonomy";
 
 type Landing = LandingStructure["landing"];
 
@@ -140,9 +142,9 @@ export interface ContentPerksData {
 
 /** Tipovi blokova koje registry poznaje + podaci koje njihov loader vraća. */
 // ─── theme-9 „Expert Editorial" — autorske sekcije ────────────────────────────
-// Sve su `content.*`: nose tekst koji vlasnica piše, ne domenske entitete.
-// `featuredEducation` i `professionalPath` postaju `education.*` (uz capability
-// i loader nad `EducationOffering`) tek kad prestanu da budu teaseri.
+// Autorske sekcije ostaju `content.*`. Topic Hub je izuzetak od E1: prezentacioni
+// naslov ostaje CMS content, ali kartice su pravi Education entiteti, pa žive u
+// zasebnom `education.topic-hub` bloku sa capability gate-om.
 
 export interface ContentAudiencePathsData {
   content: Landing["audiencePaths"] | undefined;
@@ -150,6 +152,14 @@ export interface ContentAudiencePathsData {
 
 export interface ContentTopicHubData {
   content: Landing["topicHub"] | undefined;
+}
+
+/** Live Education entities or an explicitly marked demo fixture. */
+export interface EducationTopicHubData {
+  content: Landing["topicHub"] | undefined;
+  mode: "demo" | "live";
+  items: PublicEducationSummary[];
+  taxonomy: EducationTaxonomy | null;
 }
 
 export interface ContentGuidedCareProcessData {
@@ -185,6 +195,7 @@ export interface BlockDataByType {
   "content.perks": ContentPerksData;
   "content.audience-paths": ContentAudiencePathsData;
   "content.topic-hub": ContentTopicHubData;
+  "education.topic-hub": EducationTopicHubData;
   "content.guided-care-process": ContentGuidedCareProcessData;
   "content.credentials": ContentCredentialsData;
   "content.featured-education": ContentFeaturedEducationData;
@@ -241,6 +252,7 @@ export interface BlockConfigByType {
   // theme-9: sve nose samo `source` — nemaju varijante prikaza.
   "content.audience-paths": BaseBlockConfig;
   "content.topic-hub": BaseBlockConfig;
+  "education.topic-hub": BaseBlockConfig;
   "content.guided-care-process": BaseBlockConfig;
   "content.credentials": BaseBlockConfig;
   "content.featured-education": BaseBlockConfig;
@@ -268,6 +280,11 @@ export interface BlockDataSource {
    * Memoizovan po `limit`-u, kao i ostali izvori po zahtevu (spec 5.2).
    */
   blogPosts(limit?: number): Promise<MappedBlogPost[]>;
+  /** Canonical public Education summaries; null only for explicit demo mode. */
+  educationDiscovery(): Promise<{
+    items: PublicEducationSummary[];
+    taxonomy: EducationTaxonomy | null;
+  } | null>;
 }
 
 export interface BlockLoaderContext<TConfig> {

@@ -10,18 +10,12 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import type { ContentBlock } from "@/lib/content/schemas/landing-blocks";
-import type { ContentBlockStatus } from "@/lib/content/validation/contentBlockValidation";
+import type { ContentBlockStatus, ContentValidationIssue } from "@/lib/content/validation/contentBlockValidation";
+import { contentStatusPresentation } from "@/lib/content/validation/contentValidationPresentation";
 import { CONTENT_BLOCK_LABELS } from "./BlockPicker";
 import { BlockFields } from "./BlockFields";
 import type { SlugOption } from "./types";
 import type { ContentMediaAuthoringAdapter } from "@/lib/content/media/authoring";
-
-const STATUS_LABEL: Record<ContentBlockStatus, string> = {
-  VALID: "Spremno",
-  INCOMPLETE: "Nepotpun",
-  INVALID: "Greška",
-  HIDDEN: "Sakriven",
-};
 
 const STATUS_CLASS: Record<ContentBlockStatus, string> = {
   VALID: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300",
@@ -37,6 +31,8 @@ function blockSummary(block: ContentBlock): string {
 export function BlockCard({
   block,
   status,
+  issues,
+  anchored = false,
   selected,
   first,
   last,
@@ -51,6 +47,9 @@ export function BlockCard({
 }: {
   block: ContentBlock;
   status: ContentBlockStatus;
+  issues: ContentValidationIssue[];
+  /** Blok koji host drži na mestu: menja se samo njegov sadržaj. */
+  anchored?: boolean;
   selected: boolean;
   first: boolean;
   last: boolean;
@@ -64,6 +63,7 @@ export function BlockCard({
   onDelete: () => void;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const statusPresentation = contentStatusPresentation(status, issues);
 
   return (
     <section
@@ -97,7 +97,7 @@ export function BlockCard({
         <span
           className={`absolute -top-2 left-3 z-10 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase shadow-sm sm:static sm:z-auto sm:py-1 sm:shadow-none ${STATUS_CLASS[status]}`}
         >
-          {STATUS_LABEL[status]}
+          {statusPresentation.label}
         </span>
 
         <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
@@ -107,17 +107,35 @@ export function BlockCard({
           <button type="button" onClick={() => onMove(1)} disabled={last} className="rounded p-1 hover:bg-gray-100 disabled:opacity-30 dark:hover:bg-gray-800" aria-label="Pomeri dole">
             <ArrowDownIcon className="h-4 w-4" />
           </button>
-          <button type="button" onClick={onToggleVisibility} className="rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label={status === "HIDDEN" ? "Prikaži" : "Sakrij"}>
-            {status === "HIDDEN" ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
-          </button>
-          <button type="button" onClick={onDuplicate} className="rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Dupliraj">
-            <Square2StackIcon className="h-4 w-4" />
-          </button>
-          <button type="button" onClick={() => setConfirmDelete(true)} className="rounded p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-950" aria-label="Obriši blok">
-            <TrashIcon className="h-4 w-4" />
-          </button>
+          {/* Usidren blok nema sakrivanje, dupliranje ni brisanje: on je
+              nosilac zapisa, a ne jedan od pratećih blokova. */}
+          {!anchored && (
+            <>
+              <button type="button" onClick={onToggleVisibility} className="rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label={status === "HIDDEN" ? "Prikaži" : "Sakrij"}>
+                {status === "HIDDEN" ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+              </button>
+              <button type="button" onClick={onDuplicate} className="rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Dupliraj">
+                <Square2StackIcon className="h-4 w-4" />
+              </button>
+              <button type="button" onClick={() => setConfirmDelete(true)} className="rounded p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-950" aria-label="Obriši blok">
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            </>
+          )}
         </div>
       </div>
+
+      {statusPresentation.detail && status !== "HIDDEN" && (
+        <p
+          className={`mt-2 text-xs font-medium ${
+            status === "INVALID"
+              ? "text-red-700 dark:text-red-300"
+              : "text-amber-700 dark:text-amber-300"
+          }`}
+        >
+          {statusPresentation.detail}
+        </p>
+      )}
 
       {confirmDelete && (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md bg-red-50 p-2 text-xs text-red-800 dark:bg-red-950 dark:text-red-200">

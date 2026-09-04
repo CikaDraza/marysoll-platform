@@ -3,6 +3,12 @@ import { slugify } from "@/helpers/slugify";
 import type { ContentBlock } from "@/lib/content/schemas/landing-blocks";
 import type { ContentDocumentValidation } from "@/lib/content/validation/contentBlockValidation";
 import {
+  EDUCATION_INTENT_KEYS,
+  SKINCARE_TOPIC_KEYS,
+  type EducationIntentKey,
+  type EducationTopicKey,
+} from "@/lib/education/taxonomy";
+import {
   EDUCATION_ACCESS_MODES,
   EDUCATION_CONTENT_KINDS,
   EDUCATION_CONTENT_STATUSES,
@@ -48,6 +54,8 @@ export interface EducationContentSummary {
   title: string;
   slug: string;
   kind: EducationContentKind;
+  topicKey?: EducationTopicKey;
+  intentKey?: EducationIntentKey;
   accessMode: EducationAccessMode;
   status: EducationContentStatus;
   updatedAt: string;
@@ -78,6 +86,8 @@ export interface EducationPublishedSnapshotMeta {
   title: string;
   slug: string;
   kind: EducationContentKind;
+  topicKey?: EducationTopicKey;
+  intentKey?: EducationIntentKey;
   accessMode: EducationAccessMode;
   publicPreview?: EducationPublicPreview;
   seo?: EducationContentSeo;
@@ -104,6 +114,17 @@ export interface EducationHero {
     alt?: string;
     focalPoint?: { x: number; y: number };
   };
+  /**
+   * Sme li naslovna slika i na sam vrh strane sadržaja.
+   *
+   * Kartica u listi Edukacije je koristi UVEK — ona je tamo prepoznavanje.
+   * Na strani sadržaja je opciona: kada tekst već počinje videom ili slikom iz
+   * prvog bloka, naslovna slika iznad njega je ista poruka dva puta.
+   *
+   * Odsutna vrednost znači „samo kartica": zatečeni zapisi tako ne dobijaju
+   * sliku koju vlasnica nije svesno stavila na stranu.
+   */
+  coverOnPage?: boolean;
 }
 
 /** Namerno javni metapodaci zaključanog sadržaja. */
@@ -142,12 +163,15 @@ const heroSchema = z.object({
         .optional(),
     })
     .optional(),
+  coverOnPage: z.boolean().optional(),
 });
 
 const metadataSchema = z.object({
   title: z.string().trim().min(1, "Naslov je obavezan").max(200),
   slug: z.string().trim().max(200).optional(),
   kind: z.enum(EDUCATION_CONTENT_KINDS),
+  topicKey: z.enum(SKINCARE_TOPIC_KEYS).optional(),
+  intentKey: z.enum(EDUCATION_INTENT_KEYS).optional(),
   accessMode: z.enum(EDUCATION_ACCESS_MODES),
   hero: heroSchema.optional(),
   publicPreview: publicPreviewSchema.optional(),
@@ -416,8 +440,10 @@ export function resolvePublishedCover(working: {
     return { src: heroImage.src, focalPoint: heroImage.focalPoint };
   }
 
-  const fallback = working.publicPreview?.coverImage || working.seo?.ogImage;
-  return fallback ? { src: fallback } : undefined;
+  // `seo.ogImage` ovde nema ulaz: slika za deljenje nije naslovna slika strane.
+  return working.publicPreview?.coverImage
+    ? { src: working.publicPreview.coverImage }
+    : undefined;
 }
 
 /** Snapshot koji Publish upisuje — gradi se isključivo od sačuvane radne kopije. */
@@ -426,6 +452,8 @@ export function buildPublishedSnapshot(
     title: string;
     slug: string;
     kind: EducationContentKind;
+    topicKey?: EducationTopicKey;
+    intentKey?: EducationIntentKey;
     accessMode?: unknown;
     visibility?: unknown;
     hero?: EducationHero | null;
@@ -437,21 +465,26 @@ export function buildPublishedSnapshot(
 ) {
   const accessMode = resolveAccessMode(working);
   const hero = resolvePublishedHero(working);
+  const cover = resolvePublishedCover(working);
   return {
     title: working.title,
     hero,
-    cover: resolvePublishedCover(working),
+    cover,
     slug: working.slug,
     kind: working.kind,
+    topicKey: working.topicKey,
+    intentKey: working.intentKey,
     accessMode,
     // Javni pregled ima smisla samo za zaključan sadržaj; za javan je telo
     // ionako dostupno, a za privatan ne sme postojati ništa javno.
+    // Izveden pregled uzima ono što je autor napisao za sadržaj, nikada SEO
+    // polja: ona su metapodatak za pretragu, a ovo je vidljivi javni tekst.
     publicPreview:
       accessMode === "gated"
         ? (working.publicPreview ?? {
             title: working.title,
-            description: working.seo?.description,
-            coverImage: working.seo?.ogImage,
+            description: hero?.subtitle,
+            coverImage: cover?.src,
           })
         : undefined,
     blocks: Array.isArray(working.blocks) ? working.blocks : [],

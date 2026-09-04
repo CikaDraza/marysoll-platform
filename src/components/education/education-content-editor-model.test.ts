@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { ALL_TWELVE_BLOCKS } from "@/lib/education/__fixtures__/education-blocks";
+import { moveBlockRelativeToVisible } from "@/lib/content/editor/blockOperations";
+import {
+  educationPresetBlocks,
+  primaryVideoBlockId,
+} from "@/lib/education/contentPresets";
 import type { EducationContentRecord } from "@/lib/education/content-document";
 import {
   canAutosave,
+  applyEducationImportDraft,
   createPayload,
   educationContentOverview,
   educationPublicationStateFromRecord,
@@ -11,9 +17,70 @@ import {
   educationContentRows,
   emptyEducationEditorState,
   isEducationEditorDirty,
+  initializeEducationEditorState,
   previewSlug,
   updatePayload,
 } from "./education-content-editor-model";
+
+let generatedId = 0;
+const nextId = () => `editor-${(generatedId += 1)}`;
+
+describe("inicijalizacija E2 editora", () => {
+  it("article seeduje blokove jednom, ali samo otvaranje ne može napraviti zapis", () => {
+    const state = initializeEducationEditorState(undefined, "article", nextId);
+    expect(state.kind).toBe("article");
+    expect(state.blocks.length).toBeGreaterThan(0);
+    expect(canAutosave(state, false)).toBe(false);
+  });
+
+  it("import počinje praznim article draftom", () => {
+    const state = initializeEducationEditorState(undefined, "import", nextId);
+    expect(state).toMatchObject({ kind: "article", blocks: [] });
+    expect(canAutosave(state, false)).toBe(false);
+  });
+
+  it("video odmah ima jedan VideoBlock", () => {
+    const state = initializeEducationEditorState(undefined, "video", nextId);
+    expect(state.kind).toBe("video");
+    expect(state.blocks.filter(({ type }) => type === "VideoBlock")).toHaveLength(1);
+    expect(canAutosave(state, false)).toBe(false);
+  });
+
+  it.each(["advice", "guide", "material", "video"] as const)(
+    "postojeći %s zapis pobeđuje start parametar i čuva kind",
+    (kind) => {
+      const existing = { ...record, kind };
+      const state = initializeEducationEditorState(existing, "article", nextId);
+      expect(state.kind).toBe(kind);
+      expect(createPayload(state).kind).toBe(kind);
+      expect(updatePayload({ ...state, title: "Drugi naslov" }, state)).toEqual({
+        title: "Drugi naslov",
+      });
+    },
+  );
+
+  it("import rezultat postaje uređiv članak bez FileDownloadBlock-a", () => {
+    const before = initializeEducationEditorState(undefined, "import", nextId);
+    const imported = applyEducationImportDraft(before, {
+      title: "Uvezen naslov",
+      hero: { subtitle: "Uvezen kratak opis" },
+      blocks: [{
+        id: "imported-article",
+        type: "ArticleBlock",
+        priority: 1,
+        title: "Sekcija",
+        paragraphs: ["Tekst"],
+      }],
+    });
+
+    expect(imported).toMatchObject({
+      kind: "article",
+      title: "Uvezen naslov",
+      hero: { subtitle: "Uvezen kratak opis" },
+    });
+    expect(imported.blocks.map(({ type }) => type)).toEqual(["ArticleBlock"]);
+  });
+});
 
 const record: EducationContentRecord = {
   id: "1",
@@ -336,5 +403,118 @@ describe("kucanje dok traje čuvanje", () => {
       title: "Prva izmena, pa još malo",
     });
     expect(isEducationEditorDirty(sent, sent)).toBe(false);
+  });
+});
+
+/**
+ * Strelica koja u filtriranom prikazu nema vidljivog partnera ne sme da napravi
+ * izmenu: nevidljiva promena `blocks[]` bi pokrenula autosave i novu reviziju
+ * bez ijedne promene koju je vlasnica videla.
+ */
+describe("pomeranje bez vidljivog partnera ne prlja dokument", () => {
+  let sequence = 0;
+  const videoBlocks = educationPresetBlocks("video", () => `move-${++sequence}`);
+  const baseline = { ...emptyEducationEditorState(), kind: "video" as const, blocks: videoBlocks };
+  const anchoredId = primaryVideoBlockId("video", videoBlocks);
+
+  it("usidren video nema partnera ni u jednom smeru", () => {
+    const movableIds = videoBlocks
+      .filter(({ type }) => type === "VideoBlock")
+      .filter(({ id }) => id !== anchoredId)
+      .map(({ id }) => id);
+
+    for (const direction of [-1, 1] as const) {
+      const blocks = moveBlockRelativeToVisible(
+        videoBlocks,
+        movableIds,
+        anchoredId ?? "",
+        direction,
+      );
+
+      expect(blocks.map(({ id }) => id)).toEqual(
+        videoBlocks.map(({ id }) => id),
+      );
+      expect(isEducationEditorDirty({ ...baseline, blocks }, baseline)).toBe(false);
+      expect(updatePayload({ ...baseline, blocks }, baseline)).toEqual({});
+    }
+  });
+
+  it("prvi prateći blok nema šta da zameni iznad sebe", () => {
+    const supportingIds = videoBlocks
+      .filter(({ type }) => type !== "VideoBlock")
+      .map(({ id }) => id);
+    const blocks = moveBlockRelativeToVisible(
+      videoBlocks,
+      supportingIds,
+      supportingIds[0],
+      -1,
+    );
+
+    expect(isEducationEditorDirty({ ...baseline, blocks }, baseline)).toBe(false);
+    expect(updatePayload({ ...baseline, blocks }, baseline)).toEqual({});
+  });
+
+  it("stvarna zamena dva vidljiva bloka jeste izmena", () => {
+    const supportingIds = videoBlocks
+      .filter(({ type }) => type !== "VideoBlock")
+      .map(({ id }) => id);
+    const blocks = moveBlockRelativeToVisible(
+      videoBlocks,
+      supportingIds,
+      supportingIds[0],
+      1,
+    );
+
+    expect(isEducationEditorDirty({ ...baseline, blocks }, baseline)).toBe(true);
+    expect(blocks[0].id).toBe(anchoredId);
+  });
+});
+
+/**
+ * Taxonomy default je odlučen: NEMA ga. Vidi `authoringStart.test.ts` za razlog
+ * — ovde se zaključava da ni jedan šav početnog stanja ne ubaci vrednost.
+ */
+describe("početno stanje ne bira temu ni cilj", () => {
+  it.each(["article", "import", "video"] as const)(
+    "%s start ostavlja oba ključa nepostavljena",
+    (mode) => {
+      const state = initializeEducationEditorState(
+        undefined,
+        mode,
+        (() => {
+          let n = 0;
+          return () => `tax-${mode}-${++n}`;
+        })(),
+      );
+
+      expect(state.topicKey).toBeUndefined();
+      expect(state.intentKey).toBeUndefined();
+    },
+  );
+
+  it("prvo čuvanje ne šalje temu ni cilj koje vlasnica nije izabrala", () => {
+    const state = initializeEducationEditorState(
+      undefined,
+      "article",
+      (() => {
+        let n = 0;
+        return () => `payload-${++n}`;
+      })(),
+    );
+    const payload = createPayload({ ...state, title: "Bez teme" });
+
+    expect(payload.topicKey).toBeUndefined();
+    expect(payload.intentKey).toBeUndefined();
+  });
+
+  it("postojeći zapis zadržava svoj izbor", () => {
+    const state = initializeEducationEditorState(
+      { ...record, topicKey: "conditions", intentKey: "care" },
+      "video",
+      () => "unused",
+    );
+
+    expect(state.topicKey).toBe("conditions");
+    expect(state.intentKey).toBe("care");
   });
 });

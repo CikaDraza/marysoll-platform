@@ -114,3 +114,22 @@ export function missingRequiredVideoSource(
       ),
   );
 }
+
+/**
+ * Primarni video je strukturni nosač zapisa, ne još jedan prateći blok.
+ *
+ * Kod `kind === "video"` prvi `VideoBlock` u canonical redosledu je razlog
+ * postojanja zapisa: ispred njega ne sme da stoji prateći sadržaj, pa se ne
+ * pomera, ne duplira, ne sakriva i ne briše. Menja se samo njegov izvor i
+ * njegova video polja. Isti `VideoBlock` u članku nema ta ograničenja.
+ *
+ * Vraća `null` kada zapis nije video ili kada video blok još ne postoji —
+ * tada je „Dodaj video" jedini ispravan potez.
+ */
+export function primaryVideoBlockId(
+  kind: EducationContentKind,
+  blocks: readonly ContentBlock[],
+): string | null {
+  if (kind !== "video") return null;
+  return blocks.find(({ type }) => type === "VideoBlock")?.id ?? null;
+}

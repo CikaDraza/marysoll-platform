@@ -12,6 +12,12 @@ import {
   type EducationContentKind,
   type EducationContentVisibility,
 } from "@/types/education-content";
+import {
+  resolveEducationPublicFormat,
+  type EducationIntentKey,
+  type EducationPublicFormat,
+  type EducationTopicKey,
+} from "@/lib/education/taxonomy";
 
 /**
  * JAVNI IZVOR ISTINE = `publishedSnapshot`.
@@ -44,10 +50,18 @@ export interface PublicEducationSummary {
   slug: string;
   title: string;
   kind: EducationContentKind;
+  format: EducationPublicFormat;
+  topicKey?: EducationTopicKey;
+  intentKey?: EducationIntentKey;
   accessMode: EducationAccessMode;
   publishedAt: string;
   description?: string;
   cover?: PublicEducationCover;
+  /**
+   * Sme li `cover` i na vrh strane sadržaja. Kartica ga koristi bez obzira na
+   * ovu zastavicu — ona odlučuje samo o strani.
+   */
+  coverOnPage: boolean;
 }
 
 /**
@@ -65,9 +79,11 @@ interface SnapshotRecord {
     title: string;
     slug: string;
     kind: EducationContentKind;
+    topicKey?: EducationTopicKey;
+    intentKey?: EducationIntentKey;
     accessMode?: EducationAccessMode;
     visibility?: EducationContentVisibility;
-    hero?: { subtitle?: string };
+    hero?: { subtitle?: string; coverOnPage?: boolean };
     publicPreview?: {
       title?: string;
       description?: string;
@@ -100,30 +116,33 @@ function toSummary(record: SnapshotRecord): PublicEducationSummary {
     title:
       accessMode === "gated" ? (preview?.title || snapshot.title) : snapshot.title,
     kind: snapshot.kind,
+    format: resolveEducationPublicFormat(snapshot.kind),
+    ...(snapshot.topicKey ? { topicKey: snapshot.topicKey } : {}),
+    ...(snapshot.intentKey ? { intentKey: snapshot.intentKey } : {}),
     accessMode,
     publishedAt: new Date(snapshot.publishedAt).toISOString(),
-    // Naslovna sekcija je izvor istine — osim za zaključan sadržaj, gde
-    // eksplicitno unet javni pregled ima prednost: on i postoji zato da bi
-    // vlasnica tačno odredila šta javnost vidi.
+    // VIDLJIVI OPIS DOLAZI SAMO OD AUTORA.
+    //
+    // `hero.subtitle` je opis sadržaja, a za zaključan sadržaj ga preduhitruje
+    // eksplicitno unet javni pregled: on i postoji zato da bi vlasnica tačno
+    // odredila šta javnost vidi. `seo.description` ovde NEMA ulaz — on je
+    // metapodatak za pretragu i deljenje, ne uvodni tekst strane. Kad autor
+    // nije napisao opis, zaglavlje ostaje bez njega umesto da pokaže tekst
+    // pisan za Google.
     description:
       (accessMode === "gated" ? preview?.description : undefined) ||
       snapshot.hero?.subtitle ||
-      (accessMode === "gated"
-        ? preview?.description
-        : snapshot.seo?.description) ||
       undefined,
-    // Naslovna slika je izračunata pri objavi i nosi fokus kadra; zatečeni
-    // zapisi bez nje padaju na URL iz pregleda/SEO-a, samo bez fokusa.
+    // Isto važi za naslovnu sliku: ona je izračunata pri objavi i nosi fokus
+    // kadra, a `seo.ogImage` ostaje slika za deljenje, ne vidljivi sadržaj.
     cover:
       snapshot.cover?.src
         ? snapshot.cover
-        : (accessMode === "gated" ? preview?.coverImage : snapshot.seo?.ogImage)
-          ? {
-              src: (accessMode === "gated"
-                ? preview?.coverImage
-                : snapshot.seo?.ogImage) as string,
-            }
+        : accessMode === "gated" && preview?.coverImage
+          ? { src: preview.coverImage }
           : undefined,
+    // Odsutna vrednost = „samo kartica"; strana sadržaja traži svestan izbor.
+    coverOnPage: snapshot.hero?.coverOnPage === true,
   };
 }
 
@@ -139,6 +158,7 @@ export async function listPublicEducationContent(
   })
     .select(
       "publishedSnapshot.title publishedSnapshot.slug publishedSnapshot.kind " +
+        "publishedSnapshot.topicKey publishedSnapshot.intentKey " +
         "publishedSnapshot.accessMode publishedSnapshot.visibility " +
         "publishedSnapshot.hero publishedSnapshot.publicPreview " +
         "publishedSnapshot.cover publishedSnapshot.seo " +

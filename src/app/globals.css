@@ -375,18 +375,57 @@ body {
  * pa nadjačava blok bez `!important` i bez ijedne izmene u samim blokovima.
  * Newsletter ostaje netaknut — on nikada nije unutar `.edu-prose`.
  */
-.edu-prose :is(section, aside, div) {
+.edu-prose :is(article, section, aside, div) {
   color: var(--color-ee-text);
 }
 
-/* Blokovi nose svoje široke omotače i razmake; u članku ih daje kontejner. */
-.edu-prose > :is(section, aside) {
+/*
+ * JEDNA LINIJA ZA SVE BLOKOVE.
+ *
+ * Svaki blok nosi svoj landing omotač — `max-w-4xl`/`max-w-7xl`, `mx-auto` i
+ * sopstvene margine — pa se u članku svaki uvlačio drugačije: sekcija jedno,
+ * callout drugo, zaglavlje treće. Ovde se ti omotači poništavaju da bi svaki
+ * blok počinjao i završavao tačno na ivici kontejnera članka, a vertikalni
+ * ritam dolazio iz jednog pravila ispod.
+ *
+ * `article` je namerno u listi: `ArticleBlock` se renderuje kao `<article>`,
+ * pa ga stari selektor nije ni hvatao i on je jedini zadržavao dvostruki
+ * `px-6 lg:px-8`.
+ *
+ * VAŽNO ZA CASCADE: `globals.css` piše van `@layer`, a sve Tailwind utility
+ * klase žive u sloju. Nenaslojeno pravilo zato pobeđuje `space-y-*`, `my-*` i
+ * `max-w-*` bez obzira na specifičnost — pa vertikalni ritam tela članka mora
+ * da se da ODAVDE, a ne klasom na omotaču.
+ */
+.edu-prose > :is(article, section, aside) {
+  max-width: none;
+  margin-inline: 0;
+  margin-block: 0;
+}
+
+/* Razmak između blokova; prvi blok ga nema, njega odvaja `mt-*` omotača. */
+.edu-prose > :is(article, section, aside) + :is(article, section, aside) {
+  margin-block-start: clamp(48px, 5.5vw, 76px);
+}
+
+/* Sekcije nose sadržaj u unutrašnjem omotaču, pa spoljni razmak otpada. */
+.edu-prose > :is(article, section) {
   padding-inline: 0;
   padding-block: 0;
 }
 
-.edu-prose > :is(section, aside) > div {
+.edu-prose > :is(article, section) > div {
   max-width: none;
+}
+
+/*
+ * `aside` (Stručna ograda i drugi callout-i, affiliate CTA) NEMA unutrašnji
+ * omotač — tekst mu je direktno dete. Njemu se razmak ne skida nego daje, inače
+ * slova naležu na ivicu okvira.
+ */
+.edu-prose > aside {
+  padding-block: clamp(20px, 2.2vw, 26px);
+  padding-inline: clamp(22px, 2.6vw, 32px);
 }
 
 .edu-prose :is(h2, h3) {

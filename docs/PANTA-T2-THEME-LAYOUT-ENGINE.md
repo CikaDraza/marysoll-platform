@@ -311,6 +311,14 @@ kaže samo „ovde ide `services.catalog`". Registry razrešava podatke i render
 | `deps.ts` | request-scoped izvor podataka, memoizovan → dedupe |
 | `resolve.ts` | paralelni prolaz: parse → `Promise.all(loaderi)` → mapa po `blockId` |
 
+**E1 dopuna (2026-09-04):** Theme-9 `topicHub` sada se komponuje kao
+`education.topic-hub`, sa `education.catalog` capability gate-om. Loader dobija
+canonical public Education summaries kroz request-scoped `BlockDataSource`, dok
+tema i dalje samo mapira podatke u postojeći `Theme9TopicHub` prikaz. CMS ostaje
+vlasnik eyebrow/headline kopije i eksplicitnog demo fixture-a; live naslovi,
+linkovi, redosled, topic/intent oznake i publication state pripadaju Education
+domenu. Istorijski `content.topic-hub` contract ostaje radi kompatibilnosti.
+
 Dve odluke koje nisu bile u v0.2:
 
 **Renderer se ne drži u registry-ju.** Osam tema ima osam prikaza istog bloka
@@ -877,6 +885,30 @@ zaobilaženja.
 Slugovi su prelazno backing skladište odluke. Kada persistent tenant-level
 entitlement postane potreban, menja se taj application sloj, bez unošenja
 tenant-identiteta u Theme Engine i bez spajanja sa budućim T2B capability-jem.
+
+## 6.13 Jedan kontejner po temi (2026-09-05)
+
+Tema ima JEDNU liniju u koju se sve poravnava. U theme-9 to je:
+
+```text
+mx-auto max-w-[1240px] px-5 md:px-8 lg:px-14
+```
+
+Header, Footer, sve landing sekcije, Edukacija lista i članak koriste taj isti
+kontejner — 18 pojava. `Theme9ContentPage` (rute `/za-klijente` i
+`/za-profesionalce`) je imao izuzetak: PageHero panel je stajao u
+`max-w-[1536px] px-5 md:px-8`, dakle 296px širi i bez `lg:px-14`. Panel je zato
+na velikim ekranima počinjao levo od naslova sekcije ispod sebe, a strana je
+izgledala kao dva različita rasporeda spojena jedan ispod drugog.
+
+Ispravljeno tako što PageHero koristi isti kontejner kao ostalih pet sekcija;
+panel (zaobljenje, ton, unutrašnji razmak, tipografija) nije menjan. Pravilo je
+zaključano testom `Theme9ContentPage.test.ts`, koji čita izvor i traži da svaki
+`mx-auto` omotač ima `max-w-[1240px]` i sve tri padding klase.
+
+Kontejner je danas doslovno prepisan u svakoj komponenti. Dok je tako, ovakav
+izuzetak je uvek moguć — izdvajanje u jedan `Theme9Container` je otvoren, ali
+namerno odložen cleanup (dira 18 komponenti).
 
 ## 7. Redosled (T2A)
 

@@ -45,10 +45,13 @@ export function formatPublishedDate(value: string): string {
  * naslov drugi put, u drugom kadru i drugoj tipografiji.
  *
  * Od uvođenja naslovne sekcije, opis i naslovna slika stižu SPREMNI sa servera
- * — iz jednog izvora koji hrani i karticu i zaglavlje. Ovde ostaje samo
- * apsorpcija zatečenog hero BLOKA, za sadržaj pisan pre te sekcije: takav blok
- * se ne renderuje u telu, a njegov podnaslov i slika popunjavaju zaglavlje ako
- * ga sekcija još nije popunila. Prva sledeća objava ga trajno preseli.
+ * — iz jednog izvora koji hrani i karticu i zaglavlje. Ovde ostaje apsorpcija
+ * zatečenog hero BLOKA, za sadržaj pisan pre te sekcije: takav blok se ne
+ * renderuje u telu, a njegov podnaslov i slika popunjavaju zaglavlje ako ga
+ * sekcija još nije popunila. Prva sledeća objava ga trajno preseli.
+ *
+ * Slika ima još jedan uslov: `coverOnPage`. Kartica u listi je koristi uvek,
+ * strana sadržaja samo kada je vlasnica tako izabrala.
  *
  * Naslov je izuzetak i uvek dolazi iz `EducationContent.title`: on je identitet
  * dokumenta — isti u listi, breadcrumb-u i deljenom linku.
@@ -56,6 +59,7 @@ export function formatPublishedDate(value: string): string {
 export function resolveArticlePresentation(article: {
   description?: string;
   cover?: { src: string; focalPoint?: ContentFocalPoint };
+  coverOnPage?: boolean;
   blocks: readonly ContentBlock[];
 }): {
   description?: string;
@@ -67,13 +71,16 @@ export function resolveArticlePresentation(article: {
 
   return {
     description: article.description || hero?.subtitle || undefined,
-    // Fokus kadra ide zajedno sa slikom; bez njega se naslovna slika seče
-    // mimo onoga što je autor izabrao.
-    cover:
-      article.cover ??
-      (heroImage?.src
-        ? { src: heroImage.src, focalPoint: heroImage.focalPoint }
-        : undefined),
+    // Naslovna slika je uvek na kartici, a na strani samo kad je vlasnica tu
+    // izabrala: kad tekst počinje videom ili slikom prvog bloka, slika iznad
+    // njega je ista poruka dva puta. Fokus kadra ide zajedno sa slikom — bez
+    // njega se seče mimo onoga što je autor izabrao.
+    cover: article.coverOnPage
+      ? (article.cover ??
+        (heroImage?.src
+          ? { src: heroImage.src, focalPoint: heroImage.focalPoint }
+          : undefined))
+      : undefined,
     blocks: article.blocks.filter((block) => block.type !== "HeroBlock"),
   };
 }

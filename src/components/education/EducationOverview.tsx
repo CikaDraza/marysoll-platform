@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { PlusIcon } from "@heroicons/react/20/solid";
 import { useEducationContentList } from "@/hooks/education/useEducationContent";
+import { EducationCreationChooser } from "./EducationCreationChooser";
 import {
   educationContentOverview,
   educationContentRows,
@@ -36,7 +36,7 @@ export default function EducationOverview() {
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-wrap items-start justify-between gap-4">
+      <header>
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-violet-500">
             Edu Centar
@@ -49,17 +49,9 @@ export default function EducationOverview() {
           </p>
         </div>
 
-        {/* „Sajt Edukacije" stoji u header-u, na istom mestu gde Salon ima svoj. */}
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/education/content/new"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-700"
-          >
-            <PlusIcon aria-hidden="true" className="size-4" />
-            Novi sadržaj
-          </Link>
-        </div>
       </header>
+
+      <EducationCreationChooser />
 
       {isLoading ? (
         <p className="text-sm text-gray-500 dark:text-gray-400">Učitavanje…</p>
@@ -72,13 +64,6 @@ export default function EducationOverview() {
             Prvi materijal sastavljate u editoru — tekst, slike, video i fajlove
             dodajete kao blokove.
           </p>
-          <Link
-            href="/education/content/new"
-            className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-700"
-          >
-            <PlusIcon aria-hidden="true" className="size-4" />
-            Novi sadržaj
-          </Link>
         </section>
       ) : (
         <>

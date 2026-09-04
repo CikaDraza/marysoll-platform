@@ -23,6 +23,9 @@ export interface Theme9TopicHubProps {
     tags: string[];
     href?: string;
   }[];
+  /** Generic presentation limits supplied by the data mapper. */
+  minItems?: number;
+  maxItems?: number;
 }
 
 const ALL = "__sve__";
@@ -32,13 +35,16 @@ export function Theme9TopicHub({
   headline,
   filters,
   topics,
+  minItems = 1,
+  maxItems,
 }: Theme9TopicHubProps) {
   const [active, setActive] = useState(ALL);
 
-  if (topics.length === 0) return null;
+  if (topics.length < minItems) return null;
 
-  const visible =
+  const matching =
     active === ALL ? topics : topics.filter((t) => t.group === active);
+  const visible = maxItems ? matching.slice(0, maxItems) : matching;
 
   return (
     <section id="teme" className="bg-ee-canvas">

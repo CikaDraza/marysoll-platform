@@ -9,6 +9,7 @@ import {
 } from "@/lib/education/publicContent";
 import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
 import { educationAuthorFromSalon } from "@/lib/education/presentation";
+import { resolveEducationTaxonomyForTenant } from "@/lib/education/taxonomy-server";
 import {
   getPublicSiteContext,
   tenantPageMetadata,
@@ -43,9 +44,10 @@ export default async function TenantEducationPage() {
   // je nema.
   if (!tenantId || !(await hasPublicEducationSurface(tenantId))) notFound();
 
-  const [items, salon] = await Promise.all([
+  const [items, salon, taxonomy] = await Promise.all([
     listPublicEducationContent(tenantId),
     fetchPublicSalonProfile(tenantSlug),
+    resolveEducationTaxonomyForTenant(tenantId),
   ]);
 
   return (
@@ -55,6 +57,7 @@ export default async function TenantEducationPage() {
         basePath={basePath}
         author={educationAuthorFromSalon(salon)}
         intro={salon?.shortDescription}
+        taxonomy={taxonomy}
       />
     </TenantPageShell>
   );

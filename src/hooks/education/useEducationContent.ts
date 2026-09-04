@@ -9,6 +9,7 @@ import type {
 } from "@/lib/education/content-document";
 import type { ContentBlock } from "@/lib/content/schemas/landing-blocks";
 import { resolveAccessMode } from "@/types/education-content";
+import type { EducationTaxonomy } from "@/lib/education/taxonomy";
 
 export const EDUCATION_CONTENT_KEY = ["education", "content"] as const;
 
@@ -21,6 +22,8 @@ export interface EducationContentPayload {
   title: string;
   slug?: string;
   kind: EducationContentSummary["kind"];
+  topicKey?: EducationContentSummary["topicKey"];
+  intentKey?: EducationContentSummary["intentKey"];
   accessMode: EducationContentSummary["accessMode"];
   hero?: EducationContentRecord["hero"];
   publicPreview?: EducationContentRecord["publicPreview"];
@@ -38,6 +41,8 @@ function normalizeSnapshot(
     title: String(snapshot.title ?? ""),
     slug: String(snapshot.slug ?? ""),
     kind: snapshot.kind as EducationContentSummary["kind"],
+    topicKey: snapshot.topicKey as EducationContentSummary["topicKey"],
+    intentKey: snapshot.intentKey as EducationContentSummary["intentKey"],
     accessMode: resolveAccessMode(snapshot),
     publicPreview:
       (snapshot.publicPreview as EducationPublishedSnapshotMeta["publicPreview"]) ??
@@ -61,6 +66,8 @@ export function normalizeEducationContentRecord(
     title: String(raw.title ?? ""),
     slug: String(raw.slug ?? ""),
     kind: raw.kind as EducationContentSummary["kind"],
+    topicKey: raw.topicKey as EducationContentSummary["topicKey"],
+    intentKey: raw.intentKey as EducationContentSummary["intentKey"],
     accessMode: resolveAccessMode(raw),
     hero: (raw.hero as EducationContentRecord["hero"]) ?? undefined,
     publicPreview:
@@ -73,6 +80,18 @@ export function normalizeEducationContentRecord(
     blocks: Array.isArray(raw.blocks) ? (raw.blocks as ContentBlock[]) : [],
     seo: (raw.seo as EducationContentRecord["seo"]) ?? undefined,
   };
+}
+
+export function useEducationTaxonomy() {
+  return useQuery({
+    queryKey: ["education", "taxonomy"],
+    queryFn: async (): Promise<EducationTaxonomy | null> => {
+      const { data } = await api.get<{ taxonomy: EducationTaxonomy | null }>(
+        "/education/taxonomy",
+      );
+      return data.taxonomy;
+    },
+  });
 }
 
 export function useEducationContentList() {

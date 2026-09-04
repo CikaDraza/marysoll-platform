@@ -172,7 +172,10 @@ describe("hero blok se ne prikazuje dvaput", () => {
   });
 
   it("njegov podnaslov i slika postaju zaglavlje", () => {
-    const presentation = resolveArticlePresentation({ blocks: [hero, ...body] });
+    const presentation = resolveArticlePresentation({
+      coverOnPage: true,
+      blocks: [hero, ...body],
+    });
 
     expect(presentation.description).toBe(hero.subtitle);
     expect(presentation.cover?.src).toBe(hero.images[0].src);
@@ -181,7 +184,10 @@ describe("hero blok se ne prikazuje dvaput", () => {
   it("naslovna slika nosi izabrani fokus kadra", () => {
     // Bez ovoga se hero slika u zaglavlju i na kartici seče po centru, bez
     // obzira na to šta je autor izabrao klikom.
-    const presentation = resolveArticlePresentation({ blocks: [hero, ...body] });
+    const presentation = resolveArticlePresentation({
+      coverOnPage: true,
+      blocks: [hero, ...body],
+    });
 
     expect(presentation.cover?.focalPoint).toEqual({ x: 0.3, y: 0.2 });
   });
@@ -191,6 +197,7 @@ describe("hero blok se ne prikazuje dvaput", () => {
     const presentation = resolveArticlePresentation({
       description: "Iz naslovne sekcije",
       cover: { src: "https://cdn.example.com/sekcija.jpg" },
+      coverOnPage: true,
       blocks: [hero, ...body],
     });
 
@@ -202,10 +209,39 @@ describe("hero blok se ne prikazuje dvaput", () => {
   });
 
   it("bez naslovne sekcije zaglavlje pada na zatečeni blok", () => {
-    const presentation = resolveArticlePresentation({ blocks: [hero, ...body] });
+    const presentation = resolveArticlePresentation({
+      coverOnPage: true,
+      blocks: [hero, ...body],
+    });
 
     expect(presentation.description).toBe(hero.subtitle);
     expect(presentation.cover?.src).toBe(hero.images[0].src);
+  });
+
+  /**
+   * Slika ima dva mesta i jedno pravilo po mestu: kartica u listi je koristi
+   * uvek, strana sadržaja samo kada je vlasnica tako izabrala. Podnaslov nije
+   * deo tog izbora — on je opis i stoji na oba mesta.
+   */
+  it("bez izbora slika ostaje na kartici i ne ide na stranu", () => {
+    const fromSection = resolveArticlePresentation({
+      description: "Iz naslovne sekcije",
+      cover: { src: "https://cdn.example.com/sekcija.jpg" },
+      blocks: [hero, ...body],
+    });
+    const fromLegacyBlock = resolveArticlePresentation({
+      blocks: [hero, ...body],
+    });
+
+    expect(fromSection.cover).toBeUndefined();
+    expect(fromLegacyBlock.cover).toBeUndefined();
+
+    // Opis i izbacivanje hero bloka iz tela ostaju netaknuti.
+    expect(fromSection.description).toBe("Iz naslovne sekcije");
+    expect(fromLegacyBlock.description).toBe(hero.subtitle);
+    expect(fromLegacyBlock.blocks.map((block) => block.type)).not.toContain(
+      "HeroBlock",
+    );
   });
 
   it("obe strane koje prikazuju sadržaj koriste isto pravilo", () => {

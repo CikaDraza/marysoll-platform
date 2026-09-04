@@ -1,7 +1,18 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { ContentImage } from "@/components/content-composer/blocks/ContentImage";
-import { EDUCATION_KIND_LABELS } from "@/lib/education/content-document";
 import type { PublicEducationSummary } from "@/lib/education/publicContent";
+import {
+  EDUCATION_PUBLIC_FORMAT_LABELS,
+  type EducationTaxonomy,
+  type EducationTopicKey,
+} from "@/lib/education/taxonomy";
+import {
+  availableEducationTopics,
+  filterEducationContentByTopic,
+} from "@/lib/education/discovery";
 import {
   formatPublishedDate,
   type EducationAuthor,
@@ -12,6 +23,7 @@ interface Props {
   basePath: string;
   author: EducationAuthor | null;
   intro?: string;
+  taxonomy: EducationTaxonomy | null;
 }
 
 function GatedTag() {
@@ -46,8 +58,19 @@ function CardMeta({
  * Javna lista je identična za svakog posetioca. Zaključan sadržaj se vidi, ali
  * sa oznakom i samo svojim javnim pregledom — nikada delom teksta.
  */
-export function EducationListView({ items, basePath, author, intro }: Props) {
-  const [lead, ...rest] = items;
+export function EducationListView({
+  items,
+  basePath,
+  author,
+  intro,
+  taxonomy,
+}: Props) {
+  const [activeTopic, setActiveTopic] = useState<"all" | EducationTopicKey>(
+    "all",
+  );
+  const availableTopics = availableEducationTopics(items, taxonomy);
+  const visibleItems = filterEducationContentByTopic(items, activeTopic);
+  const [lead, ...rest] = visibleItems;
 
   return (
     <div className="bg-ee-canvas">
@@ -61,7 +84,32 @@ export function EducationListView({ items, basePath, author, intro }: Props) {
           </p>
         </header>
 
-        {items.length === 0 ? (
+        {availableTopics.length > 0 && (
+          <nav
+            aria-label="Teme edukacije"
+            className="mt-8 flex flex-wrap gap-2"
+          >
+            {[{ key: "all" as const, label: "Sve" }, ...availableTopics].map(
+              (topic) => (
+                <button
+                  key={topic.key}
+                  type="button"
+                  aria-pressed={activeTopic === topic.key}
+                  onClick={() => setActiveTopic(topic.key)}
+                  className={`rounded-full border px-4 py-2 text-[13.5px] transition-colors ${
+                    activeTopic === topic.key
+                      ? "border-ee-text bg-ee-text text-ee-canvas"
+                      : "border-ee-border text-ee-text-muted hover:border-ee-accent/40"
+                  }`}
+                >
+                  {topic.label}
+                </button>
+              ),
+            )}
+          </nav>
+        )}
+
+        {visibleItems.length === 0 ? (
           <p className="border-ee-border font-instrument-sans text-ee-text-muted mt-12 rounded-[28px] border border-dashed px-6 py-14 text-center text-[16px]">
             Uskoro objavljujemo prve tekstove.
           </p>
@@ -83,7 +131,7 @@ export function EducationListView({ items, basePath, author, intro }: Props) {
                 )}
                 <div className="p-7 sm:p-9">
                   <span className="font-instrument-sans text-ee-text flex flex-wrap items-center gap-3 text-[12px] font-semibold uppercase tracking-[0.18em]">
-                    {EDUCATION_KIND_LABELS[lead.kind] ?? "Edukacija"}
+                    {EDUCATION_PUBLIC_FORMAT_LABELS[lead.format]}
                     {lead.accessMode === "gated" && <GatedTag />}
                   </span>
                   <h2 className="font-newsreader text-ee-accent mt-3 text-[clamp(24px,2.8vw,34px)] leading-[1.12] transition-opacity group-hover:opacity-80">
@@ -115,7 +163,7 @@ export function EducationListView({ items, basePath, author, intro }: Props) {
                   )}
                   <div className="flex flex-1 flex-col p-7">
                     <span className="font-instrument-sans text-ee-accent-contrast flex flex-wrap items-center gap-3 text-[12px] font-semibold uppercase tracking-[0.18em]">
-                      {EDUCATION_KIND_LABELS[item.kind] ?? "Edukacija"}
+                      {EDUCATION_PUBLIC_FORMAT_LABELS[item.format]}
                       {item.accessMode === "gated" && <GatedTag />}
                     </span>
                     <h2 className="font-newsreader text-ee-accent group-hover:text-ee-accent-contrast mt-3 text-[22px] leading-[1.16] transition-colors">

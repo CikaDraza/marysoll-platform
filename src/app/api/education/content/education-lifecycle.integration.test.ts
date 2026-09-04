@@ -2,6 +2,7 @@ import mongoose, { Types } from "mongoose";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { ALL_TWELVE_BLOCKS } from "@/lib/education/__fixtures__/education-blocks";
+import { resolveArticlePresentation } from "@/lib/education/presentation";
 
 vi.mock("@/lib/db/mongodb", () => ({ connectToDB: async () => undefined }));
 vi.mock("@/lib/auth/auth-server", () => ({ requireTenantAdmin: vi.fn() }));
@@ -52,12 +53,16 @@ type Item = {
   title: string;
   slug: string;
   accessMode: string;
+  topicKey?: string;
+  intentKey?: string;
   status: string;
   blocks: unknown[];
   publishedSnapshot: {
     title: string;
     slug: string;
     kind: string;
+    topicKey?: string;
+    intentKey?: string;
     accessMode: string;
     blocks?: unknown[];
     publishedAt: string;
@@ -103,11 +108,26 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await EducationContent.deleteMany({});
+  await mongoose.connection.db?.collection("tenants").deleteMany({});
   vi.mocked(requireTenantAdmin).mockReturnValue({
     success: true,
     tenantId: TENANT,
   });
 });
+
+async function setTaxonomyPreset(preset: "skincare" | null) {
+  if (preset) {
+    await mongoose.connection.db?.collection("tenants").updateOne(
+      { _id: new Types.ObjectId(TENANT) },
+      { $set: { educationTaxonomyPreset: preset } },
+      { upsert: true },
+    );
+    return;
+  }
+  await mongoose.connection.db?.collection("tenants").deleteOne({
+    _id: new Types.ObjectId(TENANT),
+  });
+}
 
 describe("A — prva objava", () => {
   it("draft nema snapshot; objava ga kreira i podiže status", async () => {
@@ -759,14 +779,16 @@ describe("L — zaključan sadržaj (gated)", () => {
     expect(JSON.stringify(article)).not.toContain("cdn.example.com/vodic.pdf");
   });
 
-  it("javni pregled se izvodi iz naslova i SEO-a kada nije unet", async () => {
+  it("javni pregled se izvodi iz autorskog sadržaja kada nije unet", async () => {
     await publishGated();
 
     const article = await getPublicEducationContent(TENANT, "napredna-analiza");
+    // Opis dolazi iz naslovne sekcije, ne iz `seo.description`.
     expect(article).toMatchObject({
       title: "Napredna analiza sastojaka",
-      description: "SEO opis",
+      description: "Šta stvarno pomaže koži",
     });
+    expect(article?.description).not.toBe("SEO opis");
     // Naslovna slika se računa pri objavi: hero slika ako postoji, inače
     // pregled ili SEO. Ovaj sadržaj ima hero blok, pa vodi njegova slika.
     expect(article?.cover?.src).toBe("https://cdn.example.com/hero.jpg");
@@ -1076,7 +1098,7 @@ describe("P — naslovna slika i fokus kadra", () => {
     });
   });
 
-  it("zapis bez hero bloka pada na SEO sliku, samo bez fokusa", async () => {
+  it("zapis bez naslovne slike nema naslovnu sliku — SEO je ne popunjava", async () => {
     const created = await json<{ item: Item }>(
       await createContent(
         request({
@@ -1092,7 +1114,9 @@ describe("P — naslovna slika i fokus kadra", () => {
     await publishContent(request(), params(String(created.item._id)));
 
     const article = await getPublicEducationContent(TENANT, "bez-heroja");
-    expect(article?.cover).toEqual({ src: "https://cdn.example.com/seo.jpg" });
+    // `ogImage` je slika za deljenje; naslovna slika strane dolazi od autora.
+    expect(article?.cover).toBeUndefined();
+    expect(article?.seo?.ogImage).toBe("https://cdn.example.com/seo.jpg");
   });
 });
 
@@ -1125,6 +1149,43 @@ describe("R — naslovna sekcija je jedan izvor istine", () => {
     return id;
   }
 
+  /**
+   * Naslovna slika ima dva mesta i jedan prekidač: kartica je koristi uvek,
+   * strana sadržaja samo kada je vlasnica tako izabrala. Zatečeni zapisi nemaju
+   * zastavicu, pa je za njih odgovor „samo kartica" — slika se ne pojavljuje na
+   * strani zato što je nekad tamo bila po automatizmu.
+   */
+  it("prekidač za sliku na strani preživljava objavu i ne dira karticu", async () => {
+    const id = await publishWithHero({
+      hero: { ...heroSection, coverOnPage: true },
+    });
+    const slug = (await readRaw(id)).publishedSnapshot!.slug;
+
+    const article = await getPublicEducationContent(TENANT, slug);
+    expect(article?.coverOnPage).toBe(true);
+    expect(article?.cover?.src).toBe(heroSection.image.src);
+    expect(resolveArticlePresentation(article!).cover?.src).toBe(
+      heroSection.image.src,
+    );
+  });
+
+  it("bez prekidača slika ostaje na kartici, a strana je ne prikazuje", async () => {
+    const id = await publishWithHero();
+    const slug = (await readRaw(id)).publishedSnapshot!.slug;
+
+    const article = await getPublicEducationContent(TENANT, slug);
+    const card = (await listPublicEducationContent(TENANT)).find(
+      (item) => item.slug === slug,
+    );
+
+    // Kartica je nepromenjena…
+    expect(card?.cover?.src).toBe(heroSection.image.src);
+    expect(article?.cover?.src).toBe(heroSection.image.src);
+    // …ali strana sadržaja sliku ne renderuje.
+    expect(article?.coverOnPage).toBe(false);
+    expect(resolveArticlePresentation(article!).cover).toBeUndefined();
+  });
+
   it("ista sekcija hrani i karticu i stranu", async () => {
     const id = await publishWithHero();
     const record = await readRaw(id);
@@ -1156,6 +1217,45 @@ describe("R — naslovna sekcija je jedan izvor istine", () => {
     expect(article?.cover?.src).toBe(heroSection.image.src);
   });
 
+  /**
+   * SEO polja NISU rezerva za vidljivi tekst.
+   *
+   * Ovo je regresija koja se vraćala: dok je `seo.description` stajao na kraju
+   * lanca za `description`, svaki zapis bez autorskog opisa je u zaglavlju
+   * pokazivao tekst pisan za pretragu. Metapodaci i dalje rade — samo više ne
+   * ulaze u telo strane.
+   */
+  it("zapis bez autorskog opisa nema uvodni tekst, a SEO i dalje stoji u metapodacima", async () => {
+    const created = await json<{ item: Item }>(
+      await createContent(
+        request({
+          title: "Bez uvoda",
+          slug: "bez-uvoda",
+          kind: "article",
+          accessMode: "public",
+          blocks: ALL_TWELVE_BLOCKS.slice(1),
+          seo: {
+            title: "SEO naslov za pretragu",
+            description: "SEO opis za pretragu",
+            ogImage: "https://cdn.example.com/seo.jpg",
+          },
+        }),
+      ),
+    );
+    await publishContent(request(), params(String(created.item._id)));
+
+    const article = await getPublicEducationContent(TENANT, "bez-uvoda");
+
+    expect(article?.title).toBe("Bez uvoda");
+    expect(article?.description).toBeUndefined();
+    expect(article?.cover).toBeUndefined();
+    expect(article?.seo).toMatchObject({
+      title: "SEO naslov za pretragu",
+      description: "SEO opis za pretragu",
+      ogImage: "https://cdn.example.com/seo.jpg",
+    });
+  });
+
   it("zatečeni hero blok se sam preseli u sekciju pri objavi", async () => {
     // Sadržaj pisan pre naslovne sekcije ne traži migraciju.
     const created = await json<{ item: Item }>(
@@ -1178,5 +1278,128 @@ describe("R — naslovna sekcija je jedan izvor istine", () => {
 
     expect(snapshot.hero?.subtitle).toBe("Šta stvarno pomaže koži");
     expect(snapshot.hero?.image?.src).toBe("https://cdn.example.com/hero.jpg");
+  });
+});
+
+describe("S — E1 taxonomy publication boundary", () => {
+  it("saves working metadata, publishes it, and keeps public discovery on the snapshot", async () => {
+    await setTaxonomyPreset("skincare");
+    const created = await json<{ item: Item }>(
+      await createContent(
+        request({
+          title: "Crvenilo ili rozacea",
+          slug: "crvenilo-ili-rozacea",
+          kind: "article",
+          topicKey: "conditions",
+          intentKey: "recognize",
+          accessMode: "public",
+          blocks: ALL_TWELVE_BLOCKS,
+        }),
+      ),
+    );
+    const id = String(created.item._id);
+    expect(created.item).toMatchObject({
+      topicKey: "conditions",
+      intentKey: "recognize",
+    });
+
+    expect((await publishContent(request(), params(id))).status).toBe(200);
+    expect((await readRaw(id)).publishedSnapshot).toMatchObject({
+      topicKey: "conditions",
+      intentKey: "recognize",
+    });
+
+    await saveContent(
+      request({ topicKey: "protection", intentKey: "care" }),
+      params(id),
+    );
+    expect(await readRaw(id)).toMatchObject({
+      topicKey: "protection",
+      intentKey: "care",
+    });
+    expect((await listPublicEducationContent(TENANT))[0]).toMatchObject({
+      topicKey: "conditions",
+      intentKey: "recognize",
+    });
+
+    expect((await publishContent(request(), params(id))).status).toBe(200);
+    expect((await listPublicEducationContent(TENANT))[0]).toMatchObject({
+      topicKey: "protection",
+      intentKey: "care",
+    });
+  });
+
+  it("rejects arbitrary and workspace-unsupported taxonomy values server-side", async () => {
+    const arbitrary = await createContent(
+      request({
+        title: "Arbitrary",
+        kind: "article",
+        topicKey: "marketing",
+        intentKey: "sell",
+        accessMode: "public",
+        blocks: ALL_TWELVE_BLOCKS,
+      }),
+    );
+    expect(arbitrary.status).toBe(400);
+
+    const unsupportedWorkspace = await createContent(
+      request({
+        title: "Known elsewhere",
+        kind: "article",
+        topicKey: "conditions",
+        intentKey: "recognize",
+        accessMode: "public",
+        blocks: ALL_TWELVE_BLOCKS,
+      }),
+    );
+    expect(unsupportedWorkspace.status).toBe(400);
+  });
+
+  it("requires both classifications only for a new public/gated publication", async () => {
+    await setTaxonomyPreset("skincare");
+    const publicDraft = await json<{ item: Item }>(
+      await createContent(
+        request({
+          title: "Neklasifikovan javni tekst",
+          kind: "article",
+          accessMode: "public",
+          blocks: ALL_TWELVE_BLOCKS,
+        }),
+      ),
+    );
+    expect(
+      (await publishContent(request(), params(String(publicDraft.item._id)))).status,
+    ).toBe(400);
+
+    const privateDraft = await json<{ item: Item }>(
+      await createContent(
+        request({
+          title: "Privatan plan",
+          kind: "article",
+          accessMode: "private",
+          blocks: ALL_TWELVE_BLOCKS,
+        }),
+      ),
+    );
+    expect(
+      (await publishContent(request(), params(String(privateDraft.item._id)))).status,
+    ).toBe(200);
+  });
+
+  it("keeps an already published legacy snapshot discoverable without guessing taxonomy", async () => {
+    await setTaxonomyPreset(null);
+    const id = await createPublishedV1();
+    await setTaxonomyPreset("skincare");
+
+    const [summary] = await listPublicEducationContent(TENANT);
+    expect(summary.slug).toBe("estetika-lica");
+    expect(summary).not.toHaveProperty("topicKey");
+    expect(summary).not.toHaveProperty("intentKey");
+    expect(await getPublicEducationContent(TENANT, "estetika-lica")).not.toBeNull();
+
+    expect((await publishContent(request(), params(id))).status).toBe(400);
+    expect((await listPublicEducationContent(TENANT))[0].slug).toBe(
+      "estetika-lica",
+    );
   });
 });
