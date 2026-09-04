@@ -70,3 +70,29 @@ export function bookingIntakeChanged(
     (attachment?.url ?? "") !== (current.image?.url ?? "")
   );
 }
+
+/**
+ * Da li je izbor u modalu nepotpun — jedini uslov koji koči SVA dugmad potvrde.
+ *
+ * Ranije je isti pojam postojao na dva mesta sa različitim sadržajem: dugme
+ * „Sledeće" (usluga sa zahtevom) tražilo je i datum i vreme, dok ih dugme
+ * „Zakaži termin" nije. Posledica je bila da na glavnom toku dugme izgleda
+ * aktivno bez izabranog termina, pa se tek na klik dobije poruka.
+ *
+ * Prazan izbor mora da se vidi na dugmetu, ne da se otkrije posle klika.
+ */
+export function bookingSelectionIncomplete(input: {
+  /** Izabrana usluga; `null`/`undefined` = nijedna. */
+  service: Pick<IService, "type"> | null | undefined;
+  variantName: string;
+  date: string;
+  time: string;
+  /** Ručni režim: izabran termin nije jedan od definisanih slotova. */
+  manualSlotInvalid: boolean;
+}): boolean {
+  if (!input.service) return true;
+  if (input.manualSlotInvalid) return true;
+  // Varijanta je jedini obavezan izbor unutar usluge.
+  if (input.service.type === "variant" && !input.variantName.trim()) return true;
+  return !input.date.trim() || !input.time.trim();
+}
