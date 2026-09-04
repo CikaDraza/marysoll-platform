@@ -923,9 +923,16 @@ odvojen budući pravac.
   **Sve | Procena kože | Rutina i sastojci | Promene i stanja kože | Zaštita
   kože**. Nema dodatnih javnih filtera. Kartica prikazuje „Video" kada je video
   glavni format, inače „Članak".
-- `shortDescription`, `topicKey` i `intentKey` ulaze u publication contract;
-  landing oznake nastaju iz `topicKey + intentKey`. Broj 01–06, URL, datum
-  objave, autor, redosled, link i reading time određuje sistem.
+- `topicKey` i `intentKey` ulaze u radnu kopiju i publication snapshot;
+  `hero.subtitle` ostaje jedini postojeći izvor opisa kartice/članka. Ne uvodi
+  se `shortDescription`. Landing oznake nastaju iz `topicKey + intentKey`.
+  Broj 01–06, URL, datum objave, autor, redosled i link određuje sistem.
+- **Implementirano E1 (2026-09-04):** opcioni tenant
+  `educationTaxonomyPreset: "skincare"` razrešava Education-owned taksonomiju;
+  missing/unknown preset ne pada na skincare. `education.topic-hub` nosi
+  `education.catalog` gate i kroz canonical `publicContent.ts` read model puni
+  postojeći Theme-9 renderer. Eksplicitni `SalonProfile.isDemo` je jedini seam
+  za CMS fixture; prazan real tenant nikada ne dobija demo kartice.
 
 ### E2 — Authoring clarity
 
@@ -945,8 +952,8 @@ Canonical klasifikacija razdvaja tri ose:
 | Osa | Vrednosti | Vidljivost |
 |---|---|---|
 | `format` | `article`, `video` | javna oznaka |
-| `topicKey` | `skin-assessment`, `routine-ingredients`, `skin-changes-conditions`, `skin-protection` | četiri javna filtera |
-| `intentKey` | `how-to-recognize`, `why-it-happens`, `how-to-care`, `step-by-step` | uredničko vođenje i oznaka, ne novi filter |
+| `topicKey` | `assessment`, `routine_ingredients`, `conditions`, `protection` | četiri javna filtera |
+| `intentKey` | `recognize`, `explain`, `care`, `step_by_step` | uredničko vođenje i oznaka, ne novi filter |
 
 Postojeći `advice/article/guide/video/material` ne migriraju se brutalno. Uvodi
 se backward-compatible mapiranje, pa se model čisti postepeno. Jedan video u
@@ -955,8 +962,8 @@ tekstualnom radu ne menja format: ako sadržaj ima smisla bez videa, to je
 
 Article editor ima hijerarhiju:
 
-1. veliki Naslov i pravi `shortDescription` za karticu — ne SEO description i
-   ne `publicPreview.description` kao semantički hack;
+1. veliki Naslov i `hero.subtitle` kao postojeći opis kartice — ne SEO
+   description i ne `publicPreview.description` kao semantički hack;
 2. velike selectable kartice za jednu temu i jedan editorial intent;
 3. najveću površinu za Content Composer;
 4. odvojenu, sekundarnu naslovnu sliku;
@@ -986,11 +993,12 @@ navigacija                → flush autosave, zatim prelazak
 ponovno otvaranje         → vrati/ponudi noviji lokalni draft
 ```
 
-Backend već ima `workingSavedAt`, `workingSessionId` i `workingRevision` za
-zaštitu od obrnutog redosleda zahteva; E3 taj ugovor završava kroz UI i lokalni
-oporavak. Statusi su „Čuvanje...", „Sačuvano upravo sada", „Bez interneta —
-izmene su sačuvane na ovom uređaju" i posle povratka veze „Sinhronizovano".
-Eksplicitni Save Draft može ostati kao potvrda, ali nije jedina zaštita.
+Postojeći editor već ima debounced server autosave, IndexedDB durable draft,
+session/revision ordering, recovery i exit flush. E1 taj kod ne menja. E3
+ostaje zaseban acceptance/hardening rez za potpuni online/offline status i
+potvrdu ponašanja u realnom browser toku; ne predstavlja dozvolu za prepisivanje
+postojećeg autosave sistema. Eksplicitni Save Draft može ostati kao potvrda,
+ali već nije jedina zaštita.
 
 ### E4 — poseban Blog tab
 

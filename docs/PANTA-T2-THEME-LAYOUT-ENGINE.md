@@ -311,6 +311,14 @@ kaže samo „ovde ide `services.catalog`". Registry razrešava podatke i render
 | `deps.ts` | request-scoped izvor podataka, memoizovan → dedupe |
 | `resolve.ts` | paralelni prolaz: parse → `Promise.all(loaderi)` → mapa po `blockId` |
 
+**E1 dopuna (2026-09-04):** Theme-9 `topicHub` sada se komponuje kao
+`education.topic-hub`, sa `education.catalog` capability gate-om. Loader dobija
+canonical public Education summaries kroz request-scoped `BlockDataSource`, dok
+tema i dalje samo mapira podatke u postojeći `Theme9TopicHub` prikaz. CMS ostaje
+vlasnik eyebrow/headline kopije i eksplicitnog demo fixture-a; live naslovi,
+linkovi, redosled, topic/intent oznake i publication state pripadaju Education
+domenu. Istorijski `content.topic-hub` contract ostaje radi kompatibilnosti.
+
 Dve odluke koje nisu bile u v0.2:
 
 **Renderer se ne drži u registry-ju.** Osam tema ima osam prikaza istog bloka

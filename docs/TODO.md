@@ -13,25 +13,23 @@
 
 ## Redosled
 
-```text
-EDUCATION    🟡  Edu pilot closure → E1 → E2 → E3 → E4 → E5
+EDUCATION    🟡  Edu pilot closure → E1 ✅ → E2 → E3 → E4 → E5
 BEAUTY       ✅  T1-0 → T1-4 prihvaćeno
              🟡  Marysoll browser acceptance čeka za T1-1 → T1-3 rezove
-NEXT         →   E1 Public Education discovery
+NEXT         →   E2 Authoring clarity
 DEFERRED     →   T1-5 · evidencija naplate (granica zaključana) · T3 cutover ·
                  legacy HMAC/marketplace write ·
                  Consultation / Questionnaire / Care · FUTURE H1–H4/F4–F7
-```
 
 Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran · ⏸ odloženo (posao
 ostaje neophodan)
 
 ## NEXT — sledeći rez
 
-**E1 — Public Education discovery.** Stvarni feedback je zatvorio period bez
-novih funkcija i dao precizan završni redosled E1–E5. Ništa iz DEFERRED/FUTURE
-liste ne ulazi ovde automatski — posebno ne T1-5, multi-workspace migracija,
-Content Coach ili Marketing Center.
+**E2 — Authoring clarity.** E1 je implementiran na
+`feature/edu-pilot-e1-public-discovery`; sledeći rez ostaje E2 po prihvaćenom
+redosledu. Ništa iz DEFERRED/FUTURE liste ne ulazi ovde automatski — posebno ne
+T1-5, multi-workspace migracija, Content Coach ili Marketing Center.
 
 ## T1-4 — Loyalty Redemption & Appointment Checkout
 
@@ -213,9 +211,9 @@ redosled se više ne izmišlja unapred i ne pravi se novi plan dokument.
 
 | Red | Rez | Status | Acceptance / granica |
 |---|---|---|---|
-| **E1** | Public Education discovery | **NEXT** | Theme-9 Teme čita pravi `publishedSnapshot`; demo fallback samo u demo režimu; landing prikazuje 0 ili 4–6 najnovijih; `/edukacija` zadržava dizajn i dobija samo Sve + četiri `topicKey` filtera. `shortDescription`, `topicKey`, `intentKey` ulaze u publication contract. |
+| **E1** | Public Education discovery | ✅ **kod** | Theme-9 Teme čita pravi `publishedSnapshot` kroz `education.topic-hub`; eksplicitni `isDemo` je jedini fixture seam; landing prikazuje 0 ili 4–6; `/edukacija` zadržava kartice i dobija Sve + četiri non-empty `topicKey` filtera. `topicKey`/`intentKey` su snapshot metadata, a `hero.subtitle` ostaje opis. |
 | **E2** | Authoring clarity | ⬜ posle E1 | Tri velika ulaza: Članak / Import PDF-DOCX / Video. Razdvojiti `format`, `topicKey`, `intentKey` uz backward-compatible mapiranje. Article/Video editor hijerarhija, import ≠ download, konkretne incomplete poruke, slug/SEO u Napredno. Bez velikog importer rewrite-a. |
-| **E3** | Draft safety | ⬜ posle E2 | Lokalni durable draft + debounced revision-safe server autosave + checkpoint + online/offline/saved status + flush pri navigaciji + recovery. Save Draft može ostati, ali nije jedina zaštita. |
+| **E3** | Draft safety acceptance/hardening | ⬜ posle E2 | Editor već ima lokalni durable draft, debounced revision-safe autosave, recovery i exit flush; E1 ih nije dirao. E3 proverava realni browser tok i završava potpuni online/offline/saved status, bez rewrite-a postojećeg sistema. |
 | **E4** | Blog | ⬜ posle E3 | Poseban Blog tab: Svi tekstovi / Novi blog; manual/import first nad postojećim Content Composer-om. `NewsletterCampaign` landing persistence ostaje privremeni backend adapter; Newsletter i Blog su odvojeni u UX-u. |
 | **E5** | Pilot acceptance | ⬜ posle E4 | Marina bez procedure pravi: članak od nule, članak iz PDF/DOCX, Video i Blog. Pilot je zatvoren kada ne pita „gde ovo ide?". |
 
