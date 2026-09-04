@@ -346,7 +346,8 @@ kao `distribution.campaigns` danas:
 | Faza | Sadržaj | Status |
 |---|---|---|
 | **P0** | Trajnost webhook prijema: `WebhookEvent`, dedup, svežina potpisa, zaštita od prestizanja | ✅ **u kodu** |
-| **P1** | `PaymentLedger` + `PaymentIntent` dark core, **`provider: "manual"`** — bez kartice i bez regulatorne izloženosti | ⬜ |
+| **P1a** | Depozit: uslovno okidanje, ishod po fazi otkazivanja, oba toka naplate | ✅ **u kodu** (`provider: "manual"`) |
+| **P1** | `PaymentLedger` + `PaymentIntent` dark core, **`provider: "manual"`** — bez kartice i bez regulatorne izloženosti | ✅ **u kodu** |
 | **P2** | Stvaran provajder, **samo depoziti**, jedan tenant, iza kill switch-a | ⬜ |
 | **P3** | Ostatak / puna pretplata na checkout-u | ⬜ |
 | **P4** | `ClientPackage` → kovanje vaučera | ⬜ |
@@ -363,6 +364,39 @@ Svaka faza nosi svoj integrity check (pravilo 5.3). **Novčane dijagnostike mora
 biti zakazane, ne on-demand** — integrity runner se danas pokreće samo kad
 superadmin klikne dugme, a usaglašavanje koje se pokreće kad se neko seti nije
 usaglašavanje.
+
+## 11a. Šta Faza 1 stvarno radi (u kodu)
+
+Oba toka su dokazana integracionim testovima nad pravim ReplSet-om, bez ijednog
+poziva ka provajderu:
+
+```text
+A) depozit online → ostatak online
+   depozit 1.000            → PaymentIntent(settled) + ledger capture 1.000
+   Checkout                 → paidOnline 1.000 · remainingDue 3.800
+   ostatak 3.800            → druga namera + ledger capture 3.800
+   završetak                → chargedAmount 4.800 · poeni na 4.800
+
+B) depozit online → ostatak u KEŠU
+   depozit 1.000            → ledger capture 1.000
+   ostatak 3.800 u salonu   → NE ulazi u ledger
+   završetak                → chargedAmount 4.800
+   chargedAmount − ledger   → 3.800 = salonov direktan prihod
+```
+
+**Depozit se oduzima od računa, nikad se ne vraća pa ponovo naplaćuje** — u
+oba toka `refund` zapisa nema nijednog.
+
+Uslovno okidanje radi nad postojećim brojačima (`completedVisits`, `noShows`):
+nova klijentkinja plaća, redovna sa dvanaest poseta i bez nedolazaka ne plaća.
+
+### Valuta
+
+Depozit je **fiksan RSD iznos**; ako provajder naplaćuje u EUR, EUR iznos se
+izvodi iz njega u trenutku naplate. Račun time ostaje ceo u RSD i ne pluta sa
+kursom. Klijentkinji se mora reći da njena banka obračunava po svom kursu na dan
+transakcije — inače razlika između cenovnika i skinutog iznosa izgleda kao
+greška.
 
 ## 12. Zabeleženo, ne popravlja se ovde
 

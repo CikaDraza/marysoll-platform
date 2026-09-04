@@ -164,6 +164,16 @@ export const INTEGRITY_CHECKS = [
     repair:
       "Pogledati `lastError` na zapisu. Ponovna obrada je bezbedna: svi upisi su apsolutni `$set`, a ponovljenu isporuku hvata unique ključ. Ako je događaj prestignut novijim, označiti ga kao `skipped`.",
   },
+  {
+    key: "payment.appointment.overpaid",
+    scope: "tenant",
+    name: "Naplata veća od vrednosti termina",
+    description:
+      "Neto novac koji je za termin prošao kroz platformu (depozit, online uplata) veći je od `pricing.chargedAmount`, ili termin uopšte nema upisan naplaćen iznos iako je novac stigao. Hvata pogrešno ukucan iznos, nezabeležen povraćaj i depozit koji niko nije uračunao. Proverava samo završene termine — dok termin traje, depozit legitimno premašuje iznos koji još ne postoji.",
+    defaultSeverity: "error",
+    repair:
+      "Uporediti ledger termina sa unetim naplaćenim iznosom. Ako je iznos pogrešno ukucan, ispraviti ga; ako je novac vraćen izvan sistema, upisati odgovarajući `refund` zapis.",
+  },
 ] as const satisfies readonly IntegrityCheckDefinition[];
 
 export type IntegrityCheckKey = (typeof INTEGRITY_CHECKS)[number]["key"];

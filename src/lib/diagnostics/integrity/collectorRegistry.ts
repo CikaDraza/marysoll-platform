@@ -21,6 +21,7 @@ import { collectSeoHealth } from "./collectors/seoHealth";
 import { collectTenantOwnershipMissing } from "./collectors/tenantOwnershipMissing";
 import { collectPlatformOrphanOwners } from "./collectors/platformOrphanOwners";
 import { collectWebhookStuck } from "./collectors/webhookStuck";
+import { collectPaymentReconciliation } from "./collectors/paymentReconciliation";
 
 export const TENANT_INTEGRITY_COLLECTORS = {
   "client.identity.duplicates": collectDuplicates,
@@ -35,6 +36,7 @@ export const TENANT_INTEGRITY_COLLECTORS = {
   "seo.tenant.metadata": collectSeoHealth,
   "tenant.ownership.missing": collectTenantOwnershipMissing,
   "notifications.push.subscriptions": collectPushSubscriptions,
+  "payment.appointment.overpaid": collectPaymentReconciliation,
 } satisfies Record<IntegrityCheckKeyForScope<"tenant">, IntegrityCollector>;
 
 export const PLATFORM_INTEGRITY_COLLECTORS = {

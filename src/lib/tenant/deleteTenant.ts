@@ -30,6 +30,8 @@ import { SuperAdminChat } from "@/models/SuperAdminChat";
 import { EducationContent } from "@/models/EducationContent";
 import { ClientContentAssignment } from "@/models/ClientContentAssignment";
 import { WebhookEvent } from "@/models/WebhookEvent";
+import { PaymentIntent } from "@/models/PaymentIntent";
+import { PaymentLedger } from "@/models/PaymentLedger";
 import { deleteTenantBookingData } from "@/lib/tenant/bookingCascade";
 import { cancelPaddleSubscription } from "@/lib/paddle";
 
@@ -97,6 +99,8 @@ function tenantScopedModels() {
     // te zapise — isto pravilo kao za `Subscription`. Događaji kojima tenant
     // nikad nije razrešen (`tenantId: null`) ostaju: nisu ničiji podatak.
     ["WebhookEvent", WebhookEvent],
+    ["PaymentIntent", PaymentIntent],
+    ["PaymentLedger", PaymentLedger],
   ] as const;
 }
 
