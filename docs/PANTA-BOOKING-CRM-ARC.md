@@ -64,6 +64,21 @@ upisuje* pripada §2.1, i kad izgleda kao „samo prikaz".
 Isti mapper projektuje persistence `service.bookingIntake.enabled` u presentation
 `intakeEnabled` — vidi [intake](PANTA-SERVICE-INTAKE.md).
 
+**Nepotpun izbor se vidi NA dugmetu, ne posle klika.** Jedan uslov —
+`bookingSelectionIncomplete` u `widgetPresentation.ts` — koči sva dugmad
+potvrde, i traži sve četiri stvari: uslugu, varijantu (kad je usluga ima),
+datum i vreme.
+
+Ranije su postojala dva različita uslova pod istim imenom: dugme „Sledeće"
+(usluga sa zahtevom) tražilo je i datum i vreme, dok „Zakaži termin" nije — pa
+je na glavnom toku dugme izgledalo aktivno bez izabranog termina, a greška se
+otkrivala tek porukom posle klika. Poruke pri slanju su zadržane, ali su sada
+odbrana za slučaj da neko zaobiđe UI, ne prvi način da korisnica sazna da nešto
+fali.
+
+Odluke prikaza u tom fajlu su čiste funkcije namerno: testni stack je `node`
+bez DOM-a, pa se pravilo dokazuje direktno umesto regexom nad JSX-om.
+
 ## 3. Write putanje — stvarni status
 
 | Putanja | Ruta | Canonical resolver | Availability | Pricing snapshot |

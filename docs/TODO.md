@@ -156,6 +156,8 @@ Ovo se **ne** premešta u NEXT bez nove product odluke.
 
 | Šta | Kada |
 |---|---|
+| **Booking modal: „Cena na upit" za uslugu koja cenu ima** — varijantna usluga sa fiksnim varijantama je pre izbora tvrdila da je na upit, uz „0 min" i obećanje naknadne potvrde. Uvedeno `pendingSelection` ([cene §1](PANTA-BOOKING-PRICING.md)) | 2026-09-04, grana `fix/variant-price-pending-selection` |
+| **Booking modal: dugme aktivno bez datuma i vremena** — `selectionIncomplete` je na glavnom toku gledao samo uslugu i varijantu; ujedinjeno u `bookingSelectionIncomplete` ([ARC §2.2](PANTA-BOOKING-CRM-ARC.md)) | isto |
 | **Paddle webhook idempotencija** — `event_id` se nije čuvao, pa je ponovljen `subscription.canceled` obarao salon koji plaća na besplatan plan. Uz to: svežina potpisa, zaštita od prestizanja, `payments.webhook.stuck` integrity check | 2026-09-04, grana `fix/paddle-webhook-idempotency` |
 | **theme-1 dimenzije slika** — `next/image` je nosio veličinu prikaza umesto odnosa stranica; uz to `preload` za LCP element | 2026-09-03 |
 

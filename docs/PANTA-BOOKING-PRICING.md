@@ -13,6 +13,30 @@
 `price || 0` je **zabranjen obrazac** u poslovnoj logici. Nula bi postala
 činjenica i termin na upit izgledao kao besplatan u statistici i loyalty-ju.
 
+### `null` ima DVA različita razloga
+
+Ovo je bilo previđeno i proizvelo je grešku u prikazu: „cena se ne zna" nije
+jedna činjenica nego dve, i korisnici ih čitaju sasvim drugačije.
+
+    na upit         salon tek treba da javi cenu       → „Cena na upit"
+    nije izabrano   obavezan izbor još nije napravljen → prikaz ĆUTI („— RSD")
+
+Usluga sa varijantama koje SVE imaju fiksnu cenu **cenu ima** — samo se ne zna
+koja dok se varijanta ne označi. Prikazivati joj „Cena na upit" znači tvrditi
+nešto neistinito o cenovniku salona.
+
+`estimateServicePrice` zato uz `unknown` vraća i **`pendingSelection`**: `true`
+znači „čeka se izbor", ne „na upit". Prikaz tada ne pokazuje ni iznos ni
+trajanje (`— RSD`, `— min`) i **ne** ispisuje „Konačna cena biće potvrđena
+naknadno" — jer neće biti potvrđena naknadno, već je u cenovniku.
+
+**Izuzetak:** kad su SVE varijante na upit, ishod ne zavisi od izbora, pa je
+„Cena na upit" tačna tvrdnja već pre označavanja i prikazuje se odmah.
+
+    sve varijante fiksne     pre izbora  — RSD          posle  cena varijante
+    sve varijante na upit    pre izbora  Cena na upit   posle  Cena na upit
+    mešano                   pre izbora  — RSD          posle  zavisi od izbora
+
 ## 2. Tri režima cene
 
 `priceMode` je nezavisan od `type` (`single` / `variant` / `group`).
@@ -22,6 +46,8 @@
 | `fixed` | tačan zbir | `2.700,00 RSD` |
 | `from` | brojiv minimum | `od 2.700,00 RSD` |
 | `on_request` | **`null`** | `Cena na upit` + „Konačna cena biće potvrđena naknadno" |
+
+> `null` bez izabrane varijante NIJE `on_request` — vidi §1.
 
 **Nepoznata osnovna cena truje ceo zbir.** `UNKNOWN + 700 = UNKNOWN`. Usluga
 na upit sa dodatkom od 700 nije „od 700 RSD" — to bi izgledalo kao da termin
