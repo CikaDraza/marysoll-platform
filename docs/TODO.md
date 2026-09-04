@@ -18,7 +18,8 @@ EDUCATION    🟡  Edu pilot closure → E1 → E2 → E3 → E4 → E5
 BEAUTY       ✅  T1-0 → T1-4 prihvaćeno
              🟡  Marysoll browser acceptance čeka za T1-1 → T1-3 rezove
 NEXT         →   E1 Public Education discovery
-DEFERRED     →   T1-5 · T3 cutover · legacy HMAC/marketplace write ·
+DEFERRED     →   T1-5 · Payments (spec zaključan) · T3 cutover ·
+                 legacy HMAC/marketplace write ·
                  Consultation / Questionnaire / Care · FUTURE H1–H4/F4–F7
 ```
 
@@ -140,7 +141,8 @@ Ovo se **ne** premešta u NEXT bez nove product odluke.
 
 | # | Šta | Zašto čeka |
 |---|---|---|
-| **T1-5** | Salonski paketi / entitlement / plaćanje klijentkinje (`ClientPackage`) | Nije tenant Subscription i ne uvodi se payment provider dok ne postoji stvarna potreba. `Service.subscription` opisuje ponudu, ne kupovinu. **Završetak T1-4 ga NE promoviše u NEXT** — points-shop nagrada je vaučer, ne kupljen paket. [Client 360 §K](PANTA-CLIENT-360.md) |
+| **T1-5** | Salonski paketi / entitlement / plaćanje klijentkinje (`ClientPackage`) | Nije tenant Subscription i ne uvodi se payment provider dok ne postoji stvarna potreba. `Service.subscription` opisuje ponudu, ne kupovinu. **Završetak T1-4 ga NE promoviše u NEXT** — points-shop nagrada je vaučer, ne kupljen paket. Sada ima pun ugovor: [Payments §5.4](PANTA-PAYMENTS-ENGINE.md) · [Client 360 §K](PANTA-CLIENT-360.md) |
+| **Payments — naplata klijentkinje** | Depozit, online plaćanje usluge, paketi/pretplate klijenata, ledger i isplate salonima | Specifikacija je zaključana ([PANTA-PAYMENTS-ENGINE.md](PANTA-PAYMENTS-ENGINE.md)); Faza 0 (trajnost webhook prijema) je u kodu. Dalje čeka odgovore koji nisu tehnički: sme li Marysoll kao MoR naplaćivati tuđu uslugu, fiskalizacija avansa, i izbor provajdera — **Paddle/Lemon nisu kandidati za usluge uživo** |
 | **T3 cutover** | `BookingReservation` / day-lock kao production write authority | Preduslov je occupancy blocker iz [T3 §4.1](PANTA-T3-BOOKING-ENGINE.md); dark core nije live authority pa ne blokira beauty rezove |
 | **Legacy write ulazi** | `POST /api/booking` (HMAC gost) i `POST /api/marketplace/appointments` kroz canonical seam | Jedini ulazi koji uzimaju `duration` iz zahteva i cenu `basePrice ?? 0`, bez pricing snapshot-a. Nema aktivnih korisnika tih putanja koji bi to učinili hitnim; ide uz marketplace/platform luk. [ARC §3](PANTA-BOOKING-CRM-ARC.md) |
 | **`cleanup:stale-group-items`** | Mrtav `services[]` niz na 2 usluge (marysoll, anja) | Eksplicitno odloženo. Skripta je napisana i idempotentna; pokreće se kad za to bude prilika, ne kao zaseban rez |
@@ -150,6 +152,13 @@ Ovo se **ne** premešta u NEXT bez nove product odluke.
 | Brisanje theme-3/4/6 | ~7.300 linija, 66 fajlova; baza potvrđena prazna | Preduslov: `Theme3GalleryMasonry` mora u `shared/` jer ga theme-1 i theme-2 uvoze |
 | `chargedAmount` na otkazanom, naknada, refund | Nema payment/refund lifecycle-a | Bez engine-a nema smisla projektovati hipotetičku finansijsku politiku |
 | Loyalty Phase 3 (tiers, rođendan, AI nagrade) | Redemption je gotov (T1-4); ostaje referral live QA pre nove faze | [Loyalty](PANTA-LOYALTY-ENGINE.md) |
+
+## Zatvoreno van reza
+
+| Šta | Kada |
+|---|---|
+| **Paddle webhook idempotencija** — `event_id` se nije čuvao, pa je ponovljen `subscription.canceled` obarao salon koji plaća na besplatan plan. Uz to: svežina potpisa, zaštita od prestizanja, `payments.webhook.stuck` integrity check | 2026-09-04, grana `fix/paddle-webhook-idempotency` |
+| **theme-1 dimenzije slika** — `next/image` je nosio veličinu prikaza umesto odnosa stranica; uz to `preload` za LCP element | 2026-09-03 |
 
 ## Poznat dug — ne menja redosled
 

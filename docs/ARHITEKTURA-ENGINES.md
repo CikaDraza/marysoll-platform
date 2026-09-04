@@ -163,6 +163,7 @@ ruta. Theme-9 do tada ostaje read-only preview.
 | **Media Engine** | Images, Videos, Compression, CDN, Optimization, Formats, Responsive, Gallery, Storage, Animations (Framer/Spline/Canva) | DA |
 | **Notification Engine** | Email, SMS, Push, WhatsApp, Webhook, Slack, Discord. Booking samo kaže "Send reminder" — engine odlučuje kako. | DA |
 | **Identity Engine** | Users, Roles, Permissions, Tenants, Organizations, Sessions, OAuth, Audit. Koriste ga svi engine-i. | DA |
+| **Payments Engine** ⬜ **specifikacija, bez koda** | Naplata klijentkinje: depozit, online plaćanje usluge, paketi/pretplate klijenata, ledger i isplate salonima. Danas postoji samo naplata pretplate SALONA (Paddle) i trajnost webhook prijema. Ugovor: [PANTA-PAYMENTS-ENGINE.md](PANTA-PAYMENTS-ENGINE.md). | DA — svaki marketplace/booking proizvod |
 | **Loyalty Engine** ✅ **V1 + Referral 2b u kodu; live QA čeka** | Points/Currency, streaks, rewards, vouchers, referral/share i QR check-in postoje. Tiers, birthday/personalized/AI rewards ostaju Phase 3. Današnji `AdminGrowthStudio` je legacy naziv Loyalty UI-ja; budući Growth Studio je zaseban composition surface za distribuciju i rast. Current-state ugovor: [PANTA-LOYALTY-ENGINE.md](PANTA-LOYALTY-ENGINE.md). | **DA** — retail/beauty/fitness/svaki repeat-business |
 
 T2B capability resolver **nije novi engine**. To je platformski sloj koji spaja
@@ -380,8 +381,10 @@ konkretan salon-potreba.
 8. ✅ **T3 Booking CORE je implementiran kao dark core:** kanonska rezervacija,
    day-lock, idempotentni retry, receipt/outbox i atomic reserve postoje sa
    prolazećim ReplSet testovima. Nijedna ruta ih ne poziva.
-9. **SLEDEĆE: T1-4 Loyalty Redemption & Appointment Checkout** — vodi se u
-   [TODO.md](TODO.md).
+9. ✅ **T1-4 Loyalty Redemption & Appointment Checkout je prihvaćen** (uz
+   hardening i F rezove). Sledeći product rez bira vlasnik proizvoda; naplata
+   klijentkinje je specifikovana u
+   [PANTA-PAYMENTS-ENGINE.md](PANTA-PAYMENTS-ENGINE.md) i ostaje odložena.
 10. **Odloženo — T3 cutover:** migrirati Appointment occupancy/lifecycle ulaze i
     razrešiti Slot write ulaze; architecture i concurrency testovi su release
     gate. Preduslov je occupancy blocker iz

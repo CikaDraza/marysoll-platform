@@ -227,3 +227,7 @@ samo opisuje šta salon nudi; nije dokaz da je klijentkinja nešto kupila. Tenan
 Budući `ClientPackage` mora eksplicitno nositi: klijentkinju, uslugu,
 kupljene/iskorišćene/preostale tretmane, plaćen iznos, važenje, status i istoriju
 potrošnje kroz termine.
+
+Pun ugovor (uključujući odluku da paket **kuje vaučere** umesto da uvodi novu
+pogodnost na terminu, čime `Appointment` ne dobija nijedno novo polje):
+[PANTA-PAYMENTS-ENGINE.md §5.4](PANTA-PAYMENTS-ENGINE.md).

@@ -181,6 +181,13 @@ termin doneo" i važi pre izvršenja.
 
 Refund semantika ne postoji; payment engine nije napravljen.
 
+> **Kada novac stigne online** (specifikacija:
+> [PANTA-PAYMENTS-ENGINE.md](PANTA-PAYMENTS-ENGINE.md)), `chargedAmount` ostaje
+> ono što jeste — *koliko je termin vredeo*. Uplate se vode u zasebnom ledgeru
+> koji odgovara na drugo pitanje — *kako je novac stigao*. Nijedan se ne izvodi
+> iz drugog; veže ih jedna provera: **`chargedAmount` ≥ neto naplaćeno online**.
+> Plaćanje nikad ne piše `pricing.*`.
+
 ## 6. Server je autoritet
 
 `resolveBookingRequest` je jedini seam:
