@@ -1,0 +1,9 @@
+import { PlusIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon } from "@heroicons/react/24/outline";
+import type { ChecklistBlock } from "@/lib/content/schemas/landing-blocks";
+import { createContentBlockId } from "@/lib/content/editor/blockFactories";
+import { Field, inputClassName } from "../EditorFields";
+
+export function ChecklistBlockEditor({ block, onChange }: { block: ChecklistBlock; onChange: (block: ChecklistBlock) => void }) {
+  const move = (index: number, offset: -1 | 1) => { const items = [...block.items]; const target = index + offset; if (target < 0 || target >= items.length) return; [items[index], items[target]] = [items[target], items[index]]; onChange({ ...block, items }); };
+  return <><Field label="Naslov (opciono)" value={block.title ?? ""} onChange={(title) => onChange({ ...block, title })} />{block.items.map((item, index) => <div key={item.id} className="flex items-center gap-1"><input aria-label={`Stavka ${index + 1}`} className={inputClassName} value={item.text} onChange={(event) => onChange({ ...block, items: block.items.map((current) => current.id === item.id ? { ...current, text: event.target.value } : current) })} /><button type="button" aria-label="Pomeri gore" disabled={index === 0} onClick={() => move(index, -1)}><ArrowUpIcon className="h-4 w-4" /></button><button type="button" aria-label="Pomeri dole" disabled={index === block.items.length - 1} onClick={() => move(index, 1)}><ArrowDownIcon className="h-4 w-4" /></button><button type="button" aria-label="Obriši stavku" className="text-red-600" onClick={() => onChange({ ...block, items: block.items.filter(({ id }) => id !== item.id) })}><TrashIcon className="h-4 w-4" /></button></div>)}<button type="button" className="inline-flex items-center gap-1 rounded border px-3 py-2 text-xs font-semibold" onClick={() => onChange({ ...block, items: [...block.items, { id: createContentBlockId(), text: "" }] })}><PlusIcon className="h-4 w-4" /> Dodaj korak</button></>;
+}

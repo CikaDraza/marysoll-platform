@@ -4,6 +4,8 @@
  * app/dashboard/page.tsx (Faza 4c) da tab komponente ne importuju stranicu.
  */
 import type { IService } from "@/types";
+import { minServicePrice, isPriceFrom } from "@/helpers/servicePrice";
+import { PRICE_ON_REQUEST_LABEL } from "@/helpers/formatPrice";
 import type { LandingTheme } from "@/types";
 import { availableThemesForTenant } from "@/lib/platform/theme-access";
 
@@ -146,14 +148,17 @@ export interface SeoAnalysisResult {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+/**
+ * Cena u admin listi usluga. Prati ISTU centralnu semantiku kao javni cenovnik
+ * i BookingWidget — ranije je ovde stajalo `variants[0].price`, dakle PRVA
+ * varijanta a ne najniža, i bez provere „na upit“, pa je admin umeo da pokaže
+ * drugi broj nego Marijin sajt.
+ */
 export function servicePrice(s: IService): string {
-  if (s.type === "single")
-    return s.basePrice ? `${s.basePrice.toLocaleString("sr-RS")} RSD` : "—";
-  if (s.type === "variant")
-    return s.variants?.[0]?.price
-      ? `od ${s.variants[0].price.toLocaleString("sr-RS")} RSD`
-      : "—";
-  return "Paket";
+  const min = minServicePrice(s);
+  if (min == null) return PRICE_ON_REQUEST_LABEL;
+  const amount = `${min.toLocaleString("sr-RS")} RSD`;
+  return isPriceFrom(s) ? `od ${amount}` : amount;
 }
 
 export function SeoBadge({ score }: { score: number }) {

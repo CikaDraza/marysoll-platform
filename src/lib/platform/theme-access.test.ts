@@ -6,11 +6,12 @@ import {
 
 const LASH_ROOM = "the-lash-room-by-anja";
 const MARINA = "marina-stanisavljevic-skincare-edukacija";
+const MARYSOLL = "marysoll-makeup-nails";
 
 describe("Theme Access Policy", () => {
-  it("keeps themes 1–7 available to every tenant", () => {
+  it("keeps themes 2–7 available to every tenant", () => {
+    // theme-1 je od 2026-09-02 privatna za Marysoll (product odluka).
     for (const theme of [
-      "theme-1",
       "theme-2",
       "theme-3",
       "theme-4",
@@ -50,7 +51,6 @@ describe("Theme Access Policy", () => {
 
   it("projects only the private theme each approved tenant may use", () => {
     expect(availableThemesForTenant("ordinary-salon")).toEqual([
-      "theme-1",
       "theme-2",
       "theme-3",
       "theme-4",
@@ -62,5 +62,16 @@ describe("Theme Access Policy", () => {
     expect(availableThemesForTenant(LASH_ROOM)).not.toContain("theme-9");
     expect(availableThemesForTenant(MARINA)).toContain("theme-9");
     expect(availableThemesForTenant(MARINA)).not.toContain("theme-8");
+  });
+
+  it("allows Theme 1 only to Marysoll", () => {
+    expect(canTenantUseTheme({ theme: "theme-1", tenantSlug: MARYSOLL })).toBe(
+      true,
+    );
+    expect(
+      canTenantUseTheme({ theme: "theme-1", tenantSlug: "ordinary-salon" }),
+    ).toBe(false);
+    expect(availableThemesForTenant(MARYSOLL)).toContain("theme-1");
+    expect(availableThemesForTenant("ordinary-salon")).not.toContain("theme-1");
   });
 });

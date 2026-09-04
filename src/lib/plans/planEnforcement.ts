@@ -19,7 +19,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Subscription } from "@/models/Subscription";
 import { Tenant } from "@/models/Tenant";
 import {
-  planHasFeature,
+  getPlanFeatures,
   resolveActiveFeatureOverrides,
   resolveEffectivePlan,
 } from "@/lib/plans/planFeatures";
@@ -44,31 +44,8 @@ export async function requireFeature(
   }
 
   try {
-    await connectToDB();
-
-    const [subscriptionRaw, tenantRaw] = await Promise.all([
-      Subscription.findOne({ tenantId }).lean(),
-      Tenant.findById(tenantId).select("plan paid planExpiresAt").lean(),
-    ]);
-    const subscription = subscriptionRaw as {
-      plan?: PlanName;
-      status?: string;
-      billingProvider?: string;
-      currentPeriodEnd?: Date | string;
-      featureOverrides?: Partial<PlanFeatures>;
-      overrideExpiresAt?: Date | string;
-    } | null;
-    const tenant = tenantRaw as {
-      plan?: PlanName;
-      paid?: boolean;
-      planExpiresAt?: Date | string | null;
-    } | null;
-
-    const plan: PlanName = resolveEffectivePlan(subscription, tenant);
-
-    const overrides = resolveActiveFeatureOverrides(subscription);
-
-    const allowed = planHasFeature(plan, feature, overrides);
+    const { plan, features } = await resolveTenantPlanFeatures(tenantId);
+    const allowed = Boolean(features[feature]);
 
     if (!allowed) {
       return NextResponse.json(
@@ -94,7 +71,40 @@ export async function requireFeature(
   }
 }
 
+/** Jedan DB read za sve feature odluke u složenom server read-modelu. */
+export async function resolveTenantPlanFeatures(
+  tenantId: string,
+): Promise<{ plan: PlanName; features: PlanFeatures }> {
+  await connectToDB();
+  const [subscriptionRaw, tenantRaw] = await Promise.all([
+    Subscription.findOne({ tenantId }).lean(),
+    Tenant.findById(tenantId).select("plan paid planExpiresAt").lean(),
+  ]);
+  const subscription = subscriptionRaw as {
+    plan?: PlanName;
+    status?: string;
+    billingProvider?: string;
+    currentPeriodEnd?: Date | string;
+    featureOverrides?: Partial<PlanFeatures>;
+    overrideExpiresAt?: Date | string;
+  } | null;
+  const tenant = tenantRaw as {
+    plan?: PlanName;
+    paid?: boolean;
+    planExpiresAt?: Date | string | null;
+  } | null;
+  const plan = resolveEffectivePlan(subscription, tenant);
+  return {
+    plan,
+    features: getPlanFeatures(
+      plan,
+      resolveActiveFeatureOverrides(subscription),
+    ),
+  };
+}
+
 const UPGRADE_MESSAGES: Partial<Record<keyof PlanFeatures, string>> = {
+  clientInsights: "Nadogradite na Kiki plan za napredni Client 360 uvid",
   newsletterCampaigns: "Nadogradite na Claudia plan za kreiranje kampanja",
   newsletterLanding: "Nadogradite na Claudia plan za landing stranice",
   aiEmailTemplates: "Nadogradite na Kiki plan za AI generisanje email templejta",

@@ -1,5 +1,6 @@
 import React from "react";
 import { useStatistics } from "@/hooks/useStatistics";
+import { formatStatisticsCurrency } from "./statisticsFormatters";
 
 interface StatsTableProps {
   month: number;
@@ -42,7 +43,7 @@ export const StatsTable: React.FC<StatsTableProps> = ({ month, year }) => {
     );
   }
 
-  if (!global || !services) {
+  if (!services.length && !topClients.length && !topServices.length) {
     return (
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6">
         <div className="text-gray-500 dark:text-gray-200 text-center py-4">
@@ -51,13 +52,6 @@ export const StatsTable: React.FC<StatsTableProps> = ({ month, year }) => {
       </div>
     );
   }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("sr-RS", {
-      style: "currency",
-      currency: "RSD",
-    }).format(amount);
-  };
 
   const sortedServices = [...services].sort(
     (a: { count: number }, b: { count: number }) => b.count - a.count,
@@ -231,16 +225,27 @@ export const StatsTable: React.FC<StatsTableProps> = ({ month, year }) => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
                       {service.count}
                     </td>
+                    {/* `revenue: null` = nijedan termin te usluge nema poznatu
+                        cenu. 0 RSD bi tvrdilo da je usluga besplatna. */}
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
-                      {formatCurrency(service.revenue)}
+                      {service.revenue == null ? (
+                        <span className="text-gray-400 italic">
+                          Cena nije definisana
+                        </span>
+                      ) : (
+                        formatStatisticsCurrency(service.revenue)
+                      )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
-                      {totalAppointments > 0
-                        ? `${(
-                            (service.count / totalAppointments) *
-                            100
-                          ).toFixed(1)}%`
-                        : "0%"}
+                      {service.revenue == null ? (
+                        <span className="text-gray-400 italic">
+                          Udeo nepoznat
+                        </span>
+                      ) : totalAppointments > 0 ? (
+                        `${((service.count / totalAppointments) * 100).toFixed(1)}%`
+                      ) : (
+                        "0%"
+                      )}
                     </td>
                   </tr>
                 ))

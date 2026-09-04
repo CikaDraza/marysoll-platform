@@ -18,6 +18,7 @@ import type { TenantCapabilitySnapshot } from "@/types/tenant-capabilities";
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
 export type PanelTab =
+  | "Moj Prostor"
   | "Moji Termini"
   | "Zakazivanja"
   | "Nagrade"
@@ -30,6 +31,20 @@ export const PANEL_TABS: {
   label: string;
   icon: React.ReactNode;
 }[] = [
+  {
+    id: "Moj Prostor",
+    label: "Moj Prostor",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M6 3h9l3 3v15H6V3zM9 9h6M9 13h6M9 17h4M15 3v4h4"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+      </svg>
+    ),
+  },
   {
     id: "Moji Termini",
     label: "Moji Termini",

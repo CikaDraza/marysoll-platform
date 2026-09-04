@@ -28,7 +28,15 @@ function CallbackInner() {
 
     if (token) {
       // Sačuvaj token u localStorage ovog domena (admin.marysoll.com)
-      localStorage.setItem("token", decodeURIComponent(token));
+      const accessToken = decodeURIComponent(token);
+      localStorage.setItem("token", accessToken);
+      // Server layouts cannot read localStorage. Mirror the tenant access
+      // token into the same JS-readable, host-scoped cookie contract used by
+      // direct tenant login before navigating to a server-gated workspace.
+      const secure = window.location.protocol === "https:" ? "; Secure" : "";
+      document.cookie =
+        `tenant-access-token=${encodeURIComponent(accessToken)}` +
+        `; Max-Age=${30 * 24 * 60 * 60}; Path=/; SameSite=Lax${secure}`;
     }
 
     // Odmah preusmeri na cilj — token je spreman

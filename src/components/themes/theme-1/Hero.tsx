@@ -2,6 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { AnchorLink } from "../shared/AnchorLink";
+import { BookingCtaLink } from "../shared/BookingCtaLink";
 import { MapPinIcon, PhoneArrowUpRightIcon } from "@heroicons/react/24/outline";
 import type { SalonProfileData } from "@/types";
 import WhatsappIcon from "@/components/assets/icons/WhatsappIcon";
@@ -30,16 +31,14 @@ interface Props {
   };
 }
 
-const defaultHeroData = {
-  headline: "Kiki Kiss Beauty",
-  subheadline: "Kiki Kiss Beauty salon za makeup and nails",
-  whereWhatForWhom:
-    "Kiki Kiss Beauty je salon lepote u Beogradu specijalizovan za profesionalno šminkanje, oblikovanje obrva i dugotrajan manikir za sve prilike.",
-  CTA: {
-    text: "Zakaži termin",
-    href: "/termini",
-  },
-};
+/**
+ * Fallback SME biti samo neutralan ili iz podataka OVOG salona.
+ *
+ * Ovde je ranije stajao sadržaj drugog tenanta („Kiki Kiss Beauty", Beograd,
+ * njihove usluge). Salon bez unetog naslova prikazivao je tuđe ime kao svoje.
+ * Nedostatak sadržaja se rešava izostavljanjem sekcije, ne tuđim podatkom.
+ */
+const defaultCta = { text: "Zakaži termin", href: "/termini" };
 
 export function Theme1Hero({ salon, heroData, cta }: Props) {
   // WhatsApp: use explicit social link if set, otherwise derive from phone
@@ -54,12 +53,18 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
           aria-hidden="true"
           className="absolute inset-x-0 -lg:top-46 transform-gpu overflow-hidden"
         >
+          {/* `width`/`height` su INTRINSIC dimenzije fajla (odnos stranica),
+              ne željena veličina na ekranu — veličinu vodi CSS. Ovde je
+              stajalo 1920×1080, a sam SVG je 1440×1024: uz `h-auto` visina se
+              računala iz stvarnog odnosa (1365px) i nije se poklapala sa
+              deklarisanih 1080, pa je Next prijavljivao da je promenjena samo
+              jedna dimenzija. */}
           <Image
             src={"/assets/theme-1/bg-theme-hero-1.svg"}
-            width={1920}
-            height={1080}
-            alt={salon.description}
-            className="min-w-[1920px] h-full object-cover object-center"
+            width={1440}
+            height={1024}
+            alt=""
+            className="min-w-[1920px] h-auto object-cover object-center"
             preload={true}
           />
         </div>
@@ -68,11 +73,7 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
             <div className="relative text-center">
               <div className="py-32 lg:w-7xl mx-auto">
                 <h1 className="text-5xl lg:text-7xl text-center text-black font-bold">
-                  {heroData.headline
-                    ? heroData.headline
-                    : salon.name
-                      ? salon.name
-                      : defaultHeroData.headline}
+                  {heroData.headline || salon.name || ""}
                 </h1>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-8">
                   {/* first column on desktop, on mobile second column */}
@@ -106,12 +107,14 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                       )}
                     </div>
                     <div className="mt-10 flex gap-4 justify-between w-full lg:mx-0">
-                      <AnchorLink
-                        href={cta?.primary?.href || defaultHeroData.CTA.href}
+                      {/* Primarni CTA otvara BookingWidget na mestu; `href`
+                          ostaje fallback kad widget nije na strani. */}
+                      <BookingCtaLink
+                        href={cta?.primary?.href || defaultCta.href}
                         className="cursor-pointer flex-1 px-7 py-3 bg-(--primary-color) text-white font-semibold rounded-full hover:bg-(--primary-color)/90 transition text-sm"
                       >
-                        {cta?.primary?.text || defaultHeroData.CTA.text}
-                      </AnchorLink>
+                        {cta?.primary?.text || defaultCta.text}
+                      </BookingCtaLink>
                       <AnchorLink
                         href={cta?.secondary?.href || "/usluge"}
                         className="px-7 py-3 border border-black hover:border-(--secondary-color) text-black font-semibold rounded-full hover:bg-(--secondary-color) hover:text-white transition text-sm"
@@ -121,27 +124,33 @@ export function Theme1Hero({ salon, heroData, cta }: Props) {
                     </div>
                   </dl>
                   {/* second column on desktop, on mobile first column */}
+                  {/* Intrinsic 514×938 (ranije deklarisano 350×600 = veličina
+                      prikaza). Na mobilnom je CSS menjao samo širinu
+                      (280 ≠ 350), dok je visina ostajala 600 — tačno slučaj
+                      koji Next prijavljuje. Prikaz i dalje vodi CSS.
+
+                      `preload`: ovo je LCP element hero sekcije, dakle iznad
+                      preloma — bez njega se učitava lenjo i usporava LCP. */}
                   <Image
                     src={"/assets/theme-1/statue-makeup.png"}
-                    width={350}
-                    height={600}
+                    width={514}
+                    height={938}
                     alt={salon.description}
+                    preload={true}
                     className="order-2 lg:order-2 w-[280px] lg:w-[350px] h-[600px] object-contain mx-auto -mt-12"
                   />
                   {/* third column on desktop, on mobile third column */}
                   <div className="lg:-mt-16 order-1 lg:order-3 flex flex-col items-center justify-center lg:items-end">
-                    <p className="ml-4 mt-0 mb-4 lg:mb-8 lg:-mt-6 text-center lg:text-end text-gray-900">
-                      {heroData.subheadline
-                        ? heroData.subheadline
-                        : salon.description
-                          ? salon.description
-                          : defaultHeroData.subheadline}
-                    </p>
-                    <p className="ml-4 mt-0 mb-4 lg:mb-8 lg:-mt-6 text-center lg:text-end text-gray-900">
-                      {heroData.whereWhatForWhom
-                        ? heroData.whereWhatForWhom
-                        : defaultHeroData.whereWhatForWhom}
-                    </p>
+                    {(heroData.subheadline || salon.description) && (
+                      <p className="ml-4 mt-0 mb-4 lg:mb-8 lg:-mt-6 text-center lg:text-end text-gray-900">
+                        {heroData.subheadline || salon.description}
+                      </p>
+                    )}
+                    {heroData.whereWhatForWhom && (
+                      <p className="ml-4 mt-0 mb-4 lg:mb-8 lg:-mt-6 text-center lg:text-end text-gray-900">
+                        {heroData.whereWhatForWhom}
+                      </p>
+                    )}
                     <dt className="w-auto h-auto border rounded-2xl px-4 py-2 text-base/7 font-light border-black font-main-font text-left flex">
                       {salon.social?.instagram ? (
                         <Link

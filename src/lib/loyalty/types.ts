@@ -58,7 +58,12 @@ export interface LoyaltyConfigLean {
     referrerRewardPoints?: number;
   };
   milestones: Array<{ heartsRequired: number; reward: RewardSpec }>;
-  pointsShop: Array<{ costPoints: number; reward: RewardSpec }>;
+  /**
+   * Points shop: `id` je stabilan identitet ponude (T1-4) i jedini autoritet
+   * redemption-a. Opcion je samo zbog zatečenih dokumenata pre backfill-a —
+   * ponuda bez id-a se NE nudi za kupovinu.
+   */
+  pointsShop: Array<{ id?: string; costPoints: number; reward: RewardSpec }>;
   noShowPolicy: {
     mode: "none" | "streak_reset" | "hearts_penalty";
     heartsPenalty: number;

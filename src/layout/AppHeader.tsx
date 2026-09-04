@@ -8,11 +8,20 @@ import { NotificationBell } from "@/components/shared/NotificationBell";
 import { AuthStatusButton } from "@/components/auth/AuthStatusButton";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useTheme } from "@/context/ThemeContext";
+import { usePathname } from "next/navigation";
+import { useTenantCapabilities } from "@/hooks/useTenantCapabilities";
+import { resolveAdminWorkspaceNavigation } from "@/lib/platform/workspace-capabilities";
 
 const AppHeader: React.FC = () => {
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
   const tenant = useTenantAdmin();
   const { theme } = useTheme();
+  const pathname = usePathname();
+  const { data: capabilitySnapshot } = useTenantCapabilities();
+  const workspaces = resolveAdminWorkspaceNavigation(capabilitySnapshot);
+  const isEducationWorkspace =
+    pathname.startsWith("/education") ||
+    (!workspaces.salon && workspaces.education);
 
   const handleToggle = () => {
     if (typeof window !== "undefined" && window.innerWidth >= 1024) {
@@ -54,19 +63,47 @@ const AppHeader: React.FC = () => {
           )}
         </button>
 
-        {/* Salon name breadcrumb */}
+        {/* Active workspace breadcrumb */}
         <div className="hidden sm:flex items-center gap-2 text-sm">
           <span className="text-gray-400 dark:text-gray-600">/</span>
           <span className="font-semibold text-gray-800 dark:text-gray-200">
-            Admin panel
+            {isEducationWorkspace ? "Edu Centar" : "Salon"}
           </span>
         </div>
       </div>
 
       {/* Right: actions */}
       <div className="flex items-center gap-2">
+        {/* Javna Edukacija — isti položaj i uloga kao „Sajt Salona". */}
+        {isEducationWorkspace && salonUrl && (
+          <Link
+            href={`${salonUrl}/edukacija`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden sm:flex items-center gap-1.5 px-6 py-1.5 text-sm font-semibold text-violet-600 bg-violet-50 border border-violet-100 rounded-xl hover:bg-violet-100 dark:bg-violet-500/10 dark:border-violet-500/20 dark:text-violet-400 dark:hover:bg-violet-500/20 transition-colors"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+              <path
+                d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"
+                stroke="currentColor"
+                strokeWidth="2"
+              />
+            </svg>
+            Sajt Edukacije
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M7 17L17 7M17 7H7M17 7v10"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </Link>
+        )}
+
         {/* Salon website */}
-        {salonUrl && (
+        {!isEducationWorkspace && salonUrl && (
           <Link
             href={salonUrl}
             target="_blank"

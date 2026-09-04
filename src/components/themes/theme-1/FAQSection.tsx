@@ -1,31 +1,6 @@
 import Link from "next/link";
 
-const DEFAULT_FAQS = [
-  {
-    question: "Koliko traje profesionalno šminkanje?",
-    answer:
-      "Profesionalno šminkanje traje između 60 i 120 minuta, u zavisnosti od željenog izgleda.",
-  },
-  {
-    question: "Koliko ranije zakazati termin?",
-    answer: "Najbolje 12 do 24 sata ako ste u mogucnosti.",
-  },
-  {
-    question: "Da li je moguće online zakazivanje?",
-    answer:
-      "Naravno, najlakše vam je online i najsigurnije. Moze telefonom ili na mejl.",
-  },
-  {
-    question: "Koje proizvode koristite?",
-    answer:
-      "Najbolje proizvode u ponudi na svetu. Zato imam tako dobre rezultate.",
-  },
-  {
-    question: "Koliko traje manikir?",
-    answer:
-      "Trajanje manikira, dizajn, izlivanje, sredjivanje, velicina, sve to zavisi od zahteva i to moze da traje od 120 do 180 minuta.",
-  },
-];
+
 
 interface FaqItem {
   question: string;
@@ -47,8 +22,14 @@ export function Theme1FAQSection({
   supportText,
   supportEmail,
 }: Props) {
-  const faqs = items && items.length > 0 ? items : DEFAULT_FAQS;
-  const email = supportEmail || "podrska@kikikiss.beauty";
+  // Bez tenant FAQ sadržaja sekcija se ne prikazuje. Generička pitanja
+  // predstavljena kao odgovori salona su i dalje tvrdnja koju salon nije dao.
+  const faqs = items && items.length > 0 ? items : [];
+  if (faqs.length === 0) return null;
+
+  // Email SAMO iz stvarnog tenant podatka; ovde je ranije stajao
+  // `podrska@kikikiss.beauty` — adresa drugog salona.
+  const email = supportEmail || null;
   const support =
     supportText ||
     "Ne možete pronaći odgovor koji tražite? Obratite se našem timu za";
@@ -63,15 +44,18 @@ export function Theme1FAQSection({
           {subheadline && (
             <p className="mt-3 text-base text-gray-600">{subheadline}</p>
           )}
-          <p className="mt-6 text-lg/8 text-gray-600">
-            {support}{" "}
-            <Link
-              href={`mailto:${email}`}
-              className="text-(--primary-color) underline font-semibold"
-            >
-              korisničku podršku.
-            </Link>
-          </p>
+          {/* Poziv na podršku ima smisla samo ako salon ima svoju adresu. */}
+          {email && (
+            <p className="mt-6 text-lg/8 text-gray-600">
+              {support}{" "}
+              <Link
+                href={`mailto:${email}`}
+                className="text-(--primary-color) underline font-semibold"
+              >
+                korisničku podršku.
+              </Link>
+            </p>
+          )}
         </div>
         <ul role="list" className="grid gap-x-8 gap-y-6 col-span-2 sm:gap-y-8">
           {faqs.map((faq, i) => (

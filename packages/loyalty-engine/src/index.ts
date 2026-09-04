@@ -20,6 +20,19 @@ export { computeVoucherDiscount } from "./pricing";
 export { generateVoucherCode, VOUCHER_PREFIX_BY_ORIGIN } from "./codes";
 
 export type {
+  PointsShopOfferInput,
+  BenefitPricing,
+  PointsShopEligibility,
+} from "./redemption";
+export {
+  isVoucherApplicableToService,
+  computeBenefitPricing,
+  evaluatePointsShopOffer,
+  pointsShopIdempotencyKey,
+  UNKNOWN_BENEFIT_PRICING,
+} from "./redemption";
+
+export type {
   StreakState,
   StreakUpdateOptions,
   StreakUpdateResult,

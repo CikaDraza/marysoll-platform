@@ -17,52 +17,9 @@ import { Notification } from "@/models/Notification";
 import { Testimonial } from "@/models/Testimonial";
 import { AudienceContact } from "@/models/AudienceContact";
 import { Referral } from "@/models/Referral";
+import type { MergeAccountSummary, MergeMoves, MergePreview } from "@/types/loyalty-admin";
 
 const CLIENT_ROLES = ["USER", "GUEST"];
-
-export interface MergeAccountSummary {
-  _id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: string;
-  isRegistered: boolean;
-  status: string;
-  hearts: number;
-  points: number;
-  visits: number;
-  appointments: number;
-  vouchers: number;
-}
-
-export interface MergeMoves {
-  appointments: number;
-  ledgerEntries: number;
-  loyaltyEvents: number;
-  vouchersOwned: number;
-  vouchersGifted: number; // referral veze (pozvao prijateljicu)
-  referralsAsReferrer: number;
-  referralsAsReferred: number;
-  notifications: number;
-  testimonials: number;
-  audienceContacts: number;
-}
-
-export interface MergePreview {
-  allowed: boolean;
-  reason?: string;
-  source: MergeAccountSummary | null;
-  target: MergeAccountSummary | null;
-  after: {
-    hearts: number;
-    points: number;
-    visits: number;
-    appointments: number;
-    vouchers: number;
-  } | null;
-  moves: MergeMoves | null;
-  risks: string[];
-}
 
 interface UserLean {
   _id: Types.ObjectId;

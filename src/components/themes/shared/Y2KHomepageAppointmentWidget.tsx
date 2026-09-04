@@ -44,6 +44,7 @@ import type {
 } from "@/types";
 import { firstAvailableDate, widgetDay } from "@/lib/booking/widgetDay";
 import { useTheme8Modal } from "@/components/themes/theme-8/theme8ModalContext";
+import { useBookingLauncher } from "./BookingLauncher";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -314,6 +315,8 @@ interface Props {
   clientSlug?: string;
   salon: SalonProfileData;
   services: IService[];
+  /** true → ova instanca je već u launcher modalu; ne registruje se ponovo. */
+  inLauncherModal?: boolean;
 }
 
 type ViewMode = "week" | "day";
@@ -323,6 +326,7 @@ export default function Y2KHomepageAppointmentWidget({
   clientSlug,
   salon,
   services,
+  inLauncherModal = false,
 }: Props) {
   const { user, token } = useAuth();
   const isLoggedIn = !!user;
@@ -447,6 +451,29 @@ export default function Y2KHomepageAppointmentWidget({
       /* ignore */
     }
   }, [isLoggedIn, clientSlug]);
+
+
+  // ── Hero CTA „Zakaži odmah" ───────────────────────────────────────────────
+  // Registruje SAM kalendar da bi ga launcher podigao u modalu. Instanca koja
+  // se već renderuje UNUTAR tog modala (`inLauncherModal`) se ne prijavljuje —
+  // inače bi prepisala registraciju, pa bi je zatvaranje modala obrisalo.
+  //
+  // `salon` i `services` stižu iz server komponente, pa im je identitet
+  // stabilan kroz klijentske rendere; kad bi se ipak promenili, ponovna
+  // registracija je i tačno ponašanje — kalendar bi nosio nove podatke.
+  const { register } = useBookingLauncher();
+  useEffect(() => {
+    if (inLauncherModal) return;
+    return register(() => (
+      <Y2KHomepageAppointmentWidget
+        tenantSlug={tenantSlug}
+        clientSlug={clientSlug}
+        salon={salon}
+        services={services}
+        inLauncherModal
+      />
+    ));
+  }, [register, inLauncherModal, tenantSlug, clientSlug, salon, services]);
 
   // ── Slot click handler ─────────────────────────────────────────────────────
   const handleSlotClick = useCallback((date: string, time: string) => {

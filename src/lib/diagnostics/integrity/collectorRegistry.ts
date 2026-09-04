@@ -20,6 +20,7 @@ import { collectPushSubscriptions } from "./collectors/pushSubscriptions";
 import { collectSeoHealth } from "./collectors/seoHealth";
 import { collectTenantOwnershipMissing } from "./collectors/tenantOwnershipMissing";
 import { collectPlatformOrphanOwners } from "./collectors/platformOrphanOwners";
+import { collectWebhookStuck } from "./collectors/webhookStuck";
 
 export const TENANT_INTEGRITY_COLLECTORS = {
   "client.identity.duplicates": collectDuplicates,
@@ -38,6 +39,7 @@ export const TENANT_INTEGRITY_COLLECTORS = {
 
 export const PLATFORM_INTEGRITY_COLLECTORS = {
   "tenant.ownership.orphanAccount": collectPlatformOrphanOwners,
+  "payments.webhook.stuck": collectWebhookStuck,
 } satisfies Record<
   IntegrityCheckKeyForScope<"platform">,
   PlatformIntegrityCollector

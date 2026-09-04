@@ -7,6 +7,7 @@ import { verifySignature } from "@/lib/middleware/verifySignature";
 import { checkRateLimit } from "@/lib/middleware/rateLimiter";
 import { getDistanceKm } from "@/lib/utils/distance";
 import { buildCityRegex } from "@/lib/utils/cityMatch";
+import { normalizePriceMode } from "@/helpers/formatPrice";
 
 export async function GET(req: NextRequest) {
   const verify = verifySignature(req, "");
@@ -74,7 +75,7 @@ export async function GET(req: NextRequest) {
               category: String(r.category ?? ""),
               duration: r.duration != null ? Number(r.duration) : null,
               price: r.basePrice != null ? Number(r.basePrice) : null,
-              priceMode: r.priceMode === "on_request" ? "on_request" : "fixed",
+              priceMode: normalizePriceMode(r.priceMode),
             };
           }),
         };

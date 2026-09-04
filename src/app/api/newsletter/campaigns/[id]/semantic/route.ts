@@ -56,6 +56,20 @@ export async function PATCH(
 
     const { id } = await context.params;
     const payload = await request.json();
+
+    // Content body writes belong exclusively to the validated save/publish
+    // routes. Keeping this rejection explicit prevents a legacy caller from
+    // silently believing that an unvalidated layout was persisted here.
+    if (payload.landingPage?.layout !== undefined) {
+      return NextResponse.json(
+        {
+          error: "Landing layout se čuva kroz Content Composer save rutu",
+          code: "LANDING_LAYOUT_WRITE_NOT_ALLOWED",
+        },
+        { status: 400 },
+      );
+    }
+
     const landingSlug = normalizeNewsletterLandingSlug(payload.landingPage?.slug);
     const landingAudience = normalizeEditorialAudience(
       payload.landingPage?.audience ??
@@ -69,28 +83,29 @@ export async function PATCH(
 
     const campaignId = id;
 
+    const updates: Record<string, unknown> = {};
+    if (payload.campaignType) updates.campaignType = payload.campaignType;
+    if (landingSlug) {
+      updates.ctaSlug = landingSlug;
+      updates["landingPage.slug"] = landingSlug;
+    }
+    if (payload.semanticContent) {
+      updates.semanticContent = {
+        ...payload.semanticContent,
+        status: payload.semanticContent.status ?? "draft",
+      };
+    }
+    if (payload.landingPage) {
+      updates["landingPage.audience"] = landingAudience;
+      updates["landingPage.editorialCategory"] = landingEditorialCategory;
+      if (typeof payload.landingPage.enabled === "boolean") {
+        updates["landingPage.enabled"] = payload.landingPage.enabled;
+      }
+    }
+
     const campaign = await NewsletterCampaign.findOneAndUpdate(
       { _id: campaignId, ...newsletterScopeFilter(newsletterScope) },
-      {
-        ...(payload.campaignType && { campaignType: payload.campaignType }),
-        ...(landingSlug && {
-          ctaSlug: landingSlug,
-        }),
-        ...(payload.semanticContent && {
-          semanticContent: {
-            ...payload.semanticContent,
-            status: payload.semanticContent.status ?? "draft",
-          },
-        }),
-        ...(payload.landingPage && {
-          landingPage: {
-            ...payload.landingPage,
-            slug: landingSlug,
-            audience: landingAudience,
-            editorialCategory: landingEditorialCategory,
-          },
-        }),
-      },
+      { $set: updates },
       { new: true },
     );
 

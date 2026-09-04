@@ -64,7 +64,7 @@ export function Theme3ImageGenerationSection() {
               alt="AI generated"
               width={400}
               height={400}
-              className="rounded-2xl max-h-96 object-contain"
+              className="rounded-2xl max-h-96 w-auto object-contain"
             />
           ) : (
             <p className="text-[#C0B0A8] text-sm">

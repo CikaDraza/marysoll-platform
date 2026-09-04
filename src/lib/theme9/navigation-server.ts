@@ -22,6 +22,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { NewsletterCampaign } from "@/models/NewsletterCampaign";
 import { Tenant } from "@/models/Tenant";
 import { publishedBlogFilter } from "@/lib/tenant/blogPosts";
+import { EducationContent } from "@/models/EducationContent";
 import { resolveTenantCapability } from "@/lib/platform/capabilities-server";
 import {
   EDUCATION_ROUTE_AVAILABLE,
@@ -55,6 +56,28 @@ async function hasPublishedArticles(tenantId: unknown): Promise<boolean> {
   return found !== null;
 }
 
+/**
+ * Ima li tenant bar jedan objavljen, javno OTKRIVEN Education sadržaj
+ * (`public` ili `gated`).
+ *
+ * Čita `publishedSnapshot`, isti izvor koji koristi javna `/edukacija` — nav ne
+ * sme tvrditi da sadržaja ima tamo gde ga strana neće prikazati. Radna kopija
+ * se namerno ne gleda: nesačuvan ili neobjavljen tekst nije javna površina.
+ */
+async function hasPublishedEducation(tenantId: unknown): Promise<boolean> {
+  const found = await EducationContent.exists({
+    tenantId,
+    $or: [
+      { "publishedSnapshot.accessMode": { $in: ["public", "gated"] } },
+      {
+        "publishedSnapshot.accessMode": { $exists: false },
+        "publishedSnapshot.visibility": "public",
+      },
+    ],
+  });
+  return found !== null;
+}
+
 export interface Theme9EducationFactsInput {
   /** Kad ga pozivalac već ima — bez dodatnog upita nad `Tenant`. */
   tenantId?: unknown;
@@ -81,17 +104,24 @@ export async function resolveTheme9EducationFacts(
       (input.tenantSlug ? await tenantIdBySlug(input.tenantSlug) : null);
     if (!tenantId) return NO_EDUCATION_SURFACE;
 
-    // Redosled uslova je isti kao u `resolveEducationHref()`: dok rute nema,
-    // capability ne može ništa da promeni, pa se ni ne pita.
+    // Capability se pita samo kada ruta postoji; inače ne bi mogla ništa da
+    // promeni. Blog činjenica se traži nezavisno — salon koji uključi Edu
+    // Centar ne sme izgubiti svoj blog link.
     const capabilityEnabled = EDUCATION_ROUTE_AVAILABLE
       ? ((await resolveTenantCapability(String(tenantId), "education.catalog"))
           ?.enabled ?? false)
       : false;
 
+    const [blogPosts, educationPosts] = await Promise.all([
+      hasPublishedArticles(tenantId),
+      capabilityEnabled ? hasPublishedEducation(tenantId) : false,
+    ]);
+
     return {
       routeAvailable: EDUCATION_ROUTE_AVAILABLE,
       capabilityEnabled,
-      hasPublishedArticles: await hasPublishedArticles(tenantId),
+      hasPublishedArticles: blogPosts,
+      hasPublishedEducation: educationPosts,
     };
   } catch (error: unknown) {
     console.error("[theme9 nav] Education facts lookup failed:", error);

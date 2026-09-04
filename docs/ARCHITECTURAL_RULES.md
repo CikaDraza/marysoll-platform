@@ -43,7 +43,53 @@ Code must be strictly segregated into designated operational layers:
 - **Parent UI components must be Server-Side Rendered (SSR) / Server Components by default.**
 - Keep the interactive Client Component tree as shallow as possible. Use `"use client"` only at the leaf nodes where user interaction or browser APIs are required.
 
-### 3.3 Routing & Middleware
+### 3.3 Tenant → Workspace → Presentation (zaključano 2026-08-29)
+
+Ovo je glavno pravilo platforme i nadjačava svaku ad-hoc odluku o tome „gde
+novi biznis ide“.
+
+```text
+TENANT
+= jedan biznis / brend / domen / poslovni identitet
+
+        ↓ može imati
+
+WORKSPACES
+├── Salon
+└── Edu Centar
+
+        ↓ svaki public surface kasnije može imati
+
+PRESENTATION
+├── Salon presentation/theme
+└── Education presentation/theme
+```
+
+Posledice koje su obavezujuće (revidirano 2026-09-04):
+
+- **CURRENT/legacy transition:** Salon + Edu može biti jedan tenant sa dva
+  capability workspace-a; postojeće „Aktiviraj Edu Centar“ zato i dalje menja
+  capability state istog `Tenant`-a. Ovo čuva pilot i nije obrazac za novi UX.
+- **TARGET:** Salon i Edu su odvojeni business workspace/tenant-i, jer
+  predstavljaju odvojene javne proizvode, sajtove i domene. Jedan `AuthUser`
+  poseduje/pripada oba; ne pravi se drugi login sa istim mejlom.
+- **Novi business workspace je tenant boundary.** H1–H4 iz canonical Edu plana
+  uvode multi-workspace identity, registraciju bez hybrid izbora i eksplicitnu
+  migraciju postojećih hybrid podataka.
+- **Workspace nije prezentacija.** Admin workspace može postojati pre nego što
+  taj vertikal ima ijedan javni surface; javna prezentacija je zasebna release
+  odluka po workspace-u.
+- **Prezentacija prati business workspace.** U CURRENT transition-u površine su
+  odvojene unutar tenant-a; u TARGET-u Salon i Education imaju zasebne tenant,
+  site, theme/branding i domain granice.
+- **Tema/prezentacija NIKADA nije autoritet pristupa.** Šta javnost sme da
+  otkrije odlučuje režim pristupa sadržaja, a ko sme da pročita zaštićeno telo
+  odlučuje serverski entitlement — oboje pre nego što prezentacija dobije ijedan
+  podatak. Sakrivanje u UI-ju nije zaštita; neautorizovan odgovor ne sme sadržati
+  zaštićeno telo. Ugovor:
+  [PANTA-EDU-CENTAR-ARC.md § Pristup sadržaju](PANTA-EDU-CENTAR-ARC.md#pristup-sadržaju--public--gated--private-zaključano-2026-08-29).
+
+### 3.4 Routing & Middleware
 
 - Following Next.js 16+ conventions, the global interception, rewriting, and middleware logic is handled via `proxy.ts` (replacing the deprecated `middleware.ts`).
 

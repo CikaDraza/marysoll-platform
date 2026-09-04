@@ -14,11 +14,24 @@ import "server-only";
  * Ovaj modul je sada jedina istina za oba toka.
  */
 import { Appointment } from "@/models/Appointment";
-import { Service } from "@/models/Service";
-import { canClientCancelAppointment } from "@/lib/appointments/cancellation";
+import {
+  resolveCanonicalSelection,
+  selectionFromAppointmentItem,
+  signatureOfAppointmentItem,
+} from "@/lib/appointments/canonicalSelection";
+import { BookingError } from "@/lib/booking/errors";
+import {
+  canClientEditAppointment,
+  clientAppointmentPhase,
+  isClientActionableStatus,
+} from "@/lib/appointments/cancellation";
 import { loadBookingProfile } from "@/lib/appointments/booking";
 import { createAppointmentNotification } from "@/lib/notificationService";
 import { loyaltyOnAppointmentStatusChange } from "@/lib/loyalty/hooks";
+import {
+  commitBenefitRecompute,
+  planBenefitRecompute,
+} from "@/lib/loyalty/redemption";
 import {
   checkManualSlotAvailability,
   overlapsAppointments,
@@ -27,11 +40,11 @@ import {
   isWithinWorkingHours,
   workingSlotsForDate,
 } from "@/helpers/parseWorkingHours";
-import type { IAppointmentService } from "@/types";
+import type { IAppointmentPricing, IAppointmentService } from "@/types";
 import type { PreferredContact } from "@/lib/contactRules";
-
-/** Statusi u kojima klijent više ne može ništa da menja. */
-const FINAL_STATUSES = ["appointment_cancelled", "completed", "no_show"];
+import { ACTIVE_APPOINTMENT_STATUS_FILTER } from "@/lib/appointments/occupancy";
+import { sanitizeAppointmentRequest } from "@/lib/appointments/intake";
+import type { IAppointmentRequest } from "@/types";
 
 /* Mongoose Appointment model nije generički tipovan, pa dokument opisujemo
    strukturno — samo polja koja tokovi čitaju/menjaju. */
@@ -47,11 +60,18 @@ interface AppointmentDoc {
   contactNote?: string;
   serviceName: string;
   services: IAppointmentService[];
+  pricing?: IAppointmentPricing | null;
   date: string;
   time: string;
   duration: number;
   note?: string;
+  request?: IAppointmentRequest;
   status: string;
+  appliedVoucherId?: { toString(): string } | null;
+  originalPrice?: number;
+  discountAmount?: number;
+  finalPrice?: number;
+  set(path: string, value: unknown): void;
   createdAt?: string | Date;
   cancellationWindowHours?: number;
   cancellationStatus?: string;
@@ -61,7 +81,8 @@ interface AppointmentDoc {
   noShowMarkedAt?: Date;
   noShowReason?: string;
   lastUpdatedBy?: string;
-  save(): Promise<unknown>;
+  markModified(path: string): void;
+  save(options?: { session?: import("mongoose").ClientSession }): Promise<unknown>;
 }
 
 function notificationPayload(appointment: AppointmentDoc) {
@@ -96,12 +117,32 @@ export type ClientCancelResult =
 export async function cancelAppointmentAsClient(
   appointment: AppointmentDoc,
 ): Promise<ClientCancelResult> {
-  if (FINAL_STATUSES.includes(appointment.status)) {
+  if (!isClientActionableStatus(appointment.status)) {
     return { ok: false, error: "Termin se više ne može otkazati." };
   }
 
   const now = new Date();
-  const canCancel = canClientCancelAppointment(appointment, now);
+  const phase = clientAppointmentPhase(appointment, now);
+
+  // Termin koji je već počeo klijent ne otkazuje — dva sata posle termina
+  // „Otkaži ipak" nije otkazivanje nego nedolazak, a to procenjuje salon.
+  if (phase === "started") {
+    return {
+      ok: false,
+      error: "Termin je već započeo. Za izmenu statusa kontaktirajte salon.",
+    };
+  }
+
+  // Fail-safe: bez pouzdanog početka termina nema autorizacije za upis.
+  if (phase === "unknown") {
+    return {
+      ok: false,
+      error:
+        "Termin nema ispravno vreme pa se ne može otkazati. Kontaktirajte salon.",
+    };
+  }
+
+  const canCancel = phase === "open";
   const previousStatus = appointment.status;
 
   appointment.lastUpdatedBy = "client";
@@ -129,12 +170,19 @@ export async function cancelAppointmentAsClient(
     appointment.status,
   );
 
-  if (canCancel) {
-    await createAppointmentNotification(notificationPayload(appointment), "cancelled", {
+  // Salon mora znati i za kasno otkazivanje — cilj funkcije je da ne čeka
+  // klijentkinju koja neće doći. Ranije se slalo samo za regularan otkaz.
+  await createAppointmentNotification(
+    notificationPayload(appointment),
+    "cancelled",
+    {
       sender: "client",
-      message: "Klijent je otkazao termin u dozvoljenom roku.",
-    });
-  }
+      late: !canCancel,
+      message: canCancel
+        ? "Klijent je otkazao termin u dozvoljenom roku."
+        : "Klijent je otkazao nakon dozvoljenog roka.",
+    },
+  );
 
   return {
     ok: true,
@@ -154,12 +202,22 @@ export interface RescheduleInput {
   serviceName?: string;
   note?: string;
   duration?: number;
+  /** Prisutan samo kada edit widget stvarno menja intake. Odsustvo ga čuva. */
+  request?: unknown;
+  /** Ruta ga rešava iz tenant konfiguracije; nije browser input. */
+  requestTenantFolder?: string;
 }
 
 export type ClientRescheduleResult =
   | {
       ok: false;
-      kind: "expired" | "final" | "service_not_found" | "conflict" | "unavailable";
+      kind:
+        | "expired"
+        | "final"
+        | "service_not_found"
+        | "conflict"
+        | "unavailable"
+        | "invalid_request";
       error: string;
     }
   | { ok: true };
@@ -174,9 +232,17 @@ export async function rescheduleAppointmentAsClient(
   input: RescheduleInput,
   opts?: { expiredMessage?: string },
 ): Promise<ClientRescheduleResult> {
-  if (!canClientCancelAppointment(appointment)) {
-    appointment.cancellationStatus = "late_cancel";
-    await appointment.save();
+  // Status pre roka: završen/otkazan termin ne treba ni da dobije oznaku
+  // `late_cancel` samo zato što je neko pokušao izmenu.
+  if (!isClientActionableStatus(appointment.status)) {
+    return { ok: false, kind: "final", error: "Termin se više ne može izmeniti." };
+  }
+
+  // Odbijena izmena NIJE otkazivanje. Ovde se ranije upisivalo
+  // `cancellationStatus = "late_cancel"` — pokušaj da se termin pomeri posle
+  // roka trajno je obeležavao termin kao kasno otkazan, iako je termin ostao
+  // nepromenjen i klijentkinja dolazi. Odbijanje se sada samo vraća pozivaocu.
+  if (!canClientEditAppointment(appointment)) {
     return {
       ok: false,
       kind: "expired",
@@ -184,17 +250,42 @@ export async function rescheduleAppointmentAsClient(
     };
   }
 
-  if (FINAL_STATUSES.includes(appointment.status)) {
-    return { ok: false, kind: "final", error: "Termin se više ne može izmeniti." };
-  }
-
-  const serviceId = input.services[0]?.serviceId;
-  const service = await Service.findById(serviceId);
-  if (!service) {
-    return { ok: false, kind: "service_not_found", error: "Usluga nije pronađena." };
-  }
-
   const tenantId = appointment.tenantId;
+  const serviceId = input.services[0]?.serviceId;
+
+  // Izmena prolazi kroz ISTU kapiju kao zakazivanje. Ranije je stajalo
+  // `Service.findById(serviceId)` — BEZ tenant scope-a, pa je klijentkinja
+  // mogla da na svoj termin veže uslugu drugog salona, i BEZ canonical
+  // trajanja/cene, pa je `input.duration` iz browsera bio poslovna činjenica.
+  let canonical;
+  try {
+    canonical = await resolveCanonicalSelection({
+      tenantId: String(tenantId),
+      serviceId: String(serviceId ?? ""),
+      selection: selectionFromAppointmentItem(input.services[0]),
+      displayName: input.serviceName,
+    });
+  } catch (err) {
+    if (err instanceof BookingError) {
+      return { ok: false, kind: "service_not_found", error: err.message };
+    }
+    throw err;
+  }
+
+  let sanitizedRequest: IAppointmentRequest | undefined;
+  if (input.request !== undefined) {
+    if (!canonical.resolved.intake.enabled) {
+      return {
+        ok: false,
+        kind: "invalid_request",
+        error: "Ova usluga ne prima zahtev uz zakazivanje.",
+      };
+    }
+    sanitizedRequest = sanitizeAppointmentRequest(
+      input.request,
+      input.requestTenantFolder ?? `salons/tenant-${String(tenantId)}`,
+    );
+  }
 
   // Exact-match konflikt (istorijsko ponašanje obe rute — hvata i slučaj
   // nepromenjenog vremena).
@@ -203,7 +294,7 @@ export async function rescheduleAppointmentAsClient(
     tenantId,
     date: input.date,
     time: input.time,
-    status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
+    status: ACTIVE_APPOINTMENT_STATUS_FILTER,
   });
   if (conflict) {
     return { ok: false, kind: "conflict", error: "Termin je zauzet." };
@@ -212,8 +303,8 @@ export async function rescheduleAppointmentAsClient(
   // Provere se rade samo kad se menja datum/vreme/trajanje — izmena
   // usluge/napomene mora proći i kada zatečeno stanje (npr. admin upis)
   // ne bi prošlo validaciju.
-  const newDuration =
-    Number(input.duration) || service.duration || appointment.duration;
+  // `input.duration` se namerno IGNORIŠE — trajanje određuje katalog.
+  const newDuration = canonical.durationMinutes;
   const dateOrTimeChanged =
     input.date !== appointment.date || input.time !== appointment.time;
   const timingChanged = dateOrTimeChanged || newDuration !== appointment.duration;
@@ -225,7 +316,7 @@ export async function rescheduleAppointmentAsClient(
       _id: { $ne: appointment._id },
       tenantId,
       date: input.date,
-      status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
+      status: ACTIVE_APPOINTMENT_STATUS_FILTER,
     })
       .select("date time duration")
       .lean<{ date: string; time: string; duration?: number }[]>();
@@ -290,22 +381,57 @@ export async function rescheduleAppointmentAsClient(
   const dateChanged = input.date !== appointment.date;
   const timeChanged = input.time !== appointment.time;
 
+  // Cena prati IZBOR, ne sat. Pomeranje termina za sat vremena ne sme da
+  // obriše cenu koju je salon već potvrdio; promena usluge/varijante/dodataka
+  // mora, jer se stara ponuda odnosila na nešto drugo.
+  const selectionChanged =
+    signatureOfAppointmentItem(appointment.services?.[0]) !== canonical.signature;
+
   appointment.date = input.date;
   appointment.time = input.time;
-  appointment.serviceName = input.serviceName || service.name;
+  appointment.serviceName = canonical.serviceName;
   appointment.note = input.note || undefined;
   appointment.duration = newDuration;
-  appointment.services = input.services.map((s) => ({
-    ...s,
-    serviceName: s.serviceName,
-    duration: s.duration,
-  }));
+  appointment.services = [canonical.item];
+  if (input.request !== undefined) {
+    appointment.request = sanitizedRequest;
+    appointment.markModified("request");
+  }
+  if (selectionChanged || !appointment.pricing) {
+    appointment.pricing = canonical.pricing;
+    appointment.markModified("pricing");
+  }
   appointment.lastUpdatedBy = "client";
   if (dateChanged || timeChanged) {
     appointment.status = "appointment_rescheduled";
   }
 
-  await appointment.save();
+  // ── Pogodnost prati IZBOR, kao i cena ────────────────────────────────
+  // Pomeranje sata ne dira vaučer. Promena usluge mora: service-scoped popust
+  // ne sme da ostane na usluzi za koju ne važi, a ako i dalje važi, iznos se
+  // ponovo računa nad novom canonical osnovicom.
+  const benefitPlan = await planBenefitRecompute({
+    appliedVoucherId: appointment.appliedVoucherId,
+    pricing: appointment.pricing,
+    services: appointment.services,
+  });
+  if (benefitPlan.kind === "released") {
+    appointment.set("appliedVoucherId", undefined);
+    appointment.set("originalPrice", undefined);
+    appointment.set("discountAmount", undefined);
+    appointment.set("finalPrice", undefined);
+  } else if (benefitPlan.set) {
+    appointment.originalPrice = benefitPlan.set.originalPrice ?? undefined;
+    appointment.discountAmount = benefitPlan.set.discountAmount ?? undefined;
+    appointment.finalPrice = benefitPlan.set.finalPrice ?? undefined;
+  }
+
+  // Snimanje termina i oslobađanje vaučera su ISTA transakcija kada pogodnost
+  // pada — bez toga bi pad između njih ostavio vaučer zaključan na terminu na
+  // kome pogodnosti više nema.
+  await commitBenefitRecompute(benefitPlan, (session) =>
+    appointment.save(session ? { session } : undefined),
+  );
 
   if (dateChanged || timeChanged) {
     await createAppointmentNotification(notificationPayload(appointment), "rescheduled", {

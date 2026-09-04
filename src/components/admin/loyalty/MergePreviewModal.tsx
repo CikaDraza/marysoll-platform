@@ -12,8 +12,8 @@ import toast from "react-hot-toast";
 import {
   useMergePreview,
   useMergeUsers,
-  type MergeAccountSummary,
-} from "@/hooks/useLoyaltyAdmin";
+} from "@/hooks/loyalty/useLoyaltyAdminMerge";
+import type { MergeAccountSummary } from "@/types/loyalty-admin";
 
 function AccountBox({
   account,

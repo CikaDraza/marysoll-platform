@@ -8,21 +8,22 @@ interface IServiceDoc extends Document {
   subcategory?: string;
   type: "single" | "group" | "variant";
   basePrice?: number;
-  priceMode?: "fixed" | "on_request";
+  priceMode?: "fixed" | "on_request" | "from";
   duration?: number;
   description?: string;
   icon?: string;
   services?: {
     name: string;
     price?: number;
-    priceMode?: "fixed" | "on_request";
+    priceMode?: "fixed" | "on_request" | "from";
     duration: number;
     description?: string;
   }[];
   variants?: {
     name: string;
     price: number;
-    priceMode?: "fixed" | "on_request";
+    additionalPrice?: number;
+    priceMode?: "fixed" | "on_request" | "from";
     duration: number;
     perItem: boolean;
     description?: string;
@@ -30,9 +31,11 @@ interface IServiceDoc extends Document {
   extras?: {
     name: string;
     price: number;
-    priceMode?: "fixed" | "on_request";
+    priceMode?: "fixed" | "on_request" | "from";
     duration: number;
     perItem: boolean;
+    unitLabel?: string;
+    allowQuantity?: boolean;
   }[];
   subscription?: {
     enabled: boolean;
@@ -42,6 +45,7 @@ interface IServiceDoc extends Document {
     startDate?: Date;
     endDate?: Date;
   };
+  bookingIntake?: { enabled: boolean };
   items: string[];
   featured?: "main" | "second" | "third" | "none";
   createdAt: Date;
@@ -67,7 +71,7 @@ const ServiceSchema = new Schema<IServiceDoc>(
     basePrice: Number,
     priceMode: {
       type: String,
-      enum: ["fixed", "on_request"],
+      enum: ["fixed", "on_request", "from"],
       default: "fixed",
     },
     duration: Number,
@@ -78,7 +82,7 @@ const ServiceSchema = new Schema<IServiceDoc>(
         price: Number,
         priceMode: {
           type: String,
-          enum: ["fixed", "on_request"],
+          enum: ["fixed", "on_request", "from"],
           default: "fixed",
         },
         duration: Number,
@@ -88,10 +92,13 @@ const ServiceSchema = new Schema<IServiceDoc>(
     variants: [
       {
         name: String,
+        // Puna cena varijante (fixed) — značenje se ne menja.
         price: Number,
+        // Doplata na basePrice korena, samo kada je koren "from".
+        additionalPrice: Number,
         priceMode: {
           type: String,
-          enum: ["fixed", "on_request"],
+          enum: ["fixed", "on_request", "from"],
           default: "fixed",
         },
         duration: Number,
@@ -105,11 +112,14 @@ const ServiceSchema = new Schema<IServiceDoc>(
         price: Number,
         priceMode: {
           type: String,
-          enum: ["fixed", "on_request"],
+          enum: ["fixed", "on_request", "from"],
           default: "fixed",
         },
         duration: Number,
         perItem: { type: Boolean, default: false },
+        // Jedinica mere ("kom", "nokat", "set") i da li se bira količina.
+        unitLabel: String,
+        allowQuantity: { type: Boolean, default: false },
       },
     ],
     subscription: {
@@ -125,6 +135,11 @@ const ServiceSchema = new Schema<IServiceDoc>(
       endDate: Date,
     },
     icon: { type: String },
+    // Traži li usluga da klijentkinja pošalje šta želi (fotografija/link/opis).
+    // VLASNIK odluke je usluga, ne kategorija — vidi PANTA-SERVICE-INTAKE.md.
+    bookingIntake: {
+      enabled: { type: Boolean, default: false },
+    },
     items: [{ type: String }],
     featured: {
       type: String,

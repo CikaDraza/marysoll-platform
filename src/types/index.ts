@@ -75,11 +75,23 @@ export interface IServiceSubscription {
     | "expired";
 }
 
-export type PriceMode = "fixed" | "on_request";
+/** Način cene — nezavisan od `type` (single/variant/group):
+ *   fixed      → cena je poznata i konačna
+ *   from       → poznata je najniža cena, konačna zavisi od zahteva ("od 2.000")
+ *   on_request → cena se uopšte ne zna unapred */
+export type PriceMode = "fixed" | "on_request" | "from";
 
 export interface IServiceVariant {
+  /** Opaque adresa dela usluge za Booking Engine (`variantRef`).
+   *  Opciono: zatečeni klijenti i dalje adresiraju po imenu. */
+  ref?: string;
   name: string;
+  /** PUNA cena varijante. Značenje se nikad ne menja — kod `priceMode: "from"`
+   *  na korenu se ne koristi, doplata ide u `additionalPrice`. */
   price: number;
+  /** Doplata na `basePrice` korena, SAMO kada je koren `priceMode: "from"`.
+   *  Nepoznata doplata = varijanta na upit; procena tada nema ovu stavku. */
+  additionalPrice?: number;
   priceMode?: PriceMode;
   duration: number;
   perItem: boolean;
@@ -88,19 +100,44 @@ export interface IServiceVariant {
 }
 
 export interface IServiceExtra {
+  /** Opaque adresa dela usluge za Booking Engine (`extraRefs`). */
+  ref?: string;
   name: string;
   price: number;
   priceMode?: PriceMode;
   duration: number;
   perItem: boolean;
+  /** Jedinica mere uz cenu: "kom", "nokat", "set". Samo prikaz. */
+  unitLabel?: string;
+  /** true → klijentkinja bira količinu (− 0 +); false → obično čekiranje. */
+  allowQuantity?: boolean;
 }
 
+/** Stavka paketa (`type: "group"`) — opis onoga što je uključeno.
+ *  Cena i trajanje paketa stoje na korenu usluge (`basePrice`/`duration`);
+ *  `price`/`priceMode`/`duration` ovde su zatečena polja iz starijeg modela,
+ *  koja se više ne unose i drže se samo da postojeći paketi ne izgube podatke. */
 export interface IServiceGroupItem {
+  /** Opaque adresa dela usluge za Booking Engine (`itemRefs`). */
+  ref?: string;
   name: string;
-  price: number;
-  priceMode?: PriceMode;
-  duration: number;
   description: string;
+  /** @deprecated cena je na korenu paketa */
+  price?: number;
+  /** @deprecated cena je na korenu paketa */
+  priceMode?: PriceMode;
+  /** @deprecated trajanje je na korenu paketa */
+  duration?: number;
+}
+
+/**
+ * Zahtev klijentkinje uz uslugu.
+ *
+ * v1.1 ima samo `enabled`. Struktura je objekat da bi kasnije mogla da primi
+ * izbor polja bez lomljenja ugovora — ali danas se ništa drugo ne prihvata.
+ */
+export interface IServiceBookingIntake {
+  enabled: boolean;
 }
 
 export interface IServiceInput {
@@ -117,6 +154,7 @@ export interface IServiceInput {
   extras?: IServiceExtra[];
   services?: IServiceGroupItem[];
   type: "single" | "group" | "variant";
+  bookingIntake?: IServiceBookingIntake;
   items: string[];
   featured?: HomePagePosition;
   icon?: string;
@@ -137,6 +175,11 @@ export interface IService {
   extras?: IServiceExtra[];
   services?: IServiceGroupItem[];
   type: "single" | "group" | "variant";
+  /** Poslovna konfiguracija usluge — vlasnik odluke o zahtevu klijentkinje. */
+  bookingIntake?: IServiceBookingIntake;
+  /** VEĆ REŠENA činjenica za prikaz, izvedena iz `bookingIntake` na serveru.
+   *  BookingWidget čita samo ovo i ne donosi odluku sam. */
+  intakeEnabled?: boolean;
   description: string;
   items: string[];
   featured?: HomePagePosition;
@@ -150,16 +193,91 @@ export interface IService {
 
 export interface IAppointmentVariant {
   name: string;
-  price: number;
+  /** `null` = cena nije poznata (usluga na upit). 0 je stvarna nula. */
+  price: number | null;
   duration: number;
   perItem: boolean;
 }
 
 export interface IAppointmentExtra {
   name: string;
-  price: number;
+  /** `null` = cena nije poznata (usluga na upit). 0 je stvarna nula. */
+  price: number | null;
   duration: number;
   perItem: boolean;
+  /** Koliko puta je dodatak izabran. Podrazumevano 1. */
+  quantity?: number;
+}
+
+/** Prilog uz zahtev klijentkinje. `publicId` je obavezan — bez njega nema
+ *  brisanja, transformacija ni čišćenja na Cloudinary-ju. */
+export interface IAppointmentAttachment {
+  publicId: string;
+  url: string;
+  width?: number;
+  height?: number;
+  bytes?: number;
+  format?: string;
+}
+
+/** „Kako želite da izgleda" — opcioni zahtev koji klijentkinja šalje uz termin. */
+export interface IAppointmentRequest {
+  note?: string;
+  referenceUrl?: string;
+  attachments?: IAppointmentAttachment[];
+}
+
+/**
+ * Jedna stavka računa u trenutku rezervacije.
+ * `amount: null` = iznos se ne zna (na upit) i ne ulazi ni u kakav zbir.
+ */
+export interface IPricingLine {
+  kind: "base" | "variant" | "extra";
+  label: string;
+  amount: number | null;
+  /** Opaque adresa dela usluge, kad postoji. */
+  ref?: string;
+  quantity?: number;
+}
+
+/**
+ * Canonical cena termina — server-generated, nikad iz browsera.
+ *
+ * Ključno pravilo:
+ *   0    = poznata cena od nula dinara
+ *   null = cena NIJE poznata / nije potvrđena
+ *
+ * Životni ciklus je četvorostepen i svaki stepen je zasebna činjenica:
+ *   katalog → snapshot pri rezervaciji → quote salona → stvarno naplaćeno
+ */
+export interface IAppointmentPricing {
+  mode: PriceMode;
+  currency: string;
+
+  /** Osnovna cena pri rezervaciji; `null` kod `on_request`. */
+  baseAmount: number | null;
+  /** Najmanji mogući ukupan iznos; `null` kada osnovna cena nije poznata. */
+  minimumTotal: number | null;
+  /** Poznate doplate i dodaci. NIKAD sam za sebe nije cena termina. */
+  knownAddonsTotal: number;
+
+  /** Salon je naknadno potvrdio osnovnu cenu (npr. posle fotografije). */
+  quotedBaseAmount?: number | null;
+  /** Server-izvedeno: `quotedBaseAmount + knownAddonsTotal`. */
+  quotedTotal?: number | null;
+  quotedAt?: string | Date | null;
+  quotedBy?: string | null;
+
+  /**
+   * Stvarno naplaćen UKUPAN iznos posle tretmana.
+   * Namerno NIJE `finalPrice` — to je cena posle vaučera, druga stvar.
+   */
+  chargedAmount?: number | null;
+  chargedAt?: string | Date | null;
+  chargedBy?: string | null;
+
+  /** Odakle je cena došla — da kasnije znamo zašto je minimum bio baš toliki. */
+  lines: IPricingLine[];
 }
 
 export interface IAppointmentService {
@@ -168,7 +286,13 @@ export interface IAppointmentService {
   variants?: IAppointmentVariant[];
   extras?: IAppointmentExtra[];
   quantity: number;
-  price: number;
+  /**
+   * Cena stavke, ili `null` kada se ne zna (usluga „na upit").
+   *
+   * Bio je `number`, pa je svaki tok koji je hteo da bude iskren morao da
+   * castuje ili da nepoznato prijavi kao 0 — a 0 je stvarna nula dinara.
+   */
+  price: number | null;
   duration: number;
 }
 
@@ -193,6 +317,10 @@ export interface IAppointment {
   contactNote?: string;
   serviceName: string;
   services: IAppointmentService[];
+  /** Zahtev klijentkinje (slika / link / opis), ako ga je poslala. */
+  request?: IAppointmentRequest;
+  /** Canonical cena — server-generated. Stari termini je nemaju. */
+  pricing?: IAppointmentPricing;
   duration: number;
   date: string;
   time: string;
@@ -679,6 +807,10 @@ export interface AppointmentNotificationData {
   proposedDate?: string;
   proposedTime?: string;
   lastUpdatedBy?: "client" | "admin";
+  /** Zahtev klijentkinje — mejl ga NE prilaže, samo najavljuje. */
+  request?: IAppointmentRequest | null;
+  /** Canonical cena — mejl iz nje izvodi šta sme da tvrdi. */
+  pricing?: IAppointmentPricing | null;
 }
 
 export interface TestimonialNotificationData {

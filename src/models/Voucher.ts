@@ -45,6 +45,36 @@ const voucherSchema = new Schema(
     redeemedAt: { type: Date },
     expiresAt: { type: Date },
 
+    /**
+     * Uslovi ponude U TRENUTKU kupovine (origin: "points_shop").
+     *
+     * Vaučer već nosi svoje efektivne uslove (`type`/`value`/`serviceScope`/
+     * `expiresAt`) i oni su nepromenljivi, ali audit mora da zna i ŠTA je
+     * kupljeno i po kojoj ceni: salon sme kasnije da izmeni ili obriše ponudu
+     * iz `LoyaltyConfig.pointsShop`, a već izdat vaučer se time ne menja.
+     */
+    pointsShopSnapshot: {
+      type: {
+        offerId: { type: String, required: true },
+        costPoints: { type: Number, required: true },
+        rewardType: {
+          type: String,
+          enum: ["percent", "fixed", "free_service"],
+          required: true,
+        },
+        rewardValue: { type: Number, default: 0 },
+        serviceId: { type: Schema.Types.ObjectId, ref: "Service", default: null },
+        serviceName: { type: String, default: "" },
+        expiresDays: { type: Number, default: null },
+        redeemedForAppointmentId: {
+          type: Schema.Types.ObjectId,
+          ref: "Appointment",
+        },
+      },
+      default: undefined,
+      _id: false,
+    },
+
     /** Poreklo izdavanja — za revert completion-a i audit */
     issuedByRuleId: { type: String },
     issuedByAdminId: { type: Schema.Types.ObjectId, ref: "TenantUser" },

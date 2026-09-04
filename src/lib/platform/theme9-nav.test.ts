@@ -33,9 +33,10 @@ function salonOf(over: Partial<SalonProfileData> = {}): SalonProfileData {
 
 function education(over: Partial<Theme9EducationFacts> = {}): Theme9EducationFacts {
   return {
-    routeAvailable: false,
+    routeAvailable: true,
     capabilityEnabled: false,
     hasPublishedArticles: false,
+    hasPublishedEducation: false,
     ...over,
   };
 }
@@ -82,28 +83,50 @@ describe("buildTheme9Nav — isto pravilo kao ruta", () => {
   });
 });
 
-describe("stavka „Edukacija” prati sadržaj", () => {
+describe("Blog i Edukacija prate svoj sadržaj, nezavisno", () => {
   const salon = salonOf();
 
-  it("bez objava se ne prikazuje", () => {
+  it("bez ijednog kanala se ne prikazuje nijedna stavka", () => {
     expect(buildTheme9Nav(salon, undefined, education()).map((i) => i.key)).toEqual([
       "home",
     ]);
   });
 
-  it("sa objavama vodi na postojeći blog put", () => {
+  it("blog objave daju Blog link", () => {
     const nav = buildTheme9Nav(
       salon,
       undefined,
       education({ hasPublishedArticles: true }),
     );
-    expect(nav.at(-1)).toEqual({ key: "education", href: "/blogs" });
+    expect(nav.at(-1)).toEqual({ key: "blog", href: "/blogs" });
+  });
+
+  it("razrešen Edu Centar sa objavljenim sadržajem daje Edukacija link", () => {
+    const nav = buildTheme9Nav(
+      salon,
+      undefined,
+      education({ capabilityEnabled: true, hasPublishedEducation: true }),
+    );
+    expect(nav.at(-1)).toEqual({ key: "education", href: "/edukacija" });
+  });
+
+  it("tenant sa oba kanala dobija oba linka", () => {
+    const nav = buildTheme9Nav(
+      salon,
+      undefined,
+      education({
+        capabilityEnabled: true,
+        hasPublishedArticles: true,
+        hasPublishedEducation: true,
+      }),
+    );
+    expect(nav.map((i) => i.key)).toEqual(["home", "blog", "education"]);
   });
 
   it("bez prosleđenih činjenica pada fail-closed", () => {
-    expect(buildTheme9Nav(salon, undefined).map((i) => i.key)).not.toContain(
-      "education",
-    );
+    const keys = buildTheme9Nav(salon, undefined).map((i) => i.key);
+    expect(keys).not.toContain("education");
+    expect(keys).not.toContain("blog");
   });
 });
 

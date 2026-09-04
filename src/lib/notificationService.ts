@@ -25,6 +25,7 @@ import {
   ADMIN_TESTIMONIALS_PATH,
   clientPanelPath,
 } from "@/lib/notifications/pushTargets";
+import type { IAppointmentRequest, IAppointmentPricing } from "@/types";
 
 // ── Salon branding for push payloads ─────────────────────────────────────────
 // Exportovano i za loyalty notifikacije (lib/loyalty/notifications.ts).
@@ -170,6 +171,9 @@ interface AppointmentForNotification {
   clientInstagram?: string;
   preferredContact?: "phone" | "instagram" | "email" | "platform";
   contactNote?: string;
+  /** Zahtev klijentkinje — mejl ga najavljuje, ne prilaže. */
+  request?: IAppointmentRequest | null;
+  pricing?: IAppointmentPricing | null;
 }
 
 interface TestimonialForNotification {
@@ -413,7 +417,20 @@ async function getAdminTenantUsersWithEmails(
 export async function createAppointmentNotification(
   appointment: AppointmentForNotification,
   type: AppointmentType,
-  additionalData?: { sender?: "client" | "admin"; message?: string },
+  additionalData?: {
+    sender?: "client" | "admin";
+    message?: string;
+    /** Klijent je otkazao POSLE dozvoljenog roka — salon to mora videti. */
+    late?: boolean;
+    /**
+     * Odgovor klijentkinje na PREDLOG salona.
+     *
+     * Odbijen predlog nije otkazan termin — termin i dalje stoji na starom
+     * vremenu. Bez ovog razlikovanja bi salon dobio „Termin otkazan" za
+     * termin na koji klijentkinja i dalje dolazi.
+     */
+    proposalDecision?: "accepted" | "declined";
+  },
 ) {
   await sendAppointmentEmailNotifications(appointment, type, additionalData);
 
@@ -458,8 +475,14 @@ export async function createAppointmentNotification(
       clientMessage: `Admin je predložio novi termin za ${appointment.serviceName}`,
     },
     cancelled: {
-      adminTitle: "Termin otkazan",
-      adminMessage: `Otkazali ste termin za ${appointment.serviceName} ${clientNoun(clientGender, "dat")} ${appointment.clientName}`,
+      // Kasno otkazivanje nije isto što i regularno: salon gubi termin bez
+      // vremena da ga popuni, pa mu poruka mora to i reći.
+      adminTitle: additionalData?.late
+        ? "Kasno otkazan termin"
+        : "Termin otkazan",
+      adminMessage: additionalData?.late
+        ? `${clientNounCap(clientGender)} ${appointment.clientName} je ${genderPast(clientGender, "otkazala", "otkazao/la")} termin za ${appointment.serviceName}${appointment.date ? ` (${appointment.date} u ${appointment.time})` : ""} NAKON dozvoljenog roka.`
+        : `Otkazali ste termin za ${appointment.serviceName} ${clientNoun(clientGender, "dat")} ${appointment.clientName}`,
       clientTitle: "Termin otkazan",
       clientMessage: `Vaš termin za ${appointment.serviceName} je otkazan`,
     },
@@ -569,6 +592,20 @@ export async function createAppointmentNotification(
     (type === "rescheduled" || type === "cancelled") &&
     additionalData?.sender === "client"
   ) {
+    const decision = additionalData.proposalDecision;
+    const decisionTitle =
+      decision === "accepted"
+        ? "Predlog prihvaćen"
+        : decision === "declined"
+          ? "Predlog odbijen"
+          : null;
+    const decisionMessage =
+      decision === "accepted"
+        ? `${clientNounCap(clientGender)} ${appointment.clientName} je ${genderPast(clientGender, "prihvatila", "prihvatio")} predloženi termin za ${appointment.serviceName}`
+        : decision === "declined"
+          ? `${clientNounCap(clientGender)} ${appointment.clientName} je ${genderPast(clientGender, "odbila", "odbio")} predloženi termin za ${appointment.serviceName} — termin ostaje na starom vremenu`
+          : null;
+
     const adminIds = await getAllAdminTenantUserIds(appointment.tenantId);
     const notifications = [];
     for (const adminId of adminIds) {
@@ -576,8 +613,8 @@ export async function createAppointmentNotification(
         recipientProfileId: adminId,
         tenantId: appointment.tenantId,
         type: fullType,
-        title: config.adminTitle,
-        message: config.adminMessage,
+        title: decisionTitle ?? config.adminTitle,
+        message: decisionMessage ?? config.adminMessage,
         appointmentId: appointment._id,
         metadata: {
           clientName: appointment.clientName,
@@ -591,9 +628,10 @@ export async function createAppointmentNotification(
     }
     await sendWebPushToMany(adminIds, {
       title: salonName,
-      body:
-        type === "cancelled"
-          ? `🚫 ${appointment.clientName} je ${genderPast(clientGender, "otkazala", "otkazao/la")} ${appointment.serviceName}`
+      body: decisionMessage
+        ? `${decision === "accepted" ? "✅" : "↩️"} ${decisionMessage}`
+        : type === "cancelled"
+          ? `${additionalData?.late ? "⚠️ KASNO otkazivanje" : "🚫"} — ${appointment.clientName}, ${appointment.serviceName}`
           : `🔄 ${appointment.clientName} je ${genderPast(clientGender, "izmenila", "izmenio/la")} termin za ${appointment.serviceName}${appointment.date ? " — " + appointment.date : ""}`,
       icon,
       tag: `appt-client-${type}-${appointment._id}`,
@@ -662,7 +700,12 @@ async function resolveAppointmentPrice(
 async function sendAppointmentEmailNotifications(
   appointment: AppointmentForNotification,
   type: AppointmentType,
-  additionalData?: { sender?: "client" | "admin"; message?: string },
+  additionalData?: {
+    sender?: "client" | "admin";
+    message?: string;
+    /** Klijent je otkazao POSLE dozvoljenog roka — salon to mora videti. */
+    late?: boolean;
+  },
 ): Promise<void> {
   try {
     const appointmentData = {
@@ -680,6 +723,8 @@ async function sendAppointmentEmailNotifications(
       clientInstagram: appointment.clientInstagram,
       preferredContact: appointment.preferredContact,
       contactNote: appointment.contactNote,
+      request: appointment.request ?? null,
+      pricing: appointment.pricing ?? null,
     };
 
     const settingKey = getAppointmentSettingKey(type);

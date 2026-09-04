@@ -74,17 +74,18 @@ describe("T2B server capability contract", () => {
     mockLookup({ tenant: { plan: "maria", paid: false } });
 
     await expect(resolveTenantCapabilitySnapshot(TENANT_ID)).resolves.toMatchObject({
+      verticals: ["beauty"],
       capabilities: {
         "services.catalog": { enabled: true },
         "booking.services": { enabled: true },
-        "education.catalog": { enabled: false, platformAvailable: false },
+        "education.catalog": { enabled: false, platformAvailable: true },
       },
     });
     expect(Tenant.findById).toHaveBeenCalledTimes(1);
     expect(Subscription.findOne).toHaveBeenCalledTimes(1);
   });
 
-  it("odbija platform-unavailable capability", async () => {
+  it("dozvoljava provisionovan education catalog i projektuje education identitet", async () => {
     mockLookup({
       tenant: {
         plan: "maria",
@@ -95,11 +96,58 @@ describe("T2B server capability contract", () => {
       },
     });
 
-    const response = await requireCapability(TENANT_ID, "education.catalog");
+    await expect(
+      resolveTenantCapabilitySnapshot(TENANT_ID),
+    ).resolves.toMatchObject({
+      verticals: ["education"],
+      capabilities: { "education.catalog": { enabled: true } },
+    });
+    await expect(
+      requireCapability(TENANT_ID, "education.catalog"),
+    ).resolves.toBeNull();
+  });
+
+  it("projektuje hybrid vertikale bez browser-side računanja", async () => {
+    mockLookup({
+      tenant: {
+        plan: "maria",
+        verticals: ["beauty", "education"],
+        capabilityConfiguration: {
+          overrides: [
+            { capability: "services.catalog", enabled: true },
+            { capability: "education.catalog", enabled: true },
+          ],
+        },
+      },
+    });
+
+    await expect(
+      resolveTenantCapabilitySnapshot(TENANT_ID),
+    ).resolves.toMatchObject({
+      verticals: ["beauty", "education"],
+      capabilities: {
+        "services.catalog": { enabled: true },
+        "education.catalog": { enabled: true },
+      },
+    });
+  });
+
+  it("drži education inquiries platform-unavailable", async () => {
+    mockLookup({
+      tenant: {
+        plan: "maria",
+        verticals: ["education"],
+        capabilityConfiguration: {
+          overrides: [{ capability: "education.inquiries", enabled: true }],
+        },
+      },
+    });
+
+    const response = await requireCapability(TENANT_ID, "education.inquiries");
     expect(response?.status).toBe(403);
     expect(await responseBody(response)).toMatchObject({
       code: "CAPABILITY_NOT_AVAILABLE",
-      capability: "education.catalog",
+      capability: "education.inquiries",
     });
   });
 

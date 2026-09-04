@@ -45,6 +45,7 @@ import {
   resolveTheme9EducationFacts,
   theme9NavNeedsFacts,
 } from "@/lib/theme9/navigation-server";
+import { toBookingServicePresentation } from "@/lib/booking/servicePresentation";
 
 interface Props {
   tenantSlug: string;
@@ -213,83 +214,9 @@ export async function ClientHomePage({ tenantSlug }: Props) {
     showWorkingHours: s?.showWorkingHours !== false,
   };
 
-  const serviceList = (services as Record<string, unknown>[]).map((sv) => ({
-    _id: String(sv._id),
-    name: String(sv.name ?? ""),
-    category: String(sv.category ?? ""),
-    subcategory: sv.subcategory ? String(sv.subcategory) : undefined,
-    type: (sv.type as "single" | "group" | "variant") ?? "single",
-    basePrice: sv.basePrice != null ? Number(sv.basePrice) : undefined,
-    priceMode: sv.priceMode === "on_request" ? "on_request" : "fixed",
-    duration: sv.duration ? Number(sv.duration) : undefined,
-    description: String(sv.description ?? ""),
-    items: Array.isArray(sv.items) ? sv.items.map(String) : [],
-    variants: Array.isArray(sv.variants)
-      ? sv.variants.map((v: unknown) => {
-          const vv = v as Record<string, unknown>;
-          return {
-            name: String(vv.name ?? ""),
-            price: Number(vv.price ?? 0),
-            priceMode: vv.priceMode === "on_request" ? "on_request" : "fixed",
-            duration: Number(vv.duration ?? 0),
-            perItem: Boolean(vv.perItem),
-            description: vv.description ? String(vv.description) : undefined,
-          };
-        })
-      : [],
-    extras: Array.isArray(sv.extras)
-      ? sv.extras.map((e: unknown) => {
-          const ee = e as Record<string, unknown>;
-          return {
-            name: String(ee.name ?? ""),
-            price: Number(ee.price ?? 0),
-            priceMode: ee.priceMode === "on_request" ? "on_request" : "fixed",
-            duration: Number(ee.duration ?? 0),
-            perItem: Boolean(ee.perItem),
-          };
-        })
-      : [],
-    services: Array.isArray(sv.services)
-      ? sv.services.map((s: unknown) => {
-          const ss = s as Record<string, unknown>;
-          return {
-            name: String(ss.name ?? ""),
-            price: Number(ss.price ?? 0),
-            priceMode: ss.priceMode === "on_request" ? "on_request" : "fixed",
-            duration: Number(ss.duration ?? 0),
-            description: String(ss.description ?? ""),
-          };
-        })
-      : [],
-    icon: sv.icon ? String(sv.icon) : undefined,
-    featured:
-      (sv.featured as "main" | "second" | "third" | "none" | null) ?? null,
-    subscription: (() => {
-      const sub = sv.subscription as Record<string, unknown> | undefined;
-      if (!sub)
-        return {
-          enabled: false,
-          priceMonthly: null,
-          startDate: null,
-          endDate: null,
-        };
-      return {
-        enabled: Boolean(sub.enabled ?? false),
-        subscriptionType: sub.subscriptionType as
-          | "monthly"
-          | "package"
-          | undefined,
-        treatmentCount:
-          sub.treatmentCount != null ? Number(sub.treatmentCount) : null,
-        priceMonthly:
-          sub.priceMonthly != null ? Number(sub.priceMonthly) : null,
-        startDate: sub.startDate ? String(sub.startDate) : null,
-        endDate: sub.endDate ? String(sub.endDate) : null,
-      };
-    })(),
-    createdAt: String(sv.createdAt ?? ""),
-    updatedAt: String(sv.updatedAt ?? ""),
-  })) as IService[];
+  const serviceList = (services as Record<string, unknown>[]).map(
+    toBookingServicePresentation,
+  ) as IService[];
 
   const testimonialList: PublicTestimonial[] = (
     testimonials as Record<string, unknown>[]

@@ -24,6 +24,9 @@ export async function POST(req: NextRequest) {
 
     const service = await Service.create({
       ...body,
+      // `bookingIntake` se prihvata SAMO u podržanom obliku: browser ne sme
+      // da ubaci proizvoljna polja u poslovnu konfiguraciju usluge.
+      bookingIntake: { enabled: body?.bookingIntake?.enabled === true },
       tenantId: tenantId ?? undefined,
     });
     // New service (price/category) affects booking search + AI knowledge.

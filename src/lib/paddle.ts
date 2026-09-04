@@ -205,16 +205,40 @@ export async function cancelPaddleSubscription(
  * Verifikuje `Paddle-Signature` header (format: `ts=...;h1=...`).
  * HMAC-SHA256 nad `${ts}:${rawBody}` mora odgovarati h1.
  */
+/**
+ * Koliko star potpis još prihvatamo.
+ *
+ * Bez ovoga presretnut validan payload važi ZAUVEK: potpis pokriva `ts`, ali
+ * ako niko ne gleda koliko je `ts` star, snimljen zahtev se može ponoviti bilo
+ * kad. Pet minuta pokriva normalno kašnjenje mreže i razliku u satovima, a ne
+ * ostavlja prozor za reprodukciju.
+ */
+export const PADDLE_SIGNATURE_TOLERANCE_SECONDS = 5 * 60;
+
+export type PaddleSignatureFailure =
+  | "missing"
+  | "malformed"
+  | "mismatch"
+  | "stale";
+
+export type PaddleSignatureResult =
+  | { valid: true; ts: number }
+  | { valid: false; reason: PaddleSignatureFailure; ts: number | null };
+
 export function verifyPaddleSignature({
   rawBody,
   signature,
   secret,
+  now = new Date(),
+  toleranceSeconds = PADDLE_SIGNATURE_TOLERANCE_SECONDS,
 }: {
   rawBody: string;
   signature: string | null;
   secret: string;
-}): boolean {
-  if (!signature || !secret) return false;
+  now?: Date;
+  toleranceSeconds?: number;
+}): PaddleSignatureResult {
+  if (!signature || !secret) return { valid: false, reason: "missing", ts: null };
 
   const parts = Object.fromEntries(
     signature.split(";").map((part) => {
@@ -226,7 +250,12 @@ export function verifyPaddleSignature({
   const ts = parts.ts;
   const h1 = parts.h1;
 
-  if (!ts || !h1) return false;
+  if (!ts || !h1) return { valid: false, reason: "malformed", ts: null };
+
+  const tsSeconds = Number(ts);
+  if (!Number.isFinite(tsSeconds)) {
+    return { valid: false, reason: "malformed", ts: null };
+  }
 
   const signedPayload = `${ts}:${rawBody}`;
 
@@ -235,15 +264,27 @@ export function verifyPaddleSignature({
     .update(signedPayload)
     .digest("hex");
 
+  let matches = false;
   try {
-    return crypto.timingSafeEqual(
+    matches = crypto.timingSafeEqual(
       Buffer.from(expected, "hex"),
       Buffer.from(h1, "hex"),
     );
   } catch {
     // h1 nije validan hex / pogrešna dužina
-    return false;
+    matches = false;
   }
+  if (!matches) return { valid: false, reason: "mismatch", ts: tsSeconds };
+
+  // Svežina se proverava TEK posle potvrde potpisa: obrnut redosled bi
+  // odavao informaciju o `ts` vrednosti napadaču bez validnog potpisa.
+  // Apsolutna razlika hvata i satove pomerene unapred.
+  const skewSeconds = Math.abs(now.getTime() / 1000 - tsSeconds);
+  if (skewSeconds > toleranceSeconds) {
+    return { valid: false, reason: "stale", ts: tsSeconds };
+  }
+
+  return { valid: true, ts: tsSeconds };
 }
 
 // ─── Helperi ───────────────────────────────────────────────────────────────
@@ -310,11 +351,37 @@ async function resolvePlan(
 
 // ─── Webhook handler ─────────────────────────────────────────────────────────
 
+export type PaddleWebhookOutcome =
+  | { kind: "processed"; tenantId: string }
+  | { kind: "skipped"; reason: string };
+
+/**
+ * Obrada jednog Paddle događaja.
+ *
+ * Ugovor prema pozivaocu (ruti):
+ *   `processed` → posao je stvarno urađen
+ *   `skipped`   → događaj nas ne zanima; razrešen, ne neuspeh
+ *   BACA        → obrada nije uspela; zapis ostaje `failed` i ponovo obradiv
+ *
+ * Nerazrešen tenant sada BACA umesto da tiho izađe. Ranije je to bio
+ * `console.warn` + `return`, pa se `subscription.updated` bez `custom_data`
+ * (kada lokalni `Subscription` još ne postoji) ZAUVEK gubio. Sada ostaje
+ * `failed`, a kasnije stigao `Subscription` ga čini ponovo obradivim.
+ *
+ * Ponovna obrada ISTOG događaja je bezbedna: svi upisi su apsolutni `$set`
+ * (`Tenant.findByIdAndUpdate`, `syncSubscriptionFromPaddle` upsert), nikad
+ * `$inc`. Ograda protiv ponovljene isporuke je `WebhookEvent`, a protiv
+ * prestizanja `isSupersededWebhookEvent`.
+ */
 export async function handlePaddleWebhook(
   event: PaddleSubscriptionEvent,
-): Promise<void> {
-  // Ignoriši non-subscription evente (transaction.*, customer.* itd.)
-  if (!event.event_type?.startsWith("subscription.")) return;
+): Promise<PaddleWebhookOutcome> {
+  // transaction.* / customer.* se i dalje ne obrađuju, ali se od sada ČUVAJU
+  // kao `skipped` umesto da nestanu — kada stigne naplata klijentkinja, tu su
+  // stvarni payload-i po kojima se projektuje, umesto pretpostavki.
+  if (!event.event_type?.startsWith("subscription.")) {
+    return { kind: "skipped", reason: `nije subscription događaj: ${event.event_type}` };
+  }
 
   await connectToDB();
 
@@ -322,16 +389,14 @@ export async function handlePaddleWebhook(
 
   const tenantId = await resolveTenantId(data);
   if (!tenantId) {
-    console.warn(
-      `[PADDLE] Ne mogu da odredim tenant za subscription ${data.id} (${event_type})`,
+    throw new Error(
+      `Ne mogu da odredim tenant za subscription ${data.id} (${event_type})`,
     );
-    return;
   }
 
   const tenant = await Tenant.findById(tenantId);
   if (!tenant) {
-    console.warn(`[PADDLE] Tenant nije pronađen: ${tenantId}`);
-    return;
+    throw new Error(`Tenant nije pronađen: ${tenantId}`);
   }
 
   const item = data.items?.[0];
@@ -428,6 +493,15 @@ export async function handlePaddleWebhook(
 
     default:
       // ostali subscription.* eventi se trenutno ne obrađuju
-      break;
+      return { kind: "skipped", reason: `neobrađivan tip: ${event_type}` };
   }
+
+  return { kind: "processed", tenantId };
+}
+
+/** Paddle subscription id — nosilac redosleda za `isSupersededWebhookEvent`. */
+export function paddleEventSubjectRef(event: {
+  data?: { id?: string } | null;
+}): string | null {
+  return event?.data?.id ?? null;
 }

@@ -1,6 +1,6 @@
 // hooks/useStatistics.ts
 import { useQuery } from "@tanstack/react-query";
-import { StatisticsResponse } from "@/components/admin/statistics/statistics.types";
+import type { StatisticsResponse } from "@/types/statistics";
 import { api } from "@/lib/api";
 
 interface UseStatisticsParams {
@@ -37,6 +37,7 @@ export function useStatistics({ month, year }: UseStatisticsParams) {
       noShow: 0,
       completedCount: 0,
       cancelledCount: 0,
+      withoutPriceCount: 0,
     },
     avgTimeGap: data?.avgTimeGap ?? 0,
     clients: data?.clients ?? {

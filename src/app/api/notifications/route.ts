@@ -32,9 +32,11 @@ export async function GET(req: Request) {
       query.isRead = false;
     }
 
+    // BEZ populate: `appointmentId`/`testimonialId` se koriste ISKLJUČIVO kao
+    // id u deep-link URL-u zvonca. Populate je od njih pravio cele dokumente,
+    // pa je `?appointmentId=${...}` u linku davao "[object Object]" — server
+    // je takav id odbijao, i skok na termin nikad nije radio.
     const notifications = await Notification.find(query)
-      .populate("appointmentId")
-      .populate("testimonialId")
       .sort({ createdAt: -1 })
       .limit(50);
 

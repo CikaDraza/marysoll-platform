@@ -1,0 +1,71 @@
+"use client";
+
+import { useState } from "react";
+import Image from "next/image";
+import type { ClientOverview } from "@/types/client-overview";
+import { LoyaltyBenefitPicker } from "@/components/loyalty/LoyaltyBenefitPicker";
+import { ClientOverviewSection } from "./ClientOverviewSection";
+import {
+  canApplyBenefitToAppointment,
+  splitClientAppointments,
+} from "./presentation";
+
+type AppointmentItem = ClientOverview["appointments"]["items"][number];
+
+function AppointmentRequest({ request }: { request: AppointmentItem["request"] }) {
+  if (!request) return null;
+  return <>{request.note && <p className="mt-2 rounded-lg bg-gray-50 p-2 dark:bg-gray-950">Zahtev: {request.note}</p>}{request.referenceUrl && <a className="text-violet-600 hover:underline" href={request.referenceUrl} target="_blank" rel="noreferrer">Referenca klijenta</a>}<div className="mt-2 flex flex-wrap gap-2">{request.attachments.map((attachment) => <a key={attachment.url} href={attachment.url} target="_blank" rel="noreferrer"><Image src={attachment.url} alt="Prilog uz zahtev" width={64} height={64} className="h-16 w-16 rounded-lg object-cover" /></a>)}</div></>;
+}
+
+/**
+ * „Primeni pogodnost" iz dosijea — isti server seam kao klijentski picker.
+ *
+ * Salon ovo radi kada klijentkinja uživo kaže da želi da iskoristi nagradu.
+ * Klik admina JESTE izvršenje: konfigurisana nagrada je već salonova poslovna
+ * odluka, pa nema `requested → pending → approved` lifecycle-a.
+ */
+function AppointmentBenefitAction({ appointment }: { appointment: AppointmentItem }) {
+  const [open, setOpen] = useState(false);
+  if (!canApplyBenefitToAppointment(appointment.status)) return null;
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-2 text-xs font-bold text-violet-600 hover:underline"
+      >
+        Primeni pogodnost
+      </button>
+      {open && (
+        <LoyaltyBenefitPicker
+          appointmentId={appointment.id}
+          audience="admin"
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
+function AppointmentCard({ appointment }: { appointment: AppointmentItem }) {
+  return <article className="rounded-xl border border-gray-100 p-4 text-sm dark:border-gray-800"><div className="flex flex-wrap justify-between gap-2"><strong>{appointment.serviceName}</strong><span>{appointment.date} · {appointment.time} · {appointment.status}</span></div><p className="mt-1 text-gray-700 dark:text-gray-300">{appointment.price.label}</p>{appointment.price.detail && <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">{appointment.price.detail}</p>}<AppointmentRequest request={appointment.request} /><AppointmentBenefitAction appointment={appointment} /></article>;
+}
+
+function AppointmentPagination({ pagination, onPageChange }: { pagination: ClientOverview["appointments"]["pagination"]; onPageChange: (page: number) => void }) {
+  if (pagination.totalPages <= 1) return null;
+  return <div className="flex items-center justify-between pt-2 text-sm"><button disabled={!pagination.hasPrevPage} onClick={() => onPageChange(pagination.page - 1)} className="font-bold text-violet-600 disabled:opacity-30">← Prethodna</button><span>{pagination.page} / {pagination.totalPages}</span><button disabled={!pagination.hasNextPage} onClick={() => onPageChange(pagination.page + 1)} className="font-bold text-violet-600 disabled:opacity-30">Sledeća →</button></div>;
+}
+
+function AppointmentList({ appointments, onPageChange }: { appointments: ClientOverview["appointments"]; onPageChange: (page: number) => void }) {
+  if (!appointments.items.length) return <p className="text-sm text-gray-500">Nema termina.</p>;
+  const groups = splitClientAppointments(appointments.items);
+  return <div className="space-y-5">{groups.next.length > 0 && <AppointmentGroup title="Sledeći termini" items={groups.next} />}{groups.previous.length > 0 && <AppointmentGroup title="Prethodni termini" items={groups.previous} />}<AppointmentPagination pagination={appointments.pagination} onPageChange={onPageChange} /></div>;
+}
+
+function AppointmentGroup({ title, items }: { title: string; items: readonly AppointmentItem[] }) {
+  return <section className="space-y-3"><h4 className="text-sm font-bold text-gray-900 dark:text-gray-100">{title}</h4>{items.map((appointment) => <AppointmentCard key={appointment.id} appointment={appointment} />)}</section>;
+}
+
+export function ClientAppointmentsSection({ appointments, onPageChange }: { appointments: ClientOverview["appointments"]; onPageChange: (page: number) => void }) {
+  return <ClientOverviewSection title={`Termini (${appointments.pagination.totalCount})`} open><AppointmentList appointments={appointments} onPageChange={onPageChange} /></ClientOverviewSection>;
+}

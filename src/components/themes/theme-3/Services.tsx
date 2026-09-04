@@ -1,4 +1,8 @@
 import { IService } from "@/types";
+import {
+  minServicePrice as minPrice,
+  isPriceFrom,
+} from "@/helpers/servicePrice";
 import { formatPriceToString } from "@/helpers/formatPrice";
 
 interface Props {
@@ -8,26 +12,6 @@ interface Props {
   tenantSlug?: string;
 }
 
-function isValidPrice(price: unknown, priceMode?: string): boolean {
-  if (priceMode === "on_request") return false;
-  return typeof price === "number" && isFinite(price) && price > 0;
-}
-
-function minPrice(s: IService): number | null {
-  if (s.type === "variant") {
-    const p = (s.variants ?? [])
-      .filter((v) => isValidPrice(v.price, v.priceMode))
-      .map((v) => v.price as number);
-    if (p.length) return Math.min(...p);
-  }
-  if (s.type === "group") {
-    const p = (s.services ?? [])
-      .filter((sv) => isValidPrice(sv.price, sv.priceMode))
-      .map((sv) => sv.price as number);
-    if (p.length) return Math.min(...p);
-  }
-  return isValidPrice(s.basePrice, s.priceMode) ? (s.basePrice as number) : null;
-}
 
 export function Theme3ServicesSoft({ services, headline, subheadline }: Props) {
   const grouped = services.reduce<Record<string, IService[]>>((acc, s) => {
@@ -68,7 +52,7 @@ export function Theme3ServicesSoft({ services, headline, subheadline }: Props) {
                       </p>
                       {mp != null && (
                         <p className="mt-auto text-sm font-semibold text-(--primary-color)">
-                          {(s.type === "variant" || s.type === "group") ? "od " : ""}
+                          {isPriceFrom(s) ? "od " : ""}
                           {formatPriceToString(mp)} RSD
                         </p>
                       )}

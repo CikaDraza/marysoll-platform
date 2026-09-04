@@ -153,6 +153,7 @@ export const PLATFORM_PATH_SEGMENTS = new Set([
   "logout",
   "tenant",
   "marketing",
+  "education",
   "assets",
   "dijagnostika",
 ]);

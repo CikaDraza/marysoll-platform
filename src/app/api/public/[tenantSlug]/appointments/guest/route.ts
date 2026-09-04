@@ -28,6 +28,12 @@ import {
 import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant";
 import { requireCapability } from "@/lib/platform/capabilities-server";
+import { sanitizeAppointmentRequest } from "@/lib/appointments/intake";
+import { getTenantFolder } from "@/lib/cloudinary";
+import { resolveBookingRequest } from "@/lib/booking/resolveBookingRequest";
+import { canonicalSelectionFrom } from "@/lib/appointments/canonicalSelection";
+import { buildPricingSnapshot } from "@/lib/appointments/pricingSnapshot";
+import { BookingError } from "@/lib/booking/errors";
 
 type Params = { params: Promise<{ tenantSlug: string }> };
 
@@ -76,8 +82,8 @@ export async function POST(request: NextRequest, { params }: Params) {
       services,
       date,
       time,
-      duration,
       note,
+      request: intakeRequest,
       preferredContact,
       contactNote,
     } = data;
@@ -122,8 +128,36 @@ export async function POST(request: NextRequest, { params }: Params) {
     const { profile: salonProfile, cancellationWindowHours } =
       await loadBookingProfile(tenantId!);
 
+    // Trajanje dolazi iz kataloga, NIKAD iz zahteva — gost je nepouzdan izvor.
+    let resolved;
+    try {
+      resolved = await resolveBookingRequest({
+        tenantId: tenantId!,
+        serviceId: String(services[0].serviceId),
+        selection: {
+          variantName: services[0].serviceName,
+          extras: (services[0].extras ?? []).map(
+            (e: { name: string; quantity?: number }) => ({
+              name: e.name,
+              quantity: e.quantity,
+            }),
+          ),
+        },
+      });
+    } catch (err) {
+      return NextResponse.json(
+        {
+          error:
+            err instanceof BookingError
+              ? err.message
+              : "Izbor usluge nije validan.",
+        },
+        { status: 400 },
+      );
+    }
+
     // ── Check slot availability ───────────────────────────────────────────────
-    const requestedDuration = Number(duration) || service.duration || 60;
+    const requestedDuration = resolved.durationMinutes;
     const slotError = await checkSlotAvailability({
       tenantId: tenantId!,
       date,
@@ -150,6 +184,16 @@ export async function POST(request: NextRequest, { params }: Params) {
     // ── Create appointment ────────────────────────────────────────────────────
     const resolvedServiceName = serviceName || service.name;
 
+    // Zahtev se prihvata SAMO ako usluga to traži. UI ne sme biti jedini
+    // autoritet — bez ove provere bi podmetnut payload upisao fotografiju i
+    // opis na uslugu koja ih uopšte ne nudi.
+    if (intakeRequest != null && !resolved.intake.enabled) {
+      return NextResponse.json(
+        { error: "Ova usluga ne prima zahtev uz zakazivanje." },
+        { status: 400 },
+      );
+    }
+
     const appointment = new Appointment({
       tenantId,
       clientProfileId: guestUser._id.toString(),
@@ -163,15 +207,22 @@ export async function POST(request: NextRequest, { params }: Params) {
       cancellationWindowHours,
       cancellationStatus: "can_cancel",
       serviceName: resolvedServiceName,
-      services: (services as IAppointmentService[]).map((s) => ({
-        ...s,
-        serviceName: s.serviceName,
-        duration: s.duration,
-      })),
+      // Server-generated stavka — vidi isti komentar u `/api/appointments/create`.
+      services: [canonicalSelectionFrom(resolved, {
+        serviceId: String((services as IAppointmentService[])[0].serviceId),
+        displayName: serviceName,
+      }).item],
       date,
       time,
-      duration: duration || service.duration || 60,
+      duration: resolved.durationMinutes,
       note: note || undefined,
+      // Zahtev iz browsera — nikad se ne upisuje sirov.
+      request: sanitizeAppointmentRequest(
+        intakeRequest,
+        await getTenantFolder(String(tenant._id)),
+      ),
+      // Canonical cena — server-generated i za gostinski tok.
+      pricing: buildPricingSnapshot(resolved.pricing),
       status: "pending",
       messages: [],
       adminNotified: true,
@@ -198,6 +249,8 @@ export async function POST(request: NextRequest, { params }: Params) {
         clientInstagram: appointment.clientInstagram,
         preferredContact: appointment.preferredContact,
         contactNote: appointment.contactNote,
+        request: appointment.request ?? null,
+        pricing: appointment.pricing ?? null,
       },
       "created",
     );

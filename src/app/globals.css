@@ -363,3 +363,63 @@ body {
     padding-inline: 0.75rem;
   }
 }
+
+/* ─── Theme-9 Education telo članka ────────────────────────────────────────
+ *
+ * Blokovi Content Composer-a dele se sa newsletterom, pa nose neutralnu
+ * tipografiju (sistemski sans, `text-gray-*`) i sopstvene široke omotače.
+ * Unutar theme-9 članka to izgleda kao tuđi dokument zalepljen u temu.
+ *
+ * Umesto da se dvanaest blokova račva po temi, telo se stilizuje odavde:
+ * selektor `.edu-prose h2` ima veću specifičnost od pojedinačne utility klase,
+ * pa nadjačava blok bez `!important` i bez ijedne izmene u samim blokovima.
+ * Newsletter ostaje netaknut — on nikada nije unutar `.edu-prose`.
+ */
+.edu-prose :is(section, aside, div) {
+  color: var(--color-ee-text);
+}
+
+/* Blokovi nose svoje široke omotače i razmake; u članku ih daje kontejner. */
+.edu-prose > :is(section, aside) {
+  padding-inline: 0;
+  padding-block: 0;
+}
+
+.edu-prose > :is(section, aside) > div {
+  max-width: none;
+}
+
+.edu-prose :is(h2, h3) {
+  font-family: var(--font-newsreader);
+  color: var(--color-ee-accent);
+  letter-spacing: -0.018em;
+  font-weight: 400;
+}
+
+.edu-prose h2 {
+  font-size: clamp(24px, 2.6vw, 32px);
+  line-height: 1.15;
+}
+
+.edu-prose h3 {
+  font-size: clamp(19px, 2vw, 23px);
+  line-height: 1.25;
+}
+
+.edu-prose :is(p, li) {
+  font-family: var(--font-instrument-sans);
+  color: var(--color-ee-text-muted);
+  font-size: 17px;
+  line-height: 1.78;
+}
+
+/* Stručna ograda i ostali callout-i ostaju izdvojeni, ali u tonu teme. */
+.edu-prose aside {
+  border-color: var(--color-ee-accent);
+  background: var(--color-ee-surface-muted);
+  border-radius: 0 20px 20px 0;
+}
+
+.edu-prose :is(figure, table) {
+  border-radius: 20px;
+}

@@ -15,6 +15,8 @@ import {
   resolveNewsletterAdminScope,
 } from "@/lib/newsletter/adminTenantScope";
 import { slugify } from "@/helpers/slugify";
+import { validateContentDocument } from "@/lib/content/validation/contentBlockValidation";
+import { contentValidationFailureResponse } from "@/lib/newsletter/contentValidationResponse";
 
 function normalizeNewsletterLandingSlug(slug?: string) {
   if (!slug?.trim()) return "";
@@ -67,14 +69,13 @@ export async function PATCH(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    // Update campaign
-    campaign.campaignType = payload.campaignType;
-    campaign.semanticContent = {
-      ...campaign.semanticContent,
-      ...payload.semanticContent,
-    };
-
     if (payload.campaignType === "email-landing" && payload.landingPage) {
+      const layout = payload.landingPage.layout ?? [];
+      const validation = validateContentDocument(layout, "draft");
+      if (!validation.valid) {
+        return contentValidationFailureResponse(validation);
+      }
+
       const slug = normalizeNewsletterLandingSlug(payload.landingPage.slug);
       const audience = normalizeEditorialAudience(
         payload.landingPage.audience ??
@@ -86,25 +87,43 @@ export async function PATCH(
         audience,
       );
 
-      campaign.landingPage = {
-        enabled: true,
-        slug,
-        layout: payload.landingPage.layout || [],
-        customCtas:
-          payload.landingPage.customCtas ??
-          campaign.landingPage?.customCtas ??
-          [],
-        seo: payload.landingPage.seo || {},
-        score: payload.landingPage.score || 0,
-        semanticType: payload.landingPage.semanticType,
-        audience,
-        editorialCategory,
-        generatedAt: payload.landingPage.generatedAt || new Date(),
-        status: "generated", // Uvek "generated" za save
-        regeneratedCount: (campaign.landingPage?.regeneratedCount || 0) + 1,
-      };
-      campaign.ctaSlug = slug;
+      campaign.set("landingPage.enabled", true);
+      campaign.set("landingPage.slug", slug);
+      campaign.set("landingPage.layout", layout);
+      if (payload.landingPage.customCtas !== undefined) {
+        campaign.set("landingPage.customCtas", payload.landingPage.customCtas);
+      }
+      if (payload.landingPage.seo !== undefined) {
+        campaign.set("landingPage.seo", payload.landingPage.seo);
+      }
+      if (payload.landingPage.score !== undefined) {
+        campaign.set("landingPage.score", payload.landingPage.score);
+      }
+      if (payload.landingPage.semanticType !== undefined) {
+        campaign.set(
+          "landingPage.semanticType",
+          payload.landingPage.semanticType,
+        );
+      }
+      campaign.set("landingPage.audience", audience);
+      campaign.set("landingPage.editorialCategory", editorialCategory);
+      campaign.set(
+        "landingPage.generatedAt",
+        payload.landingPage.generatedAt || new Date(),
+      );
+      campaign.set("landingPage.status", "generated");
+      campaign.set(
+        "landingPage.regeneratedCount",
+        (campaign.landingPage?.regeneratedCount || 0) + 1,
+      );
+      campaign.set("ctaSlug", slug);
     }
+
+    campaign.set("campaignType", payload.campaignType);
+    campaign.set("semanticContent", {
+      ...campaign.semanticContent,
+      ...payload.semanticContent,
+    });
 
     await campaign.save();
 

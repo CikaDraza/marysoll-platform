@@ -4,7 +4,7 @@ import "server-only";
 // Jedina tačka kroz koju se menjaju balansi. Idempotency key čini ponovno
 // knjiženje no-op-om; balans na nalogu je keš održavan $inc-om.
 
-import { Types } from "mongoose";
+import { Types, type ClientSession } from "mongoose";
 import { connectToDB } from "@/lib/db/mongodb";
 import { LoyaltyLedger } from "@/models/LoyaltyLedger";
 import { LoyaltyAccount } from "@/models/LoyaltyAccount";
@@ -85,19 +85,9 @@ export async function postLedgerEntry(
   }
 
   try {
-    await LoyaltyLedger.create({
-      tenantId: params.tenantId,
-      accountId: params.accountId,
-      tenantUserId: params.tenantUserId,
-      entryType: params.entryType,
-      currency: params.currency,
-      amount,
-      source: params.source,
-      idempotencyKey: params.idempotencyKey,
-      description: params.description,
-    });
+    await insertLedgerEntry({ ...params, amount });
   } catch (err: unknown) {
-    if ((err as { code?: number })?.code === 11000) {
+    if (isDuplicateLedgerKey(err)) {
       return { applied: 0, duplicate: true };
     }
     throw err;
@@ -110,4 +100,41 @@ export async function postLedgerEntry(
   await LoyaltyAccount.findByIdAndUpdate(params.accountId, { $inc: inc });
 
   return { applied: amount, duplicate: false };
+}
+
+/** Unique {tenantId, idempotencyKey} — isti događaj se ne knjiži dvaput. */
+export function isDuplicateLedgerKey(err: unknown): boolean {
+  return (err as { code?: number })?.code === 11000;
+}
+
+/**
+ * Sirov upis jednog ledger reda — bez clamp-a, bez dnevnog capa i bez
+ * diranja balansa na nalogu.
+ *
+ * Postoji da bi SVI ledger upisi ostali u ovom fajlu. Koristi ga
+ * `postLedgerEntry` i points-shop redemption, koji balans menja sam
+ * (uslovni `$inc` sa `pointsBalance >= cost`) i zato ne sme da prođe kroz
+ * read→clamp putanju: clamp bi tiho proknjižio manji iznos od naplaćenog.
+ *
+ * Baca E11000 kod duplikata — pozivalac odlučuje da li je to greška ili
+ * idempotentan retry.
+ */
+export async function insertLedgerEntry(
+  params: Omit<PostLedgerEntryParams, "maxPerDay">,
+  session?: ClientSession,
+): Promise<void> {
+  const doc = {
+    tenantId: params.tenantId,
+    accountId: params.accountId,
+    tenantUserId: params.tenantUserId,
+    entryType: params.entryType,
+    currency: params.currency,
+    amount: params.amount,
+    source: params.source,
+    idempotencyKey: params.idempotencyKey,
+    description: params.description,
+  };
+  // `create([doc], { session })` je jedini oblik koji Mongoose vezuje za
+  // transakciju; `create(doc, { session })` tiho ispada iz sesije.
+  await LoyaltyLedger.create([doc], session ? { session } : {});
 }

@@ -2,14 +2,22 @@
  * GET /api/public/[tenantSlug]/appointments
  *
  * Public — no auth required.
- * Returns approved/confirmed appointments for the public calendar.
- * Only exposes date, time, duration, serviceName — no client PII.
+ *
+ * Vraća ISKLJUČIVO zauzeće: kada i koliko dugo. Bez imena, bez usluge, bez
+ * cene — kalendaru za crtanje slobodnih termina ništa od toga ne treba, a
+ * `services[].price` je ranije javno otkrivao koliko je koji termin naplaćen.
+ *
+ * Skup statusa se IZVODI iz canonical occupancy pravila. Ranije je ovde
+ * stajala ručna lista `["appointment_approved", "pending"]`, pa
+ * `appointment_rescheduled` nije bio zauzet u UI-ju iako ga server blokira —
+ * klijent bi video slobodan slot i tek na potvrdi dobio „Termin je zauzet".
  */
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { Appointment } from "@/models/Appointment";
 import { requireCapability } from "@/lib/platform/capabilities-server";
+import { BLOCKING_APPOINTMENT_STATUSES } from "@/lib/appointments/occupancy";
 
 type Params = { params: Promise<{ tenantSlug: string }> };
 
@@ -30,12 +38,12 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     const appointments = await Appointment.find({
       tenantId: (tenant as Record<string, unknown>)._id,
-      status: { $in: ["appointment_approved", "pending"] },
+      status: { $in: [...BLOCKING_APPOINTMENT_STATUSES] },
     })
-      .select("date time duration serviceName services status")
+      .select("date time duration")
       .lean();
 
-    // Serialize — only plain data, no PII
+    // Samo ono što kalendar crta: kada i koliko dugo.
     const serialized = appointments.map((a) => {
       const appt = a as Record<string, unknown>;
       return {
@@ -43,19 +51,6 @@ export async function GET(_req: NextRequest, { params }: Params) {
         date: String(appt.date ?? ""),
         time: String(appt.time ?? ""),
         duration: Number(appt.duration ?? 60),
-        serviceName: String(appt.serviceName ?? ""),
-        status: String(appt.status ?? "pending"),
-        services: Array.isArray(appt.services)
-          ? appt.services.map((s: unknown) => {
-              const sv = s as Record<string, unknown>;
-              return {
-                serviceId: String(sv.serviceId ?? ""),
-                serviceName: String(sv.serviceName ?? ""),
-                duration: Number(sv.duration ?? 0),
-                price: Number(sv.price ?? 0),
-              };
-            })
-          : [],
       };
     });
 

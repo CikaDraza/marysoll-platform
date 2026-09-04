@@ -19,6 +19,7 @@ import {
   type SalonAvailabilityProfile,
 } from "@/lib/booking/availabilityAdapter";
 import { requireCapability } from "@/lib/platform/capabilities-server";
+import { ACTIVE_APPOINTMENT_STATUS_FILTER } from "@/lib/appointments/occupancy";
 
 const SLOT_INTERVAL = 30;
 
@@ -68,7 +69,7 @@ export async function GET(req: NextRequest) {
     const booked = (await Appointment.find({
       tenantId: s.tenantId,
       date,
-      status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
+      status: ACTIVE_APPOINTMENT_STATUS_FILTER,
     })
       .select("time duration status")
       .lean()) as unknown as { time?: string; duration?: number; status?: string }[];

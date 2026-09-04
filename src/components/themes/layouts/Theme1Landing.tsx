@@ -22,7 +22,6 @@ import {
   Theme1CTABookingSection,
   Theme1Footer,
   Theme1Header,
-  Theme1ImageGenerationSection,
   Theme1PricingSection,
   Theme1SocialProof,
 } from "../theme-1";
@@ -73,7 +72,6 @@ export function Theme1Landing(props: ThemeLandingProps) {
           <ThemeBlock document={document} type="content.gallery" />
           <Theme1PricingSection {...native.pricing} />
           <ThemeBlock document={document} type="content.faq" />
-          <Theme1ImageGenerationSection />
           <Theme1CTABookingSection {...native.ctaBooking} />
         </main>
         <Theme1Footer {...footerProps} />

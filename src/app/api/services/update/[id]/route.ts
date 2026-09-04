@@ -60,6 +60,9 @@ export async function PUT(req: Request, { params }: Params) {
       { _id: id, tenantId: auth.decoded.tenantId },
       {
         ...body,
+      // `bookingIntake` se prihvata SAMO u podržanom obliku: browser ne sme
+      // da ubaci proizvoljna polja u poslovnu konfiguraciju usluge.
+      bookingIntake: { enabled: body?.bookingIntake?.enabled === true },
         items: itemsArr.length ? itemsArr : undefined,
         ...(subscriptionObj ? { subscription: subscriptionObj } : {}),
         price: body.price != null ? Number(body.price) : undefined,

@@ -2,11 +2,35 @@ import { Schema, model, models, Types } from "mongoose";
 
 // ─── Appointment ──────────────────────────────────────────────────────────────
 
+/**
+ * Izbor unutar usluge (varijanta i dodaci).
+ *
+ * `pricing.lines` čuva IZNOSE i služi računu; iz njega se ne može
+ * rekonstruisati ŠTA je izabrano ni u kojoj količini. „Promeni termin" mora da
+ * ponudi zatečeni izbor, pa izbor mora da preživi upis.
+ *
+ * Do sada su `variants` i `extras` postojali samo u TypeScript tipu
+ * `IAppointmentService`, a Mongoose ih je (strict mode) tiho odbacivao.
+ */
+const selectedPartSchema = new Schema(
+  {
+    name: { type: String, required: true },
+    price: { type: Number, default: null },
+    duration: { type: Number, default: 0 },
+    perItem: { type: Boolean, default: false },
+    /** Količina dodatka (npr. 3 nokta sa 3D stikerom). Varijanta je uvek 1. */
+    quantity: { type: Number, default: 1 },
+  },
+  { _id: false },
+);
+
 const servicesSchema = new Schema(
   {
     serviceId: { type: Types.ObjectId, ref: "Service", required: true },
     quantity: { type: Number, default: 1 },
     serviceName: { type: String, required: true },
+    variants: { type: [selectedPartSchema], default: undefined },
+    extras: { type: [selectedPartSchema], default: undefined },
     price: Number,
     duration: { type: Number, required: true },
   },
@@ -44,6 +68,58 @@ const appointmentSchema = new Schema(
     contactNote: { type: String, default: "" },
     serviceName: { type: String, required: true },
     services: [servicesSchema],
+    // Canonical cena termina — server je jedini upisuje. Vidi
+    // `IAppointmentPricing`: 0 je stvarna nula, `null` je nepoznata cena.
+    // NAMERNO odvojeno od `originalPrice`/`discountAmount`/`finalPrice`, koji
+    // su vaučerska aritmetika i imaju drugu semantiku.
+    pricing: {
+      type: {
+        mode: { type: String, enum: ["fixed", "on_request", "from"] },
+        currency: { type: String, default: "RSD" },
+        baseAmount: { type: Number, default: null },
+        minimumTotal: { type: Number, default: null },
+        knownAddonsTotal: { type: Number, default: 0 },
+        quotedBaseAmount: { type: Number, default: null },
+        quotedTotal: { type: Number, default: null },
+        quotedAt: { type: Date, default: null },
+        quotedBy: { type: String, default: null },
+        chargedAmount: { type: Number, default: null },
+        chargedAt: { type: Date, default: null },
+        chargedBy: { type: String, default: null },
+        lines: [
+          {
+            kind: { type: String, enum: ["base", "variant", "extra"] },
+            label: String,
+            amount: { type: Number, default: null },
+            ref: String,
+            quantity: Number,
+            _id: false,
+          },
+        ],
+      },
+      default: undefined,
+    },
+    // Zahtev klijentkinje uz termin ("intake"): opis, referentni link i prilozi.
+    // Namerno generično (`request`/`attachments`), ne `nailImage` — sutra je
+    // ovo referenca za frizuru, šminku ili tetovažu.
+    request: {
+      type: {
+        note: String,
+        referenceUrl: String,
+        attachments: [
+          {
+            publicId: { type: String, required: true },
+            url: { type: String, required: true },
+            width: Number,
+            height: Number,
+            bytes: Number,
+            format: String,
+            _id: false,
+          },
+        ],
+      },
+      default: undefined,
+    },
     date: { type: String, required: true },
     time: { type: String, required: true },
     duration: { type: Number, required: true },

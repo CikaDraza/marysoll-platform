@@ -13,6 +13,7 @@ import {
   getNewsletterScopeKey,
   type NewsletterClientScope,
 } from "@/lib/newsletter/clientScope";
+import { getContentMutationErrorMessage } from "@/lib/newsletter/contentValidationClient";
 
 interface PublishLandingArgs {
   campaignId: string;
@@ -44,7 +45,10 @@ export function usePublishLanding(
       });
       toast.success("Landing uspešno objavljen!");
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) =>
+      toast.error(
+        getContentMutationErrorMessage(err, "Greška pri objavljivanju landing-a"),
+      ),
   });
 
   return {

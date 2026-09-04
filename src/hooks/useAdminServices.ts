@@ -33,6 +33,7 @@ const emptyServiceForm = (): IServiceInput => ({
   priceMode: "fixed",
   duration: undefined,
   description: "",
+  bookingIntake: { enabled: false },
   items: [],
   variants: [],
   extras: [],
@@ -66,6 +67,7 @@ function mapServiceToForm(s: IService): IServiceInput {
     priceMode: s.priceMode ?? "fixed",
     duration: s.duration ?? undefined,
     description: s.description ?? "",
+    bookingIntake: { enabled: s.bookingIntake?.enabled === true },
     items: s.items ?? [],
     variants: s.variants ?? [],
     extras: s.extras ?? [],
@@ -91,16 +93,35 @@ function mapServiceToForm(s: IService): IServiceInput {
 function validateService(f: IServiceInput): string | null {
   if (!f.name.trim()) return "Naziv usluge je obavezan.";
   if (!f.categorySlug?.trim()) return "Kategorija je obavezna.";
-  if (f.type === "single") {
+  // Paket je jedna cena i jedno trajanje, isto kao jedna usluga — stavke
+  // unutar njega su samo spisak onoga što je uključeno.
+  if (f.type === "single" || f.type === "group") {
     if (f.priceMode !== "on_request" && (!f.basePrice || f.basePrice <= 0)) {
       return "Cena mora biti veća od 0.";
     }
     if (!f.duration || f.duration <= 0) return "Trajanje mora biti veće od 0.";
   }
-  if (f.type === "variant" && (!f.variants || f.variants.length === 0))
-    return "Dodajte najmanje jednu varijantu.";
-  if (f.type === "group" && (!f.services || f.services.length === 0))
-    return "Dodajte najmanje jednu uslugu u grupi.";
+  if (f.type === "variant") {
+    if (!f.variants || f.variants.length === 0)
+      return "Dodajte najmanje jednu varijantu.";
+    // "od X" je obećanje klijentkinji — bez iznosa i bez najkraćeg trajanja
+    // usluga ne može ni u cenovnik ni u booking.
+    if (f.priceMode === "from") {
+      if (!f.basePrice || f.basePrice <= 0)
+        return "Unesite najnižu cenu — ona se prikazuje kao „od“.";
+      if (!f.duration || f.duration <= 0)
+        return "Unesite najkraće trajanje — ono rezerviše termin u kalendaru.";
+      // Kod „Od“ varijanta nosi DOPLATU na osnovnu cenu, pa negativan iznos
+      // ne bi bio doplata nego popust — to model ne podržava.
+      const negative = f.variants.find(
+        (v) => typeof v.additionalPrice === "number" && v.additionalPrice < 0,
+      );
+      if (negative)
+        return `Doplata za „${negative.name || "varijantu"}“ ne može biti negativna.`;
+    }
+  }
+  if (f.type === "group" && !f.services?.some((sv) => sv.name.trim()))
+    return "Navedite šta paket sadrži — bar jednu uslugu.";
   return null;
 }
 
@@ -232,7 +253,12 @@ export function useAdminServices() {
     }));
   }, []);
   const updateVariant = useCallback(
-    (i: number, k: keyof IServiceVariant, v: string | number | boolean) => {
+    (
+      i: number,
+      k: keyof IServiceVariant,
+      // `undefined` briše doplatu kad varijanta pređe na "cena na upit".
+      v: string | number | boolean | undefined,
+    ) => {
       setFormState((p) => {
         const a = [...(p.variants ?? [])];
         a[i] = { ...a[i], [k]: v };
@@ -287,13 +313,7 @@ export function useAdminServices() {
       ...p,
       services: [
         ...(p.services ?? []),
-        {
-          name: "",
-          price: 0,
-          priceMode: "fixed",
-          duration: 30,
-          description: "",
-        } as IServiceGroupItem,
+        { name: "", description: "" } as IServiceGroupItem,
       ],
     }));
   }, []);

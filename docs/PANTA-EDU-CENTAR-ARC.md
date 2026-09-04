@@ -1,11 +1,23 @@
 # PANTA — Edu Centar: workspace arhitektura i Education domen
 
-> **Status:** ZAKLJUČANA ARHITEKTURA, IMPLEMENTACIJA NIJE POČELA.
-> Kanonski dokument za Edu luk. Poslednja izmena: 2026-08-27 · `main`
+> **Status: EDU CENTAR v1 — PILOT CLOSURE.**
+> Stvarni feedback je prikupljen; završnica je zaključana kroz E1–E5.
+> Kanonski dokument za Edu luk. Poslednja izmena: 2026-09-04 · `staging/production-engines`
 >
-> **Faza 0 počinje posle završetka Theme-9 contract/rollout foundation-a i kada
-> staging postane aktivna razvojna linija za Edu luk.** 2A/2B/2C su na `main`-u;
-> dalji Theme-9 + Edu razvoj i QA vode se staging-only.
+> **Freeze je proglašen na `c3039a4`** (PDF/DOCX importer — poslednji rez pre
+> pilota). Posle njega su išle **samo ispravke onoga što je pilot odmah pokazao**
+> — multipart uvoz, verzalni naslovi u njenim materijalima, podnaslov koji je
+> gutao prvi pasus, polazni alt teksta i mobilni raspored značke — nijedna nova
+> funkcija.
+>
+> Jezgro je dovoljno kompletno, a stvarna upotreba je sada odredila mali završni
+> rez: javno povezivanje sadržaja, jasniji ulazi i klasifikacija, pouzdan editor
+> i zaseban Blog ulaz. Vidi
+> [Edu Centar v1 — pilot closure](#edu-centar-v1--pilot-closure-revised-target-2026-09-04).
+>
+> **Faza 0 je počela tek pošto je Theme-9 contract/rollout foundation zatvoren i
+> staging postao aktivna razvojna linija za Edu luk; sada je završena.**
+> 2A/2B/2C su na `main`-u; dalji Theme-9 + Edu razvoj i QA vode se staging-only.
 >
 > Product/domenski ulaz je u tri prateća dokumenta:
 > [EDUCATION_CAPABILITY_GATE_AND_ADOPTION.md](EDUCATION_CAPABILITY_GATE_AND_ADOPTION.md) ·
@@ -26,12 +38,17 @@ Tri sloja se **ne smeju** spojiti u jedan sistem, i **nijedan ne sme postati vla
 ```
 CONTENT-CENTRIC          CLIENT-CENTRIC              AUTHORING
 EducationContent         TenantUser                  Content Composer
-→ public / assigned      → Client 360 / Moj Prostor  → Newsletter
+→ public/gated/private   → Client 360 / Moj Prostor  → Newsletter
 → /edukacija             → Guide / Program /         → Education
                            Edukacija / Termini       → Guide blokovi
 ```
 
-Uz to je zaključana šira granica: **„Salon + Edukacija" nije treći tip sistema**, nego kombinacija dva capability seta nad istim tenantom. Bez te odluke Edu Centar postaje „još nekoliko tabova u salon dashboard-u", pa se za šest meseci rastura admin navigacija, klijentski profil i modeli.
+Uz to je zaključana šira granica: **„Salon + Edukacija" nije treći tip
+proizvoda.** Postojeća kombinacija dva capability seta nad istim tenantom ostaje
+samo CURRENT/legacy prelazna arhitektura dok pilot radi. TARGET je jedan
+vlasnički nalog sa više odvojenih business workspace-a/tenant-a: Salon i Edu
+imaju zaseban javni proizvod, sajt, brending i domen. `verticals[]` može ostati
+interni capability/migration mehanizam, ali nije budući product UX model.
 
 **Ishod:** Marina piše sadržaj, dodeljuje ga klijentima, pravi Guide i program — pre nego što Booking Engine bude gotov. Zakazivanje se do tada dogovara ručno.
 
@@ -43,11 +60,14 @@ Uz to je zaključana šira granica: **„Salon + Edukacija" nije treći tip sist
 |---|---|
 | PDF izvoz | **Browser print**, nula zavisnosti; dugme se zove **„Sačuvaj / štampaj PDF"**, ne „Preuzmi PDF" |
 | Izvor za `/edukacija` | **Samo novi `EducationContent`**; `/blogs` nastavlja nad `NewsletterCampaign`, netaknut |
+| Blog i Edukacija | **Dva nezavisna javna kanala**, ne zamena jedan za drugog: `/blogs` → `NewsletterCampaign`, `/edukacija` → `EducationContent`. Tenant sme imati jedan, drugi ili oba; svaki nav link se razrešava nezavisno po svojoj capability/readiness proveri |
+| Pristup sadržaju | **Tri stanja: `public` / `gated` / `private`** — vidi [Pristup sadržaju](#pristup-sadržaju--public--gated--private-zaključano-2026-08-29). Pretplata/kupovina/ručno odobrenje nisu četvrto stanje nego izvori prava pristupa |
 | Capability | **Pun gate**, ali wiring i aktivacija su **razdvojeni** (Faza 3 vs release gate u Fazi 5) |
 | Klijentske rute | `Moj Prostor` tab + pod-rute ispod `/panel`; `Moj Profil` ostaje samo identitet/podešavanja |
 | Admin rute | `/education/*` kao zaseban workspace; presedan `src/app/marketing/*` |
 | Klijenti | **Horizontalni modul**, ne unutar Edu Centra — klijent pripada tenantu, ne modulu |
-| „Salon + Edu" u bazi | **NE kao `tenantType`**; postojeće `verticals: ["beauty","education"]` |
+| „Salon + Edu" danas | **CURRENT/legacy transition:** isti tenant može imati `verticals: ["beauty","education"]` dok pilot i migracija ne budu završeni |
+| „Salon + Edu" target | **Jedan `AuthUser` → odvojeni Salon i Edu tenant/workspace**; svaki ima svoj sajt/domen. Nema javnog `hybrid` izbora niti prebacivanja vertikale unutar jednog biznisa |
 | Vlasničko polje | **`clientProfileId`** na svim client-owned modelima |
 
 ---
@@ -57,8 +77,8 @@ Uz to je zaključana šira granica: **„Salon + Edukacija" nije treći tip sist
 Poseban, kasniji luk. Theme-9 2A/2B/2C foundation je spojena u `main`, a staging
 Release A/migration rehearsal je završen.
 
-**Faza 0 počinje kada Theme-9 contract/rollout foundation bude zatvoren i staging
-postane aktivna razvojna linija Edu luka.**
+**Ulazni gate za Fazu 0 je zatvoren:** Theme-9 contract/rollout foundation je
+završen i `staging/production-engines` je aktivna razvojna linija Edu luka.
 
 ---
 
@@ -91,7 +111,12 @@ SkincareGuide · GuidedProgram
 
 ---
 
-## FAZA 0 — Vertical & workspace foundation
+## FAZA 0 — Vertical & workspace foundation (CURRENT/legacy transition)
+
+> Ova faza dokumentuje već implementirano stanje, ne budući product target.
+> `hybrid` preset, „Aktiviraj Edu Centar" nad istim tenantom i jedan tenant sa
+> dva capability seta ostaju kompatibilnost dok H1–H4 ne omoguće bezbednu
+> migraciju. Ne proširivati ovaj obrazac na novi UX.
 
 **0.1 Registration preset.** `createInitialTenantCapabilityConfiguration()` (`src/lib/platform/capabilities.ts:195`) hardkodira `verticals: ["beauty"]`. Postaje preset-svesna:
 
@@ -115,9 +140,14 @@ uz **backward-compatible prihvatanje `salonName`** dok se UI ne migrira.
 
 ⚠️ **Ne raditi preimenovanje `SalonProfile` → `SiteProfile`** — Theme sistem zavisi od njega. Education tenant privremeno dobija `SalonProfile` kao **legacy presentation profile**; to mora biti zapisano u kodu da kasnije niko ne zaključi da je Education domen zapravo Salon domen.
 
-**0.3 Ekran izbora pri registraciji** — tri kartice (Salon / Edukacija / oba). Izbor bira preset, **ne** piše `tenantType`.
+**0.3 CURRENT ekran izbora pri registraciji** — tri kartice (Salon / Edukacija /
+oba). Izbor bira preset, **ne** piše `tenantType`. TARGET uklanja „oba": korisnik
+bira „Kreiraj Salon" ili „Kreiraj Edu Centar", a postojeći vlasnik kasnije može
+da izabere „+ Kreiraj novi Edu workspace".
 
-**0.4 Module provisioning ugovor** — „Aktiviraj Edu Centar" dodaje capability set **istom** tenantu; ne pravi novi tenant, ne dira klijente, brending ni pretplatu.
+**0.4 CURRENT module provisioning ugovor** — „Aktiviraj Edu Centar" dodaje
+capability set **istom** tenantu; ne pravi novi tenant, ne dira klijente,
+brending ni pretplatu. Ovo je prelazno ponašanje, ne TARGET registracija.
 
 ⚠️ **Implementirati provisioning, ali NE puštati dugme** dok proizvod ne postoji (Faza 5).
 
@@ -127,7 +157,27 @@ uz **backward-compatible prihvatanje `salonName`** dok se UI ne migrira.
 
 **0.6 Salon se NE dira.** Postojećih ~15 dashboard tabova ostaje. Novi Education workspace se pravi po budućem modelu; Salon se migrira kasnije, zasebno.
 
-**Zapisati kao budući put, ne implementirati:** `AuthUser.email` je globalno unique i register vraća 409 ako owner email postoji. „Neka napravi drugi nalog" **nije** dugoročno rešenje za odvojene Salon/Education biznise istog vlasnika. Ispravan put je jedan `AuthUser` → više `Tenant`-a („Kreiraj novi Marysoll workspace"). `TenantUser.authUserId` je već opciona veza sa izričitom napomenom da **ne sme** biti auth authority, pa sadašnja identity arhitektura to ne sprečava.
+### Implementacioni status Faze 0
+
+- ✅ preset-aware capability konfiguracija uz identičan legacy salon default
+- ✅ neutralni `businessName` + `preset` registration contract uz `salonName` kompatibilnost
+- ✅ registration UI sa Salon / Edukacija / Salon + Edukacija izborom
+- ✅ idempotentno Edu provisioning jezgro nad istim tenantom; javni CTA ostaje zaključan do Faze 5
+- ✅ zaštićena `/education`, `/education/offerings` i `/education/inquiries` workspace granica
+- ✅ `education` je platformski rezervisana putanja; Salon workspace nije menjan
+
+Faza 0 ne uvodi `tenantType`, ne preimenuje `SalonProfile`, ne dodaje F1 sadržaj i
+ne menja Theme-9. Education tenant privremeno i dalje koristi `SalonProfile` samo
+kao presentation profile.
+
+**TARGET, ne implementirati u pilot closure rezu:** `AuthUser.email` je globalno
+unique i register vraća 409 ako owner email postoji. „Neka napravi drugi nalog"
+nije rešenje. Ispravan put je jedan `AuthUser` → više `Tenant`-a/business
+workspace-a („Kreiraj novi Marysoll workspace"). Salon i Edu su odvojeni
+tenant-i sa odvojenim sajtovima i domenima. `TenantUser.authUserId` je već
+opciona veza sa izričitom napomenom da **ne sme** biti auth authority, pa
+sadašnja identity arhitektura to ne sprečava. Detaljan redosled H1–H4 je u
+[Future pravcu](#future--posle-pilot-closure-a-ne-implementirati-u-ovom-rezu).
 
 ---
 
@@ -159,6 +209,19 @@ Cilj: `src/components/content-composer/`, `src/lib/content/{blocks,schemas,regis
 
 **Ne portovati:** `useAutoOptimizeLayout` (strukturno ne može poboljšati layout), mrtvi tipovi u `src/types/conversational/layout.ts`, `visibility: "minimized"` (nedostižan i neobrađen).
 
+### Implementacioni status Faze 1
+
+- ✅ karakterizacioni testovi zaključavaju sanitize, score, render filter/sort i ručni edit → save/publish bez AI poziva
+- ✅ generički editor i šest postojećih view komponenti žive u `src/components/content-composer/`
+- ✅ schema/parse, sanitize, text extraction, score, registry i SEO generator imaju domenski neutralno vlasništvo u `src/lib/content/`
+- ✅ preview prima header/metadata slotove; Newsletter naslov i SEO panel ostaju u tankom campaign adapteru
+- ✅ preview i public campaign renderer koriste isti registry-driven `BlockList`
+- ✅ `CtaKey` re-export je uklonjen, campaign objekat više nije zavisnost shared layout buildera, a `minimized` nije prenet u novi contract
+
+Faza 1 ne dodaje nove blokove, write-time Zod gate, Education modele ili
+capability wiring. `AdminSemanticModal`, newsletter hookovi/API rute,
+`ctaCatalog`, `landingPageAgent` i `NewsletterCampaign` nisu funkcionalno menjani.
+
 ---
 
 ## FAZA 2 — Novi blokovi i rupe u editoru
@@ -169,23 +232,120 @@ Cilj: `src/components/content-composer/`, `src/lib/content/{blocks,schemas,regis
 
 **2.3 Zod validacija na upisu.** `NewsletterCampaign.landingPage.layout` je `Schema.Types.Mixed`; save/publish pišu neprovereno. Deljeni sloj preuzima validaciju — najjeftiniji dobitak na ispravnosti u celom zahvatu.
 
+### Implementacioni status Faze 2
+
+- ✅ **F2A — Content authoring contract + generic editor UX.** Postojećih šest
+  persisted discriminanata ostalo je netaknuto; dodat je canonical
+  `ContentBlock` alias, centralni draft/publish validation contract sa statusima
+  `VALID` / `INCOMPLETE` / `INVALID` / `HIDDEN`, immutable pure operacije i
+  draft factories. Shared controlled editor sada podržava manual empty start,
+  picker, selection/collapse, add, move, hide/show, duplicate i potvrđeni delete.
+  `FeatureBlock.sections` i `PricingBlock.items` podržavaju add/delete, a editor
+  preview bezbedno označava incomplete/invalid draft umesto da obori renderer.
+- ✅ **F2B — šest blokova + shared media UX.** Canonical contract i registry sada
+  imaju ukupno 12 PascalCase discriminanata. `VideoBlock`, `TableBlock`,
+  `CalloutBlock`, `ChecklistBlock`, `FileDownloadBlock` i `ImageGalleryBlock`
+  imaju draft factory, strict validaciju, editor, neutralni semantički renderer,
+  text extraction i graceful preview degradation. Provider-neutral
+  `ContentAssetRef` / `ContentImageRef` i injected media adapter povezuju editor
+  sa postojećim image/video/file upload autoritetima; Content Composer ne zna za
+  Cloudinary, auth ili tenant foldere. Replace neuspeh čuva staru referencu, a
+  remove ne briše remote asset. Ista image kontrola popunjava i image polja šest
+  ranijih blokova. Postojeći `{src, alt}` sadržaj ostaje kompatibilan.
+- ✅ **F2C — persistence/save/publish Zod hardening.** Postojeći F2A
+  `validateContentDocument` je server write authority nad Newsletter landing
+  layoutom: draft save dozvoljava `VALID` / `INCOMPLETE` / `HIDDEN`, publish
+  samo `VALID` / `HIDDEN`, a validation failure vraća structured HTTP 422 pre
+  bilo kakve mutation. Transient media ref je `INVALID`; nedostajući media
+  ostaje `INCOMPLETE`. Save/publish persistiraju originalni dozvoljeni JSON kroz
+  targeted, lossless update i jedan save; publish više nema pre-validation
+  status mutation i čuva `customCtas`.
+
+**FAZA 2 — ZAVRŠENA.** Shared lifecycle je authoring → draft validation → draft
+save → preview → publish validation → host persistence → public render. Content
+Composer poseduje content readiness; host poseduje permissions, lifecycle,
+storage i public exposure. Faza 2 ne uvodi `EducationContent`, Education rute,
+Theme/Layout blokove, capability wiring niti novi presentation sistem.
+F2B takođe ne menja AI schema/prompt: AI i dalje generiše originalnih šest
+blokova. Eksplicitni FULL REGENERATE u Newsletter hostu i dalje zamenjuje ceo
+layout; merge ručnih blokova ostaje zaseban host UX dug.
+
 ---
 
-## FAZA 3 — Capability **wiring** (bez aktivacije)
+## FAZA 3 — Vertikalni capability wiring
 
-`CapabilityReadinessProvider` interfejs postoji (`src/lib/platform/blocks/resolve.ts:46`), ali **nijedna implementacija nije nigde priključena** — `ClientHomePage.tsx:310` ne prosleđuje `readiness`, a `resolve.ts` fail-close-uje na `"unconfigured"`. Svaki blok sa `capability !== null` bio bi **uvek preskočen**.
+Faza 3 se više ne implementira horizontalno za površine koje još ne postoje.
+Seče se uz stvarni UI i svaki naredni domen dobija gate tek kada dobije svoj
+route/API boundary.
 
-U ovoj fazi:
+### F3A — Admin workspace capability i navigacija (EDU UI-1)
 
-- ✅ plan entitlement mapiran (`plan: UNMAPPED` bezuslovno vraća `false`)
-- ✅ tenant provisioning
-- ✅ server gate-ovi
-- ✅ **`EducationReadinessProvider`** napisan i priključen u `ClientHomePage`
-- ✅ testovi, uključujući direktan API pristup bez capability-ja → 403
+> Sledeće tačke opisuju CURRENT implementaciju za pilot. H1–H4 TARGET ih
+> kasnije zamenjuje business-workspace switcherom između odvojenih tenant-a.
 
-⚠️ **`platformAvailable` ostaje `false`.** Capability ne sme otključati poluzavršen proizvod.
+- `TenantCapabilitySnapshot` additive projektuje server-resolved `verticals`;
+  legacy missing vrednost ostaje `beauty`;
+- `education.catalog` je platformski dostupan kao postojeći-plan `core` samo za
+  ovaj workspace/content foundation; tenant provisioning ostaje obavezni gate;
+- `education.inquiries` i `booking.education` ostaju `platformAvailable: false`
+  i `plan: UNMAPPED`;
+- `/education/*` ima server auth + tenant + `education.catalog` authority;
+- beauty vidi Salon, education-first Edu Centar, a hybrid jasan Salon ↔ Edu
+  Centar switch;
+- Education sidebar prikazuje samo Pregled i Sadržaj;
+- `/education/content` i `/education/content/new` su namerni UI shell-ovi bez
+  persistence-a ili throwaway forme.
+- workspace control je jedan accessible dropdown, ne aktivni link koji vodi na
+  istu rutu; hybrid owner bira Salon ↔ Edu Centar, a URL ostaje authority za
+  trenutno aktivni workspace.
 
-⚠️ `src/lib/platform/blocks/registry.test.ts` tvrdi tačan broj/spisak blokova i da **nijedan domenski blok nema `capability: null`** — menja se u istom commitu kao prvi `education.*` blok.
+**Status:** code complete; staging browser acceptance je obavezan pre UX
+prihvatanja. Production deployment ostaje zasebna release odluka.
+
+#### Workspace availability nije automatski tenant upgrade
+
+Postojeći beauty tenant ostaje beauty-only sve dok owner eksplicitno ne izabere
+**Aktiviraj Edu Centar** i potvrdi mutaciju. Selector pre aktivacije prikazuje
+aktivni Salon i zaseban activation CTA; ne predstavlja Edu Centar kao već
+dostupan workspace.
+
+Aktivacija je tenant-scoped, idempotentna canonical operacija:
+
+```text
+beauty tenant
+  → explicit owner confirmation
+  → addEducationCapabilityConfiguration(existingTenant)
+  → verticals: [beauty, education]
+  → isti tenant postaje hybrid
+```
+
+U CURRENT toku ne kreira se drugi tenant i ne menjaju se `SalonProfile`,
+postojeći sadržaj, Salon theme ili Theme-9 konfiguracija. Ovo više nije ciljna
+arhitektura: TARGET namerno razdvaja Salon i Education kao različite
+business/brand i javne site granice pod istim vlasničkim nalogom. H1–H4 definišu
+put bez lomljenja pilota; ovo poglavlje ne definiše Education theme migraciju.
+
+`core` ovde nije nova pricing odluka: postojeći plan model nema Education
+entitlement. Najmanji eksplicitni contract je platform availability ∩ postojeći
+tenant provisioning. Pravi Education pricing/entitlement može kasnije zameniti
+plan source bez promene workspace identiteta.
+
+### F3B — Domain/API gate uz EducationContent (EDU UI-2)
+
+Tek kada postoje `EducationContent` model i CRUD rute:
+
+- svaki write/read API dobija `requireCapability("education.catalog")`, tenant
+  scope i permission gate;
+- `/education/content` prelazi sa shell-a na stvarni CRUD + Content Composer;
+- readiness se računa iz stvarnog sadržaja, ne iz postojanja workspace-a.
+
+Public `education.*` block wiring, `/edukacija` readiness i client/assignment
+gate-ovi dolaze tek sa odgovarajućim UI-2/UI-3/UI-4 površinama. Ne uvoditi
+capability wiring za nepostojeći UI.
+
+⚠️ `src/lib/platform/blocks/registry.test.ts` tvrdi tačan broj/spisak blokova i
+da **nijedan domenski blok nema `capability: null`** — menja se u istom commitu
+kao prvi stvarni `education.*` blok.
 
 ---
 
@@ -196,7 +356,8 @@ EducationContent {
   tenantId          (required, prvi; tenant-first indeksi)
   title, slug
   kind:       advice | article | guide | video | material
-  visibility: "public" | "private"
+  visibility: "public" | "private"   ← TRENUTNA persistencija;
+                                        cilj je accessMode (public|gated|private)
   status:     draft | published
   blocks:     ContentBlock[]
   seo?        (samo za public)
@@ -206,6 +367,76 @@ EducationContent {
 ⚠️ Novi model sa `tenantId` **mora** u `tenantScopedModels()` (`src/lib/tenant/deleteTenant.ts:64`) — `deleteTenant.contract.test.ts` skenira `src/models/` i pada dok se ne doda.
 
 **Edu Studio** — `src/app/education/content/`. Puna admin stranica, **ne modal**. Marina počinje od praznog naslova i `[+ Dodaj blok]`, ne od AI modala.
+
+### Implementacioni status F4A + F3B (EDU UI-2) — 2026-08-29
+
+- ✅ `EducationContent` model sa tenant-first indeksima, **tenant-scoped unique
+  slug-om** (`{ tenantId, slug }`) i `Mixed` blokovima; nema `clientProfileId`,
+  assignment, theme, booking ni course polja — regresioni test to zaključava.
+- ✅ Model je u `tenantScopedModels()`; canonical cascade contract je zelen.
+- ✅ `/api/education/content` (GET/POST), `/api/education/content/[id]`
+  (GET/PATCH/DELETE) i `/api/education/content/[id]/publish` (POST). Svaka ruta
+  ide kroz jedan ulaz: admin permission → tenant iz auth konteksta →
+  `requireCapability("education.catalog")` → tenant-scoped upit. `tenantId`
+  nikada ne dolazi iz tela zahteva; nijedan upit ne koristi samo `_id`.
+- ✅ Draft-save koristi `validateContentDocument(blocks, "draft")` — INCOMPLETE
+  i HIDDEN prolaze, INVALID daje 422 `CONTENT_VALIDATION_FAILED` bez ijedne DB
+  izmene. Blokovi se persistuju tačno onakvi kakve je validator prihvatio.
+- ✅ Publish čita **persisted** zapis, ne telo zahteva: nema puta kojim bi se
+  objavilo nešto što nije prošlo Save. Host uslov je bar jedan `VALID` vidljiv
+  blok; shared validator nije menjan.
+- ✅ Lifecycle (**ispravljeno u UI-2B**): jedan zapis nosi **dve kopije**.
+
+  ```text
+  root polja        → tekuća radna kopija (menja je Save)
+  publishedSnapshot → poslednja objavljena verzija (menja je samo Publish)
+  ```
+
+  Ranija formulacija „Save ne menja `status`, dakle nema public downtime-a" je
+  bila nedovoljna: `status` jeste ostajao `published`, ali su se menjala baš
+  ona root polja (`title`, `slug`, `kind`, `visibility`, `seo`, `blocks`) koja
+  bi javna strana čitala — pa bi snimanje bilo **implicitna objava**. Sada
+  Save menja samo radnu kopiju, a objava je jedina granica promocije. Nema
+  istorije verzija: postoje tačno dve kopije, tekuća i poslednja objavljena.
+- ✅ Slug: server normalizuje, izvodi ga iz naslova samo kad nije unet, i
+  **ne prepisuje ručno potvrđen slug pri promeni naslova**; kolizija radnog
+  slug-a je 409 `EDUCATION_SLUG_TAKEN`. Javni URL je `publishedSnapshot.slug` i
+  ostaje živ dok se ne objavi ponovo; dva objavljena zapisa istog tenanta ne
+  mogu deliti javni URL (partial unique indeks nad
+  `{tenantId, publishedSnapshot.slug}` + provera pri objavi,
+  409 `EDUCATION_PUBLIC_SLUG_TAKEN`). Nikad globalno unique.
+- ✅ UI: CMS lista (naslov/vrsta/vidljivost/status/izmenjeno) + **full-page**
+  editor nad deljenim `ContentBlocksEditor`, `PreviewRenderer` i
+  `useContentMediaAuthoring`. Nema education-specific blokova; svih 12 shared
+  tipova radi round-trip.
+- ✅ **Javni izvor istine (UI-2B, obavezno za UI-3):**
+
+  ```text
+  AUTHORING SOURCE  → root EducationContent
+  PUBLIC SOURCE     → publishedSnapshot
+  PUBLISH           → jedina granica promocije
+  ```
+
+  `isPubliclyConsumable()` i `resolvePublicEducationContent()` čitaju
+  **isključivo** snapshot. Zapis bez snapshot-a nije javan ni kada mu je
+  `status: "published"` — fail-closed, da zatečen zapis pre backfill-a ne
+  procuri. UI-3 ne sme koristiti `root.status` + `root.visibility` +
+  `root.blocks`. Uslov `visibility === "public"` je **prelazan**: zamenjuje ga
+  `accessMode ∈ {public, gated}` uz zaštićeno telo za `gated`.
+- ✅ Režim pristupa prati snapshot: prelazak stupa na snagu tek objavom, u oba
+  smera. Danas su to dva stanja (`public`/`private`); ciljna tri stanja i
+  njihova pravila su u
+  [Pristup sadržaju — PUBLIC / GATED / PRIVATE](#pristup-sadržaju--public--gated--private-zaključano-2026-08-29).
+- ✅ Backfill: `npm run backfill:education-snapshot -- --dry-run|--apply`
+  (tenant-scoped opcija, idempotentan, draft se nikada ne objavljuje). Provereno
+  nad `staging-marysoll_db`: kolekcija `educationcontents` još ne postoji, dakle
+  nema zatečenih zapisa — skripta ipak postoji jer se na „verovatno prazna baza"
+  ne oslanjamo.
+- ✅ Admin oznaka: `Draft` · `Objavljeno` · `Objavljeno · neobjavljene izmene`,
+  računata iz `workingSavedAt` vs `publishedSnapshot.publishedAt` — bez
+  poređenja blokova u renderu.
+- ⬜ Nije rađeno u UI-2/2B: javno `/edukacija`, public/client read API, Moj
+  Prostor, assignment/ACL, Unpublish, istorija verzija, AI SEO.
 
 ---
 
@@ -246,30 +477,742 @@ javnu edukaciju.
 
 ---
 
+## Pristup sadržaju — PUBLIC / GATED / PRIVATE (zaključano 2026-08-29)
+
+> **Ovo je kanonski ugovor pristupa Education sadržaju.** Svaki drugi dokument
+> koji govori o javnom/privatnom Education sadržaju podređen je ovoj sekciji.
+>
+> **Status (ažurirano):** semantika je zaključana **i implementirana**.
+> Persistencija nosi `accessMode: "public" | "gated" | "private"` na radnoj
+> kopiji i na objavljenoj verziji, uz `publicPreview` za zaključan sadržaj.
+> Zatečeno `visibility` ostaje samo kao izvor za čitanje starih zapisa
+> (`resolveAccessMode()`), a `npm run backfill:education-access` ga prevodi.
+> Entitlement (pretplata / kupovina / ručno odobrenje) i dalje **ne postoji**.
+
+### Zašto tri stanja, a ne dva
+
+Dva stanja mešaju dva različita pitanja u jedno polje: *da li svet sme da zna da
+ovo postoji* i *da li svet sme da pročita telo*. Čim Marina poželi da naplati
+ili uslovi pristup vrednom članku, ta dva pitanja se razilaze — sadržaj treba da
+bude **otkriven, a zaključan**. To dvostepeno stanje u dvočlanom modelu ne
+postoji.
+
+```text
+PUBLIC          GATED                         PRIVATE
+besplatno       javno otkriveno,              neotkriveno,
+i javno         telo zaključano               samo autorizovan korisnik
+```
+
+**OTKRIVEN ALI ZAKLJUČAN ≠ PRIVATAN.** To je cela poenta razlike.
+
+### PUBLIC
+
+- postojanje je javno; metapodaci su javni; **telo je javno**
+- pojavljuje se u `/edukacija` listi
+- indeksira se po uobičajenoj javnoj SEO politici
+- javna detaljna ruta vraća pun objavljen snapshot
+
+### GATED
+
+- postojanje je **namerno** javno i pretraživo
+- javni pregled je dozvoljen: naslov, kratak opis, opciono cover
+- **telo (blokovi) NIJE javno čitljivo**
+- javna ruta prikazuje pregled + CTA za pristup
+- pojavljuje se u listi ako tako odluči product dizajn
+- neautorizovan čitalac **nikada** ne dobija zaštićene blokove — ni u HTML-u, ni
+  u RSC payload-u, ni u JSON-u
+- SEO: sme biti indeksiran, ali se indeksira **samo javni pregled**
+
+### PRIVATE
+
+- postojanje **nije** javno
+- nema javne liste, teaser-a, naslova ni cover-a
+- neautorizovan direktan URL vraća **404**, ne „nemate pristup"
+- vidljiv je kasnije samo kroz eksplicitnu dodelu / entitlement
+
+### Superseded: „gate samo ako je adresa nekad bila javna"
+
+U razgovoru pre ovog ugovora razmatrano je međurešenje: kada javni sadržaj
+pređe u privatan, njegov URL prikazuje gate umesto 404 — ali samo ako je ta
+adresa nekada bila javna, da gate ne postane orakl za pogađanje privatnih
+adresa.
+
+**To pravilo je prevaziđeno i ne sme se implementirati.** Nikada nije ušlo u
+kod ni u dokumentaciju; ovde se beleži da ne bi bilo iskopano kasnije kao
+„ranije dogovoreno".
+
+Zamenjuje ga jasnija odluka, jer je ionako rešavala pogrešan problem:
+
+```text
+želim da zaključam sadržaj, ali da se i dalje zna da postoji  → GATED
+želim da sadržaj više ne bude javno otkriven                  → PRIVATE (404)
+```
+
+**Očekivana upotreba (product zapažanje, ne tehničko ograničenje):** ono što je
+jednom bilo javno u praksi neće postati privatno — postaće **premium**, tj.
+`gated`. Privatan sadržaj tenanti prave **od nule, za konkretnu klijentkinju**.
+
+```text
+PUBLIC → GATED     glavni tok · članak je prerađen i sada ima veću vrednost
+PRIVATE            autorski od nule, za jednu klijentkinju
+PUBLIC → PRIVATE   podržano, ali ivični slučaj
+```
+
+Zato `PUBLIC → PRIVATE` ostaje podržan i ispravno definisan, ali se ne
+optimizuje: CMS ne treba da ga gura kao ravnopravan izbor, a ponašanja koja iz
+njega slede (npr. kartica „više nije dostupno" u `Mojim sadržajima`) su rubna
+zaštita, ne glavni tok.
+
+Dakle: **gate pripada GATED stanju, PRIVATE nikada nema javni gate.** Vlasnica
+bira ishod eksplicitno, umesto da ga platforma pogađa iz istorije adrese.
+
+### Trenutno stanje vs cilj
+
+| | Stanje u kodu | Ostaje otvoreno |
+|---|---|---|
+| Polje | ✅ `accessMode: "public" \| "gated" \| "private"` | — |
+| Javni upit | ✅ snapshot postoji + `accessMode ∈ {public, gated}` | — |
+| Telo | ✅ javno samo za `public`; `gated` ga ne dobija uopšte | pristup uz entitlement |
+| Javni pregled | ✅ `publicPreview` na radnoj kopiji i snapshot-u | — |
+| Gate strana | ✅ pregled + kontakt kanali tenanta | „Zatraži pristup" kao zapis |
+| Lifecycle | ✅ radna kopija + `publishedSnapshot`, prelaz tek objavom | — |
+
+**Preporučeni naziv je `accessMode`, ne `visibility`.** `visibility` postaje
+netačan čim GATED postoji: takav sadržaj **jeste** vidljiv, ali mu telo nije
+dostupno. Migracija se izvodi u implementacionom tasku, ne ovde.
+
+Zabranjeni nazivi u domenu sadržaja: `isPaid`, `subscriberOnly`, `premium`,
+`vip`, `membersOnly`. To su mehanike naplate, ne semantika pristupa — vidi
+„Entitlement" niže.
+
+### Javni pregled (`publicPreview`) za GATED
+
+GATED sadržaj mora imati **eksplicitan** javni pregled:
+
+```text
+publicPreview {
+  title
+  description?
+  coverImage?
+}
+```
+
+Ovo su javni podaci i tako se tretiraju. Tvrda pravila:
+
+- **nikad** ne izvoditi teaser iz zaštićenog tela u trenutku zahteva
+- **nikad** ne slati `ContentBlock[]` neautorizovanom čitaocu
+- **nikad** ne izlagati imena fajlova, download adrese ni media iz tela
+- pregled je eksplicitno sačuvan i objavljen kao javni metapodatak
+
+Kada **već javan** sadržaj prelazi u GATED, pregled se sme zasejati iz onoga što
+je **ranije već bilo javno**: poslednji javni naslov, javni SEO opis, javni
+cover. Ne prenosi se: blokovi članka, download adrese, interni metapodaci, novi
+privatni naslov, nesačuvana radna kopija.
+
+Sadržaj koji je GATED od prvog dana traži da vlasnica pregled definiše sama.
+
+### Odnos prema objavljenoj verziji (UI-2B ostaje na snazi)
+
+```text
+root EducationContent  → radna kopija (menja je Save)
+publishedSnapshot      → objavljena verzija (menja je samo Publish)
+```
+
+Javni read authority čita **objavljeno** stanje pristupa i objavljeni javni
+pregled, nikada nesačuvanu radnu kopiju. Buduća objavljena verzija zato nosi i
+`accessMode` i `publicPreview`.
+
+Posledica koja se ne sme prekršiti:
+
+```text
+Save     → ne menja živi režim pristupa
+Publish  → promoviše režim pristupa + telo + javni pregled u živo stanje
+```
+
+Svaki prelaz — `PUBLIC → GATED`, `GATED → PRIVATE`, `PRIVATE → PUBLIC` —
+stupa na snagu **isključivo objavom**.
+
+### Ponašanje ruta i istorija adresa
+
+```text
+tekući PUBLIC/GATED slug        → ruta se javno razrešava
+PRIVATE                         → ruta ne sme potvrditi postojanje (404)
+
+PUBLIC slug A → PUBLIC slug B   → A sme 301 na B
+GATED slug A → GATED slug B     → A sme 301 na B
+
+PUBLIC → GATED                  → ista ruta, umesto tela ide javni pregled + CTA
+GATED → PUBLIC                  → ista ruta, telo posle eksplicitne objave
+
+PUBLIC/GATED → PRIVATE          → 404 za neautorizovanog
+                                → BEZ redirekcije na novi slug
+                                → bez ijednog signala da zapis još postoji
+
+PRIVATE → PUBLIC/GATED          → javno se razrešava tek posle objave
+DELETE                          → 404
+```
+
+**Istorija adresa se nikada ne sme koristiti kao orakl za privatan sadržaj.**
+301 postoji da sačuva podeljene i indeksirane linkove između dva javno
+otkrivena stanja, ne da otkrije da nešto postoji.
+
+Implementacija (UI-3A.2): `publishedSlugHistory` na zapisu, u koju ulazi samo
+adresa koja je **stvarno bila javno objavljena** — slug iz radne kopije koji
+nikad nije objavljen nema javni URL, pa za njega ne sme postojati preusmerenje.
+Razrešavanje ide tačnim redosledom:
+
+```text
+1. kanonska adresa objavljene verzije   → sadržaj
+2. ranija javna adresa istog zapisa     → trajno preusmerenje na kanonsku
+3. sve ostalo                           → 404
+```
+
+Zabrana se odnosi na **razrešavanje**, ne na čuvanje: zapis sme zadržati svoju
+raniju javnu adresu i dok je privatan, ali je resolver tada ne razrešava — i
+kanonska i stara adresa vraćaju 404. Zahvaljujući tome, povratak iz privatnog u
+javno oživljava ranije podeljene linkove umesto da ih trajno pokida.
+
+Stara adresa je zauzeta i za druge zapise: objava koja bi preuzela tuđ alias
+odbija se sa `EDUCATION_PUBLIC_SLUG_TAKEN`, da drugi tekst ne pokupi tuđ link i
+njegov SEO signal.
+
+Napomena o statusu: Next app router ne može da postavi 301 iz same strane, pa
+se koristi `permanentRedirect()` (**308**). Za pretraživače je ekvivalentno
+trajno preusmerenje; 301 ostaje moguć samo iz proxy sloja, koji za ovo ne bi
+smeo da radi upit u bazu.
+
+### Javna lista `/edukacija` (odluka: lista je javna, ne personalizovana)
+
+```text
+PUBLIC   → pojavljuje se, pun pristup
+GATED    → pojavljuje se, sa javnim pregledom i jasnom oznakom zaključanog pristupa
+PRIVATE  → nikada se ne pojavljuje — ni prijavljenoj klijentkinji koja ima pristup
+```
+
+Upit **ne sme** biti samo `status=published`. Konceptualno:
+
+```text
+publishedSnapshot postoji
+AND accessMode ∈ ["public", "gated"]
+```
+
+**`/edukacija` je čisto javna površina i identična je za svakog posetioca.**
+Razmatrana je i personalizovana lista, u kojoj bi prijavljena klijentkinja u
+istom spisku videla i svoje privatne materijale. Odbijena je namerno:
+
+- lista bi se morala renderovati po posetiocu i **ne bi smela da se keširа**;
+- svaka greška u personalizaciji bi curila privatan sadržaj na javnoj ruti;
+- fail-closed je jači kada javni upit **strukturno ne može** da dohvati
+  `private` zapis, umesto da ga dohvata pa filtrira po posetiocu.
+
+Privatan sadržaj zato živi isključivo u autorizovanom prostoru klijentkinje
+(`Moj Prostor` → **`Moji sadržaji`**, Faza 6A/6B):
+
+```text
+/edukacija            javne + gated preview · isto za svakoga · keširano
+/panel/moj-prostor    → Moji sadržaji
+                        · dodeljeno (Marina napravila/odobrila za nju)
+                        · sačuvano (sama dodala sa javne edukacije)
+```
+
+Postoji i **proizvodni** razlog, ne samo bezbednosni: materijal napravljen baš
+za jednu klijentkinju treba da izgleda kao njen. Da se pojavi u javnom spisku,
+ona bi razumno pretpostavila da ga svi vide — i time bi izgubila ono zbog čega
+takav materijal ima vrednost.
+
+**Entitlement se ne razrešava u listi, nego na detaljnoj ruti.** Lista prikazuje
+isti `gated` pregled svima, uključujući klijentkinju koja ima odobrenje; telo
+dobija tek kada otvori sadržaj. Time lista ostaje bez ijedne per-viewer grane, a
+provera prava ostaje na jednom mestu.
+
+Poznata posledica za UX, koju treba rešiti u UI-3B/6A: klijentkinja gleda **dva
+mesta**. Navigacija mora da ih premosti (iz `Moj Prostor` ka javnoj edukaciji i
+obrnuto), inače deluje kao da joj sadržaj nedostaje.
+
+### GATED detaljna strana — verzija 1
+
+Danas ne postoje: pretplata, plaćeni pristup, pojedinačna kupovina, model
+zahteva za pristup, UI za ručno odobrenje, entitlement resolver. Zato prva
+verzija **ne sme** tvrditi da postoje.
+
+```text
+NASLOV    <javni naslov iz pregleda>
+OPIS      <eksplicitan javni teaser>
+PORUKA    „Ovaj sadržaj nije javno dostupan."
+          ili „Ovaj sadržaj je dostupan uz odobrenje."
+CTA       „Zatraži pristup" / „Kontaktirajte nas"
+          → postojeći javni kontakt kanali tenanta
+```
+
+Zabranjeno dok sistemi ne postoje: „Pretplatite se", „Kupite", „Premium",
+„Članovi", „Vaša pretplata".
+
+### Entitlement — ko sme da pročita zaključano telo
+
+Pretplata, pojedinačna kupovina i ručno odobrenje **nisu četvrti tip sadržaja.**
+To su različiti načini da korisnik stekne pravo prolaza kroz GATED (ili
+autorizovan PRIVATE) sadržaj.
+
+```text
+accessMode   = šta javnost sme da otkrije
+entitlement  = sme li OVAJ prijavljeni korisnik da pročita zaštićeno telo
+```
+
+Konceptualno, kasnije:
+
+```text
+canReadProtectedEducationContent =
+  ručno odobrenje
+  OR aktivna pretplata
+  OR pojedinačna kupovina
+```
+
+To je isti obrazac koji Marysoll već koristi prema svojim tenantima: plan
+otključava funkcionalnost automatski, a superadmin sme ručno da odobri pristup
+i bez plaćanja. Marina dobija isti oblik moći nad svojim sadržajem.
+
+**Mehanika naplate se ne kodira u `accessMode`.** Jedan zapis, jedno stanje
+pristupa, više mogućih izvora prava.
+
+### Ručni izuzetak — zašto je razdvajanje neophodno
+
+Marina ima GATED članak visoke vrednosti. Redovna klijentkinja sa konsultacija
+sme da dobije pristup **iako nema pretplatu i nije ga kupila.**
+
+Ishod: `EducationContent` ostaje **jedan zapis**; pristup dolazi iz odobrenja.
+Članak se **ne duplira** u privatnu kopiju. Bez razdvajanja `accessMode` i
+entitlement-a, ovaj scenario neizbežno vodi u duplikate sadržaja.
+
+### Odnos prema F6B (dodela i ACL)
+
+F6B postaje **prvi konkretan sloj zaštićenog pristupa**, ali dva pojma ostaju
+razdvojena i u dokumentaciji i u budućem modelu:
+
+```text
+DODELA (assignment)  = ovaj sadržaj je relevantan/dodeljen ovoj klijentkinji
+ENTITLEMENT          = ova klijentkinja sme da pročita zaštićeno telo
+```
+
+Prva implementacija sme namerno koristiti dodelu kao ručno odobrenje, ali se
+**ne sme pretpostaviti da su ta dva pojma zauvek isto** — pretplata i kupovina
+kasnije daju pravo bez ijedne pojedinačne dodele.
+
+### Odnos prema `EducationInquiry`
+
+`EducationInquiry` je poslovni upit, **nije** ACL, nije pretplata, nije
+entitlement. Za prvu verziju CTA **ne mora** da kreira nikakav zapis — postojeći
+javni kontakt kanali su dovoljni. Da li „Zatraži pristup" kasnije pravi
+`EducationInquiry` ili zaseban access-request zapis, odlučuje kasniji product
+rez.
+
+### Bezbednost: token nije dozvola
+
+Buduće čitanje zaštićenog sadržaja **ne sme** da se oslanja na dugovečnu tvrdnju
+u tokenu tipa „ovaj korisnik sme da čita sadržaj X". Token nosi identitet i
+odnos prema tenantu; **pravo pristupa se proverava na serveru pri svakom
+zahtevu.**
+
+Ukidanje odobrenja ili isteklu pretplatu mora odmah zaustaviti buduća čitanja,
+čak i kada u pregledaču i dalje stoji važeći login token.
+
+### Bezbednost: zaštićena media
+
+Za stvarno zaštićene fajlove (gated/private materijali):
+
+- ne oslanjati se na trajne javne provider adrese
+- zaštićeno preuzimanje kasnije traži autorizaciju + kratkotrajnu/potpisanu
+  isporuku ili ekvivalentan mehanizam
+
+Zatečeno javno Cloudinary ponašanje **nije automatski dovoljno** za plaćene i
+privatne materijale.
+
+Ograničenje koje treba reći naglas: ako je resurs ranije bio javan i neko ga je
+već preuzeo ili kopirao, Marysoll tu kopiju ne može povući. Platforma garantuje
+samo da **budući serverski zahtevi** više ne otkrivaju zaštićeni sadržaj.
+
+To nije razlog da se naknadno zaključavanje spreči ili otežava. `PUBLIC → GATED`
+je legitiman i očekivan potez vlasnice, tipično kada članak bitno preradi i
+unapredi — inače zaključavanje ne bi ni imalo svrhu. Platforma obezbeđuje da
+odluka bude moguća, jasna i primenjena od trenutka objave; ne pretvara se u
+DRM.
+
+### Arhitektonski položaj
+
+```text
+TENANT
+  → WORKSPACE
+      → EducationContent
+              ↓
+          accessMode
+              ↓
+     public / gated / private
+```
+
+`PRESENTATION` (tema) odlučuje **kako** dozvoljena površina izgleda.
+`ENTITLEMENT` odlučuje **ko** sme da pročita zaštićeno telo.
+**Tema nikada nije autoritet pristupa.**
+
+### Terminologija — zaključano
+
+| Pojam | Značenje |
+|---|---|
+| **Workspace activation** | tenant dobija Education capability/workspace |
+| **Capability gate** | sme li tenant uopšte da koristi Education domen |
+| **Content access mode** | `public` / `gated` / `private` — šta javnost sme da otkrije |
+| **Content gate** | sme li posetilac/korisnik da pročita telo ovog zapisa |
+| **Dodela (assignment)** | Marina je taj sadržaj namenila konkretnoj klijentkinji |
+| **Sačuvano (saved)** | klijentkinja je sama dodala sadržaj u svoj prostor |
+| **Entitlement / odobrenje** | zašto konkretan prijavljen korisnik sme da čita zaštićeno |
+| **Public preview** | namerno javni metapodaci GATED sadržaja |
+
+Reč „gate" se **ne koristi sama** — uvek se kaže koji gate.
+
+### Primeri
+
+**A — besplatan članak.** „Osnove nege kože", `public` → `/edukacija/osnove-nege-koze`,
+pun članak.
+
+**B — GATED članak visoke vrednosti.** „Napredna analiza sastojaka", `gated`, sa
+javnim pregledom (naslov, kratak opis, cover). Javnost ga otkriva, telo je
+skriveno, CTA je „Zatraži pristup". Kasnije isti zapis otključavaju pretplata,
+kupovina ili ručno odobrenje.
+
+**C — privatan klijentski materijal.** „Plan nakon konsultacije", `private` →
+nikad u listi, pogođen URL vraća 404, kasnije ga dodeljena klijentkinja vidi u
+svom autorizovanom prostoru.
+
+**D — javno postaje GATED.** Radna kopija: `accessMode = gated` + eksplicitno
+odobren javni pregled. `Save` → živo ostaje javno. `Publish` → ruta ostaje
+otkrivena, telo postaje zaključano, prikazuju se teaser i CTA.
+
+**E — javno postaje PRIVATE.** Radna kopija: `accessMode = private`. `Save` →
+živo ostaje javno. `Publish` → nestaje iz javne liste, neautorizovana ruta vraća
+404.
+
+### Šta ovaj ugovor NE odlučuje
+
+Model pretplate, model kupovine, tok plaćanja, model ručnog odobrenja, model
+zahteva za pristup, potpisivanje zaštićene media, UI-3 rute, gate komponenta,
+javni loader, ACL, `Moj Prostor` — sve ostaje implementacionim rezovima.
+
+Komercijalna pravila su **potpuno** van ovog dokumenta: koji Marysoll plan
+uključuje plaćenu edukaciju, podela prihoda, cena pretplate, cena pojedinačnog
+pristupa, povraćaji, Paddle integracija.
+
+---
+
+## Edu Centar v1 — pilot closure / revised target (2026-09-04)
+
+Stvarni feedback je završio feature freeze. Ne pravi se novi plan i ne
+redizajniraju se površine koje već rade. Pilot se zatvara kroz pet uzastopnih
+rezova E1–E5; AI/Content Coach, Marketing Center i multi-workspace migracija su
+odvojen budući pravac.
+
+### E1 — Public Education discovery
+
+- `/education` pregled ostaje vizuelno isti: „Edu Centar / Pregled / Vaši
+  edukativni materijali i njihovo stanje" i statistike Ukupno / Objavljeno / U
+  pripremi / Neobjavljene izmene.
+- Theme-9 sekcija Teme i `/edukacija` koriste isti public resolver i **isključivo
+  `EducationContent.publishedSnapshot`**. Draft izmene se nigde javno ne vide.
+- Demo sadržaj ostaje samo u demo režimu. Real tenant prikazuje stvarne podatke.
+- Landing presentation contract: 0–3 objavljena zapisa → sekcija se ne prikazuje;
+  4 → četiri kartice; 5 → pet; 6+ → najnovijih šest. Nikada 1–3 ili 7+; bez
+  ručnog featured/pin izbora u ovom rezu.
+- `/edukacija` zadržava postojeći dizajn kartice. Menja se samo filter:
+  **Sve | Procena kože | Rutina i sastojci | Promene i stanja kože | Zaštita
+  kože**. Nema dodatnih javnih filtera. Kartica prikazuje „Video" kada je video
+  glavni format, inače „Članak".
+- `shortDescription`, `topicKey` i `intentKey` ulaze u publication contract;
+  landing oznake nastaju iz `topicKey + intentKey`. Broj 01–06, URL, datum
+  objave, autor, redosled, link i reading time određuje sistem.
+
+### E2 — Authoring clarity
+
+`/education` dobija tri velike, neposredne action kartice:
+
+```text
+Napiši članak       Počni od praznog sadržaja.
+Uvezi PDF / DOCX    Pretvori postojeći materijal u web sadržaj.
+Dodaj video         Video edukacija sa opisom i izvorima.
+```
+
+AI nije četvrti ulaz. PDF/DOCX nisu vrste sadržaja nego import izvori, a
+download dokument je zaseban opcioni prilog.
+
+Canonical klasifikacija razdvaja tri ose:
+
+| Osa | Vrednosti | Vidljivost |
+|---|---|---|
+| `format` | `article`, `video` | javna oznaka |
+| `topicKey` | `skin-assessment`, `routine-ingredients`, `skin-changes-conditions`, `skin-protection` | četiri javna filtera |
+| `intentKey` | `how-to-recognize`, `why-it-happens`, `how-to-care`, `step-by-step` | uredničko vođenje i oznaka, ne novi filter |
+
+Postojeći `advice/article/guide/video/material` ne migriraju se brutalno. Uvodi
+se backward-compatible mapiranje, pa se model čisti postepeno. Jedan video u
+tekstualnom radu ne menja format: ako sadržaj ima smisla bez videa, to je
+Članak; ako je video glavni sadržaj, to je Video.
+
+Article editor ima hijerarhiju:
+
+1. veliki Naslov i pravi `shortDescription` za karticu — ne SEO description i
+   ne `publicPreview.description` kao semantički hack;
+2. velike selectable kartice za jednu temu i jedan editorial intent;
+3. najveću površinu za Content Composer;
+4. odvojenu, sekundarnu naslovnu sliku;
+5. opcionu sekciju „Materijal za preuzimanje", jasno različitu od import fajla;
+6. collapsed „Napredno" za slug/web adresu, SEO naslov/opis, OG sliku i slično.
+   Slug je automatski i ne smeta normalnom radu.
+
+Video editor odmah sadrži glavni video blok: Naslov, Kratak opis, Tema, Pristup,
+„Dodaj / nalepi video", opciono dodatno objašnjenje, izvore/korisne linkove i
+thumbnail. Ne pita koji blok korisnik želi prvo da doda.
+
+Generičko „Nepotpuno" zamenjuju konkretne poruke uz polje/blok, npr.
+„Nedostaje naslov", „Video nije dodat", „Lista nema nijednu stavku" i „Ovaj
+blok nema sadržaj". Importer se ne rekonstruiše: dozvoljeni su samo sigurni
+header/footer cleanup, spajanje prelomljenih bullet-a, pouzdana rekonstrukcija
+praznih numerisanih stavki i whitespace/HTML entity normalizacija.
+
+### E3 — Draft safety
+
+Ciljni ugovor je: **upiši → izađi → vrati se → tekst je tamo**.
+
+```text
+svaka promena             → lokalni durable draft
+kratak debounce           → revision-safe server autosave
+periodično                → server checkpoint
+navigacija                → flush autosave, zatim prelazak
+ponovno otvaranje         → vrati/ponudi noviji lokalni draft
+```
+
+Backend već ima `workingSavedAt`, `workingSessionId` i `workingRevision` za
+zaštitu od obrnutog redosleda zahteva; E3 taj ugovor završava kroz UI i lokalni
+oporavak. Statusi su „Čuvanje...", „Sačuvano upravo sada", „Bez interneta —
+izmene su sačuvane na ovom uređaju" i posle povratka veze „Sinhronizovano".
+Eksplicitni Save Draft može ostati kao potvrda, ali nije jedina zaštita.
+
+### E4 — poseban Blog tab
+
+Korisnički model je `Blog → Svi tekstovi | Novi blog`. Novi blog nudi „Napiši
+tekst" i „Uvezi PDF / DOCX", pa otvara postojeći Content Composer. „Doradi uz
+AI" može kasnije biti opciona pomoć nad početnim sadržajem, ne obavezan ulaz.
+
+CURRENT implementacija sme koristiti tanak adapter ka postojećem
+`NewsletterCampaign` landing persistence-u. Ne pravi se drugi Content Composer.
+Newsletter ostaje Newsletter, Blog ostaje Blog; korisnik ne vidi istorijsku
+putanju Kampanja → Email + Landing → Blog.
+
+### E5 — pilot acceptance
+
+Marina dobija samo četiri zadatka, bez objašnjavanja procedura:
+
+```text
+1. napiši novi članak od nule
+2. napravi jedan članak iz PDF-a ili DOCX-a
+3. napravi jedan Video
+4. napravi jedan Blog
+```
+
+Pilot je završen kada ih obavi bez pitanja „gde ovo ide?". To je acceptance
+signal za informatičku arhitekturu i tok, ne zahtev da joj se nauči procedura.
+
+### Polazna osnova koju pilot closure već ima
+
+| | |
+|---|---|
+| Workspace | CURRENT Salon ↔ Edu Centar aktivacija/capability gate; TARGET H1–H4 je odvojeni business workspace/tenant |
+| Autorstvo | CMS lista + full-page editor nad deljenim Content Composer-om, 12 blokova, preseti po vrsti |
+| Trajnost | radna kopija ≠ objavljena verzija i revision-safe backend osnova; potpuni lokalni/autosave UX završava E3 |
+| Pristup | `public` / `gated` / `private`, dodela klijentkinjama, serverski ACL |
+| Javna strana | `/edukacija` lista i članak u Theme-9, semantički HTML, SEO i sitemap po članku, istorija adresa |
+| Klijent | `Moj Prostor` → `Moji sadržaji` + zaštićeni čitač |
+| Uvoz | PDF i DOCX → draft; nikada objava |
+
+### Šta v1 svesno NEMA
+
+Entitlement (pretplata, kupovina, naplata), revision history, „Skini PDF",
+theme-aware varijante blokova, Guide i Program, AI asistencija. Nijedno od toga
+se ne dodaje bez signala iz pilota.
+
+### Poznata ograničenja koja pilot treba da razlikuje od grešaka
+
+- **Uvoz iz PDF-a je približan.** Metak nabrajanja u PDF-u je crtež, ne znak,
+  pa se liste pogađaju po najavi dve tačke. DOCX se čita verno. Zato uvoz uvek
+  otvara draft za pregled.
+- **DOCX se čita onoliko koliko je dokument pripremljen.** Verno se čita samo
+  ono što je u Word-u zaista označeno kao naslov ili lista. Dokument u kome je
+  „naslov" samo krupniji podebljan pasus — tipično posle konverzije iz PDF-a —
+  stiže kao jedan neprekinut tekst, i to nije greška uvoza nego izvora. Ovo
+  vredi reći autoru pre nego što pošalje materijal: uređen dokument štedi mu
+  najviše vremena.
+- **Podebljano, kurziv i linkovi unutar pasusa se gube.** Blokovi čuvaju čist
+  tekst, pa se oblikovanje unutar rečenice ne prenosi. Ako materijal nosi važne
+  linkove, dodaju se ručno posle uvoza.
+- **Fokus kadra i naslovna slika na kartici** postoje od prve sledeće objave;
+  zatečeni zapisi ih dobijaju kad se ponovo objave.
+- **`accessMode` backfill nije primenjen** — čitanje radi i bez njega
+  (`resolveAccessMode` prevodi staro `visibility` fail-closed), skripta postoji
+  za kasnije.
+- **Staging je `noindex`**, pa se ništa iz pilota ne rangira.
+
+### Odluke donete tokom freeze-a
+
+- **Limit uvoza ostaje 10 MB.** Diže se na 20 MB tek ako Marina stvarno naiđe
+  na dokument sa slikama koji ga prelazi, i tada uz jasnu poruku u UI-ju da
+  fotografije treba prethodno smanjiti. Ne diže se unapred, bez potrebe.
+
+### Šta je pilot izmerio
+
+Najvredniji signal nije broj grešaka nego svaki trenutak u kome autoru nije
+jasno šta sledeće da klikne. Iz toga direktno slede tri ulaza, odvojeni format /
+tema / namera, konkretnije validation poruke, jednostavniji Video editor,
+durable autosave i poseban Blog ulaz. Ostali UI koji je prošao proveru ostaje
+zamrznut.
+
+### FUTURE — posle pilot closure-a, ne implementirati u ovom rezu
+
+**H1 — Multi-workspace identity.** Jedan `AuthUser` poseduje/pripada većem broju
+`Tenant`-a. Workspace switcher bira biznis, ne capability unutar biznisa.
+
+```text
+AuthUser
+├── Salon workspace → salon sajt/domen, booking, usluge, Salon CMS/Blog
+└── Edu workspace   → Edu sajt/domen, edukacije, materijali, Edu CMS/Blog
+```
+
+**H2 — Registration.** Ukloniti javni izbor „Salon + Edu". Ostaju „Kreiraj
+Salon" i „Kreiraj Edu Centar"; vlasnik postojećeg Salona može dodati novi Edu
+workspace pod istim loginom.
+
+**H3 — Existing hybrid migration.** Tek posle H1/H2 postojeći hybrid tenant se
+deli na Salon tenant + Education tenant. Education strana dobija
+`EducationContent`, education site settings, education blogove, branding,
+domain binding i buduće education clients/assignments po unapred definisanim
+pravilima; Beauty podaci ostaju Salonu. Migracija mora biti eksplicitna i
+rehearsed, ne implicitna promena `verticals[]`.
+
+**H4 — `verticals[]`.** Ne mora odmah nestati. Može ostati interni capability i
+migration mehanizam, ali više nije proizvodni UX model niti opravdanje da Salon
+i Edu dele jedan javni sajt.
+
+Ostali budući rezovi, ovim redom posle stvarne validacije potrebe:
+
+- **F4 Growth Content Coach** — savetuje o širini teme, search intent-u,
+  konkretnom problemu, naslovu i CTA-u; nije generator generičkih tekstova.
+- **F5 Marketing Center** — od objavljenog sadržaja pravi brand-aware cover,
+  carousel, Story, Reel cover/script, newsletter teaser i CTA kroz tenant design
+  system.
+- **F6 Superadmin trend & marketing knowledge** — održava prompt/knowledge sloj,
+  SEO obrasce, title/social pattern-e, smernice i industry primere.
+- **F7 consultation/intake za procenu kože** — zaseban domenski rez, ne dodatak
+  CMS editoru.
+
+AI/Content Coach i Marketing Center ne ulaze u E1–E5. Prvo se zatvara pouzdano
+ručno autorstvo i objavljivanje.
+
+---
+
 ## FAZA 5 — Javno `/edukacija` → **release gate**
 
 - `src/app/tenant/edukacija/page.tsx` i `[...slug]/page.tsx` (catch-all, kao `/blogs`)
 - `"/edukacija"` u `CLIENT_TENANT_PATHS` (`src/lib/proxy/pipeline/routing.ts:35`) — proxy proverava i `startsWith(p + "/")`, pa **jedan unos pokriva i `[slug]`**
 - `src/app/sitemap.ts` — dodati u `tenantRoutes`
-- Preusmeriti hardkodirane linkove: `theme-9/Header.tsx` (`{name:"Edukacija", href: base+"/blogs"}`), `Footer.tsx`, `LatestEducation.tsx`
+- Navigacija (**ispravljeno 2026-08-30**): raniji plan je bio da „Edukacija" samo
+  pređe sa `/blogs` na `/edukacija`. To je prevaziđeno odlukom o **dva nezavisna
+  kanala** — vidi red „Blog i Edukacija" u zaključanim odlukama:
+
+  ```text
+  Blog       → /blogs        kada blog površina ima objavljen sadržaj
+  Edukacija  → /edukacija    kada je education.catalog razrešen
+                             i /edukacija ima objavljen javan sadržaj
+  oba        → obe stavke;   nijedan → nijedna stavka
+  ```
+
+  Fallback `Edukacija → /blogs` se uklanja i ne sme se vraćati.
+
+  ⚠️ `LatestEducation.tsx` je **izuzetak i ostaje na `/blogs`**: taj blok se puni
+  iz `content.blog` loadera, dakle iz `NewsletterCampaign` postova. Preusmeriti
+  ga na `/edukacija/<slug>` značilo bi linkovati blog slugove na Education rutu —
+  404 na svaki klik, i mešanje dva storage-a koje ugovor izričito zabranjuje.
+  Ekvivalentan blok koji se puni iz `EducationContent`-a je poseban posao
+  (UI-3B), ne preusmeravanje ovog.
 - Tenant bez capability-ja → `notFound()`, po uzoru na `resolveThemePage()`
 
 ⚠️ **theme-9 nema svoju prezentaciju za listu/članak.** `/blogs` na theme-9 pada na generički beli `src/components/tenant/BlogsPageClient.tsx` koji nema veze sa Expert Editorial. `/edukacija` traži theme-9-native prikaz — **dizajnerski posao, ne samo ruta**.
 
 ⚠️ **`/blogs` ostaje netaknut** — i za Edu centre.
 
-### RELEASE GATE (kraj Faze 5)
+### RELEASE GATE (kraj Faze 5) — ISPRAVLJENO 2026-08-29
 
-Tek kada je sve ispunjeno:
+Ranija formulacija je vezivala „Aktiviraj Edu Centar" za ovaj gate. To više
+nije tačno: EDU UI-1A je aktivaciju svesno pomerio ranije, kao **admin
+workspace activation**. Dve odluke su sada odvojene:
+
+```text
+ADMIN WORKSPACE ACTIVATION            PUBLIC EDUCATION RELEASE
+→ F3A / EDU UI-1A                     → UI-3 / F5
+→ sme postojati PRE javnog surface-a  → traži EducationContent + public
+→ staging/release kontrolisano           loader/rute/readiness
+```
+
+F5 **više ne kontroliše postojanje Edu admin workspace-a.** F5 je release gate
+za **javni** Education surface:
 
 ```
-✓ EducationContent postoji     ✓ loader postoji
+✓ EducationContent postoji     ✓ public loader postoji
 ✓ /edukacija ruta postoji      ✓ readiness provider radi
+✓ theme-9-native prikaz        ✓ javni upit traži tenantId + objavljen snapshot
+                                  + accessMode ∈ {public, gated}
         ↓
-platformAvailable = true
-+ Marina tenant enabled
-+ „Aktiviraj Edu Centar" dugme se pušta (Faza 0.4)
+javni /edukacija se pušta
 ```
+
+Produkciona izloženost aktivacionog CTA-a i javni `/edukacija` release ostaju
+**zasebne release odluke**; nijedna ne blokira drugu.
+
+Vidi i zaključano platformsko pravilo
+[Tenant → Workspace → Presentation](ARCHITECTURAL_RULES.md#33-tenant--workspace--presentation-zaključano-2026-08-29):
+workspace sme postojati pre nego što taj vertikal ima ijednu javnu
+prezentaciju.
+
+### Posle pilota — dva dijagnostička reza
+
+Ne rade se sada; zapisani su da se obim ne izmišlja iznova kad dođu na red.
+
+**DIAG-EDU-1 — Education integrity provere.** Registry integrity provera već
+pokriva Identity, Loyalty, Appointment, tenant ownership, SEO i push pretplate;
+Education nema nijednu. Kandidati proizlaze direktno iz granica koje smo
+zaključali, pa svaka provera brani već napisano pravilo:
+
+```text
+orphan ClientContentAssignment
+assignment ka drugom tenantu
+assignment ka nepostojećem client profilu
+assignment ka neobjavljenom ili nepostojećem sadržaju
+radna kopija ≠ publishedSnapshot — invarijanta
+public / gated / private granice otkrivanja
+gated nikada ne isporučuje zaštićeno telo
+private ne ostavlja javni signal da postoji
+```
+
+Poslednje tri su posebno vredne: to su tvrdnje koje danas drže testovi nad
+izmišljenim podacima, a ova provera bi ih merila nad **stvarnim** stanjem baze.
+
+**DIAG-SUPPORT-1 — „Pošaljite problem podršci".** Prirodan sledeći korak
+postojećeg Diagnostic Engine-a. Korisnik klikne, engine prikupi ono što već
+ume (uređaj, mreža, push, storage, permissions, crash), aplikacija doda
+tenant/user/rutu/greška kontekst, incident se **sačuva**, i tek onda se
+best-effort šalju obaveštenje, mejl i push uz direktan link ka reportu.
+
+> **Ako slanje zakaže, report mora ostati sačuvan.** Prijava koja je nestala
+> zato što mejl nije prošao je gora od nikakve, jer korisnik veruje da je
+> javio.
+
+**Privacy granica, zaključana unapred:** dijagnostički report **nikada**
+automatski ne šalje privatan ni zaključan Education tekst, sadržaj formi,
+poruke, fajlove, fotografije, auth tokene ni sirove query parametre. Tehnički
+metapodaci — da; sadržaj korisnika — ne. Ovo je pravilo, ne podešavanje.
 
 ---
 
@@ -304,6 +1247,7 @@ edukacija, vodiči, program, konsultacije. Za hibrid: sve zajedno.
 | `Appointment` | ✅ podaci postoje (`clientProfileId`, tenant-first indeks) |
 | `Testimonial` / Preporuke | ✅ podaci postoje (`clientProfileId`) |
 | **Loyalty** | ✅ **podaci I ekran postoje** — jedan od prvih adaptera |
+| **`Moji sadržaji`** (dodeljeno + sačuvano) | → Faza 6B |
 | Education (assignment) | → Faza 6B |
 | SkincareGuide | → Faza 8 |
 | GuidedProgram | → Faza 9 |
@@ -333,20 +1277,117 @@ podatke. Zaseban „Nagrade" ekran u početku ostaje kao detaljna stranica na ko
 vodi CTA; da li uopšte treba da ostane top-level tab odlučuje se kasnije, iz
 upotrebe.
 
+### `Moji sadržaji` — dva različita izvora, jedna sekcija
+
+`Moj Prostor` dobija sekciju **`Moji sadržaji`**, i u nju se stiže na dva
+načina koja se **ne smeju stopiti u jedan pojam**:
+
+```text
+DODELJENO   Marina je materijal namenila baš toj klijentkinji
+            → pravi ga/odobrava Marina · Marina ga i povlači
+            → jedini put kojim `private` sadržaj uopšte stiže do klijenta
+
+SAČUVANO    klijentkinja je sama dodala sadržaj sa javne edukacije
+            → pravi ga i briše klijentkinja
+            → dugme „+" na svakom sadržaju u listi i na detaljnoj strani
+```
+
+**Tvrdo pravilo: čuvanje NIKADA ne daje pristup.** Dugme „+" pravi referencu u
+klijentkinjinom prostoru, ništa više. Sačuvan `gated` sadržaj u `Mojim
+sadržajima` i dalje stoji zaključan, sa istim CTA za pristup — kao obeleživač,
+ne kao otključavanje. Bez ovog pravila „+" postaje rupa u entitlement-u.
+
+Iz toga slede tri odvojena pojma koja se lako pomešaju:
+
+```text
+sačuvano     → gde se sadržaj pojavljuje kod klijentkinje
+dodeljeno    → Marina je odlučila da je materijal za nju
+entitlement  → sme li da pročita zaštićeno telo
+```
+
+Dodela sme biti izvor entitlement-a (ručno odobrenje). Čuvanje nije nikada.
+
+Praktične posledice:
+
+- „+" na sadržaju koji posetilac gleda **neprijavljen** vodi na prijavu, ne pravi
+  tihi zapis;
+- isti sadržaj sme biti i dodeljen i sačuvan — sekcija to prikazuje kao jedan
+  unos, a ne dva;
+- „+" se pojavljuje samo nad sadržajem koji je klijentkinji vidljiv, dakle nad
+  `public` i `gated`; `private` do nje ionako stiže samo dodelom.
+
+Ovo ujedno zatvara veći deo ranije zabeleženog „klijentkinja gleda dva mesta":
+„+" je most sa javne edukacije ka njenom prostoru.
+
+### Sačuvan sadržaj koji više nije dostupan (zaključano)
+
+Kada Marina zaključa ili skloni sadržaj koji je klijentkinja ranije sačuvala,
+unos se **ne briše tiho**. Ostaje kao prazna kartica sa jasnim stanjem i
+akcijom, jer je najgore moguće ponašanje da joj sadržaj nestane bez objašnjenja:
+
+```text
+┌──────────────────────────────────────────┐
+│  <naslov koji je ona sačuvala>           │
+│  Ovaj sadržaj više nije dostupan.        │
+│                                          │
+│  [ Zatraži pristup ]   [ Ukloni ]        │
+└──────────────────────────────────────────┘
+```
+
+Akcija zavisi od novog stanja, i tu se `gated` i `private` **ne izjednačavaju**:
+
+```text
+postao GATED     → zaključan pregled + put ka pristupu
+                   (danas: zatraži pristup · kasnije: pretplata/kupovina)
+postao PRIVATE   → samo „Zatraži pristup" (kontakt) — kupovina ne postoji za
+                   private; Marina odlučuje ručnim odobrenjem
+obrisan          → samo „Ukloni"
+```
+
+Uvek postoji **„Ukloni iz Mog prostora"**, da joj sekcija ne ostane zatrpana
+sadržajem koji joj više ništa ne znači.
+
+Dve granice koje ova kartica ne sme da pređe:
+
+- prikazuje **naslov koji je ona sačuvala**, nikada novi, izmenjeni privatni
+  naslov — isto pravilo kao za javni pregled: novouređeni privatni metapodaci se
+  ne iznose;
+- postoji samo u **njenom autorizovanom prostoru**, za sadržaj koji je sama
+  sačuvala. Nikada na javnoj ruti — inače bi to bio upravo onaj orakl koji
+  `private` treba da spreči.
+
+**Zašto ovo nije bezbednosni ustupak.** Ona je taj sadržaj već videla dok je bio
+javan, možda ga i preuzela ili podelila — kartica joj ne otkriva ništa novo.
+Naknadno zaključavanje ionako nije mehanizam za povlačenje već iznetog: kao što
+stoji u ugovoru pristupa, platforma garantuje samo da **budući** zahtevi ne
+otkrivaju zaštićeno. U praksi Marina to i radi kada članak bitno preradi i
+unapredi — inače zaključavanje nema svrhu. Naš posao je da ta odluka bude
+moguća i jasna, ne da je sprečimo.
+
 Guide i Program kasnije samo **dodaju adaptere** u ovaj workspace.
 
 ---
 
 ## FAZA 6B — Dodela sadržaja i ACL
 
-**Assignment je nezavisan od `visibility`** — Marina mora moći da napiše javnu edukaciju i istovremeno je dodeli Jeleni kao „Preporučeno za vas", bez dupliranja članka:
+**Dodela je nezavisna od režima pristupa** — Marina mora moći da napiše javnu edukaciju i istovremeno je dodeli Jeleni kao „Preporučeno za vas", bez dupliranja članka.
 
-| visibility | assignment | rezultat |
+Matrica prema ciljnom modelu iz
+[Pristup sadržaju](#pristup-sadržaju--public--gated--private-zaključano-2026-08-29)
+(danas u kodu postoje samo redovi `public` i `private`):
+
+| accessMode | dodela / odobrenje | rezultat |
 |---|---|---|
 | `public` | nema | običan javni članak |
 | `public` | ima | javni članak **+** u `Moj Prostor` te klijentkinje |
-| `private` | ima | samo dodeljene klijentkinje |
+| `gated` | nema | javno otkriven, telo zaključano, CTA za pristup |
+| `gated` | ima | javno otkriven **+** telo dostupno toj klijentkinji |
+| `private` | ima | samo dodeljene klijentkinje; za ostale 404 |
 | `private` | nema | niko od klijenata |
+
+Dodela je **jedan od izvora** prava pristupa, ne jedini — pretplata i kupovina
+kasnije daju isto pravo bez pojedinačne dodele. Zato dodela i entitlement
+ostaju odvojeni pojmovi.
 
 ```
 ClientContentAssignment {
@@ -358,6 +1399,13 @@ unique index: { tenantId, educationContentId, clientProfileId }
 
 Lifecycle polja nisu luksuz — bez njih se kasnije ne može napraviti **Aktuelno / Istorija** u `Moj Prostor`.
 
+**`ClientContentAssignment` pokriva samo dodelu.** Klijentkinjino sopstveno
+čuvanje („+" dugme, vidi Fazu 6A) je zaseban pojam sa drugim vlasnikom i drugim
+lifecycle-om: pravi ga i briše klijentkinja, i **nikada** ne nosi pravo čitanja
+zaštićenog tela. Da li se to tehnički rešava zasebnim zapisom ili poljem izvora
+u istom modelu, odlučuje implementacija Faze 6B — ali pojmovi se u ugovoru ne
+smeju izjednačiti, jer bi tada „+" postao tihi grant.
+
 **ACL obrazac, doslovno kao `src/app/api/appointments/client/[id]/cancel/route.ts`:**
 
 ```
@@ -368,7 +1416,16 @@ getTokenFromRequest → verifyToken
 → 404 i za nepostojeće i za tuđe (bez ownership orakla)
 ```
 
-**Nikad** id vlasnika iz URL-a, query-ja ili body-ja. Link se može proslediti — druga osoba dobija „Nemate pristup".
+**Nikad** id vlasnika iz URL-a, query-ja ili body-ja.
+
+Prosleđen link se ponaša prema režimu pristupa, i tu se raniji tekst ispravlja —
+`private` nikada ne sme reći „Nemate pristup", jer bi time potvrdio da zapis
+postoji:
+
+```text
+private → 404 (i za nepostojeće i za tuđe, bez ownership orakla)
+gated   → javni pregled + CTA za pristup
+```
 
 ---
 
@@ -468,6 +1525,8 @@ npm run build             # prolazi
 5. `curl` bez tokena → 401; sa tokenom klijenta B → 404
 6. Tenant bez `education.catalog` → 403 na API, `notFound()` na javnoj ruti
 7. `public` + assignment → vidi se i javno i u `Moj Prostor`; `revokedAt` skida iz `Moj Prostor`
+8. `gated` bez odobrenja → javni pregled i CTA, **nikad** blokovi u odgovoru; sa odobrenjem → telo
+9. `private` bez odobrenja → 404 (ne „nemate pristup"), nema ga ni u listi ni u sitemap-u
 
 ---
 
@@ -475,7 +1534,7 @@ npm run build             # prolazi
 
 | Nalaz | Status |
 |---|---|
-| `getCampaign.ts` ne filtrira `landingPage.status === "published"` — neobjavljena kampanja dostupna na svom URL-u ako znaš slug | Zatečeno. **Zabeležiti, ne popravljati** u ovom luku osim ako ispadne trivijalno |
+| `getCampaign.ts` ne filtrira `landingPage.status === "published"` — neobjavljena kampanja dostupna na svom URL-u ako znaš slug | ✅ **ZATVORENO (2026-08-29).** Ispalo je trivijalno: `getCampaign()` sada koristi `publishedBlogFilter()`, koji traži `landingPage.enabled: true` **i** `landingPage.status: "published"`. Vidi `src/lib/server/getCampaign.ts` + `src/lib/tenant/blogPosts.ts` |
 | `src/app/api/notifications/route.ts` nema `tenantId` u upitu | Zatečeno; ako Faza 7 dira taj kod, dodati |
 | Nulta pokrivenost testovima campaign block sistema | Faza 1.1 postoji upravo zbog toga |
 | `/blogs` linkovi nekonzistentni (`/blog/` vs `/blogs/`) | Radi zbog permisivnog `$or`; ne dirati |

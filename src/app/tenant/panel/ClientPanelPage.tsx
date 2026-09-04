@@ -22,6 +22,10 @@ import {
 // otvori (isti obrazac kao admin dashboard).
 const TabLoader = () => <Loader />;
 
+const MojProstorContent = dynamic(
+  () => import("@/components/client/MojProstorContent"),
+  { ssr: false, loading: TabLoader },
+);
 const ClientAppointments = dynamic(
   () => import("@/components/client/ClientAppointments"),
   { ssr: false, loading: TabLoader },
@@ -104,6 +108,7 @@ export default function ClientPanelPage() {
       salonLogo={salon?.logo ?? null}
       capabilitySnapshot={capabilitySnapshot}
     >
+      {activeTab === "Moj Prostor" && <MojProstorContent />}
       {activeTab === "Moji Termini" && <ClientAppointments />}
       {activeTab === "Zakazivanja" && <AppointmentCalendar />}
       {activeTab === "Nagrade" && <ClientLoyalty />}

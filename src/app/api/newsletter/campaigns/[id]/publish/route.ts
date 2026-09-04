@@ -14,6 +14,8 @@ import {
   newsletterScopeFilter,
   resolveNewsletterAdminScope,
 } from "@/lib/newsletter/adminTenantScope";
+import { validateContentDocument } from "@/lib/content/validation/contentBlockValidation";
+import { contentValidationFailureResponse } from "@/lib/newsletter/contentValidationResponse";
 
 export async function PATCH(
   request: Request,
@@ -45,22 +47,12 @@ export async function PATCH(
       if (denied) return denied;
     }
     const { id } = await context.params;
-    const body: PublishLandingPayload = await request.json();
+    const body = (await request.json()) as PublishLandingPayload | null;
 
-    const campaign = await NewsletterCampaign.findOneAndUpdate(
-      {
-        _id: id,
-        ...newsletterScopeFilter(newsletterScope),
-      },
-      {
-        $set: {
-          "landingPage.status": "published",
-        },
-      },
-      {
-        new: true,
-      },
-    );
+    const campaign = await NewsletterCampaign.findOne({
+      _id: id,
+      ...newsletterScopeFilter(newsletterScope),
+    });
 
     if (!campaign) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -73,31 +65,56 @@ export async function PATCH(
       );
     }
 
+    const validation = validateContentDocument(body?.layout, "publish");
+    if (!validation.valid) {
+      return contentValidationFailureResponse(validation);
+    }
+    if (!validation.blocks.some(({ status }) => status === "VALID")) {
+      return contentValidationFailureResponse({
+        ...validation,
+        valid: false,
+        issues: [
+          {
+            blockId: "document",
+            blockType: "document",
+            path: "",
+            code: "required_content",
+            message:
+              "Newsletter landing mora imati najmanje jedan vidljiv i kompletan blok",
+            severity: "error",
+          },
+        ],
+      });
+    }
+
     // Update landing page with published status
     const audience = normalizeEditorialAudience(
-      body.audience ??
+      body?.audience ??
         campaign.landingPage?.audience ??
         (newsletterScope.scope === "platform" ? "partner" : "client"),
       decoded.isSuperAdmin ?? false,
     );
     const editorialCategory = normalizeEditorialCategory(
-      body.editorialCategory ?? campaign.landingPage?.editorialCategory,
+      body?.editorialCategory ?? campaign.landingPage?.editorialCategory,
       audience,
     );
 
-    campaign.landingPage = {
-      enabled: true,
-      slug: campaign.ctaSlug,
-      layout: body.layout,
-      semanticType: body.semanticType,
-      audience,
-      editorialCategory,
-      generatedAt: body.generatedAt,
-      status: "published", // Uvek "published" za publish
-      score: body.score || campaign.landingPage?.score || 0,
-      seo: body.seo || campaign.landingPage?.seo || {},
-      regeneratedCount: campaign.landingPage?.regeneratedCount || 0,
-    };
+    campaign.set("landingPage.enabled", true);
+    campaign.set("landingPage.slug", campaign.ctaSlug);
+    campaign.set("landingPage.layout", body!.layout);
+    campaign.set("landingPage.semanticType", body?.semanticType);
+    campaign.set("landingPage.audience", audience);
+    campaign.set("landingPage.editorialCategory", editorialCategory);
+    campaign.set("landingPage.generatedAt", body?.generatedAt);
+    campaign.set(
+      "landingPage.score",
+      body?.score || campaign.landingPage?.score || 0,
+    );
+    campaign.set(
+      "landingPage.seo",
+      body?.seo || campaign.landingPage?.seo || {},
+    );
+    campaign.set("landingPage.status", "published");
 
     await campaign.save();
 

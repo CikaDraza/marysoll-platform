@@ -26,7 +26,8 @@ interface CustomTooltipProps {
   active?: boolean;
   payload?: Array<{
     payload: PieData & {
-      revenue: number;
+      /** `null` = cena nije definisana; NIKAD se ne prikazuje kao 0 RSD. */
+      revenue: number | null;
       fullName: string;
     };
   }>;
@@ -50,10 +51,14 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
         <p className="text-sm text-gray-600">Broj termina: {data.value}</p>
         <p className="text-sm text-gray-600">
           Prihod:{" "}
-          {new Intl.NumberFormat("sr-RS", {
-            style: "currency",
-            currency: "RSD",
-          }).format(data.revenue)}
+          {data.revenue == null ? (
+            <span className="italic text-gray-400">Cena nije definisana</span>
+          ) : (
+            new Intl.NumberFormat("sr-RS", {
+              style: "currency",
+              currency: "RSD",
+            }).format(data.revenue)
+          )}
         </p>
       </div>
     );
@@ -97,12 +102,14 @@ export const StatsPieChart: React.FC<StatsPieChartProps> = ({
   const chartData: PieData[] = [...services]
     .sort((a: { count: number }, b: { count: number }) => b.count - a.count)
     .slice(0, 5)
-    .map((service: { name: string; count: number; revenue: number }) => ({
+    .map((service: { name: string; count: number; revenue: number | null }) => ({
       name:
         service.name.length > 20
           ? `${service.name.substring(0, 20)}...`
           : service.name,
       value: service.count,
+      // Kriška se meri BROJEM termina, pa nepoznata cena ne menja grafikon.
+      // `null` se prenosi do tooltip-a — 0 bi tvrdilo da je usluga besplatna.
       revenue: service.revenue,
       fullName: service.name,
     }));
@@ -120,12 +127,15 @@ export const StatsPieChart: React.FC<StatsPieChartProps> = ({
     chartData.push({
       name: "Ostalo",
       value: totalCount - shownCount,
-      revenue: services
-        .slice(5)
-        .reduce(
-          (sum: number, service: { revenue: number }) => sum + service.revenue,
-          0,
-        ),
+      // „Ostale usluge": zbir POZNATIH prihoda; ako nijedna nema cenu →
+      // `null`, pa i tu piše „Cena nije definisana".
+      revenue: (() => {
+        const known = services
+          .slice(5)
+          .map((s: { revenue: number | null }) => s.revenue)
+          .filter((v: number | null): v is number => v != null);
+        return known.length ? known.reduce((a, b) => a + b, 0) : null;
+      })(),
       fullName: "Ostale usluge",
     } as PieData);
   }

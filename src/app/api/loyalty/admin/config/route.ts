@@ -11,6 +11,7 @@ import { requireAdmin } from "@/lib/auth/auth-server";
 import { requireCapability } from "@/lib/platform/capabilities-server";
 import { LoyaltyConfig } from "@/models/LoyaltyConfig";
 import { DEFAULT_LOYALTY_CONFIG } from "@/lib/loyalty/config";
+import { assignPointsShopIds } from "@/lib/loyalty/pointsShopIdentity";
 
 const rewardSchema = z.object({
   type: z.enum(["percent", "fixed", "free_service"]),
@@ -73,11 +74,18 @@ const configSchema = z.object({
       }),
     )
     .max(1), // Claudia/MVP: jedan milestone program
+  // `id` je opcion NA ULAZU: nova ponuda ga još nema. Server ga dodeljuje i
+  // prihvata postojeći samo ako pripada ovom salonu — browser ne bira
+  // identitet ponude (vidi `assignPointsShopIds`).
   pointsShop: z
     .array(
-      z.object({ costPoints: z.number().min(1), reward: rewardSchema }),
+      z.object({
+        id: z.string().trim().max(64).optional(),
+        costPoints: z.number().int().min(1).max(1_000_000),
+        reward: rewardSchema,
+      }),
     )
-    .max(3),
+    .max(6),
   noShowPolicy: z.object({
     mode: z.enum(["none", "streak_reset", "hearts_penalty"]),
     heartsPenalty: z.number().min(0).max(10),
@@ -144,10 +152,48 @@ export async function PUT(req: NextRequest) {
     );
   }
 
+  // Nagrada mora da nosi ono što obećava: procenat bez procenta i gratis
+  // usluga bez naziva su konfiguracija koju klijentkinja ne može da iskoristi.
+  for (const offer of parsed.data.pointsShop) {
+    if (offer.reward.type !== "free_service" && offer.reward.value <= 0) {
+      return NextResponse.json(
+        { error: "Nagrada mora imati vrednost veću od nule." },
+        { status: 400 },
+      );
+    }
+    if (offer.reward.type === "percent" && offer.reward.value > 100) {
+      return NextResponse.json(
+        { error: "Procenat popusta ne može biti veći od 100." },
+        { status: 400 },
+      );
+    }
+    if (
+      offer.reward.type === "free_service" &&
+      !offer.reward.serviceName?.trim() &&
+      !offer.reward.serviceId
+    ) {
+      return NextResponse.json(
+        { error: "Gratis nagrada mora imati izabranu uslugu." },
+        { status: 400 },
+      );
+    }
+  }
+
   await connectToDB();
+  // Id-jevi se čuvaju u odnosu na SAČUVANO stanje: izmena cene i promena
+  // redosleda ne smeju da promene identitet ponude, jer već izdati vaučeri i
+  // idempotency ključevi u letu pokazuju na njega.
+  const current = await LoyaltyConfig.findOne({ tenantId: auth.decoded.tenantId })
+    .select("pointsShop")
+    .lean<{ pointsShop?: { id?: string }[] }>();
+  const pointsShop = assignPointsShopIds(
+    parsed.data.pointsShop,
+    current?.pointsShop ?? [],
+  );
+
   const config = await LoyaltyConfig.findOneAndUpdate(
     { tenantId: auth.decoded.tenantId },
-    { $set: parsed.data },
+    { $set: { ...parsed.data, pointsShop } },
     { upsert: true, new: true },
   ).lean();
 

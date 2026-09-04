@@ -12,6 +12,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type Dispatch,
   type ReactNode,
@@ -26,13 +27,33 @@ import {
   timeToMin,
 } from "@/helpers/manualSlots";
 import { availableTimesForDate } from "@/lib/booking/availabilityAdapter";
-import type { IService, IAppointment } from "@/types";
+import {
+  estimateServicePrice,
+  type PriceLine,
+  type SelectedExtra,
+} from "@/helpers/servicePrice";
+import {
+  formatPriceToString,
+  PRICE_ON_REQUEST_LABEL,
+} from "@/helpers/formatPrice";
+import type {
+  IService,
+  IAppointment,
+  IAppointmentAttachment,
+  IAppointmentRequest,
+} from "@/types";
 import type {
   BookingAuthDestination,
   BookingModalProps,
   GuestData,
   PendingAppointment,
 } from "./types";
+import {
+  bookingDefaultsFromAppointment,
+  bookingIntakeChanged,
+  bookingPresentationRequiresIntake,
+} from "@/lib/booking/widgetPresentation";
+import { LoyaltyBenefitPrompt } from "@/components/loyalty/LoyaltyBenefitPrompt";
 
 export interface BookingContextValue {
   // ── props koje podkomponente čitaju ──
@@ -41,6 +62,8 @@ export interface BookingContextValue {
   userName?: string;
   userEmail?: string;
   isPendingMode: boolean;
+  isEditMode: boolean;
+  onCancelAppointment?: () => void;
   /** Validan format referral koda iz share URL-a/pending booking-a. */
   referralVoucherCode: string;
   // ── stanje izbora ──
@@ -52,10 +75,29 @@ export interface BookingContextValue {
   setSelectedServiceId: Dispatch<SetStateAction<string>>;
   selectedVariant: string;
   setSelectedVariant: Dispatch<SetStateAction<string>>;
-  selectedExtras: string[];
-  setSelectedExtras: Dispatch<SetStateAction<string[]>>;
+  /** Izabrani dodaci sa količinom. Dodatak bez `allowQuantity` uvek nosi 1. */
+  selectedExtras: SelectedExtra[];
+  setSelectedExtras: Dispatch<SetStateAction<SelectedExtra[]>>;
+  /** Postavi količinu dodatka; 0 ga uklanja iz izbora. */
+  setExtraQuantity: (name: string, quantity: number) => void;
   note: string;
   setNote: Dispatch<SetStateAction<string>>;
+  // ── intake („kako želite da izgleda") ──
+  intakeNote: string;
+  setIntakeNote: Dispatch<SetStateAction<string>>;
+  intakeReferenceUrl: string;
+  setIntakeReferenceUrl: Dispatch<SetStateAction<string>>;
+  intakeImage: IAppointmentAttachment | null;
+  uploadIntakeImage: (file: File) => Promise<void>;
+  removeIntakeImage: () => void;
+  intakeUploading: boolean;
+  intakeError: string | null;
+  /** Usluga traži zahtev, pa modal ima drugi korak. */
+  intakeRequired: boolean;
+  /** true → prikazan je korak sa zahtevom umesto izbora usluge/termina. */
+  onIntakeStep: boolean;
+  goToIntakeStep: () => void;
+  backFromIntakeStep: () => void;
   // ── gost tok ──
   showGuestForm: boolean;
   setShowGuestForm: Dispatch<SetStateAction<boolean>>;
@@ -78,6 +120,13 @@ export interface BookingContextValue {
   availableClassicTimes: string[] | null;
   totalPrice: number;
   totalDuration: number;
+  /** Razložena procena — osnovna cena, doplata varijante, dodaci. */
+  priceLines: PriceLine[];
+  /** Objašnjenje kada cena termina nije poznata; prazno inače. */
+  priceNote: string;
+  /** Prikaz ukupne cene: "1.500,00 RSD", "od 1.500,00 RSD" (deo je na upit),
+   *  "Cena na upit" (sve je na upit) ili "" (ništa još nije izabrano). */
+  totalPriceLabel: string;
   // ── akcije ──
   handleClose: () => void;
   handleSubmitLoggedIn: (e: React.FormEvent) => Promise<void>;
@@ -116,22 +165,106 @@ export function BookingProvider({
   workingHours,
   manualSlots,
   bookedAppointments,
+  mode = "create",
+  appointment,
+  onCancelAppointment,
 }: BookingModalProps & { children: ReactNode }) {
   const { user } = useAuth();
-  const { createAppointment } = useAppointmentMutations(token);
+  const { createAppointment, updateClientAppointment } =
+    useAppointmentMutations(token);
+  const editDefaults = bookingDefaultsFromAppointment(appointment, services);
 
-  const [selectedDate, setSelectedDate] = useState(defaultDate);
-  const [selectedTime, setSelectedTime] = useState(defaultTime);
+  const [selectedDate, setSelectedDate] = useState(
+    editDefaults?.date ?? defaultDate,
+  );
+  const [selectedTime, setSelectedTime] = useState(
+    editDefaults?.time ?? defaultTime,
+  );
   const [selectedServiceId, setSelectedServiceId] = useState(
-    pendingDefaults?.serviceId || services[0]?._id || "",
+    editDefaults?.serviceId || pendingDefaults?.serviceId || services[0]?._id || "",
   );
   const [selectedVariant, setSelectedVariant] = useState(
-    pendingDefaults?.variantName || "",
+    editDefaults?.variantName || pendingDefaults?.variantName || "",
   );
-  const [selectedExtras, setSelectedExtras] = useState<string[]>(
-    pendingDefaults?.extras || [],
+  const [selectedExtras, setSelectedExtras] = useState<SelectedExtra[]>(() =>
+    editDefaults?.extras ??
+      (pendingDefaults?.extras ?? []).map((name) => ({
+        name,
+        quantity: pendingDefaults?.extraQuantities?.[name] ?? 1,
+      })),
   );
-  const [note, setNote] = useState(pendingDefaults?.note || "");
+
+  const setExtraQuantity = useCallback((name: string, quantity: number) => {
+    setSelectedExtras((prev) => {
+      if (quantity <= 0) return prev.filter((e) => e.name !== name);
+      const existing = prev.find((e) => e.name === name);
+      if (!existing) return [...prev, { name, quantity }];
+      return prev.map((e) => (e.name === name ? { ...e, quantity } : e));
+    });
+  }, []);
+  const [note, setNote] = useState(
+    editDefaults?.note || pendingDefaults?.note || "",
+  );
+
+  // Intake živi samo dok modal traje. Namerno NIJE u `PendingAppointment`:
+  // fotografija je već na Cloudinary-ju, a guranje URL-a kroz sessionStorage
+  // bi je izložilo svakome ko čita storage. Posle prijave se unosi ponovo.
+  const [intakeNote, setIntakeNote] = useState(editDefaults?.intakeNote ?? "");
+  const [intakeReferenceUrl, setIntakeReferenceUrl] = useState(
+    editDefaults?.intakeReferenceUrl ?? "",
+  );
+  const [intakeImage, setIntakeImage] =
+    useState<IAppointmentAttachment | null>(editDefaults?.intakeImage ?? null);
+  const [intakeUploading, setIntakeUploading] = useState(false);
+  const [intakeError, setIntakeError] = useState<string | null>(null);
+  const [onIntakeStep, setOnIntakeStep] = useState(false);
+
+  const uploadIntakeImage = useCallback(
+    async (file: File) => {
+      if (!tenantSlug) {
+        setIntakeError("Otpremanje trenutno nije dostupno.");
+        return;
+      }
+      setIntakeError(null);
+      setIntakeUploading(true);
+      try {
+        const body = new FormData();
+        body.append("file", file);
+        const res = await fetch(
+          `/api/public/${tenantSlug}/appointments/intake-upload`,
+          { method: "POST", body },
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setIntakeError(data?.error ?? "Otpremanje nije uspelo.");
+          return;
+        }
+        setIntakeImage(data as IAppointmentAttachment);
+      } catch {
+        setIntakeError("Otpremanje nije uspelo. Proverite internet vezu.");
+      } finally {
+        setIntakeUploading(false);
+      }
+    },
+    [tenantSlug],
+  );
+
+  const removeIntakeImage = useCallback(() => {
+    setIntakeImage(null);
+    setIntakeError(null);
+  }, []);
+
+  /** Zahtev za payload — `undefined` kad klijentkinja nije ništa unela. */
+  const buildRequest = useCallback((): IAppointmentRequest | undefined => {
+    const noteText = intakeNote.trim();
+    const ref = intakeReferenceUrl.trim();
+    if (!noteText && !ref && !intakeImage) return undefined;
+    return {
+      ...(noteText ? { note: noteText } : {}),
+      ...(ref ? { referenceUrl: ref } : {}),
+      ...(intakeImage ? { attachments: [intakeImage] } : {}),
+    };
+  }, [intakeNote, intakeReferenceUrl, intakeImage]);
   const [showGuestForm, setShowGuestForm] = useState(false);
   const [guestData, setGuestData] = useState({
     name: "",
@@ -141,6 +274,10 @@ export function BookingProvider({
     tiktok: "",
   });
   const [guestLoading, setGuestLoading] = useState(false);
+  /** Termin koji je upravo zakazan — ulaz za post-booking loyalty ponudu. */
+  const [benefitAppointmentId, setBenefitAppointmentId] = useState<string | null>(
+    null,
+  );
   const [referralVoucherCode, setReferralVoucherCode] = useState(
     pendingDefaults?.voucherCode?.trim().toUpperCase() ?? "",
   );
@@ -150,6 +287,12 @@ export function BookingProvider({
     exists: boolean;
     isRegistered: boolean;
   } | null>(null);
+
+  // Usluga kojoj trenutni izbor varijante/dodataka PRIPADA. Reset je ranije
+  // stajao samo u `onChange` radio dugmeta, pa ga je svaka druga promena usluge
+  // zaobilazila (restore pending termina, promena liste usluga, podrazumevani
+  // `services[0]`) i stari izbor je ostajao prikačen na novu uslugu.
+  const selectionOwnerRef = useRef(selectedServiceId);
 
   const checkExistingClient = useCallback(async () => {
     const email = guestData.email.trim();
@@ -178,8 +321,12 @@ export function BookingProvider({
 
   useEffect(() => {
     async function init() {
-      setSelectedDate(defaultDate);
-      setSelectedTime(defaultTime);
+      const currentEditDefaults = bookingDefaultsFromAppointment(
+        appointment,
+        services,
+      );
+      setSelectedDate(currentEditDefaults?.date ?? defaultDate);
+      setSelectedTime(currentEditDefaults?.time ?? defaultTime);
       const queryVoucher =
         typeof window !== "undefined"
           ? new URLSearchParams(window.location.search).get("voucher")
@@ -199,35 +346,98 @@ export function BookingProvider({
           // Fail closed za guest booking: server booking svakako ponovo validira.
         }
       }
-      if (pendingDefaults) {
-        setSelectedServiceId(pendingDefaults.serviceId || services[0]?._id || "");
+      if (currentEditDefaults) {
+        selectionOwnerRef.current = currentEditDefaults.serviceId;
+        setSelectedServiceId(currentEditDefaults.serviceId);
+        setSelectedVariant(currentEditDefaults.variantName);
+        setSelectedExtras(currentEditDefaults.extras);
+        setNote(currentEditDefaults.note);
+        setIntakeNote(currentEditDefaults.intakeNote);
+        setIntakeReferenceUrl(currentEditDefaults.intakeReferenceUrl);
+        setIntakeImage(currentEditDefaults.intakeImage);
+      } else if (pendingDefaults) {
+        const restoredId = pendingDefaults.serviceId || services[0]?._id || "";
+        // Vraćen izbor PRIPADA toj usluzi — obeleži ga pre nego što se
+        // `selectedServiceId` promeni, da ga čistač ispod ne obriše.
+        selectionOwnerRef.current = restoredId;
+        setSelectedServiceId(restoredId);
         setSelectedVariant(pendingDefaults.variantName || "");
-        setSelectedExtras(pendingDefaults.extras || []);
+        setSelectedExtras(
+          (pendingDefaults.extras ?? []).map((name) => ({
+            name,
+            quantity: pendingDefaults.extraQuantities?.[name] ?? 1,
+          })),
+        );
         setNote(pendingDefaults.note || "");
       }
     }
     init();
-  }, [defaultDate, defaultTime, pendingDefaults, services, tenantSlug]);
+  }, [
+    appointment,
+    defaultDate,
+    defaultTime,
+    pendingDefaults,
+    services,
+    tenantSlug,
+  ]);
 
   const selectedService = services.find((s) => s._id === selectedServiceId);
+
+  // Promenjena usluga → stari izbor pada, bez obzira odakle je promena došla.
+  useEffect(() => {
+    if (selectionOwnerRef.current === selectedServiceId) return;
+    selectionOwnerRef.current = selectedServiceId;
+    setSelectedVariant("");
+    setSelectedExtras([]);
+    // Druga usluga → drugi zahtev; korak se vraća na početak.
+    setOnIntakeStep(false);
+  }, [selectedServiceId]);
 
   // manualSlots režim: nudi se SAMO slobodan budući termin koji je vlasnik
   // definisao — datum/vreme van te liste ne sme proći.
   const isManualMode = availabilityMode === "manualSlots";
+  const editedAppointmentId = appointment?._id;
+  const availabilityAppointments = useMemo(
+    () =>
+      (bookedAppointments ?? []).filter(
+        (slot) => !editedAppointmentId || slot._id !== editedAppointmentId,
+      ),
+    [editedAppointmentId, bookedAppointments],
+  );
   const availableManualTimes = useMemo(() => {
     if (!isManualMode || !selectedDate) return [];
     const now = new Date();
-    return manualTimesForDate(manualSlots, selectedDate).filter(
+    const options = manualTimesForDate(manualSlots, selectedDate).filter(
       (s) =>
         new Date(`${selectedDate}T${s.time}`) >= now &&
         !isManualSlotTaken(
-          bookedAppointments ?? [],
+          availabilityAppointments,
           selectedDate,
           timeToMin(s.time),
           s.duration,
         ),
     );
-  }, [isManualMode, manualSlots, bookedAppointments, selectedDate]);
+    if (
+      mode === "edit" &&
+      appointment &&
+      selectedDate === appointment.date &&
+      !options.some((slot) => slot.time === appointment.time)
+    ) {
+      options.push({
+        time: appointment.time,
+        duration: appointment.duration || 60,
+      });
+      options.sort((a, b) => timeToMin(a.time) - timeToMin(b.time));
+    }
+    return options;
+  }, [
+    appointment,
+    isManualMode,
+    manualSlots,
+    mode,
+    availabilityAppointments,
+    selectedDate,
+  ]);
 
   const manualSlotInvalid =
     isManualMode && !availableManualTimes.some((s) => s.time === selectedTime);
@@ -242,43 +452,54 @@ export function BookingProvider({
     return true;
   }
 
-  const { price: totalPrice, duration: totalDuration } = useMemo(() => {
-    if (!selectedService) return { price: 0, duration: 0 };
-    let price = 0;
-    let duration = selectedService.duration || 0;
+  // Procena cene i trajanja živi u `estimateServicePrice` — istom helperu koji
+  // koriste admin lista i javni cenovnik, da tri površine ne bi imale tri
+  // tumačenja iste usluge.
+  const estimate = useMemo(
+    () =>
+      selectedService
+        ? estimateServicePrice({
+            service: selectedService,
+            variantName: selectedVariant,
+            extras: selectedExtras,
+          })
+        : null,
+    [selectedService, selectedVariant, selectedExtras],
+  );
 
-    if (
-      selectedService.type === "variant" &&
-      selectedVariant &&
-      selectedService.variants
-    ) {
-      const variant = selectedService.variants.find(
-        (v) => v.name === selectedVariant,
-      );
-      if (variant) {
-        price = variant.price;
-        if (variant.duration) duration = variant.duration;
-      }
-    } else if (selectedService.type === "single") {
-      price = selectedService.basePrice || 0;
-      duration = selectedService.duration || 0;
-    } else {
-      price = selectedService.basePrice || 0;
-      duration = selectedService.duration || 0;
+  // `null` = cena termina se ne zna. U legacy payload ide 0, isto kao i do
+  // sada za usluge na upit — poznati dodaci se NE upisuju kao cena termina.
+  const totalPrice = estimate?.total ?? 0;
+  const totalDuration = estimate?.durationMinutes ?? 0;
+  const priceLines = estimate?.lines ?? [];
+
+  const totalPriceLabel = useMemo(() => {
+    if (!estimate) return "";
+    // Nepoznata osnovna cena: nikad ne prikazuj poznate dodatke kao cenu
+    // termina — „od 700" bi izgledalo kao da termin košta 700.
+    if (estimate.total == null) return PRICE_ON_REQUEST_LABEL;
+    const formatted = `${formatPriceToString(estimate.total)} RSD`;
+    return estimate.isEstimate ? `od ${formatted}` : formatted;
+  }, [estimate]);
+
+  /** Poruka ispod ukupnog kada konačna cena tek treba da se odredi. */
+  const priceNote = estimate?.unknown
+    ? "Konačna cena biće potvrđena naknadno."
+    : "";
+
+  // Ime izbora koje ide u termin. Paket i jedna usluga nemaju izbor — samo
+  // varijanta uz ime usluge ("Izlivanje noktiju - Veličina 2").
+  const selectionLabel =
+    selectedService?.type === "variant" ? selectedVariant : "";
+
+  /** Jedini obavezan izbor u katalogu je varijanta. */
+  function validateSelection(service: IService): boolean {
+    if (service.type === "variant" && !selectedVariant) {
+      toast.error("Molimo izaberite varijantu usluge.");
+      return false;
     }
-
-    if (selectedService.extras && selectedExtras.length > 0) {
-      selectedExtras.forEach((extraName) => {
-        const extra = selectedService.extras?.find((e) => e.name === extraName);
-        if (extra) {
-          price += extra.price || 0;
-          if (extra.duration) duration += extra.duration;
-        }
-      });
-    }
-
-    return { price, duration };
-  }, [selectedService, selectedVariant, selectedExtras]);
+    return true;
+  }
 
   // Klasičan režim: dropdown nudi SAMO dostupna vremena za izabrani datum
   // (radno vreme − zauzeto − prošlost), uračunato trajanje izabrane usluge.
@@ -289,16 +510,27 @@ export function BookingProvider({
       localDate: selectedDate,
       durationMinutes: totalDuration || 60,
       profile: { workingHours },
-      appointments: bookedAppointments ?? [],
+      appointments: availabilityAppointments,
       now: new Date(),
     });
-  }, [isManualMode, workingHours, selectedDate, totalDuration, bookedAppointments]);
+  }, [
+    isManualMode,
+    workingHours,
+    selectedDate,
+    totalDuration,
+    availabilityAppointments,
+  ]);
 
   function handleClose() {
     setSelectedServiceId(services[0]?._id || "");
     setSelectedVariant("");
     setSelectedExtras([]);
     setNote("");
+    setIntakeNote("");
+    setIntakeReferenceUrl("");
+    setIntakeImage(null);
+    setIntakeError(null);
+    setOnIntakeStep(false);
     setShowGuestForm(false);
     setGuestData({ name: "", phone: "", email: "", instagram: "", tiktok: "" });
     onClose();
@@ -311,16 +543,19 @@ export function BookingProvider({
       return toast.error("Molimo izaberite datum i vreme.");
     if (!validateManualSlot()) return;
     if (!selectedService) return toast.error("Izabrana usluga nije pronađena.");
-    if (selectedService.type === "variant" && !selectedVariant)
-      return toast.error("Molimo izaberite varijantu usluge.");
+    if (!validateSelection(selectedService)) return;
 
-    const extrasForStorage = selectedExtras.map((extraName) => {
-      const extra = selectedService.extras?.find((e) => e.name === extraName);
+    const extrasForStorage = selectedExtras.map(({ name, quantity }) => {
+      const extra = selectedService.extras?.find((e) => e.name === name);
+      const qty = extra?.allowQuantity ? Math.max(1, quantity) : 1;
       return {
-        name: extraName,
-        price: extra?.price || 0,
-        duration: extra?.duration || 0,
+        name,
+        // Zapisuje se UKUPNO za taj dodatak, ne jedinična cena — termin mora
+        // da stoji sam za sebe i kad se cenovnik kasnije promeni.
+        price: (extra?.price || 0) * qty,
+        duration: (extra?.duration || 0) * qty,
         perItem: extra?.perItem || false,
+        quantity: qty,
       };
     });
 
@@ -328,14 +563,11 @@ export function BookingProvider({
       clientProfileId: user.tenantUserId ?? undefined,
       clientName: user.name,
       clientEmail: user.email,
-      serviceName: `${selectedService.name}${selectedVariant ? ` - ${selectedVariant}` : ""}`,
+      serviceName: `${selectedService.name}${selectionLabel ? ` - ${selectionLabel}` : ""}`,
       services: [
         {
           serviceId: selectedServiceId || "",
-          serviceName:
-            selectedService.type === "variant"
-              ? selectedVariant
-              : selectedService.name,
+          serviceName: selectionLabel || selectedService.name,
           extras: extrasForStorage.length > 0 ? extrasForStorage : undefined,
           quantity: 1,
           price: totalPrice,
@@ -346,6 +578,16 @@ export function BookingProvider({
       time: selectedTime,
       duration: totalDuration,
       note: note || undefined,
+      request:
+        bookingPresentationRequiresIntake(selectedService) &&
+        (mode === "create" ||
+          bookingIntakeChanged(appointment?.request, {
+            note: intakeNote,
+            referenceUrl: intakeReferenceUrl,
+            image: intakeImage,
+          }))
+          ? buildRequest()
+          : undefined,
       status: "pending",
       ...(referralVoucherCode ? { voucherCode: referralVoucherCode } : {}),
       messages: [],
@@ -355,7 +597,21 @@ export function BookingProvider({
     };
 
     try {
-      await createAppointment.mutateAsync(payload);
+      if (mode === "edit") {
+        if (!appointment?._id) throw new Error("Termin nije pronađen.");
+        await updateClientAppointment.mutateAsync({
+          id: appointment._id,
+          updatedData: payload,
+        });
+      } else {
+        const created = await createAppointment.mutateAsync(payload);
+        // Loyalty se nudi TEK posle uspešnog zakazivanja i samo ako server
+        // kaže da ima šta da se ponudi. Neuspeh ovog koraka ne dodiruje
+        // potvrdu termina — vidi `LoyaltyBenefitPrompt`.
+        const createdId = (created as { appointment?: { _id?: string } })
+          ?.appointment?._id;
+        if (createdId) setBenefitAppointmentId(String(createdId));
+      }
       onBooked?.();
       handleClose();
     } catch (err: unknown) {
@@ -368,15 +624,17 @@ export function BookingProvider({
       return toast.error("Molimo izaberite datum i vreme.");
     if (!validateManualSlot()) return;
     if (!selectedService) return toast.error("Izabrana usluga nije pronađena.");
-    if (selectedService.type === "variant" && !selectedVariant)
-      return toast.error("Molimo izaberite varijantu usluge.");
+    if (!validateSelection(selectedService)) return;
 
-    onConfirmedByGuest({
+    onConfirmedByGuest?.({
       date: selectedDate,
       time: selectedTime,
       serviceId: selectedServiceId,
       variantName: selectedVariant,
-      extras: selectedExtras,
+      extras: selectedExtras.map((e) => e.name),
+      extraQuantities: Object.fromEntries(
+        selectedExtras.map((e) => [e.name, e.quantity]),
+      ),
       note,
       totalPrice,
       totalDuration,
@@ -400,8 +658,7 @@ export function BookingProvider({
       return toast.error("Molimo izaberite datum i vreme.");
     if (!validateManualSlot()) return;
     if (!selectedService) return toast.error("Izabrana usluga nije pronađena.");
-    if (selectedService.type === "variant" && !selectedVariant)
-      return toast.error("Molimo izaberite varijantu usluge.");
+    if (!validateSelection(selectedService)) return;
     if (!guestData.name.trim()) return toast.error("Unesite ime i prezime.");
     if (
       !guestData.phone.trim() &&
@@ -413,13 +670,17 @@ export function BookingProvider({
     if (!tenantSlug)
       return toast.error("Greška: nedostaje identifikator salona.");
 
-    const extrasForStorage = selectedExtras.map((extraName) => {
-      const extra = selectedService.extras?.find((e) => e.name === extraName);
+    const extrasForStorage = selectedExtras.map(({ name, quantity }) => {
+      const extra = selectedService.extras?.find((e) => e.name === name);
+      const qty = extra?.allowQuantity ? Math.max(1, quantity) : 1;
       return {
-        name: extraName,
-        price: extra?.price || 0,
-        duration: extra?.duration || 0,
+        name,
+        // Zapisuje se UKUPNO za taj dodatak, ne jedinična cena — termin mora
+        // da stoji sam za sebe i kad se cenovnik kasnije promeni.
+        price: (extra?.price || 0) * qty,
+        duration: (extra?.duration || 0) * qty,
         perItem: extra?.perItem || false,
+        quantity: qty,
       };
     });
 
@@ -446,14 +707,11 @@ export function BookingProvider({
               ? "instagram"
               : "email",
           serviceId: selectedServiceId,
-          serviceName: `${selectedService.name}${selectedVariant ? ` - ${selectedVariant}` : ""}`,
+          serviceName: `${selectedService.name}${selectionLabel ? ` - ${selectionLabel}` : ""}`,
           services: [
             {
               serviceId: selectedServiceId,
-              serviceName:
-                selectedService.type === "variant"
-                  ? selectedVariant
-                  : selectedService.name,
+              serviceName: selectionLabel || selectedService.name,
               extras:
                 extrasForStorage.length > 0 ? extrasForStorage : undefined,
               quantity: 1,
@@ -465,6 +723,7 @@ export function BookingProvider({
           time: selectedTime,
           duration: totalDuration,
           note: noteWithInstagram,
+          request: buildRequest(),
         }),
       });
 
@@ -484,6 +743,7 @@ export function BookingProvider({
   }
 
   const isPendingMode = !!pendingDefaults;
+  const isEditMode = mode === "edit";
 
   const value: BookingContextValue = {
     services,
@@ -491,6 +751,8 @@ export function BookingProvider({
     userName,
     userEmail,
     isPendingMode,
+    isEditMode,
+    onCancelAppointment,
     referralVoucherCode,
     selectedDate,
     setSelectedDate,
@@ -502,8 +764,22 @@ export function BookingProvider({
     setSelectedVariant,
     selectedExtras,
     setSelectedExtras,
+    setExtraQuantity,
     note,
     setNote,
+    intakeNote,
+    setIntakeNote,
+    intakeReferenceUrl,
+    setIntakeReferenceUrl,
+    intakeImage,
+    uploadIntakeImage,
+    removeIntakeImage,
+    intakeUploading,
+    intakeError,
+    intakeRequired: bookingPresentationRequiresIntake(selectedService),
+    onIntakeStep,
+    goToIntakeStep: () => setOnIntakeStep(true),
+    backFromIntakeStep: () => setOnIntakeStep(false),
     showGuestForm,
     setShowGuestForm,
     guestData,
@@ -511,7 +787,8 @@ export function BookingProvider({
     guestLoading,
     existingAccount,
     checkExistingClient,
-    isSubmitting: createAppointment.isPending,
+    isSubmitting:
+      createAppointment.isPending || updateClientAppointment.isPending,
     selectedService,
     isManualMode,
     availableManualTimes,
@@ -519,6 +796,9 @@ export function BookingProvider({
     availableClassicTimes,
     totalPrice,
     totalDuration,
+    priceLines,
+    priceNote,
+    totalPriceLabel,
     handleClose,
     // toast.error vraća string pa originalni handleri nisu striktno Promise<void>;
     // wrap čuva ugovor konteksta bez promene ponašanja.
@@ -533,7 +813,15 @@ export function BookingProvider({
   };
 
   return (
-    <BookingContext.Provider value={value}>{children}</BookingContext.Provider>
+    <BookingContext.Provider value={value}>
+      {children}
+      {/* Zaseban ekran POSLE zakazivanja, u loyalty prezentacionom sloju —
+          booking widget ne zna za nagrade. */}
+      <LoyaltyBenefitPrompt
+        appointmentId={benefitAppointmentId}
+        onDismiss={() => setBenefitAppointmentId(null)}
+      />
+    </BookingContext.Provider>
   );
 }
 

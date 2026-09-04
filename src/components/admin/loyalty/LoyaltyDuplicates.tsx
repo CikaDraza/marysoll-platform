@@ -10,9 +10,8 @@
 import { useState } from "react";
 import {
   useDuplicateGroups,
-  type DuplicateAccount,
-  type DuplicateGroup,
-} from "@/hooks/useLoyaltyAdmin";
+} from "@/hooks/loyalty/useLoyaltyAdminMerge";
+import type { DuplicateAccount, DuplicateGroup } from "@/types/loyalty-admin";
 import { MergePreviewModal } from "./MergePreviewModal";
 
 const card =

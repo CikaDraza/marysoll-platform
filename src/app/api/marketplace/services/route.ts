@@ -7,6 +7,8 @@ import { Service } from "@/models/Service";
 import { verifySignature } from "@/lib/middleware/verifySignature";
 import { checkRateLimit } from "@/lib/middleware/rateLimiter";
 import { requireCapability } from "@/lib/platform/capabilities-server";
+import { normalizePriceMode } from "@/helpers/formatPrice";
+import { subdocRef } from "@/lib/booking/subdocRef";
 
 export async function GET(req: NextRequest) {
   const verify = verifySignature(req, "");
@@ -51,14 +53,16 @@ export async function GET(req: NextRequest) {
           type: String(r.type ?? "single"),
           duration: r.duration != null ? Number(r.duration) : null,
           basePrice: r.basePrice != null ? Number(r.basePrice) : null,
-          priceMode: r.priceMode === "on_request" ? "on_request" : "fixed",
-          // Varijante — sirovo, ali očišćeno (bez _id): booking app iz ovoga
-          // sam računa "od" cenu (min) i "do" trajanje (max) po svom pravilu.
+          priceMode: normalizePriceMode(r.priceMode),
+          // Varijante — bez `_id` kao javnog polja, ali sa `ref` adresom koju
+          // Booking Engine očekuje. Booking app iz ovoga i dalje sam računa
+          // "od" cenu (min) i "do" trajanje (max) po svom pravilu.
           variants: Array.isArray(r.variants)
             ? (r.variants as Record<string, unknown>[]).map((v) => ({
+                ref: subdocRef(v),
                 name: String(v.name ?? ""),
                 price: v.price != null ? Number(v.price) : null,
-                priceMode: v.priceMode === "on_request" ? "on_request" : "fixed",
+                priceMode: normalizePriceMode(v.priceMode),
                 duration: v.duration != null ? Number(v.duration) : null,
                 perItem: v.perItem === true,
               }))

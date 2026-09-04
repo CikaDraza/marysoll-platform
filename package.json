@@ -19,7 +19,13 @@
     "seed:theme9": "node --env-file=.env.local scripts/seeds/seed-expert-editorial.mts",
     "normalize:theme9": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/normalize-theme9-section-state.mts",
     "push:subscriptions": "node --env-file=.env.local scripts/prune-push-subscriptions.mjs",
-    "copy:tenants": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/copy-tenants-to-staging.mts"
+    "copy:tenants": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/copy-tenants-to-staging.mts",
+    "backfill:education-snapshot": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/backfill-education-published-snapshot.mts",
+    "backfill:education-access": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/backfill-education-access-mode.mts",
+    "backfill:group-price": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/backfill-group-package-price.mts",
+    "backfill:service-intake": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/backfill-service-booking-intake.mts",
+    "backfill:points-shop-ids": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/backfill-points-shop-ids.mts",
+    "cleanup:stale-group-items": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/cleanup-stale-group-items.mts"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.19",
@@ -43,6 +49,7 @@
     "jose": "^6.2.2",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
+    "mammoth": "^1.12.2",
     "mongoose": "^8.19.3",
     "next": "^16.1.6",
     "openai": "^6.33.0",
@@ -53,6 +60,7 @@
     "recharts": "^3.4.1",
     "resend": "^6.6.0",
     "ts-node": "^10.9.2",
+    "unpdf": "^1.8.1",
     "web-push": "^3.6.7",
     "zod": "^4.3.5"
   },

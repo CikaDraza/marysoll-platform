@@ -13,9 +13,18 @@ import { useMarkMessagesSeen } from "@/hooks/useMarkMessagesSeen";
 import Paginator from "../elements/Paginator";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuth } from "@/hooks/useAuth";
+import { usePublicSalonProfile } from "@/hooks/useSalonProfile";
+import { usePublicOccupancy } from "@/hooks/usePublicOccupancy";
+import ClientEditModal from "./ClientEditModal";
+import { useCancelAppointment } from "./useCancelAppointment";
+import type { ManualSlotsMap } from "@/types";
 import { useTenant } from "@/contexts/TenantContext";
 import {
-  noShowLabel,
+  clientAppointmentPhase,
+  isClientActionableStatus,
+} from "@/lib/appointments/cancellation";
+import {
+  noShowStatusLabel,
   clientNoun,
   clientNounCap,
   genderPast,
@@ -24,11 +33,22 @@ import {
 interface ClientAppointmentListItemProps {
   appointment: IAppointment;
   onOpenChat: (appointment: IAppointment) => void;
+  onEdit: (appointment: IAppointment) => void;
+  onCancel: (appointment: IAppointment) => void;
+  onRespondToProposal: (
+    appointment: IAppointment,
+    decision: "accept" | "decline",
+  ) => void;
+  proposalPending: boolean;
 }
 
 function ClientAppointmentListItem({
   appointment,
   onOpenChat,
+  onEdit,
+  onCancel,
+  onRespondToProposal,
+  proposalPending,
 }: ClientAppointmentListItemProps) {
   const { isOnline } = useUsers().data?.find(
     (u: IUser) => u._id === appointment.clientProfileId,
@@ -39,6 +59,26 @@ function ClientAppointmentListItem({
 
   // Uzmi ažurirani appointment sa najnovijim porukama
   const currentAppointment = appointment;
+
+  // Vreme se NE računa ponovo u komponenti — faza je canonical domenska odluka.
+  //   open    → Promeni + Otkaži
+  //   late    → samo Otkaži (postaje kasno otkazivanje)
+  //   started → ništa; termin je počeo
+  //   unknown → ništa; vreme se ne može pouzdano pročitati
+  const phase = isClientActionableStatus(currentAppointment.status)
+    ? clientAppointmentPhase(currentAppointment)
+    : "started";
+  const canEdit = phase === "open";
+  const canCancel = phase === "open" || phase === "late";
+
+  // Predlog salona čeka odgovor. Do sada je klijentkinja predlog samo VIDELA —
+  // prihvatanje se odvijalo dogovorom van sistema, a termin je ostajao na
+  // starom vremenu.
+  const hasProposal = Boolean(
+    currentAppointment.proposedDate &&
+      currentAppointment.proposedTime &&
+      isClientActionableStatus(currentAppointment.status),
+  );
 
   const getStatusColor = (status: string) => statusMeta(status).chip;
 
@@ -81,7 +121,7 @@ function ClientAppointmentListItem({
                 "Otkazano"}
               {currentAppointment.status === "completed" && "Završeno"}
               {currentAppointment.status === "no_show" &&
-                noShowLabel(clientGender)}
+                noShowStatusLabel(currentAppointment.noShowReason, clientGender)}
             </span>
             {unreadClient !== 0 && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-(--secondary-color) text-white animate-pulse">
@@ -104,17 +144,16 @@ function ClientAppointmentListItem({
               {currentAppointment.note}
             </p>
           )}
-          {currentAppointment.proposedDate &&
-            currentAppointment.proposedTime && (
-              <p className="mt-1 text-xs text-blue-600">
-                <strong>Predloženi termin:</strong>{" "}
-                {formatISODate(
-                  currentAppointment.proposedDate +
-                    "T" +
-                    currentAppointment.proposedTime,
-                )}
-              </p>
-            )}
+          {hasProposal && (
+            <p className="mt-1 text-xs text-blue-600">
+              <strong>Salon predlaže:</strong>{" "}
+              {formatISODate(
+                currentAppointment.proposedDate +
+                  "T" +
+                  currentAppointment.proposedTime,
+              )}
+            </p>
+          )}
         </div>
       </div>
 
@@ -140,7 +179,41 @@ function ClientAppointmentListItem({
         </div>
 
         {/* Akcije */}
-        <div className="flex gap-2 mt-2">
+        <div className="flex flex-wrap justify-end gap-2 mt-2">
+          {hasProposal && (
+            <>
+              <button
+                onClick={() => onRespondToProposal(currentAppointment, "accept")}
+                disabled={proposalPending}
+                className="px-3 py-1 bg-emerald-600 text-white text-xs rounded hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+              >
+                Prihvati novi termin
+              </button>
+              <button
+                onClick={() => onRespondToProposal(currentAppointment, "decline")}
+                disabled={proposalPending}
+                className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
+              >
+                Odbij
+              </button>
+            </>
+          )}
+          {canEdit && (
+            <button
+              onClick={() => onEdit(currentAppointment)}
+              className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              Promeni
+            </button>
+          )}
+          {canCancel && (
+            <button
+              onClick={() => onCancel(currentAppointment)}
+              className="px-3 py-1 bg-red-100 text-red-600 text-xs rounded hover:bg-red-600 hover:text-white transition-colors"
+            >
+              Otkaži
+            </button>
+          )}
           <button
             onClick={() => onOpenChat(currentAppointment)}
             className="px-3 py-1 relative bg-(--primary-color)/80 text-white text-xs rounded hover:bg-(--primary-color) transition-colors"
@@ -408,15 +481,6 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
   );
 }
 
-const inp = [
-  "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm",
-  "text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800",
-  "focus:outline-none focus:ring-2 focus:ring-violet-400 transition",
-  "placeholder:text-gray-400 dark:placeholder:text-gray-500",
-].join(" ");
-
-const lbl =
-  "block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5";
 const card =
   "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
 
@@ -436,12 +500,36 @@ export default function ClientAppointments() {
   const markMessagesSeen = useMarkMessagesSeen();
 
   const { user } = useAuth();
+  const { tenantSlug } = useTenant();
+
+  // Edit modal traži dostupnost. Zauzeće ide iz SANITIZOVANOG javnog feeda —
+  // samo datum, vreme i trajanje. Puni termini salona (`/api/appointments`)
+  // nose imena, telefone, poruke i intake fotografije drugih klijenata i
+  // klijentski UI ih nikad ne sme tražiti radi dostupnosti.
+  const { data: salonProfile } = usePublicSalonProfile(tenantSlug);
+  const { data: occupancy = [], refetch: refetchOccupancy } =
+    usePublicOccupancy(tenantSlug);
+
+  const [editTarget, setEditTarget] = useState<IAppointment | null>(null);
+  const { requestCancel, dialog: cancelDialog } = useCancelAppointment({
+    token: user?.token,
+  });
+  const { respondToProposal } = useAppointmentMutations(user?.token);
+
+  const handleProposalResponse = (
+    appointment: IAppointment,
+    decision: "accept" | "decline",
+  ) => {
+    if (!appointment._id) return;
+    respondToProposal.mutate({ id: appointment._id, decision });
+  };
 
   const {
     data: response,
     isLoading,
     isError,
     isFetching,
+    refetch: refetchAppointments,
   } = useAppointments({
     page,
     limit: 10,
@@ -591,6 +679,10 @@ export default function ClientAppointments() {
                 key={appointment._id}
                 appointment={appointment}
                 onOpenChat={handleOpenChat}
+                onEdit={setEditTarget}
+                onCancel={requestCancel}
+                onRespondToProposal={handleProposalResponse}
+                proposalPending={respondToProposal.isPending}
               />
             ))}
           </ul>
@@ -610,6 +702,29 @@ export default function ClientAppointments() {
           onClose={() => setSelectedAppointment(null)}
         />
       )}
+
+      {/* Isti modal koji koristi klijentski kalendar — bez druge implementacije. */}
+      <ClientEditModal
+        key={editTarget?._id ?? "edit"}
+        isOpen={editTarget !== null}
+        onClose={() => setEditTarget(null)}
+        appointment={editTarget}
+        token={user?.token}
+        availabilityMode={salonProfile?.availabilityMode}
+        workingHours={
+          salonProfile?.workingHours as
+            | Parameters<typeof ClientEditModal>[0]["workingHours"]
+            | undefined
+        }
+        manualSlots={salonProfile?.manualSlots as ManualSlotsMap | undefined}
+        bookedAppointments={occupancy}
+        onChanged={() => {
+          void refetchAppointments();
+          void refetchOccupancy();
+        }}
+      />
+
+      {cancelDialog}
     </div>
   );
 }

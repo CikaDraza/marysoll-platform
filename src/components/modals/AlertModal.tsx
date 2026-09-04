@@ -15,16 +15,23 @@ export default function AlertModal({
   onConfirm,
   title = "Izbriši termin?",
   message = "Da li ste sigurni da želite da obrišete ovaj termin? Ova akcija se ne može opozvati.",
+  confirmLabel = "Da",
+  cancelLabel = "Ne",
 }: {
   open: boolean;
   setOpen: (open: boolean) => void;
   onConfirm: () => void;
   title?: string;
   message?: string;
+  /** Tekst destruktivnog dugmeta — „Da" nije uvek dovoljno jasan. */
+  confirmLabel?: string;
+  cancelLabel?: string;
 }): JSX.Element {
   return (
     <div>
-      <Dialog open={open} onClose={onConfirm} className="relative z-60">
+      {/* onClose je zatvaranje, ne potvrda — Escape/backdrop ne sme da
+          okine destruktivnu akciju. */}
+      <Dialog open={open} onClose={() => setOpen(false)} className="relative z-60">
         <DialogBackdrop
           transition
           className="fixed inset-0 bg-gray-500/75 transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"
@@ -63,7 +70,7 @@ export default function AlertModal({
                   onClick={onConfirm}
                   className="cursor-pointer inline-flex w-full justify-center rounded-md bg-red-600 px-6 py-2 text-sm font-semibold text-white shadow-xs hover:bg-red-500 sm:ml-3 sm:w-auto"
                 >
-                  Da
+                  {confirmLabel}
                 </button>
                 <button
                   type="button"
@@ -71,7 +78,7 @@ export default function AlertModal({
                   onClick={() => setOpen(false)}
                   className="cursor-pointer mt-3 inline-flex w-full justify-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-xs inset-ring inset-ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
                 >
-                  Ne
+                  {cancelLabel}
                 </button>
               </div>
             </DialogPanel>

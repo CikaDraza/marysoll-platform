@@ -2,6 +2,10 @@
 import Link from "next/link";
 import { CheckIcon } from "@heroicons/react/20/solid";
 import { formatPriceToString, formatServicePrice } from "@/helpers/formatPrice";
+import {
+  minServicePrice as minPrice,
+  isPriceFrom,
+} from "@/helpers/servicePrice";
 import type { IService } from "@/types";
 
 interface Props {
@@ -11,21 +15,6 @@ interface Props {
 
 function classNames(...c: string[]) {
   return c.filter(Boolean).join(" ");
-}
-
-function minPrice(s: IService): number | null {
-  if (s.type === "single") return s.basePrice ?? null;
-  if (s.type === "variant") {
-    const p = (s.variants ?? []).map((v) => v.price);
-    return p.length ? Math.min(...p) : null;
-  }
-  if (s.type === "group") {
-    const p = (s.services ?? [])
-      .map((sv) => sv.price)
-      .filter((x): x is number => x != null);
-    return p.length ? Math.min(...p) : null;
-  }
-  return null;
 }
 
 export function Theme1PricingSection({ services, tenantSlug }: Props) {
@@ -128,14 +117,16 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
                     <>
                       {mp != null && (
                         <p className="mt-4 flex items-baseline gap-1">
-                          <span
-                            className={classNames(
-                              dark ? "text-gray-400" : "text-gray-500",
-                              "text-sm",
-                            )}
-                          >
-                            od
-                          </span>
+                          {isPriceFrom(srv) && (
+                            <span
+                              className={classNames(
+                                dark ? "text-gray-400" : "text-gray-500",
+                                "text-sm",
+                              )}
+                            >
+                              od
+                            </span>
+                          )}
                           <span
                             className={classNames(
                               dark ? "text-white" : "text-gray-900",
@@ -171,29 +162,28 @@ export function Theme1PricingSection({ services, tenantSlug }: Props) {
                             ))}
                           </ul>
                         )}
+                      {/* Paket ima jednu cenu — stavke su spisak onoga što
+                          je uključeno, pa se ne cenkaju pojedinačno. */}
                       {srv.type === "group" &&
                         (srv.services ?? []).length > 0 && (
-                          <ul className="mt-3 space-y-2 text-sm">
-                            {srv.services!.map((sv, i) => (
-                              <li
-                                key={i}
-                                className="flex justify-between items-center gap-x-4"
-                              >
-                                <span>{sv.name}</span>
-                                {sv.price != null && (
-                                  <>
-                                    <hr className="flex-1 border-dashed border-gray-300" />
-                                    <span className="font-semibold">
-                                      {formatServicePrice(
-                                        sv.price,
-                                        sv.priceMode,
-                                      )}
-                                    </span>
-                                  </>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
+                          <>
+                            <p
+                              className={classNames(
+                                dark ? "text-gray-400" : "text-gray-500",
+                                "mt-4 text-xs font-semibold uppercase tracking-wider",
+                              )}
+                            >
+                              Uključeno
+                            </p>
+                            <ul className="mt-1 space-y-1 text-sm">
+                              {srv.services!.map((sv, i) => (
+                                <li key={i} className="flex gap-x-2">
+                                  <span aria-hidden>·</span>
+                                  <span>{sv.name}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </>
                         )}
                     </>
                   );

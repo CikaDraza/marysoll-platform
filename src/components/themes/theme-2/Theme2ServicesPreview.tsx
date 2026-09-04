@@ -14,6 +14,10 @@ import MassageIcon from "@/components/assets/icons/services/MassageIcon";
 import { ThermoBlanketIcon } from "@/components/assets/icons/services/ThermoBlanketIcon";
 import { VacuumTreatmentIcon } from "@/components/assets/icons/services/VacuumTreatmentIcon";
 import { formatPriceToString } from "@/helpers/formatPrice";
+import {
+  minServicePrice as minPrice,
+  isPriceFrom,
+} from "@/helpers/servicePrice";
 import type { IService } from "@/types";
 import { ComponentType } from "react";
 
@@ -23,21 +27,6 @@ interface Props {
   subheadline?: string;
   tenantSlug?: string;
   showIcons?: boolean;
-}
-
-function minPrice(s: IService): number | null {
-  if (s.type === "single") return s.basePrice ?? null;
-  if (s.type === "variant") {
-    const p = (s.variants ?? []).map((v) => v.price);
-    return p.length ? Math.min(...p) : null;
-  }
-  if (s.type === "group") {
-    const p = (s.services ?? [])
-      .map((sv) => sv.price)
-      .filter((x): x is number => x != null);
-    return p.length ? Math.min(...p) : null;
-  }
-  return null;
 }
 
 type ServiceIconProps = {
@@ -135,7 +124,7 @@ export function Theme2ServicesPreview({
                   <div className="mt-auto">
                     {mp != null && (
                       <p className={`text-sm font-semibold`}>
-                        {s.type !== "single" ? "od " : ""}
+                        {isPriceFrom(s) ? "od " : ""}
                         {formatPriceToString(mp)} RSD
                       </p>
                     )}

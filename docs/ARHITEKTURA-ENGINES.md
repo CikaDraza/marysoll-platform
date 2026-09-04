@@ -4,7 +4,7 @@
 > Product Engines inicijative; operativni redosled i status pojedinačnih rezova
 > vodi [TODO.md](TODO.md).
 > Radni naziv inicijative: **Labs / "Panteleymon" (Panta)**.
-> Poslednja revizija stvarnog stanja koda: **2026-08-21**.
+> Poslednja revizija stvarnog stanja koda: **2026-09-03**.
 
 ## Polazni problem i današnje stanje
 
@@ -49,6 +49,13 @@ pravac rada, ne tvrdnja da je današnji kod već dostigao cilj.
    (Primer: Anja iPhone slučaj → beacon dijagnostika → Diagnostic Engine.)
 6. Posle Faze 4: **nova poslovna logika ne ide u Marysoll — ide u engine**,
    makar engine danas bio samo folder ili package.
+   **Zabeležen izuzetak (2026-08-29, Edu luk):** Content Composer i Edu
+   workspace su namerno napisani u `src/lib/content/` i `src/lib/platform/`, a
+   ne kao `packages/*` engine. Razlog nije previd nego redosled dokazivanja —
+   htelo se da se rad na backendu odmah vidi kao stvaran, klijentu vidljiv
+   rezultat u frontendu (prelazak Salon → Edu Centar, izgled i UX), pre nego
+   što se domen zamrzne u paket. Izdvajanje u Content Engine ostaje dug: čim
+   granica prestane da se pomera, kod se seli u `packages/`.
 7. **Svaki rizičan admin workflow mora imati Diagnostic proveru.** (Usvojeno
    2026-07-11 uz Identity & Loyalty Health.) Rizičan = dira više domenskih
    modela odjednom (merge naloga, reassign, masovne izmene). Kad se takav
@@ -66,10 +73,10 @@ svoje testove. Marysoll ih uvozi kao zavisnosti.
 - **Faza 3:** poseban servis sa sopstvenom bazom, kešom, skaliranjem
 - **Faza 4:** CDN/edge distribucija statičkih delova (theme JSON, CSS, media, preview asseti)
 
-## Gde smo sada (provereno 2026-08-21)
+## Gde smo sada (provereno 2026-09-03)
 
-Platforma se nalazi **posle glavnog T2A Theme/Layout reza, a pre T2B i
-bezbednog T3 jezgra za upis rezervacija**:
+Platforma se nalazi **posle T2A Theme/Layout i T2B capability reza, sa T3 dark
+core-om u kodu ali bez live write authority-ja**:
 
 - ✅ T0/T1 osnova, Diagnostic Engine, Event Bus i Loyalty Engine Phase 0/1 +
   Referral 2b postoje u kodu; referral i dalje čeka live QA/release gate.
@@ -89,18 +96,49 @@ bezbednog T3 jezgra za upis rezervacija**:
 - ✅ **T2B v0.3 i triple-gate su implementirani:** optional tenant vertikale,
   capability resolver, postojeći `PLAN_FEATURES` adapter, server snapshot,
   admin/client projekcija, business API i public readiness gate postoje.
-- ⬜ **T3 write/core nije implementiran:** nema kanonske rezervacije, day-lock
-  serijalizacije, booking idempotencije ni jedne atomic reserve operacije koja
-  važi za sve putanje. Postoji stariji petominutni `Slot` reserve za deo
-  marketplace toka, ali nije vezan za `Appointment`, nema vlasnički token i ne
-  predstavlja planirani `BookingHold` ni centralni autoritet za zauzetost.
+- 🟡 **T3 write/core postoji kao dark core, ali NIJE live authority.** Kanonska
+  rezervacija, **day-lock serijalizacija**, booking idempotencija, durable
+  receipt/outbox i atomic reserve postoje u `src/lib/booking/` (`core.ts`,
+  `reserve.ts`, `locks.ts`, `transaction.ts`, `idempotency.ts`) uz
+  `BookingReservation` / `BookingDayLock` modele i prolazeće integracione
+  testove nad pravim `MongoMemoryReplSet`-om. **Nijedna API ruta ih još ne
+  koristi** — `BookingReservation` se ne importuje iz `app/api/**`; production
+  zauzetost i dalje piše legacy `Appointment` put. Stariji petominutni `Slot`
+  reserve za deo marketplace toka ostaje netaknut i nije `BookingHold`.
+- ⏸ **T3 cutover (Slice 6B/6C) je SVESNO PRESKOČEN, ne zaboravljen.** Prioritet
+  je bio da se tvrdnje o backend radu odmah vide kao stvaran, klijentu vidljiv
+  test u frontendu — prelazak Salon → Edu Centar, izgled i UX. Day-lock nam
+  **jeste neophodan** i ostaje tvrdi preduslov: Marina ne prima stvarne
+  rezervacije dok write authority ne pređe na Booking Engine.
+- 🟡 **Edu Centar v1 je u feature freeze-u i u pilotu kod Marine.** U kodu
+  postoje workspace/capability foundation, Content Composer, sadržajni CRUD sa
+  radnom kopijom i objavljenim snapshot-om, javna `/edukacija` lista i članak,
+  „Moj Prostor" sa dodelom sadržaja i ACL-om, i PDF/DOCX uvoz u draft. Nove
+  funkcije čekaju signal iz stvarne upotrebe. Kanonski dokument:
+  [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md).
+- ✅ **Beauty Booking/CRM luk je u kodu:** canonical create/edit/reschedule kroz
+  `resolveBookingRequest` + `canonicalSelection`, deljeni booking presentation
+  ugovor, service-owned intake, canonical pricing snapshot i Client 360 read
+  model. Browser acceptance nad Marysoll tenantom čeka. Ugovori:
+  [PANTA-BOOKING-CRM-ARC.md](PANTA-BOOKING-CRM-ARC.md),
+  [PANTA-CLIENT-360.md](PANTA-CLIENT-360.md).
+- ✅ **Statistics je izdvojen kao domen sloj aplikacije** (`src/lib/statistics/`):
+  isti računski sloj koriste Salon Statistics i Client 360. To **nije**
+  `packages/*` engine i ne treba ga mešati sa budućim Analytics Engine-om.
 
 ### Sledeći hard gate
 
-H0, private Theme8/9 i T2B-A/B su zatvoreni. T3 write authority je specifikovan
-u [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md); sledeći funkcionalni
-rez je Slice 5 Booking CORE, a live cutover tek posle Slice 6 migration i
-concurrency gate-a.
+H0, private Theme8/9 i T2B-A/B su zatvoreni. Slice 5 Booking CORE **postoji kao
+dark core** (`BookingReservation`, day-lock, idempotencija, outbox) i prolazi
+ReplSet testove, ali ga nijedna ruta ne poziva.
+
+Sledeći funkcionalni rez **nije** T3 cutover nego **T1-4 Loyalty Redemption &
+Appointment Checkout** ([TODO.md](TODO.md)). T3 cutover ostaje odložen i pre
+njega mora biti rešen occupancy blocker iz
+[PANTA-T3-BOOKING-ENGINE.md §4.1](PANTA-T3-BOOKING-ENGINE.md) — dve semantike
+(`released` u produkciji, `blocking_until_end` u dark core-u) za isti završen ili
+nedošao termin. Day-lock ostaje **neophodan** pre nego što theme-9 primi ijednu
+stvarnu rezervaciju.
 
 Odvojena staging baza nije prerequisite. Produkcija, staging i QA trenutno dele
 Mongo bazu, pa važi
@@ -119,13 +157,14 @@ ruta. Theme-9 do tada ostaje read-only preview.
 | **Distribution Engine** ⬜ | Offer, Campaign, placement, attribution i channel artifacts. Ne poseduje sadržaj ni transport; Content govori šta, Notification šalje, Distribution odlučuje gde i kako. Zamenjuje raniji preširoki naziv „Marketing Engine“. | DA — multi-channel distribucija za više vertikala |
 | **AI Engine — Core AI** | samo LLM: Completion, Streaming, Embeddings, Memory, Agents, Prompt Library, Moderation | DA |
 | **AI Engine — AI Skills** | agenti: SEO Expert, Landing Expert, Theme Designer, Booking Assistant, Marketing Writer, Support Agent, Review Analyzer, Brand Consultant | DA |
-| **Diagnostic Engine** ✅ **(T1 GOTOV · Identity & Loyalty Health GOTOV)** | DVE porodice iza iste granice: **browser** (uređaj/browser, mreža, push, storage, permissions, crash i performance signali — entry `.`) i **server-side data-integrity** (**10** read-only provera po tenantu — entry `./integrity`; superadmin Dijagnostika tab; spec `docs/PANTA-IDENTITY-LOYALTY-HEALTH.md`). Tenant-facing „Run Diagnostics / Share report“ dashboard ostaje T5. | **DA — možda najzanimljiviji**; bilo koji SaaS |
-| **Analytics Engine** | Appointments, Revenue, Returning Clients, Cancellation Rate, Popular Services, Heatmaps, Funnels, SEO, Conversion, Performance (LCP/CLS/FID), Errors | DA |
+| **Diagnostic Engine** ✅ **(T1 GOTOV · Identity & Loyalty Health GOTOV)** | DVE porodice iza iste granice: **browser** (uređaj/browser, mreža, push, storage, permissions, crash i performance signali — entry `.`) i **server-side data-integrity** (**13** provera: 12 tenant + 1 platform, read-only — entry `./integrity`; superadmin Dijagnostika tab; spec `docs/PANTA-IDENTITY-LOYALTY-HEALTH.md`). Tenant-facing „Run Diagnostics / Share report“ dashboard ostaje T5. | **DA — možda najzanimljiviji**; bilo koji SaaS |
+| **Analytics Engine** ⬜ budući | Heatmaps, funnels, SEO, conversion, performance (LCP/CLS/FID), errors. **Ne meša se sa današnjim Statistics slojem** (`src/lib/statistics/`), koji već daje prihod, status counts, top klijente i Client 360 KPI. | DA |
 | **Content Engine** | Pages, Sections, Rich Text, Media, Localization, SEO, Versioning, Publishing, Drafts. (CMS ≠ Content Engine; Landing samo renderuje.) | DA |
 | **Media Engine** | Images, Videos, Compression, CDN, Optimization, Formats, Responsive, Gallery, Storage, Animations (Framer/Spline/Canva) | DA |
 | **Notification Engine** | Email, SMS, Push, WhatsApp, Webhook, Slack, Discord. Booking samo kaže "Send reminder" — engine odlučuje kako. | DA |
 | **Identity Engine** | Users, Roles, Permissions, Tenants, Organizations, Sessions, OAuth, Audit. Koriste ga svi engine-i. | DA |
-| **Loyalty Engine** ✅ **V1 + Referral 2b u kodu; live QA čeka** | Points/Currency, streaks, rewards, vouchers, referral/share i QR check-in postoje. Tiers, birthday/personalized/AI rewards ostaju Phase 3. Današnji `AdminGrowthStudio` je legacy naziv Loyalty UI-ja; budući Growth Studio je zaseban composition surface za distribuciju i rast. | **DA** — retail/beauty/fitness/svaki repeat-business |
+| **Payments Engine** ⬜ **specifikacija, bez koda** | Naplata klijentkinje: depozit, online plaćanje usluge, paketi/pretplate klijenata, ledger i isplate salonima. Danas postoji samo naplata pretplate SALONA (Paddle) i trajnost webhook prijema. Ugovor: [PANTA-PAYMENTS-ENGINE.md](PANTA-PAYMENTS-ENGINE.md). | DA — svaki marketplace/booking proizvod |
+| **Loyalty Engine** ✅ **V1 + Referral 2b u kodu; live QA čeka** | Points/Currency, streaks, rewards, vouchers, referral/share i QR check-in postoje. Tiers, birthday/personalized/AI rewards ostaju Phase 3. Današnji `AdminGrowthStudio` je legacy naziv Loyalty UI-ja; budući Growth Studio je zaseban composition surface za distribuciju i rast. Current-state ugovor: [PANTA-LOYALTY-ENGINE.md](PANTA-LOYALTY-ENGINE.md). | **DA** — retail/beauty/fitness/svaki repeat-business |
 
 T2B capability resolver **nije novi engine**. To je platformski sloj koji spaja
 ono što proizvod podržava, šta plan dozvoljava i šta je tenant uključio, a zatim
@@ -263,19 +302,20 @@ dovode nove — prvi engine koji Marysoll-u pravi network effect.
 Operativni detalji po slice-u vode se u [TODO.md](TODO.md). Ova tabela čuva
 širu sliku i sprečava da završena etapa ponovo bude proglašena „sledećom“.
 
-| Inicijativa | Status 2026-08-21 | Stvarno stanje / sledeći korak |
+| Inicijativa | Status 2026-09-03 | Stvarno stanje / sledeći korak |
 |---|---|---|
 | **T0 optimizacija** | ✅ završeno | Preduslov za engines luk je zatvoren. |
-| **T1 monorepo + Diagnostic** | ✅ završeno | Paket, adapter, browser dijagnostika, beacon, superadmin ekran i 10 integrity provera postoje. Tenant-facing dashboard ostaje buduće proširenje. |
-| **Loyalty** | 🟡 kod završen do Referral 2b | Phase 0/1 i Referral 2b postoje; live QA/release gate i Phase 3 premium ostaju. |
+| **T1 monorepo + Diagnostic** | ✅ završeno | Paket, adapter, browser dijagnostika, beacon, superadmin ekran i 13 integrity provera postoje. Tenant-facing dashboard ostaje buduće proširenje. |
+| **Loyalty** | 🟡 earning + korekcija rade; redemption ne | Srca/poeni, ledger, milestone→vaučer, voucher lifecycle, check-in streak, admin korekcija i celebration momenti su u produkcijskom kodu. Sledeće je **T1-4 Loyalty Redemption**; live QA referrala i Phase 3 premium ostaju. Current-state ugovor: [PANTA-LOYALTY-ENGINE.md](PANTA-LOYALTY-ENGINE.md). |
 | **H0 theme-9 zaštita sadržaja** | ✅ završeno | Lossless admin write mapper, serverski section merge i regresioni testovi čuvaju postojeća, buduća i namerno prazna polja. |
 | **T2A Theme/Layout** | ✅ prihvaćeno | Paket, registry, lifecycle, migracija tema i private Theme8/9 application policy postoje. |
 | **T2B vertikale/capabilities** | ✅ funkcionalno završeno | Optional Tenant ugovor, resolver, `requireCapability()`, admin/client projekcija, business API i public readiness gate postoje bez globalnog backfill-a. |
 | **T3 availability + prikaz toka** | 🟡 delimično završeno | Availability paket i potrošači postoje; theme-9 demo/preview šalje mejl, ali ne rezerviše termin. |
-| **T3 Booking write/core** | 🟡 specifikacija zaključana; kod nije implementiran | [T3 ugovor](PANTA-T3-BOOKING-ENGINE.md) definiše 12 Appointment + 4 Slot write ulaza, kanonsku rezervaciju, day-lock, idempotenciju, outbox i Slice 5/6 gate. |
-| **Consultation / Questionnaire / Education / Care** | ⬜ nije implementirano | Redosled: Consultation + hold + intake + theme-9 E2E; zatim Education, navigacija i Care Workspace. |
+| **T3 Booking write/core** | 🟡 dark core u kodu; cutover ⏸ svesno preskočen | Kanonska rezervacija, **day-lock**, idempotencija, receipt/outbox i atomic reserve postoje u `src/lib/booking/` sa prolazećim ReplSet testovima, ali nijedna ruta ih ne koristi. Cutover je preskočen da bi se backend tvrdnje prvo pokazale kao stvaran frontend test za klijente (Salon → Edu). **Day-lock je neophodan** i ostaje hard gate pre Slice 10. |
+| **Beauty Booking/CRM (T1-0 → T1-3)** | ✅ kod; 🟡 browser acceptance | Canonical create/edit/reschedule, deljeni booking presentation ugovor, service-owned intake, pricing snapshot, Client 360 read model i shared Statistics sloj. Otvoreno: legacy HMAC i marketplace write ulazi. |
+| **Consultation / Questionnaire / Education / Care** | 🟡 Edu Centar v1 u pilotu; ostatak ⏸ odložen | **Education:** v1 je u feature freeze-u i pilotu (workspace, Composer, CRUD sa publish snapshot-om, javna `/edukacija`, Moj Prostor + ACL, PDF/DOCX uvoz). **Consultation / Questionnaire / Care:** odloženi istom odlukom — prvo vidljiv frontend dokaz, ali su i dalje **neophodni** i vraćaju se u red posle T3 day-lock cutover-a. |
 | **T4 AI Core/Skills** | ⬜ backlog | Mapirati postojeće agente i njihove granice tek posle aktuelnih release gate-ova. |
-| **T5 Diagnostic proširenje** | 🟡 delimično | Osnova postoji; salon-facing dashboard, performance/console prikaz i eventualne bezbedne repair akcije ostaju. |
+| **T5 Diagnostic proširenje** | 🟡 delimično | Osnova postoji; salon-facing dashboard, performance/console prikaz i eventualne bezbedne repair akcije ostaju. Uz njih su zapisana i dva konkretna reza: **DIAG-EDU-1** (Education integrity provere) i **DIAG-SUPPORT-1** („Pošaljite problem podršci" → snapshot → sačuvan incident → obaveštenje/mejl/push). Oba u [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md#posle-pilota--dva-dijagnostička-reza); Education provere detaljnije u [PANTA-IDENTITY-LOYALTY-HEALTH.md](PANTA-IDENTITY-LOYALTY-HEALTH.md#planirano-proširenje-education-integrity-diag-edu-1). |
 | **T6 Notification** | ⬜ backlog | Konsolidovati email/push/notification logiku iza jednog ugovora. |
 | **T7 Identity** | ⬜ backlog | Izdvojiti auth, role/permissions i audit granice. |
 | **T8 Event Bus** | 🟡 delimično | Paket i prvih pet ugovora postoje; povezivanje ostalih emitera i potrošača nije završeno. |
@@ -338,26 +378,40 @@ konkretan salon-potreba.
 7. ✅ **T3 write authority specifikacija je zaključana** u
    [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md): obuhvata završeni
    availability deo, delimični preview i stvarni write inventory.
-8. **Implementirati T3 Booking CORE:** kanonska rezervacija, day-lock ili
-   ekvivalentna transakcijska zaštita, idempotentni retry, BookingFacts,
-   centralni conflict recovery i jasan status starog `Slot` sistema.
-9. **Migrirati svih 12 Appointment occupancy/lifecycle ulaza i razrešiti sva
-   četiri Slot write ulaza**; architecture i concurrency testovi su release gate.
-10. **Napraviti Consultation + BookingHold + Questionnaire/Intake**, pa tek onda
-    uključiti stvarno theme-9 zakazivanje.
-11. **Posle toga:** Education domen, capability-aware navigacija i Care
-    Workspace; Distribution Engine i novi Growth Studio vode se kao naredni
-    poslovni luk.
+8. ✅ **T3 Booking CORE je implementiran kao dark core:** kanonska rezervacija,
+   day-lock, idempotentni retry, receipt/outbox i atomic reserve postoje sa
+   prolazećim ReplSet testovima. Nijedna ruta ih ne poziva.
+9. ✅ **T1-4 Loyalty Redemption & Appointment Checkout je prihvaćen** (uz
+   hardening i F rezove). Sledeći product rez bira vlasnik proizvoda; naplata
+   klijentkinje je specifikovana u
+   [PANTA-PAYMENTS-ENGINE.md](PANTA-PAYMENTS-ENGINE.md) i ostaje odložena.
+10. **Odloženo — T3 cutover:** migrirati Appointment occupancy/lifecycle ulaze i
+    razrešiti Slot write ulaze; architecture i concurrency testovi su release
+    gate. Preduslov je occupancy blocker iz
+    [PANTA-T3-BOOKING-ENGINE.md §4.1](PANTA-T3-BOOKING-ENGINE.md).
+11. **Odloženo — Consultation + BookingHold + Questionnaire/Intake**, pa tek onda
+    stvarno theme-9 zakazivanje. Distribution Engine i novi Growth Studio ostaju
+    naredni poslovni luk.
 
 Referral live QA može teći paralelno uz tenant-scoped Shared-DB pravila. AI,
 Notification i ostala šira izdvajanja ostaju backlog dok aktuelni T2B/T3 release
 gate-ovi ne budu zatvoreni.
 
-## Dokumenti koji još treba da nastanu
+## Canonical dokumenti
 
-- `PANTA-T3-BOOKING-ENGINE.md` — stanje availability dela, write/core ugovor,
-  migracija, konkurentni zahtevi, hold i Consultation adapter.
-T2B v0.3 i
-[PANTA-ADMIN-CLIENT-WORKSPACES.md](PANTA-ADMIN-CLIENT-WORKSPACES.md) sada postoje.
-Booking dokument više ne treba odlagati: završeni availability i naredni write
-slice zavise od ugovora koji treba da zabeleži.
+Svaki domen ima jedno mesto istine; ostalo su izvedeni ili istorijski tekstovi.
+
+| Domen | Dokument |
+|---|---|
+| redosled rada i status | [TODO.md](TODO.md) |
+| Booking/CRM luk | [PANTA-BOOKING-CRM-ARC.md](PANTA-BOOKING-CRM-ARC.md) |
+| cene | [PANTA-BOOKING-PRICING.md](PANTA-BOOKING-PRICING.md) |
+| zahtev za uslugu | [PANTA-SERVICE-INTAKE.md](PANTA-SERVICE-INTAKE.md) |
+| otkazivanje/no-show | [PANTA-CANCELLATION-NOSHOW-POLICY.md](PANTA-CANCELLATION-NOSHOW-POLICY.md) |
+| CRM dosije | [PANTA-CLIENT-360.md](PANTA-CLIENT-360.md) |
+| Loyalty current state | [PANTA-LOYALTY-ENGINE.md](PANTA-LOYALTY-ENGINE.md) |
+| Booking write authority (target) | [PANTA-T3-BOOKING-ENGINE.md](PANTA-T3-BOOKING-ENGINE.md) |
+| Theme/Layout | [PANTA-T2-THEME-LAYOUT-ENGINE.md](PANTA-T2-THEME-LAYOUT-ENGINE.md) |
+| vertikale i capabilities | [PANTA-TENANT-VERTICALS-CAPABILITIES.md](PANTA-TENANT-VERTICALS-CAPABILITIES.md) |
+| Education | [PANTA-EDU-CENTAR-ARC.md](PANTA-EDU-CENTAR-ARC.md) |
+| integrity provere | [PANTA-IDENTITY-LOYALTY-HEALTH.md](PANTA-IDENTITY-LOYALTY-HEALTH.md) |

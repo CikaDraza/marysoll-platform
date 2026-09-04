@@ -25,6 +25,7 @@ import {
   workingSlotsForDate,
 } from "@/helpers/parseWorkingHours";
 import type { ManualSlotsMap } from "@/types";
+import { ACTIVE_APPOINTMENT_STATUS_FILTER } from "@/lib/appointments/occupancy";
 
 /** Trial/paid gate — sme li salon trenutno da prima zakazivanja. */
 export function canAcceptBookings(tenant: {
@@ -83,6 +84,8 @@ export async function checkSlotAvailability(args: {
   requestedDuration: number;
   profile: BookingSalonProfile | null;
   enforceWorkingHours?: boolean;
+  /** Termin koji se pomera ne sme da bude sam sebi prepreka. */
+  excludeAppointmentId?: string | { toString(): string } | null;
 }): Promise<string | null> {
   const {
     tenantId,
@@ -91,6 +94,7 @@ export async function checkSlotAvailability(args: {
     requestedDuration,
     profile,
     enforceWorkingHours,
+    excludeAppointmentId,
   } = args;
 
   if (enforceWorkingHours && profile?.availabilityMode !== "manualSlots") {
@@ -108,7 +112,10 @@ export async function checkSlotAvailability(args: {
   const dayAppointments = await Appointment.find({
     tenantId,
     date,
-    status: { $nin: ["appointment_rejected", "appointment_cancelled"] },
+    status: ACTIVE_APPOINTMENT_STATUS_FILTER,
+    ...(excludeAppointmentId
+      ? { _id: { $ne: String(excludeAppointmentId) } }
+      : {}),
   })
     .select("date time duration")
     .lean<{ date: string; time: string; duration?: number }[]>();

@@ -7,6 +7,7 @@ import {
 } from "@/lib/plans/planFeatures";
 import {
   TENANT_CAPABILITY_REGISTRY,
+  addEducationCapabilityConfiguration,
   createInitialTenantCapabilityConfiguration,
   resolveCapability,
   resolveEffectiveVerticals,
@@ -80,7 +81,7 @@ describe("T2B pure capability resolver", () => {
       verticals: ["education"] as const,
       capabilityConfiguration: {
         overrides: [
-          { capability: "education.catalog" as const, enabled: true },
+          { capability: "education.inquiries" as const, enabled: true },
           { capability: "loyalty.rewards" as const, enabled: true },
         ],
       },
@@ -89,7 +90,7 @@ describe("T2B pure capability resolver", () => {
     expect(
       resolveCapability({
         tenant,
-        capability: "education.catalog",
+        capability: "education.inquiries",
         planFeatures: CLAUDIA,
       }),
     ).toMatchObject({
@@ -170,12 +171,38 @@ describe("T2B pure capability resolver", () => {
 });
 
 describe("T2B registry i provisioning", () => {
-  it("drži future domene platform-unavailable", () => {
+  it("otključava samo education catalog kao provisioning-gated core workspace", () => {
+    expect(TENANT_CAPABILITY_REGISTRY["education.catalog"]).toMatchObject({
+      platformAvailable: true,
+      plan: { kind: "core" },
+      legacyBeautyDefault: false,
+    });
+    expect(
+      resolveCapability({
+        tenant: {
+          verticals: ["education"],
+          capabilityConfiguration: {
+            overrides: [
+              { capability: "education.catalog", enabled: true },
+            ],
+          },
+        },
+        capability: "education.catalog",
+        planFeatures: MARIA,
+      }),
+    ).toMatchObject({
+      enabled: true,
+      platformAvailable: true,
+      planEntitled: true,
+      tenantEnabled: true,
+    });
+  });
+
+  it("drži ostale future domene platform-unavailable", () => {
     for (const capability of [
       "consultations.catalog",
       "booking.consultations",
       "questionnaires.forms",
-      "education.catalog",
       "education.inquiries",
       "booking.education",
       "distribution.campaigns",
@@ -233,6 +260,51 @@ describe("T2B registry i provisioning", () => {
       { capability: "audience.contacts", enabled: true },
       { capability: "loyalty.rewards", enabled: true },
     ]);
+    expect(initial).toEqual(
+      createInitialTenantCapabilityConfiguration("salon"),
+    );
+  });
+
+  it("provisionuje education i hybrid preset bez tenantType-a", () => {
+    expect(createInitialTenantCapabilityConfiguration("education")).toEqual({
+      verticals: ["education"],
+      capabilityConfiguration: {
+        overrides: [
+          { capability: "education.catalog", enabled: true },
+          { capability: "education.inquiries", enabled: true },
+          { capability: "booking.education", enabled: true },
+        ],
+      },
+    });
+    expect(createInitialTenantCapabilityConfiguration("hybrid")).toEqual({
+      verticals: ["beauty", "education"],
+      capabilityConfiguration: {
+        overrides: [
+          { capability: "services.catalog", enabled: true },
+          { capability: "booking.services", enabled: true },
+          { capability: "audience.contacts", enabled: true },
+          { capability: "loyalty.rewards", enabled: true },
+          { capability: "education.catalog", enabled: true },
+          { capability: "education.inquiries", enabled: true },
+          { capability: "booking.education", enabled: true },
+        ],
+      },
+    });
+  });
+
+  it("dodaje Edu capability-je istom legacy beauty tenantu idempotentno", () => {
+    const first = addEducationCapabilityConfiguration({});
+    const second = addEducationCapabilityConfiguration(first);
+    expect(second).toEqual(first);
+    expect(first.verticals).toEqual(["beauty", "education"]);
+    expect(first.capabilityConfiguration.overrides).toContainEqual({
+      capability: "services.catalog",
+      enabled: true,
+    });
+    expect(first.capabilityConfiguration.overrides).toContainEqual({
+      capability: "education.catalog",
+      enabled: true,
+    });
   });
 
   it("ne sadrži zasebnu plan matricu ni Theme Engine zavisnost", () => {

@@ -13,7 +13,7 @@ import { Appointment } from "@/models/Appointment";
 import { LoyaltyConfig } from "@/models/LoyaltyConfig";
 import { tenantHasFeature } from "@/lib/plans/subscriptionService";
 import { appointmentEndUTC, belgradeDateStr } from "@/lib/utils/belgradeTime";
-import { loyaltyOnAppointmentStatusChange } from "../hooks";
+import { completeAppointmentCheckout } from "@/lib/appointments/checkout";
 import { notifyAdminsCompletionPrompt } from "../notifications";
 
 interface AutoCompleteConfig {
@@ -80,18 +80,30 @@ export async function runAutoComplete(): Promise<{
           appt.completionPromptSentAt &&
           hoursSinceEnd >= cfg.autoComplete.autoAfterHours
         ) {
-          const claimed = await Appointment.findOneAndUpdate(
-            { _id: appt._id, status: "appointment_approved" },
-            { $set: { status: "completed" } },
-          ).lean();
-          if (!claimed) continue;
-          await loyaltyOnAppointmentStatusChange(
-            appt._id.toString(),
-            "appointment_approved",
-            "completed",
-            { source: "auto" },
-          );
-          completed++;
+          // Isti canonical seam kao ručni checkout — ista pravila obračuna i
+          // isti atomic prelaz. Bez iznosa: mašina ne izmišlja cenu koju
+          // čovek nije rekao, pa termin bez cene ostaje bez cene.
+          //
+          // Termin sa pogodnošću a bez potvrđene pre-benefit cene seam ODBIJA
+          // (`INVALID`). To je namerno: auto-complete ne sme ni da izmisli
+          // cenu ni da skine pogodnost, pa takav termin ostaje vlasnici da ga
+          // sama zatvori kroz Checkout.
+          try {
+            const result = await completeAppointmentCheckout({
+              appointmentId: appt._id.toString(),
+              actor: { tenantId: cfg.tenantId.toString() },
+              source: "auto",
+              expectedFromStatus: "appointment_approved",
+            });
+            if (!result.alreadyCompleted) completed++;
+          } catch (err) {
+            // Ni trka sa adminom ni „traži se dogovorena cena" nisu greške
+            // crona — sledeći prolaz vidi novo stanje.
+            console.warn(
+              `[loyalty] auto-complete preskočen ${appt._id}:`,
+              err instanceof Error ? err.message : err,
+            );
+          }
           continue;
         }
 

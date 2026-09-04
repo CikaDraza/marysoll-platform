@@ -3,7 +3,7 @@
  * ugovor (koriste ih widgeti i Theme8ModalProvider) — re-exportuju se i sa
  * starog puta "@/components/shared/BookingModal" radi kompatibilnosti.
  */
-import type { IService, ManualSlotsMap } from "@/types";
+import type { IAppointment, IService, ManualSlotsMap } from "@/types";
 import type { WorkingHoursInput } from "@/helpers/parseWorkingHours";
 
 export type PendingAppointment = {
@@ -13,6 +13,8 @@ export type PendingAppointment = {
   serviceId: string;
   variantName: string;
   extras: string[];
+  /** Količina po dodatku. Stariji zapisi je nemaju → podrazumeva se 1. */
+  extraQuantities?: Record<string, number>;
   note: string;
   totalPrice: number;
   totalDuration: number;
@@ -43,13 +45,18 @@ export interface BookingModalProps {
   userEmail?: string;
   token?: string;
   tenantSlug?: string;
-  onConfirmedByGuest: (
+  onConfirmedByGuest?: (
     data: Omit<PendingAppointment, "tenantSlug">,
     destination?: BookingAuthDestination,
   ) => void;
   /** Fired after a successful booking (logged-in or direct guest) so the
    *  caller can refresh its calendar and mark the new slot as taken. */
   onBooked?: () => void;
+  /** Isti widget u edit režimu šalje client update komandu umesto create. */
+  mode?: "create" | "edit";
+  appointment?: IAppointment | null;
+  /** Opciono domen-specifično otkazivanje; presentation ostaje zajednički. */
+  onCancelAppointment?: () => void;
   pendingDefaults?: Omit<PendingAppointment, "tenantSlug"> | null;
   /** "manualSlots" ograničava izbor na termine koje je vlasnik definisao. */
   availabilityMode?: string;
@@ -57,5 +64,10 @@ export interface BookingModalProps {
   workingHours?: WorkingHoursInput;
   manualSlots?: ManualSlotsMap;
   /** Zauzeti termini (javni podaci) — filtriraju ponudu u manual režimu. */
-  bookedAppointments?: { date: string; time: string; duration?: number }[];
+  bookedAppointments?: {
+    _id?: string;
+    date: string;
+    time: string;
+    duration?: number;
+  }[];
 }

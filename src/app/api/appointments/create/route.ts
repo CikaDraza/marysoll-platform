@@ -10,8 +10,11 @@ import { createAppointmentNotification } from "@/lib/notificationService";
 import {
   reserveVoucherForBooking,
   attachReservationToAppointment,
-  computeVoucherDiscount,
 } from "@/lib/loyalty/vouchers/service";
+import {
+  computeAppointmentBenefitPricing,
+  isVoucherApplicableToAppointment,
+} from "@/lib/loyalty/redemption";
 import { Voucher } from "@/models/Voucher";
 import { trackReferralBooking } from "@/lib/loyalty/referrals";
 import {
@@ -24,9 +27,14 @@ import {
   checkSlotAvailability,
   loadBookingProfile,
 } from "@/lib/appointments/booking";
-import type { IAppointmentService } from "@/types";
 import type { ITenant } from "@/models/Tenant"; // Uveri se da imaš ovaj import
 import { requireCapability } from "@/lib/platform/capabilities-server";
+import { sanitizeAppointmentRequest } from "@/lib/appointments/intake";
+import { getTenantFolder } from "@/lib/cloudinary";
+import { resolveBookingRequest } from "@/lib/booking/resolveBookingRequest";
+import { buildPricingSnapshot } from "@/lib/appointments/pricingSnapshot";
+import { canonicalSelectionFrom } from "@/lib/appointments/canonicalSelection";
+import { BookingError } from "@/lib/booking/errors";
 
 export async function POST(request: NextRequest) {
   try {
@@ -144,7 +152,36 @@ export async function POST(request: NextRequest) {
     const { profile: salonProfile, cancellationWindowHours } =
       await loadBookingProfile(tenantId);
 
-    const requestedDuration = Number(data.duration) || service.duration || 60;
+    // Trajanje i cena dolaze iz kataloga, NIKAD iz zahteva. Klijent koji
+    // pošalje `{ duration: 5, price: 1 }` dobija canonical vrednosti.
+    let resolved;
+    try {
+      resolved = await resolveBookingRequest({
+        tenantId,
+        serviceId: String(data.services[0].serviceId),
+        selection: {
+          variantName: data.services[0].serviceName,
+          extras: (data.services[0].extras ?? []).map(
+            (e: { name: string; quantity?: number }) => ({
+              name: e.name,
+              quantity: e.quantity,
+            }),
+          ),
+        },
+      });
+    } catch (err) {
+      return NextResponse.json(
+        {
+          error:
+            err instanceof BookingError
+              ? err.message
+              : "Izbor usluge nije validan.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const requestedDuration = resolved.durationMinutes;
     const slotError = await checkSlotAvailability({
       tenantId,
       date,
@@ -161,10 +198,12 @@ export async function POST(request: NextRequest) {
     // ── Growth Studio: vaučer pri bookingu ──
     // CAS rezervacija (active → reserved): od dva konkurentna bookinga istim
     // kodom tačno jedan prolazi. Popust se računa server-side.
-    const originalPrice = (data.services as IAppointmentService[]).reduce(
-      (sum, s) => sum + (Number(s.price) || 0) * (Number(s.quantity) || 1),
-      0,
-    );
+    // Osnovica je CANONICAL iznos iz kataloga, ne zbir onoga što je browser
+    // poslao. Kod `on_request` je `null` — cena još ne postoji.
+    const bookedSelection = {
+      pricing: buildPricingSnapshot(resolved.pricing),
+      services: [{ serviceId: String(data.services[0].serviceId) }],
+    };
     let reservedVoucher = null;
     if (typeof data.voucherCode === "string" && data.voucherCode.trim()) {
       reservedVoucher = await reserveVoucherForBooking({
@@ -178,10 +217,39 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         );
       }
+      // Scope usluge je zasebna kapija od obračuna: `computeVoucherDiscount`
+      // za tip `fixed` skida iznos sa ukupnog računa bez obzira na scope, pa
+      // bi bez ove provere vaučer vezan za jednu uslugu prošao na bilo kojoj.
+      if (!isVoucherApplicableToAppointment(reservedVoucher, bookedSelection)) {
+        await Voucher.findOneAndUpdate(
+          { _id: reservedVoucher._id, status: "reserved" },
+          { $set: { status: "active", reservedAppointmentId: null } },
+        ).catch(() => null);
+        return NextResponse.json(
+          { error: "Vaučer ne važi za izabranu uslugu." },
+          { status: 400 },
+        );
+      }
     }
-    const discountAmount = reservedVoucher
-      ? computeVoucherDiscount(reservedVoucher, data.services)
-      : 0;
+    // Vaučer je PRAVILO popusta i ne mora da zna cenu pri rezervaciji. Dok je
+    // osnovica nepoznata, dinarski iznos se ne obračunava: `discountAmount: 0`
+    // i `finalPrice: 0` bi značili „obračunato nad cenom nula", što nije isto
+    // što i „još nije obračunato". Vaučer ostaje rezervisan i čeka quote —
+    // recompute ga hvata čim salon potvrdi cenu.
+    const voucherPricing = computeAppointmentBenefitPricing({
+      appointment: bookedSelection,
+      voucher: reservedVoucher,
+    });
+
+    // Zahtev se prihvata SAMO ako usluga to traži. UI ne sme biti jedini
+    // autoritet — bez ove provere bi podmetnut payload upisao fotografiju i
+    // opis na uslugu koja ih uopšte ne nudi.
+    if (data.request != null && !resolved.intake.enabled) {
+      return NextResponse.json(
+        { error: "Ova usluga ne prima zahtev uz zakazivanje." },
+        { status: 400 },
+      );
+    }
 
     const appointment = new Appointment({
       ...data,
@@ -193,19 +261,28 @@ export async function POST(request: NextRequest) {
       contactNote,
       cancellationWindowHours,
       cancellationStatus: "can_cancel",
-      duration: data.duration,
-      services: data.services.map((s: IAppointmentService) => ({
-        ...s,
-        serviceName: s.serviceName,
-        duration: s.duration,
-      })),
+      // `...data` bi ubacio sirov `request` iz browsera — prepiši ga očišćenim.
+      request: sanitizeAppointmentRequest(
+        data.request,
+        await getTenantFolder(tenantId),
+      ),
+      // Canonical trajanje termina — isto ono kojim je provereno zauzeće.
+      duration: resolved.durationMinutes,
+      // Cela stavka je server-generated. Ranije se ovde spread-ovao `...s` iz
+      // browsera: dok je Mongoose tiho odbacivao `extras`/`variants` to je
+      // prolazilo, ali čim je model počeo da ih čuva, podmetnuta cena dodatka
+      // bi se upisala pored canonical `pricing` snapshot-a.
+      services: [canonicalSelectionFrom(resolved, {
+        serviceId: String(data.services[0].serviceId),
+        displayName: data.serviceName,
+      }).item],
       unreadCount: { client: 0, admin: 0 },
+      // Canonical cena — server-generated, browser je ne može podmetnuti.
+      pricing: bookedSelection.pricing,
       ...(reservedVoucher
         ? {
             appliedVoucherId: reservedVoucher._id,
-            originalPrice,
-            discountAmount,
-            finalPrice: Math.max(0, originalPrice - discountAmount),
+            ...voucherPricing,
           }
         : {}),
     });
@@ -263,6 +340,8 @@ export async function POST(request: NextRequest) {
         clientInstagram: appointment.clientInstagram,
         preferredContact: appointment.preferredContact,
         contactNote: appointment.contactNote,
+        request: appointment.request ?? null,
+        pricing: appointment.pricing ?? null,
       },
       "created",
     );

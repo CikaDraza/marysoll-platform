@@ -273,6 +273,18 @@ describe("staging apex (qa/staging.marysoll.com, path-based tenant)", () => {
     expect(rewritePath(res)).toBe("/tenant/termini");
     expect(forwardedHeader(res, "x-tenant-base-path")).toBe("/kiki-kiss-beauty");
   });
+
+  it("staging.marysoll.com/{slug}/edukacija/{clanak} → rewrite /tenant/edukacija/{clanak}", async () => {
+    // Jedan unos u CLIENT_TENANT_PATHS pokriva i listu i pojedinačan članak.
+    const { res } = await runProxy(
+      "staging.marysoll.com",
+      "/marina-stanisavljevic-skincare-edukacija/edukacija/estetika-lica",
+    );
+    expect(rewritePath(res)).toBe("/tenant/edukacija/estetika-lica");
+    expect(forwardedHeader(res, "x-tenant-base-path")).toBe(
+      "/marina-stanisavljevic-skincare-edukacija",
+    );
+  });
 });
 
 describe("localhost dev (path-based tenant)", () => {

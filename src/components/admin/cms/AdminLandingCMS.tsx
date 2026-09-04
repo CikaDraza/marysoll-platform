@@ -327,7 +327,6 @@ export function AdminLandingCMS({ sp }: Props) {
           service.variants?.some(
             (variant) => variant.priceMode === "on_request",
           ) ||
-          service.services?.some((item) => item.priceMode === "on_request") ||
           false,
         variants: service.variants?.map((variant) => ({
           name: variant.name,

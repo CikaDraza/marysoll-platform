@@ -28,5 +28,7 @@ const TestimonialSchema = new Schema(
   { timestamps: true },
 );
 
+TestimonialSchema.index({ tenantId: 1, clientProfileId: 1, createdAt: -1 });
+
 export const Testimonial =
   models.Testimonial || model("Testimonial", TestimonialSchema);

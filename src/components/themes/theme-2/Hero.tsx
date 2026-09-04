@@ -4,6 +4,7 @@ import { PhoneArrowUpRightIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { AnchorLink } from "../shared/AnchorLink";
+import { BookingCtaLink } from "../shared/BookingCtaLink";
 
 interface Theme2Hero {
   imageUrl?: string;
@@ -38,7 +39,7 @@ export function Theme2Hero({
         <motion.img
           src={
             imageUrl ||
-            "https://res.cloudinary.com/dufo1t5li/image/upload/v1776466072/hero-shi-sham_ixxrrj.png"
+            "https://res.cloudinary.com/dufo1t5li/image/upload/v1788120014/hero-shi-sham_ixxrrj_isdbpg.webp"
           }
           alt={`${salonName || "Salon"} luksuzni tretmani`}
           className="w-full h-full object-contain lg:object-cover"
@@ -72,12 +73,12 @@ export function Theme2Hero({
           {/* CTA */}
           <div className="flex flex-col gap-4">
             <div className="flex flex-wrap gap-4 justify-start">
-              <AnchorLink
+              <BookingCtaLink
                 href={cta?.primary?.href || "/termini"}
                 className="px-10 py-4 bg-yellow-500 text-gray-950 font-black text-sm tracking-wider rounded hover:bg-yellow-400 transition shadow-2xl shadow-yellow-500/20"
               >
                 {cta?.primary?.text || "ZAKAŽI TERMIN"}
-              </AnchorLink>
+              </BookingCtaLink>
               <AnchorLink
                 href={cta?.secondary?.href || "/usluge"}
                 className="px-10 py-4 border border-yellow-500/40 text-yellow-400 font-semibold text-sm tracking-wider rounded hover:border-yellow-400 hover:text-white transition"

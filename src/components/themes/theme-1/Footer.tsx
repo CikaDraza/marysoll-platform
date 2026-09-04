@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BookingCtaLink } from "../shared/BookingCtaLink";
 import { CalendarDaysIcon } from "@heroicons/react/24/outline";
 import FooterNewsletterForm from "@/components/marketing/FooterNewsletterForm";
 
@@ -95,13 +96,16 @@ export function Theme1Footer({
               )}
             </div>
             <div className="mt-6">
-              <Link
-                href={`${base}/panel?tab=Zakazivanja`}
+              {/* Vodilo je na `/panel?tab=Zakazivanja` — klijentski panel iza
+                  prijave, ne javno zakazivanje. Sada isti launcher kao Hero,
+                  sa javnim `/termini` fallback-om. */}
+              <BookingCtaLink
+                href={`${base}/termini`}
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-(--secondary-color) text-white text-sm font-semibold rounded-full hover:bg-(--primary-color) transition"
               >
                 <CalendarDaysIcon className="size-4" />
                 Zakaži termin
-              </Link>
+              </BookingCtaLink>
             </div>
           </div>
         </div>

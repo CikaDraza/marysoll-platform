@@ -7,8 +7,9 @@
 > Capability ugovor je u
 > [PANTA-TENANT-VERTICALS-CAPABILITIES.md](PANTA-TENANT-VERTICALS-CAPABILITIES.md).
 > Capability snapshot i postojeća admin/client navigaciona projekcija su
-> implementirani u T2B-B. Kompletna nova domain IA iz ovog dokumenta ostaje
-> Slice 12; ne treba je mešati sa završenim capability gate-om.
+> implementirani u T2B-B. EDU UI-1/F3A dodatno uvodi server-resolved verticals,
+> zaseban Education sidebar i Salon ↔ Edu Centar switch; EducationContent CRUD
+> i ostatak domain IA i dalje dolaze vertikalno sa stvarnim površinama.
 
 ## 1. Osnovna pravila
 
@@ -108,13 +109,16 @@ Consultation ili Education domen postoji.
 | Nagrađivanje | `loyalty.rewards` | loyalty permission | tenant + korisnik | feature-specific | postoji bez capability gate-a |
 | Podešavanja | core + plan feature-i | OWNER/ovlašćeni ADMIN | Tenant/Subscription | nije capability readiness | postoji |
 
-Hybrid ne dobija poseban paralelni panel. Dobija uniju dozvoljenih domenskih
-stavki, grupisanih tako da isti poslovni pojam nije dupliran.
+U CURRENT/legacy transition-u hybrid ne dobija poseban paralelni panel. Dobija
+uniju dozvoljenih domenskih stavki, grupisanih tako da isti poslovni pojam nije
+dupliran. TARGET (revidiran 2026-09-04) više ne koristi hybrid kao product UX:
+isti `AuthUser` bira odvojeni Salon ili Edu business workspace/tenant.
 
 ## 3. Client workspace po osobi
 
-Client panel je personalizovan po odnosu prijavljene osobe sa tenantom. Tenant
-može biti hybrid, ali osoba ne mora imati svaki odnos.
+Client panel je personalizovan po odnosu prijavljene osobe sa tenantom. U
+CURRENT transition-u tenant može biti hybrid, ali osoba ne mora imati svaki
+odnos; TARGET razdvaja Salon i Edu tenant granice.
 
 ### 3.1 Beauty client
 
@@ -241,7 +245,15 @@ Fotografije nisu javni sadržaj. Ako storage ostane Cloudinary, smer je privatan
 tenant/client-scoped prefix ili folder uz authenticated/signed delivery. Naziv
 foldera sam po sebi nije authorization.
 
-### 4.4 Public Education nije Private Care
+### 4.4 Education pristup nije Private Care
+
+> **Terminološka ispravka (2026-08-29):** Education sadržaj više nije samo
+> „javan ili privatan" — ima tri režima pristupa: `public`, `gated` (javno
+> otkriven, telo zaključano) i `private` (neotkriven, 404 bez autorizacije).
+> Ugovor je u
+> [PANTA-EDU-CENTAR-ARC.md § Pristup sadržaju](PANTA-EDU-CENTAR-ARC.md#pristup-sadržaju--public--gated--private-zaključano-2026-08-29).
+> Care podaci nisu `EducationContent` i ne dele ovu skalu — oni su uvek
+> individualni i uvek autorizovani.
 
 Public Education je opšti stručni sadržaj za širu publiku. Private Care je
 individualna procena, plan, preporuka, dokument, fotografija i istorija

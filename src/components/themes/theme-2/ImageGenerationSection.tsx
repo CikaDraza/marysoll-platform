@@ -61,7 +61,7 @@ export function Theme2ImageGenerationSection() {
               alt="AI generated"
               width={400}
               height={400}
-              className="rounded-xl max-h-96 object-contain"
+              className="rounded-xl max-h-96 w-auto object-contain"
             />
           ) : (
             <p className="text-gray-600 text-sm">

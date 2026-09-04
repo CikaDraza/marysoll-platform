@@ -1,6 +1,14 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import {
+  AppointmentRequestModal,
+  hasRequest,
+  hasRequestImage,
+} from "./AppointmentRequestModal";
+import { AppointmentPriceModal } from "./AppointmentPriceModal";
+import { AppointmentCheckoutModal } from "./AppointmentCheckoutModal";
+import { LoyaltyBenefitPicker } from "@/components/loyalty/LoyaltyBenefitPicker";
 import { api } from "@/lib/api";
 import { formatISODate } from "@/helpers/formatISODate";
 import { statusMeta } from "@/lib/appointmentColors";
@@ -21,6 +29,7 @@ import { useSalonProfile } from "@/hooks/useSalonProfile";
 import {
   arrivedLabel,
   noShowLabel,
+  noShowStatusLabel,
   clientNoun,
   clientNounCap,
   genderPast,
@@ -29,49 +38,117 @@ import {
 interface AppointmentListItemProps {
   appointment: IAppointment;
   onOpenChat: (appointment: IAppointment) => void;
+  isOnline: boolean;
+  clientGender?: import("@/types").ClientGender;
   /** Termin na koji je admin došao deep-linkom iz notifikacije. */
   isHighlighted?: boolean;
+  /** Deep-link vodi PRAVO na zahtev: otvori ga bez dodatnog klika. */
+  autoOpenRequest?: boolean;
 }
 
 // components/admin/AdminAppointments.tsx - AppointmentListItem deo
 function AppointmentListItem({
   appointment,
   onOpenChat,
+  isOnline,
+  clientGender,
   isHighlighted = false,
+  autoOpenRequest = false,
 }: AppointmentListItemProps) {
   const { updateAppointmentStatus } = useAppointmentMutations();
-  const { data: salon } = useSalonProfile();
-  const clientGender = salon?.clientGender;
-  const { data: response, isLoading, isError, isFetching } = useAppointments();
-  const { isOnline } = useUsers().data?.find(
-    (u) => u._id === appointment.clientProfileId,
-  ) || { isOnline: false };
-
-  const appointments = useMemo(() => {
-    return response?.appointments || [];
-  }, [response?.appointments]);
 
   const unreadAdmin = appointment.unreadCount?.admin ?? 0;
 
-  // Uzmi ažurirani appointment sa najnovijim porukama
-  const currentAppointment = useMemo(() => {
-    if (!appointments) return appointment;
-    return (
-      appointments.find((a: IAppointment) => a._id === appointment._id) ||
-      appointment
-    );
-  }, [appointment, appointments]);
+  const currentAppointment = appointment;
 
+  const [manualRequestOpen, setManualRequestOpen] = useState(false);
+  const [priceModal, setPriceModal] = useState<"quote" | null>(null);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [benefitOpen, setBenefitOpen] = useState(false);
+  // Deep-link otvara zahtev sam, ali samo dok ga admin ne zatvori — inače bi
+  // se modal vraćao pri svakom osvežavanju liste.
+  const [autoOpenDismissed, setAutoOpenDismissed] = useState(false);
   const getStatusColor = (status: string) => statusMeta(status).chip;
 
-  const handleStatusUpdate = (status: IAppointment["status"]) => {
+  // Izvedeno, ne kroz efekat: postavljanje state-a u efektu lanča rendere.
+  const requestOpen =
+    manualRequestOpen ||
+    (autoOpenRequest &&
+      !autoOpenDismissed &&
+      hasRequest(currentAppointment));
+
+  const closeRequest = () => {
+    setManualRequestOpen(false);
+    setAutoOpenDismissed(true);
+  };
+
+  const handleStatusUpdate = (
+    status: IAppointment["status"],
+    pricingAmount?: number,
+  ) => {
     updateAppointmentStatus.mutate({
       id: appointment._id || "",
       status,
+      ...(pricingAmount != null ? { pricingAmount } : {}),
     });
   };
 
+  // Cena se traži samo kad je stvarno nema: usluga sa fiksnom cenom ne treba
+  // da prekida salon dijalogom na svaki klik.
+  const needsPrice =
+    currentAppointment.pricing == null ||
+    currentAppointment.pricing.mode !== "fixed";
+  const actionPending = updateAppointmentStatus.isPending;
+
+  const askPrice = () => {
+    if (!needsPrice) {
+      handleStatusUpdate("appointment_approved");
+      return;
+    }
+    setPriceModal("quote");
+  };
+
   return (
+    <>
+    {priceModal && (
+      <AppointmentPriceModal
+        appointment={currentAppointment}
+        kind={priceModal}
+        isSaving={updateAppointmentStatus.isPending}
+        onClose={() => setPriceModal(null)}
+        onSkip={() => {
+          handleStatusUpdate("appointment_approved");
+          setPriceModal(null);
+        }}
+        onConfirm={(amount) => {
+          handleStatusUpdate("appointment_approved", amount);
+          setPriceModal(null);
+        }}
+      />
+    )}
+    {/* „Došla" je sada RAČUN: cena pre pogodnosti, popust, za naplatu i
+        stvarno naplaćeno — sve server-računato (T1-4). */}
+    {checkoutOpen && (
+      <AppointmentCheckoutModal
+        appointment={currentAppointment}
+        onClose={() => setCheckoutOpen(false)}
+      />
+    )}
+    {/* Salon primenjuje pogodnost u ime klijentkinje kada ona to kaže uživo.
+        Isti server seam kao klijentski picker — nema drugog redemption toka. */}
+    {benefitOpen && currentAppointment._id && (
+      <LoyaltyBenefitPicker
+        appointmentId={currentAppointment._id}
+        audience="admin"
+        onClose={() => setBenefitOpen(false)}
+      />
+    )}
+    {requestOpen && (
+      <AppointmentRequestModal
+        appointment={currentAppointment}
+        onClose={closeRequest}
+      />
+    )}
     <li
       id={`appointment-${appointment._id}`}
       className={`flex flex-col lg:flex-row justify-between gap-x-6 py-5 border-b dark:last:border-gray-900 last:border-gray-50 border-gray-200 dark:border-slate-800 transition-colors duration-500 ${
@@ -117,8 +194,32 @@ function AppointmentListItem({
                 "Otkazano"}
               {currentAppointment.status === "completed" && "Završeno"}
               {currentAppointment.status === "no_show" &&
-                noShowLabel(clientGender)}
+                noShowStatusLabel(currentAppointment.noShowReason, clientGender)}
             </span>
+            {hasRequest(currentAppointment) &&
+              (currentAppointment.status === "pending" ? (
+                // Dok čeka odobrenje, zahtev je informacija za PROCENU termina,
+                // pa mora da se vidi pre nego što ga salon potvrdi.
+                <button
+                  type="button"
+                  onClick={() => setManualRequestOpen(true)}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 hover:bg-amber-200 transition"
+                >
+                  {hasRequestImage(currentAppointment)
+                    ? "📷 Zahtev sa fotografijom"
+                    : "📝 Detalji zahteva"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setManualRequestOpen(true)}
+                  aria-label="Zahtev klijentkinje"
+                  title="Zahtev klijentkinje"
+                  className="text-base leading-none hover:opacity-70 transition"
+                >
+                  {hasRequestImage(currentAppointment) ? "🖼️" : "📝"}
+                </button>
+              ))}
             {unreadAdmin !== 0 && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-(--secondary-color) text-white animate-pulse">
                 {unreadAdmin === 1
@@ -183,32 +284,18 @@ function AppointmentListItem({
             currentAppointment.status === "appointment_rescheduled") && (
             <>
               <button
-                onClick={() => handleStatusUpdate("appointment_approved")}
-                className="cursor-pointer px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                onClick={askPrice}
+                disabled={actionPending}
+                className="cursor-pointer px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors disabled:cursor-wait disabled:opacity-60"
               >
-                {isLoading || isFetching ? (
-                  isError ? (
-                    "greška"
-                  ) : (
-                    <LoaderButton />
-                  )
-                ) : (
-                  "Odobri"
-                )}
+                {actionPending ? <LoaderButton /> : "Odobri"}
               </button>
               <button
                 onClick={() => handleStatusUpdate("appointment_rejected")}
-                className="cursor-pointer px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+                disabled={actionPending}
+                className="cursor-pointer px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors disabled:cursor-wait disabled:opacity-60"
               >
-                {isLoading || isFetching ? (
-                  isError ? (
-                    "greška"
-                  ) : (
-                    <LoaderButton />
-                  )
-                ) : (
-                  "Otkaži"
-                )}
+                {actionPending ? <LoaderButton /> : "Otkaži"}
               </button>
             </>
           )}
@@ -216,16 +303,25 @@ function AppointmentListItem({
             hasAppointmentStarted(currentAppointment) && (
               <>
                 <button
-                  onClick={() => handleStatusUpdate("completed")}
-                  className="cursor-pointer px-3 py-1 bg-teal-600 text-white text-xs rounded hover:bg-teal-700 transition-colors"
+                  onClick={() => setBenefitOpen(true)}
+                  disabled={actionPending}
+                  className="cursor-pointer px-3 py-1 bg-violet-600 text-white text-xs rounded hover:bg-violet-700 transition-colors disabled:cursor-wait disabled:opacity-60"
                 >
-                  {arrivedLabel(clientGender)}
+                  Pogodnost
+                </button>
+                <button
+                  onClick={() => setCheckoutOpen(true)}
+                  disabled={actionPending}
+                  className="cursor-pointer px-3 py-1 bg-teal-600 text-white text-xs rounded hover:bg-teal-700 transition-colors disabled:cursor-wait disabled:opacity-60"
+                >
+                  {actionPending ? <LoaderButton /> : arrivedLabel(clientGender)}
                 </button>
                 <button
                   onClick={() => handleStatusUpdate("no_show")}
-                  className="cursor-pointer px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
+                  disabled={actionPending}
+                  className="cursor-pointer px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors disabled:cursor-wait disabled:opacity-60"
                 >
-                  {noShowLabel(clientGender)}
+                  {actionPending ? <LoaderButton /> : noShowLabel(clientGender)}
                 </button>
               </>
             )}
@@ -244,6 +340,7 @@ function AppointmentListItem({
         </div>
       </div>
     </li>
+    </>
   );
 }
 
@@ -505,6 +602,11 @@ export default function AdminAppointments() {
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const { data: salon } = useSalonProfile();
   const clientGender = salon?.clientGender;
+  const { data: users = [] } = useUsers();
+  const onlineClientIds = useMemo(
+    () => new Set(users.filter((user) => user.isOnline).map((user) => String(user._id))),
+    [users],
+  );
 
   // Deep-link iz notifikacije: /dashboard?tab=termini&appointmentId=<id>
   const searchParams = useSearchParams();
@@ -746,7 +848,10 @@ export default function AdminAppointments() {
                   key={appointment._id}
                   appointment={appointment}
                   onOpenChat={handleOpenChat}
+                  isOnline={onlineClientIds.has(String(appointment.clientProfileId))}
+                  clientGender={clientGender}
                   isHighlighted={appointment._id === highlightId}
+                  autoOpenRequest={appointment._id === highlightId}
                 />
               ))}
             </ul>

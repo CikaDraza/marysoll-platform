@@ -31,9 +31,11 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin, { DateClickArg } from "@fullcalendar/interaction";
 import { useAppointments } from "@/hooks/useAppointments";
+import { usePublicOccupancy } from "@/hooks/usePublicOccupancy";
 import { useAuth } from "@/hooks/useAuth";
-import ClientCreateModal from "./ClientCreateModal";
 import ClientEditModal from "./ClientEditModal";
+import { BookingModal } from "@/components/shared/BookingModal";
+import { useServices } from "@/hooks/useServices";
 import type {
   IAppointment,
   SalonProfileData,
@@ -443,8 +445,21 @@ export default function AppointmentCalendar() {
     data: response,
     isLoading,
     isError,
+    refetch: refetchAppointments,
   } = useAppointments({ page: 1, limit: 100 });
+
+  // Zauzeće celog salona ide iz SANITIZOVANOG javnog feeda (samo datum, vreme,
+  // trajanje). `/api/appointments` klijentu vraća isključivo NJEGOVE termine —
+  // tuđi bi nosili imena, telefone, poruke i intake fotografije.
+  const { data: occupancy = [], refetch: refetchOccupancy } =
+    usePublicOccupancy(tenantSlug);
   const { data: salonProfile } = usePublicSalonProfile(tenantSlug);
+  const { data: bookingServices = [] } = useServices();
+
+  const refreshBookingData = () => {
+    void refetchAppointments();
+    void refetchOccupancy();
+  };
 
   const safeProfile: SalonProfileData = salonProfile ?? {
     _id: "",
@@ -468,10 +483,29 @@ export default function AppointmentCalendar() {
   const isManual = salonProfile?.availabilityMode === "manualSlots";
   const manualSlots = salonProfile?.manualSlots as ManualSlotsMap | undefined;
 
-  const appointments = useMemo(
+  const ownAppointments = useMemo(
     () => response?.appointments || [],
     [response?.appointments],
   );
+
+  /**
+   * Sopstveni termini sa punim podacima + tuđi kao anonimno zauzeće.
+   *
+   * Prikaz razlikuje „moj termin" po `clientEmail`, pa tuđi zapisi bez tog
+   * polja prirodno ostaju neoznačeni — a slot i dalje blokiraju.
+   */
+  const appointments = useMemo(() => {
+    const ownIds = new Set(ownAppointments.map((a) => String(a._id)));
+    const foreign = occupancy
+      .filter((slot) => !ownIds.has(String(slot._id)))
+      .map((slot) => ({
+        _id: slot._id,
+        date: slot.date,
+        time: slot.time,
+        duration: slot.duration,
+      })) as unknown as typeof ownAppointments;
+    return [...ownAppointments, ...foreign];
+  }, [ownAppointments, occupancy]);
 
   // ── Event handlers ────────────────────────────────────────────────────────
 
@@ -880,17 +914,23 @@ export default function AppointmentCalendar() {
         </div>
       </div>
 
-      <ClientCreateModal
+      <BookingModal
         key={`create-${createDefaults.date}-${createDefaults.time}`}
         isOpen={createOpen}
         onClose={() => setCreateOpen(false)}
-        defaultDate={createDefaults.date}
-        defaultTime={createDefaults.time}
+        defaultDate={createDefaults.date ?? ""}
+        defaultTime={createDefaults.time ?? ""}
+        services={bookingServices}
+        isLoggedIn={Boolean(user)}
+        userName={user?.name}
+        userEmail={user?.email}
         token={user?.token}
+        tenantSlug={tenantSlug}
         availabilityMode={salonProfile?.availabilityMode}
         workingHours={workingHours}
         manualSlots={manualSlots}
         bookedAppointments={appointments}
+        onBooked={refreshBookingData}
       />
 
       <ClientEditModal
@@ -906,6 +946,7 @@ export default function AppointmentCalendar() {
         workingHours={workingHours}
         manualSlots={manualSlots}
         bookedAppointments={appointments}
+        onChanged={refreshBookingData}
       />
     </>
   );

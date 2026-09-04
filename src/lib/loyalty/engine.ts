@@ -18,18 +18,15 @@ import { postLedgerEntry } from "./ledger";
 import { issueVoucher, revokeVouchersIssuedForAppointment } from "./vouchers/service";
 import { createLoyaltyNotification } from "./notifications";
 import { computeStreakUpdate } from "@/lib/platform/loyalty-client";
+import { describeReward } from "./descriptions";
 import {
   formatCurrencyAmount,
   type LoyaltyConfigLean,
   type LoyaltyEventLean,
-  type RewardSpec,
 } from "./types";
 
-export function describeReward(reward: RewardSpec): string {
-  if (reward.type === "percent") return `${reward.value}% popusta`;
-  if (reward.type === "fixed") return `${reward.value} RSD popusta`;
-  return `Gratis: ${reward.serviceName || "usluga"}`;
-}
+// Opis nagrade živi u `./descriptions` — dele ga engine i redemption seam.
+export { describeReward } from "./descriptions";
 
 // Registry: tip događaja → handler. Novi moduli dodaju svoje unose ovde.
 const EVENT_HANDLERS: Record<
@@ -55,10 +52,66 @@ export async function applyRulesForEvent(
 
 // ─── appointment_completed ────────────────────────────────────────────────────
 
+/**
+ * Da li događaj o završetku i dalje opisuje STVARNO stanje termina.
+ *
+ * `LoyaltyEvent` je durabilan red: `pending`/`failed` završetak sme da bude
+ * obrađen mnogo kasnije, kroz sweeper. U međuvremenu je admin mogao da vrati
+ * termin — i tada bi obrada nagradila posetu koja se, po evidenciji, nije
+ * dogodila. Zato se ovde ne veruje događaju nego se PONOVO čita termin.
+ *
+ * Fail-closed: sve što nije nedvosmislen dokaz da termin i dalje stoji na
+ * TOM ciklusu završetka znači da se ništa ne knjiži.
+ */
+async function completionEventStillApplies(
+  event: LoyaltyEventLean,
+): Promise<boolean> {
+  const appointmentId = event.payload.appointmentId;
+  if (!appointmentId || !Types.ObjectId.isValid(String(appointmentId))) {
+    return false;
+  }
+
+  const appointment = await Appointment.findOne({
+    _id: new Types.ObjectId(String(appointmentId)),
+    tenantId: event.tenantId,
+    clientProfileId: event.subjectTenantUserId,
+  })
+    .select("status loyaltyProcessed")
+    .lean<{
+      status: string;
+      loyaltyProcessed?: { revertCount?: number };
+    }>();
+
+  if (!appointment) return false;
+  if (appointment.status !== "completed") return false;
+
+  // Ciklus iz payload-a; zatečeni događaji ga nemaju, pa se čita iz sourceId
+  // (`{id}:c{N}`), koji ga nosi od početka.
+  const payloadCycle = event.payload.cycle;
+  const fromSource = /:c(\d+)$/.exec(event.sourceId)?.[1];
+  const eventCycle =
+    typeof payloadCycle === "number"
+      ? payloadCycle
+      : fromSource != null
+        ? Number(fromSource)
+        : 0;
+  const currentCycle = Math.max(
+    0,
+    Math.trunc(appointment.loyaltyProcessed?.revertCount ?? 0),
+  );
+
+  return eventCycle === currentCycle;
+}
+
 async function handleCompleted(
   event: LoyaltyEventLean,
   config: LoyaltyConfigLean,
 ): Promise<void> {
+  // Zastareo događaj (termin je u međuvremenu vraćen) nije greška nego posao
+  // koji je prestao da važi: ne knjiži se ništa, a događaj se obeležava kao
+  // obrađen da ne bi zauvek kružio kroz sweeper.
+  if (!(await completionEventStillApplies(event))) return;
+
   const account = await getOrCreateAccount(
     event.tenantId,
     event.subjectTenantUserId,

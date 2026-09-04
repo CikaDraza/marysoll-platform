@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { headers } from "next/headers";
 import { getCanonicalUrl, getPublicSiteContext } from "@/lib/seo/public-site";
+import { listPublicEducationContent } from "@/lib/education/publicContent";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,7 @@ const tenantRoutes = [
   { path: "/usluge", changeFrequency: "weekly", priority: 0.8 },
   { path: "/termini", changeFrequency: "daily", priority: 0.8 },
   { path: "/blogs", changeFrequency: "weekly", priority: 0.6 },
+  { path: "/edukacija", changeFrequency: "weekly", priority: 0.7 },
   { path: "/pravila-zakazivanja", changeFrequency: "monthly", priority: 0.4 },
   { path: "/politika-privatnosti", changeFrequency: "yearly", priority: 0.3 },
   { path: "/cookie-policy", changeFrequency: "yearly", priority: 0.3 },
@@ -29,12 +31,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const lastModified = new Date();
 
   if (context.kind === "TENANT") {
-    return tenantRoutes.map((route) => ({
-      url: getCanonicalUrl(context, route.path),
-      lastModified,
-      changeFrequency: route.changeFrequency,
-      priority: route.priority,
-    }));
+    // Svaki javno otkriven članak ima svoju adresu i rangira se na njoj, pa
+    // ulazi u sitemap pojedinačno. Isti upit koji koristi i javna lista — dakle
+    // `private` ovde ne može ni da se pojavi.
+    const articles = await listPublicEducationContent(h.get("x-tenant-id"));
+
+    return [
+      ...tenantRoutes.map((route) => ({
+        url: getCanonicalUrl(context, route.path),
+        lastModified,
+        changeFrequency: route.changeFrequency,
+        priority: route.priority,
+      })),
+      ...articles.map((article) => ({
+        url: getCanonicalUrl(context, `/edukacija/${article.slug}`),
+        // Datum objave je tačniji signal od vremena generisanja sitemap-a.
+        lastModified: new Date(article.publishedAt),
+        changeFrequency: "monthly" as const,
+        priority: 0.6,
+      })),
+    ];
   }
 
   // Platform sitemap deliberately never lists tenant websites.

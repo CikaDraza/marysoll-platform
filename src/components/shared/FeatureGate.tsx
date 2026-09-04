@@ -37,6 +37,7 @@ import Link from "next/link";
 
 const FEATURE_LABELS: Partial<Record<keyof PlanFeatures, string>> = {
   statistics: "Statistika salona",
+  clientInsights: "Napredni Client 360 uvid",
   newsletterCampaigns: "Newsletter kampanje",
   newsletterLanding: "Newsletter landing stranice",
   aiAssistant: "AI asistent za zakazivanje",
@@ -60,6 +61,7 @@ const FEATURE_LABELS: Partial<Record<keyof PlanFeatures, string>> = {
 
 const FEATURE_TO_MIN_PLAN: Partial<Record<keyof PlanFeatures, PlanName>> = {
   statistics: "claudia",
+  clientInsights: "kiki",
   newsletterCampaigns: "claudia",
   newsletterLanding: "claudia",
   newsletterStats: "claudia",

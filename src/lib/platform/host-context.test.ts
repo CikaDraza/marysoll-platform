@@ -113,6 +113,8 @@ describe("tenantSlugFromPath", () => {
     expect(tenantSlugFromPath("/login")).toBeNull();
     expect(tenantSlugFromPath("/dashboard?tab=pretplata")).toBeNull();
     expect(tenantSlugFromPath("/superadmin/dashboard")).toBeNull();
+    expect(tenantSlugFromPath("/education")).toBeNull();
+    expect(tenantSlugFromPath("/education/offerings")).toBeNull();
   });
 });
 

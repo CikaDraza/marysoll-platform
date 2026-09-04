@@ -50,7 +50,7 @@ export function RadnoVremeTab(props: DashboardTabProps) {
       </div>
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-300">
-          <span>Otkazivanje najkasnije do</span>
+          <span>Izmena i otkazivanje najkasnije</span>
           <input
             type="number"
             min={0}
@@ -64,8 +64,34 @@ export function RadnoVremeTab(props: DashboardTabProps) {
             }
             className="w-16 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1.5 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-400"
           />
-          <span>sat</span>
+          <span>sati pre početka termina</span>
         </label>
+        <p className="text-[11px] text-gray-400 dark:text-gray-500 sm:max-w-xs">
+          Klijent može regularno da izmeni ili otkaže termin najkasnije toliko
+          sati pre početka. Posle toga izmena više nije moguća, a otkazivanje se
+          evidentira kao kasno.
+        </p>
+      </div>
+
+      {/* Sistemsko pravilo platforme — nema podešavanja, samo obaveštenje, da
+          vlasnica zna zašto klijent ponekad sme da menja i van njenog roka. */}
+      <div className="mb-6 flex items-start gap-2 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3">
+        <span aria-hidden className="text-base leading-none">
+          ⚠️
+        </span>
+        <div>
+          <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+            30 minuta za ispravku rezervacije
+          </p>
+          <p className="text-[11px] text-amber-700/90 dark:text-amber-400/80 mt-0.5">
+            Nakon zakazivanja klijent ima 30 minuta da promeni ili otkaže termin
+            bez posledica, čak i ako je termin zakazan unutar roka za izmene i
+            otkazivanje.
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <button
           onClick={() => sp.save()}
           disabled={sp.isSaving}

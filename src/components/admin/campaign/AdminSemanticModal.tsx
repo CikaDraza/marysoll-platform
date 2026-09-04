@@ -53,6 +53,7 @@ import { GeneratedImagesPanel } from "./GeneratedImagesPanel";
 import LoaderButton from "@/components/elements/LoaderButton";
 import type { NewsletterClientScope } from "@/lib/newsletter/clientScope";
 import { slugify as slugifySlug } from "@/helpers/slugify";
+import { useContentMediaAuthoring } from "@/hooks/useContentMediaAuthoring";
 
 interface Props {
   isOpen: boolean;
@@ -227,6 +228,7 @@ export default function AdminSemanticModal({
     getInitialForm(campaign),
   );
   const { user } = useAuth();
+  const mediaAdapter = useContentMediaAuthoring();
   const { data: dbCategories = [] } = useCategories();
   const isPlatformMode =
     scope?.scope === "platform" || campaign.scope === "platform";
@@ -435,7 +437,6 @@ export default function AdminSemanticModal({
       toast.success("Kampanja sačuvana!");
     } catch (err) {
       console.error(err);
-      toast.error("Greška pri čuvanju");
     }
   };
 
@@ -476,7 +477,6 @@ export default function AdminSemanticModal({
       handleClose();
     } catch (err) {
       console.error(err);
-      toast.error("Greška pri objavljivanju");
     }
   };
 
@@ -1030,8 +1030,7 @@ export default function AdminSemanticModal({
           </form>
 
           {/* MANUAL EDITOR — deterministic edits, no AI regeneration */}
-          {form.campaignType === "email-landing" &&
-            !!preview.layout?.layout?.length && (
+          {form.campaignType === "email-landing" && (
               <Disclosure
                 as="div"
                 className="border-t mt-8 border-gray-200 dark:border-gray-700 px-0 py-6"
@@ -1049,8 +1048,9 @@ export default function AdminSemanticModal({
                 </h3>
                 <DisclosurePanel className="pt-4">
                   <LandingBlocksEditor
-                    blocks={preview.layout.layout}
+                    blocks={preview.layout?.layout ?? []}
                     slugOptions={editorSlugOptions}
+                    mediaAdapter={mediaAdapter}
                     onChange={(blocks) =>
                       preview.setPreviewFromExisting({
                         layout: blocks,

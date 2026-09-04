@@ -15,8 +15,8 @@ export const metadata: Metadata = {
 export default function RegisterPage() {
   return (
     <AuthLayout
-      heading="Kreirajte vaš salon"
-      subheading="Počnite besplatno — 30 dana trial perioda"
+      heading="Kreirajte vaš biznis"
+      subheading="Izaberite workspace i počnite besplatno — 30 dana trial perioda"
       footerText="Već imate nalog?"
       footerLinkText="Prijavite se"
       footerLinkHref="/login"

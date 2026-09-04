@@ -4,6 +4,15 @@ export const TENANT_VERTICALS = ["beauty", "education"] as const;
 
 export type TenantVertical = (typeof TENANT_VERTICALS)[number];
 
+export const TENANT_REGISTRATION_PRESETS = [
+  "salon",
+  "education",
+  "hybrid",
+] as const;
+
+export type TenantRegistrationPreset =
+  (typeof TENANT_REGISTRATION_PRESETS)[number];
+
 export const TENANT_CAPABILITIES = [
   "services.catalog",
   "booking.services",
@@ -42,6 +51,8 @@ export interface ResolvedCapability {
  * Plan, vertikale i tenant override-i se nikada ne računaju u browseru.
  */
 export type TenantCapabilitySnapshot = {
+  /** Server-resolved workspace identity; legacy missing verticals become beauty. */
+  verticals: TenantVertical[];
   capabilities: Record<TenantCapability, ResolvedCapability>;
 };
 

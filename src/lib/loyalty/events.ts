@@ -47,31 +47,57 @@ export async function emitLoyaltyEvent(
   params: EmitLoyaltyEventParams,
 ): Promise<void> {
   try {
-    await connectToDB();
-    const { active, config } = await isLoyaltyActive(params.tenantId);
-    if (!active || !config) return;
-
-    let event: LoyaltyEventLean;
-    try {
-      const doc = await LoyaltyEvent.create({
-        tenantId: params.tenantId,
-        type: params.type,
-        sourceType: params.sourceType,
-        sourceId: params.sourceId,
-        subjectTenantUserId: params.subjectTenantUserId,
-        payload: params.payload ?? {},
-        status: "pending",
-      });
-      event = doc.toObject() as LoyaltyEventLean;
-    } catch (err: unknown) {
-      if ((err as { code?: number })?.code === 11000) return; // već obrađeno
-      throw err;
-    }
-
-    await processLoyaltyEvent(event, config);
+    await emitLoyaltyEventDurable(params);
   } catch (err) {
     console.error("[loyalty] emitLoyaltyEvent failed:", err);
   }
+}
+
+/**
+ * Kao `emitLoyaltyEvent`, ali BACA ako događaj nije uspeo da se upiše.
+ *
+ * Razlika je suštinska za pouzdanost: sweeper (`retryFailedEvents`) može da
+ * ponovi obradu samo događaja koji POSTOJI. Ako sam upis padne, a pozivalac
+ * grešku proguta, ne postoji ništa što bi iko kasnije retry-ovao — zarada za
+ * tu posetu je tiho izgubljena.
+ *
+ * Zato completion finalizacija koristi ovu varijantu: dok događaj nije
+ * durabilno upisan, termin se NE sme označiti kao loyalty-obrađen.
+ *
+ * Neuspeh same OBRADE i dalje se guta: događaj tada ostaje `failed` i sweeper
+ * ga preuzima.
+ *
+ * Vraća `false` kada loyalty nije aktivan (nema šta da se upiše — to je
+ * uspešan ishod, ne greška).
+ */
+export async function emitLoyaltyEventDurable(
+  params: EmitLoyaltyEventParams,
+): Promise<boolean> {
+  await connectToDB();
+  const { active, config } = await isLoyaltyActive(params.tenantId);
+  if (!active || !config) return false;
+
+  let event: LoyaltyEventLean;
+  try {
+    const doc = await LoyaltyEvent.create({
+      tenantId: params.tenantId,
+      type: params.type,
+      sourceType: params.sourceType,
+      sourceId: params.sourceId,
+      subjectTenantUserId: params.subjectTenantUserId,
+      payload: params.payload ?? {},
+      status: "pending",
+    });
+    event = doc.toObject() as LoyaltyEventLean;
+  } catch (err: unknown) {
+    // Duplikat znači da događaj VEĆ postoji — tačno ono što finalizacija
+    // treba da garantuje, pa je to uspeh, ne greška.
+    if ((err as { code?: number })?.code === 11000) return true;
+    throw err;
+  }
+
+  await processLoyaltyEvent(event, config);
+  return true;
 }
 
 /** Obradi jedan event; greška ostavlja event u failed (retry preko crona). */

@@ -44,7 +44,7 @@ export interface LoyaltyMeResponse {
   config: {
     currencies: { hearts: LoyaltyCurrencyInfo; points: LoyaltyCurrencyInfo };
     milestone: { heartsRequired: number; reward: LoyaltyRewardInfo } | null;
-    pointsShop: Array<{ costPoints: number; reward: LoyaltyRewardInfo }>;
+    pointsShop: Array<{ id?: string; costPoints: number; reward: LoyaltyRewardInfo }>;
     celebration: { intensity: "off" | "subtle" | "normal" | "max" };
     streak?: { windowDays: number };
     sharing: { enabled: boolean; friendReward: LoyaltyRewardInfo | null } | null;

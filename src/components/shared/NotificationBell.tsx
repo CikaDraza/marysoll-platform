@@ -39,7 +39,23 @@ interface NotificationBellProps {
 
 // ─── Helper: navigaciona ruta po tipu notifikacije ────────────────────────────
 
-function getNotificationHref(
+/**
+ * Id reference kao string, i kada stigne kao populisan dokument.
+ *
+ * API namerno više ne radi populate, ali link ne sme da zavisi od toga —
+ * ubačen objekat je ovde ranije završavao kao "[object Object]" u URL-u.
+ */
+function refId(value: unknown): string | null {
+  if (typeof value === "string") return value || null;
+  if (value && typeof value === "object") {
+    const id = (value as { _id?: unknown })._id;
+    if (typeof id === "string") return id || null;
+    if (id != null) return String(id) || null;
+  }
+  return null;
+}
+
+export function getNotificationHref(
   notification: INotification,
   isAdmin: boolean,
   base?: string,
@@ -53,18 +69,16 @@ function getNotificationHref(
   // Podsetnik da termin nije označen (Growth Studio) — vodi pravo na taj termin.
   if (notification.type === "loyalty_completion_prompt") {
     const href = `${panelBase}?tab=termini`;
-    return notification.appointmentId
-      ? `${href}&appointmentId=${notification.appointmentId}`
-      : href;
+    const id = refId(notification.appointmentId);
+    return id ? `${href}&appointmentId=${encodeURIComponent(id)}` : href;
   }
 
   if (notification.type.includes("appointment")) {
     const tab = isAdmin ? "termini" : "Moji Termini";
     const href = `${panelBase}?tab=${encodeURIComponent(tab)}`;
     // Admin lista ume da skoči na konkretan termin (paging + skrol + highlight).
-    return isAdmin && notification.appointmentId
-      ? `${href}&appointmentId=${notification.appointmentId}`
-      : href;
+    const id = isAdmin ? refId(notification.appointmentId) : null;
+    return id ? `${href}&appointmentId=${encodeURIComponent(id)}` : href;
   }
 
   if (notification.type.includes("testimonial")) {

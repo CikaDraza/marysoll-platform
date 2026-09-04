@@ -29,6 +29,7 @@ import { verifySignature } from "@/lib/middleware/verifySignature";
 import { checkRateLimit } from "@/lib/middleware/rateLimiter";
 import { getDistanceKm } from "@/lib/utils/distance";
 import { buildCityRegex } from "@/lib/utils/cityMatch";
+import { normalizePriceMode } from "@/helpers/formatPrice";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -439,7 +440,7 @@ export async function GET(req: NextRequest) {
             slug: svc.categorySlug ?? cat?.slug ?? "",
             duration: svc.duration ?? 60,
             price: svc.basePrice ?? null,
-            priceMode: svc.priceMode === "on_request" ? "on_request" : "fixed",
+            priceMode: normalizePriceMode(svc.priceMode),
           }
         : null,
       salon: {

@@ -18,4 +18,5 @@ export function generateVoucherCode(prefix?: string): string {
 export const VOUCHER_PREFIX_BY_ORIGIN: Record<string, string | undefined> = {
   gift: "GIFT",
   referral: "REF",
+  points_shop: "SHOP",
 };

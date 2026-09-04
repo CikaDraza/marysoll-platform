@@ -4,6 +4,8 @@ import { StatsCards } from "@/components/admin/statistics/StatsCards";
 import { StatsPieChart } from "@/components/admin/statistics/StatsPieChart";
 import { StatsTable } from "@/components/admin/statistics/StatsTable";
 import { useStatistics } from "@/hooks/useStatistics";
+import { StatisticsPeriodFilter } from "./StatisticsPeriodFilter";
+import { formatStatisticsCurrency } from "./statisticsFormatters";
 
 export const StatisticsPage: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -21,30 +23,6 @@ export const StatisticsPage: React.FC = () => {
     year: selectedYear,
   });
 
-  const months = [
-    { value: 1, label: "Januar" },
-    { value: 2, label: "Februar" },
-    { value: 3, label: "Mart" },
-    { value: 4, label: "April" },
-    { value: 5, label: "Maj" },
-    { value: 6, label: "Jun" },
-    { value: 7, label: "Jul" },
-    { value: 8, label: "Avgust" },
-    { value: 9, label: "Septembar" },
-    { value: 10, label: "Oktobar" },
-    { value: 11, label: "Novembar" },
-    { value: 12, label: "Decembar" },
-  ];
-
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("sr-RS", {
-      style: "currency",
-      currency: "RSD",
-    }).format(amount);
-  };
   const card =
     "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6 mb-6";
 
@@ -57,51 +35,8 @@ export const StatisticsPage: React.FC = () => {
         <p className="text-gray-600"></p>
       </div>
 
-      {/* Filter controls */}
-      <div className={`${card}`}>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <label
-              htmlFor="month"
-              className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1"
-            >
-              Mesec
-            </label>
-            <select
-              id="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-blue-500"
-            >
-              {months.map((month) => (
-                <option key={month.value} value={month.value}>
-                  {month.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex-1">
-            <label
-              htmlFor="year"
-              className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1"
-            >
-              Godina
-            </label>
-            <select
-              id="year"
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {years.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+      <div className="mb-6">
+        <StatisticsPeriodFilter month={selectedMonth} year={selectedYear} onMonthChange={setSelectedMonth} onYearChange={setSelectedYear} />
       </div>
 
       {/* Cards */}
@@ -138,7 +73,7 @@ export const StatisticsPage: React.FC = () => {
                   Ukupan potencijalni prihod
                 </span>
                 <span className="text-lg font-bold text-sky-900 dark:text-sky-300">
-                  {formatCurrency(revenue.potential)}
+                  {formatStatisticsCurrency(revenue.potential)}
                 </span>
               </div>
               <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-1 p-3 bg-green-50 dark:bg-gray-950 rounded-lg">
@@ -149,7 +84,7 @@ export const StatisticsPage: React.FC = () => {
                   </span>
                 </span>
                 <span className="text-lg font-bold text-green-900 dark:text-green-300">
-                  {formatCurrency(revenue.completed)}
+                  {formatStatisticsCurrency(revenue.completed)}
                 </span>
               </div>
               <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-1 p-3 bg-red-50 dark:bg-gray-950 rounded-lg">
@@ -160,9 +95,25 @@ export const StatisticsPage: React.FC = () => {
                   </span>
                 </span>
                 <span className="text-lg font-bold text-red-900 dark:text-red-300">
-                  {formatCurrency(revenue.cancelled)}
+                  {formatStatisticsCurrency(revenue.cancelled)}
                 </span>
               </div>
+              {/* Termini bez cene — prikazuje se SAMO ako ih ima. Ne ulaze ni u
+                  potencijalni ni u ostvaren prihod, pa bi bez ovog reda salon
+                  video manje termina nego što ih zaista ima. */}
+              {revenue.withoutPriceCount > 0 && (
+                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-1 p-3 bg-amber-50 dark:bg-gray-950 rounded-lg">
+                  <span className="text-sm font-medium text-amber-700">
+                    Termini bez cene
+                    <span className="block text-[11px] font-normal text-amber-600/70">
+                      Cena nije uneta — ne ulaze u prihod
+                    </span>
+                  </span>
+                  <span className="text-lg font-bold text-amber-900 dark:text-amber-300">
+                    {revenue.withoutPriceCount}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between items-center p-3 bg-purple-50 dark:bg-gray-950 rounded-lg">
                 <span className="text-sm font-medium text-purple-700">
                   Aktivni klijenti
