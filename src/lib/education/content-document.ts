@@ -3,6 +3,12 @@ import { slugify } from "@/helpers/slugify";
 import type { ContentBlock } from "@/lib/content/schemas/landing-blocks";
 import type { ContentDocumentValidation } from "@/lib/content/validation/contentBlockValidation";
 import {
+  EDUCATION_INTENT_KEYS,
+  SKINCARE_TOPIC_KEYS,
+  type EducationIntentKey,
+  type EducationTopicKey,
+} from "@/lib/education/taxonomy";
+import {
   EDUCATION_ACCESS_MODES,
   EDUCATION_CONTENT_KINDS,
   EDUCATION_CONTENT_STATUSES,
@@ -48,6 +54,8 @@ export interface EducationContentSummary {
   title: string;
   slug: string;
   kind: EducationContentKind;
+  topicKey?: EducationTopicKey;
+  intentKey?: EducationIntentKey;
   accessMode: EducationAccessMode;
   status: EducationContentStatus;
   updatedAt: string;
@@ -78,6 +86,8 @@ export interface EducationPublishedSnapshotMeta {
   title: string;
   slug: string;
   kind: EducationContentKind;
+  topicKey?: EducationTopicKey;
+  intentKey?: EducationIntentKey;
   accessMode: EducationAccessMode;
   publicPreview?: EducationPublicPreview;
   seo?: EducationContentSeo;
@@ -148,6 +158,8 @@ const metadataSchema = z.object({
   title: z.string().trim().min(1, "Naslov je obavezan").max(200),
   slug: z.string().trim().max(200).optional(),
   kind: z.enum(EDUCATION_CONTENT_KINDS),
+  topicKey: z.enum(SKINCARE_TOPIC_KEYS).optional(),
+  intentKey: z.enum(EDUCATION_INTENT_KEYS).optional(),
   accessMode: z.enum(EDUCATION_ACCESS_MODES),
   hero: heroSchema.optional(),
   publicPreview: publicPreviewSchema.optional(),
@@ -426,6 +438,8 @@ export function buildPublishedSnapshot(
     title: string;
     slug: string;
     kind: EducationContentKind;
+    topicKey?: EducationTopicKey;
+    intentKey?: EducationIntentKey;
     accessMode?: unknown;
     visibility?: unknown;
     hero?: EducationHero | null;
@@ -443,6 +457,8 @@ export function buildPublishedSnapshot(
     cover: resolvePublishedCover(working),
     slug: working.slug,
     kind: working.kind,
+    topicKey: working.topicKey,
+    intentKey: working.intentKey,
     accessMode,
     // Javni pregled ima smisla samo za zaključan sadržaj; za javan je telo
     // ionako dostupno, a za privatan ne sme postojati ništa javno.

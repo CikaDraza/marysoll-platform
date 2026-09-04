@@ -25,6 +25,7 @@ import {
   slugTakenResponse,
 } from "@/lib/education/content-authority";
 import { EducationContent } from "@/models/EducationContent";
+import { validateEducationClassificationForTenant } from "@/lib/education/taxonomy-server";
 
 export async function GET(
   request: Request,
@@ -74,6 +75,13 @@ export async function PATCH(
         metadata.error.issues[0]?.message ?? "Podaci o sadržaju nisu ispravni",
       );
     }
+    const classification = await validateEducationClassificationForTenant(
+      authority.tenantId,
+      metadata.data,
+    );
+    if (!classification.ok) {
+      return metadataFailureResponse(classification.error);
+    }
 
     const updates: Record<string, unknown> = {};
 
@@ -85,6 +93,8 @@ export async function PATCH(
 
     if (metadata.data.title !== undefined) updates.title = metadata.data.title;
     if (metadata.data.kind !== undefined) updates.kind = metadata.data.kind;
+    if (metadata.data.topicKey !== undefined) updates.topicKey = metadata.data.topicKey;
+    if (metadata.data.intentKey !== undefined) updates.intentKey = metadata.data.intentKey;
     if (metadata.data.accessMode !== undefined) {
       updates.accessMode = metadata.data.accessMode;
     }

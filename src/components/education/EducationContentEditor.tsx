@@ -34,7 +34,10 @@ import {
   EDUCATION_ACCESS_MODES,
   EDUCATION_CONTENT_KINDS,
 } from "@/types/education-content";
-import { useEducationContentMutations } from "@/hooks/education/useEducationContent";
+import {
+  useEducationContentMutations,
+  useEducationTaxonomy,
+} from "@/hooks/education/useEducationContent";
 import {
   canAutosave,
   canSeedPreset,
@@ -119,6 +122,7 @@ export default function EducationContentEditor({ record }: Props) {
   );
 
   const { create, update, publish, remove } = useEducationContentMutations(recordId);
+  const { data: taxonomy } = useEducationTaxonomy();
   const dirty = useMemo(
     () => isEducationEditorDirty(state, baseline),
     [state, baseline],
@@ -560,6 +564,58 @@ export default function EducationContentEditor({ record }: Props) {
             ))}
           </select>
         </label>
+
+        {taxonomy && (
+          <>
+            <label>
+              <span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                Tema
+              </span>
+              <select
+                value={state.topicKey ?? ""}
+                onChange={(event) =>
+                  patch({
+                    topicKey: event.target.value
+                      ? (event.target.value as EducationEditorState["topicKey"])
+                      : undefined,
+                  })
+                }
+                className={FIELD_CLASS}
+              >
+                <option value="" disabled>Izaberite temu</option>
+                {taxonomy.topics.map((topic) => (
+                  <option key={topic.key} value={topic.key}>
+                    {topic.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              <span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                Šta čitalac dobija
+              </span>
+              <select
+                value={state.intentKey ?? ""}
+                onChange={(event) =>
+                  patch({
+                    intentKey: event.target.value
+                      ? (event.target.value as EducationEditorState["intentKey"])
+                      : undefined,
+                  })
+                }
+                className={FIELD_CLASS}
+              >
+                <option value="" disabled>Izaberite pristup</option>
+                {taxonomy.intents.map((intent) => (
+                  <option key={intent.key} value={intent.key}>
+                    {intent.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </>
+        )}
 
         <fieldset className="sm:col-span-2 rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
           <legend className="px-1 text-sm font-semibold text-gray-700 dark:text-gray-200">

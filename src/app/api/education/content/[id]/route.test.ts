@@ -7,6 +7,12 @@ vi.mock("@/lib/auth/auth-server", () => ({ requireTenantAdmin: vi.fn() }));
 vi.mock("@/lib/platform/capabilities-server", () => ({
   requireCapability: vi.fn(),
 }));
+vi.mock("@/lib/education/taxonomy-server", () => ({
+  validateEducationClassificationForTenant: vi.fn(async () => ({
+    ok: true,
+    taxonomy: null,
+  })),
+}));
 vi.mock("@/models/EducationContent", async () => {
   const actual = await vi.importActual<
     typeof import("@/models/EducationContent")

@@ -18,6 +18,8 @@ export interface EducationEditorState {
   /** Ručno potvrđen slug se ne prepisuje kad se naslov promeni. */
   slugTouched: boolean;
   kind: EducationContentSummary["kind"];
+  topicKey?: EducationContentSummary["topicKey"];
+  intentKey?: EducationContentSummary["intentKey"];
   accessMode: EducationContentSummary["accessMode"];
   /** Naslovna sekcija — jedan izvor za karticu i za zaglavlje strane. */
   hero: EducationHero;
@@ -32,6 +34,8 @@ export function emptyEducationEditorState(): EducationEditorState {
     slug: "",
     slugTouched: false,
     kind: "article",
+    topicKey: undefined,
+    intentKey: undefined,
     accessMode: "public",
     hero: {},
     publicPreview: {},
@@ -48,6 +52,8 @@ export function editorStateFromRecord(
     slug: record.slug,
     slugTouched: true,
     kind: record.kind,
+    topicKey: record.topicKey,
+    intentKey: record.intentKey,
     accessMode: record.accessMode,
     hero: record.hero ?? {},
     publicPreview: record.publicPreview ?? {},
@@ -75,6 +81,8 @@ export function isEducationEditorDirty(
     state.title !== baseline.title ||
     normalizeEducationSlug(state.slug) !== normalizeEducationSlug(baseline.slug) ||
     state.kind !== baseline.kind ||
+    state.topicKey !== baseline.topicKey ||
+    state.intentKey !== baseline.intentKey ||
     state.accessMode !== baseline.accessMode ||
     JSON.stringify(state.hero) !== JSON.stringify(baseline.hero) ||
     JSON.stringify(state.publicPreview) !==
@@ -89,6 +97,8 @@ export function createPayload(state: EducationEditorState) {
     title: state.title.trim(),
     slug: previewSlug(state) || undefined,
     kind: state.kind,
+    topicKey: state.topicKey,
+    intentKey: state.intentKey,
     accessMode: state.accessMode,
     hero: state.hero,
     publicPreview: state.accessMode === "gated" ? state.publicPreview : undefined,
@@ -114,6 +124,8 @@ export function updatePayload(
     payload.slug = normalizeEducationSlug(state.slug);
   }
   if (state.kind !== baseline.kind) payload.kind = state.kind;
+  if (state.topicKey !== baseline.topicKey) payload.topicKey = state.topicKey;
+  if (state.intentKey !== baseline.intentKey) payload.intentKey = state.intentKey;
   if (state.accessMode !== baseline.accessMode) {
     payload.accessMode = state.accessMode;
   }

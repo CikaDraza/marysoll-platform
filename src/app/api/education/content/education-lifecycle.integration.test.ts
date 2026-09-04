@@ -52,12 +52,16 @@ type Item = {
   title: string;
   slug: string;
   accessMode: string;
+  topicKey?: string;
+  intentKey?: string;
   status: string;
   blocks: unknown[];
   publishedSnapshot: {
     title: string;
     slug: string;
     kind: string;
+    topicKey?: string;
+    intentKey?: string;
     accessMode: string;
     blocks?: unknown[];
     publishedAt: string;
@@ -103,11 +107,26 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await EducationContent.deleteMany({});
+  await mongoose.connection.db?.collection("tenants").deleteMany({});
   vi.mocked(requireTenantAdmin).mockReturnValue({
     success: true,
     tenantId: TENANT,
   });
 });
+
+async function setTaxonomyPreset(preset: "skincare" | null) {
+  if (preset) {
+    await mongoose.connection.db?.collection("tenants").updateOne(
+      { _id: new Types.ObjectId(TENANT) },
+      { $set: { educationTaxonomyPreset: preset } },
+      { upsert: true },
+    );
+    return;
+  }
+  await mongoose.connection.db?.collection("tenants").deleteOne({
+    _id: new Types.ObjectId(TENANT),
+  });
+}
 
 describe("A — prva objava", () => {
   it("draft nema snapshot; objava ga kreira i podiže status", async () => {
@@ -1178,5 +1197,128 @@ describe("R — naslovna sekcija je jedan izvor istine", () => {
 
     expect(snapshot.hero?.subtitle).toBe("Šta stvarno pomaže koži");
     expect(snapshot.hero?.image?.src).toBe("https://cdn.example.com/hero.jpg");
+  });
+});
+
+describe("S — E1 taxonomy publication boundary", () => {
+  it("saves working metadata, publishes it, and keeps public discovery on the snapshot", async () => {
+    await setTaxonomyPreset("skincare");
+    const created = await json<{ item: Item }>(
+      await createContent(
+        request({
+          title: "Crvenilo ili rozacea",
+          slug: "crvenilo-ili-rozacea",
+          kind: "article",
+          topicKey: "conditions",
+          intentKey: "recognize",
+          accessMode: "public",
+          blocks: ALL_TWELVE_BLOCKS,
+        }),
+      ),
+    );
+    const id = String(created.item._id);
+    expect(created.item).toMatchObject({
+      topicKey: "conditions",
+      intentKey: "recognize",
+    });
+
+    expect((await publishContent(request(), params(id))).status).toBe(200);
+    expect((await readRaw(id)).publishedSnapshot).toMatchObject({
+      topicKey: "conditions",
+      intentKey: "recognize",
+    });
+
+    await saveContent(
+      request({ topicKey: "protection", intentKey: "care" }),
+      params(id),
+    );
+    expect(await readRaw(id)).toMatchObject({
+      topicKey: "protection",
+      intentKey: "care",
+    });
+    expect((await listPublicEducationContent(TENANT))[0]).toMatchObject({
+      topicKey: "conditions",
+      intentKey: "recognize",
+    });
+
+    expect((await publishContent(request(), params(id))).status).toBe(200);
+    expect((await listPublicEducationContent(TENANT))[0]).toMatchObject({
+      topicKey: "protection",
+      intentKey: "care",
+    });
+  });
+
+  it("rejects arbitrary and workspace-unsupported taxonomy values server-side", async () => {
+    const arbitrary = await createContent(
+      request({
+        title: "Arbitrary",
+        kind: "article",
+        topicKey: "marketing",
+        intentKey: "sell",
+        accessMode: "public",
+        blocks: ALL_TWELVE_BLOCKS,
+      }),
+    );
+    expect(arbitrary.status).toBe(400);
+
+    const unsupportedWorkspace = await createContent(
+      request({
+        title: "Known elsewhere",
+        kind: "article",
+        topicKey: "conditions",
+        intentKey: "recognize",
+        accessMode: "public",
+        blocks: ALL_TWELVE_BLOCKS,
+      }),
+    );
+    expect(unsupportedWorkspace.status).toBe(400);
+  });
+
+  it("requires both classifications only for a new public/gated publication", async () => {
+    await setTaxonomyPreset("skincare");
+    const publicDraft = await json<{ item: Item }>(
+      await createContent(
+        request({
+          title: "Neklasifikovan javni tekst",
+          kind: "article",
+          accessMode: "public",
+          blocks: ALL_TWELVE_BLOCKS,
+        }),
+      ),
+    );
+    expect(
+      (await publishContent(request(), params(String(publicDraft.item._id)))).status,
+    ).toBe(400);
+
+    const privateDraft = await json<{ item: Item }>(
+      await createContent(
+        request({
+          title: "Privatan plan",
+          kind: "article",
+          accessMode: "private",
+          blocks: ALL_TWELVE_BLOCKS,
+        }),
+      ),
+    );
+    expect(
+      (await publishContent(request(), params(String(privateDraft.item._id)))).status,
+    ).toBe(200);
+  });
+
+  it("keeps an already published legacy snapshot discoverable without guessing taxonomy", async () => {
+    await setTaxonomyPreset(null);
+    const id = await createPublishedV1();
+    await setTaxonomyPreset("skincare");
+
+    const [summary] = await listPublicEducationContent(TENANT);
+    expect(summary.slug).toBe("estetika-lica");
+    expect(summary).not.toHaveProperty("topicKey");
+    expect(summary).not.toHaveProperty("intentKey");
+    expect(await getPublicEducationContent(TENANT, "estetika-lica")).not.toBeNull();
+
+    expect((await publishContent(request(), params(id))).status).toBe(400);
+    expect((await listPublicEducationContent(TENANT))[0].slug).toBe(
+      "estetika-lica",
+    );
   });
 });
