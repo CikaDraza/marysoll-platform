@@ -43,8 +43,6 @@ import {
   getAppointmentPreBenefitBasis,
 } from "./pricingSnapshot";
 import { formatServicePrice, PRICE_ON_REQUEST_LABEL } from "@/helpers/formatPrice";
-import { appointmentSettlement } from "@/lib/payments/intents";
-import { toMajor, toMinor, violatesChargedFloor } from "@/lib/platform/payments-client";
 import type { IAppointmentPricing } from "@/types";
 
 // ─── Ulaz ─────────────────────────────────────────────────────────────────────
@@ -105,16 +103,6 @@ export interface CheckoutPreview {
   expectedEarning: CheckoutExpectedEarning;
   loyaltyEnabled: boolean;
   alreadyCompleted: boolean;
-  /**
-   * Novac koji je za ovaj termin prošao KROZ PLATFORMU (depozit, online
-   * uplata) — u celim dinarima. Ono što je salon naplatio direktno (keš) se
-   * ovde NE pojavljuje; to je razlika prema `chargedAmount`.
-   *
-   * Izvedeno iz ledgera, nikad keširano na terminu.
-   */
-  paidOnline: number;
-  /** Koliko još treba naplatiti; `null` kada ukupna cena nije poznata. */
-  remainingDue: number | null;
 }
 
 interface CheckoutAppointment extends BenefitPricedAppointment {
@@ -371,15 +359,6 @@ export async function previewAppointmentCheckout(input: {
     spend: chargedAmountDefault,
   });
 
-  // Novac koji je prošao kroz platformu. Ne dira `chargedAmountDefault` —
-  // vlasnica i dalje potvrđuje UKUPNO naplaćeno, a ova dva reda samo pokazuju
-  // koliko je od toga već stiglo online.
-  const settlement = await appointmentSettlement({
-    tenantId: String(appointment.tenantId),
-    appointmentId: String(appointment._id),
-    amountDueMinor: amountDue == null ? null : toMinor(amountDue),
-  });
-
   return {
     currency,
     priceBeforeBenefit: basis,
@@ -404,11 +383,6 @@ export async function previewAppointmentCheckout(input: {
     expectedEarning: earning,
     loyaltyEnabled: enabled,
     alreadyCompleted: appointment.status === "completed",
-    paidOnline: toMajor(settlement.capturedMinor),
-    remainingDue:
-      settlement.remainingDueMinor == null
-        ? null
-        : toMajor(settlement.remainingDueMinor),
   };
 }
 
@@ -531,29 +505,6 @@ export async function completeAppointmentCheckout(input: {
       pricing ?? emptyPricingSnapshot(currency),
       chargedInput,
       by,
-    );
-  }
-
-  // ── Račun ne sme da vredi manje od novca koji je stigao ──────────────
-  // Kršenje je integritetska greška, ne validacija forme: hvata slučaj kada je
-  // vlasnica ukucala 2.000 a klijentkinja online platila 3.000, i depozit koji
-  // niko nije uračunao. Bez ijedne uplate provera ne važi, pa se zatečeno
-  // ponašanje ne menja.
-  const settlement = await appointmentSettlement({
-    tenantId: String(appointment.tenantId),
-    appointmentId: String(appointment._id),
-    amountDueMinor: null,
-  });
-  const finalCharged = chargedInput ?? benefit?.finalPrice ?? null;
-  if (
-    violatesChargedFloor({
-      chargedMinor: finalCharged == null ? null : toMinor(finalCharged),
-      capturedMinor: settlement.capturedMinor,
-    })
-  ) {
-    throw new LoyaltyRedemptionError(
-      "INVALID",
-      `Naplaćeno (${finalCharged ?? "nije uneto"}) je manje od iznosa koji je već plaćen online (${toMajor(settlement.capturedMinor)}). Proverite iznos.`,
     );
   }
 

@@ -30,10 +30,10 @@ function finding(
 }
 
 describe("integrity registry", () => {
-  it("sadrži tačno 15 provera iz spec-a, jedinstvene ključeve", () => {
-    expect(INTEGRITY_CHECKS).toHaveLength(15);
+  it("sadrži tačno 14 provera iz spec-a, jedinstvene ključeve", () => {
+    expect(INTEGRITY_CHECKS).toHaveLength(14);
     const keys = INTEGRITY_CHECKS.map((c) => c.key);
-    expect(new Set(keys).size).toBe(15);
+    expect(new Set(keys).size).toBe(14);
     expect(keys).toEqual([
       "client.identity.duplicates",
       "client.identity.mergedReferences",
@@ -49,12 +49,11 @@ describe("integrity registry", () => {
       "tenant.ownership.orphanAccount",
       "notifications.push.subscriptions",
       "payments.webhook.stuck",
-      "payment.appointment.overpaid",
     ]);
   });
 
-  it("razdvaja 13 tenant provera od dve platform provere", () => {
-    expect(INTEGRITY_CHECKS.filter((check) => check.scope === "tenant")).toHaveLength(13);
+  it("razdvaja 12 tenant provera od dve platform provere", () => {
+    expect(INTEGRITY_CHECKS.filter((check) => check.scope === "tenant")).toHaveLength(12);
     expect(INTEGRITY_CHECKS.filter((check) => check.scope === "platform").map((check) => check.key))
       .toEqual(["tenant.ownership.orphanAccount", "payments.webhook.stuck"]);
     expect(getCheckDefinition("tenant.ownership.missing").scope).toBe("tenant");
