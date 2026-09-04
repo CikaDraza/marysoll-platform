@@ -156,6 +156,7 @@ Ovo se **ne** premešta u NEXT bez nove product odluke.
 
 | Šta | Kada |
 |---|---|
+| **Client 360 Top 3: klijent čiji se dosije gleda nije bio na listi** — otvoren dosije, a prikazane tri druge osobe bez ijednog podatka o njoj. Sada je uvek na listi, sa stvarnim rednim brojem u odnosu na sve ([Client 360 §H](PANTA-CLIENT-360.md)) | 2026-09-04, grana `feat/client360-viewer-rank` |
 | **Paddle webhook idempotencija** — `event_id` se nije čuvao, pa je ponovljen `subscription.canceled` obarao salon koji plaća na besplatan plan. Uz to: svežina potpisa, zaštita od prestizanja, `payments.webhook.stuck` integrity check | 2026-09-04, grana `fix/paddle-webhook-idempotency` |
 | **theme-1 dimenzije slika** — `next/image` je nosio veličinu prikaza umesto odnosa stranica; uz to `preload` za LCP element | 2026-09-03 |
 
