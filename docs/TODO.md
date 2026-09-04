@@ -244,6 +244,7 @@ Canonical detalji, classification vocabulary i presentation/autosave contracts:
 | **H2 Registration bez hybrid izbora** | posle H1 | „Kreiraj Salon" ili „Kreiraj Edu Centar"; postojeći owner može dodati novi workspace pod istim loginom |
 | **H3 Existing hybrid migration** | posle H1/H2 | Podeliti hybrid na Salon + Education tenant uz eksplicitna pravila za EducationContent, settings, blog, branding, domen i education clients/assignments; Beauty ostaje Salonu |
 | **H4 `verticals[]` kao interni mehanizam** | posle H3 | Ne mora odmah nestati, ali više nije product UX model niti razlog da Salon i Edu dele sajt |
+| **CPU metrika u superadmin panelu** | `platformUsage.ts` | Danas hardkodovan `null`; traži Atlas Admin API + klaster **M10+** (M0 ne izlaže hardverske metrike). Storage i konekcije rade i sada, preko obične konekcije. Okidač: prelazak na M10 kad broj tenanta preraste free tier (procena ~20+). Atlas Service Account do tada nije potreban — pušten je da istekne 2026-09 |
 | **F4 Growth Content Coach** | posle pilot closure-a | Saveti za konkretan problem, search intent, naslov i CTA; nije AI generator generičkih tekstova |
 | **F5 Marketing Center** | posle Content Coach-a | Objavljen sadržaj → brand-aware cover, carousel, Story, Reel, newsletter teaser i CTA iz tenant design system-a |
 | **F6 Superadmin trend/marketing knowledge** | budući Growth OS | Održava prompt/knowledge sloj, SEO/title/social obrasce, smernice i industry primere |
