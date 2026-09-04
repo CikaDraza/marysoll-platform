@@ -1064,6 +1064,38 @@ Kada autor nije napisao opis, zaglavlje ostaje bez uvodnog pasusa. To je
 namerno: prazno mesto je signal autoru, a SEO tekst na tom mestu je pogrešan
 sadržaj koji izgleda ispravno.
 
+**Taxonomy nema podrazumevani izbor — odluka (2026-09-05):**
+
+`topicKey` i `intentKey` ostaju NEPOSTAVLJENI za svaki novi sadržaj, u sva tri
+start moda. Razlog nije ukus nego postojeći ugovor: publish ruta već odbija
+javno otkriven sadržaj bez oba ključa („Tema i pristup teksta su obavezni pre
+javne objave"). Podrazumevani izbor bi tu proveru tiho zadovoljio i svaki
+nepregledan tekst svrstao pod istu temu — a pogrešna oznaka u javnom filteru je
+gora od nijedne.
+
+Editor zato uslov POKAZUJE pre objave: sekcija 2 ispisuje šta nedostaje dok je
+sadržaj javan ili zaključan, umesto da vlasnica sazna tek kad objava padne.
+Zaključano je u `authoringStart.test.ts` i `education-content-editor-model.test.ts`
+— ni jedan šav početnog stanja ne sme da ubaci vrednost, a `createPayload` ne
+šalje ključ koji vlasnica nije izabrala.
+
+**Link i SEO nisu „napredna podešavanja" (2026-09-05):**
+
+Adresa pod kojom sadržaj živi i tekst kojim se pojavljuje u pretrazi bili su
+sklopljeni u Disclosure panel „Napredna podešavanja" — i sakriveni, i svrstani u
+isti koš sa podešavanjima koja niko ne dira. Sada je to obična, otvorena sekcija
+„7 · Link i SEO", kao i svaka druga:
+
+- polje se zove **Link sadržaja** i prikazuje javni prefiks `/edukacija/`, pa se
+  vidi šta se tačno menja;
+- SEO naslov, opis i slika za deljenje stoje odmah ispod, bez sklapanja, i samo
+  za javan i zaključan sadržaj — privatan nema javnu stranu;
+- sekcija izričito kaže da se na strani prikazuju naslov i kratak opis iz
+  sekcije 1, a ne SEO tekst (vidi „SEO nije izvor vidljivog sadržaja").
+
+Sekcija 6 je „Pristup", bez „/ objavljivanje": ona bira KO sme da vidi, dok
+objavu pokreće dugme u zaglavlju.
+
 **Telo članka: `.edu-prose` je jedini vlasnik rasporeda (2026-09-05):**
 
 Blokovi Content Composer-a dele se sa newsletterom i nose svoje landing omotače

@@ -469,3 +469,52 @@ describe("pomeranje bez vidljivog partnera ne prlja dokument", () => {
     expect(blocks[0].id).toBe(anchoredId);
   });
 });
+
+/**
+ * Taxonomy default je odlučen: NEMA ga. Vidi `authoringStart.test.ts` za razlog
+ * — ovde se zaključava da ni jedan šav početnog stanja ne ubaci vrednost.
+ */
+describe("početno stanje ne bira temu ni cilj", () => {
+  it.each(["article", "import", "video"] as const)(
+    "%s start ostavlja oba ključa nepostavljena",
+    (mode) => {
+      const state = initializeEducationEditorState(
+        undefined,
+        mode,
+        (() => {
+          let n = 0;
+          return () => `tax-${mode}-${++n}`;
+        })(),
+      );
+
+      expect(state.topicKey).toBeUndefined();
+      expect(state.intentKey).toBeUndefined();
+    },
+  );
+
+  it("prvo čuvanje ne šalje temu ni cilj koje vlasnica nije izabrala", () => {
+    const state = initializeEducationEditorState(
+      undefined,
+      "article",
+      (() => {
+        let n = 0;
+        return () => `payload-${++n}`;
+      })(),
+    );
+    const payload = createPayload({ ...state, title: "Bez teme" });
+
+    expect(payload.topicKey).toBeUndefined();
+    expect(payload.intentKey).toBeUndefined();
+  });
+
+  it("postojeći zapis zadržava svoj izbor", () => {
+    const state = initializeEducationEditorState(
+      { ...record, topicKey: "conditions", intentKey: "care" },
+      "video",
+      () => "unused",
+    );
+
+    expect(state.topicKey).toBe("conditions");
+    expect(state.intentKey).toBe("care");
+  });
+});

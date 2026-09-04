@@ -1,5 +1,3 @@
-import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/react";
-import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { ContentBlocksEditor } from "@/components/content-composer/editor/ContentBlocksEditor";
 import {
   AssetMediaField,
@@ -115,7 +113,7 @@ export function EducationTaxonomySection({
     <EducationEditorSection
       number="2 · Tema i cilj teksta"
       title="Usmerite čitaoca"
-      description="Izaberite jednu temu i jedan cilj. Ovi podaci pomažu čitaocu da pronađe pravi sadržaj."
+      description="Izaberite jednu temu i jedan cilj. Po njima čitalac filtrira sadržaj na javnoj strani, pa ih objava javnog sadržaja traži — podrazumevanog izbora namerno nema."
     >
       <EducationTaxonomyPicker
         taxonomy={taxonomy}
@@ -124,6 +122,21 @@ export function EducationTaxonomySection({
         onTopicChange={(topicKey) => onChange({ topicKey })}
         onIntentChange={(intentKey) => onChange({ intentKey })}
       />
+      {/* Isti uslov koji publish ruta proverava — vidljiv pre nego što objava
+          padne, a ne kao poruka o grešci posle klika. */}
+      {(!state.topicKey || !state.intentKey) &&
+        state.accessMode !== "private" && (
+          <p
+            role="status"
+            className="mt-4 text-xs font-medium text-amber-700 dark:text-amber-300"
+          >
+            {!state.topicKey && !state.intentKey
+              ? "Izaberite temu i cilj — bez njih javna objava nije moguća."
+              : !state.topicKey
+                ? "Izaberite temu — bez nje javna objava nije moguća."
+                : "Izaberite cilj — bez njega javna objava nije moguća."}
+          </p>
+        )}
     </EducationEditorSection>
   );
 }
@@ -292,8 +305,9 @@ export function EducationAccessSection({
 }) {
   return (
     <EducationEditorSection
-      number="6 · Pristup / objavljivanje"
+      number="6 · Pristup"
       title="Ko može da vidi"
+      description="Odlučuje ko sme da otvori sadržaj kad bude objavljen. Samo objavljivanje pokreće dugme „Objavi” u vrhu strane."
     >
       <fieldset>
         <legend className="sr-only">Ko može da vidi</legend>
@@ -381,7 +395,14 @@ export function EducationAccessSection({
   );
 }
 
-export function EducationAdvancedSettings({
+/**
+ * Link i SEO stoje otvoreni, kao i svaka druga sekcija.
+ *
+ * Bili su sklopljeni u „Napredna podešavanja": adresa pod kojom sadržaj živi
+ * i tekst kojim se pojavljuje u pretrazi nisu napredna podešavanja nego deo
+ * objave. Sklopljeni panel ih je i sakrivao i stavljao u isti koš.
+ */
+export function EducationLinkAndSeoSection({
   state,
   slugPreview,
   hasCustomSeo,
@@ -395,38 +416,45 @@ export function EducationAdvancedSettings({
   onChange: (changes: Partial<EducationEditorState>) => void;
 }) {
   return (
-    <Disclosure
-      as="section"
-      className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
+    <EducationEditorSection
+      number="7 · Link i SEO"
+      title="Adresa sadržaja i prikaz u pretrazi"
+      description={
+        hasCustomSeo
+          ? "Prilagođeni SEO podaci su podešeni."
+          : "SEO polja su opciona — bez njih se koriste naslov i kratak opis."
+      }
     >
-      <DisclosureButton className="group flex w-full items-center justify-between gap-3 px-5 py-5 text-left sm:px-6">
-        <span>
-          <span className="text-xs font-bold uppercase tracking-widest text-violet-500">
-            7 · Napredna podešavanja
-          </span>
-          <span className="mt-1 block font-bold text-gray-900 dark:text-white">
-            Web adresa i SEO
-          </span>
-          <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">
-            {hasCustomSeo ? "Prilagođeni SEO podaci su podešeni." : "Automatske vrednosti su dovoljne za objavu."}
-          </span>
-        </span>
-        <ChevronDownIcon className="size-5 shrink-0 text-gray-500 transition group-data-open:rotate-180" />
-      </DisclosureButton>
-      <DisclosurePanel className="space-y-5 border-t border-gray-200 px-5 py-5 sm:px-6 dark:border-gray-800">
-        <label>
+      <div className="space-y-5">
+        <label className="block">
           <span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">
-            Web adresa
+            Link sadržaja
           </span>
-          <input
-            value={state.slugTouched ? state.slug : slugPreview}
-            onChange={(event) => onChange({ slug: event.target.value, slugTouched: true })}
-            placeholder="kako-prepoznati-dehidriranu-kozu"
-            className={EDUCATION_FIELD_CLASS}
-          />
+          <span className="mb-2 block text-xs leading-5 text-gray-500 dark:text-gray-400">
+            Adresa pod kojom je sadržaj javno dostupan. Popunjava se iz naslova;
+            promenite je samo ako zaista treba — objavljena adresa je link koji
+            je već negde podeljen.
+          </span>
+          {/* Prefiks je deo adrese, pa se vidi: polje nosi samo ono što se menja. */}
+          <span
+            className={`${EDUCATION_FIELD_CLASS} flex items-center gap-0 px-0 py-0 focus-within:border-violet-500`}
+          >
+            <span className="shrink-0 border-r border-gray-200 py-2.5 pr-3 pl-3 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+              /edukacija/
+            </span>
+            <input
+              value={state.slugTouched ? state.slug : slugPreview}
+              onChange={(event) =>
+                onChange({ slug: event.target.value, slugTouched: true })
+              }
+              placeholder="kako-prepoznati-dehidriranu-kozu"
+              className="w-full min-w-0 bg-transparent px-3 py-2.5 text-sm text-gray-900 outline-none dark:text-white"
+            />
+          </span>
         </label>
+
         {state.accessMode !== "private" && (
-          <div className="grid gap-4">
+          <div className="grid gap-4 border-t border-gray-200 pt-5 dark:border-gray-800">
             <label>
               <span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">
                 SEO naslov
@@ -457,9 +485,13 @@ export function EducationAdvancedSettings({
               asset={state.seo.ogImage ? { src: state.seo.ogImage } : undefined}
               onChange={(asset) => onChange({ seo: { ...state.seo, ogImage: asset?.src } })}
             />
+            <p className="text-xs leading-5 text-gray-500 dark:text-gray-400">
+              Ova polja se koriste samo u pretrazi i pri deljenju linka. Na samoj
+              strani se prikazuju naslov i kratak opis iz sekcije 1.
+            </p>
           </div>
         )}
-      </DisclosurePanel>
-    </Disclosure>
+      </div>
+    </EducationEditorSection>
   );
 }

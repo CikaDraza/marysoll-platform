@@ -50,4 +50,24 @@ describe("Education authoring start mode", () => {
   it("postojeći video ostaje video i uz stale article parametar", () => {
     expect(educationAuthoringMode({ kind: "video" }, "article")).toBe("video");
   });
+
+  /**
+   * ODLUKA: taxonomy NEMA podrazumevani izbor.
+   *
+   * `topicKey` i `intentKey` su javni filteri na `/edukacija`, a publish ruta
+   * ih već traži za svaki javno otkriven sadržaj („Tema i pristup teksta su
+   * obavezni pre javne objave"). Podrazumevani izbor bi tu proveru tiho
+   * zadovoljio i svaki nepregledan tekst svrstao pod istu temu — pogrešna
+   * oznaka je gora od nijedne. Zato ostaje eksplicitan izbor, a editor uslov
+   * pokazuje pre objave umesto da javi grešku posle klika.
+   */
+  it.each(["article", "import", "video"] as const)(
+    "%s start ne izmišlja temu ni cilj",
+    (mode) => {
+      const seed = educationNewEditorSeed(mode, ids);
+
+      expect(seed).not.toHaveProperty("topicKey");
+      expect(seed).not.toHaveProperty("intentKey");
+    },
+  );
 });

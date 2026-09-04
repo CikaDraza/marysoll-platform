@@ -47,7 +47,7 @@ import {
 } from "./education-content-editor-model";
 import {
   EducationAccessSection,
-  EducationAdvancedSettings,
+  EducationLinkAndSeoSection,
   EducationBasicSection,
   EducationCoverSection,
   EducationDownloadSection,
@@ -633,7 +633,7 @@ export default function EducationContentEditor({
             />
           )}
 
-          <EducationAdvancedSettings
+          <EducationLinkAndSeoSection
             state={state}
             slugPreview={slugPreview}
             hasCustomSeo={hasCustomSeo}
