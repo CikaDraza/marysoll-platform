@@ -91,11 +91,13 @@ async function loadClientPeriodComparison(input: {
   end: Date;
 }): Promise<ClientPeriodComparison> {
   if (!input.enabled) return { topClientRows: [] };
+  // BEZ `$limit`: rang klijenta koji se gleda ne može da se izračuna iz prve
+  // tri stavke. Grupisanje ide po klijentima koji su BOOKIRALI u tom mesecu,
+  // pa je rezultat reda veličine mesečnog broja termina — ne cele baze.
   const topClientRows = await Appointment.aggregate<TopClientAggregateRow>([
     { $match: { tenantId: input.tenantId, createdAt: { $gte: input.start, $lt: input.end } } },
     { $group: { _id: { profileId: "$clientProfileId", email: "$clientEmail" }, name: { $first: "$clientName" }, count: { $sum: 1 } } },
-    { $sort: { count: -1 } },
-    { $limit: 3 },
+    { $sort: { count: -1, "_id.email": 1 } },
   ]);
   return { topClientRows };
 }
@@ -129,13 +131,60 @@ async function loadClientRelationshipRows(input: {
   return { potentialRows, realizedRows, total, completed, cancelled, noShow, lastVisit, nextAppointment };
 }
 
-function mapTopClients(rows: readonly TopClientAggregateRow[]) {
-  return rankTopClients(rows.map((entry) => ({
+function toRankedClients(rows: readonly TopClientAggregateRow[]) {
+  return rows.map((entry) => ({
     clientId: entry._id.profileId ? String(entry._id.profileId) : null,
     name: entry.name ?? entry._id.email ?? "Klijent",
     email: entry._id.email ?? "",
     count: entry.count,
-  })));
+  }));
+}
+
+/**
+ * Top 3 za period, uz OBAVEZAN red klijenta čiji se dosije gleda.
+ *
+ * Tabela bez njega odgovara na pitanje koje niko nije postavio: otvorili ste
+ * dosije Slađane, a vidite tri druge osobe i nijedan podatak o njoj. Zato se
+ * njen red uvek prikazuje — u Top 3 ako joj je tamo mesto, inače dopisan
+ * ispod, sa STVARNIM rednim brojem u odnosu na sve klijente.
+ *
+ * `rank` je POZICIJA u poretku, ne takmičarski rang: kad četvoro ima po jedan
+ * termin, ona je četvrta, ne prva. Kad nema nijedan termin u tom mesecu, dolazi
+ * odmah iza svih koji ih imaju — otud „8." kad je osmoro bookiralo.
+ *
+ * Izjednačeni se razrešavaju po mejlu (deterministički), jer redosled među
+ * jednakima nije poslovna informacija — bitno je samo da je stabilan.
+ */
+export function buildTopClients(
+  rows: readonly TopClientAggregateRow[],
+  viewerClientId: string,
+  viewerName: string,
+) {
+  const ranked = toRankedClients(rows);
+  const top = rankTopClients(ranked).map((entry, index) => ({
+    ...entry,
+    rank: index + 1,
+    isViewer: entry.clientId === viewerClientId,
+  }));
+
+  if (top.some((entry) => entry.isViewer)) return top;
+
+  const viewerIndex = ranked.findIndex((entry) => entry.clientId === viewerClientId);
+  const viewer = viewerIndex >= 0 ? ranked[viewerIndex] : null;
+
+  return [
+    ...top,
+    {
+      clientId: viewerClientId,
+      name: viewer?.name ?? viewerName,
+      email: viewer?.email ?? "",
+      // Bez ijednog termina u periodu prikazuje se nula, ne prazno polje.
+      count: viewer?.count ?? 0,
+      // Nije bookirala → staje odmah iza svih koji jesu.
+      rank: viewerIndex >= 0 ? viewerIndex + 1 : ranked.length + 1,
+      isViewer: true,
+    },
+  ];
 }
 
 function mapClient(client: ClientRow): ClientOverview["client"] {
@@ -209,8 +258,13 @@ export async function getClientOverview(params: {
       resolveTenantCapability(params.tenantId, "loyalty.rewards"),
     ]);
 
-  const topClients = mapTopClients(periodComparison.topClientRows);
-  const topThree = topClients.some((entry) => entry.clientId === params.clientId);
+  const topClients = buildTopClients(
+    periodComparison.topClientRows,
+    params.clientId,
+    client.name ?? "Klijent",
+  );
+  // „U Top 3" znači među prva tri, ne „na listi" — klijent je sada uvek na listi.
+  const topThree = topClients.some((entry) => entry.isViewer && entry.rank <= 3);
   const relationshipPotential = futureActivePotential(relationshipRows.potentialRows);
   const relationshipRealized = relationshipRealizedRevenue(relationshipRows.realizedRows);
 

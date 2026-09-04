@@ -18,14 +18,18 @@ export const CONTENT_BLOCK_LABELS: Record<LandingBlockType, string> = {
 export function BlockPicker({
   onPick,
   excludeTypes,
+  allowedTypes,
 }: {
   onPick: (type: LandingBlockType) => void;
   /** Host koji naslovnu sekciju već ima ne nudi hero — vidi Education editor. */
   excludeTypes?: readonly LandingBlockType[];
+  allowedTypes?: readonly LandingBlockType[];
 }) {
-  const available = excludeTypes
-    ? landingBlockTypes.filter((type) => !excludeTypes.includes(type))
-    : landingBlockTypes;
+  const available = landingBlockTypes.filter(
+    (type) =>
+      (!allowedTypes || allowedTypes.includes(type)) &&
+      (!excludeTypes || !excludeTypes.includes(type)),
+  );
 
   return (
     <div className="grid gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 sm:grid-cols-2 dark:border-gray-700 dark:bg-gray-900" aria-label="Izbor tipa bloka">

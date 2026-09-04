@@ -2,6 +2,7 @@
 /** BookingActions — Dugmad potvrde po toku (ulogovan / gost).
  *  Stanje čita iz BookingProvider konteksta — bez prop drilling-a. */
 
+import { bookingSelectionIncomplete } from "@/lib/booking/widgetPresentation";
 import { useBookingContext } from "./BookingProvider";
 
 export function BookingActions() {
@@ -25,10 +26,14 @@ export function BookingActions() {
     onCancelAppointment,
   } = useBookingContext();
 
-  /** Isti uslov koji koče sva dugmad potvrde. */
-  const selectionIncomplete =
-    manualSlotInvalid ||
-    (selectedService?.type === "variant" && !selectedVariant);
+  /** Isti uslov koji koči SVA dugmad potvrde — usluga, varijanta, datum, vreme. */
+  const selectionIncomplete = bookingSelectionIncomplete({
+    service: selectedService,
+    variantName: selectedVariant,
+    date: selectedDate,
+    time: selectedTime,
+    manualSlotInvalid,
+  });
 
   // Prvi korak usluge sa zahtevom vodi na „Sledeće", ne na zakazivanje.
   if (intakeRequired && !onIntakeStep) {
@@ -53,7 +58,7 @@ export function BookingActions() {
         <button
           type="button"
           onClick={goToIntakeStep}
-          disabled={selectionIncomplete || !selectedDate || !selectedTime}
+          disabled={selectionIncomplete}
           className="px-5 py-2 text-sm font-semibold text-white bg-(--primary-color)/90 hover:bg-(--primary-color) rounded-xl transition disabled:opacity-50 cursor-pointer"
         >
           Sledeće →

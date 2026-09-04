@@ -76,7 +76,7 @@ const SECTION_BLOCK_MAP: Record<
     sectionType: "content",
     blockType: "content.audience-paths",
   },
-  topicHub: { sectionType: "content", blockType: "content.topic-hub" },
+  topicHub: { sectionType: "content", blockType: "education.topic-hub" },
   guidedCareProcess: {
     sectionType: "content",
     blockType: "content.guided-care-process",

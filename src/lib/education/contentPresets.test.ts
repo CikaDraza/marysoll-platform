@@ -6,6 +6,7 @@ import { canSeedPreset } from "@/components/education/education-content-editor-m
 import {
   educationPresetBlocks,
   missingRequiredVideoSource,
+  primaryVideoBlockId,
 } from "./contentPresets";
 
 let counter = 0;
@@ -135,5 +136,40 @@ describe("video izvor je obavezan za video sadržaj", () => {
     for (const kind of ["article", "advice", "guide", "material"] as const) {
       expect(missingRequiredVideoSource(kind, [])).toBe(false);
     }
+  });
+
+  /**
+   * Primarni video je nosilac zapisa: on je prvi u canonical redosledu i host
+   * ga drži na mestu. Isti blok u članku nema to svojstvo.
+   */
+  describe("primarni video", () => {
+    const videoBlocks = educationPresetBlocks("video", ids);
+
+    it("video zapis počinje video blokom i on je usidren", () => {
+      expect(videoBlocks[0].type).toBe("VideoBlock");
+      expect(primaryVideoBlockId("video", videoBlocks)).toBe(videoBlocks[0].id);
+    });
+
+    it("usidren je prvi video i kada zapis ima još jedan", () => {
+      const extra = [...videoBlocks, { ...videoBlocks[0], id: "drugi" }];
+
+      expect(primaryVideoBlockId("video", extra)).toBe(videoBlocks[0].id);
+    });
+
+    it("članak sa video blokom nema usidren video", () => {
+      for (const kind of ["article", "advice", "guide", "material"] as const) {
+        expect(primaryVideoBlockId(kind, videoBlocks)).toBeNull();
+      }
+    });
+
+    it("video zapis bez video bloka nema šta da usidri", () => {
+      expect(
+        primaryVideoBlockId("video", educationPresetBlocks("article", ids)),
+      ).toBeNull();
+    });
+
+    it("objava i dalje traži vidljiv izvor primarnog videa", () => {
+      expect(missingRequiredVideoSource("video", videoBlocks)).toBe(true);
+    });
   });
 });

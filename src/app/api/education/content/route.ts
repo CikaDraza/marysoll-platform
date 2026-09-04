@@ -19,6 +19,7 @@ import {
   slugTakenResponse,
 } from "@/lib/education/content-authority";
 import { EducationContent } from "@/models/EducationContent";
+import { validateEducationClassificationForTenant } from "@/lib/education/taxonomy-server";
 
 export async function GET(request: Request) {
   try {
@@ -31,7 +32,7 @@ export async function GET(request: Request) {
       // Bez blokova: lista je pregled, ne sadržaj. Stanje objave je ovde jer
       // „Objavljeno · neobjavljene izmene" ne može da se izvede iz root polja.
       .select(
-        "title slug kind accessMode visibility hero status updatedAt workingSavedAt " +
+        "title slug kind topicKey intentKey accessMode visibility hero status updatedAt workingSavedAt " +
           "publishedSnapshot.accessMode publishedSnapshot.visibility " +
           "publishedSnapshot.publishedAt",
       )
@@ -57,6 +58,13 @@ export async function POST(request: Request) {
         metadata.error.issues[0]?.message ?? "Podaci o sadržaju nisu ispravni",
       );
     }
+    const classification = await validateEducationClassificationForTenant(
+      authority.tenantId,
+      metadata.data,
+    );
+    if (!classification.ok) {
+      return metadataFailureResponse(classification.error);
+    }
 
     const blocks = Array.isArray(body.blocks) ? body.blocks : [];
     const validation = validateContentDocument(blocks, "draft");
@@ -79,6 +87,8 @@ export async function POST(request: Request) {
       title: metadata.data.title,
       slug,
       kind: metadata.data.kind,
+      topicKey: metadata.data.topicKey,
+      intentKey: metadata.data.intentKey,
       accessMode: metadata.data.accessMode,
       hero: metadata.data.hero,
       publicPreview: metadata.data.publicPreview,

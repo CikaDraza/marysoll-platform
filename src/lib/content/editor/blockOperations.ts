@@ -22,6 +22,8 @@ export function addBlock(
   options: {
     afterBlockId?: string | null;
     idFactory?: ContentBlockIdFactory;
+    /** Blok koji je po ugovoru prvi (npr. primarni video) ide na početak. */
+    atStart?: boolean;
   } = {},
 ): ContentBlock[] {
   const nextBlock = createDraftContentBlock(
@@ -32,7 +34,11 @@ export function addBlock(
   const selectedIndex = options.afterBlockId
     ? blocks.findIndex(({ id }) => id === options.afterBlockId)
     : -1;
-  const insertAt = selectedIndex >= 0 ? selectedIndex + 1 : blocks.length;
+  const insertAt = options.atStart
+    ? 0
+    : selectedIndex >= 0
+      ? selectedIndex + 1
+      : blocks.length;
   const next = [...blocks];
   next.splice(insertAt, 0, nextBlock);
   return normalizePriorities(next);
@@ -46,18 +52,47 @@ export function replaceBlock(
   return blocks.map((block) => (block.id === blockId ? replacement : block));
 }
 
+/**
+ * Pomeranje u odnosu na VIDLJIVI spisak, ne u odnosu na canonical susedstvo.
+ *
+ * Host sme da prikaže samo deo `blocks` (npr. Education odvaja video i
+ * materijal za preuzimanje u zasebne sekcije). Strelice tada predstavljaju ono
+ * što autor vidi: blok menja mesto sa prethodnim/sledećim VIDLJIVIM blokom, a
+ * sve preskočeno ostaje na svom canonical mestu. Bez ovoga klik na strelicu
+ * menja `blocks[]` bez ijedne vidljive promene — i tiho pravi novu reviziju.
+ */
+export function moveBlockRelativeToVisible(
+  blocks: readonly ContentBlock[],
+  visibleBlockIds: readonly string[],
+  blockId: string,
+  direction: -1 | 1,
+): ContentBlock[] {
+  const visibleIndex = visibleBlockIds.indexOf(blockId);
+  if (visibleIndex < 0) return [...blocks];
+
+  const partnerId = visibleBlockIds[visibleIndex + direction];
+  if (partnerId === undefined) return [...blocks];
+
+  const from = blocks.findIndex(({ id }) => id === blockId);
+  const to = blocks.findIndex(({ id }) => id === partnerId);
+  if (from < 0 || to < 0) return [...blocks];
+
+  const next = [...blocks];
+  [next[from], next[to]] = [next[to], next[from]];
+  return normalizePriorities(next);
+}
+
 export function moveBlock(
   blocks: readonly ContentBlock[],
   blockId: string,
   direction: -1 | 1,
 ): ContentBlock[] {
-  const from = blocks.findIndex(({ id }) => id === blockId);
-  const to = from + direction;
-  if (from < 0 || to < 0 || to >= blocks.length) return [...blocks];
-
-  const next = [...blocks];
-  [next[from], next[to]] = [next[to], next[from]];
-  return normalizePriorities(next);
+  return moveBlockRelativeToVisible(
+    blocks,
+    blocks.map(({ id }) => id),
+    blockId,
+    direction,
+  );
 }
 
 function cloneBlock(block: ContentBlock): ContentBlock {

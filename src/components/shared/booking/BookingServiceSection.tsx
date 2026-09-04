@@ -21,6 +21,7 @@ export function BookingServiceSection() {
     totalDuration,
     priceLines,
     priceNote,
+    pricePendingSelection,
     totalPriceLabel,
   } = useBookingContext();
 
@@ -262,11 +263,18 @@ export function BookingServiceSection() {
                   ? "Trenutna procena"
                   : "Ukupno"}
             </div>
-            <div className="text-xs text-gray-400">{totalDuration} min</div>
+            {/* Dok obavezan izbor nije napravljen, trajanje je 0 samo zato što
+                se ne zna koja varijanta — „0 min" bi bio pogrešan podatak. */}
+            <div className="text-xs text-gray-400">
+              {pricePendingSelection ? "— min" : `${totalDuration} min`}
+            </div>
           </div>
           <div className="text-right">
             <div className="text-xl font-bold text-(--primary-color)">
-              {totalPriceLabel || "—"}
+              {/* Dok se čeka obavezan izbor valuta ostaje vidljiva, da se vidi
+                  da je to polje za cenu a ne prazan prostor. Bez izabrane
+                  usluge nema ni valute. */}
+              {totalPriceLabel || (pricePendingSelection ? "— RSD" : "—")}
             </div>
             {priceNote && (
               <div className="text-[11px] text-gray-500 mt-0.5 max-w-[16rem]">

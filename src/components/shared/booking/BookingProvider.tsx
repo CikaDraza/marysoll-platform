@@ -124,6 +124,8 @@ export interface BookingContextValue {
   priceLines: PriceLine[];
   /** Objašnjenje kada cena termina nije poznata; prazno inače. */
   priceNote: string;
+  /** Obavezan izbor još nije napravljen — cena i trajanje se prikazuju kao „—". */
+  pricePendingSelection: boolean;
   /** Prikaz ukupne cene: "1.500,00 RSD", "od 1.500,00 RSD" (deo je na upit),
    *  "Cena na upit" (sve je na upit) ili "" (ništa još nije izabrano). */
   totalPriceLabel: string;
@@ -475,6 +477,10 @@ export function BookingProvider({
 
   const totalPriceLabel = useMemo(() => {
     if (!estimate) return "";
+    // Obavezan izbor još nije napravljen: prikaz ćuti („—"), ne tvrdi da je
+    // usluga na upit. Usluga sa fiksnim varijantama cenu IMA — samo se ne zna
+    // koja dok se varijanta ne označi.
+    if (estimate.pendingSelection) return "";
     // Nepoznata osnovna cena: nikad ne prikazuj poznate dodatke kao cenu
     // termina — „od 700" bi izgledalo kao da termin košta 700.
     if (estimate.total == null) return PRICE_ON_REQUEST_LABEL;
@@ -483,9 +489,13 @@ export function BookingProvider({
   }, [estimate]);
 
   /** Poruka ispod ukupnog kada konačna cena tek treba da se odredi. */
-  const priceNote = estimate?.unknown
-    ? "Konačna cena biće potvrđena naknadno."
-    : "";
+  const priceNote =
+    estimate?.unknown && !estimate.pendingSelection
+      ? "Konačna cena biće potvrđena naknadno."
+      : "";
+
+  /** true → čeka se obavezan izbor; trajanje i cena se prikazuju kao „—". */
+  const pricePendingSelection = estimate?.pendingSelection ?? false;
 
   // Ime izbora koje ide u termin. Paket i jedna usluga nemaju izbor — samo
   // varijanta uz ime usluge ("Izlivanje noktiju - Veličina 2").
@@ -798,6 +808,7 @@ export function BookingProvider({
     totalDuration,
     priceLines,
     priceNote,
+    pricePendingSelection,
     totalPriceLabel,
     handleClose,
     // toast.error vraća string pa originalni handleri nisu striktno Promise<void>;

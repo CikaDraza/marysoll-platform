@@ -19,7 +19,14 @@ import type {
   ContentHeroData,
   ContentProfessionalPathData,
   ContentTopicHubData,
+  EducationTopicHubData,
 } from "@/lib/platform/blocks/types";
+import {
+  EDUCATION_TOPIC_HUB_MAX_ITEMS,
+  EDUCATION_TOPIC_HUB_MIN_ITEMS,
+  availableEducationTopics,
+  educationTopicHubItems,
+} from "@/lib/education/discovery";
 import { resolveHeroCtas } from "@/helpers/heroCta";
 import type { Theme9AboutProps } from "./AboutSection";
 import type { Theme9AudiencePathsProps } from "./AudiencePaths";
@@ -146,6 +153,45 @@ export function theme9TopicHubProps(
       tags: t.tags ?? [],
       href: t.href ? resolveHref(t.href) : undefined,
     })),
+  };
+}
+
+export function theme9EducationTopicHubProps(
+  data: EducationTopicHubData,
+  resolveHref: (href: string) => string,
+): Theme9TopicHubProps {
+  if (data.mode === "demo") {
+    return theme9TopicHubProps({ content: data.content }, resolveHref);
+  }
+
+  const topicLabels = new Map(
+    data.taxonomy?.topics.map(({ key, label }) => [key, label]) ?? [],
+  );
+  const intentLabels = new Map(
+    data.taxonomy?.intents.map(({ key, label }) => [key, label]) ?? [],
+  );
+  const liveItems =
+    educationTopicHubItems(data.items).length > 0 ? data.items : [];
+
+  return {
+    eyebrow: data.content?.eyebrow,
+    headline: data.content?.headline,
+    filters: availableEducationTopics(liveItems, data.taxonomy).map(
+      ({ key, label }) => ({ id: key, label }),
+    ),
+    topics: liveItems.map((item) => ({
+      id: item.slug,
+      group: item.topicKey,
+      title: item.title,
+      lead: item.description,
+      tags: [
+        item.topicKey ? topicLabels.get(item.topicKey) : undefined,
+        item.intentKey ? intentLabels.get(item.intentKey) : undefined,
+      ].filter((label): label is string => Boolean(label)),
+      href: resolveHref(`/edukacija/${item.slug}`),
+    })),
+    minItems: EDUCATION_TOPIC_HUB_MIN_ITEMS,
+    maxItems: EDUCATION_TOPIC_HUB_MAX_ITEMS,
   };
 }
 

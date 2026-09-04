@@ -21,6 +21,28 @@ describe("Tenant T2B persistence contract", () => {
     expect(tenant.capabilityConfiguration).toBeUndefined();
     expect(object).not.toHaveProperty("verticals");
     expect(object).not.toHaveProperty("capabilityConfiguration");
+    expect(object).not.toHaveProperty("educationTaxonomyPreset");
+  });
+
+  it("keeps Education taxonomy optional and accepts only explicit known presets", () => {
+    const configured = new Tenant({
+      ...requiredTenantFields(),
+      verticals: ["education"],
+      capabilityConfiguration: {},
+      educationTaxonomyPreset: "skincare",
+    });
+    expect(configured.validateSync()).toBeUndefined();
+    expect(configured.educationTaxonomyPreset).toBe("skincare");
+
+    const unknown = new Tenant({
+      ...requiredTenantFields(),
+      verticals: ["education"],
+      capabilityConfiguration: {},
+      educationTaxonomyPreset: "language_school",
+    });
+    expect(
+      unknown.validateSync()?.errors.educationTaxonomyPreset,
+    ).toBeDefined();
   });
 
   it("hydrate legacy dokumenta čuva undefined semantiku", () => {

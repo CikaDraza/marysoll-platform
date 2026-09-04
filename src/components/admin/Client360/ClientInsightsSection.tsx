@@ -26,9 +26,13 @@ function InsightsWarnings({ insights }: { insights: ClientOverviewInsights }) {
   return <>{valueOrZero(insights.withoutPrice) > 0 && <p className="text-xs text-amber-600">{insights.withoutPrice} termina nema definisanu cenu i ne ulazi u novčane zbirove.</p>}</>;
 }
 
+/**
+ * Klijent čiji se dosije gleda je uvek na listi i vizuelno izdvojen — bez toga
+ * tabela odgovara na pitanje koje niko nije postavio.
+ */
 function TopClientsTable({ insights }: { insights: ClientOverviewInsights }) {
   if (!insights.topClients?.length) return null;
-  return <div className="overflow-x-auto"><table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-700"><thead><tr className="text-left text-xs uppercase tracking-wider text-gray-500"><th className="px-4 py-3">Top 3 klijenta</th><th className="px-4 py-3 text-right">Termini</th></tr></thead><tbody className="divide-y divide-gray-100 dark:divide-gray-800">{insights.topClients.map((entry) => <tr key={entry.clientId ?? entry.email}><td className="px-4 py-3">{entry.name}</td><td className="px-4 py-3 text-right font-bold">{entry.count}</td></tr>)}</tbody></table></div>;
+  return <div className="overflow-x-auto"><table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-700"><thead><tr className="text-left text-xs uppercase tracking-wider text-gray-500"><th className="px-4 py-3 w-12">#</th><th className="px-4 py-3">Top 3 klijenta</th><th className="px-4 py-3 text-right">Termini</th></tr></thead><tbody className="divide-y divide-gray-100 dark:divide-gray-800">{insights.topClients.map((entry) => <tr key={entry.clientId ?? entry.email} className={entry.isViewer ? "bg-violet-50 dark:bg-violet-950/40" : undefined}><td className={`px-4 py-3 tabular-nums ${entry.isViewer ? "font-bold text-violet-700 dark:text-violet-300" : "text-gray-400"}`}>{entry.rank}.</td><td className={`px-4 py-3 ${entry.isViewer ? "font-bold text-violet-700 dark:text-violet-300" : ""}`}>{entry.name}</td><td className={`px-4 py-3 text-right font-bold ${entry.isViewer ? "text-violet-700 dark:text-violet-300" : ""}`}>{entry.count}</td></tr>)}</tbody></table></div>;
 }
 
 function InsightContent({ insights }: { insights: ClientOverviewInsights }) {

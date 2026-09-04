@@ -191,8 +191,39 @@ iznos nije poznat, prikaz je „Cena nije definisana", nikada 0.
 **Period pripada samo Top 3.** Salon Statistics i Client 360 dele Statistics
 engine primitive i iste semantičke definicije tamo gde se činjenice preklapaju
 (šta je otkazano, šta je realizovano, kako se čita cena), ali devet relationship
-KPI-ja nije month/year isečak. Jedino Top 3 mora koristiti isti period i isti
-rang kao Salon Statistics; van Top 3 se rank ne izmišlja.
+KPI-ja nije month/year isečak. Jedino Top 3 koristi isti period i isti poredak
+kao Salon Statistics.
+
+### Klijent čiji se dosije gleda je UVEK na listi
+
+Tabela je do tada prikazivala samo prva tri imena. Otvorite dosije Slađane, a
+vidite tri druge osobe i nijedan podatak o njoj — odgovor na pitanje koje niko
+nije postavio.
+
+Sada se njen red prikazuje uvek: u Top 3 ako joj je tamo mesto, inače dopisan
+ispod, vizuelno izdvojen.
+
+```text
+u Top 3        1. Desa 3 · 2. Slađana 2 · 3. Katarina 1
+van Top 3      1. Desa 5 · 2. Verica 4 · 3. Katarina 3 · 8. Slađana 1
+bez termina    1. Desa 1 · 2. Verica 1 · 3. Katarina 1 · 8. Slađana 0
+izjednačeni    1. Desa 1 · 2. Verica 1 · 3. Katarina 1 · 4. Slađana 1
+```
+
+**`rank` je POZICIJA u poretku, ne takmičarski rang.** Kad četvoro ima po jedan
+termin, ona je četvrta — ne prva. Kad u tom mesecu nema nijedan termin, dolazi
+odmah iza svih koji ih imaju (otud „8." kad je osmoro bookiralo) i prikazuje se
+sa nulom, nikad praznim poljem.
+
+Izjednačeni se razrešavaju po mejlu, deterministički: redosled među jednakima
+nije poslovna informacija, bitno je samo da je stabilan između dva učitavanja.
+
+`topThree` i dalje znači **među prva tri**, ne „na listi" — klijent je sada
+uvek na listi, pa bi šira definicija obesmislila zelenu poruku.
+
+Cena: agregacija više nema `$limit: 3`, jer se rang ne može izračunati iz prve
+tri stavke. Grupisanje ide po klijentima koji su bookirali U TOM MESECU, pa je
+rezultat reda veličine mesečnog broja termina — ne cele baze klijenata.
 
 ## I. Acceptance kriterijumi (browser provera koja čeka)
 

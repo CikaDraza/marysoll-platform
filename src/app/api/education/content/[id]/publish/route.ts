@@ -25,11 +25,17 @@ import {
   isDuplicateSlugError,
   isValidObjectId,
   notFoundResponse,
+  metadataFailureResponse,
   publicSlugTakenResponse,
   requireEducationContentAuthority,
 } from "@/lib/education/content-authority";
 import { EducationContent } from "@/models/EducationContent";
 import type { EducationContentKind } from "@/types/education-content";
+import {
+  isPubliclyDiscoverable,
+  resolveAccessMode,
+} from "@/types/education-content";
+import { validateEducationClassificationForTenant } from "@/lib/education/taxonomy-server";
 
 export async function POST(
   request: Request,
@@ -49,13 +55,33 @@ export async function POST(
       tenantId: authority.tenantId,
     })
       .select(
-        "title slug kind accessMode visibility hero publicPreview blocks seo " +
+        "title slug kind topicKey intentKey accessMode visibility hero publicPreview blocks seo " +
           "publishedSnapshot.slug publishedSnapshot.accessMode " +
           "publishedSnapshot.visibility publishedSlugHistory",
       )
       .lean();
 
     if (!working) return notFoundResponse();
+
+    const classification = await validateEducationClassificationForTenant(
+      authority.tenantId,
+      working as { topicKey?: unknown; intentKey?: unknown },
+    );
+    if (!classification.ok) {
+      return metadataFailureResponse(classification.error);
+    }
+    if (
+      classification.taxonomy &&
+      isPubliclyDiscoverable(
+        resolveAccessMode(working as { accessMode?: unknown; visibility?: unknown }),
+      ) &&
+      (!(working as { topicKey?: unknown }).topicKey ||
+        !(working as { intentKey?: unknown }).intentKey)
+    ) {
+      return metadataFailureResponse(
+        "Tema i pristup teksta su obavezni pre javne objave",
+      );
+    }
 
     const validation = validateContentDocument(
       (working as { blocks?: unknown }).blocks,

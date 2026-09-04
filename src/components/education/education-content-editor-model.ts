@@ -1,4 +1,9 @@
 import type { ContentBlock } from "@/lib/content/schemas/landing-blocks";
+import type { ContentBlockIdFactory } from "@/lib/content/editor/blockFactories";
+import {
+  educationNewEditorSeed,
+  type EducationStartMode,
+} from "@/lib/education/authoringStart";
 import {
   EDUCATION_ACCESS_LABELS,
   EDUCATION_KIND_LABELS,
@@ -18,6 +23,8 @@ export interface EducationEditorState {
   /** Ručno potvrđen slug se ne prepisuje kad se naslov promeni. */
   slugTouched: boolean;
   kind: EducationContentSummary["kind"];
+  topicKey?: EducationContentSummary["topicKey"];
+  intentKey?: EducationContentSummary["intentKey"];
   accessMode: EducationContentSummary["accessMode"];
   /** Naslovna sekcija — jedan izvor za karticu i za zaglavlje strane. */
   hero: EducationHero;
@@ -32,11 +39,49 @@ export function emptyEducationEditorState(): EducationEditorState {
     slug: "",
     slugTouched: false,
     kind: "article",
+    topicKey: undefined,
+    intentKey: undefined,
     accessMode: "public",
     hero: {},
     publicPreview: {},
     blocks: [],
     seo: {},
+  };
+}
+
+/** Jedini šav koji start-mode pretvara u početno, još nepersistirano stanje. */
+export function initializeEducationEditorState(
+  record: EducationContentRecord | undefined,
+  startMode: EducationStartMode,
+  idFactory: ContentBlockIdFactory,
+): EducationEditorState {
+  if (record) return editorStateFromRecord(record);
+
+  const seed = educationNewEditorSeed(startMode, idFactory);
+  return {
+    ...emptyEducationEditorState(),
+    kind: seed.kind,
+    blocks: seed.blocks,
+  };
+}
+
+export interface EducationImportDraft {
+  title: string;
+  hero: { subtitle?: string };
+  blocks: ContentBlock[];
+}
+
+/** Import menja radni članak, ali nikada ne pravi download prilog ili objavu. */
+export function applyEducationImportDraft(
+  state: EducationEditorState,
+  draft: EducationImportDraft,
+): EducationEditorState {
+  return {
+    ...state,
+    kind: "article",
+    title: state.title.trim() || draft.title,
+    hero: { ...state.hero, ...draft.hero },
+    blocks: draft.blocks,
   };
 }
 
@@ -48,6 +93,8 @@ export function editorStateFromRecord(
     slug: record.slug,
     slugTouched: true,
     kind: record.kind,
+    topicKey: record.topicKey,
+    intentKey: record.intentKey,
     accessMode: record.accessMode,
     hero: record.hero ?? {},
     publicPreview: record.publicPreview ?? {},
@@ -75,6 +122,8 @@ export function isEducationEditorDirty(
     state.title !== baseline.title ||
     normalizeEducationSlug(state.slug) !== normalizeEducationSlug(baseline.slug) ||
     state.kind !== baseline.kind ||
+    state.topicKey !== baseline.topicKey ||
+    state.intentKey !== baseline.intentKey ||
     state.accessMode !== baseline.accessMode ||
     JSON.stringify(state.hero) !== JSON.stringify(baseline.hero) ||
     JSON.stringify(state.publicPreview) !==
@@ -89,6 +138,8 @@ export function createPayload(state: EducationEditorState) {
     title: state.title.trim(),
     slug: previewSlug(state) || undefined,
     kind: state.kind,
+    topicKey: state.topicKey,
+    intentKey: state.intentKey,
     accessMode: state.accessMode,
     hero: state.hero,
     publicPreview: state.accessMode === "gated" ? state.publicPreview : undefined,
@@ -114,6 +165,8 @@ export function updatePayload(
     payload.slug = normalizeEducationSlug(state.slug);
   }
   if (state.kind !== baseline.kind) payload.kind = state.kind;
+  if (state.topicKey !== baseline.topicKey) payload.topicKey = state.topicKey;
+  if (state.intentKey !== baseline.intentKey) payload.intentKey = state.intentKey;
   if (state.accessMode !== baseline.accessMode) {
     payload.accessMode = state.accessMode;
   }

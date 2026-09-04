@@ -5,6 +5,7 @@ import {
   deleteBlock,
   duplicateBlock,
   moveBlock,
+  moveBlockRelativeToVisible,
   normalizePriorities,
   replaceBlock,
   toggleVisibility,
@@ -55,6 +56,20 @@ describe("Content Composer block operations", () => {
       { id: "a", priority: 4 },
       { id: "b", priority: 8 },
       { id: "c", priority: 12 },
+    ]);
+  });
+
+  it("dodaje usidreni blok na početak kada host to traži", () => {
+    const result = addBlock([hero("a", 1), hero("b", 2)], "VideoBlock", {
+      afterBlockId: "b",
+      atStart: true,
+      idFactory: () => "video",
+    });
+
+    expect(result.map(({ id, priority }) => ({ id, priority }))).toEqual([
+      { id: "video", priority: 1 },
+      { id: "a", priority: 2 },
+      { id: "b", priority: 3 },
     ]);
   });
 
@@ -120,5 +135,118 @@ describe("Content Composer block operations", () => {
     expect(normalizePriorities(replaced).map(({ priority }) => priority)).toEqual([
       1, 2,
     ]);
+  });
+
+  /**
+   * Filtriran prikaz: strelice predstavljaju ono što autor vidi, pa se zamena
+   * radi sa prethodnim/sledećim VIDLJIVIM blokom. Preskočeni blokovi zadržavaju
+   * svoj canonical slot.
+   */
+  describe("pomeranje u odnosu na vidljivi spisak", () => {
+    const canonical = (): ContentBlock[] => [
+      hero("articleA", 1),
+      hero("download", 2),
+      hero("articleB", 3),
+    ];
+
+    it("zamenjuje mesta sa sledećim vidljivim, ne sa canonical susedom", () => {
+      const result = moveBlockRelativeToVisible(
+        canonical(),
+        ["articleA", "articleB"],
+        "articleA",
+        1,
+      );
+
+      expect(result.map(({ id }) => id)).toEqual([
+        "articleB",
+        "download",
+        "articleA",
+      ]);
+    });
+
+    it("preskočeni blok ostaje na svom canonical mestu i sa svojim id-jem", () => {
+      const result = moveBlockRelativeToVisible(
+        canonical(),
+        ["articleA", "articleB"],
+        "articleA",
+        1,
+      );
+
+      expect(result[1]).toEqual(canonical()[1]);
+      expect(result.map(({ id }) => id).sort()).toEqual(
+        canonical()
+          .map(({ id }) => id)
+          .sort(),
+      );
+    });
+
+    it("povratni potez vraća canonical redosled", () => {
+      const source = canonical();
+      const down = moveBlockRelativeToVisible(
+        source,
+        ["articleA", "articleB"],
+        "articleA",
+        1,
+      );
+      const back = moveBlockRelativeToVisible(
+        down,
+        ["articleB", "articleA"],
+        "articleA",
+        -1,
+      );
+
+      expect(back).toEqual(source);
+    });
+
+    it("normalizuje prioritete tačno jednom, po canonical redosledu", () => {
+      const result = moveBlockRelativeToVisible(
+        [hero("a", 4), hero("skip", 8), hero("b", 12)],
+        ["a", "b"],
+        "a",
+        1,
+      );
+
+      expect(result.map(({ id, priority }) => ({ id, priority }))).toEqual([
+        { id: "b", priority: 1 },
+        { id: "skip", priority: 2 },
+        { id: "a", priority: 3 },
+      ]);
+    });
+
+    it("jedini vidljivi blok nema partnera i ne menja sadržaj", () => {
+      const source = canonical();
+
+      expect(
+        moveBlockRelativeToVisible(source, ["articleA"], "articleA", 1),
+      ).toEqual(source);
+      expect(
+        moveBlockRelativeToVisible(source, ["articleA"], "articleA", -1),
+      ).toEqual(source);
+    });
+
+    it("blok van vidljivog spiska se ne pomera", () => {
+      const source = canonical();
+
+      expect(
+        moveBlockRelativeToVisible(source, ["articleA", "articleB"], "download", -1),
+      ).toEqual(source);
+      expect(
+        moveBlockRelativeToVisible(source, ["articleA", "articleB"], "download", 1),
+      ).toEqual(source);
+    });
+
+    it("nefiltrirani spisak zadržava zamenu sa neposrednim susedom", () => {
+      const source = canonical();
+      const ids = source.map(({ id }) => id);
+
+      expect(
+        moveBlockRelativeToVisible(source, ids, "articleA", 1).map(
+          ({ id }) => id,
+        ),
+      ).toEqual(["download", "articleA", "articleB"]);
+      expect(moveBlock(source, "articleA", 1)).toEqual(
+        moveBlockRelativeToVisible(source, ids, "articleA", 1),
+      );
+    });
   });
 });

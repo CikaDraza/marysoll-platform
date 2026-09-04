@@ -7,6 +7,12 @@ import "server-only";
 import { model, models, Schema, Types, type Document } from "mongoose";
 import type { ContentBlock } from "@/lib/content/schemas/landing-blocks";
 import {
+  EDUCATION_INTENT_KEYS,
+  SKINCARE_TOPIC_KEYS,
+  type EducationIntentKey,
+  type EducationTopicKey,
+} from "@/lib/education/taxonomy";
+import {
   EDUCATION_ACCESS_MODES,
   EDUCATION_CONTENT_KINDS,
   EDUCATION_CONTENT_STATUSES,
@@ -25,6 +31,8 @@ export interface IEducationHero {
     alt?: string;
     focalPoint?: { x: number; y: number };
   };
+  /** Sme li naslovna slika i na vrh strane; kartica je koristi uvek. */
+  coverOnPage?: boolean;
 }
 
 export interface IEducationPublicPreview {
@@ -37,6 +45,8 @@ export interface IEducationPublishedSnapshot {
   title: string;
   slug: string;
   kind: EducationContentKind;
+  topicKey?: EducationTopicKey;
+  intentKey?: EducationIntentKey;
   accessMode?: EducationAccessMode;
   /** Zatečeno dvočlano polje; čita se samo kad `accessMode` nedostaje. */
   visibility?: EducationContentVisibility;
@@ -60,6 +70,8 @@ export interface IEducationContentDoc extends Document {
   title: string;
   slug: string;
   kind: EducationContentKind;
+  topicKey?: EducationTopicKey;
+  intentKey?: EducationIntentKey;
   accessMode?: EducationAccessMode;
   /** Zatečeno dvočlano polje; čita se samo kad `accessMode` nedostaje. */
   visibility?: EducationContentVisibility;
@@ -117,6 +129,8 @@ const EducationContentSchema = new Schema<IEducationContentDoc>(
       required: true,
       default: "article",
     },
+    topicKey: { type: String, enum: SKINCARE_TOPIC_KEYS },
+    intentKey: { type: String, enum: EDUCATION_INTENT_KEYS },
     // Režim pristupa je nezavisan od lifecycle-a: `published` ne znači javno.
     accessMode: {
       type: String,
@@ -136,6 +150,9 @@ const EducationContentSchema = new Schema<IEducationContentDoc>(
         alt: { type: String },
         focalPoint: { x: { type: Number }, y: { type: Number } },
       },
+      // Bez default-a: odsutna vrednost je „samo kartica", pa zatečeni zapisi
+      // ne dobijaju sliku na strani koju vlasnica nije birala.
+      coverOnPage: { type: Boolean },
     },
     publicPreview: {
       title: { type: String },
@@ -162,6 +179,8 @@ const EducationContentSchema = new Schema<IEducationContentDoc>(
           title: { type: String, required: true },
           slug: { type: String, required: true },
           kind: { type: String, enum: EDUCATION_CONTENT_KINDS, required: true },
+          topicKey: { type: String, enum: SKINCARE_TOPIC_KEYS },
+          intentKey: { type: String, enum: EDUCATION_INTENT_KEYS },
           accessMode: { type: String, enum: EDUCATION_ACCESS_MODES },
           visibility: { type: String, enum: EDUCATION_CONTENT_VISIBILITIES },
           hero: {
@@ -171,6 +190,7 @@ const EducationContentSchema = new Schema<IEducationContentDoc>(
               alt: { type: String },
               focalPoint: { x: { type: Number }, y: { type: Number } },
             },
+            coverOnPage: { type: Boolean },
           },
           publicPreview: {
             title: { type: String },

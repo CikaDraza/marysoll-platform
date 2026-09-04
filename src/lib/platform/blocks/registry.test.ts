@@ -48,6 +48,7 @@ describe("registracija", () => {
     "content.professional-path",
     "content.topic-hub",
     "content.final-cta",
+    "education.topic-hub",
   ];
 
   it("registruje spec-6 blokove i theme-9 autorske sekcije", () => {
@@ -96,10 +97,12 @@ describe("registracija", () => {
     expect(() => createFeatureBlockRegistry([broken])).toThrow(/schemaVersion/);
   });
 
-  it("svi blokovi su capability-neutralni (T2B non-goal)", () => {
+  it("samo novi Education domain blok nosi capability gate", () => {
     for (const def of FEATURE_BLOCK_DEFINITIONS) {
-      expect(def.capability, def.type).toBeNull();
-      expect(FEATURE_BLOCK_REGISTRY.capabilityFor(def.type)).toBeNull();
+      const expected =
+        def.type === "education.topic-hub" ? "education.catalog" : null;
+      expect(def.capability, def.type).toBe(expected);
+      expect(FEATURE_BLOCK_REGISTRY.capabilityFor(def.type)).toBe(expected);
     }
   });
 });
