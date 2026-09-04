@@ -7,7 +7,7 @@
 > Stanje koda provereno **2026-09-04**; Edu pilot closure redosled revidiran
 > **2026-09-04**.
 > Zdravlje tog preseka: `tsc` prolazi, lint bez novih upozorenja, build prolazi,
-> 179 test fajlova / 2091 test prolazi (19 preskočeno). Brojevi važe za taj
+> 180 test fajlova / 2100 testova prolazi (19 preskočeno). Brojevi važe za taj
 > datum i nisu obećanje.
 
 ## Redosled

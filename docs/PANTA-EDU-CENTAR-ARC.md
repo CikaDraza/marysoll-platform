@@ -605,8 +605,9 @@ Ovo su javni podaci i tako se tretiraju. Tvrda pravila:
 - pregled je eksplicitno sačuvan i objavljen kao javni metapodatak
 
 Kada **već javan** sadržaj prelazi u GATED, pregled se sme zasejati iz onoga što
-je **ranije već bilo javno**: poslednji javni naslov, javni SEO opis, javni
-cover. Ne prenosi se: blokovi članka, download adrese, interni metapodaci, novi
+je **ranije već bilo javno**: poslednji javni naslov, javni opis iz naslovne
+sekcije (`hero.subtitle`), javni cover. SEO polja tu nemaju ulaz — vidi „SEO
+nije izvor vidljivog sadržaja". Ne prenosi se: blokovi članka, download adrese, interni metapodaci, novi
 privatni naslov, nesačuvana radna kopija.
 
 Sadržaj koji je GATED od prvog dana traži da vlasnica pregled definiše sama.
@@ -1038,6 +1039,35 @@ Nema paralelnog video state-a i nema novog dokumenta: kanonski izvor ostaje isti
 `VideoBlock` unutar `blocks[]`, a objava i dalje traži vidljiv primarni video
 izvor (`missingRequiredVideoSource`). Isti `VideoBlock` u članku nema nijedno od
 ovih ograničenja.
+
+**SEO nije izvor vidljivog sadržaja (ispravljeno 2026-09-04):**
+
+Javno zaglavlje Education strane čita ISKLJUČIVO autorska polja:
+
+```text
+h1            EducationContent.title
+uvodni pasus  hero.subtitle  (gated: publicPreview.description ako je unet)
+naslovna slika  hero.image → snapshot.cover  (gated: publicPreview.coverImage)
+```
+
+`seo.title`, `seo.description` i `seo.ogImage` služe samo `generateMetadata`,
+pretrazi i OpenGraph-u. Ranije su stajali na kraju fallback lanca za vidljivi
+opis i cover (uvedeno u 880d265 kao „SEO je rezerva, ne konkurencija"), pa je
+svaki zapis bez autorskog opisa u zaglavlju prikazivao tekst pisan za Google,
+dok je pravi sadržaj ostajao niže na strani u slabijoj hijerarhiji. Lanac je
+presečen na tri mesta: `toSummary` (javno čitanje), `resolvePublishedCover` i
+izvedeni `publicPreview` u `buildPublishedSnapshot` (upis snapshot-a).
+
+Kada autor nije napisao opis, zaglavlje ostaje bez uvodnog pasusa. To je
+namerno: prazno mesto je signal autoru, a SEO tekst na tom mestu je pogrešan
+sadržaj koji izgleda ispravno.
+
+Redosled javne video strane je time zaključan testom:
+
+```text
+breadcrumbs → oznaka vrste („Video") → h1 → uvodni pasus →
+datum · vreme čitanja · autor → VIDEO → ostali canonical blokovi
+```
 
 ### E3 — Draft safety
 

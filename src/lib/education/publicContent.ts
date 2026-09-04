@@ -116,27 +116,25 @@ function toSummary(record: SnapshotRecord): PublicEducationSummary {
     ...(snapshot.intentKey ? { intentKey: snapshot.intentKey } : {}),
     accessMode,
     publishedAt: new Date(snapshot.publishedAt).toISOString(),
-    // Naslovna sekcija je izvor istine — osim za zaključan sadržaj, gde
-    // eksplicitno unet javni pregled ima prednost: on i postoji zato da bi
-    // vlasnica tačno odredila šta javnost vidi.
+    // VIDLJIVI OPIS DOLAZI SAMO OD AUTORA.
+    //
+    // `hero.subtitle` je opis sadržaja, a za zaključan sadržaj ga preduhitruje
+    // eksplicitno unet javni pregled: on i postoji zato da bi vlasnica tačno
+    // odredila šta javnost vidi. `seo.description` ovde NEMA ulaz — on je
+    // metapodatak za pretragu i deljenje, ne uvodni tekst strane. Kad autor
+    // nije napisao opis, zaglavlje ostaje bez njega umesto da pokaže tekst
+    // pisan za Google.
     description:
       (accessMode === "gated" ? preview?.description : undefined) ||
       snapshot.hero?.subtitle ||
-      (accessMode === "gated"
-        ? preview?.description
-        : snapshot.seo?.description) ||
       undefined,
-    // Naslovna slika je izračunata pri objavi i nosi fokus kadra; zatečeni
-    // zapisi bez nje padaju na URL iz pregleda/SEO-a, samo bez fokusa.
+    // Isto važi za naslovnu sliku: ona je izračunata pri objavi i nosi fokus
+    // kadra, a `seo.ogImage` ostaje slika za deljenje, ne vidljivi sadržaj.
     cover:
       snapshot.cover?.src
         ? snapshot.cover
-        : (accessMode === "gated" ? preview?.coverImage : snapshot.seo?.ogImage)
-          ? {
-              src: (accessMode === "gated"
-                ? preview?.coverImage
-                : snapshot.seo?.ogImage) as string,
-            }
+        : accessMode === "gated" && preview?.coverImage
+          ? { src: preview.coverImage }
           : undefined,
   };
 }

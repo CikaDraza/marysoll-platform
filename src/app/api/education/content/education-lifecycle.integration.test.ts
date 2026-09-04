@@ -778,14 +778,16 @@ describe("L — zaključan sadržaj (gated)", () => {
     expect(JSON.stringify(article)).not.toContain("cdn.example.com/vodic.pdf");
   });
 
-  it("javni pregled se izvodi iz naslova i SEO-a kada nije unet", async () => {
+  it("javni pregled se izvodi iz autorskog sadržaja kada nije unet", async () => {
     await publishGated();
 
     const article = await getPublicEducationContent(TENANT, "napredna-analiza");
+    // Opis dolazi iz naslovne sekcije, ne iz `seo.description`.
     expect(article).toMatchObject({
       title: "Napredna analiza sastojaka",
-      description: "SEO opis",
+      description: "Šta stvarno pomaže koži",
     });
+    expect(article?.description).not.toBe("SEO opis");
     // Naslovna slika se računa pri objavi: hero slika ako postoji, inače
     // pregled ili SEO. Ovaj sadržaj ima hero blok, pa vodi njegova slika.
     expect(article?.cover?.src).toBe("https://cdn.example.com/hero.jpg");
@@ -1095,7 +1097,7 @@ describe("P — naslovna slika i fokus kadra", () => {
     });
   });
 
-  it("zapis bez hero bloka pada na SEO sliku, samo bez fokusa", async () => {
+  it("zapis bez naslovne slike nema naslovnu sliku — SEO je ne popunjava", async () => {
     const created = await json<{ item: Item }>(
       await createContent(
         request({
@@ -1111,7 +1113,9 @@ describe("P — naslovna slika i fokus kadra", () => {
     await publishContent(request(), params(String(created.item._id)));
 
     const article = await getPublicEducationContent(TENANT, "bez-heroja");
-    expect(article?.cover).toEqual({ src: "https://cdn.example.com/seo.jpg" });
+    // `ogImage` je slika za deljenje; naslovna slika strane dolazi od autora.
+    expect(article?.cover).toBeUndefined();
+    expect(article?.seo?.ogImage).toBe("https://cdn.example.com/seo.jpg");
   });
 });
 
@@ -1173,6 +1177,45 @@ describe("R — naslovna sekcija je jedan izvor istine", () => {
     const article = await getPublicEducationContent(TENANT, slug);
     expect(article?.description).toBe(heroSection.subtitle);
     expect(article?.cover?.src).toBe(heroSection.image.src);
+  });
+
+  /**
+   * SEO polja NISU rezerva za vidljivi tekst.
+   *
+   * Ovo je regresija koja se vraćala: dok je `seo.description` stajao na kraju
+   * lanca za `description`, svaki zapis bez autorskog opisa je u zaglavlju
+   * pokazivao tekst pisan za pretragu. Metapodaci i dalje rade — samo više ne
+   * ulaze u telo strane.
+   */
+  it("zapis bez autorskog opisa nema uvodni tekst, a SEO i dalje stoji u metapodacima", async () => {
+    const created = await json<{ item: Item }>(
+      await createContent(
+        request({
+          title: "Bez uvoda",
+          slug: "bez-uvoda",
+          kind: "article",
+          accessMode: "public",
+          blocks: ALL_TWELVE_BLOCKS.slice(1),
+          seo: {
+            title: "SEO naslov za pretragu",
+            description: "SEO opis za pretragu",
+            ogImage: "https://cdn.example.com/seo.jpg",
+          },
+        }),
+      ),
+    );
+    await publishContent(request(), params(String(created.item._id)));
+
+    const article = await getPublicEducationContent(TENANT, "bez-uvoda");
+
+    expect(article?.title).toBe("Bez uvoda");
+    expect(article?.description).toBeUndefined();
+    expect(article?.cover).toBeUndefined();
+    expect(article?.seo).toMatchObject({
+      title: "SEO naslov za pretragu",
+      description: "SEO opis za pretragu",
+      ogImage: "https://cdn.example.com/seo.jpg",
+    });
   });
 
   it("zatečeni hero blok se sam preseli u sekciju pri objavi", async () => {

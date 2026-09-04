@@ -428,8 +428,10 @@ export function resolvePublishedCover(working: {
     return { src: heroImage.src, focalPoint: heroImage.focalPoint };
   }
 
-  const fallback = working.publicPreview?.coverImage || working.seo?.ogImage;
-  return fallback ? { src: fallback } : undefined;
+  // `seo.ogImage` ovde nema ulaz: slika za deljenje nije naslovna slika strane.
+  return working.publicPreview?.coverImage
+    ? { src: working.publicPreview.coverImage }
+    : undefined;
 }
 
 /** Snapshot koji Publish upisuje — gradi se isključivo od sačuvane radne kopije. */
@@ -451,10 +453,11 @@ export function buildPublishedSnapshot(
 ) {
   const accessMode = resolveAccessMode(working);
   const hero = resolvePublishedHero(working);
+  const cover = resolvePublishedCover(working);
   return {
     title: working.title,
     hero,
-    cover: resolvePublishedCover(working),
+    cover,
     slug: working.slug,
     kind: working.kind,
     topicKey: working.topicKey,
@@ -462,12 +465,14 @@ export function buildPublishedSnapshot(
     accessMode,
     // Javni pregled ima smisla samo za zaključan sadržaj; za javan je telo
     // ionako dostupno, a za privatan ne sme postojati ništa javno.
+    // Izveden pregled uzima ono što je autor napisao za sadržaj, nikada SEO
+    // polja: ona su metapodatak za pretragu, a ovo je vidljivi javni tekst.
     publicPreview:
       accessMode === "gated"
         ? (working.publicPreview ?? {
             title: working.title,
-            description: working.seo?.description,
-            coverImage: working.seo?.ogImage,
+            description: hero?.subtitle,
+            coverImage: cover?.src,
           })
         : undefined,
     blocks: Array.isArray(working.blocks) ? working.blocks : [],
