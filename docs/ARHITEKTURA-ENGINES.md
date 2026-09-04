@@ -163,7 +163,7 @@ ruta. Theme-9 do tada ostaje read-only preview.
 | **Media Engine** | Images, Videos, Compression, CDN, Optimization, Formats, Responsive, Gallery, Storage, Animations (Framer/Spline/Canva) | DA |
 | **Notification Engine** | Email, SMS, Push, WhatsApp, Webhook, Slack, Discord. Booking samo kaže "Send reminder" — engine odlučuje kako. | DA |
 | **Identity Engine** | Users, Roles, Permissions, Tenants, Organizations, Sessions, OAuth, Audit. Koriste ga svi engine-i. | DA |
-| **Payments Engine** ⬜ **specifikacija, bez koda** | Naplata klijentkinje: depozit, online plaćanje usluge, paketi/pretplate klijenata, ledger i isplate salonima. Danas postoji samo naplata pretplate SALONA (Paddle) i trajnost webhook prijema. Ugovor: [PANTA-PAYMENTS-ENGINE.md](PANTA-PAYMENTS-ENGINE.md). | DA — svaki marketplace/booking proizvod |
+| **Naplata** ⬜ **namerno uzak obim** | Marysoll naplaćuje ISKLJUČIVO pretplatu tenanta (Paddle). Novac između salona i klijentkinje ne prolazi kroz platformu — MoR model je razmotren i odbačen. Salon koji hoće online naplatu otvara svoj nalog, a integracija je naplativa usluga po salonu. Ugovor: [PANTA-PAYMENTS-ENGINE.md](PANTA-PAYMENTS-ENGINE.md). | NE — nije engine nego granica |
 | **Loyalty Engine** ✅ **V1 + Referral 2b u kodu; live QA čeka** | Points/Currency, streaks, rewards, vouchers, referral/share i QR check-in postoje. Tiers, birthday/personalized/AI rewards ostaju Phase 3. Današnji `AdminGrowthStudio` je legacy naziv Loyalty UI-ja; budući Growth Studio je zaseban composition surface za distribuciju i rast. Current-state ugovor: [PANTA-LOYALTY-ENGINE.md](PANTA-LOYALTY-ENGINE.md). | **DA** — retail/beauty/fitness/svaki repeat-business |
 
 T2B capability resolver **nije novi engine**. To je platformski sloj koji spaja
