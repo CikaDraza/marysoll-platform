@@ -4,6 +4,7 @@ import { useState } from "react";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import type { ContentBlock, LandingBlockType } from "@/lib/content/schemas/landing-blocks";
 import { createContentBlockId } from "@/lib/content/editor/blockFactories";
+import { visibleContentBlocks } from "@/lib/content/editor/blockPresentation";
 import {
   addBlock,
   deleteBlock,
@@ -27,15 +28,30 @@ interface Props {
   mediaAdapter?: ContentMediaAuthoringAdapter;
   /** Tipovi koje ovaj host ne nudi — npr. hero tamo gde ga strana već ima. */
   excludeTypes?: readonly LandingBlockType[];
+  /** Ograničava nove izbore, ali nikada ne uklanja postojeće blokove. */
+  allowedTypes?: readonly LandingBlockType[];
+  /** Prezentacioni filter nad istim canonical blocks nizom. */
+  includeTypes?: readonly LandingBlockType[];
+  excludeRenderTypes?: readonly LandingBlockType[];
+  quickAddType?: LandingBlockType;
+  addButtonLabel?: string;
+  emptyTitle?: string;
+  emptyHelp?: string;
+  hideAddWhenVisible?: boolean;
 }
 
-export function ContentBlocksEditor({ blocks, slugOptions = [], mediaAdapter, excludeTypes, onChange }: Props) {
-  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(blocks[0]?.id ?? null);
+export function ContentBlocksEditor({ blocks, slugOptions = [], mediaAdapter, excludeTypes, allowedTypes, includeTypes, excludeRenderTypes, quickAddType, addButtonLabel = "Dodaj blok", emptyTitle = "Prazan sadržaj", emptyHelp = "Dodajte prvi blok da započnete ručno uređivanje.", hideAddWhenVisible = false, onChange }: Props) {
+  const visibleBlocks = visibleContentBlocks(
+    blocks,
+    includeTypes,
+    excludeRenderTypes,
+  );
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(visibleBlocks[0]?.id ?? null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const effectiveSelectedId =
-    selectedBlockId === null || blocks.some(({ id }) => id === selectedBlockId)
+    selectedBlockId === null || visibleBlocks.some(({ id }) => id === selectedBlockId)
       ? selectedBlockId
-      : (blocks[0]?.id ?? null);
+      : (visibleBlocks[0]?.id ?? null);
 
   const handleAdd = (type: LandingBlockType) => {
     const id = createContentBlockId();
@@ -59,14 +75,15 @@ export function ContentBlocksEditor({ blocks, slugOptions = [], mediaAdapter, ex
 
   return (
     <div className="space-y-3">
-      {blocks.length === 0 && (
+      {visibleBlocks.length === 0 && (
         <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center dark:border-gray-700">
-          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Prazan sadržaj</p>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Dodajte prvi blok da započnete ručno uređivanje.</p>
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{emptyTitle}</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{emptyHelp}</p>
         </div>
       )}
 
-      {blocks.map((rawBlock, index) => {
+      {visibleBlocks.map((rawBlock) => {
+        const index = blocks.findIndex(({ id }) => id === rawBlock.id);
         const validation = validateContentBlock(rawBlock);
         if (!validation.block) {
           return (
@@ -90,6 +107,7 @@ export function ContentBlocksEditor({ blocks, slugOptions = [], mediaAdapter, ex
             key={block.id}
             block={block}
             status={validation.status}
+            issues={validation.issues}
             selected={block.id === effectiveSelectedId}
             first={index === 0}
             last={index === blocks.length - 1}
@@ -115,17 +133,25 @@ export function ContentBlocksEditor({ blocks, slugOptions = [], mediaAdapter, ex
         );
       })}
 
-      <button
+      {(!hideAddWhenVisible || visibleBlocks.length === 0) && <button
         type="button"
         className="inline-flex items-center gap-1 rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-700 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white"
-        onClick={() => setPickerOpen((open) => !open)}
+        onClick={() =>
+          quickAddType
+            ? handleAdd(quickAddType)
+            : setPickerOpen((open) => !open)
+        }
         aria-expanded={pickerOpen}
       >
-        <PlusIcon className="h-4 w-4" /> Dodaj blok
-      </button>
+        <PlusIcon className="h-4 w-4" /> {addButtonLabel}
+      </button>}
 
       {pickerOpen && (
-        <BlockPicker onPick={handleAdd} excludeTypes={excludeTypes} />
+        <BlockPicker
+          onPick={handleAdd}
+          excludeTypes={excludeTypes}
+          allowedTypes={allowedTypes}
+        />
       )}
     </div>
   );
