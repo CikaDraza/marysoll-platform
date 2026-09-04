@@ -23,6 +23,8 @@ describe("Education taxonomy", () => {
     expect(taxonomy?.intents.map(({ key }) => key)).toEqual(
       EDUCATION_INTENT_KEYS,
     );
+    expect(taxonomy?.topics.every(({ help }) => Boolean(help))).toBe(true);
+    expect(taxonomy?.intents.every(({ help }) => Boolean(help))).toBe(true);
   });
 
   it("does not globally default unknown Education workspaces to skincare", () => {

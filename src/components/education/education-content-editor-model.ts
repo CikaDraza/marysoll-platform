@@ -1,4 +1,9 @@
 import type { ContentBlock } from "@/lib/content/schemas/landing-blocks";
+import type { ContentBlockIdFactory } from "@/lib/content/editor/blockFactories";
+import {
+  educationNewEditorSeed,
+  type EducationStartMode,
+} from "@/lib/education/authoringStart";
 import {
   EDUCATION_ACCESS_LABELS,
   EDUCATION_KIND_LABELS,
@@ -41,6 +46,42 @@ export function emptyEducationEditorState(): EducationEditorState {
     publicPreview: {},
     blocks: [],
     seo: {},
+  };
+}
+
+/** Jedini šav koji start-mode pretvara u početno, još nepersistirano stanje. */
+export function initializeEducationEditorState(
+  record: EducationContentRecord | undefined,
+  startMode: EducationStartMode,
+  idFactory: ContentBlockIdFactory,
+): EducationEditorState {
+  if (record) return editorStateFromRecord(record);
+
+  const seed = educationNewEditorSeed(startMode, idFactory);
+  return {
+    ...emptyEducationEditorState(),
+    kind: seed.kind,
+    blocks: seed.blocks,
+  };
+}
+
+export interface EducationImportDraft {
+  title: string;
+  hero: { subtitle?: string };
+  blocks: ContentBlock[];
+}
+
+/** Import menja radni članak, ali nikada ne pravi download prilog ili objavu. */
+export function applyEducationImportDraft(
+  state: EducationEditorState,
+  draft: EducationImportDraft,
+): EducationEditorState {
+  return {
+    ...state,
+    kind: "article",
+    title: state.title.trim() || draft.title,
+    hero: { ...state.hero, ...draft.hero },
+    blocks: draft.blocks,
   };
 }
 

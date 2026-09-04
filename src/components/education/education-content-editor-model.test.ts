@@ -3,6 +3,7 @@ import { ALL_TWELVE_BLOCKS } from "@/lib/education/__fixtures__/education-blocks
 import type { EducationContentRecord } from "@/lib/education/content-document";
 import {
   canAutosave,
+  applyEducationImportDraft,
   createPayload,
   educationContentOverview,
   educationPublicationStateFromRecord,
@@ -11,9 +12,70 @@ import {
   educationContentRows,
   emptyEducationEditorState,
   isEducationEditorDirty,
+  initializeEducationEditorState,
   previewSlug,
   updatePayload,
 } from "./education-content-editor-model";
+
+let generatedId = 0;
+const nextId = () => `editor-${(generatedId += 1)}`;
+
+describe("inicijalizacija E2 editora", () => {
+  it("article seeduje blokove jednom, ali samo otvaranje ne može napraviti zapis", () => {
+    const state = initializeEducationEditorState(undefined, "article", nextId);
+    expect(state.kind).toBe("article");
+    expect(state.blocks.length).toBeGreaterThan(0);
+    expect(canAutosave(state, false)).toBe(false);
+  });
+
+  it("import počinje praznim article draftom", () => {
+    const state = initializeEducationEditorState(undefined, "import", nextId);
+    expect(state).toMatchObject({ kind: "article", blocks: [] });
+    expect(canAutosave(state, false)).toBe(false);
+  });
+
+  it("video odmah ima jedan VideoBlock", () => {
+    const state = initializeEducationEditorState(undefined, "video", nextId);
+    expect(state.kind).toBe("video");
+    expect(state.blocks.filter(({ type }) => type === "VideoBlock")).toHaveLength(1);
+    expect(canAutosave(state, false)).toBe(false);
+  });
+
+  it.each(["advice", "guide", "material", "video"] as const)(
+    "postojeći %s zapis pobeđuje start parametar i čuva kind",
+    (kind) => {
+      const existing = { ...record, kind };
+      const state = initializeEducationEditorState(existing, "article", nextId);
+      expect(state.kind).toBe(kind);
+      expect(createPayload(state).kind).toBe(kind);
+      expect(updatePayload({ ...state, title: "Drugi naslov" }, state)).toEqual({
+        title: "Drugi naslov",
+      });
+    },
+  );
+
+  it("import rezultat postaje uređiv članak bez FileDownloadBlock-a", () => {
+    const before = initializeEducationEditorState(undefined, "import", nextId);
+    const imported = applyEducationImportDraft(before, {
+      title: "Uvezen naslov",
+      hero: { subtitle: "Uvezen kratak opis" },
+      blocks: [{
+        id: "imported-article",
+        type: "ArticleBlock",
+        priority: 1,
+        title: "Sekcija",
+        paragraphs: ["Tekst"],
+      }],
+    });
+
+    expect(imported).toMatchObject({
+      kind: "article",
+      title: "Uvezen naslov",
+      hero: { subtitle: "Uvezen kratak opis" },
+    });
+    expect(imported.blocks.map(({ type }) => type)).toEqual(["ArticleBlock"]);
+  });
+});
 
 const record: EducationContentRecord = {
   id: "1",

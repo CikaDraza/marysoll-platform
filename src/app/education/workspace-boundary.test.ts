@@ -24,6 +24,7 @@ describe("Edu admin workspace boundary", () => {
     const sources = [
       "src/app/education/page.tsx",
       "src/components/education/EducationOverview.tsx",
+      "src/components/education/EducationCreationChooser.tsx",
     ].map((file) => readFileSync(path.join(process.cwd(), file), "utf8"));
 
     for (const source of sources) {
@@ -32,7 +33,7 @@ describe("Edu admin workspace boundary", () => {
     }
     // Pregled vodi u sadržaj i u kreiranje; aktivacija ostaje u selektoru.
     expect(sources[1]).toContain('href="/education/content"');
-    expect(sources[1]).toContain('href="/education/content/new"');
+    expect(sources[2]).toContain('/education/content/new?start=');
   });
 
   it("štiti ceo workspace server-side resolved capability snapshotom", () => {

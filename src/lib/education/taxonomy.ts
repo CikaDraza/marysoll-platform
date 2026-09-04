@@ -23,6 +23,8 @@ export type EducationIntentKey = (typeof EDUCATION_INTENT_KEYS)[number];
 export interface EducationTaxonomyOption<T extends string> {
   key: T;
   label: string;
+  /** Kratka pomoć autoru; nije javna taxonomy vrednost niti Content Coach. */
+  help?: string;
 }
 
 export interface EducationTaxonomy {
@@ -34,16 +36,48 @@ export interface EducationTaxonomy {
 const SKINCARE_TAXONOMY: EducationTaxonomy = {
   preset: "skincare",
   topics: [
-    { key: "assessment", label: "Procena kože" },
-    { key: "routine_ingredients", label: "Rutina i sastojci" },
-    { key: "conditions", label: "Promene i stanja kože" },
-    { key: "protection", label: "Zaštita kože" },
+    {
+      key: "assessment",
+      label: "Procena kože",
+      help: "Tip kože, trenutno stanje, dehidriranost, barijera i procena potreba.",
+    },
+    {
+      key: "routine_ingredients",
+      label: "Rutina i sastojci",
+      help: "Čišćenje, hidratacija, aktivni sastojci, kombinovanje i redosled.",
+    },
+    {
+      key: "conditions",
+      label: "Promene i stanja kože",
+      help: "Akne, crvenilo, perutanje, pigmentacije, rozacea i druge promene.",
+    },
+    {
+      key: "protection",
+      label: "Zaštita kože",
+      help: "SPF, UVA/UVB, sunce, spoljašnji uticaji i zaštita barijere.",
+    },
   ],
   intents: [
-    { key: "recognize", label: "Kako prepoznati" },
-    { key: "explain", label: "Zašto se dešava" },
-    { key: "care", label: "Kako negovati" },
-    { key: "step_by_step", label: "Korak po korak" },
+    {
+      key: "recognize",
+      label: "Kako prepoznati",
+      help: "Pomozite čitaocu da primeti razliku, znak ili obrazac.",
+    },
+    {
+      key: "explain",
+      label: "Zašto se dešava",
+      help: "Objasnite mogući mehanizam, uzrok ili okidač.",
+    },
+    {
+      key: "care",
+      label: "Kako negovati",
+      help: "Objasnite praktičan pristup nezi i zaštiti.",
+    },
+    {
+      key: "step_by_step",
+      label: "Korak po korak",
+      help: "Vodite čitaoca kroz jasan redosled postupaka.",
+    },
   ],
 };
 
