@@ -72,8 +72,14 @@ export const clientOverviewSchema = z.object({
     nextAppointment: z.object({ date: z.string(), time: z.string() }).nullable().optional(),
     topThree: z.boolean().optional(),
     withoutPrice: z.number().int().optional(),
+    /**
+     * Top 3 za period, uz OBAVEZAN red klijenta čiji se dosije gleda.
+     * `rank` je pozicija u poretku svih klijenata, ne indeks u ovom nizu —
+     * klijent van prva tri nosi svoj stvarni broj (npr. 8. ili 48.).
+     */
     topClients: z.array(z.object({
       clientId: z.string().nullable(), name: z.string(), email: z.string(), count: z.number().int(),
+      rank: z.number().int().positive(), isViewer: z.boolean(),
     })).optional(),
   }),
   loyalty: z.object({

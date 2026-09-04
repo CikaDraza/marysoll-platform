@@ -102,6 +102,16 @@ export interface ServicePriceEstimate {
   isEstimate: boolean;
   /** true → cena termina se ne zna; `total` je `null`. */
   unknown: boolean;
+  /**
+   * true → cena se ne zna zato što OBAVEZAN izbor još nije napravljen
+   * (varijanta), a NE zato što je usluga na upit.
+   *
+   * Dve različite činjenice koje su se dotad obe prikazivale kao
+   * „Cena na upit": usluga sa fiksnim varijantama je pre izbora izgledala kao
+   * da salon tek treba da javi cenu, iako cenu ima — samo se ne zna KOJA dok
+   * se varijanta ne označi. Prikaz mora da ćuti, ne da tvrdi.
+   */
+  pendingSelection: boolean;
   durationMinutes: number;
 }
 
@@ -140,6 +150,8 @@ export function estimateServicePrice(input: {
   let knownAddonsTotal = 0;
   /** Neki poznat deo nedostaje → prikazani iznos je donja granica. */
   let hasUnknownPart = false;
+  /** Cena se ne zna samo zato što obavezan izbor još nije napravljen. */
+  let pendingSelection = false;
 
   const variant =
     service.type === "variant"
@@ -162,14 +174,24 @@ export function estimateServicePrice(input: {
       if (variant.duration) duration = variant.duration;
     }
   } else if (service.type === "variant") {
-    // Bez izabrane varijante osnovna cena još ne postoji — nije "na upit",
-    // nego "nije izabrano", pa se ne prikazuje nikakav iznos.
     if (variant) {
       const known = variant.priceMode !== "on_request";
       baseAmount = known ? variant.price : null;
       if (!known) mode = "on_request";
       lines.push({ kind: "variant", label: variant.name, amount: baseAmount });
       duration += variant.duration ?? 0;
+    } else {
+      // Bez izabrane varijante osnovna cena još ne postoji — nije "na upit",
+      // nego "nije izabrano", pa prikaz mora da ćuti.
+      //
+      // Izuzetak: kad su SVE varijante na upit, ishod ne zavisi od izbora, pa
+      // je „Cena na upit" tačna tvrdnja i pre nego što se bilo šta označi.
+      const variants = service.variants ?? [];
+      const everyVariantOnRequest =
+        variants.length > 0 &&
+        variants.every((v) => v.priceMode === "on_request");
+      if (everyVariantOnRequest) mode = "on_request";
+      else pendingSelection = true;
     }
   } else {
     // single i group: jedna cena i jedno trajanje na korenu.
@@ -205,6 +227,8 @@ export function estimateServicePrice(input: {
     // "od X" kad je baza minimum ili kad neki poznat deo nedostaje.
     isEstimate: !unknown && (mode === "from" || hasUnknownPart),
     unknown,
+    // Ima smisla samo dok cena nije poznata.
+    pendingSelection: unknown && pendingSelection,
     durationMinutes: duration,
   };
 }
