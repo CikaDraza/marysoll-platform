@@ -133,7 +133,20 @@ export async function getMongoUsage(): Promise<MongoUsageData> {
     storageUsedMb: toMb(stats.storageSize ?? 0),
     storageLimitMb: MONGODB_STORAGE_LIMIT_MB,
     connections,
-    cpuAvgPercent: null, // zahteva Atlas Admin API (M10+) — vidi plan
+    // CPU je HARDKODOVAN `null`, i to je razlog zašto se nikad ne prikazuje —
+    // ne zbog isteklih kredencijala. `storageUsedMb` i `connections` iznad
+    // dolaze iz obične konekcije (`db.stats()` / `serverStatus()`), pa metrika
+    // potrošnje ne zavisi ni od kakvog Atlas ključa.
+    //
+    // Za CPU trebaju DVE stvari, i nijedna nije samo ključ:
+    //   1. poziv ka Atlas Admin API-ju (autentifikacija Service Account-om —
+    //      tek tada bi MONGODB_ATLAS_CLIENT_ID/SECRET prvi put nešto radili)
+    //   2. klaster M10+ — M0 free tier NE izlaže hardverske metrike, pa bi na
+    //      njemu i ispravni ključevi vratili prazno
+    //
+    // Očekivani trenutak: prelazak na M10 kad broj tenanta preraste free tier
+    // (procena ~20+), kada ionako trebaju jači procesor i više storage-a.
+    cpuAvgPercent: null,
     collections: stats.collections ?? 0,
   };
 }

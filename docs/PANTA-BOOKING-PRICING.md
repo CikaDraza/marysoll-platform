@@ -181,12 +181,12 @@ termin doneo" i važi pre izvršenja.
 
 Refund semantika ne postoji; payment engine nije napravljen.
 
-> **Kada novac stigne online** (specifikacija:
-> [PANTA-PAYMENTS-ENGINE.md](PANTA-PAYMENTS-ENGINE.md)), `chargedAmount` ostaje
-> ono što jeste — *koliko je termin vredeo*. Uplate se vode u zasebnom ledgeru
-> koji odgovara na drugo pitanje — *kako je novac stigao*. Nijedan se ne izvodi
-> iz drugog; veže ih jedna provera: **`chargedAmount` ≥ neto naplaćeno online**.
-> Plaćanje nikad ne piše `pricing.*`.
+> **Novac klijentkinje ne prolazi kroz platformu** — Marysoll naplaćuje samo
+> pretplatu tenanta ([granica naplate](PANTA-PAYMENTS-ENGINE.md)). Ako salon
+> naplati depozit svojim kanalom, platforma to sme samo da ZABELEŽI da bi račun
+> ostao tačan: `chargedAmount` i dalje kaže koliko je termin vredeo, a evidencija
+> uplate kako je novac stigao. Nijedno se ne izvodi iz drugog, i evidencija
+> nikad ne piše `pricing.*`.
 
 ## 6. Server je autoritet
 

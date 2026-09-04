@@ -18,7 +18,7 @@ EDUCATION    🟡  Edu pilot closure → E1 → E2 → E3 → E4 → E5
 BEAUTY       ✅  T1-0 → T1-4 prihvaćeno
              🟡  Marysoll browser acceptance čeka za T1-1 → T1-3 rezove
 NEXT         →   E1 Public Education discovery
-DEFERRED     →   T1-5 · Payments (spec zaključan) · T3 cutover ·
+DEFERRED     →   T1-5 · evidencija naplate (granica zaključana) · T3 cutover ·
                  legacy HMAC/marketplace write ·
                  Consultation / Questionnaire / Care · FUTURE H1–H4/F4–F7
 ```
@@ -142,7 +142,7 @@ Ovo se **ne** premešta u NEXT bez nove product odluke.
 | # | Šta | Zašto čeka |
 |---|---|---|
 | **T1-5** | Salonski paketi / entitlement / plaćanje klijentkinje (`ClientPackage`) | Nije tenant Subscription i ne uvodi se payment provider dok ne postoji stvarna potreba. `Service.subscription` opisuje ponudu, ne kupovinu. **Završetak T1-4 ga NE promoviše u NEXT** — points-shop nagrada je vaučer, ne kupljen paket. Sada ima pun ugovor: [Payments §5.4](PANTA-PAYMENTS-ENGINE.md) · [Client 360 §K](PANTA-CLIENT-360.md) |
-| **Payments — naplata klijentkinje** | Depozit, online plaćanje usluge, paketi/pretplate klijenata, ledger i isplate salonima | Specifikacija je zaključana ([PANTA-PAYMENTS-ENGINE.md](PANTA-PAYMENTS-ENGINE.md)); Faza 0 (trajnost webhook prijema) je u kodu. Dalje čeka odgovore koji nisu tehnički: sme li Marysoll kao MoR naplaćivati tuđu uslugu, fiskalizacija avansa, i izbor provajdera — **Paddle/Lemon nisu kandidati za usluge uživo** |
+| **Evidencija naplate + integracija po salonu** | Beleženje depozita koji je salon naplatio svojim kanalom, i integracija salonovog MoR/PSP-a kao naplativa usluga | Granica je zaključana ([PANTA-PAYMENTS-ENGINE.md](PANTA-PAYMENTS-ENGINE.md)): **Marysoll naplaćuje samo pretplatu tenanta**, novac između salona i klijentkinje ne prolazi kroz platformu. MoR model razmotren i odbačen (poreski limit, posredovanje u plaćanju, fiskalna obaveza, Paddle nema mehanizam za isplatu trećoj strani). Gate je postojeći `paymentIntegration` |
 | **T3 cutover** | `BookingReservation` / day-lock kao production write authority | Preduslov je occupancy blocker iz [T3 §4.1](PANTA-T3-BOOKING-ENGINE.md); dark core nije live authority pa ne blokira beauty rezove |
 | **Legacy write ulazi** | `POST /api/booking` (HMAC gost) i `POST /api/marketplace/appointments` kroz canonical seam | Jedini ulazi koji uzimaju `duration` iz zahteva i cenu `basePrice ?? 0`, bez pricing snapshot-a. Nema aktivnih korisnika tih putanja koji bi to učinili hitnim; ide uz marketplace/platform luk. [ARC §3](PANTA-BOOKING-CRM-ARC.md) |
 | **`cleanup:stale-group-items`** | Mrtav `services[]` niz na 2 usluge (marysoll, anja) | Eksplicitno odloženo. Skripta je napisana i idempotentna; pokreće se kad za to bude prilika, ne kao zaseban rez |
@@ -244,6 +244,7 @@ Canonical detalji, classification vocabulary i presentation/autosave contracts:
 | **H2 Registration bez hybrid izbora** | posle H1 | „Kreiraj Salon" ili „Kreiraj Edu Centar"; postojeći owner može dodati novi workspace pod istim loginom |
 | **H3 Existing hybrid migration** | posle H1/H2 | Podeliti hybrid na Salon + Education tenant uz eksplicitna pravila za EducationContent, settings, blog, branding, domen i education clients/assignments; Beauty ostaje Salonu |
 | **H4 `verticals[]` kao interni mehanizam** | posle H3 | Ne mora odmah nestati, ali više nije product UX model niti razlog da Salon i Edu dele sajt |
+| **CPU metrika u superadmin panelu** | `platformUsage.ts` | Danas hardkodovan `null`; traži Atlas Admin API + klaster **M10+** (M0 ne izlaže hardverske metrike). Storage i konekcije rade i sada, preko obične konekcije. Okidač: prelazak na M10 kad broj tenanta preraste free tier (procena ~20+). Atlas Service Account do tada nije potreban — pušten je da istekne 2026-09 |
 | **F4 Growth Content Coach** | posle pilot closure-a | Saveti za konkretan problem, search intent, naslov i CTA; nije AI generator generičkih tekstova |
 | **F5 Marketing Center** | posle Content Coach-a | Objavljen sadržaj → brand-aware cover, carousel, Story, Reel, newsletter teaser i CTA iz tenant design system-a |
 | **F6 Superadmin trend/marketing knowledge** | budući Growth OS | Održava prompt/knowledge sloj, SEO/title/social obrasce, smernice i industry primere |
