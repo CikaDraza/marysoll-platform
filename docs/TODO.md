@@ -4,10 +4,9 @@
 > sledeće i šta je namerno odloženo. Detalji po domenu žive u canonical
 > dokumentima i ne prepisuju se ovde.
 >
-> Grana: `staging/production-engines` · stanje koda provereno **2026-09-03**;
-> Edu pilot closure redosled revidiran **2026-09-04**.
-> T1-4 je merge-ovan u `staging/production-engines` 2026-09-03.
-> Zdravlje te grane: `tsc` prolazi, lint bez novih upozorenja, build prolazi,
+> Stanje koda provereno **2026-09-03**; Edu pilot closure redosled revidiran
+> **2026-09-04**.
+> Zdravlje tog preseka: `tsc` prolazi, lint bez novih upozorenja, build prolazi,
 > 166 test fajlova / 1980 testova prolazi (19 preskočeno). Brojevi važe za taj
 > datum i nisu obećanje.
 
