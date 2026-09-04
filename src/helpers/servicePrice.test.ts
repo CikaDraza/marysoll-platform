@@ -645,3 +645,107 @@ describe("tri canonical režima cene", () => {
     });
   });
 });
+
+describe("varijanta nije izabrana: to nije isto sto i cena na upit", () => {
+  /** lashroom-byanja slučaj: sve varijante imaju fiksnu cenu. */
+  const fiksneVarijante = svc({
+    name: "L volumen",
+    type: "variant",
+    variants: [
+      { name: "Novi set", price: 3500, duration: 120, perItem: false },
+      { name: "Korekcija", price: 2500, duration: 90, perItem: false },
+    ],
+  });
+
+  it("bez izabrane varijante NE tvrdi da je cena na upit", () => {
+    const e = estimateServicePrice({ service: fiksneVarijante });
+
+    // Cena se ne zna, ali razlog nije to sto salon tek treba da javi cenu.
+    expect(e.total).toBeNull();
+    expect(e.unknown).toBe(true);
+    expect(e.pendingSelection).toBe(true);
+    // Rezim ostaje fiksan: usluga cenu IMA, samo se ne zna koja.
+    expect(e.mode).toBe("fixed");
+  });
+
+  it("čim se varijanta označi, cena se pojavi i čekanje prestaje", () => {
+    const e = estimateServicePrice({
+      service: fiksneVarijante,
+      variantName: "Korekcija",
+    });
+
+    expect(e.total).toBe(2500);
+    expect(e.unknown).toBe(false);
+    expect(e.pendingSelection).toBe(false);
+    expect(e.durationMinutes).toBe(90);
+  });
+
+  it("varijanta koja stvarno nema cenu i dalje je na upit", () => {
+    const e = estimateServicePrice({
+      service: svc({
+        type: "variant",
+        variants: [
+          { name: "Standard", price: 2000, duration: 60, perItem: false },
+          {
+            name: "Po dogovoru",
+            price: 0,
+            priceMode: "on_request",
+            duration: 60,
+            perItem: false,
+          },
+        ],
+      }),
+      variantName: "Po dogovoru",
+    });
+
+    expect(e.total).toBeNull();
+    expect(e.mode).toBe("on_request");
+    // Izbor JE napravljen: ovo je stvarno na upit, ne cekanje izbora.
+    expect(e.pendingSelection).toBe(false);
+  });
+
+  it("marysoll.makeup slucaj: SVE varijante na upit -> na upit i pre izbora", () => {
+    // Ishod ne zavisi od izbora, pa je tvrdnja tačna već sada.
+    const e = estimateServicePrice({
+      service: svc({
+        type: "variant",
+        variants: [
+          { name: "Svadba", price: 0, priceMode: "on_request", duration: 90, perItem: false },
+          { name: "Maturska", price: 0, priceMode: "on_request", duration: 60, perItem: false },
+        ],
+      }),
+    });
+
+    expect(e.mode).toBe("on_request");
+    expect(e.pendingSelection).toBe(false);
+    expect(e.unknown).toBe(true);
+  });
+
+  it("usluga bez varijanti nikad ne čeka izbor", () => {
+    const fiksna = estimateServicePrice({
+      service: svc({ type: "single", basePrice: 2000 }),
+    });
+    expect(fiksna.pendingSelection).toBe(false);
+
+    const naUpit = estimateServicePrice({
+      service: svc({ type: "single", basePrice: 0, priceMode: "on_request" }),
+    });
+    expect(naUpit.pendingSelection).toBe(false);
+    expect(naUpit.mode).toBe("on_request");
+  });
+
+  it("od-usluga ima osnovnu cenu i pre izbora varijante", () => {
+    const e = estimateServicePrice({
+      service: svc({
+        type: "variant",
+        priceMode: "from",
+        basePrice: 2000,
+        variants: [
+          { name: "Veličina 1", price: 0, additionalPrice: 300, duration: 120, perItem: false },
+        ],
+      }),
+    });
+    expect(e.total).toBe(2000);
+    expect(e.pendingSelection).toBe(false);
+  });
+});
