@@ -176,3 +176,25 @@ zapisima.
 - [Identity & Loyalty Health](PANTA-IDENTITY-LOYALTY-HEALTH.md)
 - [Proxy pipeline](PROXY-PIPELINE.md)
 - [Cross-platform optimizacija](CROSS-PLATFORM-OPTIMIZATION.md)
+
+
+## Zajednička dokumentacija
+
+Od 2026-09-08 `docs/` i korenski `PLAN-OPTIMIZACIJE.md` dele isti sadržaj na
+svim postojećim lokalnim granama, uključujući `archive/*` po eksplicitnom
+zahtevu vlasnika. Prethodni commit-i čuvaju istorijske verzije dokumentacije.
+Dokumentacija opisuje zajednički status projekta; stanje implementacije stare
+grane proverava se iz njenog koda, ne iz oznake „gotovo” u zajedničkom tracker-u.
+
+Pri sledećoj izmeni dokumentacije:
+
+1. Osvežiti remote refs i uporediti docs razlike pre izbora canonical preseka;
+   sačuvati novije odluke i dokumente koji postoje samo na jednoj grani.
+2. Ažurirati `docs/TODO.md` kao jedini operativni tracker i relevantne ugovore.
+3. Preneti isti komplet dokumentacije posebnim docs commit-om na svaku granu,
+   bez spajanja aplikacionog koda radi dokumentacije i bez force push-a.
+4. Proveriti identičan `docs` tree hash i blob `PLAN-OPTIMIZACIJE.md`, kao i da
+   svaki docs commit menja samo dokumentaciju. Commitovanje i remote push su
+   odvojeni koraci; navesti koji je izvršen.
+
+Ovo je procesni ugovor; automatska CI sinhronizacija nije implementirana.

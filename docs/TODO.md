@@ -10,6 +10,18 @@
 > 184 test fajlova / 2148 testova prolazi (19 preskočeno). Brojevi važe za taj
 > datum i nisu obećanje.
 
+## Zajednička dokumentacija — 2026-09-08
+
+Dokumentacija je zajednički projektni presek, ne tvrdnja da svaka stara/task
+grana sadrži isti kod. E2 je integrisan u `origin/main` (`6b66682`) i
+`origin/staging/production-engines` (`19ceff1`); dokumentacija ta dva preseka
+identična je aktivnoj E2 grani (`f00b2d9`) pre ovog usklađivanja.
+Raniji rezultati testova u zaglavlju ostaju istorijska evidencija.
+
+Novi Blumen pilot dokumenti su uključeni u zajednički skup. Njihovo
+commitovanje ne znači da je pilot implementiran niti menja NEXT za Education.
+Pravilo narednih usklađivanja: [branching strategija](PANTA-BRANCHING-STRATEGY.md#zajednička-dokumentacija).
+
 ## Redosled
 
 ```text
@@ -223,6 +235,29 @@ redosled se više ne izmišlja unapred i ne pravi se novi plan dokument.
 
 Canonical detalji, classification vocabulary i presentation/autosave contracts:
 [Edu Centar v1 — pilot closure](PANTA-EDU-CENTAR-ARC.md#edu-centar-v1--pilot-closure--revised-target-2026-09-04).
+
+## Blumen — dokumentovan pilot, implementacija predstoji
+
+Ovo je zaseban pilot plan; nije automatska zamena za E3 → E4 → E5.
+
+- **P0 — discovery/provider gate:** potvrditi postojeće brojeve/provajdere,
+  Meta/WhatsApp vlasništvo, izvoz klijenata, katalog, radno vreme i pravila
+  prelaska sa postojećeg sistema. Zatvaranje spoljnog gate-a nije potvrđeno u repou.
+- **P1 — booking funnel i canonical podaci:** pripremiti tenant i proveriti
+  guest booking bez AI-a. Live provisioning/acceptance nisu potvrđeni ovim pregledom.
+- **R0 → R2 — prvi inženjerski rad:** Reception ugovori i validacija,
+  deterministički parser i canonical alati, serverski conversation state i
+  strukturisani odgovori sa golden eval proverama.
+- **R3 → R7:** interaktivni workspace, booking/loyalty/maps tok,
+  notification orchestrator i delivery ledger, Instagram/WhatsApp adapteri,
+  pa proaktivna Maria. To su ciljevi, ne završene funkcionalnosti.
+
+Detalji: [digitalna recepcija P0–P5](blumen_salon/PANTA-BLUMEN-DIGITAL-RECEPTION-PILOT-v0.1.md)
+· [AI workspace R0–R7](blumen_salon/PANTA-BLUMEN-RECEPTION-AI-WORKSPACE-PILOT-v0.1.md)
+· [onboarding kanala](blumen_salon/PANTA-CHANNEL-ONBOARDING-INSTAGRAM-WHATSAPP-SMS-GUIDE-v0.1.md).
+Razgovor u istom direktorijumu je istorijski kontekst; specifični pilot ugovori
+nose odluke. Cene/uslovi provajdera u dokumentima su datirani istraživački
+presek, ne rezultat ponovne provere pri ovom docs sync-u.
 
 ## Završeno ranije — platformski rezovi
 
