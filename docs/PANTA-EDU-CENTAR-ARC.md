@@ -605,8 +605,9 @@ Ovo su javni podaci i tako se tretiraju. Tvrda pravila:
 - pregled je eksplicitno sačuvan i objavljen kao javni metapodatak
 
 Kada **već javan** sadržaj prelazi u GATED, pregled se sme zasejati iz onoga što
-je **ranije već bilo javno**: poslednji javni naslov, javni SEO opis, javni
-cover. Ne prenosi se: blokovi članka, download adrese, interni metapodaci, novi
+je **ranije već bilo javno**: poslednji javni naslov, javni opis iz naslovne
+sekcije (`hero.subtitle`), javni cover. SEO polja tu nemaju ulaz — vidi „SEO
+nije izvor vidljivog sadržaja". Ne prenosi se: blokovi članka, download adrese, interni metapodaci, novi
 privatni naslov, nesačuvana radna kopija.
 
 Sadržaj koji je GATED od prvog dana traži da vlasnica pregled definiše sama.
@@ -923,9 +924,16 @@ odvojen budući pravac.
   **Sve | Procena kože | Rutina i sastojci | Promene i stanja kože | Zaštita
   kože**. Nema dodatnih javnih filtera. Kartica prikazuje „Video" kada je video
   glavni format, inače „Članak".
-- `shortDescription`, `topicKey` i `intentKey` ulaze u publication contract;
-  landing oznake nastaju iz `topicKey + intentKey`. Broj 01–06, URL, datum
-  objave, autor, redosled, link i reading time određuje sistem.
+- `topicKey` i `intentKey` ulaze u radnu kopiju i publication snapshot;
+  `hero.subtitle` ostaje jedini postojeći izvor opisa kartice/članka. Ne uvodi
+  se `shortDescription`. Landing oznake nastaju iz `topicKey + intentKey`.
+  Broj 01–06, URL, datum objave, autor, redosled i link određuje sistem.
+- **Implementirano E1 (2026-09-04):** opcioni tenant
+  `educationTaxonomyPreset: "skincare"` razrešava Education-owned taksonomiju;
+  missing/unknown preset ne pada na skincare. `education.topic-hub` nosi
+  `education.catalog` gate i kroz canonical `publicContent.ts` read model puni
+  postojeći Theme-9 renderer. Eksplicitni `SalonProfile.isDemo` je jedini seam
+  za CMS fixture; prazan real tenant nikada ne dobija demo kartice.
 
 ### E2 — Authoring clarity
 
@@ -945,8 +953,8 @@ Canonical klasifikacija razdvaja tri ose:
 | Osa | Vrednosti | Vidljivost |
 |---|---|---|
 | `format` | `article`, `video` | javna oznaka |
-| `topicKey` | `skin-assessment`, `routine-ingredients`, `skin-changes-conditions`, `skin-protection` | četiri javna filtera |
-| `intentKey` | `how-to-recognize`, `why-it-happens`, `how-to-care`, `step-by-step` | uredničko vođenje i oznaka, ne novi filter |
+| `topicKey` | `assessment`, `routine_ingredients`, `conditions`, `protection` | četiri javna filtera |
+| `intentKey` | `recognize`, `explain`, `care`, `step_by_step` | uredničko vođenje i oznaka, ne novi filter |
 
 Postojeći `advice/article/guide/video/material` ne migriraju se brutalno. Uvodi
 se backward-compatible mapiranje, pa se model čisti postepeno. Jedan video u
@@ -955,8 +963,8 @@ tekstualnom radu ne menja format: ako sadržaj ima smisla bez videa, to je
 
 Article editor ima hijerarhiju:
 
-1. veliki Naslov i pravi `shortDescription` za karticu — ne SEO description i
-   ne `publicPreview.description` kao semantički hack;
+1. veliki Naslov i `hero.subtitle` kao postojeći opis kartice — ne SEO
+   description i ne `publicPreview.description` kao semantički hack;
 2. velike selectable kartice za jednu temu i jedan editorial intent;
 3. najveću površinu za Content Composer;
 4. odvojenu, sekundarnu naslovnu sliku;
@@ -974,6 +982,173 @@ blok nema sadržaj". Importer se ne rekonstruiše: dozvoljeni su samo sigurni
 header/footer cleanup, spajanje prelomljenih bullet-a, pouzdana rekonstrukcija
 praznih numerisanih stavki i whitespace/HTML entity normalizacija.
 
+**Implementirano E2 (2026-09-04) — code complete, browser acceptance pending:**
+
+- `/education` i direktni `/education/content/new` nude `article`, `import` i
+  `video` kao whitelisted početne prezentacione režime. Režim se ne persistira;
+  postojeći zapis i njegov legacy `kind` uvek pobeđuju query parametar.
+- Novi članak automatski dobija postojeći article preset, import počinje bez
+  konkurentskih blokova, a video odmah dobija primarni `VideoBlock`. Sam izbor
+  kartice ne kreira DB zapis.
+- Editor je podeljen na Osnovno, Tema/cilj, dominantni Composer, Naslovnu sliku,
+  opcioni Materijal za preuzimanje, Pristup i collapsed Napredna podešavanja.
+  `hero.subtitle` ostaje jedini normalni opis kartice i zaglavlja.
+- Taxonomy radio kartice koriste E1 Education resolver i njegove stabilne
+  ključeve. Authoring help je prezentacioni metadata istog preseta, ne nova
+  taxonomy niti Content Coach. Tema i cilj su dva odvojena izbora, pa svaki ima
+  svoj red i svoj red kartica — u dve kolone su se čitali kao jedan spisak od
+  osam ponuda.
+- Import i download su odvojeni: importer i dalje vraća uređiv article draft,
+  dok visitor download ostaje isključivo canonical `FileDownloadBlock` u istom
+  `blocks` nizu. Generički Composer presentation filter ne kopira blokove,
+  ID-jeve niti menja redosled pri otvaranju.
+- `ContentBlockValidation.issues` ostaje jedini validator; kartica sada uz
+  „Potrebno je dopuniti" prikazuje prvu konkretnu radnju. Strict publish,
+  INVALID i HIDDEN semantike nisu oslabljene.
+- Autosave, local durable draft, revision ordering, recovery, exit flush i
+  publish-after-save nisu refaktorisani. Browser acceptance pripada narednom
+  E3 rezu i nije proglašen završenim testovima.
+
+**E2 audit (2026-09-04) — jedan potvrđen defekt, ispravljen:**
+
+Strelice u filtriranom Composer prikazu računale su `first`/`last` iz canonical
+`blocks`, a pomeranje je išlo na neposrednog canonical suseda. Autor je time
+mogao da klikne aktivnu strelicu bez vidljivog partnera: `blocks[]` redosled i
+`priority` bi se promenili bez ijedne vidljive promene, a tiha izmena bi
+pokrenula autosave i novu reviziju.
+
+Kontrole sada predstavljaju VIDLJIVI spisak: `first`/`last` se računaju iz
+vidljivih blokova, a `moveBlockRelativeToVisible` menja mesto sa prethodnim ili
+sledećim VIDLJIVIM blokom. Preskočeni blokovi zadržavaju svoj canonical slot,
+ID-jevi ostaju isti, a prioriteti se normalizuju tačno jednom. Nefiltriran
+prikaz (salon landing composer) zadržava zatečeno ponašanje.
+
+**Video invariant — primarni video je usidren (`kind === "video"`):**
+
+Prvi `VideoBlock` u canonical redosledu nije prateći blok nego nosilac zapisa.
+Hijerarhija je: PRIMARNI VIDEO → naslov i metapodaci → opciono objašnjenje →
+opcioni izvori → opcioni materijal za preuzimanje. Tačan vizuelni položaj
+naslova prati prihvaćeni Theme-9 video dizajn, ali prateći sadržaj ne sme da
+stoji ispred primarnog videa.
+
+U editoru primarni video nema Pomeri gore, Pomeri dole, Dupliraj, Sakrij ni
+Obriši — menja se samo njegov izvor i njegova video polja. Prateći blokovi
+ostaju obični canonical `ContentBlock`-ovi i pomeraju se ispod videa, a ni jedan
+od njih ne može da zameni mesto sa usidrenim blokom. Kada video blok ne postoji,
+„Dodaj video" ga ubacuje na početak `blocks` niza.
+
+Nema paralelnog video state-a i nema novog dokumenta: kanonski izvor ostaje isti
+`VideoBlock` unutar `blocks[]`, a objava i dalje traži vidljiv primarni video
+izvor (`missingRequiredVideoSource`). Isti `VideoBlock` u članku nema nijedno od
+ovih ograničenja.
+
+**SEO nije izvor vidljivog sadržaja (ispravljeno 2026-09-04):**
+
+Javno zaglavlje Education strane čita ISKLJUČIVO autorska polja:
+
+```text
+h1            EducationContent.title
+uvodni pasus  hero.subtitle  (gated: publicPreview.description ako je unet)
+naslovna slika  hero.image → snapshot.cover  (gated: publicPreview.coverImage)
+```
+
+`seo.title`, `seo.description` i `seo.ogImage` služe samo `generateMetadata`,
+pretrazi i OpenGraph-u. Ranije su stajali na kraju fallback lanca za vidljivi
+opis i cover (uvedeno u 880d265 kao „SEO je rezerva, ne konkurencija"), pa je
+svaki zapis bez autorskog opisa u zaglavlju prikazivao tekst pisan za Google,
+dok je pravi sadržaj ostajao niže na strani u slabijoj hijerarhiji. Lanac je
+presečen na tri mesta: `toSummary` (javno čitanje), `resolvePublishedCover` i
+izvedeni `publicPreview` u `buildPublishedSnapshot` (upis snapshot-a).
+
+Kada autor nije napisao opis, zaglavlje ostaje bez uvodnog pasusa. To je
+namerno: prazno mesto je signal autoru, a SEO tekst na tom mestu je pogrešan
+sadržaj koji izgleda ispravno.
+
+**Taxonomy nema podrazumevani izbor — odluka (2026-09-05):**
+
+`topicKey` i `intentKey` ostaju NEPOSTAVLJENI za svaki novi sadržaj, u sva tri
+start moda. Razlog nije ukus nego postojeći ugovor: publish ruta već odbija
+javno otkriven sadržaj bez oba ključa („Tema i pristup teksta su obavezni pre
+javne objave"). Podrazumevani izbor bi tu proveru tiho zadovoljio i svaki
+nepregledan tekst svrstao pod istu temu — a pogrešna oznaka u javnom filteru je
+gora od nijedne.
+
+Editor zato uslov POKAZUJE pre objave: sekcija 2 ispisuje šta nedostaje dok je
+sadržaj javan ili zaključan, umesto da vlasnica sazna tek kad objava padne.
+Zaključano je u `authoringStart.test.ts` i `education-content-editor-model.test.ts`
+— ni jedan šav početnog stanja ne sme da ubaci vrednost, a `createPayload` ne
+šalje ključ koji vlasnica nije izabrala.
+
+**Link i SEO nisu „napredna podešavanja" (2026-09-05):**
+
+Adresa pod kojom sadržaj živi i tekst kojim se pojavljuje u pretrazi bili su
+sklopljeni u Disclosure panel „Napredna podešavanja" — i sakriveni, i svrstani u
+isti koš sa podešavanjima koja niko ne dira. Sada je to obična, otvorena sekcija
+„7 · Link i SEO", kao i svaka druga:
+
+- polje se zove **Link sadržaja** i prikazuje javni prefiks `/edukacija/`, pa se
+  vidi šta se tačno menja;
+- SEO naslov, opis i slika za deljenje stoje odmah ispod, bez sklapanja, i samo
+  za javan i zaključan sadržaj — privatan nema javnu stranu;
+- sekcija izričito kaže da se na strani prikazuju naslov i kratak opis iz
+  sekcije 1, a ne SEO tekst (vidi „SEO nije izvor vidljivog sadržaja").
+
+Sekcija 6 je „Pristup", bez „/ objavljivanje": ona bira KO sme da vidi, dok
+objavu pokreće dugme u zaglavlju.
+
+**Telo članka: `.edu-prose` je jedini vlasnik rasporeda (2026-09-05):**
+
+Blokovi Content Composer-a dele se sa newsletterom i nose svoje landing omotače
+(`max-w-4xl`/`max-w-7xl`, `mx-auto`, `px-6 lg:px-8`, sopstvene margine). U
+članku ih poništava `.edu-prose`, pa svaki blok počinje i završava na ivici
+kontejnera strane. Dva pravila koja su se lomila:
+
+1. **Koren bloka nije uvek `section`.** `ArticleBlock` se renderuje kao
+   `<article>`, `CalloutBlock` i `AffiliateCTABlock` kao `<aside>`. Selektor je
+   hvatao samo `section, aside`, pa je `ArticleBlock` jedini zadržavao dvostruki
+   `px-6 lg:px-8`, a callout — koji NEMA unutrašnji omotač — ostajao bez svog
+   razmaka, sa tekstom na ivici okvira. Zato `aside` razmak DOBIJA, a
+   `article`/`section` ga gube.
+
+2. **`globals.css` piše van `@layer`, Tailwind utility klase u sloju.**
+   Nenaslojeno pravilo pobeđuje `space-y-*`, `my-*` i `max-w-*` bez obzira na
+   specifičnost. `margin-block: 0` je tako ugasio `space-y-12` na omotaču tela i
+   blokovi su se slepili. Vertikalni ritam zato mora da stoji uz to isto
+   pravilo, kao susedni selektor, a ne kao klasa na omotaču.
+
+Oba pravila drži `edu-prose-block-container.test.tsx`: renderuje svih dvanaest
+tipova blokova, čita listu tagova iz `globals.css` i pada ako ijedan korenski
+element nije pokriven.
+
+**Naslovna slika ima dva mesta i jedan prekidač (2026-09-05):**
+
+`hero.image` je uvek slika KARTICE u listi Edukacije i u Theme-9 hub-u — tamo je
+prepoznavanje i ne isključuje se. Na samoj strani sadržaja je opciona i vodi je
+`hero.coverOnPage`:
+
+```text
+hero.coverOnPage !== true   kartica: slika · strana: bez slike   (podrazumevano)
+hero.coverOnPage === true   kartica: slika · strana: slika iznad prvog bloka
+```
+
+Razlog je konkretan: kod `kind === "video"` i kod članka koji počinje slikom iz
+prvog bloka, naslovna slika iznad njega je ista poruka dva puta, jedna ispod
+druge. Odsutna vrednost namerno znači „samo kartica" — zatečeni zapisi tako ne
+zadržavaju sliku na strani koju vlasnica nije svesno tamo stavila.
+
+Zastavica je deo naslovne sekcije, pa putuje istim putem kao i ostatak: radna
+kopija → `publishedSnapshot.hero` → javno čitanje. Menja se u editoru (sekcija
+„4 · Naslovna slika") i, kao svaka izmena javne strane, stupa na snagu tek
+objavom. Filtriranje radi `resolveArticlePresentation`, pa i javni članak i
+zaštićeni čitač koriste isto pravilo.
+
+Redosled javne video strane je time zaključan testom:
+
+```text
+breadcrumbs → oznaka vrste („Video") → h1 → uvodni pasus →
+datum · vreme čitanja · autor → VIDEO → ostali canonical blokovi
+```
+
 ### E3 — Draft safety
 
 Ciljni ugovor je: **upiši → izađi → vrati se → tekst je tamo**.
@@ -986,11 +1161,12 @@ navigacija                → flush autosave, zatim prelazak
 ponovno otvaranje         → vrati/ponudi noviji lokalni draft
 ```
 
-Backend već ima `workingSavedAt`, `workingSessionId` i `workingRevision` za
-zaštitu od obrnutog redosleda zahteva; E3 taj ugovor završava kroz UI i lokalni
-oporavak. Statusi su „Čuvanje...", „Sačuvano upravo sada", „Bez interneta —
-izmene su sačuvane na ovom uređaju" i posle povratka veze „Sinhronizovano".
-Eksplicitni Save Draft može ostati kao potvrda, ali nije jedina zaštita.
+Postojeći editor već ima debounced server autosave, IndexedDB durable draft,
+session/revision ordering, recovery i exit flush. E1 taj kod ne menja. E3
+ostaje zaseban acceptance/hardening rez za potpuni online/offline status i
+potvrdu ponašanja u realnom browser toku; ne predstavlja dozvolu za prepisivanje
+postojećeg autosave sistema. Eksplicitni Save Draft može ostati kao potvrda,
+ali već nije jedina zaštita.
 
 ### E4 — poseban Blog tab
 
