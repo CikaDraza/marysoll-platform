@@ -125,11 +125,11 @@ export function adminOrigin(): string {
 }
 
 /**
- * Top-level segmenti koji pripadaju platformi — nikad tenant slug.
- * Mora da prati `RESERVED_TOP_SEGMENTS` u proxy/constants.ts (proxy odlučuje
- * isto ovo server-side; razilaženje = login forma gađa pogrešan endpoint).
+ * Sistemske top-level putanje koje žive u kodu — nikad tenant ili CMS slug.
+ * Dinamičke Marketing CMS stranice NAMERNO nisu ovde: njihov izvor istine je
+ * `ProfilPlatforme.cmsPages`, a proxy ih ne sme hardkodovati.
  */
-export const PLATFORM_PATH_SEGMENTS = new Set([
+export const RESERVED_SYSTEM_SEGMENTS = new Set([
   "dashboard",
   "superadmin",
   "login",
@@ -142,13 +142,6 @@ export const PLATFORM_PATH_SEGMENTS = new Set([
   "api",
   "_next",
   "newsletter",
-  "privacy",
-  "terms",
-  "terms-and-conditions",
-  "refund",
-  "pricing",
-  "kontakt",
-  "booking",
   "unauthorized",
   "logout",
   "tenant",
@@ -156,6 +149,7 @@ export const PLATFORM_PATH_SEGMENTS = new Set([
   "education",
   "assets",
   "dijagnostika",
+  "favicon.ico",
 ]);
 
 /**
@@ -164,7 +158,7 @@ export const PLATFORM_PATH_SEGMENTS = new Set([
  */
 export function tenantSlugFromPath(pathname: string): string | null {
   const first = pathname.split("/").filter(Boolean)[0] ?? "";
-  if (!first || PLATFORM_PATH_SEGMENTS.has(first)) return null;
+  if (!first || RESERVED_SYSTEM_SEGMENTS.has(first)) return null;
   return /^[a-z0-9-]+$/.test(first) ? first : null;
 }
 

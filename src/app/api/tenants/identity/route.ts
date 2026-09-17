@@ -12,16 +12,10 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { requireAdmin } from "@/lib/auth/auth-server";
 import { sendEmail } from "@/lib/email/email";
-
-function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .substring(0, 60);
-}
+import {
+  getPublicSlugAvailability,
+  publicSlugConflictMessage,
+} from "@/lib/platform/public-slugs";
 
 export async function PATCH(req: NextRequest) {
   const auth = requireAdmin(req);
@@ -51,16 +45,18 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (body.slug !== undefined) {
-    newSlug = slugify(body.slug);
-    if (!newSlug) {
-      return NextResponse.json({ error: "Slug nije validan" }, { status: 400 });
+    const availability = await getPublicSlugAvailability(body.slug, {
+      excludeTenantId: String(tenant._id),
+    });
+    newSlug = availability.slug;
+    if (!availability.available) {
+      return NextResponse.json(
+        { error: publicSlugConflictMessage(availability.conflict) },
+        { status: availability.conflict === "invalid" ? 400 : 409 },
+      );
     }
 
     if (newSlug !== tenant.slug) {
-      const existing = await Tenant.findOne({ slug: newSlug, _id: { $ne: tenant._id } });
-      if (existing) {
-        return NextResponse.json({ error: "Slug je već zauzet" }, { status: 409 });
-      }
       oldSlug = tenant.slug;
       updates.slug = newSlug;
       updates.subdomain = newSlug;
