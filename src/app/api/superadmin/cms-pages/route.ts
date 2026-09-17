@@ -6,14 +6,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
 import { ProfilPlatforme } from "@/models/ProfilPlatforme";
-
-function slugify(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .slice(0, 80);
-}
+import {
+  getPublicSlugAvailability,
+  publicSlugConflictMessage,
+} from "@/lib/platform/public-slugs";
 
 async function getPlatformDoc() {
   return ProfilPlatforme.findOne({});
@@ -38,11 +34,26 @@ export async function POST(req: NextRequest) {
   const body = await req.json() as { title?: string; slug?: string; content?: string };
   if (!body.title) return NextResponse.json({ error: "title je obavezan" }, { status: 400 });
 
-  const slug = body.slug || slugify(body.title);
+  const requestedSlug = body.slug || body.title;
 
   await connectToDB();
   const profile = await getPlatformDoc();
   if (!profile) return NextResponse.json({ error: "Profil nije pronađen" }, { status: 404 });
+
+  const availability = await getPublicSlugAvailability(requestedSlug, {
+    maxLength: 80,
+  });
+  if (!availability.available) {
+    const message =
+      availability.conflict === "cms"
+        ? "Stranica sa tim slug-om već postoji"
+        : publicSlugConflictMessage(availability.conflict);
+    return NextResponse.json(
+      { error: message },
+      { status: availability.conflict === "invalid" ? 400 : 409 },
+    );
+  }
+  const slug = availability.slug;
 
   if ((profile.cmsPages ?? {})[slug]) {
     return NextResponse.json({ error: "Stranica sa tim slug-om već postoji" }, { status: 409 });

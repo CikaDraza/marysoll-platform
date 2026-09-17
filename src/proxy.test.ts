@@ -139,9 +139,29 @@ describe("marketing domen (marysoll.com)", () => {
     expect(forwardedHeader(res, "x-domain-type")).toBe("marketing");
   });
 
-  it("PROD: path-based tenant ruta je blokirana (→ /not-found)", async () => {
-    const { res } = await runProxy("marysoll.com", "/kiki-kiss-beauty");
-    expect(rewritePath(res)).toBe("/not-found");
+  it("PROD: custom CMS slug ostaje marketing bez tenant resolve fetch-a", async () => {
+    const { res, calls } = await runProxy("marysoll.com", "/edu-centar");
+    expect(isPass(res)).toBe(true);
+    expect(forwardedHeader(res, "x-domain-type")).toBe("marketing");
+    expect(rewritePath(res)).toBeNull();
+    expect(calls).toHaveLength(0);
+  });
+
+  it("PROD: nepostojeći custom slug ostaje marketing za normalan Next 404", async () => {
+    const { res, calls } = await runProxy(
+      "marysoll.com",
+      "/neka-custom-cms-stranica",
+    );
+    expect(isPass(res)).toBe(true);
+    expect(forwardedHeader(res, "x-domain-type")).toBe("marketing");
+    expect(calls).toHaveLength(0);
+  });
+
+  it("PROD: postojeći tenant slug u putanji nije path-based tenant", async () => {
+    const { res, calls } = await runProxy("marysoll.com", "/kiki-kiss-beauty");
+    expect(isPass(res)).toBe(true);
+    expect(forwardedHeader(res, "x-domain-type")).toBe("marketing");
+    expect(calls).toHaveLength(0);
   });
 
   it("direktan pristup /tenant/* van client domena → /not-found", async () => {
@@ -181,9 +201,18 @@ describe("vercel preview (path-based tenant)", () => {
     expect(res.headers.get("location")).toBeNull();
   });
 
-  it("nepostojeći slug → /not-found (tenant bez ID-a je bezbednosna rupa)", async () => {
+  it("CMS slug bez tenanta ostaje marketing", async () => {
+    const { res } = await runProxy(HOST, "/ai-recepcija");
+    expect(isPass(res)).toBe(true);
+    expect(forwardedHeader(res, "x-domain-type")).toBe("marketing");
+    expect(rewritePath(res)).toBeNull();
+  });
+
+  it("nepostojeći slug ostaje marketing za Next routing layer", async () => {
     const { res } = await runProxy(HOST, "/nepostojeci-salon");
-    expect(rewritePath(res)).toBe("/not-found");
+    expect(isPass(res)).toBe(true);
+    expect(forwardedHeader(res, "x-domain-type")).toBe("marketing");
+    expect(rewritePath(res)).toBeNull();
   });
 
   it("interni resolve fetch nosi bypass header kad secret postoji", async () => {
@@ -272,6 +301,23 @@ describe("staging apex (qa/staging.marysoll.com, path-based tenant)", () => {
     );
     expect(rewritePath(res)).toBe("/tenant/termini");
     expect(forwardedHeader(res, "x-tenant-base-path")).toBe("/kiki-kiss-beauty");
+  });
+
+  it("staging CMS slug bez tenant-a ostaje marketing", async () => {
+    const { res } = await runProxy("staging.marysoll.com", "/edu-centar");
+    expect(isPass(res)).toBe(true);
+    expect(forwardedHeader(res, "x-domain-type")).toBe("marketing");
+    expect(rewritePath(res)).toBeNull();
+  });
+
+  it("staging nepoznat slug ne postaje unresolved client", async () => {
+    const { res } = await runProxy(
+      "staging.marysoll.com",
+      "/nepostojeca-stranica",
+    );
+    expect(isPass(res)).toBe(true);
+    expect(forwardedHeader(res, "x-domain-type")).toBe("marketing");
+    expect(rewritePath(res)).toBeNull();
   });
 
   it("staging.marysoll.com/{slug}/edukacija/{clanak} → rewrite /tenant/edukacija/{clanak}", async () => {

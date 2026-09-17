@@ -4,7 +4,7 @@
  * Headeri za interne fetch-eve: lib/platform/internal-fetch.ts.
  */
 
-import { PLATFORM_PATH_SEGMENTS } from "@/lib/platform/host-context";
+export { RESERVED_SYSTEM_SEGMENTS } from "@/lib/platform/host-context";
 
 export const IS_PROD = process.env.NODE_ENV === "production";
 export const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
@@ -63,15 +63,4 @@ export const CLIENT_PROTECTED_API_ROUTES = [
   "/api/testimonials/create",
   "/api/users/me",
 ];
-
-/**
- * Rezervisani top-level segmenti = platformske putanje (deljene sa klijentom,
- * da login forma i proxy isto odluče šta je slug a šta platformska ruta) plus
- * par čisto proxy-jevskih.
- */
-export const RESERVED_TOP_SEGMENTS = new Set([
-  ...PLATFORM_PATH_SEGMENTS,
-  "favicon.ico",
-  "Pronađi termin",
-]);
 

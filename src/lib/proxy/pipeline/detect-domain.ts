@@ -17,7 +17,7 @@ import {
   BASE_DOMAIN,
   CUSTOM_CLIENT_DOMAIN,
   IS_PROD,
-  RESERVED_TOP_SEGMENTS,
+  RESERVED_SYSTEM_SEGMENTS,
   STAGING_PATH_HOSTS,
   isCustomDomain,
 } from "../constants";
@@ -159,37 +159,35 @@ export async function detectDomain(ctx: ProxyContext): Promise<null> {
   };
   trace(ctx, `domain=${detected.type} via ${detected.via}`);
 
-  // Path-based tenant routing (marysoll.com/[slug] ili localhost/[slug] — dev,
-  // odnosno *.vercel.app preview koji nema tenant subdomene).
-  const isMarketingOrLocalhost =
-    ctx.domainType === "marketing" ||
-    (!IS_PROD && ctx.hostname.split(":")[0].startsWith("localhost"));
+  // Production apex je isključivo platform/marketing namespace. Path-based
+  // tenant routing postoji samo na lokalnom, preview i staging/QA hostu.
+  const bareHost = ctx.hostname.split(":")[0].toLowerCase();
+  const supportsPathBasedTenantRouting =
+    (!IS_PROD && bareHost.startsWith("localhost")) ||
+    bareHost.endsWith(".vercel.app") ||
+    STAGING_PATH_HOSTS.has(bareHost);
 
-  if (isMarketingOrLocalhost) {
+  if (ctx.domainType === "marketing" && supportsPathBasedTenantRouting) {
     const segments = ctx.pathname.split("/").filter(Boolean);
     const firstSegment = segments[0] ?? "";
     if (
       firstSegment.length > 0 &&
-      !RESERVED_TOP_SEGMENTS.has(firstSegment) &&
+      !RESERVED_SYSTEM_SEGMENTS.has(firstSegment) &&
       /^[a-z0-9-]+$/.test(firstSegment)
     ) {
-      ctx.domainType = "client";
       const resolved = await tenantClient.resolveSlug(ctx.request, firstSegment);
-      ctx.tenant = {
-        slug: firstSegment,
-        id: resolved?.id ?? null,
-        customDomain: resolved?.customDomain ?? null,
-      };
-      const bareHost = ctx.hostname.split(":")[0].toLowerCase();
-      // isPathBasedHost: slug je došao iz URL putanje (ne iz subdomena/custom
-      // domena) — localhost dev, Vercel preview build ILI staging apex
-      // (qa/staging.marysoll.com). Postavlja x-tenant-base-path na "/{slug}" pa
-      // in-tenant navigacija radi ispravno.
-      ctx.isPathBasedHost =
-        (!IS_PROD && bareHost.startsWith("localhost")) ||
-        bareHost.endsWith(".vercel.app") ||
-        STAGING_PATH_HOSTS.has(bareHost);
-      trace(ctx, `path slug '${firstSegment}' -> domain=client`);
+      if (resolved) {
+        ctx.domainType = "client";
+        ctx.tenant = {
+          slug: resolved.slug,
+          id: resolved.id,
+          customDomain: resolved.customDomain ?? null,
+        };
+        ctx.isPathBasedHost = true;
+        trace(ctx, `path slug '${firstSegment}' -> domain=client`);
+      } else {
+        trace(ctx, `path '${firstSegment}' is not tenant -> keep marketing`);
+      }
     }
   }
 
