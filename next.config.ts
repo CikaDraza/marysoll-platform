@@ -5,12 +5,6 @@ import type { NextConfig } from "next";
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
 
 const nextConfig: NextConfig = {
-  // TypeScript 5 ima stabilan compiler API. Time izbegavamo CLI podproces koji
-  // u pojedinim lokalnim Electron/VS Code okruženjima nema parsabilan stdout.
-  experimental: {
-    useTypeScriptCli: false,
-  },
-
   // Workspace paketi (engine-i) se isporučuju kao TS source — Next ih transpiluje
   transpilePackages: [
     "@panta/diagnostic-engine",

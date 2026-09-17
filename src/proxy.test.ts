@@ -147,6 +147,13 @@ describe("marketing domen (marysoll.com)", () => {
     expect(calls).toHaveLength(0);
   });
 
+  it("PROD: AI recepcija CMS slug ostaje marketing bez tenant resolve fetch-a", async () => {
+    const { res, calls } = await runProxy("marysoll.com", "/ai-recepcija");
+    expect(isPass(res)).toBe(true);
+    expect(forwardedHeader(res, "x-domain-type")).toBe("marketing");
+    expect(calls).toHaveLength(0);
+  });
+
   it("PROD: nepostojeći custom slug ostaje marketing za normalan Next 404", async () => {
     const { res, calls } = await runProxy(
       "marysoll.com",
@@ -343,6 +350,19 @@ describe("localhost dev (path-based tenant)", () => {
       "/kiki-kiss-beauty",
     );
   });
+
+  it.each(["127.0.0.1:3006", "192.168.1.20:3006"])(
+    "%s koristi isti local path-based tenant routing",
+    async (host) => {
+      const { res } = await runProxy(host, "/kiki-kiss-beauty/usluge", {
+        nodeEnv: "development",
+      });
+      expect(rewritePath(res)).toBe("/tenant/usluge");
+      expect(forwardedHeader(res, "x-tenant-base-path")).toBe(
+        "/kiki-kiss-beauty",
+      );
+    },
+  );
 });
 
 // ─── Tenant subdomen ──────────────────────────────────────────────────────────

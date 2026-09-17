@@ -4,6 +4,8 @@
  * Headeri za interne fetch-eve: lib/platform/internal-fetch.ts.
  */
 
+import { isLocalHost } from "@/lib/platform/host-context";
+
 export { RESERVED_SYSTEM_SEGMENTS } from "@/lib/platform/host-context";
 
 export const IS_PROD = process.env.NODE_ENV === "production";
@@ -21,8 +23,7 @@ export { STAGING_PATH_HOSTS, isPathBasedHost } from "@/lib/platform/host-context
 export function isCustomDomain(hostname: string, baseDomain: string): boolean {
   const host = hostname.split(":")[0];
   return (
-    host !== "localhost" &&
-    !host.startsWith("127.") &&
+    !isLocalHost(host) &&
     host !== baseDomain &&
     !host.endsWith(`.${baseDomain}`)
   );
@@ -63,4 +64,3 @@ export const CLIENT_PROTECTED_API_ROUTES = [
   "/api/testimonials/create",
   "/api/users/me",
 ];
-
