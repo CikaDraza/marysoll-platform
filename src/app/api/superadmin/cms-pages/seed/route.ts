@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
 import { ProfilPlatforme } from "@/models/ProfilPlatforme";
+import { getPublicSlugAvailability } from "@/lib/platform/public-slugs";
 
 const today = new Date().toLocaleDateString("sr-Latn");
 
@@ -189,12 +190,22 @@ export async function POST(req: NextRequest) {
 
     const existing = profile.cmsPages ?? {};
     const seeded: string[] = [];
+    const skipped: string[] = [];
     const updates: Record<string, unknown> = {};
 
     for (const page of DEFAULT_PAGES) {
       if (!existing[page.slug]) {
-        updates[`cmsPages.${page.slug}`] = { ...page, updatedAt: new Date() };
-        seeded.push(page.slug);
+        const availability = await getPublicSlugAvailability(page.slug);
+        if (availability.available) {
+          updates[`cmsPages.${availability.slug}`] = {
+            ...page,
+            slug: availability.slug,
+            updatedAt: new Date(),
+          };
+          seeded.push(availability.slug);
+        } else {
+          skipped.push(page.slug);
+        }
       }
     }
 
@@ -211,7 +222,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ ok: true, seeded, removed: toRemove });
+    return NextResponse.json({ ok: true, seeded, skipped, removed: toRemove });
   } catch (err) {
     console.error("[POST /api/superadmin/cms-pages/seed]", err);
     return NextResponse.json({ error: "Greška pri seed-ovanju" }, { status: 500 });

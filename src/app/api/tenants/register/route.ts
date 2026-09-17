@@ -14,6 +14,7 @@ import bcrypt from "bcryptjs";
 import { BASE_DOMAIN } from "@/lib/platform/host-context";
 import { createInitialTenantCapabilityConfiguration } from "@/lib/platform/capabilities";
 import { resolveTenantRegistrationIdentity } from "@/lib/tenant-registration";
+import { findAvailableTenantSlug } from "@/lib/platform/public-slugs";
 
 /**
  * POST /api/tenants/register
@@ -86,19 +87,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate unique slug
-    const baseSlug = businessName
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")
-      .substring(0, 40);
-
-    let slug = baseSlug;
-    let counter = 1;
-    while (await Tenant.findOne({ slug })) {
-      slug = `${baseSlug}-${counter++}`;
+    // Suffix strategija preskače postojeće tenante, CMS stranice i system rute.
+    const slug = await findAvailableTenantSlug(businessName);
+    if (!slug) {
+      return NextResponse.json(
+        { error: "Naziv biznisa ne može da se pretvori u validan slug" },
+        { status: 400 },
+      );
     }
 
     const subdomain = `${slug}.${BASE_DOMAIN}`;

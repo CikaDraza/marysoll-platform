@@ -12,12 +12,16 @@
  */
 import type { NextRequest } from "next/server";
 import { tenantClient } from "@/lib/platform/tenant-client";
+import {
+  isLocalHost,
+  isPathBasedHost,
+} from "@/lib/platform/host-context";
 import type { DomainType } from "../types";
 import {
   BASE_DOMAIN,
   CUSTOM_CLIENT_DOMAIN,
   IS_PROD,
-  RESERVED_TOP_SEGMENTS,
+  RESERVED_SYSTEM_SEGMENTS,
   STAGING_PATH_HOSTS,
   isCustomDomain,
 } from "../constants";
@@ -84,7 +88,32 @@ async function detectDomainType(
     }
   }
 
-  // 5. Custom domain — check env var first, then DB
+  // 5. Lokalni hostovi su path-based marketing/dev entrypoint-i. Mora biti pre
+  // custom-domain grane, jer LAN IP (192.168.x) nije domen tenanta.
+  if (!IS_PROD && isLocalHost(host)) {
+    const devType = process.env.DEV_DOMAIN_TYPE as DomainType | undefined;
+    if (devType === "admin") {
+      return { type: "admin", ...NONE, via: "localhost-dev" };
+    }
+    if (devType === "superadmin") {
+      return { type: "superadmin", ...NONE, via: "localhost-dev" };
+    }
+    if (devType === "client") {
+      const slug = process.env.DEV_TENANT_SLUG ?? "default";
+      const resolved =
+        slug !== "default" ? await tenantClient.resolveSlug(request, slug) : null;
+      return {
+        type: "client",
+        tenantSlug: resolved?.slug ?? slug,
+        tenantId: resolved?.id ?? null,
+        customDomain: resolved?.customDomain ?? null,
+        via: "localhost-dev",
+      };
+    }
+    return { type: "marketing", ...NONE, via: "localhost-dev" };
+  }
+
+  // 6. Custom domain — check env var first, then DB
   if (isCustomDomain(host, BASE_DOMAIN)) {
     if (CUSTOM_CLIENT_DOMAIN && host === CUSTOM_CLIENT_DOMAIN) {
       const resolved = await tenantClient.resolveDomain(request, host);
@@ -113,30 +142,6 @@ async function detectDomainType(
     return { type: "client", ...NONE, via: "custom-domain" };
   }
 
-  // 6. LOCALHOST
-  if (!IS_PROD && host.startsWith("localhost")) {
-    const devType = process.env.DEV_DOMAIN_TYPE as DomainType | undefined;
-    if (devType === "admin") {
-      return { type: "admin", ...NONE, via: "localhost-dev" };
-    }
-    if (devType === "superadmin") {
-      return { type: "superadmin", ...NONE, via: "localhost-dev" };
-    }
-    if (devType === "client") {
-      const slug = process.env.DEV_TENANT_SLUG ?? "default";
-      const resolved =
-        slug !== "default" ? await tenantClient.resolveSlug(request, slug) : null;
-      return {
-        type: "client",
-        tenantSlug: resolved?.slug ?? slug,
-        tenantId: resolved?.id ?? null,
-        customDomain: resolved?.customDomain ?? null,
-        via: "localhost-dev",
-      };
-    }
-    return { type: "marketing", ...NONE, via: "localhost-dev" };
-  }
-
   // Unrecognized host — log so we can diagnose unexpected cold-start 404s
   console.error(
     JSON.stringify({
@@ -159,37 +164,29 @@ export async function detectDomain(ctx: ProxyContext): Promise<null> {
   };
   trace(ctx, `domain=${detected.type} via ${detected.via}`);
 
-  // Path-based tenant routing (marysoll.com/[slug] ili localhost/[slug] — dev,
-  // odnosno *.vercel.app preview koji nema tenant subdomene).
-  const isMarketingOrLocalhost =
-    ctx.domainType === "marketing" ||
-    (!IS_PROD && ctx.hostname.split(":")[0].startsWith("localhost"));
-
-  if (isMarketingOrLocalhost) {
+  // Production apex je isključivo platform/marketing namespace. Path-based
+  // tenant routing postoji samo na lokalnom, preview i staging/QA hostu.
+  if (ctx.domainType === "marketing" && isPathBasedHost(ctx.hostname)) {
     const segments = ctx.pathname.split("/").filter(Boolean);
     const firstSegment = segments[0] ?? "";
     if (
       firstSegment.length > 0 &&
-      !RESERVED_TOP_SEGMENTS.has(firstSegment) &&
+      !RESERVED_SYSTEM_SEGMENTS.has(firstSegment) &&
       /^[a-z0-9-]+$/.test(firstSegment)
     ) {
-      ctx.domainType = "client";
       const resolved = await tenantClient.resolveSlug(ctx.request, firstSegment);
-      ctx.tenant = {
-        slug: firstSegment,
-        id: resolved?.id ?? null,
-        customDomain: resolved?.customDomain ?? null,
-      };
-      const bareHost = ctx.hostname.split(":")[0].toLowerCase();
-      // isPathBasedHost: slug je došao iz URL putanje (ne iz subdomena/custom
-      // domena) — localhost dev, Vercel preview build ILI staging apex
-      // (qa/staging.marysoll.com). Postavlja x-tenant-base-path na "/{slug}" pa
-      // in-tenant navigacija radi ispravno.
-      ctx.isPathBasedHost =
-        (!IS_PROD && bareHost.startsWith("localhost")) ||
-        bareHost.endsWith(".vercel.app") ||
-        STAGING_PATH_HOSTS.has(bareHost);
-      trace(ctx, `path slug '${firstSegment}' -> domain=client`);
+      if (resolved) {
+        ctx.domainType = "client";
+        ctx.tenant = {
+          slug: resolved.slug,
+          id: resolved.id,
+          customDomain: resolved.customDomain ?? null,
+        };
+        ctx.isPathBasedHost = true;
+        trace(ctx, `path slug '${firstSegment}' -> domain=client`);
+      } else {
+        trace(ctx, `path '${firstSegment}' is not tenant -> keep marketing`);
+      }
     }
   }
 
