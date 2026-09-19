@@ -106,8 +106,8 @@ const TenantSchema = new Schema<ITenant>(
       trim: true,
     },
     subdomain: { type: String, required: true, unique: true, lowercase: true },
-    // sparse: true sa unique — OK, nema duplikata
-    customDomain: { type: String, default: null, unique: true, sparse: true },
+    // Jedinstvenost je u partial indeksu ispod — NE `unique`/`sparse` ovde.
+    customDomain: { type: String, default: null },
     customDomainVerified: { type: Boolean, default: false },
     paid: { type: Boolean, default: false },
     verified: { type: Boolean, default: false },
@@ -215,6 +215,19 @@ const TenantSchema = new Schema<ITenant>(
 );
 
 TenantSchema.index({ status: 1, ownerId: 1 });
+
+// customDomain je `null` za svakog tenanta bez sopstvenog domena. `sparse`
+// unique indeks preskače samo dokumente BEZ polja, ne i one sa `null`, pa je
+// drugi takav tenant pucao na registraciji (E11000 dup key customDomain: null).
+// Partial indeks proverava jedinstvenost samo za stvarne domene (string).
+// Postojeću bazu popravlja `scripts/fix-tenant-custom-domain-index.mjs`.
+TenantSchema.index(
+  { customDomain: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { customDomain: { $type: "string" } },
+  },
+);
 
 // Self-heal legacy `trialMode`: stariji tenanti imaju vrednost "free" (van
 // trenutnog enuma ["maria","card_required"]). Bez ovoga svaki `tenant.save()`
