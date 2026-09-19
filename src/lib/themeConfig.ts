@@ -63,4 +63,9 @@ export const THEME_CONFIG: Record<LandingTheme, ThemeSectionConfig> = {
     hero: { hasImage: true, maxImages: 1 },
     gallery: { variant: "images-only" },
   },
+  /** Theme-10 "Silver Atelier" — hero portret (izrezan PNG), gallery je 3:4 mreža. */
+  "theme-10": {
+    hero: { hasImage: true, maxImages: 1 },
+    gallery: { variant: "images-only" },
+  },
 };

@@ -9,8 +9,9 @@ const MARINA = "marina-stanisavljevic-skincare-edukacija";
 const MARYSOLL = "marysoll-makeup-nails";
 
 describe("Theme Access Policy", () => {
-  it("keeps themes 2–7 available to every tenant", () => {
+  it("keeps themes 2–7 and 10 available to every tenant", () => {
     // theme-1 je od 2026-09-02 privatna za Marysoll (product odluka).
+    // theme-10 (Ash Studio dizajn) je za sada javna.
     for (const theme of [
       "theme-2",
       "theme-3",
@@ -18,6 +19,7 @@ describe("Theme Access Policy", () => {
       "theme-5",
       "theme-6",
       "theme-7",
+      "theme-10",
     ] as const) {
       expect(
         canTenantUseTheme({ theme, tenantSlug: "ordinary-beauty-studio" }),
@@ -57,6 +59,7 @@ describe("Theme Access Policy", () => {
       "theme-5",
       "theme-6",
       "theme-7",
+      "theme-10",
     ]);
     expect(availableThemesForTenant(LASH_ROOM)).toContain("theme-8");
     expect(availableThemesForTenant(LASH_ROOM)).not.toContain("theme-9");

@@ -58,6 +58,11 @@ export interface BookingModalProps {
   /** Opciono domen-specifično otkazivanje; presentation ostaje zajednički. */
   onCancelAppointment?: () => void;
   pendingDefaults?: Omit<PendingAppointment, "tenantSlug"> | null;
+  /**
+   * Usluga koju je pozivalac već izabrao (theme-10 modal bira termin → uslugu
+   * pre ove forme). Važi samo za početno stanje; edit i pending imaju prednost.
+   */
+  defaultServiceId?: string;
   /** "manualSlots" ograničava izbor na termine koje je vlasnik definisao. */
   availabilityMode?: string;
   /** Radno vreme salona — klasičan režim gradi dropdown dostupnih vremena. */

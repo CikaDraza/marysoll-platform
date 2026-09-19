@@ -163,6 +163,7 @@ export function BookingProvider({
   onConfirmedByGuest,
   onBooked,
   pendingDefaults,
+  defaultServiceId,
   availabilityMode,
   workingHours,
   manualSlots,
@@ -183,7 +184,11 @@ export function BookingProvider({
     editDefaults?.time ?? defaultTime,
   );
   const [selectedServiceId, setSelectedServiceId] = useState(
-    editDefaults?.serviceId || pendingDefaults?.serviceId || services[0]?._id || "",
+    editDefaults?.serviceId ||
+      pendingDefaults?.serviceId ||
+      defaultServiceId ||
+      services[0]?._id ||
+      "",
   );
   const [selectedVariant, setSelectedVariant] = useState(
     editDefaults?.variantName || pendingDefaults?.variantName || "",

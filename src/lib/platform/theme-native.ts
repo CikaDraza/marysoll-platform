@@ -37,6 +37,10 @@ import {
   buildTheme6Native,
   type Theme6NativeData,
 } from "@/components/themes/theme-6/nativeData";
+import {
+  buildTheme10Shell,
+  type Theme10ShellData,
+} from "@/components/themes/theme-10/nativeData";
 
 export interface ThemeNativeInput {
   salon: SalonProfileData;
@@ -169,6 +173,22 @@ export interface Theme9NativeData {
   };
 }
 
+/**
+ * theme-10 „Silver Atelier" (Ash Studio dizajn). Booking je launcher (modal),
+ * ne inline sekcija — spec 6.10/6.11: svaki CTA na strani otvara isti modal,
+ * pa ne zavisi od `appointmentSection.enabled`. Podaci widget-a idu ovde, isti
+ * privremeni kompromis kao `Theme8NativeData.bookingModal`, dok T3 Booking
+ * Engine ne da widget-u sopstveni izvor.
+ */
+export interface Theme10NativeData extends Theme10ShellData {
+  booking: {
+    tenantSlug?: string;
+    clientSlug?: string;
+    salon: SalonProfileData;
+    services: IService[];
+  };
+}
+
 export interface ThemeNativeByTheme {
   "theme-1": Theme1NativeData;
   "theme-2": Theme2NativeData;
@@ -179,6 +199,7 @@ export interface ThemeNativeByTheme {
   "theme-7": Theme7NativeData;
   "theme-8": Theme8NativeData;
   "theme-9": Theme9NativeData;
+  "theme-10": Theme10NativeData;
 }
 
 export type ThemeNativeData = Partial<ThemeNativeByTheme>;
@@ -374,6 +395,19 @@ export function buildThemeNative(
             email: salon.contactEmail || salon.email,
             workingHours,
             instagram: instagramOf(salon),
+          },
+        },
+      };
+
+    case "theme-10":
+      return {
+        "theme-10": {
+          ...buildTheme10Shell(salon),
+          booking: {
+            tenantSlug,
+            clientSlug: clientSlug ?? tenantSlug,
+            salon,
+            services: input.services,
           },
         },
       };

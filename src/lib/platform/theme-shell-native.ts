@@ -24,6 +24,10 @@ import type {
   Theme9NavItem,
 } from "@/lib/theme9/navigationResolver";
 import { shouldShowWorkingHours } from "@/helpers/workingHoursDisplay";
+import {
+  buildTheme10Shell,
+  type Theme10ShellData,
+} from "@/components/themes/theme-10/nativeData";
 
 /** Footer sa radnim vremenom i Instagramom — dele ga theme-7, -8 i -9. */
 export interface ShellFooterNative {
@@ -73,6 +77,11 @@ export interface ThemeShellNativeByTheme {
     header: { salonName: string; logo?: string; kicker?: string };
     footer: { salonName: string; tagline?: string; email: string; instagramUrl?: string };
   };
+  /**
+   * Isti Header/Footer kao na početnoj. Podstranice nemaju booking modal —
+   * CTA vodi na `/termini`, pa shell ne traži katalog usluga.
+   */
+  "theme-10": Theme10ShellData;
 }
 
 export type ThemeShellNativeData = Partial<ThemeShellNativeByTheme>;
@@ -179,6 +188,9 @@ export function buildThemeShellNative(
           },
         },
       };
+
+    case "theme-10":
+      return { "theme-10": buildTheme10Shell(salon) };
 
     // theme-1, theme-2, theme-3 — shell im ne treba ništa osim brandinga.
     default:
