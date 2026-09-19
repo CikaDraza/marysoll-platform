@@ -80,8 +80,9 @@ describe("Theme10Landing", () => {
     expect(html).toContain('href="/ash/termini"');
     expect(html).toContain("Subotica");
     expect(html).toContain('href="#galerija"');
-    // Bez članova tima: tri razloga umesto liste majstora.
-    expect(html).toContain("Bez čekanja na odgovor");
+    // Bez CMS članova tima: tim iz dizajna (Anna/Evgenija/Aleksandra).
+    expect(html).toContain("Evgenija");
+    expect(html).toContain("Pedikir, gel tehnike, dizajn folije");
   });
 
   it("CMS sadržaj pobeđuje, a isključena galerija nestaje i iz nav-a", () => {
@@ -97,6 +98,11 @@ describe("Theme10Landing", () => {
     expect(html).toContain("Rezerviši");
     expect(html).not.toContain('id="galerija"');
     expect(html).not.toContain('href="#galerija"');
+    // CMS tim (jedan član) pobeđuje tim iz dizajna — ne sme se dopuniti sa
+    // preostale dve podrazumevane kolege.
     expect(html).toContain("Anna");
+    expect(html).not.toContain("izlivanje i art dizajn");
+    expect(html).not.toContain("Evgenija");
+    expect(html).not.toContain("Aleksandra");
   });
 });

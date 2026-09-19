@@ -164,6 +164,7 @@ export function BookingProvider({
   onBooked,
   pendingDefaults,
   defaultServiceId,
+  defaultNote,
   availabilityMode,
   workingHours,
   manualSlots,
@@ -210,7 +211,7 @@ export function BookingProvider({
     });
   }, []);
   const [note, setNote] = useState(
-    editDefaults?.note || pendingDefaults?.note || "",
+    editDefaults?.note || pendingDefaults?.note || defaultNote || "",
   );
 
   // Intake živi samo dok modal traje. Namerno NIJE u `PendingAppointment`:

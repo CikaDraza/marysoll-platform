@@ -10,6 +10,9 @@
  *
  * Korak „Majstor" iz dizajna je izostavljen: booking domen još nema vezu
  * usluga ↔ zaposleni, pa bi izbor majstora bio samo prikaz bez posledice.
+ * Kad se stigne iz Tim sekcije (`openForMaster`), izabrani majstor SE najavljuje
+ * — bedž u zaglavlju + napomena termina — ali ne filtrira termine ni usluge
+ * (nema podatka po kome bi se filtriralo). Vidi `booking/context.ts`.
  *
  * Gost koji mora da se prijavi čuva izbor u `sessionStorage` (isti ugovor kao
  * widget); po povratku na početnu, provider sam otvara formu za potvrdu.
@@ -38,7 +41,7 @@ import type {
   WorkingHoursMap,
 } from "@/types";
 import { widgetDay } from "@/lib/booking/widgetDay";
-import { Theme10BookingContext } from "./context";
+import { Theme10BookingContext, type Theme10Master } from "./context";
 import {
   DOW_SHORT,
   formatDayHeading,
@@ -101,6 +104,8 @@ export function Theme10BookingProvider({
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [step, setStep] = useState<Step>(1);
   const [done, setDone] = useState(false);
+  /** Majstor iz Tim sekcije — najava, ne filter (vidi header komentar). */
+  const [lockedMaster, setLockedMaster] = useState<Theme10Master | null>(null);
   /** Deljena forma je otvorena — tematski modal se tada sklanja. */
   const [handoff, setHandoff] = useState(false);
   const [pendingDefaults, setPendingDefaults] = useState<Omit<
@@ -119,6 +124,7 @@ export function Theme10BookingProvider({
     setServiceId(null);
     setStep(1);
     setDone(false);
+    setLockedMaster(null);
   }, []);
 
   const open = useCallback(() => {
@@ -127,6 +133,17 @@ export function Theme10BookingProvider({
     reset();
     setIsOpen(true);
   }, [reset]);
+
+  const openForMaster = useCallback(
+    (master: Theme10Master) => {
+      invokerRef.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      reset();
+      setLockedMaster(master);
+      setIsOpen(true);
+    },
+    [reset],
+  );
 
   const close = useCallback(() => {
     setIsOpen(false);
@@ -274,7 +291,10 @@ export function Theme10BookingProvider({
     window.location.href = `${base}/${destination}?pendingBooking=1`;
   }
 
-  const ctx = useMemo(() => ({ open, available: true }), [open]);
+  const ctx = useMemo(
+    () => ({ open, openForMaster, available: true }),
+    [open, openForMaster],
+  );
 
   return (
     <Theme10BookingContext.Provider value={ctx}>
@@ -307,6 +327,18 @@ export function Theme10BookingProvider({
                   >
                     Izaberite svoj termin
                   </h3>
+                  {lockedMaster && (
+                    <div className="mt-4 inline-flex flex-wrap items-baseline gap-x-3.5 gap-y-1 bg-ash-ink px-4 py-[9px]">
+                      <span className="text-[11px] uppercase tracking-[0.26em] text-ash-gold-lt">
+                        Majstor {lockedMaster.name.toUpperCase()}
+                      </span>
+                      {lockedMaster.spec && (
+                        <span className="text-xs font-light text-[#b9b7b2]">
+                          {lockedMaster.spec}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <button
                   ref={closeRef}
@@ -358,7 +390,9 @@ export function Theme10BookingProvider({
                     </h4>
                     <p className="max-w-[44ch] text-[15.5px] font-light leading-[1.75] text-ash-ink-soft">
                       {pickedDate ? formatDayLong(pickedDate) : ""} u {slot} —{" "}
-                      {service?.name}. Vidimo se u studiju.
+                      {service?.name}
+                      {lockedMaster ? ` — Majstor: ${lockedMaster.name}` : ""}.
+                      Vidimo se u studiju.
                     </p>
                     <button
                       type="button"
@@ -597,7 +631,7 @@ export function Theme10BookingProvider({
 
       {isOpen && handoff && dayKey && slot && (
         <BookingModal
-          key={`${dayKey}-${slot}-${serviceId ?? ""}`}
+          key={`${dayKey}-${slot}-${serviceId ?? ""}-${lockedMaster?.name ?? ""}`}
           isOpen
           onClose={() => {
             setHandoff(false);
@@ -614,6 +648,7 @@ export function Theme10BookingProvider({
           defaultDate={dayKey}
           defaultTime={slot}
           defaultServiceId={serviceId ?? undefined}
+          defaultNote={lockedMaster ? `Željeni majstor: ${lockedMaster.name}` : undefined}
           services={services}
           isLoggedIn={isLoggedIn}
           userName={user?.name}

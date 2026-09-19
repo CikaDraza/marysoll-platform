@@ -27,6 +27,13 @@ export const THEME10_DEFAULT_IMAGES = {
   ],
 } as const;
 
+/** Tim iz dizajna — prikazuje se dok vlasnica ne unese svoj kroz Landing CMS. */
+export const THEME10_DEFAULT_TEAM = [
+  { name: "Anna", role: "Manikir, izlivanje i art dizajn" },
+  { name: "Evgenija", role: "Pedikir, gel tehnike, dizajn folije" },
+  { name: "Aleksandra", role: "Manikir i pedikir sa gel lakom" },
+] as const;
+
 /** Sidra sekcija — nav ih prikazuje samo ako sekcija postoji na strani. */
 export const THEME10_ANCHORS = {
   home: "pocetna",

@@ -12,7 +12,7 @@ import type {
   ServicesCatalogData,
 } from "@/lib/platform/blocks/types";
 import { resolveHeroCtas } from "@/helpers/heroCta";
-import { THEME10_ANCHORS, THEME10_DEFAULT_IMAGES } from "./constants";
+import { THEME10_ANCHORS, THEME10_DEFAULT_IMAGES, THEME10_DEFAULT_TEAM } from "./constants";
 import { headlineLines } from "./format";
 import type { Theme10HeroProps } from "./Hero";
 import type { Theme10StyleTriptychProps } from "./StyleTriptych";
@@ -107,11 +107,14 @@ export function theme10PriceListProps(
 
 export function theme10TeamProps(data: ContentTeamData, bookHref: string): Theme10TeamProps {
   const team = data.content;
+  const configured = (team?.members ?? [])
+    .filter((m) => m.name?.trim())
+    .map((m) => ({ name: m.name.trim(), role: m.role?.trim() ?? "" }));
   return {
     headlineLines: headlineLines(team?.headline, ["Naš tim majstora", "sada radi za vas"]),
-    members: (team?.members ?? [])
-      .filter((m) => m.name?.trim())
-      .map((m) => ({ name: m.name.trim(), role: m.role?.trim() ?? "" })),
+    // Prazan tim → tim iz dizajna (Anna / Evgenija / Aleksandra), ista logika
+    // kao ostale theme-10 sekcije: nikad prazna „Tim" kolona.
+    members: configured.length > 0 ? configured : [...THEME10_DEFAULT_TEAM],
     bookHref,
   };
 }

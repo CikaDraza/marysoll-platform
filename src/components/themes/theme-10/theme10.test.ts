@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { IService } from "@/types";
-import type { ContentHeroData, ServicesCatalogData } from "@/lib/platform/blocks/types";
-import { THEME10_DEFAULT_IMAGES } from "./constants";
+import type {
+  ContentHeroData,
+  ContentTeamData,
+  ServicesCatalogData,
+} from "@/lib/platform/blocks/types";
+import { THEME10_DEFAULT_IMAGES, THEME10_DEFAULT_TEAM } from "./constants";
 import {
   formatDayLong,
   formatRsd,
@@ -10,7 +14,7 @@ import {
   mondayOf,
   servicePriceLabel,
 } from "./format";
-import { theme10HeroProps, theme10PriceListProps } from "./blockProps";
+import { theme10HeroProps, theme10PriceListProps, theme10TeamProps } from "./blockProps";
 import { buildTheme10Nav } from "./nav";
 
 const service = (over: Partial<IService>): IService =>
@@ -76,6 +80,27 @@ describe("theme-10 blockProps", () => {
     expect(
       theme10PriceListProps({ content: undefined, services: [] } as ServicesCatalogData),
     ).toBeNull();
+  });
+
+  it("tim bez CMS članova pada na tim iz dizajna", () => {
+    const props = theme10TeamProps(
+      { content: undefined } as unknown as ContentTeamData,
+      "/salon/termini",
+    );
+    expect(props.members).toEqual([...THEME10_DEFAULT_TEAM]);
+  });
+
+  it("CMS tim potpuno zamenjuje podrazumevani, ne dopunjuje ga", () => {
+    const props = theme10TeamProps(
+      {
+        content: {
+          headline: "Tim",
+          members: [{ name: "Milica", role: "Nadograđivanje", bio: "", image: { src: "", alt: "" } }],
+        },
+      } as unknown as ContentTeamData,
+      "/salon/termini",
+    );
+    expect(props.members).toEqual([{ name: "Milica", role: "Nadograđivanje" }]);
   });
 });
 

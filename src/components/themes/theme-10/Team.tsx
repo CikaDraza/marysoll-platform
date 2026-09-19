@@ -2,10 +2,14 @@
 /**
  * Theme10Team — „Naš tim majstora", prikaz `content.team` bloka.
  *
- * Svaki red otvara booking modal. Dizajn ga zaključava na tog majstora; to
- * čeka vezu usluga ↔ zaposleni u booking domenu, pa red za sada otvara isti
- * (otvoren) tok kao ostali CTA-ovi. Bez članova tima desna kolona prikazuje
- * tri razloga za online zakazivanje iz dizajna.
+ * `members` je uvek popunjen (blockProps pada na tim iz dizajna kad CMS nema
+ * podatke — vidi `theme10TeamProps`), pa ova komponenta nema prazno stanje.
+ *
+ * Svaki red otvara booking modal ZAKLJUČAN na tog majstora — bedž u zaglavlju
+ * modala + napomena termina, ne filter dostupnosti: booking domen
+ * (`Appointment.staffProfileId`) postoji u modelu, ali se nigde ne upisuje,
+ * pa nema veze usluga ↔ zaposleni za salonov pravi katalog. Vidi
+ * `booking/context.ts`.
  */
 import { useTheme10Booking } from "./booking/context";
 import { FOCUS_RING, SECTION_X } from "./constants";
@@ -16,23 +20,8 @@ export interface Theme10TeamProps {
   bookHref: string;
 }
 
-const REASONS = [
-  {
-    title: "Bez čekanja na odgovor",
-    body: "Birate termin i u 23h — ujutru je već potvrđen.",
-  },
-  {
-    title: "Instagram i Telegram ostaju",
-    body: "Ko voli poruku — piše poruku. Ostali kliknu dugme.",
-  },
-  {
-    title: "Termin za minut",
-    body: "Slobodni termini su vidljivi odmah, bez dopisivanja.",
-  },
-];
-
 export function Theme10Team({ headlineLines, members, bookHref }: Theme10TeamProps) {
-  const { open, available } = useTheme10Booking();
+  const { openForMaster, available } = useTheme10Booking();
 
   return (
     <section
@@ -58,23 +47,25 @@ export function Theme10Team({ headlineLines, members, bookHref }: Theme10TeamPro
           </p>
         </div>
 
-        {members.length > 0 ? (
-          <div className="flex flex-col">
-            <span className="mb-[18px] text-[11px] uppercase tracking-[0.3em] text-ash-ink-faint">
-              Tim
-            </span>
-            {members.map((m, i) => (
-              <a
-                key={`${m.name}-${i}`}
-                href={bookHref}
-                aria-haspopup={available ? "dialog" : undefined}
-                onClick={(e) => {
-                  if (!available || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-                  e.preventDefault();
-                  open();
-                }}
-                className={`flex w-full items-baseline gap-[clamp(16px,2vw,28px)] border-t border-ash-ink/14 py-[22px] pr-[18px] text-left transition-[background-color,padding] duration-200 ease-out hover:bg-ash-paper hover:pl-[18px] motion-reduce:transition-none ${FOCUS_RING}`}
-              >
+        <div className="flex flex-col">
+          <span className="mb-[18px] text-[11px] uppercase tracking-[0.3em] text-ash-ink-faint">
+            Tim
+          </span>
+          {members.map((m, i) => (
+            <a
+              key={`${m.name}-${i}`}
+              href={bookHref}
+              aria-haspopup={available ? "dialog" : undefined}
+              onClick={(e) => {
+                if (!available || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                e.preventDefault();
+                openForMaster({ name: m.name, spec: m.role });
+              }}
+              className={`group flex w-full items-baseline gap-[clamp(16px,2vw,28px)] border-t border-ash-ink/14 py-[22px] pr-[18px] text-left transition-colors duration-200 ease-out hover:bg-ash-paper motion-reduce:transition-none ${FOCUS_RING}`}
+            >
+              {/* `transform` odvojeno od `background-color` — translateX je
+                  GPU-ubrzan i podnosi duži/finiji trajanje bez trzaja. */}
+              <span className="flex w-full items-baseline gap-[clamp(16px,2vw,28px)] transition-transform duration-300 ease-out group-hover:translate-x-[18px] motion-reduce:transition-none motion-reduce:group-hover:translate-x-0">
                 <span className="flex-none font-cormorant text-[34px] leading-none text-ash-gold">
                   {String(i + 1).padStart(2, "0")}
                 </span>
@@ -91,29 +82,10 @@ export function Theme10Team({ headlineLines, members, bookHref }: Theme10TeamPro
                 <span className="flex-none whitespace-nowrap text-[10.5px] uppercase tracking-[0.22em] text-ash-ink-soft">
                   Termini <span aria-hidden>→</span>
                 </span>
-              </a>
-            ))}
-          </div>
-        ) : (
-          <ol className="grid gap-px border border-ash-ink/10 bg-ash-ink/10">
-            {REASONS.map((r, i) => (
-              <li
-                key={r.title}
-                className="flex items-baseline gap-5 bg-ash-paper p-[clamp(20px,2.4vw,32px)]"
-              >
-                <span className="font-cormorant text-[34px] leading-none text-ash-gold">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <span className="flex flex-col gap-2">
-                  <span className="text-[13px] uppercase tracking-[0.2em]">{r.title}</span>
-                  <span className="text-[14.5px] font-light leading-[1.6] text-ash-ink-mute">
-                    {r.body}
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ol>
-        )}
+              </span>
+            </a>
+          ))}
+        </div>
       </div>
     </section>
   );

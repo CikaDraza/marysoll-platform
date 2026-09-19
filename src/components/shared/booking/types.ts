@@ -63,6 +63,11 @@ export interface BookingModalProps {
    * pre ove forme). Važi samo za početno stanje; edit i pending imaju prednost.
    */
   defaultServiceId?: string;
+  /**
+   * Napomena koju je pozivalac već popunio (theme-10: „Željeni majstor: …" iz
+   * Tim sekcije). Isto pravilo kao `defaultServiceId` — samo početno stanje.
+   */
+  defaultNote?: string;
   /** "manualSlots" ograničava izbor na termine koje je vlasnik definisao. */
   availabilityMode?: string;
   /** Radno vreme salona — klasičan režim gradi dropdown dostupnih vremena. */
