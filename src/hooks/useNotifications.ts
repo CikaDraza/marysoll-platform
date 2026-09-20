@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { INotification } from "@/types";
 import { useAuth } from "./useAuth";
 import { useSalonProfile, usePublicSalonProfile } from "./useSalonProfile";
@@ -121,7 +121,7 @@ export function useBrowserNotifications(notificationLogo?: string | null) {
     }
   }, [error]);
 
-  const requestPermission = async (): Promise<boolean> => {
+  const requestPermission = useCallback(async (): Promise<boolean> => {
     if (!("Notification" in window)) return false;
 
     if (Notification.permission === "default") {
@@ -130,9 +130,9 @@ export function useBrowserNotifications(notificationLogo?: string | null) {
     }
 
     return Notification.permission === "granted";
-  };
+  }, []);
 
-  const showNotification = (title: string, options?: NotificationOptions) => {
+  const showNotification = useCallback((title: string, options?: NotificationOptions) => {
     if (!("Notification" in window) || Notification.permission !== "granted") {
       return;
     }
@@ -142,7 +142,7 @@ export function useBrowserNotifications(notificationLogo?: string | null) {
       icon: options?.icon ?? resolvedLogo,
       badge: options?.badge ?? resolvedLogo,
     });
-  };
+  }, [resolvedLogo]);
 
   // Automatsko prikazivanje notifikacija za nove poruke
   useEffect(() => {
@@ -164,7 +164,7 @@ export function useBrowserNotifications(notificationLogo?: string | null) {
         }
       });
     }
-  }, [notifications, error, resolvedLogo]);
+  }, [notifications, error, requestPermission, resolvedLogo, showNotification]);
 
   return { requestPermission, showNotification };
 }
