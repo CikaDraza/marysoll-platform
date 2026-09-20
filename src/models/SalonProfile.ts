@@ -575,6 +575,7 @@ const SalonProfileSchema = new mongoose.Schema(
         "theme-7",
         "theme-8",
         "theme-9",
+        "theme-10",
       ],
       default: "theme-1",
     },

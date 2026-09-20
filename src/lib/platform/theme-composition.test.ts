@@ -62,11 +62,11 @@ const ALL_FLAGS: LegacyCmsFlag[] = [
   "perksEnabled",
 ];
 
-describe("inventar pokriva svih 9 tema", () => {
-  it("ima tačno 9 zapisa, bez duplikata", () => {
-    expect(THEME_COMPOSITIONS).toHaveLength(9);
+describe("inventar pokriva svih 10 tema", () => {
+  it("ima tačno 10 zapisa, bez duplikata", () => {
+    expect(THEME_COMPOSITIONS).toHaveLength(10);
     const ids = THEME_COMPOSITIONS.map((c) => c.theme);
-    expect(new Set(ids).size).toBe(9);
+    expect(new Set(ids).size).toBe(10);
     expect(ids).toEqual([
       "theme-1",
       "theme-2",
@@ -77,6 +77,7 @@ describe("inventar pokriva svih 9 tema", () => {
       "theme-7",
       "theme-8",
       "theme-9",
+      "theme-10",
     ]);
   });
 });
@@ -198,6 +199,7 @@ describe("nalazi koji menjaju plan migracije", () => {
       "theme-6",
       "theme-7",
       "theme-8",
+      "theme-10",
     ]);
   });
 });

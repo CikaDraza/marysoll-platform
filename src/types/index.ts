@@ -952,7 +952,8 @@ export type LandingTheme =
   | "theme-6"
   | "theme-7"
   | "theme-8"
-  | "theme-9";
+  | "theme-9"
+  | "theme-10";
 
 /**
  * Controls which gallery editor UI is shown in the CMS and

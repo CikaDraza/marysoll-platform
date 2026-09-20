@@ -376,6 +376,38 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
       shell("theme-9/footer"),
     ],
   },
+  {
+    theme: "theme-10",
+    visibility: "theme-document",
+    // „Silver Atelier" (Ash Studio dizajn). Nema inline `booking.services`:
+    // booking je launcher — svaki CTA na strani otvara isti modal (spec
+    // 6.10/6.11), pa ne zavisi od `appointmentEnabled`. Cenovnik je prikaz
+    // `services.catalog`, a „Tim" sekcija je prikaz `content.team`.
+    honoredFlags: [
+      "heroEnabled",
+      "aboutEnabled",
+      "galleryEnabled",
+      "servicesPreviewEnabled",
+      "artistsEnabled",
+    ],
+    nodes: [
+      shell("theme-10/booking-modal"),
+      shell("theme-10/header"),
+      cms("hero", "content.hero", "heroEnabled"),
+      native("theme-10/services-strip"),
+      cms("about", "content.about", "aboutEnabled (stil triptih)"),
+      native("theme-10/hygiene"),
+      cms("gallery", "content.gallery", "galleryEnabled"),
+      cms(
+        "servicesPreview",
+        "services.catalog",
+        "servicesPreviewEnabled && services.length > 0 (cenovnik)",
+      ),
+      cms("artists", "content.team", "artistsEnabled (tim + zakazivanje)"),
+      native("theme-10/cta-band"),
+      shell("theme-10/footer"),
+    ],
+  },
 ];
 
 export function compositionFor(theme: string): ThemeComposition | undefined {

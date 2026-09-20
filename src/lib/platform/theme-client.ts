@@ -175,6 +175,7 @@ const THEME_GALLERY_DEFAULTS: Record<
   "theme-7": "images-with-category",
   "theme-8": "images-with-category",
   "theme-9": "images-only",
+  "theme-10": "images-only",
 };
 
 /**

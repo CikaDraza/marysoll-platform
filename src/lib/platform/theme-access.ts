@@ -36,6 +36,8 @@ const THEME_ACCESS = {
     visibility: "private",
     allowedTenantSlugs: ["marina-stanisavljevic-skincare-edukacija"],
   },
+  // Ash Studio dizajn — za sada javna, svaki tenant je sme izabrati.
+  "theme-10": { visibility: "public" },
 } as const satisfies Record<LandingTheme, ThemeAccessDefinition>;
 
 export const THEME_NOT_AVAILABLE = "THEME_NOT_AVAILABLE";

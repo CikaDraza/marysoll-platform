@@ -112,6 +112,13 @@ const THEMES: {
       "Editorijalni dizajn za stručnu edukaciju i konsultacije o nezi kože",
     previewColors: ["#faf8f3", "#2e3b2e", "#c6d5a8"],
   },
+  {
+    id: "theme-10",
+    label: "Silver Atelier",
+    description:
+      "Magazinski dizajn u srebrnim tonovima sa zlatnim akcentima za nail studio",
+    previewColors: ["#e9e7e4", "#111110", "#b69354"],
+  },
 ];
 
 /** Theme picker projection. Server policy remains the authorization source. */

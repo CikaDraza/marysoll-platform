@@ -163,6 +163,8 @@ export function BookingProvider({
   onConfirmedByGuest,
   onBooked,
   pendingDefaults,
+  defaultServiceId,
+  defaultNote,
   availabilityMode,
   workingHours,
   manualSlots,
@@ -183,7 +185,11 @@ export function BookingProvider({
     editDefaults?.time ?? defaultTime,
   );
   const [selectedServiceId, setSelectedServiceId] = useState(
-    editDefaults?.serviceId || pendingDefaults?.serviceId || services[0]?._id || "",
+    editDefaults?.serviceId ||
+      pendingDefaults?.serviceId ||
+      defaultServiceId ||
+      services[0]?._id ||
+      "",
   );
   const [selectedVariant, setSelectedVariant] = useState(
     editDefaults?.variantName || pendingDefaults?.variantName || "",
@@ -205,7 +211,7 @@ export function BookingProvider({
     });
   }, []);
   const [note, setNote] = useState(
-    editDefaults?.note || pendingDefaults?.note || "",
+    editDefaults?.note || pendingDefaults?.note || defaultNote || "",
   );
 
   // Intake živi samo dok modal traje. Namerno NIJE u `PendingAppointment`:

@@ -876,6 +876,7 @@ matricu:
 | theme-2 … theme-7 | javna | svi tenanti, bez promene zatečenog ponašanja |
 | theme-8 | privatna | `the-lash-room-by-anja` |
 | theme-9 | privatna | `marina-stanisavljevic-skincare-edukacija` |
+| theme-10 | **javna** (od 2026-09-19) | svi tenanti — „Silver Atelier" (Ash Studio dizajn), za sada slobodna za izbor |
 
 Jedan čisti `canTenantUseTheme({ theme, tenantSlug })` koriste picker i serverski
 write put. Picker je samo projekcija; server preko autentifikovanog `tenantId`

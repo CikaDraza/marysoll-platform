@@ -13,7 +13,9 @@ describe("theme picker access projection", () => {
     expect(themes).not.toContain("theme-9");
     // theme-1 je od 2026-09-02 privatna za Marysoll.
     expect(themes).not.toContain("theme-1");
-    expect(themes).toHaveLength(6);
+    // theme-10 je javna, pa je picker vidi uz teme 2–7.
+    expect(themes).toContain("theme-10");
+    expect(themes).toHaveLength(7);
   });
 
   it("shows Theme 1 only to Marysoll", () => {

@@ -73,6 +73,25 @@
   /* Theme-9 fonts (loaded via <link> u Theme9 shell/landing bloku) */
   --font-newsreader: Newsreader, Georgia, serif;
   --font-instrument-sans: "Instrument Sans", system-ui, sans-serif;
+
+  /* Theme-10 "Silver Atelier" (Ash Studio dizajn) — srebrne površine, zlato
+     samo kao hijerarhija (linije, numeracija, eyebrow, hover). colorPolicy:
+     "locked" — tenant branding se ne mapira na ovu temu. */
+  --color-ash-ink: #111110; /* primarna crna */
+  --color-ash-ink-soft: #4a4946; /* telo teksta */
+  --color-ash-ink-mute: #5a5955; /* sekundarni tekst */
+  --color-ash-ink-faint: #6c6a66; /* eyebrow */
+  --color-ash-paper: #f7f6f3; /* najsvetlija površina */
+  --color-ash-paper-2: #f4f3f1; /* osnova strane */
+  --color-ash-paper-3: #f0efec; /* alternativna površina */
+  --color-ash-gold: #b69354; /* akcenat — linije, numeracija, hover */
+  --color-ash-gold-lt: #d8b978; /* zlato na tamnoj podlozi */
+  --color-ash-gold-dk: #7a6027; /* zlatni tekst na svetloj podlozi (AA) */
+  --color-ash-blood: #8c1c1c; /* jedini crveni akcenat na strani */
+  --color-ash-night: #1a1a19; /* footer / cenovnik */
+
+  /* Theme-10 script font (Cormorant i Jost već postoje iznad) */
+  --font-parisienne: Parisienne, cursive;
 }
 
 /* Salon brand CSS variables (used by public themes) */
