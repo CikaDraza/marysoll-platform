@@ -472,6 +472,18 @@ const SalonProfileSchema = new mongoose.Schema(
     logo: { type: String, required: false, default: null },
     // Zaseban logo za notifikacije (web push) i mejlove. Fallback na `logo` (logo sajta).
     notificationLogo: { type: String, required: false, default: null },
+    // Browser-tab logo: auto koristi `logo`, custom je opcioni odvojeni upload.
+    // Odsustvo ovog objekta kod postojećih tenant-a znači bezbedan `auto`.
+    favicon: {
+      mode: { type: String, enum: ["auto", "monogram", "custom"], default: "auto" },
+      customUrl: { type: String, default: null },
+      backgroundColor: { type: String, default: "" },
+      foregroundColor: { type: String, default: "" },
+      sourceRatio: { type: Number, default: null },
+      sourceWidth: { type: Number, default: null },
+      sourceHeight: { type: Number, default: null },
+      version: { type: Number, default: 1 },
+    },
     phone: { type: String, required: false, default: "" },
     city: { type: String, required: false, default: "" },
     street: { type: String, required: false, default: "" },

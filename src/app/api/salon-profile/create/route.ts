@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { SalonProfile } from "@/models/SalonProfile";
-import { uploadToCloudinary, getTenantFolder } from "@/lib/cloudinary";
+import { uploadToCloudinary, uploadToCloudinaryWithMetadata, getTenantFolder } from "@/lib/cloudinary";
+import { faviconSettingsSchema, validateFaviconFile } from "@/lib/branding/faviconValidation";
 import { requireTenantAdmin } from "@/lib/auth/auth-server";
 import { pruneAndValidateManualSlots } from "@/helpers/manualSlots";
 import { normalizeVacations } from "@/helpers/vacations";
@@ -27,6 +28,22 @@ export async function POST(req: NextRequest) {
     }
 
     const form = await req.formData();
+    let faviconSettings;
+    const faviconRaw = form.get("favicon");
+    if (faviconRaw !== null) {
+      let input: unknown;
+      try { input = typeof faviconRaw === "string" ? JSON.parse(faviconRaw) : null; }
+      catch { return NextResponse.json({ error: "Neispravna podešavanja ikonice." }, { status: 400 }); }
+      const parsed = faviconSettingsSchema.safeParse(input);
+      if (!parsed.success) return NextResponse.json({ error: "Neispravna podešavanja ikonice." }, { status: 400 });
+      faviconSettings = parsed.data;
+    }
+    const faviconFile = form.get("faviconFile");
+    if (faviconFile !== null && !(faviconFile instanceof File)) return NextResponse.json({ error: "Neispravan fajl ikonice." }, { status: 400 });
+    if (faviconFile instanceof File) {
+      const error = await validateFaviconFile(faviconFile);
+      if (error) return NextResponse.json({ error }, { status: 400 });
+    }
 
     const parseJSON = (key: string) => {
       const val = form.get(key);
@@ -48,10 +65,22 @@ export async function POST(req: NextRequest) {
     }
 
     let logoUrl: string | null = null;
+    let sourceRatio: number | null = null;
+    let sourceWidth: number | null = null;
+    let sourceHeight: number | null = null;
     const logoFile = form.get("logo");
     if (logoFile instanceof File && logoFile.size > 0) {
       const folder = await getTenantFolder(tenantId);
-      logoUrl = await uploadToCloudinary(logoFile, folder);
+      const uploaded = await uploadToCloudinaryWithMetadata(logoFile, folder);
+      logoUrl = uploaded.secure_url;
+      sourceRatio = uploaded.width && uploaded.height ? uploaded.width / uploaded.height : null;
+      sourceWidth = uploaded.width ?? null;
+      sourceHeight = uploaded.height ?? null;
+    }
+    let customUrl: string | null = null;
+    if (faviconFile instanceof File) {
+      const folder = await getTenantFolder(tenantId);
+      customUrl = await uploadToCloudinary(faviconFile, `${folder}/favicon`);
     }
     const cancellationWindowHoursRaw = form.get("cancellationWindowHours");
     const cancellationWindowHours =
@@ -86,6 +115,7 @@ export async function POST(req: NextRequest) {
       marketingPhone: form.get("marketingPhone") ?? "",
       resendApiKey: form.get("resendApiKey") ?? "",
       logo: logoUrl,
+      favicon: { ...faviconSettings, mode: faviconSettings?.mode === "custom" && !customUrl ? "auto" : faviconSettings?.mode ?? (customUrl ? "custom" : "auto"), customUrl, sourceRatio, sourceWidth, sourceHeight, version: 1 },
       landingTheme,
       social: parseJSON("social"),
       workingHours: parseJSON("workingHours"),

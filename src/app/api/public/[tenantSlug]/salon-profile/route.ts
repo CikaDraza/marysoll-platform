@@ -77,6 +77,7 @@ function serializeProfile(doc: Record<string, unknown>) {
     notificationLogo: doc.notificationLogo
       ? String(doc.notificationLogo)
       : null,
+    favicon: doc.favicon ?? null,
     phone: String(doc.phone ?? ""),
     street: String(doc.street ?? ""),
     city: String(doc.city ?? ""),

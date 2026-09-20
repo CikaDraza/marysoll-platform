@@ -11,10 +11,11 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
-import { useState, type RefObject } from "react";
+import { useRef, useState, type RefObject } from "react";
 import { card, inp, lbl, themePickerThemesForTenant } from "./shared";
 import type { DashboardTabProps } from "./types";
 import { PasswordVisibilityButton } from "@/components/auth/PasswordVisibilityButton";
+import { faviconPreviewUrl, resolveTenantFavicon } from "@/lib/branding/favicon";
 
 /**
  * Jedno polje za logo (sajt / notifikacije). Dva ovakva stoje jedno pored
@@ -111,6 +112,8 @@ function LogoField({
 export function ProfilTab(props: DashboardTabProps) {
   const [showPasswords, setShowPasswords] = useState(false);
   const [showResendApiKey, setShowResendApiKey] = useState(false);
+  const [faviconOpen, setFaviconOpen] = useState(false);
+  const faviconInputRef = useRef<HTMLInputElement>(null);
   const {
     deleteSalonInput,
     fileRef,
@@ -138,6 +141,14 @@ export function ProfilTab(props: DashboardTabProps) {
     updateIdentity,
     user,
   } = props;
+  const resolvedFavicon = resolveTenantFavicon({
+    name: sp.form.name,
+    logo: sp.logoPreview,
+    branding: sp.form.branding,
+    favicon: { ...sp.form.favicon, customUrl: sp.faviconPreview },
+  }, { draft: true });
+  const faviconSrc = faviconPreviewUrl(resolvedFavicon, 32);
+  const draftAutoLogo = resolvedFavicon.kind === "auto" && /^(?:blob:|data:)/.test(resolvedFavicon.source);
 
   return (
   <div className="space-y-6">
@@ -173,6 +184,33 @@ export function ProfilTab(props: DashboardTabProps) {
             hint="Mejlovi i push notifikacije. PNG · JPG · WebP (bez SVG). Ako se ne postavi, koristi se Marysoll logo."
             priority
           />
+        </div>
+
+        <div className="w-full border-t border-gray-100 dark:border-gray-800 pt-4">
+          <p className={lbl}>Logo za karticu pregledača</p>
+          <p className="mt-1 text-[11px] text-gray-400">Automatski prilagođavamo vaš logo za prikaz u kartici pregledača.</p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 rounded-t-lg border border-b-0 bg-white px-3 py-2 text-xs text-gray-700 shadow-sm" aria-label="Pregled u kartici pregledača">
+              <Image src={faviconSrc} alt="" width={20} height={20} unoptimized className={`h-5 w-5 object-contain ${draftAutoLogo ? "p-[2px]" : ""}`} />
+              <span className="max-w-32 truncate">{sp.form.name || "Salon"}</span>
+            </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border bg-white" aria-label="Uvećan pregled ikonice">
+              <Image src={faviconSrc} alt="Ikonica" width={32} height={32} unoptimized className={`h-8 w-8 object-contain ${draftAutoLogo ? "p-[3px]" : ""}`} />
+            </div>
+            <input ref={faviconInputRef} type="file" accept="image/x-icon,image/png,image/jpeg,image/webp,.ico" className="hidden" onChange={sp.handleFaviconChange} />
+            <button type="button" onClick={() => setFaviconOpen((value) => !value)} className="rounded-xl border px-3 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800">{faviconOpen ? "Zatvori" : "Podesi"}</button>
+            <span className="text-xs text-gray-500">Pregled u kartici pregledača</span>
+          </div>
+          {faviconOpen && (
+            <div className="mt-3 grid gap-3 rounded-xl bg-gray-50 p-3 dark:bg-gray-800">
+              <label className={lbl}>Način prikaza</label>
+              <select className={inp} value={sp.form.favicon.mode || "auto"} onChange={(e) => sp.setField("favicon", { ...sp.form.favicon, mode: e.target.value as "auto" | "monogram" | "custom" })}>
+                <option value="auto">Automatski</option><option value="monogram">Monogram</option><option value="custom" disabled={!sp.faviconPreview}>Posebna ikonica</option>
+              </select>
+              <div className="flex gap-2"><button type="button" onClick={() => faviconInputRef.current?.click()} className="rounded-xl bg-violet-600 px-3 py-2 text-sm font-semibold text-white">{sp.faviconPreview ? "Promeni ikonicu" : "Otpremi ikonicu"}</button>{sp.faviconPreview && <button type="button" onClick={sp.removeFavicon} className="rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-600">Ukloni</button>}</div>
+              <p className="text-[11px] text-gray-400">ICO, PNG, JPG ili WebP · maks. 5 MB. Pregled levo prikazuje veličinu kartice pregledača.</p>
+            </div>
+          )}
         </div>
 
         {/* Branding colors */}

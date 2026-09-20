@@ -35,7 +35,7 @@ export async function fetchPublicSalonProfile(
       headers: VERCEL_BYPASS_HEADERS,
       ...(opts?.noStore
         ? { cache: "no-store" }
-        : { next: { revalidate: 300 } }), // 5 min cache (default)
+        : { next: { revalidate: 300, tags: [`tenant-profile-${tenantSlug}`] } }), // 5 min cache (default)
     });
     if (!res.ok) return null;
     const json = await res.json();

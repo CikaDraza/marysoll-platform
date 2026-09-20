@@ -848,6 +848,20 @@ export interface IBranding {
   fontFamily: string;
 }
 
+/** Podešavanje ikone u kartici pregledača; odsustvo polja znači bezbedan `auto`. */
+export interface IFaviconBranding {
+  mode?: "auto" | "monogram" | "custom";
+  customUrl?: string | null;
+  backgroundColor?: string;
+  foregroundColor?: string;
+  /** Odnos originalnog logotipa pri upload-u; služi za wide-logo fallback. */
+  sourceRatio?: number | null;
+  sourceWidth?: number | null;
+  sourceHeight?: number | null;
+  /** Menja URL ikone samo kad se promeni njeno relevantno podešavanje. */
+  version?: number;
+}
+
 export interface ITimeSlot {
   from: string; // "HH:mm"
   to: string; // "HH:mm"
@@ -907,6 +921,7 @@ export interface SalonProfile {
   description: string;
   logo?: string | null;
   notificationLogo?: string | null;
+  favicon?: IFaviconBranding;
   phone: string;
   street: string;
   city: string;
@@ -977,6 +992,7 @@ export interface ISalonProfileForm {
   resendApiKey: string;
   logo: string | null;
   notificationLogo: string | null;
+  favicon: IFaviconBranding;
   social: SocialLinks;
   workingHours: WorkingHoursMap;
   vacations: IVacation[];
@@ -1637,6 +1653,7 @@ export interface SalonProfileData {
   logo?: string | null;
   /** Raster logo za push/mejl i ikonu instalirane tenant PWA. */
   notificationLogo?: string | null;
+  favicon?: IFaviconBranding;
   phone: string;
   street: string;
   city: string;
