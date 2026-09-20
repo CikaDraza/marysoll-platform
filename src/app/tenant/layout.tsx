@@ -19,18 +19,12 @@ import { TenantThemeController } from "@/components/themes/TenantThemeController
 import { TenantSiteBeacon } from "@/components/shared/TenantSiteBeacon";
 import { AddToHomeScreenBanner } from "@/components/shared/AddToHomeScreenBanner";
 import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
-import { usableRasterLogo } from "@/lib/branding/rasterLogo";
+import { faviconRequestUrl, resolveTenantFavicon } from "@/lib/branding/favicon";
 import { tenantAppName } from "@/lib/pwa/tenantAppName";
 import { getPublicSiteContext } from "@/lib/seo/public-site";
 import { TenantJsonLd } from "@/components/seo/TenantJsonLd";
 
-const PLATFORM_PWA_ICON = "/marysoll_elegant_logo.png";
-
-/**
- * PWA/Apple ikona je zaseban raster `notificationLogo`: logo sajta može biti
- * SVG, što Android/iOS instalacija i web-push ne podržavaju pouzdano. Fallback
- * je uvek Marysoll, nikad tenantov site logo.
- */
+/** Browser-tab i Apple ikonice dele tenant-aware resolver. */
 export async function generateMetadata(): Promise<Metadata> {
   const h = await headers();
   const tenantSlug = h.get("x-tenant-slug") ?? "";
@@ -38,9 +32,9 @@ export async function generateMetadata(): Promise<Metadata> {
   if (!tenantSlug) return {};
   const profile = await fetchPublicSalonProfile(tenantSlug);
   const appName = tenantAppName(profile?.name);
-  const icon = usableRasterLogo(profile?.notificationLogo)
-    ? profile.notificationLogo
-    : PLATFORM_PWA_ICON;
+  const favicon = resolveTenantFavicon(profile);
+  const iconBase = base || "";
+  const icon = (size: number) => faviconRequestUrl(iconBase, favicon.version, size);
 
   return {
     applicationName: appName,
@@ -52,7 +46,10 @@ export async function generateMetadata(): Promise<Metadata> {
     // Na host-based tenant domenu je /manifest.json; u localhost/preview
     // path-based režimu mora ostati ispod /{slug} da proxy zna tenanta.
     manifest: `${base}/manifest.json`,
-    icons: { icon, apple: icon },
+    icons: {
+      icon: [16, 32, 48, 192, 512].map((size) => ({ url: icon(size), sizes: `${size}x${size}` })),
+      apple: [{ url: icon(180), sizes: "180x180" }],
+    },
   };
 }
 

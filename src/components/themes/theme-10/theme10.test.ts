@@ -16,6 +16,12 @@ import {
 } from "./format";
 import { theme10HeroProps, theme10PriceListProps, theme10TeamProps } from "./blockProps";
 import { buildTheme10Nav } from "./nav";
+import {
+  theme10BookableServices,
+  theme10DemoPriceForMaster,
+  theme10MastersForService,
+  theme10ServicesForMaster,
+} from "./demoCatalog";
 
 const service = (over: Partial<IService>): IService =>
   ({ _id: "s1", name: "Manikir", category: "Manikir", type: "single", ...over }) as IService;
@@ -112,5 +118,59 @@ describe("theme-10 nav", () => {
 
   it("na podstranici vodi nazad na početnu", () => {
     expect(buildTheme10Nav("/salon/")[0].href).toBe("/salon/#pocetna");
+  });
+});
+
+describe("theme-10 privremeni Ash Studio cenovnik", () => {
+  const demoServices = [
+    service({ _id: "man", name: "Higijenski manikir" }),
+    service({ _id: "izl", name: "Izlivanje noktiju" }),
+    service({ _id: "art", name: "Art dizajn (2 nokta)" }),
+    service({ _id: "ped", name: "Pedikir sa gel lakom" }),
+    service({ _id: "fol", name: "Pedikir sa dizajn folijama" }),
+  ];
+
+  it("filtrira usluge po demo majstoru, bez oslanjanja na privremene DB ID-jeve", () => {
+    expect(theme10ServicesForMaster(demoServices, "Anna").map((item) => item._id)).toEqual([
+      "man",
+      "izl",
+      "art",
+    ]);
+    expect(theme10ServicesForMaster(demoServices, "Evgenija").map((item) => item._id)).toEqual([
+      "man",
+      "ped",
+      "fol",
+    ]);
+    expect(theme10ServicesForMaster(demoServices, "Aleksandra").map((item) => item._id)).toEqual([
+      "man",
+      "ped",
+    ]);
+  });
+
+  it("daje cenu ili em dash za majstora koji uslugu ne radi", () => {
+    expect(theme10DemoPriceForMaster({ name: "Manikir sa gel lakom" }, "aleksandra")).toBe(
+      "3.500 rsd",
+    );
+    expect(theme10DemoPriceForMaster({ name: "Izlivanje noktiju" }, "evgenija")).toBeNull();
+  });
+
+  it("u opštem bookingu nudi samo podržane usluge i njihove majstore iz handoffa", () => {
+    const catalog = [
+      ...demoServices,
+      service({ _id: "cen", name: "Dizajn noktiju" }),
+      service({ _id: "other", name: "Masaža ruku" }),
+    ];
+    expect(theme10BookableServices(catalog).map((item) => item._id)).toEqual([
+      "man",
+      "izl",
+      "art",
+      "ped",
+      "fol",
+    ]);
+    expect(theme10MastersForService(catalog[0]).map((master) => master.label)).toEqual([
+      "Anna",
+      "Aleksandra",
+      "Evgenija",
+    ]);
   });
 });

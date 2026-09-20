@@ -13,11 +13,16 @@ export function publicRoutes(ctx: ProxyContext): NextResponse | null {
   // Tenant-aware favicon: browser gađa /favicon.ico direktno (bez tenant
   // metadata), pa bi inače dobio statički platform favicon. Za client domene
   // prosledi tenant resolveru; ostalo pada na statički favicon.
-  if (pathname === "/favicon.ico") {
+  // Na custom/subdomenu browser traži root `/favicon.ico`; lokalni i preview
+  // tenant koriste path-based `/{slug}/favicon.ico` iz generateMetadata().
+  const tenantFaviconPath = ctx.isPathBasedHost
+    ? `/${ctx.tenant.slug}/favicon.ico`
+    : "/favicon.ico";
+  if (pathname === tenantFaviconPath) {
     if (domainType === "client" && ctx.tenant.id) {
       trace(ctx, "favicon -> /tenant/favicon");
       return NextResponse.rewrite(
-        new URL("/tenant/favicon", request.nextUrl.origin),
+        new URL(`/tenant/favicon${request.nextUrl.search}`, request.nextUrl.origin),
         { request: { headers: ctx.requestHeaders } },
       );
     }

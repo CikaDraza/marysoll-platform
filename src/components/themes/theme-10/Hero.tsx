@@ -67,7 +67,7 @@ export function Theme10Hero({
         <div className="flex flex-wrap items-center gap-3.5">
           <BookLink
             href={primaryCta.href}
-            className={`inline-flex items-center gap-3.5 rounded-full bg-ash-ink px-8 py-[18px] text-[10px] uppercase tracking-[0.2em] text-ash-paper-2 hover:bg-ash-gold hover:text-white ${EASE} ${FOCUS_RING}`}
+            className={`inline-flex items-center gap-3.5 rounded-full bg-ash-ink px-8 py-[18px] text-[10px] uppercase tracking-[0.2em] text-ash-paper-2 hover:bg-ash-gold hover:text-white min-[881px]:text-[12px] ${EASE} ${FOCUS_RING}`}
           >
             {primaryCta.text} <span aria-hidden>→</span>
           </BookLink>

@@ -117,6 +117,7 @@ const emptyForm = (): ISalonProfileForm => ({
   resendApiKey: "",
   logo: null,
   notificationLogo: null,
+  favicon: { mode: "auto", customUrl: null, backgroundColor: "", foregroundColor: "", sourceRatio: null, version: 1 },
   social: { instagram: "", facebook: "", tiktok: "", whatsapp: "", telegram: "" },
   workingHours: emptyWorkingHours(),
   vacations: [],
@@ -188,6 +189,7 @@ function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
     resendApiKey: p.resendApiKey ?? "",
     logo: p.logo ?? null,
     notificationLogo: p.notificationLogo ?? null,
+    favicon: p.favicon ?? { mode: "auto", customUrl: null, backgroundColor: "", foregroundColor: "", sourceRatio: null, version: 1 },
     social: {
       instagram: p.social?.instagram ?? "",
       facebook: p.social?.facebook ?? "",
@@ -291,6 +293,9 @@ export function useSalonProfileAdmin() {
   const [notificationLogoPreview, setNotificationLogoPreview] = useState<
     string | null
   >(null);
+  const [faviconFile, setFaviconFile] = useState<File | null>(null);
+  const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
+  const [removeCustomFavicon, setRemoveCustomFavicon] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
@@ -299,6 +304,8 @@ export function useSalonProfileAdmin() {
         setForm(mapProfileToForm(profile));
         setLogoPreview(profile.logo ?? null);
         setNotificationLogoPreview(profile.notificationLogo ?? null);
+        setFaviconPreview(profile.favicon?.customUrl ?? null);
+        setRemoveCustomFavicon(false);
         setIsEditing(false);
       }
     }
@@ -465,7 +472,13 @@ export function useSalonProfileAdmin() {
       }
       setLogoFile(file);
       const r = new FileReader();
-      r.onloadend = () => setLogoPreview(r.result as string);
+      r.onloadend = () => {
+        const url = r.result as string;
+        setLogoPreview(url);
+        const image = new window.Image();
+        image.onload = () => setForm((p) => ({ ...p, favicon: { ...p.favicon, sourceRatio: image.naturalWidth / image.naturalHeight } }));
+        image.src = url;
+      };
       r.readAsDataURL(file);
     },
     [],
@@ -475,6 +488,7 @@ export function useSalonProfileAdmin() {
     setLogoFile(null);
     setLogoPreview(null);
     setForm((p) => ({ ...p, logo: null }));
+    setForm((p) => ({ ...p, favicon: { ...p.favicon, sourceRatio: null } }));
   }, []);
 
   // ── Logo za notifikacije i mejlove ──────────────────────────────────────────
@@ -512,6 +526,28 @@ export function useSalonProfileAdmin() {
     setNotificationLogoPreview(null);
     setForm((p) => ({ ...p, notificationLogo: null }));
   }, []);
+
+  const handleFaviconChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const allowed = /\.(?:ico|png|jpe?g|webp)$/i.test(file.name);
+    if (!allowed || file.size > 5 * 1024 * 1024) {
+      toast.error("Ikonica mora biti ICO, PNG, JPG ili WebP i manja od 5 MB.");
+      e.target.value = "";
+      return;
+    }
+    setFaviconFile(file);
+    setFaviconPreview(URL.createObjectURL(file));
+    setRemoveCustomFavicon(false);
+    setForm((p) => ({ ...p, favicon: { ...p.favicon, mode: "custom" } }));
+  }, []);
+
+  const removeFavicon = useCallback(() => {
+    setFaviconFile(null);
+    setFaviconPreview(null);
+    setRemoveCustomFavicon(!!profile?.favicon?.customUrl);
+    setForm((p) => ({ ...p, favicon: { ...p.favicon, mode: p.favicon.mode === "custom" ? "auto" : p.favicon.mode, customUrl: null } }));
+  }, [profile]);
 
   // ── Save ──────────────────────────────────────────────────────────────────
 
@@ -552,9 +588,13 @@ export function useSalonProfileAdmin() {
       );
       fd.append("seo", JSON.stringify(form.seo));
       fd.append("branding", JSON.stringify(form.branding));
+      fd.append("favicon", JSON.stringify({ mode: form.favicon.mode ?? "auto", backgroundColor: form.favicon.backgroundColor ?? "", foregroundColor: form.favicon.foregroundColor ?? "" }));
+      if (faviconFile) fd.append("faviconFile", faviconFile);
+      if (removeCustomFavicon) fd.append("removeCustomFavicon", "true");
       fd.append("landingTheme", form.landingTheme);
       fd.append("landingStructure", JSON.stringify(form.landingStructure));
       if (logoFile) fd.append("logo", logoFile);
+      else if (profile?.logo && !form.logo) fd.append("removeLogo", "true");
       if (notificationLogoFile) {
         fd.append("notificationLogo", notificationLogoFile);
       } else if (!form.notificationLogo) {
@@ -571,6 +611,9 @@ export function useSalonProfileAdmin() {
       setLogoFile(null);
       setNotificationLogoPreview(saved.notificationLogo ?? null);
       setNotificationLogoFile(null);
+      setFaviconPreview(saved.favicon?.customUrl ?? null);
+      setFaviconFile(null);
+      setRemoveCustomFavicon(false);
       setIsEditing(false);
       toast.success(profile ? "Profil ažuriran!" : "Salon kreiran!");
     },
@@ -587,9 +630,12 @@ export function useSalonProfileAdmin() {
       setForm(mapProfileToForm(profile));
       setLogoPreview(profile.logo ?? null);
       setNotificationLogoPreview(profile.notificationLogo ?? null);
+      setFaviconPreview(profile.favicon?.customUrl ?? null);
     }
     setLogoFile(null);
     setNotificationLogoFile(null);
+    setFaviconFile(null);
+    setRemoveCustomFavicon(false);
     setIsEditing(false);
   }, [profile]);
 
@@ -627,6 +673,10 @@ export function useSalonProfileAdmin() {
     notificationLogoPreview,
     handleNotificationLogoChange,
     removeNotificationLogo,
+    faviconFile,
+    faviconPreview,
+    handleFaviconChange,
+    removeFavicon,
     save: saveMutation.mutate,
     isSaving: saveMutation.isPending,
   };

@@ -12,15 +12,12 @@ import { Metadata } from "next";
 import { headers } from "next/headers";
 import { ClientHomePage } from "@/components/client/ClientHomePage";
 import { fetchPublicSalonProfile } from "@/lib/tenant/fetchTenantData";
-import { usableRasterLogo } from "@/lib/branding/rasterLogo";
 import { getPublicSiteContext, tenantPageMetadata } from "@/lib/seo/public-site";
 import {
   resolveTenantTitle,
   resolveTenantDescription,
   buildTenantMetadataFacts,
 } from "@/lib/seo/metadataFallback";
-
-const PLATFORM_PWA_ICON = "/marysoll_elegant_logo.png";
 
 export async function generateMetadata(): Promise<Metadata> {
   const h = await headers();
@@ -37,10 +34,6 @@ export async function generateMetadata(): Promise<Metadata> {
     (profile?.seo as Record<string, string>)?.homeDescription,
     facts,
   );
-  const installIcon = usableRasterLogo(profile?.notificationLogo)
-    ? profile.notificationLogo
-    : PLATFORM_PWA_ICON;
-
   return {
     ...tenantPageMetadata(
       profile,
@@ -54,8 +47,6 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description,
     ),
-    // Instalirana aplikacija ne sme koristiti site logo: on može biti SVG.
-    icons: { icon: installIcon, apple: installIcon },
   };
 }
 

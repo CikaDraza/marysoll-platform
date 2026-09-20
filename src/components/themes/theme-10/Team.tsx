@@ -5,11 +5,10 @@
  * `members` je uvek popunjen (blockProps pada na tim iz dizajna kad CMS nema
  * podatke — vidi `theme10TeamProps`), pa ova komponenta nema prazno stanje.
  *
- * Svaki red otvara booking modal ZAKLJUČAN na tog majstora — bedž u zaglavlju
- * modala + napomena termina, ne filter dostupnosti: booking domen
- * (`Appointment.staffProfileId`) postoji u modelu, ali se nigde ne upisuje,
- * pa nema veze usluga ↔ zaposleni za salonov pravi katalog. Vidi
- * `booking/context.ts`.
+ * Svaki red otvara booking modal za tog majstora. Privremena Ash Studio demo
+ * matrica filtrira usluge za Evgeniju, Annu i Aleksandru; dostupnost termina
+ * ostaje zajednička dok booking domen ne dobije stvarnu vezu sa zaposlenima.
+ * Vidi `booking/context.ts`.
  */
 import { useTheme10Booking } from "./booking/context";
 import { CONTENT_WIDTH, FOCUS_RING, SECTION_X } from "./constants";

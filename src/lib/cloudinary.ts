@@ -18,6 +18,8 @@ export { cloudinary };
 
 export type UploadResult = {
   secure_url: string;
+  width?: number;
+  height?: number;
 };
 
 /**
@@ -153,16 +155,27 @@ export async function uploadToCloudinary(
   folder: string,
   resourceType: "image" | "video" = "image",
 ): Promise<string> {
-  return new Promise(async (resolve, reject) => {
+  const result = await uploadToCloudinaryWithMetadata(file, folder, resourceType);
+  return result.secure_url;
+}
+
+/** Cloudinary's intrinsic dimensions are authoritative for favicon auto mode. */
+export async function uploadToCloudinaryWithMetadata(
+  file: File,
+  folder: string,
+  resourceType: "image" | "video" = "image",
+): Promise<UploadResult> {
+  const buffer = Buffer.from(await file.arrayBuffer());
+  return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       { folder, resource_type: resourceType },
       (error, result: UploadResult | undefined) => {
         if (error) reject(error);
-        else resolve(result!.secure_url);
+        else if (result?.secure_url) resolve({ secure_url: result.secure_url, width: result.width, height: result.height });
+        else reject(new Error("Cloudinary upload nije vratio URL."));
       },
     );
 
-    const buffer = Buffer.from(await file.arrayBuffer());
     const bufferStream = new Readable();
     bufferStream.push(buffer);
     bufferStream.push(null);

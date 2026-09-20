@@ -10,45 +10,38 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { SalonProfile } from "@/models/SalonProfile";
 import { Types } from "mongoose";
+import { PLATFORM_FAVICON, faviconTransformUrl, monogramSvg, resolveTenantFavicon } from "@/lib/branding/favicon";
 
-const PLATFORM_FAVICON = "/marysoll_elegant_logo.ico";
-
-/**
- * For Cloudinary URLs, insert a square favicon-sized transformation so the tab
- * icon is crisp regardless of the source logo's aspect ratio. Non-Cloudinary
- * URLs are returned unchanged (browsers downscale them fine).
- */
-function toFaviconUrl(logo: string): string {
-  const marker = "/image/upload/";
-  const i = logo.indexOf(marker);
-  if (i === -1) return logo;
-  const head = logo.slice(0, i + marker.length);
-  const tail = logo.slice(i + marker.length);
-  return `${head}w_64,h_64,c_fill/${tail}`;
+function requestedSize(value: string | null): number {
+  const size = Number(value);
+  return [16, 32, 48, 180, 192, 512].includes(size) ? size : 32;
 }
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const tenantId = req.headers.get("x-tenant-id") ?? "";
 
-  let logo: string | null = null;
+  let profile: Record<string, unknown> | null = null;
   if (tenantId && Types.ObjectId.isValid(tenantId)) {
     try {
       await connectToDB();
-      const profile = (await SalonProfile.findOne({ tenantId })
-        .select("logo")
-        .lean()) as { logo?: string } | null;
-      logo = profile?.logo || null;
+      profile = (await SalonProfile.findOne({ tenantId })
+        .select("name logo branding favicon")
+        .lean()) as Record<string, unknown> | null;
     } catch {
       /* fall through to platform favicon */
     }
   }
 
-  const target = logo
-    ? toFaviconUrl(logo)
-    : new URL(PLATFORM_FAVICON, req.nextUrl.origin).toString();
+  const resolved = resolveTenantFavicon(profile);
+  const cacheControl = req.nextUrl.searchParams.has("v") ? "public, max-age=31536000, immutable" : "public, max-age=60, must-revalidate";
+  if (resolved.kind === "monogram") {
+    return new NextResponse(monogramSvg(resolved), { headers: { "Content-Type": "image/svg+xml; charset=utf-8", "Cache-Control": cacheControl } });
+  }
+  const target = resolved.kind === "platform"
+    ? new URL(PLATFORM_FAVICON, req.nextUrl.origin).toString()
+    : faviconTransformUrl(resolved.source, requestedSize(req.nextUrl.searchParams.get("size")));
 
   const res = NextResponse.redirect(target, 307);
-  // Kratko keširanje: favicon se ne menja često, a smanjuje DB pozive po tabu.
-  res.headers.set("Cache-Control", "public, max-age=3600, must-revalidate");
+  res.headers.set("Cache-Control", cacheControl);
   return res;
 }
