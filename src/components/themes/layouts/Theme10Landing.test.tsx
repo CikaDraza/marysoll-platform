@@ -105,7 +105,8 @@ describe("Theme10Landing", () => {
     // preostale dve podrazumevane kolege.
     expect(html).toContain("Anna");
     expect(html).not.toContain("izlivanje i art dizajn");
-    expect(html).not.toContain("Evgenija");
-    expect(html).not.toContain("Aleksandra");
+    // Cenovnik sadrži sva tri imena, zato proveravamo baš redove tima.
+    expect(html).not.toContain('text-ash-gold-dk">Evgenija</span>');
+    expect(html).not.toContain('text-ash-gold-dk">Aleksandra</span>');
   });
 });

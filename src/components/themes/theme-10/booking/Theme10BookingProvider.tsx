@@ -2,17 +2,18 @@
 /**
  * Theme10BookingProvider — booking modal teme theme-10 (dizajn „Ash Studio").
  *
- * Tok: 01 Termin → 02 Usluga → 03 Potvrda. Prikaz je teme, a pravila nisu:
+ * Tok bez unapred izabrane radnice: 01 Termin → 02 Usluga → 03 Majstor →
+ * 04 Potvrda. Kada se stigne iz Tim sekcije, majstor je već poznat pa je tok
+ * kraći: 01 Termin → 02 Usluga → 03 Potvrda. Prikaz je teme, a pravila nisu:
  *   - slobodni termini idu kroz `widgetDay` (isti `@panta/booking-engine` koji
  *     koriste javni widget, `/api/slots` i admin kalendar);
  *   - „Potvrdi termin" predaje izbor deljenom `BookingModal`-u, koji radi
  *     prijavu/gosta, dodatke, vaučer, proveru trajanja i sam upis.
  *
- * Korak „Majstor" iz dizajna je izostavljen: booking domen još nema vezu
- * usluga ↔ zaposleni, pa bi izbor majstora bio samo prikaz bez posledice.
- * Kad se stigne iz Tim sekcije (`openForMaster`), izabrani majstor SE najavljuje
- * — bedž u zaglavlju + napomena termina — ali ne filtrira termine ni usluge
- * (nema podatka po kome bi se filtriralo). Vidi `booking/context.ts`.
+ * Privremena Ash Studio demo matrica bira majstora za osam usluga iz handoffa.
+ * Kad se stigne iz Tim sekcije (`openForMaster`), taj izbor je unapred poznat
+ * i filtrira usluge. Termini se ne filtriraju po zaposlenom, jer taj podatak
+ * još nije deo stvarnog booking domena. Vidi `booking/context.ts`.
  *
  * Gost koji mora da se prijavi čuva izbor u `sessionStorage` (isti ugovor kao
  * widget); po povratku na početnu, provider sam otvara formu za potvrdu.
@@ -40,8 +41,14 @@ import type {
   SalonProfileData,
   WorkingHoursMap,
 } from "@/types";
-import { widgetDay } from "@/lib/booking/widgetDay";
+import { firstAvailableDate, widgetDay } from "@/lib/booking/widgetDay";
 import { Theme10BookingContext, type Theme10Master } from "./context";
+import {
+  theme10BookableServices,
+  theme10DemoPriceForMaster,
+  theme10MastersForService,
+  theme10ServicesForMaster,
+} from "../demoCatalog";
 import {
   DOW_SHORT,
   formatDayHeading,
@@ -64,7 +71,7 @@ type PublicAppt = {
   status: string;
 };
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4;
 
 interface Props {
   tenantSlug?: string;
@@ -74,10 +81,17 @@ interface Props {
   children: ReactNode;
 }
 
-const STEPS: { n: string; label: string; step: Step }[] = [
+const OPEN_STEPS: { n: string; label: string; step: Step }[] = [
   { n: "01", label: "Termin", step: 1 },
   { n: "02", label: "Usluga", step: 2 },
-  { n: "03", label: "Potvrda", step: 3 },
+  { n: "03", label: "Majstor", step: 3 },
+  { n: "04", label: "Potvrda", step: 4 },
+];
+
+const LOCKED_STEPS: { n: string; label: string; step: Step }[] = [
+  { n: "01", label: "Termin", step: 1 },
+  { n: "02", label: "Usluga", step: 2 },
+  { n: "03", label: "Potvrda", step: 4 },
 ];
 
 const BACK_LINK =
@@ -98,14 +112,17 @@ export function Theme10BookingProvider({
   const effectiveSlug = clientSlug ?? tenantSlug;
 
   const [isOpen, setIsOpen] = useState(false);
-  const [week, setWeek] = useState(0);
+  /** `null` znači početni prikaz: automatski prvi dan sa slobodnim terminom. */
+  const [weekOffset, setWeekOffset] = useState<number | null>(null);
   const [dayKey, setDayKey] = useState<string | null>(null);
   const [slot, setSlot] = useState<string | null>(null);
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [step, setStep] = useState<Step>(1);
   const [done, setDone] = useState(false);
-  /** Majstor iz Tim sekcije — najava, ne filter (vidi header komentar). */
+  /** Majstor iz Tim sekcije — demo filter usluga + napomena termina. */
   const [lockedMaster, setLockedMaster] = useState<Theme10Master | null>(null);
+  /** Izabrani majstor iz trećeg koraka kada booking nije zaključan. */
+  const [selectedMaster, setSelectedMaster] = useState<Theme10Master | null>(null);
   /** Deljena forma je otvorena — tematski modal se tada sklanja. */
   const [handoff, setHandoff] = useState(false);
   const [pendingDefaults, setPendingDefaults] = useState<Omit<
@@ -118,13 +135,14 @@ export function Theme10BookingProvider({
   const invokerRef = useRef<HTMLElement | null>(null);
 
   const reset = useCallback(() => {
-    setWeek(0);
+    setWeekOffset(null);
     setDayKey(null);
     setSlot(null);
     setServiceId(null);
     setStep(1);
     setDone(false);
     setLockedMaster(null);
+    setSelectedMaster(null);
   }, []);
 
   const open = useCallback(() => {
@@ -140,6 +158,7 @@ export function Theme10BookingProvider({
         document.activeElement instanceof HTMLElement ? document.activeElement : null;
       reset();
       setLockedMaster(master);
+      setSelectedMaster(master);
       setIsOpen(true);
     },
     [reset],
@@ -170,11 +189,37 @@ export function Theme10BookingProvider({
   const manualSlots = salon.manualSlots as ManualSlotsMap | undefined;
   const vacations = salon.vacations;
 
+  const today = useMemo(() => new Date(), []);
+  const firstFreeDayKey = useMemo(
+    () =>
+      firstAvailableDate(
+        {
+          workingHours,
+          manualSlots,
+          isManual,
+          appointments,
+          vacations,
+          now: today,
+        },
+        toDateKey(today),
+      ),
+    [workingHours, manualSlots, isManual, appointments, vacations, today],
+  );
+
+  const firstFreeWeekOffset = useMemo(() => {
+    if (!firstFreeDayKey) return 0;
+    const firstMonday = mondayOf(fromDateKey(firstFreeDayKey));
+    const currentMonday = mondayOf(today);
+    return Math.max(0, Math.round((firstMonday.getTime() - currentMonday.getTime()) / 604_800_000));
+  }, [firstFreeDayKey, today]);
+
+  const visibleWeekOffset = weekOffset ?? firstFreeWeekOffset;
+
   const weekStart = useMemo(() => {
-    const monday = mondayOf(new Date());
-    monday.setDate(monday.getDate() + week * 7);
+    const monday = mondayOf(today);
+    monday.setDate(monday.getDate() + visibleWeekOffset * 7);
     return monday;
-  }, [week]);
+  }, [today, visibleWeekOffset]);
 
   const days = useMemo(() => {
     const now = new Date();
@@ -203,9 +248,25 @@ export function Theme10BookingProvider({
     });
   }, [weekStart, workingHours, manualSlots, isManual, appointments, vacations]);
 
-  const currentDay = days.find((d) => d.key === dayKey) ?? null;
-  const pickedDate = dayKey ? fromDateKey(dayKey) : null;
-  const service = services.find((s) => s._id === serviceId) ?? null;
+  const selectedDayKey = dayKey ?? (weekOffset === null ? firstFreeDayKey : null);
+  const currentDay = days.find((d) => d.key === selectedDayKey) ?? null;
+  const pickedDate = selectedDayKey ? fromDateKey(selectedDayKey) : null;
+  const availableServices = useMemo(
+    () =>
+      lockedMaster
+        ? theme10ServicesForMaster(services, lockedMaster.name)
+        : theme10BookableServices(services),
+    [services, lockedMaster],
+  );
+  const service = availableServices.find((s) => s._id === serviceId) ?? null;
+  const eligibleMasters = useMemo(
+    () => (service ? theme10MastersForService(service) : []),
+    [service],
+  );
+  const bookingSteps = lockedMaster ? LOCKED_STEPS : OPEN_STEPS;
+  const selectedPrice = service && selectedMaster
+    ? theme10DemoPriceForMaster(service, selectedMaster.name.toLocaleLowerCase("sr-RS"))
+    : null;
 
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekStart.getDate() + 6);
@@ -268,7 +329,7 @@ export function Theme10BookingProvider({
         setSlot(pending.time);
         setServiceId(pending.serviceId || null);
         setIsOpen(true);
-        setStep(3);
+        setStep(4);
         setHandoff(true);
       }
       void restore();
@@ -353,7 +414,7 @@ export function Theme10BookingProvider({
 
               {/* Koraci */}
               <ol className="flex flex-wrap gap-[clamp(14px,2.4vw,32px)] border-b border-ash-ink/10 bg-white px-[clamp(20px,3vw,38px)] py-4">
-                {STEPS.map((s) => {
+                {bookingSteps.map((s) => {
                   const reached = done || step >= s.step;
                   const current = !done && step === s.step;
                   return (
@@ -391,7 +452,7 @@ export function Theme10BookingProvider({
                     <p className="max-w-[44ch] text-[15.5px] font-light leading-[1.75] text-ash-ink-soft">
                       {pickedDate ? formatDayLong(pickedDate) : ""} u {slot} —{" "}
                       {service?.name}
-                      {lockedMaster ? ` — Majstor: ${lockedMaster.name}` : ""}.
+                      {selectedMaster ? ` — Majstor: ${selectedMaster.name}` : ""}.
                       Vidimo se u studiju.
                     </p>
                     <button
@@ -407,9 +468,11 @@ export function Theme10BookingProvider({
                     <div className="flex items-center justify-center gap-[clamp(16px,3vw,36px)]">
                       <WeekArrow
                         label="Prethodna sedmica"
-                        disabled={week === 0}
+                        disabled={visibleWeekOffset === 0}
                         onClick={() => {
-                          setWeek((w) => Math.max(0, w - 1));
+                          setWeekOffset((current) =>
+                            Math.max(0, (current ?? firstFreeWeekOffset) - 1),
+                          );
                           setDayKey(null);
                           setSlot(null);
                         }}
@@ -425,7 +488,7 @@ export function Theme10BookingProvider({
                       <WeekArrow
                         label="Sledeća sedmica"
                         onClick={() => {
-                          setWeek((w) => w + 1);
+                          setWeekOffset((current) => (current ?? firstFreeWeekOffset) + 1);
                           setDayKey(null);
                           setSlot(null);
                         }}
@@ -437,7 +500,7 @@ export function Theme10BookingProvider({
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(100px,1fr))] gap-2">
                       {days.map((d) => {
                         const isFree = d.free.length > 0;
-                        const selected = d.key === dayKey;
+                        const selected = d.key === selectedDayKey;
                         return (
                           <button
                             key={d.key}
@@ -469,7 +532,7 @@ export function Theme10BookingProvider({
                               {d.date.getDate()}
                             </span>
                             <span
-                              className={`mt-2 whitespace-nowrap px-[7px] py-1 text-[9.5px] uppercase tracking-[0.1em] ${
+                              className={`mt-2 whitespace-nowrap rounded-[5px] px-[7px] py-1 text-[9.5px] uppercase tracking-[0.1em] ${
                                 isFree
                                   ? "bg-ash-ink text-ash-gold-lt"
                                   : "bg-[#e3e1de] text-[#8b8983]"
@@ -493,6 +556,9 @@ export function Theme10BookingProvider({
                               key={t}
                               type="button"
                               onClick={() => {
+                                // Automatski izabrani dan nema još eksplicitno stanje;
+                                // sačuvaj ga tek kad korisnica potvrdi konkretan termin.
+                                setDayKey(currentDay.key);
                                 setSlot(t);
                                 setServiceId(null);
                                 setStep(2);
@@ -525,13 +591,13 @@ export function Theme10BookingProvider({
                         {pickedDate ? formatDayHeading(pickedDate) : ""} · {slot}
                       </span>
                     </div>
-                    {services.length === 0 ? (
+                    {availableServices.length === 0 ? (
                       <p className="text-sm font-light text-ash-ink-faint">
-                        Salon još nije objavio usluge za online zakazivanje.
+                        Za ovog majstora trenutno nema objavljenih usluga za online zakazivanje.
                       </p>
                     ) : (
                       <div className="flex flex-col gap-2">
-                        {services.map((s) => {
+                        {availableServices.map((s) => {
                           const meta = [serviceDurationLabel(s), servicePriceLabel(s)]
                             .filter(Boolean)
                             .join("  ·  ");
@@ -542,7 +608,8 @@ export function Theme10BookingProvider({
                               type="button"
                               onClick={() => {
                                 setServiceId(s._id);
-                                setStep(3);
+                                setSelectedMaster(lockedMaster);
+                                setStep(lockedMaster ? 4 : 3);
                               }}
                               className={`flex w-full flex-wrap items-baseline justify-between gap-2.5 border px-[18px] py-4 text-left transition-colors duration-200 ease-out hover:border-ash-gold focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-ash-gold ${
                                 selected
@@ -574,6 +641,63 @@ export function Theme10BookingProvider({
                       ← Nazad na termin
                     </button>
                   </div>
+                ) : step === 3 ? (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2.5">
+                      <span className="text-[11px] uppercase tracking-[0.28em] text-ash-ink-faint">
+                        Izaberite majstora
+                      </span>
+                      <span className="text-[13px] font-light text-ash-ink-soft">
+                        {service?.name ?? ""}
+                      </span>
+                    </div>
+                    {eligibleMasters.length === 0 ? (
+                      <p className="text-sm font-light text-ash-ink-faint">
+                        Za ovu uslugu trenutno nema dostupnog majstora.
+                      </p>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        {eligibleMasters.map((master) => {
+                          const selected = selectedMaster?.name === master.label;
+                          const price = service
+                            ? theme10DemoPriceForMaster(service, master.id)
+                            : null;
+                          return (
+                            <button
+                              key={master.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedMaster({ name: master.label, spec: master.spec });
+                                setStep(4);
+                              }}
+                              className={`flex w-full flex-wrap items-baseline justify-between gap-2.5 border px-[18px] py-4 text-left transition-colors duration-200 ease-out hover:border-ash-gold focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-ash-gold ${
+                                selected
+                                  ? "border-ash-gold bg-[#fbfaf8]"
+                                  : "border-ash-ink/12 bg-white"
+                              }`}
+                            >
+                              <span className="flex flex-col gap-[5px]">
+                                <span className="font-cormorant text-[21px] leading-[1.1] text-ash-ink">
+                                  {master.label}
+                                </span>
+                                <span className="text-[11.5px] uppercase tracking-[0.14em] text-ash-gold-dk">
+                                  {master.spec}
+                                </span>
+                              </span>
+                              {price && (
+                                <span className="whitespace-nowrap text-[13px] font-light text-ash-ink-mute">
+                                  {price}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <button type="button" onClick={() => setStep(2)} className={BACK_LINK}>
+                      ← Promeni uslugu
+                    </button>
+                  </div>
                 ) : (
                   <div className="flex flex-col gap-[22px]">
                     <span className="text-[11px] uppercase tracking-[0.28em] text-ash-ink-faint">
@@ -598,24 +722,41 @@ export function Theme10BookingProvider({
                         </div>
                         <div className="mt-1.5 text-[13px] font-light text-ash-ink-mute">
                           {service
-                            ? [serviceDurationLabel(service), servicePriceLabel(service)]
+                            ? [serviceDurationLabel(service), selectedPrice ?? servicePriceLabel(service)]
                                 .filter(Boolean)
                                 .join("  ·  ")
                             : ""}
                         </div>
+                      </div>
+                      <div className="bg-white p-[22px]">
+                        <div className="mb-2.5 text-[10.5px] uppercase tracking-[0.26em] text-[#8b8983]">
+                          Majstor
+                        </div>
+                        <div className="font-cormorant text-2xl leading-[1.2]">
+                          {selectedMaster?.name ?? "—"}
+                        </div>
+                        {selectedMaster?.spec && (
+                          <div className="mt-1.5 text-[13px] font-light text-ash-ink-mute">
+                            {selectedMaster.spec}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-3.5">
                       <button
                         type="button"
                         onClick={() => setHandoff(true)}
-                        disabled={!service || !slot || !dayKey}
+                        disabled={!service || !slot || !dayKey || !selectedMaster}
                         className={SOLID_PILL}
                       >
                         Potvrdi termin <span aria-hidden>→</span>
                       </button>
-                      <button type="button" onClick={() => setStep(2)} className={BACK_LINK}>
-                        ← Promeni uslugu
+                      <button
+                        type="button"
+                        onClick={() => setStep(lockedMaster ? 2 : 3)}
+                        className={BACK_LINK}
+                      >
+                        ← {lockedMaster ? "Promeni uslugu" : "Promeni majstora"}
                       </button>
                     </div>
                     <p className="text-[13px] font-light leading-[1.7] text-ash-ink-faint">
@@ -631,7 +772,7 @@ export function Theme10BookingProvider({
 
       {isOpen && handoff && dayKey && slot && (
         <BookingModal
-          key={`${dayKey}-${slot}-${serviceId ?? ""}-${lockedMaster?.name ?? ""}`}
+          key={`${dayKey}-${slot}-${serviceId ?? ""}-${selectedMaster?.name ?? ""}`}
           isOpen
           onClose={() => {
             setHandoff(false);
@@ -648,8 +789,8 @@ export function Theme10BookingProvider({
           defaultDate={dayKey}
           defaultTime={slot}
           defaultServiceId={serviceId ?? undefined}
-          defaultNote={lockedMaster ? `Željeni majstor: ${lockedMaster.name}` : undefined}
-          services={services}
+          defaultNote={selectedMaster ? `Željeni majstor: ${selectedMaster.name}` : undefined}
+          services={availableServices}
           isLoggedIn={isLoggedIn}
           userName={user?.name}
           userEmail={user?.email}
