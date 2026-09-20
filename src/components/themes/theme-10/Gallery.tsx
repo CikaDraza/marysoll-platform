@@ -3,7 +3,7 @@
  * Pločice su fiksnog odnosa 3:4; slika se blago uvećava na hover.
  */
 import { BookLink } from "./BookLink";
-import { EASE, FOCUS_RING, SECTION_X, THEME10_ANCHORS } from "./constants";
+import { CONTENT_WIDTH, EASE, FOCUS_RING, SECTION_X, THEME10_ANCHORS } from "./constants";
 
 export interface Theme10GalleryProps {
   headlineLines: string[];
@@ -21,8 +21,9 @@ export function Theme10Gallery({
   return (
     <section
       id={THEME10_ANCHORS.gallery}
-      className={`bg-ash-paper py-[clamp(56px,6vw,104px)] ${SECTION_X}`}
+      className="bg-ash-paper py-[clamp(56px,6vw,104px)]"
     >
+      <div className={`${CONTENT_WIDTH} ${SECTION_X}`}>
       <div className="mb-[clamp(28px,3vw,48px)] grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] items-end gap-[clamp(24px,3vw,56px)]">
         <div>
           <span className="text-[11px] uppercase tracking-[0.3em] text-ash-ink-faint">
@@ -62,6 +63,7 @@ export function Theme10Gallery({
           </li>
         ))}
       </ul>
+      </div>
     </section>
   );
 }

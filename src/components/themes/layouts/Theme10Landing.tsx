@@ -81,49 +81,47 @@ export function Theme10Landing(props: ThemeLandingProps) {
         salon={native.booking.salon}
         services={native.booking.services}
       >
-        <div
-          lang="sr"
-          className="flex min-h-screen flex-col overflow-x-clip bg-ash-paper-2 font-jost text-ash-ink antialiased selection:bg-ash-gold selection:text-white"
-        >
-          <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link rel="stylesheet" href={THEME10_FONT_HREF} />
+        <div lang="sr" className="flex min-h-screen w-full flex-col overflow-x-clip bg-[linear-gradient(to_top_right,var(--color-ash-paper-2),var(--color-ash-paper-3))] font-jost text-ash-ink antialiased selection:bg-ash-gold selection:text-white">
+            <link rel="preconnect" href="https://fonts.googleapis.com" />
+            <link rel="stylesheet" href={THEME10_FONT_HREF} />
 
-          <Theme10Header
-            salonName={native.header.salonName}
-            logo={native.header.logo}
-            nav={nav}
-            homeHref={resolveHref("/")}
-            bookHref={bookHref}
-            loginHref={resolveHref("/login")}
-            clientSlug={clientSlug ?? tenantSlug}
-          />
-
-          {/* Redosled mora da prati inventar u `theme-composition.ts`
-              (čuva ga composition test). */}
-          <main className="flex-1">
-            <ThemeBlock document={document} type="content.hero" />
-            <Theme10ServicesStrip />
-            <ThemeBlock
-              document={document}
-              type="content.about"
-              slots={{ action: styleAction }}
-            />
-            <Theme10Hygiene moreHref={`#${THEME10_ANCHORS.contact}`} />
-            <ThemeBlock document={document} type="content.gallery" />
-            <ThemeBlock document={document} type="services.catalog" />
-            <ThemeBlock document={document} type="content.team" />
-            <Theme10CtaBand
+            <Theme10Header
+              salonName={native.header.salonName}
+              logo={native.header.logo}
+              nav={nav}
+              homeHref={resolveHref("/")}
               bookHref={bookHref}
-              salonName={native.footer.salonName}
-              logo={native.footer.logo}
+              loginHref={resolveHref("/login")}
+              clientSlug={clientSlug ?? tenantSlug}
+              transparentAtTop
             />
-          </main>
 
-          <Theme10Footer
-            footer={native.footer}
-            nav={nav}
-            privacyHref={resolveHref("/politika-privatnosti")}
-          />
+            {/* Redosled mora da prati inventar u `theme-composition.ts`
+                (čuva ga composition test). */}
+            <main className="flex-1">
+              <ThemeBlock document={document} type="content.hero" />
+              <Theme10ServicesStrip />
+              <ThemeBlock
+                document={document}
+                type="content.about"
+                slots={{ action: styleAction }}
+              />
+              <Theme10Hygiene moreHref={`#${THEME10_ANCHORS.contact}`} />
+              <ThemeBlock document={document} type="content.gallery" />
+              <ThemeBlock document={document} type="services.catalog" />
+              <ThemeBlock document={document} type="content.team" />
+              <Theme10CtaBand
+                bookHref={bookHref}
+                salonName={native.footer.salonName}
+                logo={native.footer.logo}
+              />
+            </main>
+
+            <Theme10Footer
+              footer={native.footer}
+              nav={nav}
+              privacyHref={resolveHref("/politika-privatnosti")}
+            />
         </div>
       </Theme10BookingProvider>
     </ThemeBlockScope>

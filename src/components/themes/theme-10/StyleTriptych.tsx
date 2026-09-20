@@ -9,7 +9,7 @@
  * na strani, pa mu landing predaje gotovo dugme (link na galeriju ili CTA).
  */
 import type { ReactNode } from "react";
-import { THEME10_ANCHORS } from "./constants";
+import { CONTENT_WIDTH, THEME10_ANCHORS } from "./constants";
 
 export interface Theme10StyleTriptychProps {
   headlineLines: string[];
@@ -28,8 +28,9 @@ export function Theme10StyleTriptych({
   return (
     <section
       id={THEME10_ANCHORS.style}
-      className="grid grid-cols-1 min-[1000px]:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1fr)]"
+      className="w-full"
     >
+      <div className={`${CONTENT_WIDTH} grid grid-cols-1 min-[1000px]:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1fr)]`}>
       <div className="relative min-h-[clamp(300px,34vw,520px)] overflow-hidden bg-[#2a1414]">
         {/* eslint-disable-next-line @next/next/no-img-element -- CMS slika, proizvoljan domen */}
         <img
@@ -81,6 +82,7 @@ export function Theme10StyleTriptych({
           <br />
           Uvek elegantno
         </div>
+      </div>
       </div>
     </section>
   );

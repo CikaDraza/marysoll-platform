@@ -2,12 +2,13 @@
  * Theme10Hygiene — „Dezinfekcija i sterilizacija". Theme-native sekcija
  * (standard studija, ne CMS sadržaj).
  */
-import { EASE, FOCUS_RING, THEME10_DEFAULT_IMAGES } from "./constants";
+import { CONTENT_WIDTH, EASE, FOCUS_RING, THEME10_DEFAULT_IMAGES } from "./constants";
 
 export function Theme10Hygiene({ moreHref }: { moreHref: string }) {
   const image = THEME10_DEFAULT_IMAGES.hygiene;
   return (
-    <section className="grid grid-cols-1 border-y border-ash-ink/8 bg-[linear-gradient(120deg,#e9e7e4_0%,#d9d7d3_100%)] min-[1000px]:grid-cols-[minmax(0,0.85fr)_minmax(0,1.3fr)_minmax(200px,0.5fr)]">
+    <section className="w-full border-y border-ash-ink/8 bg-[linear-gradient(120deg,#e9e7e4_0%,#d9d7d3_100%)]">
+      <div className={`${CONTENT_WIDTH} grid grid-cols-1 min-[1000px]:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.7fr)_minmax(220px,0.75fr)]`}>
       <div className="flex flex-col justify-center gap-[22px] px-[clamp(24px,3.4vw,56px)] py-[clamp(40px,5vw,80px)]">
         <span className="text-[11px] uppercase tracking-[0.3em] text-ash-ink-faint">
           Vaše zdravlje je na prvom mestu
@@ -34,7 +35,7 @@ export function Theme10Hygiene({ moreHref }: { moreHref: string }) {
           src={image.src}
           alt={image.alt}
           loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover object-[50%_42%]"
+          className="absolute inset-0 h-full w-full object-contain object-center"
         />
       </div>
       <div className="hidden min-h-0 items-center py-[clamp(24px,3vw,48px)] pr-3 pl-[clamp(14px,1.6vw,28px)] min-[1000px]:flex">
@@ -45,6 +46,7 @@ export function Theme10Hygiene({ moreHref }: { moreHref: string }) {
           <br />
           Profesionalnost
         </div>
+      </div>
       </div>
     </section>
   );

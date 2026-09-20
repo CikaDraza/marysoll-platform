@@ -3,7 +3,7 @@
  * Desni tamni panel nosi logo salona u svetloj varijanti.
  */
 import { BookLink } from "./BookLink";
-import { EASE, FOCUS_RING, THEME10_ANCHORS } from "./constants";
+import { CONTENT_WIDTH, EASE, FOCUS_RING, THEME10_ANCHORS } from "./constants";
 import { LightLogo } from "./LightLogo";
 
 export function Theme10CtaBand({
@@ -18,8 +18,9 @@ export function Theme10CtaBand({
   return (
     <section
       id={THEME10_ANCHORS.booking}
-      className="grid grid-cols-1 bg-[linear-gradient(120deg,#e9e7e4_0%,#d4d2ce_100%)] min-[900px]:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)_minmax(0,0.6fr)]"
+      className="w-full bg-[linear-gradient(120deg,#e9e7e4_0%,#d4d2ce_100%)]"
     >
+      <div className={`${CONTENT_WIDTH} grid grid-cols-1 min-[900px]:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)_minmax(0,0.6fr)]`}>
       <div className="flex flex-col justify-center gap-5 px-[clamp(24px,3.6vw,64px)] py-[clamp(48px,5.5vw,96px)]">
         <span className="text-[11px] uppercase leading-[2] tracking-[0.3em] text-ash-ink-faint">
           Vreme je
@@ -47,13 +48,14 @@ export function Theme10CtaBand({
           Dostupni termini u realnom vremenu.
         </p>
       </div>
-      <div className="flex flex-col items-start justify-center bg-[linear-gradient(160deg,#4a4845_0%,#2b2a28_100%)] p-[clamp(28px,3vw,56px)] min-[900px]:items-end">
+      <div className="hidden flex-col items-start justify-center bg-[linear-gradient(160deg,#4a4845_0%,#2b2a28_100%)] p-[clamp(28px,3vw,56px)] min-[900px]:flex min-[900px]:items-end">
         <LightLogo
           salonName={salonName}
           logo={logo}
           className="h-[clamp(64px,7vw,104px)]"
           textClassName="text-[clamp(24px,2.6vw,36px)]"
         />
+      </div>
       </div>
     </section>
   );

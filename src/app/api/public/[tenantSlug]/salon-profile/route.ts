@@ -86,6 +86,7 @@ function serializeProfile(doc: Record<string, unknown>) {
       ),
       facebook: String((doc.social as Record<string, string>)?.facebook ?? ""),
       tiktok: String((doc.social as Record<string, string>)?.tiktok ?? ""),
+      telegram: String((doc.social as Record<string, string>)?.telegram ?? ""),
     },
     workingHours: serializeWorkingHours(doc.workingHours),
     vacations: normalizeVacations(doc.vacations),

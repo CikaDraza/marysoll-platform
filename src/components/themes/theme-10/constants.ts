@@ -15,7 +15,7 @@ export const THEME10_FONT_HREF =
 const IMG = "/images/theme-10";
 
 export const THEME10_DEFAULT_IMAGES = {
-  hero: { src: `${IMG}/evgenia-cutout.webp`, alt: "Majstor manikira u studiju" },
+  hero: { src: `${IMG}/evgenia-cutout.png`, alt: "Majstor manikira u studiju" },
   styleLeft: { src: `${IMG}/nails-red.webp`, alt: "Manikir u tamnoj bordo nijansi" },
   styleRight: { src: `${IMG}/nails-nude.webp`, alt: "Nude manikir sa sjajnim gel lakom" },
   hygiene: { src: `${IMG}/sterilizacija.webp`, alt: "Sterilizacija instrumenata" },
@@ -54,3 +54,6 @@ export const EASE = "transition-colors duration-200 ease-out";
 
 /** Horizontalni padding sekcija: clamp(20px,4vw,56px). */
 export const SECTION_X = "px-[clamp(20px,4vw,56px)]";
+
+/** Maksimalna širina sadržaja unutar full-width sekcija na velikim ekranima. */
+export const CONTENT_WIDTH = "mx-auto w-full max-w-[1368px]";

@@ -191,6 +191,7 @@ export async function ClientHomePage({ tenantSlug }: Props) {
       instagram: String((s?.social as Record<string, string>)?.instagram ?? ""),
       facebook: String((s?.social as Record<string, string>)?.facebook ?? ""),
       tiktok: String((s?.social as Record<string, string>)?.tiktok ?? ""),
+      telegram: String((s?.social as Record<string, string>)?.telegram ?? ""),
     },
     newsletterEmail: String(s?.newsletterEmail ?? ""),
     branding: {

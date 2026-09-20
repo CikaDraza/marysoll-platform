@@ -6,7 +6,7 @@
  * zaposlenom, pa je ovde jedna kolona. Ostaje prava `<table>` (a11y).
  */
 import type { IService } from "@/types";
-import { SECTION_X, THEME10_ANCHORS } from "./constants";
+import { CONTENT_WIDTH, SECTION_X, THEME10_ANCHORS } from "./constants";
 import { servicePriceLabel } from "./format";
 
 export interface Theme10PriceListProps {
@@ -32,8 +32,9 @@ export function Theme10PriceList({ headlineLines, body, services }: Theme10Price
   return (
     <section
       id={THEME10_ANCHORS.prices}
-      className={`bg-[linear-gradient(140deg,#1a1a19_0%,#26251f_55%,#141413_100%)] py-[clamp(56px,6vw,110px)] text-ash-paper-2 ${SECTION_X}`}
+      className="bg-[linear-gradient(140deg,#1a1a19_0%,#26251f_55%,#141413_100%)] py-[clamp(56px,6vw,110px)] text-ash-paper-2"
     >
+      <div className={`${CONTENT_WIDTH} ${SECTION_X}`}>
       <div className="mb-[clamp(32px,3.6vw,56px)] grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] items-end gap-[clamp(24px,3vw,56px)]">
         <div>
           <span className="text-[11px] uppercase tracking-[0.3em] text-ash-gold">
@@ -78,6 +79,7 @@ export function Theme10PriceList({ headlineLines, body, services }: Theme10Price
             ))}
           </tbody>
         </table>
+      </div>
       </div>
     </section>
   );

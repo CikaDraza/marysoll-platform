@@ -5,12 +5,11 @@
  */
 import type { Theme10ShellData } from "./nativeData";
 import type { Theme10NavItem } from "./Header";
-import { EASE, FOCUS_RING, SECTION_X, THEME10_ANCHORS } from "./constants";
+import { CONTENT_WIDTH, EASE, FOCUS_RING, SECTION_X, THEME10_ANCHORS } from "./constants";
 import { LightLogo } from "./LightLogo";
 
 const LINK = `text-[14.5px] font-light text-[#cfcdc8] hover:text-ash-gold ${EASE} ${FOCUS_RING}`;
 const HEADING = "mb-1.5 text-[11px] uppercase tracking-[0.26em] text-ash-gold";
-
 const SOCIAL_LABELS: [keyof Theme10ShellData["footer"]["social"], string][] = [
   ["instagram", "Instagram"],
   ["telegram", "Telegram"],
@@ -32,8 +31,9 @@ export function Theme10Footer({ footer, nav, privacyHref }: Props) {
   return (
     <footer
       id={THEME10_ANCHORS.contact}
-      className={`bg-ash-night pt-[clamp(48px,5vw,84px)] pb-7 text-[#cfcdc8] ${SECTION_X}`}
+      className="bg-ash-night pt-[clamp(48px,5vw,84px)] pb-7 text-[#cfcdc8]"
     >
+      <div className={`${CONTENT_WIDTH} ${SECTION_X}`}>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-[clamp(28px,3.4vw,56px)]">
         <div className="flex flex-col items-start">
           <LightLogo
@@ -58,7 +58,7 @@ export function Theme10Footer({ footer, nav, privacyHref }: Props) {
           </nav>
         )}
 
-        {(footer.address || footer.phone || footer.email) && (
+        {(footer.address || footer.phone) && (
           <div className="flex flex-col gap-3">
             <span className={HEADING}>Kontakt</span>
             {footer.address && (
@@ -67,11 +67,6 @@ export function Theme10Footer({ footer, nav, privacyHref }: Props) {
             {footer.phone && (
               <a href={`tel:${footer.phone.replace(/\s+/g, "")}`} className={LINK}>
                 {footer.phone}
-              </a>
-            )}
-            {footer.email && (
-              <a href={`mailto:${footer.email}`} className={`${LINK} break-all`}>
-                {footer.email}
               </a>
             )}
           </div>
@@ -110,6 +105,7 @@ export function Theme10Footer({ footer, nav, privacyHref }: Props) {
         <a href={privacyHref} className={`hover:text-ash-gold ${EASE} ${FOCUS_RING}`}>
           Politika privatnosti
         </a>
+      </div>
       </div>
     </footer>
   );

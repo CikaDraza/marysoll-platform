@@ -20,7 +20,7 @@ export function Theme10Shell(props: ThemeShellProps) {
   return (
     <div
       lang="sr"
-      className="flex min-h-screen flex-col overflow-x-clip bg-ash-paper-2 font-jost text-ash-ink antialiased selection:bg-ash-gold selection:text-white"
+      className="flex min-h-screen flex-col overflow-x-clip bg-[linear-gradient(to_top_right,var(--color-ash-paper-2),var(--color-ash-paper-3))] font-jost text-ash-ink antialiased selection:bg-ash-gold selection:text-white"
     >
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="stylesheet" href={THEME10_FONT_HREF} />

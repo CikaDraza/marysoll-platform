@@ -12,7 +12,7 @@
  * `booking/context.ts`.
  */
 import { useTheme10Booking } from "./booking/context";
-import { FOCUS_RING, SECTION_X } from "./constants";
+import { CONTENT_WIDTH, FOCUS_RING, SECTION_X } from "./constants";
 
 export interface Theme10TeamProps {
   headlineLines: string[];
@@ -25,8 +25,9 @@ export function Theme10Team({ headlineLines, members, bookHref }: Theme10TeamPro
 
   return (
     <section
-      className={`border-b border-ash-ink/8 bg-ash-paper-3 py-[clamp(56px,6vw,104px)] ${SECTION_X}`}
+      className="border-b border-ash-ink/8 bg-ash-paper-3 py-[clamp(56px,6vw,104px)]"
     >
+      <div className={`${CONTENT_WIDTH} ${SECTION_X}`}>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-start gap-[clamp(32px,4vw,72px)]">
         <div className="flex flex-col gap-5">
           <span className="text-[11px] uppercase tracking-[0.3em] text-ash-ink-faint">
@@ -86,6 +87,7 @@ export function Theme10Team({ headlineLines, members, bookHref }: Theme10TeamPro
             </a>
           ))}
         </div>
+      </div>
       </div>
     </section>
   );

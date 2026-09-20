@@ -26,7 +26,7 @@ function salonWith(landing: Partial<LandingStructure["landing"]>): SalonProfileD
     street: "",
     city: "Subotica",
     description: "",
-    social: { instagram: "https://instagram.com/ash" },
+    social: { instagram: "https://instagram.com/ash", telegram: "https://t.me/ash" },
     landingTheme: "theme-10",
     landingStructure: { landing } as LandingStructure,
   } as unknown as SalonProfileData;
@@ -74,11 +74,14 @@ describe("Theme10Landing", () => {
   it("prazan CMS: prikazuje dizajn i prave usluge/kontakt salona", () => {
     const html = render(salonWith({}));
     expect(html).toContain("KOJI GOVORE");
-    expect(html).toContain("/images/theme-10/evgenia-cutout.webp");
+    expect(html).toContain("/images/theme-10/evgenia-cutout.png");
     expect(html).toContain("Higijenski pedikir");
     expect(html).toContain("2.500 rsd");
     expect(html).toContain('href="/ash/termini"');
     expect(html).toContain("Subotica");
+    expect(html).toContain('href="https://t.me/ash"');
+    expect(html).toContain("Pratite nas");
+    expect(html).not.toContain('href="mailto:ash@example.com"');
     expect(html).toContain('href="#galerija"');
     // Bez CMS članova tima: tim iz dizajna (Anna/Evgenija/Aleksandra).
     expect(html).toContain("Evgenija");

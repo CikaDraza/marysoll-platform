@@ -27,7 +27,7 @@ export function SocialSeoTab(props: DashboardTabProps) {
         Društvene mreže
       </h2>
       <div className="space-y-3">
-        {(["instagram", "facebook", "tiktok"] as const).map((net) => (
+        {(["instagram", "facebook", "tiktok", "telegram"] as const).map((net) => (
           <div key={net} className="flex items-center gap-4">
             <span className="w-24 text-sm font-semibold text-gray-600 dark:text-gray-400 capitalize">
               {net}
@@ -36,7 +36,7 @@ export function SocialSeoTab(props: DashboardTabProps) {
               className={inp}
               value={sp.form.social[net] ?? ""}
               onChange={(e) => sp.setSocialField(net, e.target.value)}
-              placeholder={`https://${net}.com/vašsalon`}
+              placeholder={net === "telegram" ? "https://t.me/vas_salon" : `https://${net}.com/vašsalon`}
             />
           </div>
         ))}
