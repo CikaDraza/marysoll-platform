@@ -13,7 +13,7 @@ function Description({ banner }: { banner: MarketingBannerData }) {
   const accent = banner.accentPhrase?.trim();
   const index = accent ? description.indexOf(accent) : -1;
   return (
-    <p className="mx-auto mt-4 max-w-[760px] text-[18px] sm:text-[21px] leading-[1.55] font-medium text-white">
+    <p className="mx-auto mt-4 max-w-[760px] text-[18px] sm:text-[21px] leading-[1.55] font-medium text-y2k-baby-pink">
       {index < 0 ? description : <>
         {description.slice(0, index)}
         <span className="text-y2k-pink font-bold">{accent}</span>
@@ -76,7 +76,7 @@ function BannerCopy({ banner, href, full }: { banner: MarketingBannerData; href:
       {(banner.title?.trim() || banner.description?.trim()) && (
         <div className="w-full bg-y2k-ink border-[3px] border-y2k-ink p-6 rounded-[8px_22px_8px_22px] shadow-[6px_8px_0_#ff2e97] rotate-[-2deg]">
           {banner.title?.trim() && (
-            <h2 className="font-bagel text-[clamp(36px,5.5vw,66px)] leading-[1.05] text-white">
+            <h2 className="font-bagel text-[clamp(36px,5.5vw,66px)] leading-[1.05] text-y2k-baby-pink">
               {banner.title}
             </h2>
           )}
