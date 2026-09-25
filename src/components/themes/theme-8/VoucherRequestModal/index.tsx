@@ -81,7 +81,7 @@ export function Theme8VoucherRequestModal({ tenantSlug, services }: { tenantSlug
   return (
     <div className="rounded-[28px] border-[4px] border-y2k-ink bg-white p-6 text-y2k-ink shadow-[10px_12px_0_#ff2e97] sm:p-8">
       <div className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-y2k-purple">The Lash Room ♡</div>
-      <h2 className="mt-2 font-bagel text-[32px] leading-tight sm:text-[38px]">🎁 Poklon vaučer</h2>
+      <h2 className="mt-2 font-bagel text-[32px] leading-tight sm:text-[38px]">🎁 Poklon vaucer</h2>
       {result ? (
         <div className="mt-5 space-y-4">
           <p className="font-medium">Zahtev je sačuvan. Broj zahteva: <strong>{result.requestCode}</strong></p>
