@@ -13,7 +13,7 @@ function Description({ banner }: { banner: MarketingBannerData }) {
   const accent = banner.accentPhrase?.trim();
   const index = accent ? description.indexOf(accent) : -1;
   return (
-    <p className="mt-4 max-w-[760px] text-[18px] sm:text-[21px] leading-[1.55] font-medium text-white">
+    <p className="mx-auto mt-4 max-w-[760px] text-[18px] sm:text-[21px] leading-[1.55] font-medium text-white">
       {index < 0 ? description : <>
         {description.slice(0, index)}
         <span className="text-y2k-pink font-bold">{accent}</span>
@@ -72,7 +72,7 @@ function bannerCtaHref(banner: MarketingBannerData, resolveHref: Props["resolveH
 
 function BannerCopy({ banner, href, full }: { banner: MarketingBannerData; href: string | null; full: boolean }) {
   return (
-    <div className={full ? "mt-12 lg:order-1 lg:mt-0" : "mt-12"}>
+    <div className={full ? "mt-12 text-center lg:order-1 lg:mt-0" : "mt-12 text-center"}>
       {banner.title?.trim() && (
         <h2 className="font-bagel text-[clamp(36px,5.5vw,66px)] leading-[1.05] text-white">
           {banner.title}
