@@ -31,6 +31,44 @@ const SalonProfileSchema = new mongoose.Schema(
     isDemo: { type: Boolean, default: false },
 
     landingStructure: {
+      marketingBanners: {
+        type: [
+          {
+            id: { type: String, required: true },
+            name: { type: String },
+            enabled: { type: Boolean, default: false },
+            title: { type: String },
+            description: { type: String },
+            accentPhrase: { type: String },
+            image: {
+              url: { type: String },
+              publicId: { type: String },
+              alt: { type: String },
+            },
+            containerStyle: {
+              type: String,
+              enum: ["contained", "full-width"],
+              default: "contained",
+            },
+            backgroundImage: {
+              url: { type: String },
+              publicId: { type: String },
+              alt: { type: String },
+            },
+            cta: {
+              enabled: { type: Boolean, default: false },
+              label: { type: String },
+              destination: {
+                type: { type: String, enum: ["custom", "edu-center"] },
+                url: { type: String },
+              },
+            },
+            divider: { enabled: { type: Boolean, default: false }, url: { type: String } },
+          },
+        ],
+        default: undefined,
+      },
+      sectionOrder: { type: [String], default: undefined },
       landing: {
         hero: {
           enabled: { type: Boolean, default: true },

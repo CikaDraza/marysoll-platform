@@ -19,6 +19,8 @@ import { useThemeBlockScope } from "./ThemeBlockScope";
 export interface ThemeBlockProps<K extends FeatureBlockType = FeatureBlockType> {
   document: ThemeDocument;
   type: K;
+  /** Selects one instance when a type occurs more than once. */
+  blockId?: string;
   /**
    * Blokovi koje kompozicija smešta UNUTAR ovog bloka (theme-7: booking u hero
    * slotu). Element se pravi ovde, ali se renderuje samo ako se renderuje i
@@ -30,6 +32,7 @@ export interface ThemeBlockProps<K extends FeatureBlockType = FeatureBlockType> 
 export function ThemeBlock<K extends FeatureBlockType>({
   document,
   type,
+  blockId,
   slots,
 }: ThemeBlockProps<K>) {
   const scope = useThemeBlockScope();
@@ -40,6 +43,7 @@ export function ThemeBlock<K extends FeatureBlockType>({
     lookupThemeBlock({
       document,
       type,
+      blockId,
       data: scope.data,
       theme: scope.theme,
     }),

@@ -19,22 +19,15 @@
  * migraciji ne dira taj put — SSR HTML mora ostati vidljiv i bez hidratacije.
  */
 import {
-  Theme8AboutUs,
-  Theme8FAQSection,
   Theme8Footer,
-  Theme8GallerySection,
   Theme8Header,
-  Theme8Hero,
   Theme8ModalProvider,
-  Theme8Perks,
   Theme8Preloader,
-  Theme8Services,
   Theme8SocialProof,
-  Theme8TestimonialsSection,
   Theme8Tribute,
   Y2KFilters,
 } from "../theme-8";
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import {
   BackgroundWall,
   DoodleLayer,
@@ -44,6 +37,8 @@ import {
 } from "../theme-8/motion";
 import { ForceReduceMotionProvider } from "../theme-8/motion/reduceMotion";
 import { THEME8_BLOCK_RENDERERS } from "../theme-8/blocks";
+import { resolveTheme8SectionOrder } from "@/lib/theme8/marketing-layout";
+import type { Theme8SystemSectionId } from "@/types/theme8-marketing";
 import { Theme8FixturesProvider } from "../theme-8/fixturesContext";
 import { ThemeBlock } from "../blocks/ThemeBlock";
 import { ThemeBlockScope } from "../blocks/ThemeBlockScope";
@@ -54,6 +49,8 @@ export function Theme8Landing(props: ThemeLandingProps) {
     blockData,
     clientSlug,
     document,
+    sectionOrder,
+    marketingBannerIds,
     headerProps,
     reduceMotion,
     resolveHref,
@@ -67,6 +64,30 @@ export function Theme8Landing(props: ThemeLandingProps) {
     () => ({ tenantSlug, clientSlug, resolveHref }),
     [tenantSlug, clientSlug, resolveHref],
   );
+
+  const orderedSections = resolveTheme8SectionOrder(
+    sectionOrder,
+    marketingBannerIds ?? [],
+  );
+
+  // System sections keep their components and relative order. Only banners move.
+  const sectionRegistry: Record<Theme8SystemSectionId, () => React.ReactNode> = {
+    hero: () => <ThemeBlock document={document} type="content.hero" />,
+    about: () => <ThemeBlock document={document} type="content.about" />,
+    "social-proof": () => (
+      <Theme8SocialProof
+        instagramUrl={native.socialProof.url}
+        instagramHandle={native.socialProof.handle}
+        tenantStats={native.socialProof.tenantStats}
+      />
+    ),
+    services: () => <ThemeBlock document={document} type="services.catalog" />,
+    gallery: () => <ThemeBlock document={document} type="content.gallery" />,
+    perks: () => <ThemeBlock document={document} type="content.perks" />,
+    testimonials: () => <ThemeBlock document={document} type="content.testimonials" />,
+    faq: () => <ThemeBlock document={document} type="content.faq" />,
+    tribute: () => <Theme8Tribute />,
+  };
 
   // Y2K display + UI fonts (variable href matches the per-theme font-load pattern)
   const y2kFontHref =
@@ -109,21 +130,21 @@ export function Theme8Landing(props: ThemeLandingProps) {
         >
           <Theme8Header {...headerProps} />
           <main className="flex-1 overflow-x-clip flex flex-col mt-6">
-            <ThemeBlock document={document} type="content.hero" />
-            <ThemeBlock document={document} type="content.about" />
-
-            <Theme8SocialProof
-              instagramUrl={native.socialProof.url}
-              instagramHandle={native.socialProof.handle}
-              tenantStats={native.socialProof.tenantStats}
-            />
-            <ThemeBlock document={document} type="services.catalog" />
-            <ThemeBlock document={document} type="content.gallery" />
-            <ThemeBlock document={document} type="content.perks" />
-            <ThemeBlock document={document} type="content.testimonials" />
-            <ThemeBlock document={document} type="content.faq" />
-            {/* Tribute — non-CMS, always last before the footer */}
-            <Theme8Tribute />
+            {orderedSections.map((id) => {
+              if (id.startsWith("marketing:")) {
+                const bannerId = id.slice(10);
+                return (
+                  <ThemeBlock
+                    key={id}
+                    document={document}
+                    type="content.marketing-banner"
+                    blockId={`marketing-${bannerId}-block`}
+                  />
+                );
+              }
+              const render = sectionRegistry[id as Theme8SystemSectionId];
+              return render ? <Fragment key={id}>{render()}</Fragment> : null;
+            })}
           </main>
           <Theme8Footer
             salonName={native.footer.salonName}

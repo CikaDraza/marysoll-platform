@@ -87,3 +87,25 @@ describe("landing.stats stvarno preživljava kastovanje", () => {
     expect(doc.landingStructure?.landing?.stats).toEqual([]);
   });
 });
+
+
+describe("Theme-8 marketing banner persistence", () => {
+  it("čuva više banera i njihov odvojeni redosled bez baze", () => {
+    const doc = new SalonProfile({
+      tenantId: new Types.ObjectId(),
+      name: "The Lash Room",
+      email: "test@example.com",
+      landingStructure: {
+        marketingBanners: [
+          { id: "education", enabled: true, image: { url: "/edu.jpg", alt: "Edukacija" }, containerStyle: "contained" },
+          { id: "voucher", enabled: false, image: { url: "", alt: "" }, containerStyle: "full-width" },
+        ],
+        sectionOrder: ["hero", "marketing:education", "about", "social-proof", "services", "gallery", "perks", "testimonials", "faq", "marketing:voucher", "tribute"],
+      },
+    });
+    expect(doc.landingStructure?.marketingBanners?.map((banner: { id: string }) => banner.id))
+      .toEqual(["education", "voucher"]);
+    expect(doc.landingStructure?.marketingBanners?.[0]?.image?.url).toBe("/edu.jpg");
+    expect(doc.landingStructure?.sectionOrder?.[1]).toBe("marketing:education");
+  });
+});

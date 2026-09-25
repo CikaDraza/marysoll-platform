@@ -28,9 +28,10 @@ export type BlockLookup =
 export function findDocumentBlock(
   document: ThemeDocument,
   type: FeatureBlockType,
+  blockId?: string,
 ): LayoutBlock | undefined {
   for (const section of document.sections) {
-    const block = section.blocks.find((b) => b.type === type);
+    const block = section.blocks.find((b) => b.type === type && (!blockId || b.id === blockId));
     if (block) return block;
   }
   return undefined;
@@ -43,12 +44,13 @@ export function findDocumentBlock(
 export function lookupThemeBlock(params: {
   document: ThemeDocument;
   type: FeatureBlockType;
+  blockId?: string;
   data: ResolvedBlockMap;
   theme: string;
 }): BlockLookup {
-  const { document, type, data, theme } = params;
+  const { document, type, blockId, data, theme } = params;
 
-  const block = findDocumentBlock(document, type);
+  const block = findDocumentBlock(document, type, blockId);
   if (!block) return { status: "absent" };
 
   const resolved = data[block.id];

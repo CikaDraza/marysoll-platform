@@ -336,6 +336,8 @@ export const THEME_COMPOSITIONS: ThemeComposition[] = [
       cms("perks", "content.perks", "perksEnabled"),
       cms("testimonials", "content.testimonials", "testimonialsEnabled"),
       cms("faq", "content.faq", "faqEnabled"),
+      // Repeatable: runtime position comes from Theme-8 sectionOrder, not this list.
+      cms("marketingBanners", "content.marketing-banner", "section-enabled"),
       native("theme-8/tribute"),
       shell("theme-8/footer"),
       shell("theme-8/sparkle-layer"),

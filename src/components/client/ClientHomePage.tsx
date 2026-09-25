@@ -333,6 +333,8 @@ export async function ClientHomePage({ tenantSlug }: Props) {
       document={themeDocument}
       blockData={blockData}
       themeNative={themeNative}
+      sectionOrder={salonData.landingStructure?.sectionOrder}
+      marketingBannerIds={salonData.landingStructure?.marketingBanners?.map((banner) => banner.id)}
       brandingVars={branding.brandingVars}
       googleFontHref={branding.googleFontHref}
       headerProps={headerProps}

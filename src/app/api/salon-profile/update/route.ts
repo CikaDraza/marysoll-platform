@@ -18,6 +18,8 @@ import { pruneAndValidateManualSlots } from "@/helpers/manualSlots";
 import { normalizeVacations } from "@/helpers/vacations";
 import type { LandingStructure } from "@/types";
 import { mergeLandingStructureUpdate } from "@/lib/salon-profile/content-preservation";
+import { marketingBannersSchema } from "@/lib/theme8/marketing-validation";
+import { resolveTheme8SectionOrder } from "@/lib/theme8/marketing-layout";
 import {
   THEME_NOT_AVAILABLE,
   isLandingTheme,
@@ -140,12 +142,34 @@ export async function PUT(req: NextRequest) {
     }
     const landingStructure = parseJSON("landingStructure");
     if (landingStructure) {
+      const incoming = z.object({
+        marketingBanners: marketingBannersSchema.optional(),
+        sectionOrder: z.array(z.string()).max(50).optional(),
+      }).passthrough().safeParse(landingStructure);
+      if (!incoming.success) {
+        return NextResponse.json(
+          { error: incoming.error.issues[0]?.message ?? "Neispravan marketing banner." },
+          { status: 400 },
+        );
+      }
+      if (incoming.data.sectionOrder) {
+        const resolved = resolveTheme8SectionOrder(
+          incoming.data.sectionOrder,
+          (incoming.data.marketingBanners ?? []).map((banner) => banner.id),
+        );
+        if (JSON.stringify(resolved) !== JSON.stringify(incoming.data.sectionOrder)) {
+          return NextResponse.json(
+            { error: "Neispravan redosled Theme-8 sekcija." },
+            { status: 400 },
+          );
+        }
+      }
       const current = profile.toObject().landingStructure as
         | LandingStructure
         | undefined;
       profile.landingStructure = mergeLandingStructureUpdate(
         current,
-        landingStructure as LandingStructure,
+        incoming.data as unknown as LandingStructure,
       );
       profile.markModified("landingStructure");
     }

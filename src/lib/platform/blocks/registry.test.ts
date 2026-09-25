@@ -51,12 +51,14 @@ describe("registracija", () => {
     "education.topic-hub",
   ];
 
-  it("registruje spec-6 blokove i theme-9 autorske sekcije", () => {
+  const THEME8_REPEATABLE_BLOCKS = ["content.marketing-banner"];
+
+  it("registruje osnovne, theme-9 i repeatable content blokove", () => {
     expect(FEATURE_BLOCK_DEFINITIONS).toHaveLength(
-      SPEC6_BLOCKS.length + THEME9_BLOCKS.length,
+      SPEC6_BLOCKS.length + THEME9_BLOCKS.length + THEME8_REPEATABLE_BLOCKS.length,
     );
     expect(FEATURE_BLOCK_REGISTRY.types().sort()).toEqual(
-      [...SPEC6_BLOCKS, ...THEME9_BLOCKS].sort(),
+      [...SPEC6_BLOCKS, ...THEME9_BLOCKS, ...THEME8_REPEATABLE_BLOCKS].sort(),
     );
   });
 

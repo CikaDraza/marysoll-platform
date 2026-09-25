@@ -1039,6 +1039,10 @@ export interface GalleryItem {
 }
 
 export interface LandingStructure {
+  /** Repeatable Theme-8 content, independent of composition order. */
+  marketingBanners?: import("@/types/theme8-marketing").MarketingBanner[];
+  /** Theme-8 section references; older tenants use the built-in order. */
+  sectionOrder?: import("@/types/theme8-marketing").Theme8SectionOrder;
   landing: {
     hero: {
       enabled: boolean;
