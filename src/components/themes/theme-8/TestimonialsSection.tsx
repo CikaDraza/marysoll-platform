@@ -26,8 +26,9 @@ export function Theme8TestimonialsSection({
           src="/images/theme-8/paint-streak.webp"
           alt=""
           aria-hidden="true"
-          width={760}
-          height={240}
+          width={600}
+          height={346}
+          sizes="(min-width: 768px) 760px, 100vw"
           className="absolute left-1/2 top-[54%] w-[760px] h-auto max-w-[112%] -translate-x-1/2 -translate-y-1/2 scale-105 opacity-90 z-0 pointer-events-none"
         />
         <FadeUp className="relative z-[1]">

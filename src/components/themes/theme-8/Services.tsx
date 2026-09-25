@@ -88,8 +88,9 @@ export function Theme8Services({
           src="/images/theme-8/paint-streak.webp"
           alt=""
           aria-hidden="true"
-          width={560}
-          height={200}
+          width={600}
+          height={346}
+          sizes="(min-width: 640px) 560px, 100vw"
           className="absolute left-1/2 top-[48%] w-[560px] h-auto max-w-[104%] -translate-x-1/2 -translate-y-1/2 scale-110 opacity-90 z-0 pointer-events-none"
         />
         <FadeUp className="relative z-[1]">
