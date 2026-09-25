@@ -204,31 +204,16 @@ export function Theme8Hero({
         {/* LEFT : giant headline */}
         <FadeUp className="relative z-[6] overflow-visible">
           <Wordmark text={wordmark} override={wordmarkOverride} />
-          <div className="relative overflow-visible mt-3 text-[15px] text-[#42303a] font-medium max-w-lg">
-            <div
-              aria-hidden="true"
-              className="absolute overflow-visible scale-120 lg:scale-100  left-1/2 top-3/5 lg:top-4/6 w-full h-[250px] -translate-x-1/2 -translate-y-1/2 opacity-90 z-0 pointer-events-none"
-            >
-              <Image
-                src="/images/theme-8/title-background-paint.webp"
-                alt=""
-                aria-hidden="true"
-                fill
-                sizes="(min-width: 1024px) 560px, 100vw"
-                className="object-cover overflow-visible lg:object-contain object-[50%_50%]"
-              />
-            </div>
+          <div className="relative mt-3 max-w-lg">
             <div className="inline-flex items-center gap-2 bg-y2k-ink text-white font-extrabold text-[13px] tracking-[0.22em] uppercase px-4 py-2 rounded-full rotate-[-2deg] mt-4">
               <span className="h-2 w-2 rounded-full bg-y2k-pink" />
               {eyebrow?.trim() || "Cute? Always. Basic? Never."}
             </div>
-            <p className="max-w-full relative z-1 text-[1.05rem] lg:text-[1rem] leading-[1.45] lg:leading-[1.35] font-semibold text-y2k-plum px-4 lg:px-8 py-3.5">
+            <p className="relative mt-4 bg-white border-[3px] border-y2k-ink p-6 rounded-[8px_22px_8px_22px] shadow-[6px_8px_0_#ff2e97] rotate-[-2deg] text-[1.05rem] lg:text-[1rem] leading-[1.45] lg:leading-[1.35] font-semibold text-y2k-ink">
               {heroData.subheadline || DEFAULT_DESCRIPTION}
             </p>
           </div>
-          {/* relative z-50: CTA MORA biti iznad paragrafa (z-1), paint pozadine
-              teksta (z-0) i dekor stickera/sparkle-a (z-5) — inače na nekim
-              rezolucijama pozicionirani paragraf pokrije dugme i "pojede" tap. */}
+          {/* CTA ostaje iznad dekoracija da može pouzdano da se klikne. */}
           <div className="relative z-50 flex flex-wrap gap-4 mt-8 items-center">
             {/* Progressive enhancement (isti princip kao panel <Link>):
                 HIDRIRANO → onClick otvori booking modal (preventDefault stopira

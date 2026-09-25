@@ -74,22 +74,13 @@ function BannerCopy({ banner, href, full }: { banner: MarketingBannerData; href:
   return (
     <div className={full ? "mt-12 text-center lg:order-1 lg:mt-0" : "mt-12 text-center"}>
       {(banner.title?.trim() || banner.description?.trim()) && (
-        <div className="relative w-full px-8 py-12 sm:px-16 sm:py-16">
-          <Image
-            src="/images/theme-8/title-background-paint.webp"
-            alt=""
-            fill
-            sizes="(min-width: 1024px) 1180px, 100vw"
-            className="pointer-events-none object-fill"
-          />
-          <div className="relative z-10">
-            {banner.title?.trim() && (
-              <h2 className="font-bagel text-[clamp(36px,5.5vw,66px)] leading-[1.05] text-y2k-ink">
-                {banner.title}
-              </h2>
-            )}
-            <Description banner={banner} />
-          </div>
+        <div className="w-full bg-white border-[3px] border-y2k-ink p-6 rounded-[8px_22px_8px_22px] shadow-[6px_8px_0_#ff2e97] rotate-[-2deg]">
+          {banner.title?.trim() && (
+            <h2 className="font-bagel text-[clamp(36px,5.5vw,66px)] leading-[1.05] text-y2k-ink">
+              {banner.title}
+            </h2>
+          )}
+          <Description banner={banner} />
         </div>
       )}
       {href && (
