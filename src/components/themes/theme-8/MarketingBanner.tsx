@@ -13,7 +13,7 @@ function Description({ banner }: { banner: MarketingBannerData }) {
   const accent = banner.accentPhrase?.trim();
   const index = accent ? description.indexOf(accent) : -1;
   return (
-    <p className="mx-auto mt-4 max-w-[760px] text-[18px] sm:text-[21px] leading-[1.55] font-medium text-white">
+    <p className="mx-auto mt-4 max-w-[760px] text-[18px] sm:text-[21px] leading-[1.55] font-medium text-y2k-ink">
       {index < 0 ? description : <>
         {description.slice(0, index)}
         <span className="text-y2k-pink font-bold">{accent}</span>
@@ -73,12 +73,25 @@ function bannerCtaHref(banner: MarketingBannerData, resolveHref: Props["resolveH
 function BannerCopy({ banner, href, full }: { banner: MarketingBannerData; href: string | null; full: boolean }) {
   return (
     <div className={full ? "mt-12 text-center lg:order-1 lg:mt-0" : "mt-12 text-center"}>
-      {banner.title?.trim() && (
-        <h2 className="font-bagel text-[clamp(36px,5.5vw,66px)] leading-[1.05] text-white">
-          {banner.title}
-        </h2>
+      {(banner.title?.trim() || banner.description?.trim()) && (
+        <div className="relative w-full px-8 py-12 sm:px-16 sm:py-16">
+          <Image
+            src="/images/theme-8/title-background-paint.webp"
+            alt=""
+            fill
+            sizes="(min-width: 1024px) 1180px, 100vw"
+            className="pointer-events-none object-fill"
+          />
+          <div className="relative z-10">
+            {banner.title?.trim() && (
+              <h2 className="font-bagel text-[clamp(36px,5.5vw,66px)] leading-[1.05] text-y2k-ink">
+                {banner.title}
+              </h2>
+            )}
+            <Description banner={banner} />
+          </div>
+        </div>
       )}
-      <Description banner={banner} />
       {href && (
         <Theme8AnchorLink
           href={href}
