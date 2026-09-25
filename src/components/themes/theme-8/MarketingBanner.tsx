@@ -44,7 +44,7 @@ function BannerBackground({ url }: { url?: string }) {
 
 function BannerPhoto({ banner, full }: { banner: MarketingBannerData; full: boolean }) {
   return (
-    <div className={`relative w-full bg-white p-2.5 pb-3.5 border-[3px] border-y2k-ink shadow-[8px_12px_0_rgba(255,46,151,0.55)] ${full
+    <div className={`relative w-full bg-white p-2.5 pb-3.5 border-[3px] border-y2k-ink shadow-[6px_8px_0_#8B16C9] ${full
       ? "rotate-[-2deg] lg:order-2 lg:rotate-[2deg]"
       : "rotate-[-2deg]"}`}>
       <div className="relative aspect-[3/4] w-full overflow-hidden">
