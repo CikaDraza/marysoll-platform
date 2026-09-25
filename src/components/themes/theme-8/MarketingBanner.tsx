@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { MarketingBanner as MarketingBannerData } from "@/types/theme8-marketing";
 import { Theme8AnchorLink } from "./AnchorLink";
+import { FadeUp } from "./FadeUp";
 
 interface Props {
   banner: MarketingBannerData;
@@ -45,7 +46,7 @@ function BannerBackground({ url }: { url?: string }) {
 function BannerPhoto({ banner, full }: { banner: MarketingBannerData; full: boolean }) {
   return (
     <div className={`relative w-full bg-white p-2.5 pb-3.5 border-[3px] border-y2k-ink shadow-[6px_8px_0_#8B16C9] ${full
-      ? "rotate-[-2deg] lg:order-2 lg:rotate-[2deg]"
+      ? "rotate-[-2deg] lg:rotate-[2deg]"
       : "rotate-[-2deg]"}`}>
       <div className="relative aspect-[3/4] w-full overflow-hidden">
         <Image
@@ -72,7 +73,7 @@ function bannerCtaHref(banner: MarketingBannerData, resolveHref: Props["resolveH
 
 function BannerCopy({ banner, href, full }: { banner: MarketingBannerData; href: string | null; full: boolean }) {
   return (
-    <div className={full ? "mt-12 text-center lg:order-1 lg:mt-0" : "mt-12 text-center"}>
+    <div className={full ? "mt-12 text-center lg:mt-0" : "mt-12 text-center"}>
       {(banner.title?.trim() || banner.description?.trim()) && (
         <div className="w-full bg-y2k-ink border-[3px] border-y2k-ink p-6 rounded-[8px_22px_8px_22px] shadow-[6px_8px_0_#ff2e97] rotate-[-2deg]">
           {banner.title?.trim() && (
@@ -110,8 +111,12 @@ export function MarketingBanner({ banner, resolveHref }: Props) {
         <div className={`relative z-10 mx-auto px-5 ${full
           ? "max-w-[1180px] lg:grid lg:grid-cols-[1fr_0.9fr] lg:items-center lg:gap-14"
           : "max-w-[1180px]"}`}>
-          <BannerPhoto banner={banner} full={full} />
-          <BannerCopy banner={banner} href={bannerCtaHref(banner, resolveHref)} full={full} />
+          <FadeUp className={full ? "lg:order-2" : undefined}>
+            <BannerPhoto banner={banner} full={full} />
+          </FadeUp>
+          <FadeUp delay={0.12} className={full ? "lg:order-1" : undefined}>
+            <BannerCopy banner={banner} href={bannerCtaHref(banner, resolveHref)} full={full} />
+          </FadeUp>
         </div>
       </div>
     </section>
