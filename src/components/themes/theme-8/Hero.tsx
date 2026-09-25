@@ -244,7 +244,7 @@ export function Theme8Hero({
         </FadeUp>
 
         {/* RIGHT : photo collage */}
-        <FadeUp className="relative min-h-[520px] z-[4]">
+        <div className="relative min-h-[520px] z-[4]">
           <Image
             src="/images/theme-8/sticker-name.webp"
             alt={salonName ?? "The Lash Room by Anja"}
@@ -256,6 +256,7 @@ export function Theme8Hero({
           {/* torn cutout */}
           <div className="absolute left-0 top-[60px] w-[74%] rotate-[-4deg] z-[5]">
             <div className="absolute -inset-2 bg-white [filter:url(#y2k-torn)] shadow-[0_22px_44px_rgba(20,0,30,0.4)]" />
+            <FadeUp className="relative">
             <div className="relative p-[9px] pb-[30px]">
               <div className="relative w-full h-[300px]">
                 <Image
@@ -273,9 +274,11 @@ export function Theme8Hero({
               </span>
             </div>
             <div className="absolute -top-3.5 left-10 w-24 h-7 bg-[linear-gradient(135deg,rgba(255,255,255,0.55),rgba(255,170,225,0.6))] shadow-[0_3px_7px_rgba(0,0,0,0.18)] rotate-[-7deg]" />
+            </FadeUp>
           </div>
           {/* founder polaroid */}
           <div className="absolute right-0 sm:right-[-1%] -bottom-1.5 w-[48%] min-w-[160px] rotate-[7deg] z-[6]">
+            <FadeUp className="relative" delay={0.12}>
             <div className="bg-white p-2.5 pb-10 border-2 border-y2k-ink shadow-[6px_10px_22px_rgba(11,11,15,0.3)]">
               <div className="relative w-full h-[200px]">
                 <Image
@@ -294,8 +297,9 @@ export function Theme8Hero({
               </span>
             </div>
             <div className="absolute -top-3 right-7 w-20 h-6 bg-[linear-gradient(135deg,rgba(255,255,255,0.55),rgba(200,170,255,0.6))] shadow-[0_3px_7px_rgba(0,0,0,0.18)] rotate-[9deg]" />
+            </FadeUp>
           </div>
-        </FadeUp>
+        </div>
       </div>
 
       {/* marquee strip — single wrapping row; items wrap (never overflow) and

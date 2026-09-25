@@ -7,7 +7,7 @@
  *                                     → ThemeBlock
  *   socialProof / tribute             → theme-8 native (stari propovi)
  *   preloader, Y2K filteri, background/decor/doodle/sparkle, modal provider,
- *   intro fade, header, footer        → shell (10 slojeva, netaknuti)
+ *   header, footer                    → shell
  *
  * BOOKING: theme-8 nema inline booking sekciju. Booking postoji kroz
  * `Theme8ModalProvider` (Hero CTA → modal) i `/termini` — dve od tri površine
@@ -32,7 +32,6 @@ import {
   BackgroundWall,
   DoodleLayer,
   FixedDecorLayer,
-  IntroFade,
   SparkleLayer,
 } from "../theme-8/motion";
 import { ForceReduceMotionProvider } from "../theme-8/motion/reduceMotion";
@@ -113,11 +112,7 @@ export function Theme8Landing(props: ThemeLandingProps) {
       <DoodleLayer />
 
       <Theme8ModalProvider booking={native.bookingModal}>
-        <IntroFade
-          className="relative z-10 flex flex-col min-h-screen"
-          delay={0.95}
-          duration={0.7}
-        >
+        <div className="relative z-10 flex flex-col min-h-screen">
           <Theme8Header {...headerProps} />
           <main className="flex-1 overflow-x-clip flex flex-col mt-6">
             {orderedSections.map((id) => {
@@ -145,7 +140,7 @@ export function Theme8Landing(props: ThemeLandingProps) {
             workingHours={native.footer.workingHours}
             showWorkingHours={Boolean(native.footer.workingHours)}
           />
-        </IntroFade>
+        </div>
       </Theme8ModalProvider>
 
       {/* sparkle layer sits above content (decorative only) */}
@@ -153,8 +148,8 @@ export function Theme8Landing(props: ThemeLandingProps) {
     </div>
   );
 
-  // iOS: forsiraj reduced-motion na ceo podstablo. IntroFade, FadeUp (22 sekcije)
-  // i dekor slojevi čitaju useThemeReduce() → initial={false}, pa se SSR HTML
+  // iOS: forsiraj reduced-motion na ceo podstablo. FadeUp i dekor slojevi
+  // čitaju useThemeReduce() → initial={false}, pa se SSR HTML
   // renderuje VIDLJIV, bez ijedne ulazne opacity animacije. Strana radi i ako se
   // klijentski JS nikad ne izvrši. Ostali uređaji (value=false) dobijaju pun doživljaj.
   return (

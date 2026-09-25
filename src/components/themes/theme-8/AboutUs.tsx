@@ -65,7 +65,7 @@ export function Theme8AboutUs({ about, founderName }: Props) {
       />
       <div className="relative rotate-[-1.5deg]">
         <div className="absolute -inset-2.5 bg-y2k-paper [filter:url(#y2k-torn2)] shadow-[0_26px_60px_rgba(20,0,30,0.42)]" />
-        <FadeUp className="relative grid md:grid-cols-[0.8fr_1.2fr] gap-9 items-center p-10">
+        <div className="relative grid md:grid-cols-[0.8fr_1.2fr] gap-9 items-center p-10">
             <div className="absolute -top-10 left-3 lg:left-6 w-36 h-36 rotate-[-8deg] z-[5]">
               <Image
                 src={`/images/theme-8/stickers/star-sticker.webp`}
@@ -77,6 +77,7 @@ export function Theme8AboutUs({ about, founderName }: Props) {
               />
             </div>
             {/* portrait */}
+            <FadeUp>
             <div className="relative rotate-[2deg]">
               <div className="bg-white p-2.5 pb-3.5 border-2 border-y2k-ink shadow-[5px_9px_18px_rgba(11,11,15,0.28)]">
                 <div className="relative w-full h-[300px]">
@@ -117,7 +118,9 @@ export function Theme8AboutUs({ about, founderName }: Props) {
                 <div className="absolute -top-2.5 right-7 w-[70px] h-6 bg-[linear-gradient(135deg,rgba(255,255,255,0.55),rgba(255,170,225,0.6))] shadow-[0_3px_7px_rgba(0,0,0,0.18)] rotate-[8deg] pointer-events-none" />
               </div>
             </div>
+            </FadeUp>
             {/* copy */}
+            <FadeUp delay={0.12}>
             <div>
               <span className="inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink mb-2.5">
                 About the studio
@@ -145,7 +148,8 @@ export function Theme8AboutUs({ about, founderName }: Props) {
                 ))}
               </div>
             </div>
-        </FadeUp>
+            </FadeUp>
+        </div>
       </div>
     </section>
   );

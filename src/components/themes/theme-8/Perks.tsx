@@ -86,8 +86,9 @@ export function Theme8Perks({ perks }: Props) {
       <div className="relative rotate-[1.2deg]">
         <div className="absolute -inset-2.5 bg-y2k-paper [filter:url(#y2k-torn)] shadow-[0_26px_60px_rgba(20,0,30,0.42)]" />
         {/* Desktop: slika levo (1/3), tekst desno (2/3). Mobilni: stack. */}
-        <FadeUp className="relative grid md:grid-cols-[1fr_2fr] gap-8 md:gap-10 items-center p-8 sm:p-10">
+        <div className="relative grid md:grid-cols-[1fr_2fr] gap-8 md:gap-10 items-center p-8 sm:p-10">
             {/* slika (kolona 1/3) — glavna + eventualne dodatne kao polaroidi */}
+            <FadeUp>
             <div className="relative flex flex-col items-center gap-4">
               <div className="relative bg-white p-2.5 pb-4 border-2 border-y2k-ink shadow-[5px_9px_18px_rgba(11,11,15,0.28)] rotate-[-2deg] w-full max-w-[300px]">
                 <div className="relative w-full h-[280px] sm:h-[320px]">
@@ -130,8 +131,10 @@ export function Theme8Perks({ perks }: Props) {
                 </div>
               )}
             </div>
+            </FadeUp>
 
             {/* tekst (kolona 2/3) */}
+            <FadeUp delay={0.12}>
             <div>
               {/* eyebrow + naslov */}
               <span className="inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink mb-2.5">
@@ -173,7 +176,8 @@ export function Theme8Perks({ perks }: Props) {
               </div>
             )}
             </div>
-        </FadeUp>
+            </FadeUp>
+        </div>
       </div>
     </section>
   );
