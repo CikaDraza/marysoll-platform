@@ -42,6 +42,7 @@
   /* Theme-8 "Y2K Lash" palette — graffiti-wall Bratz-doll aesthetic */
   --color-y2k-pink: #ff2e97; /* hot neon pink — CTAs, accents */
   --color-y2k-hot: #ff5fd2; /* lighter pink — accents on dark bg */
+  --color-y2k-baby-pink: #fad3e1; /* soft pink — readable copy on dark cards */
   --color-y2k-purple: #8b16c9; /* electric purple — secondary accent */
   --color-y2k-ink: #0b0b0f; /* near-black — borders, text, dark panels */
   --color-y2k-plum: #2a0d22; /* deep plum — page backdrop behind wall */
@@ -306,6 +307,44 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .y2k-preloader { transition: none; }
 }
+
+/* Theme-8 dekoracije ostaju iste, ali animiraju samo blizu viewporta.
+   CSS radi transform/opacity na unutrašnjem SVG <g>; spoljašnji nagib ostaje statičan. */
+.y2k-deco-motion {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-play-state: paused !important;
+}
+.y2k-deco-visible .y2k-deco-motion { animation-play-state: running !important; }
+.y2k-deco-bob { animation: y2kDecoBob 5s ease-in-out infinite; }
+.y2k-deco-wiggle { animation: y2kDecoWiggle 3.4s ease-in-out infinite; }
+.y2k-deco-twinkle { animation: y2kDecoTwinkle 2.6s ease-in-out infinite; }
+.y2k-deco-bounce { animation: y2kDecoBounce 1.8s ease-in-out infinite; }
+.y2k-deco-pulse { animation: y2kDecoPulse 1.7s ease-in-out infinite; }
+@keyframes y2kDecoBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-16px); }
+}
+@keyframes y2kDecoWiggle {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
+}
+@keyframes y2kDecoTwinkle {
+  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+@keyframes y2kDecoBounce {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-24px); }
+}
+@keyframes y2kDecoPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .y2k-deco-motion { animation: none !important; }
+}
+[data-reduce-motion="true"] .y2k-deco-motion { animation: none !important; }
 
 /* Theme-8 sticker ulaz — ČIST CSS (compositor nit, VAN glavne niti): translateY
    od dole (van ekrana) na krajnje mesto. transform+opacity su jedine "besplatne"

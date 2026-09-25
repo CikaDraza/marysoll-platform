@@ -15,7 +15,8 @@
  *
  * Mobile-friendly: pure SVG + transforms, no canvas / particles / lottie.
  */
-import { motion, useReducedMotion, type Transition } from "framer-motion";
+import { motion, type Transition } from "framer-motion";
+import { useThemeReduce } from "./reduceMotion";
 import type { ReactNode } from "react";
 
 const GLOW: Record<string, string> = {
@@ -51,6 +52,7 @@ export function DrawDoodle({
   stagger = 0.5,
   children,
 }: DrawDoodleProps) {
+  const reduce = useThemeReduce();
   return (
     <motion.svg
       viewBox={viewBox}
@@ -58,8 +60,8 @@ export function DrawDoodle({
       height={height}
       aria-hidden="true"
       className={`${GLOW[glow]} ${className ?? ""}`}
-      initial="hidden"
-      whileInView="visible"
+      initial={reduce ? false : "hidden"}
+      whileInView={reduce ? undefined : "visible"}
       viewport={{ once: true, margin: "0px 0px -8% 0px" }}
       variants={{
         hidden: {},
@@ -88,7 +90,7 @@ export function DrawStroke({
   duration = 1.1,
   ease = [0.4, 0, 0.25, 1],
 }: StrokeProps) {
-  const reduce = useReducedMotion();
+  const reduce = useThemeReduce();
   const common = {
     d,
     fill: "none",

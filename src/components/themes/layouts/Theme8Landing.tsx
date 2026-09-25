@@ -7,7 +7,7 @@
  *                                     → ThemeBlock
  *   socialProof / tribute             → theme-8 native (stari propovi)
  *   preloader, Y2K filteri, background/decor/doodle/sparkle, modal provider,
- *   intro fade, header, footer        → shell (10 slojeva, netaknuti)
+ *   header, footer                    → shell
  *
  * BOOKING: theme-8 nema inline booking sekciju. Booking postoji kroz
  * `Theme8ModalProvider` (Hero CTA → modal) i `/termini` — dve od tri površine
@@ -19,31 +19,25 @@
  * migraciji ne dira taj put — SSR HTML mora ostati vidljiv i bez hidratacije.
  */
 import {
-  Theme8AboutUs,
-  Theme8FAQSection,
   Theme8Footer,
-  Theme8GallerySection,
   Theme8Header,
-  Theme8Hero,
   Theme8ModalProvider,
-  Theme8Perks,
   Theme8Preloader,
-  Theme8Services,
   Theme8SocialProof,
-  Theme8TestimonialsSection,
   Theme8Tribute,
   Y2KFilters,
 } from "../theme-8";
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import {
   BackgroundWall,
   DoodleLayer,
   FixedDecorLayer,
-  IntroFade,
   SparkleLayer,
 } from "../theme-8/motion";
 import { ForceReduceMotionProvider } from "../theme-8/motion/reduceMotion";
 import { THEME8_BLOCK_RENDERERS } from "../theme-8/blocks";
+import { resolveTheme8SectionOrder } from "@/lib/theme8/marketing-layout";
+import type { Theme8SystemSectionId } from "@/types/theme8-marketing";
 import { Theme8FixturesProvider } from "../theme-8/fixturesContext";
 import { ThemeBlock } from "../blocks/ThemeBlock";
 import { ThemeBlockScope } from "../blocks/ThemeBlockScope";
@@ -54,6 +48,8 @@ export function Theme8Landing(props: ThemeLandingProps) {
     blockData,
     clientSlug,
     document,
+    sectionOrder,
+    marketingBannerIds,
     headerProps,
     reduceMotion,
     resolveHref,
@@ -68,6 +64,30 @@ export function Theme8Landing(props: ThemeLandingProps) {
     [tenantSlug, clientSlug, resolveHref],
   );
 
+  const orderedSections = resolveTheme8SectionOrder(
+    sectionOrder,
+    marketingBannerIds ?? [],
+  );
+
+  // System sections keep their components and relative order. Only banners move.
+  const sectionRegistry: Record<Theme8SystemSectionId, () => React.ReactNode> = {
+    hero: () => <ThemeBlock document={document} type="content.hero" />,
+    about: () => <ThemeBlock document={document} type="content.about" />,
+    "social-proof": () => (
+      <Theme8SocialProof
+        instagramUrl={native.socialProof.url}
+        instagramHandle={native.socialProof.handle}
+        tenantStats={native.socialProof.tenantStats}
+      />
+    ),
+    services: () => <ThemeBlock document={document} type="services.catalog" />,
+    gallery: () => <ThemeBlock document={document} type="content.gallery" />,
+    perks: () => <ThemeBlock document={document} type="content.perks" />,
+    testimonials: () => <ThemeBlock document={document} type="content.testimonials" />,
+    faq: () => <ThemeBlock document={document} type="content.faq" />,
+    tribute: () => <Theme8Tribute />,
+  };
+
   // Y2K display + UI fonts (variable href matches the per-theme font-load pattern)
   const y2kFontHref =
     "https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Caveat:wght@600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap";
@@ -79,16 +99,6 @@ export function Theme8Landing(props: ThemeLandingProps) {
     >
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="stylesheet" href={y2kFontHref} />
-      {/* Raw wallpaper preload SAMO za ne-iOS (gde preloader koristi CSS bg).
-          Na iOS-u nema preloadera, a BackgroundWall (next/image priority) sam
-          preload-uje optimizovanu verziju — raw 1 MB bi bio čist gubitak. */}
-      {!reduceMotion && (
-        <link
-          rel="preload"
-          as="image"
-          href="/images/theme-8/bg-wallpaper_1_.webp"
-        />
-      )}
       {/* first-paint cover: wall + big white logo, fades itself out.
           Na iOS (reduceMotion) ga NE renderujemo — skida se samo iz JS-a, pa bi
           na uređaju gde hydration padne visio zauvek ("logo stoji"). */}
@@ -102,28 +112,24 @@ export function Theme8Landing(props: ThemeLandingProps) {
       <DoodleLayer />
 
       <Theme8ModalProvider booking={native.bookingModal}>
-        <IntroFade
-          className="relative z-10 flex flex-col min-h-screen"
-          delay={0.95}
-          duration={0.7}
-        >
+        <div className="relative z-10 flex flex-col min-h-screen">
           <Theme8Header {...headerProps} />
           <main className="flex-1 overflow-x-clip flex flex-col mt-6">
-            <ThemeBlock document={document} type="content.hero" />
-            <ThemeBlock document={document} type="content.about" />
-
-            <Theme8SocialProof
-              instagramUrl={native.socialProof.url}
-              instagramHandle={native.socialProof.handle}
-              tenantStats={native.socialProof.tenantStats}
-            />
-            <ThemeBlock document={document} type="services.catalog" />
-            <ThemeBlock document={document} type="content.gallery" />
-            <ThemeBlock document={document} type="content.perks" />
-            <ThemeBlock document={document} type="content.testimonials" />
-            <ThemeBlock document={document} type="content.faq" />
-            {/* Tribute — non-CMS, always last before the footer */}
-            <Theme8Tribute />
+            {orderedSections.map((id) => {
+              if (id.startsWith("marketing:")) {
+                const bannerId = id.slice(10);
+                return (
+                  <ThemeBlock
+                    key={id}
+                    document={document}
+                    type="content.marketing-banner"
+                    blockId={`marketing-${bannerId}-block`}
+                  />
+                );
+              }
+              const render = sectionRegistry[id as Theme8SystemSectionId];
+              return render ? <Fragment key={id}>{render()}</Fragment> : null;
+            })}
           </main>
           <Theme8Footer
             salonName={native.footer.salonName}
@@ -134,7 +140,7 @@ export function Theme8Landing(props: ThemeLandingProps) {
             workingHours={native.footer.workingHours}
             showWorkingHours={Boolean(native.footer.workingHours)}
           />
-        </IntroFade>
+        </div>
       </Theme8ModalProvider>
 
       {/* sparkle layer sits above content (decorative only) */}
@@ -142,8 +148,8 @@ export function Theme8Landing(props: ThemeLandingProps) {
     </div>
   );
 
-  // iOS: forsiraj reduced-motion na ceo podstablo. IntroFade, FadeUp (22 sekcije)
-  // i dekor slojevi čitaju useThemeReduce() → initial={false}, pa se SSR HTML
+  // iOS: forsiraj reduced-motion na ceo podstablo. FadeUp i dekor slojevi
+  // čitaju useThemeReduce() → initial={false}, pa se SSR HTML
   // renderuje VIDLJIV, bez ijedne ulazne opacity animacije. Strana radi i ako se
   // klijentski JS nikad ne izvrši. Ostali uređaji (value=false) dobijaju pun doživljaj.
   return (

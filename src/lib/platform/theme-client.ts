@@ -308,6 +308,23 @@ export function landingStructureToThemeDocument(
     sections.push({ id: key, sectionType, blocks: [block] });
   }
 
+  if (options.theme === "theme-8") {
+    for (const banner of ls?.marketingBanners ?? []) {
+      if (!banner.enabled) continue;
+      sections.push({
+        id: `marketing:${banner.id}`,
+        sectionType: "content",
+        blocks: [{
+          id: `marketing-${banner.id}-block`,
+          type: "content.marketing-banner",
+          schemaVersion: 1,
+          slot: "main",
+          config: { bannerId: banner.id },
+        }],
+      });
+    }
+  }
+
   return {
     version: options.version ?? 1,
     layoutDefinitionId: LANDING_LAYOUT_DEFINITION_ID,
@@ -322,5 +339,7 @@ export function landingStructureToThemeDocument(
  * da se novi i stari put mogu porediti 1:1 dok traje migracija tema.
  */
 export function enabledSectionKeys(doc: ThemeDocument): LandingSectionKey[] {
-  return doc.sections.map((s) => s.id as LandingSectionKey);
+  return doc.sections
+    .map((section) => section.id)
+    .filter((id): id is LandingSectionKey => SECTION_ORDER.includes(id as LandingSectionKey));
 }

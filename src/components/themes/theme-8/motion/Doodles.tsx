@@ -11,7 +11,8 @@
  *
  * Playful / girly / Bratz-Y2K — not corporate, not minimal.
  */
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useThemeReduce } from "./reduceMotion";
 import { DrawDoodle, DrawStroke, type Glow } from "./DrawDoodle";
 
 interface DoodleProps {
@@ -31,7 +32,7 @@ export function HeartDoodle({
   glow = "pink",
   stroke = "#ff2e97",
 }: DoodleProps) {
-  const reduce = useReducedMotion();
+  const reduce = useThemeReduce();
   return (
     <DrawDoodle
       viewBox="0 0 100 100"
@@ -71,7 +72,7 @@ export function StarDoodle({
   glow = "purple",
   stroke = "#8B16C9",
 }: DoodleProps) {
-  const reduce = useReducedMotion();
+  const reduce = useThemeReduce();
   const star = "M50 7 L60 37 L92 38 L66 58 L77 91 L50 71 L23 91 L34 58 L8 38 L40 37 Z";
   return (
     <DrawDoodle viewBox="0 0 100 100" width={size} className={className} glow={glow}>

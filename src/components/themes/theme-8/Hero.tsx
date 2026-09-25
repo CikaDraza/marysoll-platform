@@ -8,6 +8,7 @@ import { FadeUp } from "./FadeUp";
 import { Deco } from "./Decorations";
 import { useTheme8Modal } from "./theme8ModalContext";
 import { Theme8AnchorLink } from "./AnchorLink";
+import { theme8ImageLoaderFor } from "@/helpers/theme8CloudinaryImage";
 
 interface Props {
   heroData: {
@@ -135,6 +136,8 @@ export function Theme8Hero({
   // [1] founder polaroid. Each falls back to a baked-in default.
   const mainPhoto = heroData.images?.[0] ?? heroData.image;
   const founderPhoto = heroData.images?.[1];
+  const mainPhotoSrc = mainPhoto?.src || "/images/theme-8/bratz-eye.jpg";
+  const founderPhotoSrc = founderPhoto?.src || "/images/theme-8/anja-your-artist.jpg";
   // Keyword-rich, localised fallback alt for the main hero photo (a real content
   // image), so it carries SEO value when the CMS alt field is left empty.
   const heroImageAlt =
@@ -204,31 +207,16 @@ export function Theme8Hero({
         {/* LEFT : giant headline */}
         <FadeUp className="relative z-[6] overflow-visible">
           <Wordmark text={wordmark} override={wordmarkOverride} />
-          <div className="relative overflow-visible mt-3 text-[15px] text-[#42303a] font-medium max-w-lg">
-            <div
-              aria-hidden="true"
-              className="absolute overflow-visible scale-120 lg:scale-100  left-1/2 top-3/5 lg:top-4/6 w-full h-[250px] -translate-x-1/2 -translate-y-1/2 opacity-90 z-0 pointer-events-none"
-            >
-              <Image
-                src="/images/theme-8/title-background-paint.webp"
-                alt=""
-                aria-hidden="true"
-                fill
-                sizes="(min-width: 1024px) 560px, 100vw"
-                className="object-cover overflow-visible lg:object-contain object-[50%_50%]"
-              />
-            </div>
+          <div className="relative mt-3 max-w-lg">
             <div className="inline-flex items-center gap-2 bg-y2k-ink text-white font-extrabold text-[13px] tracking-[0.22em] uppercase px-4 py-2 rounded-full rotate-[-2deg] mt-4">
               <span className="h-2 w-2 rounded-full bg-y2k-pink" />
               {eyebrow?.trim() || "Cute? Always. Basic? Never."}
             </div>
-            <p className="max-w-full relative z-1 text-[1.05rem] lg:text-[1rem] leading-[1.45] lg:leading-[1.35] font-semibold text-y2k-plum px-4 lg:px-8 py-3.5">
+            <p className="relative mt-4 bg-white border-[3px] border-y2k-ink p-6 rounded-[8px_22px_8px_22px] shadow-[6px_8px_0_#ff2e97] rotate-[-2deg] text-[1.05rem] lg:text-[1rem] leading-[1.45] lg:leading-[1.35] font-semibold text-y2k-ink">
               {heroData.subheadline || DEFAULT_DESCRIPTION}
             </p>
           </div>
-          {/* relative z-50: CTA MORA biti iznad paragrafa (z-1), paint pozadine
-              teksta (z-0) i dekor stickera/sparkle-a (z-5) — inače na nekim
-              rezolucijama pozicionirani paragraf pokrije dugme i "pojede" tap. */}
+          {/* CTA ostaje iznad dekoracija da može pouzdano da se klikne. */}
           <div className="relative z-50 flex flex-wrap gap-4 mt-8 items-center">
             {/* Progressive enhancement (isti princip kao panel <Link>):
                 HIDRIRANO → onClick otvori booking modal (preventDefault stopira
@@ -256,23 +244,27 @@ export function Theme8Hero({
         </FadeUp>
 
         {/* RIGHT : photo collage */}
-        <FadeUp className="relative min-h-[520px] z-[4]">
+        <div className="relative min-h-[520px] z-[4]">
           <Image
             src="/images/theme-8/sticker-name.webp"
             alt={salonName ?? "The Lash Room by Anja"}
             width={360}
             height={200}
+            sizes="(min-width: 1024px) 220px, 46vw"
             className="absolute right-0 sm:right-[-2%] -top-6 w-[46%] min-w-[180px] z-[7] rotate-[6deg] drop-shadow-[4px_8px_10px_rgba(11,11,15,0.4)] h-auto"
           />
           {/* torn cutout */}
           <div className="absolute left-0 top-[60px] w-[74%] rotate-[-4deg] z-[5]">
             <div className="absolute -inset-2 bg-white [filter:url(#y2k-torn)] shadow-[0_22px_44px_rgba(20,0,30,0.4)]" />
+            <FadeUp className="relative">
             <div className="relative p-[9px] pb-[30px]">
               <div className="relative w-full h-[300px]">
                 <Image
-                  src={mainPhoto?.src || "/images/theme-8/bratz-eye.jpg"}
+                  src={mainPhotoSrc}
+                  loader={theme8ImageLoaderFor(mainPhotoSrc)}
                   alt={heroImageAlt}
                   fill
+                  preload
                   sizes="(min-width: 1024px) 30vw, 70vw"
                   className="object-cover object-[50%_36%]"
                 />
@@ -282,17 +274,19 @@ export function Theme8Hero({
               </span>
             </div>
             <div className="absolute -top-3.5 left-10 w-24 h-7 bg-[linear-gradient(135deg,rgba(255,255,255,0.55),rgba(255,170,225,0.6))] shadow-[0_3px_7px_rgba(0,0,0,0.18)] rotate-[-7deg]" />
+            </FadeUp>
           </div>
           {/* founder polaroid */}
           <div className="absolute right-0 sm:right-[-1%] -bottom-1.5 w-[48%] min-w-[160px] rotate-[7deg] z-[6]">
+            <FadeUp className="relative" delay={0.12}>
             <div className="bg-white p-2.5 pb-10 border-2 border-y2k-ink shadow-[6px_10px_22px_rgba(11,11,15,0.3)]">
               <div className="relative w-full h-[200px]">
                 <Image
-                  src={
-                    founderPhoto?.src || "/images/theme-8/anja-your-artist.jpg"
-                  }
+                  src={founderPhotoSrc}
+                  loader={theme8ImageLoaderFor(founderPhotoSrc)}
                   alt={founderAlt}
                   fill
+                  loading="lazy"
                   sizes="(min-width: 1024px) 22vw, 50vw"
                   className="object-cover object-[50%_22%]"
                 />
@@ -303,8 +297,9 @@ export function Theme8Hero({
               </span>
             </div>
             <div className="absolute -top-3 right-7 w-20 h-6 bg-[linear-gradient(135deg,rgba(255,255,255,0.55),rgba(200,170,255,0.6))] shadow-[0_3px_7px_rgba(0,0,0,0.18)] rotate-[9deg]" />
+            </FadeUp>
           </div>
-        </FadeUp>
+        </div>
       </div>
 
       {/* marquee strip — single wrapping row; items wrap (never overflow) and

@@ -21,22 +21,25 @@ export function Theme8TestimonialsSection({
       id="reviews"
       className="relative max-w-[1140px] mx-auto my-28 px-5"
     >
-      <FadeUp className="text-center mb-10 relative">
+      <div className="text-center mb-10 relative">
         <Image
           src="/images/theme-8/paint-streak.webp"
           alt=""
           aria-hidden="true"
-          width={760}
-          height={240}
+          width={600}
+          height={346}
+          sizes="(min-width: 768px) 760px, 100vw"
           className="absolute left-1/2 top-[54%] w-[760px] h-auto max-w-[112%] -translate-x-1/2 -translate-y-1/2 scale-105 opacity-90 z-0 pointer-events-none"
         />
+        <FadeUp className="relative z-[1]">
         <span className="relative z-[1] inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink">
           {headline || "Kind words"}
         </span>
         <h2 className="relative z-[1] -mt-1.5 font-bagel text-[clamp(40px,6vw,80px)] leading-[0.9] text-y2k-ink rotate-[-1deg]">
           LOVED BY THE CHAIR
         </h2>
-      </FadeUp>
+        </FadeUp>
+      </div>
 
       <Theme8TestimonialCarousel
         tenantSlug={tenantSlug}

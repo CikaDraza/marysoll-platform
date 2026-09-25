@@ -47,6 +47,8 @@ interface ThemeLayoutProps {
   document: ThemeDocument;
   blockData: ResolvedBlockMap;
   themeNative: ThemeNativeData;
+  sectionOrder?: string[];
+  marketingBannerIds?: string[];
   brandingVars: React.CSSProperties;
   googleFontHref: string;
   headerProps: ThemeHeaderShared;
@@ -61,6 +63,8 @@ export function ThemeLayout({
   document,
   blockData,
   themeNative,
+  sectionOrder,
+  marketingBannerIds,
   brandingVars,
   googleFontHref,
   headerProps,
@@ -77,6 +81,8 @@ export function ThemeLayout({
     document,
     blockData,
     themeNative,
+    sectionOrder,
+    marketingBannerIds,
     tenantSlug,
     clientSlug,
     resolveHref,

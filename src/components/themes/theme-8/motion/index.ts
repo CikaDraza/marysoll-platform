@@ -8,7 +8,6 @@ export {
 export { SprayReveal, type SprayColor } from "./SprayReveal";
 export { QueenAnjaSpray } from "./QueenAnjaSpray";
 export { WriteSVG } from "./WriteSVG";
-export { IntroFade } from "./IntroFade";
 export {
   BackgroundWall,
   FixedDecorLayer,

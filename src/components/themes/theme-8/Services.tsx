@@ -83,27 +83,29 @@ export function Theme8Services({
       id="services"
       className="relative max-w-[1040px] mx-auto my-28 px-5"
     >
-      <FadeUp className="text-center mb-8 relative">
+      <div className="text-center mb-8 relative">
         <Image
           src="/images/theme-8/paint-streak.webp"
           alt=""
           aria-hidden="true"
-          width={560}
-          height={200}
+          width={600}
+          height={346}
+          sizes="(min-width: 640px) 560px, 100vw"
           className="absolute left-1/2 top-[48%] w-[560px] h-auto max-w-[104%] -translate-x-1/2 -translate-y-1/2 scale-110 opacity-90 z-0 pointer-events-none"
         />
+        <FadeUp className="relative z-[1]">
         <span className="relative z-[1] inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink">
           {"Ponuda & Cenovnik"}
         </span>
         <h2 className="relative z-[1] -mt-1.5 font-bagel text-[clamp(46px,8vw,100px)] leading-[0.9] text-y2k-ink rotate-[-1.5deg]">
           {headline || "THE MENU"}
         </h2>
-      </FadeUp>
+        </FadeUp>
+      </div>
 
-      <FadeUp>
-        <div className="relative rotate-[1deg]">
-          <div className="absolute -inset-2.5 bg-white [filter:url(#y2k-torn)] shadow-[0_24px_56px_rgba(20,0,30,0.4)]" />
-          <div className="relative px-6 sm:px-9 py-1.5">
+      <div className="relative rotate-[1deg]">
+        <div className="absolute -inset-2.5 bg-white [filter:url(#y2k-torn)] shadow-[0_24px_56px_rgba(20,0,30,0.4)]" />
+        <FadeUp className="relative px-6 sm:px-9 py-1.5">
             {subheadline ? (
               <p className="text-center font-semibold text-[12px] tracking-[0.06em] text-[#9a7d8b] pt-3">
                 {subheadline}
@@ -176,9 +178,8 @@ export function Theme8Services({
                 </button>
               );
             })}
-          </div>
-        </div>
-      </FadeUp>
+        </FadeUp>
+      </div>
 
       {services.length > MAX_ROWS && (
         <div className="mt-8 text-center">

@@ -202,6 +202,19 @@ const contentBlog: FeatureBlockDefinition<"content.blog"> = {
   },
 };
 
+const contentMarketingBanner: FeatureBlockDefinition<"content.marketing-banner"> = {
+  type: "content.marketing-banner",
+  schemaVersions: [1],
+  capability: null,
+  parseConfig: parseWith<"content.marketing-banner">(
+    z.object({ bannerId: z.string().min(1) }),
+  ),
+  async load({ config, deps }) {
+    const ls = await deps.landingStructure();
+    return { content: ls?.marketingBanners?.find((banner) => banner.id === config.bannerId) };
+  },
+};
+
 const contentPerks: FeatureBlockDefinition<"content.perks"> = {
   type: "content.perks",
   schemaVersions: [1],
@@ -354,6 +367,7 @@ export const FEATURE_BLOCK_DEFINITIONS = [
   contentFaq,
   contentBlog,
   contentPerks,
+  contentMarketingBanner,
   contentAudiencePaths,
   contentTopicHub,
   educationTopicHub,

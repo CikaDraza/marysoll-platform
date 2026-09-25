@@ -12,6 +12,8 @@ import { ArrowUpIcon } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
 import { THEME_CONFIG } from "@/lib/themeConfig";
 import { Theme9Sections } from "@/components/admin/cms/Theme9Sections";
+import { Theme8MarketingBanners } from "@/components/admin/cms/Theme8MarketingBanners";
+import { marketingBannersSchema } from "@/lib/theme8/marketing-validation";
 import {
   card,
   ImageInputField,
@@ -354,6 +356,13 @@ export function AdminLandingCMS({ sp }: Props) {
   });
 
   const handleSave = () => {
+    if (sp.form.landingTheme === "theme-8") {
+      const banners = marketingBannersSchema.safeParse(ls.marketingBanners ?? []);
+      if (!banners.success) {
+        toast.error(banners.error.issues[0]?.message ?? "Proverite marketing banner.");
+        return;
+      }
+    }
     const theme9Issues = validateTheme9SectionsForTheme(
       sp.form.landingTheme,
       ls.landing,
@@ -686,6 +695,10 @@ export function AdminLandingCMS({ sp }: Props) {
       {/* ══════════════════════════════════════════════════════════════════════
           LANDING SECTIONS
           ══════════════════════════════════════════════════════════════════ */}
+
+      {sp.form.landingTheme === "theme-8" && (
+        <Theme8MarketingBanners value={ls} onChange={updateLS} />
+      )}
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <SectionCard

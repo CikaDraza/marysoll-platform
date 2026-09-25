@@ -11,6 +11,7 @@
 import type { BlockRenderProps, ThemeBlockRenderers } from "../blocks/renderers";
 import { useThemeRouting } from "../blocks/ThemeBlockScope";
 import { useTheme8Fixtures } from "./fixturesContext";
+import { MarketingBanner } from "./MarketingBanner";
 import {
   theme8AboutProps,
   theme8FaqProps,
@@ -51,6 +52,11 @@ function GalleryBlock({ data }: BlockRenderProps<"content.gallery">) {
   return <Theme8GallerySection {...theme8GalleryProps(data, tenantSlug)} />;
 }
 
+function MarketingBannerBlock({ data }: BlockRenderProps<"content.marketing-banner">) {
+  const { resolveHref, tenantSlug, clientSlug } = useThemeRouting();
+  return data.content ? <MarketingBanner banner={data.content} resolveHref={resolveHref} tenantSlug={clientSlug ?? tenantSlug} /> : null;
+}
+
 function PerksBlock({ data }: BlockRenderProps<"content.perks">) {
   const { resolveHref } = useThemeRouting();
   return <Theme8Perks {...theme8PerksProps(data, resolveHref)} />;
@@ -80,6 +86,7 @@ export const THEME8_BLOCK_RENDERERS: ThemeBlockRenderers = {
   "services.catalog": ServicesCatalogBlock,
   "content.gallery": GalleryBlock,
   "content.perks": PerksBlock,
+  "content.marketing-banner": MarketingBannerBlock,
   "content.testimonials": TestimonialsBlock,
   "content.faq": FaqBlock,
 };

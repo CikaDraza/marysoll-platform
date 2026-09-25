@@ -70,7 +70,7 @@ export function Theme8CelebrationOverlay({
   // Preload sheet-a: prikaži lika tek kad je slika spremna (inače placeholder).
   const [spriteReady, setSpriteReady] = useState(false);
   useEffect(() => {
-    if (!sprite?.src) return;
+    if (!open || !sprite?.src) return;
     let cancelled = false;
     const img = new Image();
     img.onload = () => {
@@ -80,7 +80,7 @@ export function Theme8CelebrationOverlay({
     return () => {
       cancelled = true;
     };
-  }, [sprite?.src]);
+  }, [open, sprite?.src]);
 
   const [l1, l2] = splitTitle(title);
 

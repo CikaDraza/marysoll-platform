@@ -30,6 +30,8 @@ import { SuperAdminChat } from "@/models/SuperAdminChat";
 import { EducationContent } from "@/models/EducationContent";
 import { ClientContentAssignment } from "@/models/ClientContentAssignment";
 import { WebhookEvent } from "@/models/WebhookEvent";
+import { Theme8LandingEvent } from "@/models/Theme8LandingEvent";
+import { VoucherRequest } from "@/models/VoucherRequest";
 import { deleteTenantBookingData } from "@/lib/tenant/bookingCascade";
 import { cancelPaddleSubscription } from "@/lib/paddle";
 
@@ -87,6 +89,8 @@ function tenantScopedModels() {
     ["LoyaltyEvent", LoyaltyEvent],
     ["LoyaltyLedger", LoyaltyLedger],
     ["Voucher", Voucher],
+    ["VoucherRequest", VoucherRequest],
+    ["Theme8LandingEvent", Theme8LandingEvent],
     ["Referral", Referral],
     ["SalonInternalChat", SalonInternalChat],
     ["SuperAdminChat", SuperAdminChat],

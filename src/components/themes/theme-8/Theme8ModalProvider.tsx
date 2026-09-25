@@ -13,6 +13,7 @@
  * (opacity 0 + translateY(24px) scale(.96) → settle, .42s) plus a backdrop fade.
  */
 import { useCallback, useEffect, useState, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 // createPortal is guarded by a typeof-document check below (no SSR call).
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
@@ -30,6 +31,8 @@ import { Theme8CelebrationOverlay } from "./Theme8CelebrationOverlay";
 // Test prekidač: kad je true, zahvalnica se prikaže odmah na load (bez bukiranja).
 // U produkciji vrati na false — triggeruje se samo na uspešno zakazivanje.
 const TEST_ALWAYS_SHOW_CELEBRATION = false;
+
+const Theme8VoucherRequestModal = dynamic(() => import("./VoucherRequestModal").then((module) => module.Theme8VoucherRequestModal), { ssr: false });
 
 const CELEBRATION_SPRITE = {
   src: "/images/theme-8/celebration-sheet.webp",
@@ -103,7 +106,7 @@ export function Theme8ModalProvider({ children, booking }: Props) {
     return () => document.removeEventListener("keydown", onKey);
   }, [active]);
 
-  const maxWidth = active === "book" ? "max-w-[640px]" : "max-w-[460px]";
+  const maxWidth = active === "book" || active === "voucher" ? "max-w-[640px]" : "max-w-[460px]";
 
   return (
     <Theme8ModalContext.Provider value={{ open, close, celebrate }}>
@@ -127,6 +130,7 @@ export function Theme8ModalProvider({ children, booking }: Props) {
                 transition={{ duration: 0.25 }}
                 role="dialog"
                 aria-modal="true"
+                aria-label={active === "voucher" ? "Poklon vaučer" : active === "book" ? "Zakazivanje termina" : "Bilten"}
               >
                 {/* backdrop */}
                 <div
@@ -146,11 +150,11 @@ export function Theme8ModalProvider({ children, booking }: Props) {
                   <div className="pointer-events-none absolute -top-16 left-1/2 -translate-x-1/2 z-0">
                     <SprayReveal
                       src={
-                        active === "book"
+                        active !== "bilten"
                           ? "/images/theme-8/spray/heart-spray-1.svg"
                           : "/images/theme-8/spray/flower-spray.svg"
                       }
-                      color={active === "book" ? "pink" : "hot"}
+                      color={active !== "bilten" ? "pink" : "hot"}
                       size={190}
                       opacity={0.85}
                     />
@@ -169,6 +173,11 @@ export function Theme8ModalProvider({ children, booking }: Props) {
                         tenantSlug={booking.tenantSlug}
                         clientSlug={booking.clientSlug}
                         salon={booking.salon}
+                        services={booking.services}
+                      />
+                    ) : active === "voucher" ? (
+                      <Theme8VoucherRequestModal
+                        tenantSlug={booking.clientSlug ?? booking.tenantSlug}
                         services={booking.services}
                       />
                     ) : (

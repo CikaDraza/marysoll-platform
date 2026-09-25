@@ -15,6 +15,7 @@
  */
 
 import type { IService, LandingStructure, SalonProfileData } from "@/types";
+import type { MarketingBanner } from "@/types/theme8-marketing";
 import type { PublicTestimonial } from "@/types/public-testimonials";
 import type { TenantStats } from "@/lib/tenant/tenantStatsUtils";
 import type { MappedBlogPost } from "@/lib/tenant/blogPosts";
@@ -140,6 +141,10 @@ export interface ContentPerksData {
   content: NonNullable<Landing["perks"]> | undefined;
 }
 
+export interface ContentMarketingBannerData {
+  content: MarketingBanner | undefined;
+}
+
 /** Tipovi blokova koje registry poznaje + podaci koje njihov loader vraća. */
 // ─── theme-9 „Expert Editorial" — autorske sekcije ────────────────────────────
 // Autorske sekcije ostaju `content.*`. Topic Hub je izuzetak od E1: prezentacioni
@@ -193,6 +198,7 @@ export interface BlockDataByType {
   "content.faq": ContentFaqData;
   "content.blog": ContentBlogData;
   "content.perks": ContentPerksData;
+  "content.marketing-banner": ContentMarketingBannerData;
   "content.audience-paths": ContentAudiencePathsData;
   "content.topic-hub": ContentTopicHubData;
   "education.topic-hub": EducationTopicHubData;
@@ -249,6 +255,7 @@ export interface BlockConfigByType {
   "content.faq": BaseBlockConfig;
   "content.blog": BaseBlockConfig;
   "content.perks": BaseBlockConfig;
+  "content.marketing-banner": { bannerId: string };
   // theme-9: sve nose samo `source` — nemaju varijante prikaza.
   "content.audience-paths": BaseBlockConfig;
   "content.topic-hub": BaseBlockConfig;

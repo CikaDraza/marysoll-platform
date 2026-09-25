@@ -58,6 +58,9 @@ export interface ThemeLandingProps {
   blockData: ResolvedBlockMap;
   /** View modeli theme-native delova, po temi. */
   themeNative: ThemeNativeData;
+  /** Theme-specific composition order; only Theme-8 consumes it today. */
+  sectionOrder?: string[];
+  marketingBannerIds?: string[];
 
   // ── Rutiranje ──────────────────────────────────────────────────────────
   /** Prefiks u nav linkovima; `undefined` na custom domenu (linkovi su root-relative). */

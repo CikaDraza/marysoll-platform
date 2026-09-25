@@ -35,6 +35,7 @@ import { EMPTY_WORKING_HOURS } from "@/types/constants";
 import { pruneAndValidateManualSlots } from "@/helpers/manualSlots";
 import { normalizeVacations } from "@/helpers/vacations";
 import { mapLandingStructureForAdmin } from "@/lib/salon-profile/content-preservation";
+import { EDUCATION_BANNER_PRESET, insertMarketingBanner, resolveTheme8SectionOrder } from "@/lib/theme8/marketing-layout";
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
@@ -173,7 +174,19 @@ function mapProfileToForm(p: SalonProfile): ISalonProfileForm {
   const landingTheme = (rawProfile.landingTheme as LandingTheme) || "theme-1";
 
   const rawLS = rawProfile.landingStructure as LandingStructure | undefined;
-  const landingStructure = mapLandingStructureForAdmin(rawLS);
+  const mappedLanding = mapLandingStructureForAdmin(rawLS);
+  // Starter exists only in the editor and is off until Anja enables and saves it.
+  // An explicit empty array means it was removed, so never recreate it.
+  const landingStructure = landingTheme === "theme-8" && rawLS?.marketingBanners === undefined
+    ? {
+        ...mappedLanding,
+        marketingBanners: [EDUCATION_BANNER_PRESET],
+        sectionOrder: insertMarketingBanner(
+          resolveTheme8SectionOrder(rawLS?.sectionOrder, []),
+          EDUCATION_BANNER_PRESET.id,
+        ),
+      }
+    : mappedLanding;
 
   return {
     name: p.name ?? "",

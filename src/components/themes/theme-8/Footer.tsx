@@ -45,8 +45,7 @@ export function Theme8Footer({
       id="book"
       className="relative max-w-[1180px] mx-auto mt-28 mb-16 px-5"
     >
-      <FadeUp>
-        <div className="relative bg-y2k-ink rounded-[34px] p-10 sm:p-12 overflow-hidden rotate-[-1deg] shadow-[0_30px_70px_rgba(20,0,30,0.5)]">
+      <div className="relative bg-y2k-ink rounded-[34px] p-10 sm:p-12 overflow-hidden rotate-[-1deg] shadow-[0_30px_70px_rgba(20,0,30,0.5)]">
           <div className="absolute inset-0 bg-[radial-gradient(70%_90%_at_80%_10%,rgba(255,46,151,0.4),transparent_60%)] pointer-events-none" />
           <Deco
             shape="star"
@@ -58,7 +57,7 @@ export function Theme8Footer({
             className="absolute left-[0%] sm:left-[6%] bottom-[10%] sm:bottom-[14%] rotate-[-10deg]"
           />
 
-          <div className="relative grid lg:grid-cols-[1.2fr_0.8fr] gap-10 items-center">
+          <FadeUp className="relative grid lg:grid-cols-[1.2fr_0.8fr] gap-10 items-center">
             <div>
               <h2 className="m-0 mb-5 font-bagel text-[clamp(40px,6.5vw,82px)] leading-[0.86] text-white">
                 Spremni za vase
@@ -131,9 +130,9 @@ export function Theme8Footer({
                 </div>
               </div>
             </div>
-          </div>
+          </FadeUp>
 
-          <div className="relative mt-10 pt-5 border-t border-white/15 flex justify-between items-center flex-wrap gap-3.5">
+          <FadeUp delay={0.12} className="relative mt-10 pt-5 border-t border-white/15 flex justify-between items-center flex-wrap gap-3.5">
             <Image
               src={logoSrc}
               alt={displayName}
@@ -156,9 +155,8 @@ export function Theme8Footer({
                 Powered by Marysoll
               </Link>
             </span>
-          </div>
-        </div>
-      </FadeUp>
+          </FadeUp>
+      </div>
     </footer>
   );
 }

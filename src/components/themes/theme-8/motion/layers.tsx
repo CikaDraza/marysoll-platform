@@ -18,6 +18,7 @@ import type { CSSProperties } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useThemeReduce } from "./reduceMotion";
+import { THEME8_WALLPAPER, THEME8_WALLPAPER_BLUR } from "@/lib/theme8/wallpaper";
 import { Deco } from "../Decorations";
 import {
   HeartDoodle,
@@ -40,10 +41,6 @@ type SprayColorKey = keyof typeof SPRAY_COLORS;
 
 /* ── Background wall ─────────────────────────────────────────────────────── */
 
-// Tiny (20px, blur) inline LQIP wallpaper-a (~330 B) — prvi frame je odmah tu u
-// niskom kvalitetu, pa next/image dovuče pun (device-sized, webp, quality 60).
-const WALL_BLUR =
-  "data:image/jpeg;base64,/9j/2wBDABcQERQRDhcUEhQaGBcbIjklIh8fIkYyNSk5UkhXVVFIUE5bZoNvW2F8Yk5QcptzfIeLkpSSWG2grJ+OqoOPko3/2wBDARgaGiIeIkMlJUONXlBejY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY3/wAARCAALABQDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAwAC/8QAGxAAAgMBAQEAAAAAAAAAAAAAAREAAgMEIUH/xAAXAQADAQAAAAAAAAAAAAAAAAAAAgME/8QAHBEAAgICAwAAAAAAAAAAAAAAAAECERITMVFh/9oADAMBAAIRAxEAPwAc9r7k1sEZknbO5CY+R8gE17A672rpminDlG2TqKsWuvQKoCUzUkhkyktq6Fz8P//Z";
 
 export function BackgroundWall() {
   return (
@@ -58,13 +55,13 @@ export function BackgroundWall() {
         className="fixed top-0 left-0 w-full h-screen h-[100lvh] z-0"
       >
         <Image
-          src="/images/theme-8/bg-wallpaper_1_.webp"
+          src={THEME8_WALLPAPER}
           alt=""
           fill
-          priority
+          loading="eager"
           quality={60}
           placeholder="blur"
-          blurDataURL={WALL_BLUR}
+          blurDataURL={THEME8_WALLPAPER_BLUR}
           sizes="100vw"
           className="object-cover object-center"
         />
@@ -123,6 +120,7 @@ function StickerStick({
   src,
   w,
   h,
+  sizes,
   wrapClass,
   delay = 0,
   rotate = 0,
@@ -130,6 +128,7 @@ function StickerStick({
   src: string;
   w: number;
   h: number;
+  sizes: string;
   wrapClass: string;
   delay?: number;
   rotate?: number;
@@ -153,6 +152,7 @@ function StickerStick({
         src={src}
         width={w}
         height={h}
+        sizes={sizes}
         alt=""
         className="w-full h-auto select-none drop-shadow-[4px_10px_14px_rgba(11,11,15,0.45)]"
       />
@@ -205,6 +205,7 @@ export function FixedDecorLayer() {
           src={`${STICK}/heart-sticker.webp`}
           width={480}
           height={550}
+          sizes="(min-width: 640px) 150px, 100px"
           alt=""
           aria-hidden="true"
           className="absolute right-[6px] top-[10%] w-[100px] sm:w-[150px] h-auto rotate-[8deg] select-none drop-shadow-[4px_8px_12px_rgba(11,11,15,0.4)]"
@@ -213,6 +214,7 @@ export function FixedDecorLayer() {
           src={`${STICK}/shine-sticker.webp`}
           width={600}
           height={297}
+          sizes="(min-width: 640px) 210px, 150px"
           alt=""
           aria-hidden="true"
           className="absolute left-[-50px] top-[24%] w-[150px] sm:w-[210px] h-auto rotate-[-6deg] select-none hidden sm:block"
@@ -223,6 +225,7 @@ export function FixedDecorLayer() {
           src={`${STICK}/sticker-sprite-1.webp`}
           w={806}
           h={1172}
+          sizes="(min-width: 640px) 480px, 280px"
           delay={0.7}
           rotate={-5}
           wrapClass="absolute left-1/4 top-1/3 sm:top-2/5 w-[280px] sm:w-[480px]"
@@ -231,6 +234,7 @@ export function FixedDecorLayer() {
           src={`${STICK}/sticker-sprite-2.png`}
           w={449}
           h={734}
+          sizes="(min-width: 640px) 160px, 120px"
           delay={0.95}
           rotate={7}
           wrapClass="absolute right-[-30px] sm:-right-[100px] top-[72%] w-[120px] sm:w-[160px]"
