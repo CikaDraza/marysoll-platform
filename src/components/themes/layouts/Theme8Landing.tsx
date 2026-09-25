@@ -100,16 +100,6 @@ export function Theme8Landing(props: ThemeLandingProps) {
     >
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="stylesheet" href={y2kFontHref} />
-      {/* Raw wallpaper preload SAMO za ne-iOS (gde preloader koristi CSS bg).
-          Na iOS-u nema preloadera, a BackgroundWall (next/image priority) sam
-          preload-uje optimizovanu verziju — raw 1 MB bi bio čist gubitak. */}
-      {!reduceMotion && (
-        <link
-          rel="preload"
-          as="image"
-          href="/images/theme-8/bg-wallpaper_1_.webp"
-        />
-      )}
       {/* first-paint cover: wall + big white logo, fades itself out.
           Na iOS (reduceMotion) ga NE renderujemo — skida se samo iz JS-a, pa bi
           na uređaju gde hydration padne visio zauvek ("logo stoji"). */}

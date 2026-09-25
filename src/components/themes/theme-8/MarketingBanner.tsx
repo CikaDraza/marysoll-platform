@@ -1,4 +1,6 @@
 import Image from "next/image";
+import educationPoster from "../../../../public/images/theme-8/edu-the-lash-room-byAnja.jpg";
+import { theme8ImageLoaderFor } from "@/helpers/theme8CloudinaryImage";
 import type { MarketingBanner as MarketingBannerData } from "@/types/theme8-marketing";
 import { Theme8AnchorLink } from "./AnchorLink";
 import { FadeUp } from "./FadeUp";
@@ -28,7 +30,7 @@ function BannerDivider({ url, full }: { url?: string; full: boolean }) {
   if (!url?.trim()) return null;
   return (
     <div className={`relative z-10 mx-auto mb-10 w-full px-5 ${full ? "max-w-none" : "max-w-[1180px]"}`}>
-      <Image src={url} alt="" width={841} height={98} unoptimized className="w-full h-auto" />
+      <Image src={url} alt="" width={841} height={98} loading="lazy" unoptimized className="w-full h-auto" />
     </div>
   );
 }
@@ -37,25 +39,29 @@ function BannerBackground({ url }: { url?: string }) {
   if (!url?.trim()) return null;
   return (
     <div className="absolute inset-0 hidden lg:block overflow-hidden">
-      <Image src={url} alt="" fill sizes="100vw" className="object-cover" />
+      <Image src={url} loader={theme8ImageLoaderFor(url)} alt="" fill loading="lazy" sizes="100vw" className="object-cover" />
       <div className="absolute inset-0 bg-y2k-ink/70" />
     </div>
   );
 }
 
 function BannerPhoto({ banner, full }: { banner: MarketingBannerData; full: boolean }) {
+  const isEducationPoster = banner.image.url === "/images/theme-8/edu-the-lash-room-byAnja.jpg";
   return (
     <div className={`relative w-full bg-white p-2.5 pb-3.5 border-[3px] border-y2k-ink shadow-[6px_8px_0_#8B16C9] ${full
       ? "rotate-[-2deg] lg:rotate-[2deg]"
       : "rotate-[-2deg]"}`}>
       <div className="relative aspect-[3/4] w-full overflow-hidden">
         <Image
-          src={banner.image.url}
+          src={isEducationPoster ? educationPoster : banner.image.url}
+          loader={isEducationPoster ? undefined : theme8ImageLoaderFor(banner.image.url)}
           alt={banner.image.alt}
           fill
+          loading="lazy"
+          placeholder={isEducationPoster ? "blur" : "empty"}
           sizes={full
-            ? "(min-width: 1024px) 38vw, (min-width: 768px) 75vw, 90vw"
-            : "(min-width: 768px) 760px, 90vw"}
+            ? "(min-width: 1024px) 520px, calc(100vw - 40px)"
+            : "(min-width: 1200px) 1140px, calc(100vw - 40px)"}
           className="object-cover"
         />
       </div>

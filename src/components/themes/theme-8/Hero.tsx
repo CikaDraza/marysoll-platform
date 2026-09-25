@@ -8,6 +8,7 @@ import { FadeUp } from "./FadeUp";
 import { Deco } from "./Decorations";
 import { useTheme8Modal } from "./theme8ModalContext";
 import { Theme8AnchorLink } from "./AnchorLink";
+import { theme8ImageLoaderFor } from "@/helpers/theme8CloudinaryImage";
 
 interface Props {
   heroData: {
@@ -135,6 +136,8 @@ export function Theme8Hero({
   // [1] founder polaroid. Each falls back to a baked-in default.
   const mainPhoto = heroData.images?.[0] ?? heroData.image;
   const founderPhoto = heroData.images?.[1];
+  const mainPhotoSrc = mainPhoto?.src || "/images/theme-8/bratz-eye.jpg";
+  const founderPhotoSrc = founderPhoto?.src || "/images/theme-8/anja-your-artist.jpg";
   // Keyword-rich, localised fallback alt for the main hero photo (a real content
   // image), so it carries SEO value when the CMS alt field is left empty.
   const heroImageAlt =
@@ -247,6 +250,7 @@ export function Theme8Hero({
             alt={salonName ?? "The Lash Room by Anja"}
             width={360}
             height={200}
+            sizes="(min-width: 1024px) 220px, 46vw"
             className="absolute right-0 sm:right-[-2%] -top-6 w-[46%] min-w-[180px] z-[7] rotate-[6deg] drop-shadow-[4px_8px_10px_rgba(11,11,15,0.4)] h-auto"
           />
           {/* torn cutout */}
@@ -255,9 +259,11 @@ export function Theme8Hero({
             <div className="relative p-[9px] pb-[30px]">
               <div className="relative w-full h-[300px]">
                 <Image
-                  src={mainPhoto?.src || "/images/theme-8/bratz-eye.jpg"}
+                  src={mainPhotoSrc}
+                  loader={theme8ImageLoaderFor(mainPhotoSrc)}
                   alt={heroImageAlt}
                   fill
+                  preload
                   sizes="(min-width: 1024px) 30vw, 70vw"
                   className="object-cover object-[50%_36%]"
                 />
@@ -273,11 +279,11 @@ export function Theme8Hero({
             <div className="bg-white p-2.5 pb-10 border-2 border-y2k-ink shadow-[6px_10px_22px_rgba(11,11,15,0.3)]">
               <div className="relative w-full h-[200px]">
                 <Image
-                  src={
-                    founderPhoto?.src || "/images/theme-8/anja-your-artist.jpg"
-                  }
+                  src={founderPhotoSrc}
+                  loader={theme8ImageLoaderFor(founderPhotoSrc)}
                   alt={founderAlt}
                   fill
+                  loading="lazy"
                   sizes="(min-width: 1024px) 22vw, 50vw"
                   className="object-cover object-[50%_22%]"
                 />

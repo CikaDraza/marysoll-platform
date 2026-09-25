@@ -12,7 +12,8 @@
  * the same `whileInView` plays on open (heart spray on booking, flower on bilten).
  * Honors prefers-reduced-motion (renders settled, no animation).
  */
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useThemeReduce } from "./reduceMotion";
 
 const COLORS = {
   pink: "#ff2e97",
@@ -45,7 +46,7 @@ export function SprayReveal({
   delay = 0,
   opacity = 0.92,
 }: SprayRevealProps) {
-  const reduce = useReducedMotion();
+  const reduce = useThemeReduce();
   const c = COLORS[color];
   return (
     <motion.div

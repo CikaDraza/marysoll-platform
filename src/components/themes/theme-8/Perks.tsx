@@ -3,6 +3,7 @@ import type { HeroImage } from "@/types";
 import { FadeUp } from "./FadeUp";
 import { Deco } from "./Decorations";
 import { Theme8AnchorLink } from "./AnchorLink";
+import { theme8ImageLoaderFor } from "@/helpers/theme8CloudinaryImage";
 
 interface Cta {
   text: string;
@@ -82,20 +83,21 @@ export function Theme8Perks({ perks }: Props) {
         🎁
       </span>
 
-      <FadeUp>
-        <div className="relative rotate-[1.2deg]">
-          <div className="absolute -inset-2.5 bg-y2k-paper [filter:url(#y2k-torn)] shadow-[0_26px_60px_rgba(20,0,30,0.42)]" />
-          {/* Desktop: slika levo (1/3), tekst desno (2/3). Mobilni: stack. */}
-          <div className="relative grid md:grid-cols-[1fr_2fr] gap-8 md:gap-10 items-center p-8 sm:p-10">
+      <div className="relative rotate-[1.2deg]">
+        <div className="absolute -inset-2.5 bg-y2k-paper [filter:url(#y2k-torn)] shadow-[0_26px_60px_rgba(20,0,30,0.42)]" />
+        {/* Desktop: slika levo (1/3), tekst desno (2/3). Mobilni: stack. */}
+        <FadeUp className="relative grid md:grid-cols-[1fr_2fr] gap-8 md:gap-10 items-center p-8 sm:p-10">
             {/* slika (kolona 1/3) — glavna + eventualne dodatne kao polaroidi */}
             <div className="relative flex flex-col items-center gap-4">
               <div className="relative bg-white p-2.5 pb-4 border-2 border-y2k-ink shadow-[5px_9px_18px_rgba(11,11,15,0.28)] rotate-[-2deg] w-full max-w-[300px]">
                 <div className="relative w-full h-[280px] sm:h-[320px]">
                   <Image
                     src={images[0].src}
+                    loader={theme8ImageLoaderFor(images[0].src)}
                     alt={images[0].alt || headline}
                     fill
-                    sizes="(min-width: 768px) 28vw, 80vw"
+                    loading="lazy"
+                    sizes="(min-width: 768px) 300px, 80vw"
                     className="object-cover"
                   />
                 </div>
@@ -115,9 +117,11 @@ export function Theme8Perks({ perks }: Props) {
                       <div className="relative w-full h-[120px] sm:h-[140px]">
                         <Image
                           src={img.src}
+                          loader={theme8ImageLoaderFor(img.src)}
                           alt={img.alt || headline}
                           fill
-                          sizes="(min-width: 768px) 12vw, 40vw"
+                          loading="lazy"
+                          sizes="(min-width: 640px) 140px, 120px"
                           className="object-cover"
                         />
                       </div>
@@ -169,9 +173,8 @@ export function Theme8Perks({ perks }: Props) {
               </div>
             )}
             </div>
-          </div>
-        </div>
-      </FadeUp>
+        </FadeUp>
+      </div>
     </section>
   );
 }

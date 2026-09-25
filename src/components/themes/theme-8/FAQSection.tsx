@@ -43,10 +43,9 @@ export function Theme8FAQSection({ items, headline, supportText }: Props) {
 
   return (
     <section id="faq" className="relative max-w-[980px] mx-auto my-28 px-5">
-      <FadeUp>
-        <div className="relative w-full rotate-[-1deg]">
-          <div className="absolute -inset-2.5 bg-y2k-paper [filter:url(#y2k-torn2)] shadow-[0_24px_56px_rgba(20,0,30,0.4)]" />
-          <div className="relative w-full px-6 sm:px-10 py-9">
+      <div className="relative w-full rotate-[-1deg]">
+        <div className="absolute -inset-2.5 bg-y2k-paper [filter:url(#y2k-torn2)] shadow-[0_24px_56px_rgba(20,0,30,0.4)]" />
+        <FadeUp className="relative w-full px-6 sm:px-10 py-9">
             <div className="text-center mb-6">
               <span className="inline-block font-extrabold text-[12px] tracking-[0.24em] uppercase text-y2k-pink">
                 Q&amp;A
@@ -103,9 +102,8 @@ export function Theme8FAQSection({ items, headline, supportText }: Props) {
                 </div>
               );
             })}
-          </div>
-        </div>
-      </FadeUp>
+        </FadeUp>
+      </div>
     </section>
   );
 }

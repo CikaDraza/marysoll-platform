@@ -4,12 +4,10 @@
  * Theme-8 decorative bits — Y2K stickers (stars / sparkle / heart) that bob, wiggle
  * and twinkle, plus the torn-paper SVG filter defs used across the theme.
  *
- * Reimplements the prototype's CSS keyframes (lrbob / lrwiggle / lrtwinkle) with
- * Framer Motion loops; respects prefers-reduced-motion automatically via Framer Motion
- * (looping `animate` is paused when the user opts out).
+ * CSS animates the SVG shapes only while they are near the viewport. One shared
+ * observer controls all stickers, so offscreen decorations do no frame work.
  */
-import { motion } from "framer-motion";
-import { useThemeReduce } from "./motion/reduceMotion";
+import { useEffect, useRef, useState } from "react";
 
 const STAR =
   "M50 4 L61 38 L97 38 L68 60 L79 95 L50 73 L21 95 L32 60 L3 38 L39 38 Z";
@@ -33,15 +31,26 @@ interface DecoProps {
   style?: React.CSSProperties;
 }
 
-const LOOPS = {
-  bob: { animate: { y: [0, -16, 0] }, transition: { duration: 5, repeat: Infinity, ease: "easeInOut" as const } },
-  wiggle: { animate: { rotate: [-6, 6, -6] }, transition: { duration: 3.4, repeat: Infinity, ease: "easeInOut" as const } },
-  twinkle: { animate: { opacity: [0.35, 1, 0.35], scale: [0.8, 1.15, 0.8] }, transition: { duration: 2.6, repeat: Infinity, ease: "easeInOut" as const } },
-  // springy hop — a little more energetic than `bob`
-  bounce: { animate: { y: [0, -24, 0] }, transition: { duration: 1.8, repeat: Infinity, times: [0, 0.4, 1], ease: "easeInOut" as const } },
-  // heartbeat-style scale pulse
-  pulse: { animate: { scale: [1, 1.18, 1] }, transition: { duration: 1.7, repeat: Infinity, ease: "easeInOut" as const } },
-};
+const visibilityCallbacks = new Map<Element, (visible: boolean) => void>();
+let visibilityObserver: IntersectionObserver | null = null;
+
+function observeDecoration(element: Element, onVisibility: (visible: boolean) => void) {
+  visibilityObserver ??= new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      visibilityCallbacks.get(entry.target)?.(entry.isIntersecting);
+    }
+  }, { rootMargin: "150px 0px" });
+  visibilityCallbacks.set(element, onVisibility);
+  visibilityObserver.observe(element);
+  return () => {
+    visibilityObserver?.unobserve(element);
+    visibilityCallbacks.delete(element);
+    if (visibilityCallbacks.size === 0) {
+      visibilityObserver?.disconnect();
+      visibilityObserver = null;
+    }
+  };
+}
 
 /** A single floating Y2K sticker (decorative — aria-hidden). */
 export function Deco({
@@ -54,24 +63,29 @@ export function Deco({
   className,
   style,
 }: DecoProps) {
-  // useThemeReduce (ne goli useReducedMotion): na iPhone-u tema forsira reduced
-  // → beskonačne bob/wiggle/twinkle/bounce/pulse petlje se GASE (manje CPU/GPU
-  // i memorije, protiv "izbaci je" reload-a taba na starijim iPhone-ima).
-  const reduce = useThemeReduce();
-  const loop = motionType !== "none" && !reduce ? LOOPS[motionType] : undefined;
+  const ref = useRef<SVGSVGElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (motionType === "none" || !ref.current) return;
+    if (typeof IntersectionObserver === "undefined") return;
+    return observeDecoration(ref.current, setVisible);
+  }, [motionType]);
+
   return (
-    <motion.svg
+    <svg
+      ref={ref}
       viewBox="0 0 100 100"
       width={size}
       height={size}
       aria-hidden="true"
-      className={className}
+      className={`${className ?? ""} ${visible ? "y2k-deco-visible" : ""}`}
       style={style}
-      animate={loop?.animate}
-      transition={loop?.transition}
     >
-      <path d={PATHS[shape]} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />
-    </motion.svg>
+      <g className={motionType === "none" ? undefined : `y2k-deco-motion y2k-deco-${motionType}`}>
+        <path d={PATHS[shape]} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />
+      </g>
+    </svg>
   );
 }
 

@@ -8,7 +8,8 @@
  * intro), then rest — each statically tilted at a different angle.
  */
 import Image from "next/image";
-import { motion, useReducedMotion } from "framer-motion";
+import { useThemeReduce } from "./motion/reduceMotion";
+import { motion } from "framer-motion";
 import { FadeUp } from "./FadeUp";
 import { Deco } from "./Decorations";
 
@@ -152,7 +153,7 @@ const FRAME_DECOS: FrameDeco[] = [
 
 /** One perimeter sticker: flies in from the screen once, then rests tilted. */
 function FrameSticker({ deco, index }: { deco: FrameDeco; index: number }) {
-  const reduce = useReducedMotion();
+  const reduce = useThemeReduce();
   return (
     <motion.div
       aria-hidden="true"
@@ -190,10 +191,9 @@ export function Theme8Tribute() {
       id="tribute"
       className="relative max-w-[1120px] mx-auto my-24 px-5"
     >
-      <FadeUp>
-        <div className="relative rotate-[1.2deg]">
-          <div className="absolute -inset-2.5 bg-y2k-paper [filter:url(#y2k-torn)] shadow-[0_26px_60px_rgba(20,0,30,0.42)]" />
-          <div className="relative grid md:grid-cols-[0.85fr_1.15fr] gap-9 md:gap-12 items-center p-8 sm:p-10">
+      <div className="relative rotate-[1.2deg]">
+        <div className="absolute -inset-2.5 bg-y2k-paper [filter:url(#y2k-torn)] shadow-[0_26px_60px_rgba(20,0,30,0.42)]" />
+        <FadeUp className="relative grid md:grid-cols-[0.85fr_1.15fr] gap-9 md:gap-12 items-center p-8 sm:p-10">
             {/* portrait + heart ring */}
             <div className="relative rotate-[-2deg]">
               <div className="relative bg-white p-2.5 pb-3.5 border-2 border-y2k-ink shadow-[5px_9px_18px_rgba(11,11,15,0.28)]">
@@ -202,7 +202,8 @@ export function Theme8Tribute() {
                     src="/images/theme-8/anja&andjela.jpg"
                     alt="Anja sa svojom majkom anđelom čuvarom"
                     fill
-                    sizes="(min-width: 768px) 38vw, 90vw"
+                    loading="lazy"
+                    sizes="(min-width: 768px) 420px, calc(100vw - 80px)"
                     className="object-cover object-top"
                   />
                 </div>
@@ -231,9 +232,8 @@ export function Theme8Tribute() {
                 uzor, moja večna inspiracija.
               </p>
             </div>
-          </div>
-        </div>
-      </FadeUp>
+        </FadeUp>
+      </div>
     </section>
   );
 }

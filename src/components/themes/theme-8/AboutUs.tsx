@@ -3,6 +3,7 @@ import type { AboutTextLink } from "@/types";
 import { renderLinkedText } from "@/helpers/renderLinkedText";
 import { FadeUp } from "./FadeUp";
 import { Deco } from "./Decorations";
+import { theme8ImageLoaderFor } from "@/helpers/theme8CloudinaryImage";
 
 interface Props {
   about: {
@@ -62,16 +63,16 @@ export function Theme8AboutUs({ about, founderName }: Props) {
         motionType="wiggle"
         className="absolute right-[4%] -top-8 z-[5]"
       />
-      <FadeUp>
-        <div className="relative rotate-[-1.5deg]">
-          <div className="absolute -inset-2.5 bg-y2k-paper [filter:url(#y2k-torn2)] shadow-[0_26px_60px_rgba(20,0,30,0.42)]" />
-          <div className="relative grid md:grid-cols-[0.8fr_1.2fr] gap-9 items-center p-10">
+      <div className="relative rotate-[-1.5deg]">
+        <div className="absolute -inset-2.5 bg-y2k-paper [filter:url(#y2k-torn2)] shadow-[0_26px_60px_rgba(20,0,30,0.42)]" />
+        <FadeUp className="relative grid md:grid-cols-[0.8fr_1.2fr] gap-9 items-center p-10">
             <div className="absolute -top-10 left-3 lg:left-6 w-36 h-36 rotate-[-8deg] z-[5]">
               <Image
                 src={`/images/theme-8/stickers/star-sticker.webp`}
                 alt="star sticker"
                 fill
-                sizes="(min-width: 768px) 18vw, 45vw"
+                loading="lazy"
+                sizes="144px"
                 className="object-cover"
               />
             </div>
@@ -81,9 +82,11 @@ export function Theme8AboutUs({ about, founderName }: Props) {
                 <div className="relative w-full h-[300px]">
                   <Image
                     src={imgSrc}
+                    loader={theme8ImageLoaderFor(imgSrc)}
                     alt={imgAlt}
                     fill
-                    sizes="(min-width: 768px) 35vw, 90vw"
+                    loading="lazy"
+                    sizes="(min-width: 768px) 360px, (min-width: 640px) 70vw, 75vw"
                     className="object-cover"
                   />
                 </div>
@@ -98,9 +101,11 @@ export function Theme8AboutUs({ about, founderName }: Props) {
                   <div className="relative w-full h-[165px]">
                     <Image
                       src={sideSrc}
+                      loader={theme8ImageLoaderFor(sideSrc)}
                       alt={sideAlt}
                       fill
-                      sizes="(min-width: 768px) 18vw, 45vw"
+                      loading="lazy"
+                      sizes="(min-width: 768px) 180px, 40vw"
                       className="object-cover object-[50%_33%]"
                     />
                   </div>
@@ -140,9 +145,8 @@ export function Theme8AboutUs({ about, founderName }: Props) {
                 ))}
               </div>
             </div>
-          </div>
-        </div>
-      </FadeUp>
+        </FadeUp>
+      </div>
     </section>
   );
 }
