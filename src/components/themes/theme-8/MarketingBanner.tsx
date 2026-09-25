@@ -26,7 +26,7 @@ function Description({ banner }: { banner: MarketingBannerData }) {
 function BannerDivider({ url, full }: { url?: string; full: boolean }) {
   if (!url?.trim()) return null;
   return (
-    <div className={`relative z-10 mx-auto mb-10 w-full px-5 ${full ? "max-w-none" : "max-w-[1120px]"}`}>
+    <div className={`relative z-10 mx-auto mb-10 w-full px-5 ${full ? "max-w-none" : "max-w-[1180px]"}`}>
       <Image src={url} alt="" width={841} height={98} unoptimized className="w-full h-auto" />
     </div>
   );
@@ -104,8 +104,8 @@ export function MarketingBanner({ banner, resolveHref }: Props) {
       <div className={`relative ${full ? "lg:min-h-[610px] lg:py-20" : ""}`}>
         {full && <BannerBackground url={banner.backgroundImage?.url} />}
         <div className={`relative z-10 mx-auto px-5 ${full
-          ? "max-w-[1280px] lg:grid lg:grid-cols-[1fr_0.9fr] lg:items-center lg:gap-14"
-          : "max-w-[800px]"}`}>
+          ? "max-w-[1180px] lg:grid lg:grid-cols-[1fr_0.9fr] lg:items-center lg:gap-14"
+          : "max-w-[1180px]"}`}>
           <BannerPhoto banner={banner} full={full} />
           <BannerCopy banner={banner} href={bannerCtaHref(banner, resolveHref)} full={full} />
         </div>
