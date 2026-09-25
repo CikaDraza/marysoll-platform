@@ -59,7 +59,7 @@ const SalonProfileSchema = new mongoose.Schema(
               enabled: { type: Boolean, default: false },
               label: { type: String },
               destination: {
-                type: { type: String, enum: ["custom", "edu-center"] },
+                type: { type: String, enum: ["custom", "edu-center", "modal"] },
                 url: { type: String },
               },
             },

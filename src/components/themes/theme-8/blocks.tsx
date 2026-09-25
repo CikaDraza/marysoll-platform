@@ -53,8 +53,8 @@ function GalleryBlock({ data }: BlockRenderProps<"content.gallery">) {
 }
 
 function MarketingBannerBlock({ data }: BlockRenderProps<"content.marketing-banner">) {
-  const { resolveHref } = useThemeRouting();
-  return data.content ? <MarketingBanner banner={data.content} resolveHref={resolveHref} /> : null;
+  const { resolveHref, tenantSlug, clientSlug } = useThemeRouting();
+  return data.content ? <MarketingBanner banner={data.content} resolveHref={resolveHref} tenantSlug={clientSlug ?? tenantSlug} /> : null;
 }
 
 function PerksBlock({ data }: BlockRenderProps<"content.perks">) {

@@ -56,7 +56,7 @@ function CtaFields({ banner, onPatch }: FieldsProps) {
       <div className="flex items-center justify-between gap-3"><span className="font-semibold text-sm">CTA dugme</span><ToggleSwitch checked={cta.enabled} onChange={(enabled) => onPatch({ cta: { ...cta, enabled } })} label="Prikaži CTA" /></div>
       <div className="grid gap-3 md:grid-cols-2">
         <div><label className={lbl}>Tekst dugmeta</label><input className={inp} value={cta.label ?? ""} onChange={(event) => onPatch({ cta: { ...cta, label: event.target.value } })} /></div>
-        <div><label className={lbl}>Odredište</label><select className={inp} value={cta.destination.type} onChange={(event) => onPatch({ cta: { ...cta, destination: event.target.value === "edu-center" ? { type: "edu-center" } : { type: "custom", url: "" } } })}><option value="custom">Uneti link</option><option value="edu-center">Edu Centar</option></select></div>
+        <div><label className={lbl}>Odredište</label><select className={inp} value={cta.destination.type} onChange={(event) => onPatch({ cta: { ...cta, destination: event.target.value === "edu-center" ? { type: "edu-center" } : event.target.value === "modal" ? { type: "modal" } : { type: "custom", url: "" } } })}><option value="custom">Uneti link</option><option value="edu-center">Edu Centar</option><option value="modal">Modal · Poklon vaučer</option></select></div>
       </div>
       {cta.destination.type === "custom" && <div><label className={lbl}>Link</label><input className={inp} value={cta.destination.url} placeholder="https://... ili /putanja" onChange={(event) => onPatch({ cta: { ...cta, destination: { type: "custom", url: event.target.value } } })} /></div>}
     </div>

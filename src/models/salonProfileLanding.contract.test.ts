@@ -98,7 +98,7 @@ describe("Theme-8 marketing banner persistence", () => {
       landingStructure: {
         marketingBanners: [
           { id: "education", enabled: true, image: { url: "/edu.jpg", alt: "Edukacija" }, containerStyle: "contained" },
-          { id: "voucher", enabled: false, image: { url: "", alt: "" }, containerStyle: "full-width" },
+          { id: "voucher", enabled: false, image: { url: "", alt: "" }, containerStyle: "full-width", cta: { enabled: true, destination: { type: "modal" } } },
         ],
         sectionOrder: ["hero", "marketing:education", "about", "social-proof", "services", "gallery", "perks", "testimonials", "faq", "marketing:voucher", "tribute"],
       },
@@ -106,6 +106,7 @@ describe("Theme-8 marketing banner persistence", () => {
     expect(doc.landingStructure?.marketingBanners?.map((banner: { id: string }) => banner.id))
       .toEqual(["education", "voucher"]);
     expect(doc.landingStructure?.marketingBanners?.[0]?.image?.url).toBe("/edu.jpg");
+    expect(doc.landingStructure?.marketingBanners?.[1]?.cta?.destination?.type).toBe("modal");
     expect(doc.landingStructure?.sectionOrder?.[1]).toBe("marketing:education");
   });
 });

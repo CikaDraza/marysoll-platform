@@ -32,6 +32,7 @@ const bannerFieldsSchema = z.object({
     destination: z.discriminatedUnion("type", [
       z.object({ type: z.literal("custom"), url: z.string() }),
       z.object({ type: z.literal("edu-center") }),
+      z.object({ type: z.literal("modal") }),
     ]),
   }).optional(),
   divider: z.object({ enabled: z.boolean(), url: z.string().optional() }).optional(),

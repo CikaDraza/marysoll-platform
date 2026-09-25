@@ -8,7 +8,7 @@
  */
 import { createContext, useContext } from "react";
 
-export type ModalName = "book" | "bilten";
+export type ModalName = "book" | "bilten" | "voucher";
 
 export interface Theme8ModalCtx {
   open: (name: ModalName) => void;

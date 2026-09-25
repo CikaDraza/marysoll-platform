@@ -16,7 +16,8 @@ export interface MarketingBanner {
     label?: string;
     destination:
       | { type: "custom"; url: string }
-      | { type: "edu-center" };
+      | { type: "edu-center" }
+      | { type: "modal" };
   };
   divider?: { enabled: boolean; url?: string };
 }

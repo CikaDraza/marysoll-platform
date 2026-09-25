@@ -1,13 +1,16 @@
 import Image from "next/image";
 import educationPoster from "../../../../public/images/theme-8/edu-the-lash-room-byAnja.jpg";
 import { theme8ImageLoaderFor } from "@/helpers/theme8CloudinaryImage";
+import { isInstagramDmLink } from "@/helpers/theme8Voucher";
 import type { MarketingBanner as MarketingBannerData } from "@/types/theme8-marketing";
 import { Theme8AnchorLink } from "./AnchorLink";
 import { FadeUp } from "./FadeUp";
+import { useTheme8Modal } from "./theme8ModalContext";
 
 interface Props {
   banner: MarketingBannerData;
   resolveHref: (href: string) => string;
+  tenantSlug?: string;
 }
 
 function Description({ banner }: { banner: MarketingBannerData }) {
@@ -70,14 +73,24 @@ function BannerPhoto({ banner, full }: { banner: MarketingBannerData; full: bool
 }
 
 function bannerCtaHref(banner: MarketingBannerData, resolveHref: Props["resolveHref"]): string | null {
-  if (!banner.cta?.enabled) return null;
+  if (!banner.cta?.enabled || banner.cta.destination.type === "modal") return null;
   const url = banner.cta.destination.type === "edu-center"
     ? "/edukacija"
     : banner.cta.destination.url.trim();
   return url ? resolveHref(url) : null;
 }
 
-function BannerCopy({ banner, href, full }: { banner: MarketingBannerData; href: string | null; full: boolean }) {
+const CTA_CLASS = "mt-10 inline-flex w-fit items-center rounded-full border-[4px] border-y2k-ink bg-y2k-pink px-7 py-3.5 font-extrabold uppercase tracking-[0.04em] text-white shadow-[6px_6px_0_#0b0b0f] transition-transform hover:-translate-y-1";
+
+function BannerCopy({ banner, href, trackedHref, full, onOpenVoucher }: {
+  banner: MarketingBannerData;
+  href: string | null;
+  trackedHref: string | null;
+  full: boolean;
+  onOpenVoucher: () => void;
+}) {
+  const label = banner.cta?.label?.trim() || "Saznaj više";
+  const modal = banner.cta?.enabled && banner.cta.destination.type === "modal";
   return (
     <div className={full ? "mt-12 text-center lg:mt-0" : "mt-12 text-center"}>
       {(banner.title?.trim() || banner.description?.trim()) && (
@@ -90,21 +103,28 @@ function BannerCopy({ banner, href, full }: { banner: MarketingBannerData; href:
           <Description banner={banner} />
         </div>
       )}
-      {href && (
-        <Theme8AnchorLink
-          href={href}
-          className="mt-10 inline-flex w-fit items-center rounded-full border-[4px] border-y2k-ink bg-y2k-pink px-7 py-3.5 font-extrabold uppercase tracking-[0.04em] text-white shadow-[6px_6px_0_#0b0b0f] transition-transform hover:-translate-y-1"
-        >
-          {banner.cta?.label?.trim() || "Saznaj više"}
-        </Theme8AnchorLink>
-      )}
+      {modal ? (
+        <button type="button" onClick={onOpenVoucher} className={CTA_CLASS}>{label}</button>
+      ) : trackedHref ? (
+        <form action={trackedHref} method="post">
+          <button type="submit" className={CTA_CLASS}>{label}</button>
+        </form>
+      ) : href ? (
+        <Theme8AnchorLink href={href} className={CTA_CLASS}>{label}</Theme8AnchorLink>
+      ) : null}
     </div>
   );
 }
 
-export function MarketingBanner({ banner, resolveHref }: Props) {
+export function MarketingBanner({ banner, resolveHref, tenantSlug }: Props) {
+  const { open } = useTheme8Modal();
   if (!banner.enabled || !banner.image.url.trim()) return null;
   const full = banner.containerStyle === "full-width";
+  const destination = banner.cta?.destination;
+  const trackedHref = banner.id === "education" && destination?.type === "custom" &&
+    isInstagramDmLink(destination.url) && tenantSlug
+      ? `/api/public/${encodeURIComponent(tenantSlug)}/education-dm`
+      : null;
   return (
     <section
       id={`marketing-${banner.id}`}
@@ -121,7 +141,7 @@ export function MarketingBanner({ banner, resolveHref }: Props) {
             <BannerPhoto banner={banner} full={full} />
           </FadeUp>
           <FadeUp delay={0.12} className={full ? "lg:order-1" : undefined}>
-            <BannerCopy banner={banner} href={bannerCtaHref(banner, resolveHref)} full={full} />
+            <BannerCopy banner={banner} href={bannerCtaHref(banner, resolveHref)} trackedHref={trackedHref} full={full} onOpenVoucher={() => open("voucher")} />
           </FadeUp>
         </div>
       </div>

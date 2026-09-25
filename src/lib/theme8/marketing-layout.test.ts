@@ -86,6 +86,13 @@ describe("Theme-8 repeatable composition", () => {
       blockId: "marketing-voucher-block", data, theme: "theme-8" }).status).toBe("render");
   });
 
+  it("CTA može da otvori vaučer modal bez linka", () => {
+    expect(marketingBannersSchema.safeParse([{
+      ...voucher,
+      cta: { enabled: true, label: "Pokloni vaučer", destination: { type: "modal" } },
+    }]).success).toBe(true);
+  });
+
   it("aktivna cela širina traži pozadinu i ispravan CTA link", () => {
     const invalid = { ...voucher, containerStyle: "full-width" as const,
       cta: { enabled: true, label: "Saznaj više", destination: { type: "custom" as const, url: "javascript:alert(1)" } } };
