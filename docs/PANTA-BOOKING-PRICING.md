@@ -37,19 +37,52 @@ Kod `from` varijanta nosi **doplatu** (`additionalPrice`), ne punu cenu.
 `variants[].price` uvek znači punu cenu i to se ne menja — zatečene
 `variant + fixed` usluge zavise od toga.
 
-## 3. Četiri različite činjenice
+## 3. Pet različitih činjenica
 
-    katalog → snapshot pri rezervaciji → quote salona → chargedAmount
+    katalog → snapshot → predlog cene → prihvaćen quote → chargedAmount
 
 | | gde | značenje |
 |---|---|---|
 | katalog | `Service.basePrice`, `variants[].price` | cenovnik danas |
 | snapshot | `Appointment.pricing` | šta se znalo U TRENUTKU rezervacije |
-| quote | `pricing.quotedBaseAmount` / `quotedTotal` | salon potvrdio cenu (npr. po fotografiji) |
+| predlog | `Appointment.priceProposal` | salon je predložio cenu; klijentkinja još nije pristala |
+| quote | `pricing.quotedBaseAmount` / `quotedTotal` | klijentkinja je prihvatila predlog ili je cena potvrđena u canonical toku |
 | naplaćeno | `pricing.chargedAmount` | stvarno naplaćeno posle tretmana |
 
-`quotedTotal` je **server-izveden** iz `quotedBaseAmount + knownAddonsTotal`.
-Browser ga ne sme poslati.
+I `priceProposal.quotedTotal` i canonical `pricing.quotedTotal` su
+**server-izvedeni** iz `quotedBaseAmount + knownAddonsTotal`. Browser ne sme da
+pošalje nijedan gotov total.
+
+### Predlog cene pre početka termina (B-PRICE-1)
+
+Za `on_request` / `from` uslugu unos cene pri admin odobravanju **nije odmah
+quote** i ne odobrava termin:
+
+```text
+salon unese osnovnu cenu
+  → server doda poznate doplate
+  → Appointment.priceProposal (status ostaje pending/rescheduled)
+  → klijentkinja: Prihvati cenu | Odbij cenu
+```
+
+- **Prihvati** atomically promoviše viđeni predlog u `Appointment.pricing`,
+  postavlja `appointment_approved` i briše `priceProposal` kroz `$unset`.
+- **Odbij** postavlja `appointment_rejected`, briše predlog, oslobađa slot i
+  rezervisanu pogodnost; klijentkinja dobija put ka novom zakazivanju.
+- Predlog se ne šalje posle početka termina. Završen/finalan termin nema odluku.
+- Promena izbora usluge, novi predlog vremena ili admin zatvaranje termina
+  brišu zastareli predlog cene.
+- Prihvatanje nosi compare-and-set nad `priceProposal.proposedAt`: nova cena
+  poslata između čitanja i klika ne može biti prepisana starim prihvatanjem.
+- Klijentski payload je uska komanda `priceProposalDecision`; datum, usluga,
+  status i pricing iz istog payload-a se ne prihvataju.
+- Predlog živi van canonical `pricing`, zato pre prihvatanja ne ulazi u prihod,
+  loyalty ni voucher obračun. In-app i push notifikacije imaju posebne tipove,
+  ne predstavljaju cenu kao pomeren ili već odobren termin.
+
+Fiksna cena i eksplicitno „Odobri bez cene" zadržavaju postojeći tok. Legacy
+termin bez `pricing` snapshot-a dobija neutralan snapshot bez quote-a; predloženi
+iznos i tada ostaje isključivo u `priceProposal` do prihvatanja.
 
 ### `chargedAmount` ≠ `finalPrice`
 
@@ -156,6 +189,17 @@ svež pregled, jer se promenila osnovica po kojoj je odluka doneta.
 Bez vaučera nepoznata cena **sme** da ostane nepoznata: termin ide u „Termini
 bez cene", ne u prihod. Nijedan iznos se ne izmišlja.
 
+### Checkout preview ne sme da unmountuje unos
+
+`agreedPrice` i `chargedAmount` ulaze u React Query key posle debounce-a. Novi
+key ranije je privremeno vraćao `preview = undefined`; pošto su inputi bili
+unutar `preview && ...`, oba su se unmountovala i gubila fokus/kursor.
+
+Canonical UI ugovor je React Query v5 `placeholderData: keepPreviousData`:
+prethodni server preview ostaje prikazan dok novi ne stigne. Server i dalje
+računa sve iznose; browser ne uvodi paralelnu aritmetiku. Loading tekst važi
+samo za prvo učitavanje (`isLoading && !preview`).
+
 ## 5. Analitika — tri accessora
 
 Potrošači nikad ne čitaju cenu direktno.
@@ -241,9 +285,10 @@ snapshot. Puna tabela write putanja je u
 
 Postoji i:
 
-- unos cene u adminu — `quotedBaseAmount` pri „Odobri"; „Došla" vodi
-  Appointment Checkout, koji uz `chargedAmount` radi i recompute pogodnosti.
-  Oba unosa su opciona; snapshot ide u isti atomic upis kao status;
+- unos cene u adminu — promenljiva cena pri „Odobri" prvo ide u
+  `priceProposal`; tek klijentsko prihvatanje upisuje `quotedBaseAmount` i
+  `quotedTotal`. „Došla" vodi Appointment Checkout, koji uz `chargedAmount`
+  radi i recompute pogodnosti. Oba unosa su opciona;
 - mejl razlikuje naplaćeno / potvrđeno / na upit / „od X" i nikad ne predstavlja
   poznate dodatke kao cenu termina;
 - statistika koristi accessore iz §5 i razdvaja potencijalni, završeni i otkazani
@@ -273,7 +318,7 @@ Cena prati **izbor**, ne sat:
 | izmena | snapshot | pogodnost |
 |---|---|---|
 | samo datum/vreme | ostaje — uključujući `quotedTotal` koji je salon potvrdio | ostaje |
-| usluga, varijanta ili dodatak | nov snapshot; stara ponuda se poništava | recompute; oslobađa se ako vaučer više ne važi za uslugu |
+| usluga, varijanta ili dodatak | nov snapshot; prihvaćen quote i pending `priceProposal` se poništavaju | recompute; oslobađa se ako vaučer više ne važi za uslugu |
 | poskupljenje u cenovniku bez promene izbora | ostaje — to nije nov izbor | ostaje |
 
 Odluku donosi `selectionSignature` iz `lib/appointments/canonicalSelection.ts`,

@@ -4,10 +4,10 @@
 > sledeće i šta je namerno odloženo. Detalji po domenu žive u canonical
 > dokumentima i ne prepisuju se ovde.
 >
-> Stanje koda provereno **2026-09-05**; Edu pilot closure redosled revidiran
+> Stanje koda provereno **2026-09-26**; Edu pilot closure redosled revidiran
 > **2026-09-04**.
 > Zdravlje tog preseka: `tsc` prolazi, lint bez novih upozorenja, build prolazi,
-> 184 test fajlova / 2148 testova prolazi (19 preskočeno). Brojevi važe za taj
+> 199 test fajlova / 2253 testa prolaze (21 preskočen). Brojevi važe za taj
 > datum i nisu obećanje.
 
 ## Redosled
@@ -15,8 +15,10 @@
 ```text
 EDUCATION    🟡  Edu pilot closure → E1 ✅ → E2 ✅ code → E3 → E4 → E5
 BEAUTY       ✅  T1-0 → T1-4 prihvaćeno
+             ✅  B-PRICE-1 checkout input + potvrda promenljive cene
              🟡  Marysoll browser acceptance čeka za T1-1 → T1-3 rezove
-NEXT         →   E3 Draft safety acceptance / hardening
+NEXT         →   Staff onboarding flow — ugovor i rez zaključati pre koda
+THEN         →   E3 Draft safety acceptance / hardening
 DEFERRED     →   T1-5 · evidencija naplate (granica zaključana) · T3 cutover ·
                  legacy HMAC/marketplace write ·
                  Consultation / Questionnaire / Care · FUTURE H1–H4/F4–F7
@@ -27,12 +29,31 @@ ostaje neophodan)
 
 ## NEXT — sledeći rez
 
+**Staff onboarding flow.** Pre nastavka Edu Centra sledeći dogovoreni pravac je
+dodavanje osoblja. Scope još nije zaključan: invitation/provisioning, uloge,
+permission granice, veza sa terminima i acceptance definišu se u sledećem
+razgovoru. Ovaj red **nije** dozvola da se unapred uvedu novi modeli ili UI.
+
+Posle staff reza vraćamo se na:
+
 **E3 — Draft safety acceptance / hardening.** E2 authoring hierarchy je u kodu i
 audit je zatvoren: jedini potvrđeni defekt (strelice u filtriranom prikazu) je
 ispravljen, a primarni video je usidren. Browser acceptance ostaje otvoren i ne
 računa se kao završen samo na osnovu testova. E3 proverava postojeći
 autosave/recovery tok u realnom browseru, bez automatskog uvlačenja T1-5,
 multi-workspace migracije, Content Coach-a ili Marketing Center-a.
+
+## B-PRICE-1 — potvrda cene + stabilan checkout unos
+
+| # | Rez | Status | Šta je zaključano | Dokument |
+|---|---|---|---|---|
+| **B-PRICE-1** | **Variable-price confirmation & checkout UI regression** | ✅ **prihvaćeno 2026-09-26** | Debounce promene iznosa više ne unmountuju checkout input. Cena promenljive usluge koju salon unese pre termina prvo je server-generisan predlog; klijentkinja je prihvata ili odbija. Prihvatanje atomically promoviše quote i odobrava termin; odbijanje zatvara zahtev i vodi na novo zakazivanje. Responsive CTA i intake zahtev su prilagođeni mobilnom prikazu. | [cene §3](PANTA-BOOKING-PRICING.md) · [Booking/CRM §3.3](PANTA-BOOKING-CRM-ARC.md) |
+
+**Acceptance.** Vlasnik proizvoda je potvrdio tok u Marysoll aplikaciji. Uz
+browser prolaz stoje `tsc`, ESLint, produkcijski build i ceo root Vitest paket:
+199 test fajlova / 2253 testa prolaze, 21 je preskočen. Implementacioni commit:
+`a89ea34` (`fix/checkout-price-confirmation`). Širi T1-1 → T1-3 browser redovi
+ispod ostaju otvoreni; ovaj acceptance ih ne zatvara.
 
 ## T1-4 — Loyalty Redemption & Appointment Checkout
 
@@ -217,7 +238,7 @@ redosled se više ne izmišlja unapred i ne pravi se novi plan dokument.
 |---|---|---|---|
 | **E1** | Public Education discovery | ✅ **kod** | Theme-9 Teme čita pravi `publishedSnapshot` kroz `education.topic-hub`; eksplicitni `isDemo` je jedini fixture seam; landing prikazuje 0 ili 4–6; `/edukacija` zadržava kartice i dobija Sve + četiri non-empty `topicKey` filtera. `topicKey`/`intentKey` su snapshot metadata, a `hero.subtitle` ostaje opis. |
 | **E2** | Authoring clarity | ✅ **kod · audit zatvoren · browser acceptance pending** | Pregled i direktni `/new` nude tri jasna ulaza: Članak / Import PDF-DOCX / Video. Novi članak i video dobijaju canonical preset bez praznog DB zapisa; import ostaje article draft. Editor prati Osnovno → Tema/cilj → dominantan sadržaj → slika → opcioni canonical `FileDownloadBlock` → pristup → Napredno. Taxonomy je radio-card prikaz E1 resolvera; incomplete blok pokazuje konkretan razlog. Strelice u filtriranom prikazu rade nad vidljivim spiskom, a primarni video (`kind === "video"`) je usidren: bez pomeranja, dupliranja, sakrivanja i brisanja. Importer i autosave nisu prepisani. |
-| **E3** | Draft safety acceptance/hardening | **NEXT** | Editor već ima lokalni durable draft, debounced revision-safe autosave, recovery i exit flush; E2 ih nije menjao. E3 proverava realni browser tok i završava potpuni online/offline/saved status, bez rewrite-a postojećeg sistema. |
+| **E3** | Draft safety acceptance/hardening | ⬜ **posle staff onboarding reza** | Editor već ima lokalni durable draft, debounced revision-safe autosave, recovery i exit flush; E2 ih nije menjao. E3 proverava realni browser tok i završava potpuni online/offline/saved status, bez rewrite-a postojećeg sistema. |
 | **E4** | Blog | ⬜ posle E3 | Poseban Blog tab: Svi tekstovi / Novi blog; manual/import first nad postojećim Content Composer-om. `NewsletterCampaign` landing persistence ostaje privremeni backend adapter; Newsletter i Blog su odvojeni u UX-u. |
 | **E5** | Pilot acceptance | ⬜ posle E4 | Marina bez procedure pravi: članak od nule, članak iz PDF/DOCX, Video i Blog. Pilot je zatvoren kada ne pita „gde ovo ide?". |
 
