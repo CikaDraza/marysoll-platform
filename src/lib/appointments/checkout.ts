@@ -42,6 +42,7 @@ import {
   emptyPricingSnapshot,
   getAppointmentPreBenefitBasis,
 } from "./pricingSnapshot";
+import { benefitCasFilter } from "./benefitCas";
 import { formatServicePrice, PRICE_ON_REQUEST_LABEL } from "@/helpers/formatPrice";
 import type { IAppointmentPricing } from "@/types";
 
@@ -165,27 +166,6 @@ function hasConfirmedPreBenefitPrice(pricing: IAppointmentPricing | null | undef
  *
  * Fiksna poznata cena ne traži potvrdu — ona JESTE dogovor.
  */
-/**
- * Uslov koji pogađa TAČNO ono stanje pogodnosti nad kojim je račun izračunat.
- *
- * Checkout čita termin, izračuna račun, pa tek onda upisuje `completed`. Između
- * ta dva koraka neko drugi (klijentkinja iz panela, salon iz liste) sme da
- * primeni ili skine pogodnost — i termin bi se zatvorio po zastarelom računu:
- * naplaćeno 4.000 na terminu koji je u međuvremenu dobio popust, ili popust
- * primenjen na vaučer koji je upravo uklonjen.
- *
- * Zato upis nosi compare-and-set na `appliedVoucherId`. Odsustvo pogodnosti se
- * mora izraziti kao „nema polja ILI je null" — `$unset` u `removeBenefit`
- * ostavlja polje nepostojeće, a nikad kreirano polje takođe.
- */
-function benefitCasFilter(
-  expectedVoucherId: Types.ObjectId | null | undefined,
-): Record<string, unknown> {
-  return expectedVoucherId
-    ? { appliedVoucherId: expectedVoucherId }
-    : { appliedVoucherId: { $in: [null, undefined] } };
-}
-
 function needsAgreedPriceForCompletion(input: {
   hasBenefit: boolean;
   pricing: IAppointmentPricing | null | undefined;
@@ -447,6 +427,16 @@ export async function completeAppointmentCheckout(input: {
     };
   }
 
+  // Prvi completion sme da nastane samo iz odobrenog termina. UI ovu akciju
+  // prikazuje samo tada, ali server invariant mora da zaustavi direktan ili
+  // zastareo zahtev koji bi preskocio potvrdu termina/cene.
+  if (appointment.status !== "appointment_approved") {
+    throw new LoyaltyRedemptionError(
+      "CONFLICT",
+      "Termin mora biti odobren pre nego sto moze da se zavrsi.",
+    );
+  }
+
   const currency = appointment.pricing?.currency ?? "RSD";
   const by = input.actor.adminTenantUserId ?? null;
 
@@ -511,9 +501,9 @@ export async function completeAppointmentCheckout(input: {
   const benefitUnset = plan.kind === "released" ? BENEFIT_CLEAR_UNSET : undefined;
 
   // 4. Atomic prelaz: uslov na status je ograda protiv dvostruke obrade.
-  const statusGuard = input.expectedFromStatus
-    ? { status: input.expectedFromStatus }
-    : { status: { $ne: "completed" } };
+  const statusGuard = {
+    status: input.expectedFromStatus ?? "appointment_approved",
+  };
 
   // Račun je izračunat nad OVOM pogodnošću; upis sme da prođe samo ako je i
   // dalje ta. Isti uslov štiti i `released` granu: plan napravljen za vaučer V1

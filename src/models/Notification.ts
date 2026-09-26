@@ -18,6 +18,8 @@ const NotificationSchema = new Schema(
         "appointment_cancelled",
         "appointment_message",
         "appointment_reminder",
+        "appointment_price_proposed",
+        "appointment_price_decision",
         "testimonial_created",
         "testimonial_replied",
         "testimonial_updated",
@@ -51,6 +53,9 @@ const NotificationSchema = new Schema(
       clientProfileId: String,
       serviceName: String,
       clientName: String,
+      quotedTotal: Number,
+      currency: String,
+      decision: { type: String, enum: ["accepted", "rejected"] },
       rating: Number,
       // ── Growth Studio (loyalty) ──
       hearts: Number,

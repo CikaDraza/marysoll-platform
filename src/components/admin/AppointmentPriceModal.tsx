@@ -3,7 +3,7 @@
  * Unos cene pri ODOBRAVANJU termina.
  *
  *   Odobri → salon je video zahtev/fotografiju i zna procenu
- *            → `quotedBaseAmount`; klijentkinja odmah dobija mejl sa cenom
+ *            → klijentkinja prihvata ili odbija predlog pre potvrde termina
  *
  * Trenutak „Došla" više ne prolazi ovuda: sa pogodnostima završetak nije jedan
  * broj nego račun (cena pre pogodnosti → popust → za naplatu → stvarno
@@ -57,7 +57,7 @@ export function AppointmentPriceModal({
       >
         <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800">
           <h2 className="font-bold text-gray-800 dark:text-white">
-            {kind === "quote" ? "Cena usluge" : "Naplaćeno ukupno"}
+            {kind === "quote" ? "Predlog cene" : "Naplaćeno ukupno"}
           </h2>
           <p className="text-xs text-gray-400 mt-0.5">
             {appointment.clientName} · {appointment.serviceName}
@@ -97,7 +97,7 @@ export function AppointmentPriceModal({
 
           <p className="mt-3 text-[11px] text-gray-400">
             {kind === "quote"
-              ? "Klijentkinja odmah dobija obaveštenje sa potvrđenom cenom. Ako sada ne znate cenu, možete je uneti kada označite dolazak."
+              ? "Klijentkinja dobija ovu cenu na potvrdu. Termin će biti odobren tek kada je prihvati; ako je odbije, zakazuje novi termin."
               : "Ovaj iznos ulazi u ostvaren prihod."}
           </p>
         </div>
@@ -126,7 +126,7 @@ export function AppointmentPriceModal({
               onClick={() => onConfirm(amount)}
               className="px-5 py-2 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-700 rounded-xl transition disabled:opacity-50"
             >
-              {isSaving ? "Čuvanje..." : "Sačuvaj cenu"}
+              {isSaving ? "Slanje..." : "Pošalji cenu na potvrdu"}
             </button>
           </div>
         </div>

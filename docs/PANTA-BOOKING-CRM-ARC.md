@@ -1,6 +1,7 @@
 # Beauty Booking / CRM — operativna arhitektura luka
 
-> Grana: `staging/production-engines` · usklađeno sa kodom **2026-09-03**.
+> Usklađeno sa kodom **2026-09-26** (`a89ea34`, `b7956a5`,
+> `fix/checkout-price-confirmation`).
 > Staging tenant za vizuelnu proveru: **theme-1 / Marysoll Makeup & Nails**.
 >
 > Ovo je operativni ugovor jednog luka: otkazivanje, cene, zahtev za uslugu,
@@ -12,8 +13,9 @@
 >
 > Redosled rada i status po rezovima drži isključivo [TODO.md](TODO.md).
 >
-> **Verifikacija je do sada isključivo mašinska** — typecheck, lint, testovi i
-> produkcijski build. Browser acceptance nad Marysoll tenantom tek predstoji.
+> Širi T1-1 → T1-3 browser acceptance nad Marysoll tenantom i dalje predstoji.
+> B-PRICE-1 cena/checkout tok je browser-prihvaćen 2026-09-26, uz typecheck,
+> lint, testove i produkcijski build.
 
 ## 1. Zašto luk postoji
 
@@ -74,6 +76,7 @@ Isti mapper projektuje persistence `service.bookingIntake.enabled` u presentatio
 | Klijent menja termin | `PUT /api/appointments/client/[id]/update` | ✅ | ✅ duration overlap | ✅ |
 | Admin menja termin | `PUT /api/appointments/update/[id]` | ✅ | 🟡 namerno samo isti `date+time` → 409 | ✅ |
 | Predlog termina | ista ruta, admin → klijent | ✅ | ✅ u trenutku **prihvatanja** | ✅ |
+| Predlog promenljive cene | ista ruta, admin → klijent | — | ne menja slot | ✅ tek posle prihvatanja |
 | **Legacy HMAC gost** | `POST /api/booking` | ❌ | ❌ samo `date+time` | ❌ |
 | **Marketplace** | `POST /api/marketplace/appointments` | ❌ | 🟡 legacy provera | ❌ |
 | Završetak termina | `POST /api/appointments/[id]/checkout` | — | — | ✅ quote + `chargedAmount` |
@@ -114,6 +117,9 @@ Finalizacija posle prelaza statusa (vaučer `reserved → redeemed`, durable
 `appointment_completed`) je idempotentna i popravljiva: `loyaltyProcessed.completed`
 se postavlja tek kada su ti preduslovi durabilno uspostavljeni, pa ponovni
 checkout nad već završenim terminom dovršava ono što je ostalo nedovršeno.
+Za prvi completion server prihvata isključivo `appointment_approved`;
+`pending` termin sa predlogom cene ne može direktnim pozivom da preskoči
+klijentkinjinu odluku.
 
 ### 3.2 Granica prema Loyalty-ju
 
@@ -131,6 +137,32 @@ u T1-4 nije pomerila:
 
 Ugovor: [PANTA-LOYALTY-ENGINE.md §14](PANTA-LOYALTY-ENGINE.md) ·
 [cene §4](PANTA-BOOKING-PRICING.md).
+
+### 3.3 Promenljiva cena traži odluku klijentkinje (B-PRICE-1)
+
+Admin unos pre početka termina više ne radi „upiši quote + odobri" u jednom
+koraku. `on_request` / `from` cena prolazi kroz zaseban lifecycle:
+
+```text
+pricing snapshot
+  → server-generated priceProposal
+  → in-app/push klijentkinji
+  → accept: canonical quote + appointment_approved
+  → reject: appointment_rejected + novo zakazivanje
+```
+
+`priceProposal` nije prihod, quote ni naplaćeni iznos. Prihvatanje/odbijanje i
+brisanje predloga su jedan atomic upis sa compare-and-set proverom zatečenog
+statusa, vremena predloga i `appliedVoucherId`. Promena bilo kog od ta tri
+oslonca vraća `409`, pa aritmetika vaučera V1 ne može biti upisana preko V2.
+Odbijanje oslobađa rezervisani vaučer kroz postojeći loyalty status hook.
+Browser ne može da konstruiše predlog niti da uz odluku menja druga polja
+termina. Detaljan brojčani ugovor: [cene §3](PANTA-BOOKING-PRICING.md).
+
+Isti rez zatvara checkout UI regresiju: promena debounce-ovanog iznosa menja
+React Query key, ali `keepPreviousData` čuva prethodni server preview dok novi
+ne stigne. Input se zato ne unmountuje i ne gubi fokus; business aritmetika
+ostaje isključivo na serveru.
 
 ## 4. Invarianti sa regresionim pokrićem
 
@@ -158,6 +190,15 @@ Ovo nisu istorijske anegdote nego pravila koja su nas već koštala i danas ih
   sopstvenog termina. Odbijen predlog nije otkazan termin.
 - **`{ proposedDate: undefined }` ne briše polje.** Mongoose izbacuje `undefined`
   iz update-a, pa je predlog preživljavao odluku zauvek.
+- **Predlog cene nije quote.** `Appointment.priceProposal` ostaje van
+  `Appointment.pricing` dok ga klijentkinja ne prihvati; tek tada utiče na
+  voucher, potencijalnu vrednost i status termina.
+- **Odluka o ceni je vezana za isti termin koji je klijentkinja videla.**
+  Finalni write CAS-uje `status + proposedAt + appliedVoucherId`; stale
+  proposal, status race i V1→V2 voucher race su `409`. Komanda je uska:
+  klijent ne može uz `priceProposalDecision` da promeni druga polja.
+- **`pending` nije completion source.** Prvi `completed` sme samo iz
+  `appointment_approved`; `completed` je zasebna idempotentna repair putanja.
 - **Potvrda ne sme da visi na `onClose`.** `AlertModal` je imao
   `onClose={onConfirm}`, pa su Escape i klik na pozadinu **otkazivali termin**.
 
@@ -231,6 +272,9 @@ je. Bez registrovanog widgeta CTA ostaje običan link na `/termini`.
 - **Vaučer na `on_request` terminu ostaje rezervisan** i čeka quote.
 - **Admin predlog termina ima eksplicitno Prihvati / Odbij**, sa proverom
   dostupnosti u trenutku prihvatanja.
+- **Promenljiva cena pre termina ima eksplicitno Prihvati cenu / Odbij cenu.**
+  Odbijanje zatvara zahtev; nije isto što i odbijen predlog novog vremena, gde
+  termin ostaje na starom vremenu.
 - **Blog ostaje u navigaciji** — salon bez sadržaja dobija empty state; sama
   navigaciona stavka nije problem.
 - **AI generisanje slika se ne nudi javno.** Endpoint je admin + plan gated;

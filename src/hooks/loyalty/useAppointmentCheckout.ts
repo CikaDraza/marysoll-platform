@@ -7,7 +7,12 @@
  * računa popust ni poene sam, pa prikazani iznos ne može da se razmimoiđe sa
  * proknjiženim.
  */
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
 export interface CheckoutPreview {
@@ -66,6 +71,10 @@ export function useAppointmentCheckoutPreview(
     enabled: Boolean(appointmentId) && (opts?.enabled ?? true),
     staleTime: 0,
     retry: false,
+    // Promena debounce-ovanog iznosa menja queryKey. Bez prethodnih podataka
+    // `preview` nakratko postaje undefined, pa modal unmountuje input i gubi
+    // fokus/kursor dok novi server preview ne stigne.
+    placeholderData: keepPreviousData,
   });
 }
 

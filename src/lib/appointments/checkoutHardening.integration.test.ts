@@ -218,6 +218,31 @@ function mutateBetweenPreCheckAndTransaction(mutate: () => Promise<unknown>) {
 // ─── 1. AGREED PRICE JE SERVER INVARIANT ──────────────────────────────────────
 
 describe("1. završetak traži potvrđenu pre-benefit cenu", () => {
+  it("pending termin sa predlogom cene ne moze direktno da se zavrsi", async () => {
+    const appt = await seedAppointment({
+      status: "pending",
+      priceProposal: {
+        quotedBaseAmount: 4000,
+        quotedTotal: 4000,
+        currency: "RSD",
+        proposedAt: new Date(),
+        proposedBy: String(ADMIN),
+      },
+    });
+
+    await expect(
+      completeAppointmentCheckout({
+        appointmentId: String(appt._id),
+        actor: adminCheckout,
+        amounts: { chargedAmount: 4000 },
+      }),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+
+    const saved = await readAppointment(appt._id);
+    expect(saved?.status).toBe("pending");
+    expect(await LoyaltyEvent.countDocuments({})).toBe(0);
+  });
+
   it("`on_request` + vaučer bez dogovorene cene → INVALID, ništa se ne menja", async () => {
     const appt = await seedAppointment({
       pricing: pricing({ mode: "on_request", baseAmount: null, minimumTotal: null }),

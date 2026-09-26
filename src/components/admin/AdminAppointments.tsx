@@ -174,59 +174,64 @@ function AppointmentListItem({
               <p className="text-xs/5 text-gray-500">Offline</p>
             </div>
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-2">
             <p className="text-sm/6 font-semibold text-gray-900 dark:text-gray-300">
               {currentAppointment.clientName}
             </p>
-            <span
-              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                currentAppointment.status,
-              )}`}
-            >
-              {currentAppointment.status === "pending" && "Na čekanju"}
-              {currentAppointment.status === "appointment_approved" &&
-                "Odobreno"}
-              {currentAppointment.status === "appointment_rejected" &&
-                "Odbijeno"}
-              {currentAppointment.status === "appointment_rescheduled" &&
-                "Pomerano"}
-              {currentAppointment.status === "appointment_cancelled" &&
-                "Otkazano"}
-              {currentAppointment.status === "completed" && "Završeno"}
-              {currentAppointment.status === "no_show" &&
-                noShowStatusLabel(currentAppointment.noShowReason, clientGender)}
-            </span>
-            {hasRequest(currentAppointment) &&
-              (currentAppointment.status === "pending" ? (
-                // Dok čeka odobrenje, zahtev je informacija za PROCENU termina,
-                // pa mora da se vidi pre nego što ga salon potvrdi.
-                <button
-                  type="button"
-                  onClick={() => setManualRequestOpen(true)}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 hover:bg-amber-200 transition"
-                >
-                  {hasRequestImage(currentAppointment)
-                    ? "📷 Zahtev sa fotografijom"
-                    : "📝 Detalji zahteva"}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setManualRequestOpen(true)}
-                  aria-label="Zahtev klijentkinje"
-                  title="Zahtev klijentkinje"
-                  className="text-base leading-none hover:opacity-70 transition"
-                >
-                  {hasRequestImage(currentAppointment) ? "🖼️" : "📝"}
-                </button>
-              ))}
-            {unreadAdmin !== 0 && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-(--secondary-color) text-white animate-pulse">
-                {unreadAdmin === 1
-                  ? "Nova poruka"
-                  : `${appointment?.unreadCount?.admin} novih poruka`}
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                  currentAppointment.status,
+                )}`}
+              >
+                {currentAppointment.status === "pending" && "Na čekanju"}
+                {currentAppointment.status === "appointment_approved" &&
+                  "Odobreno"}
+                {currentAppointment.status === "appointment_rejected" &&
+                  "Odbijeno"}
+                {currentAppointment.status === "appointment_rescheduled" &&
+                  "Pomerano"}
+                {currentAppointment.status === "appointment_cancelled" &&
+                  "Otkazano"}
+                {currentAppointment.status === "completed" && "Završeno"}
+                {currentAppointment.status === "no_show" &&
+                  noShowStatusLabel(
+                    currentAppointment.noShowReason,
+                    clientGender,
+                  )}
               </span>
-            )}
+              {hasRequest(currentAppointment) &&
+                (currentAppointment.status === "pending" ? (
+                  // Dok čeka odobrenje, zahtev je informacija za PROCENU termina,
+                  // pa mora da se vidi pre nego što ga salon potvrdi.
+                  <button
+                    type="button"
+                    onClick={() => setManualRequestOpen(true)}
+                    className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 hover:bg-amber-200 transition sm:px-2 sm:py-1 sm:rounded-full sm:text-xs"
+                  >
+                    {hasRequestImage(currentAppointment)
+                      ? "📷 Zahtev sa fotografijom"
+                      : "📝 Detalji zahteva"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setManualRequestOpen(true)}
+                    aria-label="Zahtev klijentkinje"
+                    title="Zahtev klijentkinje"
+                    className="text-base leading-none hover:opacity-70 transition"
+                  >
+                    {hasRequestImage(currentAppointment) ? "🖼️" : "📝"}
+                  </button>
+                ))}
+              {unreadAdmin !== 0 && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-(--secondary-color) text-white animate-pulse">
+                  {unreadAdmin === 1
+                    ? "Nova poruka"
+                    : `${appointment?.unreadCount?.admin} novih poruka`}
+                </span>
+              )}
+            </div>
           </div>
           <p className="mt-1 text-xs/5 text-gray-500 dark:text-gray-300">
             {displayClientContact({
@@ -252,10 +257,19 @@ function AppointmentListItem({
                 )}
               </p>
             )}
+          {currentAppointment.priceProposal && (
+            <p className="mt-1 text-xs font-medium text-amber-600 dark:text-amber-300">
+              Čeka potvrdu cene:{" "}
+              {currentAppointment.priceProposal.quotedTotal.toLocaleString(
+                "sr-RS",
+              )}{" "}
+              {currentAppointment.priceProposal.currency}
+            </p>
+          )}
         </div>
       </div>
 
-      <div className="flex flex-col items-end gap-2">
+      <div className="mt-8 flex flex-col items-end gap-2 lg:mt-0">
         <p className="text-sm/6 font-semibold text-gray-900 dark:text-gray-300">
           {currentAppointment.serviceName.toUpperCase()}
         </p>
@@ -277,7 +291,7 @@ function AppointmentListItem({
         </div>
 
         {/* Akcije */}
-        <div className="flex gap-2 mt-2">
+        <div className="flex flex-wrap justify-end gap-2 mt-2">
           {/* Odobri/Otkaži i kad klijent POMERI termin (rescheduled) — ne samo
               za prvo zakazivanje (pending). */}
           {(currentAppointment.status === "pending" ||
@@ -286,14 +300,20 @@ function AppointmentListItem({
               <button
                 onClick={askPrice}
                 disabled={actionPending}
-                className="cursor-pointer px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors disabled:cursor-wait disabled:opacity-60"
+                className="cursor-pointer px-3.5 py-2.5 bg-green-600 text-white text-sm rounded-xl hover:bg-green-700 transition-colors disabled:cursor-wait disabled:opacity-60"
               >
-                {actionPending ? <LoaderButton /> : "Odobri"}
+                {actionPending ? (
+                  <LoaderButton />
+                ) : currentAppointment.priceProposal ? (
+                  "Promeni cenu"
+                ) : (
+                  "Odobri"
+                )}
               </button>
               <button
                 onClick={() => handleStatusUpdate("appointment_rejected")}
                 disabled={actionPending}
-                className="cursor-pointer px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors disabled:cursor-wait disabled:opacity-60"
+                className="cursor-pointer px-3.5 py-2.5 bg-red-600 text-white text-sm rounded-xl hover:bg-red-700 transition-colors disabled:cursor-wait disabled:opacity-60"
               >
                 {actionPending ? <LoaderButton /> : "Otkaži"}
               </button>
@@ -305,21 +325,21 @@ function AppointmentListItem({
                 <button
                   onClick={() => setBenefitOpen(true)}
                   disabled={actionPending}
-                  className="cursor-pointer px-3 py-1 bg-violet-600 text-white text-xs rounded hover:bg-violet-700 transition-colors disabled:cursor-wait disabled:opacity-60"
+                  className="cursor-pointer px-3.5 py-2.5 bg-violet-600 text-white text-sm rounded-xl hover:bg-violet-700 transition-colors disabled:cursor-wait disabled:opacity-60"
                 >
                   Pogodnost
                 </button>
                 <button
                   onClick={() => setCheckoutOpen(true)}
                   disabled={actionPending}
-                  className="cursor-pointer px-3 py-1 bg-teal-600 text-white text-xs rounded hover:bg-teal-700 transition-colors disabled:cursor-wait disabled:opacity-60"
+                  className="cursor-pointer px-3.5 py-2.5 bg-teal-600 text-white text-sm rounded-xl hover:bg-teal-700 transition-colors disabled:cursor-wait disabled:opacity-60"
                 >
                   {actionPending ? <LoaderButton /> : arrivedLabel(clientGender)}
                 </button>
                 <button
                   onClick={() => handleStatusUpdate("no_show")}
                   disabled={actionPending}
-                  className="cursor-pointer px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors disabled:cursor-wait disabled:opacity-60"
+                  className="cursor-pointer px-3.5 py-2.5 bg-purple-600 text-white text-sm rounded-xl hover:bg-purple-700 transition-colors disabled:cursor-wait disabled:opacity-60"
                 >
                   {actionPending ? <LoaderButton /> : noShowLabel(clientGender)}
                 </button>
@@ -327,7 +347,7 @@ function AppointmentListItem({
             )}
           <button
             onClick={() => onOpenChat(currentAppointment)}
-            className="relative px-3 py-1 bg-(--primary-color)/80 text-white text-xs rounded hover:bg-(--primary-color) transition-colors"
+            className="relative px-3.5 py-2.5 bg-(--primary-color)/80 text-white text-sm rounded-xl hover:bg-(--primary-color) transition-colors"
           >
             Chat ({currentAppointment.messages.length})
             {appointment.unreadCount?.admin ? (

@@ -121,7 +121,9 @@ export function AppointmentCheckoutModal({
         </div>
 
         <div className="max-h-[65vh] space-y-4 overflow-y-auto p-6">
-          {isLoading && <p className="text-sm text-gray-500">Učitavanje računa…</p>}
+          {isLoading && !preview && (
+            <p className="text-sm text-gray-500">Učitavanje računa…</p>
+          )}
 
           {preview && (
             <>

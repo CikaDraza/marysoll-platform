@@ -68,11 +68,34 @@ describe("odluka o predlogu", () => {
   });
 });
 
+describe("predlog cene", () => {
+  it("browser ne može direktno da upiše priceProposal", () => {
+    expect(source).toMatch(/delete raw\.priceProposal/);
+  });
+
+  it("promenljiva cena ostaje predlog dok je klijentkinja ne prihvati", () => {
+    expect(source).toMatch(/createPriceProposal\(/);
+    expect(source).toMatch(/delete updatedData\.status/);
+    expect(source).toMatch(/evaluatePriceProposalDecision\(/);
+  });
+
+  it("predlog se briše eksplicitnim `$unset`-om posle odluke", () => {
+    expect(source).toMatch(/\$unset:[\s\S]{0,300}CLEAR_PRICE_PROPOSAL_UNSET/);
+  });
+
+  it("odluka je uska komanda i atomic je vezana za viđeni predlog", () => {
+    expect(source).toMatch(/key !== "lastUpdatedBy"/);
+    expect(source).toMatch(/"priceProposal\.proposedAt"/);
+    expect(source).toMatch(/benefitCasFilter\(appointment\.appliedVoucherId\)/);
+    expect(source).toMatch(/status: appointment\.status/);
+    expect(source).toMatch(/predlog cene ili pogodnost/);
+  });
+});
+
 describe("klijent ne menja status mimo predloga", () => {
   it("REGRESIJA: samo-odobravanje termina se odbija", () => {
-    expect(source).toMatch(
-      /!isAdmin && updatedData\.status && !decidesProposal/,
-    );
+    expect(source).toMatch(/!isAdmin[\s\S]{0,100}!decidesProposal/);
+    expect(source).toMatch(/!decidesPriceProposal/);
     expect(source).toMatch(/Status termina menja salon/);
   });
 

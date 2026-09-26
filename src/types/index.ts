@@ -296,6 +296,19 @@ export interface IAppointmentService {
   duration: number;
 }
 
+/**
+ * Cena koju je salon predložio, ali klijentkinja još nije prihvatila.
+ * Odvojena je od canonical `pricing`: predlog nije ni potvrđena ni naplaćena
+ * cena i ne sme prerano da uđe u prihod, loyalty ili statistiku.
+ */
+export interface IAppointmentPriceProposal {
+  quotedBaseAmount: number;
+  quotedTotal: number;
+  currency: string;
+  proposedAt: string | Date;
+  proposedBy?: string | null;
+}
+
 export interface IMessage {
   _id: string;
   sender: "client" | "admin";
@@ -321,6 +334,8 @@ export interface IAppointment {
   request?: IAppointmentRequest;
   /** Canonical cena — server-generated. Stari termini je nemaju. */
   pricing?: IAppointmentPricing;
+  /** Predlog cene koji čeka eksplicitnu odluku klijentkinje. */
+  priceProposal?: IAppointmentPriceProposal;
   duration: number;
   date: string;
   time: string;
@@ -707,6 +722,8 @@ export interface INotification {
     | "appointment_cancelled"
     | "appointment_message"
     | "appointment_reminder"
+    | "appointment_price_proposed"
+    | "appointment_price_decision"
     | "testimonial_created"
     | "testimonial_replied"
     | "testimonial_updated"
