@@ -1,5 +1,7 @@
 // components/ClientAppointments.tsx
 import { formatISODate } from "@/helpers/formatISODate";
+import { formatPriceToString } from "@/helpers/formatPrice";
+import Link from "next/link";
 import { statusMeta } from "@/lib/appointmentColors";
 import { displayClientContact } from "@/lib/contactRules";
 import Loader from "../elements/Loader";
@@ -40,6 +42,11 @@ interface ClientAppointmentListItemProps {
     decision: "accept" | "decline",
   ) => void;
   proposalPending: boolean;
+  onRespondToPriceProposal: (
+    appointment: IAppointment,
+    decision: "accept" | "reject",
+  ) => void;
+  priceProposalPending: boolean;
 }
 
 function ClientAppointmentListItem({
@@ -49,6 +56,8 @@ function ClientAppointmentListItem({
   onCancel,
   onRespondToProposal,
   proposalPending,
+  onRespondToPriceProposal,
+  priceProposalPending,
 }: ClientAppointmentListItemProps) {
   const { isOnline } = useUsers().data?.find(
     (u: IUser) => u._id === appointment.clientProfileId,
@@ -78,6 +87,12 @@ function ClientAppointmentListItem({
     currentAppointment.proposedDate &&
       currentAppointment.proposedTime &&
       isClientActionableStatus(currentAppointment.status),
+  );
+  const hasPriceProposal = Boolean(
+    currentAppointment.priceProposal &&
+      (currentAppointment.status === "pending" ||
+        currentAppointment.status === "appointment_rescheduled") &&
+      phase !== "started",
   );
 
   const getStatusColor = (status: string) => statusMeta(status).chip;
@@ -154,10 +169,25 @@ function ClientAppointmentListItem({
               )}
             </p>
           )}
+          {hasPriceProposal && currentAppointment.priceProposal && (
+            <div className="mt-3 p-3 text-xs text-amber-900 dark:text-amber-100">
+              <p className="font-semibold">Salon predlaže cenu</p>
+              <p className="mt-1 text-base font-bold">
+                {formatPriceToString(
+                  currentAppointment.priceProposal.quotedTotal,
+                )}{" "}
+                {currentAppointment.priceProposal.currency}
+              </p>
+              <p className="mt-1 text-[11px] opacity-80">
+                Prihvatite da potvrdite termin. Ako odbijete, ovaj zahtev se
+                zatvara i možete zakazati novi termin.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="flex flex-col items-end gap-2">
+      <div className="mt-8 flex flex-col items-end gap-2 lg:mt-0">
         <p className="text-sm/6 font-semibold text-gray-900 dark:text-gray-100">
           {currentAppointment.serviceName.toUpperCase()}
         </p>
@@ -180,43 +210,73 @@ function ClientAppointmentListItem({
 
         {/* Akcije */}
         <div className="flex flex-wrap justify-end gap-2 mt-2">
+          {currentAppointment.status === "appointment_rejected" && (
+            <Link
+              href="?tab=Zakazivanja"
+              className="px-3.5 py-2.5 bg-emerald-600 text-white text-sm rounded-xl hover:bg-emerald-700 transition-colors"
+            >
+              Zakaži novi termin
+            </Link>
+          )}
+          {hasPriceProposal && (
+            <>
+              <button
+                onClick={() =>
+                  onRespondToPriceProposal(currentAppointment, "accept")
+                }
+                disabled={priceProposalPending}
+                className="px-3.5 py-2.5 bg-emerald-600 text-white text-sm rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+              >
+                Prihvati cenu
+              </button>
+              <button
+                onClick={() =>
+                  onRespondToPriceProposal(currentAppointment, "reject")
+                }
+                disabled={priceProposalPending}
+                className="px-3.5 py-2.5 bg-red-100 text-red-700 text-sm rounded-xl hover:bg-red-200 disabled:opacity-50 transition-colors"
+              >
+                Odbij cenu
+              </button>
+            </>
+          )}
           {hasProposal && (
             <>
               <button
                 onClick={() => onRespondToProposal(currentAppointment, "accept")}
                 disabled={proposalPending}
-                className="px-3 py-1 bg-emerald-600 text-white text-xs rounded hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                className="px-3.5 py-2.5 bg-emerald-600 text-white text-sm rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors"
               >
                 Prihvati novi termin
               </button>
               <button
                 onClick={() => onRespondToProposal(currentAppointment, "decline")}
                 disabled={proposalPending}
-                className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
+                className="px-3.5 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
               >
                 Odbij
               </button>
             </>
           )}
-          {canEdit && (
+          {canEdit && !hasPriceProposal && (
             <button
               onClick={() => onEdit(currentAppointment)}
-              className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="px-3.5 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
               Promeni
             </button>
           )}
-          {canCancel && (
+          {canCancel && !hasPriceProposal && (
             <button
               onClick={() => onCancel(currentAppointment)}
-              className="px-3 py-1 bg-red-100 text-red-600 text-xs rounded hover:bg-red-600 hover:text-white transition-colors"
+              className="px-3.5 py-2.5 bg-red-100 text-red-600 text-sm rounded-xl hover:bg-red-600 hover:text-white transition-colors"
             >
               Otkaži
             </button>
           )}
           <button
             onClick={() => onOpenChat(currentAppointment)}
-            className="px-3 py-1 relative bg-(--primary-color)/80 text-white text-xs rounded hover:bg-(--primary-color) transition-colors"
+            className="relative px-3.5 py-2.5 bg-(--primary-color)/80 text-white text-sm rounded-xl hover:bg-(--primary-color) transition-colors"
           >
             Chat ({currentAppointment.messages.length})
             {appointment.unreadCount?.client ? (
@@ -514,7 +574,8 @@ export default function ClientAppointments() {
   const { requestCancel, dialog: cancelDialog } = useCancelAppointment({
     token: user?.token,
   });
-  const { respondToProposal } = useAppointmentMutations(user?.token);
+  const { respondToProposal, respondToPriceProposal } =
+    useAppointmentMutations(user?.token);
 
   const handleProposalResponse = (
     appointment: IAppointment,
@@ -522,6 +583,14 @@ export default function ClientAppointments() {
   ) => {
     if (!appointment._id) return;
     respondToProposal.mutate({ id: appointment._id, decision });
+  };
+
+  const handlePriceProposalResponse = (
+    appointment: IAppointment,
+    decision: "accept" | "reject",
+  ) => {
+    if (!appointment._id) return;
+    respondToPriceProposal.mutate({ id: appointment._id, decision });
   };
 
   const {
@@ -683,6 +752,8 @@ export default function ClientAppointments() {
                 onCancel={requestCancel}
                 onRespondToProposal={handleProposalResponse}
                 proposalPending={respondToProposal.isPending}
+                onRespondToPriceProposal={handlePriceProposalResponse}
+                priceProposalPending={respondToPriceProposal.isPending}
               />
             ))}
           </ul>

@@ -109,6 +109,42 @@ export function useAppointmentMutations(token?: string) {
     },
   });
 
+  /** Odgovor na cenu je poseban ugovor: odbijanje zatvara ovaj zahtev. */
+  const respondToPriceProposal = useMutation({
+    mutationFn: async ({
+      id,
+      decision,
+    }: {
+      id: string;
+      decision: "accept" | "reject";
+    }) => {
+      const res = await fetch(`/api/appointments/update/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token ?? localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ priceProposalDecision: decision }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || "Greška pri odgovoru na predlog cene.");
+      }
+      return { ...json, decision };
+    },
+    onSuccess: (data: { decision: "accept" | "reject" }) => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      toast.success(
+        data.decision === "accept"
+          ? "Cena je prihvaćena i termin je potvrđen."
+          : "Cena je odbijena. Možete zakazati novi termin.",
+      );
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
   const updateClientAppointment = useMutation({
     mutationFn: async ({
       id,
@@ -198,12 +234,19 @@ export function useAppointmentMutations(token?: string) {
         body: JSON.stringify(updateData),
       });
 
-      if (!res.ok) throw new Error("Greška pri ažuriranju statusa termina");
-      return res.json();
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || "Greška pri ažuriranju statusa termina");
+      }
+      return json;
     },
-    onSuccess: () => {
+    onSuccess: (data: IAppointment) => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
-      toast.success("Status termina ažuriran.");
+      toast.success(
+        data.priceProposal
+          ? "Cena je poslata klijentkinji na potvrdu."
+          : "Status termina ažuriran.",
+      );
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -256,6 +299,7 @@ export function useAppointmentMutations(token?: string) {
     createAppointment,
     updateAppointment,
     respondToProposal,
+    respondToPriceProposal,
     updateClientAppointment,
     cancelClientAppointment,
     deleteAppointment,

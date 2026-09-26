@@ -99,6 +99,18 @@ const appointmentSchema = new Schema(
       },
       default: undefined,
     },
+    // Predlog cene je namerno van canonical `pricing`: tek prihvatanjem
+    // klijentkinje quote postaje poslovna činjenica.
+    priceProposal: {
+      type: {
+        quotedBaseAmount: { type: Number, required: true, min: 0 },
+        quotedTotal: { type: Number, required: true, min: 0 },
+        currency: { type: String, default: "RSD" },
+        proposedAt: { type: Date, required: true },
+        proposedBy: { type: String, default: null },
+      },
+      default: undefined,
+    },
     // Zahtev klijentkinje uz termin ("intake"): opis, referentni link i prilozi.
     // Namerno generično (`request`/`attachments`), ne `nailImage` — sutra je
     // ovo referenca za frizuru, šminku ili tetovažu.

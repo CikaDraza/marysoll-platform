@@ -81,6 +81,8 @@ export async function createNotification(params: CreateNotificationParams) {
     "appointment_cancelled",
     "appointment_message",
     "appointment_reminder",
+    "appointment_price_proposed",
+    "appointment_price_decision",
     "testimonial_created",
     "testimonial_replied",
     "testimonial_updated",
@@ -132,6 +134,102 @@ export async function createNotification(params: CreateNotificationParams) {
     console.error("Error creating notification:", error);
     throw error;
   }
+}
+
+interface PriceProposalNotificationAppointment {
+  _id: string;
+  tenantId: Types.ObjectId | string;
+  clientProfileId: string;
+  clientName: string;
+  serviceName: string;
+}
+
+/**
+ * Zvonce + push za poseban lifecycle cene. Namerno ne koristi status
+ * `rescheduled`: predlog cene ne sme da izgleda kao pomeren termin niti kao
+ * već odobren termin.
+ */
+export async function createPriceProposalNotification(
+  appointment: PriceProposalNotificationAppointment,
+  event:
+    | { kind: "proposed"; amount: number; currency: string }
+    | {
+        kind: "decision";
+        decision: "accepted" | "rejected";
+        amount: number;
+        currency: string;
+      },
+) {
+  const { icon, name: salonName, clientGender } = await getSalonBranding(
+    appointment.tenantId,
+  );
+  const formatted = new Intl.NumberFormat("sr-RS").format(event.amount);
+
+  if (event.kind === "proposed") {
+    const message = `Salon predlaže cenu ${formatted} ${event.currency} za ${appointment.serviceName}. Potvrdite da li se slažete.`;
+    const notification = await createNotification({
+      recipientProfileId: appointment.clientProfileId,
+      tenantId: appointment.tenantId,
+      type: "appointment_price_proposed",
+      title: "Potvrdite cenu termina",
+      message,
+      appointmentId: appointment._id,
+      metadata: {
+        serviceName: appointment.serviceName,
+        quotedTotal: event.amount,
+        currency: event.currency,
+        sender: "admin",
+      },
+    });
+    const panelUrl = await clientPanelPath(
+      appointment.tenantId,
+      "?tab=Moji%20Termini",
+    );
+    await sendWebPushToUser(appointment.clientProfileId, {
+      title: salonName,
+      body: `💰 Potvrdite cenu ${formatted} ${event.currency} za ${appointment.serviceName}`,
+      icon,
+      tag: `appt-price-proposed-${appointment._id}`,
+      url: panelUrl,
+    });
+    return notification;
+  }
+
+  const accepted = event.decision === "accepted";
+  const message = `${clientNounCap(clientGender)} ${appointment.clientName} je ${
+    accepted
+      ? genderPast(clientGender, "prihvatila", "prihvatio")
+      : genderPast(clientGender, "odbila", "odbio")
+  } cenu ${formatted} ${event.currency} za ${appointment.serviceName}.`;
+  const adminIds = await getAllAdminTenantUserIds(appointment.tenantId);
+  const notifications = await Promise.all(
+    adminIds.map((adminId) =>
+      createNotification({
+        recipientProfileId: adminId,
+        tenantId: appointment.tenantId,
+        type: "appointment_price_decision",
+        title: accepted ? "Cena prihvaćena" : "Cena odbijena",
+        message,
+        appointmentId: appointment._id,
+        metadata: {
+          clientName: appointment.clientName,
+          serviceName: appointment.serviceName,
+          quotedTotal: event.amount,
+          currency: event.currency,
+          decision: event.decision,
+          sender: "client",
+        },
+      }),
+    ),
+  );
+  await sendWebPushToMany(adminIds, {
+    title: salonName,
+    body: `${accepted ? "✅" : "❌"} ${message}`,
+    icon,
+    tag: `appt-price-decision-${appointment._id}`,
+    url: ADMIN_APPOINTMENTS_PATH,
+  });
+  return notifications;
 }
 
 // Fetch all OWNER/ADMIN TenantUser IDs for a specific tenant

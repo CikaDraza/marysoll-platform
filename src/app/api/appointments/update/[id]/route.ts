@@ -1,12 +1,15 @@
 // src/app/api/appointments/update/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import type { IAppointmentPricing } from "@/types";
+import type { IAppointmentPriceProposal, IAppointmentPricing } from "@/types";
 import { applyQuote, emptyPricingSnapshot } from "@/lib/appointments/pricingSnapshot";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Appointment } from "@/models/Appointment";
 import { resolveTenant, verifyToken } from "@/lib/auth/auth-server";
 import { actorScopeFrom, logSuperAdminAccess } from "@/lib/auth/tenantScope";
-import { createAppointmentNotification } from "@/lib/notificationService";
+import {
+  createAppointmentNotification,
+  createPriceProposalNotification,
+} from "@/lib/notificationService";
 import { loyaltyOnAppointmentStatusChange } from "@/lib/loyalty/hooks";
 import {
   BENEFIT_CLEAR_UNSET,
@@ -29,6 +32,13 @@ import {
   CLEAR_PROPOSAL_UNSET,
   evaluateProposalDecision,
 } from "@/lib/appointments/proposal";
+import {
+  CLEAR_PRICE_PROPOSAL_UNSET,
+  createPriceProposal,
+  evaluatePriceProposalDecision,
+  type PriceProposalDecision,
+} from "@/lib/appointments/priceProposal";
+import { hasAppointmentStarted } from "@/lib/appointments/cancellation";
 
 interface UpdateAppointmentData {
   status?:
@@ -47,6 +57,8 @@ interface UpdateAppointmentData {
   lastUpdatedBy?: "client" | "admin";
   /** Canonical snapshot cene — SERVER ga postavlja, browser nikad. */
   pricing?: IAppointmentPricing;
+  /** Server-generated predlog koji još nije canonical cena. */
+  priceProposal?: IAppointmentPriceProposal;
   cancelledAt?: Date;
   cancelledBy?: "client" | "admin";
   cancellationType?: "legitimate" | "late";
@@ -121,6 +133,8 @@ export async function PUT(
     // Growth Studio polja se menjaju isključivo kroz loyalty servis —
     // nikad direktno kroz ovaj update (payload ide u findByIdAndUpdate).
     const raw = updatedData as Record<string, unknown>;
+    const priceProposalDecision = raw.priceProposalDecision;
+    delete raw.priceProposalDecision;
     delete raw.appliedVoucherId;
     delete raw.appliedPromotionId;
     delete raw.originalPrice;
@@ -134,6 +148,19 @@ export async function PUT(
     // iz browsera se nikad ne upisuje, inače bi klijent mogao da podmetne
     // ceo snapshot (uključujući `chargedAmount`).
     delete raw.pricing;
+    // Browser ne sme da konstruiše predlog (npr. drugi total od prikazanog).
+    delete raw.priceProposal;
+
+    if (
+      priceProposalDecision != null &&
+      priceProposalDecision !== "accept" &&
+      priceProposalDecision !== "reject"
+    ) {
+      return NextResponse.json(
+        { error: "Odluka o ceni nije validna." },
+        { status: 400 },
+      );
+    }
 
     const appointment = await Appointment.findOne({ _id: id, ...scope.filter });
 
@@ -162,6 +189,13 @@ export async function PUT(
 
     // Postavi ko je poslednji ažurirao
     updatedData.lastUpdatedBy = isAdmin ? "admin" : "client";
+    if (priceProposalDecision != null && !isAdmin) {
+      // Odluka o ceni je uska komanda, ne dozvola za opšti update. Klijent ne
+      // sme uz `accept` da podmetne datum, uslugu, status ili canonical cenu.
+      for (const key of Object.keys(updatedData)) {
+        if (key !== "lastUpdatedBy") delete raw[key];
+      }
+    }
     if (isAdmin && updatedData.status === "appointment_cancelled") {
       updatedData.cancelledAt = new Date();
       updatedData.cancelledBy = "admin";
@@ -174,6 +208,10 @@ export async function PUT(
     const pricingAmount = (updatedData as { pricingAmount?: unknown })
       .pricingAmount;
     delete (updatedData as { pricingAmount?: unknown }).pricingAmount;
+
+    let createsPriceProposal = false;
+    let clearPriceProposal = false;
+    let decidesPriceProposal = false;
 
     if (isAdmin && pricingAmount != null) {
       const amount = Number(pricingAmount);
@@ -192,7 +230,45 @@ export async function PUT(
       // Snapshot ide u `updatedData`, dakle u ISTI atomic upis kao status.
       // Ranije se menjao samo učitani dokument bez `save()`, pa je cena
       // stizala u mejl a nikad u bazu.
-      updatedData.pricing = applyQuote(base, amount, decoded.tenantUserId ?? null);
+      const proposesPrice =
+        updatedData.status === "appointment_approved" && base.mode !== "fixed";
+
+      if (proposesPrice) {
+        if (appointment.proposedDate && appointment.proposedTime) {
+          return NextResponse.json(
+            {
+              error:
+                "Klijentkinja prvo treba da odgovori na predlog novog termina.",
+            },
+            { status: 409 },
+          );
+        }
+        if (hasAppointmentStarted(appointment)) {
+          return NextResponse.json(
+            { error: "Predlog cene se šalje pre početka termina." },
+            { status: 409 },
+          );
+        }
+
+        updatedData.priceProposal = createPriceProposal(
+          base,
+          amount,
+          decoded.tenantUserId ?? null,
+        );
+        // Legacy termini mogu biti bez pricing snapshot-a. Čuvamo samo
+        // neutralni snapshot (bez quote-a), da prihvatanje kasnije ima
+        // canonical osnovu; predloženi iznos i dalje živi isključivo odvojeno.
+        if (!appointment.pricing) updatedData.pricing = base;
+        // Termin ostaje u svom aktivnom statusu dok klijentkinja ne odluči.
+        delete updatedData.status;
+        createsPriceProposal = true;
+      } else {
+        updatedData.pricing = applyQuote(
+          base,
+          amount,
+          decoded.tenantUserId ?? null,
+        );
+      }
     }
 
     // ── Završetak ide kroz JEDAN canonical checkout seam ─────────────────
@@ -277,6 +353,11 @@ export async function PUT(
       ) {
         updatedData.pricing = canonical.pricing;
       }
+      // Predlog je vezan za tačan sastav usluge. Izmena izbora ga poništava;
+      // klijentkinja ne sme da prihvati cenu za prethodnu varijantu/dodatke.
+      if (selectionChanged && appointment.priceProposal && !createsPriceProposal) {
+        clearPriceProposal = true;
+      }
     }
 
     // ── Zauzeće pri admin izmeni ─────────────────────────────────────────
@@ -315,6 +396,49 @@ export async function PUT(
     let clearProposal = false;
     if (updatedData.proposedDate && updatedData.proposedTime && isAdmin) {
       updatedData.status = "appointment_rescheduled";
+      if (appointment.priceProposal) clearPriceProposal = true;
+    }
+
+    if (
+      isAdmin &&
+      appointment.priceProposal &&
+      (updatedData.status === "appointment_approved" ||
+        updatedData.status === "appointment_rejected" ||
+        updatedData.status === "appointment_cancelled")
+    ) {
+      clearPriceProposal = true;
+    }
+
+    // ── Odluka klijentkinje o predlogu cene ─────────────────────────────
+    if (priceProposalDecision != null) {
+      if (isAdmin) {
+        return NextResponse.json(
+          { error: "O predlogu cene odlučuje klijentkinja." },
+          { status: 403 },
+        );
+      }
+
+      const outcome = evaluatePriceProposalDecision(
+        appointment,
+        priceProposalDecision as PriceProposalDecision,
+      );
+      if (!outcome.ok) {
+        return NextResponse.json(
+          { error: outcome.error },
+          { status: outcome.kind === "stale" ? 409 : 400 },
+        );
+      }
+
+      decidesPriceProposal = true;
+      clearPriceProposal = true;
+      if (outcome.kind === "accepted") {
+        updatedData.pricing = outcome.pricing;
+        updatedData.status = "appointment_approved";
+      } else {
+        // Odbijena cena odbija zahtev i oslobađa slot; klijentkinja zatim
+        // zakazuje novi termin ako želi drugi dogovor.
+        updatedData.status = "appointment_rejected";
+      }
     }
 
     // ── Odluka o predlogu ────────────────────────────────────────────────
@@ -323,6 +447,7 @@ export async function PUT(
     // slepo prepisivalo `date`/`time` — dva termina su mogla da završe u
     // istom slotu ako je slot popunjen između predloga i odgovora.
     const decidesProposal =
+      !decidesPriceProposal &&
       Boolean(appointment.proposedDate && appointment.proposedTime) &&
       (updatedData.status === "appointment_approved" ||
         updatedData.status === "pending");
@@ -330,7 +455,12 @@ export async function PUT(
     // Klijentkinja sme da menja status SAMO kao odgovor na predlog salona.
     // Bez ovoga je `{"status":"appointment_approved"}` nad sopstvenim terminom
     // bio samo-odobravanje: zakazan termin bi zaobišao potvrdu salona.
-    if (!isAdmin && updatedData.status && !decidesProposal) {
+    if (
+      !isAdmin &&
+      updatedData.status &&
+      !decidesProposal &&
+      !decidesPriceProposal
+    ) {
       return NextResponse.json(
         { error: "Status termina menja salon." },
         { status: 403 },
@@ -389,17 +519,29 @@ export async function PUT(
     // zaključan (`reserved`) na tom istom terminu.
     const updated = await commitBenefitRecompute(benefitPlan, (session) =>
       Appointment.findOneAndUpdate(
-        { _id: id, ...scope.filter },
+        {
+          _id: id,
+          ...scope.filter,
+          // CAS: ako je salon poslao novu cenu između čitanja i odgovora,
+          // klijentkinja ne sme da prihvati stari predlog i obriše novi.
+          ...(decidesPriceProposal && appointment.priceProposal
+            ? {
+                "priceProposal.proposedAt":
+                  appointment.priceProposal.proposedAt,
+              }
+            : {}),
+        },
         {
           ...updatedData,
           ...(benefitPlan.set ?? {}),
           // `{ proposedDate: undefined }` Mongoose izbacuje iz update-a, pa je
           // predlog preživljavao odluku i klijentkinja je i dalje gledala
           // „Prihvati / Odbij". Brisanje mora biti eksplicitan `$unset`.
-          ...(clearProposal || benefitUnset
+          ...(clearProposal || clearPriceProposal || benefitUnset
             ? {
                 $unset: {
                   ...(clearProposal ? CLEAR_PROPOSAL_UNSET : {}),
+                  ...(clearPriceProposal ? CLEAR_PRICE_PROPOSAL_UNSET : {}),
                   ...(benefitUnset ?? {}),
                 },
               }
@@ -409,11 +551,66 @@ export async function PUT(
       ),
     );
 
+    if (decidesPriceProposal && !updated) {
+      return NextResponse.json(
+        {
+          error:
+            "Predlog cene je u međuvremenu promenjen. Pogledajte novu cenu pre potvrde.",
+        },
+        { status: 409 },
+      );
+    }
+
+    // Predlog i odluka imaju svoje semantičke notification tipove. Greška u
+    // zvoncu/push-u ne vraća 500 posle uspešnog atomic upisa termina.
+    try {
+      if (createsPriceProposal && updated?.priceProposal) {
+        await createPriceProposalNotification(
+          {
+            _id: String(updated._id),
+            tenantId: updated.tenantId,
+            clientProfileId: String(updated.clientProfileId),
+            clientName: updated.clientName,
+            serviceName: updated.serviceName,
+          },
+          {
+            kind: "proposed",
+            amount: updated.priceProposal.quotedTotal,
+            currency: updated.priceProposal.currency,
+          },
+        );
+      }
+
+      if (decidesPriceProposal && appointment.priceProposal) {
+        await createPriceProposalNotification(
+          {
+            _id: String(appointment._id),
+            tenantId: appointment.tenantId,
+            clientProfileId: String(appointment.clientProfileId),
+            clientName: appointment.clientName,
+            serviceName: appointment.serviceName,
+          },
+          {
+            kind: "decision",
+            decision:
+              updatedData.status === "appointment_approved"
+                ? "accepted"
+                : "rejected",
+            amount: appointment.priceProposal.quotedTotal,
+            currency: appointment.priceProposal.currency,
+          },
+        );
+      }
+    } catch (notificationError) {
+      console.error("Price proposal notification failed:", notificationError);
+    }
+
     // Notifikacija za promenu statusa. Odluka o predlogu je već poslala svoju
     // (i to SALONU) — bez ovog izuzetka bi klijentkinja povrh sopstvene akcije
     // dobila još i „Vaš termin je odobren".
     if (
       !decidesProposal &&
+      !decidesPriceProposal &&
       updatedData.status &&
       updatedData.status !== appointment.status
     ) {
@@ -434,6 +631,18 @@ export async function PUT(
         appointment.status,
         updatedData.status,
         { source: "admin" },
+      );
+    }
+
+    if (
+      decidesPriceProposal &&
+      updatedData.status &&
+      updatedData.status !== appointment.status
+    ) {
+      await loyaltyOnAppointmentStatusChange(
+        id,
+        appointment.status,
+        updatedData.status,
       );
     }
 
