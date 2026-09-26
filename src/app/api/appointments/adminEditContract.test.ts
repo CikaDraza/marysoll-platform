@@ -86,7 +86,9 @@ describe("predlog cene", () => {
   it("odluka je uska komanda i atomic je vezana za viđeni predlog", () => {
     expect(source).toMatch(/key !== "lastUpdatedBy"/);
     expect(source).toMatch(/"priceProposal\.proposedAt"/);
-    expect(source).toMatch(/Predlog cene je u međuvremenu promenjen/);
+    expect(source).toMatch(/benefitCasFilter\(appointment\.appliedVoucherId\)/);
+    expect(source).toMatch(/status: appointment\.status/);
+    expect(source).toMatch(/predlog cene ili pogodnost/);
   });
 });
 

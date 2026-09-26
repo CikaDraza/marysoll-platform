@@ -17,6 +17,7 @@ import {
   planBenefitRecompute,
 } from "@/lib/loyalty/redemption";
 import { completeAppointmentCheckout } from "@/lib/appointments/checkout";
+import { benefitCasFilter } from "@/lib/appointments/benefitCas";
 import { LoyaltyRedemptionError, loyaltyErrorStatus } from "@/lib/loyalty/errors";
 import { IAppointment, IAppointmentService } from "@/types";
 import { Types } from "mongoose";
@@ -526,8 +527,10 @@ export async function PUT(
           // klijentkinja ne sme da prihvati stari predlog i obriše novi.
           ...(decidesPriceProposal && appointment.priceProposal
             ? {
+                status: appointment.status,
                 "priceProposal.proposedAt":
                   appointment.priceProposal.proposedAt,
+                ...benefitCasFilter(appointment.appliedVoucherId),
               }
             : {}),
         },
@@ -555,7 +558,7 @@ export async function PUT(
       return NextResponse.json(
         {
           error:
-            "Predlog cene je u međuvremenu promenjen. Pogledajte novu cenu pre potvrde.",
+            "Termin, predlog cene ili pogodnost su u međuvremenu promenjeni. Ponovo učitajte termin.",
         },
         { status: 409 },
       );
