@@ -7,7 +7,7 @@
 > Stanje koda provereno **2026-09-26**; Edu pilot closure redosled revidiran
 > **2026-09-04**.
 > Zdravlje tog preseka: `tsc` prolazi, lint bez novih upozorenja, build prolazi,
-> 199 test fajlova / 2253 testa prolaze (21 preskočen). Brojevi važe za taj
+> 200 test fajlova / 2260 testova prolazi (21 preskočen). Brojevi važe za taj
 > datum i nisu obećanje.
 
 ## Redosled
@@ -47,13 +47,22 @@ multi-workspace migracije, Content Coach-a ili Marketing Center-a.
 
 | # | Rez | Status | Šta je zaključano | Dokument |
 |---|---|---|---|---|
-| **B-PRICE-1** | **Variable-price confirmation & checkout UI regression** | ✅ **prihvaćeno 2026-09-26** | Debounce promene iznosa više ne unmountuju checkout input. Cena promenljive usluge koju salon unese pre termina prvo je server-generisan predlog; klijentkinja je prihvata ili odbija. Prihvatanje atomically promoviše quote i odobrava termin; odbijanje zatvara zahtev i vodi na novo zakazivanje. Responsive CTA i intake zahtev su prilagođeni mobilnom prikazu. | [cene §3](PANTA-BOOKING-PRICING.md) · [Booking/CRM §3.3](PANTA-BOOKING-CRM-ARC.md) |
+| **B-PRICE-1** | **Variable-price confirmation & checkout UI regression** | ✅ **prihvaćeno 2026-09-26** | Debounce promene iznosa više ne unmountuju checkout input. Cena promenljive usluge koju salon unese pre termina prvo je server-generisan predlog; klijentkinja je prihvata ili odbija. Prihvatanje atomically promoviše quote i odobrava termin uz CAS nad statusom, predlogom i pogodnošću; odbijanje zatvara zahtev i vodi na novo zakazivanje. Prvi checkout completion prolazi samo iz `appointment_approved`. Responsive CTA i intake zahtev su prilagođeni mobilnom prikazu. | [cene §3](PANTA-BOOKING-PRICING.md) · [Booking/CRM §3.3](PANTA-BOOKING-CRM-ARC.md) |
 
 **Acceptance.** Vlasnik proizvoda je potvrdio tok u Marysoll aplikaciji. Uz
 browser prolaz stoje `tsc`, ESLint, produkcijski build i ceo root Vitest paket:
-199 test fajlova / 2253 testa prolaze, 21 je preskočen. Implementacioni commit:
-`a89ea34` (`fix/checkout-price-confirmation`). Širi T1-1 → T1-3 browser redovi
-ispod ostaju otvoreni; ovaj acceptance ih ne zatvara.
+200 test fajlova / 2260 testova prolazi, 21 je preskočen. Implementacioni
+commitovi: `a89ea34` i concurrency/lifecycle hardening `b7956a5`
+(`fix/checkout-price-confirmation`). Širi T1-1 → T1-3 browser redovi ispod
+ostaju otvoreni; ovaj acceptance ih ne zatvara.
+
+**Review hardening.** Odluka o predlogu cene sada jednim finalnim write-om
+CAS-uje sva tri mutable oslonca nad kojima je izračunata: zatečeni `status`,
+`priceProposal.proposedAt` i `appliedVoucherId`. Svako neslaganje vraća `409`
+i traži svež termin. Checkout server dozvoljava prvi `completed` samo iz
+`appointment_approved`; već završeni termin ostaje retry/finalization-repair
+putanja. Mongo ReplSet testovi dokazuju proposal/quote razdvajanje, accept,
+reject + release, stale proposal, V1→V2 voucher race i status race.
 
 ## T1-4 — Loyalty Redemption & Appointment Checkout
 

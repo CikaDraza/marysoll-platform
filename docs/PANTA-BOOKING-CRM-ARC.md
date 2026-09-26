@@ -1,6 +1,6 @@
 # Beauty Booking / CRM — operativna arhitektura luka
 
-> Usklađeno sa kodom **2026-09-26** (`a89ea34`,
+> Usklađeno sa kodom **2026-09-26** (`a89ea34`, `b7956a5`,
 > `fix/checkout-price-confirmation`).
 > Staging tenant za vizuelnu proveru: **theme-1 / Marysoll Makeup & Nails**.
 >
@@ -117,6 +117,9 @@ Finalizacija posle prelaza statusa (vaučer `reserved → redeemed`, durable
 `appointment_completed`) je idempotentna i popravljiva: `loyaltyProcessed.completed`
 se postavlja tek kada su ti preduslovi durabilno uspostavljeni, pa ponovni
 checkout nad već završenim terminom dovršava ono što je ostalo nedovršeno.
+Za prvi completion server prihvata isključivo `appointment_approved`;
+`pending` termin sa predlogom cene ne može direktnim pozivom da preskoči
+klijentkinjinu odluku.
 
 ### 3.2 Granica prema Loyalty-ju
 
@@ -148,8 +151,10 @@ pricing snapshot
   → reject: appointment_rejected + novo zakazivanje
 ```
 
-`priceProposal` nije prihod, quote ni naplaćeni iznos. Prihvatanje i brisanje
-predloga su jedan atomic upis sa compare-and-set proverom vremena predloga.
+`priceProposal` nije prihod, quote ni naplaćeni iznos. Prihvatanje/odbijanje i
+brisanje predloga su jedan atomic upis sa compare-and-set proverom zatečenog
+statusa, vremena predloga i `appliedVoucherId`. Promena bilo kog od ta tri
+oslonca vraća `409`, pa aritmetika vaučera V1 ne može biti upisana preko V2.
 Odbijanje oslobađa rezervisani vaučer kroz postojeći loyalty status hook.
 Browser ne može da konstruiše predlog niti da uz odluku menja druga polja
 termina. Detaljan brojčani ugovor: [cene §3](PANTA-BOOKING-PRICING.md).
@@ -188,8 +193,12 @@ Ovo nisu istorijske anegdote nego pravila koja su nas već koštala i danas ih
 - **Predlog cene nije quote.** `Appointment.priceProposal` ostaje van
   `Appointment.pricing` dok ga klijentkinja ne prihvati; tek tada utiče na
   voucher, potencijalnu vrednost i status termina.
-- **Odluka o ceni je uska i race-safe.** Klijent ne menja druga polja uz
-  `priceProposalDecision`, a CAS sprečava da prihvatanje stare cene obriše novu.
+- **Odluka o ceni je vezana za isti termin koji je klijentkinja videla.**
+  Finalni write CAS-uje `status + proposedAt + appliedVoucherId`; stale
+  proposal, status race i V1→V2 voucher race su `409`. Komanda je uska:
+  klijent ne može uz `priceProposalDecision` da promeni druga polja.
+- **`pending` nije completion source.** Prvi `completed` sme samo iz
+  `appointment_approved`; `completed` je zasebna idempotentna repair putanja.
 - **Potvrda ne sme da visi na `onClose`.** `AlertModal` je imao
   `onClose={onConfirm}`, pa su Escape i klik na pozadinu **otkazivali termin**.
 

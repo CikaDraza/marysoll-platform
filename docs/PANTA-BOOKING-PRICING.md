@@ -72,8 +72,10 @@ salon unese osnovnu cenu
 - Predlog se ne šalje posle početka termina. Završen/finalan termin nema odluku.
 - Promena izbora usluge, novi predlog vremena ili admin zatvaranje termina
   brišu zastareli predlog cene.
-- Prihvatanje nosi compare-and-set nad `priceProposal.proposedAt`: nova cena
-  poslata između čitanja i klika ne može biti prepisana starim prihvatanjem.
+- Prihvatanje/odbijanje nosi jedan compare-and-set nad sva tri mutable oslonca:
+  zatečenim `status`, `priceProposal.proposedAt` i `appliedVoucherId`. Nova
+  cena, promenjen lifecycle ili vaučer V1→V2 između čitanja i klika vraćaju
+  `409`; zastarela odluka ne upisuje quote, status ni aritmetiku pogodnosti.
 - Klijentski payload je uska komanda `priceProposalDecision`; datum, usluga,
   status i pricing iz istog payload-a se ne prihvataju.
 - Predlog živi van canonical `pricing`, zato pre prihvatanja ne ulazi u prihod,
@@ -181,6 +183,12 @@ vraća `400` i ostavlja termin netaknut:
 Auto-complete termin koji traži ljudsku cenu **preskače**: niti izmišlja cenu,
 niti skida pogodnost — ostavlja ga vlasnici.
 
+Prvi checkout completion prolazi samo iz `appointment_approved`. `pending`
+termin koji čeka potvrdu cene ne može direktnim ili zastarelim zahtevom da
+preskoči odluku klijentkinje i postane `completed`. Već `completed` termin je
+izuzetak samo kao idempotentni retry koji popravlja eventualno nedovršenu
+loyalty finalizaciju.
+
 Ako se pogodnost promeni POSLE pregleda a pre potvrde (klijentkinja je primeni
 iz panela, salon je skine iz liste), završetak vraća `409` i termin ostaje
 nezavršen. Račun se ne preračunava u okviru tog zahteva — pozivalac povlači
@@ -188,6 +196,11 @@ svež pregled, jer se promenila osnovica po kojoj je odluka doneta.
 
 Bez vaučera nepoznata cena **sme** da ostane nepoznata: termin ide u „Termini
 bez cene", ne u prihod. Nijedan iznos se ne izmišlja.
+
+Ove granice čuva Mongo ReplSet paket: predlog ne dira canonical quote,
+prihvatanje upisuje quote + `appointment_approved` + `$unset`, odbijanje
+postavlja `appointment_rejected` i oslobađa rezervisani vaučer, a stale
+proposal, V1→V2 voucher race i status race završavaju sa `409`.
 
 ### Checkout preview ne sme da unmountuje unos
 
