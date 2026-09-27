@@ -16,7 +16,7 @@ import { createLoyaltyNotification } from "@/lib/loyalty/notifications";
 import { describeReward } from "@/lib/loyalty/engine";
 
 export async function GET(req: NextRequest) {
-  const auth = requireAdmin(req);
+  const auth = await requireAdmin(req);
   if (!auth.success) return auth.response;
   const denied = await requireCapability(auth.decoded.tenantId, "loyalty.rewards");
   if (denied) return denied;
@@ -61,7 +61,7 @@ const issueSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const auth = requireAdmin(req);
+  const auth = await requireAdmin(req);
   if (!auth.success) return auth.response;
   const denied = await requireCapability(auth.decoded.tenantId, "loyalty.rewards");
   if (denied) return denied;

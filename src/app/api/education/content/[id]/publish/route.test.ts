@@ -72,7 +72,7 @@ function persisted(blocks: unknown, liveCollision: unknown = null) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(requireTenantAdmin).mockReturnValue({
+  vi.mocked(requireTenantAdmin).mockResolvedValue({
     success: true,
     tenantId: TENANT,
   });
@@ -166,13 +166,13 @@ describe("POST /api/education/content/[id]/publish", () => {
   });
 
   it("odbija klijenta i tenant bez capability-ja pre čitanja zapisa", async () => {
-    vi.mocked(requireTenantAdmin).mockReturnValue({
+    vi.mocked(requireTenantAdmin).mockResolvedValue({
       success: false,
       response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
     });
     expect((await POST(request(), params)).status).toBe(403);
 
-    vi.mocked(requireTenantAdmin).mockReturnValue({
+    vi.mocked(requireTenantAdmin).mockResolvedValue({
       success: true,
       tenantId: TENANT,
     });

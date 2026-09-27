@@ -33,7 +33,7 @@ function requestFor(payload: unknown) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(requireAdmin).mockReturnValue({
+  vi.mocked(requireAdmin).mockResolvedValue({
     success: true,
     decoded: { tenantId: "tenant-a", isSuperAdmin: false },
   } as never);

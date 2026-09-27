@@ -48,7 +48,7 @@ interface PlanStatusResponse {
 }
 
 export async function GET(req: NextRequest) {
-  const auth = requireAdmin(req);
+  const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
   if (!auth.success) return auth.response;
 

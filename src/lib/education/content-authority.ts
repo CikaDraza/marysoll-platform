@@ -16,7 +16,7 @@ export type EducationContentAuthority =
 export async function requireEducationContentAuthority(
   request: Request,
 ): Promise<EducationContentAuthority> {
-  const auth = requireTenantAdmin(request);
+  const auth = await requireTenantAdmin(request);
   if (!auth.success) return { ok: false, response: auth.response };
 
   const denied = await requireCapability(auth.tenantId, "education.catalog");

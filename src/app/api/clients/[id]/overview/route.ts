@@ -12,7 +12,7 @@ export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
-  const auth = requireTenantAdmin(req);
+  const auth = await requireTenantAdmin(req);
   if (!auth.success) return auth.response;
 
   try {

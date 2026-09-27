@@ -31,7 +31,7 @@ import {
 import { BookingError } from "@/lib/booking/errors";
 
 export async function POST(request: NextRequest) {
-  const auth = requireAdmin(request);
+  const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
   if (!auth.success) return auth.response;
 

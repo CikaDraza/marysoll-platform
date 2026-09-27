@@ -20,7 +20,7 @@ import { Subscription } from "@/models/Subscription";
 import type { ISubscription } from "@/models/Subscription";
 
 export async function GET(req: NextRequest) {
-  const auth = requireAdmin(req);
+  const auth = await requireAdmin(req);
   if (!auth.success) return auth.response;
   const { decoded } = auth;
 

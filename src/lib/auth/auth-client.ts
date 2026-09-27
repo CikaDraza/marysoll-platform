@@ -26,6 +26,10 @@
 
 import { DecodedUser } from "@/types/auth/types";
 import { jwtDecode } from "jwt-decode";
+import {
+  isBusinessAdminRole,
+  tokenHasBackofficeAccess,
+} from "@/lib/auth/roles";
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
@@ -107,7 +111,11 @@ export function getUserFromToken(token?: string): DecodedUser | null {
       email: decoded.email ?? "",
       name: decoded.name ?? "",
       phone: decoded.phone ?? "",
-      isAdmin: decoded.isAdmin ?? false,
+      isAdmin:
+        decoded.globalRole != null
+          ? isBusinessAdminRole(decoded.globalRole)
+          : decoded.isAdmin ?? false,
+      isBackofficeMember: tokenHasBackofficeAccess(decoded),
       isSuperAdmin: decoded.isSuperAdmin ?? false,
       tenantUserId: decoded.tenantUserId ?? null,
       tenantId: decoded.tenantId ?? null,
@@ -129,4 +137,3 @@ export function getUserFromToken(token?: string): DecodedUser | null {
 export function getRawToken(): string | null {
   return readRawToken();
 }
-

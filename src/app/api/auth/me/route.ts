@@ -3,6 +3,10 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { TenantUser } from "@/models/TenantUser";
 import { requireAuth } from "@/lib/auth/auth-server";
 import { DecodedToken } from "@/types/auth/types";
+import {
+  isBackofficeRole,
+  isBusinessAdminRole,
+} from "@/lib/auth/roles";
 
 /**
  * GET /api/auth/me
@@ -28,6 +32,7 @@ export async function GET(req: NextRequest) {
           name: decoded.name,
           globalRole: "SUPER_ADMIN",
           isAdmin: true,
+          isBackofficeMember: true,
           isSuperAdmin: true,
           tenantId: null,
           tenantUserId: null,
@@ -37,13 +42,14 @@ export async function GET(req: NextRequest) {
 
     // Tenant user: load from TenantUser
     const tenantUser = await TenantUser.findById(decoded.id)
-      .select("email name phone role isEmailVerified isOnline lastActive notificationSettings createdAt tenantId")
+      .select("email name phone role status isEmailVerified isOnline lastActive notificationSettings createdAt tenantId")
       .lean<{
         _id: import("mongoose").Types.ObjectId;
         email: string;
         name: string;
         phone: string;
         role: string;
+        status: string;
         isEmailVerified: boolean;
         isOnline: boolean;
         lastActive: Date;
@@ -54,6 +60,12 @@ export async function GET(req: NextRequest) {
     if (!tenantUser) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
+    if (tenantUser.status !== "active") {
+      return NextResponse.json(
+        { error: "Članstvo nije aktivno.", code: "MEMBERSHIP_INACTIVE" },
+        { status: 403 },
+      );
+    }
 
     return NextResponse.json({
       user: {
@@ -63,7 +75,8 @@ export async function GET(req: NextRequest) {
         name: tenantUser.name,
         phone: tenantUser.phone,
         globalRole: tenantUser.role,
-        isAdmin: ["OWNER", "ADMIN", "STAFF"].includes(tenantUser.role),
+        isAdmin: isBusinessAdminRole(tenantUser.role),
+        isBackofficeMember: isBackofficeRole(tenantUser.role),
         isSuperAdmin: false,
         isEmailVerified: tenantUser.isEmailVerified,
         isOnline: tenantUser.isOnline,

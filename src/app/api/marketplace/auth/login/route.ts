@@ -27,6 +27,10 @@ import {
   generateRefreshToken,
 } from "@/lib/auth/auth-server";
 import type { Types } from "mongoose";
+import {
+  isBackofficeRole,
+  isBusinessAdminRole,
+} from "@/lib/auth/roles";
 
 export async function POST(req: NextRequest) {
   const verify = verifySignature(req, await req.clone().text());
@@ -144,7 +148,7 @@ export async function POST(req: NextRequest) {
       lastActive: new Date(),
     });
 
-    const isAdmin = ["OWNER", "ADMIN", "STAFF"].includes(matchedUser.role);
+    const isAdmin = isBusinessAdminRole(matchedUser.role);
     const displayName = matchedUser.name || normalizedEmail.split("@")[0];
 
     const accessToken = generateAccessToken(
@@ -159,7 +163,9 @@ export async function POST(req: NextRequest) {
 
     return buildResponse({ token: accessToken, refreshToken, user: {
       id: matchedUser._id.toString(), email: matchedUser.email, name: displayName,
-      globalRole: matchedUser.role, isAdmin, isSuperAdmin: false,
+      globalRole: matchedUser.role, isAdmin,
+      isBackofficeMember: isBackofficeRole(matchedUser.role),
+      isSuperAdmin: false,
       tenantId: tenant._id.toString(), tenantUserId: matchedUser._id.toString(),
     }});
   } catch (error) {
@@ -173,7 +179,7 @@ function buildResponse({ token, refreshToken, user }: {
   refreshToken: string;
   user: {
     id: string; email: string; name: string; globalRole: string;
-    isAdmin: boolean; isSuperAdmin: boolean;
+    isAdmin: boolean; isBackofficeMember?: boolean; isSuperAdmin: boolean;
     tenantId: string | null; tenantUserId: string | null;
   };
 }) {
@@ -181,7 +187,13 @@ function buildResponse({ token, refreshToken, user }: {
   const res = NextResponse.json({
     message: "Prijava uspešna",
     token,
-    user: { ...user, isOnline: true, lastActive: new Date() },
+    user: {
+      ...user,
+      isBackofficeMember:
+        user.isBackofficeMember ?? isBackofficeRole(user.globalRole),
+      isOnline: true,
+      lastActive: new Date(),
+    },
   });
 
   const cookieName = user.isSuperAdmin ? "platform" : "tenant";

@@ -74,6 +74,7 @@ describe("izvor istine za sesiju", () => {
 
     expect(authClient.getRawToken()).toBe(KLIJENT);
     expect(authClient.getUserFromToken()?.isAdmin).toBe(false);
+    expect(authClient.getUserFromToken()?.isBackofficeMember).toBe(false);
     expect(authClient.getUserFromToken()?.name).toBe("Milica Petronijevic");
   });
 
@@ -105,6 +106,8 @@ describe("scenario incidenta", () => {
     origin.setTenantCookie(ADMIN);
     origin.store.set("token", ADMIN);
     expect(authClient.getUserFromToken()?.isAdmin).toBe(true);
+    // Legacy admin token nema globalRole, ali ostaje backoffice do isteka.
+    expect(authClient.getUserFromToken()?.isBackofficeMember).toBe(true);
 
     // tab B: odjava pa prijava kao pravi klijent — isti origin, isti slot
     origin.setTenantCookie(KLIJENT);

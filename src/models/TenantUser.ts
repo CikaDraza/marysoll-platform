@@ -30,8 +30,9 @@
  */
 
 import { Schema, Document, Types, model, models } from "mongoose";
+import type { TenantRole } from "@/lib/auth/roles";
 
-export type TenantUserRole = "OWNER" | "ADMIN" | "STAFF" | "USER" | "GUEST";
+export type TenantUserRole = TenantRole;
 
 export interface ITenantUserNotificationSettings {
   emailNotifications: boolean;

@@ -8,7 +8,7 @@ import type { LandingStructure } from "@/types";
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = requireAdmin(req) as { decoded: DecodedToken } | NextResponse;
+    const auth = await requireAdmin(req) as { decoded: DecodedToken } | NextResponse;
     if (auth instanceof NextResponse) return auth;
 
     const body = await req.json();

@@ -16,6 +16,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
+import { tokenHasBackofficeAccess } from "@/lib/auth/roles";
 
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "marysoll.com";
 
@@ -66,6 +67,7 @@ export function GET(req: NextRequest) {
       name: decoded.name ?? "",
       email: decoded.email ?? "",
       isAdmin: decoded.isAdmin ?? false,
+      isBackofficeMember: tokenHasBackofficeAccess(decoded),
       isSuperAdmin: decoded.isSuperAdmin ?? false,
       tenantSlug: decoded.tenantSlug ?? null,
       tenantId: decoded.tenantId ?? null,

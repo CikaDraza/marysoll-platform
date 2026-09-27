@@ -109,7 +109,7 @@ afterAll(async () => {
 beforeEach(async () => {
   await EducationContent.deleteMany({});
   await mongoose.connection.db?.collection("tenants").deleteMany({});
-  vi.mocked(requireTenantAdmin).mockReturnValue({
+  vi.mocked(requireTenantAdmin).mockResolvedValue({
     success: true,
     tenantId: TENANT,
   });
@@ -350,7 +350,7 @@ describe("H — tenant scope", () => {
   it("tuđi tenant ne može ni da pročita, ni da sačuva, ni da objavi", async () => {
     const id = await createPublishedV1();
 
-    vi.mocked(requireTenantAdmin).mockReturnValue({
+    vi.mocked(requireTenantAdmin).mockResolvedValue({
       success: true,
       tenantId: OTHER_TENANT,
     });
@@ -369,7 +369,7 @@ describe("H — tenant scope", () => {
   it("isti javni slug kod dva različita tenanta je dozvoljen", async () => {
     await createPublishedV1();
 
-    vi.mocked(requireTenantAdmin).mockReturnValue({
+    vi.mocked(requireTenantAdmin).mockResolvedValue({
       success: true,
       tenantId: OTHER_TENANT,
     });

@@ -4,10 +4,10 @@
 > sledeće i šta je namerno odloženo. Detalji po domenu žive u canonical
 > dokumentima i ne prepisuju se ovde.
 >
-> Stanje koda provereno **2026-09-26**; Edu pilot closure redosled revidiran
+> Stanje koda provereno **2026-09-27**; Edu pilot closure redosled revidiran
 > **2026-09-04**.
 > Zdravlje tog preseka: `tsc` prolazi, lint bez novih upozorenja, build prolazi,
-> 200 test fajlova / 2260 testova prolazi (21 preskočen). Brojevi važe za taj
+> 203 test fajla / 2279 testova prolazi (21 preskočen). Brojevi važe za taj
 > datum i nisu obećanje.
 
 ## Redosled
@@ -17,8 +17,10 @@ EDUCATION    🟡  Edu pilot closure → E1 ✅ → E2 ✅ code → E3 → E4 �
 BEAUTY       ✅  T1-0 → T1-4 prihvaćeno
              ✅  B-PRICE-1 checkout input + potvrda promenljive cene
              🟡  Marysoll browser acceptance čeka za T1-1 → T1-3 rezove
-NEXT         →   Staff onboarding flow — ugovor i rez zaključati pre koda
-THEN         →   E3 Draft safety acceptance / hardening
+STAFF v1     🟡  STAFF-0 authorization foundation — code complete / review pending
+NEXT         →   pregled i acceptance STAFF-0; bez prelaska na STAFF-1
+THEN         →   STAFF-1 → STAFF-6, jedan pregledan rez odjednom
+AFTER STAFF  →   E3 Draft safety acceptance / hardening
 DEFERRED     →   T1-5 · evidencija naplate (granica zaključana) · T3 cutover ·
                  legacy HMAC/marketplace write ·
                  Consultation / Questionnaire / Care · FUTURE H1–H4/F4–F7
@@ -29,12 +31,22 @@ ostaje neophodan)
 
 ## NEXT — sledeći rez
 
-**Staff onboarding flow.** Pre nastavka Edu Centra sledeći dogovoreni pravac je
-dodavanje osoblja. Scope još nije zaključan: invitation/provisioning, uloge,
-permission granice, veza sa terminima i acceptance definišu se u sledećem
-razgovoru. Ovaj red **nije** dozvola da se unapred uvedu novi modeli ili UI.
+**STAFF-0 — authorization contract.** Prvi rez je implementiran na grani
+`feat/staff-authorization` i čeka pregled. Zaključana je razlika između
+backoffice člana, poslovnog administratora, owner-a i salonskog operatora;
+`STAFF !== isAdmin`. Server authority ponovo čita aktuelni `TenantUser` i zato
+suspendovano ili promenjeno članstvo ne zadržava ovlašćenje kroz stari JWT.
+Postojeći `requireAdmin()` potrošači ostaju OWNER/ADMIN, a owner-sensitive rute
+koriste aktuelno DB OWNER članstvo. Route audit i puna matrica su u
+[Tenant ownership lifecycle §8](PANTA-TENANT-OWNERSHIP-LIFECYCLE.md#8-staff-0--authorization-foundation).
 
-Posle staff reza vraćamo se na:
+**STOP granica.** STAFF-0 još ne daje STAFF ulozi nijedan appointment endpoint.
+`requireSalonOperator()` je foundation za STAFF-4/5, ne dozvola da se generičke
+rute otvore pre command/payload audita. Invite, Team UI, seat limit,
+`StaffProfile` i bookable staff nisu započeti. Sledeći rez se ne radi dok se
+STAFF-0 ne pregleda i eksplicitno prihvati.
+
+Posle celog Staff v1 reza vraćamo se na:
 
 **E3 — Draft safety acceptance / hardening.** E2 authoring hierarchy je u kodu i
 audit je zatvoren: jedini potvrđeni defekt (strelice u filtriranom prikazu) je
