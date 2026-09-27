@@ -343,8 +343,8 @@ Testovi zaključavaju:
 
 # 10. STAFF-2 — Team invite lifecycle
 
-**Status: code complete / review pending.** Implementirano na grani
-`feat/staff-team-invite`. Rez uvodi invite/accept/resend lifecycle, ali ne uvodi
+**Status: prihvaćeno i mergeovano.** Implementirano na grani
+`feat/staff-team-invite` i mergeovano na `main` (`83ee954`). Rez uvodi invite/accept/resend lifecycle, ali ne uvodi
 Team dashboard UI, appointment dozvole, `StaffProfile` niti bookable staff.
 
 ## 10.1 Role, identity i existing-member invariant
@@ -441,15 +441,91 @@ promenjenih fajlova prolaze.
 STAFF-2 ne uvodi generic role endpoint. STAFF → ADMIN i ADMIN → STAFF ostaju
 buduća eksplicitna OWNER akcija nad active + verified članom. OWNER nikada nije
 obična role mutacija; ownership transfer ostaje poseban atomski workflow.
-STAFF-3 se ne započinje pre pregleda i acceptance-a ovog reza.
+STAFF-2 je prihvaćen i mergeovan na `main` kroz merge commit `83ee954`; tek tada
+je otvoren STAFF-3 rez.
+
+---
+
+# 11. STAFF-3 — owner Team UI
+
+**Status: code complete / browser acceptance pending.** Implementirano na grani
+`feat/staff-team-ui`. Rez izlaže postojeći STAFF-1/2 authority u Salon dashboardu
+bez uvođenja novog identity ili pricing modela.
+
+## 11.1 Vidljivost i planovi
+
+Sidebar stavka `Tim` i njen `?tab=tim` ekran vidljivi su samo OWNER-u. Ručno
+otvaranje taba od strane druge role prikazuje owner-only stanje, a `GET /api/team`
+i postojeće create/resend rute ponovo rade `requireOwner()` DB revalidation.
+
+Team ekran nije Kiki-only feature. Prikazuje efektivni plan i
+`resolveTeamSeatSnapshot()` rezultat za svaki plan:
+
+```text
+Maria       used / 1
+Claudia     used / 3
+Kiki        used / 10
+Enterprise  used / ∞
+```
+
+Aktivni superadmin override automatski menja isti prikaz. Browser ne računa
+seat-ove i ne donosi capacity odluku.
+
+## 11.2 Safe read-model
+
+Owner-only Team projekcija vraća samo:
+
+```text
+id, name, email, role, status, isEmailVerified, invitedAt, createdAt
+```
+
+Lista uključuje OWNER i postojeća ADMIN/STAFF članstva istog tenanta, ali ne
+USER/GUEST klijente. Password, auth linkage, verification/reset tokeni i
+`invitationTokenHash` nisu deo selekcije niti browser tipa. OWNER je prikazan u
+listi, ali canonical seat snapshot ga ne računa.
+
+## 11.3 UI lifecycle
+
+Ekran sadrži:
+
+- plan/seat karticu sa progress prikazom i upgrade linkom kada je limit pun;
+- responsive formu `ime + email → Pošalji poziv`;
+- listu aktivnih, pozvanih i suspendovanih team membership-a;
+- resend/regenerate akciju samo za invited STAFF;
+- jednokratni prikaz create/resend activation URL-a sa copy akcijom i jasnim
+  upozorenjem da novi link poništava prethodni.
+
+Invite forma ne šalje role niti tenant. Novi član i dalje uvek nastaje kao
+`STAFF/invited` kroz STAFF-2 server lifecycle. Query cache se invalidira posle
+create/resend operacije, pa seat i lista ponovo dolaze sa servera.
+
+## 11.4 Dokazi i otvoreni acceptance
+
+Targeted paket prolazi za owner API gate, Kiki/all-plan UI contract, safe Mongo
+projection i STAFF-2 invite regresiju. Ceo root presek: 214 test fajlova, 2356
+prošlih testova, 21 preskočen; TypeScript, ESLint promenjenih fajlova,
+`git diff --check` i production build prolaze. HTTP fallback potvrđuje dashboard
+`200` i Team API `401` bez sesije.
+
+Automatizovani browser acceptance nije izvršen jer `agent-browser` CLI nije
+dostupan u radnom okruženju. Ručno treba potvrditi OWNER Kiki tok: `Tim` u
+sidebaru, `x / 10`, create invite, copy link, resend rotaciju i responsive
+mobilni raspored bez console/error overlay-a.
+
+## 11.5 STOP granica
+
+Ovaj rez ne uvodi STAFF appointment permissions, StaffProfile, bookable staff,
+suspend/remove akcije, generic role endpoint niti ownership transfer. Eksplicitni
+STAFF ↔ ADMIN lifecycle ostaje buduća owner-only odluka nad active + verified
+članom; nikada se ne izvodi implicitno iz invite forme.
 
 ---
 
 # DEFERRED — Team management & ownership transfer
 
-**Status: DELIMIČNO OTVOREN KROZ STAFF v1.** Team model i invite lifecycle su
-u STAFF-1/STAFF-2; Team management/UI ide tek kroz STAFF-3 posle acceptance-a
-STAFF-2. Ownership transfer ostaje
+**Status: DELIMIČNO OTVOREN KROZ STAFF v1.** Team model, invite lifecycle i
+owner read/invite UI postoje kroz STAFF-1/2/3. Role/suspend/remove management i
+ownership transfer ostaju
 deferred. Ne praviti ga u Staff onboarding v1.
 
 ## Budući team management

@@ -7,7 +7,7 @@
 > Stanje koda provereno **2026-09-27**; Edu pilot closure redosled revidiran
 > **2026-09-04**.
 > Zdravlje tog preseka: `tsc` prolazi, lint bez novih upozorenja, build prolazi,
-> 211 test fajlova / 2348 testova prolazi (21 preskočen). Brojevi važe za taj
+> 214 test fajlova / 2356 testova prolazi (21 preskočen). Brojevi važe za taj
 > datum i nisu obećanje.
 
 ## Redosled
@@ -19,10 +19,10 @@ BEAUTY       ✅  T1-0 → T1-4 prihvaćeno
              🟡  Marysoll browser acceptance čeka za T1-1 → T1-3 rezove
 STAFF v1     ✅  STAFF-0 authorization foundation — prihvaćeno i mergeovano
              ✅  STAFF-1 Team model + plan limit — prihvaćeno i mergeovano
-             🟡  STAFF-2 Team invite lifecycle — code complete / review pending
-NEXT         →   pregled i acceptance STAFF-2; bez prelaska na STAFF-3
-THEN         →   STAFF-3 tek posle acceptance-a STAFF-2
-AFTER STAFF  →   E3 Draft safety acceptance / hardening
+             ✅  STAFF-2 Team invite lifecycle — prihvaćeno i mergeovano
+             🟡  STAFF-3 owner Team UI — code complete / browser acceptance pending
+NEXT         →   pregled i OWNER browser acceptance STAFF-3 na Kiki tenantu
+THEN         →   E3 Draft safety acceptance / hardening
 DEFERRED     →   T1-5 · evidencija naplate (granica zaključana) · T3 cutover ·
                  legacy HMAC/marketplace write ·
                  Consultation / Questionnaire / Care · FUTURE H1–H4/F4–F7
@@ -33,21 +33,25 @@ ostaje neophodan)
 
 ## NEXT — sledeći rez
 
-**STAFF-2 — Team invite lifecycle.** OWNER-only create uvek pravi
-`STAFF/invited` članstvo nad postojećim `TenantUser`; browser ne bira role niti
-tenant. Kriptografski raw token postoji samo u create/resend odgovoru i URL-u,
-dok baza čuva SHA-256 hash. Resend rotira token bez novog seat-a, acceptance
-atomically postavlja ličnu lozinku, verified + active stanje i troši token.
-Create/accept/resend koriste `Tenant.teamMembershipRevision` kao transaction
-serialization point; pravi ReplSet test dokazuje da od dva paralelna zahteva za
-poslednji seat tačno jedan uspeva. Login i refresh sada eksplicitno zahtevaju
-`status=active` i verified email. Puna pravila i dokazi su u
-[Tenant ownership lifecycle §10](PANTA-TENANT-OWNERSHIP-LIFECYCLE.md#10-staff-2--team-invite-lifecycle).
+**STAFF-3 — owner Team UI.** Salon sidebar sada OWNER-u prikazuje `Tim` tab.
+Ekran čita owner-only safe projection, prikazuje effective plan i canonical seat
+snapshot (`Kiki: used / 10`), vlasnika i postojeća ADMIN/STAFF članstva, invite
+formu i resend/regenerate tok. Create/resend odgovor kratkotrajno prikazuje raw
+activation URL za kopiranje; read endpoint nikada ne vraća password ni invite
+token/hash. Svi planovi koriste isti ekran i svoj efektivni limit — UI nije
+hardkodovan samo za Kiki. Puna pravila i dokazi su u
+[Tenant ownership lifecycle §11](PANTA-TENANT-OWNERSHIP-LIFECYCLE.md#11-staff-3--owner-team-ui).
 
-**STOP granica.** Nema Team dashboard UI-ja, appointment permissions,
-`StaffProfile`, bookable staff-a, generic role edit-a niti ownership transfera.
-Javna `/team/invite` stranica je samo activation površina linka iz emaila.
-STAFF-3 se ne radi dok STAFF-2 ne bude pregledan i prihvaćen.
+**Acceptance granica.** TypeScript, ESLint, targeted Team paket, ceo root Vitest
+i production build prolaze. Dev dashboard vraća `200`, a neautorizovan Team API
+ispravno `401`; automatizovani browser prolaz nije izvršen jer `agent-browser`
+CLI nije dostupan u okruženju. OWNER browser acceptance nad Kiki tenantom ostaje
+otvoren pre zatvaranja STAFF-3.
+
+**STOP granica.** STAFF-3 ne uvodi appointment permissions, `StaffProfile`,
+bookable staff, generic OWNER edit/transfer niti suspend/remove lifecycle.
+STAFF ↔ ADMIN promocija ostaje zasebna eksplicitna OWNER odluka, ne implicitni
+deo invite forme.
 
 Posle celog Staff v1 reza vraćamo se na:
 
