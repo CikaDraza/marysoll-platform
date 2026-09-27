@@ -105,6 +105,10 @@ interface ITenantUser extends Document {
   verificationTokenExpiry?: Date | null;
   resetPasswordToken?: string | null;
   resetPasswordExpiry?: Date | null;
+  invitationTokenHash?: string | null;
+  invitationExpiresAt?: Date | null;
+  invitedAt?: Date | null;
+  invitedByTenantUserId?: Types.ObjectId | null;
   status: TenantUserStatus;
 
   // ── Profile ──────────────────────────────────────────────────────────────
@@ -176,6 +180,24 @@ const tenantUserSchema = new Schema<ITenantUser>(
     },
     resetPasswordExpiry: {
       type: Date,
+      default: null,
+    },
+    invitationTokenHash: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    invitationExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    invitedAt: {
+      type: Date,
+      default: null,
+    },
+    invitedByTenantUserId: {
+      type: Schema.Types.ObjectId,
+      ref: "TenantUser",
       default: null,
     },
     status: {
@@ -305,6 +327,13 @@ tenantUserSchema.index({ tenantId: 1, email: 1 }, { unique: true });
 
 // Efficient listing of admins/staff/users per tenant.
 tenantUserSchema.index({ tenantId: 1, role: 1 });
+tenantUserSchema.index(
+  { invitationTokenHash: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { invitationTokenHash: { $type: "string" } },
+  },
+);
 
 // In dev, delete the cached model so schema changes take effect after hot reload.
 if (process.env.NODE_ENV !== "production" && models.TenantUser) {

@@ -145,6 +145,7 @@ export const RESERVED_SYSTEM_SEGMENTS = new Set([
   "unauthorized",
   "logout",
   "tenant",
+  "team",
   "marketing",
   "education",
   "assets",

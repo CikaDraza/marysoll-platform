@@ -1,7 +1,7 @@
 # PANTA — Tenant ownership lifecycle
 
 > Zaključan ugovor o vlasništvu nad salonom.
-> Poslednja izmena: 2026-09-27 · grana `feat/staff-authorization`
+> Poslednja izmena: 2026-09-27 · grana `feat/staff-team-invite`
 
 ## 1. Invariant
 
@@ -253,8 +253,8 @@ Test matrica zaključava:
 
 # 9. STAFF-1 — Team model i plan limit
 
-**Status: code complete / review pending.** Implementirano na grani
-`feat/staff-team-limit`. `TenantUser` ostaje jedini v1 team identitet; nije
+**Status: prihvaćeno i mergeovano.** Implementirano na grani
+`feat/staff-team-limit` i mergeovano na `main` (`bf93d83`). `TenantUser` ostaje jedini v1 team identitet; nije
 uveden `StaffProfile`, Invitation model, Team API/UI niti bookable staff.
 
 ## 9.1 Ko zauzima team seat
@@ -341,10 +341,115 @@ Testovi zaključavaju:
 
 ---
 
+# 10. STAFF-2 — Team invite lifecycle
+
+**Status: code complete / review pending.** Implementirano na grani
+`feat/staff-team-invite`. Rez uvodi invite/accept/resend lifecycle, ali ne uvodi
+Team dashboard UI, appointment dozvole, `StaffProfile` niti bookable staff.
+
+## 10.1 Role, identity i existing-member invariant
+
+Svaki novi poziv bez izuzetka kreira postojeći business model:
+
+```text
+TenantUser.role   = STAFF
+TenantUser.status = invited
+```
+
+API ne prihvata role i browser ne odlučuje tenant. Tenant i actor dolaze samo
+iz `requireOwner()` DB-revalidiranog membership-a; ADMIN, STAFF, USER/GUEST i
+SUPER_ADMIN bez stvarnog OWNER membership-a ne mogu pozvati niti rotirati
+poziv. Redosled poziva nema authorization značenje.
+
+Jedinstvenost `{tenantId,email}` ostaje finalni DB invariant. Postojeći
+USER/GUEST daje `TEAM_EMAIL_ALREADY_CLIENT`; active STAFF/ADMIN daje
+`TEAM_MEMBER_ALREADY_ACTIVE`; invited STAFF vodi na resend, a suspended član na
+budući reactivation tok. Isti email u drugom tenantu ostaje dozvoljen.
+
+## 10.2 Token i password lifecycle
+
+`TenantUser` nosi samo invite metapodatke:
+
+```text
+invitationTokenHash
+invitationExpiresAt
+invitedAt
+invitedByTenantUserId
+```
+
+Raw 256-bitni token se generiše kriptografski i nikada se ne čuva u bazi; baza
+čuva SHA-256 hash. Raw invite URL se vraća samo pri create/resend operaciji.
+Resend generiše novi token i odmah poništava stari. Pozvani član dobija
+nepoznati random bcrypt placeholder jer je `TenantUser.password` required;
+OWNER nikada ne dobija privremenu lozinku.
+
+Acceptance proverava tenant, `STAFF/invited`, token hash, rok i aktuelni seat
+capacity. Jedan atomski CAS zatim postavlja korisnički bcrypt hash,
+`isEmailVerified=true`, `status=active` i uklanja token hash/expiry. Iskorišćen,
+pogrešan, istekao ili resend-om zamenjen token više ne radi. Email sadrži naziv
+salona, ime pozivaoca kada postoji, team-member formulaciju, rok i activation
+CTA. Javna `/team/invite` stranica je samo acceptance površina, ne Team UI.
+
+## 10.3 Seat concurrency authority
+
+`Tenant.teamMembershipRevision` je tehnički mutex/revision, ne seat counter.
+Create transaction prvo radi atomski `$inc` tog polja, pa u istoj session čita
+efektivni `features.staffMembers`, broji active/invited ADMIN+STAFF i tek tada
+kreira invited STAFF. Write conflict se retry-uje i ponovljeni pokušaj vidi
+sveže članstvo. Zato dva paralelna zahteva ne mogu oba zauzeti poslednje mesto.
+
+Acceptance i resend koriste isti tenant serialization point. Acceptance
+fail-closed proverava da već zauzeti invited seat i dalje staje u aktuelni limit
+(npr. posle downgrade-a). Resend ne dodaje seat. Isti primitive moraju koristiti
+budući reactivate/suspend/remove tokovi kada menjaju occupancy.
+
+## 10.4 Session invariant
+
+Jedan `tenantMembershipSessionDenial()` gate sada koriste tenant login, tenant
+refresh, unified management login i marketplace login. Nova ili osvežena tenant
+sesija postoji samo za:
+
+```text
+status = active
+isEmailVerified = true
+```
+
+`invited` pada čak i u anomalnom verified stanju; `suspended` pada; active ali
+unverified i dalje dobija verification denial. Posle uspešnog acceptance-a
+STAFF je active + verified i prolazi isti login invariant kao ostali članovi.
+
+## 10.5 API i dokazi
+
+Write površine su:
+
+```text
+POST /api/team/invitations
+POST /api/team/invitations/:id/resend
+POST /api/team/invitations/accept
+```
+
+Create/resend su OWNER-only; accept je javni token lifecycle. Targeted paket
+ima 50 testova za owner gate, role/tenant injection, member konflikte, plan
+override/unlimited, cross-tenant izolaciju, duplicate email race, token
+one-use/expiry/resend i auth stanja. Pravi Mongo ReplSet test potvrđuje da pri
+dva paralelna invite-a za poslednji Maria seat tačno jedan uspeva. Ceo root
+presek: 211 test fajlova, 2348 prošlih testova, 21 preskočen; TypeScript i ESLint
+promenjenih fajlova prolaze.
+
+## 10.6 STOP granica
+
+STAFF-2 ne uvodi generic role endpoint. STAFF → ADMIN i ADMIN → STAFF ostaju
+buduća eksplicitna OWNER akcija nad active + verified članom. OWNER nikada nije
+obična role mutacija; ownership transfer ostaje poseban atomski workflow.
+STAFF-3 se ne započinje pre pregleda i acceptance-a ovog reza.
+
+---
+
 # DEFERRED — Team management & ownership transfer
 
-**Status: DELIMIČNO OTVOREN KROZ STAFF v1.** Team invite/model/UI ide kroz
-STAFF-2 → STAFF-3 tek posle acceptance-a STAFF-1. Ownership transfer ostaje
+**Status: DELIMIČNO OTVOREN KROZ STAFF v1.** Team model i invite lifecycle su
+u STAFF-1/STAFF-2; Team management/UI ide tek kroz STAFF-3 posle acceptance-a
+STAFF-2. Ownership transfer ostaje
 deferred. Ne praviti ga u Staff onboarding v1.
 
 ## Budući team management

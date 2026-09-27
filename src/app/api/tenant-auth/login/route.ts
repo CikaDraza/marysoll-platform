@@ -24,6 +24,7 @@ import {
 import { buildTenantTokenResponse } from "@/lib/auth/tokenResponse";
 import { platformUrl } from "@/lib/platform/host-context";
 import { isBusinessAdminRole } from "@/lib/auth/roles";
+import { tenantMembershipSessionDenial } from "@/lib/auth/tenantMembership";
 
 /** Marysoll podrška — BEZ hosta zahteva (prijava stiže sa domena SALONA). */
 const supportLink = () => platformUrl("/kontakt");
@@ -99,20 +100,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!tenantUser.isEmailVerified) {
+    const membershipDenial = tenantMembershipSessionDenial(tenantUser);
+    if (membershipDenial) {
       return NextResponse.json(
         {
-          error: "Email adresa nije verifikovana. Proverite inbox ili zatražite novi verifikacioni link.",
-          code: "EMAIL_NOT_VERIFIED",
+          error: membershipDenial.error,
+          code: membershipDenial.code,
         },
-        { status: 401 },
-      );
-    }
-
-    if (tenantUser.status === "suspended") {
-      return NextResponse.json(
-        { error: "Vaš nalog je suspendovan. Kontaktirajte salon." },
-        { status: 403 },
+        { status: membershipDenial.httpStatus },
       );
     }
 

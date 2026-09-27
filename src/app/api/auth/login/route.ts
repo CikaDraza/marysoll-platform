@@ -34,6 +34,7 @@ import {
   buildTenantTokenResponse,
 } from "@/lib/auth/tokenResponse";
 import { isBusinessAdminRole } from "@/lib/auth/roles";
+import { tenantMembershipSessionDenial } from "@/lib/auth/tenantMembership";
 
 const MANAGEMENT_ROLES = ["OWNER", "ADMIN", "STAFF"] as const;
 
@@ -122,17 +123,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Pogrešna lozinka." }, { status: 401 });
     }
 
-    if (!tenantUser.isEmailVerified) {
+    const membershipDenial = tenantMembershipSessionDenial(tenantUser);
+    if (membershipDenial) {
       return NextResponse.json(
-        { error: "Email adresa nije verifikovana.", code: "EMAIL_NOT_VERIFIED" },
-        { status: 401 },
-      );
-    }
-
-    if (tenantUser.status === "suspended") {
-      return NextResponse.json(
-        { error: "Vaš nalog je suspendovan. Kontaktirajte salon." },
-        { status: 403 },
+        { error: membershipDenial.error, code: membershipDenial.code },
+        { status: membershipDenial.httpStatus },
       );
     }
 

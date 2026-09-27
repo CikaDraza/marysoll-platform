@@ -7,7 +7,7 @@
 > Stanje koda provereno **2026-09-27**; Edu pilot closure redosled revidiran
 > **2026-09-04**.
 > Zdravlje tog preseka: `tsc` prolazi, lint bez novih upozorenja, build prolazi,
-> 206 test fajlova / 2316 testova prolazi (21 preskočen). Brojevi važe za taj
+> 211 test fajlova / 2348 testova prolazi (21 preskočen). Brojevi važe za taj
 > datum i nisu obećanje.
 
 ## Redosled
@@ -18,9 +18,10 @@ BEAUTY       ✅  T1-0 → T1-4 prihvaćeno
              ✅  B-PRICE-1 checkout input + potvrda promenljive cene
              🟡  Marysoll browser acceptance čeka za T1-1 → T1-3 rezove
 STAFF v1     ✅  STAFF-0 authorization foundation — prihvaćeno i mergeovano
-             🟡  STAFF-1 Team model + plan limit — code complete / review pending
-NEXT         →   pregled i acceptance STAFF-1; bez prelaska na STAFF-2
-THEN         →   STAFF-2 Invite flow, tek posle acceptance-a STAFF-1
+             ✅  STAFF-1 Team model + plan limit — prihvaćeno i mergeovano
+             🟡  STAFF-2 Team invite lifecycle — code complete / review pending
+NEXT         →   pregled i acceptance STAFF-2; bez prelaska na STAFF-3
+THEN         →   STAFF-3 tek posle acceptance-a STAFF-2
 AFTER STAFF  →   E3 Draft safety acceptance / hardening
 DEFERRED     →   T1-5 · evidencija naplate (granica zaključana) · T3 cutover ·
                  legacy HMAC/marketplace write ·
@@ -32,19 +33,21 @@ ostaje neophodan)
 
 ## NEXT — sledeći rez
 
-**STAFF-1 — Team model i plan limit.** Implementiran je centralni server seat
-policy nad postojećim `TenantUser` modelom. OWNER se ne računa; active/invited
-ADMIN i STAFF zauzimaju mesto; suspended ga oslobađa; reaktivacija ponovo
-proverava kapacitet. Limit dolazi samo iz efektivnog `PlanFeatures.staffMembers`
-i poštuje aktivni `Subscription.featureOverrides`; `-1` je unlimited. Ne postoji
-plan-name grananje. Nevalidan override pada pre DB write-a, a runtime policy je
-fail-closed. Puna pravila i dokazi su u
-[Tenant ownership lifecycle §9](PANTA-TENANT-OWNERSHIP-LIFECYCLE.md#9-staff-1--team-model-i-plan-limit).
+**STAFF-2 — Team invite lifecycle.** OWNER-only create uvek pravi
+`STAFF/invited` članstvo nad postojećim `TenantUser`; browser ne bira role niti
+tenant. Kriptografski raw token postoji samo u create/resend odgovoru i URL-u,
+dok baza čuva SHA-256 hash. Resend rotira token bez novog seat-a, acceptance
+atomically postavlja ličnu lozinku, verified + active stanje i troši token.
+Create/accept/resend koriste `Tenant.teamMembershipRevision` kao transaction
+serialization point; pravi ReplSet test dokazuje da od dva paralelna zahteva za
+poslednji seat tačno jedan uspeva. Login i refresh sada eksplicitno zahtevaju
+`status=active` i verified email. Puna pravila i dokazi su u
+[Tenant ownership lifecycle §10](PANTA-TENANT-OWNERSHIP-LIFECYCLE.md#10-staff-2--team-invite-lifecycle).
 
-**STOP granica.** STAFF-1 ne pravi invite, Team API/UI, token, email,
-`StaffProfile` niti bookable staff. Seat helper još nema membership mutatora;
-STAFF-2 mora da ga pozove iz server write toka i da zatvori konkurentno slanje
-poziva. Sledeći rez se ne radi dok se STAFF-1 ne pregleda i prihvati.
+**STOP granica.** Nema Team dashboard UI-ja, appointment permissions,
+`StaffProfile`, bookable staff-a, generic role edit-a niti ownership transfera.
+Javna `/team/invite` stranica je samo activation površina linka iz emaila.
+STAFF-3 se ne radi dok STAFF-2 ne bude pregledan i prihvaćen.
 
 Posle celog Staff v1 reza vraćamo se na:
 

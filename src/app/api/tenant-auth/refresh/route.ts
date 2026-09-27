@@ -11,6 +11,7 @@ import { TenantUser } from "@/models/TenantUser";
 import { Tenant } from "@/models/Tenant";
 import { verifyRefreshToken, generateAccessToken } from "@/lib/auth/auth-server";
 import { isBusinessAdminRole } from "@/lib/auth/roles";
+import { tenantMembershipSessionDenial } from "@/lib/auth/tenantMembership";
 
 export async function POST(request: NextRequest) {
   try {
@@ -62,8 +63,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (tenantUser.status === "suspended") {
-      return NextResponse.json({ error: "Account suspended" }, { status: 403 });
+    const membershipDenial = tenantMembershipSessionDenial(tenantUser);
+    if (membershipDenial) {
+      return NextResponse.json(
+        { error: membershipDenial.error, code: membershipDenial.code },
+        { status: membershipDenial.httpStatus },
+      );
     }
 
     const tenant = await Tenant.findById(tenantUser.tenantId)
