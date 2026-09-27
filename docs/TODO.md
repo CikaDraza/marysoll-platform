@@ -7,7 +7,7 @@
 > Stanje koda provereno **2026-09-27**; Edu pilot closure redosled revidiran
 > **2026-09-04**.
 > Zdravlje tog preseka: `tsc` prolazi, lint bez novih upozorenja, build prolazi,
-> 203 test fajla / 2279 testova prolazi (21 preskočen). Brojevi važe za taj
+> 206 test fajlova / 2316 testova prolazi (21 preskočen). Brojevi važe za taj
 > datum i nisu obećanje.
 
 ## Redosled
@@ -17,9 +17,10 @@ EDUCATION    🟡  Edu pilot closure → E1 ✅ → E2 ✅ code → E3 → E4 �
 BEAUTY       ✅  T1-0 → T1-4 prihvaćeno
              ✅  B-PRICE-1 checkout input + potvrda promenljive cene
              🟡  Marysoll browser acceptance čeka za T1-1 → T1-3 rezove
-STAFF v1     🟡  STAFF-0 authorization foundation — code complete / review pending
-NEXT         →   pregled i acceptance STAFF-0; bez prelaska na STAFF-1
-THEN         →   STAFF-1 → STAFF-6, jedan pregledan rez odjednom
+STAFF v1     ✅  STAFF-0 authorization foundation — prihvaćeno i mergeovano
+             🟡  STAFF-1 Team model + plan limit — code complete / review pending
+NEXT         →   pregled i acceptance STAFF-1; bez prelaska na STAFF-2
+THEN         →   STAFF-2 Invite flow, tek posle acceptance-a STAFF-1
 AFTER STAFF  →   E3 Draft safety acceptance / hardening
 DEFERRED     →   T1-5 · evidencija naplate (granica zaključana) · T3 cutover ·
                  legacy HMAC/marketplace write ·
@@ -31,20 +32,19 @@ ostaje neophodan)
 
 ## NEXT — sledeći rez
 
-**STAFF-0 — authorization contract.** Prvi rez je implementiran na grani
-`feat/staff-authorization` i čeka pregled. Zaključana je razlika između
-backoffice člana, poslovnog administratora, owner-a i salonskog operatora;
-`STAFF !== isAdmin`. Server authority ponovo čita aktuelni `TenantUser` i zato
-suspendovano ili promenjeno članstvo ne zadržava ovlašćenje kroz stari JWT.
-Postojeći `requireAdmin()` potrošači ostaju OWNER/ADMIN, a owner-sensitive rute
-koriste aktuelno DB OWNER članstvo. Route audit i puna matrica su u
-[Tenant ownership lifecycle §8](PANTA-TENANT-OWNERSHIP-LIFECYCLE.md#8-staff-0--authorization-foundation).
+**STAFF-1 — Team model i plan limit.** Implementiran je centralni server seat
+policy nad postojećim `TenantUser` modelom. OWNER se ne računa; active/invited
+ADMIN i STAFF zauzimaju mesto; suspended ga oslobađa; reaktivacija ponovo
+proverava kapacitet. Limit dolazi samo iz efektivnog `PlanFeatures.staffMembers`
+i poštuje aktivni `Subscription.featureOverrides`; `-1` je unlimited. Ne postoji
+plan-name grananje. Nevalidan override pada pre DB write-a, a runtime policy je
+fail-closed. Puna pravila i dokazi su u
+[Tenant ownership lifecycle §9](PANTA-TENANT-OWNERSHIP-LIFECYCLE.md#9-staff-1--team-model-i-plan-limit).
 
-**STOP granica.** STAFF-0 još ne daje STAFF ulozi nijedan appointment endpoint.
-`requireSalonOperator()` je foundation za STAFF-4/5, ne dozvola da se generičke
-rute otvore pre command/payload audita. Invite, Team UI, seat limit,
-`StaffProfile` i bookable staff nisu započeti. Sledeći rez se ne radi dok se
-STAFF-0 ne pregleda i eksplicitno prihvati.
+**STOP granica.** STAFF-1 ne pravi invite, Team API/UI, token, email,
+`StaffProfile` niti bookable staff. Seat helper još nema membership mutatora;
+STAFF-2 mora da ga pozove iz server write toka i da zatvori konkurentno slanje
+poziva. Sledeći rez se ne radi dok se STAFF-1 ne pregleda i prihvati.
 
 Posle celog Staff v1 reza vraćamo se na:
 
