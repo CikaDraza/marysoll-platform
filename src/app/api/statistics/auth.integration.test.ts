@@ -6,13 +6,12 @@
  * poziv vraćao je statistiku SVIH salona na platformi.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextResponse } from "next/server";
 
-const verifyToken = vi.fn();
-const getTokenFromRequest = vi.fn();
+const requireAdmin = vi.fn();
 
 vi.mock("@/lib/auth/auth-server", () => ({
-  verifyToken: (...a: unknown[]) => verifyToken(...a),
-  getTokenFromRequest: (...a: unknown[]) => getTokenFromRequest(...a),
+  requireAdmin: (...a: unknown[]) => requireAdmin(...a),
 }));
 vi.mock("@/lib/db/mongodb", () => ({ connectToDB: vi.fn() }));
 vi.mock("@/lib/plans/requireFeature", () => ({ requireFeature: vi.fn() }));
@@ -32,35 +31,54 @@ describe("autorizacija /api/statistics", () => {
   });
 
   it("bez tokena → 401", async () => {
-    getTokenFromRequest.mockReturnValue(null);
-    verifyToken.mockReturnValue(null);
+    requireAdmin.mockResolvedValue({
+      success: false,
+      response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    });
     const res = await callRoute();
     expect(res.status).toBe(401);
   });
 
   it("nevalidan token → 401", async () => {
-    getTokenFromRequest.mockReturnValue("bad");
-    verifyToken.mockReturnValue(null);
+    requireAdmin.mockResolvedValue({
+      success: false,
+      response: NextResponse.json({ error: "Invalid token" }, { status: 401 }),
+    });
     const res = await callRoute();
     expect(res.status).toBe(401);
   });
 
   it("KLIJENT → 403, statistika nije njegov podatak", async () => {
-    getTokenFromRequest.mockReturnValue("t");
-    verifyToken.mockReturnValue({
-      id: "u1",
-      isAdmin: false,
-      tenantId: "68f000000000000000000001",
-      tenantUserId: "68f000000000000000000002",
+    requireAdmin.mockResolvedValue({
+      success: false,
+      response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
     });
     const res = await callRoute();
     expect(res.status).toBe(403);
   });
 
   it("admin bez tenant konteksta → 403", async () => {
-    getTokenFromRequest.mockReturnValue("t");
-    verifyToken.mockReturnValue({ id: "u1", isAdmin: true });
+    requireAdmin.mockResolvedValue({
+      success: true,
+      decoded: { id: "u1", isAdmin: true, tenantId: null },
+      membership: null,
+    });
     const res = await callRoute();
     expect(res.status).toBe(403);
+  });
+
+  it("STAFF → 403 iako ima backoffice pristup", async () => {
+    requireAdmin.mockResolvedValue({
+      success: false,
+      response: NextResponse.json(
+        { error: "Read only", code: "STAFF_READ_ONLY" },
+        { status: 403 },
+      ),
+    });
+    const res = await callRoute();
+    expect(res.status).toBe(403);
+    await expect(res.json()).resolves.toMatchObject({
+      code: "STAFF_READ_ONLY",
+    });
   });
 });

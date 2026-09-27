@@ -9,6 +9,7 @@ import "server-only";
  *   tenant-*    cookie: domain undefined       (izolovano po subdomenu)
  */
 import { NextResponse } from "next/server";
+import { isBackofficeRole } from "@/lib/auth/roles";
 
 const COOKIE_MAX_AGE = 30 * 24 * 60 * 60; // 30 dana
 
@@ -38,6 +39,8 @@ export function buildPlatformTokenResponse(
       email: user.email,
       globalRole: user.globalRole,
       isAdmin: user.isAdmin,
+      isBackofficeMember:
+        user.isSuperAdmin || isBackofficeRole(user.globalRole),
       isSuperAdmin: user.isSuperAdmin,
       tenantId: null,
       tenantUserId: null,
@@ -83,6 +86,7 @@ export function buildTenantTokenResponse(
       email: user.email,
       globalRole: user.globalRole,
       isAdmin: user.isAdmin,
+      isBackofficeMember: isBackofficeRole(user.globalRole),
       isSuperAdmin: user.isSuperAdmin,
       tenantId: user.tenantId,
       tenantUserId: user.tenantUserId,

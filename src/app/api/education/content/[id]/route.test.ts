@@ -65,7 +65,7 @@ function persistedFields(call: number) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(requireTenantAdmin).mockReturnValue({
+  vi.mocked(requireTenantAdmin).mockResolvedValue({
     success: true,
     tenantId: TENANT,
   });
@@ -114,13 +114,13 @@ describe("tenant scoping", () => {
   });
 
   it("odbija klijenta i tenant bez capability-ja pre svake DB operacije", async () => {
-    vi.mocked(requireTenantAdmin).mockReturnValue({
+    vi.mocked(requireTenantAdmin).mockResolvedValue({
       success: false,
       response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
     });
     expect((await GET(request("GET"), params())).status).toBe(403);
 
-    vi.mocked(requireTenantAdmin).mockReturnValue({
+    vi.mocked(requireTenantAdmin).mockResolvedValue({
       success: true,
       tenantId: TENANT,
     });

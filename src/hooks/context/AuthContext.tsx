@@ -28,6 +28,9 @@ export const AuthProvider = ({
         email:   decoded.email,
         name:    decoded.name,
         isAdmin: decoded.isAdmin,
+        isBackofficeMember: decoded.isBackofficeMember,
+        isSuperAdmin: decoded.isSuperAdmin,
+        globalRole: decoded.globalRole,
         token:   token!,
         isOnline: decoded.isOnline,
       }

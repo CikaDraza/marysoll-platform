@@ -26,8 +26,9 @@ describe("brisanje salona", () => {
 
   it("dozvoljena je samo OWNER-u", () => {
     const s = source(OWNER_DELETE);
-    expect(s).toContain('globalRole !== "OWNER"');
-    // Uloga se potvrđuje i iz baze, ne samo iz JWT claim-a.
+    // Centralni gate i ruta oba citaju aktuelno DB clanstvo; JWT claim nije
+    // owner authority.
+    expect(s).toContain("await requireOwner(req)");
     expect(s).toMatch(/caller\.role !== "OWNER"/);
   });
 

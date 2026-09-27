@@ -12,7 +12,7 @@ const INBOX_PREFIXES = ["booking", "kontakt", "support", "newsletter"] as const;
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = requireAdmin(req);
+    const auth = await requireAdmin(req);
     if (auth instanceof NextResponse) return auth;
     if (!auth.success) return auth.response;
 

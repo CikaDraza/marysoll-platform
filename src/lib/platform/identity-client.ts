@@ -16,6 +16,7 @@ export interface DecodedToken {
   isAdmin: boolean;
   isSuperAdmin?: boolean;
   tenantId?: string;
+  globalRole?: string;
   /** "platform" = SUPER_ADMIN (AuthUser). "tenant" = any TenantUser role. */
   type?: "platform" | "tenant";
   exp: number;

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Types } from "mongoose";
 import { z } from "zod";
-import { getTokenFromRequest, verifyToken } from "@/lib/auth/auth-server";
+import { requireAdmin } from "@/lib/auth/auth-server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { requireFeature } from "@/lib/plans/planEnforcement";
 import { computeSalonStatistics, statisticsPeriod, type StatisticsAppointment } from "@/lib/statistics/engine";
@@ -16,10 +16,9 @@ const querySchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
-    const decoded = token ? verifyToken(token) : null;
-    if (!decoded) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    if (!decoded.isSuperAdmin && !decoded.isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const auth = await requireAdmin(request);
+    if (!auth.success) return auth.response;
+    const { decoded } = auth;
     if (!decoded.isSuperAdmin && !decoded.tenantId) return NextResponse.json({ error: "Forbidden: no tenant context" }, { status: 403 });
 
     const parsedQuery = querySchema.safeParse(Object.fromEntries(request.nextUrl.searchParams));

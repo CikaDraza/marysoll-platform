@@ -105,7 +105,7 @@ const configSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const auth = requireAdmin(req);
+  const auth = await requireAdmin(req);
   if (!auth.success) return auth.response;
   const denied = await requireCapability(auth.decoded.tenantId, "loyalty.rewards");
   if (denied) return denied;
@@ -122,7 +122,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const auth = requireAdmin(req);
+  const auth = await requireAdmin(req);
   if (!auth.success) return auth.response;
   const denied = await requireCapability(auth.decoded.tenantId, "loyalty.rewards");
   if (denied) return denied;

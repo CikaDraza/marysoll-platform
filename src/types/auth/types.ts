@@ -23,6 +23,7 @@ export interface DecodedUser {
   phone: string;
   instagram?: string;
   isAdmin: boolean;
+  isBackofficeMember: boolean;
   isSuperAdmin: boolean;
   tenantUserId: string | null;  // TenantUser._id
   tenantId: string | null;
@@ -46,6 +47,9 @@ export interface LoggedInUser {
   email: string;
   name: string;
   isAdmin: boolean;
+  isBackofficeMember?: boolean;
+  isSuperAdmin?: boolean;
+  globalRole?: string;
   token: string;
   tenantUserId?: string | null;
   tenantId?: string | null;

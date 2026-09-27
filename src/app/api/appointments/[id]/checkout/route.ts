@@ -51,7 +51,7 @@ export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
-  const auth = requireAdmin(req);
+  const auth = await requireAdmin(req);
   if (!auth.success) return auth.response;
   const denied = await requireCapability(auth.decoded.tenantId, "booking.services");
   if (denied) return denied;
@@ -82,7 +82,7 @@ export async function POST(
   req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
-  const auth = requireAdmin(req);
+  const auth = await requireAdmin(req);
   if (!auth.success) return auth.response;
   const denied = await requireCapability(auth.decoded.tenantId, "booking.services");
   if (denied) return denied;

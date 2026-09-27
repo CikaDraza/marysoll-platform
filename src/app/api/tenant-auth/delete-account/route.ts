@@ -14,26 +14,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { TenantUser } from "@/models/TenantUser";
-import { requireAdmin } from "@/lib/auth/auth-server";
-import { DecodedToken } from "@/types/auth/types";
+import { requireOwner } from "@/lib/auth/auth-server";
 import {
   deleteTenantPermanently,
   TenantDeletionError,
 } from "@/lib/tenant/deleteTenant";
 
 export async function DELETE(req: NextRequest) {
-  const auth = requireAdmin(req) as { decoded: DecodedToken } | NextResponse;
-  if (auth instanceof NextResponse) return auth;
+  const auth = await requireOwner(req);
+  if (!auth.success) return auth.response;
 
   const { decoded } = auth;
-
-  // Samo OWNER. ADMIN i STAFF ne mogu obrisati salon.
-  if (decoded.globalRole !== "OWNER") {
-    return NextResponse.json(
-      { error: "Samo vlasnik salona može trajno obrisati salon." },
-      { status: 403 },
-    );
-  }
 
   const tenantUserId = decoded.tenantUserId;
   const tenantId = decoded.tenantId;

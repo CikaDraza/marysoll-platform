@@ -69,7 +69,7 @@ async function docxFile(): Promise<File> {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(requireTenantAdmin).mockReturnValue({
+  vi.mocked(requireTenantAdmin).mockResolvedValue({
     success: true,
     tenantId: "6650a1f1a1f1a1f1a1f1a1f1",
   });
@@ -158,7 +158,7 @@ describe("POST /api/education/import", async () => {
   });
 
   it("odbija korisnika bez admin permission-a pre čitanja fajla", async () => {
-    vi.mocked(requireTenantAdmin).mockReturnValue({
+    vi.mocked(requireTenantAdmin).mockResolvedValue({
       success: false,
       response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
     });

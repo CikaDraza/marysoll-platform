@@ -38,7 +38,7 @@ function request(body?: Record<string, unknown>) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(requireTenantAdmin).mockReturnValue({
+  vi.mocked(requireTenantAdmin).mockResolvedValue({
     success: true,
     tenantId: TENANT_ID,
   });
@@ -73,7 +73,7 @@ describe("POST /api/tenant/education/activate", () => {
   });
 
   it("odbija ordinary client pre tenant mutation-a", async () => {
-    vi.mocked(requireTenantAdmin).mockReturnValue({
+    vi.mocked(requireTenantAdmin).mockResolvedValue({
       success: false,
       response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
     });
@@ -85,7 +85,7 @@ describe("POST /api/tenant/education/activate", () => {
   });
 
   it("odbija tenant mismatch pre mutation-a", async () => {
-    vi.mocked(requireTenantAdmin).mockReturnValue({
+    vi.mocked(requireTenantAdmin).mockResolvedValue({
       success: false,
       response: NextResponse.json(
         { error: "Forbidden: tenant mismatch" },

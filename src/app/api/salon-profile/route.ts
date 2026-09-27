@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     await connectToDB();
-    const auth: AdminAuthResult = requireAdmin(request);
+    const auth: AdminAuthResult = await requireAdmin(request);
     if (!auth.success) {
       return auth.response;
     }

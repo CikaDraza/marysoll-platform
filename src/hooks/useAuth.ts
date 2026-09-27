@@ -58,6 +58,7 @@ interface LoginApiResponse {
     name: string;
     email: string;
     isAdmin: boolean;
+    isBackofficeMember: boolean;
     isSuperAdmin: boolean;
     tenantId: string | null;
   };
@@ -368,7 +369,7 @@ export function useAuth() {
       // Produkcija → admin./superadmin. subdomen (cross-host handoff);
       // dev/preview/staging → relativno na istom hostu. Klijenti: null.
       let adminDestination: "/dashboard" | "/education" = "/dashboard";
-      if (data.user.isAdmin && !data.user.isSuperAdmin) {
+      if (data.user.isBackofficeMember && !data.user.isSuperAdmin) {
         try {
           const response = await api.get<TenantCapabilitySnapshot>(
             "/tenant/capabilities",
@@ -386,6 +387,7 @@ export function useAuth() {
 
       const target = loginRedirectUrl({
         isAdmin: data.user.isAdmin,
+        isBackofficeMember: data.user.isBackofficeMember,
         isSuperAdmin: data.user.isSuperAdmin,
         token: data.token,
         hostname: window.location.hostname,
@@ -469,6 +471,7 @@ export function useAuth() {
     token: user?.token ?? null,
     isLoggedIn: !!user,
     isAdmin: user?.isAdmin ?? false,
+    isBackofficeMember: user?.isBackofficeMember ?? false,
     isSuperAdmin: user?.isSuperAdmin ?? false,
     tenantId: user?.tenantId ?? null,
     isLoading,

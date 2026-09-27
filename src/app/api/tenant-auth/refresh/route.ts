@@ -10,6 +10,7 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { TenantUser } from "@/models/TenantUser";
 import { Tenant } from "@/models/Tenant";
 import { verifyRefreshToken, generateAccessToken } from "@/lib/auth/auth-server";
+import { isBusinessAdminRole } from "@/lib/auth/roles";
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
       .select("slug")
       .lean<{ slug: string }>();
 
-    const isAdmin = ["OWNER", "ADMIN", "STAFF"].includes(tenantUser.role);
+    const isAdmin = isBusinessAdminRole(tenantUser.role);
 
     const token = generateAccessToken(
       tenantUser._id.toString(),

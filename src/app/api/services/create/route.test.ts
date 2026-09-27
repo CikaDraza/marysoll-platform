@@ -20,7 +20,7 @@ describe("POST /api/services/create capability gate", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("direktan zahtev sa skrivenim UI-jem ne može zaobići server gate", async () => {
-    vi.mocked(requireAdmin).mockReturnValue({
+    vi.mocked(requireAdmin).mockResolvedValue({
       success: true,
       decoded: { tenantId: "507f1f77bcf86cd799439011" },
     } as never);
@@ -45,7 +45,7 @@ describe("POST /api/services/create capability gate", () => {
 
   it("capability se ne proverava pre postojeće permission provere", async () => {
     const forbidden = NextResponse.json({ error: "Nemate administratorska prava" }, { status: 403 });
-    vi.mocked(requireAdmin).mockReturnValue({ success: false, response: forbidden });
+    vi.mocked(requireAdmin).mockResolvedValue({ success: false, response: forbidden });
 
     const response = await POST(
       new NextRequest("http://localhost/api/services/create", { method: "POST" }),

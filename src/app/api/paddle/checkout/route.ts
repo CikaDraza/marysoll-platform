@@ -18,7 +18,7 @@ import type { PlanName } from "@/lib/plans/planFeatures";
 const PAID_PLANS: PlanName[] = ["claudia", "kiki", "enterprise"];
 
 export async function POST(req: NextRequest) {
-  const auth = requireAdmin(req);
+  const auth = await requireAdmin(req);
   if (!auth.success) return auth.response;
   const { decoded } = auth;
 

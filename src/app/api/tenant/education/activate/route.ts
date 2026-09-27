@@ -8,7 +8,7 @@ import { provisionEducationWorkspace } from "@/lib/platform/education-provisioni
  * capabilities or another tenant; it can only request this canonical mutation.
  */
 export async function POST(request: NextRequest) {
-  const auth = requireTenantAdmin(request);
+  const auth = await requireTenantAdmin(request);
   if (!auth.success) return auth.response;
 
   try {

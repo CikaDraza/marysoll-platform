@@ -12,6 +12,7 @@ import { identityClient } from "@/lib/platform/identity-client";
 import type { DecodedToken } from "@/lib/platform/identity-client";
 import type { AuthOut } from "./types";
 import { BASE_DOMAIN, IS_PROD, isPathBasedHost } from "./constants";
+import { tokenHasBackofficeAccess } from "@/lib/auth/roles";
 
 /**
  * Reads the access token from the request.
@@ -87,7 +88,7 @@ export async function guardApi(
 
   if (needSuperAdmin && !decoded.isSuperAdmin)
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  if (needAdmin && !decoded.isAdmin && !decoded.isSuperAdmin)
+  if (needAdmin && !tokenHasBackofficeAccess(decoded))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   return null;
 }
@@ -126,7 +127,7 @@ export async function guardPage(
 
   if (needSuperAdmin && !decoded.isSuperAdmin)
     return NextResponse.redirect(unauthorizedUrl);
-  if (needAdmin && !decoded.isAdmin && !decoded.isSuperAdmin)
+  if (needAdmin && !tokenHasBackofficeAccess(decoded))
     return NextResponse.redirect(unauthorizedUrl);
   return null;
 }

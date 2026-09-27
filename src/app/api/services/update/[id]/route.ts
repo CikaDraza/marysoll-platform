@@ -10,7 +10,7 @@ type Params = { params: Promise<{ id: string }> };
 export async function PUT(req: Request, { params }: Params) {
   try {
     await connectToDB();
-    const auth = requireAdmin(req);
+    const auth = await requireAdmin(req);
     if (!auth.success) return auth.response;
     const denied = await requireCapability(auth.decoded.tenantId, "services.catalog");
     if (denied) return denied;

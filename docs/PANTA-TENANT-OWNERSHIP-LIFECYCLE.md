@@ -1,7 +1,7 @@
 # PANTA — Tenant ownership lifecycle
 
 > Zaključan ugovor o vlasništvu nad salonom.
-> Poslednja izmena: 2026-08-24 · grana `staging/production-fixes`
+> Poslednja izmena: 2026-09-27 · grana `feat/staff-authorization`
 
 ## 1. Invariant
 
@@ -168,10 +168,94 @@ Repair nikada ne koristi poklapanje emaila kao dokaz vlasništva.
 
 ---
 
+# 8. STAFF-0 — authorization foundation
+
+**Status: code complete / review pending.** Ovaj rez zaključava auth rečnik i
+server authority. Ne uvodi pozive, Team ekran, seat limite, `StaffProfile`,
+staff-specific raspored niti novu appointment dozvolu.
+
+## 8.1 Role contract
+
+| Uloga | Backoffice | Business admin | Salon operator | Owner |
+|---|---:|---:|---:|---:|
+| OWNER | da | da | da | da |
+| ADMIN | da | da | da | ne |
+| STAFF | da | **ne** | da | ne |
+| USER / GUEST | ne | ne | ne | ne |
+
+`STAFF !== isAdmin` je invariant. `isAdmin` od ovog reza znači samo
+OWNER/ADMIN poslovnu vlast. Ulazak u dashboard koristi odvojeni
+`isBackofficeMember` pojam. Login i refresh više ne izdaju STAFF token sa
+`isAdmin=true`; legacy STAFF token sa takvim claim-om se normalizuje prema
+`globalRole=STAFF` i ne može proći admin gate.
+
+Centralni server helperi su:
+
+```text
+requireBackofficeMember()  OWNER / ADMIN / STAFF
+requireAdmin()             OWNER / ADMIN
+requireOwner()             OWNER
+requireSalonOperator()     OWNER / ADMIN / STAFF
+```
+
+JWT dokazuje identitet i tenant kontekst, ali nije authority za aktuelnu ulogu
+ili status. Svaki helper ponovo učitava `TenantUser` po `_id + tenantId +
+status=active`, zatim odlučuje na osnovu trenutne DB role. Posledice:
+
+- suspendovan STAFF sa starim validnim JWT-om ne prolazi;
+- demotovana uloga odmah gubi staro ovlašćenje;
+- tenant iz header/proxy konteksta mora odgovarati tokenu;
+- članstvo iz jednog tenanta ne može važiti u drugom;
+- owner-sensitive operacije ne veruju starom OWNER claim-u.
+
+Platform SUPER_ADMIN zadržava postojeći bypass za backoffice/admin/operator
+rute, ali nije tenant OWNER i ne prolazi `requireOwner()`.
+
+## 8.2 Audit postojećih ruta
+
+Ovo je klasifikacija, ne trenutno otvaranje STAFF pristupa. U STAFF-0 svi
+postojeći `requireAdmin()` / `requireTenantAdmin()` potrošači ostaju
+OWNER/ADMIN i sada koriste DB revalidation. B i C se aktiviraju tek u
+STAFF-4/5, posle eksplicitnog response/payload audita.
+
+| Klasa | API površina | Zaključana granica |
+|---|---|---|
+| **A — OWNER only** | `DELETE /api/tenant-auth/delete-account`; `PATCH /api/tenants/identity` | Aktuelni DB OWNER je obavezan. ADMIN/STAFF i zastareo owner JWT su odbijeni. |
+| **A — OWNER/ADMIN business write** | `/api/services/**`; salon profile create/update/SEO; `/api/tenant/education/activate`; Education content/import write; `/api/landing-cms/**`; `/api/newsletter/**`; `/api/campaigns/**`; `/api/audience-*`; `/api/loyalty/admin/**`; `/api/cloudinary/**`; `/api/admin/email-campaign/**`; tenant custom-domain/domain-search/verify; Paddle/subscription/plan operacije | STAFF ne menja katalog/cene, profil, CMS, Marketing, Loyalty, media, capability, plan niti billing. Existing admin gate ostaje zatvoren. |
+| **A — privileged read** | `GET /api/statistics`; admin analytics; loyalty admin ledger/accounts; plan/billing detalji | Statistics je eksplicitno van STAFF v1. Ostali poverljivi poslovni podaci ostaju OWNER/ADMIN dok poseban contract ne kaže drugačije. |
+| **B — STAFF read, STAFF-4 kandidat** | `GET /api/appointments`; `GET /api/appointments/search`; appointment detalji potrebni postojećem toku; operativna pretraga klijenta; read-only salon profile, radno vreme, usluge/cenovnik, CMS/Marketing, relevantan loyalty i Team spisak | Samo tenant-scoped read. `/api/clients/[id]/overview` se ne otvara naslepo ako odgovor sadrži Statistics ili širi Client 360; STAFF dobija samo podatke potrebne za rad, uz projekciju/redakciju gde je potrebna. |
+| **C — STAFF operational write, STAFF-4/5 kandidat** | appointment approve/reject/cancel/reschedule/no-show komande; `POST /api/appointments/message`; `POST /api/appointments/[id]/seen`; `GET/POST /api/appointments/[id]/checkout` uključujući `chargedAmount` | Svaka ruta koristi `requireSalonOperator()` i postojeće state-transition/business invariante. Plan/capability gate ostaje iznad role gate-a. |
+| **C — ostaje OWNER/ADMIN dok se posebno ne odluči** | variable `priceProposal`; `POST /api/appointments/create-guest`; benefit/loyalty mutacije; generic delete; proizvoljni appointment update | STAFF pravo na checkout ne daje pravo da određuje `quotedBaseAmount`, menja pogodnost, identitet, pricing ili katalog. |
+
+Posebno rizična ruta je `PUT /api/appointments/update/[id]`: STAFF-5 mora da
+uvede command/field allowlist. Operator payload nikada ne sme direktno da
+podmetne `pricing`, `priceProposal`, benefit/loyalty state, tenant/client
+identity, katalogske podatke ili status van dozvoljenog prelaza.
+
+`requireSalonOperator()` zato u STAFF-0 nema route potrošača. Postojanje helpera
+ne proširuje runtime ovlašćenja pre STAFF-4/5.
+
+## 8.3 Dokazi ovog reza
+
+Test matrica zaključava:
+
+- OWNER prolazi owner/admin/operator/backoffice;
+- ADMIN prolazi admin/operator/backoffice, ali ne owner;
+- STAFF prolazi operator/backoffice, ali ne admin/owner;
+- USER/GUEST ne prolaze backoffice gate;
+- suspendovan STAFF pada i sa starim validnim JWT-om;
+- cross-tenant i falsifikovan tenant kontekst padaju;
+- svi route potrošači async admin gate-a moraju da ga `await`-uju;
+- tenant login/refresh ulazi koriste OWNER/ADMIN admin semantiku;
+- owner-sensitive rute koriste `requireOwner()`.
+
+---
+
 # DEFERRED — Team management & ownership transfer
 
-**Status: DEFERRED.** Implementirati posle Theme-9 i Education rada, kada se
-product scope ponovo otvori. Ne praviti endpoint, UI, model ni migraciju sada.
+**Status: DELIMIČNO OTVOREN KROZ STAFF v1.** Team invite/model/UI ide kroz
+STAFF-1 → STAFF-3 tek posle acceptance-a STAFF-0. Ownership transfer ostaje
+deferred. Ne praviti ga u Staff onboarding v1.
 
 ## Budući team management
 

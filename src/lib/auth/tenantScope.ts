@@ -19,6 +19,7 @@
 
 import { Types } from "mongoose";
 import type { DecodedToken } from "@/types/auth/types";
+import { isBusinessAdminRole } from "./roles";
 
 export interface TenantScopeOk {
   ok: true;
@@ -95,7 +96,10 @@ export function actorScopeFrom(decoded: DecodedToken | null): ActorScope {
     return { ok: true, filter: {}, actor: "superadmin", isSuperAdmin: true };
   }
 
-  if (decoded.isAdmin) {
+  if (
+    isBusinessAdminRole(decoded.globalRole) ||
+    (decoded.globalRole == null && decoded.isAdmin)
+  ) {
     return { ok: true, filter: tenant.filter, actor: "admin", isSuperAdmin: false };
   }
 

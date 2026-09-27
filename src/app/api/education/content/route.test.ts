@@ -53,7 +53,7 @@ function mockList(items: unknown[]) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(requireTenantAdmin).mockReturnValue({
+  vi.mocked(requireTenantAdmin).mockResolvedValue({
     success: true,
     tenantId: TENANT,
   });
@@ -79,7 +79,7 @@ describe("GET /api/education/content", () => {
   });
 
   it("odbija korisnika bez admin permission-a", async () => {
-    vi.mocked(requireTenantAdmin).mockReturnValue({
+    vi.mocked(requireTenantAdmin).mockResolvedValue({
       success: false,
       response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
     });

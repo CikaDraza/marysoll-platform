@@ -12,9 +12,18 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
+import { TenantUser } from "@/models/TenantUser";
 import type { ITenant } from "@/models/Tenant";
 import { DecodedToken } from "@/types/auth/types";
 import { assertTenantMatch } from "@/lib/audit/tenant-guard";
+import {
+  asTenantRole,
+  isBackofficeRole,
+  isBusinessAdminRole,
+  isOwnerRole,
+  isSalonOperatorRole,
+  type TenantRole,
+} from "./roles";
 
 export function generateAccessToken(
   id: string,           // AuthUser._id for platform; TenantUser._id for tenant
@@ -53,7 +62,20 @@ export function generateRefreshToken(
 
 export function verifyToken(token: string): DecodedToken | null {
   try {
-    return jwt.verify(token, process.env.JWT_SECRET!) as DecodedToken;
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET!,
+    ) as DecodedToken;
+    // Legacy STAFF tokeni su izdati sa isAdmin=true. Dok ne isteknu, svaki
+    // postojeci direktni potrosac verifyToken-a mora ipak dobiti novu
+    // semantiku: globalRole je merodavan, STAFF nikad nije business admin.
+    if (
+      decoded.type === "tenant" &&
+      asTenantRole(decoded.globalRole) != null
+    ) {
+      decoded.isAdmin = isBusinessAdminRole(decoded.globalRole);
+    }
+    return decoded;
   } catch {
     return null;
   }
@@ -135,31 +157,67 @@ export async function resolveTenant(
  * Vraća NextResponse (401/403) ako nije.
  */
 
+export interface TenantAuthorityMembership {
+  id: string;
+  tenantId: string;
+  role: TenantRole;
+}
+
 export type AdminAuthResult =
-  | { success: true; decoded: DecodedToken }
+  | {
+      success: true;
+      decoded: DecodedToken;
+      membership: TenantAuthorityMembership | null;
+    }
   | { success: false; response: NextResponse };
 
-export function requireAdmin(request: Request): AdminAuthResult {
+type TenantAuthority =
+  | "backoffice"
+  | "admin"
+  | "owner"
+  | "operator";
+
+function authError(
+  status: 401 | 403,
+  error: string,
+  code: string,
+): AdminAuthResult {
+  return {
+    success: false,
+    response: NextResponse.json({ error, code }, { status }),
+  };
+}
+
+function roleAllows(authority: TenantAuthority, role: TenantRole): boolean {
+  if (authority === "owner") return isOwnerRole(role);
+  if (authority === "admin") return isBusinessAdminRole(role);
+  if (authority === "operator") return isSalonOperatorRole(role);
+  return isBackofficeRole(role);
+}
+
+/**
+ * Server authority uvek ponovo cita trenutno TenantUser clanstvo.
+ *
+ * JWT dokazuje identitet i tenant kontekst, ali ne trenutnu ulogu/status.
+ * Suspendovan ili demotovan clan zato gubi write pristup odmah, bez cekanja
+ * da 30-dnevni token istekne.
+ */
+async function requireTenantAuthority(
+  request: Request,
+  authority: TenantAuthority,
+): Promise<AdminAuthResult> {
   const token = getTokenFromRequest(request);
   if (!token) {
-    return {
-      success: false,
-      response: NextResponse.json(
-        { error: "Neautorizovan pristup" },
-        { status: 401 },
-      ),
-    };
+    return authError(401, "Neautorizovan pristup", "UNAUTHENTICATED");
   }
 
   const decoded = verifyToken(token);
   if (!decoded) {
-    return {
-      success: false,
-      response: NextResponse.json(
-        { error: "Nevažeći ili istekao token" },
-        { status: 401 },
-      ),
-    };
+    return authError(
+      401,
+      "Nevažeći ili istekao token",
+      "INVALID_TOKEN",
+    );
   }
 
   // Cross-check: token's tenantId must match the tenantId resolved by proxy.
@@ -171,29 +229,107 @@ export function requireAdmin(request: Request): AdminAuthResult {
   if (requestTenantId !== "" && !isSuperAdmin && tokenTenantId !== requestTenantId) {
     // Log the mismatch via the audit utility before rejecting.
     assertTenantMatch(decoded, requestTenantId, request.url);
-    return {
-      success: false,
-      response: NextResponse.json(
-        { error: "Forbidden: tenant mismatch" },
-        { status: 403 },
-      ),
-    };
+    return authError(403, "Forbidden: tenant mismatch", "TENANT_MISMATCH");
   }
 
-  // For tenant users (OWNER/ADMIN/STAFF): trust JWT isAdmin flag.
-  // isAdmin is computed at login time from TenantUser.role and embedded in the token.
-  // No DB round-trip needed — all roles are verified at token issuance.
-  if (!isSuperAdmin && !decoded.isAdmin) {
-    return {
-      success: false,
-      response: NextResponse.json(
-        { error: "Nemate administratorska prava" },
-        { status: 403 },
-      ),
-    };
+  // Platform superadmin zadrzava postojeci bypass za backoffice/admin/operator
+  // rute. Owner je tenant clanstvo i ne moze se glumiti platformskom rolom.
+  if (isSuperAdmin) {
+    if (authority === "owner") {
+      return authError(
+        403,
+        "Samo vlasnik salona može izvršiti ovu radnju.",
+        "OWNER_REQUIRED",
+      );
+    }
+    return { success: true, decoded, membership: null };
   }
 
-  return { success: true, decoded };
+  const tenantUserId = decoded.tenantUserId;
+  const tenantId = decoded.tenantId;
+  if (!tenantUserId || !tenantId || decoded.type !== "tenant") {
+    return authError(
+      403,
+      "Nedostaje aktivan tenant kontekst.",
+      "TENANT_CONTEXT_REQUIRED",
+    );
+  }
+
+  await connectToDB();
+  const member = await TenantUser.findOne({
+    _id: tenantUserId,
+    tenantId,
+    status: "active",
+  })
+    .select("_id tenantId role")
+    .lean<{ _id: { toString(): string }; tenantId: { toString(): string }; role: unknown }>();
+
+  const role = asTenantRole(member?.role);
+  if (!member || !role) {
+    return authError(
+      403,
+      "Članstvo nije aktivno.",
+      "MEMBERSHIP_INACTIVE",
+    );
+  }
+
+  if (!roleAllows(authority, role)) {
+    return authError(
+      403,
+      role === "STAFF" && authority === "admin"
+        ? "Nemate dozvolu za izmenu ovog dela salona."
+        : authority === "owner"
+          ? "Samo vlasnik salona može izvršiti ovu radnju."
+          : "Nemate potrebna ovlašćenja.",
+      role === "STAFF" && authority === "admin"
+        ? "STAFF_READ_ONLY"
+        : authority === "owner"
+          ? "OWNER_REQUIRED"
+          : "ROLE_FORBIDDEN",
+    );
+  }
+
+  const currentDecoded: DecodedToken = {
+    ...decoded,
+    globalRole: role,
+    isAdmin: isBusinessAdminRole(role),
+    tenantId: String(member.tenantId),
+    tenantUserId: String(member._id),
+  };
+
+  return {
+    success: true,
+    decoded: currentDecoded,
+    membership: {
+      id: String(member._id),
+      tenantId: String(member.tenantId),
+      role,
+    },
+  };
+}
+
+/** OWNER / ADMIN — poslovna konfiguracija i svakodnevni management. */
+export function requireAdmin(request: Request): Promise<AdminAuthResult> {
+  return requireTenantAuthority(request, "admin");
+}
+
+/** OWNER / ADMIN / STAFF — ulazak u backoffice, bez implicitnog write prava. */
+export function requireBackofficeMember(
+  request: Request,
+): Promise<AdminAuthResult> {
+  return requireTenantAuthority(request, "backoffice");
+}
+
+/** OWNER — owner-sensitive i destruktivne operacije. */
+export function requireOwner(request: Request): Promise<AdminAuthResult> {
+  return requireTenantAuthority(request, "owner");
+}
+
+/** OWNER / ADMIN / STAFF — isključivo appointment/client operativne komande. */
+export function requireSalonOperator(
+  request: Request,
+): Promise<AdminAuthResult> {
+  return requireTenantAuthority(request, "operator");
 }
 
 /**
@@ -204,8 +340,10 @@ export type TenantAdminAuthResult =
   | { success: true; tenantId: string }
   | { success: false; response: NextResponse };
 
-export function requireTenantAdmin(request: Request): TenantAdminAuthResult {
-  const auth = requireAdmin(request);
+export async function requireTenantAdmin(
+  request: Request,
+): Promise<TenantAdminAuthResult> {
+  const auth = await requireAdmin(request);
   if (!auth.success) return auth;
 
   const { tenantId } = auth.decoded;

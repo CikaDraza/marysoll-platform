@@ -17,6 +17,8 @@ import { BASE_DOMAIN, isLocalHost, isPathBasedHost } from "@/lib/platform/host-c
 
 export interface LoginRedirectParams {
   isAdmin: boolean;
+  /** OWNER / ADMIN / STAFF: pristup backoffice shell-u, ne write authority. */
+  isBackofficeMember?: boolean;
   isSuperAdmin: boolean;
   /** Access token — potreban samo za cross-host handoff. */
   token: string;
@@ -44,7 +46,7 @@ export function loginRedirectUrl(params: LoginRedirectParams): string | null {
       : "/superadmin/dashboard";
   }
 
-  if (params.isAdmin) {
+  if (params.isBackofficeMember ?? params.isAdmin) {
     const destination = params.adminDestination ?? "/dashboard";
     return crossHost
       ? `https://admin.${BASE_DOMAIN}/auth/callback?token=${encodeURIComponent(

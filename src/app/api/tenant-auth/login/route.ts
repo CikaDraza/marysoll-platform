@@ -23,6 +23,7 @@ import {
 } from "@/lib/auth/auth-server";
 import { buildTenantTokenResponse } from "@/lib/auth/tokenResponse";
 import { platformUrl } from "@/lib/platform/host-context";
+import { isBusinessAdminRole } from "@/lib/auth/roles";
 
 /** Marysoll podrška — BEZ hosta zahteva (prijava stiže sa domena SALONA). */
 const supportLink = () => platformUrl("/kontakt");
@@ -121,7 +122,7 @@ export async function POST(request: NextRequest) {
       lastActive: new Date(),
     });
 
-    const isAdmin = ["OWNER", "ADMIN", "STAFF"].includes(tenantUser.role);
+    const isAdmin = isBusinessAdminRole(tenantUser.role);
     const displayName = tenantUser.name || normalizedEmail.split("@")[0];
 
     const accessToken = generateAccessToken(

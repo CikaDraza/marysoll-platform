@@ -439,12 +439,19 @@ function AdminDashboard() {
   };
 
   useEffect(() => {
-    if (!authLoading && (!user || (!user.isAdmin && !user.isSuperAdmin))) {
+    if (
+      !authLoading &&
+      (!user || (!user.isBackofficeMember && !user.isSuperAdmin))
+    ) {
       window.location.replace("/login");
     }
   }, [authLoading, user]);
 
-  if (authLoading || !user || (!user.isAdmin && !user.isSuperAdmin)) {
+  if (
+    authLoading ||
+    !user ||
+    (!user.isBackofficeMember && !user.isSuperAdmin)
+  ) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="flex flex-col items-center gap-4">

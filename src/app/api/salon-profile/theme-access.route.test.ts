@@ -74,7 +74,7 @@ function useTenantSlug(slug: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(requireTenantAdmin).mockReturnValue({
+  vi.mocked(requireTenantAdmin).mockResolvedValue({
     success: true,
     tenantId: TENANT_ID,
   } as never);
@@ -84,7 +84,7 @@ beforeEach(() => {
 
 describe("private theme server enforcement", () => {
   it("returns the admin guard response before loading a profile", async () => {
-    vi.mocked(requireTenantAdmin).mockReturnValue({
+    vi.mocked(requireTenantAdmin).mockResolvedValue({
       success: false,
       response: NextResponse.json({ error: "Neautorizovan pristup" }, { status: 401 }),
     } as never);

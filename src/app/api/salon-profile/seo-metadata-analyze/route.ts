@@ -16,7 +16,7 @@ import { SeoAnalysisRun } from "@/models/SeoAnalysisRun";
 
 export async function POST(req: NextRequest) {
   try {
-    const auth: AdminAuthResult = requireAdmin(req);
+    const auth: AdminAuthResult = await requireAdmin(req);
     if (!auth.success) return auth.response;
     if (!auth.decoded.tenantId) {
       return NextResponse.json(

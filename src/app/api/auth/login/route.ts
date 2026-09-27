@@ -33,6 +33,7 @@ import {
   buildPlatformTokenResponse,
   buildTenantTokenResponse,
 } from "@/lib/auth/tokenResponse";
+import { isBusinessAdminRole } from "@/lib/auth/roles";
 
 const MANAGEMENT_ROLES = ["OWNER", "ADMIN", "STAFF"] as const;
 
@@ -154,10 +155,12 @@ export async function POST(request: NextRequest) {
 
     const displayName = tenantUser.name || normalizedEmail.split("@")[0];
 
+    const isAdmin = isBusinessAdminRole(tenantUser.role);
+
     const accessToken = generateAccessToken(
       tenantUser._id.toString(),
       tenantUser.email,
-      true,
+      isAdmin,
       displayName,
       tenantUser._id.toString(),
       tenant._id.toString(),
@@ -169,7 +172,7 @@ export async function POST(request: NextRequest) {
     const refreshToken = generateRefreshToken(
       tenantUser._id.toString(),
       tenantUser.email,
-      true,
+      isAdmin,
       tenantUser._id.toString(),
       tenant._id.toString(),
       false,
@@ -181,7 +184,7 @@ export async function POST(request: NextRequest) {
       email: tenantUser.email,
       name: displayName,
       globalRole: tenantUser.role,
-      isAdmin: true,
+      isAdmin,
       isSuperAdmin: false,
       tenantId: tenant._id.toString(),
       tenantUserId: tenantUser._id.toString(),

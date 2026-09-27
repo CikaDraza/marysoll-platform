@@ -11,7 +11,7 @@ export async function POST(
   req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
-  const auth = requireAdmin(req);
+  const auth = await requireAdmin(req);
   if (!auth.success) return auth.response;
   const denied = await requireCapability(auth.decoded.tenantId, "loyalty.rewards");
   if (denied) return denied;

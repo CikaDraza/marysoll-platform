@@ -29,7 +29,7 @@ import { canTenantIdUseTheme } from "@/lib/platform/theme-access-server";
 export async function PUT(req: NextRequest) {
   try {
     await connectToDB();
-    const auth = requireTenantAdmin(req);
+    const auth = await requireTenantAdmin(req);
     if (!auth.success) return auth.response;
     const tenantId = auth.tenantId;
 

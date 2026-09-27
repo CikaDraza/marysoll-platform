@@ -12,7 +12,13 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, isLoggingIn, isLoggedIn, isAdmin, isSuperAdmin } = useAuth();
+  const {
+    login,
+    isLoggingIn,
+    isLoggedIn,
+    isBackofficeMember,
+    isSuperAdmin,
+  } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,10 +48,10 @@ export default function LoginForm() {
 
   // Ako je već ulogovan kao klijent — preusmeri
   useEffect(() => {
-    if (isLoggedIn && !isAdmin && !isSuperAdmin) {
+    if (isLoggedIn && !isBackofficeMember && !isSuperAdmin) {
       router.push("/");
     }
-  }, [isLoggedIn, isAdmin, isSuperAdmin, router]);
+  }, [isLoggedIn, isBackofficeMember, isSuperAdmin, router]);
 
   function validateFields(): boolean {
     const errs = { email: "", password: "" };

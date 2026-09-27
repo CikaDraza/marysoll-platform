@@ -10,7 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
-import { requireAdmin } from "@/lib/auth/auth-server";
+import { requireOwner } from "@/lib/auth/auth-server";
 import { sendEmail } from "@/lib/email/email";
 import {
   getPublicSlugAvailability,
@@ -18,8 +18,7 @@ import {
 } from "@/lib/platform/public-slugs";
 
 export async function PATCH(req: NextRequest) {
-  const auth = requireAdmin(req);
-  if (auth instanceof NextResponse) return auth;
+  const auth = await requireOwner(req);
   if (!auth.success) return auth.response;
 
   const { decoded } = auth;
