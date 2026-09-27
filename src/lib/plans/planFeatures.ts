@@ -464,6 +464,14 @@ export function isWithinLimit(current: number, limit: number): boolean {
   return current < limit;
 }
 
+/**
+ * Validan količinski plan limit je ceo broj >= 0 ili tačno -1 za unlimited.
+ * Sprečava da neispravan superadmin override slučajno postane entitlement.
+ */
+export function isValidPlanLimit(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= -1;
+}
+
 /** Naziv plana za prikaz */
 export const PLAN_DISPLAY_NAMES: Record<PlanName, string> = {
   maria: "Maria",

@@ -33,6 +33,7 @@ import { Schema, Document, Types, model, models } from "mongoose";
 import type { TenantRole } from "@/lib/auth/roles";
 
 export type TenantUserRole = TenantRole;
+export type TenantUserStatus = "active" | "invited" | "suspended";
 
 export interface ITenantUserNotificationSettings {
   emailNotifications: boolean;
@@ -104,7 +105,7 @@ interface ITenantUser extends Document {
   verificationTokenExpiry?: Date | null;
   resetPasswordToken?: string | null;
   resetPasswordExpiry?: Date | null;
-  status: "active" | "invited" | "suspended";
+  status: TenantUserStatus;
 
   // ── Profile ──────────────────────────────────────────────────────────────
   name: string;

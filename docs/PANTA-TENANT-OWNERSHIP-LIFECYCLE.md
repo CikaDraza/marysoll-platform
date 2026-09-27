@@ -170,8 +170,8 @@ Repair nikada ne koristi poklapanje emaila kao dokaz vlasništva.
 
 # 8. STAFF-0 — authorization foundation
 
-**Status: code complete / review pending.** Ovaj rez zaključava auth rečnik i
-server authority. Ne uvodi pozive, Team ekran, seat limite, `StaffProfile`,
+**Status: prihvaćeno i mergeovano.** Ovaj rez zaključava auth rečnik i server
+authority. Ne uvodi pozive, Team ekran, seat limite, `StaffProfile`,
 staff-specific raspored niti novu appointment dozvolu.
 
 ## 8.1 Role contract
@@ -251,10 +251,100 @@ Test matrica zaključava:
 
 ---
 
+# 9. STAFF-1 — Team model i plan limit
+
+**Status: code complete / review pending.** Implementirano na grani
+`feat/staff-team-limit`. `TenantUser` ostaje jedini v1 team identitet; nije
+uveden `StaffProfile`, Invitation model, Team API/UI niti bookable staff.
+
+## 9.1 Ko zauzima team seat
+
+Jedini canonical kriterijum je `consumesTeamSeat()`:
+
+| Role | Status | Zauzima seat |
+|---|---|---:|
+| OWNER | bilo koji | ne |
+| ADMIN | `active` | da |
+| ADMIN | `invited` | da |
+| ADMIN | `suspended` | ne |
+| STAFF | `active` | da |
+| STAFF | `invited` | da |
+| STAFF | `suspended` | ne |
+| USER / GUEST | bilo koji | ne |
+
+Poziv zauzima mesto odmah, da se plan limit ne može zaobići velikim brojem
+neprihvaćenih poziva. Suspenzija oslobađa mesto. Prelaz `suspended → active`
+ponovo troši jedno mesto i mora proći isti server capacity gate kao novi invite.
+Promena aktivnog STAFF u ADMIN (ili obrnuto) ne menja potrošnju.
+
+## 9.2 Jedini plan authority
+
+Limit se čita kao:
+
+```text
+resolveTenantPlanFeatures(tenantId)
+  → effective plan
+  → aktivni Subscription.featureOverrides
+  → features.staffMembers
+```
+
+Nema `if plan === ...` grananja i vrednosti u `PLAN_FEATURES` nisu menjane.
+`-1` znači unlimited; ostale validne vrednosti su celi brojevi `>= 0`.
+Superadmin override npr. `staffMembers: 3` automatski postaje efektivni limit
+bez promene osnovnog plana. Istekao override se ne primenjuje.
+
+`PUT /api/subscriptions/override/[tenantId]` odbija nevalidan `staffMembers`
+pre DB write-a sa `INVALID_STAFF_MEMBER_LIMIT`. Runtime seat policy dodatno
+fail-closed odbija nevalidan efektivni limit sa `TEAM_SEAT_LIMIT_INVALID`.
+
+## 9.3 Server seat policy
+
+`src/lib/team/staffSeats.ts` je centralni ugovor za buduće Team mutacije:
+
+- `countTeamSeats()` broji samo canonical skup;
+- `resolveTeamSeatSnapshot()` vraća `used`, `limit`, `remaining`, `unlimited`
+  i `canAdd`;
+- `assertTeamSeatCapacity()` odbija novo mesto sa
+  `TEAM_SEAT_LIMIT_REACHED`;
+- `teamSeatDelta()` razlikuje invite/reaktivaciju od suspenzije ili promene
+  STAFF ↔ ADMIN;
+- `assertTeamSeatTransitionCapacity()` zahteva capacity proveru samo kada
+  membership prelaz stvarno dodaje seat.
+
+Ako plan/override spusti limit ispod trenutnog `used`, postojeća članstva se u
+ovom rezu ne suspenduju automatski. Snapshot daje `remaining=0` i `canAdd=false`,
+pa su novi invite i reaktivacija blokirani dok se kapacitet ne oslobodi ili
+limit ne poveća.
+
+## 9.4 Write i concurrency granica
+
+STAFF-1 ne uvodi membership write rutu. Zato policy još nije vezan za create,
+invite ili reactivate mutaciju. STAFF-2 mora da pozove transition/capacity gate
+na serveru i da zatvori paralelni `count → create` race; običan browser check
+ili dva nezavisna count-then-write zahteva nisu dovoljan limit authority.
+
+Do tada ne postoji novi ulaz koji može da kreira invited ADMIN/STAFF kroz ovaj
+rez. Postojeće auth i appointment dozvole ostaju nepromenjene.
+
+## 9.5 Dokazi ovog reza
+
+Testovi zaključavaju:
+
+- OWNER, USER/GUEST i suspended članovi se ne računaju;
+- active/invited ADMIN i STAFF se računaju;
+- invite troši seat, suspenzija ga oslobađa, STAFF ↔ ADMIN je neutralan;
+- reaktivacija ponovo prolazi plan gate;
+- dostignut limit vraća domain error bez dozvole za novi seat;
+- `-1` ostaje unlimited;
+- aktivan override menja `staffMembers`, istekao override ne;
+- nevalidan override (`-2`, decimalan ili string) pada pre DB write-a.
+
+---
+
 # DEFERRED — Team management & ownership transfer
 
 **Status: DELIMIČNO OTVOREN KROZ STAFF v1.** Team invite/model/UI ide kroz
-STAFF-1 → STAFF-3 tek posle acceptance-a STAFF-0. Ownership transfer ostaje
+STAFF-2 → STAFF-3 tek posle acceptance-a STAFF-1. Ownership transfer ostaje
 deferred. Ne praviti ga u Staff onboarding v1.
 
 ## Budući team management

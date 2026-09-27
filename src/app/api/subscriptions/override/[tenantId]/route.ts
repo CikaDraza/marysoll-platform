@@ -10,7 +10,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
 import { connectToDB } from "@/lib/db/mongodb";
-import type { PlanFeatures } from "@/lib/plans/planFeatures";
+import {
+  isValidPlanLimit,
+  type PlanFeatures,
+} from "@/lib/plans/planFeatures";
 import { Subscription } from "@/models/Subscription";
 
 type Params = { params: Promise<{ tenantId: string }> };
@@ -41,6 +44,19 @@ export async function PUT(req: NextRequest, { params }: Params) {
     if (isNaN(expiresAt.getTime()) || expiresAt <= new Date()) {
       return NextResponse.json(
         { error: "expiresAt mora biti budući datum" },
+        { status: 400 },
+      );
+    }
+
+    if (
+      body.overrides.staffMembers !== undefined &&
+      !isValidPlanLimit(body.overrides.staffMembers)
+    ) {
+      return NextResponse.json(
+        {
+          error: "staffMembers mora biti ceo broj >= 0 ili -1.",
+          code: "INVALID_STAFF_MEMBER_LIMIT",
+        },
         { status: 400 },
       );
     }
