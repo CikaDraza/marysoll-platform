@@ -24,6 +24,7 @@ import {
   resolveEffectivePlan,
 } from "@/lib/plans/planFeatures";
 import type { PlanFeatures, PlanName } from "@/lib/plans/planFeatures";
+import type { ClientSession } from "mongoose";
 
 /**
  * Checks whether the tenant's active plan includes the given feature.
@@ -74,12 +75,21 @@ export async function requireFeature(
 /** Jedan DB read za sve feature odluke u složenom server read-modelu. */
 export async function resolveTenantPlanFeatures(
   tenantId: string,
+  session?: ClientSession,
 ): Promise<{ plan: PlanName; features: PlanFeatures }> {
   await connectToDB();
-  const [subscriptionRaw, tenantRaw] = await Promise.all([
-    Subscription.findOne({ tenantId }).lean(),
-    Tenant.findById(tenantId).select("plan paid planExpiresAt").lean(),
-  ]);
+  const subscriptionQuery = Subscription.findOne({ tenantId }).lean();
+  const tenantQuery = Tenant.findById(tenantId)
+    .select("plan paid planExpiresAt")
+    .lean();
+  if (session) {
+    subscriptionQuery.session(session);
+    tenantQuery.session(session);
+  }
+  // MongoDB sessions do not support parallel operations inside a transaction.
+  const [subscriptionRaw, tenantRaw] = session
+    ? [await subscriptionQuery, await tenantQuery]
+    : await Promise.all([subscriptionQuery, tenantQuery]);
   const subscription = subscriptionRaw as {
     plan?: PlanName;
     status?: string;

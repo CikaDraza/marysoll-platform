@@ -31,6 +31,7 @@ import {
   isBackofficeRole,
   isBusinessAdminRole,
 } from "@/lib/auth/roles";
+import { tenantMembershipSessionDenial } from "@/lib/auth/tenantMembership";
 
 export async function POST(req: NextRequest) {
   const verify = verifySignature(req, await req.clone().text());
@@ -117,17 +118,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!matchedUser.isEmailVerified) {
+    const membershipDenial = tenantMembershipSessionDenial(matchedUser);
+    if (membershipDenial) {
       return NextResponse.json(
-        { error: "Email adresa nije verifikovana. Proverite inbox.", code: "EMAIL_NOT_VERIFIED" },
-        { status: 401 },
-      );
-    }
-
-    if (matchedUser.status === "suspended") {
-      return NextResponse.json(
-        { error: "Vaš nalog je suspendovan. Kontaktirajte salon." },
-        { status: 403 },
+        { error: membershipDenial.error, code: membershipDenial.code },
+        { status: membershipDenial.httpStatus },
       );
     }
 

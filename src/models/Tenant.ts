@@ -35,6 +35,8 @@ export interface ITenant extends Document {
   trialMode: "maria" | "card_required"; // how this tenant's trial was initiated
   trialRequiredCard: boolean; // true if card was provided at signup
   ownerId: Types.ObjectId;
+  /** Serialization point for every mutation that can change team seat usage. */
+  teamMembershipRevision: number;
   salonProfileId: Types.ObjectId | null;
   cloudinaryFolder: string;
   zohoOrgId?: string;
@@ -159,6 +161,7 @@ const TenantSchema = new Schema<ITenant>(
     },
     trialRequiredCard: { type: Boolean, default: false },
     ownerId: { type: Schema.Types.ObjectId, ref: "AuthUser", required: true },
+    teamMembershipRevision: { type: Number, default: 0, min: 0 },
     salonProfileId: {
       type: Schema.Types.ObjectId,
       ref: "SalonProfile",

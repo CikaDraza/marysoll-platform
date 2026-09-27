@@ -8,6 +8,7 @@ import {
   type TenantUserRole,
   type TenantUserStatus,
 } from "@/models/TenantUser";
+import type { ClientSession } from "mongoose";
 
 export const TEAM_SEAT_ROLES = ["ADMIN", "STAFF"] as const;
 export const TEAM_SEAT_STATUSES = ["active", "invited"] as const;
@@ -81,13 +82,18 @@ export function teamSeatDelta(
 /**
  * Broji isti skup za svaki budući invite/reactivate/UI potrošač.
  */
-export async function countTeamSeats(tenantId: string): Promise<number> {
+export async function countTeamSeats(
+  tenantId: string,
+  session?: ClientSession,
+): Promise<number> {
   await connectToDB();
-  return TenantUser.countDocuments({
+  const query = TenantUser.countDocuments({
     tenantId,
     role: { $in: TEAM_SEAT_ROLES },
     status: { $in: TEAM_SEAT_STATUSES },
   });
+  if (session) query.session(session);
+  return query;
 }
 
 /**
@@ -96,11 +102,14 @@ export async function countTeamSeats(tenantId: string): Promise<number> {
  */
 export async function resolveTeamSeatSnapshot(
   tenantId: string,
+  session?: ClientSession,
 ): Promise<TeamSeatSnapshot> {
-  const [{ plan, features }, used] = await Promise.all([
-    resolveTenantPlanFeatures(tenantId),
-    countTeamSeats(tenantId),
-  ]);
+  // Transactional callers must serialize operations on the shared session.
+  const resolved = session
+    ? await resolveTenantPlanFeatures(tenantId, session)
+    : await resolveTenantPlanFeatures(tenantId);
+  const used = await countTeamSeats(tenantId, session);
+  const { plan, features } = resolved;
   const limit = features.staffMembers;
   if (!isValidPlanLimit(limit)) {
     throw new TeamSeatConfigurationError(limit);
@@ -126,12 +135,13 @@ export async function resolveTeamSeatSnapshot(
 export async function assertTeamSeatCapacity(
   tenantId: string,
   requestedSeats = 1,
+  session?: ClientSession,
 ): Promise<TeamSeatSnapshot> {
   if (!Number.isInteger(requestedSeats) || requestedSeats < 1) {
     throw new RangeError("requestedSeats mora biti pozitivan ceo broj.");
   }
 
-  const snapshot = await resolveTeamSeatSnapshot(tenantId);
+  const snapshot = await resolveTeamSeatSnapshot(tenantId, session);
   if (
     !snapshot.unlimited &&
     snapshot.used + requestedSeats > snapshot.limit
@@ -149,8 +159,9 @@ export async function assertTeamSeatTransitionCapacity(params: {
   tenantId: string;
   previous?: TeamSeatMemberState | null;
   next?: TeamSeatMemberState | null;
+  session?: ClientSession;
 }): Promise<TeamSeatSnapshot | null> {
   const delta = teamSeatDelta(params.previous, params.next);
   if (delta <= 0) return null;
-  return assertTeamSeatCapacity(params.tenantId, delta);
+  return assertTeamSeatCapacity(params.tenantId, delta, params.session);
 }
