@@ -17,6 +17,7 @@ import {
 import type { TenantCapability } from "@/types/tenant-capabilities";
 import Image from "next/image";
 import AdminWorkspaceSelector from "@/components/workspace/AdminWorkspaceSelector";
+import { UserGroupIcon } from "@heroicons/react/24/outline";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -70,6 +71,7 @@ type NavItem = {
   exact?: boolean;
   tab?: string; // for dashboard tab navigation
   capability?: TenantCapability;
+  ownerOnly?: boolean;
   subItems?: {
     name: string;
     path?: string;
@@ -109,6 +111,12 @@ const AdminNav: NavItem[] = [
     icon: <Icon d={icons.users} />,
     path: "/dashboard?tab=klijenti",
     capability: "audience.contacts",
+  },
+  {
+    name: "Tim",
+    icon: <UserGroupIcon className="h-5 w-5" aria-hidden="true" />,
+    path: "/dashboard?tab=tim",
+    ownerOnly: true,
   },
   {
     name: "Growth Studio",
@@ -349,6 +357,7 @@ const AppSidebar: React.FC = () => {
   );
   const activeNav = activeWorkspace === "education" ? EducationNav : AdminNav;
   const visibleAdminNav = activeNav.flatMap((item) => {
+    if (item.ownerOnly && user?.globalRole !== "OWNER") return [];
     if (!isResolvedCapabilityEnabled(capabilitySnapshot, item.capability)) {
       return [];
     }

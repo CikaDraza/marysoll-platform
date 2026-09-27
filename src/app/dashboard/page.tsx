@@ -108,6 +108,10 @@ const NotificationSettings = dynamic(
   () => import("@/components/settings/NotificationSettings"),
   { ssr: false, loading: TabLoader },
 );
+const AdminTeam = dynamic(
+  () => import("@/components/admin/team/AdminTeam"),
+  { ssr: false, loading: TabLoader },
+);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -125,6 +129,7 @@ type Tab =
   | "preporuke"
   | "domen"
   | "klijenti"
+  | "tim"
   | "growth"
   | "chat"
   | "pretplata"
@@ -144,6 +149,7 @@ const ALL_TABS: Tab[] = [
   "preporuke",
   "domen",
   "klijenti",
+  "tim",
   "growth",
   "chat",
   "pretplata",
@@ -559,6 +565,7 @@ function AdminDashboard() {
       {effectiveTab === "preporuke" && <AdminTestimonials />}
       {effectiveTab === "domen" && <AdminCustomDomain />}
       {effectiveTab === "klijenti" && <ClientsList />}
+      {effectiveTab === "tim" && <AdminTeam />}
       {effectiveTab === "growth" && (
         <FeatureGate feature="loyaltyCore">
           <AdminGrowthStudio />
