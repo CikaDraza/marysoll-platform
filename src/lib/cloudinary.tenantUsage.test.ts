@@ -63,9 +63,7 @@ describe("tenant dynamic-folder Cloudinary usage", () => {
       `${tenantFolderSearchExpression("salons/anja")} AND (resource_type:image OR resource_type:video OR resource_type:raw)`,
     );
     expect(expression.mock.calls[0][0]).toContain('asset_folder="salons/anja"');
-    expect(expression.mock.calls[0][0]).toContain(
-      'asset_folder:"salons/anja/*"',
-    );
+    expect(expression.mock.calls[0][0]).toContain("asset_folder:salons/anja/*");
     expect(result).toEqual({
       totalBytes: 60,
       assets: 3,
@@ -75,6 +73,15 @@ describe("tenant dynamic-folder Cloudinary usage", () => {
     });
     expect(pages).toHaveBeenCalledTimes(2);
     expect(pages).toHaveBeenLastCalledWith("page-2");
+  });
+
+  it("escapes reserved folder characters while keeping the subtree wildcard active", () => {
+    const escape = String.fromCharCode(92);
+    expect(tenantFolderSearchExpression(" salons/my folder ")).toBe(
+      '(asset_folder="salons/my folder" OR asset_folder:salons/my' +
+        escape +
+        " folder/*)",
+    );
   });
 
   it("rejects provider failures and malformed pages instead of reporting zero", async () => {

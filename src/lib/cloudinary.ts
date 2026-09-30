@@ -67,11 +67,44 @@ export async function resolveCloudinaryUploadFolder(
   return `${base}/landing`;
 }
 
+function escapeCloudinarySearchTerm(value: string): string {
+  const escape = String.fromCharCode(92);
+  const reserved = new Set([
+    "!",
+    "(",
+    ")",
+    "{",
+    "}",
+    "[",
+    "]",
+    "*",
+    "^",
+    "~",
+    "?",
+    ":",
+    escape,
+    "=",
+    "&",
+    ">",
+    "<",
+    String.fromCharCode(34),
+    "|",
+  ]);
+  return [...value]
+    .map((character) =>
+      reserved.has(character) || character.trim() === ""
+        ? `${escape}${character}`
+        : character,
+    )
+    .join("");
+}
+
 export function tenantFolderSearchExpression(folder: string): string {
   const normalized = folder.trim().replace(/\/+$/, "");
   if (!normalized) throw new Error("Tenant Cloudinary folder nije definisan");
   // asset_folder is the dynamic-folder authority; public_id may be unrelated.
-  return `(asset_folder=${JSON.stringify(normalized)} OR asset_folder:${JSON.stringify(`${normalized}/*`)})`;
+  const subtreePrefix = escapeCloudinarySearchTerm(normalized);
+  return `(asset_folder=${JSON.stringify(normalized)} OR asset_folder:${subtreePrefix}/*)`;
 }
 
 export interface TenantCloudinaryUsage {
