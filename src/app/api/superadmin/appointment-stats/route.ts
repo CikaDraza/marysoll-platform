@@ -6,18 +6,11 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
 import { Appointment } from "@/models/Appointment";
 import { Tenant } from "@/models/Tenant";
-
-export interface SalonMonthStats {
-  tenantId: string;
-  salonName: string;
-  slug: string;
-  total: number;
-  nova: number;           // appointment_approved
-  cekaNaOdobrenje: number; // pending
-  zavrsena: number;       // completed
-  otkazana: number;       // appointment_cancelled
-  nijeSePojavilo: number; // no_show
-}
+import {
+  appointmentStatsQuerySchema,
+  appointmentStatsResponseSchema,
+  type SalonMonthStats,
+} from "@/types/superadmin-statistics";
 
 export async function GET(req: NextRequest) {
   const auth = requireSuperAdmin(req);
@@ -25,12 +18,14 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = req.nextUrl;
   const now = new Date();
-  const month = parseInt(searchParams.get("month") ?? String(now.getMonth() + 1), 10);
-  const year = parseInt(searchParams.get("year") ?? String(now.getFullYear()), 10);
-
-  if (isNaN(month) || month < 1 || month > 12 || isNaN(year)) {
+  const parsedQuery = appointmentStatsQuerySchema.safeParse({
+    month: searchParams.get("month") ?? now.getMonth() + 1,
+    year: searchParams.get("year") ?? now.getFullYear(),
+  });
+  if (!parsedQuery.success) {
     return NextResponse.json({ error: "Nevažeći mesec ili godina" }, { status: 400 });
   }
+  const { month, year } = parsedQuery.data;
 
   const monthStr = String(month).padStart(2, "0");
   const datePrefix = `${year}-${monthStr}`;
@@ -45,6 +40,16 @@ export async function GET(req: NextRequest) {
         $group: {
           _id: "$tenantId",
           total: { $sum: 1 },
+          clientsBookedIds: { $addToSet: "$clientProfileId" },
+          clientsApprovedIds: {
+            $addToSet: {
+              $cond: [
+                { $eq: ["$status", "appointment_approved"] },
+                "$clientProfileId",
+                null,
+              ],
+            },
+          },
           nova: {
             $sum: { $cond: [{ $eq: ["$status", "appointment_approved"] }, 1, 0] },
           },
@@ -62,11 +67,17 @@ export async function GET(req: NextRequest) {
           },
         },
       },
+      {
+        $addFields: {
+          clientsBooked: { $size: { $setDifference: ["$clientsBookedIds", [null]] } },
+          clientsApproved: { $size: { $setDifference: ["$clientsApprovedIds", [null]] } },
+        },
+      },
       { $sort: { total: -1 } },
     ]);
 
     if (agg.length === 0) {
-      return NextResponse.json({ stats: [], month, year });
+      return NextResponse.json(appointmentStatsResponseSchema.parse({ stats: [], month, year }));
     }
 
     // Fetch tenant names for matched tenantIds
@@ -85,6 +96,8 @@ export async function GET(req: NextRequest) {
         salonName: tenant?.name ?? "Nepoznat salon",
         slug: tenant?.slug ?? "",
         total: a.total,
+        clientsBooked: a.clientsBooked,
+        clientsApproved: a.clientsApproved,
         nova: a.nova,
         cekaNaOdobrenje: a.cekaNaOdobrenje,
         zavrsena: a.zavrsena,
@@ -93,7 +106,7 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json({ stats, month, year });
+    return NextResponse.json(appointmentStatsResponseSchema.parse({ stats, month, year }));
   } catch (err) {
     console.error("[GET /api/superadmin/appointment-stats]", err);
     return NextResponse.json({ error: "Greška na serveru" }, { status: 500 });

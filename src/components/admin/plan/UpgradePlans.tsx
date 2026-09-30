@@ -42,7 +42,7 @@ function planHighlights(slug: PlanName): string[] {
   const f = PLAN_FEATURES[slug];
   return [
     `${fmtLimit(f.staffMembers, "zaposlenih")}`,
-    `${fmtLimit(f.dbStorageGb, "GB")} prostora za podatke`,
+    `${fmtLimit(f.newsletterSubscribers, "newsletter pretplatnika")}`,
     f.statistics ? "Statistika i analitika" : "Osnovni pregled",
     f.aiAssistant
       ? "AI asistent i automatizacija"

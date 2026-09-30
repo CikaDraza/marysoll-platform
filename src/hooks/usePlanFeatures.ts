@@ -80,7 +80,9 @@ export function usePlanFeatures() {
   ): boolean {
     const limitMap: Record<typeof type, number> = {
       aiRequests: features.aiRequestsPerMonth,
-      storage: features.dbStorageGb,
+      // Storage quota je soft signal iz kalibrisanog resource modela i nikada
+      // ne sme da postane hard feature gate kroz ovaj legacy helper.
+      storage: -1,
       newsletterSubscribers: features.newsletterSubscribers,
       staffMembers: features.staffMembers,
     };

@@ -82,8 +82,7 @@ export function AdminPlanStatus() {
         status={data.status}
         isTrialActive={data.isTrialActive}
         trialEndsAt={data.trialEndsAt}
-        storageMetrics={data.storageMetrics}
-        features={data.features}
+        resourceUsage={data.resourceUsage}
       />
 
       <PlanInfoCard
@@ -98,10 +97,7 @@ export function AdminPlanStatus() {
       <FeaturesList features={data.features} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <StorageMetrics
-          storageMetrics={data.storageMetrics}
-          dbStorageGb={data.features.dbStorageGb}
-        />
+        <StorageMetrics resourceUsage={data.resourceUsage} />
         <AISettingsCard aiSettings={data.aiSettings} />
       </div>
 

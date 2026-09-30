@@ -9,8 +9,11 @@ import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { requireAdmin } from "@/lib/auth/auth-server";
 import { getPlanFeatures } from "@/lib/plans/planFeatures";
-import type { PlanName, PlanFeatures } from "@/lib/plans/planFeatures";
+import type { PlanName } from "@/lib/plans/planFeatures";
 import type { ITenant } from "@/models/Tenant";
+import { getCurrentResourceQuotaCalibration } from "@/lib/superadmin/resourceQuotaCalibration";
+import { buildTenantResourceUsage } from "@/lib/plans/resourceQuotas";
+import { planStatusDataSchema } from "@/types/plan-status";
 
 type TenantPlanFields = Pick<
   ITenant,
@@ -23,29 +26,6 @@ type TenantPlanFields = Pick<
   | "aiSettings"
   | "storageMetrics"
 >;
-
-interface PlanStatusResponse {
-  name: string;
-  plan: PlanName;
-  status: "active" | "suspended" | "pending" | "cancelled";
-  isTrialActive: boolean;
-  trialEndsAt: string | null;
-  planExpiresAt: string | null;
-  aiSettings: {
-    chatEnabled: boolean;
-    landingEnabled: boolean;
-    imageEnabled: boolean;
-    chatRpmLimit: number;
-    landingRpmLimit: number;
-    imageRpmLimit: number;
-  };
-  storageMetrics: {
-    mongoUsageMb: number;
-    cloudinaryUsageMb: number;
-    updatedAt: string;
-  };
-  features: PlanFeatures;
-}
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
@@ -77,9 +57,26 @@ export async function GET(req: NextRequest) {
     }
 
     const plan = (tenant.plan ?? "maria") as PlanName;
+    const calibration = await getCurrentResourceQuotaCalibration();
+    const updatedAt = tenant.storageMetrics?.updatedAt
+      ? new Date(tenant.storageMetrics.updatedAt).toISOString()
+      : new Date().toISOString();
+    const resourceUsage = buildTenantResourceUsage({
+      plan,
+      mongoUsageMb: tenant.storageMetrics?.mongoUsageMb ?? 0,
+      cloudinaryUsageMb: tenant.storageMetrics?.cloudinaryUsageMb ?? 0,
+      updatedAt,
+      baseline: calibration
+        ? {
+            mongoMb: calibration.mongoMb,
+            cloudinaryMb: calibration.cloudinaryMb,
+          }
+        : null,
+    });
+
     const features = getPlanFeatures(plan);
 
-    const response: PlanStatusResponse = {
+    const response = planStatusDataSchema.parse({
       name: tenant.name ?? "",
       plan,
       status: tenant.status ?? "pending",
@@ -98,15 +95,9 @@ export async function GET(req: NextRequest) {
         landingRpmLimit: tenant.aiSettings?.landingRpmLimit ?? 0,
         imageRpmLimit: tenant.aiSettings?.imageRpmLimit ?? 0,
       },
-      storageMetrics: {
-        mongoUsageMb: tenant.storageMetrics?.mongoUsageMb ?? 0,
-        cloudinaryUsageMb: tenant.storageMetrics?.cloudinaryUsageMb ?? 0,
-        updatedAt: tenant.storageMetrics?.updatedAt
-          ? new Date(tenant.storageMetrics.updatedAt).toISOString()
-          : new Date().toISOString(),
-      },
+      resourceUsage,
       features,
-    };
+    });
 
     return NextResponse.json(response);
   } catch (err) {

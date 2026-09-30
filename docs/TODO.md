@@ -31,6 +31,18 @@ DEFERRED     →   T1-5 · evidencija naplate (granica zaključana) · T3 cutove
 Legenda: ⬜ nije počet · 🟡 u toku · ✅ gotovo · ⛔ blokiran · ⏸ odloženo (posao
 ostaje neophodan)
 
+## Superadmin statistika i resource quota — 2026-09-30
+
+| Rez | Status | Šta je u kodu | Sledeće | Dokument |
+|---|---|---|---|---|
+| Statistika salona | ✅ kod · 🟡 browser provera | „Poslednje registracije“ prikazuju broj `USER` i `GUEST` profila sa duplikatima. Mesečni pregled razdvaja ukupan broj termina, različite profile koji su zakazali, različite profile sa trenutno potvrđenim terminom i broj termina po statusu. | Proveriti izabrane mesece i salone u superadmin panelu, posebno goste, duplikate i završene termine. | [Superadmin statistika i resursi](SUPERADMIN-STATISTIKA-I-RESOURCE-QUOTA.md) |
+| Resource quota i kapacitet | ✅ kod · 🟡 kalibracija i browser provera | Postojeći usage snapshot je proširen: Mongo procena po tenantu, Cloudinary mediji, odvojene Claudia/Kiki kvote, soft statusi, 80% platform capacity, tenant prikaz samo sopstvenih podataka i eksplicitno čuvanje Anja baseline-a. | Ručno osvežiti usage, proveriti novu Mongo procenu, pa superadmin akcijom sačuvati kalibraciju. Zatim proveriti superadmin i tenant prikaz. Snapshot od 13. 8. 2026. je samo kandidat; kalibracija još nije snimljena. | [Superadmin statistika i resursi](SUPERADMIN-STATISTIKA-I-RESOURCE-QUOTA.md) |
+
+Ovaj rez ne menja gore navedeni redosled za STAFF i Education. Lokalno su prošli
+TypeScript, ESLint, Prettier, 30 ciljanih testova, ceo Vitest paket
+(215 fajlova, 2362 prošla, 21 preskočen) i produkcijski build; browser
+provera i eksplicitna kalibracija ostaju otvorene.
+
 ## NEXT — sledeći rez
 
 **STAFF-3 — owner Team UI.** Salon sidebar sada OWNER-u prikazuje `Tim` tab.

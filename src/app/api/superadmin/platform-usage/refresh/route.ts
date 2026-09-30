@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
 import { refreshPlatformUsage } from "@/lib/superadmin/platformUsage";
+import { platformUsageResponseSchema } from "@/types/platform-usage";
 
 export async function POST(req: NextRequest) {
   const auth = requireSuperAdmin(req);
@@ -14,7 +15,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const usage = await refreshPlatformUsage();
-    return NextResponse.json({ success: true, usage });
+    const response = platformUsageResponseSchema.parse({
+      success: true,
+      usage,
+    });
+    return NextResponse.json(response);
   } catch (err) {
     console.error("POST /api/superadmin/platform-usage/refresh:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

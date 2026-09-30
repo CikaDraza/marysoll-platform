@@ -16,6 +16,24 @@ import {
   type UsageProvider,
 } from "@/models/PlatformUsageSnapshot";
 import { Tenant } from "@/models/Tenant";
+import {
+  getCurrentResourceQuotaCalibration,
+  readCalibrationCandidate,
+} from "@/lib/superadmin/resourceQuotaCalibration";
+import {
+  buildTenantResourceUsage,
+  calculatePlatformEquivalentCapacity,
+  getPlanResourceQuota,
+} from "@/lib/plans/resourceQuotas";
+import type { PlanName } from "@/lib/plans/planFeatures";
+import type {
+  CloudinaryUsageData,
+  MongoUsageData,
+  PlatformUsageRead,
+  TenantUsageData,
+  TenantUsageSnapshotData,
+  TenantUsageSnapshotRow,
+} from "@/types/platform-usage";
 
 // Tenant-scoped kolekcije korišćene za laku procenu DB potrošnje po tenantu.
 import { Appointment } from "@/models/Appointment";
@@ -31,6 +49,26 @@ import { Notification } from "@/models/Notification";
 import { SalonInternalChat } from "@/models/SalonInternalChat";
 import { SeoMeta } from "@/models/SeoMeta";
 import { SalonProfile } from "@/models/SalonProfile";
+import { AudienceSegment } from "@/models/AudienceSegment";
+import { BookingDayLock } from "@/models/BookingDayLock";
+import { BookingOperationReceipt } from "@/models/BookingOperationReceipt";
+import { BookingOutboxEvent } from "@/models/BookingOutboxEvent";
+import { BookingReservation } from "@/models/BookingReservation";
+import { CampaignAnalytics } from "@/models/CampaignAnalytics";
+import { ClientContentAssignment } from "@/models/ClientContentAssignment";
+import { EducationContent } from "@/models/EducationContent";
+import { LoyaltyAccount } from "@/models/LoyaltyAccount";
+import { LoyaltyConfig } from "@/models/LoyaltyConfig";
+import { LoyaltyEvent } from "@/models/LoyaltyEvent";
+import { LoyaltyLedger } from "@/models/LoyaltyLedger";
+import { NewsletterTemplate } from "@/models/NewsletterTemplate";
+import { Referral } from "@/models/Referral";
+import { Subscription } from "@/models/Subscription";
+import { SuperAdminChat } from "@/models/SuperAdminChat";
+import { Theme8LandingEvent } from "@/models/Theme8LandingEvent";
+import { Voucher } from "@/models/Voucher";
+import { VoucherRequest } from "@/models/VoucherRequest";
+import { WebhookEvent } from "@/models/WebhookEvent";
 import type { Model } from "mongoose";
 
 // ─── Konstante / limiti (samo za prikaz) ─────────────────────────────────────
@@ -55,47 +93,27 @@ const TENANT_SCOPED_MODELS: Model<unknown>[] = [
   SalonInternalChat,
   SeoMeta,
   SalonProfile,
+  AudienceSegment,
+  BookingDayLock,
+  BookingOperationReceipt,
+  BookingOutboxEvent,
+  BookingReservation,
+  CampaignAnalytics,
+  ClientContentAssignment,
+  EducationContent,
+  LoyaltyAccount,
+  LoyaltyConfig,
+  LoyaltyEvent,
+  LoyaltyLedger,
+  NewsletterTemplate,
+  Referral,
+  Subscription,
+  SuperAdminChat,
+  Theme8LandingEvent,
+  Voucher,
+  VoucherRequest,
+  WebhookEvent,
 ] as Model<unknown>[];
-
-// ─── Tipovi podataka u snapshot-u ────────────────────────────────────────────
-export interface MongoUsageData {
-  storageUsedMb: number;
-  storageLimitMb: number;
-  connections: number | null;
-  cpuAvgPercent: number | null; // "—" dok nije Atlas M10+ (Admin API)
-  collections: number;
-}
-
-export interface CloudinaryUsageData {
-  storageUsedMb: number;
-  storageLimitGb: number;
-  assets: number;
-  bandwidthGb: number;
-  transformations: number;
-  requests: number | null;
-}
-
-export interface TenantUsageRow {
-  tenantId: string;
-  name: string;
-  slug: string;
-  dbEstimateMb: number;
-  mediaMb: number;
-}
-
-export interface TenantUsageData {
-  tenants: TenantUsageRow[];
-  totalDbEstimateMb: number;
-  totalMediaMb: number;
-  topByDb: { name: string; dbEstimateMb: number } | null;
-  topByMedia: { name: string; mediaMb: number } | null;
-}
-
-export interface PlatformUsageRead {
-  mongodb: { data: MongoUsageData; syncedAt: string } | null;
-  cloudinary: { data: CloudinaryUsageData; syncedAt: string } | null;
-  tenantUsage: { data: TenantUsageData; syncedAt: string } | null;
-}
 
 // ─── Helperi ─────────────────────────────────────────────────────────────────
 const BYTES_PER_MB = 1024 * 1024;
@@ -209,7 +227,7 @@ async function getTenantMediaBytes(
 }
 
 // ─── Tenant usage (laka procena) ─────────────────────────────────────────────
-export async function getTenantUsage(): Promise<TenantUsageData> {
+export async function getTenantUsage(): Promise<TenantUsageSnapshotData> {
   const mongooseInstance = await connectToDB();
   const db = mongooseInstance.connection.db;
   if (!db) throw new Error("MongoDB konekcija nije dostupna");
@@ -253,7 +271,7 @@ export async function getTenantUsage(): Promise<TenantUsageData> {
     }
   }
 
-  const rows: TenantUsageRow[] = [];
+  const rows: TenantUsageSnapshotRow[] = [];
   for (const t of tenants) {
     const id = t._id.toString();
     const dbBytes = dbBytesByTenant.get(id) ?? 0;
@@ -275,7 +293,9 @@ export async function getTenantUsage(): Promise<TenantUsageData> {
     });
   }
 
-  rows.sort((a, b) => b.mediaMb + b.dbEstimateMb - (a.mediaMb + a.dbEstimateMb));
+  rows.sort(
+    (a, b) => b.mediaMb + b.dbEstimateMb - (a.mediaMb + a.dbEstimateMb),
+  );
 
   const totalDbEstimateMb =
     Math.round(rows.reduce((s, r) => s + r.dbEstimateMb, 0) * 1000) / 1000;
@@ -360,17 +380,25 @@ export async function refreshPlatformUsage(): Promise<PlatformUsageRead> {
 export async function readPlatformUsage(): Promise<PlatformUsageRead> {
   await connectToDB();
 
-  const snapshots = (await PlatformUsageSnapshot.find(
-    {},
-  ).lean()) as unknown as {
-    provider: UsageProvider;
-    data: Record<string, unknown>;
-    syncedAt: Date;
-  }[];
+  const [snapshots, calibration, calibrationCandidate] = (await Promise.all([
+    PlatformUsageSnapshot.find({}).lean(),
+    getCurrentResourceQuotaCalibration(),
+    readCalibrationCandidate(),
+  ])) as unknown as [
+    Array<{
+      provider: UsageProvider;
+      data: Record<string, unknown>;
+      syncedAt: Date;
+    }>,
+    Awaited<ReturnType<typeof getCurrentResourceQuotaCalibration>>,
+    Awaited<ReturnType<typeof readCalibrationCandidate>>,
+  ];
 
   const byProvider = new Map(snapshots.map((s) => [s.provider, s]));
 
-  const pick = <T>(provider: UsageProvider) => {
+  const pick = <T>(
+    provider: UsageProvider,
+  ): { data: T; syncedAt: string } | null => {
     const snap = byProvider.get(provider);
     if (!snap) return null;
     return {
@@ -379,9 +407,66 @@ export async function readPlatformUsage(): Promise<PlatformUsageRead> {
     };
   };
 
+  const mongodb = pick<MongoUsageData>("mongodb");
+  const cloudinary = pick<CloudinaryUsageData>("cloudinary");
+  const rawTenantUsage = pick<TenantUsageSnapshotData>("tenant_usage");
+  const baseline = calibration
+    ? { mongoMb: calibration.mongoMb, cloudinaryMb: calibration.cloudinaryMb }
+    : null;
+
+  let tenantUsage: { data: TenantUsageData; syncedAt: string } | null = null;
+  if (rawTenantUsage) {
+    const tenantIds = rawTenantUsage.data.tenants.map((row) => row.tenantId);
+    const tenants = await Tenant.find({ _id: { $in: tenantIds } })
+      .select("_id plan")
+      .lean<Array<{ _id: { toString(): string }; plan?: PlanName }>>();
+    const planByTenantId = new Map(
+      tenants.map((tenant) => [tenant._id.toString(), tenant.plan ?? "maria"]),
+    );
+
+    tenantUsage = {
+      syncedAt: rawTenantUsage.syncedAt,
+      data: {
+        ...rawTenantUsage.data,
+        tenants: rawTenantUsage.data.tenants.map((row) => {
+          const plan = planByTenantId.get(row.tenantId) ?? "maria";
+          const quotas = getPlanResourceQuota(plan, baseline);
+          const usage = buildTenantResourceUsage({
+            plan,
+            mongoUsageMb: row.dbEstimateMb,
+            cloudinaryUsageMb: row.mediaMb,
+            updatedAt: rawTenantUsage.syncedAt,
+            baseline,
+          });
+          return {
+            ...row,
+            plan,
+            quotas,
+            mongoPercent: usage.mongo.percent,
+            cloudinaryPercent: usage.cloudinary.percent,
+            mongoStatus: usage.mongo.status,
+            cloudinaryStatus: usage.cloudinary.status,
+            status: usage.status,
+          };
+        }),
+      },
+    };
+  }
+
+  const capacity = calculatePlatformEquivalentCapacity({
+    baseline,
+    mongoStorageUsedMb: mongodb?.data.storageUsedMb ?? null,
+    mongoStorageLimitMb: mongodb?.data.storageLimitMb ?? null,
+    cloudinaryStorageUsedMb: cloudinary?.data.storageUsedMb ?? null,
+    cloudinaryStorageLimitGb: cloudinary?.data.storageLimitGb ?? null,
+  });
+
   return {
-    mongodb: pick<MongoUsageData>("mongodb"),
-    cloudinary: pick<CloudinaryUsageData>("cloudinary"),
-    tenantUsage: pick<TenantUsageData>("tenant_usage"),
+    mongodb,
+    cloudinary,
+    tenantUsage,
+    calibration,
+    calibrationCandidate,
+    capacity,
   };
 }

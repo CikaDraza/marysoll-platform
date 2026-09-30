@@ -12,6 +12,7 @@ import { Subscription } from "@/models/Subscription";
 import { SalonProfile } from "@/models/SalonProfile";
 import { Service } from "@/models/Service";
 import { requireSuperAdmin } from "@/lib/auth/auth-server";
+import { superAdminTenantsResponseSchema } from "@/types/superadmin-tenants";
 
 export async function GET(req: NextRequest) {
   const auth = requireSuperAdmin(req);
@@ -29,6 +30,16 @@ export async function GET(req: NextRequest) {
     const serviceCounts = new Map<string, number>(
       (
         await Service.aggregate<{ _id: unknown; n: number }>([
+          { $group: { _id: "$tenantId", n: { $sum: 1 } } },
+        ])
+      ).map((row) => [String(row._id), row.n]),
+    );
+
+    // Svaki USER/GUEST profil je jedan red, uključujući moguće duplikate.
+    const clientCounts = new Map<string, number>(
+      (
+        await TenantUser.aggregate<{ _id: unknown; n: number }>([
+          { $match: { role: { $in: ["USER", "GUEST"] } } },
           { $group: { _id: "$tenantId", n: { $sum: 1 } } },
         ])
       ).map((row) => [String(row._id), row.n]),
@@ -123,6 +134,7 @@ export async function GET(req: NextRequest) {
             : null,
           hasWorkingHours,
           servicesCount: serviceCounts.get(String(tenant._id)) ?? 0,
+          clientCount: clientCounts.get(String(tenant._id)) ?? 0,
           lemonsqueezyCustomerId: tenant.lemonsqueezyCustomerId
             ? String(tenant.lemonsqueezyCustomerId)
             : null,
@@ -136,7 +148,7 @@ export async function GET(req: NextRequest) {
       }),
     );
 
-    return NextResponse.json({ success: true, data: enriched });
+    return NextResponse.json(superAdminTenantsResponseSchema.parse({ success: true, data: enriched }));
   } catch (err) {
     console.error("GET /api/superadmin/tenants:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
