@@ -30,6 +30,7 @@ import { SuperAdminChat } from "@/models/SuperAdminChat";
 import { EducationContent } from "@/models/EducationContent";
 import { ClientContentAssignment } from "@/models/ClientContentAssignment";
 import { WebhookEvent } from "@/models/WebhookEvent";
+import { TenantUsageHistory } from "@/models/TenantUsageHistory";
 import { Theme8LandingEvent } from "@/models/Theme8LandingEvent";
 import { VoucherRequest } from "@/models/VoucherRequest";
 import { deleteTenantBookingData } from "@/lib/tenant/bookingCascade";
@@ -101,6 +102,9 @@ function tenantScopedModels() {
     // te zapise — isto pravilo kao za `Subscription`. Događaji kojima tenant
     // nikad nije razrešen (`tenantId: null`) ostaju: nisu ničiji podatak.
     ["WebhookEvent", WebhookEvent],
+    // Istorija potrošnje po salonu. Globalni PlatformUsageHistory (bez
+    // tenantId) ostaje, pa platformski zbirovi prežive brisanje salona.
+    ["TenantUsageHistory", TenantUsageHistory],
   ] as const;
 }
 

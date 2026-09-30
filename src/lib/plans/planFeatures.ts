@@ -17,7 +17,11 @@ export type PlanName = "maria" | "claudia" | "kiki" | "enterprise";
 
 export interface PlanFeatures {
   // ── Limits ────────────────────────────────────────────────────────────────
-  /** Veličina baze podataka u GB. -1 = neograničeno */
+  /**
+   * @deprecated Legacy komercijalna vrednost. Nije tenant infrastructure quota.
+   * Resource prikaz i status moraju koristiti kalibrisani resource quota resolver.
+   * -1 = legacy neograničeno.
+   */
   dbStorageGb: number;
   /** AI zahtevi po mjesecu. -1 = neograničeno */
   aiRequestsPerMonth: number;

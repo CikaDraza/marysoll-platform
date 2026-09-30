@@ -10,46 +10,20 @@ import type { PlanFeatures } from "@/lib/plans/planFeatures";
 import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
+import { superAdminTenantsResponseSchema, type TenantRow } from "@/types/superadmin-tenants";
 
-export interface TenantRow {
-  _id: string;
-  name: string;
-  slug: string;
-  subdomain: string;
-  cloudinaryFolder: string;
-  customDomain: string | null;
-  status: "active" | "suspended" | "pending" | "cancelled";
-  plan: "maria" | "claudia" | "kiki" | "enterprise";
-  paid: boolean;
-  verified: boolean;
-  isTrialActive: boolean;
-  trialEndsAt: string | null;
-  trialDaysLeft: number | null;
-  planExpiresAt: string | null;
-  createdAt: string;
-  lemonsqueezyCustomerId: string | null;
-  lemonsqueezySubscriptionId: string | null;
-  overrideNote: string | null;
-  isDemo: boolean;
-  /** Signali spremnosti — prikazuju se na kartici salona koji čeka objavu. */
-  logo: string | null;
-  landingTheme: string | null;
-  hasWorkingHours: boolean;
-  servicesCount: number;
-  owner: {
-    _id: string;
-    name: string;
-    email: string;
-    isEmailVerified: boolean;
-    createdAt: string;
-  } | null;
-}
+export type { TenantRow } from "@/types/superadmin-tenants";
 
 async function fetchTenants(token: string): Promise<TenantRow[]> {
-  const { data } = await api.get("/superadmin/tenants", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return data.data ?? [];
+  try {
+    const { data } = await api.get<unknown>("/superadmin/tenants", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return superAdminTenantsResponseSchema.parse(data).data;
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("Lista salona nije dostupna.");
+  }
 }
 
 async function fetchStats(token: string) {

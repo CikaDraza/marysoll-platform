@@ -55,8 +55,8 @@ export function PlanInfoCard({
 
   const limits: { label: string; value: string }[] = [
     {
-      label: "Prostor za podatke",
-      value: formatLimit(features.dbStorageGb, "GB"),
+      label: "Maks. salona",
+      value: formatLimit(features.maxSalons, ""),
     },
     {
       label: "AI zahtevi / mesec",

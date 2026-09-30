@@ -1,30 +1,16 @@
 "use client";
 
 import { CloudArrowUpIcon, CircleStackIcon } from "@heroicons/react/24/outline";
+import { formatResourceMb } from "@/helpers/formatResourceMb";
+import { PLAN_DISPLAY_NAMES } from "@/lib/plans/planFeatures";
+import type {
+  ResourceMetricUsage,
+  ResourceQuotaStatus,
+  TenantResourceUsage,
+} from "@/types/resource-quota";
 
 interface StorageMetricsProps {
-  storageMetrics: {
-    mongoUsageMb: number;
-    cloudinaryUsageMb: number;
-    updatedAt: string;
-  };
-  dbStorageGb: number;
-}
-
-function formatMb(mb: number): string {
-  if (mb >= 1024) {
-    return `${(mb / 1024).toFixed(2)} GB`;
-  }
-  // Sitne vrednosti (ispod 1 MB) prikaži u KB da se vidi da potrošnja postoji.
-  if (mb > 0 && mb < 1) {
-    return `${Math.round(mb * 1024)} KB`;
-  }
-  return `${mb.toFixed(1)} MB`;
-}
-
-function formatLimit(dbStorageGb: number): string {
-  if (dbStorageGb === -1) return "Neograničeno";
-  return `${dbStorageGb} GB`;
+  resourceUsage: TenantResourceUsage;
 }
 
 function formatDate(iso: string): string {
@@ -33,23 +19,38 @@ function formatDate(iso: string): string {
   );
 }
 
-interface MetricCardProps {
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-  value: string;
-  limitLabel: string;
-  updatedAt: string;
-}
+const STATUS_LABELS: Record<ResourceQuotaStatus, string> = {
+  healthy: "U okviru kapaciteta",
+  warning: "Približavate se kapacitetu",
+  limit_reached: "Kapacitet dostignut",
+};
+
+const STATUS_CLASSES: Record<ResourceQuotaStatus, string> = {
+  healthy: "text-emerald-600 dark:text-emerald-400",
+  warning: "text-amber-600 dark:text-amber-400",
+  limit_reached: "text-red-600 dark:text-red-400",
+};
 
 function MetricCard({
   icon,
   title,
   subtitle,
-  value,
-  limitLabel,
-  updatedAt,
-}: MetricCardProps) {
+  metric,
+  planLabel,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  metric: ResourceMetricUsage;
+  planLabel: string;
+}) {
+  const displayPercent =
+    metric.percent == null ? null : Math.min(metric.percent, 100);
+  const quotaLabel =
+    metric.quotaMb == null
+      ? "Soft kvota nije određena"
+      : formatResourceMb(metric.quotaMb);
+
   return (
     <div className="admin-card p-5">
       <div className="flex items-start gap-3">
@@ -66,48 +67,73 @@ function MetricCard({
 
       <div className="mt-4">
         <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-          {value}
+          {formatResourceMb(metric.usedMb)} / {quotaLabel}
         </p>
-        <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
-          Limit plana: {limitLabel}
+        {displayPercent != null && (
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+            <div
+              className={`h-full rounded-full ${metric.status === "limit_reached" ? "bg-red-500" : metric.status === "warning" ? "bg-amber-500" : "bg-violet-500"}`}
+              style={{ width: `${displayPercent}%` }}
+            />
+          </div>
+        )}
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          {!metric.complete
+            ? "Merenje trenutno nije dostupno"
+            : metric.percent == null
+              ? "Soft kvota za ovaj resurs nije određena"
+              : `${metric.percent.toFixed(1)}% ${planLabel} soft limita`}
         </p>
+        {metric.status && (
+          <p
+            className={`mt-1 text-xs font-semibold ${STATUS_CLASSES[metric.status]}`}
+          >
+            {STATUS_LABELS[metric.status]}
+          </p>
+        )}
       </div>
-
-      <p className="mt-4 text-[10px] text-gray-400 dark:text-gray-600">
-        Poslednje ažurirano: {formatDate(updatedAt)}
-      </p>
     </div>
   );
 }
 
-export function StorageMetrics({
-  storageMetrics,
-  dbStorageGb,
-}: StorageMetricsProps) {
-  const limitLabel = formatLimit(dbStorageGb);
+export function StorageMetrics({ resourceUsage }: StorageMetricsProps) {
+  const planLabel = PLAN_DISPLAY_NAMES[resourceUsage.plan];
 
   return (
     <div className="space-y-4">
       <MetricCard
         icon={
-          <CloudArrowUpIcon className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+          <CircleStackIcon className="h-5 w-5 text-violet-600 dark:text-violet-400" />
         }
-        title="Prostor za medije"
-        subtitle="Cloudinary / slike i fajlovi"
-        value={formatMb(storageMetrics.cloudinaryUsageMb)}
-        limitLabel={limitLabel}
-        updatedAt={storageMetrics.updatedAt}
+        title="Podaci"
+        subtitle="MongoDB tenant estimate"
+        metric={resourceUsage.mongo}
+        planLabel={planLabel}
       />
       <MetricCard
         icon={
-          <CircleStackIcon className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+          <CloudArrowUpIcon className="h-5 w-5 text-violet-600 dark:text-violet-400" />
         }
-        title="Prostor za podatke"
-        subtitle="MongoDB / baza podataka"
-        value={formatMb(storageMetrics.mongoUsageMb)}
-        limitLabel={limitLabel}
-        updatedAt={storageMetrics.updatedAt}
+        title="Mediji"
+        subtitle="Cloudinary / slike i fajlovi"
+        metric={resourceUsage.cloudinary}
+        planLabel={planLabel}
       />
+      <p className="px-1 text-[10px] text-gray-400 dark:text-gray-600">
+        Poslednje ažurirano: {formatDate(resourceUsage.updatedAt)}. MongoDB
+        vrednost je procena tenant dokumenata. Cloudinary soft kvota još nije
+        određena.
+        {resourceUsage.cloudinaryAssets != null
+          ? ` Izmereno assets: ${resourceUsage.cloudinaryAssets}.`
+          : ""}
+      </p>
+      {resourceUsage.status === "limit_reached" &&
+        resourceUsage.plan === "claudia" && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+            Dostigli ste kapacitet uključen u Claudia plan. Kiki plan uključuje
+            veći kapacitet.
+          </div>
+        )}
     </div>
   );
 }

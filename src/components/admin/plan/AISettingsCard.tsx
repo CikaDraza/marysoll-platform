@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline";
-import type { PlanStatusData } from "@/hooks/usePlanStatus";
+import type { PlanStatusData } from "@/types/plan-status";
 
 interface AISettingsCardProps {
   aiSettings: PlanStatusData["aiSettings"];

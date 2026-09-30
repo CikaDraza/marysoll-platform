@@ -8,14 +8,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { requireAdmin } from "@/lib/auth/auth-server";
-import { getPlanFeatures } from "@/lib/plans/planFeatures";
-import type { PlanName, PlanFeatures } from "@/lib/plans/planFeatures";
+import { resolveTenantPlanFeatures } from "@/lib/plans/planEnforcement";
 import type { ITenant } from "@/models/Tenant";
+import { buildTenantResourceUsage } from "@/lib/plans/resourceQuotas";
+import { planStatusDataSchema } from "@/types/plan-status";
 
 type TenantPlanFields = Pick<
   ITenant,
   | "name"
-  | "plan"
   | "status"
   | "isTrialActive"
   | "trialEndsAt"
@@ -23,29 +23,6 @@ type TenantPlanFields = Pick<
   | "aiSettings"
   | "storageMetrics"
 >;
-
-interface PlanStatusResponse {
-  name: string;
-  plan: PlanName;
-  status: "active" | "suspended" | "pending" | "cancelled";
-  isTrialActive: boolean;
-  trialEndsAt: string | null;
-  planExpiresAt: string | null;
-  aiSettings: {
-    chatEnabled: boolean;
-    landingEnabled: boolean;
-    imageEnabled: boolean;
-    chatRpmLimit: number;
-    landingRpmLimit: number;
-    imageRpmLimit: number;
-  };
-  storageMetrics: {
-    mongoUsageMb: number;
-    cloudinaryUsageMb: number;
-    updatedAt: string;
-  };
-  features: PlanFeatures;
-}
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
@@ -65,7 +42,7 @@ export async function GET(req: NextRequest) {
 
     const tenant = await Tenant.findById(decoded.tenantId)
       .select(
-        "name plan status isTrialActive trialEndsAt planExpiresAt aiSettings storageMetrics",
+        "name status isTrialActive trialEndsAt planExpiresAt aiSettings storageMetrics",
       )
       .lean<TenantPlanFields>();
 
@@ -76,10 +53,25 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const plan = (tenant.plan ?? "maria") as PlanName;
-    const features = getPlanFeatures(plan);
+    // Isti effective-plan resolver kao requireFeature i
+    // /api/subscriptions/features — kvota ne sme da čita sirovi Tenant.plan.
+    const { plan, features } = await resolveTenantPlanFeatures(
+      decoded.tenantId,
+    );
+    const updatedAt = tenant.storageMetrics?.updatedAt
+      ? new Date(tenant.storageMetrics.updatedAt).toISOString()
+      : new Date().toISOString();
+    const resourceUsage = buildTenantResourceUsage({
+      plan,
+      mongoUsageMb: tenant.storageMetrics?.mongoUsageMb ?? null,
+      mongoComplete: tenant.storageMetrics?.mongoComplete === true,
+      cloudinaryUsageMb: tenant.storageMetrics?.cloudinaryUsageMb ?? null,
+      cloudinaryComplete: tenant.storageMetrics?.cloudinaryComplete === true,
+      cloudinaryAssets: tenant.storageMetrics?.cloudinaryAssets ?? null,
+      updatedAt,
+    });
 
-    const response: PlanStatusResponse = {
+    const response = planStatusDataSchema.parse({
       name: tenant.name ?? "",
       plan,
       status: tenant.status ?? "pending",
@@ -98,15 +90,9 @@ export async function GET(req: NextRequest) {
         landingRpmLimit: tenant.aiSettings?.landingRpmLimit ?? 0,
         imageRpmLimit: tenant.aiSettings?.imageRpmLimit ?? 0,
       },
-      storageMetrics: {
-        mongoUsageMb: tenant.storageMetrics?.mongoUsageMb ?? 0,
-        cloudinaryUsageMb: tenant.storageMetrics?.cloudinaryUsageMb ?? 0,
-        updatedAt: tenant.storageMetrics?.updatedAt
-          ? new Date(tenant.storageMetrics.updatedAt).toISOString()
-          : new Date().toISOString(),
-      },
+      resourceUsage,
       features,
-    };
+    });
 
     return NextResponse.json(response);
   } catch (err) {

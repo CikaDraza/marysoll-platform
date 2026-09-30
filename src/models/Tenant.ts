@@ -57,8 +57,11 @@ export interface ITenant extends Document {
     imageRpmLimit: number;
   };
   storageMetrics: {
-    mongoUsageMb: number;
-    cloudinaryUsageMb: number;
+    mongoUsageMb: number | null;
+    mongoComplete: boolean;
+    cloudinaryUsageMb: number | null;
+    cloudinaryComplete: boolean;
+    cloudinaryAssets: number | null;
     updatedAt: Date;
   };
   status: "active" | "suspended" | "pending" | "cancelled";
@@ -203,8 +206,11 @@ const TenantSchema = new Schema<ITenant>(
       _id: false,
     },
     storageMetrics: {
-      mongoUsageMb: { type: Number, default: 0 },
-      cloudinaryUsageMb: { type: Number, default: 0 },
+      mongoUsageMb: { type: Number, default: null },
+      mongoComplete: { type: Boolean, default: false },
+      cloudinaryUsageMb: { type: Number, default: null },
+      cloudinaryComplete: { type: Boolean, default: false },
+      cloudinaryAssets: { type: Number, default: null },
       updatedAt: { type: Date, default: Date.now },
       _id: false,
     },
