@@ -35,13 +35,14 @@ ostaje neophodan)
 
 | Rez | Status | Šta je u kodu | Sledeće | Dokument |
 |---|---|---|---|---|
-| Statistika salona | ✅ kod · 🟡 browser provera | „Poslednje registracije“ prikazuju broj `USER` i `GUEST` profila sa duplikatima. Mesečni pregled razdvaja ukupan broj termina, različite profile koji su zakazali, različite profile sa trenutno potvrđenim terminom i broj termina po statusu. | Proveriti izabrane mesece i salone u superadmin panelu, posebno goste, duplikate i završene termine. | [Superadmin statistika i resursi](SUPERADMIN-STATISTIKA-I-RESOURCE-QUOTA.md) |
-| Resource quota i kapacitet | ✅ kod · 🟡 kalibracija i browser provera | Postojeći usage snapshot je proširen: Mongo procena po tenantu, Cloudinary mediji, odvojene Claudia/Kiki kvote, soft statusi, 80% platform capacity, tenant prikaz samo sopstvenih podataka i eksplicitno čuvanje Anja baseline-a. | Ručno osvežiti usage, proveriti novu Mongo procenu, pa superadmin akcijom sačuvati kalibraciju. Zatim proveriti superadmin i tenant prikaz. Snapshot od 13. 8. 2026. je samo kandidat; kalibracija još nije snimljena. | [Superadmin statistika i resursi](SUPERADMIN-STATISTIKA-I-RESOURCE-QUOTA.md) |
+| Statistika salona | ✅ kod · 🟡 browser provera | „Poslednje registracije“ prikazuju broj `USER` i `GUEST` profila sa duplikatima. Mesečni profil (Europe/Belgrade mesec) razdvaja tri sata termina: zakazano (`date`), kreirano (`createdAt`) i obavljeno (`completedAt`). Uz to prikazuje različite profile, statuse, trenutno aktivno osoblje (OWNER/ADMIN/STAFF) i mesečni rast potrošnje. | Proveriti izabrane mesece i salone u superadmin panelu, posebno goste, duplikate, termine kreirane za naredni mesec i završene termine. | [Superadmin statistika i resursi](SUPERADMIN-STATISTIKA-I-RESOURCE-QUOTA.md) |
+| Resource quota i kapacitet | ✅ kod · 🟡 kalibracija i browser provera | Mongo procena po tenantu, Cloudinary mediji, odvojene Claudia/Kiki kvote, soft statusi, 80% capacity (Anja data-estimate ekvivalenti), tenant prikaz samo sopstvenih podataka i eksplicitno čuvanje Anja baseline-a. Kvote koriste efektivni plan (`resolveEffectivePlan`), ne sirovi `Tenant.plan`. | Ručno osvežiti usage, proveriti novu Mongo procenu, pa superadmin akcijom sačuvati kalibraciju. Snapshot od 13. 8. 2026. je samo kandidat; kalibracija još nije snimljena. | [Superadmin statistika i resursi](SUPERADMIN-STATISTIKA-I-RESOURCE-QUOTA.md) |
+| Istorija potrošnje (Marysoll 11) | ✅ kod · 🟡 prvi produkcijski snimak | Append-only `TenantUsageHistory` i `PlatformUsageHistory` pored latest cache-a; upis pri svakom ručnom refresh-u i dnevnom cron-u `/api/cron/usage-snapshot`. Refresh ne dira kalibraciju (behavioral test). | Posle merge-a proveriti cron u produkciji. Ako cron nije aktivan do 1. 10. 2026, ručno osvežiti potrošnju tog dana kao oktobarsku početnu tačku. Physicalization faktor za Mongo kapacitet računati kad postoji više meseci snimaka. | [§3a i §7](SUPERADMIN-STATISTIKA-I-RESOURCE-QUOTA.md#3a-istorija-potrošnje) |
 
 Ovaj rez ne menja gore navedeni redosled za STAFF i Education. Lokalno su prošli
-TypeScript, ESLint, Prettier, 30 ciljanih testova, ceo Vitest paket
-(215 fajlova, 2362 prošla, 21 preskočen) i produkcijski build; browser
-provera i eksplicitna kalibracija ostaju otvorene.
+TypeScript, ESLint, Prettier i ceo Vitest paket (220 fajlova, 2379
+prošla, 21 preskočen); browser provera, eksplicitna kalibracija i prvi
+produkcijski cron snimak ostaju otvoreni.
 
 ## NEXT — sledeći rez
 

@@ -3,7 +3,9 @@
  *
  * One document per provider (upsert by `provider`), so we always keep the latest
  * snapshot. The dashboard reads these snapshots; expensive Atlas/Cloudinary calls
- * happen only on an explicit "Osveži potrošnju" (refresh) action.
+ * happen only on a refresh ("Osveži potrošnju" or the daily usage cron).
+ * History lives separately in append-only TenantUsageHistory /
+ * PlatformUsageHistory — this collection stays a latest-value cache.
  */
 import { Schema, Document, model, models } from "mongoose";
 

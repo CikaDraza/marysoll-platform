@@ -15,6 +15,10 @@
     {
       "path": "/api/newsletter/campaigns/scheduler",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/usage-snapshot",
+      "schedule": "10 22 * * *"
     }
   ]
 }

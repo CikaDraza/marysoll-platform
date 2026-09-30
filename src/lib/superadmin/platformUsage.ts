@@ -6,6 +6,8 @@
  * Sakuplja infrastrukturnu potrošnju platforme (MongoDB + Cloudinary) i procenu
  * po tenantu. Spoljni pozivi (Cloudinary Admin API, db admin komande) se rade SAMO
  * u `refreshPlatformUsage()` — dashboard čita keširani `PlatformUsageSnapshot`.
+ * Svaki refresh (ručni ili dnevni cron) dodatno upisuje append-only istoriju
+ * (`TenantUsageHistory` + `PlatformUsageHistory`) za mesečni rast potrošnje.
  */
 import "server-only";
 
@@ -16,6 +18,12 @@ import {
   type UsageProvider,
 } from "@/models/PlatformUsageSnapshot";
 import { Tenant } from "@/models/Tenant";
+import { PlatformUsageHistory } from "@/models/PlatformUsageHistory";
+import {
+  TenantUsageHistory,
+  type UsageCaptureSource,
+} from "@/models/TenantUsageHistory";
+import { countActiveStaffByTenant } from "@/lib/team/activeStaff";
 import {
   getCurrentResourceQuotaCalibration,
   readCalibrationCandidate,
@@ -25,7 +33,7 @@ import {
   calculatePlatformEquivalentCapacity,
   getPlanResourceQuota,
 } from "@/lib/plans/resourceQuotas";
-import type { PlanName } from "@/lib/plans/planFeatures";
+import { resolveEffectivePlansForTenants } from "@/lib/plans/effectivePlans";
 import type {
   CloudinaryUsageData,
   MongoUsageData,
@@ -69,7 +77,7 @@ import { Theme8LandingEvent } from "@/models/Theme8LandingEvent";
 import { Voucher } from "@/models/Voucher";
 import { VoucherRequest } from "@/models/VoucherRequest";
 import { WebhookEvent } from "@/models/WebhookEvent";
-import type { Model } from "mongoose";
+import { Types, type Model } from "mongoose";
 
 // ─── Konstante / limiti (samo za prikaz) ─────────────────────────────────────
 const MONGODB_STORAGE_LIMIT_MB = Number(
@@ -327,7 +335,57 @@ async function upsertSnapshot(provider: UsageProvider, data: unknown) {
   );
 }
 
-export async function refreshPlatformUsage(): Promise<PlatformUsageRead> {
+/**
+ * Append-only istorija uz latest cache. Latest snapshot služi dashboardu;
+ * istorija služi mesečnom rastu (snapshot kraja meseca − snapshot početka).
+ */
+async function appendUsageHistory(input: {
+  source: UsageCaptureSource;
+  capturedAt: Date;
+  mongo: MongoUsageData | null;
+  cloudinary: CloudinaryUsageData | null;
+  tenantUsage: TenantUsageSnapshotData | null;
+}) {
+  const captureId = new Types.ObjectId();
+  const { source, capturedAt, mongo, cloudinary, tenantUsage } = input;
+
+  if (tenantUsage && tenantUsage.tenants.length > 0) {
+    const tenantIds = tenantUsage.tenants.map((row) => row.tenantId);
+    const [planByTenantId, staffByTenantId] = await Promise.all([
+      resolveEffectivePlansForTenants(tenantIds, capturedAt),
+      countActiveStaffByTenant(tenantIds),
+    ]);
+    await TenantUsageHistory.insertMany(
+      tenantUsage.tenants.map((row) => ({
+        captureId,
+        tenantId: row.tenantId,
+        capturedAt,
+        source,
+        plan: planByTenantId.get(row.tenantId) ?? "maria",
+        mongoEstimateMb: row.dbEstimateMb,
+        cloudinaryMb: row.mediaMb,
+        activeStaffCount: staffByTenantId.get(row.tenantId) ?? 0,
+      })),
+    );
+  }
+
+  await PlatformUsageHistory.create({
+    captureId,
+    capturedAt,
+    source,
+    mongoStorageUsedMb: mongo?.storageUsedMb ?? null,
+    mongoStorageLimitMb: mongo?.storageLimitMb ?? null,
+    cloudinaryStorageUsedMb: cloudinary?.storageUsedMb ?? null,
+    cloudinaryStorageLimitGb: cloudinary?.storageLimitGb ?? null,
+    tenantCount: tenantUsage?.tenants.length ?? null,
+    tenantMongoEstimateTotalMb: tenantUsage?.totalDbEstimateMb ?? null,
+    tenantCloudinaryTotalMb: tenantUsage?.totalMediaMb ?? null,
+  });
+}
+
+export async function refreshPlatformUsage(
+  source: UsageCaptureSource = "manual",
+): Promise<PlatformUsageRead> {
   await connectToDB();
 
   const [mongoRes, cloudinaryRes, tenantRes] = await Promise.allSettled([
@@ -373,6 +431,21 @@ export async function refreshPlatformUsage(): Promise<PlatformUsageRead> {
     );
   }
 
+  const fulfilled = <T>(res: PromiseSettledResult<T>) =>
+    res.status === "fulfilled" ? res.value : null;
+  const mongo = fulfilled(mongoRes);
+  const cloudinaryUsage = fulfilled(cloudinaryRes);
+  const tenantUsage = fulfilled(tenantRes);
+  if (mongo || cloudinaryUsage || tenantUsage) {
+    await appendUsageHistory({
+      source,
+      capturedAt: new Date(),
+      mongo,
+      cloudinary: cloudinaryUsage,
+      tenantUsage,
+    });
+  }
+
   return readPlatformUsage();
 }
 
@@ -416,12 +489,8 @@ export async function readPlatformUsage(): Promise<PlatformUsageRead> {
 
   let tenantUsage: { data: TenantUsageData; syncedAt: string } | null = null;
   if (rawTenantUsage) {
-    const tenantIds = rawTenantUsage.data.tenants.map((row) => row.tenantId);
-    const tenants = await Tenant.find({ _id: { $in: tenantIds } })
-      .select("_id plan")
-      .lean<Array<{ _id: { toString(): string }; plan?: PlanName }>>();
-    const planByTenantId = new Map(
-      tenants.map((tenant) => [tenant._id.toString(), tenant.plan ?? "maria"]),
+    const planByTenantId = await resolveEffectivePlansForTenants(
+      rawTenantUsage.data.tenants.map((row) => row.tenantId),
     );
 
     tenantUsage = {

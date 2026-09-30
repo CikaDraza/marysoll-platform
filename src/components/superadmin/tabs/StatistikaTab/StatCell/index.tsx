@@ -1,4 +1,12 @@
-export function StatCell({ label, value, color }: { label: string; value: number; color: string }) {
+export function StatCell({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number | string;
+  color: string;
+}) {
   return (
     <div className="text-center">
       <p className={`text-2xl font-bold ${color}`}>{value}</p>

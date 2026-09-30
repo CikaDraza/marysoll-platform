@@ -8,8 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db/mongodb";
 import { Tenant } from "@/models/Tenant";
 import { requireAdmin } from "@/lib/auth/auth-server";
-import { getPlanFeatures } from "@/lib/plans/planFeatures";
-import type { PlanName } from "@/lib/plans/planFeatures";
+import { resolveTenantPlanFeatures } from "@/lib/plans/planEnforcement";
 import type { ITenant } from "@/models/Tenant";
 import { getCurrentResourceQuotaCalibration } from "@/lib/superadmin/resourceQuotaCalibration";
 import { buildTenantResourceUsage } from "@/lib/plans/resourceQuotas";
@@ -18,7 +17,6 @@ import { planStatusDataSchema } from "@/types/plan-status";
 type TenantPlanFields = Pick<
   ITenant,
   | "name"
-  | "plan"
   | "status"
   | "isTrialActive"
   | "trialEndsAt"
@@ -45,7 +43,7 @@ export async function GET(req: NextRequest) {
 
     const tenant = await Tenant.findById(decoded.tenantId)
       .select(
-        "name plan status isTrialActive trialEndsAt planExpiresAt aiSettings storageMetrics",
+        "name status isTrialActive trialEndsAt planExpiresAt aiSettings storageMetrics",
       )
       .lean<TenantPlanFields>();
 
@@ -56,8 +54,12 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const plan = (tenant.plan ?? "maria") as PlanName;
-    const calibration = await getCurrentResourceQuotaCalibration();
+    // Isti effective-plan resolver kao requireFeature i
+    // /api/subscriptions/features — kvota ne sme da čita sirovi Tenant.plan.
+    const [{ plan, features }, calibration] = await Promise.all([
+      resolveTenantPlanFeatures(decoded.tenantId),
+      getCurrentResourceQuotaCalibration(),
+    ]);
     const updatedAt = tenant.storageMetrics?.updatedAt
       ? new Date(tenant.storageMetrics.updatedAt).toISOString()
       : new Date().toISOString();
@@ -73,8 +75,6 @@ export async function GET(req: NextRequest) {
           }
         : null,
     });
-
-    const features = getPlanFeatures(plan);
 
     const response = planStatusDataSchema.parse({
       name: tenant.name ?? "",

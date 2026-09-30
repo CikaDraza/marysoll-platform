@@ -219,7 +219,9 @@ export function PlatformUsageSection() {
             <h3 className="font-semibold text-white">Capacity model</h3>
             <p className="text-xs text-slate-400">
               Heuristika kapaciteta prema veličini The Lash Room, sa rezervom od
-              20%.
+              20%. Brojevi su Anja data-estimate ekvivalenti, ne broj salona:
+              Mongo procena ne uključuje indekse i overhead, pa je Mongo
+              kapacitet optimističan dok ga istorija snimaka ne kalibriše.
             </p>
           </div>
           <button
@@ -299,7 +301,7 @@ export function PlatformUsageSection() {
             value={
               capacity?.mongoAnjaEquivalentCapacity == null
                 ? "—"
-                : `≈ ${capacity.mongoAnjaEquivalentCapacity} salona`
+                : `≈ ${capacity.mongoAnjaEquivalentCapacity} Anja data-estimate ekv.`
             }
           />
           <MetricRow
@@ -307,7 +309,7 @@ export function PlatformUsageSection() {
             value={
               capacity?.cloudinaryAnjaEquivalentCapacity == null
                 ? "—"
-                : `≈ ${capacity.cloudinaryAnjaEquivalentCapacity} salona`
+                : `≈ ${capacity.cloudinaryAnjaEquivalentCapacity} Anja ekv.`
             }
           />
           <MetricRow
@@ -315,7 +317,7 @@ export function PlatformUsageSection() {
             value={
               capacity?.platformAnjaEquivalentCapacity == null
                 ? "—"
-                : `≈ ${capacity.platformAnjaEquivalentCapacity} ekvivalenata`
+                : `≈ ${capacity.platformAnjaEquivalentCapacity} Anja data-estimate ekv.`
             }
           />
           <MetricRow
