@@ -11,7 +11,7 @@
  */
 import "server-only";
 
-import { cloudinary } from "@/lib/cloudinary";
+import { cloudinary, getTenantCloudinaryUsage } from "@/lib/cloudinary";
 import { connectToDB } from "@/lib/db/mongodb";
 import {
   PlatformUsageSnapshot,
@@ -34,6 +34,10 @@ import {
   getPlanResourceQuota,
 } from "@/lib/plans/resourceQuotas";
 import { resolveEffectivePlansForTenants } from "@/lib/plans/effectivePlans";
+import {
+  mongoUsageDataSchema,
+  tenantUsageSnapshotDataSchema,
+} from "@/types/platform-usage";
 import type {
   CloudinaryUsageData,
   MongoUsageData,
@@ -41,6 +45,7 @@ import type {
   TenantUsageData,
   TenantUsageSnapshotData,
   TenantUsageSnapshotRow,
+  UsageCaptureReport,
 } from "@/types/platform-usage";
 
 // Tenant-scoped kolekcije korišćene za laku procenu DB potrošnje po tenantu.
@@ -139,14 +144,64 @@ export async function getMongoUsage(): Promise<MongoUsageData> {
   const db = mongooseInstance.connection.db;
   if (!db) throw new Error("MongoDB konekcija nije dostupna");
 
-  const stats = (await db.stats()) as {
-    storageSize?: number;
-    collections?: number;
-  };
+  let quotaBytes: number | null = null;
+  let quotaSource: MongoUsageData["quotaSource"] = "unavailable";
+  try {
+    // Atlas Free/Flex: cluster-wide data + indexes, not db.stats().storageSize.
+    const response = (await db.command({ atlasSize: 1 })) as Record<
+      string,
+      unknown
+    >;
+    const candidate = response.atlasSize;
+    if (
+      response.ok === 1 &&
+      typeof candidate === "number" &&
+      Number.isSafeInteger(candidate) &&
+      candidate >= 0
+    ) {
+      quotaBytes = candidate;
+      quotaSource = "atlasSize";
+    }
+  } catch (error) {
+    console.warn("MongoDB atlasSize nije dostupan:", error);
+  }
+
+  let dataSizeMb: number | null = null;
+  let storageSizeMb: number | null = null;
+  let indexSizeMb: number | null = null;
+  let collections: number | null = null;
+  try {
+    const stats = (await db.stats()) as {
+      dataSize?: number;
+      storageSize?: number;
+      indexSize?: number;
+      collections?: number;
+    };
+    const validBytes = (value: number | undefined) =>
+      typeof value === "number" && Number.isFinite(value) && value >= 0;
+    dataSizeMb = validBytes(stats.dataSize) ? toMb(stats.dataSize!) : null;
+    storageSizeMb = validBytes(stats.storageSize)
+      ? toMb(stats.storageSize!)
+      : null;
+    indexSizeMb = validBytes(stats.indexSize) ? toMb(stats.indexSize!) : null;
+    collections =
+      Number.isInteger(stats.collections) && stats.collections! >= 0
+        ? stats.collections!
+        : null;
+    if (
+      quotaBytes == null &&
+      validBytes(stats.dataSize) &&
+      validBytes(stats.indexSize)
+    ) {
+      quotaBytes = stats.dataSize! + stats.indexSize!;
+      quotaSource = "dbStatsEstimate";
+    }
+  } catch (error) {
+    console.warn("MongoDB db.stats dijagnostika nije dostupna:", error);
+  }
 
   let connections: number | null = null;
   try {
-    // serverStatus može biti ograničen na shared tierovima — fallback na null.
     const serverStatus = (await db.admin().serverStatus()) as {
       connections?: { current?: number };
     };
@@ -156,24 +211,16 @@ export async function getMongoUsage(): Promise<MongoUsageData> {
   }
 
   return {
-    storageUsedMb: toMb(stats.storageSize ?? 0),
-    storageLimitMb: MONGODB_STORAGE_LIMIT_MB,
+    quotaUsedMb: quotaBytes == null ? null : toMb(quotaBytes),
+    quotaLimitMb: MONGODB_STORAGE_LIMIT_MB,
+    quotaSource,
+    dataSizeMb,
+    storageSizeMb,
+    indexSizeMb,
     connections,
-    // CPU je HARDKODOVAN `null`, i to je razlog zašto se nikad ne prikazuje —
-    // ne zbog isteklih kredencijala. `storageUsedMb` i `connections` iznad
-    // dolaze iz obične konekcije (`db.stats()` / `serverStatus()`), pa metrika
-    // potrošnje ne zavisi ni od kakvog Atlas ključa.
-    //
-    // Za CPU trebaju DVE stvari, i nijedna nije samo ključ:
-    //   1. poziv ka Atlas Admin API-ju (autentifikacija Service Account-om —
-    //      tek tada bi MONGODB_ATLAS_CLIENT_ID/SECRET prvi put nešto radili)
-    //   2. klaster M10+ — M0 free tier NE izlaže hardverske metrike, pa bi na
-    //      njemu i ispravni ključevi vratili prazno
-    //
-    // Očekivani trenutak: prelazak na M10 kad broj tenanta preraste free tier
-    // (procena ~20+), kada ionako trebaju jači procesor i više storage-a.
+    // M0 does not expose CPU through this connection; M10+ requires Admin API.
     cpuAvgPercent: null,
-    collections: stats.collections ?? 0,
+    collections,
   };
 }
 
@@ -187,7 +234,14 @@ export async function getCloudinaryUsage(): Promise<CloudinaryUsageData> {
     resources?: number;
   };
 
-  const storageBytes = usage.storage?.usage ?? 0;
+  const storageBytes = usage.storage?.usage;
+  if (
+    typeof storageBytes !== "number" ||
+    !Number.isFinite(storageBytes) ||
+    storageBytes < 0
+  ) {
+    throw new Error("Cloudinary usage nije vratio validnu storage potrošnju");
+  }
   const storageLimitGb = usage.storage?.limit
     ? toGb(usage.storage.limit)
     : CLOUDINARY_STORAGE_LIMIT_GB;
@@ -200,38 +254,6 @@ export async function getCloudinaryUsage(): Promise<CloudinaryUsageData> {
     transformations: usage.transformations?.usage ?? 0,
     requests: usage.requests ?? null,
   };
-}
-
-// ─── Cloudinary media po tenantu ─────────────────────────────────────────────
-async function getTenantMediaBytes(
-  folder: string,
-): Promise<{ bytes: number; assets: number }> {
-  let bytes = 0;
-  let assets = 0;
-  let nextCursor: string | undefined;
-  let guard = 0; // sprečava beskonačnu petlju
-
-  // Admin API `prefix` filtrira po public_id prefiksu — pouzdano hvata sve
-  // (uključujući ugnežđene podfoldere) za zadati cloudinaryFolder.
-  do {
-    const res = (await cloudinary.api.resources({
-      type: "upload",
-      prefix: folder,
-      max_results: 500,
-      next_cursor: nextCursor,
-    })) as {
-      resources?: { bytes?: number }[];
-      next_cursor?: string;
-    };
-
-    const resources = res.resources ?? [];
-    for (const r of resources) bytes += r.bytes ?? 0;
-    assets += resources.length;
-    nextCursor = res.next_cursor;
-    guard += 1;
-  } while (nextCursor && guard < 20);
-
-  return { bytes, assets };
 }
 
 // ─── Tenant usage (laka procena) ─────────────────────────────────────────────
@@ -250,78 +272,123 @@ export async function getTenantUsage(): Promise<TenantUsageSnapshotData> {
   }[];
 
   const dbBytesByTenant = new Map<string, number>();
-
-  // Laka procena: count(docs po tenantId) × avgObjSize (iz collStats).
+  let mongoComplete = true;
+  // count(tenant docs) × collection avgObjSize is an estimate, never physical quota.
   for (const Model of TENANT_SCOPED_MODELS) {
     const collName = Model.collection.collectionName;
-    let avgObjSize = 0;
+    let avgObjSize: number;
     try {
-      const collStats = (await db.command({ collStats: collName })) as {
+      const stats = (await db.command({ collStats: collName })) as {
         avgObjSize?: number;
+        count?: number;
       };
-      avgObjSize = collStats.avgObjSize ?? 0;
-    } catch {
-      continue; // kolekcija još ne postoji
-    }
-    if (avgObjSize <= 0) continue;
-
-    const counts = (await Model.aggregate([
-      { $group: { _id: "$tenantId", count: { $sum: 1 } } },
-    ])) as { _id: { toString(): string } | null; count: number }[];
-
-    for (const c of counts) {
-      if (!c._id) continue;
-      const key = c._id.toString();
-      dbBytesByTenant.set(
-        key,
-        (dbBytesByTenant.get(key) ?? 0) + c.count * avgObjSize,
+      if (stats.count === 0) continue;
+      if (
+        typeof stats.avgObjSize !== "number" ||
+        !Number.isFinite(stats.avgObjSize) ||
+        stats.avgObjSize < 0
+      ) {
+        throw new Error(`Nevalidan avgObjSize za ${collName}`);
+      }
+      avgObjSize = stats.avgObjSize;
+    } catch (error) {
+      const mongoError = error as { code?: number; codeName?: string };
+      if (
+        mongoError.code === 26 ||
+        mongoError.codeName === "NamespaceNotFound"
+      ) {
+        continue; // Collection has never been created: true zero documents.
+      }
+      console.error(
+        `Tenant Mongo estimate nije kompletan (${collName}):`,
+        error,
       );
+      mongoComplete = false;
+      continue;
+    }
+    if (avgObjSize === 0) continue;
+    try {
+      const counts = (await Model.aggregate([
+        { $group: { _id: "$tenantId", count: { $sum: 1 } } },
+      ])) as { _id: { toString(): string } | null; count: number }[];
+      for (const row of counts) {
+        if (!row._id) continue;
+        const id = row._id.toString();
+        dbBytesByTenant.set(
+          id,
+          (dbBytesByTenant.get(id) ?? 0) + row.count * avgObjSize,
+        );
+      }
+    } catch (error) {
+      console.error(`Tenant Mongo count nije kompletan (${collName}):`, error);
+      mongoComplete = false;
     }
   }
 
   const rows: TenantUsageSnapshotRow[] = [];
-  for (const t of tenants) {
-    const id = t._id.toString();
-    const dbBytes = dbBytesByTenant.get(id) ?? 0;
-    let mediaBytes = 0;
-    if (t.cloudinaryFolder) {
+  for (const tenant of tenants) {
+    const id = tenant._id.toString();
+    let mediaMb: number | null = null;
+    let mediaAssets: number | null = null;
+    let mediaComplete = false;
+    if (tenant.cloudinaryFolder?.trim()) {
       try {
-        const media = await getTenantMediaBytes(t.cloudinaryFolder);
-        mediaBytes = media.bytes;
-      } catch {
-        mediaBytes = 0;
+        const media = await getTenantCloudinaryUsage(tenant.cloudinaryFolder);
+        mediaMb = toMbPrecise(media.totalBytes);
+        mediaAssets = media.assets;
+        mediaComplete = true;
+      } catch (error) {
+        console.error(`Tenant Cloudinary measurement failed (${id}):`, error);
       }
     }
     rows.push({
       tenantId: id,
-      name: t.name,
-      slug: t.slug,
-      dbEstimateMb: toMbPrecise(dbBytes),
-      mediaMb: toMbPrecise(mediaBytes),
+      name: tenant.name,
+      slug: tenant.slug,
+      dbEstimateMb: mongoComplete
+        ? toMbPrecise(dbBytesByTenant.get(id) ?? 0)
+        : null,
+      dbEstimateComplete: mongoComplete,
+      mediaMb,
+      mediaComplete,
+      mediaAssets,
     });
   }
 
   rows.sort(
-    (a, b) => b.mediaMb + b.dbEstimateMb - (a.mediaMb + a.dbEstimateMb),
+    (a, b) =>
+      (b.mediaMb ?? 0) +
+      (b.dbEstimateMb ?? 0) -
+      ((a.mediaMb ?? 0) + (a.dbEstimateMb ?? 0)),
   );
-
-  const totalDbEstimateMb =
-    Math.round(rows.reduce((s, r) => s + r.dbEstimateMb, 0) * 1000) / 1000;
-  const totalMediaMb =
-    Math.round(rows.reduce((s, r) => s + r.mediaMb, 0) * 1000) / 1000;
-
-  const topByDb = [...rows].sort((a, b) => b.dbEstimateMb - a.dbEstimateMb)[0];
-  const topByMedia = [...rows].sort((a, b) => b.mediaMb - a.mediaMb)[0];
+  const sum = (values: number[]) =>
+    Math.round(values.reduce((total, value) => total + value, 0) * 1000) / 1000;
+  const validDb = rows.filter(
+    (row) => row.dbEstimateComplete && row.dbEstimateMb != null,
+  );
+  const validMedia = rows.filter(
+    (row) => row.mediaComplete && row.mediaMb != null,
+  );
+  const topByDb = [...validDb].sort(
+    (a, b) => b.dbEstimateMb! - a.dbEstimateMb!,
+  )[0];
+  const topByMedia = [...validMedia].sort((a, b) => b.mediaMb! - a.mediaMb!)[0];
 
   return {
     tenants: rows,
-    totalDbEstimateMb,
-    totalMediaMb,
+    totalDbEstimateMb:
+      validDb.length === rows.length
+        ? sum(validDb.map((row) => row.dbEstimateMb!))
+        : null,
+    totalMediaMb:
+      validMedia.length === rows.length
+        ? sum(validMedia.map((row) => row.mediaMb!))
+        : null,
     topByDb: topByDb
-      ? { name: topByDb.name, dbEstimateMb: topByDb.dbEstimateMb }
+      ? { name: topByDb.name, dbEstimateMb: topByDb.dbEstimateMb! }
       : null,
     topByMedia: topByMedia
-      ? { name: topByMedia.name, mediaMb: topByMedia.mediaMb }
+      ? { name: topByMedia.name, mediaMb: topByMedia.mediaMb! }
       : null,
   };
 }
@@ -349,6 +416,7 @@ async function appendUsageHistory(input: {
   const captureId = new Types.ObjectId();
   const { source, capturedAt, mongo, cloudinary, tenantUsage } = input;
 
+  let tenantHistoryCount = 0;
   if (tenantUsage && tenantUsage.tenants.length > 0) {
     const tenantIds = tenantUsage.tenants.map((row) => row.tenantId);
     const [planByTenantId, staffByTenantId] = await Promise.all([
@@ -363,24 +431,33 @@ async function appendUsageHistory(input: {
         source,
         plan: planByTenantId.get(row.tenantId) ?? "maria",
         mongoEstimateMb: row.dbEstimateMb,
+        mongoEstimateComplete: row.dbEstimateComplete,
         cloudinaryMb: row.mediaMb,
+        cloudinaryComplete: row.mediaComplete,
+        cloudinaryAssets: row.mediaAssets,
         activeStaffCount: staffByTenantId.get(row.tenantId) ?? 0,
       })),
     );
+    tenantHistoryCount = tenantUsage.tenants.length;
   }
 
   await PlatformUsageHistory.create({
     captureId,
     capturedAt,
     source,
-    mongoStorageUsedMb: mongo?.storageUsedMb ?? null,
-    mongoStorageLimitMb: mongo?.storageLimitMb ?? null,
+    mongoStorageUsedMb: mongo?.storageSizeMb ?? null,
+    mongoStorageLimitMb: mongo?.quotaLimitMb ?? null,
+    mongoQuotaUsedMb: mongo?.quotaUsedMb ?? null,
+    mongoQuotaSource: mongo?.quotaSource ?? "unavailable",
+    mongoDataSizeMb: mongo?.dataSizeMb ?? null,
+    mongoIndexSizeMb: mongo?.indexSizeMb ?? null,
     cloudinaryStorageUsedMb: cloudinary?.storageUsedMb ?? null,
     cloudinaryStorageLimitGb: cloudinary?.storageLimitGb ?? null,
     tenantCount: tenantUsage?.tenants.length ?? null,
     tenantMongoEstimateTotalMb: tenantUsage?.totalDbEstimateMb ?? null,
     tenantCloudinaryTotalMb: tenantUsage?.totalMediaMb ?? null,
   });
+  return { captureId: captureId.toString(), tenantHistoryCount };
 }
 
 export async function refreshPlatformUsage(
@@ -393,15 +470,13 @@ export async function refreshPlatformUsage(
     getCloudinaryUsage(),
     getTenantUsage(),
   ]);
-
-  // Logovanje pojedinačnih grešaka (allSettled ih inače proguta).
-  for (const [name, res] of [
+  for (const [name, result] of [
     ["mongodb", mongoRes],
     ["cloudinary", cloudinaryRes],
     ["tenant_usage", tenantRes],
   ] as const) {
-    if (res.status === "rejected") {
-      console.error(`refreshPlatformUsage: ${name} failed:`, res.reason);
+    if (result.status === "rejected") {
+      console.error(`refreshPlatformUsage: ${name} failed:`, result.reason);
     }
   }
 
@@ -413,7 +488,6 @@ export async function refreshPlatformUsage(
   }
   if (tenantRes.status === "fulfilled") {
     await upsertSnapshot("tenant_usage", tenantRes.value);
-    // Usput popuni per-tenant storageMetrics (koristi sledeći task: tenant dashboard).
     const now = new Date();
     await Promise.all(
       tenantRes.value.tenants.map((row) =>
@@ -422,7 +496,10 @@ export async function refreshPlatformUsage(
           {
             $set: {
               "storageMetrics.mongoUsageMb": row.dbEstimateMb,
+              "storageMetrics.mongoComplete": row.dbEstimateComplete,
               "storageMetrics.cloudinaryUsageMb": row.mediaMb,
+              "storageMetrics.cloudinaryComplete": row.mediaComplete,
+              "storageMetrics.cloudinaryAssets": row.mediaAssets,
               "storageMetrics.updatedAt": now,
             },
           },
@@ -431,22 +508,51 @@ export async function refreshPlatformUsage(
     );
   }
 
-  const fulfilled = <T>(res: PromiseSettledResult<T>) =>
-    res.status === "fulfilled" ? res.value : null;
-  const mongo = fulfilled(mongoRes);
-  const cloudinaryUsage = fulfilled(cloudinaryRes);
-  const tenantUsage = fulfilled(tenantRes);
-  if (mongo || cloudinaryUsage || tenantUsage) {
-    await appendUsageHistory({
+  const mongo = mongoRes.status === "fulfilled" ? mongoRes.value : null;
+  const cloudinaryUsage =
+    cloudinaryRes.status === "fulfilled" ? cloudinaryRes.value : null;
+  const tenantUsage = tenantRes.status === "fulfilled" ? tenantRes.value : null;
+  let captureId: string | null = null;
+  let tenantHistoryCount = 0;
+  let historyOk = false;
+  try {
+    const saved = await appendUsageHistory({
       source,
       capturedAt: new Date(),
       mongo,
       cloudinary: cloudinaryUsage,
       tenantUsage,
     });
+    captureId = saved.captureId;
+    tenantHistoryCount = saved.tenantHistoryCount;
+    historyOk = true;
+  } catch (error) {
+    console.error("refreshPlatformUsage: history capture failed:", error);
   }
 
-  return readPlatformUsage();
+  const tenantComplete =
+    tenantUsage != null &&
+    tenantUsage.tenants.length > 0 &&
+    tenantUsage.tenants.every(
+      (row) => row.dbEstimateComplete && row.mediaComplete,
+    );
+  const providers: UsageCaptureReport["providers"] = {
+    mongodb: mongo?.quotaSource === "atlasSize" ? "ok" : "failed",
+    cloudinary: cloudinaryUsage ? "ok" : "failed",
+    tenantUsage: tenantComplete ? "ok" : "failed",
+    history: historyOk ? "ok" : "failed",
+  };
+  const capture: UsageCaptureReport = {
+    captureId,
+    status:
+      Object.values(providers).every((status) => status === "ok") &&
+      tenantHistoryCount > 0
+        ? "complete"
+        : "partial",
+    providers,
+    tenantHistoryCount,
+  };
+  return { ...(await readPlatformUsage()), capture };
 }
 
 // ─── Read (samo iz snapshot-a — bez spoljnih poziva) ─────────────────────────
@@ -480,9 +586,68 @@ export async function readPlatformUsage(): Promise<PlatformUsageRead> {
     };
   };
 
-  const mongodb = pick<MongoUsageData>("mongodb");
+  const rawMongo = pick<Record<string, unknown>>("mongodb");
+  const mongodb = rawMongo
+    ? {
+        syncedAt: rawMongo.syncedAt,
+        data: mongoUsageDataSchema.parse({
+          quotaUsedMb: rawMongo.data.quotaUsedMb ?? null,
+          quotaLimitMb:
+            rawMongo.data.quotaLimitMb ??
+            rawMongo.data.storageLimitMb ??
+            MONGODB_STORAGE_LIMIT_MB,
+          quotaSource: rawMongo.data.quotaSource ?? "unavailable",
+          dataSizeMb: rawMongo.data.dataSizeMb ?? null,
+          storageSizeMb:
+            rawMongo.data.storageSizeMb ?? rawMongo.data.storageUsedMb ?? null,
+          indexSizeMb: rawMongo.data.indexSizeMb ?? null,
+          connections: rawMongo.data.connections ?? null,
+          cpuAvgPercent: rawMongo.data.cpuAvgPercent ?? null,
+          collections: rawMongo.data.collections ?? null,
+        }),
+      }
+    : null;
   const cloudinary = pick<CloudinaryUsageData>("cloudinary");
-  const rawTenantUsage = pick<TenantUsageSnapshotData>("tenant_usage");
+  const rawTenant = pick<TenantUsageSnapshotData>("tenant_usage");
+  // Old snapshots have no quality flags. Do not present them as verified data.
+  const rawTenantUsage = rawTenant
+    ? {
+        syncedAt: rawTenant.syncedAt,
+        data: tenantUsageSnapshotDataSchema.parse({
+          ...rawTenant.data,
+          tenants: rawTenant.data.tenants.map((row) => ({
+            ...row,
+            dbEstimateComplete: row.dbEstimateComplete === true,
+            dbEstimateMb:
+              row.dbEstimateComplete === true ? row.dbEstimateMb : null,
+            mediaComplete: row.mediaComplete === true,
+            mediaMb: row.mediaComplete === true ? row.mediaMb : null,
+            mediaAssets:
+              row.mediaComplete === true ? (row.mediaAssets ?? null) : null,
+          })),
+          totalDbEstimateMb: rawTenant.data.tenants.every(
+            (row) => row.dbEstimateComplete === true,
+          )
+            ? rawTenant.data.totalDbEstimateMb
+            : null,
+          totalMediaMb: rawTenant.data.tenants.every(
+            (row) => row.mediaComplete === true,
+          )
+            ? rawTenant.data.totalMediaMb
+            : null,
+          topByDb: rawTenant.data.tenants.every(
+            (row) => row.dbEstimateComplete === true,
+          )
+            ? rawTenant.data.topByDb
+            : null,
+          topByMedia: rawTenant.data.tenants.every(
+            (row) => row.mediaComplete === true,
+          )
+            ? rawTenant.data.topByMedia
+            : null,
+        }),
+      }
+    : null;
   const baseline = calibration
     ? { mongoMb: calibration.mongoMb, cloudinaryMb: calibration.cloudinaryMb }
     : null;
@@ -499,13 +664,15 @@ export async function readPlatformUsage(): Promise<PlatformUsageRead> {
         ...rawTenantUsage.data,
         tenants: rawTenantUsage.data.tenants.map((row) => {
           const plan = planByTenantId.get(row.tenantId) ?? "maria";
-          const quotas = getPlanResourceQuota(plan, baseline);
+          const quotas = getPlanResourceQuota(plan);
           const usage = buildTenantResourceUsage({
             plan,
             mongoUsageMb: row.dbEstimateMb,
+            mongoComplete: row.dbEstimateComplete,
             cloudinaryUsageMb: row.mediaMb,
+            cloudinaryComplete: row.mediaComplete,
+            cloudinaryAssets: row.mediaAssets,
             updatedAt: rawTenantUsage.syncedAt,
-            baseline,
           });
           return {
             ...row,
@@ -524,8 +691,11 @@ export async function readPlatformUsage(): Promise<PlatformUsageRead> {
 
   const capacity = calculatePlatformEquivalentCapacity({
     baseline,
-    mongoStorageUsedMb: mongodb?.data.storageUsedMb ?? null,
-    mongoStorageLimitMb: mongodb?.data.storageLimitMb ?? null,
+    mongoQuotaUsedMb:
+      mongodb?.data.quotaSource === "atlasSize"
+        ? mongodb.data.quotaUsedMb
+        : null,
+    mongoStorageLimitMb: mongodb?.data.quotaLimitMb ?? null,
     cloudinaryStorageUsedMb: cloudinary?.data.storageUsedMb ?? null,
     cloudinaryStorageLimitGb: cloudinary?.data.storageLimitGb ?? null,
   });
@@ -537,5 +707,6 @@ export async function readPlatformUsage(): Promise<PlatformUsageRead> {
     calibration,
     calibrationCandidate,
     capacity,
+    capture: null,
   };
 }

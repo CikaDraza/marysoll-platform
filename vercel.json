@@ -18,7 +18,7 @@
     },
     {
       "path": "/api/cron/usage-snapshot",
-      "schedule": "10 22 * * *"
+      "schedule": "10 21 * * *"
     }
   ]
 }

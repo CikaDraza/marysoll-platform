@@ -6,7 +6,9 @@ const { snapshotLean, snapshotExists } = vi.hoisted(() => ({
   snapshotLean: vi.fn(),
   snapshotExists: vi.fn(),
 }));
-vi.mock("@/lib/db/mongodb", () => ({ connectToDB: vi.fn(async () => undefined) }));
+vi.mock("@/lib/db/mongodb", () => ({
+  connectToDB: vi.fn(async () => undefined),
+}));
 vi.mock("@/models/PlatformUsageSnapshot", () => ({
   PlatformUsageSnapshot: {
     findOne: vi.fn(() => ({
@@ -37,7 +39,10 @@ const snapshot = {
         name: "The LASH ROOM by Anja",
         slug: "the-lash-room-by-anja",
         dbEstimateMb: 0.204,
+        dbEstimateComplete: true,
         mediaMb: 6.728,
+        mediaComplete: true,
+        mediaAssets: 4,
       },
     ],
     totalDbEstimateMb: 0.204,
@@ -61,6 +66,35 @@ describe("resource quota calibration", () => {
       cloudinaryMb: 6.728,
       snapshotSyncedAt: "2026-08-13T19:43:01.657Z",
     });
+  });
+
+  it("rejects partial or legacy unqualified benchmark snapshots", () => {
+    expect(
+      findCalibrationCandidate({
+        ...snapshot,
+        data: {
+          ...snapshot.data,
+          tenants: [
+            {
+              ...snapshot.data.tenants[0],
+              mediaComplete: false,
+              mediaMb: null,
+            },
+          ],
+        },
+      }),
+    ).toBeNull();
+    expect(
+      findCalibrationCandidate({
+        ...snapshot,
+        data: {
+          ...snapshot.data,
+          tenants: [
+            { ...snapshot.data.tenants[0], dbEstimateComplete: undefined },
+          ],
+        },
+      } as unknown as typeof snapshot),
+    ).toBeNull();
   });
 
   it("does not produce a candidate without a usage snapshot", () => {

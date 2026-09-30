@@ -76,6 +76,35 @@ describe("computeMonthlyUsageGrowth", () => {
     expect(growth?.cloudinaryDeltaMb).toBeNull();
   });
 
+  it("does not calculate growth across a failed provider measurement", () => {
+    const points: UsageHistoryPoint[] = [
+      point("2026-10-01T21:10:00Z", 1, 10),
+      {
+        ...point("2026-10-10T21:10:00Z", 2, 11),
+        cloudinaryMb: null,
+        cloudinaryComplete: false,
+      },
+      point("2026-10-31T21:10:00Z", 3, 12),
+    ];
+    const growth = computeMonthlyUsageGrowth(points, OCT_START, NOV_START);
+    expect(growth?.mongoDeltaMb).toBe(2);
+    expect(growth?.cloudinaryDeltaMb).toBeNull();
+    expect(growth?.closingCloudinaryMb).toBe(12);
+  });
+
+  it("keeps legacy numeric history rows valid when quality flags are absent", () => {
+    const growth = computeMonthlyUsageGrowth(
+      [
+        point("2026-10-01T21:10:00Z", 1, 10),
+        point("2026-10-31T21:10:00Z", 2, 11),
+      ],
+      OCT_START,
+      NOV_START,
+    );
+    expect(growth?.mongoDeltaMb).toBe(1);
+    expect(growth?.cloudinaryDeltaMb).toBe(1);
+  });
+
   it("returns null without a snapshot inside the month", () => {
     expect(
       computeMonthlyUsageGrowth(

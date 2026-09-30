@@ -7,12 +7,22 @@ import {
   resourceQuotasSchema,
 } from "@/types/resource-quota";
 
+const mongoQuotaSourceSchema = z.enum([
+  "atlasSize",
+  "dbStatsEstimate",
+  "unavailable",
+]);
+
 export const mongoUsageDataSchema = z.object({
-  storageUsedMb: z.number().finite().nonnegative(),
-  storageLimitMb: z.number().finite().nonnegative(),
+  quotaUsedMb: z.number().finite().nonnegative().nullable(),
+  quotaLimitMb: z.number().finite().nonnegative(),
+  quotaSource: mongoQuotaSourceSchema,
+  dataSizeMb: z.number().finite().nonnegative().nullable(),
+  storageSizeMb: z.number().finite().nonnegative().nullable(),
+  indexSizeMb: z.number().finite().nonnegative().nullable(),
   connections: z.number().int().nonnegative().nullable(),
   cpuAvgPercent: z.number().finite().nonnegative().nullable(),
-  collections: z.number().int().nonnegative(),
+  collections: z.number().int().nonnegative().nullable(),
 });
 
 export const cloudinaryUsageDataSchema = z.object({
@@ -28,13 +38,16 @@ export const tenantUsageSnapshotRowSchema = z.object({
   tenantId: z.string().min(1),
   name: z.string(),
   slug: z.string().min(1),
-  dbEstimateMb: z.number().finite().nonnegative(),
-  mediaMb: z.number().finite().nonnegative(),
+  dbEstimateMb: z.number().finite().nonnegative().nullable(),
+  dbEstimateComplete: z.boolean(),
+  mediaMb: z.number().finite().nonnegative().nullable(),
+  mediaComplete: z.boolean(),
+  mediaAssets: z.number().int().nonnegative().nullable(),
 });
 
 const tenantUsageSnapshotDataBaseSchema = z.object({
-  totalDbEstimateMb: z.number().finite().nonnegative(),
-  totalMediaMb: z.number().finite().nonnegative(),
+  totalDbEstimateMb: z.number().finite().nonnegative().nullable(),
+  totalMediaMb: z.number().finite().nonnegative().nullable(),
   topByDb: z
     .object({
       name: z.string(),
@@ -78,6 +91,18 @@ function snapshotSchema<T extends z.ZodType>(data: T) {
   return z.object({ data, syncedAt: z.iso.datetime() }).nullable();
 }
 
+const usageCaptureReportSchema = z.object({
+  captureId: z.string().nullable(),
+  status: z.enum(["complete", "partial"]),
+  providers: z.object({
+    mongodb: z.enum(["ok", "failed"]),
+    cloudinary: z.enum(["ok", "failed"]),
+    tenantUsage: z.enum(["ok", "failed"]),
+    history: z.enum(["ok", "failed"]),
+  }),
+  tenantHistoryCount: z.number().int().nonnegative(),
+});
+
 export const platformUsageReadSchema = z.object({
   mongodb: snapshotSchema(mongoUsageDataSchema),
   cloudinary: snapshotSchema(cloudinaryUsageDataSchema),
@@ -85,6 +110,7 @@ export const platformUsageReadSchema = z.object({
   calibration: resourceQuotaCalibrationReadSchema.nullable(),
   calibrationCandidate: calibrationCandidateSchema.nullable(),
   capacity: platformEquivalentCapacitySchema,
+  capture: usageCaptureReportSchema.nullable(),
 });
 
 export const platformUsageResponseSchema = z.object({
@@ -96,6 +122,7 @@ export const apiErrorResponseSchema = z.object({
   error: z.string().min(1),
 });
 
+export type UsageCaptureReport = z.infer<typeof usageCaptureReportSchema>;
 export type MongoUsageData = z.infer<typeof mongoUsageDataSchema>;
 export type CloudinaryUsageData = z.infer<typeof cloudinaryUsageDataSchema>;
 export type TenantUsageSnapshotRow = z.infer<

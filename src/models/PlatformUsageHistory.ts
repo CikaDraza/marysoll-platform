@@ -13,8 +13,13 @@ export interface IPlatformUsageHistory extends Document {
   captureId: Types.ObjectId;
   capturedAt: Date;
   source: UsageCaptureSource;
+  /** Legacy db.stats storage diagnostic, not Atlas quota usage. */
   mongoStorageUsedMb: number | null;
   mongoStorageLimitMb: number | null;
+  mongoQuotaUsedMb: number | null;
+  mongoQuotaSource: "atlasSize" | "dbStatsEstimate" | "unavailable";
+  mongoDataSizeMb: number | null;
+  mongoIndexSizeMb: number | null;
   cloudinaryStorageUsedMb: number | null;
   cloudinaryStorageLimitGb: number | null;
   tenantCount: number | null;
@@ -46,6 +51,15 @@ const PlatformUsageHistorySchema = new Schema<IPlatformUsageHistory>(
     },
     mongoStorageUsedMb: nullableNumber,
     mongoStorageLimitMb: nullableNumber,
+    mongoQuotaUsedMb: nullableNumber,
+    mongoQuotaSource: {
+      type: String,
+      enum: ["atlasSize", "dbStatsEstimate", "unavailable"],
+      default: "unavailable",
+      immutable: true,
+    },
+    mongoDataSizeMb: nullableNumber,
+    mongoIndexSizeMb: nullableNumber,
     cloudinaryStorageUsedMb: nullableNumber,
     cloudinaryStorageLimitGb: nullableNumber,
     tenantCount: nullableNumber,

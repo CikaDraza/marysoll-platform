@@ -9,14 +9,22 @@ import {
 const baseline = { mongoMb: 2, cloudinaryMb: 50 };
 
 describe("resource quota model", () => {
-  it("derives Claudia and Kiki quotas from the captured baseline", () => {
-    expect(getPlanResourceQuota("claudia", baseline)).toEqual({
-      mongoStorageMb: 4,
-      cloudinaryStorageMb: 100,
+  it("uses fixed provisional Mongo soft quotas independent of Anja", () => {
+    expect(getPlanResourceQuota("maria")).toEqual({
+      mongoStorageMb: 3,
+      cloudinaryStorageMb: null,
     });
-    expect(getPlanResourceQuota("kiki", baseline)).toEqual({
-      mongoStorageMb: 8,
-      cloudinaryStorageMb: 200,
+    expect(getPlanResourceQuota("claudia")).toEqual({
+      mongoStorageMb: 6,
+      cloudinaryStorageMb: null,
+    });
+    expect(getPlanResourceQuota("kiki")).toEqual({
+      mongoStorageMb: 12,
+      cloudinaryStorageMb: null,
+    });
+    expect(getPlanResourceQuota("enterprise")).toEqual({
+      mongoStorageMb: null,
+      cloudinaryStorageMb: null,
     });
   });
 
@@ -33,7 +41,7 @@ describe("resource quota model", () => {
   it("uses 80% safe capacity and selects the smaller provider", () => {
     const capacity = calculatePlatformEquivalentCapacity({
       baseline,
-      mongoStorageUsedMb: 100,
+      mongoQuotaUsedMb: 100,
       mongoStorageLimitMb: 512,
       cloudinaryStorageUsedMb: 250,
       cloudinaryStorageLimitGb: 25,
@@ -50,7 +58,7 @@ describe("resource quota model", () => {
   it("returns unavailable values instead of Infinity for a zero baseline", () => {
     const capacity = calculatePlatformEquivalentCapacity({
       baseline: { mongoMb: 0, cloudinaryMb: 0 },
-      mongoStorageUsedMb: 10,
+      mongoQuotaUsedMb: 10,
       mongoStorageLimitMb: 512,
       cloudinaryStorageUsedMb: 10,
       cloudinaryStorageLimitGb: 25,
@@ -67,17 +75,35 @@ describe("resource quota model", () => {
     const usage = buildTenantResourceUsage({
       plan: "claudia",
       mongoUsageMb: 2,
+      mongoComplete: true,
       cloudinaryUsageMb: 50,
+      cloudinaryComplete: true,
+      cloudinaryAssets: 7,
       updatedAt: "2026-08-13T19:43:01.657Z",
-      baseline,
     });
     const serialized = JSON.stringify(usage);
 
-    expect(usage.mongo.percent).toBe(50);
-    expect(usage.cloudinary.percent).toBe(50);
+    expect(usage.mongo.percent).toBeCloseTo(33.333, 2);
+    expect(usage.cloudinary.percent).toBeNull();
+    expect(usage.cloudinaryAssets).toBe(7);
     expect(serialized).not.toContain("storageLimitMb");
     expect(serialized).not.toContain("storageLimitGb");
     expect(serialized).not.toContain("calibration");
     expect(serialized).not.toContain("platformAnjaEquivalentCapacity");
+  });
+  it("does not turn failed measurements into zero or upgrade recommendations", () => {
+    const usage = buildTenantResourceUsage({
+      plan: "claudia",
+      mongoUsageMb: null,
+      mongoComplete: false,
+      cloudinaryUsageMb: null,
+      cloudinaryComplete: false,
+      cloudinaryAssets: null,
+      updatedAt: "2026-10-01T00:00:00.000Z",
+    });
+    expect(usage.mongo.usedMb).toBeNull();
+    expect(usage.cloudinary.usedMb).toBeNull();
+    expect(usage.status).toBeNull();
+    expect(usage.nextPlan).toBeNull();
   });
 });

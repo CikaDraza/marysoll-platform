@@ -1,6 +1,7 @@
 "use client";
 
 import { CloudArrowUpIcon, CircleStackIcon } from "@heroicons/react/24/outline";
+import { formatResourceMb } from "@/helpers/formatResourceMb";
 import { PLAN_DISPLAY_NAMES } from "@/lib/plans/planFeatures";
 import type {
   ResourceMetricUsage,
@@ -10,12 +11,6 @@ import type {
 
 interface StorageMetricsProps {
   resourceUsage: TenantResourceUsage;
-}
-
-function formatMb(mb: number): string {
-  if (mb >= 1024) return `${(mb / 1024).toFixed(2)} GB`;
-  if (mb > 0 && mb < 1) return `${Math.round(mb * 1024)} KB`;
-  return `${mb.toFixed(1)} MB`;
 }
 
 function formatDate(iso: string): string {
@@ -53,8 +48,8 @@ function MetricCard({
     metric.percent == null ? null : Math.min(metric.percent, 100);
   const quotaLabel =
     metric.quotaMb == null
-      ? "Kvota još nije kalibrisana"
-      : formatMb(metric.quotaMb);
+      ? "Soft kvota nije određena"
+      : formatResourceMb(metric.quotaMb);
 
   return (
     <div className="admin-card p-5">
@@ -72,7 +67,7 @@ function MetricCard({
 
       <div className="mt-4">
         <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-          {formatMb(metric.usedMb)} / {quotaLabel}
+          {formatResourceMb(metric.usedMb)} / {quotaLabel}
         </p>
         {displayPercent != null && (
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
@@ -83,9 +78,11 @@ function MetricCard({
           </div>
         )}
         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          {metric.percent == null
-            ? "Quota status nije dostupan"
-            : `${metric.percent.toFixed(1)}% ${planLabel} limita`}
+          {!metric.complete
+            ? "Merenje trenutno nije dostupno"
+            : metric.percent == null
+              ? "Soft kvota za ovaj resurs nije određena"
+              : `${metric.percent.toFixed(1)}% ${planLabel} soft limita`}
         </p>
         {metric.status && (
           <p
@@ -124,7 +121,11 @@ export function StorageMetrics({ resourceUsage }: StorageMetricsProps) {
       />
       <p className="px-1 text-[10px] text-gray-400 dark:text-gray-600">
         Poslednje ažurirano: {formatDate(resourceUsage.updatedAt)}. MongoDB
-        vrednost je procena tenant dokumenata.
+        vrednost je procena tenant dokumenata. Cloudinary soft kvota još nije
+        određena.
+        {resourceUsage.cloudinaryAssets != null
+          ? ` Izmereno assets: ${resourceUsage.cloudinaryAssets}.`
+          : ""}
       </p>
       {resourceUsage.status === "limit_reached" &&
         resourceUsage.plan === "claudia" && (

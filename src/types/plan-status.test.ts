@@ -8,9 +8,11 @@ describe("tenant plan-status response contract", () => {
     const resourceUsage = buildTenantResourceUsage({
       plan: "claudia",
       mongoUsageMb: 2,
+      mongoComplete: true,
       cloudinaryUsageMb: 50,
+      cloudinaryComplete: true,
+      cloudinaryAssets: 7,
       updatedAt: "2026-08-13T19:43:01.657Z",
-      baseline: { mongoMb: 2, cloudinaryMb: 50 },
     });
 
     const parsed = planStatusDataSchema.parse({
@@ -39,8 +41,8 @@ describe("tenant plan-status response contract", () => {
       otherTenants: [{ tenantId: "other" }],
     });
 
-    expect(parsed.resourceUsage.mongo.quotaMb).toBe(4);
-    expect(parsed.resourceUsage.cloudinary.quotaMb).toBe(100);
+    expect(parsed.resourceUsage.mongo.quotaMb).toBe(6);
+    expect(parsed.resourceUsage.cloudinary.quotaMb).toBeNull();
     expect(parsed).not.toHaveProperty("globalMongoLimitMb");
     expect(parsed).not.toHaveProperty("globalCloudinaryLimitGb");
     expect(parsed).not.toHaveProperty("platformCapacity");

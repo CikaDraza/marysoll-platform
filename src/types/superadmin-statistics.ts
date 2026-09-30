@@ -10,8 +10,8 @@ const salonUsageGrowthSchema = z.object({
   closingAt: z.iso.datetime(),
   /** true kada je početna tačka snimak s kraja prethodnog meseca. */
   openingFromPreviousMonth: z.boolean(),
-  closingMongoMb: z.number().finite().nonnegative(),
-  closingCloudinaryMb: z.number().finite().nonnegative(),
+  closingMongoMb: z.number().finite().nonnegative().nullable(),
+  closingCloudinaryMb: z.number().finite().nonnegative().nullable(),
   closingActiveStaffCount: z.number().int().nonnegative(),
   /** null dok za mesec postoji samo jedan snimak. Može biti negativan. */
   mongoDeltaMb: z.number().finite().nullable(),

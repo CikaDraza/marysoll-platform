@@ -24,7 +24,8 @@ export const resourceQuotasSchema = z.object({
 });
 
 export const resourceMetricUsageSchema = z.object({
-  usedMb: z.number().finite().nonnegative(),
+  usedMb: z.number().finite().nonnegative().nullable(),
+  complete: z.boolean(),
   quotaMb: z.number().finite().nonnegative().nullable(),
   percent: z.number().finite().nonnegative().nullable(),
   status: resourceQuotaStatusSchema.nullable(),
@@ -35,6 +36,7 @@ export const tenantResourceUsageSchema = z.object({
   plan: planNameSchema,
   mongo: resourceMetricUsageSchema,
   cloudinary: resourceMetricUsageSchema,
+  cloudinaryAssets: z.number().int().nonnegative().nullable(),
   status: resourceQuotaStatusSchema.nullable(),
   nextPlan: planNameSchema.nullable(),
   updatedAt: z.iso.datetime(),

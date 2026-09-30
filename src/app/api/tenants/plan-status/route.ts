@@ -10,7 +10,6 @@ import { Tenant } from "@/models/Tenant";
 import { requireAdmin } from "@/lib/auth/auth-server";
 import { resolveTenantPlanFeatures } from "@/lib/plans/planEnforcement";
 import type { ITenant } from "@/models/Tenant";
-import { getCurrentResourceQuotaCalibration } from "@/lib/superadmin/resourceQuotaCalibration";
 import { buildTenantResourceUsage } from "@/lib/plans/resourceQuotas";
 import { planStatusDataSchema } from "@/types/plan-status";
 
@@ -56,24 +55,20 @@ export async function GET(req: NextRequest) {
 
     // Isti effective-plan resolver kao requireFeature i
     // /api/subscriptions/features — kvota ne sme da čita sirovi Tenant.plan.
-    const [{ plan, features }, calibration] = await Promise.all([
-      resolveTenantPlanFeatures(decoded.tenantId),
-      getCurrentResourceQuotaCalibration(),
-    ]);
+    const { plan, features } = await resolveTenantPlanFeatures(
+      decoded.tenantId,
+    );
     const updatedAt = tenant.storageMetrics?.updatedAt
       ? new Date(tenant.storageMetrics.updatedAt).toISOString()
       : new Date().toISOString();
     const resourceUsage = buildTenantResourceUsage({
       plan,
-      mongoUsageMb: tenant.storageMetrics?.mongoUsageMb ?? 0,
-      cloudinaryUsageMb: tenant.storageMetrics?.cloudinaryUsageMb ?? 0,
+      mongoUsageMb: tenant.storageMetrics?.mongoUsageMb ?? null,
+      mongoComplete: tenant.storageMetrics?.mongoComplete === true,
+      cloudinaryUsageMb: tenant.storageMetrics?.cloudinaryUsageMb ?? null,
+      cloudinaryComplete: tenant.storageMetrics?.cloudinaryComplete === true,
+      cloudinaryAssets: tenant.storageMetrics?.cloudinaryAssets ?? null,
       updatedAt,
-      baseline: calibration
-        ? {
-            mongoMb: calibration.mongoMb,
-            cloudinaryMb: calibration.cloudinaryMb,
-          }
-        : null,
     });
 
     const response = planStatusDataSchema.parse({

@@ -59,8 +59,8 @@ function getBannerInfo(
     return {
       message:
         resourceUsage.plan === "claudia"
-          ? "Dostigli ste kapacitet uključen u Claudia plan. Kiki plan uključuje veći kapacitet."
-          : "Dostigli ste resource kapacitet uključen u trenutni plan. Pogledajte dostupne planove.",
+          ? "Vaša procena Mongo potrošnje je dostigla privremenu soft kvotu Claudia plana. Kiki ima višu soft kvotu."
+          : "Vaša procena Mongo potrošnje je dostigla privremenu soft kvotu plana. Pogledajte dostupne planove.",
       severity: "warning",
     };
   }
@@ -68,7 +68,7 @@ function getBannerInfo(
   if (resourceUsage.status === "warning") {
     return {
       message:
-        "Približavate se resource kapacitetu uključenom u trenutni plan.",
+        "Vaša procena Mongo potrošnje se približava privremenoj soft kvoti plana.",
       severity: "warning",
     };
   }

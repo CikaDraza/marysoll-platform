@@ -10,10 +10,11 @@ import type {
 
 export const SAFE_CAPACITY_RATIO = 0.8;
 
-const PLAN_QUOTA_MULTIPLIERS: Record<PlanName, number | null> = {
-  maria: 1,
-  claudia: 2,
-  kiki: 4,
+// Provisional tenant Mongo estimates. Soft commercial policy, never a write gate.
+const MONGO_SOFT_QUOTAS_MB: Record<PlanName, number | null> = {
+  maria: 3,
+  claudia: 6,
+  kiki: 12,
   enterprise: null,
 };
 
@@ -22,10 +23,6 @@ const STATUS_RANK: Record<ResourceQuotaStatus, number> = {
   warning: 1,
   limit_reached: 2,
 };
-
-function finiteNonNegative(value: number): number | null {
-  return Number.isFinite(value) && value >= 0 ? value : null;
-}
 
 function divideOrNull(numerator: number, denominator: number): number | null {
   if (
@@ -38,28 +35,25 @@ function divideOrNull(numerator: number, denominator: number): number | null {
   return numerator / denominator;
 }
 
-export function getPlanResourceQuota(
-  plan: PlanName,
-  baseline: ResourceQuotaBaseline | null,
-): ResourceQuotas {
-  const multiplier = PLAN_QUOTA_MULTIPLIERS[plan];
-  if (!baseline || multiplier == null) {
-    return { mongoStorageMb: null, cloudinaryStorageMb: null };
-  }
-
-  const mongo = finiteNonNegative(baseline.mongoMb);
-  const cloudinary = finiteNonNegative(baseline.cloudinaryMb);
+export function getPlanResourceQuota(plan: PlanName): ResourceQuotas {
   return {
-    mongoStorageMb: mongo == null ? null : mongo * multiplier,
-    cloudinaryStorageMb: cloudinary == null ? null : cloudinary * multiplier,
+    mongoStorageMb: MONGO_SOFT_QUOTAS_MB[plan],
+    // Cloudinary is measurement-only until a business quota is approved.
+    cloudinaryStorageMb: null,
   };
 }
 
 export function getResourceUsagePercent(
-  usedMb: number,
+  usedMb: number | null,
   quotaMb: number | null,
 ): number | null {
-  if (quotaMb == null || quotaMb <= 0 || !Number.isFinite(usedMb)) return null;
+  if (
+    usedMb == null ||
+    quotaMb == null ||
+    quotaMb <= 0 ||
+    !Number.isFinite(usedMb)
+  )
+    return null;
   return (Math.max(0, usedMb) / quotaMb) * 100;
 }
 
@@ -73,13 +67,19 @@ export function getResourceQuotaStatus(
 }
 
 function metricUsage(
-  usedMb: number,
+  usedMb: number | null,
+  complete: boolean,
   quotaMb: number | null,
   isEstimate: boolean,
 ): ResourceMetricUsage {
-  const percent = getResourceUsagePercent(usedMb, quotaMb);
+  const valid =
+    complete && usedMb != null && Number.isFinite(usedMb) && usedMb >= 0;
+  const value = valid ? usedMb : null;
+  const percent =
+    value == null ? null : getResourceUsagePercent(value, quotaMb);
   return {
-    usedMb: Math.max(0, usedMb),
+    usedMb: value,
+    complete: valid,
     quotaMb,
     percent,
     status: getResourceQuotaStatus(percent),
@@ -101,24 +101,33 @@ function overallStatus(
 
 export function buildTenantResourceUsage(input: {
   plan: PlanName;
-  mongoUsageMb: number;
-  cloudinaryUsageMb: number;
+  mongoUsageMb: number | null;
+  mongoComplete: boolean;
+  cloudinaryUsageMb: number | null;
+  cloudinaryComplete: boolean;
+  cloudinaryAssets: number | null;
   updatedAt: string;
-  baseline: ResourceQuotaBaseline | null;
 }): TenantResourceUsage {
-  const quotas = getPlanResourceQuota(input.plan, input.baseline);
-  const mongo = metricUsage(input.mongoUsageMb, quotas.mongoStorageMb, true);
+  const quotas = getPlanResourceQuota(input.plan);
+  const mongo = metricUsage(
+    input.mongoUsageMb,
+    input.mongoComplete,
+    quotas.mongoStorageMb,
+    true,
+  );
   const cloudinary = metricUsage(
     input.cloudinaryUsageMb,
-    quotas.cloudinaryStorageMb,
+    input.cloudinaryComplete,
+    null,
     false,
   );
-  const status = overallStatus([mongo.status, cloudinary.status]);
+  const status = overallStatus([mongo.status]);
 
   return {
     plan: input.plan,
     mongo,
     cloudinary,
+    cloudinaryAssets: input.cloudinaryComplete ? input.cloudinaryAssets : null,
     status,
     nextPlan:
       status === "limit_reached" && input.plan === "claudia" ? "kiki" : null,
@@ -128,7 +137,7 @@ export function buildTenantResourceUsage(input: {
 
 export function calculatePlatformEquivalentCapacity(input: {
   baseline: ResourceQuotaBaseline | null;
-  mongoStorageUsedMb: number | null;
+  mongoQuotaUsedMb: number | null;
   mongoStorageLimitMb: number | null;
   cloudinaryStorageUsedMb: number | null;
   cloudinaryStorageLimitGb: number | null;
@@ -160,9 +169,9 @@ export function calculatePlatformEquivalentCapacity(input: {
       ? null
       : divideOrNull(cloudinarySafeCapacityMb, cloudinaryBaseline);
   const mongoEquivalent =
-    input.mongoStorageUsedMb == null
+    input.mongoQuotaUsedMb == null
       ? null
-      : divideOrNull(input.mongoStorageUsedMb, mongoBaseline);
+      : divideOrNull(input.mongoQuotaUsedMb, mongoBaseline);
   const cloudinaryEquivalent =
     input.cloudinaryStorageUsedMb == null
       ? null

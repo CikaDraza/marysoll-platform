@@ -5,16 +5,10 @@ import {
   superAdminCardClass as card,
   superAdminPrimaryButtonClass as btnPrimary,
 } from "@/components/superadmin/shared";
+import { formatResourceMb } from "@/helpers/formatResourceMb";
 import { PLAN_DISPLAY_NAMES } from "@/lib/plans/planFeatures";
 import { usePlatformUsage } from "@/hooks/usePlatformUsage";
 import type { ResourceQuotaStatus } from "@/types/resource-quota";
-
-function fmtMb(mb: number | null | undefined) {
-  if (mb == null) return "—";
-  if (mb >= 1024) return `${(mb / 1024).toFixed(2)} GB`;
-  if (mb > 0 && mb < 1) return `${Math.round(mb * 1024)} KB`;
-  return `${mb.toFixed(1)} MB`;
-}
 
 function fmtPercent(percent: number | null) {
   return percent == null ? "—" : `${percent.toFixed(1)}%`;
@@ -79,10 +73,14 @@ export function PlatformUsageSection() {
   const capacity = usage?.capacity;
   const m = mongo?.data;
   const c = cloud?.data;
-  const mongoLimitMb = m?.storageLimitMb ?? 0;
+  const mongoLimitMb = m?.quotaLimitMb ?? 0;
+  const atlasQuotaReliable =
+    m?.quotaSource === "atlasSize" && m.quotaUsedMb != null;
   const cloudLimitGb = c?.storageLimitGb ?? 0;
   const mongoPercent =
-    m && mongoLimitMb > 0 ? (m.storageUsedMb / mongoLimitMb) * 100 : null;
+    atlasQuotaReliable && mongoLimitMb > 0
+      ? (m.quotaUsedMb! / mongoLimitMb) * 100
+      : null;
   const cloudPercent =
     c && cloudLimitGb > 0
       ? (c.storageUsedMb / (cloudLimitGb * 1024)) * 100
@@ -91,7 +89,15 @@ export function PlatformUsageSection() {
 
   function refreshUsage() {
     refresh.mutate(undefined, {
-      onSuccess: () => toast.success("Potrošnja je osvežena."),
+      onSuccess: (result) => {
+        if (result.usage.capture?.status === "partial") {
+          toast.error(
+            "Potrošnja je delimično osvežena; proverite kvalitet merenja.",
+          );
+        } else {
+          toast.success("Potrošnja je osvežena.");
+        }
+      },
       onError: (error) => toast.error(error.message),
     });
   }
@@ -100,7 +106,7 @@ export function PlatformUsageSection() {
     const verb = calibration ? "ponovo kalibrišete" : "kalibrišete";
     if (
       !window.confirm(
-        `Da li želite da ${verb} limite prema trenutno prikazanoj potrošnji The Lash Room?`,
+        `Da li želite da ${verb} referentni workload The Lash Room? Ovo ne menja plan kvote.`,
       )
     ) {
       return;
@@ -143,18 +149,26 @@ export function PlatformUsageSection() {
               Platform infrastructure
             </p>
             <h3 className="mt-0.5 font-bold text-white">MongoDB Atlas</h3>
-            <p className="text-xs text-slate-500">stvarni globalni storage</p>
+            <p className="text-xs text-slate-500">
+              Atlas quota usage: data + indexes
+            </p>
           </div>
           <div className="space-y-1.5">
             <p className="text-3xl font-black text-white">
-              {fmtMb(m?.storageUsedMb)}
+              {formatResourceMb(m?.quotaUsedMb)}
             </p>
-            <UsageBar used={m?.storageUsedMb ?? 0} limit={mongoLimitMb} />
+            {atlasQuotaReliable && (
+              <UsageBar used={m.quotaUsedMb!} limit={mongoLimitMb} />
+            )}
             <p className="text-xs text-slate-500">
-              Fizički limit: {fmtMb(m?.storageLimitMb)}
+              {atlasQuotaReliable
+                ? `Atlas kvota: ${formatResourceMb(m?.quotaUsedMb)} / ${formatResourceMb(m?.quotaLimitMb)} (${fmtPercent(mongoPercent)})`
+                : m?.quotaSource === "dbStatsEstimate"
+                  ? "Samo DB data + indexes procena; Atlas quota odnos nije dostupan."
+                  : "Atlas quota merenje nije dostupno."}
             </p>
             <p className="text-xs text-slate-500">
-              Iskorišćeno: {fmtPercent(mongoPercent)}
+              Izvor: {m?.quotaSource ?? "unavailable"}
             </p>
           </div>
           <div className="space-y-1.5 border-t border-slate-700 pt-2">
@@ -166,6 +180,18 @@ export function PlatformUsageSection() {
             <p className="text-[11px] text-slate-500">
               CPU metrika nije dostupna na trenutnom Atlas tier-u.
             </p>
+            <MetricRow
+              label="DB data (dijagnostika)"
+              value={formatResourceMb(m?.dataSizeMb)}
+            />
+            <MetricRow
+              label="DB storage (dijagnostika)"
+              value={formatResourceMb(m?.storageSizeMb)}
+            />
+            <MetricRow
+              label="DB indexes (dijagnostika)"
+              value={formatResourceMb(m?.indexSizeMb)}
+            />
             <MetricRow label="Collections" value={m?.collections ?? "—"} />
           </div>
           <p className="pt-1 text-xs text-slate-500">
@@ -183,7 +209,7 @@ export function PlatformUsageSection() {
           </div>
           <div className="space-y-1.5">
             <p className="text-3xl font-black text-white">
-              {fmtMb(c?.storageUsedMb)}
+              {formatResourceMb(c?.storageUsedMb)}
             </p>
             <UsageBar
               used={c?.storageUsedMb ?? 0}
@@ -218,10 +244,9 @@ export function PlatformUsageSection() {
           <div>
             <h3 className="font-semibold text-white">Capacity model</h3>
             <p className="text-xs text-slate-400">
-              Heuristika kapaciteta prema veličini The Lash Room, sa rezervom od
-              20%. Brojevi su Anja data-estimate ekvivalenti, ne broj salona:
-              Mongo procena ne uključuje indekse i overhead, pa je Mongo
-              kapacitet optimističan dok ga istorija snimaka ne kalibriše.
+              Heuristika kapaciteta prema referentnom workload-u The Lash Room,
+              sa rezervom od 20%. Ovo nisu plan kvote ni pouzdan broj salona:
+              tenant Mongo procena ne uključuje indekse i overhead.
             </p>
           </div>
           <button
@@ -233,15 +258,15 @@ export function PlatformUsageSection() {
             {calibrate.isPending
               ? "Čuvanje..."
               : calibration
-                ? "Ponovo kalibriši prema The Lash Room"
-                : "Kalibriši prema The Lash Room"}
+                ? "Sačuvaj novi benchmark"
+                : "Sačuvaj benchmark"}
           </button>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="rounded-lg border border-slate-700 p-3">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Sačuvani calibration baseline
+              Sačuvani operational benchmark
             </p>
             {calibration ? (
               <div className="mt-2 space-y-1.5">
@@ -250,11 +275,11 @@ export function PlatformUsageSection() {
                 </p>
                 <MetricRow
                   label="MongoDB estimate"
-                  value={fmtMb(calibration.mongoMb)}
+                  value={formatResourceMb(calibration.mongoMb)}
                 />
                 <MetricRow
                   label="Cloudinary"
-                  value={fmtMb(calibration.cloudinaryMb)}
+                  value={formatResourceMb(calibration.cloudinaryMb)}
                 />
                 <MetricRow
                   label="Captured"
@@ -276,11 +301,11 @@ export function PlatformUsageSection() {
                 <p className="font-semibold text-white">{candidate.name}</p>
                 <MetricRow
                   label="MongoDB estimate"
-                  value={fmtMb(candidate.mongoMb)}
+                  value={formatResourceMb(candidate.mongoMb)}
                 />
                 <MetricRow
                   label="Cloudinary"
-                  value={fmtMb(candidate.cloudinaryMb)}
+                  value={formatResourceMb(candidate.cloudinaryMb)}
                 />
                 <MetricRow
                   label="Snapshot"
@@ -360,8 +385,9 @@ export function PlatformUsageSection() {
           </div>
           {tenantUsage && (
             <span className="text-right text-xs text-slate-500">
-              Tenant DB estimates {fmtMb(tenantUsage.data.totalDbEstimateMb)} ·
-              Media {fmtMb(tenantUsage.data.totalMediaMb)}
+              Tenant DB estimates{" "}
+              {formatResourceMb(tenantUsage.data.totalDbEstimateMb)} · Media{" "}
+              {formatResourceMb(tenantUsage.data.totalMediaMb)}
             </span>
           )}
         </div>
@@ -376,15 +402,20 @@ export function PlatformUsageSection() {
                 <tr className="border-b border-slate-700 text-slate-500">
                   <th className="pb-2 text-left font-semibold">Salon</th>
                   <th className="pb-2 text-left font-semibold">Plan</th>
-                  <th className="pb-2 text-right font-semibold">Mongo</th>
+                  <th className="pb-2 text-right font-semibold">
+                    Mongo estimate
+                  </th>
                   <th className="pb-2 text-right font-semibold">Mongo quota</th>
                   <th className="pb-2 text-right font-semibold">Mongo %</th>
-                  <th className="pb-2 text-right font-semibold">Cloudinary</th>
                   <th className="pb-2 text-right font-semibold">
-                    Cloudinary quota
+                    Mongo kvalitet
                   </th>
                   <th className="pb-2 text-right font-semibold">
-                    Cloudinary %
+                    Cloudinary MB
+                  </th>
+                  <th className="pb-2 text-right font-semibold">Assets</th>
+                  <th className="pb-2 text-right font-semibold">
+                    Media kvalitet
                   </th>
                   <th className="pb-2 text-right font-semibold">Status</th>
                 </tr>
@@ -400,27 +431,32 @@ export function PlatformUsageSection() {
                     </td>
                     <td className="py-2">{PLAN_DISPLAY_NAMES[tenant.plan]}</td>
                     <td className="py-2 text-right">
-                      {fmtMb(tenant.dbEstimateMb)}
+                      {formatResourceMb(tenant.dbEstimateMb)}
                     </td>
                     <td className="py-2 text-right">
-                      {fmtMb(tenant.quotas.mongoStorageMb)}
+                      {formatResourceMb(tenant.quotas.mongoStorageMb)}
                     </td>
                     <td className="py-2 text-right">
                       {fmtPercent(tenant.mongoPercent)}
                     </td>
-                    <td className="py-2 text-right">{fmtMb(tenant.mediaMb)}</td>
                     <td className="py-2 text-right">
-                      {fmtMb(tenant.quotas.cloudinaryStorageMb)}
+                      {tenant.dbEstimateComplete ? "potpuno" : "nedostupno"}
                     </td>
                     <td className="py-2 text-right">
-                      {fmtPercent(tenant.cloudinaryPercent)}
+                      {formatResourceMb(tenant.mediaMb)}
+                    </td>
+                    <td className="py-2 text-right">
+                      {tenant.mediaAssets ?? "—"}
+                    </td>
+                    <td className="py-2 text-right">
+                      {tenant.mediaComplete ? "potpuno" : "nedostupno"}
                     </td>
                     <td
                       className={`py-2 text-right font-semibold ${tenant.status ? STATUS_CLASSES[tenant.status] : "text-slate-500"}`}
                     >
                       {tenant.status
                         ? STATUS_LABELS[tenant.status]
-                        : "Nije kalibrisano"}
+                        : "Nedostupno"}
                     </td>
                   </tr>
                 ))}

@@ -8,7 +8,7 @@ vi.mock("@/lib/db/mongodb", () => ({
 }));
 
 const MB = 1024 * 1024;
-const cloudinaryResources = vi.fn();
+const tenantMedia = vi.fn();
 vi.mock("@/lib/cloudinary", () => ({
   cloudinary: {
     api: {
@@ -19,9 +19,9 @@ vi.mock("@/lib/cloudinary", () => ({
         requests: 10,
         resources: 42,
       })),
-      resources: (...args: unknown[]) => cloudinaryResources(...args),
     },
   },
+  getTenantCloudinaryUsage: (...args: unknown[]) => tenantMedia(...args),
 }));
 
 import { Appointment } from "@/models/Appointment";
@@ -32,7 +32,11 @@ import { Subscription } from "@/models/Subscription";
 import { Tenant } from "@/models/Tenant";
 import { TenantUsageHistory } from "@/models/TenantUsageHistory";
 import { TenantUser } from "@/models/TenantUser";
-import { readPlatformUsage, refreshPlatformUsage } from "./platformUsage";
+import {
+  getTenantUsage,
+  readPlatformUsage,
+  refreshPlatformUsage,
+} from "./platformUsage";
 
 let mongo: MongoMemoryServer;
 
@@ -45,14 +49,13 @@ describe.sequential("platform usage refresh", () => {
     mongo = await MongoMemoryServer.create();
     await mongoose.connect(mongo.getUri(), { dbName: "platform-usage" });
 
-    cloudinaryResources.mockImplementation(
-      async ({ prefix }: { prefix: string }) => ({
-        resources:
-          prefix === "tenants/anja"
-            ? [{ bytes: 4 * MB }, { bytes: 2 * MB }]
-            : [{ bytes: 1 * MB }],
-      }),
-    );
+    tenantMedia.mockImplementation(async (folder: string) => ({
+      totalBytes: folder === "tenants/anja" ? 6 * MB : 1 * MB,
+      assets: folder === "tenants/anja" ? 2 : 1,
+      imageBytes: folder === "tenants/anja" ? 6 * MB : 1 * MB,
+      videoBytes: 0,
+      rawBytes: 0,
+    }));
 
     await Tenant.collection.insertMany([
       {
@@ -135,8 +138,10 @@ describe.sequential("platform usage refresh", () => {
   it("appends history on every refresh without touching the calibration", async () => {
     const calibrationBefore = await ResourceQuotaCalibration.find({}).lean();
 
-    await refreshPlatformUsage("manual");
-    await refreshPlatformUsage("cron");
+    const manual = await refreshPlatformUsage("manual");
+    const cron = await refreshPlatformUsage("cron");
+    expect(manual.capture?.status).toBe("partial"); // MongoMemoryServer has no atlasSize.
+    expect(cron.capture?.tenantHistoryCount).toBe(3);
 
     const calibrationAfter = await ResourceQuotaCalibration.find({}).lean();
     expect(calibrationAfter).toEqual(calibrationBefore);
@@ -158,6 +163,7 @@ describe.sequential("platform usage refresh", () => {
     expect(platformRows[0]).toMatchObject({
       cloudinaryStorageUsedMb: 250,
       tenantCount: 3,
+      mongoQuotaSource: "dbStatsEstimate",
     });
 
     const anjaRows = await TenantUsageHistory.find({ tenantId: ANJA })
@@ -177,10 +183,73 @@ describe.sequential("platform usage refresh", () => {
     );
     expect(anjaRows[0]).toMatchObject({
       cloudinaryMb: 6,
+      cloudinaryComplete: true,
+      cloudinaryAssets: 2,
       activeStaffCount: 1,
       plan: "maria",
     });
     expect(anjaRows[0].mongoEstimateMb).toBeGreaterThan(0);
+  });
+
+  it("records unavailable Cloudinary usage instead of a false zero", async () => {
+    tenantMedia.mockImplementation(async (folder: string) => {
+      if (folder === "tenants/anja") throw new Error("Cloudinary 429");
+      return {
+        totalBytes: MB,
+        assets: 1,
+        imageBytes: MB,
+        videoBytes: 0,
+        rawBytes: 0,
+      };
+    });
+    try {
+      const result = await refreshPlatformUsage("cron");
+      expect(result.capture?.status).toBe("partial");
+      expect(result.capture?.providers.tenantUsage).toBe("failed");
+      const history = await TenantUsageHistory.findOne({ tenantId: ANJA })
+        .sort({ capturedAt: -1 })
+        .lean();
+      expect(history).toMatchObject({
+        cloudinaryMb: null,
+        cloudinaryComplete: false,
+      });
+      const tenant = await Tenant.findById(ANJA).lean<{
+        storageMetrics: {
+          cloudinaryUsageMb: number | null;
+          cloudinaryComplete: boolean;
+        };
+      }>();
+      expect(tenant?.storageMetrics).toMatchObject({
+        cloudinaryUsageMb: null,
+        cloudinaryComplete: false,
+      });
+      expect(result.tenantUsage?.data.totalMediaMb).toBeNull();
+    } finally {
+      tenantMedia.mockImplementation(async (folder: string) => ({
+        totalBytes: folder === "tenants/anja" ? 6 * MB : MB,
+        assets: folder === "tenants/anja" ? 2 : 1,
+        imageBytes: folder === "tenants/anja" ? 6 * MB : MB,
+        videoBytes: 0,
+        rawBytes: 0,
+      }));
+    }
+  });
+
+  it("marks Mongo tenant estimates incomplete when a collection count fails", async () => {
+    const aggregate = vi
+      .spyOn(Appointment, "aggregate")
+      .mockRejectedValueOnce(new Error("count failed"));
+    try {
+      const usage = await getTenantUsage();
+      expect(usage.totalDbEstimateMb).toBeNull();
+      expect(
+        usage.tenants.every(
+          (row) => row.dbEstimateMb === null && !row.dbEstimateComplete,
+        ),
+      ).toBe(true);
+    } finally {
+      aggregate.mockRestore();
+    }
   });
 
   it("resolves quota plans through resolveEffectivePlan, not raw Tenant.plan", async () => {
@@ -201,7 +270,7 @@ describe.sequential("platform usage refresh", () => {
     expect(rows.get(UNPAID_KIKI.toString())?.plan).toBe("maria");
     expect(rows.get(PADDLE_CLAUDIA.toString())).toMatchObject({
       plan: "claudia",
-      quotas: { mongoStorageMb: 0.4, cloudinaryStorageMb: 12 },
+      quotas: { mongoStorageMb: 6, cloudinaryStorageMb: null },
     });
   });
 });

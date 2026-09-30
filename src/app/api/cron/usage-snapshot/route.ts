@@ -1,7 +1,7 @@
 /**
  * GET /api/cron/usage-snapshot
  *
- * Dnevni snimak potrošnje (Vercel Cron, 22:10 UTC ≈ ponoć po Beogradu).
+ * Dnevni snimak potrošnje (Vercel Cron, 21:10 UTC = 23:10 leti / 22:10 zimi po Beogradu).
  * Osvežava latest cache (`PlatformUsageSnapshot`) i dodaje append-only
  * istoriju, pa mesečni rast po salonu postoji i bez ručnog "Osveži potrošnju".
  * Ne dira ResourceQuotaCalibration — kalibracija ostaje eksplicitna akcija.
@@ -25,9 +25,17 @@ export async function GET(req: NextRequest) {
 
   try {
     const usage = await refreshPlatformUsage("cron");
+    const capture = usage.capture;
+    if (!capture || capture.status !== "complete") {
+      return NextResponse.json(
+        { ok: false, capture, error: "Incomplete usage history capture" },
+        { status: 503 },
+      );
+    }
     return NextResponse.json({
       ok: true,
-      tenants: usage.tenantUsage?.data.tenants.length ?? 0,
+      capture,
+      tenants: capture.tenantHistoryCount,
       syncedAt: usage.tenantUsage?.syncedAt ?? null,
     });
   } catch (err) {

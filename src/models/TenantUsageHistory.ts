@@ -18,8 +18,11 @@ export interface ITenantUsageHistory extends Document {
   source: UsageCaptureSource;
   /** Efektivni plan u trenutku snimka (resolveEffectivePlan). */
   plan: PlanName;
-  mongoEstimateMb: number;
-  cloudinaryMb: number;
+  mongoEstimateMb: number | null;
+  mongoEstimateComplete: boolean;
+  cloudinaryMb: number | null;
+  cloudinaryComplete: boolean;
+  cloudinaryAssets: number | null;
   /** Aktivni OWNER/ADMIN/STAFF nalozi u trenutku snimka. */
   activeStaffCount: number;
 }
@@ -46,8 +49,11 @@ const TenantUsageHistorySchema = new Schema<ITenantUsageHistory>(
       required: true,
       immutable: true,
     },
-    mongoEstimateMb: { type: Number, required: true, min: 0, immutable: true },
-    cloudinaryMb: { type: Number, required: true, min: 0, immutable: true },
+    mongoEstimateMb: { type: Number, default: null, min: 0, immutable: true },
+    mongoEstimateComplete: { type: Boolean, default: true, immutable: true },
+    cloudinaryMb: { type: Number, default: null, min: 0, immutable: true },
+    cloudinaryComplete: { type: Boolean, default: true, immutable: true },
+    cloudinaryAssets: { type: Number, default: null, min: 0, immutable: true },
     activeStaffCount: {
       type: Number,
       required: true,

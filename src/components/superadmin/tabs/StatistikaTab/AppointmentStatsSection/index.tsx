@@ -62,10 +62,10 @@ function UsageGrowthRow({ growth }: { growth: SalonUsageGrowth | null }) {
         {growth.openingFromPreviousMonth
           ? " (kraj prethodnog meseca)"
           : ""} → {fmtDay(growth.closingAt)}
-        {" · "}na kraju: {growth.closingMongoMb.toFixed(3)} MB Mongo ·{" "}
-        {growth.closingCloudinaryMb.toFixed(3)} MB Cloudinary
+        {" · "}na kraju: {growth.closingMongoMb?.toFixed(3) ?? "—"} MB Mongo ·{" "}
+        {growth.closingCloudinaryMb?.toFixed(3) ?? "—"} MB Cloudinary
         {growth.mongoDeltaMb == null
-          ? " · potreban je još jedan snimak za rast"
+          ? " · rast nije dostupan (jedan ili nepotpun snimak)"
           : ""}
       </p>
     </div>
@@ -165,7 +165,7 @@ export function AppointmentStatsSection() {
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-700">
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-4 pt-3 border-t border-slate-700">
             <StatCell
               label="Kreirano u mesecu"
               value={salon.appointmentsCreated}
@@ -176,8 +176,6 @@ export function AppointmentStatsSection() {
               value={salon.appointmentsCompleted}
               color="text-blue-400"
             />
-          </div>
-          <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-700">
             <StatCell
               label="Klijenata zakazalo"
               value={salon.clientsBooked}
@@ -188,6 +186,9 @@ export function AppointmentStatsSection() {
               value={salon.clientsApproved}
               color="text-violet-400"
             />
+            <div className="text-center" aria-hidden="true">
+              <p className="text-2xl font-bold text-slate-500">—</p>
+            </div>
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-4 pt-3 border-t border-slate-700">
             <StatCell

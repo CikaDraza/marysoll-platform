@@ -1,4 +1,4 @@
-# Superadmin statistika i kalibrisane resource kvote
+# Superadmin statistika i soft resource kvote
 
 **Stanje: 2026-09-30.** Implementacija je na grani `feat/superadmin-statistics`.
 Status rada i preostali koraci vode se u [TODO.md](TODO.md); ovaj dokument
@@ -16,20 +16,20 @@ osoba. Brojanje se radi jednom agregacijom u superadmin API-ju.
 uvek Europe/Belgrade mesec. Termini se mere po tri odvojena sata, jer isti
 termin može pripadati različitim mesecima:
 
-| Naziv u prikazu | Polje | Sat | Značenje |
-|---|---|---|---|
-| Termina zakazano za mesec | `appointmentsScheduled` | `Appointment.date` | Business volume: termini koji se održavaju u mesecu, nezavisno od statusa. |
-| Kreirano u mesecu | `appointmentsCreated` | `createdAt` | Platform workload: termini upisani u bazu u mesecu. Termin napravljen 20. 10. za 10. 11. je oktobarski workload i novembarski volume. |
-| Obavljeno u mesecu | `appointmentsCompleted` | `completedAt` | Obavljen posao: termini čiji je završetak evidentiran u mesecu. Revert completion-a briše `completedAt`; stari završeni termini bez tog polja nisu u ovoj metrici. |
+| Naziv u prikazu           | Polje                   | Sat                | Značenje                                                                                                                                                           |
+| ------------------------- | ----------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Termina zakazano za mesec | `appointmentsScheduled` | `Appointment.date` | Business volume: termini koji se održavaju u mesecu, nezavisno od statusa.                                                                                         |
+| Kreirano u mesecu         | `appointmentsCreated`   | `createdAt`        | Platform workload: termini upisani u bazu u mesecu. Termin napravljen 20. 10. za 10. 11. je oktobarski workload i novembarski volume.                              |
+| Obavljeno u mesecu        | `appointmentsCompleted` | `completedAt`      | Obavljen posao: termini čiji je završetak evidentiran u mesecu. Revert completion-a briše `completedAt`; stari završeni termini bez tog polja nisu u ovoj metrici. |
 
 Klijenti i statusne kolone ostaju vezani za datum održavanja:
 
-| Naziv u prikazu | Definicija |
-|---|---|
-| Klijenata zakazalo | Broj različitih `clientProfileId` vrednosti među tim terminima. Jedan profil sa više termina broji se jednom; termin bez profila nije klijent u ovoj metrici. |
-| Klijenata sa potvrđenim terminom | Broj različitih `clientProfileId` vrednosti na terminima čiji je **trenutni** status `appointment_approved`. |
-| Potvrđena | Broj termina čiji je trenutni status `appointment_approved`; ranije se ova kolona zvala „Nova“. |
-| Čeka / Završena / Otkazana / Nije došlo | Broj termina sa odgovarajućim trenutnim statusom `pending` / `completed` / `appointment_cancelled` / `no_show`. |
+| Naziv u prikazu                         | Definicija                                                                                                                                                    |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Klijenata zakazalo                      | Broj različitih `clientProfileId` vrednosti među tim terminima. Jedan profil sa više termina broji se jednom; termin bez profila nije klijent u ovoj metrici. |
+| Klijenata sa potvrđenim terminom        | Broj različitih `clientProfileId` vrednosti na terminima čiji je **trenutni** status `appointment_approved`.                                                  |
+| Potvrđena                               | Broj termina čiji je trenutni status `appointment_approved`; ranije se ova kolona zvala „Nova“.                                                               |
+| Čeka / Završena / Otkazana / Nije došlo | Broj termina sa odgovarajućim trenutnim statusom `pending` / `completed` / `appointment_cancelled` / `no_show`.                                               |
 
 Uz termine, profil prikazuje:
 
@@ -57,208 +57,131 @@ Relevantni kod: [`salonMonthlyStats`](../src/lib/superadmin/salonMonthlyStats.ts
 
 ## 2. Tri različita broja za resurse
 
-- **Globalna infrastrukturna potrošnja:** `db.stats().storageSize` za MongoDB i
-  Cloudinary `api.usage()` za storage. Globalni limiti su `mongodb.storageLimitMb`
-  i `cloudinary.storageLimitGb`. Oni pripadaju celoj platformi.
-- **Tenant potrošnja:** Mongo je **procena** `broj dokumenata sa tenantId ×
-  avgObjSize kolekcije`; Cloudinary sabira bajtove resursa ispod
-  `Tenant.cloudinaryFolder`. Mongo procena ne uključuje pouzdanu fizičku
-  alokaciju indeksa, globalnih kolekcija i overhead-a.
-- **Tenant plan kvota:** izračunava se iz sačuvane kalibracije, zasebno za
-  MongoDB i Cloudinary. Ne koristi globalni fizički limit kao tenant limit.
-  Plan salona je **efektivni plan** iz `resolveEffectivePlan` (Subscription
-  status, grace period, istek interne dodele, `Tenant.paid`), isti resolver
-  kao `requireFeature` i `/api/subscriptions/features`. Sirovi `Tenant.plan`
-  se ne koristi: neplaćen Tenant sa `plan: "kiki"` dobija Maria kvotu, a
-  aktivna Paddle Claudia pretplata dobija Claudia kvotu i kad `Tenant.plan`
-  kaže Maria.
+- **Globalni Mongo:** Atlas Free/Flex komanda `db.command({ atlasSize: 1 })`
+  vraća numeričko polje `atlasSize` za data + index potrošnju klastera.
+  Stvarni response shape je proveren 2026-09-30. Izvor `atlasSize` je jedini
+  pouzdan za odnos prema konfigurisanom limitu (trenutno 512 MB). Fallback
+  `dbStatsEstimate` računa `dataSize + indexSize` i nije tačan Atlas quota
+  broj; ako ni on ne uspe, vrednost je null uz izvor `unavailable`.
+  `storageSize`, data/index size, collections i connections su dijagnostika.
+- **Globalni Cloudinary:** `api.usage()` meri ceo nalog.
+- **Tenant Mongo:** procena broja dokumenata sa `tenantId` puta `avgObjSize`
+  kolekcije. Indeksi, globalne kolekcije i overhead nisu pouzdano raspodeljeni.
+  Neuspeo `collStats` ili agregacija daje null / `complete: false`; stvarna
+  nula ostaje 0 / `complete: true`.
+- **Tenant Cloudinary:** Search API sabira stvarni `asset.bytes` za image,
+  video i raw u `Tenant.cloudinaryFolder` i svim podfolderima. Dynamic
+  `asset_folder` određuje članstvo, ne `public_id` prefix. Svi cursor pages
+  ulaze u zbir i broj assets. API neuspeh daje null / incomplete, nikad 0 MB.
+- **Tenant soft kvota:** fiksna poslovna granica za Mongo procenu; Cloudinary
+  limit još nije određen i trenutno je samo merna metrika.
 
-`dbStorageGb` u `planFeatures.ts` ostaje legacy polje radi kompatibilnosti i
-više se ne koristi za prikaz ili resource status. Resend, Zoho i Vercel nisu
-ulazi u ovaj quota model.
+Efektivni plan dolazi iz `resolveEffectivePlan`: neplaćen raw Kiki dobija Maria
+kvotu, aktivna Paddle Claudia dobija Claudia kvotu. Legacy `dbStorageGb`,
+Resend, Zoho i Vercel nisu deo ovog statusa.
 
-## 3. Kalibracija i planovi
+## 3. Benchmark i planovi
 
-Referentni tenant ima slug `the-lash-room-by-anja`. Superadmin prvo ručno
-pokreće **Osveži potrošnju**. Poslednji `tenant_usage` snapshot daje kandidata:
-Mongo `dbEstimateMb` i Cloudinary `mediaMb`, uz vreme snapshot-a. Akcija
-**Kalibriši prema The Lash Room** traži eksplicitnu potvrdu i tek tada upisuje
-novi `ResourceQuotaCalibration` dokument: tenant, obe MB vrednosti, izvorni
-snapshot, vreme i superadmin koji je potvrdio. Ponovna kalibracija dodaje novi
-zapis; najnoviji je aktivan. Osvežavanje usage snapshot-a ne upisuje
-kalibraciju i ne pomera plan kvote.
+The Lash Room (`the-lash-room-by-anja`) je **low-tier operational benchmark**,
+ne generator storage kvota. Superadmin može eksplicitno sačuvati kompletan
+snapshot kao `ResourceQuotaCalibration`; novi zapis je append-only. Refresh
+ne menja kalibraciju niti plan kvote. Kandidat zahteva potpuna oba merenja.
 
-| Plan | Mongo kvota | Cloudinary kvota |
-|---|---:|---:|
-| Maria | 1 × baseline | 1 × baseline |
-| Claudia | 2 × baseline | 2 × baseline |
-| Kiki | 4 × baseline | 4 × baseline |
-| Enterprise | Nije definisana ovim modelom | Nije definisana ovim modelom |
+| Plan       | Mongo estimate soft quota | Cloudinary soft quota |
+| ---------- | ------------------------: | --------------------- |
+| Maria      |                      3 MB | nije određena         |
+| Claudia    |                      6 MB | nije određena         |
+| Kiki       |                     12 MB | nije određena         |
+| Enterprise |             custom / null | nije određena         |
 
-Status za svaki resurs: ispod 80% `healthy`, od 80% do ispod 100% `warning`,
-a od 100% `limit_reached`. Ukupan tenant status je stroži od dva resursa.
-To je **informativan soft status**: ne menja plan, pretplatu, zakazivanje,
-prijavu niti upis podataka. Za Claudia tenant na limitu prikaz upućuje na
-veći Kiki kapacitet.
+Pragovi Mongo statusa su 80% (`warning`) i 100% (`limit_reached`).
+Nepotpuno merenje nema procenat ni status. Cloudinary ne ulazi u resource
+status ili upgrade preporuku. Soft quota ne blokira booking, login, upload
+ili DB write i ne menja automatski plan/Paddle: **measure → warn → recommend**.
+MB nisu fizički rezervisani na Atlasu i `512 / 6` nije pouzdana procena broja
+Claudia salona. Budući required plan konceptualno uzima
+`max(capabilityTier, workloadTier, resourceTier)`. Salon sa 2 MB može koristiti
+Kiki funkcije; osnovni salon može prerasti workload profil; onboarding može
+početi na Claudia i kada se kasnije očekuje Kiki.
 
-Bez sačuvanog baseline-a tenant kvote, procenti i statusi su nedostupni.
-API `/api/tenants/plan-status` bira tenant isključivo iz autentifikovane
-admin sesije i vraća samo njegov usage i izvedene kvote. Globalni limiti,
-kapacitet platforme, podaci drugih salona i sam calibration zapis nisu deo
-tog odgovora.
+Tenant plan-status API koristi samo autentifikovani tenant i vraća njegovu
+Mongo procenu i soft kvotu, Cloudinary usage i status. Globalni limit, podaci
+drugih salona i calibration/history detalji nisu deo odgovora.
 
 ## 3a. Istorija potrošnje
 
-`PlatformUsageSnapshot` ostaje **latest cache**: jedan dokument po provideru,
-svaki refresh ga pregazi. Zato sam ne može da odgovori koliko je salon dodao
-tokom meseca. Uz njega, svaki refresh sada upisuje append-only istoriju:
+`PlatformUsageSnapshot` je latest cache, a sledeći zapisi su append-only:
 
-| Kolekcija | Red | Polja |
-|---|---|---|
-| `TenantUsageHistory` | jedan po salonu po refresh-u | `captureId`, `tenantId`, `capturedAt`, `source` (`manual`/`cron`), efektivni `plan`, `mongoEstimateMb`, `cloudinaryMb`, `activeStaffCount` |
-| `PlatformUsageHistory` | jedan po refresh-u | isti `captureId`, globalni Mongo/Cloudinary used i limit, broj salona, zbir tenant Mongo procena i zbir tenant Cloudinary MB |
+| Kolekcija              | Red                | Polja                                                                                                                             |
+| ---------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `TenantUsageHistory`   | salon po refresh-u | isti `captureId`, vreme, source, efektivni plan, nullable Mongo/Cloudinary MB i `complete` flag-ovi, asset count, aktivno osoblje |
+| `PlatformUsageHistory` | jedan po refresh-u | isti `captureId`, `mongoQuotaUsedMb`, `mongoQuotaSource`, globalna dijagnostika, Cloudinary usage i nullable zbir tenant metrika  |
 
-Polja su `immutable`; kod nikad ne menja postojeći red. Provider koji nije
-uspeo ostaje `null` u `PlatformUsageHistory`.
+Legacy `mongoStorageUsedMb` zadržava značenje `db.stats().storageSize`.
+Stari validni tenant history bez flag-ova ostaje čitljiv; stari latest cache
+bez flag-ova zahteva novo merenje pre prikaza kao kompletan.
 
-Snimci nastaju na dva načina:
+Ručni refresh pravi `source: manual`. Vercel cron na
+`/api/cron/usage-snapshot` radi **21:10 UTC**, odnosno približno 23:10 leti i
+22:10 zimi po Beogradu, istog lokalnog dana. U produkciji zahteva
+`Authorization: Bearer CRON_SECRET`. Kompletan capture vraća HTTP 200;
+nevalidna Mongo quota metrika, tenant usage/history ili global history daju
+`ok: false`, HTTP 503 i capture/provider status. Ručni refresh čuva dostupne
+podatke i upozorava na partial capture. Nijedan tok ne dira kalibraciju.
 
-- ručno, preko **Osveži potrošnju** (`source: "manual"`);
-- dnevno, preko Vercel cron-a `/api/cron/usage-snapshot` u 22:10 UTC
-  (`source: "cron"`), što je 00:10 po Beogradu leti i 23:10 zimi. Cron traži
-  `Authorization: Bearer CRON_SECRET`; bez podešenog secret-a radi samo u
-  developmentu. Po pokretanju troši oko 1 + broj salona Cloudinary Admin API
-  zahteva.
-
-Ni jedan od ta dva toka ne dira `ResourceQuotaCalibration`. To proverava
-behavioral integration test koji dva puta pokreće refresh nad pravom bazom
-([platformUsage.integration.test.ts](../src/lib/superadmin/platformUsage.integration.test.ts)).
-
-**Mesečni rast** ([usageGrowth.ts](../src/lib/superadmin/usageGrowth.ts)):
-početna tačka je poslednji snimak pre početka meseca (kraj prethodnog meseca),
-a ako ga nema, prvi snimak u mesecu. Krajnja tačka je poslednji snimak u
-mesecu. Rast je `kraj − početak` i može biti negativan (obrisani mediji). Sa
-samo jednim snimkom u mesecu rast je nedostupan, a prikazuje se samo stanje.
-Za oktobar 2026. prvi dnevni snimak mora postojati od 1. 10.: ako cron do tada
-nije u produkciji, superadmin treba ručno da osveži potrošnju prvog dana.
-
-Brisanje salona briše i njegov `TenantUsageHistory` (canonical tenant
-cascade). `PlatformUsageHistory` nema `tenantId` i ostaje.
+Mesečni rast koristi poslednji snimak pre početka meseca ili prvi u mesecu,
+i poslednji snimak u mesecu. Delta zahteva validne krajnje i međutačke za
+taj resurs; invalid tačka daje null, ne lažni negativni skok. Jedan snimak
+nije dovoljan. Brisanje salona briše njegov history, globalni ostaje.
 
 ## 4. Kapacitet platforme
 
-Superadmin vidi provider kartice sa globalnim used/limit vrednostima, a
-posebno tabelu tenant procena. Capacity model koristi rezervu od 20%:
+Superadmin prikazuje Atlas quota usage uz izvor, odvojeno od DB dijagnostike.
+Odnos `used / 512 MB` prikazuje se samo za izvor `atlasSize`. Anja ekvivalenti
+i safe capacity uz 20% rezerve su **heuristika**, ne garantovan broj salona.
+Tenant Mongo procena nema indekse i globalni overhead; CPU/RAM/connections
+mogu ograničiti platformu pre storage kvote. Bez benchmarka ili pouzdanog
+provider podatka trenutni ekvivalent je nedostupan.
 
-```text
-mongoSafeMb = mongodb.storageLimitMb × 0.8
-cloudinarySafeMb = cloudinary.storageLimitGb × 1024 × 0.8
-mongoEquivalentCapacity = floor(mongoSafeMb / anja.mongoMb)
-cloudinaryEquivalentCapacity = floor(cloudinarySafeMb / anja.cloudinaryMb)
-effectiveCapacity = min(mongoEquivalentCapacity, cloudinaryEquivalentCapacity)
-```
+Budući physicalization factor treba više meseci validnih snimaka:
 
-Manji provider je bottleneck. Trenutni globalni „Anja ekvivalenti“ računaju
-se kao globalni used MB podeljen odgovarajućim baseline MB. To je heuristika
-veličine, ne broj salona, i UI ih zato zove **Anja data-estimate ekvivalenti**.
+    physicalizationFactor =
+      Δ globalni Mongo atlasSize quotaUsedMb /
+      Σ Δ validnih tenant mongoEstimateMb
 
-Mongo kapacitet je trenutno previše optimističan. Brojilac je stvarni fizički
-storage platforme, a imenilac je Anjina procena `broj dokumenata × avgObjSize`
-bez indeksa, globalnih kolekcija i overhead-a. Brojka „2007“ iz §5 zato nije
-odluka da Free cluster nosi 2007 salona. Istorija (§3a) omogućava kalibraciju:
-kada postoji više meseci snimaka, odnos
+Faktor se još ne računa niti određuje pricing. Cloudinary tenant bytes su
+stvarni, ali plan limit još nije određen.
 
-```text
-physicalizationFactor = Δ globalni Mongo storageUsedMb / Σ Δ tenant mongoEstimateMb
-```
+## 5. Početno stanje i oktobarsko merenje
 
-daje koliko fizičkog storage-a stvarno košta 1 MB procene. Realniji Mongo
-kapacitet je tada `mongoSafeMb / (anja.mongoMb × physicalizationFactor)`.
-Faktor se još ne računa u kodu; potrebni su podaci od oktobra. Cloudinary je
-čistiji, jer se sabiraju stvarni bajtovi tenant foldera. Kada baseline ili provider podaci nedostaju, ili je
-baseline nula, kapacitet je nedostupan umesto `Infinity`. Mongo CPU ostaje `—`;
-trenutni tier ne daje pouzdanu metriku kroz postojeći tok.
-
-## 5. Očitani kandidat i ograničenja
-
-Read-only očitavanje konfigurisanog Mongo snapshot-a 2026-09-30 dalo je
-sledeće **istorijske** vrednosti. Snapshot-i su sinhronizovani 2026-08-13 oko
-19:43 UTC. Ovo su kandidat i ilustracija formule, ne sačuvana kalibracija:
-
-| Metrika | Snapshot |
-|---|---:|
-| The Lash Room Mongo procena | 0.204 MB |
-| The Lash Room Cloudinary | 6.728 MB |
-| Globalni Mongo used / limit | 2 / 512 MB |
-| Globalni Cloudinary used / limit | 246.4 MB / 25 GB |
-| Izvedena Claudia Mongo / Cloudinary kvota | 0.408 / 13.456 MB |
-| Izvedena Kiki Mongo / Cloudinary kvota | 0.816 / 26.912 MB |
-| Mongo / Cloudinary kapacitet do 80% | 2007 / 3043 Anja ekvivalenta |
-| Efektivni kapacitet i bottleneck | 2007; MongoDB |
-| Trenutni globalni Mongo / Cloudinary ekvivalenti | približno 9,8 / 36,6 |
-
-Na datum ovog očitavanja u `resourcequotacalibrations` nije bilo zapisa.
-Nova Mongo procena nakon refresh-a može biti veća, jer su dodatno uključeni
-modeli sa pouzdanim `tenantId`: `AudienceSegment`, `BookingDayLock`,
-`BookingOperationReceipt`, `BookingOutboxEvent`, `BookingReservation`,
-`CampaignAnalytics`, `ClientContentAssignment`, `EducationContent`,
-`LoyaltyAccount`, `LoyaltyConfig`, `LoyaltyEvent`, `LoyaltyLedger`,
-`NewsletterTemplate`, `Referral`, `Subscription`, `SuperAdminChat`,
-`Theme8LandingEvent`, `Voucher`, `VoucherRequest` i `WebhookEvent`. Audit
-proizvodnih modela nije našao druge izostavljene kolekcije sa pouzdanim
-`tenantId`. `Tenant` nije tenant sadržaj. Cloudinary zbir zavisi od ispravno
-podešenog `cloudinaryFolder` za salon.
+Read-only provere 2026-09-30 potvrdile su stvarni `atlasSize` response shape
+i Cloudinary Search rezultat za Anjin dynamic folder. Snapshot 2026-08-13,
+zasnovan na `storageSize` i `public_id` prefix pretpostavkama, **nije validan
+za Atlas quota ratio, fizički kapacitet ili plan kvote**. Potrebni su novi
+dnevni snimci sa oznakama kvaliteta. The Lash Room ostaje referenca za
+current footprint, mesečni rast, aktivno osoblje, termine kreirane, zakazane
+i obavljene i već dostupnu aktivnost klijenata. Oktobarska kalibracija i
+Cloudinary granice ostaju poslovne odluke.
 
 ## 6. Provera pre prihvatanja
 
-1. U superadminu otvoriti Statistiku i proveriti „Klijenti salona“ za salon sa
-   gostima i dupliranim profilima.
-2. Promeniti mesec i proveriti da ukupan broj termina, različiti profili i
-   statusne kolone odgovaraju terminima po datumu održavanja.
-3. Osvežiti potrošnju, proveriti Anjine **nove** vrednosti i vreme snapshot-a,
-   pa potvrditi kalibraciju samo ako kandidat odgovara očekivanju.
-4. Proveriti Mongo/Cloudinary kvote i procente za Claudia i Kiki salon, zatim
-   tenant admin prikaz bez globalnih podataka.
-5. Ponovo osvežiti potrošnju i proveriti da `capturedAt` i plan kvote ostaju
-   isti dok superadmin eksplicitno ne zatraži ponovnu kalibraciju.
-6. Posle dva refresh-a proveriti da u Statistici salon ima rast potrošnje, a
-   da `resourcequotacalibrations` nema novih zapisa.
-7. Posle deploy-a proveriti u Vercel Cron logu da `/api/cron/usage-snapshot`
-   vraća `200` i da `platformusagehistories` dobija red dnevno.
-8. Za tenant čiji se `Tenant.plan` razlikuje od efektivnog plana (npr. istekla
-   interna dodela) proveriti da i superadmin i tenant prikaz koriste efektivni
-   plan.
+1. U browseru proveriti mesece, tri sata termina, goste i duplikate.
+2. Osvežiti usage i proveriti Atlas izvor, odvojenu DB dijagnostiku, 3/6/12 MB
+   soft kvote i tenant prikaz bez globalnih podataka.
+3. Proveriti dynamic/nested Cloudinary assets, asset count i unavailable
+   prikaz pri neuspehu.
+4. Proveriti korelisane history redove, invalid growth i stabilnu kalibraciju.
+5. U produkciji proveriti cron 21:10 UTC, HTTP 200 samo za kompletan capture
+   i upis obe history kolekcije. Ako nije aktivan 1. 10. 2026, ručno snimiti
+   početnu tačku tog dana.
 
-Lokalne provere: TypeScript, ESLint, Prettier i ceo Vitest paket su prošli
-(brojevi su u [TODO.md](TODO.md)). Browser provera, produkcijska kalibracija i
-prvi produkcijski cron snimak su odvojeni, otvoreni koraci.
+Lokalne provere su u [TODO.md](TODO.md). Browser acceptance i prvi
+produkcijski dnevni snimak ostaju odvojeni koraci.
 
 ## 7. Marysoll 11 / Unit Economics
 
-Prvih 10–11 produkcionih salona služe da se izmeri stvarna ekonomija jednog
-tenanta i da se na osnovu toga formiraju cene. Veličine koje pratimo:
-
-| Veličina | Izvor danas |
-|---|---|
-| ARPU | Subscription / Paddle (van ovog sloja) |
-| Infrastructure COGS / tenant | rast potrošnje iz §3a × cena providera; Mongo preko physicalization faktora |
-| Support hours / tenant / mesec | ručna evidencija (nije u kodu) |
-| Heavy-maintenance rate | ručna evidencija (nije u kodu) |
-| Feature-development load | ručna evidencija (nije u kodu) |
-| Churn | Subscription statusi |
-| Net contribution / tenant | ARPU − COGS − podrška/održavanje |
-
-**The Lash Room je low-tier operational reference profile** (1 salon / 1
-radnica). Pri tome se razlikuju dve stvari:
-
-- **current footprint**: koliko Anja zauzima sada. To je kalibracioni
-  baseline (§3) iz kojeg se izvode Claudia/Kiki kvote. Ne pomera se sam.
-- **monthly growth/workload**: koliko Anja doda i uradi mesečno. To su rast iz
-  §3a i tri sata termina iz §1 (`appointmentsCreated`, `appointmentsScheduled`,
-  `appointmentsCompleted`).
-
-Profil novog salona se opisuje istim merama (broj osoblja, termini mesečno,
-aktivni klijenti, lokacije) i poredi sa Anjom. Hipoteza da salon sa 2 radnice
-troši približno 2× Anje, a salon sa 3 lokacije i 10 radnika ne pripada
-Claudia planu, tek treba da se potvrdi podacima od oktobra 2026. Broj lokacija
-još nije mera u kodu.
+Prvih 10–11 produkcionih salona od oktobra meri potrošnju i workload pre
+konačnih poslovnih granica. ARPU dolazi iz Subscription/Paddle, podrška i
+održavanje iz ručne evidencije, churn iz pretplata, a infrastructure COGS
+zahteva cene providera i validan Mongo physicalization factor. Trenutni
+podaci ne pokreću automatske pricing, subscription ili plan odluke.

@@ -35,7 +35,14 @@ export function findCalibrationCandidate(
   const tenant = snapshot.data.tenants.find(
     (row) => row.slug === CALIBRATION_TENANT_SLUG,
   );
-  if (!tenant) return null;
+  if (
+    !tenant ||
+    tenant.dbEstimateComplete !== true ||
+    tenant.mediaComplete !== true ||
+    tenant.dbEstimateMb == null ||
+    tenant.mediaMb == null
+  )
+    return null;
 
   return {
     tenantId: tenant.tenantId,

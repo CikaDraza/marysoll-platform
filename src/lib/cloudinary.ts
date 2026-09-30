@@ -67,6 +67,72 @@ export async function resolveCloudinaryUploadFolder(
   return `${base}/landing`;
 }
 
+export function tenantFolderSearchExpression(folder: string): string {
+  const normalized = folder.trim().replace(/\/+$/, "");
+  if (!normalized) throw new Error("Tenant Cloudinary folder nije definisan");
+  // asset_folder is the dynamic-folder authority; public_id may be unrelated.
+  return `(asset_folder=${JSON.stringify(normalized)} OR asset_folder:${JSON.stringify(`${normalized}/*`)})`;
+}
+
+export interface TenantCloudinaryUsage {
+  totalBytes: number;
+  assets: number;
+  imageBytes: number;
+  videoBytes: number;
+  rawBytes: number;
+}
+
+/** Full dynamic-folder subtree, across every Search API page and resource type. */
+export async function getTenantCloudinaryUsage(
+  folder: string,
+): Promise<TenantCloudinaryUsage> {
+  const expression = `${tenantFolderSearchExpression(folder)} AND (resource_type:image OR resource_type:video OR resource_type:raw)`;
+  const totals: TenantCloudinaryUsage = {
+    totalBytes: 0,
+    assets: 0,
+    imageBytes: 0,
+    videoBytes: 0,
+    rawBytes: 0,
+  };
+  let cursor: string | undefined;
+  const seenCursors = new Set<string>();
+  do {
+    let search = cloudinary.search.expression(expression).max_results(500);
+    if (cursor) search = search.next_cursor(cursor);
+    const page = (await search.execute()) as {
+      resources?: Array<{ bytes?: number; resource_type?: string }>;
+      next_cursor?: string;
+    };
+    if (!Array.isArray(page.resources)) {
+      throw new Error("Cloudinary Search nije vratio listu assets");
+    }
+    for (const asset of page.resources) {
+      if (
+        !Number.isFinite(asset.bytes) ||
+        asset.bytes == null ||
+        asset.bytes < 0 ||
+        !["image", "video", "raw"].includes(asset.resource_type ?? "")
+      ) {
+        throw new Error(
+          "Cloudinary Search nije vratio potpun asset measurement",
+        );
+      }
+      totals.totalBytes += asset.bytes;
+      totals.assets += 1;
+      if (asset.resource_type === "image") totals.imageBytes += asset.bytes;
+      if (asset.resource_type === "video") totals.videoBytes += asset.bytes;
+      if (asset.resource_type === "raw") totals.rawBytes += asset.bytes;
+    }
+    cursor = page.next_cursor;
+    if (cursor) {
+      if (seenCursors.has(cursor))
+        throw new Error("Cloudinary Search cursor se ponavlja");
+      seenCursors.add(cursor);
+    }
+  } while (cursor);
+  return totals;
+}
+
 type CloudinaryResource = {
   public_id: string;
   secure_url: string;
@@ -115,14 +181,17 @@ export async function listCloudinaryResources(
   try {
     const res = await cloudinary.search
       .expression(
-        `resource_type:${resourceType} AND (folder:"${folder}" OR folder:"${folder}/*")`,
+        `resource_type:${resourceType} AND ${tenantFolderSearchExpression(folder)}`,
       )
       .sort_by("created_at", "desc")
       .max_results(100)
       .execute();
     return (res.resources as CloudinaryResource[]).map(mapResource);
   } catch (err) {
-    console.error("Cloudinary search failed, fallback na prefix listanje:", err);
+    console.error(
+      "Cloudinary search failed, fallback na prefix listanje:",
+      err,
+    );
     const res = await cloudinary.api.resources({
       type: "upload",
       resource_type: resourceType,
@@ -155,7 +224,11 @@ export async function uploadToCloudinary(
   folder: string,
   resourceType: "image" | "video" = "image",
 ): Promise<string> {
-  const result = await uploadToCloudinaryWithMetadata(file, folder, resourceType);
+  const result = await uploadToCloudinaryWithMetadata(
+    file,
+    folder,
+    resourceType,
+  );
   return result.secure_url;
 }
 
@@ -171,7 +244,12 @@ export async function uploadToCloudinaryWithMetadata(
       { folder, resource_type: resourceType },
       (error, result: UploadResult | undefined) => {
         if (error) reject(error);
-        else if (result?.secure_url) resolve({ secure_url: result.secure_url, width: result.width, height: result.height });
+        else if (result?.secure_url)
+          resolve({
+            secure_url: result.secure_url,
+            width: result.width,
+            height: result.height,
+          });
         else reject(new Error("Cloudinary upload nije vratio URL."));
       },
     );
