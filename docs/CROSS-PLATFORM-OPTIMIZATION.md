@@ -89,6 +89,32 @@ tier logike; animacije se vraćaju na iOS jer više ne kriju sadržaj.
   — korisnik nikad ne ostane bez kanala.
 - **Merilo**: subscribe success rate i delivery rate **po platformi**.
 
+#### Marysoll podrška — obavezni tok obaveštenja (2026-09-30)
+
+Za poruku koju Superadmin pošalje tenantu važi sledeći ugovor:
+
+- `OWNER` i `ADMIN` članovi tog tenanta dobijaju zaseban `Notification`
+  (`chat_message`) sa `metadata.source = "marysoll_support"`, naslovom
+  „Marysoll podrška“ i pregledom poruke; drugi tenanti i klijenti nisu primaoci.
+- U `NotificationBell` postoji posebna sekcija **💬 Marysoll podrška**, pored
+  „Termini“ i „Preporuke“. Interni chat salona ostaje u „Ostalo“. Ranije
+  sačuvane poruke podrške bez `metadata.source` prepoznaju se po postojećem
+  naslovu, bez migracije podataka.
+- Klik na stavku u zvoncetu i push vode na `/dashboard?tab=chat`.
+- Email „Nova poruka od Marysoll podrške“ nudi dugme **Otvori chat** koje vodi
+  direktno na admin chat. Apsolutni URL se gradi kroz `adminUrl()` u
+  `host-context`: produkcija koristi `admin.marysoll.com`, dok lokalni,
+  staging/QA i preview ostaju na svom hostu.
+- Email ide na raspoložive adrese `OWNER`/`ADMIN` članova, najviše jednom u
+  15 minuta po tenantu. Čitanje chata resetuje taj prozor. Svaka poruka i
+  dalje stvara in-app notifikaciju; email i push su best-effort kanali i njihov
+  neuspeh ne poništava sačuvanu chat poruku.
+- Email za ovaj razgovor koristi Marysoll platform identitet, a ne salonski
+  email identitet. Fallback na zvonce ostaje obavezan kada push nije dostupan.
+
+Obrnuti smer (tenant → Superadmin) i dalje šalje Superadminima njihovo zvonce,
+push i throttle-ovan email kroz isti chat kanal.
+
 ### C. Assets / slike
 
 - **Budžet po strani**: cilj < ~1.5 MB nad prevojem, < ~250 KB po slici.

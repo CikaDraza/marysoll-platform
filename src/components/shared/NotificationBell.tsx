@@ -25,6 +25,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import type { INotification } from "@/types";
+import { isMarysollSupportNotification } from "@/helpers/notificationGroups";
 import Link from "next/link";
 
 interface NotificationBellProps {
@@ -209,8 +210,12 @@ export function NotificationBell({ base }: NotificationBellProps) {
   const testimonialNotifs = notifications.filter((n) =>
     n.type.includes("testimonial"),
   );
+  const marysollNotifs = notifications.filter(isMarysollSupportNotification);
   const otherNotifs = notifications.filter(
-    (n) => !n.type.includes("appointment") && !n.type.includes("testimonial"),
+    (n) =>
+      !n.type.includes("appointment") &&
+      !n.type.includes("testimonial") &&
+      !isMarysollSupportNotification(n),
   );
 
   const unreadCount = notifications.length;
@@ -335,6 +340,25 @@ export function NotificationBell({ base }: NotificationBellProps) {
                     </span>
                   </div>
                   {testimonialNotifs.map((n) => (
+                    <NotificationItem
+                      key={n._id}
+                      notification={n}
+                      onRead={handleRead}
+                      isAdmin={isAdmin}
+                      base={base}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {marysollNotifs.length > 0 && (
+                <div>
+                  <div className="px-4 py-1.5 bg-zinc-50 border-b border-zinc-100">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                      💬 Marysoll podrška · {marysollNotifs.length}
+                    </span>
+                  </div>
+                  {marysollNotifs.map((n) => (
                     <NotificationItem
                       key={n._id}
                       notification={n}

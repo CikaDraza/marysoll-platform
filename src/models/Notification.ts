@@ -53,6 +53,7 @@ const NotificationSchema = new Schema(
       clientProfileId: String,
       serviceName: String,
       clientName: String,
+      source: { type: String, enum: ["marysoll_support"] },
       quotedTotal: Number,
       currency: String,
       decision: { type: String, enum: ["accepted", "rejected"] },

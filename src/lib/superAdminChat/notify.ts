@@ -19,7 +19,7 @@ import { AuthUser } from "@/models/AuthUser";
 import { getSalonBranding } from "@/lib/notificationService";
 import { sendWebPushToUser, sendWebPushToAuthUser } from "@/lib/webPush";
 import { sendSuperAdminChatNotification } from "@/lib/email/email";
-import { platformOrigin } from "@/lib/platform/host-context";
+import { adminUrl, platformOrigin } from "@/lib/platform/host-context";
 import {
   ADMIN_CHAT_PATH,
   SUPERADMIN_PATH,
@@ -27,6 +27,7 @@ import {
 
 const EMAIL_THROTTLE_MS = 15 * 60 * 1000; // 15 min
 const APP_URL = platformOrigin();
+const ADMIN_CHAT_EMAIL_URL = adminUrl(ADMIN_CHAT_PATH);
 
 type ThrottleField = "superAdminEmailThrottleAt" | "ownerEmailThrottleAt";
 
@@ -182,7 +183,7 @@ export async function notifyOwnersOfChatMessage(params: {
           title: "Marysoll podrška",
           message: body || "📎 Prilog",
           isRead: false,
-          metadata: { sender: "admin", clientName: "Marysoll podrška" },
+          metadata: { sender: "admin", clientName: "Marysoll podrška", source: "marysoll_support" },
         }),
       ),
     );
@@ -214,7 +215,7 @@ export async function notifyOwnersOfChatMessage(params: {
             message: params.content ?? "",
             hasAttachment: params.hasAttachment,
             fromSuperAdmin: true,
-            url: APP_URL,
+            url: ADMIN_CHAT_EMAIL_URL,
           }),
         ),
       );

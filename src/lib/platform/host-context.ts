@@ -260,6 +260,16 @@ export function platformUrl(path = "", req?: RequestLike): string {
   return joinUrl(platformOrigin(req), path);
 }
 
+/** Apsolutni URL admin panela u istom okruženju. */
+export function adminUrl(path = "", req?: RequestLike): string {
+  const origin = platformOrigin(req);
+  const host = hostOfOrigin(origin);
+  return joinUrl(
+    isPathBasedHost(host) ? origin : `https://admin.${BASE_DOMAIN}`,
+    path,
+  );
+}
+
 /** Ključ okruženja iz apsolutnog origin-a; "" ako origin nije validan URL. */
 export function environmentKeyOfOrigin(origin: string): string {
   const host = hostOfOrigin(origin);

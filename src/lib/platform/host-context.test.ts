@@ -280,6 +280,32 @@ describe("platformUrl", () => {
   });
 });
 
+describe("adminUrl", () => {
+  it("uses the admin subdomain in production", async () => {
+    const { adminUrl } = await load({ appUrl: "https://marysoll.com" });
+    expect(adminUrl("/dashboard?tab=chat")).toBe(
+      "https://admin.marysoll.com/dashboard?tab=chat",
+    );
+  });
+
+  it("stays on the staging host", async () => {
+    const { adminUrl } = await load({ appUrl: "https://qa.marysoll.com" });
+    expect(adminUrl("/dashboard?tab=chat")).toBe(
+      "https://qa.marysoll.com/dashboard?tab=chat",
+    );
+  });
+
+  it("stays on the preview host", async () => {
+    const { adminUrl } = await load({
+      vercelEnv: "preview",
+      vercelUrl: "marysoll-preview.vercel.app",
+    });
+    expect(adminUrl("/dashboard?tab=chat")).toBe(
+      "https://marysoll-preview.vercel.app/dashboard?tab=chat",
+    );
+  });
+});
+
 describe("environmentKey", () => {
   it("svi produkcijski hostovi dele jedan ključ", async () => {
     const h = await load();

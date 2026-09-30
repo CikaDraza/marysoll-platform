@@ -752,6 +752,7 @@ export interface INotification {
     clientProfileId?: string;
     serviceName?: string;
     clientName?: string;
+    source?: "marysoll_support";
     rating?: number;
     hearts?: number;
     points?: number;
