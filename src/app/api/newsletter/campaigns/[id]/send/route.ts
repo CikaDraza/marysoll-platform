@@ -68,6 +68,10 @@ export async function POST(
       );
     }
 
+    if (campaign.contentPurpose === "blog") {
+      return NextResponse.json({ error: "Blog nije email kampanja" }, { status: 400 });
+    }
+
     switch (action) {
       case "send": {
         if (!["draft", "scheduled", "paused"].includes(campaign.status)) {

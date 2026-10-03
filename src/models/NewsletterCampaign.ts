@@ -18,6 +18,8 @@ const NewsletterCampaignSchema = new Schema(
       default: "tenant",
       index: true,
     },
+    contentPurpose: { type: String, enum: ["newsletter", "blog"], default: "newsletter", index: true },
+    blogDraft: { type: Schema.Types.Mixed, select: false },
     name: { type: String, required: true },
     templateId: { type: Schema.Types.ObjectId, ref: "NewsletterTemplate" },
     subject: { type: String, required: true },

@@ -54,6 +54,6 @@ describe("GET /api/newsletter/campaigns admin contract", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual([draft]);
-    expect(NewsletterCampaign.find).toHaveBeenCalledWith({ tenantId: "tenant-a" });
+    expect(NewsletterCampaign.find).toHaveBeenCalledWith({ tenantId: "tenant-a", contentPurpose: { $ne: "blog" } });
   });
 });

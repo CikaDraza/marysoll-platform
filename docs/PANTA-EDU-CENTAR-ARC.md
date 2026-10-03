@@ -1191,6 +1191,8 @@ CURRENT implementacija sme koristiti tanak adapter ka postojećem
 Newsletter ostaje Newsletter, Blog ostaje Blog; korisnik ne vidi istorijsku
 putanju Kampanja → Email + Landing → Blog.
 
+**E4 implementirano (2026-10-03):** Edu sidebar ima zaseban `Blog → Svi tekstovi | Novi blog`, sa ručnim i PDF/DOCX početkom. Full-page editor koristi postojeći Content Composer i PreviewRenderer. Tenant/capability-gated API čuva `blogDraft` kroz tanak NewsletterCampaign adapter, objava promoviše validiran nacrt u postojeći javni Blog ugovor. Sačuvana radna kopija ne menja objavljeni naslov, slug ili blokove. Blog je isključen iz Newsletter liste i send API-ja. Lokalni oporavak i autosave koriste isti durable draft helper kao Edu. Provere: 8 fokusiranih API testova; browser unos i draft čuvanje; integracioni tok sa stvarnom bazom potvrđuje objavu, public lookup i odvojenu radnu kopiju.
+
 ### E5 — pilot acceptance
 
 Marina dobija samo četiri zadatka, bez objašnjavanja procedura:

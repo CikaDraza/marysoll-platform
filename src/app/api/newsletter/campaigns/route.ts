@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
     await connectToDB();
     const scopeFilter = newsletterScopeFilter(newsletterScope);
-    const campaigns = await NewsletterCampaign.find(scopeFilter)
+    const campaigns = await NewsletterCampaign.find({ ...scopeFilter, contentPurpose: { $ne: "blog" } })
       .sort({ createdAt: -1 })
       .lean();
 

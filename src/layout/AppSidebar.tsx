@@ -258,6 +258,7 @@ const EducationNav: NavItem[] = [
     ),
     path: "/education/content",
   },
+  { name: "Blog", icon: <Icon d={icons.dashboard} />, path: "/education/blog" },
 ];
 
 // ─── Plan badge in sidebar footer ─────────────────────────────────────────────
