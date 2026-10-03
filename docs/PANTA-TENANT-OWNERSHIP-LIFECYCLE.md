@@ -508,9 +508,10 @@ prošlih testova, 21 preskočen; TypeScript, ESLint promenjenih fajlova,
 `200` i Team API `401` bez sesije.
 
 Automatizovani browser acceptance nije izvršen jer `agent-browser` CLI nije
-dostupan u radnom okruženju. Ručno treba potvrditi OWNER Kiki tok: `Tim` u
-sidebaru, `x / 10`, create invite, copy link, resend rotaciju i responsive
-mobilni raspored bez console/error overlay-a.
+dostupan u radnom okruženju. Vlasnik proizvoda je 2026-10-02 potvrdio ručni Kiki
+tok: pozivanje → prihvatanje → prijava, ponovno slanje i mobilni prikaz rade.
+STAFF-3 browser acceptance je zatvoren ovom potvrdom; ovo nije nova automatska
+verifikacija niti potvrda STAFF operativnih API prava.
 
 ## 11.5 STOP granica
 
@@ -576,3 +577,98 @@ ukloniti, a salon ni u jednom trenutku nije bez vlasnika.
 - audit;
 - transakcioni testovi;
 - integrity testovi.
+
+---
+
+# 12. Nastavak tima — audit i predlog 2026-10-02
+
+**Status: odloženo do zahteva klijenata, odluka 2026-10-02.** Raniji STAFF
+operativni plan i sledeći predlog ostaju sačuvani; sada nema implementacije.
+Korisnik
+traži da OWNER bira samostalnost zaposlenog i ima pregled usluga, rasporeda,
+kreiranih/dodeljenih termina i zahteva za promenu.
+
+## 12.1 Šta postoji u lokalnom kodu
+
+- Team read/invite/resend/accept; pregled članova je samo OWNER, ne ADMIN.
+- `TenantUser.role/status` i seat policy podržavaju buduće role/status mutacije,
+  ali Team nema rute ni UI za promenu role, suspenziju, reaktivaciju i uklanjanje.
+- Opšta `users/[id]/delete` ruta može fizički obrisati STAFF; nije owner-only
+  Team lifecycle, nema tenant filter na ciljnom korisniku ni obradu budućih
+  dodeljenih termina. `users/[id]/update` menja osnovne podatke, ne role/status,
+  i takođe nema tenant filter na ciljnom korisniku. Ne koristiti ove rute kao
+  osnovu gotovog Team management-a bez popravke autorizacije/izolacije.
+- Dashboard prima STAFF, ali `requireSalonOperator` nema produkcijske potrošače.
+  Services create/update i checkout traže `requireAdmin`. Appointment list i
+  `actorScopeFrom` tretiraju STAFF kao klijenta, ne salon operatora.
+- `Appointment.staffProfileId` postoji kao opciona referenca na `TenantUser`;
+  nema povezanog izbora zaposlenog, validacije usluga ni per-staff dostupnosti.
+- Booking core poznaje resource i actor identitet; service adapter koristi
+  samo `resourceKey: salon`. To je osnova, ne implementiran staff booking.
+- Raspored/vacations/manualSlots pripadaju salonu. Nema operativnog StaffProfile,
+  veze zaposlenog sa uslugama ni workflow-a zahteva za promenu rasporeda.
+
+## 12.2 Predloženi ekran i ovlašćenja
+
+U `Tim` OWNER otvara detalje člana: **Usluge · Raspored · Termini · Zahtevi ·
+Prava**. Termini razlikuju ko je kreirao termin od toga ko pruža uslugu.
+OWNER vidi sve, ADMIN operativni pregled po eksplicitno dodeljenom pravu;
+promena role, suspenzija, uklanjanje i izbor modela ostaju OWNER operacije.
+
+Model se bira po članu, sa odvojenim pravima za izbor usluga, raspored i
+otkazivanje/pomeranje rezervisanih termina:
+
+1. **Vlasnik upravlja:** OWNER dodeljuje postojeće usluge i raspored; STAFF
+   vidi dodeljeno i može slati predloge.
+2. **Uz odobrenje:** STAFF bira/predlaže postojeće usluge i promene rasporeda ili
+   termina; promena važi tek posle OWNER potvrde.
+3. **Samostalno:** STAFF menja svoj raspored i dozvoljene operativne termine
+   direktno, uz proveru konflikata i audit; OWNER ima pregled svih promena.
+
+Izbor postojećih usluga i stvaranje nove usluge/cene su odvojena prava. Predlog:
+katalog i cene ostaju OWNER/ADMIN, STAFF bira iz dozvoljenog kataloga. Ako je
+potrebno stvaranje novih usluga od strane STAFF-a, dodati poseban approval tok.
+Granica vidljivosti termina (samo dodeljeni ili ceo salon) mora biti eksplicitna
+politika, sprovedena na serveru.
+
+## 12.3 Pregled i odobravanje promena
+
+Predlog je kombinacija: `Tim` ima zajedničku listu **Zahtevi na čekanju** i
+brojač uz člana; klik otvara modal sa sažetim diff-om, datumima, razlogom i
+pogođenim rezervacijama. Ceo nedeljni kalendar je dopunski prikaz.
+
+| Dan/datum | Trenutno odobreno | Predlog |
+| --- | --- | --- |
+| Ponedeljak | 09:00–15:00 | 09:00–17:00 |
+| Petak | 09:00–15:00 | Ne radi |
+| Subota | Ne radi | 09:00–15:00 |
+
+Poređenje je sa trenutnim odobrenim rasporedom zaposlenog; ako još nema svoj
+raspored, polazi od rasporeda salona. Navesti da li je promena za konkretan
+datum, period od–do ili ponavljajući nedeljni raspored, kao i datum početka.
+Rad van radnog vremena salona je izuzetak koji OWNER eksplicitno odobrava.
+
+Akcije: **Odobri · Odbij uz razlog · Predloži izmenu**. OWNER izmena postaje
+kontrapredlog koji STAFF prihvata; nije automatsko prihvatanje originalnog
+zahteva. Obaveštenje vodi direktno na zahtev, a STAFF vidi status i odgovor.
+
+Dok je zahtev pending, javna dostupnost i postojeće rezervacije koriste
+odobreno stanje. Pri odobrenju ponovo proveriti verziju rasporeda, prava,
+konflikte i aktivno članstvo. Ako OWNER u međuvremenu promeni osnovu, zahtev
+mora na novi pregled, ne sme pregaziti promenu. Skraćenje radnog vremena koje
+pogađa rezervacije zahteva zasebno rešavanje tih termina; nikad tiho otkazivanje.
+Odobrenje OWNER-a za pomeranje termina ne zamenjuje postojeću klijentsku potvrdu
+kada je ona potrebna u postojećem booking toku.
+
+## 12.4 Potrebne implementacione celine
+
+1. Tenant-scoped owner Team mutacije + audit; soft uklanjanje koje čuva istoriju,
+   blokira pristup i zahteva obradu budućih termina; reaktivacija proverava seat.
+2. Operativni profil, dodeljene usluge, pravila i raspored zaposlenog; OWNER može
+   takođe pružati usluge bez zauzimanja dodatnog team seat-a.
+3. STAFF API prava i UI; assignment naspram creator identiteta; staff resource
+   availability/locking kroz postojeći booking core, bez drugog booking sistema.
+4. Zahtevi, odobravanje/odbijanje/kontrapredlog, diff, obaveštenja i istorija;
+   potvrda i primena promene moraju biti atomske i bez duple primene.
+
+Redosled iznad je predlog; STAFF nastavak više nije samo onboarding UI.

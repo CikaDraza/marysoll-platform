@@ -20,9 +20,9 @@ BEAUTY       ✅  T1-0 → T1-4 prihvaćeno
 STAFF v1     ✅  STAFF-0 authorization foundation — prihvaćeno i mergeovano
              ✅  STAFF-1 Team model + plan limit — prihvaćeno i mergeovano
              ✅  STAFF-2 Team invite lifecycle — prihvaćeno i mergeovano
-             🟡  STAFF-3 owner Team UI — code complete / browser acceptance pending
-NEXT         →   pregled i OWNER browser acceptance STAFF-3 na Kiki tenantu
-THEN         →   E3 Draft safety acceptance / hardening
+             ✅  STAFF-3 owner Team UI — browser acceptance potvrđen 2026-10-02
+STAFF LATER  ⏸  prava, upravljanje članovima i rasporedi — tek na zahtev klijenata
+NEXT         →   E3 Draft safety acceptance / hardening
 DEFERRED     →   T1-5 · evidencija naplate (granica zaključana) · T3 cutover ·
                  legacy HMAC/marketplace write ·
                  Consultation / Questionnaire / Care · FUTURE H1–H4/F4–F7
@@ -51,6 +51,26 @@ cron snimak ostaju otvoreni.
 
 ## NEXT — sledeći rez
 
+**Edu grana, 2026-10-03:** `feature/edu` je napravljena iz
+`feat/marysoll-support-notifications`, sa postojećim lokalnim izmenama.
+E1 audit je našao i ispravio skrivanje objavljenih edukacija kada Theme-9 nema
+popunjen CMS naslov sekcije Teme. OFF ostaje veto; runtime discovery odlučuje
+prikaz 0 ili 4–6. SSR regresije proveravaju kompletan adapter/loader/mapper tok;
+browser acceptance nad Marininim tenantom ostaje zasebna provera.
+
+**Theme-9, 2026-10-03:** Expert Editorial je javno dostupan svim tenantima.
+Prvi izbor upisuje generički CMS starter sa neutralnim ilustracijama, uz
+očuvanje autorskog sadržaja i OFF odluka; postojeći Theme-9 profili se ne
+menjaju običnim snimanjem. Detalji: Theme Layout Engine §6.12.
+
+**Odluka 2026-10-02:** STAFF-3 onboarding je prihvaćen. Dalji STAFF rad čeka
+zahtev klijenata. Raniji operativni plan i novi predlog da OWNER bira model rada
+po zaposlenom ostaju zapisani u lifecycle dokumentu; sada se ne implementiraju.
+
+**Odluka 2026-10-03:** više salona/poslovnica unutar jednog tenanta se za sada
+preskače. Postojeća lista/selector nisu završen multi-salon tok; ne otvarati
+implementaciju sada. Ovo je odvojeno od budućeg H1/H2 multi-workspace plana.
+
 **STAFF-3 — owner Team UI.** Salon sidebar sada OWNER-u prikazuje `Tim` tab.
 Ekran čita owner-only safe projection, prikazuje effective plan i canonical seat
 snapshot (`Kiki: used / 10`), vlasnika i postojeća ADMIN/STAFF članstva, invite
@@ -63,8 +83,11 @@ hardkodovan samo za Kiki. Puna pravila i dokazi su u
 **Acceptance granica.** TypeScript, ESLint, targeted Team paket, ceo root Vitest
 i production build prolaze. Dev dashboard vraća `200`, a neautorizovan Team API
 ispravno `401`; automatizovani browser prolaz nije izvršen jer `agent-browser`
-CLI nije dostupan u okruženju. OWNER browser acceptance nad Kiki tenantom ostaje
-otvoren pre zatvaranja STAFF-3.
+CLI nije dostupan u okruženju. Vlasnik proizvoda je 2026-10-02 potvrdio ručni
+browser acceptance na Kiki salonu: pozivanje, prihvatanje, prijava, ponovno
+slanje i mobilni prikaz rade. STAFF-3 je time prihvaćen. Vidljiv STAFF dashboard
+ne potvrđuje operativna API prava: audit lokalnog koda pokazuje da ona još nisu
+povezana. Predlog nastavka je u lifecycle dokumentu §12.
 
 **STOP granica.** STAFF-3 ne uvodi appointment permissions, `StaffProfile`,
 bookable staff, generic OWNER edit/transfer niti suspend/remove lifecycle.
@@ -551,7 +574,7 @@ theme-9 popravka menja ponašanje tema 1–8.
 
 | grupa                       | ugovor                                                                                                  |
 | --------------------------- | ------------------------------------------------------------------------------------------------------- |
-| 7 theme-9 autorskih blokova | novi tri-state visibility ugovor                                                                        |
+| theme-9 autorski blokovi | tri-state visibility ugovor; E1 `education.topic-hub` koristi runtime edukacije, uz eksplicitni OFF veto |
 | `about`                     | postojeći safe tenant-derived fallback (loader već dovlači `salon.name`, `salon.logo`, `tenantStats()`) |
 | `blog` / `LatestEducation`  | zaseban runtime-data policy; `enabled` i dalje ima `default: false` kao shared legacy sekcija           |
 | `hero`                      | postojeći theme-9 mapper/fallback ugovor                                                                |
