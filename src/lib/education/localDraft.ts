@@ -11,13 +11,13 @@ import type { EducationEditorState } from "@/components/education/education-cont
  * NIJE sinhronizacija i nema rešavanje konflikata: čuva se poslednje stanje
  * jednog uređaja, a korisnica pri otvaranju bira da li ga vraća.
  */
-export interface EducationLocalDraft {
+export interface EducationLocalDraft<T = EducationEditorState> {
   key: string;
   tenantId: string;
   contentId: string;
   /** Vreme lokalnog upisa; poredi se sa serverskim `workingSavedAt`. */
   savedAt: number;
-  state: EducationEditorState;
+  state: T;
 }
 
 const DB_NAME = "marysoll-education-drafts";
@@ -75,44 +75,69 @@ async function withStore<T>(
 
   return new Promise((resolve) => {
     try {
-      const request = run(db.transaction(STORE, mode).objectStore(STORE));
-      request.onsuccess = () => resolve(request.result as T);
-      request.onerror = () => resolve(null);
+      const tx = db.transaction(STORE, mode);
+      const request = run(tx.objectStore(STORE));
+      tx.oncomplete = () => { db.close(); resolve(request.result as T); };
+      const failed = () => { db.close(); resolve(null); };
+      tx.onerror = failed;
+      tx.onabort = failed;
     } catch {
+      db.close();
       resolve(null);
     }
   });
 }
 
-export async function putLocalDraft(draft: EducationLocalDraft): Promise<void> {
-  await withStore("readwrite", (store) => store.put(draft));
+const mirrorKey = (key: string) => `education-draft:${key}`;
+
+function readMirror<T>(key: string): EducationLocalDraft<T> | null {
+  try {
+    const value = JSON.parse(localStorage.getItem(mirrorKey(key)) ?? "null");
+    return value?.key === key && Number.isFinite(value.savedAt) && value.state ? value : null;
+  } catch { return null; }
 }
 
-export async function readLocalDraft(
-  tenantId: string,
-  contentId: string,
-): Promise<EducationLocalDraft | null> {
-  return withStore<EducationLocalDraft>("readonly", (store) =>
-    store.get(localDraftKey(tenantId, contentId)),
-  );
+/** Synchronous mirror survives pagehide before IndexedDB can finish. */
+export async function putLocalDraft<T>(draft: EducationLocalDraft<T>): Promise<boolean> {
+  let mirrored = false;
+  try {
+    localStorage.setItem(mirrorKey(draft.key), JSON.stringify(draft));
+    mirrored = true;
+  } catch { /* IndexedDB may still be available. */ }
+  const result = await withStore("readwrite", (store) => store.put(draft));
+  return mirrored || result !== null;
 }
 
-/**
- * Briše lokalnu kopiju SAMO ako je server potvrdio baš nju.
- *
- * Ako je korisnica u međuvremenu nastavila da piše, lokalna kopija je novija
- * od potvrđene i mora da preživi — inače bismo obrisali jedinu kopiju izmena
- * koje server još nije video.
- */
-export async function clearLocalDraftIfConfirmed(
-  tenantId: string,
-  contentId: string,
-  confirmedSavedAt: number,
-): Promise<void> {
-  const stored = await readLocalDraft(tenantId, contentId);
-  if (!stored || stored.savedAt > confirmedSavedAt) return;
+export async function readLocalDraft<T = EducationEditorState>(tenantId: string, contentId: string): Promise<EducationLocalDraft<T> | null> {
+  const key = localDraftKey(tenantId, contentId);
+  const mirror = readMirror<T>(key);
+  const stored = await withStore<EducationLocalDraft<T>>("readonly", (store) => store.get(key));
+  if (!stored || (mirror && mirror.savedAt >= stored.savedAt)) return mirror;
+  return stored;
+}
 
-  await withStore("readwrite", (store) =>
-    store.delete(localDraftKey(tenantId, contentId)),
-  );
+/** Delete in the same transaction as the timestamp check. */
+export async function clearLocalDraftIfConfirmed(tenantId: string, contentId: string, confirmedSavedAt: number): Promise<void> {
+  const key = localDraftKey(tenantId, contentId);
+  const mirror = readMirror(key);
+  if (mirror && mirror.savedAt <= confirmedSavedAt) {
+    try { localStorage.removeItem(mirrorKey(key)); } catch { /* Unavailable storage. */ }
+  }
+  const db = await openDatabase();
+  if (!db) return;
+  await new Promise<void>((resolve) => {
+    try {
+      const tx = db.transaction(STORE, "readwrite");
+      const store = tx.objectStore(STORE);
+      const request = store.get(key);
+      request.onsuccess = () => {
+        const stored = request.result as EducationLocalDraft | undefined;
+        if (stored && stored.savedAt <= confirmedSavedAt) store.delete(key);
+      };
+      const done = () => { db.close(); resolve(); };
+      tx.oncomplete = done;
+      tx.onerror = done;
+      tx.onabort = done;
+    } catch { db.close(); resolve(); }
+  });
 }

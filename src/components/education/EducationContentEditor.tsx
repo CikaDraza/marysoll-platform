@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -81,6 +81,12 @@ const AUTOSAVE_DELAY_MS = 2000;
 /** Lokalna kopija se piše češće: upis je jeftin i ne ide preko mreže. */
 const LOCAL_DRAFT_DELAY_MS = 600;
 
+function subscribeNetwork(callback: () => void) {
+  window.addEventListener("online", callback);
+  window.addEventListener("offline", callback);
+  return () => { window.removeEventListener("online", callback); window.removeEventListener("offline", callback); };
+}
+
 interface Props {
   record?: EducationContentRecord;
   startMode?: EducationStartMode;
@@ -109,6 +115,10 @@ export default function EducationContentEditor({
   const [recordId, setRecordId] = useState(record?.id);
   const [tab, setTab] = useState<Tab>("editor");
   const [autosave, setAutosave] = useState<AutosaveState>("idle");
+  const online = useSyncExternalStore(subscribeNetwork, () => navigator.onLine, () => true);
+  const [localSavedState, setLocalSavedState] = useState<EducationEditorState | null>(null);
+  const locallySaved = localSavedState === state;
+  const localContentId = recordId ?? `new:${startMode}`;
   const [recovery, setRecovery] = useState<EducationEditorState | null>(null);
 
   /**
@@ -154,11 +164,13 @@ export default function EducationContentEditor({
     // sme da bude pregaženo odgovorom servera — a upravo bi se to desilo kad
     // bi se `state` posle uspeha punio iz odgovora.
     const sent = state;
+    const confirmedStamp = localStampRef.current;
 
     try {
       if (!recordId || !baseline) {
         const created = await create.mutateAsync(createPayload(sent));
         setRecordId(created.id);
+        void clearLocalDraftIfConfirmed(tenantId ?? "", localContentId, confirmedStamp);
         setPublication(educationPublicationStateFromRecord(created));
 
         // Jedino se slug preuzima sa servera, jer ga server normalizuje. Ostala
@@ -197,7 +209,7 @@ export default function EducationContentEditor({
       void clearLocalDraftIfConfirmed(
         tenantId ?? "",
         saved.id,
-        localStampRef.current,
+        confirmedStamp,
       );
       return saved.id;
     } catch (error) {
@@ -228,12 +240,12 @@ export default function EducationContentEditor({
    * je živo na sajtu.
    */
   useEffect(() => {
-    if (!dirty || busy) return;
+    if (!dirty || busy || !online || recovery) return;
     if (!canAutosave(state, Boolean(recordId))) return;
 
     const timer = setTimeout(runAutosave, AUTOSAVE_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [state, dirty, busy, recordId, runAutosave]);
+  }, [state, dirty, busy, recordId, runAutosave, online, recovery]);
 
   const [isImporting, setImporting] = useState(false);
   /** Šta je uvoz pročitao — ostaje na ekranu, za razliku od toasta. */
@@ -309,30 +321,30 @@ export default function EducationContentEditor({
    * pregledača, prekid veze i dokument prevelik za `keepalive`.
    */
   useEffect(() => {
-    if (!recordId || !tenantId || !dirty) return;
+    if (!tenantId || !dirty || recovery) return;
 
     const timer = setTimeout(() => {
       localStampRef.current = Date.now();
       void putLocalDraft({
-        key: `${tenantId}:${recordId}`,
+        key: `${tenantId}:${localContentId}`,
         tenantId,
-        contentId: recordId,
+        contentId: localContentId,
         savedAt: localStampRef.current,
         state,
-      });
+      }).then((saved) => { if (saved) setLocalSavedState(state); });
     }, LOCAL_DRAFT_DELAY_MS);
 
     return () => clearTimeout(timer);
-  }, [state, dirty, recordId, tenantId]);
+  }, [state, dirty, localContentId, tenantId, recovery]);
 
   /** Pri otvaranju: ako lokalna kopija nije novija od serverske, ćuti. */
   useEffect(() => {
-    if (!record?.id || !tenantId) return;
+    if (!tenantId) return;
 
     let cancelled = false;
-    void readLocalDraft(tenantId, record.id).then((draft) => {
+    void readLocalDraft(tenantId, record?.id ?? `new:${startMode}`).then((draft) => {
       if (cancelled || !draft) return;
-      if (!shouldOfferRecovery({ draft, serverWorkingSavedAt: record.workingSavedAt })) {
+      if (!shouldOfferRecovery({ draft, serverWorkingSavedAt: record?.workingSavedAt })) {
         return;
       }
       setRecovery(draft.state);
@@ -341,7 +353,7 @@ export default function EducationContentEditor({
     return () => {
       cancelled = true;
     };
-  }, [record?.id, record?.workingSavedAt, tenantId]);
+  }, [record?.id, record?.workingSavedAt, tenantId, startMode]);
 
   /**
    * Poslednja odbrana: napuštanje strane, prelazak na drugi ekran i zatvaranje
@@ -358,6 +370,12 @@ export default function EducationContentEditor({
   const flushOnExit = useCallback(() => {
     const current = exitStateRef.current;
     if (deletedRef.current || !current.dirty) return;
+    if (tenantId) {
+      const contentId = current.recordId ?? `new:${startMode}`;
+      localStampRef.current = Date.now();
+      void putLocalDraft({ key: `${tenantId}:${contentId}`, tenantId, contentId,
+        savedAt: localStampRef.current, state: current.state });
+    }
     if (!current.recordId || !current.baseline) return;
     if (!current.state.title.trim()) return;
 
@@ -365,7 +383,7 @@ export default function EducationContentEditor({
       ...updatePayload(current.state, current.baseline),
       saveOrder: nextSaveOrder(),
     });
-  }, [nextSaveOrder]);
+  }, [nextSaveOrder, tenantId, startMode]);
 
   useEffect(() => {
     // `pagehide` hvata i zatvaranje kartice i mobilni prelazak u pozadinu, gde
@@ -386,6 +404,16 @@ export default function EducationContentEditor({
     };
   }, [flushOnExit]);
 
+
+  useEffect(() => {
+    if (!online || busy || recovery) return;
+    const timer = setInterval(() => {
+      const current = exitStateRef.current;
+      if (current.dirty && canAutosave(current.state, Boolean(current.recordId))) void runAutosave();
+    }, 30_000);
+    return () => clearInterval(timer);
+  }, [online, busy, recovery, runAutosave]);
+
   const handleDelete = async () => {
     if (!recordId) return;
     if (!window.confirm("Trajno obrisati ovaj sadržaj?")) return;
@@ -395,9 +423,11 @@ export default function EducationContentEditor({
       // više ne postoji.
       deletedRef.current = true;
       await remove.mutateAsync(recordId);
+      await clearLocalDraftIfConfirmed(tenantId ?? "", recordId, Infinity);
       toast.success("Sadržaj je obrisan");
       router.push("/education/content");
     } catch (error) {
+      deletedRef.current = false;
       toast.error(getContentMutationErrorMessage(error, "Brisanje nije uspelo"));
     }
   };
@@ -443,7 +473,10 @@ export default function EducationContentEditor({
             </button>
             <button
               type="button"
-              onClick={() => setRecovery(null)}
+              onClick={() => {
+                void clearLocalDraftIfConfirmed(tenantId ?? "", localContentId, Infinity);
+                setRecovery(null);
+              }}
               className="rounded-xl px-3 py-1.5 text-xs font-semibold text-amber-900 transition hover:bg-amber-100 dark:text-amber-200"
             >
               Odbaci
@@ -463,9 +496,11 @@ export default function EducationContentEditor({
                 ? "Novi video"
                 : "Novi članak"}
           </h1>
-          <p className="mt-1 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <p role="status" aria-live="polite" className="mt-1 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <span>{publicationLabel(publication)}</span>
-            {autosave === "saving" ? (
+            {!online ? (
+              <span className="text-xs text-amber-700">{locallySaved ? "Bez veze — sačuvano na ovom uređaju" : "Bez veze — čeka slanje na server"}</span>
+            ) : autosave === "saving" ? (
               <span className="text-xs text-gray-400">Čuvanje…</span>
             ) : autosave === "error" ? (
               <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-950/40 dark:text-red-300">

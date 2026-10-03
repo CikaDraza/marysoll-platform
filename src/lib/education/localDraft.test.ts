@@ -54,3 +54,29 @@ describe("lokalna kopija radne verzije", () => {
     ).toBe(false);
   });
 });
+
+describe("durable mirror without IndexedDB", () => {
+  it("preserves a new titleless draft and isolates tenants", async () => {
+    const { vi } = await import("vitest");
+    const entries = new Map<string, string>();
+    vi.stubGlobal("indexedDB", undefined);
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => entries.get(key) ?? null,
+      setItem: (key: string, value: string) => entries.set(key, value),
+      removeItem: (key: string) => entries.delete(key),
+    });
+    try {
+      const { putLocalDraft, readLocalDraft, clearLocalDraftIfConfirmed } = await import("./localDraft");
+      const { initializeEducationEditorState } = await import("@/components/education/education-content-editor-model");
+      const state = initializeEducationEditorState(undefined, "article", () => "block-test");
+      const local = { key: localDraftKey("a", "new:article"), tenantId: "a", contentId: "new:article", savedAt: 20, state };
+      expect(await putLocalDraft(local)).toBe(true);
+      expect(await readLocalDraft("a", "new:article")).toEqual(local);
+      expect(await readLocalDraft("b", "new:article")).toBeNull();
+      await clearLocalDraftIfConfirmed("a", "new:article", 10);
+      expect(await readLocalDraft("a", "new:article")).toEqual(local);
+      await clearLocalDraftIfConfirmed("a", "new:article", 20);
+      expect(await readLocalDraft("a", "new:article")).toBeNull();
+    } finally { vi.unstubAllGlobals(); }
+  });
+});

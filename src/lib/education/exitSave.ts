@@ -28,7 +28,7 @@ export function saveEducationDraftOnExit(
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(payload),
-    });
+    }).catch(() => { /* The durable local copy remains available offline. */ });
     return true;
   } catch {
     // Gašenje strane ne sme da pukne zbog čuvanja; izmene ostaju nesačuvane,

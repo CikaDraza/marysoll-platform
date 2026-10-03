@@ -1178,6 +1178,8 @@ potvrdu ponašanja u realnom browser toku; ne predstavlja dozvolu za prepisivanj
 postojećeg autosave sistema. Eksplicitni Save Draft može ostati kao potvrda,
 ali već nije jedina zaštita.
 
+**E3 hardening (2026-10-03):** nacrt pre prvog serverskog snimanja ima tenant-scoped lokalni ključ po ulazu; sinhrona lokalna kopija dopunjuje IndexedDB pri izlasku. Potvrda servera briše samo poslatu lokalnu verziju, a IndexedDB provera i brisanje su u istoj transakciji. Dodati su online/offline status, retry posle reconnect-a, periodični checkpoint i trajno odbacivanje recovery kopije. Fokusirana provera: 48 testova, TypeScript i ESLint. Browser: offline tekst sačuvan na uređaju i recovery ponuđen po ponovnom otvaranju.
+
 ### E4 — poseban Blog tab
 
 Korisnički model je `Blog → Svi tekstovi | Novi blog`. Novi blog nudi „Napiši
