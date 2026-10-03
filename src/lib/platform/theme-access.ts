@@ -32,10 +32,7 @@ const THEME_ACCESS = {
     visibility: "private",
     allowedTenantSlugs: ["the-lash-room-by-anja"],
   },
-  "theme-9": {
-    visibility: "private",
-    allowedTenantSlugs: ["marina-stanisavljevic-skincare-edukacija"],
-  },
+  "theme-9": { visibility: "public" },
   // Ash Studio dizajn — za sada javna, svaki tenant je sme izabrati.
   "theme-10": { visibility: "public" },
 } as const satisfies Record<LandingTheme, ThemeAccessDefinition>;

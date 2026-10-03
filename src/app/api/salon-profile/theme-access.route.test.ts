@@ -83,6 +83,33 @@ beforeEach(() => {
 });
 
 describe("private theme server enforcement", () => {
+  it("initializes starter only on the first switch to public Theme 9", async () => {
+    const existing = profile("theme-2");
+    vi.mocked(SalonProfile.findOne).mockResolvedValue(existing as never);
+    const response = await PUT(request("PUT", { landingTheme: "theme-9", name: "Novi centar" }));
+    expect(response.status).toBe(200);
+    expect(existing).toMatchObject({
+      theme9StarterVersion: 1,
+      landingStructure: { landing: { hero: { headline: "Novi centar" } } },
+      themePages: { "za-klijente": { enabled: true } },
+    });
+  });
+
+  it("does not restore starter after the owner removes content and switches back", async () => {
+    const existing = { ...profile("theme-2"), theme9StarterVersion: 1 };
+    vi.mocked(SalonProfile.findOne).mockResolvedValue(existing as never);
+    expect((await PUT(request("PUT", { landingTheme: "theme-9" }))).status).toBe(200);
+    expect(existing).not.toHaveProperty("landingStructure");
+    expect(existing).not.toHaveProperty("themePages");
+  });
+
+  it("does not initialize starter during an existing Theme 9 tenant's save", async () => {
+    const existing = profile("theme-9");
+    vi.mocked(SalonProfile.findOne).mockResolvedValue(existing as never);
+    expect((await PUT(request("PUT", { landingTheme: "theme-9" }))).status).toBe(200);
+    expect(existing).not.toHaveProperty("theme9StarterVersion");
+    expect(existing).not.toHaveProperty("themePages");
+  });
   it("returns the admin guard response before loading a profile", async () => {
     vi.mocked(requireTenantAdmin).mockResolvedValue({
       success: false,
@@ -95,7 +122,7 @@ describe("private theme server enforcement", () => {
     expect(SalonProfile.findOne).not.toHaveBeenCalled();
   });
 
-  it.each(["theme-8", "theme-9"] as const)(
+  it.each(["theme-1", "theme-8"] as const)(
     "rejects manual %s assignment in PUT for an ordinary tenant",
     async (theme) => {
       const existing = profile();
@@ -112,7 +139,7 @@ describe("private theme server enforcement", () => {
     },
   );
 
-  it.each(["theme-8", "theme-9"] as const)(
+  it.each(["theme-1", "theme-8"] as const)(
     "rejects manual %s assignment in POST for an ordinary tenant",
     async (theme) => {
       useTenantSlug("ordinary-beauty-studio");
@@ -130,6 +157,7 @@ describe("private theme server enforcement", () => {
   it.each([
     { tenantSlug: LASH_ROOM, theme: "theme-8" },
     { tenantSlug: MARINA, theme: "theme-9" },
+    { tenantSlug: "ordinary-beauty-studio", theme: "theme-9" },
   ] as const)(
     "allows the approved tenant to select $theme through PUT",
     async ({ tenantSlug, theme }) => {
@@ -148,6 +176,7 @@ describe("private theme server enforcement", () => {
   it.each([
     { tenantSlug: LASH_ROOM, theme: "theme-8" },
     { tenantSlug: MARINA, theme: "theme-9" },
+    { tenantSlug: "ordinary-beauty-studio", theme: "theme-9" },
   ] as const)(
     "keeps $theme during an ordinary save for its approved tenant",
     async ({ tenantSlug, theme }) => {
@@ -165,15 +194,15 @@ describe("private theme server enforcement", () => {
     },
   );
 
-  it("allows the approved tenant to create a profile with its private theme", async () => {
-    useTenantSlug(MARINA);
+  it("allows an ordinary tenant to create a profile with public Theme 9 and starter content", async () => {
+    useTenantSlug("ordinary-beauty-studio");
     vi.mocked(SalonProfile.create).mockResolvedValue({ id: "profile-1" } as never);
 
     const response = await POST(request("POST", { landingTheme: "theme-9" }));
 
     expect(response.status).toBe(201);
     expect(SalonProfile.create).toHaveBeenCalledWith(
-      expect.objectContaining({ landingTheme: "theme-9", tenantId: TENANT_ID }),
+      expect.objectContaining({ landingTheme: "theme-9", tenantId: TENANT_ID, theme9StarterVersion: 1, themePages: expect.objectContaining({ "za-klijente": expect.objectContaining({ enabled: true }) }), landingStructure: expect.objectContaining({ landing: expect.objectContaining({ hero: expect.objectContaining({ image: expect.objectContaining({ src: "/images/theme-9/starter/care.svg" }) }) }) }) }),
     );
   });
 

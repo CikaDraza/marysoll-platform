@@ -20,6 +20,10 @@ početnoj strani. Komponente bez slike jednostavno ne renderuju okvir.
 
 ## Čemu služe
 
+Od 2026-10-03 tema je dostupna svim tenantima. Direktorijum `starter/` sadrži
+dve generičke SVG ilustracije za početni CMS sadržaj novih korisnika teme.
+One su odvojene od fotografija iz ovog handoff-a i nemaju tenant identitet.
+
 Seed sadržaj za Marinin tenant: njen `landingStructure` pokazuje na ove putanje
 dok se ne prebace u njen Cloudinary medija prostor (gde tenant sadržaj i
 pripada). `art-1..3` su naslovne slike njenih tekstova i idu uz objave, ne uz

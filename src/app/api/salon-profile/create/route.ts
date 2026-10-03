@@ -11,6 +11,8 @@ import {
   isLandingTheme,
 } from "@/lib/platform/theme-access";
 import { canTenantIdUseTheme } from "@/lib/platform/theme-access-server";
+import { createTheme9Starter } from "@/lib/theme9/starter";
+import type { LandingStructure } from "@/types";
 
 export async function POST(req: NextRequest) {
   try {
@@ -101,6 +103,10 @@ export async function POST(req: NextRequest) {
     const manualSlots = pruneAndValidateManualSlots(parseJSON("manualSlots"));
     const showWorkingHours = form.get("showWorkingHours") !== "false";
 
+    const starter = landingTheme === "theme-9"
+      ? createTheme9Starter(String(form.get("name") ?? ""), landingStructure as LandingStructure | undefined)
+      : undefined;
+
     const created = await SalonProfile.create({
       tenantId,
       name: form.get("name"),
@@ -126,7 +132,9 @@ export async function POST(req: NextRequest) {
       cancellationWindowHours,
       seo: parseJSON("seo"),
       branding: parseJSON("branding"),
-      ...(landingStructure ? { landingStructure } : {}),
+      ...(starter
+        ? { ...starter, theme9StarterVersion: 1 }
+        : landingStructure ? { landingStructure } : {}),
     });
 
     return NextResponse.json({ success: true, data: created }, { status: 201 });

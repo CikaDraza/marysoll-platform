@@ -875,7 +875,7 @@ matricu:
 | theme-1 | **privatna** (od 2026-09-02) | `marysoll-makeup-nails` |
 | theme-2 … theme-7 | javna | svi tenanti, bez promene zatečenog ponašanja |
 | theme-8 | privatna | `the-lash-room-by-anja` |
-| theme-9 | privatna | `marina-stanisavljevic-skincare-edukacija` |
+| theme-9 | **javna** (od 2026-10-03) | svi tenanti — Expert Editorial |
 | theme-10 | **javna** (od 2026-09-19) | svi tenanti — „Silver Atelier" (Ash Studio dizajn), za sada slobodna za izbor |
 
 Jedan čisti `canTenantUseTheme({ theme, tenantSlug })` koriste picker i serverski
@@ -886,6 +886,16 @@ zaobilaženja.
 Slugovi su prelazno backing skladište odluke. Kada persistent tenant-level
 entitlement postane potreban, menja se taj application sloj, bez unošenja
 tenant-identiteta u Theme Engine i bez spajanja sa budućim T2B capability-jem.
+
+**Theme-9 početni sadržaj (2026-10-03):** kreiranje profila sa ovom temom ili
+prvi prelazak sa druge teme upisuje generički starter u tenantov
+`landingStructure` i `themePages`. Starter ima neutralne lokalne SVG ilustracije,
+bez Marininih portreta, biografije, sertifikata, cena ili demo rezervacija.
+Autorski popunjene sekcije i eksplicitno isključene sekcije ostaju sačuvane.
+`theme9StarterVersion` sprečava ponovno popunjavanje obrisanih sekcija pri
+kasnijem vraćanju na temu. Postojeći Theme-9 profili se ne reseeduju običnim
+snimanjem. Renderer i dalje čita samo persisted sadržaj, bez runtime starter
+fallback-a. Otvaranje teme ne uključuje Education capability automatski.
 
 ## 6.13 Jedan kontejner po temi (2026-09-05)
 

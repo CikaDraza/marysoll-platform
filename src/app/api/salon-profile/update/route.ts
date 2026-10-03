@@ -25,6 +25,7 @@ import {
   isLandingTheme,
 } from "@/lib/platform/theme-access";
 import { canTenantIdUseTheme } from "@/lib/platform/theme-access-server";
+import { createTheme9Starter } from "@/lib/theme9/starter";
 
 export async function PUT(req: NextRequest) {
   try {
@@ -72,6 +73,9 @@ export async function PUT(req: NextRequest) {
     };
 
     const requestedTheme = form.get("landingTheme");
+    const initializeTheme9 = requestedTheme === "theme-9"
+      && profile.landingTheme !== "theme-9"
+      && !profile.theme9StarterVersion;
     if (isLandingTheme(requestedTheme)) {
       if (!(await canTenantIdUseTheme({ tenantId, theme: requestedTheme }))) {
         return NextResponse.json(
@@ -241,6 +245,16 @@ export async function PUT(req: NextRequest) {
     if (faviconChanged) {
       profile.favicon = { ...(profile.favicon?.toObject?.() ?? profile.favicon), version: (Number(profile.favicon?.version) || 1) + 1 };
       profile.markModified("favicon");
+    }
+
+    if (initializeTheme9) {
+      const stored = profile.toObject();
+      const starter = createTheme9Starter(profile.name, stored.landingStructure, stored.themePages);
+      profile.landingStructure = starter.landingStructure;
+      profile.themePages = starter.themePages;
+      profile.theme9StarterVersion = 1;
+      profile.markModified("landingStructure");
+      profile.markModified("themePages");
     }
 
     await profile.save();

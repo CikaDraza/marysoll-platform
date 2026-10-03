@@ -9,7 +9,7 @@ const MARINA = "marina-stanisavljevic-skincare-edukacija";
 const MARYSOLL = "marysoll-makeup-nails";
 
 describe("Theme Access Policy", () => {
-  it("keeps themes 2–7 and 10 available to every tenant", () => {
+  it("keeps themes 2–7, 9 and 10 available to every tenant", () => {
     // theme-1 je od 2026-09-02 privatna za Marysoll (product odluka).
     // theme-10 (Ash Studio dizajn) je za sada javna.
     for (const theme of [
@@ -19,6 +19,7 @@ describe("Theme Access Policy", () => {
       "theme-5",
       "theme-6",
       "theme-7",
+      "theme-9",
       "theme-10",
     ] as const) {
       expect(
@@ -39,16 +40,17 @@ describe("Theme Access Policy", () => {
     ).toBe(false);
   });
 
-  it("allows Theme 9 only to Marina", () => {
+  it("allows Theme 9 to every tenant, including without a slug", () => {
+    expect(canTenantUseTheme({ theme: "theme-9" })).toBe(true);
     expect(canTenantUseTheme({ theme: "theme-9", tenantSlug: MARINA })).toBe(
       true,
     );
     expect(
       canTenantUseTheme({ theme: "theme-9", tenantSlug: LASH_ROOM }),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       canTenantUseTheme({ theme: "theme-9", tenantSlug: "ordinary-salon" }),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("projects only the private theme each approved tenant may use", () => {
@@ -59,10 +61,11 @@ describe("Theme Access Policy", () => {
       "theme-5",
       "theme-6",
       "theme-7",
+      "theme-9",
       "theme-10",
     ]);
     expect(availableThemesForTenant(LASH_ROOM)).toContain("theme-8");
-    expect(availableThemesForTenant(LASH_ROOM)).not.toContain("theme-9");
+    expect(availableThemesForTenant(LASH_ROOM)).toContain("theme-9");
     expect(availableThemesForTenant(MARINA)).toContain("theme-9");
     expect(availableThemesForTenant(MARINA)).not.toContain("theme-8");
   });

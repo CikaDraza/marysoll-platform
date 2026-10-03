@@ -599,6 +599,8 @@ const SalonProfileSchema = new mongoose.Schema(
      * `Mixed` jer je oblik po strani isti (`TenantThemePage`) i validira se u
      * aplikacijskom sloju; ključevi su `ThemePageKey`.
      */
+    // Prevent later theme switches from restoring starter sections the owner removed.
+    theme9StarterVersion: { type: Number, default: undefined },
     themePages: {
       type: mongoose.Schema.Types.Mixed,
       default: undefined,
