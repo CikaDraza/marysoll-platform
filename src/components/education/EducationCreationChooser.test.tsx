@@ -7,7 +7,7 @@ describe("Education creation chooser", () => {
     const html = renderToStaticMarkup(<EducationCreationChooser />);
 
     expect(html).toContain("Napiši članak");
-    expect(html).toContain("Uvezi dokument");
+    expect(html).toContain("Uvezi PDF / DOCX");
     expect(html).toContain("Dodaj video");
     expect(html).toContain("/education/content/new?start=article");
     expect(html).toContain("/education/content/new?start=import");

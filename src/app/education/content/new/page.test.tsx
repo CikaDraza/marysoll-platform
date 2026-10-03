@@ -12,7 +12,7 @@ describe("direct Education /new route", () => {
       const html = renderToStaticMarkup(element);
       expect(html).toContain("Kako želite da počnete?");
       expect(html).toContain("Napiši članak");
-      expect(html).toContain("Uvezi dokument");
+      expect(html).toContain("Uvezi PDF / DOCX");
       expect(html).toContain("Dodaj video");
     },
   );

@@ -17,7 +17,7 @@ describe("Education overview creation entry", () => {
     expect(html).toContain("Pregled");
     expect(html).toContain("Vaši edukativni materijali i njihovo stanje.");
     expect(html).toContain("Napiši članak");
-    expect(html).toContain("Uvezi dokument");
+    expect(html).toContain("Uvezi PDF / DOCX");
     expect(html).toContain("Dodaj video");
   });
 });

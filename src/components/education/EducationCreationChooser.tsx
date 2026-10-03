@@ -20,7 +20,7 @@ const CREATION_ACTIONS: ReadonlyArray<{
   },
   {
     mode: "import",
-    title: "Uvezi dokument",
+    title: "Uvezi PDF / DOCX",
     description:
       "Pretvorite pripremljeni PDF ili DOCX u nacrt koji možete da uredite pre objave.",
     icon: ArrowUpTrayIcon,

@@ -1157,6 +1157,8 @@ breadcrumbs → oznaka vrste („Video") → h1 → uvodni pasus →
 datum · vreme čitanja · autor → VIDEO → ostali canonical blokovi
 ```
 
+**E2 provera (2026-10-03):** tri ulaza su proverena u izolovanom browseru: članak, PDF/DOCX uvoz i video. Naziv uvoza sada jasno navodi oba formata. Fokusirani testovi: 5 fajlova, 31 test prolazi. Otvaranje editora ne kreira prazan zapis.
+
 ### E3 — Draft safety
 
 Ciljni ugovor je: **upiši → izađi → vrati se → tekst je tamo**.
