@@ -308,7 +308,7 @@ export default function EducationContentEditor({
     if (!saved) return;
 
     try {
-      const published = await publish.mutateAsync();
+      const published = await publish.mutateAsync(saved);
       setPublication(educationPublicationStateFromRecord(published));
       toast.success("Sadržaj je objavljen");
     } catch (error) {

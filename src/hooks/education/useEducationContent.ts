@@ -164,9 +164,9 @@ export function useEducationContentMutations(id?: string) {
   });
 
   const publish = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (recordId: string) => {
       const { data } = await api.post<{ item: Record<string, unknown> }>(
-        `/education/content/${id}/publish`,
+        `/education/content/${recordId}/publish`,
       );
       return normalizeEducationContentRecord(data.item);
     },

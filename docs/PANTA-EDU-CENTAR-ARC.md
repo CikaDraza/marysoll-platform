@@ -1207,6 +1207,8 @@ Marina dobija samo četiri zadatka, bez objašnjavanja procedura:
 Pilot je završen kada ih obavi bez pitanja „gde ovo ide?". To je acceptance
 signal za informatičku arhitekturu i tok, ne zahtev da joj se nauči procedura.
 
+**E5 tehnička spremnost (2026-10-03):** sva četiri toka prolaze u ponovljivom integracionom testu sa stvarnom privremenom bazom i Marininim PDF-om. Browser potvrđuje ulaze, PDF rezultat, lokalni offline recovery, javni Theme 9 discovery i Blog renderer. Detaljna evidencija je u [EDU-PILOT-ACCEPTANCE.md](./EDU-PILOT-ACCEPTANCE.md). **Marinina samostalna acceptance provera ostaje otvorena; E5 nije proglašen korisnički završenim.**
+
 ### Polazna osnova koju pilot closure već ima
 
 | | |
