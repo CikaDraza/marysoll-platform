@@ -174,8 +174,8 @@ export function theme9EducationTopicHubProps(
     educationTopicHubItems(data.items).length > 0 ? data.items : [];
 
   return {
-    eyebrow: data.content?.eyebrow,
-    headline: data.content?.headline,
+    eyebrow: data.content?.eyebrow || "Teme",
+    headline: data.content?.headline || "Znanje koje možete primeniti",
     filters: availableEducationTopics(liveItems, data.taxonomy).map(
       ({ key, label }) => ({ id: key, label }),
     ),

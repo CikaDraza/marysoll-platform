@@ -300,7 +300,12 @@ export function landingStructureToThemeDocument(
   const sections: LayoutSection[] = [];
 
   for (const key of SECTION_ORDER) {
-    if (!isSectionVisible(ls, key)) continue;
+    // E1 live discovery is driven by published Education records, not authored
+    // CMS cards. Let its loader/mapper decide the 4–6 threshold; OFF is a veto.
+    const visible = options.theme === "theme-9" && key === "topicHub"
+      ? ls?.landing?.topicHub?.enabled !== false
+      : isSectionVisible(ls, key);
+    if (!visible) continue;
 
     const { sectionType } = SECTION_BLOCK_MAP[key];
     const block = buildSectionBlock(ls, key, { theme: options.theme });

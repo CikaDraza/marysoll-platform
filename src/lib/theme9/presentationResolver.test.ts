@@ -171,11 +171,15 @@ describe("landingStructureToThemeDocument", () => {
     }
   });
 
-  it("prazan profil ne dobija nijednu od 7 sekcija", () => {
+  it("prazan profil dobija samo runtime discovery blok; ostale autorske sekcije su skrivene", () => {
     const keys = enabledSectionKeys(
       landingStructureToThemeDocument(ls({}), { theme: "theme-9" }),
     );
     for (const key of THEME9_TRISTATE_SECTIONS) {
+      if (key === "topicHub") {
+        expect(keys).toContain(key);
+        continue;
+      }
       expect(keys).not.toContain(key);
     }
   });

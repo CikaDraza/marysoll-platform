@@ -934,6 +934,14 @@ odvojen budući pravac.
   `education.catalog` gate i kroz canonical `publicContent.ts` read model puni
   postojeći Theme-9 renderer. Eksplicitni `SalonProfile.isDemo` je jedini seam
   za CMS fixture; prazan real tenant nikada ne dobija demo kartice.
+- **E1 audit/hardening (2026-10-03, `feature/edu`):** postojeći kod je zadržan.
+  Ispravljen je preuranjeni CMS visibility gate: Theme-9 sada uključuje
+  `education.topic-hub` za runtime učitavanje i kada nema CMS naslova/kartica,
+  osim ako je `enabled: false`. Javni renderer i dalje prikazuje 0 ili 4–6
+  stvarnih objavljenih zapisa; generički naslov sekcije nije fixture članak.
+  Regresioni test prolazi adapter → loader → mapper → stvarni SSR HTML za
+  0–3 / 4 / 5 / 6 / 9 zapisa, tenant-prefixed linkove i eksplicitni OFF.
+  Stvarni browser acceptance nije ovim proglašen završenim.
 
 ### E2 — Authoring clarity
 

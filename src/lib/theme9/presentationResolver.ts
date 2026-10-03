@@ -23,6 +23,9 @@
  * `about` zadržava svoj tenant-derived fallback, `blog` ostaje runtime-data
  * policy sa `default: false`, `hero` postojeći mapper ugovor. Generalizacija na
  * svih 10 blokova bi theme-9 popravkom promenila ponašanje tema 1–8.
+ * E1 izuzetak: `education.topic-hub` koristi runtime objavljene edukacije.
+ * Adapter zato uključuje taj blok bez CMS teksta, osim uz eksplicitni OFF;
+ * mapper/renderer odlučuje prag 4–6. Ovaj resolver ostaje za autorski sadržaj.
  *
  * NAPOMENA O IMPORTU: relativni import nosi `.ts` ekstenziju namerno. Moduli u
  * `src/lib/theme9/` se uvoze i iz `scripts/*.mts` (vidi
