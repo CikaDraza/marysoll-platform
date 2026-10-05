@@ -1156,11 +1156,11 @@ Broad test/build evidence u tabeli iznad obnovljen je za ovu korekciju.
 
 Nearby authority review: Tenant status/trial/capability i Subscription override
 issues ne odbacuju validan Subscription plan grant; independent validan Tenant
-grant ostaje fallback. Trial resolver ipak proverava invalid billingProvider pre
-non-trialing statusa: validan active/past_due/cancelled/paused/expired status sa
-invalid providerom daje unknown/partial trial, iako za sam non-trialing zaključak
-provider nije potreban. To prati zaključani audit §17C redosled; ponašanje je
-prijavljeno i nije menjano u ovoj parity korekciji.
+grant ostaje fallback. Product Owner je eksplicitno potvrdio postojeći §17C
+redosled: validan non-trialing status + invalid provider daje unknown/partial
+trial. Bez pouzdano poznatog provider-a nema dovoljno authority evidence za
+trial interpretaciju; ovaj ishod ostaje namerna odluka, ne code-review blocker.
+Runtime ponašanje nije menjano.
 
 ### J. Dokumentacija i commit evidence
 
@@ -1170,13 +1170,54 @@ Verifikovan runtime commit: [`e6d4644`](https://github.com/CikaDraza/marysoll-pl
 (`e6d4644607f486415e41271d060220d0027aa4ca`). Dokumentacioni commit prati runtime commit i ne menja izvršni kod.
 Dokumentacioni audit merge: PR #134, main 045b369; runtime task diff je nezavisan.
 
+### Staging acceptance — SALES-1 foundation, 2026-10-05
+
+Product Owner odobrio je **APPROVED FOR STAGING ACCEPTANCE** za tačan head
+[`202dc4f`](https://github.com/CikaDraza/marysoll-platform/commit/202dc4f5fde6f62f1f6859630f00c5b262eea861)
+(`202dc4f5fde6f62f1f6859630f00c5b262eea861`), zatvorio Paddle parity nalaz i
+potvrdio da nema preostalih code-review blocker-a. PR #135 je označen ready i
+merge-ovan **isključivo u staging/production-engines** sa atomskim expected-head
+SHA guard-om; reviewed runtime nije menjan tokom staging integracije.
+
+**Foundation staging acceptance završen u sledećem obuhvatu:**
+
+- Staging merge commit: `4f5ff38ec6c5fe0e3020c223c056a2207c7df819`.
+  `git diff 202dc4f origin/staging/production-engines` je prazan: identičan
+  repository tree kao reviewed/tested head, pa se 119 targeted / 2.517 app /
+  153 engine i no-write dokaz iz prethodnog pass-a odnosi na isti runtime.
+- Vercel deployment `dpl_GQ9oQ8Qfvau8tW9ovJx4g4bMxeY4`, state **READY**,
+  githubCommitRef=staging/production-engines i githubCommitSha=4f5ff38…;
+  GitHub Vercel status za taj merge SHA je success.
+- Vercel project domain potvrđuje gitBranch=staging/production-engines;
+  isti deployment eksplicitno ima alias `staging.marysoll.com`.
+- Read-only HTTPS HEAD smoke na stable domenu: `/` 200, `/dashboard` 200,
+  `/superadmin` → `/superadmin/dashboard` 200; odgovori text/html.
+  Ovo je deployment/routing smoke, ne tvrdnja o authenticated tenant UI tokovima.
+
+SALES-1 je foundation bez novog HTTP/UI caller-a: runtime authority/parity i
+DAL no-write acceptance daju deterministički fixture testovi nad identičnim
+source tree-om, a staging build/deployment/domain smoke potvrđuju integraciju.
+Nisu proveravani authenticated tenant dashboard feature tokovi, live Commercial
+DB reads ili DMD; nema takvog Commercial transporta u ovom slice-u. Ne tvrditi
+end-to-end adapter/authorization acceptance pre SALES-2A/2B.
+
+Promotion PR prema main-u priprema se zasebno; **main nije promenjen ovim
+staging acceptance-om**. Sledeća runtime grana je
+`feat/marysoll-sales-2a-commercial-policy-projection`, od svežeg origin/main
+koji već sadrži prihvaćeni SALES-1. DMD može paralelno raditi
+SALES-0B.1 Staff Identity / Capabilities; Marysoll SALES-2A uvodi fixture/port
+semantiku bez potrebe da DMD bude online.
+
 ### K/L. Sledeći gate i preporučeni PR
 
 Nema preostale Product Owner odluke ni DMD online zavisnosti koja blokira
 **MARYSOLL-SALES-2A — Commercial policy + projection DTO**. Sledeći PR uvodi
 verified binding/assignment ports, deny-by-default policy, assigned-account
-safe DTO i fixture principale; postojeći SALES-1 read model konzumira se bez
-ponovnog računanja trial/plan/capability truth-a. Ovaj DAL je interni persistence
+safe DTO i fixture principale. Zaključani redosled je verified CommercialPrincipal
+→ DMD assignment port → ProductAccountBinding port → deny-by-default
+CommercialAction policy → assigned tenant scope → SALES-1 read DAL → Sales-safe
+DTO mapper. Postojeći SALES-1 read model konzumira se bez ponovnog računanja
+trial/plan/capability truth-a. Ovaj DAL je interni persistence
 primitive, **nije authorization gate** i trenutno nema javnog/route/UI caller-a.
 Ne izlagati ga direktno: SALES-2A proverava scope pre read-a.
 
@@ -1186,4 +1227,5 @@ gate. SALES-3 sanitizer ostaje obavezan server boundary; SALES-5 zadržava dva
 postojeća campaign modela i zaključani Sales draft/OWNER approval revision ugovor.
 Po [branching strategiji](PANTA-BRANCHING-STRATEGY.md) runtime kandidat ide kroz
 PR u staging/production-engines, zatim appropriate stable-domain QA pre main.
-SALES-1 local acceptance ne zatvara live/staging/production release gate.
+SALES-1 foundation staging acceptance je zatvoren u gore navedenom obuhvatu;
+main/production promotion i budući endpoint/adapter acceptance ostaju zasebni.

@@ -91,7 +91,7 @@ Sales-safe server projekcija i domain capabilities važe i za direktan API.
 | Rez | Status | Gate / sledeće |
 |---|---|---|
 | MARYSOLL-SALES-0 — Projection Contract | ✅ dokument i audit | §17 A–O: source inventory, trial/projection authority, binding i buduće diagnostics/marketing granice; stvarne PO odluke izdvojene |
-| MARYSOLL-SALES-1 — Trial/subscription authority | ✅ kod + lokalni test/build | §18: centralni schemas, shared plan provenance, pure trial/subscription resolveri, single/batch read-only DAL; 119 novih testova. Staging/live release ostaje otvoren |
+| MARYSOLL-SALES-1 — Trial/subscription authority | ✅ kod/test + foundation staging acceptance | §18: 119 targeted testova, reviewed head 202dc4f; PR #135 staging merge 4f5ff38, Vercel READY + stable-domain routing smoke. Main/production promotion ostaje otvoren |
 | MARYSOLL-SALES-2A — Projection/policy/DTO | ⬜ | Posle SALES-1 resolvera/testova: verified binding/assignment ports, policy, assigned read DTO i fixture principi; bez endpoint-a |
 | MARYSOLL-SALES-2B — Internal read-only endpoints | ⬜ | Posle 2A: tanak transport, response/request schemas, no-write i direct-request testovi, DMD adapter integration; live samo uz actual verified assignment/trust |
 | MARYSOLL-SALES-3 — Diagnostic/support projection | ⬜ | Sanitized summary, trusted tenant/account context, restricted support token; `?u=` ostaje samo label |
@@ -141,8 +141,16 @@ ostali rezovi i live DMD povezivanje rade se po njegovim gate-ovima.
   validan status/plan grant; issue + null period + partial projection ostaju.
   Internal/legacy-internal invalid period ostaje fail-closed; plan izbor i dalje
   delegira shared resolveru. Dodato 10 regression slučajeva; bez SALES-2A.
-- [ ] Staging/live acceptance i release po PANTA branching strategiji.
-- [ ] Zatim `Implement SALES-2A projection/policy/DTO`.
+- [x] Product Owner approval za head 202dc4f; Paddle parity nalaz zatvoren,
+  invalid provider + non-trialing trial unknown/partial eksplicitno potvrđen.
+- [x] SALES-1 foundation staging acceptance: PR #135 merge 4f5ff38, source tree
+  identičan reviewed head-u, Vercel READY/success, potvrđen staging alias i
+  public HEAD routing smoke. Nema tvrdnje o authenticated tenant UI/DMD proveri.
+- [ ] Promotion PR → main i production release po PANTA branching strategiji.
+- [ ] Zatim `Implement SALES-2A projection/policy/DTO` na
+  `feat/marysoll-sales-2a-commercial-policy-projection`, od svežeg origin/main
+  sa SALES-1; verified principal → assignment port → binding port → default-deny
+  action policy → scoped tenant → SALES-1 DAL → safe DTO, bez HTTP-a.
 - [ ] Tek zatim `Implement SALES-2B endpoints`.
 
 **Product Owner odluke zaključane 2026-10-05.** DMD binding/reassignment
@@ -162,7 +170,9 @@ DAL nije authorization gate; SALES-2A scope/policy prethodi svakom budućem
 route/UI caller-u. Nema API/UI, DMD auth/binding transporta ili produkcijskih
 write/migracija. Stvarni fajlovi i A–L evidence: [§18 runtime](PANTA-COMMERCIAL-CLIENT-SUCCESS.md#sales-1-runtime).
 Runtime commit: [`e6d4644`](https://github.com/CikaDraza/marysoll-platform/commit/e6d4644607f486415e41271d060220d0027aa4ca).
-SALES-2A/2B ostaju nezapočeti; sledeći Commercial PR je SALES-2A policy/projection/DTO.
+SALES-2A/2B ostaju nezapočeti; sledeći runtime Commercial rez je SALES-2A
+policy/projection/DTO posle SALES-1 promotion-a. DMD SALES-0B.1 Staff Identity /
+Capabilities može raditi paralelno, bez Marysoll HTTP transporta u 2A.
 
 ## NEXT — sledeći rez
 
