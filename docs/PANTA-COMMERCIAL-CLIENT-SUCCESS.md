@@ -976,3 +976,256 @@ integration/release dogovori. Za live SALES-2B DMD trust/assignment ugovor jeste
 gate; za SALES-1/2A nisu. Paddle grace i Tenant effective-plan fallback se ne
 menjaju ovim read slice-om. Nema preostale Product Owner odluke koja blokira
 SALES-1 implementaciju.
+
+<a id="sales-1-runtime"></a>
+
+## 18. MARYSOLL-SALES-1 — runtime authority (2026-10-05)
+
+**Implementirano i lokalno verifikovano.** Authority audit i tri zaključane
+Product Owner odluke prvo su spojeni kroz [PR #134](https://github.com/CikaDraza/marysoll-platform/pull/134)
+u `main` (`045b369`). Runtime grana
+`feat/marysoll-sales-1-trial-subscription-authority` počinje upravo od tog
+svežeg `origin/main`. Ovaj odeljak je aktuelni implementacioni zapis; §17
+ostaje inventar i odluke audit pass-a. SALES-2A/2B nisu implementirani.
+
+### A. Stvarni fajlovi i tok
+
+| Fajl | Odgovornost |
+|---|---|
+| [commercial-subscription.ts](../src/types/commercial-subscription.ts) | Centralni Zod read contract, trial/subscription/tenant vocabulary, kontrolisani issue/field source ugovori, unknown persistence input i typed read outcomes |
+| [plan-resolution.ts](../src/types/plan-resolution.ts) | Centralni kompatibilni effective-plan input i decision tipovi; plan sloj ne zavisi od Commercial tipova |
+| [planFeatures.ts](../src/lib/plans/planFeatures.ts) | `resolveEffectivePlanDecision`; postojeći `resolveEffectivePlan` delegira i vraća samo plan. Isti subscription/internal expiry/Paddle grace/legacy Tenant izbor |
+| [evidence.ts](../src/helpers/commercial/evidence.ts) | Zod validacija pojedinačnih allowlisted polja, razlikovanje missing/invalid, bez coercion-a i bez izmišljanja datuma |
+| [resolveCommercialTrialState.ts](../src/helpers/commercial/resolveCommercialTrialState.ts) | Pure trial authority; eksplicitan validan `now`, kontrolisana source/reason/quality/issue objašnjenja |
+| [resolveCommercialSubscriptionState.ts](../src/helpers/commercial/resolveCommercialSubscriptionState.ts) | Pure kompozicija plan/trial/override/capability odluka nad istim input-om i vremenom; strict allowlist i detached output |
+| [subscriptionRead.ts](../src/lib/commercial/subscriptionRead.ts) | `server-only` `readCommercialSubscription` / `readCommercialSubscriptions`; jedan zajednički persistence put, dva scoped lean upita za batch, bez write/repair-a |
+
+Četiri nova test fajla:
+[trial matrix](../src/helpers/commercial/resolveCommercialTrialState.test.ts),
+[subscription projection](../src/helpers/commercial/resolveCommercialSubscriptionState.test.ts),
+[read-only DAL](../src/lib/commercial/subscriptionRead.test.ts),
+[plan provenance parity](../src/lib/plans/planProvenance.test.ts).
+Nisu menjani Mongoose modeli, route handleri, dashboard, billing writeri,
+registracija, proxy, booking ili postojeći trial consumer-i.
+
+### B. Finalni domen ugovor
+
+`commercialSubscriptionStateSchema` / `CommercialSubscriptionState` je
+version 1 read model iz §17D: tenantStatus, effectivePlan/effectivePlanSource,
+subscriptionStatus, billingProvider, currentPeriodEnd, trial, features,
+capabilities, fieldSources, aggregate quality i asOf. Dodat je
+`lastSuccessfulPayment` sa istim unavailable payment ugovorom kao paidThrough.
+`CommercialTrialState` ima šest stanja: active, expired, inactive, not_started,
+not_trialing, unknown; endsAt, source, reason, quality i kontrolisane issues.
+
+`fieldSources` objašnjava svaku nezavisnu odluku. Issues imaju samo allowlisted
+`code + field`; invalid raw vrednosti i exception messages ne ulaze u DTO.
+Root/output objekti su strict Zod objekti, features koriste postojeći
+planFeaturesSchema, a capability record ima sve poznate capability ključeve.
+Nema provider ID-jeva, override note, owner/customer podataka ili raw dokumenta.
+`asOf` je vreme proračuna, ne dokaz realtime Paddle freshness.
+
+Input je read-only i razlikuje uspešno missing Subscription (`null`) od
+read failure-a. `CommercialReadResult` razlikuje ok, not_found, invalid_input i
+read_failure; razlozi su kontrolisani kodovi. Missing Tenant nije Maria success.
+Invalid server now se odbija; pure resolver ne bira implicitno wall-clock vreme.
+
+### C. Implementirana trial matrica
+
+| Evidence | Odluka |
+|---|---|
+| Internal trialing ili missing Subscription + Tenant true/future | active, Tenant authority; bez Subscription legacy |
+| Tenant true/past ili tačno now | expired; stale flag je informational, ne write/repair |
+| Tenant false/past | expired; ne izmišljati razlog prethodne deactivation istorije |
+| Tenant false/future | inactive; internal trialing neslaganje je partial issue |
+| Pending Tenant false/null + provisional internal Subscription | not_started; generički period nije trial activation |
+| Nepending Tenant false/null + internal trialing | unknown / activation_unconfirmed |
+| Missing Subscription + eksplicitni false/null | not_trialing / legacy; bez obe trial evidence unknown / unavailable |
+| Paddle trialing + validan Subscription period | period autoritet; active samo end > now, inače expired. Uvek partial jer zapis može biti synthetic webhook period |
+| Paddle trialing bez validnog perioda | unknown; missing/invalid reason, bez Tenant fallback-a ili +14/+30 datuma |
+| Validan non-trialing Subscription | not_trialing; stale Tenant trial ne postaje active niti dokaz konverzije |
+| Različiti validni datumi | trial_dates_disagree i partial, čak i kada oba datuma daju isti status |
+| Unknown status/provider ili invalid Tenant flag/datum | affected decision unknown/partial; truthy string nije boolean activation |
+| Missing provider postojećeg legacy Subscription-a | internal fallback za existing plan/trial ponašanje; provider ostaje null i legacy provenance je vidljiv |
+
+Tenant status ostaje nezavisan; nijedan read ne aktivira pending/suspended
+workspace. Internal manual extension koristi Tenant rok, i kada Subscription
+period ostaje prošli. Non-trialing status proverava se pre datuma.
+
+### D. Subscription projection i shared plan
+
+`resolveCommercialSubscriptionState` jedina sastavlja domen rezultat. Plan
+izbor postoji samo u `resolveEffectivePlanDecision`; kompatibilan wrapper
+čuva sve važeće existing gate rezultate. Internal paid plan poštuje period,
+Paddle active/trialing/past_due status vodi grant i kad je recorded period
+prošao, a validan Tenant paid/plan/expiry fallback ostaje moguć kada Subscription
+ne daje grant. Trial classification sama ne dodeljuje paid features.
+
+Invalid Subscription plan/status/provider zatvara Subscription grant. Invalid
+period zatvara samo internal/legacy-internal grant, koji zavisi od roka; validan
+Paddle plan/status/provider ostaje eligible i sa corrupt periodom. Datum se
+projektuje kao null sa invalid_field issue i partial/source_invalid field source;
+aggregate quality ostaje partial. Invalid Tenant plan/paid/expiry zatvara samo
+Tenant grant. Nezavisan validan izvor ostaje eligible. Missing internal period čuva existing no-expiry ponašanje,
+ali nepotpunost je partial. Ne postoji Commercial plan matrix niti gate rewrite.
+
+Features koriste `getPlanFeatures` + `resolveActiveFeatureOverrides`, a
+capabilities `resolveCapability` + `resolveEffectiveVerticals`. Override expiry,
+trial expiry i plan expiry koriste isti explicit now, sa granicom end > now.
+Capability platformAvailable/planEntitled/tenantEnabled/enabled nisu Sales action
+permissions. distribution.campaigns ostaje platform-unavailable. Invalid
+capability configuration fail-closed prati postojeći canonical resolver.
+
+### E. Billing koji ostaje unavailable
+
+`price.amount`, `price.currency`, `price.interval` ostaju null sa reason
+subscription_price_snapshot_missing. paidThrough i lastSuccessfulPayment imaju
+value=null i payment_evidence_unavailable. Tenant.paid, plan key, catalog cena,
+currentPeriodEnd i trialing nisu dokaz stvarne naplate. SALES-1 nema BillingEvidence
+ni provider fetch. Očekivana unavailable payment polja sama ne obaraju kvalitet
+inače potpunih lokalnih source-ova. Future catalogPrice mora biti zaseban prikaz.
+
+### F/G. Reuse i zabranjeni side effect putevi
+
+Reuse: shared effective-plan decision/wrapper, planFeaturesSchema,
+resolveActiveFeatureOverrides, getPlanFeatures, resolveCapability,
+resolveEffectiveVerticals i postojeći tenant capability vocabulary.
+
+DAL koristi isključivo connectToDB + Tenant/Subscription find/select/lean sa
+minimalnim allowlist-ama i tenantId scope-om. Single delegira batch putu.
+Caller now se kopira pre async učitavanja, tako da svi rezultati batch-a imaju
+isti asOf. DAL nema create, save, update, upsert, repair, metrics,
+Paddle sync-a, aplikacionog HTTP-a ili DMD poziva u ovom kodu.
+
+Namerno se ne pozivaju getOrCreateSubscription, tenantHasFeature,
+subscriptions/features GET, Paddle writeri/sync i Newsletter GET koji menja
+metrics/status. Core Subscription/Tenant query greška daje read_failure,
+ne uspešan missing/legacy fallback; failure poruka je sanitizovana.
+
+### H/I. Test i quality evidence
+
+| Provera | Rezultat |
+|---|---|
+| Novi ciljani testovi | **4 fajla / 119 testova prolaze**: trial 42, projection 39, DAL 9, plan parity 29 |
+| Root app Vitest | **228 fajlova / 2.517 passed / 21 skipped** (`npm test -- --maxWorkers=4`) |
+| Engine paketi | **13 fajlova / 153 testova prolaze**, svih 5 workspace paketa (`npm run test:engines`) |
+| Typecheck | `npx tsc --noEmit` prolazi |
+| ESLint nad svim changed TypeScript fajlovima | prolazi, bez warning/error |
+| Fallow full + changed audit | full repo backlog je vidljiv; `fallow audit --base origin/main` **pass, 0 introduced** dead-code/complexity/duplication/styling nalaza |
+| Fallow skill init | prescribed `npx skills add fallow-rs/fallow-skills --skill fallow --agent codex --yes` izvršen u `/tmp`, bez izmena project/global skill konfiguracije |
+| Production build | `npm run build` prolazi, bez warning/error |
+| Diff / docs links | provereni pre commit-a |
+
+Testovi dokazuju authority priority, različite validne datume, invalid/missing
+fields, expiry equality, single-clock batch, frozen input/no mutation, detached
+allowlist output, no payment/price inference, legacy provider i Tenant fallback,
+Paddle status-driven plan parity i canonical capability/override ponašanje.
+DAL testovi spy-uju create/update/bulk/insert/delete/save; missing Subscription,
+not-found, read failure i invalid input nemaju write. Write-capable subscription
+service import je trap, a fetch spy potvrđuje odsustvo aplikacionog HTTP/DMD poziva.
+
+Environment napomene: stale `.next/types` / `.next/dev/types` reference na
+obrisane Blog rute sklonjene su kao generisani cache, pa build regeneriše aktuelne
+tipove. Prvi sandbox app run nije mogao otvoriti lokalne MongoMemoryServer
+portove; eskalirani test proces rešava EPERM. Neograničen worker run imao je
+jedan 5s invitation timeout pri paralelnom build-u; ograničen full run prolazi
+bez menjanja test timeout-a ili test koda. Nisu rađene produkcijske migracije,
+repair ili data write akcije.
+
+Fallow new-only pass **nije tvrdnja da je full repo backlog nula**: changed
+file audit označava inherited planHasFeature unused export, eslint-config-next
+unused dependency, tailwindcss dev-dependency-in-production i postojeću duplu
+PLAN_FEATURES konfiguraciju. Nijedan nije introduced ovim rezom; bez blanket
+suppression-a, auto-fix-a ili refaktorisanja van scope-a. Stoga strogi globalni
+„zero warnings“ iz ARCHITECTURAL_RULES ostaje poznat repository quality dug,
+iako SALES-1 nema nove nalaze.
+
+**PR #135 parity korekcija (2026-10-05).** Pre merging-a otklonjen je coarse
+Subscription evidence filter: invalid Paddle currentPeriodEnd više ne odbacuje
+validan Subscription grant niti bira Maria/Kiki fallback. Novi
+`hasInvalidSubscriptionGrantSource` validira samo polja relevantna za provider
+entitlement, dok izbor plana ostaje isključivo u resolveEffectivePlanDecision.
+Nema write/repair-a, promena shared resolvera, nove billing politike ili SALES-2A.
+
+Dodato je 10 regression slučajeva: Paddle active/trialing/past_due sa invalid
+periodom i očuvanim issue/source; active Claudia naspram validnog Kiki Tenant
+fallback-a; internal i dva legacy missing-provider oblika fail-closed (sa i bez
+validnog Tenant fallback-a); elapsed Paddle active/trialing/past_due parity.
+Pre korekcije četiri Paddle testa padaju; posle prolaze svih 119 targeted testova.
+Broad test/build evidence u tabeli iznad obnovljen je za ovu korekciju.
+
+Nearby authority review: Tenant status/trial/capability i Subscription override
+issues ne odbacuju validan Subscription plan grant; independent validan Tenant
+grant ostaje fallback. Product Owner je eksplicitno potvrdio postojeći §17C
+redosled: validan non-trialing status + invalid provider daje unknown/partial
+trial. Bez pouzdano poznatog provider-a nema dovoljno authority evidence za
+trial interpretaciju; ovaj ishod ostaje namerna odluka, ne code-review blocker.
+Runtime ponašanje nije menjano.
+
+### J. Dokumentacija i commit evidence
+
+Ovaj odeljak i Commercial kontrolna tabela/checklist u [TODO.md](TODO.md)
+beleže implementaciju, stvarne fajlove, authority, gate rezultate i sledeći rez.
+Verifikovan runtime commit: [`e6d4644`](https://github.com/CikaDraza/marysoll-platform/commit/e6d4644607f486415e41271d060220d0027aa4ca)
+(`e6d4644607f486415e41271d060220d0027aa4ca`). Dokumentacioni commit prati runtime commit i ne menja izvršni kod.
+Dokumentacioni audit merge: PR #134, main 045b369; runtime task diff je nezavisan.
+
+### Staging acceptance — SALES-1 foundation, 2026-10-05
+
+Product Owner odobrio je **APPROVED FOR STAGING ACCEPTANCE** za tačan head
+[`202dc4f`](https://github.com/CikaDraza/marysoll-platform/commit/202dc4f5fde6f62f1f6859630f00c5b262eea861)
+(`202dc4f5fde6f62f1f6859630f00c5b262eea861`), zatvorio Paddle parity nalaz i
+potvrdio da nema preostalih code-review blocker-a. PR #135 je označen ready i
+merge-ovan **isključivo u staging/production-engines** sa atomskim expected-head
+SHA guard-om; reviewed runtime nije menjan tokom staging integracije.
+
+**Foundation staging acceptance završen u sledećem obuhvatu:**
+
+- Staging merge commit: `4f5ff38ec6c5fe0e3020c223c056a2207c7df819`.
+  `git diff 202dc4f origin/staging/production-engines` je prazan: identičan
+  repository tree kao reviewed/tested head, pa se 119 targeted / 2.517 app /
+  153 engine i no-write dokaz iz prethodnog pass-a odnosi na isti runtime.
+- Vercel deployment `dpl_GQ9oQ8Qfvau8tW9ovJx4g4bMxeY4`, state **READY**,
+  githubCommitRef=staging/production-engines i githubCommitSha=4f5ff38…;
+  GitHub Vercel status za taj merge SHA je success.
+- Vercel project domain potvrđuje gitBranch=staging/production-engines;
+  isti deployment eksplicitno ima alias `staging.marysoll.com`.
+- Read-only HTTPS HEAD smoke na stable domenu: `/` 200, `/dashboard` 200,
+  `/superadmin` → `/superadmin/dashboard` 200; odgovori text/html.
+  Ovo je deployment/routing smoke, ne tvrdnja o authenticated tenant UI tokovima.
+
+SALES-1 je foundation bez novog HTTP/UI caller-a: runtime authority/parity i
+DAL no-write acceptance daju deterministički fixture testovi nad identičnim
+source tree-om, a staging build/deployment/domain smoke potvrđuju integraciju.
+Nisu proveravani authenticated tenant dashboard feature tokovi, live Commercial
+DB reads ili DMD; nema takvog Commercial transporta u ovom slice-u. Ne tvrditi
+end-to-end adapter/authorization acceptance pre SALES-2A/2B.
+
+Promotion PR prema main-u priprema se zasebno; **main nije promenjen ovim
+staging acceptance-om**. Sledeća runtime grana je
+`feat/marysoll-sales-2a-commercial-policy-projection`, od svežeg origin/main
+koji već sadrži prihvaćeni SALES-1. DMD može paralelno raditi
+SALES-0B.1 Staff Identity / Capabilities; Marysoll SALES-2A uvodi fixture/port
+semantiku bez potrebe da DMD bude online.
+
+### K/L. Sledeći gate i preporučeni PR
+
+Nema preostale Product Owner odluke ni DMD online zavisnosti koja blokira
+**MARYSOLL-SALES-2A — Commercial policy + projection DTO**. Sledeći PR uvodi
+verified binding/assignment ports, deny-by-default policy, assigned-account
+safe DTO i fixture principale. Zaključani redosled je verified CommercialPrincipal
+→ DMD assignment port → ProductAccountBinding port → deny-by-default
+CommercialAction policy → assigned tenant scope → SALES-1 read DAL → Sales-safe
+DTO mapper. Postojeći SALES-1 read model konzumira se bez ponovnog računanja
+trial/plan/capability truth-a. Ovaj DAL je interni persistence
+primitive, **nije authorization gate** i trenutno nema javnog/route/UI caller-a.
+Ne izlagati ga direktno: SALES-2A proverava scope pre read-a.
+
+SALES-2B ostaje posle 2A: tanak HTTP transport, direct-request/no-write testovi
+i DMD adapter; actual issuer/key/assertion/revocation/binding transport je live
+gate. SALES-3 sanitizer ostaje obavezan server boundary; SALES-5 zadržava dva
+postojeća campaign modela i zaključani Sales draft/OWNER approval revision ugovor.
+Po [branching strategiji](PANTA-BRANCHING-STRATEGY.md) runtime kandidat ide kroz
+PR u staging/production-engines, zatim appropriate stable-domain QA pre main.
+SALES-1 foundation staging acceptance je zatvoren u gore navedenom obuhvatu;
+main/production promotion i budući endpoint/adapter acceptance ostaju zasebni.

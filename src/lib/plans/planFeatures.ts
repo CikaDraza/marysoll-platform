@@ -13,6 +13,8 @@
  *   UI gate: import { FeatureGate } from "@/components/shared/FeatureGate"
  */
 
+import type { EffectivePlanDecision, EffectivePlanSubscriptionInput, EffectivePlanTenantInput } from "@/types/plan-resolution";
+
 export type PlanName = "maria" | "claudia" | "kiki" | "enterprise";
 
 export interface PlanFeatures {
@@ -379,50 +381,46 @@ const PLAN_GRANTING_STATUSES = ["active", "trialing", "past_due"] as const;
  * funkcionalnosti bez Paddle naplate ima samo tenant kojem ih je superadmin
  * eksplicitno dodelio (plan ili featureOverrides).
  */
+export function resolveEffectivePlanDecision(
+  subscription: EffectivePlanSubscriptionInput | null | undefined,
+  tenant: EffectivePlanTenantInput | null | undefined,
+  now: Date = new Date(),
+): EffectivePlanDecision {
+  const subscriptionPlan = resolveSubscriptionPlanGrant(subscription, now);
+  if (subscriptionPlan) return { plan: subscriptionPlan, source: "subscription", reason: "subscription_grant" };
+  const tenantPlan = resolveTenantPlanGrant(tenant, now);
+  if (tenantPlan) return { plan: tenantPlan, source: "tenant_legacy", reason: "tenant_legacy_grant" };
+  return { plan: "maria", source: "maria_default", reason: "no_paid_plan_grant" };
+}
+
+function resolveSubscriptionPlanGrant(subscription: EffectivePlanSubscriptionInput | null | undefined, now: Date): PlanName | null {
+  if (!subscription) return null;
+  const { plan, status, billingProvider, currentPeriodEnd } = subscription;
+  if (!plan || plan === "maria") return null;
+  if (!(PLAN_GRANTING_STATUSES as readonly string[]).includes(status ?? "")) return null;
+  const isInternal = (billingProvider ?? "internal") === "internal";
+  if (!isInternal) return plan;
+  return isPlanPeriodOpen(currentPeriodEnd, now) ? plan : null;
+}
+
+function resolveTenantPlanGrant(tenant: EffectivePlanTenantInput | null | undefined, now: Date): PlanName | null {
+  const plan = tenant?.plan ?? "maria";
+  if (!tenant?.paid || plan === "maria") return null;
+  return isPlanPeriodOpen(tenant.planExpiresAt, now) ? plan : null;
+}
+
+function isPlanPeriodOpen(end: Date | string | null | undefined, now: Date): boolean {
+  const expiry = end ? new Date(end) : null;
+  return !expiry || expiry > now;
+}
+
+/** Compatible value-only facade; all consumers share the decision above. */
 export function resolveEffectivePlan(
-  subscription:
-    | {
-        plan?: PlanName | null;
-        status?: string | null;
-        billingProvider?: string | null;
-        currentPeriodEnd?: Date | string | null;
-      }
-    | null
-    | undefined,
-  tenant:
-    | {
-        plan?: PlanName | null;
-        paid?: boolean | null;
-        planExpiresAt?: Date | string | null;
-      }
-    | null
-    | undefined,
+  subscription: EffectivePlanSubscriptionInput | null | undefined,
+  tenant: EffectivePlanTenantInput | null | undefined,
   now: Date = new Date(),
 ): PlanName {
-  const subPlan = subscription?.plan ?? null;
-  const subStatus = subscription?.status ?? "";
-  if (
-    subPlan &&
-    subPlan !== "maria" &&
-    (PLAN_GRANTING_STATUSES as readonly string[]).includes(subStatus)
-  ) {
-    const isInternal =
-      (subscription?.billingProvider ?? "internal") === "internal";
-    const periodEnd = subscription?.currentPeriodEnd
-      ? new Date(subscription.currentPeriodEnd)
-      : null;
-    if (!isInternal || !periodEnd || periodEnd > now) return subPlan;
-  }
-
-  const tenantPlan = tenant?.plan ?? "maria";
-  const tenantExpiry = tenant?.planExpiresAt
-    ? new Date(tenant.planExpiresAt)
-    : null;
-  if (tenant?.paid && tenantPlan !== "maria" && (!tenantExpiry || tenantExpiry > now)) {
-    return tenantPlan;
-  }
-
-  return "maria";
+  return resolveEffectivePlanDecision(subscription, tenant, now).plan;
 }
 
 /**
