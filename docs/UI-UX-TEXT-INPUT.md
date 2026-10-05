@@ -8,14 +8,15 @@ Status: implementirano i lokalno provereno; čeka korisničku proveru i merge.
 Proširivi unos koristi se u admin i superadmin chat-u, kao i u chat-u vezanom
 za termin na admin i client strani.
 
-- Početna visina je 2 reda. Pisanje ili paste automatski povećava visinu do
+- Početna i minimalna visina je 1 red, uz padding i minimum od 40px. Pisanje ili paste automatski povećava visinu do
   12 redova, uz ograničenje raspoloživog prostora na manjim ekranima.
+  Paste ponovo uključuje automatski rast i posle ručnog smanjivanja.
 - Ručka iznad unosa povlači se nagore za veće polje i nadole za manje.
   Fokusirana ručka podržava i strelice gore/dole.
 - Ceo composer, uključujući prateće kontrole, ograničen je na 70% visine
   prostora razgovora ispod zaglavlja.
 - Ručno izabrana visina ostaje dok korisnik uređuje poruku. Pražnjenje unosa,
-  uključujući uspešno slanje, vraća automatsko podešavanje na 2 reda.
+  uključujući uspešno slanje, vraća automatsko podešavanje na 1 red.
 - `Enter` šalje poruku; `Shift+Enter` dodaje novi red.
 - Tekst duži od vidljivog unosa skroluje se unutar textarea.
 
@@ -41,7 +42,10 @@ slug, datume i numeričke vrednosti ostaju odgovarajući jednolinijski input-i.
 Polja za duži sadržaj koriste textarea sa vertikalnim proširivanjem i
 maksimalnom visinom od `70dvh`. Korisnik povlači standardnu ručku pri donjoj
 ivici polja. Ova formularska polja ne koriste chat automatski rast ni
-prekrivanje poruka.
+prekrivanje poruka. Globalna minimalna visina je `calc(1lh + 2rem + 2px)`,
+da standardno smanjivanje ne sakrije tekst između paddinga i bordera.
+Chat ima sopstveni minimum izračunat iz jednog reda, stvarnog paddinga i
+bordera, najmanje 40px radi usklađivanja sa send dugmetom.
 
 Obuhvaćeno:
 

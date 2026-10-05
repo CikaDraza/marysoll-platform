@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef, type TextareaHTMLAttributes, type PointerEvent } from "react";
 
-export function ChatTextarea({ value, className = "", disabled, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+export function ChatTextarea({ value, className = "", disabled, onPaste, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const manualHeight = useRef<number | null>(null);
   const drag = useRef<{ y: number; height: number } | null>(null);
@@ -13,12 +13,13 @@ export function ChatTextarea({ value, className = "", disabled, ...props }: Text
     const composer = textarea?.closest<HTMLElement>("[data-chat-composer]");
     if (!textarea || !frame || !composer) return;
     const styles = getComputedStyle(textarea);
-    const lineHeight = parseFloat(styles.lineHeight);
+    const lineHeight = parseFloat(styles.lineHeight) || parseFloat(styles.fontSize) * 1.5;
     const chrome = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom)
       + parseFloat(styles.borderTopWidth) + parseFloat(styles.borderBottomWidth);
-    const minimum = lineHeight * 2 + chrome;
+    const minimum = Math.max(40, lineHeight + chrome);
     const overhead = composer.offsetHeight - textarea.offsetHeight;
     const maximum = Math.max(minimum, frame.clientHeight * 0.7 - overhead);
+    textarea.style.minHeight = `${minimum}px`;
     textarea.style.height = "0px";
     const automatic = Math.min(textarea.scrollHeight + parseFloat(styles.borderTopWidth) + parseFloat(styles.borderBottomWidth), lineHeight * 12 + chrome);
     textarea.style.height = `${Math.max(minimum, Math.min(requested ?? manualHeight.current ?? automatic, maximum))}px`;
@@ -74,7 +75,12 @@ export function ChatTextarea({ value, className = "", disabled, ...props }: Text
       >
         <span aria-hidden="true" className="h-1 w-10 rounded-full bg-gray-400/60" />
       </button>
-      <textarea {...props} ref={textareaRef} value={value} disabled={disabled} rows={2}
+      <textarea {...props} ref={textareaRef} value={value} disabled={disabled} rows={1}
+        onPaste={(event) => {
+          // A new pasted draft grows automatically even after manual shrinking.
+          manualHeight.current = null;
+          onPaste?.(event);
+        }}
         aria-label={props["aria-label"] ?? "Poruka"}
         className={`block w-full min-w-0 resize-none overflow-y-auto ${className}`} />
     </div>

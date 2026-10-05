@@ -290,7 +290,7 @@ export function SuperAdminChatWorkspace({ tenantId, tenantName, ownerEmail }: Pr
                 onKeyDown={handleKeyDown}
                 placeholder="Napišite poruku... (Enter za slanje)"
                 disabled={chat.isSending}
-                className="border border-slate-600 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 bg-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors placeholder:text-slate-500 disabled:opacity-60"
+                className="border border-slate-600 rounded-xl px-3.5 py-2 text-sm text-slate-200 bg-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors placeholder:text-slate-500 disabled:opacity-60"
                 style={{ overflowY: "auto" }}
               />
 

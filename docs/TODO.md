@@ -54,9 +54,12 @@ cron snimak ostaju otvoreni.
 **✅ Implementirano; 🟡 korisnička provera i merge čekaju.** Grana:
 `fix/ui-ux-small-improvements`.
 
-- [x] Admin/superadmin chat i admin/client chat termina: automatski 2–12
+- [x] Admin/superadmin chat i admin/client chat termina: automatski 1–12
   redova, ručno širenje nagore do 70% prostora, skrolabilne poruke i unos,
   `Enter`/`Shift+Enter`.
+- [x] Korekcija chat-a: početni/minimalni 1 red sa vidljivim paddingom; paste
+  vraća automatski rast posle ručnog smanjenja. Ostale textarea imaju minimum
+  koji čuva vidljiv tekst i pri smanjivanju.
 - [x] Newsletter, Content Composer i Marketing: textarea za opise, uvode,
   duži sadržaj i AI instrukcije; vertikalno proširivanje postojećih polja.
 - [x] Stariji/uvezени newsletter templejti: duži sadržaj prepoznat i kada je

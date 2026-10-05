@@ -525,6 +525,8 @@ body {
 @layer base {
   textarea {
     resize: vertical;
+    /* Keep a full text line visible even with p-4 padding and borders. */
+    min-height: calc(1lh + 2rem + 2px);
     max-height: 70dvh;
   }
 }

@@ -542,7 +542,7 @@ export function AdminChat() {
                       onKeyDown={handleKeyDown}
                       placeholder="Napišite poruku... (Enter za slanje)"
                       disabled={chat.isSending}
-                      className="border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500 disabled:opacity-60"
+                      className="border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2 text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500 disabled:opacity-60"
                       style={{ overflowY: "auto" }}
                     />
 
