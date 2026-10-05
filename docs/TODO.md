@@ -130,11 +130,21 @@ je SALES-1; ostali rezovi i live DMD povezivanje rade se po njegovim gate-ovima.
 - [ ] Zatim `Implement SALES-2A projection/policy/DTO`.
 - [ ] Tek zatim `Implement SALES-2B endpoints`.
 
-SALES-1 nema nerešenu PO authority odluku. Pre live binding-a odlučiti ko
-odobrava povezivanje/reaktivaciju/reassignment; DMD trust/assertion/revocation
-je zaseban tehnički live gate. Billed price/evidence proširenje i Sales draft
-approval/delegation pravila ostaju kasniji eksplicitni scope. Ovaj pass nije
-menjao runtime, podatke, auth, migracije niti API-je.
+**Product Owner odluke zaključane 2026-10-05.** DMD binding/reassignment
+upravlja preko TARGET `account.binding.manage` (privilegovani interni operator,
+kasnije commercial_admin); staff_sales nema self-assign. Read-only Client
+Success ne zahteva posebno tenant-owner odobrenje; delegated write zahteva.
+Verified billing evidence dolazi kasnije; stvarni price/paidThrough do tada
+null/unavailable. SALES-5 dozvoljava novi/sopstveni pre-approval Sales draft i
+duplicate u novi; Tenant OWNER odobrava zaključanu revision, kasnija izmena
+invalidira approval. Send/schedule/publish ostaju tenant akcije.
+
+SALES-1 nema nerešenu PO authority odluku. DMD trust/assertion/revocation je
+zaseban tehnički live gate. Ovaj docs rez ne menja runtime/podatke/API-je.
+Korisnik je odobrio dokumentacioni PR → merge u main, zatim novu granu
+`feat/marysoll-sales-1-trial-subscription-authority` od svežeg origin/main.
+Runtime redosled je schemas → plan provenance → trial resolver → subscription
+projection → read-only loader → tests; SALES-2A/2B ostaju nezapočeti.
 
 ## NEXT — sledeći rez
 

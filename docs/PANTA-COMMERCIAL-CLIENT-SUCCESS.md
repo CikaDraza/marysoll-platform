@@ -64,8 +64,8 @@ izdvajanje svih budućih engine-a i ne kopira njihov domen u DMD.
 
 Marysoll ostaje autoritet za tenant, trial/subscription, efektivni plan,
 capabilities, product usage, campaign sadržaj/status i diagnostic evidence.
-DMD je autoritet za Account, commercial assignment, relationship health,
-Incident status i assigned technical owner. Cross-link i prikaz sažetka ne
+DMD je autoritet za Account, binding/reassignment, commercial assignment,
+relationship health, Incident status i assigned technical owner. Cross-link i prikaz sažetka ne
 prenose pravo na promenu izvornog zapisa.
 
 ## 3. CURRENT — potvrđena polazna osnova
@@ -93,8 +93,8 @@ DMD Account nije Marysoll krajnji klijent salona (`TenantUser`), a
 `salesRepresentativeId` nije salonov staff ID.
 
 TARGET binding sadrži `bindingId`, `dmdAccountId`, `productKey: marysoll`,
-`tenantId`, `environment`, status i revision. DMD poseduje Account i dodelu;
-Marysoll proverava binding i svoj stvarni tenant. Jedan DMD Account može imati
+`tenantId`, `environment`, status i revision. DMD poseduje Account, binding/reassignment i dodelu;
+Marysoll proverava signed/verified binding, assignment i svoj stvarni tenant. Jedan DMD Account može imati
 više proizvoda i više eksplicitno povezanih Marysoll business tenant-a; svaki
 prikaz/operacija bira konkretan binding. Za jedan tenant u jednom okruženju
 postoji jedan aktivni Marysoll product binding; izuzetak zahteva zaseban ugovor.
@@ -321,9 +321,13 @@ na aktivnost/asistenciju, Newsletter na email tok. CURRENT postoje odvojeni
 više tabova zadržava istu referencu; različiti modeli se ne spajaju po naslovu
 niti predstavljaju kao jedan ID. Editor se deli gde je sadržajni format isti.
 
-U draft fazi dozvoljene su samo posebno gated akcije: pripremi/predloži,
-kreiraj/izmeni Sales draft, dupliraj prethodnu kampanju u novi draft i zatraži
-odobrenje. Ne uređuje se live ili već poslati sadržaj kroz draft put. Autorstvo
+U SALES-5 početno Sales kreira novi Sales draft, uređuje svoj draft samo dok
+nije poslat na approval i duplira postojeću kampanju u novi Sales draft.
+Ne uređuje tenant-owned/live/sent sadržaj. Request approval zaključava tačnu
+revision; kasnija dozvoljena izmena invalidira approval i traži novo odobrenje.
+U prvoj verziji odobrava isključivo Tenant OWNER. Send/schedule/publish ostaju
+tenant akcije; kasnije je moguća eksplicitna `marketing.approve` ili
+managed-service delegacija. Ovo su TARGET pravila, ne implementacija SALES-5. Autorstvo
 Sales-a i tenant owner ostaju sačuvani u auditu. Audience izbor koristi
 odobrene tenant-scoped segmente, bez pune liste primalaca u Sales response-u.
 
@@ -442,10 +446,10 @@ DMD zahteve, deploy niti izmene runtime-a.
 |---|---|
 | DMD principal/SSO/service credential, assignment revocation i mapping API | Zajednički DMD SALES-0A + Marysoll SALES-0/2; u ovom repo-u nije potvrđeno |
 | Konačni production host i auth/session cookie scope za Commercial | Marysoll proxy/identity rez; staging ostaje path-based |
-| Binding lifecycle, ko odobrava povezivanje/prekid i audit reassignment-a | DMD Account authority + Marysoll tenant authority; Sales nema self-assign |
+| Binding lifecycle i audit reassignment-a | Product Owner zaključano: DMD `account.binding.manage`, interni operator → kasnije commercial_admin; Sales nema self-assign; Marysoll verifier/read mirror |
 | Trial/billing read precedence i price/paid-through | Zaključano auditom u §17 C–E; source-aware read, payment/price unavailable. Novi billing evidence izvor je zaseban budući scope |
 | Support token rok/bounded reuse, sanitized summary retention i evidence expiry UX | SALES-3/4 + DMD Incident policy |
-| Koji assigned draft-ovi se mogu uređivati i ko u tenant-u odobrava | SALES-5; početno authorized tenant owner, proširenje kroz canonical permission policy |
+| Sales draft ownership i approval | Product Owner zaključano: novi/sopstveni pre-approval Sales draft, duplicate u novi; Tenant OWNER odobrava revision; tenant-owned/live/sent sadržaj se ne menja |
 | Kasnija managed-service delegacija i efekat opoziva na odobrene schedule-e | Poseban write/delegation rez posle read/draft acceptance-a |
 
 ## 16. Kanonske reference
@@ -714,13 +718,19 @@ unknown env, neaktivan binding ili revision mismatch zatvaraju scope.
 Binding lifecycle nije subscription lifecycle: suspendovan tenant sme imati
 assigned Commercial status read za support, ali to ne daje product write.
 
-DMD poseduje Account i Sales assignment; Marysoll integration repository
-poseduje proverenu product mapping vezu i njenu validaciju. Nema Marysoll
-assignment editor-a, self-assign-a ni povezivanja preko email/name/slug/label.
+**Product Owner zaključano, 2026-10-05:** DMD poseduje Account, binding/
+reassignment i Sales assignment. TARGET `account.binding.manage` inicijalno
+ima samo privilegovani interni operator; kasnije može `commercial_admin`.
+`staff_sales` nikada ne dodeljuje account/tenant sebi. Svaka promena ima DMD
+audit i novu revision; Marysoll čita/verifikuje signed/verified binding i
+assignment, a eventualni lokalni snapshot je read mirror, ne writer authority.
+Read-only Client Success pristup ne traži zasebno Tenant OWNER odobrenje;
+buduće delegated write akcije zahtevaju tenant authorization. Nema Marysoll
+assignment editor-a niti povezivanja preko email/name/slug/label.
 SALES-2A koristi typed repository port sa fixture binding-ima; ne zahteva DB
-migraciju ni auth. Persistiranje/administrativno aktiviranje binding-a mora
-biti eksplicitno rešeno pre live SALES-2B, van read handlera. Izbor ko odobrava
-vezu je Product Owner gate u O; wire encoding nije product odluka.
+migraciju ni auth. DMD binding capability/provisioning i signed assertion
+transport moraju biti tehnički rešeni pre live SALES-2B, van read handlera.
+Authority odluka je zatvorena; wire encoding nije product odluka.
 
 ### G. DMD actor / assignment assertions koje Marysoll mora verifikovati
 
@@ -946,23 +956,23 @@ novih Commercial testova i ne zatvara implementacione gate-ove iz tabele.
 Dokumentacione reference i diff proveravaju se zasebno. Production build nije
 potreban za ovaj doc-only pass niti je njime tvrđeno runtime acceptance stanje.
 
-### O. Stvarne otvorene Product Owner odluke
+### O. Product Owner odluke — zaključano 2026-10-05
 
-**SALES-1 nema otvorenu Product Owner source-of-truth odluku:** C/D zaključavaju
-read ponašanje uz očuvanje runtime entitlement politike. Ne čeka SSO, support
-TTL, Incident API ili managed-service odobrenja. Nepoznati payment/price podaci
-su eksplicitno unavailable, nisu zahtev da se u ovom slice-u radi novi billing.
+Sve tri preostale product odluke su potvrđene; SALES-1 ne čeka druge rezove.
 
-| Odluka | Kada je potrebna | Bezbedno ponašanje do odluke |
+| Odluka | Zaključak | Kada se implementira |
 |---|---|---|
-| Ko inicira i ko odobrava Account↔Tenant binding/reaktivaciju/reassignment | Pre prvog live binding write/provisioninga za SALES-2B | Fixtures/ports u 2A, neaktivan/nepostojeći binding odbijen; Sales nema self-link/self-assign |
-| Da li i kada se želi stvarni billed price/paid-through umesto unavailable | Poseban billing evidence/catalog scope; nije SALES-1/2 blocker | null/unavailable; nema poslovne tvrdnje izvedene iz plana/perioda/paid flag-a |
-| Koje tuđe draft-ove Sales sme da menja i ko u tenant-u odobrava; buduća managed delegation | SALES-5, pre prve scoped write akcije | Svi Sales write putevi deny; samo kasniji eksplicitni tenant approval ugovor otvara radnju |
+| Binding / reassignment | DMD authority; TARGET `account.binding.manage` samo interni privilegovani operator, kasnije commercial_admin. staff_sales nema self-assign. Marysoll verifikuje signed/verified binding + assignment. Read-only Client Success ne traži Tenant OWNER approval; delegated write traži tenant authorization. Svaka promena auditovana | SALES-2A boundary/fixtures; actual DMD capability/assertion transport pre live SALES-2B |
+| Billing evidence | Uvodi se kasnije. Stvarni actualPrice/paidThrough/ostale payment tvrdnje ostaju null/unavailable do verified evidence. Budući catalogPrice je zaseban prikaz, ne dokaz naplate | Zaseban billing evidence rez; nije blocker SALES-1/2 |
+| Sales draftovi | Novi Sales draft; edit samo sopstvenog pre approval-a; duplicate u novi draft. Bez tenant-owned/live/sent edit-a. Request approval zaključava revision; kasnija izmena invalidira approval. Početno Tenant OWNER odobrava; send/schedule/publish tenant akcije. Kasnije eksplicitna marketing.approve/managed-service delegacija | SALES-5; foundation deny-by-default ostaje |
 
-DMD issuer/key/assertion API i revocation freshness, binding persistence
-transport, session/host encoding i support token TTL su preostali **tehnički
-integration/release dogovori**, ne razlog za novo product redizajniranje.
-Za live SALES-2B DMD trust/assignment ugovor jeste gate; za SALES-1/2A nisu.
-Paddle deadline/grace i postojeći Tenant fallback nisu otvorene odluke koje
-route autor treba da bira. Promena tih access pravila zahteva poseban product
-nalog i ne ulazi u ovaj Commercial read slice.
+Stabilna campaign referenca ostaje `campaignKind + campaignId`; nema trećeg
+campaign modela niti nasilnog spajanja dva postojeća. Diagnostic sanitizer je
+obavezan server boundary u SALES-3, uključujući findings poruke, ne UI filter.
+
+DMD issuer/key/assertion API i revocation freshness, binding read-mirror
+transport, session/host encoding i support token TTL ostaju tehnički
+integration/release dogovori. Za live SALES-2B DMD trust/assignment ugovor jeste
+gate; za SALES-1/2A nisu. Paddle grace i Tenant effective-plan fallback se ne
+menjaju ovim read slice-om. Nema preostale Product Owner odluke koja blokira
+SALES-1 implementaciju.
