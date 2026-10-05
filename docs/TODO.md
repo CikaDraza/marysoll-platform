@@ -75,10 +75,12 @@ Detalji, obuhvat i ograničenja provera:
 
 ## Marysoll Commercial / Client Success — kontrolni dokument (2026-10-05)
 
-**✅ SALES-0 ugovor/audit + SALES-1 runtime lokalno verifikovani; ⬜ SALES-2A.**
+**✅ SALES-0 + SALES-1 main; SALES-2A implementiran, acceptance otvoren.**
 Audit + zaključane PO odluke spojeni su u `main` kroz PR #134 (`045b369`).
 SALES-1 runtime grana `feat/marysoll-sales-1-trial-subscription-authority`
-napravljena je od tog svežeg `origin/main`; staging/live release ostaje zaseban gate.
+napravljena je od tog svežeg `origin/main`. Posle PO staging/main approval-a,
+PR #136 promovisan je u main `396624a` (Vercel success); obe stalne test grane
+fast-forwardovane su na isti commit. SALES-2A grana je od tog svežeg origin/main.
 Kanonski kontrolni dokument:
 [PANTA-COMMERCIAL-CLIENT-SUCCESS.md](PANTA-COMMERCIAL-CLIENT-SUCCESS.md).
 
@@ -91,8 +93,8 @@ Sales-safe server projekcija i domain capabilities važe i za direktan API.
 | Rez | Status | Gate / sledeće |
 |---|---|---|
 | MARYSOLL-SALES-0 — Projection Contract | ✅ dokument i audit | §17 A–O: source inventory, trial/projection authority, binding i buduće diagnostics/marketing granice; stvarne PO odluke izdvojene |
-| MARYSOLL-SALES-1 — Trial/subscription authority | ✅ kod/test + foundation staging acceptance | §18: 119 targeted testova, reviewed head 202dc4f; PR #135 staging merge 4f5ff38, Vercel READY + stable-domain routing smoke. Main/production promotion ostaje otvoren |
-| MARYSOLL-SALES-2A — Projection/policy/DTO | ⬜ | Posle SALES-1 resolvera/testova: verified binding/assignment ports, policy, assigned read DTO i fixture principi; bez endpoint-a |
+| MARYSOLL-SALES-1 — Trial/subscription authority | ✅ main promotion | §18: 119 targeted, approved head 202dc4f; PR #135 staging 4f5ff38 + acceptance; PR #136 main 396624a, Vercel success |
+| MARYSOLL-SALES-2A — Projection/policy/DTO | ✅ kod/fixture testovi; ⬜ staging acceptance | §19: 93 nova / 212 targeted; verified principal + assignment/binding ports, default-deny policy, scoped batch DAL, signed revision-bound cursor, response revalidation i safe DTO; bez endpoint-a |
 | MARYSOLL-SALES-2B — Internal read-only endpoints | ⬜ | Posle 2A: tanak transport, response/request schemas, no-write i direct-request testovi, DMD adapter integration; live samo uz actual verified assignment/trust |
 | MARYSOLL-SALES-3 — Diagnostic/support projection | ⬜ | Sanitized summary, trusted tenant/account context, restricted support token; `?u=` ostaje samo label |
 | MARYSOLL-SALES-4 — DMD Incident handoff | ⬜ | Durable report/delivery, idempotency, retry i DMD technical handoff; jedan Incident lifecycle |
@@ -146,11 +148,20 @@ ostali rezovi i live DMD povezivanje rade se po njegovim gate-ovima.
 - [x] SALES-1 foundation staging acceptance: PR #135 merge 4f5ff38, source tree
   identičan reviewed head-u, Vercel READY/success, potvrđen staging alias i
   public HEAD routing smoke. Nema tvrdnje o authenticated tenant UI/DMD proveri.
-- [ ] Promotion PR → main i production release po PANTA branching strategiji.
-- [ ] Zatim `Implement SALES-2A projection/policy/DTO` na
+- [x] Promotion PR #136 → main 396624a uz PO approval i expected-head guard;
+  Vercel success, obe stalne test grane fast-forward na main.
+- [x] `Implement SALES-2A projection/policy/DTO` na
   `feat/marysoll-sales-2a-commercial-policy-projection`, od svežeg origin/main
   sa SALES-1; verified principal → assignment port → binding port → default-deny
   action policy → scoped tenant → SALES-1 DAL → safe DTO, bez HTTP-a.
+- [x] SALES-2A adversarial fixture regresije: foreign scope/resources, stale/
+  revoked/expired evidence, env/product/revision mismatch, default-deny write,
+  private nested fields, cursor tampering/scope change i response-time revocation.
+- [x] SALES-2A lokalni gate: 212 targeted; app 2.610 passed / 21 skipped;
+  engine 153 passed; TypeScript, changed ESLint, build i Fallow changed audit
+  (0 introduced) pass. Full Fallow inherited 385 backlog nije globalni zero claim.
+- [ ] SALES-2A PR → staging/production-engines, review/foundation acceptance;
+  nije live DMD identity/assignment niti authenticated tenant UI acceptance.
 - [ ] Tek zatim `Implement SALES-2B endpoints`.
 
 **Product Owner odluke zaključane 2026-10-05.** DMD binding/reassignment

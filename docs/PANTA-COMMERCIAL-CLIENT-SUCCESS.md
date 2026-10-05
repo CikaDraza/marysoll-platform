@@ -1201,8 +1201,14 @@ Nisu proveravani authenticated tenant dashboard feature tokovi, live Commercial
 DB reads ili DMD; nema takvog Commercial transporta u ovom slice-u. Ne tvrditi
 end-to-end adapter/authorization acceptance pre SALES-2A/2B.
 
-Promotion PR prema main-u priprema se zasebno; **main nije promenjen ovim
-staging acceptance-om**. Sledeća runtime grana je
+Staging acceptance sam nije promenio main. Product Owner je zatim eksplicitno
+odobrio **APPROVED FOR MAIN**, uključujući prihvatanje foundation test scope-a
+bez ručnog authenticated tenant testa, jer nema novog HTTP/UI caller-a.
+[PR #136](https://github.com/CikaDraza/marysoll-platform/pull/136) merge-ovan je
+uz expected-head `e229a596b792834368f524227bd7517078c50f4b` kao main
+`396624ae907d462c251b0fd7274da28bc62acf5d`; Vercel status za taj main SHA je
+**success**. Obe stalne test grane fast-forwardovane su na isti main commit,
+bez force push-a ili dodatnog sync merge-a. Sledeća runtime grana je
 `feat/marysoll-sales-2a-commercial-policy-projection`, od svežeg origin/main
 koji već sadrži prihvaćeni SALES-1. DMD može paralelno raditi
 SALES-0B.1 Staff Identity / Capabilities; Marysoll SALES-2A uvodi fixture/port
@@ -1227,5 +1233,136 @@ gate. SALES-3 sanitizer ostaje obavezan server boundary; SALES-5 zadržava dva
 postojeća campaign modela i zaključani Sales draft/OWNER approval revision ugovor.
 Po [branching strategiji](PANTA-BRANCHING-STRATEGY.md) runtime kandidat ide kroz
 PR u staging/production-engines, zatim appropriate stable-domain QA pre main.
-SALES-1 foundation staging acceptance je zatvoren u gore navedenom obuhvatu;
-main/production promotion i budući endpoint/adapter acceptance ostaju zasebni.
+SALES-1 foundation staging acceptance i main promotion su zatvoreni u gore
+navedenom obuhvatu. Budući endpoint/adapter acceptance ostaje zaseban.
+
+## 19. MARYSOLL-SALES-2A — Commercial policy / projection DTO (2026-10-05)
+
+Runtime slice je implementiran na
+`feat/marysoll-sales-2a-commercial-policy-projection`, napravljenoj od svežeg
+`origin/main` `396624a` posle PR #136. Ovo je lokalno verifikovan foundation
+kandidat; staging acceptance i live DMD integration nisu time proglašeni gotovim.
+
+### A. Izvršni put i stvarni fajlovi
+
+```text
+trusted identity verification port → validated CommercialPrincipal
+  → current DMD assignment page → verified ProductAccountBinding page
+  → deny-by-default policy → immutable assigned tenant scope
+  → SALES-1 readCommercialSubscriptions (one scoped batch)
+  → response-time identity / assignment / binding revalidation
+  → strict Sales-safe versioned DTO
+```
+
+| Fajl | Odgovornost |
+|---|---|
+| [commercial.ts](../src/types/commercial.ts) | Centralne strict Zod šeme/tipovi za principal, assignment, binding, selection/cursor, scoped context i list/detail result; typed identity/assignment/binding ports |
+| [accessEvidence.ts](../src/helpers/commercial/accessEvidence.ts) | Pure evidence validation, scope/revision poređenje i zamrzavanje odvojenih parsed snapshot-a |
+| [policy.ts](../src/lib/commercial/policy.ts) | Server-only factory sa trusted ports; nema header/admin JWT/secret fallback-a; samo factory-issued access može dobiti scope |
+| [accountRead.ts](../src/lib/commercial/accountRead.ts) | Assigned list, account filter i binding detail; limit 1–100, DAL batching, lokalni tenant existence/identity check, revalidation pre odgovora |
+| [cursor.ts](../src/lib/commercial/cursor.ts) | Server-only HMAC cursor codec sa eksplicitno prosleđenim ključem od najmanje 32 bajta; nema podrazumevanog ključa ni env provisioning-a |
+| [accountDto.ts](../src/helpers/commercial/accountDto.ts) | Pure allowlist mapper; identitet binding-a, permitted actions, postojeći SALES-1 product snapshot i eksplicitno unavailable moduli |
+| [commercial.fixtures.ts](../src/lib/commercial/commercial.fixtures.ts) | Isključivo test adapter: opaque fixture credential i promenljivi authority snapshots; nema runtime importer-a |
+
+SALES-1 trial/subscription/plan/capability izvori, resolveri i DAL nisu menjani.
+Nema HTTP route-a, Server Action-a, proxy promene, UI-ja, AuthUser role,
+migracije/modela, DMD mrežnog transporta ili write/provisioning lifecycle-a.
+
+### B. Authority i default-deny odluke
+
+Identity port **mora verifikovati** credential, service caller/acting-for actor,
+issuer/audience, lifetime i aktuelni status/revocation; schema parse nije dokaz
+potpisa. SALES-2A nema produkcijski adapter. Policy dodatno proverava allowed
+issuer, `audience=marysoll-commercial`, active actor, subject=actingFor,
+environment, revision, assertion reference, issued/not-before/expiry i lokalni
+verification `checkedAt` za konkretan request clock. Plain principal objekat,
+admin JWT, secret i proizvoljan subject nisu fixture credentials.
+
+Assignment port vraća samo scoped stranicu aktuelnih DMD assignment-a.
+Nepoznat, istekao, suspendovan/opozvan, foreign-subject/environment ili
+neispravan assignment odbija zahtev pre DAL-a. Binding mora biti verifikovan,
+active, Marysoll, istog account-a/environment-a i expected revision-a; nedostajući,
+opozvan/neaktivan, pogrešan tenant ID ili duplikat tenant/binding veze odbija se.
+Verified binding repository mora garantovati jedinstveni active tenant/env
+binding i u off-page podacima; lokalna provera odbija i duplikate u vraćenoj strani.
+Slug/email/name/label ne učestvuju u scope-u. DMD ostaje jedini writer authority.
+
+Operativne akcije u ovom slice-u su **account.read** i **subscription.read**,
+isključivo uz eksplicitnu principal permission. Capability/plan/Sales role nisu
+permission bypass. Subscription bez odgovarajuće dozvole je
+`unavailable/action_not_permitted`, bez product facts. Account status read može
+prikazati suspendovan tenant i ne traži Tenant OWNER approval. Resource context
+mora pripadati istom tenant-u i binding-u; foundation nema product write akcije.
+
+`usage.read`, `diagnostics.summary.read`, `campaign.summary.read`,
+`audience.aggregate.read` i buduće draft/approval akcije imaju vocabulary mesta,
+ali ostaju unsupported. Send/schedule/publish/unpublish/export/recipient read,
+billing/config i binding mutation nikada ne dobijaju foundation grant.
+
+### C. Snapshot, pagination i response race granica
+
+Svaki service poziv ponovo verifikuje principal i authority ports; nema cache-a
+koji produžava opozvanu dodelu. `checkedAt` označava proveru u trusted server
+adapteru za dati request, ne preimenovani remote updatedAt ili cached evidence.
+Na response granici identity, assignment i binding ponovo se učitavaju uz novi
+server clock; expiry, permission/actor change, reassign/rebind, revision change
+ili authority outage odbijaju ceo odgovor. Issued access/scope su duboko frozen
+i schema-odvojeni od mutable source fixture-a.
+
+Cursor je versioned, potpisan i vezan za principal issuer/subject/service/env/
+permission revision, assignment scope revision, binding scope revision, account
+filter, page size i expiry. Ne može preneti pristup između actor-a/env-a/account-a,
+proširiti page size niti nastaviti nakon scope promene. Assignment scope revision
+obuhvata kompletan assigned skup; binding scope revision obuhvata sve binding
+promene u okruženju, uključujući off-page promene. Ove monotone revision-e
+obezbeđuju source ports, ne novi lokalni assignment writer. Stvarni DMD adapter
+mora ispuniti taj contract pre SALES-2B live gate-a.
+
+DAL dobija samo policy-issued tenant ID-jeve i jedan kloniran `now` za sve
+product snapshots. Missing/deleted tenant odbija read; core query failure,
+mismatched tenant/asOf ili corrupt DTO ne postaju uspešan Maria/billing fallback.
+List failure ne vraća delimičan skup privatnih stavki uz error. Prazna validna
+assigned lista jeste prazna; authority outage nije prazna lista.
+
+### D. DTO/privacy i unavailable sources
+
+DTO ima schemaVersion, product/account/binding/tenant/env identitet, allowed
+read actions, asOf i **isti** SALES-1 snapshot sa field sources/quality. Ne računa
+trial/plan iznova; corrupt Paddle period ostaje null/partial, Claudia grant ostaje.
+Core failure daje typed sanitized failure, bez raw exception/modela.
+
+Usage, diagnostics, marketing, audience, incidents i relationship su zasebni
+`unavailable/not_implemented` moduli sa asOf. Nisu empty-success/healthy/zero
+projekcije i ne pokreću admin GET, metrics normalization, diagnostic scan,
+Newsletter/Notification/provider/DMD poziv. Nema recipients/secrets/assertion
+payload-a, actor audit detalja, overrideNote, findings/evidence/repair argumenta
+ili raw error-a. Strict nested SALES-1 validation odbija ubačena privatna polja.
+
+### E. Lokalni dokaz i sledeći gate
+
+- Tri nova adversarial test fajla: policy **45**, accountRead **39**, cursor **9**
+  — ukupno **93** novih slučajeva.
+- Targeted Commercial + plan provenance: **7 fajlova / 212 passed**;
+  svih postojećih **119 SALES-1** testova ostaje zeleno bez izmene authority koda.
+
+| Završni lokalni gate | Rezultat |
+|---|---|
+| Root app Vitest, maxWorkers=4 | 231 fajl / **2.610 passed**, 21 skipped |
+| Svih 5 engine paketa | 13 fajlova / **153 passed** |
+| TypeScript + changed-file ESLint | pass, bez novih diagnostics/warnings |
+| Fallow changed audit prema origin/main | **pass, 0 introduced** dead-code/complexity/duplication/styling; 2 inherited dependency nalaza |
+| Full Fallow + skill initialization | izvršeni; postojeći globalni backlog od 385 nalaza ostaje, nema Commercial nalaza ni novog suppression/config-a |
+| Production Next build | pass; postojeći routes/proxy ne menjaju se |
+
+Full Fallow nije globalni zero-warning rezultat iz ARCHITECTURAL_RULES; inherited
+backlog nije očišćen ovim slice-om. Scope gate je dokumentovani new-only audit.
+Svi testovi koriste fixtures/mocks, bez produkcijske DB migracije, slanja ili
+provider/DMD poziva. Nema live auth/DMD/tenant UI acceptance tvrdnje.
+
+Sledeći integration slice ostaje **SALES-2B**, tek nakon review/staging acceptance
+2A: actual verifier, trust/service credentials, replay/revocation/freshness,
+current DMD assignment/binding ports, stabilni scope revisions i tanak transport
+sa direct-request/no-write testovima. Fixture adapter nikada ne može biti live
+fallback. SALES-3 sanitizer i SALES-5 revision-bound OWNER approval ostaju svoje
+postojeće granice. Runtime PR ide prvo u `staging/production-engines` po
+[branching strategiji](PANTA-BRANCHING-STRATEGY.md), bez automatskog main promotion-a.
