@@ -51,7 +51,7 @@ cron snimak ostaju otvoreni.
 
 ## UI/UX — proširivi unos teksta (2026-10-05)
 
-**✅ Implementirano; 🟡 korisnička provera i merge čekaju.** Grana:
+**✅ Implementirano, korisnički provereno i mergeovano 2026-10-05 (PR #133).** Grana:
 `fix/ui-ux-small-improvements`.
 
 - [x] Admin/superadmin chat i admin/client chat termina: automatski 1–12
@@ -68,10 +68,44 @@ cron snimak ostaju otvoreni.
   liste drafts/sent/scheduled/failed i ostale Marketing površine.
 - [x] Izvorni TypeScript, ciljani ESLint i 11 testova prolaze; izolovane browser
   provere na desktop i mobilnoj širini završene.
-- [ ] Korisnička provera u aplikaciji i merge na `main`.
+- [x] Korisnička provera u aplikaciji i merge na `main` (PR #133).
 
 Detalji, obuhvat i ograničenja provera:
 [UI/UX — unos dužeg teksta](UI-UX-TEXT-INPUT.md).
+
+## Marysoll Commercial / Client Success — kontrolni dokument (2026-10-05)
+
+**✅ Dokumentacioni ugovor; ⬜ runtime implementacija.** Nova grana od svežeg
+`origin/main`: `docs/commercial-client-success-contract`.
+Kanonski kontrolni dokument:
+[PANTA-COMMERCIAL-CLIENT-SUCCESS.md](PANTA-COMMERCIAL-CLIENT-SUCCESS.md).
+
+DMD ostaje glavno relationship/assignment/task/Incident radno mesto; Marysoll
+Commercial je Sales product workspace sa admin dashboard UI/UX-om i svojim
+Overview, Accounts, Trials & Subscriptions, Marketing, Newsletter, Diagnostics,
+Incidents i Product Usage tabovima/stranicama. Assigned account scope,
+Sales-safe server projekcija i domain capabilities važe i za direktan API.
+
+| Rez | Status | Gate / sledeće |
+|---|---|---|
+| MARYSOLL-SALES-0 — Projection Contract | ✅ dokument · 🟡 DMD integration detalji | Ugovor napisan; verified principal/assignment/binding i SSO ugovor uskladiti sa DMD SALES-0A |
+| MARYSOLL-SALES-1 — Trial/subscription authority | ⬜ | Prvi Marysoll implementacioni rez: shared resolver, GET bez write-a, legacy i unknown/source semantika |
+| MARYSOLL-SALES-2 — Commercial read-only API | ⬜ | Assigned list/detail DTO i DMD adapter; live pristup tek uz verified assignment |
+| MARYSOLL-SALES-3 — Diagnostic/support projection | ⬜ | Sanitized summary, trusted tenant/account context, restricted support token; `?u=` ostaje samo label |
+| MARYSOLL-SALES-4 — DMD Incident handoff | ⬜ | Durable report/delivery, idempotency, retry i DMD technical handoff; jedan Incident lifecycle |
+| MARYSOLL-SALES-5 — Marketing/Newsletter projection | ⬜ | Postojeći servisi/editor, Sales draft + request approval; send/schedule/publish bez tenant authorization nedozvoljeni |
+| MARYSOLL-SALES-6 — Sales dashboard | ⬜ | Backend + DMD adapter pre UI-ja; admin visual shell, sopstveni routes/tabs i cross-linkovi |
+
+**STOP granica.** Bez Sales-as-superadmin/tenant-admin, raw evidence/PII,
+produkcijskog repair-a, paralelnog DMD CRM/Incident/Newsletter sistema ili
+managed-service write dozvola u foundation-u. `Marketing Engine` iz priloga
+mapira se na postojeće Content/Distribution/Notification granice; Distribution
+runtime i novi Growth Studio i dalje su budući rad. DIAG-SUPPORT-1 deli isti
+support intake/handoff smer i ne dobija drugi nezavisni Incident lifecycle.
+
+Ovaj dokumentacioni rez ne zatvara STAFF-3/Education acceptance i ne menja
+njihov postojeći NEXT. U okviru Commercial luka sledeći implementacioni korak
+je SALES-1; ostali rezovi i live DMD povezivanje rade se po njegovim gate-ovima.
 
 ## NEXT — sledeći rez
 
