@@ -1061,9 +1061,12 @@ Paddle active/trialing/past_due status vodi grant i kad je recorded period
 prošao, a validan Tenant paid/plan/expiry fallback ostaje moguć kada Subscription
 ne daje grant. Trial classification sama ne dodeljuje paid features.
 
-Invalid plan/status/provider/expiry ne postaje novi paid grant: problematičan
-izvor izostavlja se iz plan input-a uz partial provenance, dok nezavisan validan
-izvor ostaje eligible. Missing internal period čuva existing no-expiry ponašanje,
+Invalid Subscription plan/status/provider zatvara Subscription grant. Invalid
+period zatvara samo internal/legacy-internal grant, koji zavisi od roka; validan
+Paddle plan/status/provider ostaje eligible i sa corrupt periodom. Datum se
+projektuje kao null sa invalid_field issue i partial/source_invalid field source;
+aggregate quality ostaje partial. Invalid Tenant plan/paid/expiry zatvara samo
+Tenant grant. Nezavisan validan izvor ostaje eligible. Missing internal period čuva existing no-expiry ponašanje,
 ali nepotpunost je partial. Ne postoji Commercial plan matrix niti gate rewrite.
 
 Features koriste `getPlanFeatures` + `resolveActiveFeatureOverrides`, a
@@ -1103,8 +1106,8 @@ ne uspešan missing/legacy fallback; failure poruka je sanitizovana.
 
 | Provera | Rezultat |
 |---|---|
-| Novi ciljani testovi | **4 fajla / 109 testova prolaze**: trial 42, projection 29, DAL 9, plan parity 29 |
-| Root app Vitest | **228 fajlova / 2.507 passed / 21 skipped** (`npm test -- --maxWorkers=4`) |
+| Novi ciljani testovi | **4 fajla / 119 testova prolaze**: trial 42, projection 39, DAL 9, plan parity 29 |
+| Root app Vitest | **228 fajlova / 2.517 passed / 21 skipped** (`npm test -- --maxWorkers=4`) |
 | Engine paketi | **13 fajlova / 153 testova prolaze**, svih 5 workspace paketa (`npm run test:engines`) |
 | Typecheck | `npx tsc --noEmit` prolazi |
 | ESLint nad svim changed TypeScript fajlovima | prolazi, bez warning/error |
@@ -1136,6 +1139,28 @@ PLAN_FEATURES konfiguraciju. Nijedan nije introduced ovim rezom; bez blanket
 suppression-a, auto-fix-a ili refaktorisanja van scope-a. Stoga strogi globalni
 „zero warnings“ iz ARCHITECTURAL_RULES ostaje poznat repository quality dug,
 iako SALES-1 nema nove nalaze.
+
+**PR #135 parity korekcija (2026-10-05).** Pre merging-a otklonjen je coarse
+Subscription evidence filter: invalid Paddle currentPeriodEnd više ne odbacuje
+validan Subscription grant niti bira Maria/Kiki fallback. Novi
+`hasInvalidSubscriptionGrantSource` validira samo polja relevantna za provider
+entitlement, dok izbor plana ostaje isključivo u resolveEffectivePlanDecision.
+Nema write/repair-a, promena shared resolvera, nove billing politike ili SALES-2A.
+
+Dodato je 10 regression slučajeva: Paddle active/trialing/past_due sa invalid
+periodom i očuvanim issue/source; active Claudia naspram validnog Kiki Tenant
+fallback-a; internal i dva legacy missing-provider oblika fail-closed (sa i bez
+validnog Tenant fallback-a); elapsed Paddle active/trialing/past_due parity.
+Pre korekcije četiri Paddle testa padaju; posle prolaze svih 119 targeted testova.
+Broad test/build evidence u tabeli iznad obnovljen je za ovu korekciju.
+
+Nearby authority review: Tenant status/trial/capability i Subscription override
+issues ne odbacuju validan Subscription plan grant; independent validan Tenant
+grant ostaje fallback. Trial resolver ipak proverava invalid billingProvider pre
+non-trialing statusa: validan active/past_due/cancelled/paused/expired status sa
+invalid providerom daje unknown/partial trial, iako za sam non-trialing zaključak
+provider nije potreban. To prati zaključani audit §17C redosled; ponašanje je
+prijavljeno i nije menjano u ovoj parity korekciji.
 
 ### J. Dokumentacija i commit evidence
 

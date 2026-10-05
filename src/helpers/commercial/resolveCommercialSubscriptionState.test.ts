@@ -41,7 +41,7 @@ describe("Commercial subscription projection", () => {
   });
   it.each([
     ["plan", "unknown"], ["status", "unknown"], ["billingProvider", "unknown"], ["currentPeriodEnd", "not-a-date"],
-  ])("invalid Subscription %s cannot create a paid grant", (field, value) => {
+  ])("invalid internal Subscription %s cannot create a paid grant", (field, value) => {
     const result = project(tenant, { ...subscription, [field]: value });
     expect(result.effectivePlan).toBe("maria");
     expect(result.quality.state).toBe("partial");
@@ -65,6 +65,31 @@ describe("Commercial subscription projection", () => {
   it("expired Paddle trial period does not change status-driven paid plan behavior", () => {
     const result = project({ ...tenant, isTrialActive: true, trialEndsAt: future }, { ...subscription, status: "trialing", billingProvider: "paddle", currentPeriodEnd: past });
     expect(result).toMatchObject({ effectivePlan: "claudia", subscriptionStatus: "trialing", trial: { status: "expired", source: "subscription_period", quality: "partial" }, paidThrough: { value: null } });
+  });
+  it.each(["active", "trialing", "past_due"])("Paddle %s retains Claudia with an invalid period and exposes the corrupt field", (status) => {
+    const result = project(tenant, { ...subscription, status, billingProvider: "paddle", currentPeriodEnd: "not-a-date" });
+    expect(result).toMatchObject({
+      effectivePlan: "claudia", effectivePlanSource: "subscription",
+      currentPeriodEnd: null, quality: { state: "partial" },
+    });
+    expect(result.quality.issues).toContainEqual({ code: "invalid_field", field: "subscription.currentPeriodEnd" });
+    expect(result.fieldSources.currentPeriodEnd).toEqual({ source: "subscription", quality: "partial", reason: "source_invalid" });
+    if (status === "trialing") expect(result.trial).toMatchObject({ status: "unknown", source: "subscription_period", reason: "trial_end_invalid" });
+  });
+  it("invalid Paddle period does not incorrectly select a valid paid Kiki Tenant fallback", () => {
+    const result = project({ ...tenant, plan: "kiki", paid: true, planExpiresAt: future }, { ...subscription, billingProvider: "paddle", currentPeriodEnd: "not-a-date" });
+    expect(result).toMatchObject({ effectivePlan: "claudia", effectivePlanSource: "subscription", currentPeriodEnd: null, quality: { state: "partial" } });
+    expect(result.quality.issues).toContainEqual({ code: "invalid_field", field: "subscription.currentPeriodEnd" });
+  });
+  it.each(["internal", undefined, null])("internal/legacy provider %s cannot convert an invalid period into a no-expiry grant", (billingProvider) => {
+    const invalidPeriod = { ...subscription, billingProvider, currentPeriodEnd: "not-a-date" };
+    const result = project(tenant, invalidPeriod);
+    expect(result).toMatchObject({ effectivePlan: "maria", effectivePlanSource: "maria_default", currentPeriodEnd: null, quality: { state: "partial" } });
+    expect(result.quality.issues).toContainEqual({ code: "invalid_field", field: "subscription.currentPeriodEnd" });
+    expect(project({ ...tenant, plan: "kiki", paid: true, planExpiresAt: future }, invalidPeriod)).toMatchObject({ effectivePlan: "kiki", effectivePlanSource: "tenant_legacy" });
+  });
+  it.each(["active", "trialing", "past_due"])("Paddle %s elapsed period keeps the status-driven Subscription grant", (status) => {
+    expect(project({ ...tenant, plan: "kiki", paid: true }, { ...subscription, status, billingProvider: "paddle", currentPeriodEnd: past })).toMatchObject({ effectivePlan: "claudia", effectivePlanSource: "subscription", currentPeriodEnd: past });
   });
   it("trial cannot independently grant paid features", () => {
     const result = project({ ...tenant, isTrialActive: true, trialEndsAt: future }, { ...subscription, plan: "maria", status: "trialing" });

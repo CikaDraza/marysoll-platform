@@ -91,7 +91,7 @@ Sales-safe server projekcija i domain capabilities važe i za direktan API.
 | Rez | Status | Gate / sledeće |
 |---|---|---|
 | MARYSOLL-SALES-0 — Projection Contract | ✅ dokument i audit | §17 A–O: source inventory, trial/projection authority, binding i buduće diagnostics/marketing granice; stvarne PO odluke izdvojene |
-| MARYSOLL-SALES-1 — Trial/subscription authority | ✅ kod + lokalni test/build | §18: centralni schemas, shared plan provenance, pure trial/subscription resolveri, single/batch read-only DAL; 109 novih testova. Staging/live release ostaje otvoren |
+| MARYSOLL-SALES-1 — Trial/subscription authority | ✅ kod + lokalni test/build | §18: centralni schemas, shared plan provenance, pure trial/subscription resolveri, single/batch read-only DAL; 119 novih testova. Staging/live release ostaje otvoren |
 | MARYSOLL-SALES-2A — Projection/policy/DTO | ⬜ | Posle SALES-1 resolvera/testova: verified binding/assignment ports, policy, assigned read DTO i fixture principi; bez endpoint-a |
 | MARYSOLL-SALES-2B — Internal read-only endpoints | ⬜ | Posle 2A: tanak transport, response/request schemas, no-write i direct-request testovi, DMD adapter integration; live samo uz actual verified assignment/trust |
 | MARYSOLL-SALES-3 — Diagnostic/support projection | ⬜ | Sanitized summary, trusted tenant/account context, restricted support token; `?u=` ostaje samo label |
@@ -131,12 +131,16 @@ ostali rezovi i live DMD povezivanje rade se po njegovim gate-ovima.
   resolveEffectivePlanDecision sa kompatibilnim wrapper-om, pure
   resolveCommercialTrialState/resolveCommercialSubscriptionState i server-only
   readCommercialSubscription/readCommercialSubscriptions; bez endpoint-a/UI-ja.
-- [x] 4 nova fajla / 109 testova: authority matrica, source/quality, override/plan/
+- [x] 4 nova fajla / 119 testova: authority matrica, source/quality, override/plan/
   capability parity, no mutation, single now, unavailable billing, DAL no-write.
-- [x] Root app 228 fajlova / 2.507 passed / 21 skipped; svih 5 engine paketa
+- [x] Root app 228 fajlova / 2.517 passed / 21 skipped; svih 5 engine paketa
   (13 fajlova / 153 tests), tsc, changed ESLint i production build prolaze.
 - [x] Fallow full + skill init izvršeni; changed audit pass sa 0 introduced
   nalaza. Inherited repo quality backlog ostaje dokumentovan, nije zero-global claim.
+- [x] PR #135 parity korekcija: corrupt Paddle currentPeriodEnd ne poništava
+  validan status/plan grant; issue + null period + partial projection ostaju.
+  Internal/legacy-internal invalid period ostaje fail-closed; plan izbor i dalje
+  delegira shared resolveru. Dodato 10 regression slučajeva; bez SALES-2A.
 - [ ] Staging/live acceptance i release po PANTA branching strategiji.
 - [ ] Zatim `Implement SALES-2A projection/policy/DTO`.
 - [ ] Tek zatim `Implement SALES-2B endpoints`.

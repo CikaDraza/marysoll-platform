@@ -36,11 +36,20 @@ function aggregateQuality(issues: readonly CommercialIssue[], trialQuality: Comm
   return !hasSubscription || issues.some((issue) => issue.code === "legacy_provider_missing") ? "legacy" : "authoritative";
 }
 
+function hasInvalidSubscriptionGrantSource(evidence: CommercialEvidence): boolean {
+  return evidence.issues.some((issue) =>
+    issue.code === "invalid_field" && SUBSCRIPTION_PLAN_FIELDS.has(issue.field) &&
+    // Paddle grants are status-driven; only internal/legacy grants depend on
+    // the period. Retain the invalid period issue for projection provenance.
+    (issue.field !== "subscription.currentPeriodEnd" || evidence.subscription?.billingProvider !== "paddle"),
+  );
+}
+
 function planDecision(evidence: CommercialEvidence, now: Date) {
-  const invalidSubscription = hasInvalidSource(evidence.issues, SUBSCRIPTION_PLAN_FIELDS);
+  const invalidSubscription = hasInvalidSubscriptionGrantSource(evidence);
   const invalidTenant = hasInvalidSource(evidence.issues, TENANT_PLAN_FIELDS);
-  // Invalid dates must not become null/no-expiry grants. Independent valid
-  // legacy Tenant evidence remains eligible under the shared plan rule.
+  // Invalid internal dates must not become null/no-expiry grants. Independent
+  // valid legacy Tenant evidence remains eligible under the shared plan rule.
   const decision = resolveEffectivePlanDecision(invalidSubscription ? null : evidence.subscription, invalidTenant ? null : evidence.tenant, now);
   let quality: CommercialQuality = "authoritative";
   const incomplete = evidence.issues.some((issue) => issue.code === "required_field_missing" && (SUBSCRIPTION_PLAN_FIELDS.has(issue.field) || TENANT_PLAN_FIELDS.has(issue.field)));
