@@ -75,8 +75,9 @@ Detalji, obuhvat i ograničenja provera:
 
 ## Marysoll Commercial / Client Success — kontrolni dokument (2026-10-05)
 
-**✅ Dokumentacioni ugovor; ⬜ runtime implementacija.** Nova grana od svežeg
-`origin/main`: `docs/commercial-client-success-contract`.
+**✅ SALES-0 ugovor + authority/code audit; ⬜ runtime implementacija.**
+SALES-0 je na `main`. Analysis/documentation pass radi se od svežeg
+`origin/main` (`fbb57b4`) na `feat/marysoll-sales-1-commercial-authority`.
 Kanonski kontrolni dokument:
 [PANTA-COMMERCIAL-CLIENT-SUCCESS.md](PANTA-COMMERCIAL-CLIENT-SUCCESS.md).
 
@@ -88,9 +89,10 @@ Sales-safe server projekcija i domain capabilities važe i za direktan API.
 
 | Rez | Status | Gate / sledeće |
 |---|---|---|
-| MARYSOLL-SALES-0 — Projection Contract | ✅ dokument · 🟡 DMD integration detalji | Ugovor napisan; verified principal/assignment/binding i SSO ugovor uskladiti sa DMD SALES-0A |
-| MARYSOLL-SALES-1 — Trial/subscription authority | ⬜ | Prvi Marysoll implementacioni rez: shared resolver, GET bez write-a, legacy i unknown/source semantika |
-| MARYSOLL-SALES-2 — Commercial read-only API | ⬜ | Assigned list/detail DTO i DMD adapter; live pristup tek uz verified assignment |
+| MARYSOLL-SALES-0 — Projection Contract | ✅ dokument i audit | §17 A–O: source inventory, trial/projection authority, binding i buduće diagnostics/marketing granice; stvarne PO odluke izdvojene |
+| MARYSOLL-SALES-1 — Trial/subscription authority | ✅ plan · ⬜ kod | §17 C/D/L/N: pure resolveri + shared effective-plan provenance + read-only loader; zatvoriti testove pre 2A. Ne čeka SALES-3/4/5 ili DMD auth |
+| MARYSOLL-SALES-2A — Projection/policy/DTO | ⬜ | Posle SALES-1 resolvera/testova: verified binding/assignment ports, policy, assigned read DTO i fixture principi; bez endpoint-a |
+| MARYSOLL-SALES-2B — Internal read-only endpoints | ⬜ | Posle 2A: tanak transport, response/request schemas, no-write i direct-request testovi, DMD adapter integration; live samo uz actual verified assignment/trust |
 | MARYSOLL-SALES-3 — Diagnostic/support projection | ⬜ | Sanitized summary, trusted tenant/account context, restricted support token; `?u=` ostaje samo label |
 | MARYSOLL-SALES-4 — DMD Incident handoff | ⬜ | Durable report/delivery, idempotency, retry i DMD technical handoff; jedan Incident lifecycle |
 | MARYSOLL-SALES-5 — Marketing/Newsletter projection | ⬜ | Postojeći servisi/editor, Sales draft + request approval; send/schedule/publish bez tenant authorization nedozvoljeni |
@@ -106,6 +108,33 @@ support intake/handoff smer i ne dobija drugi nezavisni Incident lifecycle.
 Ovaj dokumentacioni rez ne zatvara STAFF-3/Education acceptance i ne menja
 njihov postojeći NEXT. U okviru Commercial luka sledeći implementacioni korak
 je SALES-1; ostali rezovi i live DMD povezivanje rade se po njegovim gate-ovima.
+
+**Authority audit — nalazi i zatvoren plan.**
+[Izveštaj A–O / §17](PANTA-COMMERCIAL-CLIENT-SUCCESS.md#commercial-authority-audit):
+
+- [x] Trial source/consumer inventar, uključujući pre-verification trialing
+  Subscription, Tenant-only manual extend i nesinhronizovan Paddle trial datum.
+- [x] Predložen kanonski read ugovor: internal trial koristi Tenant lifecycle,
+  Paddle trial sačuvani Subscription period, non-trialing Subscription ne
+  prikazuje stale trial kao aktuelan; source/reason/quality čuvaju neslaganje.
+- [x] Effective plan i override pravila ostaju zajednička; paidThrough i stvarni
+  amount/currency/interval su unavailable, bez payment evidence pretpostavki.
+- [x] Utvrđeni GET side effect-i: subscriptions/features kreira legacy zapis;
+  Newsletter campaigns GET ažurira metrics/status. Nijedan se ne koristi u
+  Commercial read-u. Postojeći campaign modeli ostaju, uz campaignKind + ID.
+- [x] Diagnostic raw/PII i admin media/gallery/rute nisu Sales-safe reuse;
+  definisani scoped mapper/adapter i default-deny write putevi za kasnije rezove.
+- [x] 6 postojećih ciljanih Vitest fajlova / 47 testova prolaze. Ovo potvrđuje
+  trenutne primitive, ne nove Commercial resolvere niti live integration.
+- [ ] `Implement MARYSOLL-SALES-1` — resolveri, read loader i zahtevani testovi.
+- [ ] Zatim `Implement SALES-2A projection/policy/DTO`.
+- [ ] Tek zatim `Implement SALES-2B endpoints`.
+
+SALES-1 nema nerešenu PO authority odluku. Pre live binding-a odlučiti ko
+odobrava povezivanje/reaktivaciju/reassignment; DMD trust/assertion/revocation
+je zaseban tehnički live gate. Billed price/evidence proširenje i Sales draft
+approval/delegation pravila ostaju kasniji eksplicitni scope. Ovaj pass nije
+menjao runtime, podatke, auth, migracije niti API-je.
 
 ## NEXT — sledeći rez
 
