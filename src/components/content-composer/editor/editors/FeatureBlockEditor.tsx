@@ -15,7 +15,7 @@ export function FeatureBlockEditor({ block, mediaAdapter, onChange }: {
   return (
     <>
       <Field label="Naslov" value={block.title} onChange={(title) => onChange({ ...block, title })} />
-      <Field label="Uvod" value={block.intro ?? ""} onChange={(intro) => onChange({ ...block, intro })} />
+      <Field label="Uvod" textarea rows={3} value={block.intro ?? ""} onChange={(intro) => onChange({ ...block, intro })} />
       {block.sections.map((section, index) => (
         <div key={index} className="space-y-2 rounded border border-gray-200 p-2 dark:border-gray-700">
           <div className="flex items-center justify-between gap-2">

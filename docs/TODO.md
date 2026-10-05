@@ -49,6 +49,27 @@ nekorišćene exporte. Zato arhitektonski zero-warning gate još nije zatvoren.
 Browser acceptance, eksplicitna benchmark kalibracija i prvi produkcijski
 cron snimak ostaju otvoreni.
 
+## UI/UX — proširivi unos teksta (2026-10-05)
+
+**✅ Implementirano; 🟡 korisnička provera i merge čekaju.** Grana:
+`fix/ui-ux-small-improvements`.
+
+- [x] Admin/superadmin chat i admin/client chat termina: automatski 2–12
+  redova, ručno širenje nagore do 70% prostora, skrolabilne poruke i unos,
+  `Enter`/`Shift+Enter`.
+- [x] Newsletter, Content Composer i Marketing: textarea za opise, uvode,
+  duži sadržaj i AI instrukcije; vertikalno proširivanje postojećih polja.
+- [x] Stariji/uvezени newsletter templejti: duži sadržaj prepoznat i kada je
+  tip polja `text`; nazivi, naslovi i kratka polja ostaju jednolinijski.
+- [x] Marketing AI i editor kampanja: višeredne teme i opisi publike; pregledane
+  liste drafts/sent/scheduled/failed i ostale Marketing površine.
+- [x] Izvorni TypeScript, ciljani ESLint i 11 testova prolaze; izolovane browser
+  provere na desktop i mobilnoj širini završene.
+- [ ] Korisnička provera u aplikaciji i merge na `main`.
+
+Detalji, obuhvat i ograničenja provera:
+[UI/UX — unos dužeg teksta](UI-UX-TEXT-INPUT.md).
+
 ## NEXT — sledeći rez
 
 **STAFF-3 — owner Team UI.** Salon sidebar sada OWNER-u prikazuje `Tim` tab.

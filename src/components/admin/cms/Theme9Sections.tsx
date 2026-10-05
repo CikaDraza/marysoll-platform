@@ -146,7 +146,7 @@ function Area({
       <FieldHead label={label} length={current.length} kind={kind} />
       <FieldPurpose kind={kind} />
       <textarea
-        className={inp + " resize-none"}
+        className={inp + " resize-y max-h-[70dvh]"}
         rows={rows}
         value={current}
         maxLength={fieldMax(kind)}
@@ -175,7 +175,7 @@ function Lines({
     <div>
       <label className={lbl}>{label}</label>
       <textarea
-        className={inp + " resize-none"}
+        className={inp + " resize-y max-h-[70dvh]"}
         rows={rows}
         value={(value ?? []).join("\n")}
         onChange={(e) =>

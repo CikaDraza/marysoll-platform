@@ -18,6 +18,8 @@ import { useAppointments } from "@/hooks/useAppointments";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IAppointment, IMessage } from "@/types";
 import { useAppointmentMutations } from "@/hooks/useAppointmentMutations";
+import { ChatConversationFrame } from "@/components/admin/chat/ChatConversationFrame";
+import { ChatTextarea } from "@/components/admin/chat/ChatTextarea";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useUsers } from "@/hooks/useUsers";
 import { useMarkMessagesSeen } from "@/hooks/useMarkMessagesSeen";
@@ -474,7 +476,7 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -485,7 +487,7 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="relative bg-slate-900 rounded-lg w-full max-w-2xl mx-4">
+      <div className="relative bg-slate-900 rounded-lg w-full max-w-2xl mx-4 flex flex-col h-[min(36rem,90dvh)] overflow-hidden">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {/* Large circle top-right */}
           <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-violet-600/20 blur-3xl" />
@@ -511,7 +513,7 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
             <rect width="100%" height="100%" fill="url(#dots)" />
           </svg>
         </div>
-        <div className="flex justify-between items-center p-4 border-b border-gray-700">
+        <div className="flex shrink-0 justify-between items-center p-4 border-b border-gray-700">
           <h3 className="text-lg font-semibold text-white">
             Chat - {appointment.clientName} - {appointment.serviceName}
           </h3>
@@ -523,87 +525,89 @@ function ChatModal({ appointment, onClose }: ChatModalProps) {
           </button>
         </div>
 
-        <div ref={messagesContainerRef} className="p-4 h-96 overflow-y-auto">
-          {localMessages.length === 0 ? (
-            <p className="text-gray-200 text-center">
-              Nema poruka. Pošaljite prvu poruku.
-            </p>
-          ) : (
-            <div>
-              {localMessages.map((msg) => (
-                <div
-                  key={msg._id}
-                  className={`mb-3 ${
-                    msg.sender === "admin" ? "text-right" : ""
-                  }`}
-                >
+        <ChatConversationFrame>
+          <div data-chat-messages ref={messagesContainerRef} className="p-4 h-full overflow-y-auto">
+            {localMessages.length === 0 ? (
+              <p className="text-gray-200 text-center">
+                Nema poruka. Pošaljite prvu poruku.
+              </p>
+            ) : (
+              <div>
+                {localMessages.map((msg) => (
                   <div
-                    className={`inline-block px-4 py-2 rounded-lg max-w-xs shadow-2xl ${
-                      msg.sender === "admin"
-                        ? "bg-(--primary-color)/80 text-white"
-                        : "bg-gray-200 text-gray-800"
-                    } ${msg._id.startsWith("temp-") ? "opacity-80" : ""}`}
+                    key={msg._id}
+                    className={`mb-3 ${
+                      msg.sender === "admin" ? "text-right" : ""
+                    }`}
                   >
-                    <p className="text-sm">{msg.message}</p>
-                    <p className="text-xs opacity-70 mt-1">
-                      {new Date(msg.timestamp).toLocaleString("sr-RS", {
-                        hour12: false,
-                      })}
-                      {msg._id.startsWith("temp-") && " (šalje se...)"}
-                    </p>
-                  </div>
-                </div>
-              ))}
-
-              {/* Typing indicator kada se šalje poruka */}
-              {isSending && (
-                <div className="flex justify-end mb-3">
-                  <div className="inline-block px-4 py-2 rounded-lg bg-gray-300 opacity-80">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"></div>
-                      <div
-                        className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"
-                        style={{ animationDelay: "0.1s" }}
-                      ></div>
-                      <div
-                        className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"
-                        style={{ animationDelay: "0.2s" }}
-                      ></div>
+                    <div
+                      className={`inline-block px-4 py-2 rounded-lg max-w-xs shadow-2xl ${
+                        msg.sender === "admin"
+                          ? "bg-(--primary-color)/80 text-white"
+                          : "bg-gray-200 text-gray-800"
+                      } ${msg._id.startsWith("temp-") ? "opacity-80" : ""}`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
+                      <p className="text-xs opacity-70 mt-1">
+                        {new Date(msg.timestamp).toLocaleString("sr-RS", {
+                          hour12: false,
+                        })}
+                        {msg._id.startsWith("temp-") && " (šalje se...)"}
+                      </p>
                     </div>
                   </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
-        </div>
+                ))}
 
-        <div className="p-4 border-t border-gray-700">
-          <div className="flex flex-col lg:flex-row gap-2">
-            <input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyPress}
-              placeholder="Unesite poruku..."
-              className="flex-1 text-white placeholder-gray-300 border border-gray-500 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-(--secondary-color)"
-              disabled={isSending}
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={!message.trim() || isSending}
-              className="bg-(--secondary-color) text-white px-4 py-2 rounded hover:bg-(--secondary-color)/80 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-w-20 justify-center"
-            >
-              {isSending ? (
-                <>
-                  <LoaderButton />
-                </>
-              ) : (
-                "Pošalji"
-              )}
-            </button>
+                {/* Typing indicator kada se šalje poruka */}
+                {isSending && (
+                  <div className="flex justify-end mb-3">
+                    <div className="inline-block px-4 py-2 rounded-lg bg-gray-300 opacity-80">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"></div>
+                        <div
+                          className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"
+                          style={{ animationDelay: "0.1s" }}
+                        ></div>
+                        <div
+                          className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"
+                          style={{ animationDelay: "0.2s" }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
           </div>
-        </div>
+
+          <div data-chat-composer className="absolute inset-x-0 bottom-0 max-h-[70%] overflow-y-auto bg-slate-900 p-4 border-t border-gray-700">
+            <div className="flex items-end gap-2">
+              <ChatTextarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="Unesite poruku..."
+                className="text-sm leading-5 bg-slate-900 text-white placeholder-gray-300 border border-gray-500 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-(--secondary-color)"
+                disabled={isSending}
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={!message.trim() || isSending}
+                className="bg-(--secondary-color) text-white px-4 py-2 rounded hover:bg-(--secondary-color)/80 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-w-20 justify-center"
+              >
+                {isSending ? (
+                  <>
+                    <LoaderButton />
+                  </>
+                ) : (
+                  "Pošalji"
+                )}
+              </button>
+            </div>
+            <p className="mt-1.5 text-xs text-slate-400">Enter za slanje · Shift+Enter za novi red</p>
+          </div>
+        </ChatConversationFrame>
       </div>
     </div>
   );

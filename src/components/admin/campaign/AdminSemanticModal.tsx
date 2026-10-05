@@ -846,7 +846,7 @@ export default function AdminSemanticModal({
                     })
                   }
                   rows={3}
-                  className="mt-1 w-full rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 p-2"
+                  className="mt-1 w-full resize-y max-h-[70dvh] rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 p-2"
                   required
                 />
               </div>

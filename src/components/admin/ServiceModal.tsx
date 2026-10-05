@@ -352,7 +352,7 @@ export function ServiceModal({ s }: Props) {
                       min={1}
                     />
                     <textarea
-                      className={i2 + " col-span-2 resize-none"}
+                      className={i2 + " col-span-2 resize-y max-h-[70dvh]"}
                       rows={2}
                       value={v.description ?? ""}
                       onChange={(e) =>
@@ -518,7 +518,7 @@ export function ServiceModal({ s }: Props) {
           <div>
             <label className={l2}>Opis usluge</label>
             <textarea
-              className={i2 + " resize-none"}
+              className={i2 + " resize-y max-h-[70dvh]"}
               rows={3}
               value={form.description}
               onChange={(e) => s.setField("description", e.target.value)}
@@ -531,7 +531,7 @@ export function ServiceModal({ s }: Props) {
               Navedite šta usluga sadrži (svaka stavka novi red)
             </label>
             <textarea
-              className={i2 + " resize-none"}
+              className={i2 + " resize-y max-h-[70dvh]"}
               rows={4}
               value={(form.items ?? []).join("\n")}
               onChange={(e) => s.setField("items", e.target.value.split("\n"))}
