@@ -117,9 +117,11 @@ export function CampaignStrategistPanel({
         </div>
 
         <div>
-          <label className={lbl}>Tema kampanje *</label>
-          <input
-            className={inp}
+          <label className={lbl} htmlFor="campaign-ai-topic">Tema kampanje *</label>
+          <textarea
+            id="campaign-ai-topic"
+            rows={3}
+            className={`${inp} resize-y max-h-[70dvh]`}
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder="npr. Prolećna ponuda gel laka, Black Friday popust..."
@@ -153,8 +155,10 @@ export function CampaignStrategistPanel({
           </div>
 
           {audienceType === "custom_segment" && (
-            <input
-              className={`${inp} mt-3`}
+            <textarea
+              rows={3}
+              aria-label="Opis ciljne grupe"
+              className={`${inp} mt-3 resize-y max-h-[70dvh]`}
               value={customSegment}
               onChange={(e) => setCustomSegment(e.target.value)}
               placeholder="Describe the custom segment..."
@@ -163,7 +167,7 @@ export function CampaignStrategistPanel({
 
           {audienceType === "manual_emails" && (
             <textarea
-              className={`${inp} mt-3 resize-none`}
+              className={`${inp} mt-3 resize-y max-h-[70dvh]`}
               rows={3}
               value={manualEmails}
               onChange={(e) => setManualEmails(e.target.value)}

@@ -2,6 +2,8 @@
 
 import React, { useRef, useEffect, useCallback, memo } from "react";
 import Image from "next/image";
+import { ChatConversationFrame } from "./ChatConversationFrame";
+import { ChatTextarea } from "./ChatTextarea";
 import Link from "next/link";
 import { useSuperAdminChat } from "@/hooks/useSuperAdminChat";
 import type { SAMessage, SAAttachment } from "@/hooks/useSuperAdminChat";
@@ -93,7 +95,7 @@ const MessageBubble = memo(function MessageBubble({
               : "bg-slate-700 text-slate-200 rounded-bl-sm"
           } ${isTemp ? "opacity-70" : ""}`}
         >
-          {msg.message && <p className="text-sm leading-relaxed">{msg.message}</p>}
+          {msg.message && <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.message}</p>}
           {(msg.attachments ?? []).map((att, i) => (
             <AttachmentBubble key={i} att={att} />
           ))}
@@ -193,130 +195,133 @@ export function SuperAdminChatWorkspace({ tenantId, tenantName, ownerEmail }: Pr
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto min-h-0 pr-1">
-        {chat.messagesLoading ? (
-          <div className="flex items-center justify-center h-full text-slate-400 text-sm">
-            <span className="w-4 h-4 border-2 border-violet-400 border-t-violet-200 rounded-full animate-spin mr-2" />
-            Učitavanje poruka...
-          </div>
-        ) : chat.messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <p className="text-sm text-slate-500">Nema poruka. Pošaljite prvu poruku!</p>
-          </div>
-        ) : (
-          <>
-            {chat.messages.map((msg) => (
-              <MessageBubble
-                key={msg._id}
-                msg={msg}
-                myId={chat.myId}
-                onDelete={chat.deleteMessage}
-              />
-            ))}
-            {chat.isSending && <TypingIndicator />}
-            <div ref={messagesEndRef} />
-          </>
-        )}
-      </div>
+      <ChatConversationFrame key={tenantId}>
+        {/* Messages */}
+        <div data-chat-messages className="h-full overflow-y-auto pr-1">
+          {chat.messagesLoading ? (
+            <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+              <span className="w-4 h-4 border-2 border-violet-400 border-t-violet-200 rounded-full animate-spin mr-2" />
+              Učitavanje poruka...
+            </div>
+          ) : chat.messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <p className="text-sm text-slate-500">Nema poruka. Pošaljite prvu poruku!</p>
+            </div>
+          ) : (
+            <>
+              {chat.messages.map((msg) => (
+                <MessageBubble
+                  key={msg._id}
+                  msg={msg}
+                  myId={chat.myId}
+                  onDelete={chat.deleteMessage}
+                />
+              ))}
+              {chat.isSending && <TypingIndicator />}
+              <div ref={messagesEndRef} />
+            </>
+          )}
+        </div>
 
-      {/* Pending attachments */}
-      {chat.pendingAttachments.length > 0 && (
-        <div className="flex flex-wrap gap-2 py-2 flex-shrink-0">
-          {chat.pendingAttachments.map((att, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-700 border border-slate-600"
-            >
-              {att.type === "image" ? (
-                <Image src={att.url} alt={att.name} width={32} height={32}
-                  className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
-              ) : (
-                <svg className="w-5 h-5 text-red-400 flex-shrink-0" viewBox="0 0 24 24" fill="none">
-                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"
-                    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-              <span className="text-xs text-slate-300 max-w-[100px] truncate">{att.name}</span>
+        <div data-chat-composer className="absolute inset-x-0 bottom-0 max-h-[70%] overflow-y-auto bg-slate-800">
+          {/* Pending attachments */}
+          {chat.pendingAttachments.length > 0 && (
+            <div className="flex flex-wrap gap-2 py-2 flex-shrink-0">
+              {chat.pendingAttachments.map((att, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-700 border border-slate-600"
+                >
+                  {att.type === "image" ? (
+                    <Image src={att.url} alt={att.name} width={32} height={32}
+                      className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+                  ) : (
+                    <svg className="w-5 h-5 text-red-400 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"
+                        stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                  <span className="text-xs text-slate-300 max-w-[100px] truncate">{att.name}</span>
+                  <button
+                    onClick={() => chat.removePendingAttachment(i)}
+                    className="text-slate-400 hover:text-red-400 transition ml-0.5"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Input area */}
+          <div className="border-t border-slate-700 pt-3 flex-shrink-0">
+            <div className="flex items-end gap-2">
+              {/* File upload */}
               <button
-                onClick={() => chat.removePendingAttachment(i)}
-                className="text-slate-400 hover:text-red-400 transition ml-0.5"
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={chat.isUploading}
+                title="Priloži fajl (JPG, PNG, WebP, PDF – max 20MB)"
+                className="flex-shrink-0 w-10 h-10 flex items-center justify-center text-slate-400 hover:text-violet-400 hover:bg-violet-900/20 rounded-xl transition disabled:opacity-50"
               >
-                ×
+                {chat.isUploading ? (
+                  <span className="w-4 h-4 border-2 border-violet-400 border-t-violet-200 rounded-full animate-spin" />
+                ) : (
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"
+                      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+
+              {/* Text input */}
+              <ChatTextarea
+                value={chat.inputText}
+                onChange={(e) => chat.setInputText(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Napišite poruku... (Enter za slanje)"
+                disabled={chat.isSending}
+                className="border border-slate-600 rounded-xl px-3.5 py-2 text-sm text-slate-200 bg-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors placeholder:text-slate-500 disabled:opacity-60"
+                style={{ overflowY: "auto" }}
+              />
+
+              {/* Send */}
+              <button
+                onClick={() => void chat.sendMessage()}
+                disabled={
+                  (!chat.inputText.trim() && chat.pendingAttachments.length === 0) ||
+                  chat.isSending
+                }
+                className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Pošalji (Enter)"
+              >
+                {chat.isSending ? (
+                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M22 2L11 13M22 2L15 22 11 13 2 9l20-7z"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
               </button>
             </div>
-          ))}
+            <p className="text-[10px] text-slate-600 mt-1.5 ml-12">
+              Enter za slanje · Shift+Enter za novi red · JPG, PNG, WebP, PDF do 20MB
+            </p>
+          </div>
         </div>
-      )}
-
-      {/* Input area */}
-      <div className="border-t border-slate-700 pt-3 flex-shrink-0">
-        <div className="flex items-end gap-2">
-          {/* File upload */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={chat.isUploading}
-            title="Priloži fajl (JPG, PNG, WebP, PDF – max 20MB)"
-            className="flex-shrink-0 w-10 h-10 flex items-center justify-center text-slate-400 hover:text-violet-400 hover:bg-violet-900/20 rounded-xl transition disabled:opacity-50"
-          >
-            {chat.isUploading ? (
-              <span className="w-4 h-4 border-2 border-violet-400 border-t-violet-200 rounded-full animate-spin" />
-            ) : (
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"
-                  stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
-                />
-              </svg>
-            )}
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,application/pdf"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-
-          {/* Text input */}
-          <textarea
-            value={chat.inputText}
-            onChange={(e) => chat.setInputText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Napišite poruku... (Enter za slanje)"
-            rows={1}
-            disabled={chat.isSending}
-            className="flex-1 resize-none border border-slate-600 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 bg-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500 transition placeholder:text-slate-500 max-h-32 disabled:opacity-60"
-            style={{ overflowY: "auto" }}
-          />
-
-          {/* Send */}
-          <button
-            onClick={() => void chat.sendMessage()}
-            disabled={
-              (!chat.inputText.trim() && chat.pendingAttachments.length === 0) ||
-              chat.isSending
-            }
-            className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Pošalji (Enter)"
-          >
-            {chat.isSending ? (
-              <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-            ) : (
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M22 2L11 13M22 2L15 22 11 13 2 9l20-7z"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                />
-              </svg>
-            )}
-          </button>
-        </div>
-        <p className="text-[10px] text-slate-600 mt-1.5 ml-12">
-          Enter za slanje · Shift+Enter za novi red · JPG, PNG, WebP, PDF do 20MB
-        </p>
-      </div>
+      </ChatConversationFrame>
     </div>
   );
 }

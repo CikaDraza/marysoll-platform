@@ -101,12 +101,13 @@ export function SingleImageField({
           Generiši sliku sa AI
         </label>
         <div className="space-y-2">
-          <input
-            type="text"
+          <textarea
+            rows={3}
+            aria-label="Instrukcije za generisanje slike"
             value={singleImage.prompt}
             onChange={(e) => singleImage.setPrompt(e.target.value)}
             placeholder="Unesite prompt za generisanje slike..."
-            className="w-full px-3 py-2 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+            className="w-full resize-y max-h-[70dvh] px-3 py-2 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
           />
           <button
             type="button"

@@ -229,7 +229,7 @@ export function SocialSeoTab(props: DashboardTabProps) {
                 </span>
               </label>
               <textarea
-                className={inp + " resize-none"}
+                className={inp + " resize-y max-h-[70dvh]"}
                 rows={2}
                 value={sp.form.seo[dk] ?? ""}
                 onChange={(e) => sp.setSeoField(dk, e.target.value)}

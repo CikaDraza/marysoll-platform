@@ -124,6 +124,6 @@ export function ImageMediaField({ label = "Slika", image, adapter, onChange, asp
       aspectHint && <p className="text-xs text-gray-500">Preporučeni kadar: {aspectHint}</p>
     )}
     <AssetMediaField kind="image" label={label} asset={image} adapter={adapter} onChange={(asset) => onChange(asset ? { ...asset, alt: image?.alt || defaultAlt?.trim() || "", caption: image?.caption } : undefined)} />
-    {image && <><Field label="Alt tekst" value={image.alt} onChange={(alt) => onChange({ ...image, alt })} /><Field label="Opis slike (opciono)" value={image.caption ?? ""} onChange={(caption) => onChange({ ...image, caption })} /></>}
+    {image && <><Field label="Alt tekst" value={image.alt} onChange={(alt) => onChange({ ...image, alt })} /><Field label="Opis slike (opciono)" textarea rows={3} value={image.caption ?? ""} onChange={(caption) => onChange({ ...image, caption })} /></>}
   </div>;
 }

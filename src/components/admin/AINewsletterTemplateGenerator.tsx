@@ -64,7 +64,8 @@ export default function AINewsletterTemplateGenerator({
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Ovde upišite tekst za generisanje HTML templejta."
-              className="w-full h-32 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              rows={4}
+              className="w-full min-h-32 resize-y max-h-[70dvh] p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
 
             <div className="flex gap-3 mt-6">

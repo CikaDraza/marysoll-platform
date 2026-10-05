@@ -56,11 +56,13 @@ export function GeneratedImagesPanel({
     <div className="space-y-6">
       {images.map((img, index) => (
         <div key={index} className="rounded space-y-2">
-          <input
+          <textarea
+            rows={3}
+            aria-label={`Instrukcije za sliku ${index + 1}`}
             value={img.prompt}
             onChange={(e) => updatePrompt(index, e.target.value)}
             placeholder="Prompt za sliku..."
-            className="w-full bg-gray-100 dark:bg-gray-950 p-2 py-3 rounded focus:outline-none focus:ring-2 focus:ring-violet-400"
+            className="w-full resize-y max-h-[70dvh] bg-gray-100 dark:bg-gray-950 p-2 py-3 rounded focus:outline-none focus:ring-2 focus:ring-violet-400"
           />
 
           <div className="flex gap-2">

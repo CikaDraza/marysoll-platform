@@ -728,7 +728,7 @@ export function AdminLandingCMS({ sp }: Props) {
           <div>
             <label className={lbl}>Podtekst (Subheadline)</label>
             <textarea
-              className={inp + " resize-none"}
+              className={inp + " resize-y max-h-[70dvh]"}
               rows={2}
               value={hero.subheadline ?? ""}
               onChange={(e) =>
@@ -745,7 +745,7 @@ export function AdminLandingCMS({ sp }: Props) {
               Ko, šta, za koga (Where/What/For whom)
             </label>
             <textarea
-              className={inp + " resize-none"}
+              className={inp + " resize-y max-h-[70dvh]"}
               rows={2}
               value={hero.whereWhatForWhom ?? ""}
               onChange={(e) =>
@@ -776,7 +776,7 @@ export function AdminLandingCMS({ sp }: Props) {
             <div>
               <label className={lbl}>Podtekst (Subheadline)</label>
               <textarea
-                className={inp + " resize-none"}
+                className={inp + " resize-y max-h-[70dvh]"}
                 rows={2}
                 value={hero.subheadline ?? ""}
                 onChange={(e) =>
@@ -860,7 +860,7 @@ export function AdminLandingCMS({ sp }: Props) {
             <div>
               <label className={lbl}>Marquee traka (po jedan pojam u redu)</label>
               <textarea
-                className={inp + " resize-none"}
+                className={inp + " resize-y max-h-[70dvh]"}
                 rows={4}
                 value={(hero.theme8?.marquee ?? []).join("\n")}
                 onChange={(e) =>
@@ -1323,7 +1323,7 @@ export function AdminLandingCMS({ sp }: Props) {
           {(about.paragraphs ?? []).map((p, i) => (
             <div key={i} className="flex gap-2">
               <textarea
-                className={inp + " resize-none flex-1"}
+                className={inp + " resize-y max-h-[70dvh] flex-1"}
                 rows={3}
                 value={p}
                 onChange={(e) => {
@@ -1675,7 +1675,7 @@ export function AdminLandingCMS({ sp }: Props) {
             {(perks.paragraphs ?? []).map((p, i) => (
               <div key={i} className="flex gap-2">
                 <textarea
-                  className={inp + " resize-none flex-1"}
+                  className={inp + " resize-y max-h-[70dvh] flex-1"}
                   rows={2}
                   value={p}
                   onChange={(e) => {
@@ -2760,7 +2760,7 @@ export function AdminLandingCMS({ sp }: Props) {
                     <div className="col-span-2">
                       <label className={lbl}>Opis</label>
                       <textarea
-                        className={inp + " resize-none"}
+                        className={inp + " resize-y max-h-[70dvh]"}
                         rows={2}
                         value={treatment.description ?? ""}
                         onChange={(e) =>
@@ -3013,7 +3013,7 @@ export function AdminLandingCMS({ sp }: Props) {
                     placeholder="Pitanje..."
                   />
                   <textarea
-                    className={inp + " resize-none"}
+                    className={inp + " resize-y max-h-[70dvh]"}
                     rows={2}
                     value={item.answer ?? ""}
                     onChange={(e) => {
@@ -3154,7 +3154,7 @@ export function AdminLandingCMS({ sp }: Props) {
                   </span>
                 </div>
                 <textarea
-                  className={inp + " resize-none"}
+                  className={inp + " resize-y max-h-[70dvh]"}
                   rows={4}
                   maxLength={PAGE_PARAGRAPH_MAX}
                   value={servicesPage.paragraph ?? ""}
@@ -3213,7 +3213,7 @@ export function AdminLandingCMS({ sp }: Props) {
                   </span>
                 </div>
                 <textarea
-                  className={inp + " resize-none"}
+                  className={inp + " resize-y max-h-[70dvh]"}
                   rows={4}
                   maxLength={PAGE_PARAGRAPH_MAX}
                   value={appointmentsPage.paragraph ?? ""}

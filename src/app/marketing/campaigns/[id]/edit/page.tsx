@@ -261,18 +261,22 @@ export default function CampaignEditPage() {
           <p className={sectionTitle}>Osnovna podešavanja</p>
           <div className="space-y-4">
             <div>
-              <label className={lbl}>Tema kampanje</label>
-              <input
-                className={inp}
+              <label className={lbl} htmlFor="campaign-edit-topic">Tema kampanje</label>
+              <textarea
+                id="campaign-edit-topic"
+                rows={3}
+                className={`${inp} resize-y max-h-[70dvh]`}
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 placeholder="npr. Prolećna akcija, Popust na tretmane..."
               />
             </div>
             <div>
-              <label className={lbl}>Ciljna publika</label>
-              <input
-                className={inp}
+              <label className={lbl} htmlFor="campaign-edit-audience">Ciljna publika</label>
+              <textarea
+                id="campaign-edit-audience"
+                rows={3}
+                className={`${inp} resize-y max-h-[70dvh]`}
                 value={audience}
                 onChange={(e) => setAudience(e.target.value)}
                 placeholder="npr. Klijenti koji nisu posjetili 3 meseca"
@@ -330,7 +334,7 @@ export default function CampaignEditPage() {
             <div>
               <label className={lbl}>Hero tekst</label>
               <textarea
-                className={`${inp} resize-none`}
+                className={`${inp} resize-y max-h-[70dvh]`}
                 rows={4}
                 value={heroText}
                 onChange={(e) => setHeroText(e.target.value)}

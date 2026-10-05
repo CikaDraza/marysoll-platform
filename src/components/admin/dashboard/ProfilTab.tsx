@@ -491,7 +491,7 @@ export function ProfilTab(props: DashboardTabProps) {
               <div className="sm:col-span-2">
                 <label className={lbl}>Opis salona</label>
                 <textarea
-                  className={inp + " resize-none"}
+                  className={inp + " resize-y max-h-[70dvh]"}
                   rows={3}
                   value={sp.form.description}
                   onChange={(e) =>

@@ -12,6 +12,7 @@ import AINewsletterTemplateGenerator from "./AINewsletterTemplateGenerator";
 import { useNewsletterTemplates } from "@/hooks/useNewsletterTemplates";
 import { defaultNewsletterTemplates } from "@/lib/defaultNewsletterTemplates";
 import { useNewsletterSubscribers } from "@/hooks/useNewsletterSubscribers";
+import { isMultilineNewsletterField } from "@/lib/newsletter/fieldPresentation";
 import { standardNewsletterVariables } from "@/lib/standardNewsletterVariables";
 import { extractVariablesFromHtml } from "@/lib/templateUtils";
 import {
@@ -702,7 +703,7 @@ function AdminNewsletterDashboard({ scope }: AdminNewsletterDashboardProps) {
                         label={variable.label}
                         scope={scope}
                       />
-                    ) : variable.type === "textarea" ? (
+                    ) : isMultilineNewsletterField(variable) ? (
                       <textarea
                         value={
                           isClientName
@@ -717,7 +718,7 @@ function AdminNewsletterDashboard({ scope }: AdminNewsletterDashboardProps) {
                         }
                         placeholder={variable.placeholder}
                         disabled={isClientName}
-                        className={`w-full p-3 border rounded-lg resize-none ${
+                        className={`w-full p-3 border rounded-lg resize-y max-h-[70dvh] ${
                           isClientName
                             ? "bg-gray-100 text-gray-500 cursor-not-allowed border-gray-300"
                             : "border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
@@ -860,7 +861,8 @@ function AdminNewsletterDashboard({ scope }: AdminNewsletterDashboardProps) {
             value={customHtmlInput}
             onChange={(e) => setCustomHtmlInput(e.target.value)}
             placeholder="Ovde zalepi čist HTML kod templejta (bez <html>, <body>, <head> tagova)"
-            className="w-full h-60 lg:h-48 p-4 border border-gray-300 dark:border-gray-700 rounded-lg font-mono text-sm"
+            rows={8}
+            className="w-full min-h-48 resize-y max-h-[70dvh] p-4 border border-gray-300 dark:border-gray-700 rounded-lg font-mono text-sm"
           />
           <label className="flex items-center gap-3 my-4">
             <input

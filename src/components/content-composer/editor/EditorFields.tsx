@@ -23,7 +23,7 @@ export function Field({
       <label className={labelClassName}>{label}</label>
       {textarea ? (
         <textarea
-          className={inputClassName}
+          className={`${inputClassName} resize-y max-h-[70dvh]`}
           rows={rows ?? 3}
           value={value}
           onChange={(event) => onChange(event.target.value)}

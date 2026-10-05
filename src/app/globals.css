@@ -520,3 +520,13 @@ body {
 .edu-prose :is(figure, table) {
   border-radius: 20px;
 }
+
+/* Multiline form inputs can grow vertically without changing their width. */
+@layer base {
+  textarea {
+    resize: vertical;
+    /* Keep a full text line visible even with p-4 padding and borders. */
+    min-height: calc(1lh + 2rem + 2px);
+    max-height: 70dvh;
+  }
+}

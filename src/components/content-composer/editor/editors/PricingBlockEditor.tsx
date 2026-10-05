@@ -14,7 +14,7 @@ export function PricingBlockEditor({ block, slugOptions, onChange }: {
   return (
     <>
       <Field label="Naslov" value={block.title} onChange={(title) => onChange({ ...block, title })} />
-      <Field label="Opis" value={block.description ?? ""} onChange={(description) => onChange({ ...block, description })} />
+      <Field label="Opis" textarea rows={3} value={block.description ?? ""} onChange={(description) => onChange({ ...block, description })} />
       {block.items.map((item, index) => (
         <div key={index} className="space-y-2 rounded border border-gray-200 p-2 dark:border-gray-700">
           <div className="flex items-center justify-between gap-2">
@@ -50,6 +50,8 @@ export function PricingBlockEditor({ block, slugOptions, onChange }: {
           />
           <Field
             label="Opis"
+            textarea
+            rows={3}
             value={item.description ?? ""}
             onChange={(description) => onChange({
               ...block,
