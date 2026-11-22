@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 import Loader from "../elements/Loader";
 
 const lbl =
-  "block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5";
+  "block text-[11px] font-bold text-gray-400 dark:text-gray-200 uppercase tracking-widest mb-1.5";
 const card =
   "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6";
 
@@ -78,7 +78,7 @@ export default function NotificationSettings() {
   return (
     <div className="py-6">
       {/* Naslov zavisno od uloge */}
-      <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8">
+      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
         {isAdmin ? "Postavke notifikacija" : "Moje postavke notifikacija"}
       </h3>
 
@@ -114,8 +114,8 @@ export default function NotificationSettings() {
           </div>
 
           {iosNeedsInstall && (
-            <div className="mt-4 p-4 bg-violet-50 border border-violet-200 rounded-lg">
-              <p className="text-sm text-violet-800 leading-relaxed">
+            <div className="mt-4 p-4 bg-violet-50 dark:bg-gray-900 border border-violet-200 rounded-lg">
+              <p className="text-sm text-violet-800 dark:text-gray-300 leading-relaxed">
                 <strong>📲 iPhone:</strong> na iOS-u obaveštenja rade samo kada
                 je Marysoll dodat na početni ekran. Dodirnite{" "}
                 <strong>Share</strong> (kvadrat sa strelicom nagore) →{" "}
@@ -210,8 +210,8 @@ export default function NotificationSettings() {
           </div>
 
           {settings.appointmentReminder && (
-            <div className="mt-6 p-4 bg-violet-50 border border-violet-200 rounded-lg">
-              <p className="text-sm text-violet-800">
+            <div className="mt-6 p-4 bg-violet-50 dark:bg-gray-900 border border-violet-200 rounded-lg">
+              <p className="text-sm text-violet-800 dark:text-gray-300">
                 Podsetnici se automatski šalju <strong>1 sat</strong> i{" "}
                 <strong>30 minuta</strong> pre početka termina — kao push
                 notifikacija i u zvonu obaveštenja.
@@ -287,8 +287,8 @@ export default function NotificationSettings() {
           </div>
 
           {/* Info blok zavisno od uloge */}
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
+          <div className="mt-4 p-4 bg-blue-50 dark:bg-gray-900 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800 dark:text-gray-300">
               <strong>Napomena:</strong>
               {isAdmin
                 ? " Email notifikacije za preporuke se šalju adminima kada se desi neki događaj (nova preporuka, izmena, brisanje). Klijent dobija email samo kada salon odgovori na njegovu preporuku."
@@ -300,21 +300,21 @@ export default function NotificationSettings() {
         {/* Newsletter postavke (opciono) */}
         <div>
           <h4 className={lbl}>Newsletter postavke</h4>
-          <p className="text-sm text-gray-600 mb-6">
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
             Primajte promocije, novosti i korisne savete direktno na email.
             Možete birati koje vrste sadržaja želite.
           </p>
           {/* Glavni toggle za pretplatu */}
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mt-1 transition-colors">
+                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 transition-colors">
                   {settings.newsletterPromotions ||
                   settings.newsletterUpdates ||
                   settings.newsletterTips ? (
                     "Trenutno primate odabrane vrste emailova"
                   ) : (
-                    <span className="text-(--secondary-color) transition-colors">
+                    <span className="text-(--secondary-color) dark:text-gray-300 transition-colors">
                       Trenutno niste pretplaćeni ni na jedan bilten
                     </span>
                   )}
@@ -396,7 +396,7 @@ export default function NotificationSettings() {
             </div>
           </div>
 
-          <div className="text-sm text-(--secondary-color)">
+          <div className="text-sm text-(--secondary-color) dark:text-gray-300">
             {saveMutation.isPending && "Čuvanje..."}
             {saveMutation.isSuccess && "✓ Sačuvano"}
             {saveMutation.isError && "✗ Greška"}
@@ -423,7 +423,7 @@ function NotificationToggle({
     <div className={`${card} flex items-center justify-between`}>
       <div>
         <p className={lbl}>{label}</p>
-        <p className="text-sm text-gray-500">{description}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>
       </div>
       <button
         onClick={onChange}
