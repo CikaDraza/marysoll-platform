@@ -34,7 +34,11 @@ const THEME_ACCESS = {
   },
   "theme-9": {
     visibility: "private",
-    allowedTenantSlugs: ["marina-stanisavljevic-skincare-edukacija"],
+    allowedTenantSlugs: [
+      "marina-stanisavljevic-skincare-edukacija",
+      "kiki-kiss-beauty",
+      "shisham-frizerski-salon",
+    ],
   },
   // Ash Studio dizajn — za sada javna, svaki tenant je sme izabrati.
   "theme-10": { visibility: "public" },

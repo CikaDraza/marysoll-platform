@@ -7,6 +7,8 @@ import {
 const LASH_ROOM = "the-lash-room-by-anja";
 const MARINA = "marina-stanisavljevic-skincare-edukacija";
 const MARYSOLL = "marysoll-makeup-nails";
+const KIKI_KISS = "kiki-kiss-beauty";
+const SHI_SHAM = "shisham-frizerski-salon";
 
 describe("Theme Access Policy", () => {
   it("keeps themes 2–7 and 10 available to every tenant", () => {
@@ -39,8 +41,14 @@ describe("Theme Access Policy", () => {
     ).toBe(false);
   });
 
-  it("allows Theme 9 only to Marina", () => {
+  it("allows Theme 9 to Marina and the approved demo tenants", () => {
     expect(canTenantUseTheme({ theme: "theme-9", tenantSlug: MARINA })).toBe(
+      true,
+    );
+    expect(canTenantUseTheme({ theme: "theme-9", tenantSlug: KIKI_KISS })).toBe(
+      true,
+    );
+    expect(canTenantUseTheme({ theme: "theme-9", tenantSlug: SHI_SHAM })).toBe(
       true,
     );
     expect(
@@ -65,7 +73,20 @@ describe("Theme Access Policy", () => {
     expect(availableThemesForTenant(LASH_ROOM)).not.toContain("theme-9");
     expect(availableThemesForTenant(MARINA)).toContain("theme-9");
     expect(availableThemesForTenant(MARINA)).not.toContain("theme-8");
+    expect(availableThemesForTenant(KIKI_KISS)).toContain("theme-9");
+    expect(availableThemesForTenant(KIKI_KISS)).not.toContain("theme-8");
+    expect(availableThemesForTenant(KIKI_KISS)).not.toContain("theme-1");
+    expect(availableThemesForTenant(SHI_SHAM)).toContain("theme-9");
+    expect(availableThemesForTenant(SHI_SHAM)).not.toContain("theme-8");
+    expect(availableThemesForTenant(SHI_SHAM)).not.toContain("theme-1");
   });
+
+  it.each([undefined, null, "", "kiki-kiss", "kiki-kiss-beauty-copy"])(
+    "does not grant Theme 9 to an absent or unapproved tenant: %s",
+    (tenantSlug) => {
+      expect(canTenantUseTheme({ theme: "theme-9", tenantSlug })).toBe(false);
+    },
+  );
 
   it("allows Theme 1 only to Marysoll", () => {
     expect(canTenantUseTheme({ theme: "theme-1", tenantSlug: MARYSOLL })).toBe(

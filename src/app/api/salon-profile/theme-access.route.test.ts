@@ -40,6 +40,8 @@ import { PUT } from "./update/route";
 const TENANT_ID = "tenant-1";
 const LASH_ROOM = "the-lash-room-by-anja";
 const MARINA = "marina-stanisavljevic-skincare-edukacija";
+const KIKI_KISS = "kiki-kiss-beauty";
+const SHI_SHAM = "shisham-frizerski-salon";
 
 function request(
   method: "POST" | "PUT",
@@ -130,6 +132,8 @@ describe("private theme server enforcement", () => {
   it.each([
     { tenantSlug: LASH_ROOM, theme: "theme-8" },
     { tenantSlug: MARINA, theme: "theme-9" },
+    { tenantSlug: KIKI_KISS, theme: "theme-9" },
+    { tenantSlug: SHI_SHAM, theme: "theme-9" },
   ] as const)(
     "allows the approved tenant to select $theme through PUT",
     async ({ tenantSlug, theme }) => {
@@ -148,6 +152,8 @@ describe("private theme server enforcement", () => {
   it.each([
     { tenantSlug: LASH_ROOM, theme: "theme-8" },
     { tenantSlug: MARINA, theme: "theme-9" },
+    { tenantSlug: KIKI_KISS, theme: "theme-9" },
+    { tenantSlug: SHI_SHAM, theme: "theme-9" },
   ] as const)(
     "keeps $theme during an ordinary save for its approved tenant",
     async ({ tenantSlug, theme }) => {
@@ -165,16 +171,33 @@ describe("private theme server enforcement", () => {
     },
   );
 
-  it("allows the approved tenant to create a profile with its private theme", async () => {
-    useTenantSlug(MARINA);
-    vi.mocked(SalonProfile.create).mockResolvedValue({ id: "profile-1" } as never);
+  it.each([MARINA, KIKI_KISS, SHI_SHAM])(
+    "allows an approved tenant %s to create a profile with Theme 9",
+    async (tenantSlug) => {
+      useTenantSlug(tenantSlug);
+      vi.mocked(SalonProfile.create).mockResolvedValue({ id: "profile-1" } as never);
 
-    const response = await POST(request("POST", { landingTheme: "theme-9" }));
+      const response = await POST(request("POST", { landingTheme: "theme-9" }));
 
-    expect(response.status).toBe(201);
-    expect(SalonProfile.create).toHaveBeenCalledWith(
-      expect.objectContaining({ landingTheme: "theme-9", tenantId: TENANT_ID }),
-    );
+      expect(response.status).toBe(201);
+      expect(SalonProfile.create).toHaveBeenCalledWith(
+        expect.objectContaining({ landingTheme: "theme-9", tenantId: TENANT_ID }),
+      );
+    },
+  );
+
+  it("does not trust a demo tenant slug supplied in the form", async () => {
+    const existing = profile();
+    useTenantSlug("ordinary-beauty-studio");
+    vi.mocked(SalonProfile.findOne).mockResolvedValue(existing as never);
+
+    const response = await PUT(request("PUT", {
+      landingTheme: "theme-9",
+      tenantSlug: KIKI_KISS,
+    }));
+
+    expect(response.status).toBe(403);
+    expect(existing.save).not.toHaveBeenCalled();
   });
 
   it("keeps an approved private theme when a partial PUT omits landingTheme", async () => {
