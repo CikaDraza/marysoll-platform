@@ -30,10 +30,15 @@ describe("theme picker access projection", () => {
     expect(themes).not.toContain("theme-9");
   });
 
-  it("shows Theme 9 only to Marina", () => {
-    const themes = idsFor("marina-stanisavljevic-skincare-edukacija");
+  it.each([
+    "marina-stanisavljevic-skincare-edukacija",
+    "kiki-kiss-beauty",
+    "shisham-frizerski-salon",
+  ])("shows Theme 9 to the approved tenant %s", (tenantSlug) => {
+    const themes = idsFor(tenantSlug);
 
     expect(themes).toContain("theme-9");
     expect(themes).not.toContain("theme-8");
+    expect(themes).not.toContain("theme-1");
   });
 });
